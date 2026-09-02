@@ -12,13 +12,17 @@ The agentic-ready approach has two distinct layers:
 ```mermaid
 graph TB
     subgraph "Methodology (tool-agnostic)"
-        M1["Phase 1: Bootstrap"]
-        M2["Phase 2: Source-Level Docs"]
-        M3["Phase 3: Agent-Oriented Docs"]
-        M4["Phase 4: Contracts & Baselines"]
-        M5["Phase 5: Agent-Driven Refactoring"]
-        M6["Phase 6: Human Docs"]
-        M7["Phase 7: Spec-Driven Dev"]
+        subgraph "Part I: Readiness Foundation (Required)"
+            M1["Phase 1: Bootstrap"]
+            M2["Phase 2: Source-Level Docs"]
+            M3["Phase 3: Agent-Oriented Docs"]
+            M4["Phase 4: Contracts & Baselines"]
+        end
+        subgraph "Part II: Post-Readiness Roadmap (Agent-Driven)"
+            M5["Phase 5: Refactoring (Optional)"]
+            M6["Phase 6: Human Docs"]
+            M7["Phase 7: Spec-Driven Dev"]
+        end
     end
 
     subgraph "Tooling (accelerators)"
@@ -39,6 +43,7 @@ graph TB
     T1 -.-> M6
     T1 -.-> M7
     T2 -.-> M5
+    T2 -.-> M7
     T3 -.-> M2
     T4 -.-> M3
     T5 -.-> M4

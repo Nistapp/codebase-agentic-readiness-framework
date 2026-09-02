@@ -15,7 +15,7 @@ An **agentic-ready codebase** provides AI coding agents with the structure they 
 - **Security and change-control boundaries** — agents operate within defined constraints.
 
 > [!IMPORTANT]
-> This approach does not require the entire codebase to be modernized before agents can participate. Readiness is built **incrementally** through [seven phases](Phased-Approach.md).
+> This approach does not require the entire codebase to be modernized before agents can participate. Readiness is built **incrementally** through a [4-phase foundation and 3-phase post-execution roadmap](Phased-Approach.md). The foundation is mandatory for all codebases and can be completed in a few weeks for a medium-sized repository. The post-execution roadmap is optional and can be pursued as resources allow.
 
 ### Applicability
 

@@ -4,17 +4,34 @@
 
 ## Phase Progression
 
-Readiness is built through seven sequential phases. Each phase produces artifacts that subsequent phases depend on.
+The framework is structured into two distinct parts:
+
+1. **Part I: Agentic-Readiness Foundation (Phases 1–4)** — The mandatory, sequential phases required to make any codebase safe, bounded, discoverable, and deterministic for AI coding agents. Completing Phase 4 achieves full **Agentic Readiness**.
+2. **Part II: Post-Readiness Roadmap & Execution (Phases 5–7)** — Suggested workflows and roadmap activities that can be performed, automated, or accelerated *by* AI agents once the foundation is established.
 
 ```mermaid
-graph LR
-    P1["Phase 1\nBootstrap"] --> P2["Phase 2\nSource Docs"]
-    P2 --> P3["Phase 3\nAgent Docs"]
-    P3 --> P4["Phase 4\nContracts"]
-    P4 --> P5["Phase 5\nRefactoring"]
-    P5 --> P6["Phase 6\nHuman Docs"]
-    P6 --> P7["Phase 7\nReady for Spec-Driven Dev"]
+flowchart TB
+    subgraph Part1 ["Part I: Agentic-Readiness Foundation (Required)"]
+        direction LR
+        P1["Phase 1<br/>Bootstrap"] --> P2["Phase 2<br/>Source Docs"]
+        P2 --> P3["Phase 3<br/>Agent Docs"]
+        P3 --> P4["Phase 4<br/>Contracts & Baselines"]
+    end
 
+    subgraph Part2 ["Part II: Post-Readiness Roadmap & Execution (Agent-Driven)"]
+        direction LR
+        P5["Phase 5<br/>Refactoring (Optional)"]
+        P6["Phase 6<br/>Human Docs"]
+        P7["Phase 7<br/>Spec-Driven Dev"]
+    end
+
+    P4 ==>|"Codebase is Agentic-Ready"| Part2
+    P4 -.-> P5
+    P4 -.-> P6
+    P4 -.-> P7
+
+    style Part1 fill:#f0fdf4,stroke:#16a34a,stroke-width:2px
+    style Part2 fill:#f8fafc,stroke:#64748b,stroke-width:2px,stroke-dasharray: 5 5
     style P1 fill:#2d6a4f,stroke:#1b4332,color:#fff
     style P2 fill:#2d6a4f,stroke:#1b4332,color:#fff
     style P3 fill:#40916c,stroke:#2d6a4f,color:#fff
@@ -25,9 +42,11 @@ graph LR
 ```
 
 > [!NOTE]
-> Phases are presented linearly. Phase parallelism may be explored in future iterations.
+> Foundation phases (1–4) are sequential because each produces artifacts that subsequent phases depend on. Once Phase 4 is complete, the codebase is agentic-ready, and post-readiness roadmap activities (5–7) can be carried out by agents independently.
 
 ---
+
+## Part I: Agentic-Readiness Foundation (Required)
 
 ## Phase 1: Agentic Bootstrap ✅
 
@@ -189,13 +208,29 @@ Runtime instrumentation is added selectively around high-risk or high-value work
 
 **Result:** Agents can change code while detecting unintended behavioral changes.
 
+> [!IMPORTANT]
+> ### 🏁 Milestone: Codebase is Officially Agentic-Ready
+> Upon completing Phase 4, the repository has achieved full **Agentic Readiness**:
+> - **Discoverability & Graph Memory**: Indexed in `codebase-memory-mcp`.
+> - **Execution Determinism**: Standardized `Taskfile`/`Makefile` commands and quality gates.
+> - **Semantic Clarity**: Rich docstrings, signatures, and invariants.
+> - **Bounded Scope**: Explicit per-component Constraint Engineering rules.
+> - **Regression Safety Nets**: Published contracts and characterization tests.
+>
+> The subsequent phases (Phases 5–7) constitute a **suggested execution roadmap** — high-value activities and development workflows that can now be performed, automated, or accelerated by AI agents.
+
 ---
 
-## Phase 5 (Optional):  Refactoring 
+## Part II: Post-Readiness Roadmap & Execution (Agent-Driven)
+
+> [!IMPORTANT]
+> Phases 5-7 are not part of the Agentic-Readiness Framework. They are suggested activities that can be performed once the codebase is agentic-ready. They can be taken up in parallel or dropped entirely.
+
+## Phase 5 (Optional): Refactoring 
 
 > **Objective**: Support controlled feature development and refactoring within legacy code.
 >
-> **Tools**: Manual. This is also optional.
+> **Tools**: Manual (using claude-code, opencode etc). This is optional and can be taken up whenever the team is ready. Once Phases1-4 are completed, refactoring becomes much easier as the code is more structured and bounded i.e. claude-code and opencode etc. will produce much better results. You can also use something like https://github.com/spec-ops-method to prepare the specs before transition to SDD.
 
 ### Refactoring Principles
 
@@ -260,11 +295,14 @@ Generated documentation should link back to the source code, tests, contracts, a
 **Result:** Developers can learn, operate, and maintain the repository without relying on tribal knowledge.
 
 > [!NOTE]
-> We created these manually for `agentic-tdd` and can be found [`here`](https://github.com/Nistapp/agentic-tdd/tree/main/docs). `agentic-repoDocs` will automate this process in the future.
+> We created repo-docs manually for `agentic-tdd` and can be found [`here`](https://github.com/Nistapp/agentic-tdd/tree/main/docs). The manual process (by manual we mean that we used oepncode+deepseek-v4-flash + prompting.) took just a few days. `agentic-repoDocs` will automate this process in the future to bring it down to a few hours.
 
 ---
 
 ## Phase 7: Spec-Driven Feature Development
+
+> [!IMPORTANT]
+> There are excellent tools like https://github.com/spec-ops-method which can be used to prepare baseline specs for existing codebase. Generating baseline specs is a prerequisite for using Spec Ops. The framework does not mandate using this, but we highly recommend it for legacy codebases.
 
 > **Objective**: Support regular feature development through a controlled, specification-driven workflow.
 >
@@ -333,6 +371,9 @@ graph TD
 ```
 
 This cycle ensures that **every tool operation starts from indexed knowledge and ends by updating it** — preventing drift between the codebase and its documentation.
+
+> [!TODO]
+> We missed a stage for generating unit-tests for the existing codebase. Generating unit-tests for existing code may 'bake in' certain behaviors that we may want to change later. So we have to be careful about this. Unit-tests are closely related to formal specs and we will address this later. 
 
 ---
 
