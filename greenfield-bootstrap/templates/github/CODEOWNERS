@@ -1,0 +1,9 @@
+# Default owner for everything
+* @<your-github-username>
+
+# Core engine — requires senior review
+src/core/ @<your-github-username>
+src/core/interfaces.ts @<your-github-username>
+
+# CI/CD
+.github/ @<your-github-username>

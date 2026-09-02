@@ -15,7 +15,8 @@ An **agentic-ready codebase** provides AI coding agents with the structure they 
 - **Security and change-control boundaries** — agents operate within defined constraints.
 
 > [!IMPORTANT]
-> This approach does not require the entire codebase to be modernized before agents can participate. Readiness is built **incrementally** through a [4-phase foundation and 3-phase post-execution roadmap](Phased-Approach.md). The foundation is mandatory for all codebases and can be completed in a few weeks for a medium-sized repository. The post-execution roadmap is optional and can be pursued as resources allow.
+> - **For existing codebases:** Readiness is built **incrementally** through a [4-phase foundation and 3-phase post-execution roadmap](../brownfield-legacy/Phased-Approach.md).
+> - **For new codebases:** Readiness is established from Day 1 using the [Project Initialization Recipe](../greenfield-bootstrap/README.md).
 
 ### Applicability
 
@@ -38,7 +39,7 @@ Constraint Engineering is about **what NOT to do** — enforcing boundaries and 
 
 1. **Ensure analysis before generation**
    - Agents must explore code via `codebase-memory-mcp` before writing any code.
-   - Optionally, a specialist impact-analysis agent (to be built) validates proposed changes before execution.
+   - Optionally, a specialist impact-analysis agent validates proposed changes before execution.
 2. **Constrain agent scope**
    - Explicit `allow:...` / `deny:...` lists for files, methods, interfaces, directories, and commands.
    - Agents cannot touch what they are not permitted to touch.
@@ -64,11 +65,11 @@ flowchart TD
 
 | Phase | Constraint Engineering Role |
 |-------|----------------------------|
-| [Phase 1](Phased-Approach.md#phase-1-agentic-bootstrap) | Establish initial allow/deny lists. Configure deterministic commands that agents must use. |
-| [Phase 3](Phased-Approach.md#phase-3-agent-oriented-documentation) | `agentic-agentDocs` generates per-component constraint definitions: forbidden dependencies, data classification, ownership rules. |
-| [Phase 4](Phased-Approach.md#phase-4-contracts-and-behavior-baselines) | Contracts become enforceable constraints — agents must not break published interfaces. |
-| [Phase 5](Phased-Approach.md#phase-5-agent-driven-refactoring) | Refactoring is bounded to single components. Agents cannot weaken tests. |
-| [Phase 7](Phased-Approach.md#phase-7-spec-driven-feature-development) | Implementation plans are cross-checked against `codebase-memory-mcp` for impact before approval. |
+| [Phase 1](../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-) | Establish initial allow/deny lists. Configure deterministic commands that agents must use. |
+| [Phase 3](../brownfield-legacy/Phased-Approach.md#phase-3-agent-oriented-documentation-) | `agentic-agentDocs` generates per-component constraint definitions: forbidden dependencies, data classification, ownership rules. |
+| [Phase 4](../brownfield-legacy/Phased-Approach.md#phase-4-contracts-and-behavior-baselines-) | Contracts become enforceable constraints — agents must not break published interfaces. |
+| [Phase 5](../brownfield-legacy/Phased-Approach.md#phase-5-agent-driven-refactoring-) | Refactoring is bounded to single components. Agents cannot weaken tests. |
+| [Phase 7](../brownfield-legacy/Phased-Approach.md#phase-7-spec-driven-feature-development-) | Implementation plans are cross-checked against `codebase-memory-mcp` for impact before approval. |
 
 ---
 
@@ -94,4 +95,4 @@ This approach is based on the following assumptions:
 
 ---
 
-← [Home](README.md) · [Phased Approach →](Phased-Approach.md)
+← [Home](../README.md) · [Legacy Phased Approach →](../brownfield-legacy/Phased-Approach.md) · [New Project Recipe →](../greenfield-bootstrap/README.md)

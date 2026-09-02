@@ -57,7 +57,7 @@ flowchart TB
 ### Activities
 
 - Configure and run `codebase-memory-mcp` to index source files, symbols, relationships, dependencies, and tests.
-- Create root and component-level `AGENTS.md` files. A good example is [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md)
+- Create root and component-level `AGENTS.md` files. A good example is [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md) (See also our [Greenfield AGENTS.md Template](../greenfield-bootstrap/templates/AGENTS.md)).
 - Standardize commands using a `Makefile`, `Taskfile`, or package scripts:
 
 ```bash
@@ -156,7 +156,7 @@ The tool must be **conservative**:
 - **Per-component Constraint Engineering definitions** — explicit allow/deny rules for files, methods, interfaces, directories, and commands.
 
 > [!NOTE]
-> This is where [Constraint Engineering](Overview.md#constraint-engineering) becomes enforceable at the component level. The `agentic-agentDocs` tool generates the constraint definitions that agents must respect.
+> This is where [Constraint Engineering](../shared/Overview.md#constraint-engineering) becomes enforceable at the component level. The `agentic-agentDocs` tool generates the constraint definitions that agents must respect.
 
 The context pack contains only the information relevant to a task: related symbols, callers, callees, tests, contracts, and architecture decisions.
 
@@ -230,7 +230,7 @@ Runtime instrumentation is added selectively around high-risk or high-value work
 
 > **Objective**: Support controlled feature development and refactoring within legacy code.
 >
-> **Tools**: Manual (using claude-code, opencode etc). This is optional and can be taken up whenever the team is ready. Once Phases1-4 are completed, refactoring becomes much easier as the code is more structured and bounded i.e. claude-code and opencode etc. will produce much better results. You can also use something like https://github.com/spec-ops-method to prepare the specs before transition to SDD.
+> **Tools**: Manual (using claude-code, opencode etc). This is optional and can be taken up whenever the team is ready. Once Phases 1-4 are completed, refactoring becomes much easier as the code is more structured and bounded i.e. claude-code and opencode etc. will produce much better results. You can also use something like https://github.com/spec-ops-method to prepare the specs before transition to SDD.
 
 ### Refactoring Principles
 
@@ -295,7 +295,7 @@ Generated documentation should link back to the source code, tests, contracts, a
 **Result:** Developers can learn, operate, and maintain the repository without relying on tribal knowledge.
 
 > [!NOTE]
-> We created repo-docs manually for `agentic-tdd` and can be found [`here`](https://github.com/Nistapp/agentic-tdd/tree/main/docs). The manual process (by manual we mean that we used oepncode+deepseek-v4-flash + prompting.) took just a few days. `agentic-repoDocs` will automate this process in the future to bring it down to a few hours.
+> We created repo-docs manually for `agentic-tdd` and can be found [`here`](https://github.com/Nistapp/agentic-tdd/tree/main/docs). The manual process took just a few days. `agentic-repoDocs` will automate this process in the future to bring it down to a few hours.
 
 ---
 
@@ -377,4 +377,4 @@ This cycle ensures that **every tool operation starts from indexed knowledge and
 
 ---
 
-← [Overview](Overview.md) · [Tool Ecosystem →](Tool-Ecosystem.md)
+← [Brownfield Track Overview](README.md) · [Core Overview](../shared/Overview.md) · [Tool Ecosystem →](../shared/Tool-Ecosystem.md)

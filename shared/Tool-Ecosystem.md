@@ -5,7 +5,7 @@
 ## Methodology vs. Tooling
 
 > [!IMPORTANT]
-> The methodology described in this wiki stands on its own. A team can follow the [phased approach](Phased-Approach.md) manually without any of the tools listed below. The tools **accelerate adoption** but are not prerequisites.
+> The methodology described in this framework stands on its own. A team can follow the [legacy phased approach](../brownfield-legacy/Phased-Approach.md) or the [greenfield initialization recipe](../greenfield-bootstrap/README.md) manually without any of the tools listed below. The tools **accelerate adoption** but are not prerequisites.
 
 The agentic-ready approach has two distinct layers:
 
@@ -65,7 +65,7 @@ A well-prepared codebase should give exceptional results with **any** coding age
 | `agentic-agentDocs` | 📋 Planned | 3 | Will create structured, agent-oriented documentation and task-specific context packs. Currently in conceptualisation. |
 | `agentic-contracts` | 💡 Aspirational | 4 | Will generate and validate API contracts, event schemas, and consumer-provider relationships. |
 | `agentic-characterize` | 💡 Aspirational | 4 | Will produce characterization tests and golden-master baselines for existing behavior. |
-| `agentic-repoDocs` | 💡 Aspirational | 6 | Will create human-facing repository documentation following the Diátaxis model. The manually created docs  `agentic-tdd` can be found [`here`](https://github.com/Nistapp/agentic-tdd/tree/main/docs). `agentic-repoDocs` will automate this process in the future.|
+| `agentic-repoDocs` | 💡 Aspirational | 6 | Will create human-facing repository documentation following the Diátaxis model. The manually created docs `agentic-tdd` can be found [`here`](https://github.com/Nistapp/agentic-tdd/tree/main/docs). `agentic-repoDocs` will automate this process in the future.|
 
 ### Maturity Legend
 
@@ -115,4 +115,4 @@ All tools will be published as independent open-source npm packages, each focuse
 
 ---
 
-← [Home](README.md) · [Phased Approach](Phased-Approach.md) · [Risks and Mitigations](Risks-and-Mitigations.md)
+← [Home](../README.md) · [Legacy Phased Approach](../brownfield-legacy/Phased-Approach.md) · [Risks and Mitigations](Risks-and-Mitigations.md)

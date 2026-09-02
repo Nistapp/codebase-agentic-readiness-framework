@@ -17,9 +17,9 @@
 
 | Resource | Description |
 |----------|-------------|
-| [Diátaxis](https://diataxis.fr/) | Documentation framework (tutorials, how-tos, reference, explanation) used in Phase 6. |
+| [Diátaxis](https://diataxis.fr/) | Documentation framework (tutorials, how-tos, reference, explanation) used in documentation standards. |
 | [OpenAPI Specification](https://spec.openapis.org/oas/latest.html) | Standard for REST API contracts, referenced in Phase 4. |
-| [OWASP](https://owasp.org/) | Security scanning standards and guidelines, applicable to Phase 1 security checks. |
+| [OWASP](https://owasp.org/) | Security scanning standards and guidelines, applicable to security quality gates. |
 | [DORA Metrics](https://dora.dev/) | DevOps Research and Assessment — deployment frequency, lead time, change failure rate, MTTR. Useful for measuring agentic workflow impact. |
 
 ## Further Reading
@@ -34,4 +34,4 @@
 
 ---
 
-← [Home](README.md)
+← [Home](../README.md)

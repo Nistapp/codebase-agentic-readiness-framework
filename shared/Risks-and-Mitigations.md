@@ -1,7 +1,7 @@
 # Risks and Mitigations
 
 > [!NOTE]
-> This section captures known risks when adopting agentic workflows in legacy codebases. It will be expanded as the tooling matures and real-world patterns emerge.
+> This section captures known risks when adopting agentic workflows in codebases. It will be expanded as the tooling matures and real-world patterns emerge.
 
 ## Risk Matrix
 
@@ -13,7 +13,7 @@
 | R4 | **Agents weakening tests** — An agent modifies or removes tests to make its code changes pass. | Silent regression; the safety net is removed. | Independent verification: tests and security checks run in a separate, agent-inaccessible pipeline. Constraint Engineering deny lists for test directories. |
 | R5 | **Constraint erosion** — Allow/deny lists become overly permissive over time as teams take shortcuts. | Agent blast radius expands silently; spaghettification returns. | Periodic audit of constraint configurations. Treat constraint files as reviewed infrastructure, not developer convenience. |
 | R6 | **Context pack incompleteness** — The context pack misses a critical dependency or side effect. | Agent produces code that compiles but breaks an undiscovered integration. | Use `codebase-memory-mcp` comprehensively. Run impact analysis before plan approval. Add missing relationships when discovered. |
-| R7 | **Tool immaturity** — Several tools in the ecosystem are planned or aspirational, not yet available. | Teams may adopt the methodology expecting tooling that does not yet exist. | Be transparent about [tool maturity status](Tool-Ecosystem.md). The methodology is valuable even with manual execution of some phases. |
+| R7 | **Tool immaturity** — Several tools in the ecosystem are planned or aspirational, not yet available. | Teams may adopt the methodology expecting tooling that does not yet exist. | [tool maturity status](Tool-Ecosystem.md). The methodology is valuable even with manual execution of some phases. |
 | R8 | **False confidence** — Teams assume agent-produced code is correct because it passed quality gates. | Subtle logic errors or security issues may slip through automated checks. | Human review remains necessary for high-risk changes. Quality gates increase probability but do not guarantee correctness. |
 
 ## General Principle
@@ -23,4 +23,4 @@
 
 ---
 
-← [Home](README.md) · [Phased Approach](Phased-Approach.md) · [Tool Ecosystem](Tool-Ecosystem.md)
+← [Home](../README.md) · [Legacy Phased Approach](../brownfield-legacy/Phased-Approach.md) · [Tool Ecosystem](Tool-Ecosystem.md)

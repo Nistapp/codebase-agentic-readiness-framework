@@ -3,7 +3,7 @@
 | Term | Definition |
 |------|------------|
 | **Agentic-Ready** | A codebase state where AI coding agents can safely discover, modify, and verify code within well-defined boundaries. |
-| **Constraint Engineering** | The practice of defining and enforcing explicit boundaries (allow/deny lists, mandatory analysis steps) to prevent agents from making uncontrolled or unintended changes. A reactive safety mechanism. |
+| **Constraint Engineering** | The practice of defining and enforcing explicit boundaries (allow/deny lists, mandatory analysis steps) to prevent agents from making uncontrolled or unintended changes. A proactive safety mechanism. |
 | **Context Pack** | A task-specific bundle of information (symbols, callers, callees, tests, contracts, architecture decisions) assembled for an agent before it begins work. Replaces "dump the whole repo" approaches. |
 | **Characterization Test** | A test that records what the system *currently does*, regardless of whether that behavior is correct or desirable. Used as a behavioral baseline to detect unintended changes. |
 | **Golden-Master Test** | A form of characterization test that captures the full output of a system or component and compares future outputs against this "golden" reference. Also called an approval test. |
@@ -25,4 +25,4 @@
 
 ---
 
-← [Home](README.md)
+← [Home](../README.md)

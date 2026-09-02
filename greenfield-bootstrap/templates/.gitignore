@@ -1,0 +1,38 @@
+# Secrets — NEVER commit
+.env
+opencode.json
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+dist-test/
+*.tsbuildinfo
+
+# Pipeline artifacts (transient)
+.agentic-tdd/
+session-*
+
+# opencode internals
+.opencode/node_modules/
+.opencode/package-lock.json
+
+# Coverage
+coverage/
+
+# Editors
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Agent scratchpads (contents git-ignored, dirs preserved via .gitkeep)
+artefacts/*
+artifacts/*
+!artefacts/.gitkeep
+!artifacts/.gitkeep
