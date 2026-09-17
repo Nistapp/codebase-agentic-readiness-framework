@@ -17,23 +17,23 @@ jobs:
       - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: <node-version>
           cache: "npm"
 
       - name: Install Dependencies
         run: npm ci
 
-      - name: Check Formatting & Lint (Biome)
-        run: npx biome ci .
+      # Every step below is a script name a developer or agent can run locally.
+      # Never add a CI-only gate: an unreachable gate cannot be honoured.
+      - name: Check (format, lint, typecheck, tests)
+        run: npm run check
 
-      - name: Type-Check (Production)
-        run: npm run lint
-
-      - name: Run Tests with Coverage
-        run: npm run test:coverage
+      # Coverage thresholds are enabled with the first real test (see vitest.config.ts).
+      # - name: Verify Coverage Thresholds
+      #   run: npm run test:coverage
 
       - name: Verify Build
         run: npm run build:full
 
       - name: Security Audit
-        run: npm audit --audit-level=high
+        run: npm run security

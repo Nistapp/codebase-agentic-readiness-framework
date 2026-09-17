@@ -13,10 +13,10 @@
 
 ## Checklist
 
-- [ ] `npm run lint` passes with zero errors
-- [ ] `npm test` passes with 100% pass rate
+- [ ] `npm run check` passes (format:check → typecheck → test)
+- [ ] `npm run security` passes (no high-severity advisories)
 - [ ] Tests added for new public methods/interfaces
-- [ ] Documentation updated (if applicable)
-- [ ] ADR created (if introducing new architectural pattern)
+- [ ] Docs updated in the same change set if a public interface, observable behaviour, architecture, or ADR changed (per `docs/STYLE_GUIDE.md`)
+- [ ] ADR created, or revised in place, and indexed in `docs/architecture/README.md`
 - [ ] No `any`, `@ts-ignore`, or `as any` introduced
 - [ ] Conventional Commit message format used

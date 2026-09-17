@@ -104,6 +104,26 @@ graph TB
 
 ---
 
+## Reference Implementation — `agentic-tdd`
+
+`agentic-tdd` is the live worked example of Phases 1–4, including the Phase 1 command
+surface and the documentation contract. Copy its conventions instead of inventing local
+variants:
+
+| Practice | Where to look |
+|---|---|
+| Agent governance — DI boundaries, commit and release lifecycle, documentation rules | `AGENTS.md` |
+| Canonical documentation rules — invariants, Diátaxis tracks, ADR lifecycle, doc-maintenance trigger | `docs/STYLE_GUIDE.md` |
+| Standardized command surface as package scripts — `format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security` | `package.json` → `scripts` |
+| CI invoking the same script names a developer runs locally | `.github/workflows/ci.yml`, `.github/workflows/security.yml` |
+| A real change set that updated docs alongside the code (`npm run check` gate, `typecheck` verb, STYLE_GUIDE compliance) | `docs/architecture/contributor-deep-dive/08-developer-guide.md` § Verification Workflow |
+
+Repository: <https://github.com/Nistapp/agentic-tdd>. Some of the conventions above are on
+the branch under active development rather than the default branch — read the branch before
+copying, and treat this repository as the source of truth over any restatement here.
+
+---
+
 ## Shared Conventions
 
 All tools will be published as independent open-source npm packages, each focused on a single responsibility. They will share common conventions for:

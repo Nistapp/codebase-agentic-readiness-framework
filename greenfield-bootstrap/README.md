@@ -76,6 +76,23 @@
 > [!TIP]
 > Pre-configured, copy-ready template files are available in the [**`templates/` directory**](templates/).
 
+## Automated Scaffolding
+
+This whole recipe is executable. [`bootstrap.py`](https://github.com/Nistapp/codebase-agentic-readiness-framework)
+(in the `python-agentic-bootstrap` repo) reads `templates/**`, substitutes your project's
+name/org/author, writes the tree below, initialises git on `dev`, installs dependencies, and
+proves the result by running `npm run check`, `npm run build`, and `npm pack --dry-run`.
+
+```bash
+python3 bootstrap.py ~/Projects/my-new-pkg \
+  --name my-new-pkg --org nistapp --cli --install
+```
+
+The script owns **structure, substitution, and verification**. `templates/**` owns every byte
+of file content — so this recipe and any generated project cannot drift apart. Run
+`python3 bootstrap.py --help` for the full flag list (`--lib`/`--cli`, `--node`, `--dry-run`,
+`--no-git`, `--templates`, `--force`).
+
 ---
 
 ## Phase 1 — Foundation
@@ -88,64 +105,47 @@ git init
 git checkout -b dev          # dev is the working branch from day one
 ```
 
-### 1.2 `.nvmrc`
-Pin Node.js 24+ LTS. (See [template](templates/.nvmrc))
-
-```
-24
-```
-
-Then run: `nvm use` (or `fnm use`) to lock your shell.
-
-### 1.3 `package.json`
-
-```bash
-npm init -y
-```
-
-Then replace with:
-
 ```jsonc
+// Rendered from templates/package.json — the template is canonical. Key fields:
 {
-  "name": "<project-name>",
+  "name": "<package-name>",          // scoped when --org is used: @org/<project-name>
   "version": "0.1.0",
-  "description": "<one-line description>",
-  "type": "module",
-  "engines": {
-    "node": ">=24.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/<org>/<project>.git"
-  },
+  "description": "<project-description>",
+  "engines": { "node": ">=<node-version>.0.0" },
   "main": "./dist/core/index.js",
   "types": "./dist/core/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/core/index.d.ts",
-      "import": "./dist/core/index.js"
-    }
+    ".": { "types": "./dist/core/index.d.ts", "import": "./dist/core/index.js" }
   },
-  "bin": {
-    "<project-name>": "./dist/cli/index.js"
-  },
+  "files": ["dist"],                 // what npm publishes — nothing else leaves the repo
+  "publishConfig": { "access": "public" },
   "scripts": {
-    "clean": "rm -rf dist",
+    // the six verbs from §1.4, plus clean/build/build:full/dev
+    "check": "npm run format:check && npm run typecheck && npm test",
+    "prepublishOnly": "npm run check && npm run build:full",
+    "prepare": "husky"
+  },
+  "author": "<author>",
+  "devDependencies": { "typescript": "…", "vitest": "…", "@biomejs/biome": "…", "husky": "…", "lint-staged": "…", "@commitlint/*": "…", "shx": "…" },
+  "lint-staged": { "*.ts": ["biome check --fix --no-errors-on-unmatched", "biome format --write --no-errors-on-unmatched"] }
+}
+```
+
+> [!NOTE]
+> The CLI `bin` entry is added **only** with `--cli` (it points at `./dist/cli/index.js`), and
+> `license` is intentionally absent until you choose one — see "Before you publish" in the
+> generated `README.md`.
+
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run format:check && npm run typecheck && npm test",
+    "security": "npm audit --audit-level=high",
+    "check:fix": "biome check --fix .",
     "build": "tsc && npm run copy:agents",
     "copy:agents": "rm -rf dist/agents && mkdir -p dist/agents && cp -r src/agents/* dist/agents/ && cp config.default.json dist/config.default.json && echo '{\"type\":\"module\"}' > dist/package.json",
     "build:full": "npm run clean && npm run build",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage",
     "dev": "tsc --watch",
-    "lint": "tsc --noEmit && npm run lint:tests",
-    "lint:tests": "tsc --noEmit -p tsconfig.test.json",
-    "format": "biome format --write .",
-    "check": "biome check .",
-    "check:fix": "biome check --fix .",
     "docs": "typedoc --out docs/api src/core/index.ts",
-    "audit:ci": "npm audit --audit-level=high",
-    "prepublishOnly": "npm run lint && npm test && npm run build:full",
+    "prepublishOnly": "npm run check && npm run build:full",
     "prepare": "husky"
   },
   "keywords": [],
@@ -159,7 +159,34 @@ Then replace with:
 }
 ```
 
-### 1.4 Install dev tooling
+### 1.4 The standardized command surface — six verbs
+
+Every repository MUST expose the same six verbs. The **verbs are the contract**; the
+runner is a local choice: `package.json` scripts (shown here, and what the
+[`agentic-tdd`](https://github.com/Nistapp/agentic-tdd) reference implementation uses), a
+`Taskfile`, or a `Makefile`. A language-neutral `make check` wrapper that shells out to
+`npm run check` is fine — a *second, divergent* definition of the gate is not.
+
+| Verb (convention) | This recipe | Implemented as | Purpose |
+|---|---|---|---|
+| `task format` | `npm run format` | `biome format --write .` | Rewrite formatting in place. |
+| `task format:check` | `npm run format:check` | `biome ci .` | Read-only verification: formatting **and** lint rules; exits non-zero on drift. |
+| `task lint` | `npm run lint` | `biome lint .` | Read-only lint. |
+| `task typecheck` | `npm run typecheck` | `tsc --noEmit` + `-p tsconfig.test.json` | Strict type-check of `src/` **and** `test/`. |
+| `task test` | `npm test` | `vitest run` | Full suite; 100% pass required. |
+| `task check` | `npm run check` | `format:check` → `typecheck` → `test` | The single pre-PR / CI gate. |
+| `task security` | `npm run security` | `npm audit --audit-level=high` | Dependency-CVE gate. |
+
+> [!IMPORTANT]
+> **One command surface, three consumers — and never two definitions of it.** Write the
+> six verbs into `AGENTS.md` §3 and CI runs the *same script names* you run locally
+> (`npm run check`, `npm run security`). Never let CI run a step that has no local
+> equivalent: a gate an agent cannot reach is a gate an agent cannot honour, and a local
+> gate weaker than its CI counterpart produces rework rather than safety.
+
+---
+
+### 1.5 Install dev tooling
 
 ```bash
 # TypeScript + Node types
@@ -175,8 +202,8 @@ npm i -D @biomejs/biome
 npm i -D husky lint-staged @commitlint/cli @commitlint/config-conventional
 ```
 
-### 1.5 `tsconfig.json` — Production
-(See [template](templates/tsconfig.json))
+### 1.6 `tsconfig.json` — Production
+(See [template](templates/tsconfig.json) — canonical; the block below is an excerpt.)
 
 ```jsonc
 {
@@ -197,15 +224,15 @@ npm i -D husky lint-staged @commitlint/cli @commitlint/config-conventional
     "moduleDetection": "force",
     "skipLibCheck": true,
     "incremental": true,
-    "tsBuildInfoFile": "./dist/.tsbuildinfo"
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "dist", "test", "src/**/*.test.ts"]
 }
 ```
 
-### 1.6 `tsconfig.test.json` — Tests
-(See [template](templates/tsconfig.test.json))
+### 1.7 `tsconfig.test.json` — Tests
+(See [template](templates/tsconfig.test.json) — canonical; the block below is an excerpt.)
 
 ```jsonc
 {
@@ -224,10 +251,10 @@ npm i -D husky lint-staged @commitlint/cli @commitlint/config-conventional
 ```
 
 > [!IMPORTANT]
-> This ensures `npm run lint:tests` type-checks your test files — stubs, mocks,
+> This ensures `npm run typecheck` type-checks your test files — stubs, mocks,
 > and interface mismatches are caught before runtime.
 
-### 1.7 Create directory structure
+### 1.8 Create directory structure
 
 ```bash
 # Source
@@ -252,42 +279,25 @@ mkdir -p .github/{workflows,ISSUE_TEMPLATE}
 touch artefacts/.gitkeep specs/.gitkeep
 ```
 
-### 1.8 Core DI interface file
-(See [template](templates/interfaces.ts))
+### 1.9 Core DI interface file + public entry point
+
+Copy the DI port interfaces from [**`templates/interfaces.ts`**](templates/interfaces.ts) to
+`src/core/interfaces.ts` — the single source of truth for infrastructure dependencies.
+`src/core/` must NEVER import from `src/infrastructure/` or `src/cli/`; implementations live in
+`src/infrastructure/` and are wired in `src/cli/`.
 
 ```bash
-touch src/core/interfaces.ts
+mkdir -p src/core src/cli
+cp templates/interfaces.ts src/core/interfaces.ts   # or let bootstrap.py do it
 ```
 
-Add the initial structure:
+Also copy [**`templates/core-index.ts`**](templates/core-index.ts) to `src/core/index.ts` — this
+is the package's public entry point (`main`/`types` in `package.json`), and it must export only
+what consumers may rely on. Everything else stays internal.
 
-```typescript
-// src/core/interfaces.ts
-// ============================================================================
-// DI Port Interfaces — Single Source of Truth
-// ============================================================================
-// All infrastructure dependencies are defined here as interfaces.
-// src/core/ must NEVER import from src/infrastructure/ or src/cli/.
-// Implementations live in src/infrastructure/ and are wired in src/cli/.
-// ============================================================================
-
-export interface ILogger {
-  info(msg: string, context?: Record<string, unknown>): void;
-  warn(msg: string, context?: Record<string, unknown>): void;
-  error(msg: string, context?: Record<string, unknown>): void;
-  debug(msg: string, context?: Record<string, unknown>): void;
-  child(bindings: Record<string, unknown>): ILogger;
-}
-
-export interface IFileSystem {
-  readFile(path: string): Promise<string>;
-  writeFile(path: string, content: string): Promise<void>;
-  exists(path: string): Promise<boolean>;
-  mkdir(path: string): Promise<void>;
-  readDir(path: string): Promise<string[]>;
-  unlink(path: string): Promise<void>;
-}
-```
+> [!IMPORTANT]
+> `npm run build` fails until `src/core/index.ts` exists, because `package.json` points `main` and
+> `types` at it. Ship the barrel from day one and add exports as the public surface grows.
 
 ---
 
@@ -301,25 +311,23 @@ export interface IFileSystem {
 
 ### 2.3 Git Hooks — Husky + lint-staged + commitlint
 
-```bash
-npx husky init
-```
+The hooks are provided as templates — copy them and let husky wire the hook path itself:
 
-- **`.husky/pre-commit`**: `npx lint-staged`
-- **`.husky/commit-msg`**: `npx --no -- commitlint --edit $1`
+- **`.husky/pre-commit`**: (See [template](templates/husky/pre-commit)) — `npx lint-staged`, mode `0755`
+- **`.husky/commit-msg`**: (See [template](templates/husky/commit-msg)) — `npx --no -- commitlint --edit "$1"`, mode `0755`
 - **`commitlint.config.js`**: (See [template](templates/commitlint.config.js))
 
-Add to `package.json`:
-```jsonc
-{
-  "lint-staged": {
-    "*.ts": [
-      "biome check --fix --no-errors-on-unmatched",
-      "biome format --write --no-errors-on-unmatched"
-    ]
-  }
-}
+```bash
+npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 ```
+
+> [!IMPORTANT]
+> **Do not run `npx husky init`.** `npm install` already runs the `prepare: husky` script from
+> `package.json`, which points `core.hooksPath` at `.husky/_` and activates the hooks you copied.
+> `husky init` would clobber `.husky/pre-commit`.
+
+`lint-staged` is configured in [templates/package.json](templates/package.json) — no separate
+`package.json` edit is required.
 
 ---
 
@@ -335,14 +343,14 @@ Add to `package.json`:
 - **Mocks**: `vi.fn()` + typed stubs satisfying full DI interfaces. Never mock entire modules.
 - **No real I/O**: Tests must not touch real filesystem, git, or external APIs.
 - **100% pass rate**: Never `.skip` or comment out a failing test.
-- **Gate**: Run `npm run lint && npm test` before every commit.
+- **Gate**: Run `npm run check` before every commit — the identical command CI runs.
 
 ---
 
 ## Phase 4 — CI/CD & Release Management
 
 ### 4.1 Workflows
-- **`.github/workflows/ci.yml`**: Build, Lint, Test, Coverage & Audit. (See [template](templates/github/workflows/ci.yml))
+- **`.github/workflows/ci.yml`**: `npm run check` → coverage thresholds → `npm run build:full` → `npm run security`. Every step is a script you can run locally. (See [template](templates/github/workflows/ci.yml))
 - **`.github/workflows/enforce-dev-base.yml`**: Enforce Dev branch PR source for Main. (See [template](templates/github/workflows/enforce-dev-base.yml))
 - **`.github/workflows/release-and-sync.yml`**: Release Please, npm publish via OIDC provenance, automated back-merge to dev. (See [template](templates/github/workflows/release-and-sync.yml))
 - **`.github/dependabot.yml`**: Weekly automated dependency updates. (See [template](templates/github/dependabot.yml))
@@ -364,10 +372,12 @@ Add to `package.json`:
 | Architecture | `docs/architecture/` | Design rationale, ADRs |
 
 ### 5.2 Templates & Guides
-- [**`docs/STYLE_GUIDE.md`**](templates/docs/STYLE_GUIDE.md) — 5 Invariants, RFC 2119 tone, ATX headers.
+- [**`docs/STYLE_GUIDE.md`**](templates/docs/STYLE_GUIDE.md) — the canonical rule set for every `.md` file under `docs/`: invariants, RFC 2119 tone, ATX headers, doc-maintenance trigger.
+- **`AGENTS.md` MUST name the documentation contract:** `docs/` is the single source of truth for permanent documentation, `docs/STYLE_GUIDE.md` is the canonical authoring rule set, `artefacts/` is transient scratch that agents MUST NOT read unless a human passes an explicit path.
+- **`AGENTS.md` MUST state the definition of done:** a change that alters a public interface, observable behaviour, architecture, or an ADR updates the affected doc pages, their anchors, and the ADR index **in the same change set**. Link to the style guide — never restate its rules in `AGENTS.md`, because restated rules drift.
 - [**`docs/architecture/README.md`**](templates/docs/architecture/README.md) — ADR index & doc router.
 - [**`docs/architecture/glossary.md`**](templates/docs/architecture/glossary.md) — Domain glossary.
-- [**`docs/templates/adr-template.md`**](templates/docs/templates/adr-template.md) — Architectural Decision Record with tombstone support.
+- [**`docs/templates/adr-template.md`**](templates/docs/templates/adr-template.md) — Architectural Decision Record (living, current-state only — revised in place, never tombstoned).
 - [**`docs/templates/architecture-doc-template.md`**](templates/docs/templates/architecture-doc-template.md) — System design doc template.
 - [**`docs/templates/how-to-template.md`**](templates/docs/templates/how-to-template.md) — Task guide template.
 
@@ -376,7 +386,7 @@ Add to `package.json`:
 ## Phase 6 — Agent Governance
 
 ### 6.1 `AGENTS.md`
-Copy and customize the [**`AGENTS.md` Template**](templates/AGENTS.md) to govern agent behavior, strict typing, DI boundaries, and commit rules.
+Copy and customize the [**`AGENTS.md` Template**](templates/AGENTS.md) to govern agent behavior, strict typing, DI boundaries, commit rules, the standardized command surface (§3), and the documentation standards that point at `docs/STYLE_GUIDE.md` (§8).
 
 ### 6.2 Agent Scratchpad — `artefacts/`
 Transient workspace for AI agents (`artefacts/*` in `.gitignore`, directory preserved via `.gitkeep`).
@@ -430,15 +440,20 @@ git commit -m "chore: scaffold project with world-class standards"
 
 ## Quick Reference — What Tooling Enforces What
 
+Every gate below is reachable through one of the six standardized verbs, under the same
+name locally and in CI.
+
 | Standard | Enforced By | When |
 |---|---|---|
-| Code formatting | Biome | Pre-commit hook (lint-staged) |
-| Code linting | Biome | Pre-commit hook + CI |
-| Type safety | `tsc --noEmit` | `npm run lint` + CI |
-| Test type safety | `tsc -p tsconfig.test.json` | `npm run lint:tests` + CI |
+| Code formatting | Biome | `npm run format:check` — pre-commit hook + CI |
+| Code linting | Biome | `npm run lint` / `npm run format:check` + CI |
+| Type safety (src) | `tsc --noEmit` | `npm run typecheck` + CI |
+| Type safety (test) | `tsc -p tsconfig.test.json` | `npm run typecheck` + CI |
+| Test suite | Vitest | `npm test` + CI |
+| **Full gate** | `format:check` → `typecheck` → `test` | `npm run check` — pre-PR and CI, identical |
+| Dependency vulnerabilities | `npm audit --audit-level=high` | `npm run security` + CI |
 | Conventional Commits | commitlint | Pre-commit-msg hook |
-| Test coverage thresholds | Vitest `thresholds` | CI |
-| Dependency vulnerabilities | `npm audit` | CI |
+| Test coverage thresholds | Vitest `thresholds` | `npm run test:coverage` + CI |
 | Branch protection | `enforce-dev-base.yml` | CI (on PR to main) |
 | Dependency freshness | Dependabot | Weekly PRs |
 | Version + changelog | Release Please | On merge to main |

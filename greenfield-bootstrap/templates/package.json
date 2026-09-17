@@ -1,0 +1,65 @@
+{
+  "name": "<package-name>",
+  "version": "0.1.0",
+  "description": "<project-description>",
+  "type": "module",
+  "engines": {
+    "node": ">=<node-version>.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/<github-owner>/<project-name>.git"
+  },
+  "main": "./dist/core/index.js",
+  "types": "./dist/core/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "shx rm -rf dist",
+    "format": "biome format --write .",
+    "format:check": "biome ci .",
+    "lint": "biome lint .",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run format:check && npm run typecheck && npm test",
+    "security": "npm audit --audit-level=high",
+    "check:fix": "biome check --fix .",
+    "build": "tsc",
+    "build:full": "npm run clean && npm run build",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run check && npm run build:full",
+    "prepare": "husky"
+  },
+  "keywords": [],
+  "author": "<author>",
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.14",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
+    "@types/node": "^24.13.5",
+    "@vitest/coverage-v8": "^5.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
+    "shx": "^0.4.0",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.1"
+  },
+  "lint-staged": {
+    "*.ts": [
+      "biome check --fix --no-errors-on-unmatched",
+      "biome format --write --no-errors-on-unmatched"
+    ]
+  }
+}

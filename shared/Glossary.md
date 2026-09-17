@@ -12,6 +12,8 @@
 | **Context Bloat** | Providing an agent with excessive, unfocused context that exhausts its reasoning budget and degrades output quality. |
 | **Specification Drift** | When implementation gradually diverges from the original specification because neither is updated to reflect changes in the other. |
 | **Quality Gate** | An automated, deterministic check (lint, typecheck, test, security scan) that code must pass before proceeding. |
+| **Standardized Command Surface** | The fixed set of six verification verbs every agentic-ready repository exposes — `format`, `lint`, `typecheck`, `test`, `check` (the aggregate gate), and `security` — implemented via package scripts, a `Taskfile`, or a `Makefile`, and invoked with identical names by agents, humans, and CI. |
+| **Doc Maintenance Trigger** | The definition of done for documentation: a change that alters a public interface, observable behaviour, architecture, or an ADR updates the affected doc pages, their source anchors, and the ADR index in the same change set. Stated in `AGENTS.md`, detailed in `docs/STYLE_GUIDE.md`. |
 | **Impact Analysis** | The process of determining what components, symbols, tests, and contracts are affected by a proposed change — ideally performed *before* code generation begins. |
 | **Allow/Deny List** | Explicit configuration that specifies which files, directories, methods, interfaces, or commands an agent is permitted or forbidden to touch. |
 | **SDD** | Specification-Driven Development — writing and maintaining a specification as the source of truth that drives implementation. |

@@ -8,7 +8,7 @@ An **agentic-ready codebase** provides AI coding agents with the structure they 
 
 - **Focused and reliable context** — agents reason over relevant information, not the entire repo.
 - **Clear interfaces and relationships** — boundaries are explicit, not implicit.
-- **Deterministic development commands** — `task lint`, `task test`, `task check` produce consistent results.
+- **Deterministic development commands** — one command surface (`format`, `lint`, `typecheck`, `test`, `check`, `security`, realised as package scripts, a `Taskfile`, or a `Makefile`) produces identical results for agents, humans, and CI.
 - **Executable quality gates** — automated checks that agents must pass before changes are accepted.
 - **Tests that protect existing behavior** — characterization tests, contracts, and unit tests.
 - **Documentation that evolves with the code** — generated, maintained, and indexed automatically.
@@ -68,7 +68,7 @@ flowchart TD
 | [Phase 1](../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-) | Establish initial allow/deny lists. Configure deterministic commands that agents must use. |
 | [Phase 3](../brownfield-legacy/Phased-Approach.md#phase-3-agent-oriented-documentation-) | `agentic-agentDocs` generates per-component constraint definitions: forbidden dependencies, data classification, ownership rules. |
 | [Phase 4](../brownfield-legacy/Phased-Approach.md#phase-4-contracts-and-behavior-baselines-) | Contracts become enforceable constraints — agents must not break published interfaces. |
-| [Phase 5](../brownfield-legacy/Phased-Approach.md#phase-5-agent-driven-refactoring-) | Refactoring is bounded to single components. Agents cannot weaken tests. |
+| [Phase 5](../brownfield-legacy/Phased-Approach.md#phase-5-optional-refactoring) | Refactoring is bounded to single components. Agents cannot weaken tests. |
 | [Phase 7](../brownfield-legacy/Phased-Approach.md#phase-7-spec-driven-feature-development-) | Implementation plans are cross-checked against `codebase-memory-mcp` for impact before approval. |
 
 ---

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Template Version:** 1.0.0
+> **Template Version:** 1.1.0
 > **Purpose:** This file governs how AI coding agents (Antigravity, Claude Code, Gemini CLI, etc.) work inside this repository.
 > **Action:** Read it in full before making any change to the codebase.
 
@@ -37,9 +37,35 @@ Agents MUST respect the following structural rules:
 | Language | TypeScript 7.x | Strict mode, `noUncheckedIndexedAccess`, `isolatedModules` |
 | Runtime | Node.js 24.x | ESM (`"type": "module"`) |
 | Imports | NodeNext | Always use `.js` extensions in local import paths |
-| Lint/Format | Biome | Run `npm run check` and `npm run format` |
-| Tests | Vitest 4.x | Run `npm test`. Coverage enforced via `npm run test:coverage` |
+| Format | Biome | `npm run format` (write) / `npm run format:check` (verify) |
+| Lint | Biome | `npm run lint` (read-only) |
+| Type-check | `tsc --noEmit` | `npm run typecheck` — covers `src/` and `test/` |
+| Full gate | `npm run check` | `format:check` → `typecheck` → `test` |
+| Dependency audit | `npm run security` | `npm audit --audit-level=high` |
+| Tests | Vitest 4.x | `npm test`. Coverage thresholds enforced via `npm run test:coverage` |
+| Build | `tsc` + asset copy | `npm run build` / `npm run build:full` |
 | Git Hooks | Husky + commitlint | Conventional Commits required |
+
+### 3.1 Standardized command surface
+
+These six verbs are the **only** sanctioned way to verify work in this repository. Use
+them exactly as written — do not invent ad-hoc invocations (`npx vitest`, `tsc file.ts`,
+`eslint .`) and do not run a check that CI does not run.
+
+```bash
+npm run format        # rewrite formatting in place
+npm run format:check  # read-only verify: formatting + lint rules
+npm run lint          # read-only lint
+npm run typecheck     # tsc --noEmit for src/ and test/ — MUST be zero errors
+npm test              # full suite — MUST be 100% pass
+npm run check         # THE gate: format:check → typecheck → test
+npm run security      # dependency-CVE gate
+```
+
+> [!IMPORTANT]
+> `npm run check` is the single pre-commit and pre-PR gate, and CI invokes the identical
+> script name. If you cannot make `npm run check` pass, report the blocker — never relax
+> the gate (no `.skip`, no silenced rule, no weakened assertion) to get green.
 
 ---
 
@@ -56,13 +82,14 @@ The `codebase-memory-mcp` tool is mandatory. You must use it proactively before 
 
 **File Reading Policy:**
 - **NEVER** open entire large files without a compelling reason. Query by symbol name instead.
+- **`artefacts/` is prohibited.** It holds transient, unverified scratch documents. Agents MUST NOT crawl, glob, grep, or read files there, and MUST NOT treat its contents as architectural source of truth. Access is permitted only when the human passes a specific file path in their prompt.
 
 ---
 
 ## 5. Coding Standards
 
 ### 5.1 TypeScript Rules
-- **Strict mode is non-negotiable.** `npm run lint` must produce zero errors.
+- **Strict mode is non-negotiable.** `npm run typecheck` must produce zero errors.
 - **No `any`.** Use `unknown` and narrow explicitly.
 - **No `@ts-ignore` or `as any`.**
 - **No `const enum`.** (Breaks `isolatedModules`). Use standard `enum`.
@@ -77,6 +104,12 @@ The `codebase-memory-mcp` tool is mandatory. You must use it proactively before 
 - **Test Helpers:** Suffix with `Stub` or `Mock`.
 - **Formatting:** Handled automatically by Biome (`npm run format`).
 
+### 5.3 Documentation Rules
+- **`docs/` is the single source of truth** for permanent documentation; `artefacts/` is transient and off-limits to agents (see §4).
+- **Every `.md` file under `docs/` MUST follow `docs/STYLE_GUIDE.md`** — the canonical authoring rules. Link to the relevant section rather than restating rules here, because restated rules drift.
+- **Definition of done:** when a change alters a public interface, observable behaviour, architecture, or an ADR, update the affected documentation pages, their source anchors, and the ADR index tables **in the same change set**. Pure internal refactors with no observable or documentation impact do not require doc edits.
+- New or revised ADRs MUST follow `docs/STYLE_GUIDE.md` § ADR Lifecycle and be registered in `docs/architecture/README.md`.
+
 ---
 
 ## 6. Testing Standards
@@ -87,6 +120,7 @@ The `codebase-memory-mcp` tool is mandatory. You must use it proactively before 
 - **Mocks:** Use `vi.fn()` and fully typed stubs. Do NOT mock entire modules unless strictly necessary.
 - **No Real I/O:** Tests must NOT touch the real filesystem, git, or network. Use injected DI stubs.
 - **Pass Rate:** 100% required. Never `.skip` or comment out failing tests.
+- **Gate:** Run `npm run check` before committing — the identical command CI runs.
 
 ---
 
@@ -108,11 +142,14 @@ Format: `<type>(<scope>): <description>`
 
 ## 8. Documentation Standards (Diátaxis)
 
-All documentation must follow the guidelines in `docs/STYLE_GUIDE.md`.
+`docs/STYLE_GUIDE.md` is the canonical rule set for everything written under `docs/`. This
+section only states the layout and the triggers; the style guide states the rules.
 
 - **Single Source of Truth:** `docs/` is the only valid directory for permanent documentation.
-- **ADRs:** Architectural Decision Records live in `docs/architecture/adrs/`. New dependencies or architectural changes require an ADR.
-- **Transience:** Agent scratchpads, implementation plans, and WIP research go in `artefacts/` (which is git-ignored).
+- **Categories:** content is classified as tutorial, how-to, reference, or explanation; architecture material lives under `docs/architecture/`.
+- **ADRs:** Architectural Decision Records live in `docs/architecture/adrs/NNNN-short-title.md` and are indexed in `docs/architecture/README.md`. New runtime dependencies or architectural changes require an ADR.
+- **Transience:** Agent scratchpads, implementation plans, and WIP research go in `artefacts/` (git-ignored contents, and off-limits to agents per §4).
+- **Glossary:** domain terms are defined once in `docs/architecture/glossary.md` and used consistently everywhere else.
 
 ---
 
@@ -136,3 +173,6 @@ All documentation must follow the guidelines in `docs/STYLE_GUIDE.md`.
 7. ❌ **Do not** commit directly to `main`.
 8. ❌ **Do not** bypass Biome formatting or linting checks.
 9. ❌ **Do not** document aspirational features as existing facts.
+10. ❌ **Do not** edit files under `docs/` without following `docs/STYLE_GUIDE.md`.
+11. ❌ **Do not** verify work with an ad-hoc command. Use the six standardized verbs in §3.1.
+12. ❌ **Do not** read, grep, or glob `artefacts/` unless the human passes an explicit file path (§4).

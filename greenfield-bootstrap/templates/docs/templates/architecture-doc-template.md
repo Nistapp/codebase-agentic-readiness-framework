@@ -1,7 +1,7 @@
 # [Component / Subsystem Name]
 
 > **Audience:** Engineers & Architects
-> **Related ADRs:** [ADR-0001](../adrs/0001-initial-architecture.md)
+> **Related ADRs:** [ADR-0001](../architecture/adrs/0001-initial-architecture.md)
 
 ---
 

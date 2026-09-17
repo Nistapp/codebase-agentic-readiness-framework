@@ -58,16 +58,20 @@ flowchart TB
 
 - Configure and run `codebase-memory-mcp` to index source files, symbols, relationships, dependencies, and tests.
 - Create root and component-level `AGENTS.md` files. A good example is [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md) (See also our [Greenfield AGENTS.md Template](../greenfield-bootstrap/templates/AGENTS.md)).
-- Standardize commands using a `Makefile`, `Taskfile`, or package scripts:
+- Make every `AGENTS.md` name the **documentation contract**: `docs/` is the single source of truth for permanent documentation, `docs/STYLE_GUIDE.md` is the canonical authoring rule set, and `artefacts/` is transient scratch that agents MUST NOT read unless a human passes an explicit path. State the **definition of done** — a change that alters a public interface, observable behaviour, architecture, or an ADR updates the affected doc pages, their source anchors, and the ADR index **in the same change set** — and link to the style guide rather than restating its rules, because restated rules drift.
+- Standardize commands using package scripts, a `Taskfile`, or a `Makefile`. The six verbs are the contract; the runner is a local choice. The reference implementation (`agentic-tdd`) uses npm scripts:
 
 ```bash
-task format
-task lint
-task typecheck
-task test
-task check
-task security
+task format      # npm run format        — rewrite formatting
+task lint        # npm run lint          — read-only lint
+task typecheck   # npm run typecheck     — tsc --noEmit, zero errors (src/ and test/)
+task test        # npm test              — full suite, 100% pass
+task check       # npm run check         — THE pre-PR gate: format:check → typecheck → test
+task security    # npm run security      — dependency-CVE gate
 ```
+
+> [!IMPORTANT]
+> **One command surface, three consumers.** CI MUST invoke the identical script names a human or agent runs locally (`npm run check`, `npm run security`) — never a CI-only step. A gate that has no local equivalent cannot be honoured by an agent, and a local gate weaker than its CI counterpart produces rework instead of safety.
 
 - Add formatters, linters, type checkers, and basic security scanning (aligned with [OWASP](https://owasp.org/) guidelines where applicable).
 - Establish quality baselines for existing technical debt.
@@ -84,7 +88,8 @@ task security
 |-------------|--------|----------|
 | `codebase-memory-mcp` index | Graph database | Agents, all tools |
 | `AGENTS.md` files | Markdown | Agents |
-| `Taskfile` / `Makefile` | Script | Agents, CI, humans |
+| `Taskfile` / `Makefile` / package scripts | Script | Agents, CI, humans |
+| `docs/STYLE_GUIDE.md` | Markdown | Agents, humans |
 | Quality baselines | Config files | CI |
 | Allow/deny lists | Config files | Agents |
 
@@ -212,7 +217,7 @@ Runtime instrumentation is added selectively around high-risk or high-value work
 > ### 🏁 Milestone: Codebase is Officially Agentic-Ready
 > Upon completing Phase 4, the repository has achieved full **Agentic Readiness**:
 > - **Discoverability & Graph Memory**: Indexed in `codebase-memory-mcp`.
-> - **Execution Determinism**: Standardized `Taskfile`/`Makefile` commands and quality gates.
+> - **Execution Determinism**: One standardized command surface (`format`, `lint`, `typecheck`, `test`, `check`, `security`) via `Taskfile`/`Makefile`/package scripts, invoked identically by agents, humans, and CI.
 > - **Semantic Clarity**: Rich docstrings, signatures, and invariants.
 > - **Bounded Scope**: Explicit per-component Constraint Engineering rules.
 > - **Regression Safety Nets**: Published contracts and characterization tests.
@@ -262,9 +267,9 @@ Observability can be added incrementally to areas being changed: structured logs
 
 > **Objective**: Create documentation for developers, operators, and other human stakeholders.
 >
-> **Tools**: `agentic-repoDocs` 💡 Aspirational
+- **Tools**: `agentic-repoDocs` 💡 Aspirational
 
-The documentation follows the [Diátaxis](https://diataxis.fr/) model:
+Documentation rules are governed from Phase 1 by `docs/STYLE_GUIDE.md`, which `AGENTS.md` names as canonical. The documentation follows the [Diátaxis](https://diataxis.fr/) model:
 
 - **Tutorials** — learning-oriented walkthroughs.
 - **How-to guides** — task-oriented instructions.
