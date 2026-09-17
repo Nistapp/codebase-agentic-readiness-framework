@@ -3,6 +3,9 @@
 This file is the reviewed contract for the v1 Python implementation. Decisions are recorded
 as **Decision → Alternatives considered → Reason**, in that order.
 
+**Status: implemented and verified end to end against the real npm registry** — see
+§ Verification record.
+
 Source of truth for file content: `~/Projects/codebase-agentic-readiness-framework/greenfield-bootstrap/templates/**`.
 
 ---
@@ -185,8 +188,37 @@ paper over.
 | 6 | `enforce-dev-base.yml` assumes remote `dev` exists and is not default | Print the explicit `gh` step; the script cannot know the remote |
 | 7 | `biome.json` ignores `*.md`/`*.json`/`*.yml` ⇒ generated docs are never format-checked | Note in generated README; decide whether markdown formatting is enforced |
 | 8 | Publishable package pieces missing: `LICENSE`, `README.md`, pinned `release-please-config.json` | Generator covers README (and LICENSE once D6 is revisited) |
+| 9 | `biome.json` used Biome 1.x keys (`files.ignore`, `organizeImports`, `rules.recommended`), so a fresh scaffold failed its first gate command before doing anything | Fixed in the framework template (`6934e24`): Biome 2 schema, `files.includes` negation globs, `assist.actions.source.organizeImports`, `preset` |
+| 10 | `vitest.config.ts` violated the formatter it ships with, so `biome ci` failed | Fixed in the framework template (`6934e24`): `exclude` array inlined |
+| 11 | `tsBuildInfoFile` pointed inside `dist/`, so a 44 kB incremental build cache was being published in the tarball | Fixed in the framework template (`./tsconfig.tsbuildinfo`, already gitignored); the script additionally hard-fails when the payload contains secrets or `.tsbuildinfo` |
+
+> [!IMPORTANT]
+> **Every template fix lives in the framework repo, never here.** Framework commits `267de81`
+> (command surface, documentation contract, new scaffold templates) and `6934e24` (Biome 2
+> config) on `codebase-agentic-readiness-framework@main`. This script absorbed all of them with
+> **zero code changes** — the templates moved underneath it — which is D4 doing its job. The only
+> script change they triggered is the publish-payload gate in defect 11, written to catch the
+> class of problem rather than the single instance.
 
 ---
+
+## Verification record (v1)
+
+Run against the live templates, scaffolding into `/tmp`, against the real npm registry:
+
+| Check | Result |
+|---|---|
+| Files written | 38 (36 rendered from templates + 2 `.gitkeep`) |
+| Placeholder gate | 0 survivors; missing-file and unexpectedly-empty-file checks pass |
+| `git init` | branch `dev` with the scaffold commit |
+| `npm install` | devDependencies resolve; this box runs Node 22.23.1, so `engines >=24` warns (target stays 24 — `.nvmrc`, `engines` and CI all agree) |
+| `npm run check` | exit 0 — format:check (6 files), typecheck (`src/` + `test/`), Vitest reports "No test files found, exiting with code 0" |
+| `npm run build` | `dist/core/*` and `dist/cli/*` emitted |
+| `npm pack --dry-run --json` | 14 files, 3.7 kB; no secrets, no `.tsbuildinfo` |
+| `npm view <name>` | reports the name unclaimed |
+| husky chain | `core.hooksPath=.husky/_`; a non-conventional commit message is rejected, a conventional one accepted |
+| Failure gates | non-empty target refused without `--force`; `--dry-run`, `--lib`, `--cli` behave as designed |
+| `--templates <path>` override | verified against an extracted copy of the framework branch |
 
 ## Roadmap
 

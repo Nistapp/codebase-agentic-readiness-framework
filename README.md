@@ -9,8 +9,18 @@ Run it in an empty directory and get the recommended structure: TypeScript stric
 automation, and the standardized six-verb command surface — a publishable npm package
 skeleton, ready for the first commit.
 
-**Status: design phase.** No implementation code yet. [`DESIGN.md`](DESIGN.md) is the
-reviewed contract the implementation will follow.
+**Status: v1 implemented and verified.** [`bootstrap.py`](bootstrap.py) — Python 3, stdlib only,
+no dependencies to install — renders the framework templates into a new project.
+[`DESIGN.md`](DESIGN.md) is the contract it implements.
+
+```bash
+python3 bootstrap.py ~/Projects/my-new-pkg --name my-new-pkg --org nistapp --cli --install
+python3 bootstrap.py --help          # every flag: --templates --dry-run --no-git --with-infra
+```
+
+Always scaffold into a throwaway directory (`/tmp/...`), never into a real repo: the script
+refuses a non-empty target unless `--force`, but the scaffolder's output deserves a look before
+it lands anywhere real.
 
 ---
 
