@@ -78,10 +78,11 @@
 
 ## Automated Scaffolding
 
-This whole recipe is executable. [`bootstrap.py`](https://github.com/Nistapp/codebase-agentic-readiness-framework)
-(in the `python-agentic-bootstrap` repo) reads `templates/**`, substitutes your project's
-name/org/author, writes the tree below, initialises git on `dev`, installs dependencies, and
-proves the result by running `npm run check`, `npm run build`, and `npm pack --dry-run`.
+This whole recipe is executable. `bootstrap.py` — in the separate `python-agentic-bootstrap`
+repo (local for now; an npm package is planned) — reads `templates/**`, substitutes your
+project's name/org/author, writes the tree below, initialises git on `dev`, installs
+dependencies, and proves the result by running `npm run check`, `npm run build`, and
+`npm pack --dry-run`, including a check that no secrets or build caches would be published.
 
 ```bash
 python3 bootstrap.py ~/Projects/my-new-pkg \
