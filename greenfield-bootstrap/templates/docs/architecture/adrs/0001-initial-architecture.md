@@ -38,7 +38,7 @@ the decision and retrofitting later.
 
 | Alternative | Why it was rejected |
 |---|---|
-| ESLint + Prettier instead of Biome | Two tools, two configs, two command paths; more surface for local/CI divergence. Revisit if a required rule set is unavailable in Biome. |
+| ESLint + Prettier instead of Biome | Two tools, two configs, two ignore mechanisms — and `format:check` would no longer cover lint, so the six-verb surface would keep a `lint` verb with nothing behind it. Costed concretely: a 9-file swap that redefines `lint` as a `typecheck` alias. Revisit only if a required rule set is unavailable in Biome. |
 | Makefile or Taskfile as the primary runner | Adds a second language and a second definition of the gate. Acceptable only as a thin wrapper over the same package scripts. |
 | `lint` as a separate code linter with no type-check verb | Conflating lint and type-check hides which gate failed and tempts agents to "fix" formatting instead of types. |
 | Retrofitting standards after the first feature | Standards applied to a moving codebase become a migration project instead of a Day-0 default. |
