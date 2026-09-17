@@ -12,11 +12,7 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'text-summary', 'lcov', 'html'],
       include: ['src/**/*.ts'],
-      exclude: [
-        'src/**/*.test.ts',
-        'src/agents/**',
-        'src/**/index.ts',
-      ],
+      exclude: ['src/**/*.test.ts', 'src/agents/**', 'src/**/index.ts'],
       // Coverage thresholds are turned on with the first real test — 80/75/80/80 is
       // unreachable for an empty suite and would fail CI at commit #1.
       // thresholds: {
