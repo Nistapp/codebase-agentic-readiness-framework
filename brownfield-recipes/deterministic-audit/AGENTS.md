@@ -44,7 +44,7 @@ Agents MUST respect the following structural rules.
 
 | Module | Responsibility |
 |---|---|
-| `audit/__main__.py` | Process entry point: `main(argv=None) -> int`, callable with no arguments (zipapp shim + future console script). |
+| `audit/__main__.py` | Process entry point: `main(argv=None) -> int`, callable with no arguments (future console script), and `entry()`, the zipapp entry point that exits with `main()`'s code. |
 | `audit/cli.py` | Argument surface and exit codes only — no scan logic. |
 | `audit/target.py` | Target guard and git provenance capture. |
 | `audit/scan.py` | Bounded traversal, file classification, bounded content reads, grep. |

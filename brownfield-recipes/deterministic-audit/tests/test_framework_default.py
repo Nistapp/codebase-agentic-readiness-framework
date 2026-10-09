@@ -123,6 +123,7 @@ class ZipappTests(unittest.TestCase):
             copy = Path(tmp) / "audit.pyz"
             shutil.copy(self.archive, copy)
             proc = subprocess.run([str(copy), "--verify-rules"], text=True, capture_output=True)
+        self.assertEqual(proc.returncode, cli.EXIT_USAGE)
         self.assertIn("--framework", proc.stderr)
 
 

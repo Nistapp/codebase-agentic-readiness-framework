@@ -40,9 +40,11 @@ interpreter — both of which cost the property that motivates the rule in the f
    library's `zipapp`. It runs as `./dist/audit.pyz <target>`, on any machine with Python 3.9+, with no
    dependencies. `dist/` is gitignored — a zip is not reviewable in a diff and must never become a second source
    of truth.
-4. **Entry-point contract**: `audit.__main__.main(argv: list[str] | None = None) -> int`. The zipapp-generated
-   shim and a future `console_scripts` entry point both call `main()` with **no arguments**; passing argv is the
-   test path. One function serves all three callers.
+4. **Entry-point contract**: `audit.__main__.main(argv: list[str] | None = None) -> int`. A future
+   `console_scripts` entry point calls `main()` with **no arguments**; passing argv is the test path. The
+   zipapp-generated shim discards the return value of what it calls, so the archive's entry point is
+   `audit.__main__.entry`, which exits with `main()`'s code. Without it the archive would exit `0` whatever the
+   scan found.
 5. **Tables stay in code, not in data files.** `audit/rules/variants.py` is a Python data structure rather than
    JSON or YAML. A `.pyz` is not a filesystem: `Path(__file__).parent` does not exist inside it, and a shipped
    data file would have to be read through `importlib.resources`. Keeping the variant table as code removes that

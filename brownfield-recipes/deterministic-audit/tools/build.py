@@ -12,8 +12,9 @@ Two constraints come from zipapp and are easy to get wrong:
 
 1. the archive root needs an entry point — passing ``main=`` makes zipapp generate a root
    ``__main__.py`` shim, so the package tree itself needs no root-level file
-2. that shim calls ``main()`` with **no arguments**, exactly like a console script, which is why
-   ``audit.__main__.main`` accepts ``argv=None``
+2. that shim calls the entry point with **no arguments** and discards what it returns, which is why
+   ``audit.__main__.main`` accepts ``argv=None`` and the entry point is ``entry``, which exits with
+   ``main()``'s code
 
 Excluded from the archive: tests, docs, dist and bytecode. Nothing inside a .pyz can be read with
 ``Path(__file__)`` — the archive is not a directory — so shipped data must go through
@@ -29,7 +30,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DIST = REPO_ROOT / "dist"
 ARCHIVE = DIST / "audit.pyz"
-ENTRY_POINT = "audit.__main__:main"
+ENTRY_POINT = "audit.__main__:entry"
 
 EXCLUDED_PREFIXES = ("tests/", "docs/", "dist/", "tools/", ".git/")
 

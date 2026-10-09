@@ -188,6 +188,12 @@ class ZipappContractTests(unittest.TestCase):
         self.assertEqual(run.returncode, 0, run.stderr)
         self.assertIn("checks catalogued", run.stdout)
 
+    def test_archive_exits_with_the_codes_the_cli_returns(self):
+        run = subprocess.run([str(REPO_ROOT / "dist" / "audit.pyz"), "--verify-rules",
+                              "--framework", "/nonexistent/framework-checkout"],
+                             text=True, capture_output=True)
+        self.assertEqual(run.returncode, 1, run.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
