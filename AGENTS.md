@@ -25,8 +25,8 @@ make security       # secrets scan against .secrets.baseline
 - Never weaken a gate to get green: no `.skip`, no rule turned off, no assertion relaxed. If you cannot pass a gate, say so.
 - `make test` skips the positive-fixture test when `CI=true` and its scaffolder (a sibling repository) is absent.
   Locally the test fails loudly without it; set `AUDIT_BOOTSTRAP=<path to bootstrap.py>` to point at the scaffolder.
-- Known engine defect: the engine's CMD-01 and CMD-02 report FAIL on this Makefile because it mis-reads the escaped
-  `format\:check` target. The defect is in the engine, not the Makefile; do not rename the target to quiet it.
+- Known engine defect: the engine's CMD-01 and CMD-02 report FAIL on this Makefile, because it does not read the escaped
+  `format\:check` target or follow `check`'s prerequisites. The Makefile is correct; do not rewrite it to quiet the engine.
 
 ## Boundaries
 
@@ -40,7 +40,7 @@ make security       # secrets scan against .secrets.baseline
 | `brownfield-recipes/docs/` | Documentation for all of the above. | Follow `brownfield-recipes/docs/STYLE_GUIDE.md`; start at `docs/architecture/README.md`. |
 | `artefacts/` | Scratch notes and plans, git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
 
-Folders that are still empty are placeholders, and the docs pages that describe them say `Planned`.
+A folder with no files yet is not written yet; the docs page that describes it says `Planned`.
 
 ## Never
 
@@ -57,8 +57,8 @@ A change is done when all of this holds:
 
 - `make check` and `make security` pass.
 - New code has tests, and a new engine check has a fixture that fails exactly that check.
-- The documentation a change affects is updated in the same set of commits. When you fill a placeholder page,
-  remove its `Planned` note, and update the doc router.
+- The documentation a change affects is updated in the same set of commits. When you fill in a page marked `Planned`,
+  remove that note and update the doc router.
 - Python files carry the SPDX header `AGPL-3.0-or-later` and the copyright line. Documentation, schemas and published
   outputs are `GFDL-1.3-only`. The zones are in `brownfield-recipes/docs/reference/licensing.md`.
 - Commits follow Conventional Commits, one logical change each, so any one can be reverted alone.
