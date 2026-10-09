@@ -236,13 +236,6 @@ def informational() -> list[CheckSpec]:
     return [s for s in REGISTRY if not s.scored]
 
 
-def tier_histogram(specs=None) -> dict[str, int]:
-    out: dict[str, int] = {}
-    for spec in specs or REGISTRY:
-        out[spec.tier] = out.get(spec.tier, 0) + 1
-    return out
-
-
 # ---------------------------------------------------------------------------
 # framework anchor resolution (--verify-rules)
 # ---------------------------------------------------------------------------
