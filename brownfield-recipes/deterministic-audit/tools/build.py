@@ -48,8 +48,8 @@ def _filter(path: Path) -> bool:
 
 
 def main() -> int:
-    if sys.version_info < (3, 9):
-        print("audit: needs Python 3.9+ to build", file=sys.stderr)
+    if sys.version_info < (3, 11):
+        print("audit: needs Python 3.11+ to build", file=sys.stderr)
         return 1
 
     DIST.mkdir(exist_ok=True)

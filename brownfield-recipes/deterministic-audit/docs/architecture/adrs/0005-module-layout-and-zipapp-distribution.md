@@ -37,7 +37,7 @@ interpreter — both of which cost the property that motivates the rule in the f
    virtualenv, no `pip install`, no `PYTHONPATH`. This is why there is no `src/` layout. Nothing outside the
    standard library is imported.
 3. **One artifact for distribution**: `python3 tools/build.py` produces `dist/audit.pyz` using the standard
-   library's `zipapp`. It runs as `./dist/audit.pyz <target>`, on any machine with Python 3.9+, with no
+   library's `zipapp`. It runs as `./dist/audit.pyz <target>`, on any machine with Python 3.11+, with no
    dependencies. `dist/` is gitignored — a zip is not reviewable in a diff and must never become a second source
    of truth.
 4. **Entry-point contract**: `audit.__main__.main(argv: list[str] | None = None) -> int`. A future
