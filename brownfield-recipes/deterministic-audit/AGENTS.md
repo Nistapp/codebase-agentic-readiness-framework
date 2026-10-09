@@ -114,7 +114,7 @@ Commands that **do** work today, and are the sanctioned way to verify work here:
 ```bash
 python3 -m unittest discover -s tests                                   # the test suite
 python3 -m audit --list-checks                                          # catalogue: implemented vs planned
-python3 -m audit --verify-rules --framework <path-to-framework>         # every anchor must resolve
+python3 -m audit --verify-rules                                         # every anchor must resolve
 python3 tools/build.py && ./dist/audit.pyz --list-checks                # the single-file distributable
 ```
 

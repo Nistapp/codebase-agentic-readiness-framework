@@ -277,6 +277,24 @@ def resolve_anchors(specs, framework_root: Path) -> list[tuple[str, Anchor]]:
     return missing
 
 
+#: A directory is the framework checkout when it holds the file every rule pack anchors to.
+_FRAMEWORK_MARKER = "brownfield-legacy/Phased-Approach.md"
+
+
+def find_framework_root(start: Path | None = None) -> Path | None:
+    """Locate the framework checkout by walking up from ``start`` (default: this package).
+
+    This tool lives inside the framework repository, so the default resolves to the repository root
+    with no flag. ``None`` means the tool was moved out of the repository (a ``.pyz`` copied
+    elsewhere, say); callers then need an explicit ``--framework``.
+    """
+    here = (start if start is not None else Path(__file__)).resolve()
+    for candidate in (here, *here.parents):
+        if (candidate / _FRAMEWORK_MARKER).is_file():
+            return candidate
+    return None
+
+
 # ---------------------------------------------------------------------------
 # ruleset identity (recorded in every report's provenance)
 # ---------------------------------------------------------------------------

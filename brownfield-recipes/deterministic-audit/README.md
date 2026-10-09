@@ -42,7 +42,7 @@ python3 -m audit <target> --run-gates --allow-probe check --allow-probe test --t
 
 # what is implemented right now, and whether every rule still traces to the framework
 python3 -m audit --list-checks
-python3 -m audit --verify-rules --framework ../..
+python3 -m audit --verify-rules
 
 # tests, and the single-file distributable
 python3 -m unittest discover -s tests

@@ -66,7 +66,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--verify-rules", action="store_true",
                         help="resolve every rule pack's framework anchor and exit")
     parser.add_argument("--framework", metavar="PATH",
-                        help="local checkout of codebase-agentic-readiness-framework (for --verify-rules)")
+                        help="framework checkout, for --verify-rules and the report's framework revision "
+                             "(default: the repository this tool lives in)")
     parser.add_argument("--force", action="store_true", help="overwrite an existing report")
     parser.add_argument("--version", action="version", version=f"audit {__version__} (ruleset {__ruleset_revision__})")
     return parser
@@ -78,13 +79,13 @@ def run(argv: list[str]) -> int:
 
     if args.list_checks:
         return _list_checks()
-    if args.verify_rules:
-        return _verify_rules(args.framework)
-    if args.run_gates and not args.allow_probe:
-        print("audit: --run-gates requires at least one --allow-probe VERB", file=sys.stderr)
-        return EXIT_USAGE
 
     try:
+        if args.verify_rules:
+            return _verify_rules(args.framework)
+        if args.run_gates and not args.allow_probe:
+            print("audit: --run-gates requires at least one --allow-probe VERB", file=sys.stderr)
+            return EXIT_USAGE
         return _scan(args)
     except AuditUsageError as exc:
         print(f"audit: {exc}", file=sys.stderr)
@@ -106,13 +107,13 @@ def _list_checks() -> int:
 
 
 def _verify_rules(framework: str | None) -> int:
-    from audit.rules.registry import REGISTRY, resolve_anchors
+    from audit.rules.registry import REGISTRY, find_framework_root, resolve_anchors
 
-    if not framework:
-        print("audit: --verify-rules needs --framework <path to codebase-agentic-readiness-framework>",
-              file=sys.stderr)
+    root = Path(framework).expanduser().resolve() if framework else find_framework_root()
+    if root is None:
+        print("audit: --verify-rules needs --framework <path to the framework checkout>; "
+              "this copy of the tool is not inside one", file=sys.stderr)
         return EXIT_USAGE
-    root = Path(framework).expanduser().resolve()
     if not root.is_dir():
         raise AuditUsageError(f"framework checkout not found: {root}")
 

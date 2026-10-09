@@ -41,8 +41,11 @@ SCHEMA_VERSION = "2"
 
 
 def _framework_revision(args: argparse.Namespace) -> str | None:
-    root = getattr(args, "framework", None)
-    if not root:
+    from audit.rules.registry import find_framework_root
+
+    explicit = getattr(args, "framework", None)
+    root = Path(explicit).expanduser() if explicit else find_framework_root()
+    if root is None:
         return None
     try:
         proc = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
