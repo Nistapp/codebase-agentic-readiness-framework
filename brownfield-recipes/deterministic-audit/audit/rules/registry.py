@@ -51,9 +51,6 @@ PACK_ANCHORS: dict[str, Anchor] = {
     "HYG": Anchor("brownfield-legacy/Phased-Approach.md", "Phase 1: Agentic Bootstrap"),
 }
 
-#: Packs whose id prefix does not equal the pack key.
-_ID_PREFIX = {"EXEC": "EXEC"}
-
 
 @dataclass
 class CheckSpec:
