@@ -25,7 +25,6 @@ from audit import __ruleset_revision__, __version__
 
 EXIT_OK = 0
 EXIT_USAGE = 1
-EXIT_FINDINGS = 2
 
 
 class AuditUsageError(Exception):
