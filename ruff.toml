@@ -1,0 +1,8 @@
+# Ruff settings for the whole repository. The Makefile verbs `format`, `format:check` and `lint` read them.
+# Fixtures are test data and deliberately contain malformed code, so no verb touches them.
+target-version = "py311"
+line-length = 120
+extend-exclude = ["**/tests/fixtures/**", "**/dist/**"]
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
