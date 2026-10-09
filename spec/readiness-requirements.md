@@ -84,7 +84,7 @@ The instruction file MUST name every verb of the [command surface](command-surfa
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--six-verbs)
+- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)
 - **Checks:** AGT-05
 
 ### REQ-SH-010 — Architectural boundaries declared
@@ -184,7 +184,7 @@ The repository MUST define every verb of the [command surface](command-surface.m
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--six-verbs)
+- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)
 - **Checks:** CMD-01
 
 ### REQ-SH-022 — `check` composes the read-only verbs
@@ -192,7 +192,7 @@ The `check` verb MUST run `format:check`, `typecheck` and `test`.
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--six-verbs)
+- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)
 - **Checks:** CMD-02
 
 ### REQ-SH-023 — No second definition of the gate
@@ -200,7 +200,7 @@ A runner other than the authoritative one MAY define `check` only as a delegatio
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--six-verbs)
+- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)
 - **Checks:** CMD-03
 
 ### REQ-SH-024 — Read-only verbs do not write
@@ -208,7 +208,7 @@ No read-only verb MAY invoke a write command: `format`, install, build or clean.
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--six-verbs)
+- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)
 - **Checks:** CMD-04
 
 ### REQ-SH-025 — Documented commands resolve
@@ -292,7 +292,7 @@ Every verification command in the CI pipeline MUST be a verb of the [command sur
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--six-verbs)
+- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)
 - **Checks:** CI-02, CI-03
 
 ### REQ-SH-035 — CI enforces the gate
@@ -300,7 +300,7 @@ On every pull request the CI pipeline MUST run the verbs that make up `check` an
 
 - **Phase:** 1
 - **Verification:** agent
-- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--six-verbs)
+- **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)
 - **Checks:** none yet
 
 ## Baselines and the ratchet

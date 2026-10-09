@@ -6,7 +6,7 @@ An **agentic-ready codebase** provides AI coding agents with the structure they 
 
 - **Focused and reliable context** — agents reason over relevant information, not the entire repo.
 - **Clear interfaces and relationships** — boundaries are explicit, not implicit.
-- **Deterministic development commands** — one command surface (`format`, `lint`, `typecheck`, `test`, `check`, `security`, realised as package scripts, a `Taskfile`, or a `Makefile`) produces identical results for agents, humans, and CI.
+- **Deterministic development commands** — one command surface (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`, realised as package scripts, a `Taskfile`, or a `Makefile`) produces identical results for agents, humans, and CI.
 - **Executable quality gates** — automated checks that agents must pass before changes are accepted.
 - **Tests that protect existing behavior** — characterization tests, contracts, and unit tests.
 - **Documentation that evolves with the code** — generated, maintained, and indexed automatically.

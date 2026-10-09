@@ -16,7 +16,7 @@ A verb is the name of one command. The verbs are the contract; the runner that c
 | `check` | The single pre-PR and CI gate. Runs `format:check`, `typecheck` and `test`, in that order. | No | — |
 | `security` | Dependency vulnerability gate. | No | No |
 
-The surface is these seven commands. Older framework text calls the set "the six verbs", counting `format` and `format:check` as one concern with a write form and a read-only form. Both forms are required.
+The surface is these seven commands. `format` and `format:check` are the write form and the read-only form of one concern, and both are required.
 
 ## Spelling per runner
 

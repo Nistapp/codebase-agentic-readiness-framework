@@ -28,7 +28,7 @@ the decision and retrofitting later.
 | Architecture | Pure core (`src/core/`) behind DI ports; OS access only in `src/infrastructure/` | Keeps the engine testable without I/O and bounds what an agent can touch. |
 | Tests | Vitest, `test/` mirroring `src/` | Fast, ESM-native, typed stubs satisfy the DI interfaces. |
 | Format + lint | Biome | One binary, one config, one read-only verification command (`biome ci .`). |
-| Command surface | Six verbs as package scripts — `format`, `lint`, `typecheck`, `test`, `check`, `security` | Agents, humans, and CI invoke identical names; `npm run check` is the single gate. |
+| Command surface | Seven verbs as package scripts — `format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security` | Agents, humans, and CI invoke identical names; `npm run check` is the single gate. |
 | Documentation | `docs/` is the source of truth, governed by `docs/STYLE_GUIDE.md`; `AGENTS.md` points at it and states the definition of done | Rules live in one place; restating them elsewhere guarantees drift. |
 | Docs hosting of transient work | `artefacts/` (git-ignored contents, off-limits to agents) | Keeps unverified scratch out of agent context and out of the index. |
 
@@ -38,7 +38,7 @@ the decision and retrofitting later.
 
 | Alternative | Why it was rejected |
 |---|---|
-| ESLint + Prettier instead of Biome | Two tools, two configs, two ignore mechanisms — and `format:check` would no longer cover lint, so the six-verb surface would keep a `lint` verb with nothing behind it. Costed concretely: a 9-file swap that redefines `lint` as a `typecheck` alias. Revisit only if a required rule set is unavailable in Biome. |
+| ESLint + Prettier instead of Biome | Two tools, two configs, two ignore mechanisms — and `format:check` would no longer cover lint, so the seven-verb surface would keep a `lint` verb with nothing behind it. Costed concretely: a 9-file swap that redefines `lint` as a `typecheck` alias. Revisit only if a required rule set is unavailable in Biome. |
 | Makefile or Taskfile as the primary runner | Adds a second language and a second definition of the gate. Acceptable only as a thin wrapper over the same package scripts. |
 | `lint` as a separate code linter with no type-check verb | Conflating lint and type-check hides which gate failed and tempts agents to "fix" formatting instead of types. |
 | Retrofitting standards after the first feature | Standards applied to a moving codebase become a migration project instead of a Day-0 default. |

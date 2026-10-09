@@ -57,15 +57,16 @@ flowchart TB
 - Configure and run `codebase-memory-mcp` to index source files, symbols, relationships, dependencies, and tests.
 - Create root and component-level `AGENTS.md` files. A good example is [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md) (See also our [Greenfield AGENTS.md Template](../greenfield-bootstrap/templates/AGENTS.md)).
 - Make every `AGENTS.md` name the **documentation contract**: `docs/` is the single source of truth for permanent documentation, `docs/STYLE_GUIDE.md` is the canonical authoring rule set, and `artefacts/` is transient scratch that agents MUST NOT read unless a human passes an explicit path. State the **definition of done** — a change that alters a public interface, observable behaviour, architecture, or an ADR updates the affected doc pages, their source anchors, and the ADR index **in the same change set** — and link to the style guide rather than restating its rules, because restated rules drift.
-- Standardize commands using package scripts, a `Taskfile`, or a `Makefile`. The six verbs are the contract; the runner is a local choice. The reference implementation (`agentic-tdd`) uses npm scripts:
+- Standardize commands using package scripts, a `Taskfile`, or a `Makefile`. The seven verbs are the contract; the runner is a local choice. The reference implementation (`agentic-tdd`) uses npm scripts:
 
 ```bash
-task format      # npm run format        — rewrite formatting
-task lint        # npm run lint          — read-only lint
-task typecheck   # npm run typecheck     — tsc --noEmit, zero errors (src/ and test/)
-task test        # npm test              — full suite, 100% pass
-task check       # npm run check         — THE pre-PR gate: format:check → typecheck → test
-task security    # npm run security      — dependency-CVE gate
+task format        # npm run format        — rewrite formatting
+task format:check  # npm run format:check  — read-only: formatting and lint rules
+task lint          # npm run lint          — read-only lint
+task typecheck     # npm run typecheck     — tsc --noEmit, zero errors (src/ and test/)
+task test          # npm test              — full suite, 100% pass
+task check         # npm run check         — THE pre-PR gate: format:check → typecheck → test
+task security      # npm run security      — dependency-CVE gate
 ```
 
 > [!IMPORTANT]
@@ -215,7 +216,7 @@ Runtime instrumentation is added selectively around high-risk or high-value work
 > ### 🏁 Milestone: Codebase is Officially Agentic-Ready
 > Upon completing Phase 4, the repository has achieved full **Agentic Readiness**:
 > - **Discoverability & Graph Memory**: Indexed in `codebase-memory-mcp`.
-> - **Execution Determinism**: One standardized command surface (`format`, `lint`, `typecheck`, `test`, `check`, `security`) via `Taskfile`/`Makefile`/package scripts, invoked identically by agents, humans, and CI.
+> - **Execution Determinism**: One standardized command surface (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`) via `Taskfile`/`Makefile`/package scripts, invoked identically by agents, humans, and CI.
 > - **Semantic Clarity**: Rich docstrings, signatures, and invariants.
 > - **Bounded Scope**: Explicit per-component Constraint Engineering rules.
 > - **Regression Safety Nets**: Published contracts and characterization tests.
