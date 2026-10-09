@@ -137,4 +137,5 @@ All documentation follows [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md), which is
 
 ## License
 
-Not yet chosen — no license field is claimed until one is.
+The code in this directory is licensed under the [GNU Affero General Public License, version 3 or later](LICENSE) (`AGPL-3.0-or-later`). The licence covers the tool, not the repositories it audits or the reports
+it writes. How the documentation is licensed: [Licensing](../docs/reference/licensing.md).
