@@ -174,24 +174,3 @@ class PathList(Payload):
     kind: ClassVar[str] = "path_list"
     paths: tuple[str, ...] = ()
     truncated: bool = False
-
-
-# ---------------------------------------------------------------------------
-# mapping — EXEC-07, TOOL-01/02/03/04/05, BASE-01/02
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class MappingEntry:
-    """One key→value fact a check wants to surface in a table."""
-
-    key: str
-    value: str
-
-
-@dataclass(frozen=True)
-class Mapping(Payload):
-    """An ordered set of key→value facts."""
-
-    kind: ClassVar[str] = "mapping"
-    entries: tuple[MappingEntry, ...] = ()

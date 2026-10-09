@@ -211,7 +211,7 @@ Every check additionally carries a short human **`summary`** and a structured **
 The payload is a `kind`-discriminated object (`audit/rules/payloads.py`): the renderer switches on
 `kind` to build a check-specific table and never parses prose. A check with no table of its own
 carries `data: {}` and relies on `summary`. The payload kinds are `verb_surface`, `credential_matrix`,
-`secret_shapes`, `env_keys`, `harness_matrix`, `ratio`, `counter`, `path_list` and `mapping`.
+`secret_shapes`, `env_keys`, `harness_matrix`, `ratio`, `counter` and `path_list`.
 
 ---
 

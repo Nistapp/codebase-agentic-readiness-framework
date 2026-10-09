@@ -41,7 +41,7 @@ code.**
    `verdict`, `summary`, and a typed `data` payload. The old `checks[].detail` string is removed.
 2. **Structured payloads, not prose.** `audit/rules/payloads.py` defines frozen, `kind`-discriminated
    dataclasses (`verb_surface`, `credential_matrix`, `secret_shapes`, `env_keys`, `harness_matrix`,
-   `ratio`, `counter`, `path_list`, `mapping`). A check emits `summary` (one short sentence) plus an
+   `ratio`, `counter`, `path_list`). A check emits `summary` (one short sentence) plus an
    optional `Payload`; the JSON carries `data.to_dict()`. The renderer dispatches on `kind` and never
    parses a string.
 3. **The template is code.** `audit/report/presentation.py` holds the section order, table columns,

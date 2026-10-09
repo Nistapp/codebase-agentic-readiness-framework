@@ -73,8 +73,6 @@ def _specifics(check: dict, finding: dict | None) -> str:
         return f"{len(paths)} path(s): {', '.join(paths)}."
     if kind == "counter":
         return f"{data.get('value', 0)} {data.get('unit', '')}."
-    if kind == "mapping":
-        return "; ".join(f"{e['key']}={e['value']}" for e in data.get("entries") or []) or "—"
     return check.get("summary") or "—"
 
 
