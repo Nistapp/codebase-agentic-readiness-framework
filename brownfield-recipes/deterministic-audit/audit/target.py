@@ -37,10 +37,6 @@ class Target:
     git_dirty: bool
     scanned_at: str
 
-    @property
-    def is_dirty(self) -> bool:
-        return self.git_dirty
-
 
 def _git(path: Path, *args: str) -> str | None:
     try:
