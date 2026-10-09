@@ -154,7 +154,7 @@ The repository MUST have a `docs/` directory that contains at least one Markdown
 - **Checks:** DOC-02
 
 ### REQ-SH-018 — Scratch and tool-state directories ignored
-`artefacts/`, `artifacts/` and the directories where agent tools keep their own state MUST be matched by an ignore rule, and none of their contents MAY be tracked.
+When `artefacts/`, `artifacts/` or a directory where an agent tool keeps its own state exists, an ignore rule MUST match it and none of its contents MAY be tracked.
 
 - **Phase:** 1
 - **Verification:** automated
