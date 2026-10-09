@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git tag:*)",
+      "Bash(make:*)",
+      "Bash(python3:*)"
+    ],
+    "ask": [
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(rm:*)",
+      "Bash(rmdir:*)",
+      "Bash(unlink:*)"
+    ]
+  }
+}
