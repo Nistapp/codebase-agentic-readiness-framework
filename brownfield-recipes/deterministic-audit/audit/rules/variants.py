@@ -477,7 +477,7 @@ NON_INSTRUCTION_GLOBS: tuple[tuple[str, str], ...] = (
 #: Ignore-file conventions. These are exclusion semantics, not instructions — they matter to
 #: CON-03 (artefacts excluded from the index) and EXEC-05, not to AGT.
 IGNORE_FILES: tuple[tuple[str, str, str], ...] = (
-    ("codebase-memory-mcp", ".cbmignore", "https://github.com/nicobailon/codebase-memory-mcp"),
+    ("codebase-memory-mcp", ".cbmignore", "https://github.com/DeusData/codebase-memory-mcp"),
     ("Cursor", ".cursorignore", "https://cursor.com/docs/reference/ignore-file"),
     ("Cursor", ".cursorindexingignore", "https://cursor.com/docs/reference/ignore-file"),
     ("Roo Code", ".rooignore", "https://roocodeinc.github.io/Roo-Code/features/rooignore/"),

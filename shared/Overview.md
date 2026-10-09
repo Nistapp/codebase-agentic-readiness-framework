@@ -78,7 +78,7 @@ flowchart TD
 This approach is based on the following assumptions:
 
 1. **Better context → better agent output.** Context engineering is possible only with high-quality, purpose-built documentation.
-2. **Model reasoning capacity is finite.** Providing an LLM with unstructured information produces broken or incomplete results. The less that the LLM has to discover during runtime, the more capacity it has to understand the task and apply correct reasoning. Structured repository information can be built asynchronously and delivered synchronously. See [`codebase-memory-mcp`](https://github.com/nicobailon/codebase-memory-mcp).
+2. **Model reasoning capacity is finite.** Providing an LLM with unstructured information produces broken or incomplete results. The less that the LLM has to discover during runtime, the more capacity it has to understand the task and apply correct reasoning. Structured repository information can be built asynchronously and delivered synchronously. See [`codebase-memory-mcp`](https://github.com/DeusData/codebase-memory-mcp).
 3. **Smaller, task-specific context outperforms whole-repo context.**
 4. **Deterministic commands and automated quality gates reduce rework and agent uncertainty.**
 5. **Tests, contracts, and documentation preserve existing structure and behavior.**

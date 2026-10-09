@@ -67,7 +67,7 @@ Both tracks share the same core intelligence layer and architectural invariants:
 
 ## 🧠 Core Intelligence Layer
 
-[`codebase-memory-mcp`](https://github.com/nicobailon/codebase-memory-mcp) serves as the shared knowledge backbone across all workflows. Both human developers and AI agents query this graph to identify symbols, callers, callees, dependencies, contracts, and relevant documentation before making changes.
+[`codebase-memory-mcp`](https://github.com/DeusData/codebase-memory-mcp) serves as the shared knowledge backbone across all workflows. Both human developers and AI agents query this graph to identify symbols, callers, callees, dependencies, contracts, and relevant documentation before making changes.
 
 ---
 
