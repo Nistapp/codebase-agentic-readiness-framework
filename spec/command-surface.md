@@ -1,6 +1,6 @@
 # Command surface
 
-Normative. This page fixes the verbs a repository exposes to agents, humans and CI, and how each runner spells them. The requirements in `readiness-requirements.md` link here instead of restating the table. The keywords **MUST**, **SHOULD** and **MAY** are used as in [spec/README.md](README.md#requirement-language).
+Normative. This page fixes the verbs a repository exposes to agents, humans and CI, and how each runner spells them. The requirements in [readiness-requirements.md](readiness-requirements.md) link here instead of restating the table. The keywords **MUST**, **SHOULD** and **MAY** are used as in [spec/README.md](README.md#requirement-language).
 
 ## The verbs
 

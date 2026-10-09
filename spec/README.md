@@ -71,9 +71,10 @@ The report format itself is defined later by the report schema in `brownfield-re
 
 ## Contents
 
+- [readiness-requirements.md](readiness-requirements.md): the normative requirements for Phase 1 and the requirements shared with new repositories, extracted from the framework documents.
 - [command-surface.md](command-surface.md): the verbs every repository exposes and how each runner spells them.
 
 ### Planned
 
-- `readiness-requirements.md`: the normative requirements, extracted from the existing docs.
+- Requirements for Phases 2 to 4, in `readiness-requirements.md` or in files beside it.
 - `schemas/`: only if a readiness manifest or report format is defined.
