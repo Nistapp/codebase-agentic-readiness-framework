@@ -69,7 +69,11 @@ The report format itself is defined later by the report schema in `brownfield-re
 | Diagrams | Mermaid |
 | Terminology | `shared/Glossary.md` |
 
-## Planned contents
+## Contents
+
+- [command-surface.md](command-surface.md): the verbs every repository exposes and how each runner spells them.
+
+### Planned
 
 - `readiness-requirements.md`: the normative requirements, extracted from the existing docs.
 - `schemas/`: only if a readiness manifest or report format is defined.
