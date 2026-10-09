@@ -62,7 +62,7 @@ Agents MUST respect the following structural rules.
 | `audit/report/model.py` | **The** schema-v2 report model — the JSON render contract (ADR-0007). |
 | `audit/report/presentation.py` | The Markdown template (sections, columns, editorial wording), in code. |
 | `audit/report/md_render.py` | Generic section/table renderer over the report dict. |
-| `audit/report/json_writer.py`, `audit/report/md_writer.py` | Thin file-facing writers over the model. |
+| `audit/report/md_writer.py` | Thin file-facing Markdown writer over the model. |
 | `tools/build.py` | Zipapp builder producing `dist/audit.pyz`. |
 | `tests/` | Stdlib `unittest` suite and fixtures. |
 

@@ -10,7 +10,7 @@
 ## Context
 
 The audit emits two artifacts from one run: a machine-readable JSON report and a human Markdown page.
-They were written by two independent functions (`render_json` and `render_markdown`) that each walked
+They were written by two independent functions, one per format, that each walked
 the in-memory `AuditResult` separately. Nothing forced them to agree, the Markdown carried only prose
 findings, and every check's structured facts — the missing verbs, the credential file×line matrix, the
 harness reach list — were flattened into one human `detail` string that no renderer could turn into a

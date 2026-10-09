@@ -89,7 +89,7 @@ audit/                     the tool: standard library only, no install step
     variants.py            THE instruction-variant table (one data structure, in code)
     registry.py            check catalogue + framework anchors + ruleset hash
     checks/                one module per check family; idx.py, agt.py, execution.py, cmd.py, sec.py, doc.py, nav.py, tool.py, ci.py, tst.py, base.py, con.py and hyg.py are implemented
-  report/                  report model (schema v2), Markdown template, writers
+  report/                  report model (schema v2), Markdown template, writer
 tools/build.py             python3 tools/build.py  ->  dist/audit.pyz
 tests/                     stdlib unittest suite + fixtures
 docs/                      the design of record, and the source of the doc-link checker
