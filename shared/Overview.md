@@ -67,7 +67,7 @@ flowchart TD
 | [Phase 3](../brownfield-legacy/Phased-Approach.md#phase-3-agent-oriented-documentation-) | `agentic-agentDocs` generates per-component constraint definitions: forbidden dependencies, data classification, ownership rules. |
 | [Phase 4](../brownfield-legacy/Phased-Approach.md#phase-4-contracts-and-behavior-baselines-) | Contracts become enforceable constraints — agents must not break published interfaces. |
 | [Phase 5](../brownfield-legacy/Phased-Approach.md#phase-5-optional-refactoring) | Refactoring is bounded to single components. Agents cannot weaken tests. |
-| [Phase 7](../brownfield-legacy/Phased-Approach.md#phase-7-spec-driven-feature-development-) | Implementation plans are cross-checked against `codebase-memory-mcp` for impact before approval. |
+| [Phase 7](../brownfield-legacy/Phased-Approach.md#phase-7-spec-driven-feature-development) | Implementation plans are cross-checked against `codebase-memory-mcp` for impact before approval. |
 
 ---
 
