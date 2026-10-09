@@ -2,7 +2,7 @@
 
 Normative requirements for the Codebase Agentic Readiness Framework: what a repository MUST, SHOULD, or MAY have to count as agentic-ready.
 
-The recipes in `greenfield-bootstrap/` and `brownfield-legacy/` explain *how*. This folder states *what* and is the source of truth for conformance. Recipes should link to requirement IDs instead of restating rules.
+The recipes in `greenfield-bootstrap/`, `brownfield-legacy/` and `brownfield-recipes/` explain *how*. The last also holds the audit engine and tools that check requirements. This folder states *what* and is the source of truth for conformance. Recipes and checks should link to requirement IDs instead of restating rules.
 
 ## Conventions
 
