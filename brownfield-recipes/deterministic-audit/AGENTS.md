@@ -89,29 +89,30 @@ Agents MUST respect the following structural rules.
 | Language | Python 3.11+ | Standard library only; `from __future__ import annotations`. |
 | Runtime | `python3` | No install step: `python3 -m audit <target>` from a fresh clone. |
 | Tests | stdlib `unittest` | `python3 -m unittest discover -s tests`. No pytest dependency. |
+| Dev tools | ruff, mypy, detect-secrets via `uvx` | Pinned in the root `Makefile` (§3.1). Never imported by `audit/` or `tools/`. |
 | Build | `zipapp` | `python3 tools/build.py` → `dist/audit.pyz`; source tree is the artifact of record. |
 | Index | `codebase-memory-mcp` | Mandatory for structural queries (see §4). |
 | Docs | Diátaxis + [`../docs/STYLE_GUIDE.md`](../docs/STYLE_GUIDE.md) | The shared style guide is canonical (see §8). |
 
 ### 3.1 Standardized command surface
 
-The framework's **six verbs** are the contract; the runner is a local choice. This repository has **not yet
-wired a runner** (`Makefile` / `Taskfile` / package scripts), and it is stdlib-only — so the formatter,
-linter, type-checker and security verbs have **no implementation here yet**. They are listed because the
-contract names them, and each is marked with its current status. Do not invent an ad-hoc command in place of
-a missing verb; say the verb is not yet wired.
+The framework's verbs are the contract. The runner is the **root `Makefile`** of this repository
+([root `AGENTS.md`](../../AGENTS.md)); CI runs the same targets. Run them from the repository root.
 
-| Verb | Status in this repository |
-|---|---|
-| `format` | Not yet wired — stdlib-only, no formatter dependency. |
-| `format:check` | Not yet wired. |
-| `lint` | Not yet wired. |
-| `typecheck` | Not yet wired — no static type-checker dependency. |
-| `test` | **Wired:** `python3 -m unittest discover -s tests`. |
-| `check` | Not yet wired as one verb; until a runner exists, compose `test` + `--verify-rules` + build. |
-| `security` | Not yet wired — stdlib-only, no dependency-CVE tooling. |
+| Verb | Command | What it covers here |
+|---|---|---|
+| `format` | `make format` | ruff format over `brownfield-recipes/`. |
+| `format:check` | `make format:check` (alias `make format-check`) | ruff format check plus ruff lint rules. |
+| `lint` | `make lint` | ruff lint rules, read-only. |
+| `typecheck` | `make typecheck` | mypy strict, on `tools/build.py` only. The rest of the engine joins later through a ratchet. |
+| `test` | `make test` | `python3 -m unittest discover -s tests` in this directory. |
+| `check` | `make check` | `format:check`, `typecheck`, `test`, then `--verify-rules`. |
+| `security` | `make security` | Secrets scan against the committed baseline. No dependency audit: there are no dependencies. |
 
-Commands that **do** work today, and are the sanctioned way to verify work here:
+The dev tools (ruff, mypy, detect-secrets) are pinned in the Makefile and run through `uvx`. They are never imported
+by `audit/` or `tools/`, so the standard-library-only rule stands.
+
+Commands that run the engine itself, from this directory:
 
 ```bash
 python3 -m unittest discover -s tests                                   # the test suite
@@ -121,8 +122,8 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 ```
 
 > [!IMPORTANT]
-> Once a runner is added, CI MUST invoke the identical script names a human or agent runs locally. A gate
-> with no local equivalent cannot be honoured by an agent.
+> CI MUST invoke the identical targets a human or agent runs locally. A gate with no local equivalent cannot be
+> honoured by an agent.
 
 ---
 
@@ -174,12 +175,13 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
   The catalogue's § Adding a Check makes this a merge requirement: **no fixture, no check.**
 - **Positive fixture:** a freshly generated `python-agentic-bootstrap` scaffold, **generated in the test run,
   never vendored**. If a scaffold ever fails this audit, one of the two tools is wrong — that is a defect to
-  fix, not a false positive to tune away.
+  fix, not a false positive to tune away. Its scaffolder lives in a sibling repository, so the test fails
+  loudly without it, except when `CI=true`, where it skips and says why.
 - **Load-bearing tests:** determinism (two full reports differ only by timestamp) and the zipapp
   entry-point contract (`main` callable with no arguments) must not be weakened.
 - **Pass rate:** 100% required. Never `.skip` or comment out a failing test; never relax an assertion to get
-  green.
-- **Gate:** run the test command in §3.1 before proposing a change.
+  green. The one sanctioned skip is the positive-fixture test in CI, above.
+- **Gate:** run `make check` (§3.1) from the repository root before proposing a change.
 
 ---
 
@@ -195,7 +197,8 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 - **Commits (Conventional Commits):** `<type>(<scope>): <description>` with types `feat`, `fix`, `refactor`,
   `test`, `docs`, `chore`, `ci`, `perf`, `revert`.
 - **Agent commits:** `chore(ai): pass-[N] - <description>`.
-- **Never commit unless explicitly asked.** Do not update git config, force-push, or create empty commits.
+- **Commit only when asked**, or when the instructions for your session say to commit per item. Never push, run
+  `git init`, update git config, force-push, or create empty commits.
 
 ---
 
@@ -248,6 +251,6 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 10. ❌ **Do not** document a check as implemented while it is only in the catalogue.
 11. ❌ **Do not** merge a check without its one-defect fixture (no fixture, no check).
 12. ❌ **Do not** reuse a retired ADR number, or leave a `Superseded` / `Deprecated` tombstone.
-13. ❌ **Do not** weaken, `.skip`, or comment out a failing test to get green.
-14. ❌ **Do not** commit, `git init`, or push unless KC explicitly asks.
+13. ❌ **Do not** weaken, `.skip`, or comment out a failing test to get green (the CI skip in §6 is the one exception).
+14. ❌ **Do not** push, `git init`, or commit unless KC asks or your session's instructions say to commit.
 15. ❌ **Do not** verify work with an ad-hoc command; use the sanctioned surface in §3.1.
