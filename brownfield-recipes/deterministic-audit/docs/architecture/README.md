@@ -50,8 +50,8 @@
 ## Framework Dependencies
 
 This tool implements Phase 1 of an external methodology. Its normative source is
-`codebase-agentic-readiness-framework` (see the [Phased Approach](https://github.com/Nistapp/codebase-agentic-readiness-framework/blob/main/brownfield-legacy/Phased-Approach.md)).
+the codebase agentic-readiness framework at the root of this repository (see the [Phased Approach](../../../../brownfield-legacy/Phased-Approach.md)).
 Where the two disagree, the framework wins and this tool has a defect.
 
-Local checkout: `~/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework` (or any clone —
-`--framework <path>` points the rule-anchor check at it).
+The framework is the root of this repository (`../..` from the tool's directory). `--framework <path>` points
+the rule-anchor check at a different checkout.

@@ -189,4 +189,4 @@ that consistency is reported as a note — review routing and scope lockdown sho
 
 - Previous: [2. The Readiness Model](02-the-readiness-model.md)
 - Implementation detail: [Check Catalogue](../contributor-deep-dive/02-check-catalogue.md)
-- Method: [Phased Approach — Phase 1](https://github.com/Nistapp/codebase-agentic-readiness-framework/blob/main/brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)
+- Method: [Phased Approach — Phase 1](../../../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)

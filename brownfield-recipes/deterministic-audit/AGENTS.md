@@ -73,7 +73,7 @@ Agents MUST respect the following structural rules.
 3. **No third-party dependency.** `audit/` and `tools/` import from the standard library only. A data file
    cannot ship inside a `.pyz` via `Path(__file__)` — that is why `variants.py` is code, and it stays code.
 4. **The framework is normative.** Where this tool's docs and
-   `codebase-agentic-readiness-framework` disagree, **the framework wins and this tool has a defect**.
+   the framework (the root of this repository, [README](../../README.md)) disagree, **the framework wins and this tool has a defect**.
    Resolve it here, never by weakening the tool.
 5. **Findings carry evidence.** No verdict without the evidence that produced it. `UNKNOWN` is used when
    evidence cannot be gathered — it is never upgraded to `PASS` for convenience.
@@ -184,9 +184,9 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 ## 7. Git Conventions
 
 > [!NOTE]
-> This repository is **not yet a git repository**. `git init` happens only on KC's explicit instruction
-> (handoff §6.5). The first commit is the doc set + code + tests together, with `.gitignore` covering
-> `dist/` and `artefacts/`.
+> This tool now lives inside the framework repository, under `brownfield-recipes/deterministic-audit/`, and
+> its original history is preserved there. Branches and commits follow the repository's own conventions; the
+> bullets below describe this tool's own conventions.
 
 - **Branching (intended):** `main` = production, `dev` = active development, feature branches
   `feat/<slug>`, `fix/<slug>`, `refactor/<slug>`. PRs to `main` originate from `dev`.
@@ -212,7 +212,8 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 - **Definition of done:** when a change alters a public interface, observable behaviour, architecture, a
   check's semantics, or an ADR, update the affected documentation pages, their source line anchors, and the
   ADR index **in the same change set**. Pure internal refactors with no documentation impact are exempt.
-- **No restating the framework:** `codebase-agentic-readiness-framework` is the external source of truth.
+- **No restating the framework:** the framework at the root of this repository ([README](../../README.md)) is
+  the source of truth.
   Cite it by phase and section and link to it; never copy its prose into `docs/`.
 - **Empirical grounding:** never document a check as implemented while it exists only in the catalogue. The
   catalogue is the design; the implementation status column is the fact.

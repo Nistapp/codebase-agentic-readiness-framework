@@ -16,6 +16,7 @@ __pycache__/
 # reports produced by running the audit
 /audit-report.json
 /audit-report.md
+/audit-out/
 
 # probe and scan scratch
 /.audit-cache/

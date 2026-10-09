@@ -18,7 +18,7 @@ it. A tool that hands over an ordered list of blockers teaches them what to fix 
 the remaining items stop mattering.
 
 The audit is anchored to **Phase 1 (Bootstrap)** of the [agentic-readiness
-framework](https://github.com/Nistapp/codebase-agentic-readiness-framework/blob/main/brownfield-legacy/Phased-Approach.md)
+framework](../../../../../brownfield-legacy/Phased-Approach.md)
 — the phase the framework itself calls a dramatic improvement on its own. Later phases are reported as
 presence-level signals and never scored.
 
@@ -80,7 +80,7 @@ trusting.
 
 | Tool | Role |
 |---|---|
-| `codebase-agentic-readiness-framework` | The methodology. This audit implements Phase 1 of it. |
+| [The framework](../../../../../README.md) (the root of this repository) | The methodology. This audit implements Phase 1 of it. |
 | `python-agentic-bootstrap` | Creates a *greenfield* project that is Phase-1-complete on commit #1. Also this audit's positive fixture. |
 | `python-agentic-audit` (this) | Measures a *brownfield* project's distance from the same bar. |
 | `codebase-memory-mcp` | The index both the audit probes and the agents query. |

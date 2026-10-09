@@ -10,7 +10,7 @@
 
 - [ ] Python 3.11+ on `PATH` (standard library only — nothing to install)
 - [ ] Read access to the target repository
-- [ ] A local checkout of `codebase-agentic-readiness-framework` (for rule anchors)
+- [ ] The framework checkout (rule anchors resolve against the root of this repository)
 - [ ] Know whether the target is a git repository and whether its working tree is dirty
 
 ---
@@ -34,7 +34,7 @@ you are citing.
 
 ```bash
 python3 -m audit --list-checks
-python3 -m audit --verify-rules --framework ~/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework
+python3 -m audit --verify-rules --framework ../..
 ```
 
 `--verify-rules` resolves every rule pack's framework anchor. If a heading has moved, it fails here rather than

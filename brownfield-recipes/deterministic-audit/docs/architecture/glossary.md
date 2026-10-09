@@ -7,7 +7,7 @@ consistently. Terms inherited from the readiness framework are cited, not redefi
 
 | Term | Definition |
 |---|---|
-| **Agentic Readiness** | The state in which a codebase gives AI coding agents reliable context, bounded scope, a deterministic verification loop, and executable quality gates. Defined by the framework: [Phases 1–4](https://github.com/Nistapp/codebase-agentic-readiness-framework/blob/main/brownfield-legacy/Phased-Approach.md). |
+| **Agentic Readiness** | The state in which a codebase gives AI coding agents reliable context, bounded scope, a deterministic verification loop, and executable quality gates. Defined by the framework: [Phases 1–4](../../../../brownfield-legacy/Phased-Approach.md). |
 | **Phase (1–4)** | The mandatory, sequential foundation phases of the readiness framework: Bootstrap, Source Docs, Agent Docs, Contracts & Baselines. Phase 1 is the scope of this audit's score. |
 | **Phase (5–7)** | Post-readiness roadmap activities (Refactoring, Human Docs, Spec-Driven Development). Out of scope for this tool — reported, never scored. |
 | **Tier** | How a check obtains its evidence. **Tier A** — artifact existence. **Tier B** — content and cross-artifact invariants (parse/regex/set-difference). **Tier C** — executed probes against the target. |

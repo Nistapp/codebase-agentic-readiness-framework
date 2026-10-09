@@ -34,15 +34,15 @@ Two axes are always reported separately: **phase** (which framework requirement 
 ## Quick Start
 
 ```bash
-# from a checkout of this repo — no install step, no dependencies
-python3 -m audit <target> --format both --out ../audit-out/<name>
+# from brownfield-recipes/deterministic-audit/ — no install step, no dependencies
+python3 -m audit <target> --format both --out ./audit-out/<name>
 
 # add executed probes, explicitly and with a time budget
 python3 -m audit <target> --run-gates --allow-probe check --allow-probe test --timeout 600
 
 # what is implemented right now, and whether every rule still traces to the framework
 python3 -m audit --list-checks
-python3 -m audit --verify-rules --framework ~/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework
+python3 -m audit --verify-rules --framework ../..
 
 # tests, and the single-file distributable
 python3 -m unittest discover -s tests
@@ -120,7 +120,7 @@ All documentation follows [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md), which is
 | Dependency | Role |
 |---|---|
 | Python 3.11+ | Runtime. Standard library only — nothing to install, so the audit runs before the target's toolchain exists. |
-| `codebase-agentic-readiness-framework` | The methodology. Rule packs cite its Phase 1 anchors; where the two disagree, the framework wins. |
+| [The framework](../../README.md) (the root of this repository) | The methodology. Rule packs cite its Phase 1 anchors; where the two disagree, the framework wins. |
 | `codebase-memory-mcp` | The index the audit probes and the agents query. |
 
 ---

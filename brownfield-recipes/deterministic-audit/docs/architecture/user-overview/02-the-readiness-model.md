@@ -12,7 +12,7 @@ The report answers a single question: **how far is this repository from Phase 1 
 
 | Concept | Rule |
 |---|---|
-| Scored | Phase 1 (Bootstrap) requirements only, as defined by the framework's [Phase 1](https://github.com/Nistapp/codebase-agentic-readiness-framework/blob/main/brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-). |
+| Scored | Phase 1 (Bootstrap) requirements only, as defined by the framework's [Phase 1](../../../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-). |
 | Reported, never scored | Phases 2–4 presence signals, and the hygiene set (README, CODEOWNERS, release process, contribution templates). These are **numberless**. |
 | Presented separately | Attested items — properties no static scan can settle. |
 | Never reported | Anything the scan did not look at. Silence is not a pass. |
