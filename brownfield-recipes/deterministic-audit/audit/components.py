@@ -30,7 +30,7 @@ class Component:
 
     name: str
     path: str
-    declared_by: str            # which manifest declared it
+    declared_by: str  # which manifest declared it
     manifest: str | None = None  # the component's own build manifest, if present
 
     @property
@@ -57,8 +57,15 @@ class ComponentModel:
 
 
 def _manifest_in(inv: Inventory, prefix: str) -> str | None:
-    for candidate in ("package.json", "pyproject.toml", "pom.xml", "build.gradle",
-                      "build.gradle.kts", "Cargo.toml", "go.mod"):
+    for candidate in (
+        "package.json",
+        "pyproject.toml",
+        "pom.xml",
+        "build.gradle",
+        "build.gradle.kts",
+        "Cargo.toml",
+        "go.mod",
+    ):
         rel = f"{prefix}/{candidate}".lstrip("./") if prefix != "." else candidate
         if inv.has(rel):
             return rel
@@ -75,10 +82,10 @@ def _expand_workspace_glob(inv: Inventory, pattern: str) -> list[str]:
         prefix = f"{parent}/" if parent else ""
         seen: set[str] = set()
         for rel in inv.paths():
-            if rel.startswith(prefix) and "/" not in rel[len(prefix):]:
+            if rel.startswith(prefix) and "/" not in rel[len(prefix) :]:
                 seen.add(prefix.rstrip("/"))
             elif rel.startswith(prefix):
-                child = rel[len(prefix):].split("/", 1)[0]
+                child = rel[len(prefix) :].split("/", 1)[0]
                 seen.add(f"{prefix}{child}")
         return sorted(seen)
     return [pattern] if any(r == pattern or r.startswith(pattern + "/") for r in inv.paths()) else []
@@ -86,8 +93,7 @@ def _expand_workspace_glob(inv: Inventory, pattern: str) -> list[str]:
 
 def detect_components(inv: Inventory) -> ComponentModel:
     model = ComponentModel()
-    model.components.append(Component(name="(root)", path=".", declared_by="implicit",
-                                      manifest=_manifest_in(inv, ".")))
+    model.components.append(Component(name="(root)", path=".", declared_by="implicit", manifest=_manifest_in(inv, ".")))
 
     # -- Node / TypeScript workspaces ------------------------------------
     text = inv.read("package.json")
@@ -99,9 +105,14 @@ def detect_components(inv: Inventory) -> ComponentModel:
         globs = workspaces.get("packages", []) if isinstance(workspaces, dict) else (workspaces or [])
         for glob in globs if isinstance(globs, list) else []:
             for path in _expand_workspace_glob(inv, str(glob)):
-                model.components.append(Component(name=PurePosixPath(path).name, path=path,
-                                                  declared_by="package.json:workspaces",
-                                                  manifest=_manifest_in(inv, path)))
+                model.components.append(
+                    Component(
+                        name=PurePosixPath(path).name,
+                        path=path,
+                        declared_by="package.json:workspaces",
+                        manifest=_manifest_in(inv, path),
+                    )
+                )
 
     # -- pnpm-workspace.yaml (minimal list parse; no YAML parser in the stdlib) --
     pnpm = inv.read("pnpm-workspace.yaml")
@@ -110,18 +121,27 @@ def detect_components(inv: Inventory) -> ComponentModel:
         for glob in globs:
             for path in _expand_workspace_glob(inv, glob):
                 if not any(c.path == path for c in model.components):
-                    model.components.append(Component(name=PurePosixPath(path).name, path=path,
-                                                      declared_by="pnpm-workspace.yaml",
-                                                      manifest=_manifest_in(inv, path)))
+                    model.components.append(
+                        Component(
+                            name=PurePosixPath(path).name,
+                            path=path,
+                            declared_by="pnpm-workspace.yaml",
+                            manifest=_manifest_in(inv, path),
+                        )
+                    )
 
     # -- Maven multi-module ----------------------------------------------
     pom = inv.read("pom.xml")
     if pom:
         for module in re.findall(r"<module>\s*([^<\s]+)\s*</module>", pom):
-            model.components.append(Component(name=module.strip("./").split("/")[-1],
-                                              path=module.strip("./"),
-                                              declared_by="pom.xml:<modules>",
-                                              manifest=_manifest_in(inv, module.strip("./"))))
+            model.components.append(
+                Component(
+                    name=module.strip("./").split("/")[-1],
+                    path=module.strip("./"),
+                    declared_by="pom.xml:<modules>",
+                    manifest=_manifest_in(inv, module.strip("./")),
+                )
+            )
 
     # -- Gradle subprojects ----------------------------------------------
     for settings in ("settings.gradle", "settings.gradle.kts"):
@@ -132,18 +152,25 @@ def detect_components(inv: Inventory) -> ComponentModel:
             for quoted in re.findall(r"['\"]([^'\"]+)['\"]", raw):
                 path = quoted.replace(":", "/").strip("/")
                 if path and not any(c.path == path for c in model.components):
-                    model.components.append(Component(name=path.split("/")[-1], path=path,
-                                                      declared_by=f"{settings}:include",
-                                                      manifest=_manifest_in(inv, path)))
+                    model.components.append(
+                        Component(
+                            name=path.split("/")[-1],
+                            path=path,
+                            declared_by=f"{settings}:include",
+                            manifest=_manifest_in(inv, path),
+                        )
+                    )
 
     # -- go.work / Cargo workspace ---------------------------------------
     gowork = inv.read("go.work")
     if gowork:
         for path in re.findall(r"^\s*(?:use\s+)?\(?\s*(\./[^\s)]+)", gowork, re.MULTILINE):
             path = path.strip("./")
-            model.components.append(Component(name=path.split("/")[-1], path=path,
-                                              declared_by="go.work:use",
-                                              manifest=_manifest_in(inv, path)))
+            model.components.append(
+                Component(
+                    name=path.split("/")[-1], path=path, declared_by="go.work:use", manifest=_manifest_in(inv, path)
+                )
+            )
 
     cargo = inv.read("Cargo.toml")
     if cargo:
@@ -151,9 +178,14 @@ def detect_components(inv: Inventory) -> ComponentModel:
         quoted_members = re.findall(r"['\"]([^'\"]+)['\"]", members.group(1)) if members else []
         for quoted in quoted_members:
             for path in _expand_workspace_glob(inv, quoted):
-                model.components.append(Component(name=PurePosixPath(path).name, path=path,
-                                                  declared_by="Cargo.toml:[workspace]",
-                                                  manifest=_manifest_in(inv, path)))
+                model.components.append(
+                    Component(
+                        name=PurePosixPath(path).name,
+                        path=path,
+                        declared_by="Cargo.toml:[workspace]",
+                        manifest=_manifest_in(inv, path),
+                    )
+                )
 
     # -- Candidate components (informational only) ------------------------
     declared_paths = {c.path for c in model.components}

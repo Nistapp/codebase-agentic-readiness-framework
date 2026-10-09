@@ -19,9 +19,9 @@ from dataclasses import dataclass, field
 class Severity(str, enum.Enum):
     """Effect on agent work, independent of framework phase. Ordering is meaningful."""
 
-    BLOCKER = "BLOCKER"      # agent work is impossible, unsafe, or unverifiable
-    DEGRADER = "DEGRADER"    # agent work is possible but unreliable or wasteful
-    COSMETIC = "COSMETIC"    # hygiene; changes little
+    BLOCKER = "BLOCKER"  # agent work is impossible, unsafe, or unverifiable
+    DEGRADER = "DEGRADER"  # agent work is possible but unreliable or wasteful
+    COSMETIC = "COSMETIC"  # hygiene; changes little
 
     @property
     def rank(self) -> int:
@@ -41,8 +41,8 @@ class Verdict(str, enum.Enum):
     PASS = "PASS"
     PARTIAL = "PARTIAL"
     FAIL = "FAIL"
-    UNKNOWN = "UNKNOWN"      # ran, but could not gather evidence — never counted as a pass
-    ATTEST = "ATTEST"        # not statically verifiable; requires a human
+    UNKNOWN = "UNKNOWN"  # ran, but could not gather evidence — never counted as a pass
+    ATTEST = "ATTEST"  # not statically verifiable; requires a human
 
 
 @dataclass(frozen=True)

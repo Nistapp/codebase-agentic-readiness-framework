@@ -56,11 +56,21 @@ from audit.stack import PACKAGE_MANAGERS, extract_npm_scripts, parse_makefile_ta
 from audit.rules.payloads import EnvKeys, Payload
 
 
-def _outcome(spec, verdict: Verdict, summary: str = "",
-             findings: list[Finding] | None = None,
-             data: Payload | None = None) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=summary, data=data, findings=findings or [])
+def _outcome(
+    spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
+) -> CheckOutcome:
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=summary,
+        data=data,
+        findings=findings or [],
+    )
 
 
 def _unknown(spec, reason: str) -> CheckOutcome:
@@ -131,15 +141,21 @@ def check_exec01(*, spec, target, inventory, stack, components, session) -> Chec
             pinned.append(f"{ecosystem} ({', '.join(evidence)})")
             continue
         unpinned.append(ecosystem)
-        findings.append(Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-            statement=statement(
-                f"reproduce the {ecosystem} toolchain",
-                f"the detected {ecosystem} project pins no toolchain version"),
-            remediation=f"Commit the pin appropriate to {ecosystem} — "
-                        f"{', '.join(_PIN_FILES.get(ecosystem) or ('.tool-versions',))} "
-                        f"— so the agent's runtime is the repository's, not the host's.",
-        ))
+        findings.append(
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement(
+                    f"reproduce the {ecosystem} toolchain",
+                    f"the detected {ecosystem} project pins no toolchain version",
+                ),
+                remediation=f"Commit the pin appropriate to {ecosystem} — "
+                f"{', '.join(_PIN_FILES.get(ecosystem) or ('.tool-versions',))} "
+                f"— so the agent's runtime is the repository's, not the host's.",
+            )
+        )
 
     if findings:
         return _outcome(spec, Verdict.FAIL, f"unpinned: {', '.join(unpinned)}", findings)
@@ -163,8 +179,7 @@ _ECOSYSTEM_MANAGERS: dict[str, tuple[str, ...]] = {
 
 
 def _lockfiles_for(ecosystem: str) -> list[str]:
-    return [f for manager in _ECOSYSTEM_MANAGERS.get(ecosystem, ())
-            for f in PACKAGE_MANAGERS.get(manager, ())]
+    return [f for manager in _ECOSYSTEM_MANAGERS.get(ecosystem, ()) for f in PACKAGE_MANAGERS.get(manager, ())]
 
 
 def _dependency_name(spec_text: str) -> str | None:
@@ -219,10 +234,8 @@ def _node_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
             deps |= set(legacy)
         return deps
     if lockfile == "pnpm-lock.yaml":
-        deps = set(re.findall(
-            r"(?m)^\s{2,}'?((?:@[^/'\s]+/)?[A-Za-z0-9._-]+)@[^'\s:]+'?\s*:", text))
-        deps |= set(re.findall(
-            r"(?m)^\s{4,}'?((?:@[^/'\s]+/)?[A-Za-z0-9._-]+)'?:\s*$", text))
+        deps = set(re.findall(r"(?m)^\s{2,}'?((?:@[^/'\s]+/)?[A-Za-z0-9._-]+)@[^'\s:]+'?\s*:", text))
+        deps |= set(re.findall(r"(?m)^\s{4,}'?((?:@[^/'\s]+/)?[A-Za-z0-9._-]+)'?:\s*$", text))
         return deps or None
     if lockfile == "yarn.lock":
         deps = set(re.findall(r"(?m)^\"?((?:@[^/\"]+/)?[A-Za-z0-9._-]+)@", text))
@@ -241,8 +254,7 @@ def _python_manifest_deps(inv: Inventory) -> set[str] | None:
                 name = _dependency_name(item)
                 if name:
                     deps.add(name)
-        for block in re.finditer(
-                r"(?ms)^\[tool\.poetry\.dependencies\]\s*\n(.*?)(?=^\[|\Z)", text):
+        for block in re.finditer(r"(?ms)^\[tool\.poetry\.dependencies\]\s*\n(.*?)(?=^\[|\Z)", text):
             for line in block.group(1).splitlines():
                 match = re.match(r"^([A-Za-z0-9_.-]+)\s*=", line.strip())
                 if match and match.group(1).lower() != "python":
@@ -381,8 +393,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
 
     tracked = tracked_files(target.path)
     if tracked is None:
-        return _unknown(spec, "git could not report tracked files, so the lockfile's tracked "
-                              "state is unknown")
+        return _unknown(spec, "git could not report tracked files, so the lockfile's tracked state is unknown")
 
     findings: list[Finding] = []
     verified: list[str] = []
@@ -391,41 +402,57 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
         candidates = [f for f in _lockfiles_for(ecosystem) if inventory.has(f)]
         tracked_candidates = sorted(f for f in candidates if f in tracked)
         if not candidates:
-            findings.append(Finding(
-                check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-                statement=statement(
-                    "install identical dependencies on every run",
-                    f"the {ecosystem} project has no lockfile "
-                    f"({', '.join(_lockfiles_for(ecosystem))}), so a fresh install resolves "
-                    f"whatever versions are current"),
-                remediation="Generate the lockfile with the project's package manager and commit it.",
-            ))
+            findings.append(
+                Finding(
+                    check=spec.id,
+                    severity=spec.severity,
+                    phase=spec.phase,
+                    verdict=Verdict.FAIL,
+                    statement=statement(
+                        "install identical dependencies on every run",
+                        f"the {ecosystem} project has no lockfile "
+                        f"({', '.join(_lockfiles_for(ecosystem))}), so a fresh install resolves "
+                        f"whatever versions are current",
+                    ),
+                    remediation="Generate the lockfile with the project's package manager and commit it.",
+                )
+            )
             continue
         if not tracked_candidates:
-            findings.append(Finding(
-                check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-                statement=statement(
-                    "install identical dependencies on every run",
-                    f"{', '.join(sorted(candidates))} exists but is not tracked, so a fresh "
-                    f"checkout does not get it"),
-                evidence=[Evidence(p) for p in sorted(candidates)],
-                remediation="Commit the lockfile; add it to .gitignore only if the team has "
-                            "deliberately chosen floating dependencies.",
-            ))
+            findings.append(
+                Finding(
+                    check=spec.id,
+                    severity=spec.severity,
+                    phase=spec.phase,
+                    verdict=Verdict.FAIL,
+                    statement=statement(
+                        "install identical dependencies on every run",
+                        f"{', '.join(sorted(candidates))} exists but is not tracked, so a fresh "
+                        f"checkout does not get it",
+                    ),
+                    evidence=[Evidence(p) for p in sorted(candidates)],
+                    remediation="Commit the lockfile; add it to .gitignore only if the team has "
+                    "deliberately chosen floating dependencies.",
+                )
+            )
             continue
         lockfile = tracked_candidates[0]
         state, extras = _lock_consistency(inventory, ecosystem, lockfile)
         if state == "mismatch":
-            findings.append(Finding(
-                check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-                statement=statement(
-                    "install identical dependencies on every run",
-                    f"{lockfile} is tracked but omits manifest dependencies: "
-                    f"{', '.join(sorted(extras)[:12])}"),
-                evidence=[Evidence(lockfile, note="lockfile out of step with the manifest")],
-                remediation="Re-run the package manager's install/lock step and commit the "
-                            "updated lockfile.",
-            ))
+            findings.append(
+                Finding(
+                    check=spec.id,
+                    severity=spec.severity,
+                    phase=spec.phase,
+                    verdict=Verdict.FAIL,
+                    statement=statement(
+                        "install identical dependencies on every run",
+                        f"{lockfile} is tracked but omits manifest dependencies: {', '.join(sorted(extras)[:12])}",
+                    ),
+                    evidence=[Evidence(lockfile, note="lockfile out of step with the manifest")],
+                    remediation="Re-run the package manager's install/lock step and commit the updated lockfile.",
+                )
+            )
         elif state == "unverified":
             unverified.append(lockfile)
         else:
@@ -437,10 +464,15 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
         verdict = Verdict.PARTIAL
     else:
         verdict = Verdict.PASS
-    detail = "; ".join(filter(None, [
-        f"tracked: {', '.join(verified)}" if verified else "",
-        f"consistency unverified: {', '.join(unverified)}" if unverified else "",
-    ]))
+    detail = "; ".join(
+        filter(
+            None,
+            [
+                f"tracked: {', '.join(verified)}" if verified else "",
+                f"consistency unverified: {', '.join(unverified)}" if unverified else "",
+            ],
+        )
+    )
     return _outcome(spec, verdict, detail, findings)
 
 
@@ -448,9 +480,18 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
 # EXEC-03 — non-interactive setup path
 # ===========================================================================
 
-_SETUP_FILES = (".devcontainer/devcontainer.json", ".devcontainer.json",
-                "docker-compose.yml", "docker-compose.yaml", "compose.yml", "compose.yaml",
-                "Dockerfile", "setup.sh", "bootstrap.sh", "dev-setup.sh")
+_SETUP_FILES = (
+    ".devcontainer/devcontainer.json",
+    ".devcontainer.json",
+    "docker-compose.yml",
+    "docker-compose.yaml",
+    "compose.yml",
+    "compose.yaml",
+    "Dockerfile",
+    "setup.sh",
+    "bootstrap.sh",
+    "dev-setup.sh",
+)
 _DOC_FILES = ("README.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md")
 _SETUP_TARGETS = ("setup", "bootstrap", "install", "dev", "dev-setup")
 
@@ -472,18 +513,25 @@ _INSTALL_SUBCOMMANDS: dict[str, frozenset[str]] = {
     "pnpm": frozenset({"install", "i"}),
     "yarn": frozenset({"install"}),
     "bun": frozenset({"install"}),
-    "pip": frozenset({"install"}), "pip3": frozenset({"install"}),
-    "poetry": frozenset({"install"}), "pipenv": frozenset({"install", "sync"}),
+    "pip": frozenset({"install"}),
+    "pip3": frozenset({"install"}),
+    "poetry": frozenset({"install"}),
+    "pipenv": frozenset({"install", "sync"}),
     "uv": frozenset({"sync", "pip"}),
-    "bundle": frozenset({"install"}), "gem": frozenset({"install"}),
+    "bundle": frozenset({"install"}),
+    "gem": frozenset({"install"}),
     "composer": frozenset({"install"}),
-    "make": frozenset(_SETUP_TARGETS), "task": frozenset(_SETUP_TARGETS),
+    "make": frozenset(_SETUP_TARGETS),
+    "task": frozenset(_SETUP_TARGETS),
     "cargo": frozenset({"fetch", "build"}),
     "go": frozenset({"mod", "build", "install"}),
     "dotnet": frozenset({"restore"}),
-    "gradle": frozenset({"build", "assemble"}), "gradlew": frozenset({"build", "assemble"}),
-    "mvn": frozenset({"install", "package"}), "mvnw": frozenset({"install", "package"}),
-    "docker": frozenset({"compose", "build"}), "docker-compose": frozenset({"up", "build"}),
+    "gradle": frozenset({"build", "assemble"}),
+    "gradlew": frozenset({"build", "assemble"}),
+    "mvn": frozenset({"install", "package"}),
+    "mvnw": frozenset({"install", "package"}),
+    "docker": frozenset({"compose", "build"}),
+    "docker-compose": frozenset({"up", "build"}),
     "nvm": frozenset({"use"}),
 }
 
@@ -530,34 +578,54 @@ def check_exec03(*, spec, target, inventory, stack, components, session) -> Chec
     doc_text = "\n".join(filter(None, (inventory.read(n) for n in _DOC_FILES)))
     documented_commands = _documented_setup(inventory)
     if documented_commands:
-        return _outcome(spec, Verdict.PASS,
-                        f"documented setup command: {documented_commands[0]}")
+        return _outcome(spec, Verdict.PASS, f"documented setup command: {documented_commands[0]}")
 
     signals = _setup_signals(inventory)
     documented = [s for s in signals if _is_documented(s, doc_text)]
     if documented:
-        return _outcome(spec, Verdict.PASS,
-                        f"documented setup artifact: {', '.join(documented)}")
+        return _outcome(spec, Verdict.PASS, f"documented setup artifact: {', '.join(documented)}")
     if signals:
-        return _outcome(spec, Verdict.PARTIAL, f"present but undocumented: {', '.join(signals)}",
-                        [Finding(
-                            check=spec.id, severity=spec.severity, phase=spec.phase,
-                            verdict=Verdict.PARTIAL,
-                            statement=statement(
-                                "provision the environment from the repository alone",
-                                f"{', '.join(signals)} exists but no doc names it"),
-                            evidence=[Evidence(s) for s in signals],
-                            remediation="Reference the setup path in README.md or AGENTS.md so an "
-                                        "agent finds it without guessing.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"present but undocumented: {', '.join(signals)}",
+            [
+                Finding(
+                    check=spec.id,
+                    severity=spec.severity,
+                    phase=spec.phase,
+                    verdict=Verdict.PARTIAL,
+                    statement=statement(
+                        "provision the environment from the repository alone",
+                        f"{', '.join(signals)} exists but no doc names it",
+                    ),
+                    evidence=[Evidence(s) for s in signals],
+                    remediation="Reference the setup path in README.md or AGENTS.md so an "
+                    "agent finds it without guessing.",
+                )
+            ],
+        )
 
-    return _outcome(spec, Verdict.FAIL, "no setup path found", [Finding(
-        check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-        statement=statement(
-            "prepare the environment non-interactively",
-            "no devcontainer, compose file, Dockerfile, setup target/script, or documented "
-            "install command exists"),
-        remediation="Add a committed setup path (a devcontainer, compose file, or a documented "
-                    "install command in README.md) that runs with no prompts.")])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no setup path found",
+        [
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement(
+                    "prepare the environment non-interactively",
+                    "no devcontainer, compose file, Dockerfile, setup target/script, or documented "
+                    "install command exists",
+                ),
+                remediation="Add a committed setup path (a devcontainer, compose file, or a documented "
+                "install command in README.md) that runs with no prompts.",
+            )
+        ],
+    )
 
 
 # ===========================================================================
@@ -585,22 +653,51 @@ _SHELL_ENV_BASENAMES = ("Dockerfile",)
 
 #: Conventional host/CI/test variables an agent never needs a template for. Kept in code so the
 #: allow-list is deterministic and reviewable rather than a per-target heuristic.
-_ENV_ALLOWLIST: frozenset[str] = frozenset({
-    "CI", "HOME", "PATH", "PWD", "SHELL", "USER", "LANG", "LC_ALL", "TZ", "TERM", "TMPDIR",
-    "NODE_ENV", "DEBUG", "LOG_LEVEL", "LOG_FORMAT", "VERBOSE", "PORT",
-    "PYTHONPATH", "PYTHONUNBUFFERED", "VIRTUAL_ENV", "PYTHONHASHSEED",
-    "FORCE_COLOR", "NO_COLOR", "COLUMNS", "LINES",
-})
+_ENV_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "CI",
+        "HOME",
+        "PATH",
+        "PWD",
+        "SHELL",
+        "USER",
+        "LANG",
+        "LC_ALL",
+        "TZ",
+        "TERM",
+        "TMPDIR",
+        "NODE_ENV",
+        "DEBUG",
+        "LOG_LEVEL",
+        "LOG_FORMAT",
+        "VERBOSE",
+        "PORT",
+        "PYTHONPATH",
+        "PYTHONUNBUFFERED",
+        "VIRTUAL_ENV",
+        "PYTHONHASHSEED",
+        "FORCE_COLOR",
+        "NO_COLOR",
+        "COLUMNS",
+        "LINES",
+    }
+)
 _ENV_ALLOW_PREFIXES: tuple[str, ...] = (
-    "GITHUB_", "CI_", "RUNNER_", "ACTIONS_", "npm_config_", "NPM_CONFIG_",
-    "VITEST_", "PYTEST_", "COVERAGE_",
+    "GITHUB_",
+    "CI_",
+    "RUNNER_",
+    "ACTIONS_",
+    "npm_config_",
+    "NPM_CONFIG_",
+    "VITEST_",
+    "PYTEST_",
+    "COVERAGE_",
 )
 _ENV_EXAMPLE_FILES = (".env.example", ".env.sample", ".env.template", "env.example")
 
 
 def _is_shell_env_file(rel: str) -> bool:
-    return (rel.endswith(_SHELL_ENV_SUFFIXES)
-            or rel.rsplit("/", 1)[-1] in _SHELL_ENV_BASENAMES)
+    return rel.endswith(_SHELL_ENV_SUFFIXES) or rel.rsplit("/", 1)[-1] in _SHELL_ENV_BASENAMES
 
 
 def _referenced_env_keys(inv: Inventory) -> set[str]:
@@ -640,23 +737,35 @@ def check_exec04(*, spec, target, inventory, stack, components, session) -> Chec
     referenced = _referenced_env_keys(inventory)
     declared, files = _declared_env_keys(inventory)
     missing = sorted(k for k in referenced - declared if not _env_allowed(k))
-    keys = EnvKeys(referenced=tuple(sorted(referenced)), missing=tuple(missing),
-                   templates=tuple(files))
+    keys = EnvKeys(referenced=tuple(sorted(referenced)), missing=tuple(missing), templates=tuple(files))
 
     if not missing:
-        detail = (f"{len(referenced)} referenced key(s) declared"
-                  if referenced else "no environment keys referenced")
+        detail = f"{len(referenced)} referenced key(s) declared" if referenced else "no environment keys referenced"
         return _outcome(spec, Verdict.PASS, detail, data=keys)
 
-    because = (f"{len(missing)} referenced key(s) are absent from "
-               f"{', '.join(files) if files else 'any committed example file'}: "
-               f"{', '.join(missing[:12])}")
-    return _outcome(spec, Verdict.FAIL, because, [Finding(
-        check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-        statement=statement("know every variable the code needs before running it", because),
-        evidence=[Evidence(f) for f in files] or [Evidence("(no example file)")],
-        remediation="Add the missing keys to .env.example (values redacted) so the environment "
-                    "can be provisioned without reading the source.")], data=keys)
+    because = (
+        f"{len(missing)} referenced key(s) are absent from "
+        f"{', '.join(files) if files else 'any committed example file'}: "
+        f"{', '.join(missing[:12])}"
+    )
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        because,
+        [
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement("know every variable the code needs before running it", because),
+                evidence=[Evidence(f) for f in files] or [Evidence("(no example file)")],
+                remediation="Add the missing keys to .env.example (values redacted) so the environment "
+                "can be provisioned without reading the source.",
+            )
+        ],
+        data=keys,
+    )
 
 
 # ===========================================================================
@@ -664,8 +773,13 @@ def check_exec04(*, spec, target, inventory, stack, components, session) -> Chec
 # ===========================================================================
 
 _GENERATED_HEADER_MARKERS = (
-    "@generated", "do not edit", "generated by", "code generated",
-    "auto-generated", "autogenerated", "this file is generated",
+    "@generated",
+    "do not edit",
+    "generated by",
+    "code generated",
+    "auto-generated",
+    "autogenerated",
+    "this file is generated",
 )
 
 
@@ -679,62 +793,241 @@ def _has_generated_header(text: str | None) -> bool:
 def check_exec05(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     tracked = tracked_files(target.path)
     if tracked is None:
-        return _unknown(spec, "git could not report tracked files, so generated-file state is "
-                              "unknown")
+        return _unknown(spec, "git could not report tracked files, so generated-file state is unknown")
 
-    generated = sorted(f.rel for f in inventory.files
-                       if f.kind is Kind.GENERATED and f.rel in tracked)
+    generated = sorted(f.rel for f in inventory.files if f.kind is Kind.GENERATED and f.rel in tracked)
     if not generated:
         return _outcome(spec, Verdict.PASS, "no tracked generated or vendored paths")
 
     offenders = [rel for rel in generated if not _has_generated_header(inventory.read(rel))]
     if not offenders:
-        return _outcome(spec, Verdict.PASS,
-                        f"{len(generated)} tracked generated path(s) carry a generated header")
+        return _outcome(spec, Verdict.PASS, f"{len(generated)} tracked generated path(s) carry a generated header")
 
-    because = (f"{len(offenders)} generated/vendored path(s) are tracked without a "
-               f"generated-file header: {', '.join(offenders[:12])}")
-    return _outcome(spec, Verdict.FAIL, because, [Finding(
-        check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-        statement=statement("edit tracked source without it being overwritten", because),
-        evidence=[Evidence(p) for p in offenders[:12]],
-        remediation="Untrack the generated output and ignore it, or add a generated-file header "
-                    "(`@generated` / `DO NOT EDIT`) so agents know not to edit it.")])
+    because = (
+        f"{len(offenders)} generated/vendored path(s) are tracked without a "
+        f"generated-file header: {', '.join(offenders[:12])}"
+    )
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        because,
+        [
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement("edit tracked source without it being overwritten", because),
+                evidence=[Evidence(p) for p in offenders[:12]],
+                remediation="Untrack the generated output and ignore it, or add a generated-file header "
+                "(`@generated` / `DO NOT EDIT`) so agents know not to edit it.",
+            )
+        ],
+    )
 
 
 # ===========================================================================
 # EXEC-06 — documented commands resolve
 # ===========================================================================
 
-_KNOWN_TOOLS = frozenset({
-    "python", "python3", "pip", "pip3", "poetry", "uv", "pipenv", "pytest", "tox", "ruff",
-    "black", "mypy", "pyright", "flake8", "pylint", "isort",
-    "node", "npm", "npx", "pnpm", "yarn", "bun", "corepack", "tsc", "vitest", "jest", "eslint",
-    "biome", "prettier", "shx", "husky", "lint-staged", "commitlint", "semgrep",
-    "go", "gofmt", "golangci-lint",
-    "cargo", "rustc", "rustup", "clippy", "rustfmt",
-    "java", "javac", "mvn", "gradle", "dotnet",
-    "ruby", "gem", "bundle", "rake", "php", "composer",
-    "git", "gh", "docker", "docker-compose", "podman", "kubectl", "helm", "terraform",
-    "aws", "az", "gcloud",
-    "make", "task", "just", "cmake", "ninja", "bash", "sh", "zsh", "fish", "shellcheck",
-    "curl", "wget", "jq", "yq", "tar", "zip", "unzip", "gzip", "openssl", "ssh", "scp", "rsync",
-    "mkdir", "cp", "mv", "rm", "ls", "cat", "touch", "chmod", "ln", "sed", "awk", "grep", "find",
-    "xargs", "which", "command", "env", "echo", "printf", "head", "tail", "tee", "sort", "uniq",
-    "wc", "diff", "sleep", "kill", "ps", "du", "df",
-    "nvm", "fnm", "asdf", "mise", "volta", "sdk",
-    "pre-commit", "lefthook",
-    "opencode", "claude", "codex", "gemini", "aider", "copilot", "cursor", "windsurf", "amp",
-    "crush", "pi", "goose", "audit",
-})
+_KNOWN_TOOLS = frozenset(
+    {
+        "python",
+        "python3",
+        "pip",
+        "pip3",
+        "poetry",
+        "uv",
+        "pipenv",
+        "pytest",
+        "tox",
+        "ruff",
+        "black",
+        "mypy",
+        "pyright",
+        "flake8",
+        "pylint",
+        "isort",
+        "node",
+        "npm",
+        "npx",
+        "pnpm",
+        "yarn",
+        "bun",
+        "corepack",
+        "tsc",
+        "vitest",
+        "jest",
+        "eslint",
+        "biome",
+        "prettier",
+        "shx",
+        "husky",
+        "lint-staged",
+        "commitlint",
+        "semgrep",
+        "go",
+        "gofmt",
+        "golangci-lint",
+        "cargo",
+        "rustc",
+        "rustup",
+        "clippy",
+        "rustfmt",
+        "java",
+        "javac",
+        "mvn",
+        "gradle",
+        "dotnet",
+        "ruby",
+        "gem",
+        "bundle",
+        "rake",
+        "php",
+        "composer",
+        "git",
+        "gh",
+        "docker",
+        "docker-compose",
+        "podman",
+        "kubectl",
+        "helm",
+        "terraform",
+        "aws",
+        "az",
+        "gcloud",
+        "make",
+        "task",
+        "just",
+        "cmake",
+        "ninja",
+        "bash",
+        "sh",
+        "zsh",
+        "fish",
+        "shellcheck",
+        "curl",
+        "wget",
+        "jq",
+        "yq",
+        "tar",
+        "zip",
+        "unzip",
+        "gzip",
+        "openssl",
+        "ssh",
+        "scp",
+        "rsync",
+        "mkdir",
+        "cp",
+        "mv",
+        "rm",
+        "ls",
+        "cat",
+        "touch",
+        "chmod",
+        "ln",
+        "sed",
+        "awk",
+        "grep",
+        "find",
+        "xargs",
+        "which",
+        "command",
+        "env",
+        "echo",
+        "printf",
+        "head",
+        "tail",
+        "tee",
+        "sort",
+        "uniq",
+        "wc",
+        "diff",
+        "sleep",
+        "kill",
+        "ps",
+        "du",
+        "df",
+        "nvm",
+        "fnm",
+        "asdf",
+        "mise",
+        "volta",
+        "sdk",
+        "pre-commit",
+        "lefthook",
+        "opencode",
+        "claude",
+        "codex",
+        "gemini",
+        "aider",
+        "copilot",
+        "cursor",
+        "windsurf",
+        "amp",
+        "crush",
+        "pi",
+        "goose",
+        "audit",
+    }
+)
 
-_SHELL_KEYWORDS = frozenset({
-    "cd", "export", "source", ".", "set", "unset", "alias", "if", "then", "else", "elif", "fi",
-    "for", "while", "do", "done", "case", "esac", "function", "return", "local", "readonly",
-    "declare", "eval", "trap", "umask", "ulimit", "wait", "jobs", "fg", "bg", "type", "hash",
-    "pwd", "whoami", "id", "uname", "date", "hostname", "realpath", "dirname", "basename",
-    "printenv", "true", "false", "exit", "yes", "no", "test", "[", "[[",
-})
+_SHELL_KEYWORDS = frozenset(
+    {
+        "cd",
+        "export",
+        "source",
+        ".",
+        "set",
+        "unset",
+        "alias",
+        "if",
+        "then",
+        "else",
+        "elif",
+        "fi",
+        "for",
+        "while",
+        "do",
+        "done",
+        "case",
+        "esac",
+        "function",
+        "return",
+        "local",
+        "readonly",
+        "declare",
+        "eval",
+        "trap",
+        "umask",
+        "ulimit",
+        "wait",
+        "jobs",
+        "fg",
+        "bg",
+        "type",
+        "hash",
+        "pwd",
+        "whoami",
+        "id",
+        "uname",
+        "date",
+        "hostname",
+        "realpath",
+        "dirname",
+        "basename",
+        "printenv",
+        "true",
+        "false",
+        "exit",
+        "yes",
+        "no",
+        "test",
+        "[",
+        "[[",
+    }
+)
 
 _STRIPPABLE_PREFIXES = frozenset({"sudo", "env", "time", "nohup", "command", "stdbuf"})
 
@@ -761,8 +1054,9 @@ def _command_parts(command: str) -> list[str]:
     return _tokenise(command)
 
 
-def _resolves(inv: Inventory, tokens: list[str], verbs: dict, scripts: dict, make_targets: dict,
-              bins: set[str]) -> bool:
+def _resolves(
+    inv: Inventory, tokens: list[str], verbs: dict, scripts: dict, make_targets: dict, bins: set[str]
+) -> bool:
     while tokens and tokens[0] in _STRIPPABLE_PREFIXES:
         tokens = tokens[1:]
     if not tokens:
@@ -792,8 +1086,7 @@ def _resolves(inv: Inventory, tokens: list[str], verbs: dict, scripts: dict, mak
 
     candidate = head[2:] if head.startswith("./") else head
     if "/" in candidate or head.startswith("./"):
-        if inv.has(candidate) or any(f.rel == candidate or f.rel.startswith(candidate + "/")
-                                     for f in inv.files):
+        if inv.has(candidate) or any(f.rel == candidate or f.rel.startswith(candidate + "/") for f in inv.files):
             return True
 
     return False
@@ -807,8 +1100,7 @@ def _logical_commands(entries: list[tuple[str, int, str]]) -> list[tuple[str, in
     """
     merged: list[tuple[str, int, str]] = []
     for path, line, command in entries:
-        if merged and merged[-1][0] == path and merged[-1][1] + 1 == line \
-                and merged[-1][2].rstrip().endswith("\\"):
+        if merged and merged[-1][0] == path and merged[-1][1] + 1 == line and merged[-1][2].rstrip().endswith("\\"):
             prev_path, prev_line, prev = merged[-1]
             merged[-1] = (prev_path, prev_line, prev.rstrip().rstrip("\\").rstrip() + " " + command)
         else:
@@ -859,14 +1151,26 @@ def check_exec06(*, spec, target, inventory, stack, components, session) -> Chec
     if not unresolved:
         return _outcome(spec, Verdict.PASS, f"{len(unique)} documented command(s) resolve")
 
-    because = (f"{len(unresolved)} documented command(s) name no script, verb, or file: "
-               + "; ".join(f"{cmd!r} ({path}:{line})" for path, line, cmd in unresolved[:8]))
-    return _outcome(spec, Verdict.FAIL, because, [Finding(
-        check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-        statement=statement("run the documented commands literally", because),
-        evidence=[Evidence(path, line=line, note=cmd) for path, line, cmd in unresolved[:12]],
-        remediation="Fix the documented command to name a resolvable script, verb, or file — an "
-                    "agent will run it exactly as written.")])
+    because = f"{len(unresolved)} documented command(s) name no script, verb, or file: " + "; ".join(
+        f"{cmd!r} ({path}:{line})" for path, line, cmd in unresolved[:8]
+    )
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        because,
+        [
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement("run the documented commands literally", because),
+                evidence=[Evidence(path, line=line, note=cmd) for path, line, cmd in unresolved[:12]],
+                remediation="Fix the documented command to name a resolvable script, verb, or file — an "
+                "agent will run it exactly as written.",
+            )
+        ],
+    )
 
 
 # ===========================================================================
@@ -874,16 +1178,46 @@ def check_exec06(*, spec, target, inventory, stack, components, session) -> Chec
 # ===========================================================================
 
 _CONCERN_GLOBS: dict[str, tuple[str, ...]] = {
-    "lint": ("eslint.config.*", ".eslintrc", ".eslintrc.*", "biome.json", "biome.jsonc",
-             "ruff.toml", ".ruff.toml", ".flake8", ".pylintrc", ".golangci.yml", ".golangci.yaml",
-             "clippy.toml", ".stylelintrc", ".stylelintrc.*", "oxlint.json", ".oxlintrc.json"),
-    "format": ("prettier.config.*", ".prettierrc", ".prettierrc.*", "biome.json", "biome.jsonc",
-               ".clang-format", "rustfmt.toml", ".rustfmt.toml", "dprint.json"),
-    "test": ("vitest.config.*", "jest.config.*", "pytest.ini", "tox.ini", ".mocharc.*",
-             "karma.conf.js", "cypress.config.*"),
+    "lint": (
+        "eslint.config.*",
+        ".eslintrc",
+        ".eslintrc.*",
+        "biome.json",
+        "biome.jsonc",
+        "ruff.toml",
+        ".ruff.toml",
+        ".flake8",
+        ".pylintrc",
+        ".golangci.yml",
+        ".golangci.yaml",
+        "clippy.toml",
+        ".stylelintrc",
+        ".stylelintrc.*",
+        "oxlint.json",
+        ".oxlintrc.json",
+    ),
+    "format": (
+        "prettier.config.*",
+        ".prettierrc",
+        ".prettierrc.*",
+        "biome.json",
+        "biome.jsonc",
+        ".clang-format",
+        "rustfmt.toml",
+        ".rustfmt.toml",
+        "dprint.json",
+    ),
+    "test": (
+        "vitest.config.*",
+        "jest.config.*",
+        "pytest.ini",
+        "tox.ini",
+        ".mocharc.*",
+        "karma.conf.js",
+        "cypress.config.*",
+    ),
     "types": ("tsconfig.json", "jsconfig.json", "mypy.ini", ".mypy.ini", "pyrightconfig.json"),
-    "security": (".gitleaks.toml", "semgrep.yml", ".semgrep.yml", ".snyk", "osv-scanner.toml",
-                 ".bandit"),
+    "security": (".gitleaks.toml", "semgrep.yml", ".semgrep.yml", ".snyk", "osv-scanner.toml", ".bandit"),
 }
 
 #: Sections inside a root ``pyproject.toml`` that author a concern, matched per concern.
@@ -913,22 +1247,33 @@ def _concern_configs(inv: Inventory) -> dict[str, list[str]]:
 
 def check_exec07(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     found = _concern_configs(inventory)
-    competing = {concern: sorted(set(paths)) for concern, paths in found.items()
-                 if len(set(paths)) > 1}
+    competing = {concern: sorted(set(paths)) for concern, paths in found.items() if len(set(paths)) > 1}
     if not competing:
         authored = {c: (paths[0] if paths else None) for c, paths in found.items() if paths}
         detail = "; ".join(f"{c}: {p}" for c, p in sorted(authored.items()))
         return _outcome(spec, Verdict.PASS, detail or "no concern configs found")
 
-    because = "; ".join(f"{concern} ({', '.join(paths)})"
-                        for concern, paths in sorted(competing.items()))
-    return _outcome(spec, Verdict.FAIL, f"competing configs: {because}", [Finding(
-        check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-        statement=statement("know which config wins for each concern",
-                            f"{len(competing)} concern(s) have more than one config: {because}"),
-        evidence=[Evidence(p) for _concern, paths in sorted(competing.items()) for p in paths],
-        remediation="Keep one authoritative config per concern and document any deliberate "
-                    "delegation, or delete the redundant config.")])
+    because = "; ".join(f"{concern} ({', '.join(paths)})" for concern, paths in sorted(competing.items()))
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        f"competing configs: {because}",
+        [
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement(
+                    "know which config wins for each concern",
+                    f"{len(competing)} concern(s) have more than one config: {because}",
+                ),
+                evidence=[Evidence(p) for _concern, paths in sorted(competing.items()) for p in paths],
+                remediation="Keep one authoritative config per concern and document any deliberate "
+                "delegation, or delete the redundant config.",
+            )
+        ],
+    )
 
 
 IMPLEMENTATIONS = {

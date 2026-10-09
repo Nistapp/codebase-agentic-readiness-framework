@@ -20,12 +20,10 @@ def _esc(text: Any) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ").strip()
 
 
-def _table(headers: tuple[str, ...], rows: list[list[str]],
-           aligns: tuple[str, ...] | None = None) -> list[str]:
+def _table(headers: tuple[str, ...], rows: list[list[str]], aligns: tuple[str, ...] | None = None) -> list[str]:
     aligns = aligns or tuple("left" for _ in headers)
     sep = {"left": "---", "center": ":--:", "right": "--:"}
-    out = ["| " + " | ".join(_esc(h) for h in headers) + " |",
-           "|" + "|".join(sep[a] for a in aligns) + "|"]
+    out = ["| " + " | ".join(_esc(h) for h in headers) + " |", "|" + "|".join(sep[a] for a in aligns) + "|"]
     for row in rows:
         out.append("| " + " | ".join(_esc(c) for c in row) + " |")
     return out
@@ -50,8 +48,10 @@ def _specifics(check: dict, finding: dict | None) -> str:
     if kind == "verb_surface":
         missing = data.get("missing") or []
         if missing:
-            return (f"Missing: {_codes(missing)} — "
-                    f"{data.get('resolved_count', 0)} of {len(data.get('verbs') or [])} defined.")
+            return (
+                f"Missing: {_codes(missing)} — "
+                f"{data.get('resolved_count', 0)} of {len(data.get('verbs') or [])} defined."
+            )
         return f"All {len(data.get('verbs') or [])} verbs resolved."
     if kind == "env_keys":
         return f"Missing env keys: {_codes(data.get('missing') or [])}."
@@ -63,11 +63,15 @@ def _specifics(check: dict, finding: dict | None) -> str:
         return f"{data.get('total', 0)} credential-shaped line(s)."
     if kind == "harness_matrix":
         unreached = data.get("unreached_tools") or []
-        return (f"{data.get('reached', 0)}/{data.get('total', 0)} harnesses reached; "
-                f"unreached: {', '.join(unreached) or 'none'}.")
+        return (
+            f"{data.get('reached', 0)}/{data.get('total', 0)} harnesses reached; "
+            f"unreached: {', '.join(unreached) or 'none'}."
+        )
     if kind == "ratio":
-        return (f"{data.get('numerator', 0)}/{data.get('denominator', 0)} "
-                f"{data.get('unit', '')} ({_pct(data.get('numerator', 0), data.get('denominator', 1))}).")
+        return (
+            f"{data.get('numerator', 0)}/{data.get('denominator', 0)} "
+            f"{data.get('unit', '')} ({_pct(data.get('numerator', 0), data.get('denominator', 1))})."
+        )
     if kind == "path_list":
         paths = data.get("paths") or []
         return f"{len(paths)} path(s): {', '.join(paths)}."
@@ -116,17 +120,23 @@ def _scorecard(report: dict) -> list[str]:
     summary = report["summary"]
     counts = summary["checks"]
     applicable = summary.get("checks_applicable", 0)
-    out = [f"**Phase-1 score:** `{summary['phase1_score']:.2f}` "
-           f"({counts['pass']} pass · {counts['partial']} partial · {counts['fail']} fail · "
-           f"{counts['unknown']} unknown · {counts['attest']} attest)", ""]
+    out = [
+        f"**Phase-1 score:** `{summary['phase1_score']:.2f}` "
+        f"({counts['pass']} pass · {counts['partial']} partial · {counts['fail']} fail · "
+        f"{counts['unknown']} unknown · {counts['attest']} attest)",
+        "",
+    ]
 
     out.append("### Verdict distribution (applicable checks)")
     out.append("")
-    rows = [[label, str(counts.get(key, 0)), _pct(counts.get(key, 0), applicable), credit, meaning]
-            for label, key, credit, meaning in P.VERDICT_ROWS]
+    rows = [
+        [label, str(counts.get(key, 0)), _pct(counts.get(key, 0), applicable), credit, meaning]
+        for label, key, credit, meaning in P.VERDICT_ROWS
+    ]
     rows.append(["**Total**", f"**{sum(counts.values())}**", "**100%**", "", f"{applicable} applicable checks"])
-    out += _table(("Verdict", "Checks", "Share", "Earns credit", "Meaning"), rows,
-                  ("left", "right", "right", "center", "left"))
+    out += _table(
+        ("Verdict", "Checks", "Share", "Earns credit", "Meaning"), rows, ("left", "right", "right", "center", "left")
+    )
     out.append("")
 
     out.append("### Findings by severity")
@@ -138,8 +148,7 @@ def _scorecard(report: dict) -> list[str]:
         affected = sorted({f["check"] for f in group})
         rows.append([severity, str(len(group)), window, _codes(affected) if affected else "—"])
     rows.append(["**Total**", f"**{len(findings)}**", "", ""])
-    out += _table(("Severity", "Findings", "Fix window", "Checks affected"), rows,
-                  ("left", "right", "left", "left"))
+    out += _table(("Severity", "Findings", "Fix window", "Checks affected"), rows, ("left", "right", "left", "left"))
     out.append("")
 
     out.append("> [!IMPORTANT]")
@@ -149,8 +158,11 @@ def _scorecard(report: dict) -> list[str]:
 
 def _unattested(report: dict) -> list[str]:
     items = report["unattested"]
-    out = ["These are always listed, on every report. A completed scan cannot settle them; they are",
-           "printed so the score is never read as a guarantee.", ""]
+    out = [
+        "These are always listed, on every report. A completed scan cannot settle them; they are",
+        "printed so the score is never read as a guarantee.",
+        "",
+    ]
     rows = [[f"`{item}`", P.UNATTESTED_MEANINGS.get(item, "—")] for item in items]
     out += _table(("Property", "What the scan cannot settle"), rows)
     return out
@@ -168,12 +180,20 @@ def _verb_surface_block(report: dict) -> list[str] | None:
     out = ["The framework's seven verbs, resolved verb by verb on the target's runners.", ""]
     rows = []
     for entry in data.get("verbs") or []:
-        runner = (f"`{entry['runner']}`" + (f" (`{entry['command']}`)" if entry.get("command") else "")
-                  ) if entry.get("runner") else "—"
-        rows.append([f"`{entry['verb']}`", "yes" if entry["resolved"] else "**no**",
-                     runner, "defined" if entry["resolved"] else "**MISSING**"])
-    out += _table(("Verb", "Resolved", "Runner / evidence", "Status"), rows,
-                  ("left", "center", "left", "center"))
+        runner = (
+            (f"`{entry['runner']}`" + (f" (`{entry['command']}`)" if entry.get("command") else ""))
+            if entry.get("runner")
+            else "—"
+        )
+        rows.append(
+            [
+                f"`{entry['verb']}`",
+                "yes" if entry["resolved"] else "**no**",
+                runner,
+                "defined" if entry["resolved"] else "**MISSING**",
+            ]
+        )
+    out += _table(("Verb", "Resolved", "Runner / evidence", "Status"), rows, ("left", "center", "left", "center"))
     out.append("")
 
     fixes = [f for f in report["findings"] if f["check"] in {"CMD-01", "CMD-02", "AGT-05"}]
@@ -191,11 +211,13 @@ def _credential_matrix_block(report: dict) -> list[str] | None:
     matrix = data if data and data.get("total") else None
     if not matrix:
         return None
-    out = [f"{matrix['total']} credential-shaped line(s) across {len(matrix['files'])} tracked "
-           f"file(s) in {matrix.get('source') or 'the repository'}. The report never records the "
-           f"value itself.", ""]
-    rows = [[f"`{f['path']}`", ", ".join(str(n) for n in f["lines"]), str(len(f["lines"]))]
-            for f in matrix["files"]]
+    out = [
+        f"{matrix['total']} credential-shaped line(s) across {len(matrix['files'])} tracked "
+        f"file(s) in {matrix.get('source') or 'the repository'}. The report never records the "
+        f"value itself.",
+        "",
+    ]
+    rows = [[f"`{f['path']}`", ", ".join(str(n) for n in f["lines"]), str(len(f["lines"]))] for f in matrix["files"]]
     rows.append(["**Total**", "", f"**{matrix['total']}**"])
     out += _table(("File", "Lines", "Count"), rows, ("left", "left", "right"))
     return out
@@ -204,15 +226,19 @@ def _credential_matrix_block(report: dict) -> list[str] | None:
 def _secret_shapes_block(report: dict) -> list[str] | None:
     merged: dict[str, dict] = {}
     for check in _checks_with_kind(report, "secret_shapes"):
-        for shape in (check["data"].get("shapes") or []):
+        for shape in check["data"].get("shapes") or []:
             merged.setdefault(shape["label"], shape)
     if not merged:
         return None
-    rows = [[shape["label"], "covered" if shape["covered"] else "**missing**",
-             f"`{shape['suggested']}`" if shape.get("suggested") else "—"]
-            for shape in merged.values()]
-    return _table(("Shape", "Status", "Suggested `.gitignore` entry"), rows,
-                  ("left", "center", "left"))
+    rows = [
+        [
+            shape["label"],
+            "covered" if shape["covered"] else "**missing**",
+            f"`{shape['suggested']}`" if shape.get("suggested") else "—",
+        ]
+        for shape in merged.values()
+    ]
+    return _table(("Shape", "Status", "Suggested `.gitignore` entry"), rows, ("left", "center", "left"))
 
 
 def _findings(report: dict, severity: str) -> list[str]:
@@ -223,14 +249,16 @@ def _findings(report: dict, severity: str) -> list[str]:
     rows = []
     for finding in group:
         check = by_id.get(finding["check"], {})
-        rows.append([
-            f"`{finding['check']}`",
-            check.get("title", "—"),
-            finding["verdict"],
-            _specifics(check, finding),
-            _evidence_cell(finding.get("evidence") or []),
-            finding.get("remediation") or "—",
-        ])
+        rows.append(
+            [
+                f"`{finding['check']}`",
+                check.get("title", "—"),
+                finding["verdict"],
+                _specifics(check, finding),
+                _evidence_cell(finding.get("evidence") or []),
+                finding.get("remediation") or "—",
+            ]
+        )
     out = _table(P.FINDINGS_COLUMNS, rows, P.FINDINGS_ALIGN)
     return out
 
@@ -238,11 +266,14 @@ def _findings(report: dict, severity: str) -> list[str]:
 def _appendix(report: dict) -> list[str]:
     checks = report["checks"]
     summary = report["summary"]
-    out = [f"All {len(checks)} checks in the catalogue, grouped by pack, including the "
-           f"{summary['checks']['pass']} passes and {summary['checks']['unknown']} unknowns the "
-           f"findings tables omit. `{summary['checks_implemented']}` of "
-           f"`{summary['checks_applicable']}` applicable checks are implemented in this ruleset; "
-           f"`{summary['checks_scoreable']}` are scoreable.", ""]
+    out = [
+        f"All {len(checks)} checks in the catalogue, grouped by pack, including the "
+        f"{summary['checks']['pass']} passes and {summary['checks']['unknown']} unknowns the "
+        f"findings tables omit. `{summary['checks_implemented']}` of "
+        f"`{summary['checks_applicable']}` applicable checks are implemented in this ruleset; "
+        f"`{summary['checks_scoreable']}` are scoreable.",
+        "",
+    ]
     last_pack = None
     rows: list[list[str]] = []
     for check in checks:
@@ -255,8 +286,17 @@ def _appendix(report: dict) -> list[str]:
             out.append("")
             rows = []
             last_pack = pack
-        rows.append([f"`{check['id']}`", check["title"], check["severity"], check["tier"],
-                     check["verdict"], check["status"], check.get("summary") or "—"])
+        rows.append(
+            [
+                f"`{check['id']}`",
+                check["title"],
+                check["severity"],
+                check["tier"],
+                check["verdict"],
+                check["status"],
+                check.get("summary") or "—",
+            ]
+        )
     if rows:
         out += _table(P.APPENDIX_COLUMNS, rows, P.APPENDIX_ALIGN)
     return out
@@ -266,8 +306,11 @@ def _not_applicable(report: dict) -> list[str]:
     items = report.get("not_applicable") or []
     if not items:
         return []
-    return ["These catalogue checks do not apply to the detected stack, so they are neither passed "
-            "nor failed.", "", _codes(items)]
+    return [
+        "These catalogue checks do not apply to the detected stack, so they are neither passed nor failed.",
+        "",
+        _codes(items),
+    ]
 
 
 def _structural(report: dict) -> list[str]:
@@ -276,31 +319,44 @@ def _structural(report: dict) -> list[str]:
     if not components or (len(components) == 1 and components[0]["name"] == "(root)"):
         out.append("Single-root repository — no component declarations found.")
     else:
-        rows = [[c["name"], f"`{c['path']}`", "yes" if c["declared"] else "no", c["declared_by"],
-                 f"`{c['manifest']}`" if c.get("manifest") else "—", c["agents_md"]]
-                for c in components]
-        out += _table(("Component", "Path", "Declared", "Declared by", "Manifest", "AGENTS.md"),
-                      rows, ("left", "left", "center", "left", "left", "center"))
+        rows = [
+            [
+                c["name"],
+                f"`{c['path']}`",
+                "yes" if c["declared"] else "no",
+                c["declared_by"],
+                f"`{c['manifest']}`" if c.get("manifest") else "—",
+                c["agents_md"],
+            ]
+            for c in components
+        ]
+        out += _table(
+            ("Component", "Path", "Declared", "Declared by", "Manifest", "AGENTS.md"),
+            rows,
+            ("left", "left", "center", "left", "left", "center"),
+        )
     candidates = report.get("candidate_components") or []
     if candidates:
         out.append("")
-        out.append(f"Candidate components (not declared, informational): "
-                   f"{_codes(candidates)}")
+        out.append(f"Candidate components (not declared, informational): {_codes(candidates)}")
     out.append("")
 
     inv, stack = report["inventory"], report["stack"]
     out.append("### Scan coverage")
     out.append("")
-    out += _table(("Metric", "Value"), [
-        ["Files inspected", str(inv["files_inspected"])],
-        ["Files skipped", str(inv["files_skipped"])],
-        ["Traversal truncated", "yes" if inv["truncated"] else "no"],
-        ["Ecosystems", ", ".join(stack["ecosystems"]) or "—"],
-        ["Package managers", ", ".join(stack["package_managers"]) or "—"],
-        ["Test frameworks", ", ".join(stack["test_frameworks"]) or "—"],
-        ["CI providers", ", ".join(stack["ci_providers"]) or "—"],
-        ["Hook managers", ", ".join(stack["hook_managers"]) or "—"],
-    ])
+    out += _table(
+        ("Metric", "Value"),
+        [
+            ["Files inspected", str(inv["files_inspected"])],
+            ["Files skipped", str(inv["files_skipped"])],
+            ["Traversal truncated", "yes" if inv["truncated"] else "no"],
+            ["Ecosystems", ", ".join(stack["ecosystems"]) or "—"],
+            ["Package managers", ", ".join(stack["package_managers"]) or "—"],
+            ["Test frameworks", ", ".join(stack["test_frameworks"]) or "—"],
+            ["CI providers", ", ".join(stack["ci_providers"]) or "—"],
+            ["Hook managers", ", ".join(stack["hook_managers"]) or "—"],
+        ],
+    )
     out.append("")
 
     out.append("### Probes")
@@ -311,14 +367,28 @@ def _structural(report: dict) -> list[str]:
     else:
         rows = []
         for probe in probes:
-            state = ("refused: " + probe["refused_reason"]) if probe.get("refused_reason") else (
-                "timed out" if probe["timed_out"] else f"exit {probe['exit_code']}")
+            state = (
+                ("refused: " + probe["refused_reason"])
+                if probe.get("refused_reason")
+                else ("timed out" if probe["timed_out"] else f"exit {probe['exit_code']}")
+            )
             command = " ".join(probe["command"]) if probe.get("command") else "—"
-            rows.append([f"`{probe['verb']}`", f"`{command}`", state,
-                         f"{probe['duration_s']:.1f}s", str(probe["redactions"]),
-                         "yes" if probe["timed_out"] else "no", probe.get("output_tail") or "—"])
-        out += _table(("Verb", "Command", "State", "Duration", "Redactions", "Timed out", "Output"),
-                      rows, ("left", "left", "left", "right", "right", "center", "left"))
+            rows.append(
+                [
+                    f"`{probe['verb']}`",
+                    f"`{command}`",
+                    state,
+                    f"{probe['duration_s']:.1f}s",
+                    str(probe["redactions"]),
+                    "yes" if probe["timed_out"] else "no",
+                    probe.get("output_tail") or "—",
+                ]
+            )
+        out += _table(
+            ("Verb", "Command", "State", "Duration", "Redactions", "Timed out", "Output"),
+            rows,
+            ("left", "left", "left", "right", "right", "center", "left"),
+        )
     return out
 
 
@@ -353,10 +423,8 @@ def render_markdown(report: dict[str, Any]) -> str:
     """Render the schema-v2 report dict to the human Markdown artifact."""
     lines: list[str] = ["# Agentic readiness audit", ""]
     lines.append("> [!NOTE]")
-    lines.append("> This audit reports; it does not gate. A completed scan exits 0 unless a threshold "
-                 "or baseline")
-    lines.append("> was requested (ADR-0001). `UNKNOWN` and `ATTEST` earn no credit and are never "
-                 "rendered as passes.")
+    lines.append("> This audit reports; it does not gate. A completed scan exits 0 unless a threshold or baseline")
+    lines.append("> was requested (ADR-0001). `UNKNOWN` and `ATTEST` earn no credit and are never rendered as passes.")
     lines.append("")
 
     for section in P.SECTIONS:
@@ -383,6 +451,8 @@ def render_markdown(report: dict[str, Any]) -> str:
 
     lines.append("---")
     lines.append("")
-    lines.append("Docs: `docs/architecture/README.md` · check catalogue: "
-                 "`docs/architecture/contributor-deep-dive/02-check-catalogue.md`")
+    lines.append(
+        "Docs: `docs/architecture/README.md` · check catalogue: "
+        "`docs/architecture/contributor-deep-dive/02-check-catalogue.md`"
+    )
     return "\n".join(lines) + "\n"

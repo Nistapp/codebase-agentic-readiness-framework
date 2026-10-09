@@ -17,9 +17,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                       # noqa: E402
-from audit.ignore import (                                           # noqa: E402
-    IgnoreRule, ignore_patterns, is_ignored, load_ignore_rules, matching_rules, tracked_files,
+import support  # noqa: E402
+from audit.ignore import (  # noqa: E402
+    IgnoreRule,
+    ignore_patterns,
+    is_ignored,
+    load_ignore_rules,
+    matching_rules,
+    tracked_files,
 )
 
 
@@ -62,8 +67,7 @@ class IgnoreRuleTests(unittest.TestCase):
 
         hits = matching_rules("app.log", rules)
         self.assertEqual([(r.pattern, r.source) for r in hits], [("*.log", ".gitignore")])
-        self.assertEqual(matching_rules("artefacts", rules),
-                         [IgnoreRule("artefacts", ".cbmignore")])
+        self.assertEqual(matching_rules("artefacts", rules), [IgnoreRule("artefacts", ".cbmignore")])
         self.assertEqual(matching_rules("app.py", rules), [])
 
     def test_ignore_patterns_returns_the_historical_list_shape(self):

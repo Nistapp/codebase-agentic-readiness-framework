@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 TOOL_CHECKS = ("TOOL-01", "TOOL-02", "TOOL-03", "TOOL-04", "TOOL-05", "TOOL-06")
 
@@ -44,8 +44,7 @@ class ToolFixtureTests(unittest.TestCase):
 
                 failing = sorted(cid for cid in TOOL_CHECKS if verdicts[cid] == "FAIL")
                 expected_failing = [check] if expected == "FAIL" else []
-                self.assertEqual(failing, expected_failing,
-                                 f"{name}: unexpected TOOL FAILs {failing}")
+                self.assertEqual(failing, expected_failing, f"{name}: unexpected TOOL FAILs {failing}")
 
     def test_positive_fixture_passes_all_six(self):
         report = support.run_audit(support.fixture("tool-ok-node"))
@@ -73,16 +72,20 @@ class ToolInlineTests(unittest.TestCase):
         self.assertEqual(support.verdicts(report)["TOOL-04"], "PARTIAL")
 
     def test_core_hookspath_wires_the_chain(self):
-        report = self._scan({
-            "package.json": '{"scripts": {"prepare": "git config core.hooksPath .githooks"}}',
-            ".githooks/pre-commit": "#!/bin/sh\n",
-        })
+        report = self._scan(
+            {
+                "package.json": '{"scripts": {"prepare": "git config core.hooksPath .githooks"}}',
+                ".githooks/pre-commit": "#!/bin/sh\n",
+            }
+        )
         self.assertEqual(support.verdicts(report)["TOOL-05"], "PASS")
 
     def test_python_strict_mypy_is_pass(self):
-        report = self._scan({
-            "pyproject.toml": "[tool.mypy]\nstrict = true\n",
-        })
+        report = self._scan(
+            {
+                "pyproject.toml": "[tool.mypy]\nstrict = true\n",
+            }
+        )
         self.assertEqual(support.verdicts(report)["TOOL-03"], "PASS")
 
     def test_no_ecosystem_and_no_config_is_unknown_not_fail(self):

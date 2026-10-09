@@ -21,7 +21,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 BASE_CHECKS = ("BASE-01", "BASE-02", "BASE-03", "BASE-04")
 
@@ -44,8 +44,7 @@ class BaseFixtureTests(unittest.TestCase):
 
                 failing = sorted(cid for cid in BASE_CHECKS if verdicts[cid] == "FAIL")
                 expected_failing = [check] if expected == "FAIL" else []
-                self.assertEqual(failing, expected_failing,
-                                 f"{name}: unexpected BASE FAILs {failing}")
+                self.assertEqual(failing, expected_failing, f"{name}: unexpected BASE FAILs {failing}")
 
     def test_positive_fixture_passes_all_four(self):
         report = support.run_audit(support.fixture("base-ok"))
@@ -69,32 +68,36 @@ class BaseInlineTests(unittest.TestCase):
             self.assertEqual(verdicts[check], "UNKNOWN", f"unrecognised repo: {check}")
 
     def test_commented_out_threshold_is_not_coverage_configuration(self):
-        report = self._scan({
-            "package.json": '{"name": "x", "scripts": {"test": "vitest run"}}',
-            "vitest.config.ts": ("export default {\n  test: {\n    // thresholds: { lines: 80 },\n"
-                                 "  },\n};\n"),
-        })
+        report = self._scan(
+            {
+                "package.json": '{"name": "x", "scripts": {"test": "vitest run"}}',
+                "vitest.config.ts": ("export default {\n  test: {\n    // thresholds: { lines: 80 },\n  },\n};\n"),
+            }
+        )
         self.assertEqual(support.verdicts(report)["BASE-04"], "FAIL")
 
     def test_ci_baseline_reference_counts_as_ratchet(self):
-        report = self._scan({
-            "package.json": '{"name": "x", "scripts": {"test": "vitest run"}}',
-            "baseline.json": '{"findings": []}\n',
-            ".github/workflows/ci.yml": (
-                "on: [pull_request]\njobs:\n  r:\n    steps:\n"
-                "      - run: python3 -m audit . --baseline baseline.json\n"),
-            "vitest.config.ts": "export default { test: { coverage: {"
-                                " thresholds: { lines: 80 } } } };\n",
-        })
+        report = self._scan(
+            {
+                "package.json": '{"name": "x", "scripts": {"test": "vitest run"}}',
+                "baseline.json": '{"findings": []}\n',
+                ".github/workflows/ci.yml": (
+                    "on: [pull_request]\njobs:\n  r:\n    steps:\n"
+                    "      - run: python3 -m audit . --baseline baseline.json\n"
+                ),
+                "vitest.config.ts": "export default { test: { coverage: { thresholds: { lines: 80 } } } };\n",
+            }
+        )
         self.assertEqual(support.verdicts(report)["BASE-03"], "PASS")
 
     def test_documented_baseline_satisfies_base01(self):
-        report = self._scan({
-            "package.json": '{"name": "x", "scripts": {"test": "vitest run"}}',
-            "AGENTS.md": "# Rules\n\nA quality baseline file records current violations.\n",
-            "vitest.config.ts": "export default { test: { coverage: {"
-                                " thresholds: { lines: 80 } } } };\n",
-        })
+        report = self._scan(
+            {
+                "package.json": '{"name": "x", "scripts": {"test": "vitest run"}}',
+                "AGENTS.md": "# Rules\n\nA quality baseline file records current violations.\n",
+                "vitest.config.ts": "export default { test: { coverage: { thresholds: { lines: 80 } } } };\n",
+            }
+        )
         self.assertEqual(support.verdicts(report)["BASE-01"], "PASS")
 
 

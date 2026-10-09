@@ -24,7 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict)
 FIXTURES: dict[str, tuple[str, str]] = {
@@ -111,8 +111,9 @@ class Doc03TrackedStateTests(unittest.TestCase):
 
     def test_tracked_state_unavailable_degrades_to_unknown_not_pass(self):
         report = support.run_audit(self._prepare(git=False, force_add=False))
-        self.assertEqual(support.verdicts(report)["DOC-03"], "UNKNOWN",
-                         "without git the tracked set cannot be ruled out")
+        self.assertEqual(
+            support.verdicts(report)["DOC-03"], "UNKNOWN", "without git the tracked set cannot be ruled out"
+        )
 
 
 if __name__ == "__main__":

@@ -44,8 +44,8 @@ from audit.rules.payloads import (
 
 #: An instruction file below this size, or matching a stub marker, is present but not governance.
 MIN_INSTRUCTION_CHARS = 400
-STUB_MARKERS = ("todo", "tbd", "placeholder", "lorem ipsum", "<describe", "coming soon",
-                "fill this in")
+STUB_MARKERS = ("todo", "tbd", "placeholder", "lorem ipsum", "<describe", "coming soon", "fill this in")
+
 
 #: All basenames that could be an instruction file, derived from the variant table.
 def _instruction_basenames() -> set[str]:
@@ -112,6 +112,7 @@ def _trivial_reason(text: str) -> str | None:
 # AGT-01 — instruction file present, canonical, non-trivial
 # ---------------------------------------------------------------------------
 
+
 def check_agt01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     present = instruction_paths(inventory)
     classified = V.classify_present(present)
@@ -119,70 +120,98 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
     detail_parts: list[str] = []
 
     canonical_root = "AGENTS.md" in present
-    canonical_nested = sorted(p for p in present
-                              if p.endswith("/AGENTS.md") and p != "AGENTS.md")
+    canonical_nested = sorted(p for p in present if p.endswith("/AGENTS.md") and p != "AGENTS.md")
     mis_cased = V.mis_cased_canonical_candidates(present)
     aliases = classified["aliases"]
     overrides = classified["overrides"]
     vendor_only = classified["vendor_only"]
 
     if not present:
-        findings.append(Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-            statement=statement(
-                "learn the project's conventions",
-                "no agent-instruction file exists anywhere in the repository"),
-            remediation="Create AGENTS.md at the repository root using the framework template "
-                        "(codebase-agentic-readiness-framework templates/AGENTS.md).",
-        ))
+        findings.append(
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement(
+                    "learn the project's conventions", "no agent-instruction file exists anywhere in the repository"
+                ),
+                remediation="Create AGENTS.md at the repository root using the framework template "
+                "(codebase-agentic-readiness-framework templates/AGENTS.md).",
+            )
+        )
     else:
         if canonical_root:
             text = inventory.read("AGENTS.md") or ""
             reason = _trivial_reason(text)
             if reason:
-                findings.append(Finding(
-                    check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-                    statement=statement("work to this project's conventions",
-                                        f"AGENTS.md exists but is a stub — {reason}"),
-                    evidence=[Evidence("AGENTS.md", note=f"{_rule_line_count(text)} rule lines")],
-                    remediation="Fill AGENTS.md from the framework template: verbs, boundaries, "
-                                "definition of done, prohibitions.",
-                ))
+                findings.append(
+                    Finding(
+                        check=spec.id,
+                        severity=spec.severity,
+                        phase=spec.phase,
+                        verdict=Verdict.FAIL,
+                        statement=statement(
+                            "work to this project's conventions", f"AGENTS.md exists but is a stub — {reason}"
+                        ),
+                        evidence=[Evidence("AGENTS.md", note=f"{_rule_line_count(text)} rule lines")],
+                        remediation="Fill AGENTS.md from the framework template: verbs, boundaries, "
+                        "definition of done, prohibitions.",
+                    )
+                )
         if mis_cased:
-            findings.append(Finding(
-                check=spec.id, severity=Severity.BLOCKER, phase=spec.phase, verdict=Verdict.FAIL,
-                statement=statement(
-                    "rely on the instruction file being found",
-                    f"{', '.join(mis_cased)} differs from AGENTS.md only by case, and "
-                    f"case-sensitive filesystems will not find it"),
-                evidence=[Evidence(p) for p in mis_cased],
-                remediation="Rename to AGENTS.md exactly (Warp also requires ALL CAPS).",
-            ))
+            findings.append(
+                Finding(
+                    check=spec.id,
+                    severity=Severity.BLOCKER,
+                    phase=spec.phase,
+                    verdict=Verdict.FAIL,
+                    statement=statement(
+                        "rely on the instruction file being found",
+                        f"{', '.join(mis_cased)} differs from AGENTS.md only by case, and "
+                        f"case-sensitive filesystems will not find it",
+                    ),
+                    evidence=[Evidence(p) for p in mis_cased],
+                    remediation="Rename to AGENTS.md exactly (Warp also requires ALL CAPS).",
+                )
+            )
         if not canonical_root and (aliases or vendor_only):
-            owner = ", ".join(sorted(set(
-                tool for name in aliases for tool in V.NON_CANONICAL_ALIASES.get(name, ())
-            ))) or "one harness"
-            findings.append(Finding(
-                check=spec.id, severity=Severity.DEGRADER, phase=spec.phase, verdict=Verdict.PARTIAL,
-                statement=statement(
-                    "share one set of project rules across harnesses",
-                    f"instruction content lives only in vendor-specific files "
-                    f"({', '.join(sorted(aliases + vendor_only))}) that {owner} reads"),
-                remediation="Add AGENTS.md as the canonical file and reduce vendor files to a "
-                            "one-line pointer, or a symlink where the harness supports it.",
-            ))
+            owner = (
+                ", ".join(sorted(set(tool for name in aliases for tool in V.NON_CANONICAL_ALIASES.get(name, ()))))
+                or "one harness"
+            )
+            findings.append(
+                Finding(
+                    check=spec.id,
+                    severity=Severity.DEGRADER,
+                    phase=spec.phase,
+                    verdict=Verdict.PARTIAL,
+                    statement=statement(
+                        "share one set of project rules across harnesses",
+                        f"instruction content lives only in vendor-specific files "
+                        f"({', '.join(sorted(aliases + vendor_only))}) that {owner} reads",
+                    ),
+                    remediation="Add AGENTS.md as the canonical file and reduce vendor files to a "
+                    "one-line pointer, or a symlink where the harness supports it.",
+                )
+            )
         if overrides:
             for override in overrides:
                 tool = V.OVERRIDE_PATHS.get(override, "some harness")
-                findings.append(Finding(
-                    check=spec.id, severity=Severity.DEGRADER, phase=spec.phase,
-                    verdict=Verdict.PARTIAL,
-                    statement=statement(
-                        "rely on AGENTS.md in every directory",
-                        f"{override} is present for {tool} and makes the AGENTS.md beside it inert"),
-                    evidence=[Evidence(override)],
-                    remediation="Delete the override, or make it a deliberate, documented superset.",
-                ))
+                findings.append(
+                    Finding(
+                        check=spec.id,
+                        severity=Severity.DEGRADER,
+                        phase=spec.phase,
+                        verdict=Verdict.PARTIAL,
+                        statement=statement(
+                            "rely on AGENTS.md in every directory",
+                            f"{override} is present for {tool} and makes the AGENTS.md beside it inert",
+                        ),
+                        evidence=[Evidence(override)],
+                        remediation="Delete the override, or make it a deliberate, documented superset.",
+                    )
+                )
         if canonical_nested:
             detail_parts.append(f"{len(canonical_nested)} nested instruction file(s)")
 
@@ -191,28 +220,45 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
     else:
         verdict = Verdict.FAIL if any(f.verdict is Verdict.FAIL for f in findings) else Verdict.PARTIAL
 
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary="; ".join(detail_parts), findings=findings)
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary="; ".join(detail_parts),
+        findings=findings,
+    )
 
 
 # ---------------------------------------------------------------------------
 # AGT-02 — component coverage
 # ---------------------------------------------------------------------------
 
+
 def check_agt02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     members = [c for c in components.declared if not c.is_root]
     if not members:
-        return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase,
-                            Verdict.PASS, spec.status,
-                            summary="single-root repository: no component-level instruction files "
-                                   "required")
+        return CheckOutcome(
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.PASS,
+            spec.status,
+            summary="single-root repository: no component-level instruction files required",
+        )
 
     covered: list[str] = []
     uncovered: list[str] = []
     for component in members:
         candidate = f"{component.path}/AGENTS.md"
         if inventory.has(candidate) or any(
-                p.endswith(f"{component.path}/AGENTS.md") for p in instruction_paths(inventory)):
+            p.endswith(f"{component.path}/AGENTS.md") for p in instruction_paths(inventory)
+        ):
             covered.append(component.path)
         else:
             uncovered.append(component.path)
@@ -220,27 +266,46 @@ def check_agt02(*, spec, target, inventory, stack, components, session) -> Check
     ratio = len(covered) / len(members)
     findings: list[Finding] = []
     if uncovered:
-        findings.append(Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.PARTIAL,
-            statement=statement(
-                "get component-scoped rules when it enters a component",
-                f"{len(uncovered)} of {len(members)} declared components have no AGENTS.md "
-                f"({', '.join(uncovered[:6])}{'…' if len(uncovered) > 6 else ''}), so the root file "
-                f"is the only guidance available"),
-            remediation="Add a short AGENTS.md per component stating what is local to it — "
-                        "ownership, entry points, test verb overrides.",
-        ))
+        findings.append(
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.PARTIAL,
+                statement=statement(
+                    "get component-scoped rules when it enters a component",
+                    f"{len(uncovered)} of {len(members)} declared components have no AGENTS.md "
+                    f"({', '.join(uncovered[:6])}{'…' if len(uncovered) > 6 else ''}), so the root file "
+                    f"is the only guidance available",
+                ),
+                remediation="Add a short AGENTS.md per component stating what is local to it — "
+                "ownership, entry points, test verb overrides.",
+            )
+        )
     verdict = Verdict.PASS if ratio == 1.0 else (Verdict.FAIL if ratio == 0 else Verdict.PARTIAL)
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=f"coverage {len(covered)}/{len(members)}",
-                        data=Ratio(numerator=len(covered), denominator=len(members),
-                                   unit="components", method="declared AGENTS.md per component"),
-                        findings=findings)
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=f"coverage {len(covered)}/{len(members)}",
+        data=Ratio(
+            numerator=len(covered),
+            denominator=len(members),
+            unit="components",
+            method="declared AGENTS.md per component",
+        ),
+        findings=findings,
+    )
 
 
 # ---------------------------------------------------------------------------
 # AGT-08 — competing instruction files + reach matrix
 # ---------------------------------------------------------------------------
+
 
 def check_agt08(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     present = instruction_paths(inventory)
@@ -252,48 +317,79 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
     findings: list[Finding] = []
 
     if competitors:
-        findings.append(Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-            statement=statement(
-                "know which instruction file is authoritative",
-                f"{len(competitors)} vendor-specific instruction files exist alongside the "
-                f"canonical one ({', '.join(competitors[:8])}{'…' if len(competitors) > 8 else ''})"),
-            evidence=[Evidence(p) for p in competitors[:12]],
-            remediation="Keep AGENTS.md canonical; reduce each vendor file to a pointer at it, or "
-                        "delete it if the harness reads AGENTS.md natively.",
-        ))
+        findings.append(
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement(
+                    "know which instruction file is authoritative",
+                    f"{len(competitors)} vendor-specific instruction files exist alongside the "
+                    f"canonical one ({', '.join(competitors[:8])}{'…' if len(competitors) > 8 else ''})",
+                ),
+                evidence=[Evidence(p) for p in competitors[:12]],
+                remediation="Keep AGENTS.md canonical; reduce each vendor file to a pointer at it, or "
+                "delete it if the harness reads AGENTS.md natively.",
+            )
+        )
     for winner, loser in shadowed:
-        findings.append(Finding(
-            check=spec.id, severity=Severity.DEGRADER, phase=spec.phase, verdict=Verdict.PARTIAL,
-            statement=statement(
-                "be sure that both files are read",
-                f"{winner} shadows {loser} for the harness that defines the pair, so only one of "
-                f"the two is ever loaded"),
-            evidence=[Evidence(winner), Evidence(loser)],
-            remediation="Reconcile the two files, or delete the shadowed one — a file nobody "
-                        "reads still gets edited.",
-        ))
+        findings.append(
+            Finding(
+                check=spec.id,
+                severity=Severity.DEGRADER,
+                phase=spec.phase,
+                verdict=Verdict.PARTIAL,
+                statement=statement(
+                    "be sure that both files are read",
+                    f"{winner} shadows {loser} for the harness that defines the pair, so only one of "
+                    f"the two is ever loaded",
+                ),
+                evidence=[Evidence(winner), Evidence(loser)],
+                remediation="Reconcile the two files, or delete the shadowed one — a file nobody "
+                "reads still gets edited.",
+            )
+        )
     if missed and ("AGENTS.md" in present or competitors):
-        findings.append(Finding(
-            check=spec.id, severity=Severity.COSMETIC, phase=spec.phase, verdict=Verdict.PARTIAL,
-            statement=statement(
-                "assume every harness on the team sees the project rules",
-                f"{len(reached)} of {len(reached) + len(missed)} known harnesses reach an "
-                f"instruction file; {', '.join(missed[:8])}{'…' if len(missed) > 8 else ''} reach "
-                f"nothing"),
-            remediation="Either state the supported harnesses in AGENTS.md, or add the vendor "
-                        "pointer files for the harnesses in use.",
-        ))
+        findings.append(
+            Finding(
+                check=spec.id,
+                severity=Severity.COSMETIC,
+                phase=spec.phase,
+                verdict=Verdict.PARTIAL,
+                statement=statement(
+                    "assume every harness on the team sees the project rules",
+                    f"{len(reached)} of {len(reached) + len(missed)} known harnesses reach an "
+                    f"instruction file; {', '.join(missed[:8])}{'…' if len(missed) > 8 else ''} reach "
+                    f"nothing",
+                ),
+                remediation="Either state the supported harnesses in AGENTS.md, or add the vendor "
+                "pointer files for the harnesses in use.",
+            )
+        )
 
-    verdict = Verdict.FAIL if any(f.verdict is Verdict.FAIL for f in findings) else (
-        Verdict.PARTIAL if findings else Verdict.PASS)
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status,
-                        summary=f"{len(reached)}/{len(reached) + len(missed)} harnesses reached",
-                        data=HarnessMatrix(reached=len(reached), total=len(reached) + len(missed),
-                                           reached_tools=tuple(sorted(reached)),
-                                           unreached_tools=tuple(sorted(missed))),
-                        findings=findings)
+    verdict = (
+        Verdict.FAIL
+        if any(f.verdict is Verdict.FAIL for f in findings)
+        else (Verdict.PARTIAL if findings else Verdict.PASS)
+    )
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=f"{len(reached)}/{len(reached) + len(missed)} harnesses reached",
+        data=HarnessMatrix(
+            reached=len(reached),
+            total=len(reached) + len(missed),
+            reached_tools=tuple(sorted(reached)),
+            unreached_tools=tuple(sorted(missed)),
+        ),
+        findings=findings,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -314,6 +410,7 @@ _DEFER_RE = re.compile(
     r"start\s+by\s+reading|"
     r"refer\s+to\s+[^.\n]{0,60}\s+first)"
 )
+
 
 #: Config keys that name an instruction file elsewhere, and how to read them.
 def _configured_targets(inventory: Inventory) -> dict[str, list[str]]:
@@ -338,8 +435,7 @@ def _configured_targets(inventory: Inventory) -> dict[str, list[str]]:
     codex = inventory.read(".codex/config.toml")
     if codex:
         targets = []
-        for key in ("project_doc_fallback_filenames", "model_instructions_file",
-                    "experimental_instructions_file"):
+        for key in ("project_doc_fallback_filenames", "model_instructions_file", "experimental_instructions_file"):
             match = re.search(rf"{key}\s*=\s*(.+)", codex)
             if match:
                 targets += re.findall(r"['\"]([^'\"]+)['\"]", match.group(1))
@@ -402,33 +498,51 @@ def check_agt10(*, spec, target, inventory, stack, components, session) -> Check
                 if inventory.has(candidate) and candidate not in named_elsewhere:
                     deferred.append(candidate)
         if deferred:
-            findings.append(Finding(
-                check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-                statement=statement(
-                    "trust that the referenced rules are actually loaded",
-                    f"the instruction file defers its content to {', '.join(sorted(set(deferred)))} "
-                    f"and no harness configuration names that file, so loading depends on the agent "
-                    f"choosing to follow the pointer"),
-                evidence=[Evidence("AGENTS.md",
-                                   note="deferral found: " + ", ".join(sorted(set(deferred))))],
-                remediation="Inline the rules that must always apply, or name the referenced file "
-                            "in each harness's config (aider read:, opencode.json instructions, "
-                            "Codex model_instructions_file).",
-            ))
+            findings.append(
+                Finding(
+                    check=spec.id,
+                    severity=spec.severity,
+                    phase=spec.phase,
+                    verdict=Verdict.FAIL,
+                    statement=statement(
+                        "trust that the referenced rules are actually loaded",
+                        f"the instruction file defers its content to {', '.join(sorted(set(deferred)))} "
+                        f"and no harness configuration names that file, so loading depends on the agent "
+                        f"choosing to follow the pointer",
+                    ),
+                    evidence=[Evidence("AGENTS.md", note="deferral found: " + ", ".join(sorted(set(deferred))))],
+                    remediation="Inline the rules that must always apply, or name the referenced file "
+                    "in each harness's config (aider read:, opencode.json instructions, "
+                    "Codex model_instructions_file).",
+                )
+            )
         if not _rule_line_count(entry) > 0:
             detail.append("instruction file has no rule lines")
 
     verdict = Verdict.FAIL if findings else Verdict.PASS
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary="; ".join(detail), findings=findings)
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary="; ".join(detail),
+        findings=findings,
+    )
 
 
 def _broken_pointer(spec, config_file: str, name: str) -> Finding:
     return Finding(
-        check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
+        check=spec.id,
+        severity=spec.severity,
+        phase=spec.phase,
+        verdict=Verdict.FAIL,
         statement=statement(
             "receive project instructions from the configured file",
-            f"{config_file} points at {name!r}, which does not exist in the repository"),
+            f"{config_file} points at {name!r}, which does not exist in the repository",
+        ),
         evidence=[Evidence(config_file, note=f"missing target: {name}")],
         remediation=f"Create {name}, or remove the stale entry from {config_file}.",
     )
@@ -437,6 +551,7 @@ def _broken_pointer(spec, config_file: str, name: str) -> Finding:
 # ---------------------------------------------------------------------------
 # Shared readers for the content-contract checks (AGT-03, 04, 06, 07, 09)
 # ---------------------------------------------------------------------------
+
 
 def _entry(inventory: Inventory) -> tuple[str, str]:
     """The entry instruction file and its text: canonical first, else the CLAUDE.md fallback."""
@@ -448,8 +563,9 @@ def _entry(inventory: Inventory) -> tuple[str, str]:
 
 
 def _unknown(spec, reason: str) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase,
-                        Verdict.UNKNOWN, spec.status, summary=reason)
+    return CheckOutcome(
+        spec.id, spec.title, spec.tier, spec.severity, spec.phase, Verdict.UNKNOWN, spec.status, summary=reason
+    )
 
 
 def _first_line(text: str, pattern: re.Pattern) -> int | None:
@@ -480,25 +596,44 @@ def check_agt03(*, spec, target, inventory, stack, components, session) -> Check
     }
     missing = [label for label, line in wanted.items() if line is None]
     if not missing:
-        return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase,
-                            Verdict.PASS, spec.status,
-                            summary="docs/, the style guide and the scratch contract are named")
+        return CheckOutcome(
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.PASS,
+            spec.status,
+            summary="docs/, the style guide and the scratch contract are named",
+        )
 
     covered = {label: line for label, line in wanted.items() if line is not None}
     verdict = Verdict.PARTIAL if covered else Verdict.FAIL
     return CheckOutcome(
-        spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict, spec.status,
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
         summary=f"does not name {', '.join(missing)}",
-        findings=[Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-            statement=statement(
-                "know where permanent and scratch documentation live",
-                f"{name} does not name {', '.join(missing)}"),
-            evidence=[Evidence(name, line=line, note=label) for label, line in covered.items()],
-            remediation="Name docs/ as the canonical home for permanent knowledge, "
-                        "docs/STYLE_GUIDE.md as the authoring rules, and artefacts/ as off-limits "
-                        "scratch."),
-        ])
+        findings=[
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=verdict,
+                statement=statement(
+                    "know where permanent and scratch documentation live", f"{name} does not name {', '.join(missing)}"
+                ),
+                evidence=[Evidence(name, line=line, note=label) for label, line in covered.items()],
+                remediation="Name docs/ as the canonical home for permanent knowledge, "
+                "docs/STYLE_GUIDE.md as the authoring rules, and artefacts/ as off-limits "
+                "scratch.",
+            ),
+        ],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -507,7 +642,8 @@ def check_agt03(*, spec, target, inventory, stack, components, session) -> Check
 
 _CHANGE_SET_RE = re.compile(r"(?i)\bsame changeset\b|\bsame change set\b")
 _DOD_TRIGGER_RE = re.compile(
-    r"(?i)\b(public interface|observable behaviou?r|architecture|\badr\b|documentation|docs)\b")
+    r"(?i)\b(public interface|observable behaviou?r|architecture|\badr\b|documentation|docs)\b"
+)
 
 
 def check_agt04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
@@ -522,37 +658,59 @@ def check_agt04(*, spec, target, inventory, stack, components, session) -> Check
         if not _CHANGE_SET_RE.search(line):
             continue
         change_line = change_line or no
-        window = "\n".join(lines[max(0, no - 3):no + 2])
+        window = "\n".join(lines[max(0, no - 3) : no + 2])
         if _DOD_TRIGGER_RE.search(window):
             tied_line = no
             break
 
     if tied_line:
-        return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase,
-                            Verdict.PASS, spec.status,
-                            summary="definition of done ties a doc trigger to the same change set")
+        return CheckOutcome(
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.PASS,
+            spec.status,
+            summary="definition of done ties a doc trigger to the same change set",
+        )
 
     if change_line:
-        why = ("the same-change-set rule is stated but names no documentation trigger (public "
-               "interface, observable behaviour, architecture or an ADR)")
+        why = (
+            "the same-change-set rule is stated but names no documentation trigger (public "
+            "interface, observable behaviour, architecture or an ADR)"
+        )
     else:
         why = "no definition-of-done sentence ties a documentation trigger to the same change set"
     return CheckOutcome(
-        spec.id, spec.title, spec.tier, spec.severity, spec.phase, Verdict.FAIL, spec.status,
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        Verdict.FAIL,
+        spec.status,
         summary=why,
-        findings=[Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-            statement=statement("keep code and its documentation in step", why),
-            evidence=[Evidence(name, line=change_line)] if change_line else [],
-            remediation="State that a change altering a public interface, observable behaviour, "
-                        "architecture, a check's semantics or an ADR updates the affected docs and "
-                        "the ADR index in the same change set."),
-        ])
+        findings=[
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement("keep code and its documentation in step", why),
+                evidence=[Evidence(name, line=change_line)] if change_line else [],
+                remediation="State that a change altering a public interface, observable behaviour, "
+                "architecture, a check's semantics or an ADR updates the affected docs and "
+                "the ADR index in the same change set.",
+            ),
+        ],
+    )
 
 
 # ---------------------------------------------------------------------------
 # AGT-05 — six verbs named, and they resolve
 # ---------------------------------------------------------------------------
+
 
 def _mentioned_verbs(text: str) -> set[str]:
     """Which framework verbs the instruction file names, as whole tokens.
@@ -595,33 +753,52 @@ def check_agt05(*, spec, target, inventory, stack, components, session) -> Check
     # a second failure onto an unrecognised ecosystem.
     if not runner_commands(inventory):
         if names_complete:
-            return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase,
-                                Verdict.PARTIAL, spec.status,
-                                summary=f"all {len(VERBS)} verbs named, but no runner defines them",
-                                data=_verb_binding_surface({}),
-                                findings=[Finding(
-                                    check=spec.id, severity=Severity.DEGRADER, phase=spec.phase,
-                                    verdict=Verdict.PARTIAL,
-                                    statement=statement(
-                                        "run the named verbs",
-                                        f"{name or 'the instruction file'} names every verb but no "
-                                        f"runner manifest defines them"),
-                                    evidence=[Evidence(name)] if name else [],
-                                    remediation="Add the verbs to a runner (package.json scripts, "
-                                                "a Makefile, a Taskfile) so the names execute.")])
-        return _unknown(spec, "no verb runner and no complete verb list to resolve; CMD-01 owns "
-                              "the missing-runner finding")
+            return CheckOutcome(
+                spec.id,
+                spec.title,
+                spec.tier,
+                spec.severity,
+                spec.phase,
+                Verdict.PARTIAL,
+                spec.status,
+                summary=f"all {len(VERBS)} verbs named, but no runner defines them",
+                data=_verb_binding_surface({}),
+                findings=[
+                    Finding(
+                        check=spec.id,
+                        severity=Severity.DEGRADER,
+                        phase=spec.phase,
+                        verdict=Verdict.PARTIAL,
+                        statement=statement(
+                            "run the named verbs",
+                            f"{name or 'the instruction file'} names every verb but no runner manifest defines them",
+                        ),
+                        evidence=[Evidence(name)] if name else [],
+                        remediation="Add the verbs to a runner (package.json scripts, "
+                        "a Makefile, a Taskfile) so the names execute.",
+                    )
+                ],
+            )
+        return _unknown(
+            spec, "no verb runner and no complete verb list to resolve; CMD-01 owns the missing-runner finding"
+        )
 
     resolved = resolve_verbs(inventory, stack)
     missing_resolution = [v for v in VERBS if v not in resolved]
     resolves_complete = not missing_resolution
 
     if names_complete and resolves_complete:
-        return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase,
-                            Verdict.PASS, spec.status,
-                            summary=f"all {len(VERBS)} verbs named in {name or 'the entry file'} "
-                                   f"and resolved on a runner",
-                            data=_verb_binding_surface(resolved))
+        return CheckOutcome(
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.PASS,
+            spec.status,
+            summary=f"all {len(VERBS)} verbs named in {name or 'the entry file'} and resolved on a runner",
+            data=_verb_binding_surface(resolved),
+        )
 
     verdict = Verdict.PARTIAL if (names_complete or resolves_complete) else Verdict.FAIL
     because = []
@@ -629,17 +806,28 @@ def check_agt05(*, spec, target, inventory, stack, components, session) -> Check
         because.append(f"not named: {', '.join(missing_names)}")
     if missing_resolution:
         because.append(f"not resolved: {', '.join(missing_resolution)}")
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary="; ".join(because),
-                        data=_verb_binding_surface(resolved),
-                        findings=[Finding(
-                            check=spec.id, severity=spec.severity, phase=spec.phase,
-                            verdict=verdict,
-                            statement=statement(
-                                "use the project's own commands instead of inventing them",
-                                "; ".join(because)),
-                            remediation="List all seven verbs in AGENTS.md and define each on one "
-                                        "runner so the instruction and the manifest agree.")])
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary="; ".join(because),
+        data=_verb_binding_surface(resolved),
+        findings=[
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=verdict,
+                statement=statement("use the project's own commands instead of inventing them", "; ".join(because)),
+                remediation="List all seven verbs in AGENTS.md and define each on one "
+                "runner so the instruction and the manifest agree.",
+            )
+        ],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -648,10 +836,12 @@ def check_agt05(*, spec, target, inventory, stack, components, session) -> Check
 
 _BOUNDARY_CONTEXT_RE = re.compile(
     r"(?i)\b(must|never|only|prohibit|forbidden|boundar|module|owns?|responsible|responsibility|"
-    r"import|depend|layer|allow|deny|exclude|separate|isolat)\b")
+    r"import|depend|layer|allow|deny|exclude|separate|isolat)\b"
+)
 _PATH_TOKEN_RE = re.compile(
     r"`([A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]*)+)`"
-    r"|(?<![\w/`])([A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]*)+)")
+    r"|(?<![\w/`])([A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]*)+)"
+)
 
 
 def _path_is_real(inventory: Inventory, token: str) -> bool:
@@ -680,44 +870,71 @@ def check_agt06(*, spec, target, inventory, stack, components, session) -> Check
 
     count = len(referenced)
     if count >= 2:
-        return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase,
-                            Verdict.PASS, spec.status,
-                            summary=f"{count} boundary rules reference real paths")
+        return CheckOutcome(
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.PASS,
+            spec.status,
+            summary=f"{count} boundary rules reference real paths",
+        )
 
     verdict = Verdict.PARTIAL if count == 1 else Verdict.FAIL
-    why = (f"only {count} boundary rule references a path that exists in this repository"
-           if count else "no boundary rule references a path that exists in this repository")
+    why = (
+        f"only {count} boundary rule references a path that exists in this repository"
+        if count
+        else "no boundary rule references a path that exists in this repository"
+    )
     return CheckOutcome(
-        spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict, spec.status,
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
         summary=why,
-        findings=[Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-            statement=statement("learn where code may live and what may cross a boundary", why),
-            evidence=[Evidence(name, line=line, note=token)
-                      for token, line in referenced.items()],
-            remediation="State at least two boundaries as rules naming real paths — for example "
-                        "where application code lives and where tests live."),
-        ])
+        findings=[
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=verdict,
+                statement=statement("learn where code may live and what may cross a boundary", why),
+                evidence=[Evidence(name, line=line, note=token) for token, line in referenced.items()],
+                remediation="State at least two boundaries as rules naming real paths — for example "
+                "where application code lives and where tests live.",
+            ),
+        ],
+    )
 
 
 # ---------------------------------------------------------------------------
 # AGT-07 — prohibitions / do-not-do rules
 # ---------------------------------------------------------------------------
 
-_PROHIBITION_HEADING_RE = re.compile(
-    r"(?i)\b(do[- ]?not|don't|prohibit\w*|deny|forbidden|never|no[- ]?go)\b")
+_PROHIBITION_HEADING_RE = re.compile(r"(?i)\b(do[- ]?not|don't|prohibit\w*|deny|forbidden|never|no[- ]?go)\b")
 _PROHIBITION_LINE_RE = re.compile(
-    r"(?i)\b(never|do not|don't|must not|mustn't|prohibit(?:ed)?|forbidden|off-limits)\b|❌")
+    r"(?i)\b(never|do not|don't|must not|mustn't|prohibit(?:ed)?|forbidden|off-limits)\b|❌"
+)
 
 #: The four concerns the framework names for the prohibitions list. Generated build output and
 #: transient scratch are treated together: both are machine-produced and must not be hand-edited.
 _AGT07_CONCERNS: tuple[tuple[str, re.Pattern], ...] = (
     ("tests", re.compile(r"(?i)\b(tests?|skip|xfail)\b")),
-    ("generated files", re.compile(
-        r"(?i)(generated|build output|vendored|artefacts?/|artifacts?/|dist/|__pycache__|"
-        r"committed artifact)")),
-    ("the default branch", re.compile(
-        r"(?i)(default branch|force-?push|rewrite history|protected branch|\bpush\b|\bmain\b)")),
+    (
+        "generated files",
+        re.compile(
+            r"(?i)(generated|build output|vendored|artefacts?/|artifacts?/|dist/|__pycache__|"
+            r"committed artifact)"
+        ),
+    ),
+    (
+        "the default branch",
+        re.compile(r"(?i)(default branch|force-?push|rewrite history|protected branch|\bpush\b|\bmain\b)"),
+    ),
     ("secrets", re.compile(r"(?i)(secret|credential|api[ -]?key|\.env|redaction|token)")),
 )
 
@@ -737,15 +954,27 @@ def check_agt07(*, spec, target, inventory, stack, components, session) -> Check
 
     if not _has_prohibition_section(text):
         return CheckOutcome(
-            spec.id, spec.title, spec.tier, spec.severity, spec.phase, Verdict.FAIL, spec.status,
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.FAIL,
+            spec.status,
             summary="no prohibitions section",
-            findings=[Finding(
-                check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-                statement=statement("rely on an explicit do-not list",
-                                    f"{name} has no prohibitions section"),
-                evidence=[Evidence(name)],
-                remediation="Add an explicit prohibitions section covering tests, generated files, "
-                            "the default branch and secrets.")])
+            findings=[
+                Finding(
+                    check=spec.id,
+                    severity=spec.severity,
+                    phase=spec.phase,
+                    verdict=Verdict.FAIL,
+                    statement=statement("rely on an explicit do-not list", f"{name} has no prohibitions section"),
+                    evidence=[Evidence(name)],
+                    remediation="Add an explicit prohibitions section covering tests, generated files, "
+                    "the default branch and secrets.",
+                )
+            ],
+        )
 
     covered: dict[str, int] = {}
     for no, line in enumerate(text.splitlines(), start=1):
@@ -757,24 +986,42 @@ def check_agt07(*, spec, target, inventory, stack, components, session) -> Check
 
     missing = [label for label, _ in _AGT07_CONCERNS if label not in covered]
     if not missing:
-        return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase,
-                            Verdict.PASS, spec.status,
-                            summary="prohibitions cover tests, generated files, the default branch "
-                                   "and secrets")
+        return CheckOutcome(
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.PASS,
+            spec.status,
+            summary="prohibitions cover tests, generated files, the default branch and secrets",
+        )
 
     verdict = Verdict.PARTIAL if covered else Verdict.FAIL
     return CheckOutcome(
-        spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict, spec.status,
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
         summary=f"not covered: {', '.join(missing)}",
-        findings=[Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-            statement=statement(
-                "rely on an explicit do-not list",
-                f"{name} does not prohibit edits to {', '.join(missing)}"),
-            evidence=[Evidence(name, line=line, note=label) for label, line in covered.items()],
-            remediation="Add an explicit prohibition for each of: tests, generated files, the "
-                        "default branch and secrets."),
-        ])
+        findings=[
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=verdict,
+                statement=statement(
+                    "rely on an explicit do-not list", f"{name} does not prohibit edits to {', '.join(missing)}"
+                ),
+                evidence=[Evidence(name, line=line, note=label) for label, line in covered.items()],
+                remediation="Add an explicit prohibition for each of: tests, generated files, the "
+                "default branch and secrets.",
+            ),
+        ],
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -796,9 +1043,16 @@ def check_agt09(*, spec, target, inventory, stack, components, session) -> Check
     release_line = _first_line(text, _RELEASE_RE)
 
     if branch_line and release_line:
-        return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase,
-                            Verdict.PASS, spec.status,
-                            summary="the branch model and the release boundary are stated")
+        return CheckOutcome(
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.PASS,
+            spec.status,
+            summary="the branch model and the release boundary are stated",
+        )
     if branch_line:
         verdict = Verdict.PARTIAL
         why = "the branch model is stated but nothing says whether an agent may tag or release"
@@ -809,18 +1063,29 @@ def check_agt09(*, spec, target, inventory, stack, components, session) -> Check
         verdict = Verdict.FAIL
         why = "neither the branch model nor the release boundary is stated"
 
-    evidence = [Evidence(name, line=line)
-                for line in (branch_line, release_line) if line]
+    evidence = [Evidence(name, line=line) for line in (branch_line, release_line) if line]
     return CheckOutcome(
-        spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict, spec.status,
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
         summary=why,
-        findings=[Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-            statement=statement("know which branch to work on and whether it may cut a release", why),
-            evidence=evidence,
-            remediation="State the branches that exist (for example main and dev) and whether an "
-                        "agent may tag or publish a release."),
-        ])
+        findings=[
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=verdict,
+                statement=statement("know which branch to work on and whether it may cut a release", why),
+                evidence=evidence,
+                remediation="State the branches that exist (for example main and dev) and whether an "
+                "agent may tag or publish a release.",
+            ),
+        ],
+    )
 
 
 IMPLEMENTATIONS = {

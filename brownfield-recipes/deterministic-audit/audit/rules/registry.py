@@ -56,13 +56,13 @@ PACK_ANCHORS: dict[str, Anchor] = {
 class CheckSpec:
     id: str
     title: str
-    tier: str                       # A (artifact) | B (contract) | C (executed probe)
+    tier: str  # A (artifact) | B (contract) | C (executed probe)
     severity: Severity
     evidence_rule: str
     phase: int = 1
     scored: bool = True
     ecosystems: tuple[str, ...] = ()  # empty = applies to every stack
-    status: str = "planned"           # implemented | planned | blocked
+    status: str = "planned"  # implemented | planned | blocked
     impl: Callable | None = None
 
     # -- convenience -----------------------------------------------------
@@ -82,26 +82,57 @@ class CheckSpec:
         from audit.evaluate import CheckOutcome
 
         if self.status == "blocked":
-            return CheckOutcome(self.id, self.title, self.tier, self.severity, self.phase,
-                                Verdict.UNKNOWN, self.status,
-                                summary="blocked: the framework defines no artifact contract for this "
-                                        "deliverable, so it carries weight 0 in v1 (see CON-01)")
+            return CheckOutcome(
+                self.id,
+                self.title,
+                self.tier,
+                self.severity,
+                self.phase,
+                Verdict.UNKNOWN,
+                self.status,
+                summary="blocked: the framework defines no artifact contract for this "
+                "deliverable, so it carries weight 0 in v1 (see CON-01)",
+            )
         if self.impl is None:
-            return CheckOutcome(self.id, self.title, self.tier, self.severity, self.phase,
-                                Verdict.UNKNOWN, self.status,
-                                summary=f"not implemented in ruleset {_revision()}")
+            return CheckOutcome(
+                self.id,
+                self.title,
+                self.tier,
+                self.severity,
+                self.phase,
+                Verdict.UNKNOWN,
+                self.status,
+                summary=f"not implemented in ruleset {_revision()}",
+            )
         return self.impl(spec=self, **kwargs)
 
 
 def _revision() -> str:
     from audit import __ruleset_revision__
+
     return __ruleset_revision__
 
 
-def _c(check_id: str, title: str, tier: str, sev: Severity, status: str = "planned",
-       scored: bool = True, rule: str = "", ecosystems: tuple[str, ...] = ()) -> CheckSpec:
-    return CheckSpec(id=check_id, title=title, tier=tier, severity=sev, evidence_rule=rule,
-                     status=status, scored=scored, ecosystems=ecosystems)
+def _c(
+    check_id: str,
+    title: str,
+    tier: str,
+    sev: Severity,
+    status: str = "planned",
+    scored: bool = True,
+    rule: str = "",
+    ecosystems: tuple[str, ...] = (),
+) -> CheckSpec:
+    return CheckSpec(
+        id=check_id,
+        title=title,
+        tier=tier,
+        severity=sev,
+        evidence_rule=rule,
+        status=status,
+        scored=scored,
+        ecosystems=ecosystems,
+    )
 
 
 _S = Severity
@@ -150,13 +181,27 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("BASE-03", "No-new-violations mechanism", "B", _S.DEGRADER),
     _c("BASE-04", "Coverage floor configured", "A", _S.DEGRADER),
     # -- CON ------------------------------------------------------------
-    _c("CON-01", "Allow/deny artifact present", "B", _S.BLOCKER, status="blocked", scored=False,
-       rule="Blocked: the framework requires allow/deny lists in Phase 1 but defines no artifact "
-            "name or schema. Weight 0 in v1; the audit emits a draft instead (CON-04)."),
+    _c(
+        "CON-01",
+        "Allow/deny artifact present",
+        "B",
+        _S.BLOCKER,
+        status="blocked",
+        scored=False,
+        rule="Blocked: the framework requires allow/deny lists in Phase 1 but defines no artifact "
+        "name or schema. Weight 0 in v1; the audit emits a draft instead (CON-04).",
+    ),
     _c("CON-02", "Test directories protected", "B", _S.BLOCKER),
     _c("CON-03", "artefacts/ excluded from index and agent reads", "B", _S.DEGRADER),
-    _c("CON-04", "Draft allow/deny emitted", "—", _S.COSMETIC, scored=False, status="planned",
-       rule="Emitter, not a check: writes a draft list from the scan."),
+    _c(
+        "CON-04",
+        "Draft allow/deny emitted",
+        "—",
+        _S.COSMETIC,
+        scored=False,
+        status="planned",
+        rule="Emitter, not a check: writes a draft list from the scan.",
+    ),
     # -- EXEC -----------------------------------------------------------
     _c("EXEC-01", "Toolchain pinned / wrapper committed", "A", _S.BLOCKER),
     _c("EXEC-02", "Lockfile committed and consistent", "B", _S.BLOCKER),
@@ -200,7 +245,7 @@ def _attach_implementations(specs: tuple[CheckSpec, ...]) -> tuple[CheckSpec, ..
     """Wire implemented checks from audit/rules/checks/*. Nothing implemented ⇒ all planned."""
     try:
         from audit.rules.checks import IMPLEMENTATIONS
-    except ImportError:      # a partially built tree must still list and run
+    except ImportError:  # a partially built tree must still list and run
         return specs
 
     for spec in specs:
@@ -220,6 +265,7 @@ REGISTRY_BY_ID: dict[str, CheckSpec] = {spec.id: spec for spec in REGISTRY}
 # ---------------------------------------------------------------------------
 # queries
 # ---------------------------------------------------------------------------
+
 
 def applicable_checks(stack) -> list[CheckSpec]:
     return [spec for spec in REGISTRY if spec.applies_to(stack)]
@@ -261,9 +307,7 @@ def resolve_anchors(specs, framework_root: Path) -> list[tuple[str, Anchor]]:
                 headings[anchor.file] = set()
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
-            headings[anchor.file] = {
-                _normalise(match.group(1)) for match in _HEADING_RE.finditer(text)
-            }
+            headings[anchor.file] = {_normalise(match.group(1)) for match in _HEADING_RE.finditer(text)}
         wanted = _normalise(anchor.heading)
         if not any(wanted in heading for heading in headings[anchor.file]):
             missing.append((pack, anchor))
@@ -292,6 +336,7 @@ def find_framework_root(start: Path | None = None) -> Path | None:
 # ruleset identity (recorded in every report's provenance)
 # ---------------------------------------------------------------------------
 
+
 def ruleset_hash() -> str:
     """SHA-256 over the catalogue and the instruction-variant table.
 
@@ -303,11 +348,11 @@ def ruleset_hash() -> str:
 
     import audit.rules.variants as variants
 
-    parts = [f"{s.id}|{s.tier}|{s.severity.value}|{int(s.scored)}|{s.status}|{s.evidence_rule}"
-             for s in REGISTRY]
+    parts = [f"{s.id}|{s.tier}|{s.severity.value}|{int(s.scored)}|{s.status}|{s.evidence_rule}" for s in REGISTRY]
     for harness in variants.HARNESSES:
-        parts.append(f"H|{harness.tool}|{harness.agents_md}|{int(harness.nested)}"
-                     f"|{','.join(harness.paths)}|{harness.doc_url}")
+        parts.append(
+            f"H|{harness.tool}|{harness.agents_md}|{int(harness.nested)}|{','.join(harness.paths)}|{harness.doc_url}"
+        )
     for row in variants.SHADOW_PAIRS:
         parts.append("S|" + "|".join(row))
     for row in variants.CONFIG_INDIRECTION:

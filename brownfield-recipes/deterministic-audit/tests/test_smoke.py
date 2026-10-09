@@ -24,11 +24,11 @@ TESTS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(TESTS_DIR))
 
-import support                                                           # noqa: E402
-from audit.rules import variants as V                                     # noqa: E402
-from audit.rules.registry import REGISTRY, ruleset_hash                   # noqa: E402
-from audit.scan import Kind, build_inventory                              # noqa: E402
-from audit.stack import detect_stack                                      # noqa: E402
+import support  # noqa: E402
+from audit.rules import variants as V  # noqa: E402
+from audit.rules.registry import REGISTRY, ruleset_hash  # noqa: E402
+from audit.scan import Kind, build_inventory  # noqa: E402
+from audit.stack import detect_stack  # noqa: E402
 
 
 class CatalogueContractTests(unittest.TestCase):
@@ -38,6 +38,7 @@ class CatalogueContractTests(unittest.TestCase):
 
     def test_catalogue_size_matches_the_documented_counts(self):
         from audit.rules.registry import informational, scoreable
+
         self.assertEqual(len(REGISTRY), 69, "catalogue drifted from the documented 69 rows")
         self.assertEqual(len(scoreable()), 54, "scoreable count drifted from the documented 54")
         self.assertEqual(len(informational()), 15, "informational count drifted from 15")
@@ -143,11 +144,12 @@ class AgtPackTests(unittest.TestCase):
         self.assertEqual(verdicts["AGT-01"], "PARTIAL")
 
     def test_deferring_instruction_file_fails_agt10(self):
-        report = self._scan({
-            "AGENTS.md": "# Rules\n\nfirst read and understand the existing conventions "
-                         "(CONVENTIONS.md)\n" * 20,
-            "CONVENTIONS.md": "# Conventions\n\n" + "Use tabs.\n" * 40,
-        })
+        report = self._scan(
+            {
+                "AGENTS.md": "# Rules\n\nfirst read and understand the existing conventions (CONVENTIONS.md)\n" * 20,
+                "CONVENTIONS.md": "# Conventions\n\n" + "Use tabs.\n" * 40,
+            }
+        )
         verdicts = {c["id"]: c["verdict"] for c in report["checks"]}
         self.assertEqual(verdicts["AGT-10"], "FAIL")
 
@@ -157,8 +159,9 @@ class AgtPackTests(unittest.TestCase):
         from audit.findings import Severity, Verdict
         from audit.rules.registry import CheckSpec
 
-        spec = CheckSpec(id="ZZZ-01", title="hypothetical", tier="A",
-                         severity=Severity.COSMETIC, evidence_rule="", status="planned")
+        spec = CheckSpec(
+            id="ZZZ-01", title="hypothetical", tier="A", severity=Severity.COSMETIC, evidence_rule="", status="planned"
+        )
         outcome = spec.run(target=None, inventory=None, stack=None, components=None, session=None)
         self.assertEqual(outcome.verdict, Verdict.UNKNOWN)
         self.assertEqual(outcome.status, "planned")
@@ -180,8 +183,9 @@ class DeterminismTests(unittest.TestCase):
 
 class ZipappContractTests(unittest.TestCase):
     def test_archive_builds_and_runs(self):
-        build = subprocess.run([sys.executable, str(REPO_ROOT / "tools" / "build.py")],
-                               cwd=str(REPO_ROOT), text=True, capture_output=True)
+        build = subprocess.run(
+            [sys.executable, str(REPO_ROOT / "tools" / "build.py")], cwd=str(REPO_ROOT), text=True, capture_output=True
+        )
         self.assertEqual(build.returncode, 0, build.stderr)
 
         archive = REPO_ROOT / "dist" / "audit.pyz"
@@ -192,9 +196,11 @@ class ZipappContractTests(unittest.TestCase):
         self.assertIn("checks catalogued", run.stdout)
 
     def test_archive_exits_with_the_codes_the_cli_returns(self):
-        run = subprocess.run([str(REPO_ROOT / "dist" / "audit.pyz"), "--verify-rules",
-                              "--framework", "/nonexistent/framework-checkout"],
-                             text=True, capture_output=True)
+        run = subprocess.run(
+            [str(REPO_ROOT / "dist" / "audit.pyz"), "--verify-rules", "--framework", "/nonexistent/framework-checkout"],
+            text=True,
+            capture_output=True,
+        )
         self.assertEqual(run.returncode, 1, run.stderr)
 
 

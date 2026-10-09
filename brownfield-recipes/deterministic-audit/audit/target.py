@@ -19,11 +19,30 @@ from audit.cli import AuditUsageError
 
 #: Directories that are never descended into, regardless of ignore files. Vendored and build
 #: output are the two largest sources of false findings in a brownfield scan.
-HARD_EXCLUDE_DIRS = frozenset({
-    ".git", "node_modules", "vendor", "dist", "build", "target", ".venv", "venv",
-    "__pycache__", ".next", ".nuxt", ".cache", "coverage", ".gradle", ".tox",
-    ".mypy_cache", ".pytest_cache", ".ruff_cache", ".idea", ".terraform",
-})
+HARD_EXCLUDE_DIRS = frozenset(
+    {
+        ".git",
+        "node_modules",
+        "vendor",
+        "dist",
+        "build",
+        "target",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".next",
+        ".nuxt",
+        ".cache",
+        "coverage",
+        ".gradle",
+        ".tox",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".idea",
+        ".terraform",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -42,7 +61,9 @@ def _git(path: Path, *args: str) -> str | None:
     try:
         proc = subprocess.run(
             ["git", "-C", str(path), *args],
-            text=True, capture_output=True, timeout=10,
+            text=True,
+            capture_output=True,
+            timeout=10,
         )
     except (OSError, subprocess.SubprocessError):
         return None

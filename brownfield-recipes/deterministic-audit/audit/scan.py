@@ -48,31 +48,77 @@ class Kind(str, enum.Enum):
 
 
 _NAME_KINDS: dict[str, Kind] = {
-    "package.json": Kind.MANIFEST, "pyproject.toml": Kind.MANIFEST, "setup.py": Kind.MANIFEST,
-    "requirements.txt": Kind.MANIFEST, "Pipfile": Kind.MANIFEST, "pom.xml": Kind.BUILD,
-    "build.gradle": Kind.BUILD, "build.gradle.kts": Kind.BUILD, "settings.gradle": Kind.BUILD,
-    "go.mod": Kind.MANIFEST, "Cargo.toml": Kind.MANIFEST, "Gemfile": Kind.MANIFEST,
-    "composer.json": Kind.MANIFEST, "Makefile": Kind.BUILD, "Taskfile.yml": Kind.BUILD,
-    "Taskfile.yaml": Kind.BUILD, "gradlew": Kind.SCRIPT, "mvnw": Kind.SCRIPT,
-    ".env.example": Kind.CONFIG, ".nvmrc": Kind.CONFIG, ".tool-versions": Kind.CONFIG,
-    ".editorconfig": Kind.CONFIG, ".aider.conf.yml": Kind.CONFIG, "opencode.json": Kind.CONFIG,
+    "package.json": Kind.MANIFEST,
+    "pyproject.toml": Kind.MANIFEST,
+    "setup.py": Kind.MANIFEST,
+    "requirements.txt": Kind.MANIFEST,
+    "Pipfile": Kind.MANIFEST,
+    "pom.xml": Kind.BUILD,
+    "build.gradle": Kind.BUILD,
+    "build.gradle.kts": Kind.BUILD,
+    "settings.gradle": Kind.BUILD,
+    "go.mod": Kind.MANIFEST,
+    "Cargo.toml": Kind.MANIFEST,
+    "Gemfile": Kind.MANIFEST,
+    "composer.json": Kind.MANIFEST,
+    "Makefile": Kind.BUILD,
+    "Taskfile.yml": Kind.BUILD,
+    "Taskfile.yaml": Kind.BUILD,
+    "gradlew": Kind.SCRIPT,
+    "mvnw": Kind.SCRIPT,
+    ".env.example": Kind.CONFIG,
+    ".nvmrc": Kind.CONFIG,
+    ".tool-versions": Kind.CONFIG,
+    ".editorconfig": Kind.CONFIG,
+    ".aider.conf.yml": Kind.CONFIG,
+    "opencode.json": Kind.CONFIG,
 }
 
 _SUFFIX_KINDS: dict[str, Kind] = {
-    ".md": Kind.DOC, ".rst": Kind.DOC, ".txt": Kind.DOC,
-    ".py": Kind.SOURCE, ".ts": Kind.SOURCE, ".tsx": Kind.SOURCE, ".js": Kind.SOURCE,
-    ".jsx": Kind.SOURCE, ".java": Kind.SOURCE, ".kt": Kind.SOURCE, ".go": Kind.SOURCE,
-    ".rs": Kind.SOURCE, ".rb": Kind.SOURCE, ".cs": Kind.SOURCE, ".php": Kind.SOURCE,
-    ".sh": Kind.SCRIPT, ".bash": Kind.SCRIPT, ".ps1": Kind.SCRIPT,
-    ".json": Kind.CONFIG, ".yaml": Kind.CONFIG, ".yml": Kind.CONFIG, ".toml": Kind.CONFIG,
-    ".ini": Kind.CONFIG, ".cfg": Kind.CONFIG, ".properties": Kind.CONFIG,
-    ".min.js": Kind.GENERATED, ".map": Kind.GENERATED, ".pb.go": Kind.GENERATED,
+    ".md": Kind.DOC,
+    ".rst": Kind.DOC,
+    ".txt": Kind.DOC,
+    ".py": Kind.SOURCE,
+    ".ts": Kind.SOURCE,
+    ".tsx": Kind.SOURCE,
+    ".js": Kind.SOURCE,
+    ".jsx": Kind.SOURCE,
+    ".java": Kind.SOURCE,
+    ".kt": Kind.SOURCE,
+    ".go": Kind.SOURCE,
+    ".rs": Kind.SOURCE,
+    ".rb": Kind.SOURCE,
+    ".cs": Kind.SOURCE,
+    ".php": Kind.SOURCE,
+    ".sh": Kind.SCRIPT,
+    ".bash": Kind.SCRIPT,
+    ".ps1": Kind.SCRIPT,
+    ".json": Kind.CONFIG,
+    ".yaml": Kind.CONFIG,
+    ".yml": Kind.CONFIG,
+    ".toml": Kind.CONFIG,
+    ".ini": Kind.CONFIG,
+    ".cfg": Kind.CONFIG,
+    ".properties": Kind.CONFIG,
+    ".min.js": Kind.GENERATED,
+    ".map": Kind.GENERATED,
+    ".pb.go": Kind.GENERATED,
 }
 
 _TEST_HINTS = ("test_", "_test.", ".test.", ".spec.", "tests/", "test/", "__tests__/")
 
-_GENERATED_HINTS = ("dist/", "build/", "generated/", ".g.cs", ".designer.cs", ".pb.go",
-                    ".lock.gen", "vendor/", ".min.css", ".min.js")
+_GENERATED_HINTS = (
+    "dist/",
+    "build/",
+    "generated/",
+    ".g.cs",
+    ".designer.cs",
+    ".pb.go",
+    ".lock.gen",
+    "vendor/",
+    ".min.css",
+    ".min.js",
+)
 
 
 @dataclass(frozen=True)
@@ -103,8 +149,7 @@ class Inventory:
     def match(self, *patterns: str) -> list[str]:
         out: list[str] = []
         for f in self.files:
-            if any(fnmatch.fnmatch(f.rel, p) or fnmatch.fnmatch(os.path.basename(f.rel), p)
-                   for p in patterns):
+            if any(fnmatch.fnmatch(f.rel, p) or fnmatch.fnmatch(os.path.basename(f.rel), p) for p in patterns):
                 out.append(f.rel)
         return out
 
@@ -122,8 +167,7 @@ class Inventory:
         except OSError:
             return None
 
-    def grep(self, pattern, *, kinds: tuple[Kind, ...] | None = None,
-             limit: int = 200) -> list[tuple[str, int, str]]:
+    def grep(self, pattern, *, kinds: tuple[Kind, ...] | None = None, limit: int = 200) -> list[tuple[str, int, str]]:
         """Dot-less search across eligible text files. Returns (rel, line_no, line)."""
         import re
 
@@ -149,8 +193,12 @@ def _classify(rel: str) -> Kind:
     base = os.path.basename(rel)
     if base in _NAME_KINDS:
         return _NAME_KINDS[base]
-    if rel.startswith(".github/workflows/") or base in (".gitlab-ci.yml", "Jenkinsfile",
-                                                        "azure-pipelines.yml", ".circleci"):
+    if rel.startswith(".github/workflows/") or base in (
+        ".gitlab-ci.yml",
+        "Jenkinsfile",
+        "azure-pipelines.yml",
+        ".circleci",
+    ):
         return Kind.CI
     lowered = rel.lower()
     if any(h in lowered for h in _GENERATED_HINTS):
@@ -171,8 +219,9 @@ def _looks_binary(path: Path) -> bool:
         return True
 
 
-def build_inventory(root: Path, *, extra_excludes: tuple[str, ...] = (),
-                    max_files: int = 250_000, max_depth: int = 24) -> Inventory:
+def build_inventory(
+    root: Path, *, extra_excludes: tuple[str, ...] = (), max_files: int = 250_000, max_depth: int = 24
+) -> Inventory:
     """Walk the target once. Never follows symlinks; never leaves ``root``."""
     root = root.resolve()
     patterns = ignore_patterns(root)
@@ -186,9 +235,11 @@ def build_inventory(root: Path, *, extra_excludes: tuple[str, ...] = (),
             dirnames[:] = []
             continue
 
-        dirnames[:] = [d for d in sorted(dirnames)
-                       if d not in HARD_EXCLUDE_DIRS and not is_ignored(
-                           (current / d).relative_to(root).as_posix(), patterns)]
+        dirnames[:] = [
+            d
+            for d in sorted(dirnames)
+            if d not in HARD_EXCLUDE_DIRS and not is_ignored((current / d).relative_to(root).as_posix(), patterns)
+        ]
 
         for name in sorted(filenames):
             if len(inv.files) >= max_files:
@@ -211,12 +262,14 @@ def build_inventory(root: Path, *, extra_excludes: tuple[str, ...] = (),
                 inv.files.append(FileEntry(rel, 0, _classify(rel), has_text=True))
                 continue
             binary = _looks_binary(path)
-            inv.files.append(FileEntry(
-                rel=rel,
-                size=size,
-                kind=Kind.BINARY if binary else _classify(rel),
-                has_text=not binary,
-            ))
+            inv.files.append(
+                FileEntry(
+                    rel=rel,
+                    size=size,
+                    kind=Kind.BINARY if binary else _classify(rel),
+                    has_text=not binary,
+                )
+            )
         if inv.truncated:
             break
 

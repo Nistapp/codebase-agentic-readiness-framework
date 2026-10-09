@@ -65,8 +65,20 @@ from audit.rules.payloads import Counter, Payload
 #: Suffixes a *test source* file can carry. A file classified ``Kind.TEST`` by a directory hint
 #: (``test/``, ``tests/``) but carrying another suffix (``.json``) is configuration, not a test.
 _TEST_SOURCE_SUFFIXES: tuple[str, ...] = (
-    ".py", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs",
-    ".go", ".rs", ".java", ".kt", ".rb", ".cs", ".php",
+    ".py",
+    ".ts",
+    ".tsx",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".go",
+    ".rs",
+    ".java",
+    ".kt",
+    ".rb",
+    ".cs",
+    ".php",
 )
 
 #: Framework-specific test-file globs, in addition to the scan's classification.
@@ -98,9 +110,21 @@ _FASTPATH_RE = re.compile("|".join(_FASTPATH_PATTERNS))
 
 #: Coverage configuration filenames. Present at any depth is evidence.
 _COVERAGE_FILES: tuple[str, ...] = (
-    ".coveragerc", ".coveragerc.toml", ".nycrc", ".nycrc.json", ".nycrc.yml", ".nycrc.yaml",
-    "nyc.config.js", "nyc.config.cjs", ".c8rc", ".c8rc.json", "codecov.yml", ".codecov.yml",
-    ".codecov.yaml", "coveralls.yml", ".coveralls.yml",
+    ".coveragerc",
+    ".coveragerc.toml",
+    ".nycrc",
+    ".nycrc.json",
+    ".nycrc.yml",
+    ".nycrc.yaml",
+    "nyc.config.js",
+    "nyc.config.cjs",
+    ".c8rc",
+    ".c8rc.json",
+    "codecov.yml",
+    ".codecov.yml",
+    ".codecov.yaml",
+    "coveralls.yml",
+    ".coveralls.yml",
 )
 
 #: A command that turns coverage on. Matched against package scripts and resolved verb commands.
@@ -111,15 +135,26 @@ _COVERAGE_TOOL_RE = re.compile(
 
 #: Runner config globs that enable coverage through a config key rather than a script flag.
 _COVERAGE_CONFIG_GLOBS: tuple[str, ...] = (
-    "vitest.config.*", "jest.config.*", "vite.config.*", "karma.conf.*",
+    "vitest.config.*",
+    "jest.config.*",
+    "vite.config.*",
+    "karma.conf.*",
 )
 _COVERAGE_CONFIG_RE = re.compile(r"(?m)^\s*coverage\s*:|[\"']coverage[\"']\s*:")
 
 #: Language family by source suffix, for the TST-03 census.
 _FAMILY_BY_SUFFIX: dict[str, str] = {
-    ".py": "python", ".go": "go", ".rs": "rust", ".java": "jvm", ".kt": "jvm",
-    ".ts": "javascript", ".tsx": "javascript", ".js": "javascript", ".jsx": "javascript",
-    ".mjs": "javascript", ".cjs": "javascript",
+    ".py": "python",
+    ".go": "go",
+    ".rs": "rust",
+    ".java": "jvm",
+    ".kt": "jvm",
+    ".ts": "javascript",
+    ".tsx": "javascript",
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
 }
 
 _JS_MARKERS: tuple[str, ...] = (
@@ -146,32 +181,55 @@ _MARKER_PATTERNS: dict[str, tuple[str, ...]] = {
 }
 
 
-def _outcome(spec, verdict: Verdict, summary: str = "",
-             findings: list[Finding] | None = None,
-             data: Payload | None = None) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=summary, data=data, findings=findings or [])
+def _outcome(
+    spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
+) -> CheckOutcome:
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=summary,
+        data=data,
+        findings=findings or [],
+    )
 
 
 def _unknown(spec, reason: str) -> CheckOutcome:
     return _outcome(spec, Verdict.UNKNOWN, reason)
 
 
-def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[Evidence],
-             remediation: str, severity: Severity | None = None) -> Finding:
-    return Finding(check=spec.id, severity=severity or spec.severity, phase=spec.phase,
-                   verdict=verdict, statement=statement(cannot, because), evidence=evidence,
-                   remediation=remediation)
+def _finding(
+    spec,
+    cannot: str,
+    because: str,
+    verdict: Verdict,
+    evidence: list[Evidence],
+    remediation: str,
+    severity: Severity | None = None,
+) -> Finding:
+    return Finding(
+        check=spec.id,
+        severity=severity or spec.severity,
+        phase=spec.phase,
+        verdict=verdict,
+        statement=statement(cannot, because),
+        evidence=evidence,
+        remediation=remediation,
+    )
 
 
 # ---------------------------------------------------------------------------
 # shared readers
 # ---------------------------------------------------------------------------
 
+
 def _test_files(inventory) -> list[str]:
     """Test source files, per the scan's conventions plus the framework test globs."""
-    files = {f.rel for f in inventory.files
-             if f.kind is Kind.TEST and f.rel.lower().endswith(_TEST_SOURCE_SUFFIXES)}
+    files = {f.rel for f in inventory.files if f.kind is Kind.TEST and f.rel.lower().endswith(_TEST_SOURCE_SUFFIXES)}
     files.update(inventory.match(*_FRAMEWORK_TEST_GLOBS))
     return sorted(files)
 
@@ -191,51 +249,78 @@ def _family_for(rel: str, stack) -> str:
 # TST-01 — test verb and a non-empty suite
 # ===========================================================================
 
+
 def check_tst01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     binding = resolve_verbs(inventory, stack).get("test")
     files = _test_files(inventory)
 
     if binding and files:
-        return _outcome(spec, Verdict.PASS,
-                        f"test verb on {binding.runner} ({binding.command}); "
-                        f"{len(files)} test file(s)")
+        return _outcome(
+            spec, Verdict.PASS, f"test verb on {binding.runner} ({binding.command}); {len(files)} test file(s)"
+        )
 
     if binding and not files:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"test verb on {binding.runner} ({binding.command}) but no test file matches "
-                        f"the framework conventions", [_finding(
-            spec, "run a real suite rather than an empty one",
-            "a test verb resolves but no test file exists yet",
-            Verdict.PARTIAL, [Evidence(binding.runner, note=binding.command)],
-            "Add a test file (for example `test/` or `src/**/*.test.ts`) so the test verb runs a "
-            "real suite, not an empty one.",
-            severity=Severity.DEGRADER)])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"test verb on {binding.runner} ({binding.command}) but no test file matches the framework conventions",
+            [
+                _finding(
+                    spec,
+                    "run a real suite rather than an empty one",
+                    "a test verb resolves but no test file exists yet",
+                    Verdict.PARTIAL,
+                    [Evidence(binding.runner, note=binding.command)],
+                    "Add a test file (for example `test/` or `src/**/*.test.ts`) so the test verb runs a "
+                    "real suite, not an empty one.",
+                    severity=Severity.DEGRADER,
+                )
+            ],
+        )
 
     if files and not binding:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"{len(files)} test file(s) but no resolvable test verb", [_finding(
-            spec, "run the suite by name",
-            "test files exist but no runner exposes a test verb",
-            Verdict.PARTIAL, [Evidence(rel) for rel in files[:12]],
-            "Define a test verb on the runner (for example `npm test`, a Makefile `test` target, or "
-            "`pytest`) so the suite is reachable without inventing a command.",
-            severity=Severity.DEGRADER)])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"{len(files)} test file(s) but no resolvable test verb",
+            [
+                _finding(
+                    spec,
+                    "run the suite by name",
+                    "test files exist but no runner exposes a test verb",
+                    Verdict.PARTIAL,
+                    [Evidence(rel) for rel in files[:12]],
+                    "Define a test verb on the runner (for example `npm test`, a Makefile `test` target, or "
+                    "`pytest`) so the suite is reachable without inventing a command.",
+                    severity=Severity.DEGRADER,
+                )
+            ],
+        )
 
     if stack.ecosystems:
-        return _outcome(spec, Verdict.FAIL, "no test verb and no test file", [_finding(
-            spec, "run the test suite",
-            "no test verb resolves and no test file exists",
-            Verdict.FAIL, [Evidence(rel) for rel in sorted(inventory.paths())[:1]]
-            or [Evidence("<repository>")],
-            "Add a test verb and at least one test file so a change set can be verified.")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no test verb and no test file",
+            [
+                _finding(
+                    spec,
+                    "run the test suite",
+                    "no test verb resolves and no test file exists",
+                    Verdict.FAIL,
+                    [Evidence(rel) for rel in sorted(inventory.paths())[:1]] or [Evidence("<repository>")],
+                    "Add a test verb and at least one test file so a change set can be verified.",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem, no test verb and no test file, so a suite cannot "
-                          "be ruled out")
+    return _unknown(spec, "no recognised ecosystem, no test verb and no test file, so a suite cannot be ruled out")
 
 
 # ===========================================================================
 # TST-02 — suite status (Tier C)
 # ===========================================================================
+
 
 def check_tst02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     binding = resolve_verbs(inventory, stack).get("test")
@@ -252,16 +337,27 @@ def check_tst02(*, spec, target, inventory, stack, components, session) -> Check
     if result.exit_code == 0:
         return _outcome(spec, Verdict.PASS, f"test verb exited 0 in {result.duration_s:.2f}s")
 
-    return _outcome(spec, Verdict.FAIL, f"test verb exited {result.exit_code}", [_finding(
-        spec, "trust the suite to verify a change set",
-        f"the test verb ({' '.join(plan.command)}) exited {result.exit_code}",
-        Verdict.FAIL, [Evidence(binding.runner, note=binding.command)],
-        "Make the test verb exit 0 before relying on it as a gate.")])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        f"test verb exited {result.exit_code}",
+        [
+            _finding(
+                spec,
+                "trust the suite to verify a change set",
+                f"the test verb ({' '.join(plan.command)}) exited {result.exit_code}",
+                Verdict.FAIL,
+                [Evidence(binding.runner, note=binding.command)],
+                "Make the test verb exit 0 before relying on it as a gate.",
+            )
+        ],
+    )
 
 
 # ===========================================================================
 # TST-03 — skip / xfail census
 # ===========================================================================
+
 
 def check_tst03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     files = _test_files(inventory)
@@ -288,22 +384,24 @@ def check_tst03(*, spec, target, inventory, stack, components, session) -> Check
 
     total = sum(counts.values())
     breakdown = ", ".join(f"{family} {count}" for family, count in sorted(counts.items()))
-    detail = (f"skip/xfail census across {readable} test file(s): "
-              f"{breakdown or 'no markers'}; total {total}")
-    return _outcome(spec, Verdict.PASS, detail,
-                    data=Counter(value=total, unit="skip/xfail markers",
-                                 breakdown=dict(sorted(counts.items()))))
+    detail = f"skip/xfail census across {readable} test file(s): {breakdown or 'no markers'}; total {total}"
+    return _outcome(
+        spec,
+        Verdict.PASS,
+        detail,
+        data=Counter(value=total, unit="skip/xfail markers", breakdown=dict(sorted(counts.items()))),
+    )
 
 
 # ===========================================================================
 # TST-04 — fast path documented
 # ===========================================================================
 
+
 def check_tst04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     files = _test_files(inventory)
     if not files:
-        return _unknown(spec, "no test file is present, so there is no suite for a fast path to act "
-                              "on (see TST-01)")
+        return _unknown(spec, "no test file is present, so there is no suite for a fast path to act on (see TST-01)")
 
     docs = [rel for rel in _FASTPATH_DOCS if inventory.has(rel)]
     scope = ", ".join(docs) if docs else f"{', '.join(_FASTPATH_DOCS)} (none present)"
@@ -314,38 +412,46 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
             continue
         for _language, line, command in extract_fenced_commands(text):
             if _FASTPATH_RE.search(command):
-                return _outcome(spec, Verdict.PASS,
-                                f"fast path documented: {rel}:{line} `{command}` (scope: {scope})")
+                return _outcome(spec, Verdict.PASS, f"fast path documented: {rel}:{line} `{command}` (scope: {scope})")
 
-    return _outcome(spec, Verdict.FAIL,
-                    f"no single-test/subset invocation in fenced shell blocks (scope: {scope})",
-                    [_finding(
-                        spec, "run one test or a subset without the whole suite",
-                        f"none of the entry documents shows a single-test or subset invocation "
-                        f"(scope: {scope})",
-                        Verdict.FAIL, [Evidence(rel) for rel in docs] or [Evidence("<repository>")],
-                        "Document a fast path (for example `pytest -k <name>`, "
-                        "`npm test -- <name>`, or `go test -run <name>`) in a fenced shell block.")])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        f"no single-test/subset invocation in fenced shell blocks (scope: {scope})",
+        [
+            _finding(
+                spec,
+                "run one test or a subset without the whole suite",
+                f"none of the entry documents shows a single-test or subset invocation (scope: {scope})",
+                Verdict.FAIL,
+                [Evidence(rel) for rel in docs] or [Evidence("<repository>")],
+                "Document a fast path (for example `pytest -k <name>`, "
+                "`npm test -- <name>`, or `go test -run <name>`) in a fenced shell block.",
+            )
+        ],
+    )
 
 
 # ===========================================================================
 # TST-05 — coverage configuration
 # ===========================================================================
 
+
 def _coverage_evidence(inventory, stack) -> list[str]:
     found = [name for name in _COVERAGE_FILES if inventory.has(name)]
 
-    if any(_COVERAGE_TOOL_RE.search(command)
-           for command in extract_npm_scripts(inventory).values()):
+    if any(_COVERAGE_TOOL_RE.search(command) for command in extract_npm_scripts(inventory).values()):
         found.append("package.json script")
     if _read_matches(inventory, "pyproject.toml", r"(?ms)^\[tool\.coverage"):
         found.append("pyproject.toml [tool.coverage]")
-    for rel, pattern in (("setup.cfg", r"(?m)^\[coverage"),
-                         ("tox.ini", r"(?m)^\[coverage"),
-                         ("pytest.ini", r"--cov\b"),
-                         ("pom.xml", r"jacoco"),
-                         ("build.gradle", r"jacoco"),
-                         ("build.gradle.kts", r"jacoco")):
+    for rel, pattern in (
+        ("setup.cfg", r"(?m)^\[coverage"),
+        ("tox.ini", r"(?m)^\[coverage"),
+        ("pytest.ini", r"--cov\b"),
+        ("pom.xml", r"jacoco"),
+        ("build.gradle", r"jacoco"),
+        ("build.gradle.kts", r"jacoco"),
+    ):
         if _read_matches(inventory, rel, pattern):
             found.append(rel)
 
@@ -372,12 +478,22 @@ def check_tst05(*, spec, target, inventory, stack, components, session) -> Check
     if evidence:
         return _outcome(spec, Verdict.PASS, f"coverage configured: {', '.join(evidence)}")
 
-    return _outcome(spec, Verdict.FAIL, "no coverage configuration", [_finding(
-        spec, "see how much of the code the suite actually covers",
-        "no coverage configuration or coverage-invoking command is present",
-        Verdict.FAIL, [Evidence("<repository>")],
-        "Configure coverage for the test runner (a `coverage` block, `.coveragerc`/`.nycrc`, "
-        "`--coverage`/`--cov`, or `go test -cover`).")])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no coverage configuration",
+        [
+            _finding(
+                spec,
+                "see how much of the code the suite actually covers",
+                "no coverage configuration or coverage-invoking command is present",
+                Verdict.FAIL,
+                [Evidence("<repository>")],
+                "Configure coverage for the test runner (a `coverage` block, `.coveragerc`/`.nycrc`, "
+                "`--coverage`/`--cov`, or `go test -cover`).",
+            )
+        ],
+    )
 
 
 IMPLEMENTATIONS = {

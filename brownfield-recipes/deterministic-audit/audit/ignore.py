@@ -37,7 +37,11 @@ from pathlib import Path
 
 #: Ignore files lifted from the target, in load order. Mirrors the historical set in ``audit.scan``.
 IGNORE_FILE_NAMES: tuple[str, ...] = (
-    ".gitignore", ".cbmignore", ".cursorignore", ".aiderignore", ".rooignore",
+    ".gitignore",
+    ".cbmignore",
+    ".cursorignore",
+    ".aiderignore",
+    ".rooignore",
 )
 
 
@@ -59,7 +63,9 @@ def tracked_files(target: Path) -> set[str] | None:
     try:
         proc = subprocess.run(
             ["git", "-C", str(target), "ls-files", "-z"],
-            text=True, capture_output=True, timeout=10,
+            text=True,
+            capture_output=True,
+            timeout=10,
         )
     except (OSError, subprocess.SubprocessError):
         return None
@@ -101,8 +107,7 @@ def matching_rules(rel: str, rules: list[IgnoreRule]) -> list[IgnoreRule]:
     This is the "does any ignore file cover this path?" answer DOC-03 and CON-03 need.
     """
     base = os.path.basename(rel)
-    return [rule for rule in rules
-            if fnmatch.fnmatch(rel, rule.pattern) or fnmatch.fnmatch(base, rule.pattern)]
+    return [rule for rule in rules if fnmatch.fnmatch(rel, rule.pattern) or fnmatch.fnmatch(base, rule.pattern)]
 
 
 def is_ignored(rel: str, patterns: list[str]) -> bool:

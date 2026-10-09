@@ -78,8 +78,7 @@ def eligible(plan: ProbePlan, allow: tuple[str, ...]) -> tuple[bool, str | None]
     return True, None
 
 
-def run_plan(plan: ProbePlan, *, allow: tuple[str, ...], cwd: Path,
-             timeout: int = 300) -> ProbeResult:
+def run_plan(plan: ProbePlan, *, allow: tuple[str, ...], cwd: Path, timeout: int = 300) -> ProbeResult:
     """Run one probe. Refusals are recorded as evidence, never as exceptions."""
     permitted, reason = eligible(plan, allow)
     if not permitted:
@@ -87,24 +86,34 @@ def run_plan(plan: ProbePlan, *, allow: tuple[str, ...], cwd: Path,
 
     started = time.monotonic()
     try:
-        proc = subprocess.run(plan.command, cwd=str(cwd), text=True, capture_output=True,
-                              timeout=timeout)
+        proc = subprocess.run(plan.command, cwd=str(cwd), text=True, capture_output=True, timeout=timeout)
     except subprocess.TimeoutExpired as exc:
         partial = (exc.stdout or "") if isinstance(exc.stdout, str) else ""
         clean, redactions = redact(partial)
-        return ProbeResult(plan.verb, plan.command, None, time.monotonic() - started,
-                           timed_out=True,
-                           output_tail="\n".join(clean.splitlines()[-OUTPUT_TAIL_LINES:]),
-                           redactions=redactions)
+        return ProbeResult(
+            plan.verb,
+            plan.command,
+            None,
+            time.monotonic() - started,
+            timed_out=True,
+            output_tail="\n".join(clean.splitlines()[-OUTPUT_TAIL_LINES:]),
+            redactions=redactions,
+        )
     except OSError as exc:
-        return ProbeResult(plan.verb, plan.command, None, time.monotonic() - started,
-                           refused_reason=f"could not execute: {exc}")
+        return ProbeResult(
+            plan.verb, plan.command, None, time.monotonic() - started, refused_reason=f"could not execute: {exc}"
+        )
 
     combined = (proc.stdout or "") + (proc.stderr or "")
     clean, redactions = redact(combined)
-    return ProbeResult(plan.verb, plan.command, proc.returncode, time.monotonic() - started,
-                       output_tail="\n".join(clean.splitlines()[-OUTPUT_TAIL_LINES:]),
-                       redactions=redactions)
+    return ProbeResult(
+        plan.verb,
+        plan.command,
+        proc.returncode,
+        time.monotonic() - started,
+        output_tail="\n".join(clean.splitlines()[-OUTPUT_TAIL_LINES:]),
+        redactions=redactions,
+    )
 
 
 @dataclass
@@ -119,8 +128,9 @@ class ProbeSession:
 
     def run(self, plan: ProbePlan) -> ProbeResult:
         if not self.enabled:
-            result = ProbeResult(plan.verb, plan.command, None, 0.0,
-                                 refused_reason="probes disabled (pass --run-gates)")
+            result = ProbeResult(
+                plan.verb, plan.command, None, 0.0, refused_reason="probes disabled (pass --run-gates)"
+            )
             self.results.append(result)
             return result
         result = run_plan(plan, allow=self.allow, cwd=self.cwd, timeout=self.timeout)

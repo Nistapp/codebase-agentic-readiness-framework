@@ -19,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict)
 FIXTURES: dict[str, tuple[str, str]] = {
@@ -43,8 +43,7 @@ class CmdFixtureTests(unittest.TestCase):
                 self.assertEqual(verdicts[check], expected, f"{name}: {check}")
 
                 failing = sorted(cid for cid in CMD_CHECKS if verdicts[cid] == "FAIL")
-                self.assertEqual(failing, [check],
-                                 f"{name}: unexpected CMD FAILs {failing}")
+                self.assertEqual(failing, [check], f"{name}: unexpected CMD FAILs {failing}")
 
     def test_all_seven_verbs_on_one_runner_passes_for_npm_and_make(self):
         # Two runners, the same seven verbs: CMD-01 must pass on both. This is the check that the
@@ -74,12 +73,17 @@ class CmdUnknownTests(unittest.TestCase):
     def test_check_that_composes_only_some_verbs_is_partial(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            support.write(root, "package.json", (
-                '{"name":"partial","scripts":{"format":"prettier --write .",'
-                '"format:check":"prettier --check .","lint":"eslint .",'
-                '"typecheck":"tsc --noEmit","test":"vitest run",'
-                '"check":"npm run typecheck && npm test",'
-                '"security":"npm audit"}}'))
+            support.write(
+                root,
+                "package.json",
+                (
+                    '{"name":"partial","scripts":{"format":"prettier --write .",'
+                    '"format:check":"prettier --check .","lint":"eslint .",'
+                    '"typecheck":"tsc --noEmit","test":"vitest run",'
+                    '"check":"npm run typecheck && npm test",'
+                    '"security":"npm audit"}}'
+                ),
+            )
             report = support.run_audit(root)
         self.assertEqual(support.verdicts(report)["CMD-02"], "PARTIAL")
 
@@ -92,15 +96,28 @@ class Agt05Tests(unittest.TestCase):
     def test_named_and_resolved_passes(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            support.write(root, "AGENTS.md", (
-                "# Rules\n\n" + "Always run the tests before committing.\n" * 20
-                + "\nVerbs: " + ", ".join(VERBS) + "\n"))
-            support.write(root, "package.json", (
-                '{"name":"x","scripts":{"format":"prettier --write .",'
-                '"format:check":"prettier --check .","lint":"eslint .",'
-                '"typecheck":"tsc --noEmit","test":"vitest run",'
-                '"check":"npm run format:check && npm run typecheck && npm test",'
-                '"security":"npm audit"}}'))
+            support.write(
+                root,
+                "AGENTS.md",
+                (
+                    "# Rules\n\n"
+                    + "Always run the tests before committing.\n" * 20
+                    + "\nVerbs: "
+                    + ", ".join(VERBS)
+                    + "\n"
+                ),
+            )
+            support.write(
+                root,
+                "package.json",
+                (
+                    '{"name":"x","scripts":{"format":"prettier --write .",'
+                    '"format:check":"prettier --check .","lint":"eslint .",'
+                    '"typecheck":"tsc --noEmit","test":"vitest run",'
+                    '"check":"npm run format:check && npm run typecheck && npm test",'
+                    '"security":"npm audit"}}'
+                ),
+            )
             report = support.run_audit(root)
         self.assertEqual(support.verdicts(report)["AGT-05"], "PASS")
 

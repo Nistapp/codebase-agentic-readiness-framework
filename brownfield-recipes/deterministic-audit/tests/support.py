@@ -30,8 +30,7 @@ def write(root: Path, rel: str, text: str) -> Path:
     return path
 
 
-def run_audit(target: Path, *, fmt: str = "json", extra_args: tuple[str, ...] = (),
-              env: dict | None = None) -> dict:
+def run_audit(target: Path, *, fmt: str = "json", extra_args: tuple[str, ...] = (), env: dict | None = None) -> dict:
     """Run ``python3 -m audit`` against ``target`` and return the parsed JSON report.
 
     The report is written to a temporary ``--out`` outside the target (the writer refuses to drop a
@@ -42,9 +41,10 @@ def run_audit(target: Path, *, fmt: str = "json", extra_args: tuple[str, ...] = 
     with tempfile.TemporaryDirectory() as out_dir:
         out = Path(out_dir) / "report.json"
         proc = subprocess.run(
-            [sys.executable, "-m", "audit", str(target),
-             "--format", fmt, "--out", str(out), *extra_args],
-            cwd=str(REPO_ROOT), text=True, capture_output=True,
+            [sys.executable, "-m", "audit", str(target), "--format", fmt, "--out", str(out), *extra_args],
+            cwd=str(REPO_ROOT),
+            text=True,
+            capture_output=True,
             env={**os.environ, **(env or {})},
         )
         if proc.returncode != 0:
@@ -54,19 +54,20 @@ def run_audit(target: Path, *, fmt: str = "json", extra_args: tuple[str, ...] = 
         return json.loads(out.read_text(encoding="utf-8"))
 
 
-def run_audit_process(target: Path, *, fmt: str = "json", extra_args: tuple[str, ...] = (),
-                      out: Path | None = None) -> tuple[subprocess.CompletedProcess, Path]:
+def run_audit_process(
+    target: Path, *, fmt: str = "json", extra_args: tuple[str, ...] = (), out: Path | None = None
+) -> tuple[subprocess.CompletedProcess, Path]:
     """Run the audit **without** asserting an exit code; return ``(process, out_path)``.
 
     Needed by the ratchet, where a non-zero exit is the behaviour under test. ``out`` should be a
     fresh path (the writer refuses to overwrite unless ``--force`` is passed).
     """
-    out_path = Path(out) if out is not None else (
-        Path(tempfile.mkdtemp(prefix="audit-out-")) / "report.json")
+    out_path = Path(out) if out is not None else (Path(tempfile.mkdtemp(prefix="audit-out-")) / "report.json")
     proc = subprocess.run(
-        [sys.executable, "-m", "audit", str(target),
-         "--format", fmt, "--out", str(out_path), *extra_args],
-        cwd=str(REPO_ROOT), text=True, capture_output=True,
+        [sys.executable, "-m", "audit", str(target), "--format", fmt, "--out", str(out_path), *extra_args],
+        cwd=str(REPO_ROOT),
+        text=True,
+        capture_output=True,
     )
     return proc, out_path
 

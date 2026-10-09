@@ -54,8 +54,7 @@ READ_ONLY_VERBS: tuple[str, ...] = tuple(v for v in VERBS if v not in MUTATING_V
 
 #: Pull-request trigger patterns, per CI provider. Matched against the raw workflow text.
 _PR_TRIGGER_PATTERNS: dict[str, tuple[re.Pattern[str], ...]] = {
-    "github": (re.compile(r"(?m)^\s*pull_request(?:_target)?\s*:"),
-               re.compile(r"\bon\s*:\s*\[[^\]]*pull_request")),
+    "github": (re.compile(r"(?m)^\s*pull_request(?:_target)?\s*:"), re.compile(r"\bon\s*:\s*\[[^\]]*pull_request")),
     "gitlab": (re.compile(r"merge_request", re.IGNORECASE),),
     "azure": (re.compile(r"(?m)^\s*pr\s*:"),),
     "jenkins": (re.compile(r"changeRequest", re.IGNORECASE),),
@@ -78,67 +77,161 @@ _RUNNER_TARGET_RES = (_NPM_RE, _YARN_RE, _TASK_RE, _GRADLE_RE)
 _DIRECT_VERB_PATTERNS: tuple[tuple[str, tuple[re.Pattern[str], ...]], ...] = tuple(
     (verb, tuple(re.compile(p) for p in patterns))
     for verb, patterns in (
-        ("format:check", (
-            r"\bprettier\b[^&|;]*--check\b", r"\bruff\s+format\b[^&|;]*--(?:check|diff)\b",
-            r"\bbiome\s+ci\b", r"\bblack\b[^&|;]*--check\b",
-            r"\bcargo\s+fmt\b[^&|;]*--check\b",
-            r"\bdotnet\s+format\b[^&|;]*--verify-no-changes\b",
-        )),
-        ("format", (
-            r"\bprettier\b[^&|;]*(?:--write|-w)\b", r"\bruff\s+format\b", r"\bbiome\s+format\b",
-            r"\bblack\b", r"\bgofmt\b[^&|;]*\s-w\b", r"\bcargo\s+fmt\b",
-        )),
-        ("typecheck", (
-            r"\btsc\b", r"\bmypy\b", r"\bpyright\b", r"\bbasedpyright\b",
-            r"\bcargo\s+check\b", r"\bgo\s+vet\b",
-        )),
-        ("lint", (
-            r"\beslint\b", r"\bruff\s+check\b", r"\bflake8\b", r"\bpylint\b",
-            r"\bgolangci-lint\b", r"\bclippy\b", r"\brubocop\b",
-            r"\bbiome\s+(?:check|lint)\b", r"\bstylelint\b",
-        )),
-        ("test", (
-            r"\bvitest\b", r"\bjest\b", r"\bmocha\b", r"\bpytest\b",
-            r"python3?\s+-m\s+(?:unittest|pytest)", r"\bgo\s+test\b", r"\bcargo\s+test\b",
-            r"\bdotnet\s+test\b", r"\brspec\b", r"\bphpunit\b",
-        )),
-        ("security", (
-            r"\bnpm\s+audit\b", r"\b(?:pnpm|yarn|bun)\s+audit\b", r"\bpip-audit\b",
-            r"\bsafety\s+check\b", r"\bosv-scanner\b", r"\bcargo\s+audit\b",
-            r"\bgovulncheck\b", r"\bsnyk\b", r"\btrivy\b", r"\bgrype\b",
-            r"\bbundler-audit\b", r"\bcomposer\s+audit\b", r"\baudit-ci\b",
-        )),
+        (
+            "format:check",
+            (
+                r"\bprettier\b[^&|;]*--check\b",
+                r"\bruff\s+format\b[^&|;]*--(?:check|diff)\b",
+                r"\bbiome\s+ci\b",
+                r"\bblack\b[^&|;]*--check\b",
+                r"\bcargo\s+fmt\b[^&|;]*--check\b",
+                r"\bdotnet\s+format\b[^&|;]*--verify-no-changes\b",
+            ),
+        ),
+        (
+            "format",
+            (
+                r"\bprettier\b[^&|;]*(?:--write|-w)\b",
+                r"\bruff\s+format\b",
+                r"\bbiome\s+format\b",
+                r"\bblack\b",
+                r"\bgofmt\b[^&|;]*\s-w\b",
+                r"\bcargo\s+fmt\b",
+            ),
+        ),
+        (
+            "typecheck",
+            (
+                r"\btsc\b",
+                r"\bmypy\b",
+                r"\bpyright\b",
+                r"\bbasedpyright\b",
+                r"\bcargo\s+check\b",
+                r"\bgo\s+vet\b",
+            ),
+        ),
+        (
+            "lint",
+            (
+                r"\beslint\b",
+                r"\bruff\s+check\b",
+                r"\bflake8\b",
+                r"\bpylint\b",
+                r"\bgolangci-lint\b",
+                r"\bclippy\b",
+                r"\brubocop\b",
+                r"\bbiome\s+(?:check|lint)\b",
+                r"\bstylelint\b",
+            ),
+        ),
+        (
+            "test",
+            (
+                r"\bvitest\b",
+                r"\bjest\b",
+                r"\bmocha\b",
+                r"\bpytest\b",
+                r"python3?\s+-m\s+(?:unittest|pytest)",
+                r"\bgo\s+test\b",
+                r"\bcargo\s+test\b",
+                r"\bdotnet\s+test\b",
+                r"\brspec\b",
+                r"\bphpunit\b",
+            ),
+        ),
+        (
+            "security",
+            (
+                r"\bnpm\s+audit\b",
+                r"\b(?:pnpm|yarn|bun)\s+audit\b",
+                r"\bpip-audit\b",
+                r"\bsafety\s+check\b",
+                r"\bosv-scanner\b",
+                r"\bcargo\s+audit\b",
+                r"\bgovulncheck\b",
+                r"\bsnyk\b",
+                r"\btrivy\b",
+                r"\bgrype\b",
+                r"\bbundler-audit\b",
+                r"\bcomposer\s+audit\b",
+                r"\baudit-ci\b",
+            ),
+        ),
     )
 )
 
 #: Package-manager subcommands that are tooling, not project scripts. Never flagged as CI-only.
-_PM_BUILTINS: frozenset[str] = frozenset({
-    "ci", "install", "i", "publish", "pack", "version", "exec", "init", "link", "dedupe",
-    "prune", "update", "outdated", "ls", "why", "config", "cache", "login", "logout", "whoami",
-    "doctor", "help", "start", "stop", "restart", "add", "remove", "uninstall",
-})
+_PM_BUILTINS: frozenset[str] = frozenset(
+    {
+        "ci",
+        "install",
+        "i",
+        "publish",
+        "pack",
+        "version",
+        "exec",
+        "init",
+        "link",
+        "dedupe",
+        "prune",
+        "update",
+        "outdated",
+        "ls",
+        "why",
+        "config",
+        "cache",
+        "login",
+        "logout",
+        "whoami",
+        "doctor",
+        "help",
+        "start",
+        "stop",
+        "restart",
+        "add",
+        "remove",
+        "uninstall",
+    }
+)
 
 
-def _outcome(spec, verdict: Verdict, summary: str = "",
-             findings: list[Finding] | None = None,
-             data: Payload | None = None) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=summary, data=data, findings=findings or [])
+def _outcome(
+    spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
+) -> CheckOutcome:
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=summary,
+        data=data,
+        findings=findings or [],
+    )
 
 
 def _unknown(spec, reason: str) -> CheckOutcome:
     return _outcome(spec, Verdict.UNKNOWN, reason)
 
 
-def _finding(spec, cannot: str, because: str, verdict: Verdict,
-             evidence: list[Evidence], remediation: str) -> Finding:
-    return Finding(check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-                   statement=statement(cannot, because), evidence=evidence, remediation=remediation)
+def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[Evidence], remediation: str) -> Finding:
+    return Finding(
+        check=spec.id,
+        severity=spec.severity,
+        phase=spec.phase,
+        verdict=verdict,
+        statement=statement(cannot, because),
+        evidence=evidence,
+        remediation=remediation,
+    )
 
 
 # ---------------------------------------------------------------------------
 # workflow discovery and a minimal, documented YAML scan
 # ---------------------------------------------------------------------------
+
 
 def _workflows(inventory) -> list[tuple[str, str]]:
     """Every present workflow file as ``(provider, rel)``, in provider order then path order."""
@@ -234,39 +327,56 @@ def _all_run_commands(inventory, workflows) -> list[tuple[str, int, str]]:
 # CI-01 — pipeline present, triggered on PRs
 # ===========================================================================
 
+
 def check_ci01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     workflows = _workflows(inventory)
     if not workflows:
         providers = ", ".join(sorted(stack.ci_providers)) or "none"
-        return _outcome(spec, Verdict.FAIL,
-                        f"no CI workflow file (detected providers: {providers})", [_finding(
-            spec, "rely on CI to verify a change set",
-            "no CI workflow file exists",
+        return _outcome(
+            spec,
             Verdict.FAIL,
-            [Evidence(rel) for rel in sorted(inventory.paths())[:1]] or [Evidence("<repository>")],
-            "Add a PR-triggered workflow (for example .github/workflows/ci.yml) that runs the same "
-            "verbs the local command surface defines.")])
+            f"no CI workflow file (detected providers: {providers})",
+            [
+                _finding(
+                    spec,
+                    "rely on CI to verify a change set",
+                    "no CI workflow file exists",
+                    Verdict.FAIL,
+                    [Evidence(rel) for rel in sorted(inventory.paths())[:1]] or [Evidence("<repository>")],
+                    "Add a PR-triggered workflow (for example .github/workflows/ci.yml) that runs the same "
+                    "verbs the local command surface defines.",
+                )
+            ],
+        )
 
-    triggered = [(provider, rel) for provider, rel in workflows
-                 if _has_pr_trigger(provider, inventory.read(rel) or "")]
+    triggered = [(provider, rel) for provider, rel in workflows if _has_pr_trigger(provider, inventory.read(rel) or "")]
     if triggered:
         detail = "; ".join(f"{rel} ({provider})" for provider, rel in triggered)
         return _outcome(spec, Verdict.PASS, f"PR-triggered: {detail}")
 
     providers = ", ".join(sorted({provider for provider, _rel in workflows}))
-    return _outcome(spec, Verdict.PARTIAL,
-                    f"{len(workflows)} workflow(s) ({providers}) but none declares a PR trigger",
-                    [_finding(
-        spec, "trust CI to run before a change reaches the default branch",
-        "workflow files exist but none declares a pull-request trigger",
-        Verdict.PARTIAL, [Evidence(rel) for _provider, rel in workflows],
-        "Add a pull-request trigger (GitHub `on: pull_request`, GitLab `merge_request`, …) so the "
-        "pipeline runs on the PR rather than only after merge.")])
+    return _outcome(
+        spec,
+        Verdict.PARTIAL,
+        f"{len(workflows)} workflow(s) ({providers}) but none declares a PR trigger",
+        [
+            _finding(
+                spec,
+                "trust CI to run before a change reaches the default branch",
+                "workflow files exist but none declares a pull-request trigger",
+                Verdict.PARTIAL,
+                [Evidence(rel) for _provider, rel in workflows],
+                "Add a pull-request trigger (GitHub `on: pull_request`, GitLab `merge_request`, …) so the "
+                "pipeline runs on the PR rather than only after merge.",
+            )
+        ],
+    )
 
 
 # ===========================================================================
 # CI-02 — local↔CI parity
 # ===========================================================================
+
 
 def check_ci02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     local = resolve_verbs(inventory, stack)
@@ -274,25 +384,37 @@ def check_ci02(*, spec, target, inventory, stack, components, session) -> CheckO
         return _unknown(spec, "no local verb resolves on any runner, so CI cannot be compared to it")
 
     commands = _all_run_commands(inventory, _workflows(inventory))
-    ci_verbs = {verb for _rel, _line, command in commands
-                if (verb := _command_verb(command)) is not None}
+    ci_verbs = {verb for _rel, _line, command in commands if (verb := _command_verb(command)) is not None}
 
     extra = sorted(verb for verb in ci_verbs if verb not in local)
-    missing = sorted(verb for verb in READ_ONLY_VERBS
-                     if verb in local and verb not in ci_verbs)
+    missing = sorted(verb for verb in READ_ONLY_VERBS if verb in local and verb not in ci_verbs)
 
-    detail = (f"CI verbs: {', '.join(sorted(ci_verbs)) or 'none'}; "
-              f"local read-only verbs not exercised: {', '.join(missing) or 'none'}")
+    detail = (
+        f"CI verbs: {', '.join(sorted(ci_verbs)) or 'none'}; "
+        f"local read-only verbs not exercised: {', '.join(missing) or 'none'}"
+    )
 
     if extra:
-        return _outcome(spec, Verdict.FAIL, detail, [_finding(
-            spec, "run the same command surface locally that CI runs",
-            f"CI invokes framework verb(s) with no local definition: {', '.join(extra)}",
+        return _outcome(
+            spec,
             Verdict.FAIL,
-            [Evidence(rel, line=line, note=command)
-             for rel, line, command in commands if _command_verb(command) in extra],
-            "Define the missing verb(s) on the local runner, or stop invoking them from CI, so the "
-            "two surfaces agree.")])
+            detail,
+            [
+                _finding(
+                    spec,
+                    "run the same command surface locally that CI runs",
+                    f"CI invokes framework verb(s) with no local definition: {', '.join(extra)}",
+                    Verdict.FAIL,
+                    [
+                        Evidence(rel, line=line, note=command)
+                        for rel, line, command in commands
+                        if _command_verb(command) in extra
+                    ],
+                    "Define the missing verb(s) on the local runner, or stop invoking them from CI, so the "
+                    "two surfaces agree.",
+                )
+            ],
+        )
 
     return _outcome(spec, Verdict.PASS, detail)
 
@@ -300,6 +422,7 @@ def check_ci02(*, spec, target, inventory, stack, components, session) -> CheckO
 # ===========================================================================
 # CI-03 — CI-only steps flagged
 # ===========================================================================
+
 
 def check_ci03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     local_targets: set[str] = set()
@@ -309,15 +432,20 @@ def check_ci03(*, spec, target, inventory, stack, components, session) -> CheckO
     findings: list[Finding] = []
     for rel, line, command in _all_run_commands(inventory, _workflows(inventory)):
         if _command_verb(command) is not None:
-            continue                                # CI-02's subject, not repeated here
+            continue  # CI-02's subject, not repeated here
         target = _runner_target(command)
         if target is None or target in _PM_BUILTINS or target in local_targets:
             continue
-        findings.append(_finding(
-            spec, "reproduce a CI step on the local command surface",
-            f"{rel}:{line} runs `{command}` with no local runner entry for `{target}`",
-            Verdict.FAIL, [Evidence(rel, line=line, note=command)],
-            f"Add a local script/target for `{target}`, or document why the step is CI-only."))
+        findings.append(
+            _finding(
+                spec,
+                "reproduce a CI step on the local command surface",
+                f"{rel}:{line} runs `{command}` with no local runner entry for `{target}`",
+                Verdict.FAIL,
+                [Evidence(rel, line=line, note=command)],
+                f"Add a local script/target for `{target}`, or document why the step is CI-only.",
+            )
+        )
 
     if not findings:
         return _outcome(spec, Verdict.PASS, "no CI-only steps")

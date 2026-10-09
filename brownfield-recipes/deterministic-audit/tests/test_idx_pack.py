@@ -20,7 +20,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 IDX_CHECKS = ("IDX-01", "IDX-02", "IDX-03")
 
@@ -30,12 +30,11 @@ def write_store(store: Path, roots: list[str]) -> Path:
     store.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(store / "fake-project.db")
     try:
-        connection.execute(
-            "CREATE TABLE projects (name TEXT PRIMARY KEY, indexed_at TEXT, root_path TEXT)")
+        connection.execute("CREATE TABLE projects (name TEXT PRIMARY KEY, indexed_at TEXT, root_path TEXT)")
         connection.executemany(
             "INSERT INTO projects (name, indexed_at, root_path) VALUES (?, ?, ?)",
-            [(f"project-{index}", "2026-01-01T00:00:00Z", root)
-             for index, root in enumerate(roots)])
+            [(f"project-{index}", "2026-01-01T00:00:00Z", root) for index, root in enumerate(roots)],
+        )
         connection.commit()
     finally:
         connection.close()
@@ -45,8 +44,7 @@ def write_store(store: Path, roots: list[str]) -> Path:
 class IdxFixtureTests(unittest.TestCase):
     def test_idx01_fails_when_no_mcp_config_exists(self):
         with tempfile.TemporaryDirectory() as home:
-            report = support.run_audit(support.fixture("idx-01-no-mcp-config"),
-                                       env={"HOME": home})
+            report = support.run_audit(support.fixture("idx-01-no-mcp-config"), env={"HOME": home})
         self.assertEqual(support.verdicts(report)["IDX-01"], "FAIL")
 
     def test_idx02_unknown_when_store_cannot_be_located(self):
@@ -100,23 +98,18 @@ class IdxRegistrationTests(unittest.TestCase):
 
     def test_project_config_naming_the_server_passes(self):
         with tempfile.TemporaryDirectory() as home:
-            report = self._scan(
-                {"opencode.json": '{"mcp": {"codebase-memory-mcp": {}}}'},
-                {"HOME": home})
+            report = self._scan({"opencode.json": '{"mcp": {"codebase-memory-mcp": {}}}'}, {"HOME": home})
         self.assertEqual(support.verdicts(report)["IDX-01"], "PASS")
 
     def test_user_config_naming_the_server_passes(self):
         with tempfile.TemporaryDirectory() as home:
-            support.write(Path(home), ".config/opencode/opencode.jsonc",
-                          '{"mcp": {"codebase-memory-mcp": {}}}')
+            support.write(Path(home), ".config/opencode/opencode.jsonc", '{"mcp": {"codebase-memory-mcp": {}}}')
             report = self._scan({"README.md": "# repo\n"}, {"HOME": home})
         self.assertEqual(support.verdicts(report)["IDX-01"], "PASS")
 
     def test_config_without_the_server_is_partial(self):
         with tempfile.TemporaryDirectory() as home:
-            report = self._scan(
-                {".mcp.json": '{"mcpServers": {"another-tool": {}}}'},
-                {"HOME": home})
+            report = self._scan({".mcp.json": '{"mcpServers": {"another-tool": {}}}'}, {"HOME": home})
         self.assertEqual(support.verdicts(report)["IDX-01"], "PARTIAL")
 
 

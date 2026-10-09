@@ -27,12 +27,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
-from audit.rules.registry import REGISTRY_BY_ID                          # noqa: E402
+import support  # noqa: E402
+from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 
 SCAFFOLDER_ENV = "AUDIT_BOOTSTRAP"
-KNOWN_SCAFFOLDER = (Path.home() / "Projects" / "Nistapp-agentic-frameworks" / "agentic-bootstrap"
-                    / "python-agentic-bootstrap" / "bootstrap.py")
+KNOWN_SCAFFOLDER = (
+    Path.home()
+    / "Projects"
+    / "Nistapp-agentic-frameworks"
+    / "agentic-bootstrap"
+    / "python-agentic-bootstrap"
+    / "bootstrap.py"
+)
 
 #: The IDX checks assert properties of the operator's harness and index store, not repository
 #: content: a freshly generated scaffold in a temporary directory carries no project-level MCP
@@ -60,7 +66,8 @@ class PositiveFixtureTests(unittest.TestCase):
             target.mkdir()
             proc = subprocess.run(
                 [sys.executable, str(scaffolder), str(target), "--no-git"],
-                text=True, capture_output=True,
+                text=True,
+                capture_output=True,
             )
             self.assertEqual(proc.returncode, 0, f"scaffolder failed:\n{proc.stderr}")
 
@@ -81,8 +88,7 @@ class PositiveFixtureTests(unittest.TestCase):
         failing = sorted(check for check in scoreable if verdicts[check] == "FAIL")
         self.assertEqual(failing, [], f"a freshly scaffolded project fails {failing}")
 
-        blockers = [f for f in report["findings"]
-                    if f["check"] in scoreable and f["severity"] == "BLOCKER"]
+        blockers = [f for f in report["findings"] if f["check"] in scoreable and f["severity"] == "BLOCKER"]
         self.assertEqual(blockers, [], f"BLOCKER findings among scoreable checks: {blockers}")
 
         # Informational checks are still reported, not dropped from the report.

@@ -51,31 +51,80 @@ from audit.rules.payloads import Payload
 
 #: Formatter configuration filenames, across the ecosystems the catalogue names.
 _FORMATTER_CONFIG_NAMES: tuple[str, ...] = (
-    ".prettierrc", ".prettierrc.json", ".prettierrc.json5", ".prettierrc.yml", ".prettierrc.yaml",
-    ".prettierrc.toml", ".prettierrc.js", ".prettierrc.cjs", ".prettierrc.mjs",
-    "prettier.config.js", "prettier.config.cjs", "prettier.config.mjs",
-    "biome.json", "biome.jsonc", ".dprint.json", "dprint.json",
-    "ruff.toml", ".ruff.toml", "black.toml", ".black.toml",
-    "rustfmt.toml", ".rustfmt.toml", ".clang-format",
-    "pint.json", ".php-cs-fixer.php", ".php-cs-fixer.dist.php",
+    ".prettierrc",
+    ".prettierrc.json",
+    ".prettierrc.json5",
+    ".prettierrc.yml",
+    ".prettierrc.yaml",
+    ".prettierrc.toml",
+    ".prettierrc.js",
+    ".prettierrc.cjs",
+    ".prettierrc.mjs",
+    "prettier.config.js",
+    "prettier.config.cjs",
+    "prettier.config.mjs",
+    "biome.json",
+    "biome.jsonc",
+    ".dprint.json",
+    "dprint.json",
+    "ruff.toml",
+    ".ruff.toml",
+    "black.toml",
+    ".black.toml",
+    "rustfmt.toml",
+    ".rustfmt.toml",
+    ".clang-format",
+    "pint.json",
+    ".php-cs-fixer.php",
+    ".php-cs-fixer.dist.php",
 )
 
 #: Linter configuration filenames.
 _LINTER_CONFIG_NAMES: tuple[str, ...] = (
-    ".eslintrc", ".eslintrc.json", ".eslintrc.js", ".eslintrc.cjs", ".eslintrc.mjs",
-    ".eslintrc.yml", ".eslintrc.yaml", "eslint.config.js", "eslint.config.cjs",
-    "eslint.config.mjs", "eslint.config.ts", "biome.json", "biome.jsonc",
-    "ruff.toml", ".ruff.toml", ".flake8", ".pylintrc", "pylintrc",
-    ".golangci.yml", ".golangci.yaml", ".golangci.toml", "clippy.toml", ".clippy.toml",
-    ".rubocop.yml", "checkstyle.xml", ".stylelintrc", ".stylelintrc.json",
-    "phpcs.xml", ".phpcs.xml",
+    ".eslintrc",
+    ".eslintrc.json",
+    ".eslintrc.js",
+    ".eslintrc.cjs",
+    ".eslintrc.mjs",
+    ".eslintrc.yml",
+    ".eslintrc.yaml",
+    "eslint.config.js",
+    "eslint.config.cjs",
+    "eslint.config.mjs",
+    "eslint.config.ts",
+    "biome.json",
+    "biome.jsonc",
+    "ruff.toml",
+    ".ruff.toml",
+    ".flake8",
+    ".pylintrc",
+    "pylintrc",
+    ".golangci.yml",
+    ".golangci.yaml",
+    ".golangci.toml",
+    "clippy.toml",
+    ".clippy.toml",
+    ".rubocop.yml",
+    "checkstyle.xml",
+    ".stylelintrc",
+    ".stylelintrc.json",
+    "phpcs.xml",
+    ".phpcs.xml",
 )
 
 #: Commit-message convention configuration filenames.
 _COMMITLINT_CONFIG_NAMES: tuple[str, ...] = (
-    "commitlint.config.js", "commitlint.config.cjs", "commitlint.config.mjs",
-    "commitlint.config.ts", ".commitlintrc", ".commitlintrc.json", ".commitlintrc.js",
-    ".commitlintrc.cjs", ".commitlintrc.yml", ".commitlintrc.yaml", ".commitlintrc.toml",
+    "commitlint.config.js",
+    "commitlint.config.cjs",
+    "commitlint.config.mjs",
+    "commitlint.config.ts",
+    ".commitlintrc",
+    ".commitlintrc.json",
+    ".commitlintrc.js",
+    ".commitlintrc.cjs",
+    ".commitlintrc.yml",
+    ".commitlintrc.yaml",
+    ".commitlintrc.toml",
 )
 
 #: Hook managers whose mere presence is a wired chain.
@@ -85,21 +134,43 @@ _WIRED_HOOK_FILES: tuple[str, ...] = (".pre-commit-config.yaml", "lefthook.yml",
 _TYPECHECK_ECOSYSTEMS: frozenset[str] = frozenset({"node", "python", "dotnet"})
 
 #: Dependency-audit invocations. The verb is evidence; it is never executed.
-_AUDIT_PATTERNS: tuple[re.Pattern[str], ...] = tuple(re.compile(p) for p in (
-    r"\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?audit\b",
-    r"\bpip-audit\b", r"\bpip\s+audit\b", r"\bsafety\s+check\b",
-    r"\bosv-scanner\b", r"\bcargo\s+audit\b", r"\bgovulncheck\b",
-    r"\bsnyk\b", r"\btrivy\b", r"\bgrype\b",
-    r"\bbundler-audit\b", r"\bbundle\s+audit\b", r"\bcomposer\s+audit\b",
-    r"\baudit-ci\b", r"\bdotnet\s+list\s+package\b[^&|;]*--vulnerable\b",
-))
+_AUDIT_PATTERNS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(p)
+    for p in (
+        r"\b(?:npm|pnpm|yarn|bun)\s+(?:run\s+)?audit\b",
+        r"\bpip-audit\b",
+        r"\bpip\s+audit\b",
+        r"\bsafety\s+check\b",
+        r"\bosv-scanner\b",
+        r"\bcargo\s+audit\b",
+        r"\bgovulncheck\b",
+        r"\bsnyk\b",
+        r"\btrivy\b",
+        r"\bgrype\b",
+        r"\bbundler-audit\b",
+        r"\bbundle\s+audit\b",
+        r"\bcomposer\s+audit\b",
+        r"\baudit-ci\b",
+        r"\bdotnet\s+list\s+package\b[^&|;]*--vulnerable\b",
+    )
+)
 
 
-def _outcome(spec, verdict: Verdict, summary: str = "",
-             findings: list[Finding] | None = None,
-             data: Payload | None = None) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=summary, data=data, findings=findings or [])
+def _outcome(
+    spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
+) -> CheckOutcome:
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=summary,
+        data=data,
+        findings=findings or [],
+    )
 
 
 def _unknown(spec, reason: str) -> CheckOutcome:
@@ -120,12 +191,25 @@ def _read_matches(inventory, rel: str, pattern: str) -> bool:
     return bool(text and re.search(pattern, text))
 
 
-def _finding(spec, cannot: str, because: str, verdict: Verdict,
-             evidence: list[Evidence], remediation: str,
-             path: str | None = None) -> Finding:
-    return Finding(check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-                   statement=statement(cannot, because), evidence=evidence,
-                   remediation=remediation, path=path)
+def _finding(
+    spec,
+    cannot: str,
+    because: str,
+    verdict: Verdict,
+    evidence: list[Evidence],
+    remediation: str,
+    path: str | None = None,
+) -> Finding:
+    return Finding(
+        check=spec.id,
+        severity=spec.severity,
+        phase=spec.phase,
+        verdict=verdict,
+        statement=statement(cannot, because),
+        evidence=evidence,
+        remediation=remediation,
+        path=path,
+    )
 
 
 def _manifest_evidence(inventory) -> list[Evidence]:
@@ -137,6 +221,7 @@ def _manifest_evidence(inventory) -> list[Evidence]:
 # ===========================================================================
 # config readers
 # ===========================================================================
+
 
 def _formatter_config(inventory) -> list[str]:
     found = _present(inventory, _FORMATTER_CONFIG_NAMES)
@@ -183,13 +268,15 @@ def _typecheck_signals(inventory, stack) -> tuple[list[str], list[str]]:
     for rel in ("mypy.ini", ".mypy.ini"):
         if not inventory.has(rel):
             continue
-        (strict if _read_matches(inventory, rel, r"(?im)^\s*strict\s*=\s*true")
-         else nonstrict).append(rel)
+        (strict if _read_matches(inventory, rel, r"(?im)^\s*strict\s*=\s*true") else nonstrict).append(rel)
 
     for rel, strict_re, present_re in (
-        ("pyproject.toml", r"(?ms)^\[tool\.(?:mypy|pyright)\][^\[]*?"
-                          r"(?:strict\s*=\s*true|typeCheckingMode\s*=\s*\"strict\")",
-         r"(?m)^\[tool\.(?:mypy|pyright)\]"),
+        (
+            "pyproject.toml",
+            r"(?ms)^\[tool\.(?:mypy|pyright)\][^\[]*?"
+            r"(?:strict\s*=\s*true|typeCheckingMode\s*=\s*\"strict\")",
+            r"(?m)^\[tool\.(?:mypy|pyright)\]",
+        ),
         ("setup.cfg", r"(?ms)^\[mypy\][^\[]*?strict\s*=\s*true", r"(?m)^\[mypy\]"),
     ):
         if not inventory.has(rel):
@@ -206,8 +293,7 @@ def _typecheck_signals(inventory, stack) -> tuple[list[str], list[str]]:
         else:
             nonstrict.append("pyrightconfig.json")
 
-    for rel in inventory.match("*.csproj") + inventory.match("Directory.Build.props",
-                                                             "Directory.Build.targets"):
+    for rel in inventory.match("*.csproj") + inventory.match("Directory.Build.props", "Directory.Build.targets"):
         text = inventory.read(rel)
         if not text:
             continue
@@ -270,90 +356,144 @@ def _commit_rule(inventory) -> list[str]:
 # TOOL-01 — formatter configured
 # ===========================================================================
 
+
 def check_tool01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     configs = _formatter_config(inventory)
     binding = resolve_verbs(inventory, stack).get("format")
 
     if configs and binding:
-        return _outcome(spec, Verdict.PASS,
-                        f"formatter {', '.join(configs)} + {binding.runner} format verb")
+        return _outcome(spec, Verdict.PASS, f"formatter {', '.join(configs)} + {binding.runner} format verb")
 
     if configs:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"formatter config present ({', '.join(configs)}) but no resolvable "
-                        f"format write verb", [_finding(
-            spec, "format a change set the same way every time",
-            "a formatter is configured but no runner exposes a format verb",
+        return _outcome(
+            spec,
             Verdict.PARTIAL,
-            [Evidence(configs[0])],
-            "Add a format verb (for example `prettier --write .`) to the runner so the configured "
-            "formatter is reachable by name.")])
+            f"formatter config present ({', '.join(configs)}) but no resolvable format write verb",
+            [
+                _finding(
+                    spec,
+                    "format a change set the same way every time",
+                    "a formatter is configured but no runner exposes a format verb",
+                    Verdict.PARTIAL,
+                    [Evidence(configs[0])],
+                    "Add a format verb (for example `prettier --write .`) to the runner so the configured "
+                    "formatter is reachable by name.",
+                )
+            ],
+        )
 
     if binding:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"format verb on {binding.runner} but no formatter config file", [_finding(
-            spec, "format a change set the same way every time",
-            "a format verb exists but no formatter configuration file is present",
-            Verdict.PARTIAL, [Evidence(binding.runner, note=binding.command)],
-            "Commit a formatter config (for example `.prettierrc.json`) so the tool's behaviour "
-            "does not depend on defaults.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"format verb on {binding.runner} but no formatter config file",
+            [
+                _finding(
+                    spec,
+                    "format a change set the same way every time",
+                    "a format verb exists but no formatter configuration file is present",
+                    Verdict.PARTIAL,
+                    [Evidence(binding.runner, note=binding.command)],
+                    "Commit a formatter config (for example `.prettierrc.json`) so the tool's behaviour "
+                    "does not depend on defaults.",
+                )
+            ],
+        )
 
     if _recognised(stack, inventory):
-        return _outcome(spec, Verdict.FAIL, "no formatter config and no format verb", [_finding(
-            spec, "format a change set the same way every time",
-            "no formatter is configured and no format verb is defined",
-            Verdict.FAIL, [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
-            "Add a formatter config and a format write verb (prettier, black, ruff format, …).")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no formatter config and no format verb",
+            [
+                _finding(
+                    spec,
+                    "format a change set the same way every time",
+                    "no formatter is configured and no format verb is defined",
+                    Verdict.FAIL,
+                    [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
+                    "Add a formatter config and a format write verb (prettier, black, ruff format, …).",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem, runner manifest or formatter config, so a "
-                          "formatter cannot be ruled out")
+    return _unknown(
+        spec, "no recognised ecosystem, runner manifest or formatter config, so a formatter cannot be ruled out"
+    )
 
 
 # ===========================================================================
 # TOOL-02 — linter configured
 # ===========================================================================
 
+
 def check_tool02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     configs = _linter_config(inventory)
     binding = resolve_verbs(inventory, stack).get("lint")
 
     if configs and binding:
-        return _outcome(spec, Verdict.PASS,
-                        f"linter {', '.join(configs)} + {binding.runner} lint verb")
+        return _outcome(spec, Verdict.PASS, f"linter {', '.join(configs)} + {binding.runner} lint verb")
 
     if configs:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"linter config present ({', '.join(configs)}) but no resolvable lint verb",
-                        [_finding(
-            spec, "catch lint regressions before they land",
-            "a linter is configured but no runner exposes a lint verb",
-            Verdict.PARTIAL, [Evidence(configs[0])],
-            "Add a lint verb (for example `eslint .` or `ruff check`) to the runner so the "
-            "configured linter is reachable by name.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"linter config present ({', '.join(configs)}) but no resolvable lint verb",
+            [
+                _finding(
+                    spec,
+                    "catch lint regressions before they land",
+                    "a linter is configured but no runner exposes a lint verb",
+                    Verdict.PARTIAL,
+                    [Evidence(configs[0])],
+                    "Add a lint verb (for example `eslint .` or `ruff check`) to the runner so the "
+                    "configured linter is reachable by name.",
+                )
+            ],
+        )
 
     if binding:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"lint verb on {binding.runner} but no linter config file", [_finding(
-            spec, "catch lint regressions before they land",
-            "a lint verb exists but no linter configuration file is present",
-            Verdict.PARTIAL, [Evidence(binding.runner, note=binding.command)],
-            "Commit a linter config (for example `.eslintrc.json` or `[tool.ruff]`) so the rule set "
-            "does not depend on defaults.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"lint verb on {binding.runner} but no linter config file",
+            [
+                _finding(
+                    spec,
+                    "catch lint regressions before they land",
+                    "a lint verb exists but no linter configuration file is present",
+                    Verdict.PARTIAL,
+                    [Evidence(binding.runner, note=binding.command)],
+                    "Commit a linter config (for example `.eslintrc.json` or `[tool.ruff]`) so the rule set "
+                    "does not depend on defaults.",
+                )
+            ],
+        )
 
     if _recognised(stack, inventory):
-        return _outcome(spec, Verdict.FAIL, "no linter config and no lint verb", [_finding(
-            spec, "catch lint regressions before they land",
-            "no linter is configured and no lint verb is defined",
-            Verdict.FAIL, [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
-            "Add a linter config and a lint read-only verb (eslint, ruff, flake8, golangci-lint, …).")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no linter config and no lint verb",
+            [
+                _finding(
+                    spec,
+                    "catch lint regressions before they land",
+                    "no linter is configured and no lint verb is defined",
+                    Verdict.FAIL,
+                    [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
+                    "Add a linter config and a lint read-only verb (eslint, ruff, flake8, golangci-lint, …).",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem, runner manifest or linter config, so a linter "
-                          "cannot be ruled out")
+    return _unknown(spec, "no recognised ecosystem, runner manifest or linter config, so a linter cannot be ruled out")
 
 
 # ===========================================================================
 # TOOL-03 — type checker configured
 # ===========================================================================
+
 
 def check_tool03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     strict, nonstrict = _typecheck_signals(inventory, stack)
@@ -362,33 +502,53 @@ def check_tool03(*, spec, target, inventory, stack, components, session) -> Chec
         return _outcome(spec, Verdict.PASS, f"strict config: {', '.join(sorted(set(strict)))}")
 
     if nonstrict:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"type checker configured but not strict: {', '.join(sorted(set(nonstrict)))}",
-                        [_finding(
-            spec, "trust the type checker to catch a whole class of defects",
-            f"a type-check configuration exists but is not strict "
-            f"({', '.join(sorted(set(nonstrict)))})",
+        return _outcome(
+            spec,
             Verdict.PARTIAL,
-            [Evidence(rel) for rel in sorted(set(nonstrict))],
-            "Turn on strict mode (tsconfig `strict: true`, mypy `strict = true`, pyright "
-            "`typeCheckingMode: \"strict\"`) so the checker's findings are trustworthy.")])
+            f"type checker configured but not strict: {', '.join(sorted(set(nonstrict)))}",
+            [
+                _finding(
+                    spec,
+                    "trust the type checker to catch a whole class of defects",
+                    f"a type-check configuration exists but is not strict ({', '.join(sorted(set(nonstrict)))})",
+                    Verdict.PARTIAL,
+                    [Evidence(rel) for rel in sorted(set(nonstrict))],
+                    "Turn on strict mode (tsconfig `strict: true`, mypy `strict = true`, pyright "
+                    '`typeCheckingMode: "strict"`) so the checker\'s findings are trustworthy.',
+                )
+            ],
+        )
 
     if set(stack.ecosystems) & _TYPECHECK_ECOSYSTEMS:
-        return _outcome(spec, Verdict.FAIL, "no strict type-check configuration", [_finding(
-            spec, "trust the type checker to catch a whole class of defects",
-            "no strict type-check configuration is present for the detected ecosystem "
-            f"({', '.join(sorted(set(stack.ecosystems)))})",
-            Verdict.FAIL, _manifest_evidence(inventory),
-            "Add a strict type-check configuration (tsconfig.json strict, mypy/pyright strict, or "
-            ".NET `<Nullable>enable</Nullable>`).")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no strict type-check configuration",
+            [
+                _finding(
+                    spec,
+                    "trust the type checker to catch a whole class of defects",
+                    "no strict type-check configuration is present for the detected ecosystem "
+                    f"({', '.join(sorted(set(stack.ecosystems)))})",
+                    Verdict.FAIL,
+                    _manifest_evidence(inventory),
+                    "Add a strict type-check configuration (tsconfig.json strict, mypy/pyright strict, or "
+                    ".NET `<Nullable>enable</Nullable>`).",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised strict type-check configuration and no ecosystem this "
-                          "pack knows one for, so type-checking cannot be judged")
+    return _unknown(
+        spec,
+        "no recognised strict type-check configuration and no ecosystem this "
+        "pack knows one for, so type-checking cannot be judged",
+    )
 
 
 # ===========================================================================
 # TOOL-04 — dependency / security scan verb
 # ===========================================================================
+
 
 def _is_audit_command(command: str) -> bool:
     return any(pattern.search(command) for pattern in _AUDIT_PATTERNS)
@@ -404,30 +564,50 @@ def check_tool04(*, spec, target, inventory, stack, components, session) -> Chec
 
     security = bindings.get("security")
     if security is not None:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"security verb on {security.runner} runs no dependency audit "
-                        f"({security.command})", [_finding(
-            spec, "know whether a dependency carries a known vulnerability",
-            "a security verb exists but it does not run a dependency-audit check",
-            Verdict.PARTIAL, [Evidence(security.runner, note=security.command)],
-            "Make the security verb run a dependency audit (npm audit, pip-audit, osv-scanner, "
-            "cargo audit, govulncheck, snyk).")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"security verb on {security.runner} runs no dependency audit ({security.command})",
+            [
+                _finding(
+                    spec,
+                    "know whether a dependency carries a known vulnerability",
+                    "a security verb exists but it does not run a dependency-audit check",
+                    Verdict.PARTIAL,
+                    [Evidence(security.runner, note=security.command)],
+                    "Make the security verb run a dependency audit (npm audit, pip-audit, osv-scanner, "
+                    "cargo audit, govulncheck, snyk).",
+                )
+            ],
+        )
 
     if _recognised(stack, inventory):
-        return _outcome(spec, Verdict.FAIL, "no verb runs a dependency audit", [_finding(
-            spec, "know whether a dependency carries a known vulnerability",
-            "no resolvable verb runs a dependency-audit check",
-            Verdict.FAIL, [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
-            "Add a dependency-audit verb (npm audit, pip-audit, osv-scanner, cargo audit, "
-            "govulncheck, snyk).")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no verb runs a dependency audit",
+            [
+                _finding(
+                    spec,
+                    "know whether a dependency carries a known vulnerability",
+                    "no resolvable verb runs a dependency-audit check",
+                    Verdict.FAIL,
+                    [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
+                    "Add a dependency-audit verb (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, snyk).",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem, runner manifest or dependency-audit verb, so a "
-                          "dependency scan cannot be ruled out")
+    return _unknown(
+        spec,
+        "no recognised ecosystem, runner manifest or dependency-audit verb, so a dependency scan cannot be ruled out",
+    )
 
 
 # ===========================================================================
 # TOOL-05 — local hook chain active
 # ===========================================================================
+
 
 def check_tool05(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     wired, configured = _hook_wiring(inventory)
@@ -436,30 +616,48 @@ def check_tool05(*, spec, target, inventory, stack, components, session) -> Chec
         return _outcome(spec, Verdict.PASS, f"wired: {', '.join(sorted(set(wired)))}")
 
     if configured:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"hooks present but not wired: {', '.join(sorted(set(configured)))}",
-                        [_finding(
-            spec, "rely on local hooks to run before a commit",
-            f"a hook manager is present but not wired ({', '.join(sorted(set(configured)))})",
-            Verdict.PARTIAL, [Evidence(rel.split(" ")[0]) for rel in sorted(set(configured))],
-            "Wire the hooks: set `core.hooksPath`, add a `prepare`/install script, or commit a "
-            "`.pre-commit-config.yaml`.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"hooks present but not wired: {', '.join(sorted(set(configured)))}",
+            [
+                _finding(
+                    spec,
+                    "rely on local hooks to run before a commit",
+                    f"a hook manager is present but not wired ({', '.join(sorted(set(configured)))})",
+                    Verdict.PARTIAL,
+                    [Evidence(rel.split(" ")[0]) for rel in sorted(set(configured))],
+                    "Wire the hooks: set `core.hooksPath`, add a `prepare`/install script, or commit a "
+                    "`.pre-commit-config.yaml`.",
+                )
+            ],
+        )
 
     if stack.ecosystems:
-        return _outcome(spec, Verdict.FAIL, "no hook chain configured", [_finding(
-            spec, "rely on local hooks to run before a commit",
-            "no hook manager is configured",
-            Verdict.FAIL, _manifest_evidence(inventory),
-            "Adopt a hook manager (pre-commit, lefthook, husky) and wire it so checks run before a "
-            "commit rather than only in CI.")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no hook chain configured",
+            [
+                _finding(
+                    spec,
+                    "rely on local hooks to run before a commit",
+                    "no hook manager is configured",
+                    Verdict.FAIL,
+                    _manifest_evidence(inventory),
+                    "Adopt a hook manager (pre-commit, lefthook, husky) and wire it so checks run before a "
+                    "commit rather than only in CI.",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem and no hook configuration, so a hook chain "
-                          "cannot be ruled out")
+    return _unknown(spec, "no recognised ecosystem and no hook configuration, so a hook chain cannot be ruled out")
 
 
 # ===========================================================================
 # TOOL-06 — commit convention enforced
 # ===========================================================================
+
 
 def check_tool06(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     rules = _commit_rule(inventory)
@@ -468,16 +666,23 @@ def check_tool06(*, spec, target, inventory, stack, components, session) -> Chec
 
     wired, configured = _hook_wiring(inventory)
     if stack.ecosystems or wired or configured:
-        return _outcome(spec, Verdict.FAIL, "no commit-message rule", [_finding(
-            spec, "rely on a consistent commit-message convention",
-            "no commitlint config, commit-msg hook, or equivalent exists",
+        return _outcome(
+            spec,
             Verdict.FAIL,
-            _manifest_evidence(inventory),
-            "Add a commitlint config or a commit-msg hook so commit messages follow one "
-            "convention.")])
+            "no commit-message rule",
+            [
+                _finding(
+                    spec,
+                    "rely on a consistent commit-message convention",
+                    "no commitlint config, commit-msg hook, or equivalent exists",
+                    Verdict.FAIL,
+                    _manifest_evidence(inventory),
+                    "Add a commitlint config or a commit-msg hook so commit messages follow one convention.",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem and no hook configuration, so a commit "
-                          "convention cannot be judged")
+    return _unknown(spec, "no recognised ecosystem and no hook configuration, so a commit convention cannot be judged")
 
 
 IMPLEMENTATIONS = {

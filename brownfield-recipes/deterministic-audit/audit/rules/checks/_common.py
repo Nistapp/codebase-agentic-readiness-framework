@@ -50,8 +50,16 @@ class VerbBinding:
 #: Runner precedence when more than one manifest defines the same verb. Fixed and documented so a
 #: target with both a Makefile and package.json resolves deterministically.
 RUNNER_PRECEDENCE: tuple[str, ...] = (
-    "package.json", "Makefile", "Taskfile.yml", "Taskfile.yaml", "pyproject.toml",
-    "build.gradle", "build.gradle.kts", "pom.xml", "gradlew", "mvnw",
+    "package.json",
+    "Makefile",
+    "Taskfile.yml",
+    "Taskfile.yaml",
+    "pyproject.toml",
+    "build.gradle",
+    "build.gradle.kts",
+    "pom.xml",
+    "gradlew",
+    "mvnw",
 )
 
 
@@ -69,11 +77,11 @@ def resolve_all_verbs(inventory: Inventory, stack: Stack) -> dict[str, tuple[Ver
             command = commands.get(verb)
             if command:
                 candidates.setdefault(verb, []).append(
-                    VerbBinding(verb=verb, runner=runner, command=command,
-                                argv=_split_argv(command))
+                    VerbBinding(verb=verb, runner=runner, command=command, argv=_split_argv(command))
                 )
-    return {verb: tuple(sorted(bindings, key=lambda b: _runner_rank(b.runner)))
-            for verb, bindings in candidates.items()}
+    return {
+        verb: tuple(sorted(bindings, key=lambda b: _runner_rank(b.runner))) for verb, bindings in candidates.items()
+    }
 
 
 def resolve_verbs(inventory: Inventory, stack: Stack) -> dict[str, VerbBinding]:
@@ -83,8 +91,7 @@ def resolve_verbs(inventory: Inventory, stack: Stack) -> dict[str, VerbBinding]:
     :data:`audit.stack.VERBS` to find the missing ones. ``stack`` is accepted so callers can pass the
     detected stack even though resolution reads the inventory directly in v1.
     """
-    return {verb: bindings[0]
-            for verb, bindings in resolve_all_verbs(inventory, stack).items()}
+    return {verb: bindings[0] for verb, bindings in resolve_all_verbs(inventory, stack).items()}
 
 
 def runner_commands(inventory: Inventory) -> tuple[tuple[str, dict[str, str]], ...]:
@@ -133,6 +140,7 @@ def extract_fenced_commands(text: str) -> list[tuple[str, int, str]]:
 # runner readers
 # ---------------------------------------------------------------------------
 
+
 def _runner_commands(inventory: Inventory):
     """Yield ``(runner, {verb: command})`` for every manifest present, in precedence order."""
     if inventory.has("package.json"):
@@ -177,6 +185,7 @@ def _split_argv(command: str) -> tuple[str, ...]:
 # minimal, stdlib-only manifest parsers (deliberately crude — documented as such)
 # ---------------------------------------------------------------------------
 
+
 def _indent(line: str) -> int:
     return len(line) - len(line.lstrip())
 
@@ -189,8 +198,7 @@ def _parse_taskfile(text: str) -> dict[str, str]:
     """
     lines = text.splitlines()
     try:
-        start = next(i for i, line in enumerate(lines)
-                     if re.match(r"^tasks:\s*(#.*)?$", line))
+        start = next(i for i, line in enumerate(lines) if re.match(r"^tasks:\s*(#.*)?$", line))
     except StopIteration:
         return {}
 
@@ -200,7 +208,7 @@ def _parse_taskfile(text: str) -> dict[str, str]:
     header_indent: int | None = None
     current: str | None = None
 
-    for line in lines[start + 1:]:
+    for line in lines[start + 1 :]:
         if not line.strip() or line.lstrip().startswith("#"):
             continue
         indent = _indent(line)
@@ -253,8 +261,7 @@ def _parse_pyproject_tasks(text: str) -> dict[str, str]:
             continue
         table = re.match(r"^([A-Za-z0-9_.-]+)\s*=\s*\{(.*)\}\s*$", line)
         if table:
-            command = re.search(r'(?:cmd|command|script)\s*[:=]\s*["\']([^"\']+)["\']',
-                                table.group(2))
+            command = re.search(r'(?:cmd|command|script)\s*[:=]\s*["\']([^"\']+)["\']', table.group(2))
             if command:
                 tasks[table.group(1)] = command.group(1)
     return tasks

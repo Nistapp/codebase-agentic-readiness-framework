@@ -23,11 +23,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
-from audit.evaluate import AuditResult, CheckOutcome                     # noqa: E402
-from audit.findings import Severity, Verdict                             # noqa: E402
-from audit.rules.registry import REGISTRY_BY_ID                          # noqa: E402
+from audit.evaluate import AuditResult, CheckOutcome  # noqa: E402
+from audit.findings import Severity, Verdict  # noqa: E402
+from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 
 HYG_IDS = tuple(f"HYG-{n:02d}" for n in range(1, 12))
 
@@ -36,9 +36,17 @@ FIXTURES: dict[str, dict[str, str]] = {
     "hyg-01-placeholder-readme": {"HYG-01": "FAIL", "HYG-10": "FAIL"},
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
     "hyg-minimal": {
-        "HYG-01": "FAIL", "HYG-02": "FAIL", "HYG-03": "FAIL", "HYG-04": "FAIL",
-        "HYG-05": "FAIL", "HYG-06": "FAIL", "HYG-07": "FAIL", "HYG-08": "FAIL",
-        "HYG-09": "FAIL", "HYG-10": "FAIL", "HYG-11": "UNKNOWN",
+        "HYG-01": "FAIL",
+        "HYG-02": "FAIL",
+        "HYG-03": "FAIL",
+        "HYG-04": "FAIL",
+        "HYG-05": "FAIL",
+        "HYG-06": "FAIL",
+        "HYG-07": "FAIL",
+        "HYG-08": "FAIL",
+        "HYG-09": "FAIL",
+        "HYG-10": "FAIL",
+        "HYG-11": "UNKNOWN",
     },
 }
 
@@ -88,12 +96,10 @@ class HygCatalogueTests(unittest.TestCase):
 
 class ScoreIsolationTests(unittest.TestCase):
     def test_informational_outcomes_do_not_enter_auditresult_score(self):
-        scored = CheckOutcome("DOC-01", "docs", "A", Severity.DEGRADER, 1,
-                              Verdict.PASS, "implemented")
+        scored = CheckOutcome("DOC-01", "docs", "A", Severity.DEGRADER, 1, Verdict.PASS, "implemented")
 
         def score_with(hyg_verdict: Verdict) -> float:
-            info = CheckOutcome("HYG-01", "readme", "A", Severity.COSMETIC, 1,
-                                hyg_verdict, "implemented")
+            info = CheckOutcome("HYG-01", "readme", "A", Severity.COSMETIC, 1, hyg_verdict, "implemented")
             return AuditResult(None, None, None, None, [scored, info]).score
 
         baseline = AuditResult(None, None, None, None, [scored]).score
@@ -112,7 +118,8 @@ class ScoreIsolationTests(unittest.TestCase):
             # Rewrite only the README with prose (no fenced commands, so no scoreable check sees a
             # difference) until the informational verdict flips.
             support.write(
-                root, "README.md",
+                root,
+                "README.md",
                 "# Widget Service\n\nWidget Service exposes a small HTTP API for managing widgets. "
                 "It is written for teams that need a dependable, boring service they can extend "
                 "without reading the whole repository first.\n\n## Running it\n\nInstall Python "

@@ -62,8 +62,12 @@ SERVER_NAME = "codebase-memory-mcp"
 
 #: Project-level MCP configuration candidates, relative to the target root.
 _PROJECT_CONFIGS: tuple[str, ...] = (
-    "opencode.json", "opencode.jsonc", ".mcp.json",
-    ".cursor/mcp.json", ".vscode/mcp.json", ".gemini/settings.json",
+    "opencode.json",
+    "opencode.jsonc",
+    ".mcp.json",
+    ".cursor/mcp.json",
+    ".vscode/mcp.json",
+    ".gemini/settings.json",
     ".codex/config.toml",
 )
 
@@ -80,27 +84,43 @@ _GIT_COLUMN_RE = re.compile(r"(?i)(?:git[_ -]?sha|sha[_ -]?git|revision|commit)"
 _READ_LIMIT = 256 * 1024
 
 
-def _outcome(spec, verdict: Verdict, summary: str = "",
-             findings: list[Finding] | None = None,
-             data: Payload | None = None) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=summary, data=data, findings=findings or [])
+def _outcome(
+    spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
+) -> CheckOutcome:
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=summary,
+        data=data,
+        findings=findings or [],
+    )
 
 
 def _unknown(spec, reason: str) -> CheckOutcome:
     return _outcome(spec, Verdict.UNKNOWN, reason)
 
 
-def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[Evidence],
-             remediation: str) -> Finding:
-    return Finding(check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-                   statement=statement(cannot, because), evidence=evidence,
-                   remediation=remediation)
+def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[Evidence], remediation: str) -> Finding:
+    return Finding(
+        check=spec.id,
+        severity=spec.severity,
+        phase=spec.phase,
+        verdict=verdict,
+        statement=statement(cannot, because),
+        evidence=evidence,
+        remediation=remediation,
+    )
 
 
 # ---------------------------------------------------------------------------
 # readers
 # ---------------------------------------------------------------------------
+
 
 def _user_configs() -> tuple[Path, ...]:
     """User-level MCP configuration candidates, resolved against ``$HOME`` at call time."""
@@ -202,6 +222,7 @@ def _match_project(rows: list[dict], target) -> dict | None:
 # IDX-01 — codebase-memory-mcp registered for this repository
 # ===========================================================================
 
+
 def check_idx01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     present: list[str] = []
     named: list[str] = []
@@ -229,35 +250,50 @@ def check_idx01(*, spec, target, inventory, stack, components, session) -> Check
             named.append(f"{label} (user)")
 
     if not present:
-        return _outcome(spec, Verdict.FAIL,
-                        "no project- or user-level MCP configuration found", [_finding(
-            spec, "discover the codebase through an MCP index",
-            "no MCP configuration names codebase-memory-mcp for this repository",
-            Verdict.FAIL, [Evidence("<repository>")],
-            "Register the server in a project config (for example `opencode.json`) or a user config "
-            "(`~/.config/opencode/opencode.json`).")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no project- or user-level MCP configuration found",
+            [
+                _finding(
+                    spec,
+                    "discover the codebase through an MCP index",
+                    "no MCP configuration names codebase-memory-mcp for this repository",
+                    Verdict.FAIL,
+                    [Evidence("<repository>")],
+                    "Register the server in a project config (for example `opencode.json`) or a user config "
+                    "(`~/.config/opencode/opencode.json`).",
+                )
+            ],
+        )
 
     if named:
-        return _outcome(spec, Verdict.PASS,
-                        f"{SERVER_NAME} registered in: {', '.join(sorted(named))}")
+        return _outcome(spec, Verdict.PASS, f"{SERVER_NAME} registered in: {', '.join(sorted(named))}")
 
     if unreadable:
-        return _unknown(spec, "MCP configuration found but could not be read: "
-                              f"{', '.join(sorted(unreadable))}")
+        return _unknown(spec, f"MCP configuration found but could not be read: {', '.join(sorted(unreadable))}")
 
-    return _outcome(spec, Verdict.PARTIAL,
-                    f"MCP configuration present but does not name {SERVER_NAME}: "
-                    f"{', '.join(sorted(present))}", [_finding(
-        spec, "discover the codebase through an MCP index",
-        f"an MCP configuration exists ({', '.join(sorted(present))}) but does not name "
-        f"{SERVER_NAME}",
-        Verdict.PARTIAL, [Evidence(rel) for rel in sorted(present)],
-        f"Add a {SERVER_NAME} server entry to one of the discovered MCP configurations.")])
+    return _outcome(
+        spec,
+        Verdict.PARTIAL,
+        f"MCP configuration present but does not name {SERVER_NAME}: {', '.join(sorted(present))}",
+        [
+            _finding(
+                spec,
+                "discover the codebase through an MCP index",
+                f"an MCP configuration exists ({', '.join(sorted(present))}) but does not name {SERVER_NAME}",
+                Verdict.PARTIAL,
+                [Evidence(rel) for rel in sorted(present)],
+                f"Add a {SERVER_NAME} server entry to one of the discovered MCP configurations.",
+            )
+        ],
+    )
 
 
 # ===========================================================================
 # IDX-02 — an index exists for this checkout
 # ===========================================================================
+
 
 def check_idx02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     store, searched = _locate_store(target)
@@ -268,8 +304,7 @@ def check_idx02(*, spec, target, inventory, stack, components, session) -> Check
 
     dbs = _candidate_dbs(store)
     if not dbs:
-        return _unknown(spec, f"index store located ({store}) but holds no readable database; "
-                              f"{locations}")
+        return _unknown(spec, f"index store located ({store}) but holds no readable database; {locations}")
 
     roots: list[str] = []
     readable = False
@@ -281,26 +316,35 @@ def check_idx02(*, spec, target, inventory, stack, components, session) -> Check
         roots.extend(str(row.get("root_path", "")) for row in rows)
 
     if not readable:
-        return _unknown(spec, f"index store located ({store}) but no database could be read with "
-                              f"the standard library; {locations}")
+        return _unknown(
+            spec, f"index store located ({store}) but no database could be read with the standard library; {locations}"
+        )
 
     wanted = target.path.resolve()
     if any(_resolve(root) == wanted for root in roots if root):
-        return _outcome(spec, Verdict.PASS,
-                        f"index store {store} contains a project rooted at {wanted}")
+        return _outcome(spec, Verdict.PASS, f"index store {store} contains a project rooted at {wanted}")
 
-    return _outcome(spec, Verdict.FAIL,
-                    f"index store {store} records no project rooted at {wanted} "
-                    f"({len(roots)} project(s) present)", [_finding(
-        spec, "query a current index of this checkout",
-        f"the index store contains no project whose root resolves to {wanted}",
-        Verdict.FAIL, [Evidence(str(store))],
-        "Index this checkout with codebase-memory-mcp so agents have a graph to query.")])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        f"index store {store} records no project rooted at {wanted} ({len(roots)} project(s) present)",
+        [
+            _finding(
+                spec,
+                "query a current index of this checkout",
+                f"the index store contains no project whose root resolves to {wanted}",
+                Verdict.FAIL,
+                [Evidence(str(store))],
+                "Index this checkout with codebase-memory-mcp so agents have a graph to query.",
+            )
+        ],
+    )
 
 
 # ===========================================================================
 # IDX-03 — index freshness (Tier C)
 # ===========================================================================
+
 
 def _indexed_git_sha(store: Path, target) -> tuple[str | None, str]:
     """The store's recorded git revision for the target, or ``(None, reason)``.
@@ -310,8 +354,9 @@ def _indexed_git_sha(store: Path, target) -> tuple[str | None, str]:
     """
     dbs = _candidate_dbs(store)
     if not dbs:
-        return None, (f"no readable index database at {store} "
-                      f"(a .zst artifact needs zstd, which the standard library lacks)")
+        return None, (
+            f"no readable index database at {store} (a .zst artifact needs zstd, which the standard library lacks)"
+        )
 
     columns: list[str] = []
     found_project = False
@@ -332,18 +377,21 @@ def _indexed_git_sha(store: Path, target) -> tuple[str | None, str]:
 
     if not found_project:
         return None, "no project matching this checkout was found in the index store"
-    return None, ("the store records project root and index time but no git revision "
-                  f"(columns: {', '.join(columns) or 'unknown'})")
+    return None, (
+        "the store records project root and index time but no git revision "
+        f"(columns: {', '.join(columns) or 'unknown'})"
+    )
 
 
 def check_idx03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     if target.git_sha is None:
-        return _unknown(spec, "target is not a git repository, so there is no HEAD for the index to "
-                              "match")
+        return _unknown(spec, "target is not a git repository, so there is no HEAD for the index to match")
 
     if not session.enabled:
-        return _unknown(spec, "index freshness is a Tier-C probe; re-run with --run-gates to compare "
-                              "the indexed revision against HEAD")
+        return _unknown(
+            spec,
+            "index freshness is a Tier-C probe; re-run with --run-gates to compare the indexed revision against HEAD",
+        )
 
     store, searched = _locate_store(target)
     if store is None:
@@ -355,12 +403,21 @@ def check_idx03(*, spec, target, inventory, stack, components, session) -> Check
     if sha == target.git_sha:
         return _outcome(spec, Verdict.PASS, f"indexed revision {sha} equals HEAD")
 
-    return _outcome(spec, Verdict.FAIL,
-                    f"indexed revision {sha} does not match HEAD {target.git_sha}", [_finding(
-        spec, "trust the graph to reflect the current revision",
-        f"the index was built at {sha} but HEAD is {target.git_sha}",
-        Verdict.FAIL, [Evidence(str(store), note=f"indexed {sha}; HEAD {target.git_sha}")],
-        "Re-index this checkout so the graph matches HEAD.")])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        f"indexed revision {sha} does not match HEAD {target.git_sha}",
+        [
+            _finding(
+                spec,
+                "trust the graph to reflect the current revision",
+                f"the index was built at {sha} but HEAD is {target.git_sha}",
+                Verdict.FAIL,
+                [Evidence(str(store), note=f"indexed {sha}; HEAD {target.git_sha}")],
+                "Re-index this checkout so the graph matches HEAD.",
+            )
+        ],
+    )
 
 
 IMPLEMENTATIONS = {

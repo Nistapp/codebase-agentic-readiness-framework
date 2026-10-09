@@ -35,9 +35,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
-from audit.rules.registry import REGISTRY, scoreable                     # noqa: E402
+from audit.rules.registry import REGISTRY, scoreable  # noqa: E402
 
 FIXTURES_DIR = support.FIXTURES_DIR
 
@@ -64,8 +64,15 @@ MATRIX: dict[str, dict[str, str]] = {
     "doc-02-no-style-guide": {"DOC-02": "FAIL"},
     "doc-03-tracked-artefacts": {"DOC-03": "FAIL"},
     "doc-04-adr-unindexed": {"DOC-04": "PARTIAL"},
-    "doc-nav-ok": {"DOC-01": "PASS", "DOC-02": "PASS", "DOC-03": "PASS", "DOC-04": "PASS",
-                   "NAV-01": "PASS", "NAV-02": "PASS", "NAV-03": "PASS"},
+    "doc-nav-ok": {
+        "DOC-01": "PASS",
+        "DOC-02": "PASS",
+        "DOC-03": "PASS",
+        "DOC-04": "PASS",
+        "NAV-01": "PASS",
+        "NAV-02": "PASS",
+        "NAV-03": "PASS",
+    },
     "nav-01-no-manifest": {"NAV-01": "UNKNOWN"},
     "nav-02-no-entry": {"NAV-02": "FAIL"},
     "nav-03-red-flags": {"NAV-03": "PARTIAL"},
@@ -83,8 +90,14 @@ MATRIX: dict[str, dict[str, str]] = {
     "tool-04-no-audit-verb": {"TOOL-04": "FAIL"},
     "tool-05-unwired-hooks": {"TOOL-05": "PARTIAL"},
     "tool-06-no-commit-rule": {"TOOL-06": "FAIL"},
-    "tool-ok-node": {"TOOL-01": "PASS", "TOOL-02": "PASS", "TOOL-03": "PASS",
-                     "TOOL-04": "PASS", "TOOL-05": "PASS", "TOOL-06": "PASS"},
+    "tool-ok-node": {
+        "TOOL-01": "PASS",
+        "TOOL-02": "PASS",
+        "TOOL-03": "PASS",
+        "TOOL-04": "PASS",
+        "TOOL-05": "PASS",
+        "TOOL-06": "PASS",
+    },
     # -- CI -----------------------------------------------------------------------------------
     "ci-01-no-pr-trigger": {"CI-01": "PARTIAL"},
     "ci-02-parity-break": {"CI-02": "FAIL"},
@@ -108,8 +121,15 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-05-generated": {"EXEC-05": "FAIL"},
     "exec-06-broken-command": {"EXEC-06": "FAIL"},
     "exec-07-dual-lint": {"EXEC-07": "FAIL"},
-    "exec-ok": {"EXEC-01": "PASS", "EXEC-02": "PASS", "EXEC-03": "PASS",
-                "EXEC-04": "PASS", "EXEC-05": "PASS", "EXEC-06": "PASS", "EXEC-07": "PASS"},
+    "exec-ok": {
+        "EXEC-01": "PASS",
+        "EXEC-02": "PASS",
+        "EXEC-03": "PASS",
+        "EXEC-04": "PASS",
+        "EXEC-05": "PASS",
+        "EXEC-06": "PASS",
+        "EXEC-07": "PASS",
+    },
     # -- TST ----------------------------------------------------------------------------------
     "tst-01-no-suite": {"TST-01": "PARTIAL"},
     "tst-03-skip-markers": {"TST-03": "PASS"},
@@ -128,15 +148,31 @@ MATRIX: dict[str, dict[str, str]] = {
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
     "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN"},
     # -- the AGT-content positive fixture -----------------------------------------------------
-    "governed-minimal": {"AGT-01": "PASS", "AGT-02": "PASS", "AGT-03": "PASS", "AGT-04": "PASS",
-                         "AGT-06": "PASS", "AGT-07": "PASS", "AGT-09": "PASS", "AGT-10": "PASS"},
+    "governed-minimal": {
+        "AGT-01": "PASS",
+        "AGT-02": "PASS",
+        "AGT-03": "PASS",
+        "AGT-04": "PASS",
+        "AGT-06": "PASS",
+        "AGT-07": "PASS",
+        "AGT-09": "PASS",
+        "AGT-10": "PASS",
+    },
 }
 
 #: Fixtures whose target reads git's tracked set; they are copied into a fresh git repository.
-NEEDS_GIT = frozenset({
-    "doc-03-tracked-artefacts", "exec-02-no-lockfile", "exec-05-generated", "exec-ok",
-    "sec-01-ok", "sec-01-tracked-env", "sec-02-key-shaped", "con-03-artefacts-not-ignored",
-})
+NEEDS_GIT = frozenset(
+    {
+        "doc-03-tracked-artefacts",
+        "exec-02-no-lockfile",
+        "exec-05-generated",
+        "exec-ok",
+        "sec-01-ok",
+        "sec-01-tracked-env",
+        "sec-02-key-shaped",
+        "con-03-artefacts-not-ignored",
+    }
+)
 
 #: Fixtures where an ignore rule hides the tracked defect; the defect is force-added after `add -A`.
 FORCE_ADD: dict[str, str] = {
@@ -158,18 +194,33 @@ NOT_IN_MATRIX: dict[str, str] = {}
 #: "ok" fixtures but are the only checked-in fixtures where TST-03/TST-04 pass, so they complete
 #: the census rather than pretend the check is verified elsewhere.
 GOVERNED_FIXTURES = (
-    "cmd-ok-npm", "cmd-ok-make", "tool-ok-node", "ci-ok-gh", "base-ok", "doc-nav-ok",
-    "sec-01-ok", "exec-ok", "governed-minimal", "agt-05-ok", "con-02-protected",
-    "tst-03-skip-markers", "tst-05-no-coverage",
+    "cmd-ok-npm",
+    "cmd-ok-make",
+    "tool-ok-node",
+    "ci-ok-gh",
+    "base-ok",
+    "doc-nav-ok",
+    "sec-01-ok",
+    "exec-ok",
+    "governed-minimal",
+    "agt-05-ok",
+    "con-02-protected",
+    "tst-03-skip-markers",
+    "tst-05-no-coverage",
 )
 
 #: Scoreable checks that cannot PASS without executed Tier-C probes or machine-local state.
 #: IDX-* assert the operator's harness and index store; TST-02 runs the suite to learn its status.
 #: They are covered by their own tests (test_idx_pack.py, the positive fixture) and are never
 #: faked as passes here.
-PROBE_OR_ENVIRONMENT_SCOPED = frozenset({
-    "IDX-01", "IDX-02", "IDX-03", "TST-02",
-})
+PROBE_OR_ENVIRONMENT_SCOPED = frozenset(
+    {
+        "IDX-01",
+        "IDX-02",
+        "IDX-03",
+        "TST-02",
+    }
+)
 
 
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess:
@@ -205,10 +256,8 @@ class FixtureMatrixTests(unittest.TestCase):
     def test_every_fixture_is_accounted_for(self):
         actual = {p.name for p in FIXTURES_DIR.iterdir() if p.is_dir()}
         declared = set(MATRIX) | set(NOT_IN_MATRIX)
-        self.assertEqual(actual - declared, set(),
-                         "fixture directories with no explicit matrix row")
-        self.assertEqual(declared - actual, set(),
-                         "matrix rows naming a fixture that does not exist")
+        self.assertEqual(actual - declared, set(), "fixture directories with no explicit matrix row")
+        self.assertEqual(declared - actual, set(), "matrix rows naming a fixture that does not exist")
 
     def test_each_fixture_reports_its_documented_verdict(self):
         for name in sorted(MATRIX):
@@ -217,8 +266,7 @@ class FixtureMatrixTests(unittest.TestCase):
             with self.subTest(fixture=name):
                 verdicts = support.verdicts(run(name))
                 for check, expected in MATRIX[name].items():
-                    self.assertEqual(verdicts.get(check), expected,
-                                     f"{name}: {check} expected {expected}")
+                    self.assertEqual(verdicts.get(check), expected, f"{name}: {check} expected {expected}")
 
     def test_empty_directory_reports_nothing_and_does_not_crash(self):
         # A completed scan of an empty directory exits 0 (it reports, it does not gate) and emits a
@@ -231,14 +279,13 @@ class FixtureMatrixTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             report = support.run_audit(Path(tmp))
         verdicts = support.verdicts(report)
-        self.assertEqual(set(verdicts), {spec.id for spec in REGISTRY},
-                         "the empty scan dropped or added checks")
-        self.assertTrue(all(v in {"PASS", "PARTIAL", "FAIL", "UNKNOWN"} for v in verdicts.values()),
-                        "the empty scan produced a non-verdict")
-        self.assertEqual(verdicts["AGT-01"], "FAIL",
-                         "an empty repository has no instruction file")
-        blocker_fails = {c["id"] for c in report["checks"]
-                         if c["verdict"] == "FAIL" and c["severity"] == "BLOCKER"}
+        self.assertEqual(set(verdicts), {spec.id for spec in REGISTRY}, "the empty scan dropped or added checks")
+        self.assertTrue(
+            all(v in {"PASS", "PARTIAL", "FAIL", "UNKNOWN"} for v in verdicts.values()),
+            "the empty scan produced a non-verdict",
+        )
+        self.assertEqual(verdicts["AGT-01"], "FAIL", "an empty repository has no instruction file")
+        blocker_fails = {c["id"] for c in report["checks"] if c["verdict"] == "FAIL" and c["severity"] == "BLOCKER"}
         self.assertTrue(blocker_fails, "an empty repository satisfies no blocker")
 
     def test_governed_fixtures_pass_every_scoreable_check(self):
@@ -246,13 +293,15 @@ class FixtureMatrixTests(unittest.TestCase):
         for name in GOVERNED_FIXTURES:
             with self.subTest(fixture=name):
                 report = run(name)
-                passed |= {cid for cid, verdict in support.verdicts(report).items()
-                           if verdict == "PASS" and cid not in PROBE_OR_ENVIRONMENT_SCOPED}
+                passed |= {
+                    cid
+                    for cid, verdict in support.verdicts(report).items()
+                    if verdict == "PASS" and cid not in PROBE_OR_ENVIRONMENT_SCOPED
+                }
 
         required = {spec.id for spec in scoreable()} - PROBE_OR_ENVIRONMENT_SCOPED
         missing = sorted(required - passed)
-        self.assertEqual(missing, [],
-                         f"no governed fixture passes these scoreable checks: {missing}")
+        self.assertEqual(missing, [], f"no governed fixture passes these scoreable checks: {missing}")
 
 
 class DeterminismOverFixtureTests(unittest.TestCase):
@@ -260,8 +309,7 @@ class DeterminismOverFixtureTests(unittest.TestCase):
         name = "hyg-minimal"
         first = run(name)
         second = run(name)
-        self.assertGreaterEqual(len(first["findings"]), 2,
-                                "pick a fixture with more than one finding")
+        self.assertGreaterEqual(len(first["findings"]), 2, "pick a fixture with more than one finding")
         for report in (first, second):
             report["provenance"].pop("scanned_at", None)
         self.assertEqual(first, second, f"{name}: the report is not deterministic")

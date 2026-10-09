@@ -23,7 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict, needs a git repository)
 FIXTURES: dict[str, tuple[str, str, bool]] = {
@@ -62,25 +62,25 @@ class ExecFixtureTests(unittest.TestCase):
                 self.assertEqual(verdicts[check], expected, f"{name}: {check}")
 
                 failing = sorted(cid for cid in EXEC_CHECKS if verdicts[cid] == "FAIL")
-                self.assertEqual(failing, [check],
-                                 f"{name}: unexpected EXEC FAILs {failing}")
+                self.assertEqual(failing, [check], f"{name}: unexpected EXEC FAILs {failing}")
 
     def test_tracked_state_unavailable_degrades_to_unknown_not_pass(self):
-        for name, _check in (("exec-02-no-lockfile", "EXEC-02"),
-                             ("exec-05-generated", "EXEC-05")):
+        for name, _check in (("exec-02-no-lockfile", "EXEC-02"), ("exec-05-generated", "EXEC-05")):
             with self.subTest(fixture=name):
                 report = support.run_audit(self._prepare(name, git=False))
                 verdicts = support.verdicts(report)
-                self.assertEqual(verdicts[_check], "UNKNOWN",
-                                 f"{name}: without git the check must not infer a tracked set")
+                self.assertEqual(
+                    verdicts[_check], "UNKNOWN", f"{name}: without git the check must not infer a tracked set"
+                )
 
     def test_a_broken_command_lists_its_evidence(self):
         report = support.run_audit(self._prepare("exec-06-broken-command", git=False))
         findings = [f for f in report["findings"] if f["check"] == "EXEC-06"]
         self.assertTrue(findings, "EXEC-06 failed without emitting a finding")
-        self.assertTrue(any("does-not-exist" in (e.get("note") or "")
-                            for f in findings for e in f["evidence"]),
-                        "the unresolvable command is not named in the evidence")
+        self.assertTrue(
+            any("does-not-exist" in (e.get("note") or "") for f in findings for e in f["evidence"]),
+            "the unresolvable command is not named in the evidence",
+        )
 
 
 if __name__ == "__main__":

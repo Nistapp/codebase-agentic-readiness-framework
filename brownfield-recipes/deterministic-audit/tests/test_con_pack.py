@@ -23,7 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 CON_CHECKS = ("CON-01", "CON-02", "CON-03", "CON-04")
 
@@ -140,12 +140,19 @@ class Con04EmitterTests(unittest.TestCase):
 
             draft = out.parent / "constraints.draft.yaml"
             self.assertTrue(draft.is_file(), "the emitter produced no draft")
-            self.assertFalse(draft.resolve().is_relative_to(target.resolve()),
-                             "the emitter wrote inside the target")
+            self.assertFalse(draft.resolve().is_relative_to(target.resolve()), "the emitter wrote inside the target")
 
             text = draft.read_text(encoding="utf-8")
-            for section in ("deny:", "secrets:", "migrations:", "generated:", "tests:", "iac:",
-                            "production:", "allow:"):
+            for section in (
+                "deny:",
+                "secrets:",
+                "migrations:",
+                "generated:",
+                "tests:",
+                "iac:",
+                "production:",
+                "allow:",
+            ):
                 self.assertIn(section, text)
 
             report = json.loads(out.read_text(encoding="utf-8"))

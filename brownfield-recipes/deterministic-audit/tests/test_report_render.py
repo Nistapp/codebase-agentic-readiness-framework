@@ -18,17 +18,23 @@ from pathlib import Path
 import support
 from audit.report.md_writer import render_markdown_from_report
 
-CHECK_KEYS = {"id", "pack", "title", "tier", "severity", "phase", "scored", "status",
-              "verdict", "summary", "data"}
+CHECK_KEYS = {"id", "pack", "title", "tier", "severity", "phase", "scored", "status", "verdict", "summary", "data"}
 
 
 def _target() -> Path:
     """A throwaway repo with a runner (so CMD-01 has a surface) and a credential-shaped line."""
     tmp = Path(tempfile.mkdtemp(prefix="render-"))
-    support.write(tmp, "package.json", json.dumps({
-        "name": "demo",
-        "scripts": {"format": "prettier --write .", "lint": "eslint .", "test": "jest"},
-    }, indent=2))
+    support.write(
+        tmp,
+        "package.json",
+        json.dumps(
+            {
+                "name": "demo",
+                "scripts": {"format": "prettier --write .", "lint": "eslint .", "test": "jest"},
+            },
+            indent=2,
+        ),
+    )
     support.write(tmp, "src/a.ts", "export const apiKey = 'sk-abcdefghijklmnopqrstuvwxyz01';\n")
     return tmp
 
@@ -63,8 +69,7 @@ class RenderFromJsonTests(unittest.TestCase):
 
     def test_render_is_deterministic(self):
         report = support.run_audit(_target())
-        self.assertEqual(render_markdown_from_report(report),
-                         render_markdown_from_report(report))
+        self.assertEqual(render_markdown_from_report(report), render_markdown_from_report(report))
 
     def test_every_check_appears_in_the_appendix(self):
         report = support.run_audit(_target())

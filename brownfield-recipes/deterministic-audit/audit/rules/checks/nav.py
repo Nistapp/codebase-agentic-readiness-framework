@@ -46,11 +46,21 @@ LARGE_FILE_BYTES = 512 * 1024
 CATCH_ALL_FILES = 50
 
 
-def _outcome(spec, verdict: Verdict, summary: str = "",
-             findings: list[Finding] | None = None,
-             data: Payload | None = None) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=summary, data=data, findings=findings or [])
+def _outcome(
+    spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
+) -> CheckOutcome:
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=summary,
+        data=data,
+        findings=findings or [],
+    )
 
 
 def _unknown(spec, reason: str) -> CheckOutcome:
@@ -66,32 +76,40 @@ def _has_exact(inventory: Inventory, rel: str) -> bool:
 # NAV-01 — declared component boundaries
 # ===========================================================================
 
+
 def check_nav01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     members = [c for c in components.declared if not c.is_root]
     if members:
         detail = ", ".join(f"{c.path} (by {c.declared_by})" for c in members[:6])
-        return _outcome(spec, Verdict.PASS,
-                        f"{len(members)} declared component(s): {detail}")
+        return _outcome(spec, Verdict.PASS, f"{len(members)} declared component(s): {detail}")
 
     if components.candidates:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"{len(components.candidates)} candidate component(s), none declared", [
-            Finding(
-                check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.PARTIAL,
-                statement=statement(
-                    "scope work to a bounded component",
-                    f"{', '.join(components.candidates[:6])} look like components but no build "
-                    f"manifest declares them"),
-                evidence=[Evidence(path) for path in components.candidates[:12]],
-                remediation="Declare the components in a workspace manifest (npm workspaces, "
-                            "pnpm-workspace.yaml, Maven modules, Gradle includes) so blast radius "
-                            "is scoped."),
-        ])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"{len(components.candidates)} candidate component(s), none declared",
+            [
+                Finding(
+                    check=spec.id,
+                    severity=spec.severity,
+                    phase=spec.phase,
+                    verdict=Verdict.PARTIAL,
+                    statement=statement(
+                        "scope work to a bounded component",
+                        f"{', '.join(components.candidates[:6])} look like components but no build "
+                        f"manifest declares them",
+                    ),
+                    evidence=[Evidence(path) for path in components.candidates[:12]],
+                    remediation="Declare the components in a workspace manifest (npm workspaces, "
+                    "pnpm-workspace.yaml, Maven modules, Gradle includes) so blast radius "
+                    "is scoped.",
+                ),
+            ],
+        )
 
     root = next((c for c in components.declared if c.is_root), None)
     if root is not None and root.manifest:
-        return _outcome(spec, Verdict.PASS,
-                        f"single-root repository declares {root.manifest}")
+        return _outcome(spec, Verdict.PASS, f"single-root repository declares {root.manifest}")
 
     return _unknown(spec, "no build manifest declares a component; stack not recognised")
 
@@ -101,11 +119,27 @@ def check_nav01(*, spec, target, inventory, stack, components, session) -> Check
 # ===========================================================================
 
 _NODE_INDEX_FILES = (
-    "index.js", "index.ts", "index.mjs", "index.cjs",
-    "src/index.js", "src/index.ts", "src/index.mjs",
-    "server.js", "server.ts", "src/server.js", "src/server.ts",
-    "main.js", "main.ts", "main.mjs", "main.cjs", "src/main.js", "src/main.ts",
-    "app.js", "app.ts", "src/app.js", "src/app.ts",
+    "index.js",
+    "index.ts",
+    "index.mjs",
+    "index.cjs",
+    "src/index.js",
+    "src/index.ts",
+    "src/index.mjs",
+    "server.js",
+    "server.ts",
+    "src/server.js",
+    "src/server.ts",
+    "main.js",
+    "main.ts",
+    "main.mjs",
+    "main.cjs",
+    "src/main.js",
+    "src/main.ts",
+    "app.js",
+    "app.ts",
+    "src/app.js",
+    "src/app.ts",
 )
 
 _ENTRY_NAMES: dict[str, tuple[str, ...]] = {
@@ -144,8 +178,7 @@ def _python_entry(inventory: Inventory) -> list[str]:
     for rel in ("main.py", "app.py", "src/main.py", "src/app.py", "manage.py"):
         if _has_exact(inventory, rel):
             found.append(rel)
-    hits = inventory.grep(r"if\s+__name__\s*==\s*['\"]__main__['\"]",
-                          kinds=(Kind.SOURCE, Kind.SCRIPT), limit=10)
+    hits = inventory.grep(r"if\s+__name__\s*==\s*['\"]__main__['\"]", kinds=(Kind.SOURCE, Kind.SCRIPT), limit=10)
     found += [rel for rel, _line, _text in hits if rel not in found]
     for manifest in ("pyproject.toml", "setup.py", "setup.cfg"):
         text = inventory.read(manifest)
@@ -159,8 +192,11 @@ def _grep_sources(inventory: Inventory, pattern: str, limit: int = 10) -> list[s
 
 
 def _jvm_entry(inventory: Inventory) -> list[str]:
-    return _grep_sources(inventory, r"public\s+static\s+void\s+main\s*\(|fun\s+main\s*\(|"
-                                    r"@SpringBootApplication")
+    return _grep_sources(
+        inventory,
+        r"public\s+static\s+void\s+main\s*\(|fun\s+main\s*\(|"
+        r"@SpringBootApplication",
+    )
 
 
 def _go_entry(inventory: Inventory) -> list[str]:
@@ -212,58 +248,76 @@ def check_nav02(*, spec, target, inventory, stack, components, session) -> Check
     found = _entry_points(inventory, stack.ecosystems)
     ecosystems = ", ".join(sorted(stack.ecosystems))
     if found:
-        return _outcome(spec, Verdict.PASS,
-                        f"entry point(s): {', '.join(found[:6])}")
+        return _outcome(spec, Verdict.PASS, f"entry point(s): {', '.join(found[:6])}")
 
-    return _outcome(spec, Verdict.FAIL,
-                    f"no entry point found for {ecosystems}", [
-        Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-            statement=statement(
-                "find where execution begins",
-                f"the {ecosystems} project declares no entry point (main, bin, __main__, "
-                f"Application or func main)"),
-            remediation="Declare the entry point in the manifest (package.json main/bin, "
-                        "pyproject scripts, a Gradle main class) or name the executable file so "
-                        "an agent can tell live code from dead code."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        f"no entry point found for {ecosystems}",
+        [
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement(
+                    "find where execution begins",
+                    f"the {ecosystems} project declares no entry point (main, bin, __main__, Application or func main)",
+                ),
+                remediation="Declare the entry point in the manifest (package.json main/bin, "
+                "pyproject scripts, a Gradle main class) or name the executable file so "
+                "an agent can tell live code from dead code.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # NAV-03 — structural red flags (informational counts, never FAIL)
 # ===========================================================================
 
+
 def check_nav03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     oversized = sorted(f.rel for f in inventory.files if f.size > LARGE_FILE_BYTES)
     binaries = sorted(f.rel for f in inventory.files if f.kind is Kind.BINARY)
-    minified = sorted(f.rel for f in inventory.files
-                      if f.kind is Kind.GENERATED and ".min." in f.rel.lower())
+    minified = sorted(f.rel for f in inventory.files if f.kind is Kind.GENERATED and ".min." in f.rel.lower())
 
     per_dir: dict[str, int] = {}
     for entry in inventory.files:
         parent = entry.rel.rsplit("/", 1)[0] if "/" in entry.rel else "."
         per_dir[parent] = per_dir.get(parent, 0) + 1
-    catch_all = sorted(directory for directory, count in per_dir.items()
-                       if count > CATCH_ALL_FILES)
+    catch_all = sorted(directory for directory, count in per_dir.items() if count > CATCH_ALL_FILES)
 
-    detail = (f"oversized(>{LARGE_FILE_BYTES} B): {len(oversized)}; "
-              f"catch-all dirs(>{CATCH_ALL_FILES} files): {len(catch_all)}; "
-              f"binaries: {len(binaries)}; minified: {len(minified)}")
+    detail = (
+        f"oversized(>{LARGE_FILE_BYTES} B): {len(oversized)}; "
+        f"catch-all dirs(>{CATCH_ALL_FILES} files): {len(catch_all)}; "
+        f"binaries: {len(binaries)}; minified: {len(minified)}"
+    )
     flags = oversized + catch_all + binaries + minified
     if not flags:
         return _outcome(spec, Verdict.PASS, detail)
 
-    return _outcome(spec, Verdict.PARTIAL, detail, [
-        Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.PARTIAL,
-            statement=statement(
-                "work in a codebase without obvious structural traps",
-                f"{len(oversized)} oversized file(s), {len(catch_all)} catch-all director(y/ies), "
-                f"{len(binaries)} checked-in binary file(s) and {len(minified)} minified asset(s)"),
-            evidence=[Evidence(rel) for rel in (oversized + catch_all + binaries + minified)[:12]],
-            remediation="Split oversized files, break up catch-all directories, and keep binaries "
-                        "and minified assets out of the tree (generate them in the build)."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.PARTIAL,
+        detail,
+        [
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.PARTIAL,
+                statement=statement(
+                    "work in a codebase without obvious structural traps",
+                    f"{len(oversized)} oversized file(s), {len(catch_all)} catch-all director(y/ies), "
+                    f"{len(binaries)} checked-in binary file(s) and {len(minified)} minified asset(s)",
+                ),
+                evidence=[Evidence(rel) for rel in (oversized + catch_all + binaries + minified)[:12]],
+                remediation="Split oversized files, break up catch-all directories, and keep binaries "
+                "and minified assets out of the tree (generate them in the build).",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
@@ -275,10 +329,8 @@ _DIAGRAM_SUFFIXES = (".mmd", ".puml", ".drawio", ".excalidraw", ".svg", ".png")
 
 def check_nav04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     has_arch = any(f.rel.startswith("docs/architecture/") for f in inventory.files)
-    has_adr = any(f.rel.startswith(("docs/architecture/adrs/", "docs/adr/"))
-                  for f in inventory.files)
-    diagrams = sorted(f.rel for f in inventory.files
-                      if f.rel.lower().endswith(_DIAGRAM_SUFFIXES))
+    has_adr = any(f.rel.startswith(("docs/architecture/adrs/", "docs/adr/")) for f in inventory.files)
+    diagrams = sorted(f.rel for f in inventory.files if f.rel.lower().endswith(_DIAGRAM_SUFFIXES))
 
     if has_arch or has_adr or diagrams:
         parts = []
@@ -290,15 +342,24 @@ def check_nav04(*, spec, target, inventory, stack, components, session) -> Check
             parts.append(f"{len(diagrams)} diagram(s)")
         return _outcome(spec, Verdict.PASS, "; ".join(parts))
 
-    return _outcome(spec, Verdict.FAIL, "no architecture orientation artifact", [
-        Finding(
-            check=spec.id, severity=spec.severity, phase=spec.phase, verdict=Verdict.FAIL,
-            statement=statement(
-                "orient itself from a map instead of exploring blindly",
-                "no docs/architecture/, ADR directory or diagram exists"),
-            remediation="Add a short architecture page (with a diagram) so an agent can orient "
-                        "before it explores."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no architecture orientation artifact",
+        [
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement(
+                    "orient itself from a map instead of exploring blindly",
+                    "no docs/architecture/, ADR directory or diagram exists",
+                ),
+                remediation="Add a short architecture page (with a diagram) so an agent can orient before it explores.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
@@ -308,7 +369,8 @@ def check_nav04(*, spec, target, inventory, stack, components, session) -> Check
 _PY_PUBLIC_RE = re.compile(r"^(?:async\s+)?def\s+([A-Za-z_]\w*)|^class\s+([A-Za-z_]\w*)")
 _TS_EXPORT_RE = re.compile(
     r"^export\s+(?:default\s+)?(?:async\s+)?"
-    r"(?:function|class|const|let|var|interface|type|enum)\s+([A-Za-z_$][\w$]*)")
+    r"(?:function|class|const|let|var|interface|type|enum)\s+([A-Za-z_$][\w$]*)"
+)
 _TS_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
 
 
@@ -383,19 +445,21 @@ def check_nav05(*, spec, target, inventory, stack, components, session) -> Check
     if language is None:
         return _unknown(spec, "no recognised source language, so 'public' cannot be defined")
 
-    total, documented = (_python_census(inventory) if language == "python"
-                         else _ts_census(inventory))
-    method = (f"python: module-level def/class not starting with '_'"
-              if language == "python" else "typescript: exported declarations")
+    total, documented = _python_census(inventory) if language == "python" else _ts_census(inventory)
+    method = (
+        f"python: module-level def/class not starting with '_'"
+        if language == "python"
+        else "typescript: exported declarations"
+    )
     if total == 0:
         return _unknown(spec, f"{language}: no public symbols detected ({method})")
 
     ratio = documented / total
     detail = f"{documented}/{total} public symbols documented ({ratio:.0%}); method: {method}"
     verdict = Verdict.PASS if documented == total else Verdict.PARTIAL
-    return _outcome(spec, verdict, detail,
-                    data=Ratio(numerator=documented, denominator=total,
-                               unit="public symbols", method=method))
+    return _outcome(
+        spec, verdict, detail, data=Ratio(numerator=documented, denominator=total, unit="public symbols", method=method)
+    )
 
 
 IMPLEMENTATIONS = {

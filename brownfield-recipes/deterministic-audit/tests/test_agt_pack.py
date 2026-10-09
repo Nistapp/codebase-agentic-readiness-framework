@@ -17,7 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict)
 FIXTURES: dict[str, tuple[str, str]] = {
@@ -42,8 +42,9 @@ class AgtFixtureTests(unittest.TestCase):
 
                 failing = {cid for cid in AGT_CHECKS if verdicts[cid] == "FAIL"}
                 expected_failing = {check} if expected == "FAIL" else set()
-                self.assertEqual(failing, expected_failing,
-                                 f"{name}: unexpected AGT content FAILs {failing - expected_failing}")
+                self.assertEqual(
+                    failing, expected_failing, f"{name}: unexpected AGT content FAILs {failing - expected_failing}"
+                )
 
     def test_governed_minimal_passes_all_five(self):
         report = support.run_audit(support.fixture("governed-minimal"))

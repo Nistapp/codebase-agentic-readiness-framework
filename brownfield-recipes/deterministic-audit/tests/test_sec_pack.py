@@ -24,7 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict, needs git, force-add .env)
 FIXTURES: dict[str, tuple[str, str, bool, bool]] = {
@@ -67,8 +67,7 @@ class SecFixtureTests(unittest.TestCase):
 
                 failing = sorted(cid for cid in SEC_CHECKS if verdicts[cid] == "FAIL")
                 expected_failing = [check] if expected == "FAIL" else []
-                self.assertEqual(failing, expected_failing,
-                                 f"{name}: unexpected SEC FAILs {failing}")
+                self.assertEqual(failing, expected_failing, f"{name}: unexpected SEC FAILs {failing}")
 
     def test_sec_01_ok_passes_all_three(self):
         report = support.run_audit(self._prepare("sec-01-ok", git=True))
@@ -78,8 +77,9 @@ class SecFixtureTests(unittest.TestCase):
 
     def test_tracked_state_unavailable_degrades_to_unknown_not_pass(self):
         report = support.run_audit(self._prepare("sec-01-tracked-env", git=False))
-        self.assertEqual(support.verdicts(report)["SEC-01"], "UNKNOWN",
-                         "without git the tracked .env cannot be ruled out")
+        self.assertEqual(
+            support.verdicts(report)["SEC-01"], "UNKNOWN", "without git the tracked .env cannot be ruled out"
+        )
 
 
 class Sec02ReportHygieneTests(unittest.TestCase):
@@ -95,8 +95,7 @@ class Sec02ReportHygieneTests(unittest.TestCase):
 
     def test_the_matched_value_never_reaches_the_report(self):
         report = support.run_audit(self._prepare("sec-02-key-shaped", git=True))
-        self.assertNotIn(SYNTHETIC_SECRET, json.dumps(report),
-                         "SEC-02 leaked the matched value into the report")
+        self.assertNotIn(SYNTHETIC_SECRET, json.dumps(report), "SEC-02 leaked the matched value into the report")
 
         findings = [f for f in report["findings"] if f["check"] == "SEC-02"]
         self.assertTrue(findings, "SEC-02 failed without emitting a finding")

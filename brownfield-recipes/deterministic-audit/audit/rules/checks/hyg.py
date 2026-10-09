@@ -71,25 +71,54 @@ RECENT_WINDOW = dt.timedelta(days=365)
 _PROTECTION_PROVIDERS = frozenset({"github", "gitlab"})
 
 _DEPENDENCY_AUTOMATION = (
-    ".github/dependabot.yml", ".github/dependabot.yaml", "dependabot.yml", "dependabot.yaml",
-    "renovate.json", "renovate.json5", ".renovaterc", ".renovaterc.json",
-    ".github/renovate.json", "renovate.config.js",
+    ".github/dependabot.yml",
+    ".github/dependabot.yaml",
+    "dependabot.yml",
+    "dependabot.yaml",
+    "renovate.json",
+    "renovate.json5",
+    ".renovaterc",
+    ".renovaterc.json",
+    ".github/renovate.json",
+    "renovate.config.js",
 )
 
 
-def _outcome(spec, verdict: Verdict, summary: str = "",
-             findings: list[Finding] | None = None,
-             data: Payload | None = None) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=summary, data=data, findings=findings or [])
+def _outcome(
+    spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
+) -> CheckOutcome:
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=summary,
+        data=data,
+        findings=findings or [],
+    )
 
 
-def _finding(spec, verdict: Verdict, cannot: str, because: str, *,
-             evidence: list[Evidence] | None = None, path: str | None = None,
-             remediation: str | None = None) -> Finding:
+def _finding(
+    spec,
+    verdict: Verdict,
+    cannot: str,
+    because: str,
+    *,
+    evidence: list[Evidence] | None = None,
+    path: str | None = None,
+    remediation: str | None = None,
+) -> Finding:
     return Finding(
-        check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-        statement=statement(cannot, because), evidence=evidence or [], path=path,
+        check=spec.id,
+        severity=spec.severity,
+        phase=spec.phase,
+        verdict=verdict,
+        statement=statement(cannot, because),
+        evidence=evidence or [],
+        path=path,
         remediation=remediation,
     )
 
@@ -98,6 +127,7 @@ def _finding(spec, verdict: Verdict, cannot: str, because: str, *,
 # artifact locators (all read the inventory; none touches the filesystem directly)
 # ---------------------------------------------------------------------------
 
+
 def _basename(rel: str) -> str:
     return rel.rsplit("/", 1)[-1]
 
@@ -105,13 +135,14 @@ def _basename(rel: str) -> str:
 def _present(inventory: Inventory, *names: str) -> list[str]:
     """Files whose path equals, or ends with, one of ``names`` (any depth)."""
     wanted = tuple(name.strip("/") for name in names)
-    return sorted(f.rel for f in inventory.files
-                  if f.rel.strip("/") in wanted
-                  or any(f.rel.strip("/").endswith("/" + name) for name in wanted))
+    return sorted(
+        f.rel
+        for f in inventory.files
+        if f.rel.strip("/") in wanted or any(f.rel.strip("/").endswith("/" + name) for name in wanted)
+    )
 
 
-def _named_documents(inventory: Inventory, prefixes: tuple[str, ...], *,
-                     root_only: bool = False) -> list[str]:
+def _named_documents(inventory: Inventory, prefixes: tuple[str, ...], *, root_only: bool = False) -> list[str]:
     """Files whose basename starts with a prefix and is a bare name or a document suffix."""
     out: list[str] = []
     for entry in inventory.files:
@@ -126,9 +157,11 @@ def _named_documents(inventory: Inventory, prefixes: tuple[str, ...], *,
 
 
 def _documents_containing(inventory: Inventory, needle: str) -> list[str]:
-    return sorted(f.rel for f in inventory.files
-                  if needle in _basename(f.rel).lower()
-                  and _basename(f.rel).lower().endswith(_DOC_SUFFIXES))
+    return sorted(
+        f.rel
+        for f in inventory.files
+        if needle in _basename(f.rel).lower() and _basename(f.rel).lower().endswith(_DOC_SUFFIXES)
+    )
 
 
 def _git_output(target_path: Path, *args: str) -> str | None:
@@ -136,7 +169,9 @@ def _git_output(target_path: Path, *args: str) -> str | None:
     try:
         proc = subprocess.run(
             ["git", "-C", str(target_path), *args],
-            text=True, capture_output=True, timeout=10,
+            text=True,
+            capture_output=True,
+            timeout=10,
         )
     except (OSError, subprocess.SubprocessError):
         return None
@@ -158,6 +193,7 @@ def _commit_date(target_path: Path, *pathspec: str) -> dt.datetime | None:
 # HYG-01 — README present and non-placeholder
 # ===========================================================================
 
+
 def _readme_reason(text: str) -> str | None:
     stripped = text.strip()
     if len(stripped) < MIN_README_CHARS:
@@ -166,221 +202,327 @@ def _readme_reason(text: str) -> str | None:
     for marker in STUB_MARKERS:
         if marker in lowered:
             return f"contains the placeholder marker {marker!r}"
-    body = [line.strip() for line in stripped.splitlines()
-            if line.strip() and not line.strip().startswith("#")]
+    body = [line.strip() for line in stripped.splitlines() if line.strip() and not line.strip().startswith("#")]
     if not body:
         return "a title with no body"
     return None
 
 
 def check_hyg01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    found = sorted(f.rel for f in inventory.files
-                   if "/" not in f.rel and _basename(f.rel).lower().startswith("readme"))
+    found = sorted(f.rel for f in inventory.files if "/" not in f.rel and _basename(f.rel).lower().startswith("readme"))
     if not found:
-        return _outcome(spec, Verdict.FAIL, "no README at the repository root", [
-            _finding(spec, Verdict.FAIL, "orient itself in this project in seconds",
-                     "no README exists at the repository root",
-                     remediation="Add a root README that says what the project is, how to run it, "
-                                 "and how to contribute."),
-        ])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no README at the repository root",
+            [
+                _finding(
+                    spec,
+                    Verdict.FAIL,
+                    "orient itself in this project in seconds",
+                    "no README exists at the repository root",
+                    remediation="Add a root README that says what the project is, how to run it, "
+                    "and how to contribute.",
+                ),
+            ],
+        )
 
-    primary = min(found, key=lambda rel: (0 if _basename(rel).lower() == "readme.md" else 1,
-                                          rel.lower()))
+    primary = min(found, key=lambda rel: (0 if _basename(rel).lower() == "readme.md" else 1, rel.lower()))
     text = inventory.read(primary)
     if text is None:
-        return _outcome(spec, Verdict.UNKNOWN,
-                        f"{primary} present but not readable as text (binary or oversized)")
+        return _outcome(spec, Verdict.UNKNOWN, f"{primary} present but not readable as text (binary or oversized)")
 
     reason = _readme_reason(text)
     if reason is None:
         return _outcome(spec, Verdict.PASS, f"{primary} present and non-placeholder")
 
-    return _outcome(spec, Verdict.FAIL, f"{primary} is a placeholder — {reason}", [
-        _finding(spec, Verdict.FAIL, "learn what this project is",
-                 f"{primary} exists but is a placeholder — {reason}",
-                 evidence=[Evidence(primary)], path=primary,
-                 remediation="Replace the stub with a description, a quick-start, and a link to "
-                             "the documentation."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        f"{primary} is a placeholder — {reason}",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "learn what this project is",
+                f"{primary} exists but is a placeholder — {reason}",
+                evidence=[Evidence(primary)],
+                path=primary,
+                remediation="Replace the stub with a description, a quick-start, and a link to the documentation.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-02 — CODEOWNERS
 # ===========================================================================
 
+
 def check_hyg02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     found = _present(inventory, "CODEOWNERS")
     if found:
         return _outcome(spec, Verdict.PASS, f"CODEOWNERS present at {', '.join(found[:3])}")
-    return _outcome(spec, Verdict.FAIL, "no CODEOWNERS file", [
-        _finding(spec, Verdict.FAIL, "know who owns a path before changing it",
-                 "no CODEOWNERS file exists at the root, under .github/, or under docs/",
-                 remediation="Add .github/CODEOWNERS mapping paths to owners so review routing is "
-                             "machine-readable."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no CODEOWNERS file",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "know who owns a path before changing it",
+                "no CODEOWNERS file exists at the root, under .github/, or under docs/",
+                remediation="Add .github/CODEOWNERS mapping paths to owners so review routing is machine-readable.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-03 — pull-request template
 # ===========================================================================
 
+
 def check_hyg03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    found = sorted(f.rel for f in inventory.files
-                   if _basename(f.rel).lower().startswith("pull_request_template"))
+    found = sorted(f.rel for f in inventory.files if _basename(f.rel).lower().startswith("pull_request_template"))
     if found:
         return _outcome(spec, Verdict.PASS, f"pull-request template present at {found[0]}")
-    return _outcome(spec, Verdict.FAIL, "no pull-request template", [
-        _finding(spec, Verdict.FAIL, "file a change with the information reviewers need",
-                 "no .github/pull_request_template file exists",
-                 remediation="Add .github/pull_request_template.md describing what a good change "
-                             "records."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no pull-request template",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "file a change with the information reviewers need",
+                "no .github/pull_request_template file exists",
+                remediation="Add .github/pull_request_template.md describing what a good change records.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-04 — issue templates
 # ===========================================================================
 
+
 def check_hyg04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    found = sorted(f.rel for f in inventory.files
-                   if f.rel.startswith(".github/ISSUE_TEMPLATE/")
-                   or f.rel == ".github/ISSUE_TEMPLATE.md")
+    found = sorted(
+        f.rel
+        for f in inventory.files
+        if f.rel.startswith(".github/ISSUE_TEMPLATE/") or f.rel == ".github/ISSUE_TEMPLATE.md"
+    )
     if found:
         return _outcome(spec, Verdict.PASS, f"{len(found)} issue template(s) present")
-    return _outcome(spec, Verdict.FAIL, "no issue templates", [
-        _finding(spec, Verdict.FAIL, "report a bug or request in a structured way",
-                 "no .github/ISSUE_TEMPLATE entry exists",
-                 remediation="Add at least one file under .github/ISSUE_TEMPLATE/ (a bug report "
-                             "and a feature request are a good start)."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no issue templates",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "report a bug or request in a structured way",
+                "no .github/ISSUE_TEMPLATE entry exists",
+                remediation="Add at least one file under .github/ISSUE_TEMPLATE/ (a bug report "
+                "and a feature request are a good start).",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-05 — CONTRIBUTING
 # ===========================================================================
 
+
 def check_hyg05(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     found = _named_documents(inventory, ("contributing",))
     if found:
         return _outcome(spec, Verdict.PASS, f"CONTRIBUTING present at {found[0]}")
-    return _outcome(spec, Verdict.FAIL, "no CONTRIBUTING document", [
-        _finding(spec, Verdict.FAIL, "contribute without reverse-engineering the process",
-                 "no CONTRIBUTING document exists",
-                 remediation="Add CONTRIBUTING.md covering setup, the gate, and the review flow."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no CONTRIBUTING document",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "contribute without reverse-engineering the process",
+                "no CONTRIBUTING document exists",
+                remediation="Add CONTRIBUTING.md covering setup, the gate, and the review flow.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-06 — SECURITY
 # ===========================================================================
 
+
 def check_hyg06(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     found = _named_documents(inventory, ("security",))
     if found:
         return _outcome(spec, Verdict.PASS, f"SECURITY present at {found[0]}")
-    return _outcome(spec, Verdict.FAIL, "no SECURITY document", [
-        _finding(spec, Verdict.FAIL, "report a vulnerability responsibly",
-                 "no SECURITY document exists at the root, under .github/, or under docs/",
-                 remediation="Add SECURITY.md with a private disclosure channel and a response "
-                             "expectation."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no SECURITY document",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "report a vulnerability responsibly",
+                "no SECURITY document exists at the root, under .github/, or under docs/",
+                remediation="Add SECURITY.md with a private disclosure channel and a response expectation.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-07 — CHANGELOG present and recent
 # ===========================================================================
 
+
 def check_hyg07(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     found = _named_documents(inventory, ("changelog", "changes", "history"))
     if not found:
-        return _outcome(spec, Verdict.FAIL, "no CHANGELOG document", [
-            _finding(spec, Verdict.FAIL, "see what changed between two versions",
-                     "no CHANGELOG (or CHANGES/HISTORY) document exists",
-                     remediation="Add CHANGELOG.md and record notable changes under a version "
-                                 "heading."),
-        ])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no CHANGELOG document",
+            [
+                _finding(
+                    spec,
+                    Verdict.FAIL,
+                    "see what changed between two versions",
+                    "no CHANGELOG (or CHANGES/HISTORY) document exists",
+                    remediation="Add CHANGELOG.md and record notable changes under a version heading.",
+                ),
+            ],
+        )
 
     primary = found[0]
     head_date = _commit_date(target.path, "HEAD")
     changelog_date = _commit_date(target.path, "--", primary)
     if head_date is None or changelog_date is None:
-        return _outcome(spec, Verdict.UNKNOWN,
-                        f"{primary} present, but git could not date it against HEAD")
+        return _outcome(spec, Verdict.UNKNOWN, f"{primary} present, but git could not date it against HEAD")
 
     age = head_date - changelog_date
     if age <= RECENT_WINDOW:
-        return _outcome(spec, Verdict.PASS,
-                        f"{primary} last changed {age.days} day(s) before HEAD")
+        return _outcome(spec, Verdict.PASS, f"{primary} last changed {age.days} day(s) before HEAD")
 
-    return _outcome(spec, Verdict.FAIL,
-                    f"{primary} last changed {age.days} day(s) before HEAD "
-                    f"(window {RECENT_WINDOW.days})", [
-        _finding(spec, Verdict.FAIL, "trust that the changelog reflects the current release",
-                 f"{primary} has not changed in {age.days} days of repository history",
-                 evidence=[Evidence(primary)], path=primary,
-                 remediation="Record the current release in the changelog in the same change set "
-                             "that cuts it."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        f"{primary} last changed {age.days} day(s) before HEAD (window {RECENT_WINDOW.days})",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "trust that the changelog reflects the current release",
+                f"{primary} has not changed in {age.days} days of repository history",
+                evidence=[Evidence(primary)],
+                path=primary,
+                remediation="Record the current release in the changelog in the same change set that cuts it.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-08 — release document
 # ===========================================================================
 
+
 def check_hyg08(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     found = _documents_containing(inventory, "release")
     if found:
         return _outcome(spec, Verdict.PASS, f"release document present at {found[0]}")
-    return _outcome(spec, Verdict.FAIL, "no release document", [
-        _finding(spec, Verdict.FAIL, "know how a release is cut",
-                 "no text or markdown document describing the release process exists",
-                 remediation="Add docs/releasing.md (or RELEASE.md) describing how a version is "
-                             "cut and published."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no release document",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "know how a release is cut",
+                "no text or markdown document describing the release process exists",
+                remediation="Add docs/releasing.md (or RELEASE.md) describing how a version is cut and published.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-09 — dependency update automation
 # ===========================================================================
 
+
 def check_hyg09(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     found = _present(inventory, *_DEPENDENCY_AUTOMATION)
     if found:
         return _outcome(spec, Verdict.PASS, f"dependency automation configured at {found[0]}")
-    return _outcome(spec, Verdict.FAIL, "no dependency update automation", [
-        _finding(spec, Verdict.FAIL, "keep dependencies patched without manual sweeps",
-                 "no Dependabot or Renovate configuration exists",
-                 remediation="Add .github/dependabot.yml (or renovate.json) with an update "
-                             "schedule."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no dependency update automation",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "keep dependencies patched without manual sweeps",
+                "no Dependabot or Renovate configuration exists",
+                remediation="Add .github/dependabot.yml (or renovate.json) with an update schedule.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-10 — license
 # ===========================================================================
 
+
 def check_hyg10(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    found = _named_documents(inventory, ("license", "licence", "copying", "copyright", "unlicense"),
-                             root_only=True)
+    found = _named_documents(inventory, ("license", "licence", "copying", "copyright", "unlicense"), root_only=True)
     if found:
         return _outcome(spec, Verdict.PASS, f"license present at {found[0]}")
-    return _outcome(spec, Verdict.FAIL, "no license file at the repository root", [
-        _finding(spec, Verdict.FAIL, "know the terms under which the code may be used",
-                 "no LICENSE (or COPYING) file exists at the repository root",
-                 remediation="Add a LICENSE file; choose one deliberately rather than defaulting "
-                             "to all rights reserved."),
-    ])
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        "no license file at the repository root",
+        [
+            _finding(
+                spec,
+                Verdict.FAIL,
+                "know the terms under which the code may be used",
+                "no LICENSE (or COPYING) file exists at the repository root",
+                remediation="Add a LICENSE file; choose one deliberately rather than defaulting "
+                "to all rights reserved.",
+            ),
+        ],
+    )
 
 
 # ===========================================================================
 # HYG-11 — branch protection declared as code
 # ===========================================================================
 
+
 def _branch_protection_config(inventory: Inventory) -> list[str]:
-    named = [f.rel for f in inventory.files
-             if "branch-protection" in f.rel.lower() or "branch_protection" in f.rel.lower()]
-    terraform = sorted(rel for rel in inventory.with_suffix(".tf")
-                       if "branch_protection" in (inventory.read(rel) or "").lower())
+    named = [
+        f.rel for f in inventory.files if "branch-protection" in f.rel.lower() or "branch_protection" in f.rel.lower()
+    ]
+    terraform = sorted(
+        rel for rel in inventory.with_suffix(".tf") if "branch_protection" in (inventory.read(rel) or "").lower()
+    )
     return sorted(set(named) | set(terraform))
 
 
@@ -391,19 +533,28 @@ def check_hyg11(*, spec, target, inventory, stack, components, session) -> Check
 
     recognised = sorted(_PROTECTION_PROVIDERS & set(stack.ci_providers))
     if recognised:
-        return _outcome(spec, Verdict.FAIL,
-                        f"{', '.join(recognised)} offers branch protection as code, none found", [
-            _finding(spec, Verdict.FAIL, "reproduce the protected-branch rules as code",
-                     f"the {', '.join(recognised)} provider is detected but no branch-protection "
-                     f"configuration exists",
-                     remediation="Declare branch protection in code (a Terraform resource or "
-                                 ".github/branch-protection) so it is reviewed like any other "
-                                 "change."),
-        ])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            f"{', '.join(recognised)} offers branch protection as code, none found",
+            [
+                _finding(
+                    spec,
+                    Verdict.FAIL,
+                    "reproduce the protected-branch rules as code",
+                    f"the {', '.join(recognised)} provider is detected but no branch-protection configuration exists",
+                    remediation="Declare branch protection in code (a Terraform resource or "
+                    ".github/branch-protection) so it is reviewed like any other "
+                    "change.",
+                ),
+            ],
+        )
 
-    return _outcome(spec, Verdict.UNKNOWN,
-                    "no CI provider recognised; whether branch protection can be declared as code "
-                    "is provider-dependent")
+    return _outcome(
+        spec,
+        Verdict.UNKNOWN,
+        "no CI provider recognised; whether branch protection can be declared as code is provider-dependent",
+    )
 
 
 IMPLEMENTATIONS = {

@@ -18,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 CI_CHECKS = ("CI-01", "CI-02", "CI-03")
 
@@ -40,8 +40,7 @@ class CiFixtureTests(unittest.TestCase):
 
                 failing = sorted(cid for cid in CI_CHECKS if verdicts[cid] == "FAIL")
                 expected_failing = [check] if expected == "FAIL" else []
-                self.assertEqual(failing, expected_failing,
-                                 f"{name}: unexpected CI FAILs {failing}")
+                self.assertEqual(failing, expected_failing, f"{name}: unexpected CI FAILs {failing}")
 
     def test_positive_fixture_passes_all_three(self):
         report = support.run_audit(support.fixture("ci-ok-gh"))
@@ -63,26 +62,35 @@ class CiInlineTests(unittest.TestCase):
         self.assertEqual(support.verdicts(report)["CI-01"], "FAIL")
 
     def test_ci_without_local_verbs_is_unknown_not_pass(self):
-        report = self._scan({
-            ".github/workflows/ci.yml": "on:\n  pull_request:\njobs:\n  b:\n    steps:\n"
-                                        "      - run: npm run check\n",
-        })
+        report = self._scan(
+            {
+                ".github/workflows/ci.yml": "on:\n  pull_request:\njobs:\n  b:\n    steps:\n"
+                "      - run: npm run check\n",
+            }
+        )
         self.assertEqual(support.verdicts(report)["CI-02"], "UNKNOWN")
 
     def test_gitlab_merge_request_trigger_counts(self):
-        report = self._scan({
-            ".gitlab-ci.yml": ("test:\n  script:\n    - npm run check\n"
-                               "  rules:\n    - if: $CI_MERGE_REQUEST_IID\n"),
-            "package.json": '{"scripts": {"check": "true"}}',
-        })
+        report = self._scan(
+            {
+                ".gitlab-ci.yml": (
+                    "test:\n  script:\n    - npm run check\n  rules:\n    - if: $CI_MERGE_REQUEST_IID\n"
+                ),
+                "package.json": '{"scripts": {"check": "true"}}',
+            }
+        )
         self.assertEqual(support.verdicts(report)["CI-01"], "PASS")
 
     def test_block_scalar_step_is_parsed(self):
-        report = self._scan({
-            ".github/workflows/ci.yml": ("on:\n  pull_request:\njobs:\n  b:\n    steps:\n"
-                                         "      - run: |\n          npm ci\n          npm run check\n"),
-            "package.json": '{"scripts": {"check": "true"}}',
-        })
+        report = self._scan(
+            {
+                ".github/workflows/ci.yml": (
+                    "on:\n  pull_request:\njobs:\n  b:\n    steps:\n"
+                    "      - run: |\n          npm ci\n          npm run check\n"
+                ),
+                "package.json": '{"scripts": {"check": "true"}}',
+            }
+        )
         self.assertEqual(support.verdicts(report)["CI-02"], "PASS")
         self.assertEqual(support.verdicts(report)["CI-03"], "PASS")
 

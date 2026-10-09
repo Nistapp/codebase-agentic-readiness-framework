@@ -67,12 +67,25 @@ from audit.rules.payloads import PathList, Payload
 #: Constraint / allow-deny files, matched at the repository root. A documented name set, not a
 #: schema: the framework names no artifact (CON-01), so the pack recognises the common spellings.
 _CONSTRAINT_FILES: tuple[str, ...] = (
-    ".agentignore", ".aiignore", ".cursorignore", ".aiderignore", ".rooignore",
-    ".codeiumignore", ".copilotignore", ".geminiignore", ".claudeignore",
-    ".codebaseignore", ".agenticignore",
-    "constraints.yaml", "constraints.yml", "constraints.json",
+    ".agentignore",
+    ".aiignore",
+    ".cursorignore",
+    ".aiderignore",
+    ".rooignore",
+    ".codeiumignore",
+    ".copilotignore",
+    ".geminiignore",
+    ".claudeignore",
+    ".codebaseignore",
+    ".agenticignore",
+    "constraints.yaml",
+    "constraints.yml",
+    "constraints.json",
     "constraints.draft.yaml",
-    "allowlist.txt", "denylist.txt", "allowlist", "denylist",
+    "allowlist.txt",
+    "denylist.txt",
+    "allowlist",
+    "denylist",
 )
 
 #: Directory names that make a directory a test directory.
@@ -85,11 +98,17 @@ _CON_ROOTS: tuple[str, ...] = _SCRATCH_ROOTS + _STATE_ROOTS
 
 #: CI workflow locations read for a textual protect-guard, and the guard keyword.
 _CI_FILES: tuple[str, ...] = (
-    ".github/workflows/*.yml", ".github/workflows/*.yaml",
-    ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml", ".circleci/config.yml",
+    ".github/workflows/*.yml",
+    ".github/workflows/*.yaml",
+    ".gitlab-ci.yml",
+    "Jenkinsfile",
+    "azure-pipelines.yml",
+    ".circleci/config.yml",
 )
-_CI_PROTECT_RE = re.compile(r"(?i)\b(?:deny|denied|forbid|protect(?:ed|ion)?|read[- ]?only"
-                            r"|no[- ]?edit|immutable)\b")
+_CI_PROTECT_RE = re.compile(
+    r"(?i)\b(?:deny|denied|forbid|protect(?:ed|ion)?|read[- ]?only"
+    r"|no[- ]?edit|immutable)\b"
+)
 
 #: The draft artifact CON-04 writes, beside the report under ``--out``.
 DRAFT_FILENAME = "constraints.draft.yaml"
@@ -116,22 +135,38 @@ def set_emit_target(out_path: Path | None) -> None:
 # shared helpers
 # ---------------------------------------------------------------------------
 
-def _outcome(spec, verdict: Verdict, summary: str = "",
-             findings: list[Finding] | None = None,
-             data: Payload | None = None) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=summary, data=data, findings=findings or [])
+
+def _outcome(
+    spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
+) -> CheckOutcome:
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=summary,
+        data=data,
+        findings=findings or [],
+    )
 
 
 def _unknown(spec, reason: str, data: Payload | None = None) -> CheckOutcome:
     return _outcome(spec, Verdict.UNKNOWN, reason, data=data)
 
 
-def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[Evidence],
-             remediation: str) -> Finding:
-    return Finding(check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-                   statement=statement(cannot, because), evidence=evidence,
-                   remediation=remediation)
+def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[Evidence], remediation: str) -> Finding:
+    return Finding(
+        check=spec.id,
+        severity=spec.severity,
+        phase=spec.phase,
+        verdict=verdict,
+        statement=statement(cannot, because),
+        evidence=evidence,
+        remediation=remediation,
+    )
 
 
 def _pattern_covers(rel: str, pattern: str) -> bool:
@@ -148,8 +183,13 @@ def _pattern_covers(rel: str, pattern: str) -> bool:
         if core.endswith(suffix):
             core = core[: -len(suffix)]
     core = core.rstrip("/")
-    return (rel == core or fnmatch.fnmatch(rel, p) or fnmatch.fnmatch(rel, core)
-            or fnmatch.fnmatch(rel, core + "/*") or fnmatch.fnmatch(rel, core + "/**"))
+    return (
+        rel == core
+        or fnmatch.fnmatch(rel, p)
+        or fnmatch.fnmatch(rel, core)
+        or fnmatch.fnmatch(rel, core + "/*")
+        or fnmatch.fnmatch(rel, core + "/**")
+    )
 
 
 def _covered(rel: str, patterns: list[str]) -> bool:
@@ -215,6 +255,7 @@ def _present_roots(target: Target, inventory: Inventory) -> list[str]:
 # CON-02 — test directories protected
 # ===========================================================================
 
+
 def _ci_protection(inventory: Inventory, test_roots: list[str]) -> list[str]:
     """CI workflow files with a line naming a test directory and a deny/protect keyword."""
     names = {root.rsplit("/", 1)[-1] for root in test_roots}
@@ -234,8 +275,7 @@ def _ci_protection(inventory: Inventory, test_roots: list[str]) -> list[str]:
 def check_con02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     test_roots = _test_roots(target, inventory)
     if not test_roots:
-        return _unknown(spec, "no test directories detected, so there is nothing for a deny list "
-                              "to protect")
+        return _unknown(spec, "no test directories detected, so there is nothing for a deny list to protect")
 
     listed = _describe(test_roots)
     files = _constraint_files(inventory)
@@ -249,25 +289,45 @@ def check_con02(*, spec, target, inventory, stack, components, session) -> Check
         uncovered = [root for root in test_roots if not _covered(root, patterns)]
 
         if not uncovered:
-            return _outcome(spec, Verdict.PASS,
-                            f"constraint file denies the test directories ({listed}): "
-                            f"{', '.join(files)}", data=paths)
+            return _outcome(
+                spec,
+                Verdict.PASS,
+                f"constraint file denies the test directories ({listed}): {', '.join(files)}",
+                data=paths,
+            )
         if covered:
-            return _outcome(spec, Verdict.PARTIAL,
-                            f"constraint file covers {_describe(covered)} but not "
-                            f"{_describe(uncovered)}", [_finding(
-                spec, "rely on the deny list to keep test directories out of an agent's reach",
-                f"the constraint file(s) {', '.join(files)} do not deny {_describe(uncovered)}",
-                Verdict.PARTIAL, [Evidence(rel) for rel in files],
-                f"Add {_describe(uncovered)} to the constraint/deny list.")], data=paths)
-        return _outcome(spec, Verdict.FAIL,
-                        f"a constraint file exists but denies none of the test directories "
-                        f"({listed})", [_finding(
-            spec, "trust that a failing test is not rewritten to pass",
-            f"the constraint file(s) {', '.join(files)} do not deny any test directory",
-            Verdict.FAIL, [Evidence(rel) for rel in files],
-            f"Add {listed} to the constraint/deny list so test edits are bounded and reviewed.")],
-                        data=paths)
+            return _outcome(
+                spec,
+                Verdict.PARTIAL,
+                f"constraint file covers {_describe(covered)} but not {_describe(uncovered)}",
+                [
+                    _finding(
+                        spec,
+                        "rely on the deny list to keep test directories out of an agent's reach",
+                        f"the constraint file(s) {', '.join(files)} do not deny {_describe(uncovered)}",
+                        Verdict.PARTIAL,
+                        [Evidence(rel) for rel in files],
+                        f"Add {_describe(uncovered)} to the constraint/deny list.",
+                    )
+                ],
+                data=paths,
+            )
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            f"a constraint file exists but denies none of the test directories ({listed})",
+            [
+                _finding(
+                    spec,
+                    "trust that a failing test is not rewritten to pass",
+                    f"the constraint file(s) {', '.join(files)} do not deny any test directory",
+                    Verdict.FAIL,
+                    [Evidence(rel) for rel in files],
+                    f"Add {listed} to the constraint/deny list so test edits are bounded and reviewed.",
+                )
+            ],
+            data=paths,
+        )
 
     rules = load_ignore_rules(target.path)
     rule_patterns = [rule.pattern for rule in rules]
@@ -275,45 +335,64 @@ def check_con02(*, spec, target, inventory, stack, components, session) -> Check
     ci = _ci_protection(inventory, test_roots)
     mechanisms: list[str] = []
     if ignored:
-        sources = sorted({rule.source for rule in rules
-                          if any(_pattern_covers(root, rule.pattern) for root in ignored)})
+        sources = sorted(
+            {rule.source for rule in rules if any(_pattern_covers(root, rule.pattern) for root in ignored)}
+        )
         mechanisms.append(f"ignore rules ({', '.join(sources)})")
     if ci:
         mechanisms.append(f"CI guard ({', '.join(ci)})")
 
     if mechanisms:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"no dedicated constraint file; test directories protected by "
-                        f"{'; '.join(mechanisms)}", [_finding(
-            spec, "point at one first-class deny list for test directories",
-            f"no constraint file exists; protection is indirect ({'; '.join(mechanisms)})",
+        return _outcome(
+            spec,
             Verdict.PARTIAL,
-            [Evidence(ci[0] if ci else (rules[0].source if rules else "<repository>"))],
-            "Add a constraint/allow-deny file that names the test directories explicitly.")],
-                        data=paths)
+            f"no dedicated constraint file; test directories protected by {'; '.join(mechanisms)}",
+            [
+                _finding(
+                    spec,
+                    "point at one first-class deny list for test directories",
+                    f"no constraint file exists; protection is indirect ({'; '.join(mechanisms)})",
+                    Verdict.PARTIAL,
+                    [Evidence(ci[0] if ci else (rules[0].source if rules else "<repository>"))],
+                    "Add a constraint/allow-deny file that names the test directories explicitly.",
+                )
+            ],
+            data=paths,
+        )
 
-    return _unknown(spec, f"no constraint file protects the test directories ({listed}), and no "
-                          f"ignore rule or CI guard does either", data=paths)
+    return _unknown(
+        spec,
+        f"no constraint file protects the test directories ({listed}), and no ignore rule or CI guard does either",
+        data=paths,
+    )
 
 
 # ===========================================================================
 # CON-03 — artefacts/ and agent state excluded from index and reads
 # ===========================================================================
 
+
 def check_con03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     tracked = tracked_files(target.path)
-    tracked_members = sorted(rel for rel in (tracked or set())
-                             if rel.split("/", 1)[0] in _CON_ROOTS)
+    tracked_members = sorted(rel for rel in (tracked or set()) if rel.split("/", 1)[0] in _CON_ROOTS)
 
     if tracked_members:
         roots = sorted({rel.split("/", 1)[0] for rel in tracked_members})
-        return _outcome(spec, Verdict.FAIL,
-                        f"tracked: {', '.join(tracked_members[:8])}", [_finding(
-            spec, "treat scratch and agent-state directories as transient",
-            f"{len(tracked_members)} path(s) under {', '.join(roots)}/ are tracked by git",
-            Verdict.FAIL, [Evidence(rel) for rel in tracked_members[:12]],
-            "Untrack the contents (git rm --cached) — an ignore rule only keeps future files "
-            "out.")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            f"tracked: {', '.join(tracked_members[:8])}",
+            [
+                _finding(
+                    spec,
+                    "treat scratch and agent-state directories as transient",
+                    f"{len(tracked_members)} path(s) under {', '.join(roots)}/ are tracked by git",
+                    Verdict.FAIL,
+                    [Evidence(rel) for rel in tracked_members[:12]],
+                    "Untrack the contents (git rm --cached) — an ignore rule only keeps future files out.",
+                )
+            ],
+        )
 
     present = _present_roots(target, inventory)
     if not present:
@@ -325,31 +404,46 @@ def check_con03(*, spec, target, inventory, stack, components, session) -> Check
     uncovered = [root for root in present if not _covered(root, patterns)]
 
     if uncovered and not covered:
-        return _outcome(spec, Verdict.FAIL,
-                        f"{', '.join(root + '/' for root in uncovered)} present but matched by no "
-                        f"ignore rule", [_finding(
-            spec, "keep scratch and agent-state directories out of the index and out of reads",
-            f"{', '.join(root + '/' for root in uncovered)} exists but no ignore rule covers it",
-            Verdict.FAIL, [Evidence(root + "/") for root in uncovered],
-            f"Add {', '.join(root + '/' for root in uncovered)} to .gitignore so agents and the "
-            f"index do not read transient state as source of truth.")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            f"{', '.join(root + '/' for root in uncovered)} present but matched by no ignore rule",
+            [
+                _finding(
+                    spec,
+                    "keep scratch and agent-state directories out of the index and out of reads",
+                    f"{', '.join(root + '/' for root in uncovered)} exists but no ignore rule covers it",
+                    Verdict.FAIL,
+                    [Evidence(root + "/") for root in uncovered],
+                    f"Add {', '.join(root + '/' for root in uncovered)} to .gitignore so agents and the "
+                    f"index do not read transient state as source of truth.",
+                )
+            ],
+        )
 
     if uncovered:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"ignore rules cover {', '.join(root + '/' for root in covered)} but not "
-                        f"{', '.join(root + '/' for root in uncovered)}", [_finding(
-            spec, "keep every scratch and agent-state directory out of the index and reads",
-            f"ignore rules do not cover {', '.join(root + '/' for root in uncovered)}",
-            Verdict.PARTIAL, [Evidence(root + "/") for root in uncovered],
-            f"Add {', '.join(root + '/' for root in uncovered)} to .gitignore.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"ignore rules cover {', '.join(root + '/' for root in covered)} but not "
+            f"{', '.join(root + '/' for root in uncovered)}",
+            [
+                _finding(
+                    spec,
+                    "keep every scratch and agent-state directory out of the index and reads",
+                    f"ignore rules do not cover {', '.join(root + '/' for root in uncovered)}",
+                    Verdict.PARTIAL,
+                    [Evidence(root + "/") for root in uncovered],
+                    f"Add {', '.join(root + '/' for root in uncovered)} to .gitignore.",
+                )
+            ],
+        )
 
     if tracked is None:
         covered_list = ", ".join(root + "/" for root in covered)
-        return _unknown(spec, f"ignore rules cover {covered_list}, but git could not report the "
-                              f"tracked set")
+        return _unknown(spec, f"ignore rules cover {covered_list}, but git could not report the tracked set")
 
-    return _outcome(spec, Verdict.PASS,
-                    f"{', '.join(root + '/' for root in covered)} present, ignored, and untracked")
+    return _outcome(spec, Verdict.PASS, f"{', '.join(root + '/' for root in covered)} present, ignored, and untracked")
 
 
 # ===========================================================================
@@ -359,17 +453,29 @@ def check_con03(*, spec, target, inventory, stack, components, session) -> Check
 #: Canonical deny patterns per draft section. Emitted verbatim so the draft is useful even where the
 #: scan observed no instance of a category.
 _DRAFT_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
-    ("secrets", (".aws/*", ".env", ".env.*", "id_rsa*", "*.cer", "*.crt", "*.key",
-                 "*.keystore", "*.p12", "*.pem", "*.pfx")),
-    ("migrations", ("alembic/versions/", "db/migrate/", "flyway/", "liquibase/",
-                    "migration/", "migrations/", "prisma/migrations/")),
-    ("generated", ("build/", "dist/", "generated/", "vendor/", "*.designer.cs", "*.g.cs",
-                   "*.min.css", "*.min.js", "*.pb.go")),
+    (
+        "secrets",
+        (".aws/*", ".env", ".env.*", "id_rsa*", "*.cer", "*.crt", "*.key", "*.keystore", "*.p12", "*.pem", "*.pfx"),
+    ),
+    (
+        "migrations",
+        (
+            "alembic/versions/",
+            "db/migrate/",
+            "flyway/",
+            "liquibase/",
+            "migration/",
+            "migrations/",
+            "prisma/migrations/",
+        ),
+    ),
+    (
+        "generated",
+        ("build/", "dist/", "generated/", "vendor/", "*.designer.cs", "*.g.cs", "*.min.css", "*.min.js", "*.pb.go"),
+    ),
     ("tests", ("__tests__/", "spec/", "specs/", "test/", "tests/")),
-    ("iac", ("*.tf", "*.tf.json", "*.tfstate", "*.tfvars", "ansible/", "charts/", "helm/",
-             "k8s/", "kubernetes/")),
-    ("production", ("**/prod/**", "**/production/**", "environments/prod/",
-                    "environments/production/")),
+    ("iac", ("*.tf", "*.tf.json", "*.tfstate", "*.tfvars", "ansible/", "charts/", "helm/", "k8s/", "kubernetes/")),
+    ("production", ("**/prod/**", "**/production/**", "environments/prod/", "environments/production/")),
 )
 
 _GENERATED_DIRS: frozenset[str] = frozenset({"build", "dist", "generated", "vendor"})
@@ -434,8 +540,11 @@ def _allow_roots(inventory: Inventory) -> list[str]:
         if any(matcher(entry) for matcher in _DRAFT_MATCHERS.values()):
             denied.add(entry.rel.split("/", 1)[0])
     roots = {entry.rel.split("/", 1)[0] for entry in inventory.files if "/" in entry.rel}
-    return [f"{root}/" for root in sorted(roots)
-            if not root.startswith(".") and root not in denied and root != "node_modules"]
+    return [
+        f"{root}/"
+        for root in sorted(roots)
+        if not root.startswith(".") and root not in denied and root != "node_modules"
+    ]
 
 
 def build_constraint_draft(inventory: Inventory) -> str:
@@ -483,14 +592,14 @@ def _write_constraint_draft(target: Target, out_path: Path, text: str) -> Path |
 
 def check_con04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     if _EMIT_TARGET is None:
-        return _unknown(spec, "draft not emitted; pass --emit-baseline to write "
-                              f"{DRAFT_FILENAME} beside the report")
+        return _unknown(spec, f"draft not emitted; pass --emit-baseline to write {DRAFT_FILENAME} beside the report")
 
     draft = build_constraint_draft(inventory)
     written = _write_constraint_draft(target, _EMIT_TARGET, draft)
     if written is None:
-        return _unknown(spec, f"refusing to emit inside the target ({_EMIT_TARGET.parent}); pass "
-                              f"an --out outside the repository")
+        return _unknown(
+            spec, f"refusing to emit inside the target ({_EMIT_TARGET.parent}); pass an --out outside the repository"
+        )
 
     return _outcome(spec, Verdict.PASS, f"draft allow/deny list written: {written}")
 

@@ -15,8 +15,19 @@ import importlib
 import importlib.util
 
 MODULE_NAMES: tuple[str, ...] = (
-    "idx", "agt", "doc", "cmd", "tool", "ci",
-    "base", "con", "execution", "tst", "nav", "sec", "hyg",
+    "idx",
+    "agt",
+    "doc",
+    "cmd",
+    "tool",
+    "ci",
+    "base",
+    "con",
+    "execution",
+    "tst",
+    "nav",
+    "sec",
+    "hyg",
 )
 
 IMPLEMENTATIONS: dict[str, object] = {}

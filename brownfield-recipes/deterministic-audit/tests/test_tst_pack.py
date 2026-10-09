@@ -23,7 +23,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-import support                                                           # noqa: E402
+import support  # noqa: E402
 
 TST_CHECKS = ("TST-01", "TST-02", "TST-03", "TST-04", "TST-05")
 
@@ -45,8 +45,7 @@ class TstFixtureTests(unittest.TestCase):
 
                 failing = sorted(cid for cid in TST_CHECKS if verdicts[cid] == "FAIL")
                 expected_failing = [check] if expected == "FAIL" else []
-                self.assertEqual(failing, expected_failing,
-                                 f"{name}: unexpected TST FAILs {failing}")
+                self.assertEqual(failing, expected_failing, f"{name}: unexpected TST FAILs {failing}")
 
     def test_skip_marker_fixture_is_a_nonzero_census(self):
         report = support.run_audit(support.fixture("tst-03-skip-markers"))
@@ -55,8 +54,7 @@ class TstFixtureTests(unittest.TestCase):
 
         check = next(c for c in report["checks"] if c["id"] == "TST-03")
         self.assertEqual(check["data"]["kind"], "counter")
-        self.assertEqual(check["data"]["value"], 3,
-                         f"census did not count the markers: {check['data']}")
+        self.assertEqual(check["data"]["value"], 3, f"census did not count the markers: {check['data']}")
 
 
 class TstInlineTests(unittest.TestCase):
@@ -80,12 +78,13 @@ class TstInlineTests(unittest.TestCase):
         self.assertEqual(support.verdicts(report)["TST-01"], "UNKNOWN")
 
     def test_fully_tooled_repository_passes_the_artifact_checks(self):
-        report = self._scan({
-            "package.json": json.dumps({"scripts": {"test": "vitest run --coverage"}}),
-            "test/app.test.ts": "import { expect, it } from 'vitest';\n"
-                                "it('adds', () => expect(1 + 1).toBe(2));\n",
-            "README.md": "# x\n\n```bash\nnpx vitest run test/app.test.ts\n```\n",
-        })
+        report = self._scan(
+            {
+                "package.json": json.dumps({"scripts": {"test": "vitest run --coverage"}}),
+                "test/app.test.ts": "import { expect, it } from 'vitest';\nit('adds', () => expect(1 + 1).toBe(2));\n",
+                "README.md": "# x\n\n```bash\nnpx vitest run test/app.test.ts\n```\n",
+            }
+        )
         verdicts = support.verdicts(report)
         for check in ("TST-01", "TST-03", "TST-04", "TST-05"):
             self.assertEqual(verdicts[check], "PASS", check)
@@ -109,7 +108,7 @@ class TstInlineTests(unittest.TestCase):
 
     def test_permitted_probe_runs_a_safe_command_and_passes(self):
         report = self._scan(
-            {"package.json": json.dumps({"scripts": {"test": "python3 -c \"pass\""}})},
+            {"package.json": json.dumps({"scripts": {"test": 'python3 -c "pass"'}})},
             extra_args=("--run-gates", "--allow-probe", "test"),
         )
         self.assertEqual(support.verdicts(report)["TST-02"], "PASS")

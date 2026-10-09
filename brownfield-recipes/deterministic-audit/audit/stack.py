@@ -70,8 +70,16 @@ HOOK_MANAGERS: dict[str, tuple[str, ...]] = {
     "gradle-hooks": (".githooks/*",),
 }
 
-VERB_RUNNERS = ("package.json", "Taskfile.yml", "Taskfile.yaml", "Makefile",
-                "pyproject.toml", "build.gradle", "build.gradle.kts", "pom.xml")
+VERB_RUNNERS = (
+    "package.json",
+    "Taskfile.yml",
+    "Taskfile.yaml",
+    "Makefile",
+    "pyproject.toml",
+    "build.gradle",
+    "build.gradle.kts",
+    "pom.xml",
+)
 
 #: The six verbs of the framework's standardized command surface.
 VERBS = ("format", "format:check", "lint", "typecheck", "test", "check", "security")
@@ -172,11 +180,10 @@ def parse_makefile_targets(inv: Inventory) -> dict[str, str]:
             if current:
                 targets[current] = (targets.get(current, "") + " " + line.strip()).strip()
             continue
-        verb = next((v for v in _VERB_TARGETS
-                     if line.startswith(v + ":") and not line.startswith(v + ":=")), None)
+        verb = next((v for v in _VERB_TARGETS if line.startswith(v + ":") and not line.startswith(v + ":=")), None)
         if verb is not None:
             current = verb
-            targets[verb] = line[len(verb) + 1:].strip()
+            targets[verb] = line[len(verb) + 1 :].strip()
             continue
         match = re.match(r"^([A-Za-z0-9_.-]+)\s*:(?!=)\s*(.*)$", line)
         if match:

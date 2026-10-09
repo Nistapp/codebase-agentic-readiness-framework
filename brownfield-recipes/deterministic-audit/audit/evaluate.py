@@ -56,9 +56,9 @@ class CheckOutcome:
     severity: Severity
     phase: int
     verdict: Verdict
-    status: str                     # implemented | planned | blocked
-    summary: str = ""               # one short human sentence (the appendix headline)
-    data: Payload | None = None     # typed structured facts; renderer dispatches on .kind
+    status: str  # implemented | planned | blocked
+    summary: str = ""  # one short human sentence (the appendix headline)
+    data: Payload | None = None  # typed structured facts; renderer dispatches on .kind
     findings: list[Finding] = field(default_factory=list)
 
 
@@ -90,8 +90,9 @@ class AuditResult:
         """Outcomes that the score actually covers: scoreable, not blocked, not informational."""
         from audit.rules.registry import REGISTRY_BY_ID
 
-        return [o for o in self.outcomes
-                if REGISTRY_BY_ID[o.check].scored and REGISTRY_BY_ID[o.check].status != "blocked"]
+        return [
+            o for o in self.outcomes if REGISTRY_BY_ID[o.check].scored and REGISTRY_BY_ID[o.check].status != "blocked"
+        ]
 
     @property
     def score(self) -> float:
@@ -145,29 +146,35 @@ class AuditResult:
         return sorted(current_ids - baseline_ids)
 
 
-def evaluate(*, target: Target, inventory: Inventory, stack: Stack,
-             args: argparse.Namespace) -> AuditResult:
+def evaluate(*, target: Target, inventory: Inventory, stack: Stack, args: argparse.Namespace) -> AuditResult:
     """Run every applicable check. Unimplemented checks report UNKNOWN, never PASS."""
     from audit.rules.registry import applicable_checks
 
-    session = ProbeSession(cwd=target.path, allow=tuple(args.allow_probe),
-                           timeout=args.timeout, enabled=bool(args.run_gates))
+    session = ProbeSession(
+        cwd=target.path, allow=tuple(args.allow_probe), timeout=args.timeout, enabled=bool(args.run_gates)
+    )
     components = detect_components(inventory)
 
     outcomes: list[CheckOutcome] = []
     not_applicable: list[str] = []
     for spec in applicable_checks(stack):
-        outcome = spec.run(target=target, inventory=inventory, stack=stack,
-                           components=components, session=session)
+        outcome = spec.run(target=target, inventory=inventory, stack=stack, components=components, session=session)
         outcomes.append(outcome)
 
     catalogued = {spec.id for spec in applicable_checks(stack)}
     from audit.rules.registry import REGISTRY
+
     not_applicable = [spec.id for spec in REGISTRY if spec.id not in catalogued]
 
-    return AuditResult(target=target, stack=stack, inventory=inventory, components=components,
-                       outcomes=outcomes, not_applicable=not_applicable,
-                       probes=session.results)
+    return AuditResult(
+        target=target,
+        stack=stack,
+        inventory=inventory,
+        components=components,
+        outcomes=outcomes,
+        not_applicable=not_applicable,
+        probes=session.results,
+    )
 
 
 def provenance(target: Target, args: argparse.Namespace) -> dict:

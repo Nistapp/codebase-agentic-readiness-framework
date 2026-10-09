@@ -26,9 +26,9 @@ TESTS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(ENGINE_DIR))
 sys.path.insert(0, str(TESTS_DIR))
 
-import support                                                           # noqa: E402
-from audit import cli                                                     # noqa: E402
-from audit.rules.registry import find_framework_root                      # noqa: E402
+import support  # noqa: E402
+from audit import cli  # noqa: E402
+from audit.rules.registry import find_framework_root  # noqa: E402
 
 FRAMEWORK_ROOT = ENGINE_DIR.parents[1]
 MARKER = ("brownfield-legacy", "Phased-Approach.md")
@@ -64,15 +64,18 @@ class FindFrameworkRootTests(unittest.TestCase):
 
 class VerifyRulesTests(unittest.TestCase):
     def test_verify_rules_needs_no_flag_inside_the_repository(self):
-        proc = subprocess.run([sys.executable, "-m", "audit", "--verify-rules"],
-                              cwd=str(ENGINE_DIR), text=True, capture_output=True)
+        proc = subprocess.run(
+            [sys.executable, "-m", "audit", "--verify-rules"], cwd=str(ENGINE_DIR), text=True, capture_output=True
+        )
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("framework anchors resolve", proc.stdout)
 
     def test_verify_rules_outside_a_checkout_asks_for_the_flag(self):
         stderr = io.StringIO()
-        with mock.patch("audit.rules.registry.find_framework_root", return_value=None), \
-                contextlib.redirect_stderr(stderr):
+        with (
+            mock.patch("audit.rules.registry.find_framework_root", return_value=None),
+            contextlib.redirect_stderr(stderr),
+        ):
             code = cli.run(["--verify-rules"])
         self.assertEqual(code, cli.EXIT_USAGE)
         self.assertIn("--framework", stderr.getvalue())
@@ -96,9 +99,22 @@ class FrameworkRevisionTests(unittest.TestCase):
     def test_explicit_framework_overrides_the_default(self):
         with tempfile.TemporaryDirectory() as tmp:
             repo = Path(tmp)
-            for args in (("init", "-q"),
-                         ("-c", "user.name=t", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false",
-                          "commit", "--allow-empty", "-q", "-m", "x")):
+            for args in (
+                ("init", "-q"),
+                (
+                    "-c",
+                    "user.name=t",
+                    "-c",
+                    "user.email=t@example.com",
+                    "-c",
+                    "commit.gpgsign=false",
+                    "commit",
+                    "--allow-empty",
+                    "-q",
+                    "-m",
+                    "x",
+                ),
+            ):
                 subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
             report = support.run_audit(support.fixture("exec-ok"), extra_args=("--framework", str(repo)))
             self.assertEqual(report["provenance"]["framework_revision"], _git_head(repo))
@@ -112,8 +128,12 @@ class FrameworkRevisionTests(unittest.TestCase):
 class ZipappTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        build = subprocess.run([sys.executable, str(ENGINE_DIR / "tools" / "build.py")],
-                               cwd=str(ENGINE_DIR), text=True, capture_output=True)
+        build = subprocess.run(
+            [sys.executable, str(ENGINE_DIR / "tools" / "build.py")],
+            cwd=str(ENGINE_DIR),
+            text=True,
+            capture_output=True,
+        )
         assert build.returncode == 0, build.stderr
         cls.archive = ENGINE_DIR / "dist" / "audit.pyz"
 

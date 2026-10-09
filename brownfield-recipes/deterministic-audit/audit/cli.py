@@ -34,10 +34,7 @@ class AuditUsageError(Exception):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="audit",
-        description=(
-            "Read-only agentic-readiness audit for an existing repository. "
-            "Reports; does not gate."
-        ),
+        description=("Read-only agentic-readiness audit for an existing repository. Reports; does not gate."),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "The audit never writes inside <target>, never installs anything, and makes no\n"
@@ -49,27 +46,47 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--phase", type=int, default=1, help="highest framework phase to evaluate (default: 1)")
     parser.add_argument("--format", choices=("json", "md", "both"), default="both", help="report formats")
     parser.add_argument("--out", help="output path or directory; outside the target by default")
-    parser.add_argument("--run-gates", action="store_true",
-                        help="enable Tier-C probes (executes the target's own commands)")
-    parser.add_argument("--allow-probe", action="append", default=[], metavar="VERB",
-                        help="permit one probe verb; repeatable (required by --run-gates)")
+    parser.add_argument(
+        "--run-gates", action="store_true", help="enable Tier-C probes (executes the target's own commands)"
+    )
+    parser.add_argument(
+        "--allow-probe",
+        action="append",
+        default=[],
+        metavar="VERB",
+        help="permit one probe verb; repeatable (required by --run-gates)",
+    )
     parser.add_argument("--timeout", type=int, default=300, metavar="SECONDS", help="per-probe timeout")
-    parser.add_argument("--fail-on", choices=("BLOCKER", "DEGRADER", "COSMETIC"),
-                        help="exit 2 when a finding at or above this severity exists (default: never)")
-    parser.add_argument("--baseline", metavar="REPORT.JSON",
-                        help="ratchet: exit 2 only when findings appear that the baseline did not have")
-    parser.add_argument("--emit-baseline", action="store_true",
-                        help="emit the remediation inputs the scan can derive; writes "
-                             "constraints.draft.yaml beside the report (CON-04)")
-    parser.add_argument("--exclude", action="append", default=[], metavar="GLOB",
-                        help="extra path glob to exclude; repeatable")
+    parser.add_argument(
+        "--fail-on",
+        choices=("BLOCKER", "DEGRADER", "COSMETIC"),
+        help="exit 2 when a finding at or above this severity exists (default: never)",
+    )
+    parser.add_argument(
+        "--baseline",
+        metavar="REPORT.JSON",
+        help="ratchet: exit 2 only when findings appear that the baseline did not have",
+    )
+    parser.add_argument(
+        "--emit-baseline",
+        action="store_true",
+        help="emit the remediation inputs the scan can derive; writes "
+        "constraints.draft.yaml beside the report (CON-04)",
+    )
+    parser.add_argument(
+        "--exclude", action="append", default=[], metavar="GLOB", help="extra path glob to exclude; repeatable"
+    )
     parser.add_argument("--max-files", type=int, default=250_000, help="hard cap on inspected files")
     parser.add_argument("--list-checks", action="store_true", help="print the check catalogue and exit")
-    parser.add_argument("--verify-rules", action="store_true",
-                        help="resolve every rule pack's framework anchor and exit")
-    parser.add_argument("--framework", metavar="PATH",
-                        help="framework checkout, for --verify-rules and the report's framework revision "
-                             "(default: the repository this tool lives in)")
+    parser.add_argument(
+        "--verify-rules", action="store_true", help="resolve every rule pack's framework anchor and exit"
+    )
+    parser.add_argument(
+        "--framework",
+        metavar="PATH",
+        help="framework checkout, for --verify-rules and the report's framework revision "
+        "(default: the repository this tool lives in)",
+    )
     parser.add_argument("--force", action="store_true", help="overwrite an existing report")
     parser.add_argument("--version", action="version", version=f"audit {__version__} (ruleset {__ruleset_revision__})")
     return parser
@@ -100,11 +117,12 @@ def _list_checks() -> int:
     width = max(len(spec.id) for spec in REGISTRY)
     print(f"{'id'.ljust(width)}  tier  severity   status       title")
     for spec in REGISTRY:
-        print(f"{spec.id.ljust(width)}  {spec.tier:<4}  {spec.severity.value:<9}  "
-              f"{spec.status:<11}  {spec.title}")
+        print(f"{spec.id.ljust(width)}  {spec.tier:<4}  {spec.severity.value:<9}  {spec.status:<11}  {spec.title}")
     informational = len(REGISTRY) - len(scoreable())
-    print(f"\n{len(REGISTRY)} checks catalogued · {len(scoreable())} scoreable · "
-          f"{informational} informational, blocked or emitter-only")
+    print(
+        f"\n{len(REGISTRY)} checks catalogued · {len(scoreable())} scoreable · "
+        f"{informational} informational, blocked or emitter-only"
+    )
     return EXIT_OK
 
 
@@ -113,8 +131,11 @@ def _verify_rules(framework: str | None) -> int:
 
     root = Path(framework).expanduser().resolve() if framework else find_framework_root()
     if root is None:
-        print("audit: --verify-rules needs --framework <path to the framework checkout>; "
-              "this copy of the tool is not inside one", file=sys.stderr)
+        print(
+            "audit: --verify-rules needs --framework <path to the framework checkout>; "
+            "this copy of the tool is not inside one",
+            file=sys.stderr,
+        )
         return EXIT_USAGE
     if not root.is_dir():
         raise AuditUsageError(f"framework checkout not found: {root}")

@@ -61,10 +61,17 @@ from audit.rules.payloads import Payload
 #: Baseline / suppression artifacts, matched by name at any depth. A `*baseline*` name is treated as
 #: a baseline wherever it sits; this is a documented name set, not a content assertion.
 _BASELINE_GLOBS: tuple[str, ...] = (
-    ".eslint-baseline*", ".ruff-baseline*", ".mypy-baseline*",
-    "baseline.json", "*baseline*.json", "*baseline*.xml",
-    "coverage-baseline.*", "*.baseline", ".secrets.baseline",
-    ".snyk", ".gitleaksignore",
+    ".eslint-baseline*",
+    ".ruff-baseline*",
+    ".mypy-baseline*",
+    "baseline.json",
+    "*baseline*.json",
+    "*baseline*.xml",
+    "coverage-baseline.*",
+    "*.baseline",
+    ".secrets.baseline",
+    ".snyk",
+    ".gitleaksignore",
 )
 
 #: Entry documents whose contents can satisfy the "documented equivalent mechanism" clause.
@@ -86,11 +93,25 @@ _DOC_RATCHET_RE = re.compile(
 
 #: Files whose mere presence implies a violation-counting tool is configured.
 _COUNTING_CONFIG_GLOBS: tuple[str, ...] = (
-    ".eslintrc*", "eslint.config.*", "biome.json", "biome.jsonc",
-    ".ruff.toml", "ruff.toml", ".flake8", "pylintrc", ".pylintrc",
-    "mypy.ini", ".mypy.ini", ".golangci.yml", ".golangci.yaml",
-    "clippy.toml", ".gitleaks.toml", ".snyk", "sonar-project.properties",
-    ".semgrep.yml", ".semgrep.yaml",
+    ".eslintrc*",
+    "eslint.config.*",
+    "biome.json",
+    "biome.jsonc",
+    ".ruff.toml",
+    "ruff.toml",
+    ".flake8",
+    "pylintrc",
+    ".pylintrc",
+    "mypy.ini",
+    ".mypy.ini",
+    ".golangci.yml",
+    ".golangci.yaml",
+    "clippy.toml",
+    ".gitleaks.toml",
+    ".snyk",
+    "sonar-project.properties",
+    ".semgrep.yml",
+    ".semgrep.yaml",
 )
 _PYPROJECT_TOOL_RE = re.compile(r"(?m)^\[tool\.(?:ruff|mypy|pylint|bandit|pyright)\b")
 _SETUP_CFG_TOOL_RE = re.compile(r"(?m)^\[(?:mypy|flake8|pylint|isort|bandit)\b")
@@ -104,17 +125,29 @@ _BUDGET_RE = re.compile(
 
 #: Runner manifests read for a numeric budget in addition to the counting configs.
 _RUNNER_MANIFESTS: tuple[str, ...] = (
-    "package.json", "pyproject.toml", "Makefile", "Taskfile.yml", "Taskfile.yaml",
+    "package.json",
+    "pyproject.toml",
+    "Makefile",
+    "Taskfile.yml",
+    "Taskfile.yaml",
 )
 
 #: Configs that carry a coverage floor, and a runner config that enables it through a key.
 _FLOOR_FILES: tuple[str, ...] = (
-    ".coveragerc", ".coveragerc.toml", "setup.cfg", "tox.ini", "pytest.ini", "pyproject.toml",
+    ".coveragerc",
+    ".coveragerc.toml",
+    "setup.cfg",
+    "tox.ini",
+    "pytest.ini",
+    "pyproject.toml",
 )
 _FLOOR_FILE_RE = re.compile(r"(?i)fail_under\s*[:=]\s*\d+|--cov-fail-under(?:=|\s+)\d+")
 
 _COVERAGE_CONFIG_GLOBS: tuple[str, ...] = (
-    "vitest.config.*", "jest.config.*", "vite.config.*", "karma.conf.*",
+    "vitest.config.*",
+    "jest.config.*",
+    "vite.config.*",
+    "karma.conf.*",
 )
 _COVERAGE_CONFIG_RE = re.compile(
     r"(?i)coverageThreshold|\bthresholds\b\s*[:=]|fail_under\s*[:=]\s*\d+"
@@ -128,27 +161,43 @@ _COVERAGE_PROSE_RE = re.compile(
 )
 
 
-def _outcome(spec, verdict: Verdict, summary: str = "",
-             findings: list[Finding] | None = None,
-             data: Payload | None = None) -> CheckOutcome:
-    return CheckOutcome(spec.id, spec.title, spec.tier, spec.severity, spec.phase, verdict,
-                        spec.status, summary=summary, data=data, findings=findings or [])
+def _outcome(
+    spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
+) -> CheckOutcome:
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        verdict,
+        spec.status,
+        summary=summary,
+        data=data,
+        findings=findings or [],
+    )
 
 
 def _unknown(spec, reason: str) -> CheckOutcome:
     return _outcome(spec, Verdict.UNKNOWN, reason)
 
 
-def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[Evidence],
-             remediation: str) -> Finding:
-    return Finding(check=spec.id, severity=spec.severity, phase=spec.phase, verdict=verdict,
-                   statement=statement(cannot, because), evidence=evidence,
-                   remediation=remediation)
+def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[Evidence], remediation: str) -> Finding:
+    return Finding(
+        check=spec.id,
+        severity=spec.severity,
+        phase=spec.phase,
+        verdict=verdict,
+        statement=statement(cannot, because),
+        evidence=evidence,
+        remediation=remediation,
+    )
 
 
 # ---------------------------------------------------------------------------
 # readers
 # ---------------------------------------------------------------------------
+
 
 def _baseline_artifacts(inventory: Inventory) -> list[str]:
     found: set[str] = set()
@@ -273,9 +322,20 @@ def _recognised(inventory: Inventory, stack) -> bool:
     """Whether a recognised ecosystem or a project configuration exists at all."""
     if stack.ecosystems:
         return True
-    for pattern in ("package.json", "pyproject.toml", "setup.py", "requirements*.txt", "Pipfile",
-                    "pom.xml", "build.gradle", "build.gradle.kts", "go.mod", "Cargo.toml",
-                    "Gemfile", "composer.json"):
+    for pattern in (
+        "package.json",
+        "pyproject.toml",
+        "setup.py",
+        "requirements*.txt",
+        "Pipfile",
+        "pom.xml",
+        "build.gradle",
+        "build.gradle.kts",
+        "go.mod",
+        "Cargo.toml",
+        "Gemfile",
+        "composer.json",
+    ):
         if inventory.match(pattern):
             return True
     return False
@@ -285,38 +345,57 @@ def _recognised(inventory: Inventory, stack) -> bool:
 # BASE-01 — baseline artifact exists
 # ===========================================================================
 
+
 def check_base01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     artifacts = _baseline_artifacts(inventory)
     documented = _documented_baseline(inventory)
     if artifacts or documented:
         evidence = artifacts or [documented or "<repository>"]
-        return _outcome(spec, Verdict.PASS,
-                        f"baseline/suppression mechanism present: "
-                        f"{', '.join(evidence)}"
-                        + ("" if artifacts else f" (documented in {documented})"))
+        return _outcome(
+            spec,
+            Verdict.PASS,
+            f"baseline/suppression mechanism present: "
+            f"{', '.join(evidence)}" + ("" if artifacts else f" (documented in {documented})"),
+        )
 
     tools = _counting_tools(inventory, stack)
     if tools:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"quality tooling is configured but no baseline artifact is committed: "
-                        f"{', '.join(tools[:6])}", [_finding(
-            spec, "diff today's findings against an accepted baseline",
-            "quality tooling is configured but no baseline or suppression artifact is committed",
-            Verdict.PARTIAL, [Evidence(rel) for rel in tools[:6]],
-            "Commit a baseline or suppression artifact (for example `baseline.json`, an "
-            "eslint/ruff baseline, or `.gitleaksignore`), or document the equivalent mechanism in "
-            "`AGENTS.md`.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"quality tooling is configured but no baseline artifact is committed: {', '.join(tools[:6])}",
+            [
+                _finding(
+                    spec,
+                    "diff today's findings against an accepted baseline",
+                    "quality tooling is configured but no baseline or suppression artifact is committed",
+                    Verdict.PARTIAL,
+                    [Evidence(rel) for rel in tools[:6]],
+                    "Commit a baseline or suppression artifact (for example `baseline.json`, an "
+                    "eslint/ruff baseline, or `.gitleaksignore`), or document the equivalent mechanism in "
+                    "`AGENTS.md`.",
+                )
+            ],
+        )
 
     if _recognised(inventory, stack):
-        return _outcome(spec, Verdict.FAIL, "no baseline or suppression artifact", [_finding(
-            spec, "distinguish pre-existing debt from new debt",
-            "no baseline or suppression artifact is committed",
-            Verdict.FAIL, [Evidence("<repository>")],
-            "Commit a baseline/suppression artifact, or document the equivalent mechanism in "
-            "`AGENTS.md`.")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no baseline or suppression artifact",
+            [
+                _finding(
+                    spec,
+                    "distinguish pre-existing debt from new debt",
+                    "no baseline or suppression artifact is committed",
+                    Verdict.FAIL,
+                    [Evidence("<repository>")],
+                    "Commit a baseline/suppression artifact, or document the equivalent mechanism in `AGENTS.md`.",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem or configuration, so a baseline cannot be ruled "
-                          "out")
+    return _unknown(spec, "no recognised ecosystem or configuration, so a baseline cannot be ruled out")
 
 
 # ===========================================================================
@@ -329,36 +408,52 @@ _METHOD = "static configuration scan; the target's own tools are never run"
 def check_base02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     budgets = _budget_evidence(inventory, stack)
     if budgets:
-        return _outcome(spec, Verdict.PASS,
-                        f"violation count configured: {', '.join(budgets)}; method: {_METHOD}")
+        return _outcome(spec, Verdict.PASS, f"violation count configured: {', '.join(budgets)}; method: {_METHOD}")
 
     surface = sorted(set(_counting_tools(inventory, stack)) | set(_baseline_artifacts(inventory)))
     if surface:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"counting surface present but no committed count/budget: "
-                        f"{', '.join(surface[:6])}; method: {_METHOD}", [_finding(
-            spec, "state how many violations exist today",
-            "a counting surface exists but no numeric violation budget or count is committed",
-            Verdict.PARTIAL, [Evidence(rel) for rel in surface[:6]],
-            "Commit the count or configure a budget (`--max-warnings N`, `max-issues`, or a "
-            "`violation budget`) so a regression has a baseline number to compare against.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"counting surface present but no committed count/budget: {', '.join(surface[:6])}; method: {_METHOD}",
+            [
+                _finding(
+                    spec,
+                    "state how many violations exist today",
+                    "a counting surface exists but no numeric violation budget or count is committed",
+                    Verdict.PARTIAL,
+                    [Evidence(rel) for rel in surface[:6]],
+                    "Commit the count or configure a budget (`--max-warnings N`, `max-issues`, or a "
+                    "`violation budget`) so a regression has a baseline number to compare against.",
+                )
+            ],
+        )
 
     if _recognised(inventory, stack):
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"no violation-count mechanism found; method: {_METHOD}", [_finding(
-            spec, "state how many violations exist today",
-            "no violation-counting tooling, budget or artifact is configured",
-            Verdict.PARTIAL, [Evidence("<repository>")],
-            "Add linters/type-checkers/security scanners and commit the count they produce, so "
-            "debt is measured rather than guessed.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"no violation-count mechanism found; method: {_METHOD}",
+            [
+                _finding(
+                    spec,
+                    "state how many violations exist today",
+                    "no violation-counting tooling, budget or artifact is configured",
+                    Verdict.PARTIAL,
+                    [Evidence("<repository>")],
+                    "Add linters/type-checkers/security scanners and commit the count they produce, so "
+                    "debt is measured rather than guessed.",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem or counting configuration, so a count cannot be "
-                          "ruled out")
+    return _unknown(spec, "no recognised ecosystem or counting configuration, so a count cannot be ruled out")
 
 
 # ===========================================================================
 # BASE-03 — no-new-violations mechanism
 # ===========================================================================
+
 
 def check_base03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     ratchet = _ratchet(inventory, stack, _budget_evidence(inventory, stack))
@@ -367,59 +462,93 @@ def check_base03(*, spec, target, inventory, stack, components, session) -> Chec
 
     artifacts = _baseline_artifacts(inventory)
     if artifacts:
-        return _outcome(spec, Verdict.FAIL,
-                        f"baseline present but never compared against: {', '.join(artifacts)}",
-                        [_finding(
-            spec, "stop the violation count from growing",
-            f"a baseline is committed ({', '.join(artifacts)}) but nothing compares against it",
-            Verdict.FAIL, [Evidence(rel) for rel in artifacts],
-            "Add a comparison step — a CI job that runs `--baseline <report>`, a violation budget "
-            "in config, or a documented no-new-violations procedure — so the baseline is enforced.")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            f"baseline present but never compared against: {', '.join(artifacts)}",
+            [
+                _finding(
+                    spec,
+                    "stop the violation count from growing",
+                    f"a baseline is committed ({', '.join(artifacts)}) but nothing compares against it",
+                    Verdict.FAIL,
+                    [Evidence(rel) for rel in artifacts],
+                    "Add a comparison step — a CI job that runs `--baseline <report>`, a violation budget "
+                    "in config, or a documented no-new-violations procedure — so the baseline is enforced.",
+                )
+            ],
+        )
 
     if _recognised(inventory, stack):
-        return _outcome(spec, Verdict.PARTIAL,
-                        "no ratchet and no baseline yet, so there is nothing to compare against",
-                        [_finding(
-            spec, "stop the violation count from growing",
-            "no baseline, budget or comparison step exists, so the count is not guarded",
-            Verdict.PARTIAL, [Evidence("<repository>")],
-            "Once a baseline exists, wire a comparison step (the audit's own `--baseline REPORT.JSON` "
-            "is the reference pattern) so new findings fail the build.")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            "no ratchet and no baseline yet, so there is nothing to compare against",
+            [
+                _finding(
+                    spec,
+                    "stop the violation count from growing",
+                    "no baseline, budget or comparison step exists, so the count is not guarded",
+                    Verdict.PARTIAL,
+                    [Evidence("<repository>")],
+                    "Once a baseline exists, wire a comparison step (the audit's own `--baseline REPORT.JSON` "
+                    "is the reference pattern) so new findings fail the build.",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem or configuration, so a ratchet cannot be ruled "
-                          "out")
+    return _unknown(spec, "no recognised ecosystem or configuration, so a ratchet cannot be ruled out")
 
 
 # ===========================================================================
 # BASE-04 — coverage floor configured
 # ===========================================================================
 
+
 def check_base04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     configured = _coverage_floor_config(inventory, stack)
     if configured:
-        return _outcome(spec, Verdict.PASS,
-                        f"coverage threshold configured: {', '.join(configured)}")
+        return _outcome(spec, Verdict.PASS, f"coverage threshold configured: {', '.join(configured)}")
 
     prose = _coverage_prose(inventory)
     if prose:
-        return _outcome(spec, Verdict.PARTIAL,
-                        f"coverage threshold stated in prose only: {'; '.join(prose[:4])}",
-                        [_finding(
-            spec, "know when coverage drops below an agreed floor",
-            "a coverage threshold is described in prose but not configured in the test runner",
-            Verdict.PARTIAL, [Evidence(entry.split(":", 1)[0]) for entry in prose[:4]],
-            "Move the threshold into test-runner configuration (`coverage.fail_under`, "
-            "`--cov-fail-under`, `coverageThreshold`, or a vitest/jest `thresholds` block).")])
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"coverage threshold stated in prose only: {'; '.join(prose[:4])}",
+            [
+                _finding(
+                    spec,
+                    "know when coverage drops below an agreed floor",
+                    "a coverage threshold is described in prose but not configured in the test runner",
+                    Verdict.PARTIAL,
+                    [Evidence(entry.split(":", 1)[0]) for entry in prose[:4]],
+                    "Move the threshold into test-runner configuration (`coverage.fail_under`, "
+                    "`--cov-fail-under`, `coverageThreshold`, or a vitest/jest `thresholds` block).",
+                )
+            ],
+        )
 
     if _recognised(inventory, stack):
-        return _outcome(spec, Verdict.FAIL, "no coverage threshold configured", [_finding(
-            spec, "know when coverage drops below an agreed floor",
-            "no coverage threshold is configured in the test runner",
-            Verdict.FAIL, [Evidence("<repository>")],
-            "Configure a coverage floor for the test runner so a drop fails the gate.")])
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no coverage threshold configured",
+            [
+                _finding(
+                    spec,
+                    "know when coverage drops below an agreed floor",
+                    "no coverage threshold is configured in the test runner",
+                    Verdict.FAIL,
+                    [Evidence("<repository>")],
+                    "Configure a coverage floor for the test runner so a drop fails the gate.",
+                )
+            ],
+        )
 
-    return _unknown(spec, "no recognised ecosystem or test-runner configuration, so a coverage "
-                          "floor cannot be ruled out")
+    return _unknown(
+        spec, "no recognised ecosystem or test-runner configuration, so a coverage floor cannot be ruled out"
+    )
 
 
 IMPLEMENTATIONS = {

@@ -41,9 +41,7 @@ def _resolve_out(args: argparse.Namespace, target_path: Path) -> Path:
         cwd.relative_to(target_path)
     except ValueError:
         return cwd / "audit-report.json"
-    raise ReportWriteError(
-        "refusing to write the report inside the target — run from elsewhere or pass --out"
-    )
+    raise ReportWriteError("refusing to write the report inside the target — run from elsewhere or pass --out")
 
 
 def resolve_out_path(args: argparse.Namespace, target_path: Path) -> Path:

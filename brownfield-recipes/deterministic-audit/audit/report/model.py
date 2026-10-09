@@ -51,8 +51,7 @@ def _framework_revision(args: argparse.Namespace) -> str | None:
     if root is None:
         return None
     try:
-        proc = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"],
-                              text=True, capture_output=True, timeout=10)
+        proc = subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], text=True, capture_output=True, timeout=10)
     except (OSError, subprocess.SubprocessError):
         return None
     return proc.stdout.strip() if proc.returncode == 0 else None
@@ -71,19 +70,21 @@ def build_report(result: AuditResult, args: argparse.Namespace) -> dict[str, Any
     checks = []
     for outcome in result.outcomes:
         spec = REGISTRY_BY_ID[outcome.check]
-        checks.append({
-            "id": outcome.check,
-            "pack": outcome.check.split("-")[0],
-            "title": outcome.title,
-            "tier": outcome.tier,
-            "severity": outcome.severity.value,
-            "phase": outcome.phase,
-            "scored": spec.scored,
-            "status": outcome.status,
-            "verdict": outcome.verdict.value,
-            "summary": outcome.summary,
-            "data": outcome.data.to_dict() if outcome.data is not None else {},
-        })
+        checks.append(
+            {
+                "id": outcome.check,
+                "pack": outcome.check.split("-")[0],
+                "title": outcome.title,
+                "tier": outcome.tier,
+                "severity": outcome.severity.value,
+                "phase": outcome.phase,
+                "scored": spec.scored,
+                "status": outcome.status,
+                "verdict": outcome.verdict.value,
+                "summary": outcome.summary,
+                "data": outcome.data.to_dict() if outcome.data is not None else {},
+            }
+        )
 
     report: dict[str, Any] = {
         "schema_version": SCHEMA_VERSION,
@@ -124,8 +125,7 @@ def build_report(result: AuditResult, args: argparse.Namespace) -> dict[str, Any
                 "declared": True,
                 "declared_by": c.declared_by,
                 "manifest": c.manifest,
-                "agents_md": "present" if result.inventory.has(
-                    f"{c.path}/AGENTS.md".lstrip("./")) else "missing",
+                "agents_md": "present" if result.inventory.has(f"{c.path}/AGENTS.md".lstrip("./")) else "missing",
             }
             for c in result.components.declared
         ],
