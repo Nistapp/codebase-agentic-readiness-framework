@@ -370,7 +370,7 @@ The repository MUST pin its toolchain with a version file, an engines or `requir
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [Phased-Approach.md § Phase 1: Agentic Bootstrap](../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)
+- **Source:** [greenfield-bootstrap/README.md § File Tree — What Gets Created](../greenfield-bootstrap/README.md#file-tree--what-gets-created)
 - **Checks:** EXEC-01
 
 ### REQ-SH-040 — Lockfile tracked and consistent
@@ -394,7 +394,7 @@ Every environment variable that the source references MUST appear in the committ
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [Phased-Approach.md § Phase 1: Agentic Bootstrap](../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)
+- **Source:** [greenfield-bootstrap/README.md § File Tree — What Gets Created](../greenfield-bootstrap/README.md#file-tree--what-gets-created)
 - **Checks:** EXEC-04
 
 ### REQ-SH-043 — Generated files marked or untracked
@@ -478,7 +478,7 @@ Each ecosystem in the repository MUST declare an entry point.
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [Phased-Approach.md § Phase 1: Agentic Bootstrap](../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)
+- **Source:** [greenfield-bootstrap/README.md § 1.9 Core DI interface file + public entry point](../greenfield-bootstrap/README.md#19-core-di-interface-file--public-entry-point)
 - **Checks:** NAV-02
 
 ### REQ-SH-053 — No structural red flags
