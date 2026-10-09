@@ -15,13 +15,31 @@ The keywords **MUST**, **MUST NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are
 Every requirement has a stable ID and is written as one testable statement:
 
 ```markdown
-### REQ-GF-012 — Six-verb command surface
-The repository MUST expose `format`, `lint`, `typecheck`, `test`, `check`, and `security` as single commands.
+### REQ-SH-000 — Example requirement
+The repository MUST expose one command that runs every gate that CI runs.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [Phased-Approach.md § Activities](../brownfield-legacy/Phased-Approach.md#activities)
+- **Checks:** CMD-02
 ```
+
+The example is illustrative: number `000` is reserved for examples and is never assigned to a real requirement.
 
 - Format: `REQ-<AREA>-<NNN>`. Areas: `GF` greenfield, `BF` brownfield, `SH` shared.
 - IDs are never reused or renumbered. A withdrawn requirement is marked `Withdrawn`, not deleted.
-- Each requirement states its verification method, one of the four below.
+- One requirement is one testable statement. If two parts need different verification methods, split it into two requirements.
+
+### Requirement fields
+
+Every requirement carries these four fields under its statement.
+
+| Field | Meaning |
+|---|---|
+| `Phase` | The framework phase, 1 to 7 as numbered in [Phased-Approach.md](../brownfield-legacy/Phased-Approach.md), at which the requirement first applies. The greenfield recipe numbers its own build phases 1 to 8; those are not framework phases. |
+| `Verification` | One of the four methods below. |
+| `Source` | The framework document and heading the requirement comes from, as a link. The heading must exist in that document. |
+| `Checks` | The IDs of the checks that verify it, taken from `brownfield-recipes/catalogue.json` once that file exists. `none yet` means a check is wanted but not written. A `human` or `attested` requirement may have no check and then says `none (human)` or `none (attested)`. |
 
 ### Verification methods
 
