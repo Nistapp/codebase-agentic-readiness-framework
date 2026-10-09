@@ -1,7 +1,5 @@
 # Tool Ecosystem
 
-[[_TOC_]]
-
 ## Methodology vs. Tooling
 
 > [!IMPORTANT]

@@ -1,7 +1,5 @@
 # Overview
 
-[[_TOC_]]
-
 ## What Is an Agentic-Ready Codebase?
 
 An **agentic-ready codebase** provides AI coding agents with the structure they need to work safely and accurately:

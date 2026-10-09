@@ -1,7 +1,5 @@
 # Phased Approach
 
-[[_TOC_]]
-
 ## Phase Progression
 
 The framework is structured into two distinct parts:
