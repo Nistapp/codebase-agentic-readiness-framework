@@ -142,5 +142,9 @@ All documentation follows [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md), which is
 
 ## License
 
-The code in this directory is licensed under the [GNU Affero General Public License, version 3 or later](LICENSE) (`AGPL-3.0-or-later`). The licence covers the tool, not the repositories it audits or the reports
-it writes. How the documentation is licensed: [Licensing](../docs/reference/licensing.md).
+The code in this directory is licensed under the [GNU Affero General Public License, version 3 or later](LICENSE) (`AGPL-3.0-or-later`).
+The documentation (this README, `AGENTS.md` and everything under [`docs/`](docs/LICENSING.md)) and the example
+reports under [`examples/`](examples/LICENSING.md) are licensed under the GNU Free Documentation License,
+version 1.3 (`GFDL-1.3-only`), whose text is the [`LICENSE`](../../LICENSE) at the root of this repository.
+Neither licence covers the repositories the tool audits or the reports you produce with it. See
+[Licensing](../docs/reference/licensing.md).
