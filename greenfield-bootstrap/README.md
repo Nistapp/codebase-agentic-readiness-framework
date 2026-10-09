@@ -137,29 +137,6 @@ git checkout -b dev          # dev is the working branch from day one
 > `license` is intentionally absent until you choose one — see "Before you publish" in the
 > generated `README.md`.
 
-    "test:coverage": "vitest run --coverage",
-    "check": "npm run format:check && npm run typecheck && npm test",
-    "security": "npm audit --audit-level=high",
-    "check:fix": "biome check --fix .",
-    "build": "tsc && npm run copy:agents",
-    "copy:agents": "rm -rf dist/agents && mkdir -p dist/agents && cp -r src/agents/* dist/agents/ && cp config.default.json dist/config.default.json && echo '{\"type\":\"module\"}' > dist/package.json",
-    "build:full": "npm run clean && npm run build",
-    "dev": "tsc --watch",
-    "docs": "typedoc --out docs/api src/core/index.ts",
-    "prepublishOnly": "npm run check && npm run build:full",
-    "prepare": "husky"
-  },
-  "keywords": [],
-  "author": "<your-name>",
-  "license": "AGPL-3.0",
-  "dependencies": {},
-  "devDependencies": {},
-  "files": [
-    "dist"
-  ]
-}
-```
-
 ### 1.4 The standardized command surface — six verbs
 
 Every repository MUST expose the same six verbs. The **verbs are the contract**; the
