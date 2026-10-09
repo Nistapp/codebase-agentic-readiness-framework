@@ -44,7 +44,7 @@ Rules:
 - **Tables:** GFM tables.
 - **Blank lines:** one before and after headers, code blocks, tables and alerts.
 - **Check references:** cite checks by catalogue ID (`EXEC-02`), never by prose description.
-- **Requirement references:** cite requirements by ID (`REQ-BF-012`) once `spec/readiness-requirements.md` exists.
+- **Requirement references:** cite requirements by ID (`REQ-SH-022`), as defined in `spec/readiness-requirements.md`.
 
 ---
 

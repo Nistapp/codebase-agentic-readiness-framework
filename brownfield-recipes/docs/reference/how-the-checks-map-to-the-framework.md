@@ -5,7 +5,7 @@
 > **Status:** Planned (placeholder).
 
 > [!NOTE]
-> Planned. Neither the catalogue nor the requirements exist yet. Filled in by roadmap step S1.5 and S4.6.
+> Planned. The requirements exist ([readiness-requirements.md](../../../spec/readiness-requirements.md), with a [traceability table](../../../spec/traceability.md)); the catalogue does not. Filled in by roadmap step S1.5 and S4.6.
 
 ---
 
@@ -14,5 +14,5 @@
 | Item | Description |
 |---|---|
 | `check ID` | Catalogue entry, e.g. `CMD-01` |
-| `requirement ID` | Spec entry, e.g. `REQ-BF-012` |
+| `requirement ID` | Spec entry, e.g. `REQ-SH-022` |
 | `framework anchor` | Section of `brownfield-legacy/Phased-Approach.md` |
