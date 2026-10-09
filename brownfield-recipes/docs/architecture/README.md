@@ -14,6 +14,7 @@
 |---|---|---|
 | [Style guide](../STYLE_GUIDE.md) | — | Canonical authoring rules |
 | [Glossary](glossary.md) | Reference | Canonical terms |
+| [Deterministic engine docs](../../deterministic-audit/docs/architecture/README.md) | Explanation | The engine's own doc router and ADR index |
 
 ## Tutorials
 

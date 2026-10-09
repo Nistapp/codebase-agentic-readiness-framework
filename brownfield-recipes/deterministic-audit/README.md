@@ -114,9 +114,9 @@ Start at the **[architecture index and doc router](docs/architecture/README.md)*
 | Scan engine & tiering | [Contributor Deep Dive 1](docs/architecture/contributor-deep-dive/01-scan-engine-and-tiering.md) | Engineers |
 | Check catalogue | [Contributor Deep Dive 2](docs/architecture/contributor-deep-dive/02-check-catalogue.md) | Engineers |
 | Decisions of record | [ADR index](docs/architecture/README.md#adr-index) | Everyone |
-| Authoring rules | [STYLE_GUIDE.md](docs/STYLE_GUIDE.md) | Writers, documentation agents |
+| Authoring rules | [STYLE_GUIDE.md](../docs/STYLE_GUIDE.md) | Writers, documentation agents |
 
-All documentation follows [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md), which is canonical.
+All documentation follows the shared [style guide](../docs/STYLE_GUIDE.md), which is canonical.
 
 ---
 

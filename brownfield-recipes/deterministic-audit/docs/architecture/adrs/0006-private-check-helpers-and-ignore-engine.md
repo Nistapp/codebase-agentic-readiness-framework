@@ -89,4 +89,4 @@ same manifest by two slightly different rules will one day disagree in the same 
 * **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
 * Archived wording: `git log --follow docs/architecture/adrs/NNNN-title.md`.
 
-See [`docs/STYLE_GUIDE.md`](../../STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.
+See the [style guide](../../../../docs/STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.

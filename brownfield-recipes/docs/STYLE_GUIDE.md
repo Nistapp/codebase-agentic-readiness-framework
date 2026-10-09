@@ -1,6 +1,6 @@
 # Documentation Style Guide
 
-> **Scope:** Governs all documentation under `brownfield-recipes/docs/`, and the engine docs under `brownfield-recipes/deterministic-audit/docs/` once the engine is migrated. Applies to human writers and AI documentation agents.
+> **Scope:** Governs all documentation under `brownfield-recipes/docs/`, and the engine docs under `brownfield-recipes/deterministic-audit/docs/`. Applies to human writers and AI documentation agents.
 > **Standard:** [Diátaxis](https://diataxis.fr/) plus constraint-driven agent invariants.
 > **Origin:** Adapted from the engine's style guide, which follows the greenfield template [`STYLE_GUIDE.md`](../../greenfield-bootstrap/templates/docs/STYLE_GUIDE.md). This file adds a Reference quadrant.
 > **Enforcement:** The repository-root `AGENTS.md` (planned) MUST require compliance with this file. Link to these rules; never restate them elsewhere, because restated rules drift.

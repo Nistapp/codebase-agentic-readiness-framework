@@ -91,7 +91,7 @@ Agents MUST respect the following structural rules.
 | Tests | stdlib `unittest` | `python3 -m unittest discover -s tests`. No pytest dependency. |
 | Build | `zipapp` | `python3 tools/build.py` → `dist/audit.pyz`; source tree is the artifact of record. |
 | Index | `codebase-memory-mcp` | Mandatory for structural queries (see §4). |
-| Docs | Diátaxis + `docs/STYLE_GUIDE.md` | The style guide is canonical (see §8). |
+| Docs | Diátaxis + [`../docs/STYLE_GUIDE.md`](../docs/STYLE_GUIDE.md) | The shared style guide is canonical (see §8). |
 
 ### 3.1 Standardized command surface
 
@@ -203,13 +203,13 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 
 - **Single source of truth:** `docs/` is the sole canonical home for permanent knowledge. `artefacts/` is
   transient scratch (see §4).
-- **Canonical rules:** `docs/STYLE_GUIDE.md` holds the authoring rules. Link to it; do **not** restate its
-  rules elsewhere, because restated rules drift.
+- **Canonical rules:** the shared style guide, [`../docs/STYLE_GUIDE.md`](../docs/STYLE_GUIDE.md), holds the
+  authoring rules. Link to it; do **not** restate its rules elsewhere, because restated rules drift.
 - **Doc router:** `docs/architecture/README.md` is the entry point and the ADR index.
 - **Categories (Diátaxis):** tutorial, how-to, reference, explanation; architecture material lives under
   `docs/architecture/`.
 - **ADRs:** `docs/architecture/adrs/NNNN-short-title.md`, created from
-  `docs/templates/adr-template.md`, indexed in `docs/architecture/README.md`. Revise in place — there is no
+  [`../docs/templates/adr-template.md`](../docs/templates/adr-template.md), indexed in `docs/architecture/README.md`. Revise in place — there is no
   `Superseded` or `Deprecated` status, no tombstones, and a retired sequence number is never reused.
 - **Definition of done:** when a change alters a public interface, observable behaviour, architecture, a
   check's semantics, or an ADR, update the affected documentation pages, their source line anchors, and the
@@ -244,7 +244,7 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 6. ❌ **Do not** move secret redaction out of capture time.
 7. ❌ **Do not** read, grep, or glob `artefacts/` unless a human passes an explicit file path.
 8. ❌ **Do not** document aspirational features as existing facts. Tag what is missing as `UNKNOWN`.
-9. ❌ **Do not** restate `docs/STYLE_GUIDE.md` or the readiness framework — link to them.
+9. ❌ **Do not** restate the shared style guide (`../docs/STYLE_GUIDE.md`) or the readiness framework — link to them.
 10. ❌ **Do not** document a check as implemented while it is only in the catalogue.
 11. ❌ **Do not** merge a check without its one-defect fixture (no fixture, no check).
 12. ❌ **Do not** reuse a retired ADR number, or leave a `Superseded` / `Deprecated` tombstone.

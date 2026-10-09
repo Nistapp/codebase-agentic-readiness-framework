@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-> **Status:** v1 complete — the `audit/` package runs, and every pack (`IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set) is live. All 54 scoreable checks are implemented; only the blocked `CON-01` is not evaluated, and Tier-C probe checks report `UNKNOWN` unless probes are permitted. Pages below describe the design of record and the current implementation state. See [`docs/STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 1.3 (Empirical Grounding).
+> **Status:** v1 complete — the `audit/` package runs, and every pack (`IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set) is live. All 54 scoreable checks are implemented; only the blocked `CON-01` is not evaluated, and Tier-C probe checks report `UNKNOWN` unless probes are permitted. Pages below describe the design of record and the current implementation state. See the [style guide](../../../docs/STYLE_GUIDE.md) § 1.3 (Empirical Grounding).
 
 > **Related:** the brownfield recipes (in development) build on this engine; their documentation is at [`brownfield-recipes/docs/`](../../../docs/architecture/README.md).
 

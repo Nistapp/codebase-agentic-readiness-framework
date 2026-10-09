@@ -103,4 +103,4 @@ interpreter — both of which cost the property that motivates the rule in the f
 * **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*.
 * **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
 
-See [`docs/STYLE_GUIDE.md`](../../STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.
+See the [style guide](../../../../docs/STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.
