@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """EXEC execution-determinism checks against their one-defect fixtures.
 
 Each fixture is a minimal repository that fails exactly one `EXEC` check. The audit runs as a

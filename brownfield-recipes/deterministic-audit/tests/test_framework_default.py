@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """The framework checkout defaults to the repository this tool lives in.
 
 ``--framework`` used to be mandatory for ``--verify-rules`` and the report's ``framework_revision`` was

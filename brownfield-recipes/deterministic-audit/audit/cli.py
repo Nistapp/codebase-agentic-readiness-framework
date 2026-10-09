@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Command-line surface (stage S1). Argument parsing and dispatch only — no scan logic.
 
 Exit codes (docs: The Readiness Model § 8):

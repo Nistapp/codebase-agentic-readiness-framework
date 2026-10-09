@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """HYG checks against their fixtures, and the invariant that they never move the score.
 
 The `HYG` pack is informational: every check returns a real `CheckOutcome` so a reader sees the

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Tests for the private cross-pack helpers (``audit.rules.checks._common``)."""
 
 from __future__ import annotations

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """TST test-surface checks against their one-defect fixtures.
 
 Each fixture is a small node project that isolates one TST defect; the inline cases cover the

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Shared test harness — imported by test modules without packaging ``tests/``.
 
 ``python3 -m unittest discover -s tests`` puts this directory on ``sys.path``, so every test module

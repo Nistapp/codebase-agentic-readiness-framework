@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Private cross-pack check helpers.
 
 This module is **not** a rule pack. It defines no checks, contributes nothing to the catalogue, and

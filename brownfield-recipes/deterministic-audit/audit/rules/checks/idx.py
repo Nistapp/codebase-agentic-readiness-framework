@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """`IDX` pack — discovery and the codebase index.
 
 Anchor: `brownfield-legacy/Phased-Approach.md` § Phase 1: Agentic Bootstrap ("Configure and run

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """The baseline ratchet: exit 2 only on a finding the accepted baseline did not have.
 
 The ratchet compares stable finding ids (`check id + path`), never counts or scores. These tests

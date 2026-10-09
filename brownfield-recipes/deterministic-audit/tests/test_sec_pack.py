@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """SEC security-hygiene checks against their one-defect fixtures.
 
 `SEC-01` and `SEC-02` read git's tracked-file set, so their fixtures are copied into a temporary git

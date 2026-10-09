@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Tests for the git-aware ignore engine (``audit.ignore``).
 
 The temp git repository is created inside the test's own temporary directory — never the audit repo.

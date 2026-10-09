@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Stage S9 — verdict engine and scoring.
 
 Two axes, never merged: **phase** (which framework requirement — provenance) and **severity**

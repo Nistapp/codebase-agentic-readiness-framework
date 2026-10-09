@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Smoke and contract tests — stdlib ``unittest``, so the suite runs with no install step.
 
     python3 -m unittest discover -s tests -v

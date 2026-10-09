@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Stage S10 — the finding model.
 
 Every finding is phrased as **"an agent cannot X today because Y"**. That phrasing is not style:

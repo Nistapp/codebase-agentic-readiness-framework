@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Generic Markdown renderer over the report model.
 
 Reads the schema-v2 report dict (see :mod:`audit.report.model`) and the template data in

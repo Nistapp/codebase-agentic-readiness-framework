@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Stage S8 — Tier-C probe runner.
 
 Executing a repository's own commands executes that repository's code. That is a supply-chain

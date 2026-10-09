@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Stage S3 — bounded traversal and inventory.
 
 Unbounded traversal is how a scanning tool becomes unusable on the repositories that need it

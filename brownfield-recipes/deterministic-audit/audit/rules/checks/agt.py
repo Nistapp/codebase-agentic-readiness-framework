@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """`AGT` pack — agent governance.
 
 Implemented here: `AGT-01` (canonical instruction file), `AGT-02` (component coverage),

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Rule-pack implementations, one module per pack.
 
 The registry wires checks to implementations by id. A pack module that has not been written yet is

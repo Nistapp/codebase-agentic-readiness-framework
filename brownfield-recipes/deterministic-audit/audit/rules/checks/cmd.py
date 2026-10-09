@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """`CMD` pack — command surface.
 
 Anchor: `brownfield-legacy/Phased-Approach.md` § Activities.

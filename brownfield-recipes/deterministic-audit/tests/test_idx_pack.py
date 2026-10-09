@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """IDX checks, exercised against constructed stores.
 
 Index and registration state is machine-local, so these tests never depend on the host's real

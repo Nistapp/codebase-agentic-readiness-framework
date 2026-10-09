@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """The positive fixture: a freshly scaffolded project must not fail the implemented checks.
 
 ``python-agentic-bootstrap``'s scaffold is Phase-1-complete by construction, so it is the natural

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """CON checks and the CON-04 emitter.
 
 `CON-01` stays blocked by design and is asserted to remain so. `CON-02` is exercised against its

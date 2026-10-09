@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """`BASE` pack — quality baselines and the no-new-violations ratchet.
 
 Anchor: `brownfield-legacy/Phased-Approach.md` § Activities ("Establish quality baselines for

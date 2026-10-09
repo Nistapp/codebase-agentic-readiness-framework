@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Build the single-file distributable: dist/audit.pyz.
 
 The package tree is the source of truth; this produces the one artifact you hand to someone else.

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Stage S11 — report writers.
 
 The report is the product. Two properties matter more than formatting:

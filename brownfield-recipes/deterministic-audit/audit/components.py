@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Stage S6 — component model.
 
 Components are *declared* by build manifests, at depth 1. Directory nesting is not evidence of a

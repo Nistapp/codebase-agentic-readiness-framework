@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Stage S4 — stack and layout detection.
 
 Decides which rule packs apply to a target. Detection never guesses: an ecosystem this module

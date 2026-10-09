@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """The Markdown template, as code.
 
 A ``.pyz`` has no filesystem (ADR-0005 § 5), so the template is a Python data structure rather than

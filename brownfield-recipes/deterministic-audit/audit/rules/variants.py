@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Instruction-file variant table — ONE data structure, in code, with sources.
 
 A scan that only looks for ``AGENTS.md`` produces two errors in opposite directions: it reports

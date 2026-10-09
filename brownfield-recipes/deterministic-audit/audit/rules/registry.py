@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Rule-pack registry — one table, mirroring docs/architecture/contributor-deep-dive/02-check-catalogue.md.
 
 The catalogue page is the design of record; this module is its executable form. A change to either

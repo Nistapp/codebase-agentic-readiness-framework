@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Report rendering tests — schema v2, the JSON↔Markdown contract.
 
 The load-bearing property: the Markdown artifact is a pure function of the JSON report dict. These

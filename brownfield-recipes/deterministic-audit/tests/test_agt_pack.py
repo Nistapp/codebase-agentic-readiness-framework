@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """AGT content-contract checks (AGT-03, 04, 06, 07, 09) against their one-defect fixtures.
 
 Each fixture is a minimal repository that fails exactly one check; `governed-minimal` passes all

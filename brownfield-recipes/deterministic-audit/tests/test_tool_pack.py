@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """TOOL tooling checks against their one-defect fixtures.
 
 Every fixture is a small node project that fails exactly one TOOL check (or returns `PARTIAL` for the

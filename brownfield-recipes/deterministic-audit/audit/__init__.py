@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """python-agentic-audit — read-only agentic-readiness scanner for existing repositories.
 
 SCOPE CONTRACT (stage S0). This tool:

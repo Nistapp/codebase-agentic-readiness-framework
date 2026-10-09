@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Structured per-check payloads — the machine-readable half of a check outcome.
 
 A check's headline lives in ``CheckOutcome.summary`` (one short human sentence). The *evidence

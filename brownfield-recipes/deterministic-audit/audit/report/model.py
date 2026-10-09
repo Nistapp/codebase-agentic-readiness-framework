@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Report model — schema v2, the single serialisable shape both writers consume.
 
 The JSON report is the render contract. :func:`build_report` turns an :class:`AuditResult` into one

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """CMD command-surface checks and the deferred AGT-05 against their one-defect fixtures.
 
 Each defect fixture is a minimal repository that fails exactly one `CMD` check; the two `cmd-ok-*`

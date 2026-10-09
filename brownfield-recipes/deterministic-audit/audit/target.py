@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Stage S2 — target guard and provenance capture.
 
 The audit runs inside repositories it does not own. This stage is the only place that decides

@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """Markdown report writer — renders the JSON report model (schema v2) to Markdown.
 
 The Markdown artifact is a pure function of the report dict, so it can be produced from an

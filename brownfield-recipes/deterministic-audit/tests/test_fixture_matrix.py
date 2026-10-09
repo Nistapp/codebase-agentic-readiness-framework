@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """The fixture matrix — one explicit expectation per fixture, checked end to end.
 
 This is the Phase-14 consolidation of the per-pack fixture tests. It walks ``tests/fixtures/`` and

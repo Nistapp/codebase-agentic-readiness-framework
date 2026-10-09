@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """JSON report writer — serialises the schema-v2 report model.
 
 The model (:mod:`audit.report.model`) owns the schema; this module is the file-facing name for it.

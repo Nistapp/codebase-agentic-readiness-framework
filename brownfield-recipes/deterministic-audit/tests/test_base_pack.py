@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
 """BASE checks against their one-defect fixtures.
 
 Each fixture is a small node project that isolates one baseline/ratchet defect; `base-ok` passes all
