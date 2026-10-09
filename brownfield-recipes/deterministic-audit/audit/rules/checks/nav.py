@@ -447,7 +447,7 @@ def check_nav05(*, spec, target, inventory, stack, components, session) -> Check
 
     total, documented = _python_census(inventory) if language == "python" else _ts_census(inventory)
     method = (
-        f"python: module-level def/class not starting with '_'"
+        "python: module-level def/class not starting with '_'"
         if language == "python"
         else "typescript: exported declarations"
     )

@@ -13,7 +13,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from audit.scan import Inventory, Kind
+from audit.scan import Inventory
 
 #: ecosystem -> (manifest globs, verb-runner hints)
 ECOSYSTEM_SIGNALS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
