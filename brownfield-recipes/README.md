@@ -12,7 +12,7 @@ Recipes that a coding agent runs to audit an existing repository for agentic rea
 | `schema/` | The report, intake and progress schemas | Planned |
 | `stacks/` | Stack profiles | Planned |
 | `tools/` | Deterministic tools | Planned |
-| `deterministic-audit/` | The migrated deterministic engine | Planned |
+| [`deterministic-audit/`](deterministic-audit/README.md) | The deterministic engine, migrated with its history | Live |
 | [`docs/`](docs/architecture/README.md) | Documentation, Diátaxis layout | Placeholders |
 
 Licensing: [docs/reference/licensing.md](docs/reference/licensing.md).

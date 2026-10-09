@@ -14,6 +14,8 @@
 `python-agentic-audit` is a **read-only agentic-readiness scanner for existing repositories**. It is the
 brownfield half of the agentic-readiness toolchain: `python-agentic-bootstrap` proves a new project *starts*
 ready; this audit measures how far an existing repository is from the same bar and reports an ordered backlog.
+It is also the deterministic engine of the brownfield recipes in `brownfield-recipes/` ([README](../README.md),
+in development). The "no LLM" rules below bind this engine, not the recipes around it.
 
 It is written in **Python 3.11+ using the standard library only**, with **no install step** — a fresh clone
 runs `python3 -m audit <target>` immediately. That constraint is not stylistic: the audit must run before the

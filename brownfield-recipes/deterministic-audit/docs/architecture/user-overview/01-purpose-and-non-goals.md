@@ -22,6 +22,11 @@ framework](../../../../../brownfield-legacy/Phased-Approach.md)
 — the phase the framework itself calls a dramatic improvement on its own. Later phases are reported as
 presence-level signals and never scored.
 
+> [!NOTE]
+> This page describes the deterministic engine. The [brownfield recipes](../../../../README.md), which are in
+> development, are meant to run it first and then add an LLM-assisted assessment of what a program cannot
+> decide. The "no model is called" statements on this page apply to the engine only.
+
 ---
 
 ## What This Is (and Is Not)

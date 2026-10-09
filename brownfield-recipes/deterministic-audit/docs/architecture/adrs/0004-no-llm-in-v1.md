@@ -31,6 +31,10 @@ whose content varies between runs cannot be diffed, regression-tested, or attrib
 
 **Deterministic, standard-library only, no model in v1.**
 
+This decision binds the deterministic engine in this directory. The
+[brownfield recipes](../../../../README.md) are a separate component, in development. They are meant to run the
+engine first and add an LLM-assisted assessment of the items it parks as `ATTEST`, so they are not bound by it.
+
 1. No LLM calls, no network calls by default, no embedding of a model client.
 2. Every check's evidence rule must be **falsifiable by inspection** — a reviewer applies it to a fixture and
    reaches the same verdict.

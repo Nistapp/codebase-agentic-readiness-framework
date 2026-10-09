@@ -6,6 +6,11 @@
 work in it effectively**. It is the brownfield half of the agentic-readiness toolchain: `python-agentic-bootstrap`
 proves a new project *starts* ready; this audit measures how far an existing one is from the same bar.
 
+> [!NOTE]
+> This is the deterministic engine of the [brownfield recipes](../README.md), which are in development. The
+> recipes are meant to run it first and then add an LLM-assisted assessment of what a program cannot decide.
+> This engine never calls a model.
+
 **It reports; it does not gate.** A completed scan exits `0` whatever it finds. Regression detection is a ratchet
 against an accepted baseline, so it is safe to introduce into a legacy repository on day one.
 
@@ -26,7 +31,7 @@ Two axes are always reported separately: **phase** (which framework requirement 
 
 - Not a gate, a linter, a security scanner, or a coverage tool.
 - Not a code-quality score. Readiness and quality are different axes.
-- Not an LLM: no model is called, so the same repository and flags produce the same report.
+- Not an LLM: this engine calls no model, so the same repository and flags produce the same report. Model-assisted audits are the job of the [recipes](../README.md).
 - Not a rewriter. It never modifies the target.
 
 ---

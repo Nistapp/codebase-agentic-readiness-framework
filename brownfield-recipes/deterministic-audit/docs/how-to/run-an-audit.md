@@ -3,6 +3,7 @@
 > **Goal:** Produce a readiness report for an existing repository without modifying it.
 > **Audience:** Operators / Engineers
 > **Status:** Live for the implemented packs (`AGT`); the workflow below is what the tool does today. Checks that are not implemented report `UNKNOWN`.
+> **See also:** the LLM-assisted audit recipe, in development: [Run an audit with the recipes](../../../docs/how-to/run-an-audit.md).
 
 ---
 
