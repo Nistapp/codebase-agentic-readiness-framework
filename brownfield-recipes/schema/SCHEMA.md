@@ -331,7 +331,7 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 
 ## Validating
 
-Until the stdlib validator exists, the reference `jsonschema` package checks the schemas and examples. It runs in a throwaway environment, so nothing is installed in the project:
+Until the stdlib validator exists, the reference `jsonschema` package checks the schemas, the examples and the catalogue. It runs in a throwaway environment, so nothing is installed in the project:
 
 ```bash
 uv run --no-project --with jsonschema==4.23.0 python - <<'EOF'
@@ -340,11 +340,16 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 root = Path("brownfield-recipes/schema")
+catalogue = Path("brownfield-recipes/catalogue.json")
 examples = root / "examples"
 report_examples = [examples / "minimal.json", *sorted(examples.rglob("*.audit-*.json"))]
 intake_examples = sorted(examples.glob("audit-intake.*.json"))
 
-for schema_name, files in [("audit-report.schema.json", report_examples), ("audit-intake.schema.json", intake_examples)]:
+for schema_name, files in [
+    ("audit-report.schema.json", report_examples),
+    ("audit-intake.schema.json", intake_examples),
+    ("catalogue.schema.json", [catalogue]),
+]:
     schema = json.loads((root / schema_name).read_text())
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
@@ -354,4 +359,4 @@ for schema_name, files in [("audit-report.schema.json", report_examples), ("audi
 EOF
 ```
 
-The command prints `valid` once for each example: the minimal report, the three drafts in `examples/realistic/`, the worked example and the intake example. The raw engine reports are not reports of this schema and are skipped.
+The command prints `valid` once for each file: the minimal report, the three drafts in `examples/realistic/`, the worked example, the intake example and the catalogue. The raw engine reports are not reports of this schema and are skipped.
