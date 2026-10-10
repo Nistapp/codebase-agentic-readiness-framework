@@ -5,6 +5,7 @@
 
     report.py init <intake>
     report.py add-check <draft> --from FILE|-
+    report.py add-finding <draft> --from FILE|-
 
 ``init`` reads the intake file, captures the target's provenance (commit, branch, whether the working tree is
 dirty), and creates ``<label>.audit-draft.<stamp>.json`` in the intake's ``output_dir``. It never replaces a file: a
@@ -30,6 +31,7 @@ import argparse
 import contextlib
 import json
 import os
+import posixpath
 import re
 import shutil
 import sys
@@ -48,7 +50,11 @@ import validate_report as vr
 INFO = _common.ToolInfo(
     name="report",
     summary="Build the audit report: the only writer of the draft, and every write is validated.",
-    synopsis=("report.py init <intake>", "report.py add-check <draft> --from FILE|-"),
+    synopsis=(
+        "report.py init <intake>",
+        "report.py add-check <draft> --from FILE|-",
+        "report.py add-finding <draft> --from FILE|-",
+    ),
     writes=(
         "init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the "
         "target; a name that is taken is never replaced. The other subcommands: that draft, in place and atomically, "
@@ -414,21 +420,26 @@ def read_fragment(source: str, what: str) -> Any:
     return vr.read_report(Path(source).expanduser(), what)
 
 
-def fragment_validator(fields: Sequence[str], required: Sequence[str], definition: str) -> subset.SubsetValidator:
+def fragment_validator(
+    fields: Sequence[str], required: Sequence[str], definition: str, extra: Mapping[str, Any] | None = None
+) -> subset.SubsetValidator:
     """A validator for a fragment, made from the report schema's own definition of the same item.
 
     A fragment holds some of the fields of a check or a finding, and none of the ones the tool computes, so
     the schema refuses those as unknown fields. Each field's rule is the report schema's, never a copy of it.
+    `extra` adds fields that the report does not have, such as the scope that becomes part of a finding's key.
     """
     schema = report_schema()
     properties = schema["$defs"][definition]["properties"]
+    chosen = {field_name: properties[field_name] for field_name in fields}
+    chosen.update(extra or {})
     return subset.SubsetValidator(
         {
             "$defs": schema["$defs"],
             "type": "object",
             "required": list(required),
             "additionalProperties": False,
-            "properties": {field_name: properties[field_name] for field_name in fields},
+            "properties": chosen,
         }
     )
 
@@ -594,6 +605,136 @@ def run_add_check(args: argparse.Namespace) -> _common.Result:
     return result
 
 
+# --- add-finding -----------------------------------------------------------------------------------------
+
+FINDING_FIELDS = ("check", "severity", "statement", "evidence", "searches", "remediation")
+FINDING_REQUIRED = ("check", "statement", "remediation")
+SCOPE_SCHEMA = {
+    "description": "A path or a component that tells apart two findings of one check. It becomes part of the key.",
+    "type": "string",
+    "minLength": 1,
+    "maxLength": 300,
+}
+
+
+def finding_validator() -> subset.SubsetValidator:
+    return fragment_validator(FINDING_FIELDS, FINDING_REQUIRED, "finding", {"scope": SCOPE_SCHEMA})
+
+
+def normal_scope(scope: str) -> str | None:
+    """A scope in the one spelling every run gives it, or None when it names the whole check.
+
+    A key must be the same for the same finding in any run (R-14), so `./src//a.ts`, `src\\a.ts` and `src/a.ts`
+    are one scope. A scope that leaves the target is not a path inside it and cannot name a finding there.
+    """
+    if not scope.strip():
+        raise _common.ValidationFailed(
+            "the finding's scope is not usable", errors=["fragment: /scope: the scope is empty; leave it out"]
+        )
+    text = posixpath.normpath(scope.strip().replace("\\", "/"))
+    if text == ".":
+        return None
+    reason = vr.leaves_target(text)
+    if reason is not None:
+        raise _common.ValidationFailed(
+            "the finding's scope is not usable", errors=[f"fragment: /scope: the scope {reason}"]
+        )
+    if re.search(r"\s", text):
+        raise _common.ValidationFailed(
+            "the finding's scope is not usable", errors=["fragment: /scope: the scope must not contain whitespace"]
+        )
+    return text
+
+
+def finding_key(check_id: str, scope: str | None) -> str:
+    return check_id if scope is None else f"{check_id}:{scope}"
+
+
+def next_finding_id(findings: Sequence[Mapping[str, Any]]) -> str:
+    """`F-001`, `F-002`, and so on: one more than the highest in use, so an id is never reused."""
+    highest = max((int(finding["id"][2:]) for finding in findings), default=0)
+    return f"F-{highest + 1:03d}"
+
+
+def finding_counts(document: Mapping[str, Any]) -> dict[str, int]:
+    findings = document["findings"]
+    return {
+        "findings": len(findings),
+        "findings_pending": sum(1 for finding in findings if finding["disposition"] == "pending"),
+    }
+
+
+def apply_finding(document: dict[str, Any], fragment: Mapping[str, Any]) -> Change:
+    """Record an issue a check raised.
+
+    The tool computes the key, assigns the id and sets the disposition: `pending` until a person decides, or
+    `confirmed` by policy when the run's policy is `accept-all`. A finding the agent already recorded is replaced
+    while it is `pending`. One that has a decision is not the agent's to change.
+    """
+    check = next((c for c in document["checks"] if c["id"] == fragment["check"]), None)
+    if check is None:
+        raise _common.ValidationFailed(
+            f"{fragment['check']} is not a check in this draft",
+            errors=[
+                f"fragment: /check: record {fragment['check']} first, with add-check or by importing the engine's report"
+            ],
+        )
+    key = finding_key(fragment["check"], normal_scope(fragment["scope"]) if "scope" in fragment else None)
+    index = next((i for i, f in enumerate(document["findings"]) if f["key"] == key), None)
+    current = None if index is None else document["findings"][index]
+    if current is not None and current["disposition"] != "pending":
+        raise _common.ValidationFailed(
+            f"{current['id']} ({key}) already has a decision, so the agent cannot rewrite it",
+            errors=[
+                f"{current['id']} is {current['disposition']}. To record it again, set its disposition back to "
+                "pending with set-disposition first, or use another scope for a different finding."
+            ],
+        )
+    finding: dict[str, Any] = {
+        "id": next_finding_id(document["findings"]) if current is None else current["id"],
+        "key": key,
+        "check": fragment["check"],
+        "severity": fragment.get("severity", check["severity"]),
+        "statement": fragment["statement"],
+        "evidence": fragment.get("evidence", []),
+        "searches": fragment.get("searches", []),
+        "remediation": fragment["remediation"],
+        "disposition": "pending",
+    }
+    if document["run_context"]["confirmation_policy"] == "accept-all":
+        finding.update(disposition="confirmed", confirmed_via="policy")
+    if index is None:
+        index = len(document["findings"])
+        document["findings"].append({})
+    document["findings"][index] = in_schema_order(finding, "finding")
+    return Change(
+        data={
+            "finding": finding["id"],
+            "key": key,
+            "action": "added" if current is None else "replaced",
+            "check": finding["check"],
+            "severity": finding["severity"],
+            "disposition": finding["disposition"],
+        },
+        touched=[f"/findings/{index}/"],
+    )
+
+
+def run_add_finding(args: argparse.Namespace) -> _common.Result:
+    fragment = checked_fragment(args.source, "finding fragment", finding_validator())
+    counts: dict[str, int] = {}
+
+    def change(document: dict[str, Any]) -> Change:
+        made = apply_finding(document, fragment)
+        counts.update(finding_counts(document))
+        return made
+
+    result = update_draft(args.draft, change)
+    result.data.update(counts)
+    result.summary = f"report: {result.data['finding']} {result.data['action']} for {result.data['key']}"
+    return result
+
+
 # --- The command line ---------------------------------------------------------------------------------
 
 
@@ -607,10 +748,13 @@ def build_parser() -> _common.ToolParser:
     record.add_argument(
         "--from", dest="source", required=True, help="a JSON file with the check's result, or - for stdin"
     )
+    finding = commands.add_parser("add-finding", help="record an issue that a check raised", allow_abbrev=False)
+    finding.add_argument("draft", help="the draft to change")
+    finding.add_argument("--from", dest="source", required=True, help="a JSON file with the finding, or - for stdin")
     return parser
 
 
-HANDLERS = {"init": run_init, "add-check": run_add_check}
+HANDLERS = {"init": run_init, "add-check": run_add_check, "add-finding": run_add_finding}
 
 
 def handler(argv: Sequence[str]) -> _common.Result:

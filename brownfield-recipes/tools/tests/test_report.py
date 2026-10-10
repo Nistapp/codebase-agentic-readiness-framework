@@ -11,6 +11,7 @@ scan finds nothing in this file. Standard library only.
 
 from __future__ import annotations
 
+import contextlib
 import io
 import json
 import os
@@ -116,6 +117,16 @@ class BuilderCase(unittest.TestCase):
     def add_check(self, draft: Path, fragment: Any) -> tuple[int, dict[str, Any], str]:
         return call(["add-check", str(draft), "--from", "-"], json.dumps(fragment))
 
+    def add_finding(self, draft: Path, fragment: Any) -> tuple[int, dict[str, Any], str]:
+        return call(["add-finding", str(draft), "--from", "-"], json.dumps(fragment))
+
+    def failing_draft(self, **changes: Any) -> Path:
+        """A new draft in which AGT-11 has failed, so that it can have findings."""
+        draft = self.start(**changes)
+        code, envelope, _ = self.add_check(draft, agent_check(verdict="FAIL", summary="Restates the README."))
+        self.assertEqual(code, 0, envelope)
+        return draft
+
     def unchanged_by(self, draft: Path, run: Any) -> tuple[int, dict[str, Any], str]:
         """Run `run()`, which must change nothing: the draft's bytes and the folder's files stay as they were."""
         before, names = draft.read_bytes(), sorted(p.name for p in draft.parent.iterdir())
@@ -135,6 +146,18 @@ def agent_check(**changes: Any) -> dict[str, Any]:
         "evidence": [
             {"kind": "file", "path": "AGENTS.md", "lines": "14-15", "quote": "Never run npm publish by hand."}
         ],
+    }
+    fragment.update(changes)
+    return fragment
+
+
+def agent_finding(**changes: Any) -> dict[str, Any]:
+    """A fragment for a finding on AGT-11, which must have failed first."""
+    fragment: dict[str, Any] = {
+        "check": "AGT-11",
+        "statement": "An agent cannot tell which rules are the team's because AGENTS.md only restates the README.",
+        "evidence": [{"kind": "file", "path": "AGENTS.md", "lines": "1-3"}],
+        "remediation": {"summary": "Replace the overview with the rules the code does not show.", "effort": "S"},
     }
     fragment.update(changes)
     return fragment
@@ -828,6 +851,283 @@ class OverrideTests(BuilderCase):
         self.assertEqual(self.check("AGT-11")["method"], "agent")
 
 
+class AddFindingTests(BuilderCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.draft = self.failing_draft()
+
+    def findings(self) -> list[dict[str, Any]]:
+        found: list[dict[str, Any]] = read_json(self.draft)["findings"]
+        return found
+
+    def test_it_records_a_finding_and_computes_its_id_key_and_disposition(self) -> None:
+        code, envelope, stderr = self.add_finding(self.draft, agent_finding())
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(
+            envelope["data"],
+            {
+                "draft": str(self.draft),
+                "finding": "F-001",
+                "key": "AGT-11",
+                "action": "added",
+                "check": "AGT-11",
+                "severity": "DEGRADER",
+                "disposition": "pending",
+                "findings": 1,
+                "findings_pending": 1,
+            },
+        )
+        self.assertEqual(stderr, "report: F-001 added for AGT-11\n")
+        (finding,) = self.findings()
+        self.assertEqual(
+            list(finding),
+            ["id", "key", "check", "severity", "statement", "evidence", "searches", "remediation", "disposition"],
+        )
+        self.assertEqual(finding["evidence"][0]["captured_by"], "agent")
+        self.assertEqual(vr.validate_document(read_json(self.draft)).errors, [])
+
+    def test_the_summary_counts_the_pending_agent_finding(self) -> None:
+        self.assertEqual(read_json(self.draft)["summary"]["unconfirmed_agent_findings"], 0)
+        self.add_finding(self.draft, agent_finding())
+        document = read_json(self.draft)
+        self.assertEqual(document["summary"]["unconfirmed_agent_findings"], 1)
+        self.assertEqual(document["summary"], _summary.compute_summary(document))
+
+    def test_the_key_is_the_check_and_the_scope_in_one_spelling(self) -> None:
+        spellings = [
+            ("src/a.ts", "AGT-11:src/a.ts"),
+            ("./src//a.ts", "AGT-11:src/a.ts"),
+            ("src\\a.ts", "AGT-11:src/a.ts"),
+            ("  src/a.ts/  ", "AGT-11:src/a.ts"),
+            ("packages/../src/a.ts", "AGT-11:src/a.ts"),
+            ("api-gateway", "AGT-11:api-gateway"),
+            (".", "AGT-11"),
+            ("./", "AGT-11"),
+        ]
+        for scope, key in spellings:
+            with self.subTest(scope=scope):
+                draft = self.failing_draft()
+                code, envelope, _ = self.add_finding(draft, agent_finding(scope=scope))
+                self.assertEqual(code, 0, envelope)
+                self.assertEqual(envelope["data"]["key"], key)
+                self.assertEqual(read_json(draft)["findings"][0]["key"], key)
+
+    def test_a_scope_that_is_not_a_place_in_the_target_is_refused(self) -> None:
+        for scope, expected in [
+            ("/etc/passwd", "is absolute"),
+            ("../x", "climbs out"),
+            ("a/../../x", "climbs out"),
+            ("two words", "whitespace"),
+            ("   ", "is empty"),
+            ("C:\\x", "is absolute"),
+        ]:
+            with self.subTest(scope=scope):
+                code, envelope, _ = self.unchanged_by(
+                    self.draft, lambda: self.add_finding(self.draft, agent_finding(scope=scope))
+                )
+                self.assertEqual(code, 2)
+                self.assertIn(expected, "\n".join(envelope["data"]["errors"]))
+
+    def test_ids_count_up_and_are_never_reused(self) -> None:
+        for number, scope in enumerate(["a", "b", "c"], start=1):
+            _, envelope, _ = self.add_finding(self.draft, agent_finding(scope=scope))
+            self.assertEqual(envelope["data"]["finding"], f"F-{number:03d}")
+        document = read_json(self.draft)
+        self.assertEqual([f["id"] for f in document["findings"]], ["F-001", "F-002", "F-003"])
+        self.assertEqual(rb.next_finding_id([]), "F-001")
+        self.assertEqual(rb.next_finding_id([{"id": "F-009"}, {"id": "F-002"}]), "F-010")
+        self.assertEqual(rb.next_finding_id([{"id": "F-999"}]), "F-1000")
+
+    def test_the_agent_cannot_write_what_the_tool_computes(self) -> None:
+        fields = [
+            ("id", "F-009"),
+            ("key", "AGT-11"),
+            ("disposition", "confirmed"),
+            ("confirmed_via", "interactive"),
+            ("disposition_note", "x"),
+        ]
+        for name, value in fields:
+            with self.subTest(field=name):
+                code, envelope, _ = self.unchanged_by(
+                    self.draft, lambda: self.add_finding(self.draft, agent_finding(**{name: value}))
+                )
+                self.assertEqual(code, 2)
+                self.assertIn(f"unexpected property: '{name}'", "\n".join(envelope["data"]["errors"]))
+
+    def test_the_statement_has_the_required_form(self) -> None:
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.add_finding(self.draft, agent_finding(statement="The docs are thin."))
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("/statement", envelope["data"]["errors"][0])
+
+    def test_a_finding_needs_a_check_that_is_in_the_draft(self) -> None:
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.add_finding(self.draft, agent_finding(check="CI-04"))
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("CI-04 is not a check in this draft", envelope["data"]["error"])
+        self.assertIn("record CI-04 first", envelope["data"]["errors"][0])
+
+    def test_a_passing_check_cannot_have_an_undecided_finding(self) -> None:
+        self.add_check(
+            self.draft,
+            agent_check(id="CI-04", verdict="PASS", evidence=[{"kind": "file", "path": ".github/workflows/ci.yml"}]),
+        )
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.add_finding(self.draft, agent_finding(check="CI-04"))
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("its finding must be rejected", envelope["data"]["errors"][0])
+
+    def test_severity_defaults_to_the_checks_and_may_be_lower_but_not_higher(self) -> None:
+        _, envelope, _ = self.add_finding(self.draft, agent_finding(scope="a"))
+        self.assertEqual(envelope["data"]["severity"], "DEGRADER")
+        _, envelope, _ = self.add_finding(self.draft, agent_finding(scope="b", severity="COSMETIC"))
+        self.assertEqual(envelope["data"]["severity"], "COSMETIC")
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.add_finding(self.draft, agent_finding(scope="c", severity="BLOCKER"))
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("BLOCKER is higher than AGT-11's DEGRADER", envelope["data"]["errors"][0])
+
+    def test_dependencies_must_be_findings_in_the_draft(self) -> None:
+        self.add_finding(self.draft, agent_finding(scope="a"))
+        remediation = {"summary": "Do it after F-001.", "depends_on": ["F-001"], "touches": ["AGENTS.md"]}
+        code, envelope, _ = self.add_finding(self.draft, agent_finding(scope="b", remediation=remediation))
+        self.assertEqual(code, 0, envelope)
+        remediation["depends_on"] = ["F-009"]
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.add_finding(self.draft, agent_finding(scope="c", remediation=remediation))
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("F-009 is not a finding in this report", envelope["data"]["errors"][0])
+
+    def test_a_playbook_must_be_one_the_catalogue_names(self) -> None:
+        named = next(c["playbooks"][0] for c in vr.load_catalogue()["checks"] if c["playbooks"])
+        code, _, _ = self.add_finding(
+            self.draft, agent_finding(scope="a", remediation={"summary": "x", "playbook": named})
+        )
+        self.assertEqual(code, 0)
+        code, envelope, _ = self.unchanged_by(
+            self.draft,
+            lambda: self.add_finding(
+                self.draft, agent_finding(scope="b", remediation={"summary": "x", "playbook": "make-it-nice"})
+            ),
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("the catalogue names no playbook make-it-nice", envelope["data"]["errors"][0])
+
+    def test_a_finding_the_agent_wrote_is_replaced_in_place_while_it_is_pending(self) -> None:
+        self.add_finding(self.draft, agent_finding(scope="a"))
+        self.add_finding(self.draft, agent_finding(scope="b"))
+        code, envelope, _ = self.add_finding(
+            self.draft,
+            agent_finding(scope="a", statement="An agent cannot trust the rules because they are stale.", evidence=[]),
+        )
+        self.assertEqual((code, envelope["data"]["action"], envelope["data"]["finding"]), (0, "replaced", "F-001"))
+        findings = self.findings()
+        self.assertEqual([f["id"] for f in findings], ["F-001", "F-002"])
+        self.assertEqual(findings[0]["statement"], "An agent cannot trust the rules because they are stale.")
+        self.assertEqual(findings[0]["evidence"], [])
+        self.assertEqual(envelope["data"]["findings"], 2)
+
+    def test_a_finding_that_has_a_decision_is_not_the_agents_to_rewrite(self) -> None:
+        self.add_finding(self.draft, agent_finding())
+        document = read_json(self.draft)
+        document["findings"][0].update(disposition="confirmed", confirmed_via="interactive")
+        document["summary"] = _summary.compute_summary(document)
+        self.draft.write_text(rb.dumps(document), encoding="utf-8")
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.add_finding(self.draft, agent_finding(statement="An agent cannot x because y."))
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("F-001 (AGT-11) already has a decision", envelope["data"]["error"])
+        self.assertIn("is confirmed", envelope["data"]["errors"][0])
+
+    def test_the_run_policy_decides_the_disposition(self) -> None:
+        for policy, eval_mode, expected in [
+            ("accept-all", True, ("confirmed", "policy")),
+            ("defer-all", True, ("pending", None)),
+            ("defer-all", False, ("pending", None)),
+            ("interactive", False, ("pending", None)),
+        ]:
+            with self.subTest(policy=policy, eval_mode=eval_mode):
+                draft = self.failing_draft(confirmation_policy=policy, eval_mode=eval_mode)
+                code, envelope, _ = self.add_finding(draft, agent_finding())
+                self.assertEqual(code, 0, envelope)
+                finding = read_json(draft)["findings"][0]
+                self.assertEqual((finding["disposition"], finding.get("confirmed_via")), expected)
+                self.assertEqual(vr.validate_document(read_json(draft)).errors, [])
+
+    def test_evidence_follows_the_same_rules_as_a_checks(self) -> None:
+        evidence = [{"kind": "file", "path": "AGENTS.md", "captured_by": "tool", "tool": "engine", "tool_version": "1"}]
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.add_finding(self.draft, agent_finding(evidence=evidence))
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("the agent cannot record tool-captured evidence", "\n".join(envelope["data"]["errors"]))
+        quote = [{"kind": "file", "path": "AGENTS.md", "quote": credentials()[1]}]
+        code, envelope, stderr = self.unchanged_by(
+            self.draft, lambda: self.add_finding(self.draft, agent_finding(evidence=quote))
+        )
+        self.assertEqual(code, 2)
+        self.assertTrue(envelope["data"]["errors"][0].startswith("rule 11:"))
+        self.assertNotIn(credentials()[1], json.dumps(envelope) + stderr)
+
+    def test_a_cited_file_that_is_missing_is_a_warning_about_this_finding_only(self) -> None:
+        _git.make_repo(self.target, ["AGENTS.md"])
+        draft = self.failing_draft()
+        code, envelope, _ = self.add_finding(draft, agent_finding(evidence=[{"kind": "file", "path": "gone.md"}]))
+        self.assertEqual(code, 0)
+        self.assertEqual(len(envelope["warnings"]), 1)
+        self.assertTrue(envelope["warnings"][0].startswith("/findings/0/evidence/0: the file gone.md"))
+
+    def test_a_finding_on_an_engine_check_gets_the_next_id_after_the_engines(self) -> None:
+        draft = self.engine_draft()
+        before = read_json(draft)["findings"]
+        fragment = agent_finding(
+            check="TOOL-05", scope="packages/api", evidence=[], remediation={"summary": "Add the command."}
+        )
+        fragment["statement"] = "An agent cannot run the type check in packages/api because no script defines it."
+        code, envelope, _ = self.add_finding(draft, fragment)
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(envelope["data"]["finding"], f"F-{len(before) + 1:03d}")
+        self.assertEqual(envelope["data"]["key"], "TOOL-05:packages/api")
+        self.assertEqual(vr.validate_document(read_json(draft)).errors, [])
+
+
+class ConcurrencyTests(BuilderCase):
+    def test_commands_that_run_at_the_same_time_lose_nothing(self) -> None:
+        draft = self.failing_draft()
+        scopes = [f"module-{number}" for number in range(8)]
+        script = str(TOOLS / "report.py")
+        with contextlib.ExitStack() as stack:
+            procs = [
+                stack.enter_context(
+                    subprocess.Popen(
+                        [sys.executable, script, "add-finding", str(draft), "--from", "-"],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True,
+                    )
+                )
+                for _ in scopes
+            ]
+            for proc, scope in zip(procs, scopes):
+                assert proc.stdin is not None
+                proc.stdin.write(json.dumps(agent_finding(scope=scope)))
+                proc.stdin.close()
+            results = [(proc.wait(60), proc.stdout.read() if proc.stdout else "") for proc in procs]
+        self.assertEqual([code for code, _ in results], [0] * len(scopes), [out for _, out in results])
+        document = read_json(draft)
+        self.assertEqual(sorted(f["key"] for f in document["findings"]), sorted(f"AGT-11:{scope}" for scope in scopes))
+        self.assertEqual(sorted(f["id"] for f in document["findings"]), [f"F-{n:03d}" for n in range(1, 9)])
+        self.assertEqual(vr.validate_document(document).errors, [])
+        self.assertEqual(sorted(p.name for p in self.out.iterdir()), [draft.name])
+
+
 class LockTests(BuilderCase):
     def test_a_second_holder_waits_until_the_first_lets_go(self) -> None:
         events: list[str] = []
@@ -884,6 +1184,7 @@ class ToolContractTests(BuilderCase):
         self.assertIs(manifest["network"], False)
         self.assertTrue(any(line.startswith("report.py init") for line in manifest["synopsis"]))
         self.assertTrue(any(line.startswith("report.py add-check") for line in manifest["synopsis"]))
+        self.assertTrue(any(line.startswith("report.py add-finding") for line in manifest["synopsis"]))
 
     def test_a_missing_or_unknown_subcommand_is_exit_1(self) -> None:
         for argv in ([], ["nothing"]):

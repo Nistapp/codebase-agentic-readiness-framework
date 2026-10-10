@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init` and `add-check`). The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init`, `add-check` and `add-finding`). The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first two subcommands. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first three subcommands. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | [`engine.py`](#enginepy) | Runs the deterministic engine from any directory | Live |
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
-| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init` and `add-check`; the other subcommands: Planned (S2.3) |
+| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init`, `add-check` and `add-finding`; the other subcommands: Planned (S2.3) |
 | `render_report.py` | Renders a report to Markdown | Planned (S2.4) |
 | `facts.py` | Emits stack and inventory facts, no verdicts | Planned (S2.7) |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
@@ -155,7 +155,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-Only `init` and `add-check` exist so far. `add-finding`, `set-disposition`, `status` and `finalise` are planned in the same step (S2.3), and `import-engine` is S2.5.
+Only `init`, `add-check` and `add-finding` exist so far. `set-disposition`, `status` and `finalise` are planned in the same step (S2.3), and `import-engine` is S2.5.
 
 Every subcommand but `init` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
@@ -164,6 +164,7 @@ Every subcommand but `init` changes the draft it is given, in place. A change is
 ```text
 python3 brownfield-recipes/tools/report.py init <intake>
 python3 brownfield-recipes/tools/report.py add-check <draft> --from FILE|-
+python3 brownfield-recipes/tools/report.py add-finding <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py --describe
 ```
 
@@ -277,3 +278,52 @@ The tool adds the check's `title`, `phase`, `severity`, `scored` and `method` fr
 | `the change would leave the draft invalid, so nothing was written` | `data.errors` names the rule and the place. Change the fragment. |
 | `rule 5: ... is an agent check with the verdict PASS and has no evidence` | Cite what shows the check passes, or record `FAIL` or `UNKNOWN` and say what was missing. |
 | `another report command has held the lock on ...` | Another `report.py` command is still running on a draft in the same folder. Wait for it, and run commands one at a time. |
+
+### add-finding
+
+Records an issue that a check raised.
+
+```text
+python3 brownfield-recipes/tools/report.py add-finding <draft> --from -
+```
+
+```json
+{
+  "check": "SEC-02",
+  "scope": "src/config/constants.ts",
+  "statement": "An agent cannot tell a credential from a placeholder because a live-looking key sits in constants.ts.",
+  "evidence": [{ "kind": "file", "path": "src/config/constants.ts", "lines": "12" }],
+  "remediation": { "summary": "Move the key to the environment and rotate it.", "playbook": "env-inventory-and-secrets", "effort": "S" }
+}
+```
+
+| Fragment field | Meaning |
+|---|---|
+| `check`, `statement`, `remediation` | Required. The check the finding belongs to, which must already be in the draft; the statement, always "An agent cannot X because Y."; and the remediation (`summary`, and optionally `playbook`, `effort`, `depends_on` and `touches`). A playbook must be one the catalogue names. |
+| `scope` | Optional. A path or component that tells two findings of one check apart. |
+| `severity` | Optional. The check's severity by default. It may be lower, never higher. |
+| `evidence`, `searches` | Optional. As for `add-check`. |
+
+The tool computes what the agent must not write:
+
+- **`key`** is the check ID, then `:` and the scope when there is one: `SEC-02:src/config/constants.ts`. A re-audit matches findings by key, so the tool writes the scope in one spelling: backslashes become `/`, `./` and `//` and `..` segments are resolved, and a scope of `.` means the whole check. A scope that is absolute, climbs out of the target, is empty or holds whitespace is refused.
+- **`id`** is the next `F-nnn` after the highest in the draft. It is for display, and it is never reused.
+- **`disposition`** is `pending` until a person decides. Under the `accept-all` policy (evaluation runs only) it is `confirmed`, with `confirmed_via: policy`.
+
+Recording a finding again with the same key replaces it in place and keeps its `id`, as long as it is `pending`. A finding that has a decision is not the agent's to rewrite: the command exits 2 and names it. A finding on a check whose verdict is `PASS` is refused, because a passing check has no issue to raise (rule 7).
+
+**Outputs.** `data` holds `draft`, `finding` (the id), `key`, `action` (`added` or `replaced`), `check`, `severity`, `disposition`, `findings` and `findings_pending`. Warnings list each cited file that is not in the target at the recorded commit, for this finding only.
+
+**Exit codes** are those of `add-check`. A check that is not in the draft, a scope that is not usable and a finding that already has a decision are exit 2.
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `<ID> is not a check in this draft` | Record the check first with `add-check`, or import the engine's report. |
+| `fragment: /scope: ...` | Use a path inside the target, or a component name without whitespace; or leave `scope` out. |
+| `<F-id> (<key>) already has a decision, so the agent cannot rewrite it` | A person decided. Set the finding back to `pending` with `set-disposition` to record it again, or give the new finding another scope. |
+| `rule 7: ... is higher than <ID>'s <severity>` | A finding is never more severe than its check. |
+| `rule 7: ... is PASS, so its finding must be rejected` | The check passes, so it raises no finding. Record the check as failing first, if it fails. |
+| `rule 2: ... the catalogue names no playbook ...` | Use a playbook named in [`catalogue.json`](../../catalogue.json), or leave `playbook` out. |
+| `rule 1: ... is not a finding in this report` | A `depends_on` entry must be the id of a finding already recorded. |
