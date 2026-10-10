@@ -242,12 +242,12 @@ The subset has no `oneOf`, `anyOf`, `if` or `format`. What each evidence kind ne
 ## Rules beyond the schema
 
 > [!NOTE]
-> Planned. `tools/validate_report.py` (S2.2) and `tools/report.py` (S2.3) do not exist yet. The rules are written down now so that the examples can be held to them; the examples are checked against the schema by a reference validator, and by a throwaway script that applies these rules, until the tools exist.
+> Live for rules 1 to 9, 11 and 12: [`tools/validate_report.py`](../tools/validate_report.py) applies them. Rule 10 follows in the same step (S2.2, item 3). `tools/report.py` (S2.3), which enforces the intake rules at the end of this section, is planned.
 
-A report is valid when it meets the schema and every rule here. An error fails validation. A warning does not.
+A report is valid when it meets the schema and every rule here. An error fails validation. A warning does not. The tool checks in two stages: the schema first, and the rules only for a report that passes it, because the rules read fields the schema guarantees. Warnings are reported once a report has no errors.
 
 1. **Unique and resolved.** Check IDs, finding IDs and finding keys are each unique. A finding's `check` is a check in the report, its `key` starts with that check's ID, and every `depends_on` entry is a finding in the report. Dependencies have no cycle.
-2. **Catalogue.** Once the catalogue exists (S1.5), each check's `title`, `phase`, `severity`, `scored` and `method` agree with it, and each `playbook` names a playbook that exists.
+2. **Catalogue.** Each check is in [`catalogue.json`](../catalogue.json), and its `title`, `phase`, `severity`, `scored` and `method` agree with it. Each finding's `playbook` is one the catalogue names; a playbook may be named before its file is written, so the catalogue, not the folder of playbooks, is what "exists" means. A report built against another `catalogue_version` than the one the tool holds, in `MAJOR.MINOR`, is a warning.
 3. **Evidence by kind.** `file` evidence has a `path`, and `lines` only with a `path`. `command` evidence has a `command`. `index_query` evidence has an `index_tool` and a `query`. A `path` is relative to the target and does not leave it.
 4. **Who captured it.** Evidence with `captured_by: tool` names the `tool` and its `tool_version`. Evidence with `captured_by: agent` names neither.
 5. **Methods.** A check with an `engine_verdict` has `method: automated`, and the report has `provenance.engine`. An `automated` check needs no evidence of its own: the tool's recorded output is the evidence. An `agent` check has no `engine_verdict`; its `PASS` or `PARTIAL` has at least one evidence item. Its `FAIL` needs neither evidence nor a search: when the agent found nothing, its `summary` says "we did not find any evidence", and the report invents no evidence and no search to fill the gap.
@@ -257,7 +257,7 @@ A report is valid when it meets the schema and every rule here. An error fails v
 9. **Policy.** `accept-all` needs `eval_mode: true`, and `eval_mode: true` rules out `interactive`. `confirmed_via: policy` appears only when the policy is not `interactive`.
 10. **Summary.** The validator recomputes `summary` and fails on any difference.
 11. **No secrets.** No `quote` or `output_tail` holds a string shaped like a credential, judged by the engine's redaction patterns.
-12. **Warnings.** A `file` path that does not exist in the target at `git_sha`, when the target can be reached.
+12. **Warnings.** A `file` path that does not exist in the target at `git_sha`, when the target can be reached. The tool reaches it only when given `--target`. It asks git (`git cat-file`, which writes nothing) whether the commit holds the path, and looks in the working tree when `git_sha` is `null`. When the target lacks the commit, or git is missing, the tool says so in one warning and checks nothing else.
 
 The intake file has its own rules, which `report.py init` enforces (planned, S2.3): `accept-all` needs `eval_mode: true`, `eval_mode: true` rules out `interactive`, `index.name` is present unless `kind` is `none`, `target_path` is an existing directory, and `output_dir` is not inside it.
 

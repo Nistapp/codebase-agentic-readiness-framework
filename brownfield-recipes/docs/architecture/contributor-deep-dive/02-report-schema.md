@@ -3,10 +3,10 @@
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain why the audit report has the shape it has, how it differs from the engine's schema v2, and what keeps it honest. The field tables are in [`SCHEMA.md`](../../../schema/SCHEMA.md), and this page does not repeat them.
 > **Related ADRs:** the engine's [ADR-0007](../../../deterministic-audit/docs/architecture/adrs/0007-json-report-render-contract.md), which makes the JSON report the render contract.
-> **Status:** Live for the schemas ([`audit-report.schema.json`](../../../schema/audit-report.schema.json), [`audit-intake.schema.json`](../../../schema/audit-intake.schema.json)). The tools that read and write them are planned.
+> **Status:** Live for the schemas ([`audit-report.schema.json`](../../../schema/audit-report.schema.json), [`audit-intake.schema.json`](../../../schema/audit-intake.schema.json)) and for the validator. The tools that write and render a report are planned.
 
 > [!NOTE]
-> Planned. `tools/validate_report.py` (S2.2), `tools/report.py` (S2.3), `tools/render_report.py` (S2.4) and the engine adapter (S2.5) do not exist yet. Where this page names one, it says what the schema requires of it, not what it does.
+> Planned. `tools/report.py` (S2.3), `tools/render_report.py` (S2.4) and the engine adapter (S2.5) do not exist yet. `tools/validate_report.py` does. Where this page names one, it says what the schema requires of it, not what it does.
 
 ---
 
@@ -20,7 +20,7 @@ flowchart LR
     Engine["Engine report, schema v2"] --> Adapter["import-engine (planned)"] --> Builder
     Agent["Agent: checks and findings"] --> Builder
     Builder --> Report["audit-report.json"]
-    Report --> Validator["validate_report.py (planned)"]
+    Report --> Validator["validate_report.py"]
     Report --> Renderer["render_report.py (planned)"] --> Markdown["audit-report.md"]
     Report --> Implement["Implementation recipe (planned)"]
 ```

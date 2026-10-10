@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`. The other tools are planned.
+> **Status:** Live for `engine.py` and `validate_report.py`. The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py` exists. The sections for the other tools are filled in by roadmap steps S2.2 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py` and `validate_report.py` exist. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -14,7 +14,7 @@
 | Item | Description | Status |
 |---|---|---|
 | [`engine.py`](#enginepy) | Runs the deterministic engine from any directory | Live |
-| `validate_report.py` | Validates a report against schema and semantic rules | Planned (S2.2) |
+| [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
 | `report.py` | Builds and updates the audit report; the only writer | Planned (S2.3) |
 | `render_report.py` | Renders a report to Markdown | Planned (S2.4) |
 | `facts.py` | Emits stack and inventory facts, no verdicts | Planned (S2.7) |
@@ -96,3 +96,54 @@ A scan writes one file, `<label>.engine-report.<stamp>.json`, in the output dire
 | `the engine refused the run: ... exists; nothing was replaced, run the tool again` | Another run took the name in the same second. Run the tool again. |
 | `repo_label ... is not allowed` | Use a label that matches the pattern above. |
 | `--list-checks takes no other argument` | Run `--list-checks` on its own. |
+
+---
+
+## validate_report.py
+
+Checks an audit report against [its schema](../../schema/audit-report.schema.json) and against the rules a schema cannot express, which are numbered in [`SCHEMA.md`](../../schema/SCHEMA.md#rules-beyond-the-schema). It reads the report and writes nothing. The source is [`validate_report.py`](../../tools/validate_report.py), and the schema checker it uses is [`_jsonschema_subset.py`](../../tools/_jsonschema_subset.py).
+
+**Synopsis**
+
+```text
+python3 brownfield-recipes/tools/validate_report.py <report> [--target <repo>]
+python3 brownfield-recipes/tools/validate_report.py --describe
+```
+
+**Inputs**
+
+| Argument | Meaning |
+|---|---|
+| `<report>` | The report to check: a JSON file of at most 32 MiB. |
+| `--target <repo>` | The audited repository. With it the tool also looks for each cited `file` path and warns about the ones that are missing (rule 12). It asks git whether the commit in `provenance.target.git_sha` holds the path, or looks in the working tree when no commit is recorded. It never writes to the target. |
+
+**Outputs**
+
+A valid report gives `data` with `valid` (`true`), `report` (the path as given), `schema_version`, `status`, the number of `checks` and `findings`, and `target_checked`. Warnings are in the envelope's `warnings`, bounded like every list; when some were left out, `truncated` is `true` and `data.warnings_omitted` says how many. Warnings come only once a report has no errors.
+
+An invalid report gives `data.error`, which counts the errors and names the stage, and `data.errors`, one string for each error:
+
+```text
+rule 6: /checks/6: TOOL-03 overrides the engine's PARTIAL with PASS and gives no override_reason
+schema: /checks/1/verdict: expected one of ["PASS", "PARTIAL", "FAIL", "UNKNOWN", "NOT_APPLICABLE"]
+```
+
+The tool checks in two stages. The first applies the schema, and a report that fails it is returned with its schema errors alone, up to 500. The second applies the rules, only to a report that passed the first, because the rules read fields the schema guarantees. Errors come in rule order, then in the order of the document. An error names the place with a JSON Pointer and never repeats the value it found, so a credential in a quote does not travel into the list.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The report is valid. |
+| `1` | A bad argument, a report that is missing, not a file or over the size limit, or a target that does not exist. |
+| `2` | The report was read and is not valid: it fails the schema or a rule, or the file is not JSON, repeats a key, holds `NaN` or `Infinity`, is not UTF-8, or is nested too deeply. |
+| `3` | Internal error. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `rule 1: ...` to `rule 12: ...` | The rule is in [Rules beyond the schema](../../schema/SCHEMA.md#rules-beyond-the-schema). The message says which item to change. |
+| `rule 11: ... it looks like a credential` | Shorten the quote or the output tail, or leave it out. The patterns are the engine's, so a line such as `token: abc` is flagged even when it is not a secret. |
+| `schema: /path: ...` | The pointer names the field. The schema is [`audit-report.schema.json`](../../schema/audit-report.schema.json). |
+| `the file is not a report: ...` | The file is not one JSON document that this tool accepts. |
