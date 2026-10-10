@@ -47,10 +47,9 @@
           "pattern": "^[0-9a-f]{40}$"
         },
         "catalogue_version": {
-          "description": "Version of the check catalogue the report was built against.",
+          "description": "Version of the check catalogue the report was built against: MAJOR.MINOR.PATCH, as in catalogue.json.",
           "type": "string",
-          "minLength": 1,
-          "maxLength": 40
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
         },
         "engine": {
           "description": "The deterministic engine that produced the automated verdicts. Absent until an engine report is imported.",

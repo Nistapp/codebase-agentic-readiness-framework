@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:codebase-agentic-readiness-framework:catalogue:0.1",
+  "title": "Check catalogue",
+  "description": "The one machine-readable source of check metadata: every check the audit can report, in one ID namespace, with its method, requirements and playbooks. Engine checks and agent-only checks sit side by side. Rules a schema cannot express, such as agreement with the engine and the spec, are tested; see SCHEMA.md and the catalogue page of the docs.",
+  "type": "object",
+  "required": ["catalogue_version", "fingerprint", "checks"],
+  "additionalProperties": false,
+  "properties": {
+    "catalogue_version": {
+      "description": "MAJOR.MINOR.PATCH. Bump MINOR when a check is added, removed or renumbered, or when a check's phase, severity, scored flag, method or requirement IDs change. Bump PATCH for a title, playbook or rubric wording change that leaves every verdict meaning the same. Bump MAJOR at 1.0. Reports record it as provenance.catalogue_version.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "fingerprint": {
+      "description": "SHA-256, first 16 hex digits, over one line per check, `id|phase|severity|scored|method|req_ids|engine_id`, with scored as 0 or 1, req_ids sorted and joined by commas, and a null engine_id empty. It changes with anything that bumps MINOR, so a test fails until the version and the fingerprint are updated together.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$"
+    },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/check" }
+    }
+  },
+  "$defs": {
+    "check": {
+      "type": "object",
+      "required": ["id", "family", "title", "phase", "severity", "scored", "method", "status", "req_ids", "engine_id", "playbooks"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "The family, a hyphen and two digits. One namespace for engine and agent-only checks.",
+          "type": "string",
+          "pattern": "^[A-Z]{2,5}-[0-9]{2,3}$"
+        },
+        "family": {
+          "description": "The ID's prefix.",
+          "type": "string",
+          "pattern": "^[A-Z]{2,5}$"
+        },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "phase": { "type": "integer", "minimum": 1, "maximum": 7 },
+        "severity": { "enum": ["BLOCKER", "DEGRADER", "COSMETIC"] },
+        "scored": {
+          "description": "Whether the check enters the Phase-1 score. False for informational checks, emitters, and checks the engine cannot evaluate yet.",
+          "type": "boolean"
+        },
+        "method": {
+          "description": "automated: the engine decides. agent: a model decides, with cited evidence. Requirements verified by a person or by declaration have no check.",
+          "enum": ["automated", "agent"]
+        },
+        "status": {
+          "description": "For an engine check, the engine's own status. For an agent-only check, planned until its rubric exists. An unimplemented or blocked check is reported UNKNOWN.",
+          "enum": ["implemented", "planned", "blocked"]
+        },
+        "req_ids": {
+          "description": "The requirements this check verifies. The requirement's Checks field in spec/readiness-requirements.md says the same.",
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string", "pattern": "^REQ-(BF|GF|SH)-[0-9]{3}$" }
+        },
+        "engine_id": {
+          "description": "The engine's ID for this check, which is the check's own ID; null for an agent-only check.",
+          "type": ["string", "null"],
+          "pattern": "^[A-Z]{2,5}-[0-9]{2,3}$"
+        },
+        "playbooks": {
+          "description": "The playbooks that remediate this check's findings. A playbook may be named before it is written.",
+          "type": "array",
+          "maxItems": 10,
+          "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,60}$" }
+        }
+      }
+    }
+  }
+}

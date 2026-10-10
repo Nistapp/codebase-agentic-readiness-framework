@@ -12,6 +12,7 @@
 |---|---|
 | [`audit-report.schema.json`](audit-report.schema.json) | The canonical result of an audit. JSON Schema 2020-12, `schema_version` `0.1`. |
 | [`audit-intake.schema.json`](audit-intake.schema.json) | The answers to the audit's Stage 0 questions, given in a file. `intake_version` `0.1`. |
+| [`catalogue.schema.json`](catalogue.schema.json) | The check catalogue, [`../catalogue.json`](../catalogue.json): every check in one ID namespace. |
 | [`examples/minimal.json`](examples/minimal.json) | The smallest valid report: one agent check, no findings. |
 | [`examples/realistic/`](examples/realistic/) | The engine's real reports on three open-source repositories, each beside its conversion: `agentic-tdd`, `Digital-Assistant-SDK` and `Digital-Assistant-Server`. They were scanned on 2026-10-10 at the commits named in each report's `provenance.target`, with the engine at ruleset revision `2026-09-28.13`. A `*.engine-report.*.json` file is the engine's output, untouched. A `*.audit-draft.*.json` file is that report converted by the mapping below and nothing else: all 69 checks, every finding pending, no name anonymised and nothing invented, because the repositories are open source. In all three the recomputed phase-1 score equals the engine's (0.7311, 0.6513 and 0.4244). Each pair is the input and the expected output for the engine adapter (S2.5). |
 | [`examples/example-service.audit-report.20261010T094207Z.json`](examples/example-service.audit-report.20261010T094207Z.json) | A synthetic worked example of a finished report on a made-up service. It shows an override of the engine's verdict, an agent check with evidence, an agent `FAIL` that found nothing and says so, a dependency between findings, a finding less severe than its check, and confirmed, edited, rejected and deferred dispositions. It is documentation, not a measured result, and the ID of its agent-only checks, `AGT-11` and `CI-04`, is provisional until the check catalogue exists (S1.5). |
@@ -27,7 +28,7 @@ The Markdown report is a pure function of the JSON report: nothing the Markdown 
 |---|---|---|
 | `schema_version` | the report | The shape of the report. `0.1` today. |
 | `intake_version` | the intake file | The shape of the intake file. `0.1` today. |
-| `catalogue_version` | `provenance` | The check catalogue the report was built against. The catalogue is planned (S1.5), so this field has no defined format yet beyond a non-empty string. |
+| `catalogue_version` | `provenance` | The check catalogue the report was built against, `MAJOR.MINOR.PATCH`, as in [`catalogue.json`](../catalogue.json). The bump rules are in [`catalogue.schema.json`](catalogue.schema.json). |
 | `provenance.recipe.version` | `provenance` | The audit recipe that produced the report. |
 | `provenance.engine.version`, `ruleset_hash` | `provenance` | The deterministic engine and its ruleset. |
 
@@ -221,7 +222,7 @@ The examples in this folder are documentation, not run outputs. Where one belong
 
 ## The keyword subset
 
-Both schemas use only the keywords below, so a small validator can check them. A schema lint (planned, S2.2) rejects any other keyword.
+The three schemas use only the keywords below, so a small validator can check them. A schema lint (planned, S2.2) rejects any other keyword.
 
 | Keyword | Notes |
 |---|---|
