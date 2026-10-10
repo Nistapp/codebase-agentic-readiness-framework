@@ -127,7 +127,15 @@ Handler = Callable[[Sequence[str]], Result]
 
 
 class ToolParser(argparse.ArgumentParser):
-    """An argument parser whose errors are a `UsageError`, so they exit with 1 and an envelope, not with 2."""
+    """An argument parser whose errors are a `UsageError`, so they exit with 1 and an envelope, not with 2.
+
+    It refuses abbreviations: `--out` must not quietly mean `--out-dir`, and a flag added later must not change
+    what an abbreviation in an old recipe means.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        kwargs.setdefault("allow_abbrev", False)
+        super().__init__(*args, **kwargs)
 
     def error(self, message: str) -> NoReturn:
         raise UsageError(message)

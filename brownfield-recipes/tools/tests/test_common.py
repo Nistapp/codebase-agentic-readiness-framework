@@ -175,6 +175,13 @@ class DescribeTests(unittest.TestCase):
 
 
 class ParserTests(unittest.TestCase):
+    def test_an_abbreviation_is_refused(self) -> None:
+        parser = _common.ToolParser(prog="demo")
+        parser.add_argument("--out-dir")
+        with self.assertRaises(_common.UsageError):
+            parser.parse_args(["--out", "x"])
+        self.assertEqual(parser.parse_args(["--out-dir", "x"]).out_dir, "x")
+
     def test_a_bad_argument_is_a_usage_error_with_an_envelope(self) -> None:
         parser = _common.ToolParser(prog="demo")
         parser.add_argument("--known")

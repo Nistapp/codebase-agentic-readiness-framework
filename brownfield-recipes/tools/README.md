@@ -109,7 +109,7 @@ if __name__ == "__main__":
 
 | Helper | Use it to |
 |---|---|
-| `ToolParser` | Parse arguments. A bad argument becomes a `UsageError`, so it exits with 1 and an envelope, not with argparse's 2. |
+| `ToolParser` | Parse arguments. A bad argument becomes a `UsageError`, so it exits with 1 and an envelope, not with argparse's 2, and an abbreviation of an option is refused. |
 | `bound_items` | Keep a list within the output budget and learn how many items were left out. |
 | `resolve_target` | Turn the target argument into a resolved directory that exists. |
 | `resolve_within` | Read a path the target names, refusing one that leaves the target through `..` or a symlink. |
