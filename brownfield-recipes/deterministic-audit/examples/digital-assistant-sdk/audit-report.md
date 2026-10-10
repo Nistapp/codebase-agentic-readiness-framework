@@ -116,7 +116,7 @@ The framework's seven verbs, resolved verb by verb on the target's runners.
 | Check | Title | Verdict | Specifics | Evidence | Fix |
 |---|---|:--:|---|---|---|
 | `CI-01` | Pipeline present, triggered on PRs | FAIL | no CI workflow file (detected providers: none) | `.env` | Add a PR-triggered workflow (for example .github/workflows/ci.yml) that runs the same verbs the local command surface defines. |
-| `CMD-01` | Six verbs resolvable on one runner | FAIL | Missing: `format:check`, `typecheck`, `check`, `security` — 3 of 7 defined. | `package.json` | Define every verb (format, format:check, lint, typecheck, test, check, security) as a script/target so an agent never has to invent a command. |
+| `CMD-01` | Seven verbs resolvable on one runner | FAIL | Missing: `format:check`, `typecheck`, `check`, `security` — 3 of 7 defined. | `package.json` | Define every verb (format, format:check, lint, typecheck, test, check, security) as a script/target so an agent never has to invent a command. |
 | `CMD-02` | check composes the read-only verbs | FAIL | the check verb is not defined on any runner | — | Define check as format-check, then typecheck, then test. |
 | `EXEC-01` | Toolchain pinned / wrapper committed | FAIL | unpinned: node | — | Commit the pin appropriate to node — .nvmrc, .node-version — so the agent's runtime is the repository's, not the host's. |
 | `EXEC-02` | Lockfile committed and consistent | FAIL | — | — | Generate the lockfile with the project's package manager and commit it. |
@@ -140,7 +140,7 @@ The framework's seven verbs, resolved verb by verb on the target's runners.
 |---|---|:--:|---|---|---|
 | `AGT-03` | Documentation contract named | FAIL | does not name docs/, docs/STYLE_GUIDE.md, artefacts/ | — | Name docs/ as the canonical home for permanent knowledge, docs/STYLE_GUIDE.md as the authoring rules, and artefacts/ as off-limits scratch. |
 | `AGT-04` | Definition of done stated | FAIL | no definition-of-done sentence ties a documentation trigger to the same change set | — | State that a change altering a public interface, observable behaviour, architecture, a check's semantics or an ADR updates the affected docs and the ADR index in the same change set. |
-| `AGT-05` | Six verbs named | FAIL | Missing: `format:check`, `typecheck`, `check`, `security` — 3 of 7 defined. | — | List all seven verbs in AGENTS.md and define each on one runner so the instruction and the manifest agree. |
+| `AGT-05` | Seven verbs named | FAIL | Missing: `format:check`, `typecheck`, `check`, `security` — 3 of 7 defined. | — | List all seven verbs in AGENTS.md and define each on one runner so the instruction and the manifest agree. |
 | `AGT-07` | Do-not-do / deny rules present | FAIL | no prohibitions section | `AGENTS.md` | Add an explicit prohibitions section covering tests, generated files, the default branch and secrets. |
 | `AGT-09` | Branch and release boundary declared | PARTIAL | the branch model is stated but nothing says whether an agent may tag or release | `AGENTS.md:30` | State the branches that exist (for example main and dev) and whether an agent may tag or publish a release. |
 | `BASE-01` | Baseline artifact exists | PARTIAL | quality tooling is configured but no baseline artifact is committed: .eslintrc.js, package.json:lint | `.eslintrc.js`<br>`package.json:lint` | Commit a baseline or suppression artifact (for example `baseline.json`, an eslint/ruff baseline, or `.gitleaksignore`), or document the equivalent mechanism in `AGENTS.md`. |
@@ -196,7 +196,7 @@ All 69 checks in the catalogue, grouped by pack, including the 21 passes and 6 u
 | `AGT-02` | Component coverage by instruction files | DEGRADER | A | PASS | implemented | single-root repository: no component-level instruction files required |
 | `AGT-03` | Documentation contract named | DEGRADER | B | FAIL | implemented | does not name docs/, docs/STYLE_GUIDE.md, artefacts/ |
 | `AGT-04` | Definition of done stated | DEGRADER | B | FAIL | implemented | no definition-of-done sentence ties a documentation trigger to the same change set |
-| `AGT-05` | Six verbs named | DEGRADER | B | FAIL | implemented | not named: format:check, security; not resolved: format:check, typecheck, check, security |
+| `AGT-05` | Seven verbs named | DEGRADER | B | FAIL | implemented | not named: format:check, security; not resolved: format:check, typecheck, check, security |
 | `AGT-06` | Architectural boundaries declared | DEGRADER | B | PASS | implemented | 3 boundary rules reference real paths |
 | `AGT-07` | Do-not-do / deny rules present | DEGRADER | B | FAIL | implemented | no prohibitions section |
 | `AGT-08` | No competing instruction files, and the reach matrix is stated | DEGRADER | B | PARTIAL | implemented | 20/28 harnesses reached |
@@ -216,7 +216,7 @@ All 69 checks in the catalogue, grouped by pack, including the 21 passes and 6 u
 
 | ID | Title | Severity | Tier | Verdict | Status | Detail |
 |---|---|---|:--:|:--:|---|---|
-| `CMD-01` | Six verbs resolvable on one runner | BLOCKER | B | FAIL | implemented | format -> package.json; format:check -> missing; lint -> package.json; typecheck -> missing; test -> package.json; check -> missing; security -> missing |
+| `CMD-01` | Seven verbs resolvable on one runner | BLOCKER | B | FAIL | implemented | format -> package.json; format:check -> missing; lint -> package.json; typecheck -> missing; test -> package.json; check -> missing; security -> missing |
 | `CMD-02` | check composes the read-only verbs | BLOCKER | B | FAIL | implemented | the check verb is not defined on any runner |
 | `CMD-03` | No divergent second definition | DEGRADER | B | PASS | implemented | no runner defines check, so there is nothing to diverge |
 | `CMD-04` | Write verbs separated from read-only verbs | DEGRADER | B | PASS | implemented | no read-only verb invokes a write verb |

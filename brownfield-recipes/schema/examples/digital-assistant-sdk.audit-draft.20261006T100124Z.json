@@ -157,7 +157,7 @@
     },
     {
       "id": "AGT-05",
-      "title": "Six verbs named",
+      "title": "Seven verbs named",
       "phase": 1,
       "severity": "DEGRADER",
       "scored": true,
@@ -417,7 +417,7 @@
     },
     {
       "id": "CMD-01",
-      "title": "Six verbs resolvable on one runner",
+      "title": "Seven verbs resolvable on one runner",
       "phase": 1,
       "severity": "BLOCKER",
       "scored": true,

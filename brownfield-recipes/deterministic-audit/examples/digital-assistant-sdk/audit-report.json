@@ -155,7 +155,7 @@
       "status": "implemented",
       "summary": "not named: format:check, security; not resolved: format:check, typecheck, check, security",
       "tier": "B",
-      "title": "Six verbs named",
+      "title": "Seven verbs named",
       "verdict": "FAIL"
     },
     {
@@ -374,7 +374,7 @@
       "status": "implemented",
       "summary": "format -> package.json; format:check -> missing; lint -> package.json; typecheck -> missing; test -> package.json; check -> missing; security -> missing",
       "tier": "B",
-      "title": "Six verbs resolvable on one runner",
+      "title": "Seven verbs resolvable on one runner",
       "verdict": "FAIL"
     },
     {

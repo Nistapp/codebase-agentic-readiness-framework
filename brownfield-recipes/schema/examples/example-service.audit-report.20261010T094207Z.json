@@ -205,7 +205,7 @@
     },
     {
       "id": "CMD-01",
-      "title": "Six verbs resolvable on one runner",
+      "title": "Seven verbs resolvable on one runner",
       "phase": 1,
       "severity": "BLOCKER",
       "scored": true,
