@@ -1,0 +1,61 @@
+{
+  "schema_version": "0.1",
+  "status": "draft",
+  "provenance": {
+    "recipe": { "name": "brownfield-audit", "version": "0.1.0" },
+    "framework_revision": null,
+    "catalogue_version": "0.1",
+    "agent": { "harness": "claude-code", "model": "claude-sonnet-5-5" },
+    "target": { "path": "/work/example-service", "git_sha": null, "branch": null, "dirty": null },
+    "started_at": "2026-10-10T09:00:00+00:00"
+  },
+  "run_context": {
+    "eval_mode": false,
+    "confirmation_policy": "interactive",
+    "index": { "kind": "none" },
+    "probes": { "allowed": [], "timeout_s": 120 },
+    "excluded": [],
+    "known_components": []
+  },
+  "stack": {
+    "ecosystems": [],
+    "package_managers": [],
+    "ci_providers": [],
+    "test_frameworks": [],
+    "hook_managers": []
+  },
+  "components": [],
+  "checks": [
+    {
+      "id": "AGT-01",
+      "title": "Instruction file present, canonical, and non-trivial",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "agent",
+      "verdict": "PASS",
+      "confidence": "high",
+      "summary": "AGENTS.md exists at the root and states the commands, boundaries and prohibitions.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "agent",
+          "path": "AGENTS.md",
+          "lines": "1-12",
+          "quote": "This file governs how AI coding agents work inside this repository."
+        }
+      ],
+      "searches": []
+    }
+  ],
+  "findings": [],
+  "summary": {
+    "phase1_score": 1,
+    "scored_checks": 1,
+    "blockers_remaining": { "total": 0, "fail": 0, "partial": 0, "unknown": 0 },
+    "unknown_scored_checks": 0,
+    "unconfirmed_agent_findings": 0
+  },
+  "unattested": [],
+  "coverage": { "scopes_examined": [], "scopes_skipped": [] }
+}
