@@ -198,18 +198,18 @@ The report also shows the unattested list beside them. The spec defines no level
 Every file a run writes carries the repository's name, so that runs on several repositories sit side by side. No run replaces another run's output.
 
 > [!NOTE]
-> The engine report is written under this rule today, by [`tools/engine.py`](../tools/engine.py), and so is the draft, by [`report.py init`](../tools/report.py), with the helpers in [`tools/_common.py`](../tools/_common.py). The final report is written by `report.py finalise`. The renderer, [`tools/render_report.py`](../tools/render_report.py), exists, but `finalise` does not call it yet (S2.4), and the Markdown file it will write beside the final report must keep to these names.
+> The engine report is written under this rule today, by [`tools/engine.py`](../tools/engine.py), and so is the draft, by [`report.py init`](../tools/report.py), with the helpers in [`tools/_common.py`](../tools/_common.py). The final report and its Markdown are written by `report.py finalise`, which has [`render_report.py`](../tools/render_report.py) render the Markdown.
 
 | File | Name | Written by |
 |---|---|---|
 | Draft report | `<label>.audit-draft.<stamp>.json` | `report.py init` |
-| Final report | `<label>.audit-report.<stamp>.json`, and `.md` beside it once `finalise` calls the renderer (S2.4) | `report.py finalise` |
+| Final report | `<label>.audit-report.<stamp>.json`, and its Markdown, `<label>.audit-report.<stamp>.md` | `report.py finalise` |
 | Engine report | `<label>.engine-report.<stamp>.json` | `tools/engine.py` |
 | Intake | `audit-intake.<label>.json` | The operator. The recipe never writes it. |
 
 - **`<label>`** is the intake's `repo_label`. When absent it is derived from the name of the target directory: lower case, each run of characters outside `a` to `z` and `0` to `9` becomes one hyphen, leading and trailing hyphens are dropped, and the result is cut to 24 characters with any trailing hyphen dropped. `repo` stands in if nothing is left. The derived label for `Digital-Assistant-SDK` is `digital-assistant-sdk`, and for `Digital_Assistant_microServices` it is `digital-assistant-micros`. Set `repo_label` for a better short name; it takes up to 32 characters of `a` to `z`, `0` to `9`, dot, underscore and hyphen. The label is recorded in `provenance.target.label`.
 - **`<stamp>`** is the UTC time as `YYYYMMDDTHHMMSSZ`: `started_at` for a draft, `finalised_at` for a final report, and the scan time for an engine report.
-- **Nothing is replaced.** A tool creates a file only if the name is free. If it is taken, which can happen when two runs start in the same second, the tool adds `-2`, `-3` and so on after the stamp. No tool has an overwrite option. The engine's own `--force` is never passed.
+- **Nothing is replaced.** A tool creates a file only if the name is free. If it is taken, which can happen when two runs start in the same second, the tool adds `-2`, `-3` and so on after the stamp. A final report's two files take one number together: if either name is taken, both take `-2`. No tool has an overwrite option. The engine's own `--force` is never passed.
 - **One deliberate exception:** a run updates its own draft in place, atomically, as it works and when it resumes after an interruption. That file belongs to the run. A second run on the same repository starts a new draft with a new stamp, and `finalise` leaves the draft untouched and writes the final files new.
 - **Eval-mode runs write drafts only**, because an eval-mode report is never final.
 - **The output directory is outside the target.** It is the intake's `output_dir`.

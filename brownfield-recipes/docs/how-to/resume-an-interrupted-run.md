@@ -54,7 +54,7 @@ Until the recipe exists, the agent can do the same by hand: record each remainin
 ## Verification
 
 - `report.py status` shows `checks_recorded` and `findings_pending` no lower than before the interruption, and a family does not move back from `families_done` to `families_remaining`.
-- `report.py finalise` writes `<label>.audit-report.<stamp>.json`, and `validate_report.py` exits 0 on it.
+- `report.py finalise` writes `<label>.audit-report.<stamp>.json` and `<label>.audit-report.<stamp>.md`, and `validate_report.py` exits 0 on the JSON.
 
 ## Troubleshooting
 

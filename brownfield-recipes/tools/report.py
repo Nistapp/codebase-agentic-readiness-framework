@@ -48,6 +48,7 @@ from typing import Any, Callable, Iterator, Mapping, Sequence
 import _common
 import _jsonschema_subset as subset
 import _summary
+import render_report
 import validate_report as vr
 
 INFO = _common.ToolInfo(
@@ -65,7 +66,8 @@ INFO = _common.ToolInfo(
         "init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the "
         "target; a name that is taken is never replaced. add-check, add-finding and set-disposition: that draft, in "
         "place and atomically, and no other file. status: nothing. finalise: a new final report, "
-        "<label>.audit-report.<stamp>.json, beside the draft, which it leaves as it was."
+        "<label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, "
+        "which it leaves as it was."
     ),
 )
 
@@ -1030,11 +1032,13 @@ def finalisation_errors(document: Mapping[str, Any]) -> list[str]:
 
 
 def run_finalise(args: argparse.Namespace) -> _common.Result:
-    """Write the final report as a new file, beside the draft, which stays exactly as it was.
+    """Write the final report and its Markdown as new files, beside the draft, which stays exactly as it was.
 
-    Every earlier file is left alone: a second `finalise` writes a second final report, with `-2` after the stamp.
-    The final report is the draft with `status: final` and the time it was finalised, and nothing else: the summary is
-    already the one the tools computed, and validating the result checks that.
+    Every earlier file is left alone: a second `finalise` writes a second pair, with `-2` after the stamp. The two
+    files take one name apart from the extension, so a taken name for either moves both. The final report is the
+    draft with `status: final` and the time it was finalised, and nothing else: the summary is already the one the
+    tools computed, and validating the result checks that. The Markdown is `render_report.render` of that report, made
+    before anything is written, so a failure leaves nothing behind.
     """
     path = Path(args.draft).expanduser().resolve()
     directory = path.parent
@@ -1061,13 +1065,21 @@ def run_finalise(args: argparse.Namespace) -> _common.Result:
                 errors=outcome.errors,
             )
         label = final["provenance"]["target"]["label"]
+        markdown = render_report.render(final)
         try:
-            written = _common.create_new(directory, label, FINAL_KIND, _common.utc_stamp(moment), "json", dumps(final))
+            written, written_markdown = _common.create_new_group(
+                directory,
+                label,
+                FINAL_KIND,
+                _common.utc_stamp(moment),
+                [("json", dumps(final)), ("md", markdown)],
+            )
         except OSError as exc:
             raise _common.UsageError(f"cannot write the final report in {directory}: {exc.strerror or exc}") from None
     kept, omitted = _common.bound_items(outcome.warnings)
     data: dict[str, Any] = {
         "report": str(written),
+        "markdown": str(written_markdown),
         "draft": str(path),
         "status": final["status"],
         "finalised_at": final["provenance"]["finalised_at"],
@@ -1080,7 +1092,10 @@ def run_finalise(args: argparse.Namespace) -> _common.Result:
     score = final["summary"]["phase1_score"]
     return _common.Result(
         data=data,
-        summary=f"report: wrote {written.name} (phase-1 score {score}, {len(final['findings'])} findings)",
+        summary=(
+            f"report: wrote {written.name} and {written_markdown.name} "
+            f"(phase-1 score {score}, {len(final['findings'])} findings)"
+        ),
         warnings=kept,
         truncated=bool(omitted),
     )

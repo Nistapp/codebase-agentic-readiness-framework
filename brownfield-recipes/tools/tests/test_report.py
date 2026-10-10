@@ -31,6 +31,7 @@ import _paths
 import _common
 import _git
 import _summary
+import render_report
 import report as rb
 import validate_report as vr
 
@@ -1640,23 +1641,29 @@ class FinaliseTests(BuilderCase):
         super().setUp()
         self.draft = self.complete_engine_draft()
 
-    def test_it_writes_the_final_report_as_a_new_file_and_leaves_the_draft_as_it_was(self) -> None:
+    def test_it_writes_the_final_report_and_its_markdown_as_new_files_and_leaves_the_draft_as_it_was(self) -> None:
         before = self.files()
         code, envelope, stderr = self.finalise(self.draft)
         self.assertEqual(code, 0, envelope)
         final = Path(envelope["data"]["report"])
+        markdown = Path(envelope["data"]["markdown"])
         self.assertEqual(final.name, "agentic-tdd.audit-report.20261010T114530Z.json")
-        self.assertEqual(final.parent, self.out)
+        self.assertEqual(markdown.name, "agentic-tdd.audit-report.20261010T114530Z.md")
+        self.assertEqual((final.parent, markdown.parent), (self.out, self.out))
         after = self.files()
-        self.assertEqual({name: data for name, data in after.items() if name != final.name}, before)
-        self.assertEqual(set(after) - set(before), {final.name})
+        self.assertEqual(
+            {name: data for name, data in after.items() if name not in (final.name, markdown.name)}, before
+        )
+        self.assertEqual(set(after) - set(before), {final.name, markdown.name})
+        self.assertEqual(envelope["data"]["draft"], str(self.draft))
         self.assertEqual(envelope["data"]["status"], "final")
         self.assertEqual(envelope["data"]["finalised_at"], "2026-10-10T11:45:30+00:00")
         self.assertEqual((envelope["data"]["checks"], envelope["data"]["findings"]), (71, 24))
         self.assertEqual(envelope["data"]["summary"], read_json(final)["summary"])
         self.assertRegex(
             stderr,
-            r"^report: wrote agentic-tdd\.audit-report\.20261010T114530Z\.json \(phase-1 score [0-9.]+, 24 findings\)\n$",
+            r"^report: wrote agentic-tdd\.audit-report\.20261010T114530Z\.json and "
+            r"agentic-tdd\.audit-report\.20261010T114530Z\.md \(phase-1 score [0-9.]+, 24 findings\)\n$",
         )
 
     def test_the_final_report_validates_and_is_the_draft_made_final(self) -> None:
@@ -1684,14 +1691,65 @@ class FinaliseTests(BuilderCase):
         code, envelope, _ = self.finalise(self.draft)
         self.assertEqual(code, 0)
         self.assertEqual(Path(envelope["data"]["report"]).name, "agentic-tdd.audit-report.20261010T114530Z-2.json")
+        self.assertEqual(Path(envelope["data"]["markdown"]).name, "agentic-tdd.audit-report.20261010T114530Z-2.md")
         after = self.files()
         self.assertEqual({name: data for name, data in after.items() if name in first}, first)
-        self.assertEqual(len(after), len(first) + 1)
+        self.assertEqual(len(after), len(first) + 2)
         later = datetime(2026, 10, 10, 12, 0, 0, tzinfo=timezone.utc)
         with mock.patch.object(rb, "utc_now", return_value=later):
             code, envelope, _ = call(["finalise", str(self.draft)])
         self.assertEqual(Path(envelope["data"]["report"]).name, "agentic-tdd.audit-report.20261010T120000Z.json")
+        self.assertEqual(Path(envelope["data"]["markdown"]).name, "agentic-tdd.audit-report.20261010T120000Z.md")
         self.assertEqual({name: data for name, data in self.files().items() if name in first}, first)
+
+    def test_the_markdown_is_the_rendering_of_the_final_json_and_carries_its_name(self) -> None:
+        _, envelope, _ = self.finalise(self.draft)
+        final, markdown = Path(envelope["data"]["report"]), Path(envelope["data"]["markdown"])
+        self.assertEqual(final.with_suffix(".md"), markdown)
+        self.assertEqual(markdown.read_text(encoding="utf-8"), render_report.render(read_json(final)))
+        text = markdown.read_text(encoding="utf-8")
+        self.assertIn("Finalised `2026-10-10T11:45:30+00:00`", text)
+        self.assertNotIn("**Draft.**", text)
+        self.assertIn("## Readiness summary", text)
+
+    def test_a_taken_name_for_either_file_moves_both_to_the_next_number(self) -> None:
+        stem = "agentic-tdd.audit-report.20261010T114530Z"
+        for taken in ("json", "md"):
+            with self.subTest(taken=taken):
+                stray = self.out / f"{stem}.{taken}"
+                stray.write_text("somebody else's file", encoding="utf-8")
+                before = self.files()
+                code, envelope, _ = self.finalise(self.draft)
+                self.assertEqual(code, 0, envelope)
+                self.assertEqual(Path(envelope["data"]["report"]).name, f"{stem}-2.json")
+                self.assertEqual(Path(envelope["data"]["markdown"]).name, f"{stem}-2.md")
+                self.assertEqual(stray.read_text(encoding="utf-8"), "somebody else's file")
+                after = self.files()
+                self.assertEqual({name: data for name, data in after.items() if name in before}, before)
+                self.assertEqual(set(after) - set(before), {f"{stem}-2.json", f"{stem}-2.md"})
+                for name in (f"{stem}-2.json", f"{stem}-2.md", stray.name):
+                    (self.out / name).unlink()
+
+    def test_the_two_files_are_never_left_apart(self) -> None:
+        def stems(suffix: str) -> list[str]:
+            return sorted(p.stem for p in self.out.glob(f"*.audit-report.*.{suffix}"))
+
+        for _ in range(3):
+            self.finalise(self.draft)
+        self.assertEqual(stems("json"), stems("md"))
+        self.assertEqual(len(stems("md")), 3)
+
+    def test_a_render_that_fails_writes_nothing(self) -> None:
+        with mock.patch.object(render_report, "render", side_effect=RuntimeError("a bug in the renderer")):
+            code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(code, 3)
+        self.assertIn("a bug in the renderer", envelope["data"]["error"])
+
+    def test_a_failed_write_of_the_markdown_leaves_neither_file(self) -> None:
+        with mock.patch("os.fsync", side_effect=[None, OSError(28, "No space left on device")]):
+            code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(code, 1)
+        self.assertIn("cannot write the final report", envelope["data"]["error"])
 
     def test_a_second_run_on_the_same_repository_leaves_a_finished_report_alone(self) -> None:
         _, envelope, _ = self.finalise(self.draft)
@@ -1724,6 +1782,7 @@ class FinaliseTests(BuilderCase):
         self.assertEqual(
             envelope["data"]["errors"][:2], ["checks not recorded in AGT: AGT-11", "checks not recorded in CI: CI-04"]
         )
+        self.assertEqual(envelope["data"]["error"], "the draft cannot be finalised: 3 problems")
         self.assertEqual(envelope["data"]["errors"][2].split(":")[0], "24 findings still pending")
         self.assertTrue(envelope["data"]["errors"][2].endswith(" and 4 more"))
         shown = envelope["data"]["errors"][2].split(": ", 1)[1].split(" and ")[0].split()
@@ -1757,15 +1816,28 @@ class FinaliseTests(BuilderCase):
             code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
         self.assertEqual(code, 2)
         self.assertEqual(envelope["data"]["errors"], ["rule 8: /: made up"])
-        self.assertTrue(
-            envelope["data"]["error"].startswith("the final report would not be valid, so nothing was written")
+        self.assertEqual(
+            envelope["data"]["error"], "the final report would not be valid, so nothing was written: 1 error"
+        )
+
+        def failing_twice(document: Any, **kwargs: Any) -> Any:
+            if isinstance(document, dict) and document.get("status") == "final":
+                return vr.Outcome(errors=["rule 8: /: one", "rule 9: /: two"])
+            return real(document, **kwargs)
+
+        with mock.patch.object(vr, "validate_document", failing_twice):
+            code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(
+            envelope["data"]["error"], "the final report would not be valid, so nothing was written: 2 errors"
         )
 
     def test_a_failed_write_leaves_no_partial_file_and_the_draft_intact(self) -> None:
         with mock.patch("os.fsync", side_effect=OSError(28, "No space left on device")):
             code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
         self.assertEqual(code, 1)
-        self.assertIn("cannot write the final report", envelope["data"]["error"])
+        self.assertEqual(
+            envelope["data"]["error"], f"cannot write the final report in {self.out}: No space left on device"
+        )
 
     def test_a_final_report_is_never_changed_afterwards(self) -> None:
         _, envelope, _ = self.finalise(self.draft)
@@ -1787,9 +1859,9 @@ class FinaliseTests(BuilderCase):
 
     def test_a_draft_that_is_missing_or_invalid_is_refused(self) -> None:
         code, envelope, _ = self.finalise(self.out / "none.json")
-        self.assertEqual((code, "draft not found" in envelope["data"]["error"]), (1, True))
+        self.assertEqual((code, envelope["data"]["error"]), (1, f"draft not found: {self.out / 'none.json'}"))
         code, envelope, _ = self.finalise(self.root / "nowhere" / "d.json")
-        self.assertEqual((code, "draft not found" in envelope["data"]["error"]), (1, True))
+        self.assertEqual((code, envelope["data"]["error"]), (1, f"draft not found: {self.root / 'nowhere' / 'd.json'}"))
         document = read_json(self.draft)
         document["summary"]["phase1_score"] = 0.5
         self.draft.write_text(rb.dumps(document), encoding="utf-8")

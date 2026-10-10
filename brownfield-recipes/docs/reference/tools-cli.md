@@ -155,7 +155,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. The draft's path may be a link: the draft it points to is changed, and the link stays a link. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-The subcommands are `init`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`. `import-engine`, which brings in the engine's checks, is planned (S2.5), and so is the call that makes `finalise` write the Markdown file beside the final report with [`render_report.py`](#render_reportpy).
+The subcommands are `init`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`. `import-engine`, which brings in the engine's checks, is planned (S2.5).
 
 Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
@@ -425,16 +425,13 @@ The draft may be final: `status` then reports it and says it is already final. A
 
 ### finalise
 
-Writes the final report from a finished draft. It checks that nothing stands in the way, validates the result, and creates `<label>.audit-report.<stamp>.json` beside the draft. The draft is left exactly as it was, and no earlier file is touched: a second `finalise` writes a second final report, with `-2` after the stamp.
+Writes the final report from a finished draft. It checks that nothing stands in the way, validates the result, renders its Markdown with [`render_report.py`](#render_reportpy), and creates `<label>.audit-report.<stamp>.json` and `<label>.audit-report.<stamp>.md` beside the draft. The two files share one name apart from the extension: if either name is taken, both take `-2` after the stamp. The draft is left exactly as it was, and no earlier file is touched: a second `finalise` writes a second pair.
 
 ```text
 python3 brownfield-recipes/tools/report.py finalise <draft>
 ```
 
-The final report is the draft with `status: final` and `provenance.finalised_at`, and nothing else. The stamp in the name is the `finalised_at` time. A final report is never changed afterwards: every other subcommand refuses it.
-
-> [!NOTE]
-> Planned. `finalise` writes the JSON file only. The renderer, [`render_report.py`](#render_reportpy), exists, and the call that makes `finalise` write the Markdown file beside the final report is the next change (S2.4).
+The final report is the draft with `status: final` and `provenance.finalised_at`, and nothing else. The stamp in the name is the `finalised_at` time. The Markdown is the rendering of that report, made before anything is written, so a failure leaves no file of either kind. A final report is never changed afterwards: every other subcommand refuses it.
 
 A draft can be finalised only when all of this holds, and each problem that does not is one line in `data.errors`:
 
@@ -448,14 +445,14 @@ A draft can be finalised only when all of this holds, and each problem that does
 
 `status` reports the same conditions as `ready_to_finalise` and `blocking`, without writing anything.
 
-**Outputs.** `data` holds `report` (the path of the new file), `draft`, `status` (`final`), `finalised_at`, `checks`, `findings` and `summary` (the readiness summary: score, scored checks, blockers remaining and the two qualifiers). Warnings list each cited file that is not in the target at the recorded commit, for the whole report, bounded.
+**Outputs.** `data` holds `report` (the path of the new JSON file), `markdown` (the path of the Markdown file beside it), `draft`, `status` (`final`), `finalised_at`, `checks`, `findings` and `summary` (the readiness summary: score, scored checks, blockers remaining and the two qualifiers). Warnings list each cited file that is not in the target at the recorded commit, for the whole report, bounded.
 
 **Exit codes**
 
 | Code | When |
 |---|---|
-| `0` | The final report was written. |
-| `1` | A bad argument; the draft is missing or too large, or is already a final report; its folder is inside the target; the lock could not be taken; the file could not be written. Nothing is written, and no partial file is left. |
+| `0` | The final report and its Markdown were written. |
+| `1` | A bad argument; the draft is missing or too large, or is already a final report; its folder is inside the target; the lock could not be taken; the file could not be written. Nothing is written, and no partial file of either kind is left. |
 | `2` | The draft cannot be finalised (`data.errors` lists every problem), the draft was already invalid, or the final report would be. Nothing is written. |
 | `3` | Internal error. |
 
@@ -474,7 +471,7 @@ A draft can be finalised only when all of this holds, and each problem that does
 
 ## render_report.py
 
-Renders an audit report to Markdown. The Markdown is a pure function of the JSON report: one report gives the same bytes every time, whatever order its keys come in, and nothing in the Markdown is absent from the JSON apart from the words that explain a verdict or a severity. The readiness summary is computed with [`_summary.py`](../../tools/_summary.py), the code that the validator and the report builder use, and never taken from the file. The source is [`render_report.py`](../../tools/render_report.py). It is a command of its own, for a draft or for a report written earlier. The next change makes [`report.py finalise`](#finalise) call it to write the Markdown beside the final report.
+Renders an audit report to Markdown. The Markdown is a pure function of the JSON report: one report gives the same bytes every time, whatever order its keys come in, and nothing in the Markdown is absent from the JSON apart from the words that explain a verdict or a severity. The readiness summary is computed with [`_summary.py`](../../tools/_summary.py), the code that the validator and the report builder use, and never taken from the file. The source is [`render_report.py`](../../tools/render_report.py). [`report.py finalise`](#finalise) calls it to write the Markdown beside the final report, and it is a command of its own for a draft, or for a report written earlier.
 
 **Synopsis**
 
