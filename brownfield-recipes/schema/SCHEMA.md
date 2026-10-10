@@ -34,7 +34,7 @@ Policy:
 
 - A `0.x` schema may break between releases. The version is `1.0` once the audit recipe and the implementation recipe have both run end to end on two repositories. Until then nothing may rely on a field staying put.
 - A consumer refuses a `schema_version` it does not know. It never guesses.
-- A schema change that adds a field is a new `0.x`. So is every change to a field's meaning, even where the field name stays.
+- A schema change that adds a field is a new `0.x`. So is every change to a field's meaning, even where the field name stays. `0.1` itself stays open until the first tool that reads it ships (S2.2), so edits before then do not bump the version.
 - The schemas, the check catalogue, the check rubrics and the tools are one shared layer. A report records `catalogue_version` so that a later run can warn when its catalogue differs.
 
 ---
@@ -44,8 +44,8 @@ Policy:
 ```text
 report
 ├── schema_version, status
-├── provenance       recipe, framework_revision, catalogue_version, engine?, agent, target, started_at, finalised_at?
-├── run_context      eval_mode, confirmation_policy, index, probes, excluded, known_components, stack_profile?
+├── provenance       recipe, framework_revision, catalogue_version, engine?, agent, target (label, path, …), started_at, finalised_at?
+├── run_context      eval_mode, confirmation_policy, provider_exposure_acknowledged, index, probes, excluded, known_components, stack_profile?
 ├── stack            ecosystems, package_managers, ci_providers, test_frameworks, hook_managers, notes?
 ├── components[]     name, path, declared, declared_by?, manifest?, agents_md?
 ├── checks[]         one per check evaluated, passes included
@@ -82,8 +82,8 @@ A `?` marks an optional field. Every object is closed: a field the schema does n
 | `framework_revision` | Git SHA of the framework repository the recipe ran from. `null` when it was not a git checkout. |
 | `catalogue_version` | See Versioning. |
 | `engine` | Absent until an engine report is imported. `name`, `version`, `ruleset_revision`, `ruleset_hash`, and `scanned_at` as the engine reported them. |
-| `agent` | `harness` and `model`. Self-reported by the operator or the agent and unverified. |
-| `target` | `path`, `git_sha`, `branch` and `dirty`. The last three are `null` when the target is not a git repository. The path is whatever the operator typed; anonymise it before sharing a report. |
+| `agent` | `harness` and `model`. Self-reported by the operator or the agent and unverified. `none` for both when no agent took part, as in a report that only imports an engine run. |
+| `target` | `label`, `path`, `git_sha`, `branch` and `dirty`. `label` is the short repository name used in output file names (see Output files). The last three are `null` when the target is not a git repository. The path is whatever the operator typed; anonymise it before sharing a report if the repository is private. |
 | `started_at`, `finalised_at` | ISO 8601 with an offset. `finalised_at` is set with `status: final`. |
 
 ### `run_context`
@@ -94,6 +94,7 @@ The intake answers, as the run used them. [`report.py init`](#intake-file) (plan
 |---|---|
 | `eval_mode` | True for a headless evaluation run. The report is stamped, and can never be final. |
 | `confirmation_policy` | `interactive`: the person decides on each finding. `defer-all`: every disposition stays pending. `accept-all`: every finding is confirmed; eval mode only. |
+| `provider_exposure_acknowledged` | Always `true`. The operator confirmed in the intake that the model provider receives whatever the agent reads from the target, and the report keeps the record. |
 | `index` | `kind` (`mcp`, `cli` or `none`), and the tool's `name` and `notes`. |
 | `probes` | `allowed`: the verbs the engine's probe runner may execute on the target, each one of the seven in [`spec/command-surface.md`](../../spec/command-surface.md). `timeout_s`: the per-command limit. An empty `allowed` means nothing ran. |
 | `excluded`, `known_components` | Paths the audit left out, and component roots the operator named. |
@@ -181,10 +182,39 @@ The report also shows the unattested list beside them. The spec defines no level
 | `probes` | no | `allowed` verbs and `timeout_s`. Nothing runs when absent. A target's commands run its code. |
 | `excluded`, `known_components` | no | Paths relative to the target. |
 | `confirmation_policy` | yes | `interactive`, `defer-all` or `accept-all`. |
+| `repo_label` | no | A short name for the repository, used in output file names. Derived from the target directory's name when absent. |
 | `output_dir` | yes | Where the report is written. Outside the target. |
 | `eval_mode` | no | False when absent. |
 
-`report.py init` copies `eval_mode`, `confirmation_policy`, `index` (without `allow_install`), `probes`, `excluded` and `known_components` into `run_context`, with `probes` defaulting to no verbs and 120 seconds. It copies `target_path` to `provenance.target.path` and `harness` and `model` to `provenance.agent`. The acknowledgement, `allow_install` and `output_dir` are instructions to the run, not results, so they are not in the report.
+`report.py init` copies `eval_mode`, `confirmation_policy`, `provider_exposure_acknowledged`, `index` (without `allow_install`), `probes`, `excluded` and `known_components` into `run_context`, with `probes` defaulting to no verbs and 120 seconds. It copies `target_path` to `provenance.target.path`, the label to `provenance.target.label`, and `harness` and `model` to `provenance.agent`. `allow_install` and `output_dir` are instructions to the run, not results, so they are not in the report.
+
+---
+
+## Output files
+
+Every file a run writes carries the repository's name, so that runs on several repositories sit side by side. No run replaces another run's output.
+
+> [!NOTE]
+> Planned. The tools that write these files are S2.1 (the helpers and `tools/engine.py`), S2.3 (`report.py`) and S2.4 (`render_report.py`). The schema fixes the names and the `label` field now; the tools must keep to them.
+
+| File | Name | Written by |
+|---|---|---|
+| Draft report | `<label>.audit-draft.<stamp>.json` | `report.py init` |
+| Final report | `<label>.audit-report.<stamp>.json`, and `.md` beside it | `report.py finalise` |
+| Engine report | `<label>.engine-report.<stamp>.json` | `tools/engine.py` |
+| Intake | `audit-intake.<label>.json` | The operator. The recipe never writes it. |
+
+- **`<label>`** is the intake's `repo_label`. When absent it is derived from the name of the target directory: lower case, each run of characters outside `a` to `z` and `0` to `9` becomes one hyphen, leading and trailing hyphens are dropped, and the result is cut to 24 characters with any trailing hyphen dropped. `repo` stands in if nothing is left. The derived label for `Digital-Assistant-SDK` is `digital-assistant-sdk`, and for `Digital_Assistant_microServices` it is `digital-assistant-micros`. Set `repo_label` for a better short name; it takes up to 32 characters of `a` to `z`, `0` to `9`, dot, underscore and hyphen. The label is recorded in `provenance.target.label`.
+- **`<stamp>`** is the UTC time as `YYYYMMDDTHHMMSSZ`: `started_at` for a draft, `finalised_at` for a final report, and the scan time for an engine report.
+- **Nothing is replaced.** A tool creates a file only if the name is free. If it is taken, which can happen when two runs start in the same second, the tool adds `-2`, `-3` and so on after the stamp. No tool has an overwrite option. The engine's own `--force` is never passed.
+- **One deliberate exception:** a run updates its own draft in place, atomically, as it works and when it resumes after an interruption. That file belongs to the run. A second run on the same repository starts a new draft with a new stamp, and `finalise` leaves the draft untouched and writes the final files new.
+- **Eval-mode runs write drafts only**, because an eval-mode report is never final.
+- **The output directory is outside the target.** It is the intake's `output_dir`.
+
+The examples in this folder are documentation, not run outputs. Where one belongs to a repository it follows the same naming.
+
+> [!WARNING]
+> The engine on its own does not meet this yet. It refuses to replace a JSON report without `--force`, but it replaces the Markdown file beside the report, and the `CON-04` draft, without asking, and its default name `audit-report.json` has no label. The recipes avoid this by always going through `tools/engine.py`, which passes a full file name and asks for JSON only.
 
 ---
 
