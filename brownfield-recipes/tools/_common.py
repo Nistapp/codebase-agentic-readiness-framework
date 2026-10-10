@@ -414,6 +414,96 @@ def free_name(directory: Path, label: str, kind: str, stamp: str, ext: str) -> P
     raise UsageError(f"no free name for {label}.{kind}.{stamp} in {directory}")
 
 
+def _payload(data: str | bytes) -> bytes:
+    return data.encode("utf-8") if isinstance(data, str) else data
+
+
+def _claim(path: Path) -> int:
+    """Create `path` with `O_EXCL` and return its descriptor.
+
+    `FileExistsError` when anything is there: a file, a directory, or a symlink, dangling or not. The call never
+    follows a link, so a name that points elsewhere is never written through.
+    """
+    return os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+
+
+def _give_back(claimed: Sequence[tuple[int, Path]], *, from_index: int = 0) -> None:
+    """Close the descriptors from `from_index` on, and remove every file in `claimed`.
+
+    The files are ones this process created a moment ago and has not shown to anyone, so they are the only files
+    that a failed creation ever removes. A descriptor that a file object took over is not in the closing range,
+    because closing one number twice could close a descriptor that another thread has opened since.
+    """
+    for descriptor, _ in claimed[from_index:]:
+        with contextlib.suppress(OSError):
+            os.close(descriptor)
+    for _, path in claimed:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(path)
+
+
+def _fill(claimed: Sequence[tuple[int, Path]], payloads: Sequence[bytes]) -> None:
+    """Write each payload to the file claimed for it and flush it to disk. On any failure none of the files is left."""
+    taken = 0
+    try:
+        for (descriptor, _), payload in zip(claimed, payloads):
+            taken += 1
+            with os.fdopen(descriptor, "wb") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+    except BaseException:
+        _give_back(claimed, from_index=taken)
+        raise
+
+
+def create_file(path: str | Path, data: str | bytes) -> Path:
+    """Write `data` to `path`, which must not exist, and return it. Anything already there stops the call.
+
+    This is for a file the caller named itself, such as an `--out` path. A file the tool names is made with
+    `create_new` or `create_new_group`, which number a taken name instead of refusing it. Any other `OSError`, such
+    as a missing folder, reaches the caller. A write that fails removes the partial file it created and nothing else.
+    """
+    target = Path(path)
+    try:
+        descriptor = _claim(target)
+    except FileExistsError:
+        raise UsageError(f"{target} already exists, and a tool never replaces a file") from None
+    _fill([(descriptor, target)], [_payload(data)])
+    return target
+
+
+def create_new_group(
+    directory: Path, label: str, kind: str, stamp: str, files: Sequence[tuple[str, str | bytes]]
+) -> list[Path]:
+    """Write files that share one name apart from the extension, as one group, and return their paths in order.
+
+    The group takes the first number at which every name is free, so `<label>.<kind>.<stamp>.json` and its `.md`
+    never come apart: if either name is taken, both move to `-2`, and so on. A name that was claimed before the
+    clash is found is given back. No existing file is touched, and a write that fails removes the files this call
+    created and nothing else. The caller gets `directory` from `output_directory`, which has kept it outside the target.
+    """
+    extensions = [ext for ext, _ in files]
+    if not extensions or len(set(extensions)) != len(extensions):
+        raise ValueError("a group needs at least one file, and each must have its own extension")
+    payloads = [_payload(data) for _, data in files]
+    for attempt in range(1, MAX_NAME_ATTEMPTS + 1):
+        claimed: list[tuple[int, Path]] = []
+        try:
+            for ext in extensions:
+                path = directory / output_name(label, kind, stamp, ext, attempt)
+                claimed.append((_claim(path), path))
+        except FileExistsError:
+            _give_back(claimed)
+            continue
+        except BaseException:
+            _give_back(claimed)
+            raise
+        _fill(claimed, payloads)
+        return [path for _, path in claimed]
+    raise UsageError(f"no free name for {label}.{kind}.{stamp} in {directory}")
+
+
 def create_new(directory: Path, label: str, kind: str, stamp: str, ext: str, data: str | bytes) -> Path:
     """Write `data` to a new file named by `output_name` and return its path. No existing file is touched.
 
@@ -421,21 +511,4 @@ def create_new(directory: Path, label: str, kind: str, stamp: str, ext: str, dat
     and neither replaces the other. A write that fails removes the partial file it created and nothing else.
     The caller gets `directory` from `output_directory`, which has kept it outside the target.
     """
-    payload = data.encode("utf-8") if isinstance(data, str) else data
-    for attempt in range(1, MAX_NAME_ATTEMPTS + 1):
-        path = directory / output_name(label, kind, stamp, ext, attempt)
-        try:
-            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
-        except FileExistsError:
-            continue
-        try:
-            with os.fdopen(fd, "wb") as handle:
-                handle.write(payload)
-                handle.flush()
-                os.fsync(handle.fileno())
-        except BaseException:
-            with contextlib.suppress(FileNotFoundError):
-                os.unlink(path)
-            raise
-        return path
-    raise UsageError(f"no free name for {label}.{kind}.{stamp} in {directory}")
+    return create_new_group(directory, label, kind, stamp, [(ext, data)])[0]

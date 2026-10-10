@@ -9,6 +9,7 @@ stamp, the name, and the exclusive create with its `-2`, `-3` suffixes.
 
 from __future__ import annotations
 
+import os
 import re
 import tempfile
 import threading
@@ -262,6 +263,251 @@ class CreateNewTests(unittest.TestCase):
         self.assertEqual(
             sorted(p.read_text(encoding="utf-8") for p in paths), sorted(f"writer {n}\n" for n in range(count))
         )
+
+
+class CreateFileTests(unittest.TestCase):
+    """A file the caller named itself, such as an `--out` path, is created or refused, and never replaced."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.dir = Path(self._tmp.name)
+
+    def names(self) -> list[str]:
+        return sorted(p.name for p in self.dir.iterdir())
+
+    def test_a_file_is_created_at_the_path_with_the_text_or_the_bytes(self) -> None:
+        path = _common.create_file(self.dir / "report.md", "# Title\n")
+        self.assertEqual(path, self.dir / "report.md")
+        self.assertEqual(path.read_text(encoding="utf-8"), "# Title\n")
+        raw = _common.create_file(str(self.dir / "raw.bin"), b"\xc3\xa9\r\n")
+        self.assertEqual(raw.read_bytes(), b"\xc3\xa9\r\n")
+
+    def test_a_file_that_is_there_is_never_replaced(self) -> None:
+        old = self.dir / "report.md"
+        old.write_text("somebody else's text", encoding="utf-8")
+        with self.assertRaises(_common.UsageError) as caught:
+            _common.create_file(old, "mine")
+        self.assertIn("already exists", str(caught.exception))
+        self.assertEqual(old.read_text(encoding="utf-8"), "somebody else's text")
+        self.assertEqual(self.names(), ["report.md"])
+
+    def test_a_directory_is_refused(self) -> None:
+        (self.dir / "report.md").mkdir()
+        with self.assertRaises(_common.UsageError):
+            _common.create_file(self.dir / "report.md", "x")
+
+    def test_a_symlink_is_refused_and_never_written_through(self) -> None:
+        elsewhere = self.dir / "elsewhere.txt"
+        dangling, living = self.dir / "dangling.md", self.dir / "living.md"
+        elsewhere.write_text("kept", encoding="utf-8")
+        try:
+            dangling.symlink_to(self.dir / "nowhere.txt")
+            living.symlink_to(elsewhere)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks are not available here")
+        for link in (dangling, living):
+            with self.assertRaises(_common.UsageError):
+                _common.create_file(link, "mine")
+        self.assertFalse((self.dir / "nowhere.txt").exists())
+        self.assertEqual(elsewhere.read_text(encoding="utf-8"), "kept")
+
+    def test_a_missing_folder_is_an_oserror_for_the_caller_to_explain(self) -> None:
+        with self.assertRaises(FileNotFoundError):
+            _common.create_file(self.dir / "missing" / "report.md", "x")
+
+    def test_a_failed_write_removes_only_its_own_partial_file(self) -> None:
+        old = self.dir / "old.md"
+        old.write_text("kept", encoding="utf-8")
+        with mock.patch("os.fsync", side_effect=OSError("disk full")):
+            with self.assertRaises(OSError):
+                _common.create_file(self.dir / "report.md", "lost")
+        self.assertEqual(self.names(), ["old.md"])
+        self.assertEqual(old.read_text(encoding="utf-8"), "kept")
+
+    def test_racing_writers_to_one_path_give_one_winner_and_the_winner_is_intact(self) -> None:
+        count = 8
+        won: list[int] = []
+        lost: list[int] = []
+        start = threading.Barrier(count)
+
+        def writer(n: int) -> None:
+            start.wait()
+            try:
+                _common.create_file(self.dir / "report.md", f"writer {n}\n" * 1000)
+            except _common.UsageError:
+                lost.append(n)
+            else:
+                won.append(n)
+
+        threads = [threading.Thread(target=writer, args=(n,)) for n in range(count)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        self.assertEqual((len(won), len(lost)), (1, count - 1))
+        self.assertEqual((self.dir / "report.md").read_text(encoding="utf-8"), f"writer {won[0]}\n" * 1000)
+
+
+class CreateNewGroupTests(unittest.TestCase):
+    """Files that share one name apart from the extension are created together, or moved to the next number together."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.dir = Path(self._tmp.name)
+
+    def names(self) -> list[str]:
+        return sorted(p.name for p in self.dir.iterdir())
+
+    def group(self, *, kind: str = "audit-report") -> list[Path]:
+        return _common.create_new_group(self.dir, "repo", kind, STAMP, [("json", '{"a": 1}\n'), ("md", "# A\n")])
+
+    def test_the_files_are_created_in_the_order_given_with_one_name_apart_from_the_extension(self) -> None:
+        paths = self.group()
+        self.assertEqual(
+            [p.name for p in paths],
+            ["repo.audit-report.20261010T094207Z.json", "repo.audit-report.20261010T094207Z.md"],
+        )
+        self.assertEqual([p.read_text(encoding="utf-8") for p in paths], ['{"a": 1}\n', "# A\n"])
+
+    def test_a_second_group_is_numbered_for_both_files_and_the_first_is_untouched(self) -> None:
+        first = self.group()
+        before = [p.read_bytes() for p in first]
+        second = self.group()
+        self.assertEqual(
+            [p.name for p in second],
+            ["repo.audit-report.20261010T094207Z-2.json", "repo.audit-report.20261010T094207Z-2.md"],
+        )
+        self.assertEqual([p.read_bytes() for p in first], before)
+        self.assertEqual(len(self.names()), 4)
+
+    def test_a_taken_name_for_either_extension_moves_both_files_to_the_next_number(self) -> None:
+        for taken in ("json", "md"):
+            with self.subTest(taken=taken):
+                kind = f"taken-{taken}"
+                stray = self.dir / f"repo.{kind}.{STAMP}.{taken}"
+                stray.write_text("somebody else's file", encoding="utf-8")
+                paths = self.group(kind=kind)
+                self.assertEqual([p.name for p in paths], [f"repo.{kind}.{STAMP}-2.json", f"repo.{kind}.{STAMP}-2.md"])
+                self.assertEqual(stray.read_text(encoding="utf-8"), "somebody else's file")
+                self.assertEqual(
+                    sorted(n for n in self.names() if kind in n), sorted([stray.name] + [p.name for p in paths])
+                )
+
+    def test_the_name_claimed_before_a_clash_is_given_back_and_leaves_no_empty_file(self) -> None:
+        (self.dir / f"repo.audit-report.{STAMP}.md").write_text("stray", encoding="utf-8")
+        self.group()
+        for name in self.names():
+            self.assertGreater((self.dir / name).stat().st_size, 0, name)
+        self.assertNotIn(f"repo.audit-report.{STAMP}.json", self.names())
+
+    def test_a_dangling_symlink_holds_its_name_and_is_not_written_through(self) -> None:
+        link = self.dir / f"repo.audit-report.{STAMP}.md"
+        try:
+            link.symlink_to(self.dir / "elsewhere.txt")
+        except (OSError, NotImplementedError):
+            self.skipTest("symlinks are not available here")
+        paths = self.group()
+        self.assertEqual(paths[0].name, f"repo.audit-report.{STAMP}-2.json")
+        self.assertFalse((self.dir / "elsewhere.txt").exists())
+
+    def test_a_failed_write_of_the_second_file_removes_both_and_nothing_else(self) -> None:
+        old = _common.create_new(self.dir, "repo", "audit-draft", STAMP, "json", "kept")
+        with mock.patch("os.fsync", side_effect=[None, OSError("disk full")]):
+            with self.assertRaises(OSError):
+                self.group()
+        self.assertEqual(self.names(), [old.name])
+        self.assertEqual(old.read_text(encoding="utf-8"), "kept")
+
+    def test_no_descriptor_is_left_open_after_a_failed_write_or_a_failed_claim(self) -> None:
+        claimed: list[int] = []
+        real = _common._claim
+
+        def recording(path: Path) -> int:
+            descriptor = real(path)
+            claimed.append(descriptor)
+            return descriptor
+
+        def closed(descriptors: list[int]) -> bool:
+            for descriptor in descriptors:
+                try:
+                    os.fstat(descriptor)
+                except OSError:
+                    continue
+                return False
+            return True
+
+        by_us: list[int] = []
+        real_close = os.close
+
+        def counting_close(descriptor: int) -> None:
+            by_us.append(descriptor)
+            real_close(descriptor)
+
+        # The first file's write fails. Its file object closes its descriptor, so this code must close only the
+        # second: a descriptor closed twice could be one that another thread has opened in between.
+        with mock.patch.object(_common, "_claim", recording), mock.patch("os.fsync", side_effect=OSError("full")):
+            with mock.patch("os.close", counting_close):
+                with self.assertRaises(OSError):
+                    self.group()
+        self.assertEqual(len(claimed), 2)
+        self.assertTrue(closed(claimed))
+        self.assertEqual(by_us, [claimed[1]])
+        self.assertEqual(self.names(), [])
+
+        claimed.clear()
+        by_us.clear()
+
+        def failing_second(path: Path) -> int:
+            if claimed:
+                raise PermissionError(13, "Permission denied")
+            return recording(path)
+
+        with mock.patch.object(_common, "_claim", failing_second), mock.patch("os.close", counting_close):
+            with self.assertRaises(PermissionError):
+                self.group()
+        self.assertEqual(len(claimed), 1)
+        self.assertTrue(closed(claimed))
+        self.assertEqual(by_us, [claimed[0]])
+        self.assertEqual(self.names(), [])
+
+    def test_a_group_needs_files_and_each_needs_its_own_extension(self) -> None:
+        for files in ([], [("json", "a"), ("json", "b")]):
+            with self.subTest(files=files):
+                with self.assertRaises(ValueError):
+                    _common.create_new_group(self.dir, "repo", "audit-report", STAMP, files)
+        self.assertEqual(self.names(), [])
+
+    def test_running_out_of_names_is_a_usage_error_and_leaves_only_the_strays(self) -> None:
+        with mock.patch.object(_common, "MAX_NAME_ATTEMPTS", 2):
+            for number in ("", "-2"):
+                (self.dir / f"repo.audit-report.{STAMP}{number}.md").write_text("stray", encoding="utf-8")
+            with self.assertRaises(_common.UsageError):
+                self.group()
+        self.assertEqual(self.names(), [f"repo.audit-report.{STAMP}-2.md", f"repo.audit-report.{STAMP}.md"])
+
+    def test_racing_groups_each_get_their_own_pair(self) -> None:
+        count = 8
+        start = threading.Barrier(count)
+
+        def writer(n: int) -> None:
+            start.wait()
+            _common.create_new_group(
+                self.dir, "repo", "audit-report", STAMP, [("json", f"json {n}\n"), ("md", f"md {n}\n")]
+            )
+
+        threads = [threading.Thread(target=writer, args=(n,)) for n in range(count)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+        stems = sorted(p.stem for p in self.dir.glob("*.json"))
+        self.assertEqual(len(stems), count)
+        self.assertEqual(stems, sorted(p.stem for p in self.dir.glob("*.md")))
+        for stem in stems:
+            owner = (self.dir / f"{stem}.json").read_text(encoding="utf-8").split()[1]
+            self.assertEqual((self.dir / f"{stem}.md").read_text(encoding="utf-8"), f"md {owner}\n")
 
 
 class FreeNameTests(unittest.TestCase):

@@ -119,6 +119,8 @@ if __name__ == "__main__":
 | `utc_stamp`, `output_name` | Build the stamp and the file name. |
 | `free_name` | Find the first name nothing occupies, for a program that writes the file itself and refuses to replace one. It creates nothing. |
 | `create_new` | Write a new file under the output name, creating it exclusively and numbering it `-2`, `-3` when the name is taken. |
+| `create_new_group` | Write files that share one name apart from the extension, such as a final report's JSON and Markdown. A taken name moves the whole group to the next number. |
+| `create_file` | Write a file at a path the caller named, such as `--out`. It creates the file or refuses; it never replaces one. |
 
 Tests are in [`tests/`](tests/) and run with `make test`. A test starts with `import _paths`, which puts this folder on the import path.
 
