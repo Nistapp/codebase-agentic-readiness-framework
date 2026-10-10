@@ -204,7 +204,7 @@ def _ordered_runners(runners: set[str]) -> list[str]:
 
 
 # ===========================================================================
-# CMD-01 — six verbs resolvable on one runner
+# CMD-01 — seven verbs resolvable on one runner
 # ===========================================================================
 
 

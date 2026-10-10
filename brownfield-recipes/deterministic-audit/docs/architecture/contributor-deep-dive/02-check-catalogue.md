@@ -71,7 +71,7 @@ suspicious verdict.
 | `AGT-02` | Component coverage | A | DEGRADER | `components with AGENTS.md / declared components`, as a `PARTIAL` ratio | Implemented |
 | `AGT-03` | Documentation contract named | B | DEGRADER | Names `docs/`, names `docs/STYLE_GUIDE.md` as canonical, names `artefacts/` as off-limits | Implemented |
 | `AGT-04` | Definition of done stated | B | DEGRADER | A doc-trigger sentence exists and names the same change set | Implemented |
-| `AGT-05` | Six verbs named | B | DEGRADER | The command block lists `format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security` and they resolve in `CMD-01` | Implemented |
+| `AGT-05` | Seven verbs named | B | DEGRADER | The command block lists `format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security` and they resolve in `CMD-01` | Implemented |
 | `AGT-06` | Architectural boundaries declared | B | DEGRADER | At least two named boundary rules referencing real paths | Implemented |
 | `AGT-07` | Do-not-do / deny rules present | B | DEGRADER | A prohibitions section exists and covers tests, generated files, default branch, secrets | Implemented |
 | `AGT-08` | No competing instruction files; reach stated | B | DEGRADER | No variant file competes with the canonical one; shadow pairs reconciled; the harnesses that reach nothing are stated | Implemented |
@@ -95,7 +95,7 @@ suspicious verdict.
 
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
-| `CMD-01` | Six verbs resolvable on one runner | B | BLOCKER | Each verb maps to a script in exactly one runner (package scripts, `Taskfile`, `Makefile`, `pyproject`, gradle, maven) | Implemented |
+| `CMD-01` | Seven verbs resolvable on one runner | B | BLOCKER | Each verb maps to a script in exactly one runner (package scripts, `Taskfile`, `Makefile`, `pyproject`, gradle, maven) | Implemented |
 | `CMD-02` | `check` composes the read-only verbs | B | BLOCKER | The `check` definition invokes format-check, typecheck and test (or documented equivalents) | Implemented |
 | `CMD-03` | No divergent second definition | B | DEGRADER | A second runner may delegate; it must not define its own composition of the gate | Implemented |
 | `CMD-04` | Write verbs separated from read-only verbs | B | DEGRADER | A write verb is never invoked by a verification verb | Implemented |

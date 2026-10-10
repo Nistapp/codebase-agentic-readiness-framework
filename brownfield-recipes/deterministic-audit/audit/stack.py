@@ -81,7 +81,7 @@ VERB_RUNNERS = (
     "pom.xml",
 )
 
-#: The six verbs of the framework's standardized command surface.
+#: The seven verbs of the framework's standardized command surface.
 VERBS = ("format", "format:check", "lint", "typecheck", "test", "check", "security")
 
 

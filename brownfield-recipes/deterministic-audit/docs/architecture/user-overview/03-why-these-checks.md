@@ -41,7 +41,7 @@ down is invisible.
 | `AGT-02` Per-component coverage | Monorepos have different rules per component | Agent applies one component's conventions to another |
 | `AGT-03` Documentation contract named | Agents must know where permanent truth lives and what is off-limits | Agent treats scratch notes as architecture |
 | `AGT-04` Definition of done stated | Docs must change in the same change set as the code | Specs drift within days |
-| `AGT-05` Six verbs named | The agent must know the sanctioned verification path | Agent invents `npx vitest`; local and CI diverge |
+| `AGT-05` Seven verbs named | The agent must know the sanctioned verification path | Agent invents `npx vitest`; local and CI diverge |
 | `AGT-06` Boundaries declared | Architecture rules must be stated, not inferred | Spaghetti edits across module boundaries |
 | `AGT-07` Do-not-do / deny rules | Explicit prohibitions work; implicit ones do not | Agent weakens tests, edits generated files, commits to main |
 | `AGT-08` No competing instruction files | `AGENTS.md` + `CLAUDE.md` + `.cursorrules` disagreeing is obeyed as ambiguity | Inconsistent behaviour across harnesses, untraceable |
@@ -66,7 +66,7 @@ One command surface, three consumers. This family is the core of Phase 1 and the
 
 | Check | Why it matters | Failure mode without it |
 |---|---|---|
-| `CMD-01` Six verbs, one runner | The verbs are the contract; the runner is a local choice | No shared vocabulary for "how do I verify this" |
+| `CMD-01` Seven verbs, one runner | The verbs are the contract; the runner is a local choice | No shared vocabulary for "how do I verify this" |
 | `CMD-02` `check` composes the read-only verbs | A single pre-merge gate must exist and be the same one everywhere | Different people gate on different subsets |
 | `CMD-03` No divergent second definition | A Makefile target that shells out is fine; a *competing* gate is not | Two answers to "is this green", silently |
 | `CMD-04` Write verbs separated from read-only verbs | An agent must be able to verify without mutating | Agent runs a formatter as a "check" and dirties the tree |

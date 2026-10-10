@@ -179,7 +179,7 @@ Schema v2. The JSON is the **render contract**: the Markdown report is a pure fu
                "checks": { "pass": 0, "partial": 0, "fail": 0, "unknown": 0, "attest": 0 },
                "checks_implemented": 0, "checks_scoreable": 0, "checks_applicable": 0,
                "coverage_note": "…" },
-  "checks": [ { "id": "CMD-01", "pack": "CMD", "title": "Six verbs resolvable on one runner",
+  "checks": [ { "id": "CMD-01", "pack": "CMD", "title": "Seven verbs resolvable on one runner",
                 "tier": "B", "severity": "BLOCKER", "phase": 1, "scored": true,
                 "status": "implemented", "verdict": "FAIL",
                 "summary": "<one short sentence for the appendix>",

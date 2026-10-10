@@ -148,7 +148,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("AGT-02", "Component coverage by instruction files", "A", _S.DEGRADER),
     _c("AGT-03", "Documentation contract named", "B", _S.DEGRADER),
     _c("AGT-04", "Definition of done stated", "B", _S.DEGRADER),
-    _c("AGT-05", "Six verbs named", "B", _S.DEGRADER),
+    _c("AGT-05", "Seven verbs named", "B", _S.DEGRADER),
     _c("AGT-06", "Architectural boundaries declared", "B", _S.DEGRADER),
     _c("AGT-07", "Do-not-do / deny rules present", "B", _S.DEGRADER),
     _c("AGT-08", "No competing instruction files, and the reach matrix is stated", "B", _S.DEGRADER),
@@ -160,7 +160,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("DOC-03", "artefacts/ exists and is ignored", "B", _S.DEGRADER),
     _c("DOC-04", "ADR directory and index", "A", _S.COSMETIC),
     # -- CMD ------------------------------------------------------------
-    _c("CMD-01", "Six verbs resolvable on one runner", "B", _S.BLOCKER),
+    _c("CMD-01", "Seven verbs resolvable on one runner", "B", _S.BLOCKER),
     _c("CMD-02", "check composes the read-only verbs", "B", _S.BLOCKER),
     _c("CMD-03", "No divergent second definition", "B", _S.DEGRADER),
     _c("CMD-04", "Write verbs separated from read-only verbs", "B", _S.DEGRADER),

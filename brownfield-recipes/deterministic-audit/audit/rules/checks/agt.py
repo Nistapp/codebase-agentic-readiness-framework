@@ -4,7 +4,7 @@
 """`AGT` pack — agent governance.
 
 Implemented here: `AGT-01` (canonical instruction file), `AGT-02` (component coverage),
-`AGT-03` (documentation contract), `AGT-04` (definition of done), `AGT-05` (six verbs named),
+`AGT-03` (documentation contract), `AGT-04` (definition of done), `AGT-05` (seven verbs named),
 `AGT-06` (architectural boundaries), `AGT-07` (prohibitions), `AGT-08` (competing files + reach
 matrix), `AGT-09` (branch and release boundary) and `AGT-10` (indirection).
 
@@ -706,7 +706,7 @@ def check_agt04(*, spec, target, inventory, stack, components, session) -> Check
 
 
 # ---------------------------------------------------------------------------
-# AGT-05 — six verbs named, and they resolve
+# AGT-05 — seven verbs named, and they resolve
 # ---------------------------------------------------------------------------
 
 
