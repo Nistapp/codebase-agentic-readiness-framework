@@ -37,6 +37,7 @@ from typing import Any, Iterator, Mapping, Sequence
 
 import _common
 import _jsonschema_subset as subset
+import _summary
 import engine
 
 INFO = _common.ToolInfo(
@@ -407,6 +408,27 @@ def rule_9_policy(report: Mapping[str, Any], context: Context, out: Outcome) -> 
                 )
 
 
+def flatten_summary(summary: Mapping[str, Any]) -> dict[str, Any]:
+    """The summary as one level of `/summary/...` pointers, so that each differing number can be named."""
+    flat: dict[str, Any] = {}
+    for name, value in summary.items():
+        if isinstance(value, Mapping):
+            flat.update({f"{name}/{inner}": number for inner, number in value.items()})
+        else:
+            flat[name] = value
+    return flat
+
+
+def rule_10_summary(report: Mapping[str, Any], context: Context, out: Outcome) -> None:
+    stored = flatten_summary(report["summary"])
+    computed = flatten_summary(_summary.compute_summary(report))
+    for name, expected in computed.items():
+        if stored[name] != expected:
+            out.error(
+                10, f"/summary/{name}", f"the report says {stored[name]} and its checks and findings give {expected}"
+            )
+
+
 def rule_11_no_secrets(report: Mapping[str, Any], context: Context, out: Outcome) -> None:
     for pointer, evidence in evidence_items(report):
         for name in ("quote", "output_tail"):
@@ -433,6 +455,7 @@ RULES = (
     rule_7_findings,
     rule_8_final_reports,
     rule_9_policy,
+    rule_10_summary,
     rule_11_no_secrets,
 )
 

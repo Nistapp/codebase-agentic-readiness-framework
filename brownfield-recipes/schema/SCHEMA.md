@@ -148,7 +148,7 @@ A search has `tool` (`glob`, `grep` or `index`), the `pattern`, the `scope` and 
 
 ### `summary`
 
-The readiness summary of [`spec/readiness-summary.md`](../../spec/readiness-summary.md). The tools compute it from `checks` and `findings`; the model never writes it.
+The readiness summary of [`spec/readiness-summary.md`](../../spec/readiness-summary.md). The tools compute it from `checks` and `findings` with [`_summary.py`](../tools/_summary.py); the model never writes it.
 
 | Field | Meaning |
 |---|---|
@@ -242,7 +242,7 @@ The subset has no `oneOf`, `anyOf`, `if` or `format`. What each evidence kind ne
 ## Rules beyond the schema
 
 > [!NOTE]
-> Live for rules 1 to 9, 11 and 12: [`tools/validate_report.py`](../tools/validate_report.py) applies them. Rule 10 follows in the same step (S2.2, item 3). `tools/report.py` (S2.3), which enforces the intake rules at the end of this section, is planned.
+> Live: [`tools/validate_report.py`](../tools/validate_report.py) applies all twelve rules. `tools/report.py` (S2.3), which enforces the intake rules at the end of this section, is planned.
 
 A report is valid when it meets the schema and every rule here. An error fails validation. A warning does not. The tool checks in two stages: the schema first, and the rules only for a report that passes it, because the rules read fields the schema guarantees. Warnings are reported once a report has no errors.
 
@@ -255,7 +255,7 @@ A report is valid when it meets the schema and every rule here. An error fails v
 7. **Findings.** A finding's `severity` is not higher than its check's. A finding on a check whose verdict is `PASS` or `NOT_APPLICABLE` has the disposition `rejected`. `confirmed_via` is present if and only if the disposition is not `pending`.
 8. **Final reports.** `status: final` needs `finalised_at`, no `pending` finding, `eval_mode` false, and `confirmed_via: interactive` on every finding of BLOCKER severity.
 9. **Policy.** `accept-all` needs `eval_mode: true`, and `eval_mode: true` rules out `interactive`. `confirmed_via: policy` appears only when the policy is not `interactive`.
-10. **Summary.** The validator recomputes `summary` and fails on any difference.
+10. **Summary.** The validator recomputes `summary` with [`tools/_summary.py`](../tools/_summary.py) and fails on any difference, naming each number that differs. The score is compared exactly, as stored to four places. The same code will write the summary in the report builder and show it in the renderer.
 11. **No secrets.** No `quote` or `output_tail` holds a string shaped like a credential, judged by the engine's redaction patterns.
 12. **Warnings.** A `file` path that does not exist in the target at `git_sha`, when the target can be reached. The tool reaches it only when given `--target`. It asks git (`git cat-file`, which writes nothing) whether the commit holds the path, and looks in the working tree when `git_sha` is `null`. When the target lacks the commit, or git is missing, the tool says so in one warning and checks nothing else.
 

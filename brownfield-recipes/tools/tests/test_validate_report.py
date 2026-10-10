@@ -27,6 +27,7 @@ from unittest import mock
 
 import _paths
 import _common
+import _summary
 import validate_report as vr
 
 TOOLS = _paths.TOOLS
@@ -57,13 +58,19 @@ def finding_of(report: dict[str, Any], finding_id: str) -> dict[str, Any]:
     return found
 
 
+def rule_number(error: str) -> int:
+    """The rule an error names, or 0 for a schema error."""
+    found = re.match(r"rule (\d+):", error)
+    return int(found.group(1)) if found else 0
+
+
 def rules_in(outcome: vr.Outcome) -> set[int]:
-    """The rule numbers of the errors, with 0 for a schema error. Rule 10 (the summary) is tested on its own."""
-    numbers = set()
-    for error in outcome.errors:
-        found = re.match(r"rule (\d+):", error)
-        numbers.add(int(found.group(1)) if found else 0)
-    return numbers - {10}
+    """The rule numbers of the errors, with 0 for a schema error.
+
+    Rule 10 is left out. A test that changes a verdict leaves the stored summary stale on purpose, and Rule10Tests
+    covers the summary on its own.
+    """
+    return {rule_number(error) for error in outcome.errors} - {10}
 
 
 def tool_evidence(path: str) -> dict[str, Any]:
@@ -500,6 +507,69 @@ class Rule9Tests(unittest.TestCase):
         for finding in report["findings"]:
             finding["confirmed_via"] = "policy"
         self.assertEqual(vr.validate_document(report).errors, [])
+
+
+class Rule10Tests(unittest.TestCase):
+    def only_rule_10(self, report: dict[str, Any]) -> list[str]:
+        errors = vr.validate_document(report).errors
+        self.assertTrue(all(e.startswith("rule 10:") for e in errors), errors)
+        return errors
+
+    def test_a_summary_that_matches_its_checks_passes(self) -> None:
+        self.assertEqual(vr.validate_document(base()).errors, [])
+        self.assertEqual(_summary.compute_summary(base()), base()["summary"])
+
+    def test_each_number_that_differs_is_named_with_the_value_each_side_holds(self) -> None:
+        changes: dict[str, tuple[str, Callable[[dict[str, Any]], object]]] = {
+            "phase1_score": ("/summary/phase1_score", lambda s: s.update(phase1_score=0.9)),
+            "scored_checks": ("/summary/scored_checks", lambda s: s.update(scored_checks=11)),
+            "total": ("/summary/blockers_remaining/total", lambda s: s["blockers_remaining"].update(total=3)),
+            "fail": ("/summary/blockers_remaining/fail", lambda s: s["blockers_remaining"].update(fail=3)),
+            "partial": ("/summary/blockers_remaining/partial", lambda s: s["blockers_remaining"].update(partial=1)),
+            "unknown": ("/summary/blockers_remaining/unknown", lambda s: s["blockers_remaining"].update(unknown=1)),
+            "unknown_scored_checks": ("/summary/unknown_scored_checks", lambda s: s.update(unknown_scored_checks=0)),
+            "unconfirmed": ("/summary/unconfirmed_agent_findings", lambda s: s.update(unconfirmed_agent_findings=2)),
+        }
+        for name, (pointer, change) in changes.items():
+            with self.subTest(field=name):
+                report = base()
+                change(report["summary"])
+                errors = self.only_rule_10(report)
+                self.assertEqual(len(errors), 1, errors)
+                self.assertTrue(errors[0].startswith(f"rule 10: {pointer}: the report says "), errors[0])
+        report = base()
+        report["summary"]["phase1_score"] = 0.9
+        self.assertEqual(
+            vr.validate_document(report).errors,
+            ["rule 10: /summary/phase1_score: the report says 0.9 and its checks and findings give 0.3333"],
+        )
+
+    def test_a_verdict_changed_without_the_summary_is_found(self) -> None:
+        report = base()
+        check_of(report, "CMD-01")["verdict"] = "PASS"
+        finding_of(report, "F-001")["disposition"] = "rejected"
+        errors = vr.validate_document(report).errors
+        self.assertTrue(any(e.startswith("rule 10: /summary/blockers_remaining/fail") for e in errors), errors)
+
+    def test_a_summary_recomputed_after_the_change_passes(self) -> None:
+        report = base()
+        check_of(report, "CMD-01")["verdict"] = "PASS"
+        finding_of(report, "F-001")["disposition"] = "rejected"
+        report["summary"] = _summary.compute_summary(report)
+        self.assertFalse([e for e in vr.validate_document(report).errors if e.startswith("rule 10:")])
+        self.assertEqual(report["summary"]["blockers_remaining"]["fail"], 3)
+
+    def test_the_summary_errors_come_after_rule_9_and_before_rule_11(self) -> None:
+        report = base()
+        report["summary"]["scored_checks"] = 1
+        report["run_context"].update({"eval_mode": True, "confirmation_policy": "defer-all"})
+        check_of(report, "AGT-11")["evidence"][0]["quote"] = "pass" + "word" + " = " + "hunter" + "2"
+        report["status"] = "draft"
+        del report["provenance"]["finalised_at"]
+        report["run_context"]["confirmation_policy"] = "interactive"  # rule 9
+        numbers = [rule_number(error) for error in vr.validate_document(report).errors]
+        self.assertEqual(numbers, sorted(numbers))
+        self.assertEqual(set(numbers), {9, 10, 11})
 
 
 class Rule11Tests(unittest.TestCase):
