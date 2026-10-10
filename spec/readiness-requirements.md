@@ -10,6 +10,8 @@ Normative. These are the requirements a repository meets to complete Phase 1 (Ag
 - **Source.** The framework text the requirement comes from. Where the framework does not say it in so many words and the requirement follows from the Phase 1 objective ("executable, discoverable, and safe for agent interaction"), the source is the nearest framework heading, usually the Phase 1 heading, and [traceability.md](traceability.md) lists the requirement as derived.
 - **Checks.** Check IDs are the audit engine's, as printed by `python3 -m audit --list-checks`. [traceability.md](traceability.md) lists the requirements for each check.
 - **Command surface.** The verbs and their spelling on each runner are in [command-surface.md](command-surface.md).
+- **Prohibitions section.** The section of the instruction file whose heading says what an agent must not do: "Do Not Do", "Never", "Prohibited", "Forbidden" or "Deny". It is the repository's deny list, and nothing else is required to be ([decision 0001](decisions/0001-constraint-artifact.md)).
+- **Naming a path.** An entry of the prohibitions section names a path when the path, or a pattern that covers it, appears in a code span of that entry.
 
 ## Discovery and index
 
@@ -348,7 +350,7 @@ A coverage threshold MUST be configured in the test runner's configuration.
 ## Constraints
 
 ### REQ-SH-037 — Allow and deny lists
-The repository MUST declare initial allow and deny lists that bound what an agent may change.
+The prohibitions section of the instruction file MUST be the repository's deny list: at least one of its entries MUST name a path that matches a file or directory of the repository.
 
 - **Phase:** 1
 - **Verification:** automated
@@ -356,7 +358,7 @@ The repository MUST declare initial allow and deny lists that bound what an agen
 - **Checks:** CON-01
 
 ### REQ-SH-038 — Test directories denied
-Every test directory MUST be on the deny list.
+The prohibitions section of the instruction file MUST name every test directory.
 
 - **Phase:** 1
 - **Verification:** automated
