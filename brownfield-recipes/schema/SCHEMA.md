@@ -13,7 +13,7 @@
 | [`audit-report.schema.json`](audit-report.schema.json) | The canonical result of an audit. JSON Schema 2020-12, `schema_version` `0.1`. |
 | [`audit-intake.schema.json`](audit-intake.schema.json) | The answers to the audit's Stage 0 questions, given in a file. `intake_version` `0.1`. |
 | [`examples/minimal.json`](examples/minimal.json) | The smallest valid report: one agent check, no findings. |
-| [`examples/digital-assistant-sdk.audit-draft.20261006T100124Z.json`](examples/digital-assistant-sdk.audit-draft.20261006T100124Z.json) | The engine's real report on the Digital-Assistant-SDK repository, converted by the mapping below and nothing else: all 69 checks and 50 findings, every finding pending. No name is anonymised and nothing is invented; the repository is open source. The recomputed score, 0.4412, equals the engine's. |
+| [`examples/realistic/`](examples/realistic/) | The engine's real reports on three open-source repositories, each beside its conversion: `agentic-tdd`, `Digital-Assistant-SDK` and `Digital-Assistant-Server`. They were scanned on 2026-10-10 at the commits named in each report's `provenance.target`, with the engine at ruleset revision `2026-09-28.13`. A `*.engine-report.*.json` file is the engine's output, untouched. A `*.audit-draft.*.json` file is that report converted by the mapping below and nothing else: all 69 checks, every finding pending, no name anonymised and nothing invented, because the repositories are open source. In all three the recomputed phase-1 score equals the engine's (0.7311, 0.6513 and 0.4244). Each pair is the input and the expected output for the engine adapter (S2.5). |
 | [`examples/example-service.audit-report.20261010T094207Z.json`](examples/example-service.audit-report.20261010T094207Z.json) | A synthetic worked example of a finished report on a made-up service. It shows an override of the engine's verdict, an agent check with evidence, an agent `FAIL` that found nothing and says so, a dependency between findings, a finding less severe than its check, and confirmed, edited, rejected and deferred dispositions. It is documentation, not a measured result, and the ID of its agent-only checks, `AGT-11` and `CI-04`, is provisional until the check catalogue exists (S1.5). |
 | [`examples/audit-intake.example-service.json`](examples/audit-intake.example-service.json) | A valid intake file. |
 
@@ -315,7 +315,7 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 | `checks[].pack` | Not carried. It is the ID's prefix. |
 | `checks[].tier` | Not carried. It is the engine's evidence cost class; the report states `method` and `captured_by` instead. |
 | `checks[].status` | Not carried. `planned` and `blocked` checks arrive as `UNKNOWN`, with `scored` false when blocked. |
-| `findings[].id` | `findings[].key`. The builder assigns `findings[].id`. |
+| `findings[].id` | `findings[].key`. The builder assigns `findings[].id`. The engine's id is the check ID plus an optional path and is not always unique: `AGT-08` can raise two findings with no path. The adapter keeps the first as it is and adds `:2`, `:3` and so on to later ones, in the engine's order, so that keys stay unique. |
 | `findings[].check`, `severity`, `statement` | `findings[].check`, `severity`, `statement` |
 | `findings[].phase`, `verdict` | Not carried. The check's phase and verdict apply. |
 | `findings[].remediation` (a string) | `findings[].remediation.summary` |
@@ -339,17 +339,18 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 root = Path("brownfield-recipes/schema")
-for schema_name, example in [
-    ("audit-report.schema.json", "minimal.json"),
-    ("audit-report.schema.json", "digital-assistant-sdk.audit-draft.20261006T100124Z.json"),
-    ("audit-report.schema.json", "example-service.audit-report.20261010T094207Z.json"),
-    ("audit-intake.schema.json", "audit-intake.example-service.json"),
-]:
+examples = root / "examples"
+report_examples = [examples / "minimal.json", *sorted(examples.rglob("*.audit-*.json"))]
+intake_examples = sorted(examples.glob("audit-intake.*.json"))
+
+for schema_name, files in [("audit-report.schema.json", report_examples), ("audit-intake.schema.json", intake_examples)]:
     schema = json.loads((root / schema_name).read_text())
     Draft202012Validator.check_schema(schema)
-    errors = list(Draft202012Validator(schema).iter_errors(json.loads((root / "examples" / example).read_text())))
-    print(example, "valid" if not errors else errors)
+    validator = Draft202012Validator(schema)
+    for path in files:
+        errors = list(validator.iter_errors(json.loads(path.read_text())))
+        print(path.name, "valid" if not errors else errors)
 EOF
 ```
 
-The command prints `valid` four times.
+The command prints `valid` once for each example: the minimal report, the three drafts in `examples/realistic/`, the worked example and the intake example. The raw engine reports are not reports of this schema and are skipped.

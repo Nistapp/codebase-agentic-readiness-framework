@@ -64,11 +64,12 @@ The schema is at `0.1`, and a `0.x` schema may break between releases. The freez
 
 ## 4. Engine mapping
 
-[`SCHEMA.md`](../../../schema/SCHEMA.md#engine-schema-v2-mapping) maps every field of the engine's schema v2. Four properties of the engine's output shaped it.
+[`SCHEMA.md`](../../../schema/SCHEMA.md#engine-schema-v2-mapping) maps every field of the engine's schema v2. Five properties of the engine's output shaped it.
 
 - **Counts of findings and counts of checks differ.** The engine's `summary.blockers` counts findings, and one check can raise many. The spec's "blockers remaining" counts checks, so that an `UNKNOWN` check, which raises no finding, is not hidden. The two numbers differ by design, and the engine's is not carried.
 - **A finding can be less severe than its check.** `AGT-08` is `DEGRADER`, and its finding is `COSMETIC`. The rule is therefore that a finding is not more severe than its check, not that the two are equal.
 - **Evidence paths are not always paths.** The engine writes `tsconfig.json:strict` and `(no example file)` in a `path` field. The adapter splits the first into a path and a note and drops the second, because the schema's `path` is a repository-relative path that the validator can resolve.
+- **The engine's finding IDs can collide.** An ID is the check ID plus a path, and `AGT-08` raises two findings with no path, so both are `AGT-08` (seen on the Digital-Assistant-Server report). A key must be unique, so the adapter numbers the later one `AGT-08:2`. The engine's baseline ratchet compares these IDs and would merge the two, which is an engine defect to fix.
 - **The engine's `ATTEST` verdict maps to no verdict.** A requirement verified by a person or by declaration has no check ([`spec/traceability.md`](../../../../spec/traceability.md)), so it appears in `unattested[]` with its requirement ID. The engine emits no `ATTEST` verdict today; its five fixed unattested items are mapped instead.
 
 ---
