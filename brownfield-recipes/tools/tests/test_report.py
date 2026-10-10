@@ -131,6 +131,33 @@ class BuilderCase(unittest.TestCase):
             self.assertEqual(code, 0, envelope)
         return draft
 
+    def complete_engine_draft(self) -> Path:
+        """The engine draft with both agent-only checks recorded and every finding decided by a person."""
+        draft = self.engine_draft()
+        evidence = [{"kind": "file", "path": "AGENTS.md", "quote": "x"}]
+        for check_id in ("AGT-11", "CI-04"):
+            code, envelope, _ = self.add_check(draft, agent_check(id=check_id, evidence=evidence))
+            self.assertEqual(code, 0, envelope)
+        findings = read_json(draft)["findings"]
+        blockers = [f["id"] for f in findings if f["severity"] == "BLOCKER"]
+        others = [{"finding": f["id"], "disposition": "confirmed"} for f in findings if f["severity"] != "BLOCKER"]
+        for finding_id in blockers:
+            code, envelope, _ = self.decide(
+                draft, "--via", "interactive", "--finding", finding_id, "--disposition", "confirmed"
+            )
+            self.assertEqual(code, 0, envelope)
+        code, envelope, _ = self.decide(draft, "--via", "batch", "--from", "-", stdin=json.dumps(others))
+        self.assertEqual(code, 0, envelope)
+        return draft
+
+    def stdout_lines(self, *argv: str) -> int:
+        """Run the tool as a script and count the lines it prints on stdout, which is what a recipe reads."""
+        done = subprocess.run(
+            [sys.executable, str(TOOLS / "report.py"), *argv], capture_output=True, text=True, check=False
+        )
+        self.assertEqual(done.returncode, 0, done.stderr)
+        return len(done.stdout.splitlines())
+
     def failing_draft(self, **changes: Any) -> Path:
         """A new draft in which AGT-11 has failed, so that it can have findings."""
         draft = self.start(**changes)
@@ -1420,6 +1447,173 @@ class SetDispositionTests(BuilderCase):
         self.assertEqual((code, envelope["data"]["action"], envelope["data"]["finding"]), (0, "replaced", "F-001"))
 
 
+class StatusTests(BuilderCase):
+    def status(self, draft: Path) -> tuple[int, dict[str, Any], str]:
+        return call(["status", str(draft)])
+
+    def data(self, draft: Path) -> dict[str, Any]:
+        code, envelope, stderr = self.status(draft)
+        self.assertEqual(code, 0, stderr)
+        data: dict[str, Any] = envelope["data"]
+        return data
+
+    def test_a_new_draft_has_every_family_remaining(self) -> None:
+        draft = self.start()
+        code, envelope, stderr = self.status(draft)
+        self.assertEqual(code, 0)
+        data = envelope["data"]
+        self.assertEqual(data["draft"], str(draft))
+        self.assertEqual(
+            (data["status"], data["eval_mode"], data["confirmation_policy"]), ("draft", False, "interactive")
+        )
+        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (0, 71))
+        self.assertEqual(data["families_done"], "")
+        self.assertEqual(
+            list(data["families_remaining"]),
+            ["IDX", "AGT", "DOC", "CMD", "TOOL", "CI", "BASE", "CON", "EXEC", "TST", "NAV", "SEC", "HYG"],
+        )
+        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03 CI-04")
+        self.assertEqual((data["findings"], data["findings_pending"], data["blockers_pending"]), (0, 0, 0))
+        self.assertEqual((data["ready_to_finalise"], data["blocking"]), (False, "71 of 71 checks are not recorded"))
+        self.assertEqual(data["pending"], [])
+        self.assertNotIn("pending_omitted", data)
+        self.assertFalse(envelope["truncated"])
+        self.assertEqual(
+            stderr, "report: 0 of 71 checks recorded; not ready to finalise: 71 of 71 checks are not recorded\n"
+        )
+
+    def test_recording_a_check_takes_it_off_the_remaining_list(self) -> None:
+        draft = self.start()
+        self.add_check(draft, agent_check(id="CI-04", verdict="FAIL", evidence=[]))
+        data = self.data(draft)
+        self.assertEqual(data["checks_recorded"], 1)
+        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03")
+        self.assertNotIn("CI-04", " ".join(data["families_remaining"].values()))
+
+    def test_an_engine_draft_lists_what_is_left_and_the_pending_findings_blockers_first(self) -> None:
+        draft = self.engine_draft()
+        data = self.data(draft)
+        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (69, 71))
+        self.assertEqual(data["families_remaining"], {"AGT": "AGT-11", "CI": "CI-04"})
+        self.assertEqual(data["families_done"], "IDX DOC CMD TOOL BASE CON EXEC TST NAV SEC HYG")
+        self.assertEqual((data["findings"], data["findings_pending"], data["blockers_pending"]), (24, 24, 4))
+        self.assertEqual(data["blocking"], "2 of 71 checks are not recorded; 24 findings are pending")
+        findings = read_json(draft)["findings"]
+        blockers = [f for f in findings if f["severity"] == "BLOCKER"]
+        self.assertEqual(data["pending"][: len(blockers)], [f"{f['id']} BLOCKER {f['key']}" for f in blockers])
+        self.assertEqual(len(data["pending"]), 8)
+        self.assertEqual(data["pending_omitted"], 16)
+        self.assertTrue(all(line.split()[1] in ("BLOCKER", "DEGRADER", "COSMETIC") for line in data["pending"]))
+        order = [line.split()[1] for line in data["pending"]]
+        self.assertEqual(order, sorted(order, key=["BLOCKER", "DEGRADER", "COSMETIC"].index))
+
+    def test_blockers_come_first_whatever_the_order_the_findings_were_recorded_in(self) -> None:
+        draft = self.engine_draft()
+        document = read_json(draft)
+        document["findings"].reverse()
+        draft.write_text(rb.dumps(document), encoding="utf-8")
+        pending = self.data(draft)["pending"]
+        self.assertEqual([line.split()[1] for line in pending[:4]], ["BLOCKER"] * 4)
+        self.assertNotEqual(pending[4].split()[1], "BLOCKER")
+
+    def test_what_was_left_out_of_the_list_is_said_in_the_envelope(self) -> None:
+        code, envelope, _ = self.status(self.engine_draft())
+        self.assertEqual(code, 0)
+        self.assertIs(envelope["truncated"], True)
+
+    def test_a_report_of_70_checks_prints_40_lines_or_fewer(self) -> None:
+        draft = self.engine_draft()
+        self.add_check(draft, agent_check())
+        self.assertEqual(len(read_json(draft)["checks"]), 70)
+        self.assertLessEqual(self.stdout_lines("status", str(draft)), 40)
+
+    def test_no_draft_can_make_it_print_more_than_40_lines(self) -> None:
+        fresh = self.start()
+        self.assertLessEqual(self.stdout_lines("status", str(fresh)), 40)
+        busy = self.failing_draft()
+        for number in range(30):
+            code, envelope, _ = self.add_finding(busy, agent_finding(scope=f"module-{number}"))
+            self.assertEqual(code, 0, envelope)
+        lines = self.stdout_lines("status", str(busy))
+        self.assertLessEqual(lines, 40)
+        data = self.data(busy)
+        self.assertEqual(len(data["pending"]) + data["pending_omitted"], 30)
+        self.assertGreater(data["pending_omitted"], 0)
+        self.assertEqual(len(data["families_remaining"]), 13)
+
+    def test_it_is_ready_when_every_check_is_recorded_and_every_finding_decided(self) -> None:
+        draft = self.complete_engine_draft()
+        data = self.data(draft)
+        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (71, 71))
+        self.assertEqual((data["families_remaining"], data["findings_pending"], data["blockers_pending"]), ({}, 0, 0))
+        self.assertEqual((data["ready_to_finalise"], data["blocking"]), (True, ""))
+        self.assertEqual(data["pending"], [])
+        self.assertEqual(self.status(draft)[2], "report: 71 of 71 checks recorded; ready to finalise\n")
+
+    def test_one_pending_finding_is_enough_to_hold_it_back(self) -> None:
+        draft = self.complete_engine_draft()
+        self.decide(draft, "--finding", "F-001", "--disposition", "pending")
+        data = self.data(draft)
+        self.assertEqual((data["ready_to_finalise"], data["blocking"]), (False, "1 finding is pending"))
+        self.assertEqual(len(data["pending"]), 1)
+
+    def test_an_eval_run_is_never_ready(self) -> None:
+        draft = self.draft_with_findings(["a"], confirmation_policy="accept-all", eval_mode=True)
+        data = self.data(draft)
+        self.assertTrue(data["blocking"].startswith("this is an eval-mode run, and its report is never final"))
+        self.assertIs(data["ready_to_finalise"], False)
+
+    def test_a_blocker_decided_by_anything_but_a_person_holds_it_back(self) -> None:
+        draft = self.complete_engine_draft()
+        document = read_json(draft)
+        blocker = next(f for f in document["findings"] if f["severity"] == "BLOCKER")
+        blocker["confirmed_via"] = "batch"
+        draft.write_text(rb.dumps(document), encoding="utf-8")
+        data = self.data(draft)
+        self.assertEqual(
+            (data["ready_to_finalise"], data["blocking"]), (False, "1 BLOCKER finding not decided interactively")
+        )
+
+    def test_a_final_report_can_be_described_and_is_not_changeable(self) -> None:
+        worked = next((TOOLS.parent / "schema" / "examples").glob("example-service.audit-report.*.json"))
+        copy = self.out / worked.name
+        self.out.mkdir()
+        shutil.copyfile(worked, copy)
+        data = self.data(copy)
+        self.assertEqual(
+            (data["status"], data["ready_to_finalise"], data["blocking"]),
+            ("final", False, "the report is already final"),
+        )
+
+    def test_an_invalid_draft_is_exit_2_and_a_missing_one_is_exit_1(self) -> None:
+        draft = self.start()
+        document = read_json(draft)
+        document["summary"]["scored_checks"] = 9
+        draft.write_text(rb.dumps(document), encoding="utf-8")
+        code, envelope, _ = self.status(draft)
+        self.assertEqual(code, 2)
+        self.assertIn("the draft is not valid to report on", envelope["data"]["error"])
+        self.assertTrue(envelope["data"]["errors"][0].startswith("rule 10:"))
+        code, envelope, _ = self.status(self.out / "none.json")
+        self.assertEqual(code, 1)
+        self.assertIn("draft not found", envelope["data"]["error"])
+
+    def test_it_writes_nothing_and_does_not_wait_for_the_lock(self) -> None:
+        draft = self.engine_draft()
+        before = tree_state(self.out)
+        with rb.write_lock(self.out):
+            code, _, _ = self.status(draft)
+        self.assertEqual(code, 0)
+        self.assertEqual(tree_state(self.out), before)
+
+    def test_a_draft_inside_the_target_can_still_be_described(self) -> None:
+        draft = self.start()
+        document = read_json(draft)
+        document["provenance"]["target"]["path"] = str(self.root)
+        draft.write_text(rb.dumps(document), encoding="utf-8")
+        self.assertEqual(self.status(draft)[0], 0)
+
+
 class ConcurrencyTests(BuilderCase):
     def test_commands_that_run_at_the_same_time_lose_nothing(self) -> None:
         draft = self.failing_draft()
@@ -1509,6 +1703,7 @@ class ToolContractTests(BuilderCase):
         self.assertTrue(any(line.startswith("report.py add-check") for line in manifest["synopsis"]))
         self.assertTrue(any(line.startswith("report.py add-finding") for line in manifest["synopsis"]))
         self.assertTrue(any(line.startswith("report.py set-disposition") for line in manifest["synopsis"]))
+        self.assertTrue(any(line.startswith("report.py status") for line in manifest["synopsis"]))
 
     def test_a_missing_or_unknown_subcommand_is_exit_1(self) -> None:
         for argv in ([], ["nothing"]):

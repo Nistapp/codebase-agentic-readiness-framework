@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init`, `add-check`, `add-finding` and `set-disposition`). The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init`, `add-check`, `add-finding`, `set-disposition` and `status`). The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first four subcommands. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first five subcommands. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | [`engine.py`](#enginepy) | Runs the deterministic engine from any directory | Live |
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
-| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init`, `add-check`, `add-finding` and `set-disposition`; the other subcommands: Planned (S2.3) |
+| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init`, `add-check`, `add-finding`, `set-disposition` and `status`; `finalise`: Planned (S2.3) |
 | `render_report.py` | Renders a report to Markdown | Planned (S2.4) |
 | `facts.py` | Emits stack and inventory facts, no verdicts | Planned (S2.7) |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
@@ -155,9 +155,9 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-Only `init`, `add-check`, `add-finding` and `set-disposition` exist so far. `status` and `finalise` are planned in the same step (S2.3), and `import-engine` is S2.5.
+Only `init`, `add-check`, `add-finding`, `set-disposition` and `status` exist so far. `finalise` is planned in the same step (S2.3), and `import-engine` is S2.5.
 
-Every subcommand but `init` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
+Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
 **Synopsis**
 
@@ -167,6 +167,7 @@ python3 brownfield-recipes/tools/report.py add-check <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py add-finding <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py set-disposition <draft> --via VIA
         (--finding ID --disposition DISPOSITION [--note TEXT] | --from FILE|-)
+python3 brownfield-recipes/tools/report.py status <draft>
 python3 brownfield-recipes/tools/report.py --describe
 ```
 
@@ -387,3 +388,36 @@ The tool refuses a decision that would claim something false about who made it:
 | `--via policy needs the 'accept-all' confirmation policy ...` | Use `--via interactive` or `batch`, for a person's decision. |
 | `<F-id> is not a finding in this draft` | Use an id from `status`. |
 | `fragment: /N/...` | Fix the item the pointer names. |
+
+### status
+
+Says where an audit stands: which families of checks are done, which are not, and which findings still wait for a decision. It is what to run first when a session resumes after a crash or after the agent's context ran out, because the draft holds everything and the tool reads it. It reads the draft and writes nothing, and it does not wait for the lock.
+
+```text
+python3 brownfield-recipes/tools/report.py status <draft>
+```
+
+The draft may be final: `status` then reports it and says it is already final. A draft that fails validation is exit 2, with the errors.
+
+**Outputs.** The envelope is at most **40 lines** on stdout, so a report of 70 checks costs a few hundred tokens and not a page. `data` holds:
+
+| Key | Meaning |
+|---|---|
+| `draft`, `status` | The path as given, and `draft` or `final`. |
+| `eval_mode`, `confirmation_policy` | The run's answers, which say who may decide. |
+| `checks_recorded`, `checks_expected` | The checks in the draft, and the phase-1 checks of the catalogue. |
+| `families_done` | The families whose checks are all recorded, in the order the audit works through them (the catalogue's). |
+| `families_remaining` | For each family with a check not yet recorded, the IDs of those checks. |
+| `findings`, `findings_pending`, `blockers_pending` | The findings, those waiting for a decision, and the `BLOCKER` ones among them. |
+| `ready_to_finalise`, `blocking` | Whether `finalise` has nothing to stop it, and if not, why in a sentence: an eval-mode run, checks not recorded, findings pending, a `BLOCKER` not decided interactively, or a report that is already final. `finalise` has the last word: it validates the final report. |
+| `pending` | The findings waiting for a decision, one line each as `<id> <severity> <key>`, blockers first, as many as fit in the line budget (at most 8). |
+| `pending_omitted` | How many pending findings are not listed, when some are left out. The envelope then has `truncated: true`. |
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The state was reported. |
+| `1` | A bad argument, or the draft is missing or too large. |
+| `2` | The draft is not valid JSON, or fails its schema or a rule: it was edited by hand or by another tool. |
+| `3` | Internal error. |

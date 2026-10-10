@@ -7,6 +7,7 @@
     report.py add-check <draft> --from FILE|-
     report.py add-finding <draft> --from FILE|-
     report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
+    report.py status <draft>
 
 ``init`` reads the intake file, captures the target's provenance (commit, branch, whether the working tree is
 dirty), and creates ``<label>.audit-draft.<stamp>.json`` in the intake's ``output_dir``. It never replaces a file: a
@@ -56,11 +57,12 @@ INFO = _common.ToolInfo(
         "report.py add-check <draft> --from FILE|-",
         "report.py add-finding <draft> --from FILE|-",
         "report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)",
+        "report.py status <draft>",
     ),
     writes=(
         "init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the "
-        "target; a name that is taken is never replaced. The other subcommands: that draft, in place and atomically, "
-        "and no other file."
+        "target; a name that is taken is never replaced. add-check, add-finding and set-disposition: that draft, in "
+        "place and atomically, and no other file. status: nothing."
     ),
 )
 
@@ -71,6 +73,8 @@ DRAFT_KIND = "audit-draft"
 DEFAULT_PROBE_TIMEOUT_S = 120
 MAX_FRAGMENT_CHARS = 1024 * 1024
 LOCK_WAIT_S = 30
+STATUS_LINE_BUDGET = 40
+PENDING_SHOWN = 8
 
 INTAKE_SCHEMA = vr.RECIPES / "schema" / "audit-intake.schema.json"
 GIT_SHA = re.compile(r"^[0-9a-f]{40}\Z")
@@ -355,20 +359,26 @@ class Change:
     touched: list[str] = field(default_factory=list)
 
 
-def read_draft(path: Path) -> dict[str, Any]:
-    """The draft at `path`, which must be a valid report with the status `draft`."""
+def read_valid_report(path: Path, *, when: str) -> dict[str, Any]:
+    """The report at `path`, draft or final, which must be valid. `when` says what the caller was about to do."""
     document = vr.read_report(path, "draft")
     outcome = vr.validate_document(document)
     if outcome.errors:
         count = len(outcome.errors)
         raise _common.ValidationFailed(
-            f"the draft is not valid before the change: {count} error{'' if count == 1 else 's'} in the {outcome.stage} stage",
+            f"the draft is not valid {when}: {count} error{'' if count == 1 else 's'} in the {outcome.stage} stage",
             errors=outcome.errors,
         )
-    if document["status"] != "draft":
-        raise _common.UsageError(f"{path.name} is a final report; only a draft can be changed")
     checked: dict[str, Any] = document
     return checked
+
+
+def read_draft(path: Path) -> dict[str, Any]:
+    """The draft at `path`, which must be a valid report with the status `draft`."""
+    document = read_valid_report(path, when="before the change")
+    if document["status"] != "draft":
+        raise _common.UsageError(f"{path.name} is a final report; only a draft can be changed")
+    return document
 
 
 def target_directory(document: Mapping[str, Any]) -> Path | None:
@@ -874,6 +884,108 @@ def run_set_disposition(args: argparse.Namespace) -> _common.Result:
     return result
 
 
+# --- status ------------------------------------------------------------------------------------------------
+
+SEVERITY_ORDER = {"BLOCKER": 0, "DEGRADER": 1, "COSMETIC": 2}
+
+
+def family_of(check_id: str) -> str:
+    return check_id.split("-", 1)[0]
+
+
+def missing_checks(document: Mapping[str, Any]) -> dict[str, list[str]]:
+    """The expected checks that the draft does not hold, by family, in catalogue order."""
+    recorded = set(recorded_checks(document))
+    missing: dict[str, list[str]] = {}
+    for check in expected_checks():
+        if check["id"] not in recorded:
+            missing.setdefault(family_of(check["id"]), []).append(check["id"])
+    return missing
+
+
+def pending_findings(document: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    """The findings still waiting for a decision, blockers first, then in the order they were recorded."""
+    waiting = [finding for finding in document["findings"] if finding["disposition"] == "pending"]
+    return sorted(waiting, key=lambda finding: SEVERITY_ORDER[finding["severity"]])
+
+
+def blocking_reasons(document: Mapping[str, Any]) -> list[str]:
+    """What stands between this draft and a final report, in a few words each. Empty when nothing does."""
+    if document["status"] == "final":
+        return ["the report is already final"]
+    reasons: list[str] = []
+    if document["run_context"]["eval_mode"]:
+        reasons.append("this is an eval-mode run, and its report is never final")
+    absent = sum(len(ids) for ids in missing_checks(document).values())
+    if absent:
+        reasons.append(f"{absent} of {len(expected_checks())} checks are not recorded")
+    waiting = len(pending_findings(document))
+    if waiting:
+        reasons.append(f"{waiting} finding{'' if waiting == 1 else 's'} {'is' if waiting == 1 else 'are'} pending")
+    undecided = sum(
+        1
+        for finding in document["findings"]
+        if finding["severity"] == "BLOCKER"
+        and finding["disposition"] != "pending"
+        and finding.get("confirmed_via") != "interactive"
+    )
+    if undecided:
+        reasons.append(f"{undecided} BLOCKER finding{'' if undecided == 1 else 's'} not decided interactively")
+    return reasons
+
+
+def envelope_lines(data: Mapping[str, Any]) -> int:
+    """How many lines the envelope for `data` takes on stdout."""
+    text = _common.encode_envelope(_common.make_envelope(INFO, ok=True, data=dict(data)))
+    return len(text.splitlines())
+
+
+def status_data(path: Path, document: Mapping[str, Any]) -> dict[str, Any]:
+    """The state of a draft, in at most `STATUS_LINE_BUDGET` lines of envelope.
+
+    The families come in the catalogue's order, which is the order the audit works in, and in one map, so their
+    number is bounded by the catalogue's. The pending findings are what is
+    left to fit: as many as the budget allows, up to `PENDING_SHOWN`, blockers first, and the rest are counted.
+    """
+    missing = missing_checks(document)
+    families = list(dict.fromkeys(family_of(check["id"]) for check in expected_checks()))
+    counts = decision_counts(document)
+    reasons = blocking_reasons(document)
+    waiting = [f"{f['id']} {f['severity']} {f['key']}" for f in pending_findings(document)]
+    data: dict[str, Any] = {
+        "draft": str(path),
+        "status": document["status"],
+        "eval_mode": document["run_context"]["eval_mode"],
+        "confirmation_policy": document["run_context"]["confirmation_policy"],
+        **check_counts(document),
+        "families_done": " ".join(family for family in families if family not in missing),
+        "families_remaining": {family: " ".join(ids) for family, ids in missing.items()},
+        **counts,
+        "ready_to_finalise": not reasons,
+        "blocking": "; ".join(reasons),
+    }
+    for shown in range(min(len(waiting), PENDING_SHOWN), -1, -1):
+        data["pending"] = waiting[:shown]
+        if shown < len(waiting):
+            data["pending_omitted"] = len(waiting) - shown
+        if envelope_lines(data) <= STATUS_LINE_BUDGET:
+            break
+    return data
+
+
+def run_status(args: argparse.Namespace) -> _common.Result:
+    path = Path(args.draft).expanduser()
+    document = read_valid_report(path, when="to report on")
+    data = status_data(path, document)
+    counts = check_counts(document)
+    state = "ready to finalise" if data["ready_to_finalise"] else f"not ready to finalise: {data['blocking']}"
+    return _common.Result(
+        data=data,
+        summary=f"report: {counts['checks_recorded']} of {counts['checks_expected']} checks recorded; {state}",
+        truncated="pending_omitted" in data,
+    )
+
+
 # --- The command line ---------------------------------------------------------------------------------
 
 
@@ -897,6 +1009,10 @@ def build_parser() -> _common.ToolParser:
     decide.add_argument("--disposition", choices=DISPOSITIONS, help="the decision")
     decide.add_argument("--note", help="why, in the person's words")
     decide.add_argument("--from", dest="source", help="a JSON list of decisions, from a file or - for stdin")
+    describe = commands.add_parser(
+        "status", help="say what is done, what remains and what awaits a decision", allow_abbrev=False
+    )
+    describe.add_argument("draft", help="the draft to describe")
     return parser
 
 
@@ -905,6 +1021,7 @@ HANDLERS = {
     "add-check": run_add_check,
     "add-finding": run_add_finding,
     "set-disposition": run_set_disposition,
+    "status": run_status,
 }
 
 
