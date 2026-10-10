@@ -1,0 +1,793 @@
+{
+  "schema_version": "0.1",
+  "status": "final",
+  "provenance": {
+    "recipe": {
+      "name": "brownfield-audit",
+      "version": "0.1.0"
+    },
+    "framework_revision": "cafecafecafecafecafecafecafecafecafecafe",
+    "catalogue_version": "0.1",
+    "engine": {
+      "name": "python-agentic-audit",
+      "version": "0.1.0",
+      "ruleset_revision": "2026-09-28.13",
+      "ruleset_hash": "a1b2a1b2a1b2a1b2",
+      "scanned_at": "2026-10-10T09:01:30+00:00"
+    },
+    "agent": {
+      "harness": "claude-code",
+      "model": "claude-sonnet-5-5"
+    },
+    "target": {
+      "label": "example-service",
+      "path": "/work/example-service",
+      "git_sha": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+      "branch": "main",
+      "dirty": false
+    },
+    "started_at": "2026-10-10T09:00:00+00:00",
+    "finalised_at": "2026-10-10T09:42:07+00:00"
+  },
+  "run_context": {
+    "eval_mode": false,
+    "confirmation_policy": "interactive",
+    "provider_exposure_acknowledged": true,
+    "index": {
+      "kind": "mcp",
+      "name": "codebase-memory-mcp"
+    },
+    "probes": {
+      "allowed": [],
+      "timeout_s": 120
+    },
+    "excluded": [
+      "dist/"
+    ],
+    "known_components": [],
+    "stack_profile": {
+      "id": "typescript-node",
+      "source": "shipped",
+      "confirmed_by_user": true
+    }
+  },
+  "stack": {
+    "ecosystems": [
+      "node"
+    ],
+    "package_managers": [
+      "npm"
+    ],
+    "ci_providers": [
+      "github-actions"
+    ],
+    "test_frameworks": [
+      "jest"
+    ],
+    "hook_managers": []
+  },
+  "components": [
+    {
+      "name": "(root)",
+      "path": ".",
+      "declared": true,
+      "declared_by": "implicit",
+      "manifest": "package.json",
+      "agents_md": "present"
+    }
+  ],
+  "checks": [
+    {
+      "id": "IDX-01",
+      "title": "codebase-memory-mcp registered for this repository",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "codebase-memory-mcp registered in: ~/.config/opencode/opencode.jsonc (user)",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-07",
+      "title": "Do-not-do / deny rules present",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no prohibitions section",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "AGENTS.md"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "AGT-08",
+      "title": "No competing instruction files, and the reach matrix is stated",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PARTIAL",
+      "engine_verdict": "PARTIAL",
+      "summary": "20/28 harnesses reached",
+      "evidence": [],
+      "searches": [],
+      "data": {
+        "kind": "harness_matrix",
+        "reached": 20,
+        "reached_tools": [
+          "Augment Code",
+          "Bolt (StackBlitz)",
+          "Charm Crush",
+          "Cline",
+          "Cursor",
+          "Devin (Cognition)",
+          "Firebase Studio (ex-IDX)",
+          "GitHub Copilot / VS Code",
+          "Goose (Block)",
+          "JetBrains Junie",
+          "Jules (Google)",
+          "Kiro (AWS)",
+          "OpenAI Codex CLI",
+          "Roo Code",
+          "Sourcegraph Amp",
+          "Trae",
+          "Warp",
+          "Windsurf / Devin Desktop",
+          "Zed",
+          "opencode"
+        ],
+        "total": 28,
+        "unreached_tools": [
+          "Aider",
+          "Amazon Q Developer",
+          "Anthropic Claude Code",
+          "Continue",
+          "Google Gemini CLI",
+          "Qwen Code",
+          "Replit Agent",
+          "Void"
+        ]
+      }
+    },
+    {
+      "id": "AGT-11",
+      "title": "Instructions are specific and not inferable",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "agent",
+      "verdict": "PARTIAL",
+      "confidence": "medium",
+      "summary": "AGENTS.md states the non-obvious branch and release rules, but most other lines restate what package.json already shows.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "agent",
+          "path": "AGENTS.md",
+          "lines": "14-16",
+          "quote": "Run `npm test` to run the tests. Run `npm run lint` to lint the code."
+        },
+        {
+          "kind": "file",
+          "captured_by": "agent",
+          "path": "AGENTS.md",
+          "lines": "31-33",
+          "quote": "Never tag a release from a feature branch; releases are cut from `dev` by the release workflow."
+        },
+        {
+          "kind": "index_query",
+          "captured_by": "agent",
+          "index_tool": "search_graph",
+          "query": "scripts defined in package.json",
+          "result_summary": "7 scripts; 4 are named in AGENTS.md with no added context"
+        }
+      ],
+      "searches": [
+        {
+          "tool": "grep",
+          "pattern": "do not|never|must not",
+          "scope": "AGENTS.md",
+          "hits": 2
+        }
+      ]
+    },
+    {
+      "id": "CMD-01",
+      "title": "Six verbs resolvable on one runner",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "format -> package.json; format:check -> missing; lint -> package.json; typecheck -> missing; test -> package.json; check -> missing; security -> missing",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "package.json"
+        }
+      ],
+      "searches": [],
+      "data": {
+        "kind": "verb_surface",
+        "missing": [
+          "format:check",
+          "typecheck",
+          "check",
+          "security"
+        ],
+        "resolved_count": 3,
+        "verbs": [
+          {
+            "command": "prettier --write \"src/**/*.ts\"",
+            "resolved": true,
+            "runner": "package.json",
+            "verb": "format"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "format:check"
+          },
+          {
+            "command": "eslint \"src/**/*.ts\"",
+            "resolved": true,
+            "runner": "package.json",
+            "verb": "lint"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "typecheck"
+          },
+          {
+            "command": "jest",
+            "resolved": true,
+            "runner": "package.json",
+            "verb": "test"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "check"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "security"
+          }
+        ]
+      }
+    },
+    {
+      "id": "CMD-02",
+      "title": "check composes the read-only verbs",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "the check verb is not defined on any runner",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "package.json"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "TOOL-03",
+      "title": "Type checker configured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PARTIAL",
+      "summary": "type checker configured and strict: tsconfig.base.json",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "agent",
+          "path": "tsconfig.base.json",
+          "lines": "4",
+          "quote": "\"strict\": true"
+        },
+        {
+          "kind": "file",
+          "captured_by": "agent",
+          "path": "tsconfig.json",
+          "lines": "2",
+          "quote": "\"extends\": \"./tsconfig.base.json\""
+        }
+      ],
+      "searches": [],
+      "confidence": "high",
+      "override_reason": "tsconfig.json extends tsconfig.base.json, which sets strict: true; the engine reads only the leaf file."
+    },
+    {
+      "id": "CI-01",
+      "title": "Pipeline present, triggered on PRs",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "workflow file(s): .github/workflows/ci.yml, triggered on pull_request",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CI-04",
+      "title": "CI enforces the same gate as the local check",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "agent",
+      "verdict": "FAIL",
+      "confidence": "medium",
+      "summary": "We did not find any evidence that the CI workflow runs the repository's check verb or fails the run when it fails.",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "EXEC-01",
+      "title": "Toolchain pinned / wrapper committed",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "unpinned: node",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "package.json"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "SEC-02",
+      "title": "No key-shaped strings in tracked files",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "3 credential-shaped line(s) across 2 file(s) in tracked text files",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "src/config/constants.ts",
+          "lines": "12",
+          "note": "credential-shaped string"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "src/services/__tests__/auth.test.ts",
+          "lines": "37",
+          "note": "credential-shaped string"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "src/services/__tests__/auth.test.ts",
+          "lines": "58",
+          "note": "credential-shaped string"
+        }
+      ],
+      "searches": [],
+      "data": {
+        "kind": "credential_matrix",
+        "total": 3,
+        "source": "git ls-files",
+        "files": [
+          {
+            "path": "src/config/constants.ts",
+            "lines": [
+              12
+            ]
+          },
+          {
+            "path": "src/services/__tests__/auth.test.ts",
+            "lines": [
+              37,
+              58
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "TST-02",
+      "title": "Suite status known",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "probe not run: probes disabled (pass --run-gates)",
+      "evidence": [],
+      "searches": []
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-001",
+      "key": "CMD-01",
+      "check": "CMD-01",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not defined on any runner (format:check, typecheck, check, security).",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "package.json"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Define every verb as a script so an agent never has to invent a command.",
+        "playbook": "define-command-surface",
+        "effort": "S",
+        "touches": [
+          "package.json"
+        ]
+      },
+      "disposition": "confirmed",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-002",
+      "key": "CMD-02",
+      "check": "CMD-02",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot run one command that proves a change is safe because the check verb is not defined on any runner.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "package.json"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Define check as the composition of the read-only verbs.",
+        "playbook": "define-command-surface",
+        "effort": "S",
+        "touches": [
+          "package.json"
+        ],
+        "depends_on": [
+          "F-001"
+        ]
+      },
+      "disposition": "confirmed",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-003",
+      "key": "EXEC-01",
+      "check": "EXEC-01",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot reproduce the toolchain because node is not pinned by a version file, an engines constraint or a wrapper.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "package.json"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Pin Node 22 in .nvmrc.",
+        "playbook": "pin-execution-environment",
+        "effort": "S",
+        "touches": [
+          ".nvmrc"
+        ]
+      },
+      "disposition": "edited",
+      "disposition_note": "The owner pins Node 22 in .nvmrc and leaves the engines field alone.",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-004",
+      "key": "SEC-02:src/config/constants.ts",
+      "check": "SEC-02",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot keep credentials out of the repository and its history because src/config/constants.ts contains 1 credential-shaped line(s).",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "src/config/constants.ts",
+          "lines": "12",
+          "note": "credential-shaped string"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Remove the value from the file and its history, load it from the environment, and rotate the credential.",
+        "playbook": "env-inventory-and-secrets",
+        "effort": "M",
+        "touches": [
+          "src/config/constants.ts"
+        ]
+      },
+      "disposition": "confirmed",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-005",
+      "key": "SEC-02:src/services/__tests__/auth.test.ts",
+      "check": "SEC-02",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot keep credentials out of the repository and its history because src/services/__tests__/auth.test.ts contains 2 credential-shaped line(s).",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "src/services/__tests__/auth.test.ts",
+          "lines": "37",
+          "note": "credential-shaped string"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "src/services/__tests__/auth.test.ts",
+          "lines": "58",
+          "note": "credential-shaped string"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Remove the value from the file and its history, load it from the environment, and rotate the credential."
+      },
+      "disposition": "rejected",
+      "disposition_note": "Placeholder values in a unit test, not credentials.",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-006",
+      "key": "AGT-07",
+      "check": "AGT-07",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot rely on an explicit do-not list because AGENTS.md has no prohibitions section.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "AGENTS.md"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Add an explicit prohibitions section covering tests, generated files, the default branch and secrets.",
+        "playbook": "add-deny-rules",
+        "effort": "S",
+        "touches": [
+          "AGENTS.md"
+        ]
+      },
+      "disposition": "confirmed",
+      "confirmed_via": "batch"
+    },
+    {
+      "id": "F-007",
+      "key": "AGT-11",
+      "check": "AGT-11",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot learn the project's non-obvious rules from AGENTS.md because most of its lines restate what the manifests already show.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "agent",
+          "path": "AGENTS.md",
+          "lines": "14-16",
+          "quote": "Run `npm test` to run the tests. Run `npm run lint` to lint the code."
+        },
+        {
+          "kind": "file",
+          "captured_by": "agent",
+          "path": "AGENTS.md",
+          "lines": "31-33",
+          "quote": "Never tag a release from a feature branch; releases are cut from `dev` by the release workflow."
+        }
+      ],
+      "searches": [
+        {
+          "tool": "grep",
+          "pattern": "do not|never|must not",
+          "scope": "AGENTS.md",
+          "hits": 2
+        }
+      ],
+      "remediation": {
+        "summary": "Cut the lines an agent can infer from package.json and keep the branch, release and deploy rules.",
+        "playbook": "adapt-agents-md",
+        "effort": "S",
+        "touches": [
+          "AGENTS.md"
+        ]
+      },
+      "disposition": "confirmed",
+      "confirmed_via": "batch"
+    },
+    {
+      "id": "F-008",
+      "key": "CI-04",
+      "check": "CI-04",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot trust a green CI run to mean the local gate passed because we did not find any evidence that the workflow runs the check verb.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Make the workflow run the check verb once it exists.",
+        "playbook": "add-ci-parity",
+        "effort": "M",
+        "touches": [
+          ".github/workflows/ci.yml"
+        ],
+        "depends_on": [
+          "F-002"
+        ]
+      },
+      "disposition": "confirmed",
+      "confirmed_via": "batch"
+    },
+    {
+      "id": "F-009",
+      "key": "TOOL-03",
+      "check": "TOOL-03",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot trust the type checker to catch a whole class of defects because a type-check configuration exists but is not strict (tsconfig.json:strict).",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "tsconfig.json",
+          "note": "strict is not set"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Turn on strict mode."
+      },
+      "disposition": "rejected",
+      "disposition_note": "Overridden to PASS: strict is set in the extended base config.",
+      "confirmed_via": "batch"
+    },
+    {
+      "id": "F-010",
+      "key": "AGT-08",
+      "check": "AGT-08",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot be reached by every agent harness because 8 of 28 known harnesses cannot read AGENTS.md.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "State the harnesses that do not read AGENTS.md."
+      },
+      "disposition": "deferred",
+      "disposition_note": "The team uses two of the harnesses it lacks files for; revisit when it adds a third.",
+      "confirmed_via": "batch"
+    }
+  ],
+  "summary": {
+    "phase1_score": 0.3333,
+    "scored_checks": 12,
+    "blockers_remaining": {
+      "total": 4,
+      "fail": 4,
+      "partial": 0,
+      "unknown": 0
+    },
+    "unknown_scored_checks": 1,
+    "unconfirmed_agent_findings": 0
+  },
+  "unattested": [
+    {
+      "requirement": "REQ-SH-004",
+      "method": "attested",
+      "property": "index-in-use",
+      "why": "Whether the codebase index is actually used during agent work."
+    },
+    {
+      "requirement": "REQ-BF-004",
+      "method": "attested",
+      "property": "baseline-adequacy",
+      "why": "Whether the committed baseline or budget is adequate."
+    },
+    {
+      "requirement": "REQ-SH-050",
+      "method": "attested",
+      "property": "suite-trustworthiness",
+      "why": "Whether the passing test suite actually catches regressions."
+    },
+    {
+      "requirement": "REQ-SH-020",
+      "method": "attested",
+      "property": "doc-accuracy",
+      "why": "Whether the documentation matches the code it describes."
+    },
+    {
+      "requirement": "REQ-SH-026",
+      "method": "attested",
+      "property": "gate-honoured",
+      "why": "Whether the gate is actually run and honoured before merge."
+    }
+  ],
+  "coverage": {
+    "scopes_examined": [
+      "."
+    ],
+    "scopes_skipped": [
+      {
+        "scope": "dist/",
+        "reason": "excluded at intake"
+      }
+    ],
+    "inventory": {
+      "files_inspected": 84,
+      "files_skipped": 0,
+      "truncated": false
+    }
+  }
+}
