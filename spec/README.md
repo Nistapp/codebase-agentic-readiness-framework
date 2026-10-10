@@ -48,7 +48,7 @@ Each requirement names the one method by which conformance is established.
 | Method | Who decides | What backs the verdict | How it appears in an audit report |
 |---|---|---|---|
 | `automated` | A deterministic tool. The same inputs give the same verdict. | The tool's output, recorded with the tool's name and version. | A verdict (PASS, FAIL or PARTIAL; UNKNOWN when the tool could not gather its evidence), with tool-captured evidence. An agent may disagree only with counter-evidence and a recorded reason, and the report shows the tool's verdict next to the override. |
-| `agent` | A model reading the repository. | Cited evidence: file, line and a short quote. Every FAIL also lists the searches that found nothing. | A verdict with agent-captured evidence. A person confirms blockers before the report is final. |
+| `agent` | A model reading the repository. | Cited evidence: file, line and a short quote. A PASS or PARTIAL cites at least one item. A FAIL lists the searches that found nothing, if the agent ran any. Where the agent found no evidence it says "we did not find any evidence"; it does not invent evidence or a search to fill the gap. | A verdict with agent-captured evidence, or, for a FAIL, the statement that no evidence was found. A person confirms blockers before the report is final. |
 | `human` | A person, such as a reviewer or an architect. | The reviewer's recorded outcome. | Listed as pending review. It has no verdict and earns no credit until a person records one. |
 | `attested` | The owner of the repository or process, by declaration. | The declaration: who made it, and when. | Listed as unattested. It is never shown as a pass and earns no credit until the owner declares it. |
 
