@@ -758,6 +758,18 @@ class AddCheckTests(BuilderCase):
         self.assertEqual(code, 1)
         self.assertIn("refusing to write inside the target", envelope["data"]["error"])
 
+    def test_a_link_to_the_draft_changes_the_draft_and_stays_a_link(self) -> None:
+        elsewhere = self.root / "elsewhere"
+        elsewhere.mkdir()
+        link = elsewhere / "latest.json"
+        link.symlink_to(self.draft)
+        code, envelope, _ = self.add_check(link, agent_check())
+        self.assertEqual(code, 0, envelope)
+        self.assertTrue(link.is_symlink())
+        self.assertEqual(envelope["data"]["draft"], str(self.draft))
+        self.assertEqual(len(read_json(self.draft)["checks"]), 1)
+        self.assertEqual(sorted(p.name for p in elsewhere.iterdir()), ["latest.json"])
+
     def test_a_failed_write_leaves_the_previous_draft_and_no_stray_file(self) -> None:
         self.add_check(self.draft, agent_check())
         for name in ("os.replace", "os.fsync"):

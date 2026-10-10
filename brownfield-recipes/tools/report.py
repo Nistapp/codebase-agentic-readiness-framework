@@ -399,9 +399,12 @@ def refuse_inside_target(target: Path | None, path: Path) -> None:
 
 
 def update_draft(argument: str, change: Callable[[dict[str, Any]], Change]) -> _common.Result:
-    """Apply `change` to the draft named by `argument`: validate, then write atomically, or write nothing."""
-    path = Path(argument).expanduser()
-    directory = path.parent.resolve()
+    """Apply `change` to the draft named by `argument`: validate, then write atomically, or write nothing.
+
+    The path is resolved first, so that a link to a draft changes the draft and does not replace the link.
+    """
+    path = Path(argument).expanduser().resolve()
+    directory = path.parent
     if not directory.is_dir():
         raise _common.UsageError(f"draft not found: {path}")
     with write_lock(directory):
@@ -1033,8 +1036,8 @@ def run_finalise(args: argparse.Namespace) -> _common.Result:
     The final report is the draft with `status: final` and the time it was finalised, and nothing else: the summary is
     already the one the tools computed, and validating the result checks that.
     """
-    path = Path(args.draft).expanduser()
-    directory = path.parent.resolve()
+    path = Path(args.draft).expanduser().resolve()
+    directory = path.parent
     if not directory.is_dir():
         raise _common.UsageError(f"draft not found: {path}")
     moment = utc_now()
