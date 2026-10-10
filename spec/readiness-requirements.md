@@ -6,9 +6,9 @@ Normative. These are the requirements a repository meets to complete Phase 1 (Ag
 
 - **Area.** `REQ-SH` is a property any repository, new or existing, has to count as ready: the greenfield recipe produces it and the brownfield audit checks it. `REQ-BF` is a property that exists only because the repository already has history, such as an inherited violation baseline. The greenfield track starts without debt, so almost everything is shared.
 - **Phase.** Every requirement here is phase 1 of the [framework phases](../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-).
-- **Keyword.** A requirement is a MUST unless its check is rated COSMETIC, which makes it a SHOULD. Severity is the audit engine's at the time of writing.
+- **Keyword.** A requirement is a MUST unless its check is rated COSMETIC, which makes it a SHOULD. Severity is the catalogue's at the time of writing.
 - **Source.** The framework text the requirement comes from. Where the framework does not say it in so many words and the requirement follows from the Phase 1 objective ("executable, discoverable, and safe for agent interaction"), the source is the nearest framework heading, usually the Phase 1 heading, and [traceability.md](traceability.md) lists the requirement as derived.
-- **Checks.** Check IDs are the audit engine's, as printed by `python3 -m audit --list-checks`. [traceability.md](traceability.md) lists the requirements for each check.
+- **Checks.** Check IDs are those of the [check catalogue](../brownfield-recipes/catalogue.json): the audit engine's, as printed by `python3 -m audit --list-checks`, and the checks that only an agent runs. A test keeps the catalogue and these fields in step. [traceability.md](traceability.md) lists the requirements for each check.
 - **Command surface.** The verbs and their spelling on each runner are in [command-surface.md](command-surface.md).
 - **Prohibitions section.** The section of the instruction file whose heading says what an agent must not do: "Do Not Do", "Never", "Prohibited", "Forbidden" or "Deny". It is the repository's deny list, and nothing else is required to be ([decision 0001](decisions/0001-constraint-artifact.md)).
 - **Naming a path.** An entry of the prohibitions section names a path when the path, or a pattern that covers it, appears in a code span of that entry.
@@ -135,7 +135,7 @@ The instruction file MUST consist of instructions that are specific to the repos
 - **Phase:** 1
 - **Verification:** agent
 - **Source:** [Phased-Approach.md § Activities](../brownfield-legacy/Phased-Approach.md#activities)
-- **Checks:** none yet
+- **Checks:** AGT-11
 
 ## Documentation contract
 
@@ -303,7 +303,7 @@ On every pull request the CI pipeline MUST run the verbs that make up `check` an
 - **Phase:** 1
 - **Verification:** agent
 - **Source:** [greenfield-bootstrap/README.md § 1.4 The standardized command surface](../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)
-- **Checks:** none yet
+- **Checks:** CI-04
 
 ## Baselines and the ratchet
 

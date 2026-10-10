@@ -2,11 +2,11 @@
 
 Maps the checks of the audit engine to the [requirements](readiness-requirements.md) they verify, and the requirements back to the checks. The `Checks` field of a requirement is authoritative. This page is its inverse, built from those fields on 2026-10-09; no test keeps the two in step yet.
 
-Check IDs and severities are those printed by `python3 -m audit --list-checks`.
+Check IDs and severities are those of the [check catalogue](../brownfield-recipes/catalogue.json). A test checks this page against it.
 
 ## Checks to requirements
 
-69 checks. 54 scored checks and the blocked `CON-01` trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
+71 checks: 69 of the audit engine and 2 that only an agent runs. 56 scored checks and the blocked `CON-01` trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
 
 | Check | Title | Severity | Scored | Requirements |
 |---|---|---|---|---|
@@ -23,6 +23,7 @@ Check IDs and severities are those printed by `python3 -m audit --list-checks`.
 | `AGT-08` | No competing instruction files, and the reach matrix is stated | DEGRADER | yes | [REQ-SH-012](readiness-requirements.md#req-sh-012--no-competing-instruction-files) |
 | `AGT-09` | Branch and release boundary declared | DEGRADER | yes | [REQ-SH-013](readiness-requirements.md#req-sh-013--branch-and-release-boundary-declared) |
 | `AGT-10` | Instruction indirection resolved | DEGRADER | yes | [REQ-SH-014](readiness-requirements.md#req-sh-014--instruction-indirection-resolved) |
+| `AGT-11` | Instructions are specific and not inferable | DEGRADER | yes (agent) | [REQ-SH-015](readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) |
 | `DOC-01` | docs/ exists | DEGRADER | yes | [REQ-SH-016](readiness-requirements.md#req-sh-016--documentation-directory) |
 | `DOC-02` | docs/STYLE_GUIDE.md exists | DEGRADER | yes | [REQ-SH-017](readiness-requirements.md#req-sh-017--style-guide) |
 | `DOC-03` | artefacts/ exists and is ignored | DEGRADER | yes | [REQ-SH-018](readiness-requirements.md#req-sh-018--scratch-and-tool-state-directories-ignored) |
@@ -40,6 +41,7 @@ Check IDs and severities are those printed by `python3 -m audit --list-checks`.
 | `CI-01` | Pipeline present, triggered on PRs | BLOCKER | yes | [REQ-SH-033](readiness-requirements.md#req-sh-033--pipeline-on-pull-requests) |
 | `CI-02` | Local↔CI parity | BLOCKER | yes | [REQ-SH-034](readiness-requirements.md#req-sh-034--ci-runs-the-verbs) |
 | `CI-03` | CI-only steps flagged | DEGRADER | yes | [REQ-SH-034](readiness-requirements.md#req-sh-034--ci-runs-the-verbs) |
+| `CI-04` | CI enforces the same gate as the local check | DEGRADER | yes (agent) | [REQ-SH-035](readiness-requirements.md#req-sh-035--ci-enforces-the-gate) |
 | `BASE-01` | Baseline artifact exists | DEGRADER | yes | [REQ-BF-001](readiness-requirements.md#req-bf-001--quality-baseline) |
 | `BASE-02` | Current violation counts measured | DEGRADER | yes | [REQ-BF-002](readiness-requirements.md#req-bf-002--violation-count-recorded) |
 | `BASE-03` | No-new-violations mechanism | DEGRADER | yes | [REQ-BF-003](readiness-requirements.md#req-bf-003--no-new-violations) |
@@ -82,24 +84,24 @@ Check IDs and severities are those printed by `python3 -m audit --list-checks`.
 
 ## Checks that do not yet verify their requirement
 
-The engine has not caught up with [decision 0001](decisions/0001-constraint-artifact.md). Until it does, these two checks do not verify the requirement they are listed against. The decision's "Engine changes not yet made" list says what changes.
+The engine has not caught up with [decision 0001](decisions/0001-constraint-artifact.md), and two agent-only checks have no rubric yet. Until then, these checks do not verify the requirement they are listed against. The decision's "Engine changes not yet made" list says what changes for the first two.
 
 | Check | Requirement | What the engine does today |
 |---|---|---|
 | `CON-01` | [REQ-SH-037](readiness-requirements.md#req-sh-037--allow-and-deny-lists) | Blocked, weight 0. It reads nothing. |
 | `CON-02` | [REQ-SH-038](readiness-requirements.md#req-sh-038--test-directories-denied) | Reads root-level constraint files, ignore rules and CI text. It never reads the prohibitions section. |
+| `AGT-11` | [REQ-SH-015](readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) | Catalogued only. The engine has no such check, and the rubric an agent follows is not written. |
+| `CI-04` | [REQ-SH-035](readiness-requirements.md#req-sh-035--ci-enforces-the-gate) | Catalogued only, as above. |
 
 ## Requirements without a check
 
-7 of the 60 requirements have no check. The five attested ones are the engine's unattested list: the report shows them as unattested and they earn no credit.
+5 of the 60 requirements have no check. All five are attested, and they are the engine's unattested list: the report shows them as unattested and they earn no credit.
 
 | Requirement | Title | Verification | Why |
 |---|---|---|---|
 | [REQ-SH-004](readiness-requirements.md#req-sh-004--agents-explore-through-the-index) | Agents explore through the index | attested | attested; the engine's unattested item `index-in-use` |
-| [REQ-SH-015](readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) | Instructions are specific and not inferable | agent | agent-verified; no check yet |
 | [REQ-SH-020](readiness-requirements.md#req-sh-020--documentation-is-accurate) | Documentation is accurate | attested | attested; the engine's unattested item `doc-accuracy` |
 | [REQ-SH-026](readiness-requirements.md#req-sh-026--the-gate-is-honoured) | The gate is honoured | attested | attested; the engine's unattested item `gate-honoured` |
-| [REQ-SH-035](readiness-requirements.md#req-sh-035--ci-enforces-the-gate) | CI enforces the gate | agent | agent-verified; no check yet |
 | [REQ-BF-004](readiness-requirements.md#req-bf-004--baseline-is-adequate) | Baseline is adequate | attested | attested; the engine's unattested item `baseline-adequacy` |
 | [REQ-SH-050](readiness-requirements.md#req-sh-050--the-suite-is-trustworthy) | The suite is trustworthy | attested | attested; the engine's unattested item `suite-trustworthiness` |
 

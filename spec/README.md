@@ -39,7 +39,7 @@ Every requirement carries these four fields under its statement.
 | `Phase` | The framework phase, 1 to 7 as numbered in [Phased-Approach.md](../brownfield-legacy/Phased-Approach.md), at which the requirement first applies. The greenfield recipe numbers its own build phases 1 to 8; those are not framework phases. |
 | `Verification` | One of the four methods below. |
 | `Source` | The framework document and heading the requirement comes from, as a link. The heading must exist in that document. |
-| `Checks` | The IDs of the checks that verify it, taken from `brownfield-recipes/catalogue.json` once that file exists. `none yet` means a check is wanted but not written. A `human` or `attested` requirement may have no check and then says `none (human)` or `none (attested)`. |
+| `Checks` | The IDs of the checks that verify it, taken from the [check catalogue](../brownfield-recipes/catalogue.json). `none yet` means a check is wanted but not written. A `human` or `attested` requirement may have no check and then says `none (human)` or `none (attested)`. |
 
 ### Verification methods
 
