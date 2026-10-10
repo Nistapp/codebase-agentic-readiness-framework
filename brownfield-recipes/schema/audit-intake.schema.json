@@ -94,6 +94,11 @@
       "description": "interactive asks the person about each finding. defer-all leaves every disposition pending. accept-all confirms every finding and is allowed only with eval_mode.",
       "enum": ["interactive", "defer-all", "accept-all"]
     },
+    "repo_label": {
+      "description": "A short name for the repository, used in output file names. Lower case letters, digits, dot, underscore and hyphen, at most 32 characters. When absent the run derives one from the name of the target directory; see SCHEMA.md, Output files.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
+    },
     "output_dir": {
       "description": "Where the report and its draft are written. Outside the target.",
       "type": "string",

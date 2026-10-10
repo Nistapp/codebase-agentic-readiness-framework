@@ -77,9 +77,10 @@
         },
         "target": {
           "type": "object",
-          "required": ["path", "git_sha", "branch", "dirty"],
+          "required": ["label", "path", "git_sha", "branch", "dirty"],
           "additionalProperties": false,
           "properties": {
+            "label": { "$ref": "#/$defs/repoLabel" },
             "path": { "type": "string", "minLength": 1, "maxLength": 1000 },
             "git_sha": { "$ref": "#/$defs/gitShaOrNull" },
             "branch": { "type": ["string", "null"], "maxLength": 255 },
@@ -93,7 +94,15 @@
     "run_context": {
       "description": "The answers given at intake, as the run used them.",
       "type": "object",
-      "required": ["eval_mode", "confirmation_policy", "index", "probes", "excluded", "known_components"],
+      "required": [
+        "eval_mode",
+        "confirmation_policy",
+        "provider_exposure_acknowledged",
+        "index",
+        "probes",
+        "excluded",
+        "known_components"
+      ],
       "additionalProperties": false,
       "properties": {
         "eval_mode": {
@@ -101,6 +110,10 @@
           "type": "boolean"
         },
         "confirmation_policy": { "$ref": "#/$defs/confirmationPolicy" },
+        "provider_exposure_acknowledged": {
+          "description": "The operator confirmed, in the intake, that the model provider receives whatever the agent reads from the target. Always true: a run does not start without it.",
+          "const": true
+        },
         "index": { "$ref": "#/$defs/indexContext" },
         "probes": { "$ref": "#/$defs/probeContext" },
         "excluded": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/relativePath" } },
@@ -244,6 +257,11 @@
       "description": "ISO 8601 date and time with an offset.",
       "type": "string",
       "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "repoLabel": {
+      "description": "A short name for the repository, used in output file names: lower case letters, digits, dot, underscore and hyphen, at most 32 characters.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
     },
     "gitShaOrNull": {
       "type": ["string", "null"],

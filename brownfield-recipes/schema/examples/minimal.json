@@ -2,18 +2,36 @@
   "schema_version": "0.1",
   "status": "draft",
   "provenance": {
-    "recipe": { "name": "brownfield-audit", "version": "0.1.0" },
+    "recipe": {
+      "name": "brownfield-audit",
+      "version": "0.1.0"
+    },
     "framework_revision": null,
     "catalogue_version": "0.1",
-    "agent": { "harness": "claude-code", "model": "claude-sonnet-5-5" },
-    "target": { "path": "/work/example-service", "git_sha": null, "branch": null, "dirty": null },
+    "agent": {
+      "harness": "claude-code",
+      "model": "claude-sonnet-5-5"
+    },
+    "target": {
+      "label": "example-service",
+      "path": "/work/example-service",
+      "git_sha": null,
+      "branch": null,
+      "dirty": null
+    },
     "started_at": "2026-10-10T09:00:00+00:00"
   },
   "run_context": {
     "eval_mode": false,
     "confirmation_policy": "interactive",
-    "index": { "kind": "none" },
-    "probes": { "allowed": [], "timeout_s": 120 },
+    "provider_exposure_acknowledged": true,
+    "index": {
+      "kind": "none"
+    },
+    "probes": {
+      "allowed": [],
+      "timeout_s": 120
+    },
     "excluded": [],
     "known_components": []
   },
@@ -52,10 +70,18 @@
   "summary": {
     "phase1_score": 1,
     "scored_checks": 1,
-    "blockers_remaining": { "total": 0, "fail": 0, "partial": 0, "unknown": 0 },
+    "blockers_remaining": {
+      "total": 0,
+      "fail": 0,
+      "partial": 0,
+      "unknown": 0
+    },
     "unknown_scored_checks": 0,
     "unconfirmed_agent_findings": 0
   },
   "unattested": [],
-  "coverage": { "scopes_examined": [], "scopes_skipped": [] }
+  "coverage": {
+    "scopes_examined": [],
+    "scopes_skipped": []
+  }
 }
