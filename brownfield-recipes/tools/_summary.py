@@ -34,6 +34,11 @@ def scored_checks(checks: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]
     ]
 
 
+def open_blockers(checks: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
+    """The scored BLOCKER checks whose verdict is not PASS: FAIL, PARTIAL or UNKNOWN. "Blockers remaining" counts them."""
+    return [check for check in scored_checks(checks) if check["severity"] == "BLOCKER" and check["verdict"] != "PASS"]
+
+
 def compute_summary(report: Mapping[str, Any]) -> dict[str, Any]:
     """The five summary fields, in the schema's order."""
     scored = scored_checks(report["checks"])
@@ -41,10 +46,10 @@ def compute_summary(report: Mapping[str, Any]) -> dict[str, Any]:
     earned = sum(WEIGHTS[check["severity"]] * HALF_CREDITS[check["verdict"]] for check in scored)
     score = round(earned / (2 * weight), SCORE_PLACES) if weight else 0.0
 
-    open_blockers = [check for check in scored if check["severity"] == "BLOCKER" and check["verdict"] != "PASS"]
-    blockers: dict[str, int] = {"total": len(open_blockers)}
+    unmet = open_blockers(report["checks"])
+    blockers: dict[str, int] = {"total": len(unmet)}
     for state in BLOCKER_STATES:
-        blockers[state] = sum(1 for check in open_blockers if check["verdict"] == state.upper())
+        blockers[state] = sum(1 for check in unmet if check["verdict"] == state.upper())
 
     agent_checks = {check["id"] for check in report["checks"] if check["method"] == "agent"}
     unconfirmed = sum(

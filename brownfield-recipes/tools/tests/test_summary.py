@@ -125,6 +125,20 @@ class BlockerAndQualifierTests(unittest.TestCase):
         )
         self.assertEqual(result["blockers_remaining"], {"total": 4, "fail": 2, "partial": 1, "unknown": 1})
 
+    def test_open_blockers_are_the_scored_blocker_checks_that_are_not_met_in_report_order(self) -> None:
+        checks = [
+            check("A-01", "BLOCKER", "UNKNOWN"),
+            check("A-02", "BLOCKER", "PASS"),
+            check("A-03", "DEGRADER", "FAIL"),
+            check("A-04", "BLOCKER", "FAIL", scored=False),
+            check("A-05", "BLOCKER", "FAIL", phase=2),
+            check("A-06", "BLOCKER", "NOT_APPLICABLE"),
+            check("A-07", "BLOCKER", "PARTIAL"),
+            check("A-08", "BLOCKER", "FAIL"),
+        ]
+        self.assertEqual([c["id"] for c in _summary.open_blockers(checks)], ["A-01", "A-07", "A-08"])
+        self.assertEqual(_summary.open_blockers([]), [])
+
     def test_unknown_scored_checks_counts_every_severity(self) -> None:
         result = summary_of(
             [
