@@ -38,7 +38,7 @@
 |---|---|---|
 | [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Planned (S2.1–S2.8) |
 | [Harness notes](../reference/harness-notes.md) | Claude Code, opencode, Codex, Cursor specifics | Planned (S4.6) |
-| [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Planned (S1.5, S4.6) |
+| [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; generated table Planned (S4.6) |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
 
 ## Explanation — User Overview
@@ -55,7 +55,7 @@
 |---|---|---|
 | [1. Tool Contract](contributor-deep-dive/01-tool-contract.md) | The contract every tool follows | Planned (S2.1) |
 | [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the tools that use it: Planned, S2.2–S2.5) |
-| [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Planned (S1.5, S3.1) |
+| [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live for the catalogue; rubric anatomy Planned (S3.1) |
 | [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Planned (S3.4) |
 | [5. Evaluation](contributor-deep-dive/05-evaluation.md) | Corpus, metrics, models | Planned (S4.1) |
 

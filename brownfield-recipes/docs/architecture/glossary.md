@@ -25,3 +25,5 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Finding key | A finding's stable identifier: the check ID, then an optional scope after a colon. A re-audit matches findings by it. |
 | Intake file | The JSON file that answers the audit's Stage 0 questions, so that a run needs no interview. |
 | Override | A report verdict that differs from the engine's, recorded with a reason and agent-captured counter-evidence. |
+| Catalogue | `catalogue.json`: every check in one ID namespace, with its method, requirements and playbooks. |
+| Agent-only check | A check no deterministic rule can settle, judged by a model with cited evidence, such as `AGT-11`. It has no engine ID. |

@@ -4,6 +4,10 @@
 > **Related ADRs:** [ADR-0003](../adrs/0003-component-depth-declared-depth-1.md) · [ADR-0004](../adrs/0004-no-llm-in-v1.md)
 > **Status:** Live for the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs (the `CON-04` emitter included); every catalogued check is implemented save the blocked `CON-01`. This page is the design of record; `audit/rules/registry.py` is its executable form, and `python3 -m audit --list-checks` prints the current truth.
 
+> [!NOTE]
+> The recipes' [`catalogue.json`](../../../../catalogue.json) is seeded from this registry through `--list-checks --format json`
+> and adds the checks only an agent can judge. A test keeps it identical to this registry on every field they share.
+
 > [!IMPORTANT]
 > **The executable rules live in code, not here.** This catalogue holds the id, tier, phase anchor, severity and
 > evidence rule for every check — the rationale for each family is in

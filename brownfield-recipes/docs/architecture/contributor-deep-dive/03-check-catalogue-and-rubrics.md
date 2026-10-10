@@ -1,26 +1,57 @@
 # 3. Check Catalogue & Rubrics
 
 > **Audience:** Engineers, maintainers
-> **Goal:** Explain how checks are defined once in `catalogue.json` and judged through rubric files.
-> **Status:** Planned (placeholder).
+> **Goal:** Explain how checks are defined once in `catalogue.json`, what keeps it true, and how a check is judged.
+> **Status:** Live for the catalogue. The rubrics that say how an agent judges a check are planned.
 
 > [!NOTE]
-> Planned. `catalogue.json` and the check files do not exist yet. Filled in by roadmap step S1.5 and S3.1–S3.3.
+> Planned. The check files that hold each check's rubric do not exist yet, so section 3 below is a placeholder. Filled in by roadmap steps S3.1–S3.3. The catalogue itself, [`catalogue.json`](../../../catalogue.json), exists and is tested.
 
 ---
 
 ## 1. One ID namespace
 
-- TBD: engine checks plus agent-only checks in the same families.
+[`catalogue.json`](../../../catalogue.json) lists every check the audit can report, engine checks and agent-only checks together. A check has one ID, in the form of a family prefix and a number, and that ID is the only name the report, the spec's `Checks` fields, the playbooks and the rubrics use. Nothing translates between an "engine ID" and a "recipe ID". The schema is [`catalogue.schema.json`](../../../schema/catalogue.schema.json), and the field list is there; this page does not repeat it.
+
+Where the entries come from:
+
+- **Engine checks** are seeded from the engine's own list, `python3 -m audit --list-checks --format json` ([`cli.py`](../../../deterministic-audit/audit/cli.py)). After seeding the file is edited by hand. The engine's ID is the check's ID, and `engine_id` repeats it.
+- **Agent-only checks** are the ones no deterministic rule can settle. Today there are two: `AGT-11` (instructions are specific and not inferable, for [REQ-SH-015](../../../../spec/readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable)) and `CI-04` (CI enforces the same gate as the local check, for [REQ-SH-035](../../../../spec/readiness-requirements.md#req-sh-035--ci-enforces-the-gate)). They are numbered after the engine's highest number in their family, so an engine check added later cannot collide with one: the engine takes the next free number and the test fails if it takes an agent check's.
+- **`status`** is the engine's own status for an engine check, so `CON-01` is `blocked` while the engine cannot evaluate it. An agent-only check is `planned` until its rubric exists. A check that is planned or blocked is reported `UNKNOWN`. `scored` is also the engine's, which is why `CON-01` is not scored yet.
 
 ## 2. Methods
 
-- TBD: deterministic, agent, attested; how each appears in a report.
+A check's `method` is one of the two that produce a verdict. The words are the spec's ([verification methods](../../../../spec/README.md#verification-methods)).
+
+| Method | Decided by | In the catalogue | In a report |
+|---|---|---|---|
+| `automated` | The engine | Every engine check | `engine_verdict` equals `verdict` unless an agent overrides it with counter-evidence and a reason |
+| `agent` | A model reading the repository | `AGT-11`, `CI-04` | A verdict with cited evidence, or a `FAIL` that says no evidence was found |
+
+A requirement verified by a person (`human`) or by the owner's declaration (`attested`) has no check, so it has no row here. It appears in a report's `unattested[]`. The catalogue test requires that a check has the same method as every requirement it verifies, so the two vocabularies cannot drift.
 
 ## 3. Rubric anatomy
 
 - TBD: why it matters, look for, rubric, evidence, absence proof, engine, pitfalls.
 
-## 4. Traceability
+## 4. Traceability and versions
 
-- TBD: check to requirement to framework section.
+A check reaches the framework in three hops, and three files say it:
+
+1. The catalogue's `req_ids` name the requirements the check verifies.
+2. Each requirement's `Checks` field in [`readiness-requirements.md`](../../../../spec/readiness-requirements.md) names the checks back.
+3. Each requirement's `Source` links the framework heading it comes from.
+
+[`traceability.md`](../../../../spec/traceability.md) lists the same relation for people to read. A test, [`test_catalogue.py`](../../../tools/tests/test_catalogue.py), holds all of them to one another: the catalogue against the engine's JSON list, the requirements in both directions, the method against the requirement's, and the traceability table. [How the Checks Map to the Framework](../../reference/how-the-checks-map-to-the-framework.md) shows how to follow one check.
+
+A report records `catalogue_version`, which is `MAJOR.MINOR.PATCH`. The rules for a bump are in the schema's description of the field. A `fingerprint` in the catalogue covers the fields that decide a verdict: ID, phase, severity, scored flag, method, requirement IDs and engine ID. The test fails when the fingerprint is stale, and its message names the steps. The fingerprint does not cover titles, playbooks or rubric wording, so a change to one of those, which is a PATCH at most, depends on the person making it.
+
+---
+
+## 5. Invariants & Failure Modes
+
+- **Invariant: the engine is the authority on its own checks.** The catalogue cannot hold an engine check the engine lacks, cannot omit one it has, and cannot disagree with it on title, phase, severity, scored flag or status. The engine's order is kept.
+- **Invariant: agreement is checked in both directions.** A requirement names a check only if the check names the requirement, and the other way round.
+- **Invariant: every scored BLOCKER names a playbook.** The implementation recipe covers every blocker class of the audit.
+- **Failure mode: a catalogued check with no rubric.** `AGT-11` and `CI-04` are in the catalogue and cannot be judged until the rubrics exist, so a report cannot contain a verdict for them yet.
+- **Failure mode: a change the fingerprint misses.** A rewritten rubric changes what a verdict means and leaves the fingerprint alone. The rule is that such a change bumps the version, and nothing enforces it.

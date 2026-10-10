@@ -9,7 +9,7 @@
 | What | Licence |
 |---|---|
 | Scripts and code: `brownfield-recipes/tools/`, the migrated engine code, and their tests | AGPL-3.0-or-later |
-| Documentation: this `docs/` tree, the engine's docs (`deterministic-audit/docs/`, its README and `AGENTS.md`), recipes, check files, playbooks, stack profiles | GFDL 1.3 |
+| Documentation: this `docs/` tree, the engine's docs (`deterministic-audit/docs/`, its README and `AGENTS.md`), recipes, check files, playbooks, stack profiles, the check catalogue (`catalogue.json`) | GFDL 1.3 |
 | JSON Schemas and their documentation | GFDL 1.3 |
 | Example reports and other outputs published in this repository, including `deterministic-audit/examples/` | GFDL 1.3 |
 
