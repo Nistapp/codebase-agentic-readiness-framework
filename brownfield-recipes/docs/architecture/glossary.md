@@ -22,3 +22,6 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Evidence | A cited file, command or index query that supports a verdict. |
 | `captured_by` | Whether evidence was captured by a tool or reported by the agent. |
 | Eval mode | A run with fixed answers and confirmation policy, used for evaluation only. |
+| Finding key | A finding's stable identifier: the check ID, then an optional scope after a colon. A re-audit matches findings by it. |
+| Intake file | The JSON file that answers the audit's Stage 0 questions, so that a run needs no interview. |
+| Override | A report verdict that differs from the engine's, recorded with a reason and agent-captured counter-evidence. |
