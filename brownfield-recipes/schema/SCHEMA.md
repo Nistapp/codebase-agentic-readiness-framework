@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone who reads, writes or validates an audit report
 > **Source of truth:** [`audit-report.schema.json`](audit-report.schema.json) and [`audit-intake.schema.json`](audit-intake.schema.json). Where this page and a schema disagree, the schema wins and this page has a defect.
-> **Status:** Live for the schemas, the examples and the validator. The report builder is live for `init` and planned for its other subcommands; the renderer and the engine adapter are planned. Each section that depends on one says so.
+> **Status:** Live for the schemas, the examples, the validator and the report builder, except its `import-engine` subcommand. The renderer and the engine adapter are planned. Each section that depends on one says so.
 
 ---
 
@@ -74,7 +74,7 @@ A `?` marks an optional field. Every object is closed: a field the schema does n
 
 | Field | Meaning |
 |---|---|
-| `status` | `draft` while the report is being built or any finding awaits a decision. `final` only after validation, with nothing pending, and never in eval mode. Only `report.py finalise` (planned, S2.3) sets it. |
+| `status` | `draft` while the report is being built or any finding awaits a decision. `final` only after validation, with nothing pending, and never in eval mode. Only `report.py finalise` sets it. |
 
 ### `provenance`
 
@@ -137,7 +137,7 @@ A search has `tool` (`glob`, `grep` or `index`), the `pattern`, the `scope` and 
 
 | Field | Meaning |
 |---|---|
-| `id` | `F-001`, `F-002`, and so on. For display. The builder assigns them and they may change when a report is rebuilt. |
+| `id` | `F-001`, `F-002`, and so on. For display. The builder assigns the next number after the highest in the draft, and never reuses one. They may change when a report is rebuilt. |
 | `key` | Stable across runs: the check ID, then an optional scope after a colon, such as `SEC-02:src/config/constants.ts`. A re-audit matches findings by `key`. The builder computes it. |
 | `check`, `severity` | The check the finding came from, and its severity, which may be lower than the check's. |
 | `statement` | Always "An agent cannot X because Y." |
@@ -197,12 +197,12 @@ The report also shows the unattested list beside them. The spec defines no level
 Every file a run writes carries the repository's name, so that runs on several repositories sit side by side. No run replaces another run's output.
 
 > [!NOTE]
-> The engine report is written under this rule today, by [`tools/engine.py`](../tools/engine.py), and so is the draft, by [`report.py init`](../tools/report.py), with the helpers in [`tools/_common.py`](../tools/_common.py). The final report (`report.py finalise`, S2.3) and the Markdown file (`render_report.py`, S2.4) are planned. They must keep to these names.
+> The engine report is written under this rule today, by [`tools/engine.py`](../tools/engine.py), and so is the draft, by [`report.py init`](../tools/report.py), with the helpers in [`tools/_common.py`](../tools/_common.py). The final report is written by `report.py finalise`. The Markdown file beside it (`render_report.py`, S2.4) is planned and must keep to these names.
 
 | File | Name | Written by |
 |---|---|---|
 | Draft report | `<label>.audit-draft.<stamp>.json` | `report.py init` |
-| Final report | `<label>.audit-report.<stamp>.json`, and `.md` beside it | `report.py finalise` |
+| Final report | `<label>.audit-report.<stamp>.json`, and `.md` beside it once the renderer exists (S2.4) | `report.py finalise` |
 | Engine report | `<label>.engine-report.<stamp>.json` | `tools/engine.py` |
 | Intake | `audit-intake.<label>.json` | The operator. The recipe never writes it. |
 
@@ -255,7 +255,7 @@ A report is valid when it meets the schema and every rule here. An error fails v
 7. **Findings.** A finding's `severity` is not higher than its check's. A finding on a check whose verdict is `PASS` or `NOT_APPLICABLE` has the disposition `rejected`. `confirmed_via` is present if and only if the disposition is not `pending`.
 8. **Final reports.** `status: final` needs `finalised_at`, no `pending` finding, `eval_mode` false, and `confirmed_via: interactive` on every finding of BLOCKER severity.
 9. **Policy.** `accept-all` needs `eval_mode: true`, and `eval_mode: true` rules out `interactive`. `confirmed_via: policy` appears only when the policy is not `interactive`.
-10. **Summary.** The validator recomputes `summary` with [`tools/_summary.py`](../tools/_summary.py) and fails on any difference, naming each number that differs. The score is compared exactly, as stored to four places. The same code will write the summary in the report builder and show it in the renderer.
+10. **Summary.** The validator recomputes `summary` with [`tools/_summary.py`](../tools/_summary.py) and fails on any difference, naming each number that differs. The score is compared exactly, as stored to four places. The same code writes the summary in the report builder and will show it in the renderer.
 11. **No secrets.** No `quote` or `output_tail` holds a string shaped like a credential, judged by the engine's redaction patterns.
 12. **Warnings.** A `file` path that does not exist in the target at `git_sha`, when the target can be reached. The tool reaches it only when given `--target`. It asks git (`git cat-file`, which writes nothing) whether the commit holds the path, and looks in the working tree when `git_sha` is `null`. When the target lacks the commit, or git is missing, the tool says so in one warning and checks nothing else.
 

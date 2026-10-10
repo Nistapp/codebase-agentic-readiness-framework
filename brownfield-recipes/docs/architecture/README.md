@@ -28,7 +28,7 @@
 |---|---|---|
 | [Run an audit](../how-to/run-an-audit.md) | Produce a confirmed report for a repo | Planned (S3.5) |
 | [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Planned (S5.4) |
-| [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Planned (S2.3, S5.1) |
+| [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits (S2.3); implementations Planned (S5.1) |
 | [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Planned (S3.4) |
 | [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Planned (S4.1) |
 
@@ -36,7 +36,7 @@
 
 | Page | Purpose | Status |
 |---|---|---|
-| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py` and `validate_report.py`; the rest Planned (S2.3–S2.8, S5.1) |
+| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`, `validate_report.py` and `report.py`; the rest Planned (S2.4–S2.8, S5.1) |
 | [Harness notes](../reference/harness-notes.md) | Claude Code, opencode, Codex, Cursor specifics | Planned (S4.6) |
 | [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; generated table Planned (S4.6) |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
@@ -54,7 +54,7 @@
 | Page | Purpose | Status |
 |---|---|---|
 | [1. Tool Contract](contributor-deep-dive/01-tool-contract.md) | The contract every tool follows | Live |
-| [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the validator is live; the other tools that use it: Planned, S2.3–S2.5) |
+| [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the validator and the report builder are live; the renderer and the engine adapter: Planned, S2.4–S2.5) |
 | [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live for the catalogue; rubric anatomy Planned (S3.1) |
 | [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Planned (S3.4) |
 | [5. Evaluation](contributor-deep-dive/05-evaluation.md) | Corpus, metrics, models | Planned (S4.1) |

@@ -28,3 +28,6 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Override | A report verdict that differs from the engine's, recorded with a reason and agent-captured counter-evidence. |
 | Catalogue | `catalogue.json`: every check in one ID namespace, with its method, requirements and playbooks. |
 | Agent-only check | A check no deterministic rule can settle, judged by a model with cited evidence, such as `AGT-11`. It has no engine ID. |
+| Draft | `<label>.audit-draft.<stamp>.json`: the report while it is being built. Only `report.py` writes it, and it becomes a final report when nothing is pending. |
+| Fragment | The JSON object an agent hands `report.py` for one check, finding or list of decisions. It holds only what the agent decides; the tool computes the rest. |
+| Builder | `report.py`: the only writer of the draft. Every change it makes is validated and written atomically. |

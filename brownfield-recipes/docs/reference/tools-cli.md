@@ -153,7 +153,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 ## report.py
 
-Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
+Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. The draft's path may be a link: the draft it points to is changed, and the link stays a link. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
 The subcommands are `init`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`. `import-engine`, which brings in the engine's checks, is planned (S2.5), and so is the Markdown file that `finalise` will write beside the final report (`render_report.py`, S2.4).
 

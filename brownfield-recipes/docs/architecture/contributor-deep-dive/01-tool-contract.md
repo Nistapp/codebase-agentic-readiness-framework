@@ -5,7 +5,7 @@
 > **Status:** Live.
 
 > [!NOTE]
-> Planned. The tool catalogue generated from each tool's manifest is planned for S2.8, and the report builder and renderer that follow this contract are planned for S2.3 and S2.4. `engine.py` and `validate_report.py` follow it today.
+> Planned. The tool catalogue generated from each tool's manifest is planned for S2.8, and the renderer that follows this contract is planned for S2.4. `engine.py`, `validate_report.py` and `report.py` follow it today.
 
 ---
 

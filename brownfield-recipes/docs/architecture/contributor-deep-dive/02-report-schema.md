@@ -3,10 +3,10 @@
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain why the audit report has the shape it has, how it differs from the engine's schema v2, and what keeps it honest. The field tables are in [`SCHEMA.md`](../../../schema/SCHEMA.md), and this page does not repeat them.
 > **Related ADRs:** the engine's [ADR-0007](../../../deterministic-audit/docs/architecture/adrs/0007-json-report-render-contract.md), which makes the JSON report the render contract.
-> **Status:** Live for the schemas ([`audit-report.schema.json`](../../../schema/audit-report.schema.json), [`audit-intake.schema.json`](../../../schema/audit-intake.schema.json)) and for the validator. The tools that write and render a report are planned.
+> **Status:** Live for the schemas ([`audit-report.schema.json`](../../../schema/audit-report.schema.json), [`audit-intake.schema.json`](../../../schema/audit-intake.schema.json)), the validator and the report builder. The renderer and the engine adapter are planned.
 
 > [!NOTE]
-> Planned. `tools/report.py` (S2.3), `tools/render_report.py` (S2.4) and the engine adapter (S2.5) do not exist yet. `tools/validate_report.py` does. Where this page names one, it says what the schema requires of it, not what it does.
+> Planned. `tools/render_report.py` (S2.4) and the engine adapter, `report.py import-engine` (S2.5), do not exist yet. `tools/validate_report.py` and `tools/report.py` do. Where this page names a tool that does not, it says what the schema requires of it, not what it does.
 
 ---
 
@@ -16,7 +16,7 @@ One JSON file is the audit's result. The Markdown report is a pure function of i
 
 ```mermaid
 flowchart LR
-    Intake["Intake file"] --> Builder["report.py (planned)"]
+    Intake["Intake file"] --> Builder["report.py"]
     Engine["Engine report, schema v2"] --> Adapter["import-engine (planned)"] --> Builder
     Agent["Agent: checks and findings"] --> Builder
     Builder --> Report["audit-report.json"]
@@ -27,7 +27,7 @@ flowchart LR
 
 Three decisions give the report its shape.
 
-- **The model writes through one tool.** The builder is the only writer, so a model never edits the JSON by hand. That keeps `key`, `id` and `status` computable, and it is why `summary` is not the model's to write.
+- **The model writes through one tool.** The builder, `report.py`, is the only writer, so a model never edits the JSON by hand. That keeps `key`, `id` and `status` computable, and it is why `summary` is not the model's to write.
 - **`provenance` says what ran, and `run_context` says what was decided.** `provenance` is the engine, the harness and the target. `run_context` is the intake: `eval_mode`, `confirmation_policy`, the index, the probes allowed. A reader can tell an unattended evaluation from a person's audit without reading anything else.
 - **Closed objects.** Every object has `additionalProperties: false`, except the engine's `checks[].data`. A misspelt field is an error, and a field added later is a version change.
 
@@ -46,7 +46,7 @@ The spec gives each [verification method](../../../../spec/README.md#verificatio
 
 Two facts about the engine's own report forced the distinction. On its example report, 23 of the 42 `FAIL` and `PARTIAL` checks have no evidence on any of their findings ([audit-report.json](../../../deterministic-audit/examples/digital-assistant-sdk/audit-report.json)): the verdict is the tool's whole claim. A rule that every `FAIL` needs evidence would reject real engine output. For an agent, a positive verdict is judgment, and a judgment without a citation cannot be audited. A `FAIL` is different. It claims that something is missing, and the honest record of a failed look may be nothing. A rule that every `FAIL` lists a search would push a model to invent one, and nothing can check that the search ran, so the schema accepts a `FAIL` with no evidence and no search and leaves the summary to say "we did not find any evidence".
 
-`captured_by` says who recorded each fact, `tool` or `agent`. Evidence captured by a tool names the tool and its version, so a reader can tell a command the engine ran from one the model reports having run. The schema cannot prove capture. It makes the claim visible and leaves the proof to the tools that write the file; a report whose evidence was typed by a model and labelled `tool` is a failure the validator cannot catch alone.
+`captured_by` says who recorded each fact, `tool` or `agent`. Evidence captured by a tool names the tool and its version, so a reader can tell a command the engine ran from one the model reports having run. The schema cannot prove capture. It makes the claim visible and leaves the proof to the tools that write the file; a report whose evidence was typed by a model and labelled `tool` is a failure the validator cannot catch alone. The builder closes it at the door: evidence in a fragment is the agent's whatever it says, and a fragment that claims a tool captured it is refused ([`agent_evidence`](../../../tools/report.py#L476-L501)).
 
 There are three evidence kinds: `file`, `command` and `index_query`. There is no `absence` kind. A search that found nothing is a record of effort, not a fact about a file, and `searches[]` is where it goes.
 
@@ -56,7 +56,7 @@ Quotes are limited to 300 characters and command output to 2,000, and the valida
 
 ## 3. Stable keys and versions
 
-A finding has two identifiers. `id` (`F-001`) is for display, and the builder numbers findings in a report's order. `key` is the check ID plus an optional scope, as in `SEC-02:src/config/constants.ts`, and it does not change between runs. A re-audit, a before-and-after comparison and the implementation recipe's re-verification all match findings by `key`. The engine already derives its finding ID this way ([`findings.py`](../../../deterministic-audit/audit/findings.py#L69-L72)), so an imported engine ID becomes the key unchanged.
+A finding has two identifiers. `id` (`F-001`) is for display, and the builder numbers findings one past the highest in use. `key` is the check ID plus an optional scope, as in `SEC-02:src/config/constants.ts`, and it does not change between runs. A re-audit, a before-and-after comparison and the implementation recipe's re-verification all match findings by `key`. The engine already derives its finding ID this way ([`findings.py`](../../../deterministic-audit/audit/findings.py#L69-L72)), so an imported engine ID becomes the key unchanged.
 
 The schema is at `0.1`, and a `0.x` schema may break between releases. The freeze at `1.0` waits until both recipes have run end to end on two repositories, so that the first breaking change is not the one that follows a release. The report also records `catalogue_version`, because the schema, the check catalogue, the rubrics and the tools form one shared layer. The implementation recipe is meant to warn when a report was built against a different catalogue. The catalogue is planned (S1.5), so the field has no format yet beyond a non-empty string.
 
@@ -74,7 +74,20 @@ The schema is at `0.1`, and a `0.x` schema may break between releases. The freez
 
 ---
 
-## 5. Invariants & Failure Modes
+## 5. The builder
+
+[`report.py`](../../../tools/report.py) owns the draft, and four choices in it follow from what an agent is and does.
+
+- **The agent hands over a fragment, and the tool does the rest.** A check's title, phase, severity, `scored` flag and method come from the catalogue; a finding's `key` and `id` are computed; the summary is computed from the checks and findings. Each is a field a model could get wrong or make up, and a field the schema refuses in a fragment is a field the model cannot get wrong. The fragment's own rules are the report schema's, taken from its definitions by [`fragment_validator`](../../../tools/report.py#L448-L469) and never copied, so the two cannot disagree.
+- **A change is validated before it is written ([`update_draft`](../../../tools/report.py#L401-L432)).** The builder reads the draft and validates it, applies the change, recomputes the summary, validates the result with the validator's own function, and writes it atomically. A change the rules refuse writes nothing, and an agent that cannot see why reads `data.errors`, which names the rule. A draft that was already invalid is refused up front, so a broken draft cannot be blamed on the next change.
+- **The agent can add what only it can judge, and dispute what the engine said.** An automated check's verdict is the engine's, so the builder will not let an agent add one. It lets the agent dispute one the engine ran: the engine's verdict and evidence stay, and the agent's verdict, reason and evidence sit beside them. This is the override described under Invariants, made through a door that records both sides ([`override_check`](../../../tools/report.py#L586-L615)).
+- **Calls take turns.** An agent harness can run tool calls in parallel, and each call here is a read, a change and a write, so two at once would lose one. A lock on the output folder (`flock`, [`write_lock`](../../../tools/report.py#L343-L356)) makes them queue. It is on the folder because the draft file is replaced on every write, which would leave a waiting call holding a lock on a file that no longer exists. The system drops the lock when the process dies, so an interrupted run leaves nothing that blocks the next one. Where `flock` does not exist, which is native Windows (backlog item 2), the builder takes no lock and the calls must be made one at a time.
+
+What the builder does not do is judge. It does not decide that a check passes, that a finding is real, or that a finding should be confirmed; the agent supplies the first two and a person the third. `set-disposition` records a decision and who made it, and refuses the ones that would claim a person where there is none ([`refused_decisions`](../../../tools/report.py#L817-L848)).
+
+---
+
+## 6. Invariants & Failure Modes
 
 - **Invariant: the verdict that counts is `verdict`.** `engine_verdict` is kept beside it. A difference needs an `override_reason` and agent-captured counter-evidence, so the report shows the tool's word and the agent's side by side.
 - **Invariant: an eval-mode report is never final.** `eval_mode` is part of `run_context`, and `status: final` is forbidden with it, so evaluation output cannot pass as an audit.
