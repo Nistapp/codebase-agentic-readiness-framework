@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py` and `validate_report.py`. The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init`). The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py` and `validate_report.py` exist. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first subcommand. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | [`engine.py`](#enginepy) | Runs the deterministic engine from any directory | Live |
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
-| `report.py` | Builds and updates the audit report; the only writer | Planned (S2.3) |
+| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init`; the other subcommands: Planned (S2.3) |
 | `render_report.py` | Renders a report to Markdown | Planned (S2.4) |
 | `facts.py` | Emits stack and inventory facts, no verdicts | Planned (S2.7) |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
@@ -148,3 +148,67 @@ The tool checks in two stages. The first applies the schema, and a report that f
 | `rule 11: ... it looks like a credential` | Shorten the quote or the output tail, or leave it out. The patterns are the engine's, so a line such as `token: abc` is flagged even when it is not a secret. |
 | `schema: /path: ...` | The pointer names the field. The schema is [`audit-report.schema.json`](../../schema/audit-report.schema.json). |
 | `the file is not a report: ...` | The file is not one JSON document that this tool accepts. |
+
+---
+
+## report.py
+
+Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
+
+Only `init` exists so far. `add-check`, `add-finding`, `set-disposition`, `status` and `finalise` are planned in the same step (S2.3), and `import-engine` is S2.5.
+
+**Synopsis**
+
+```text
+python3 brownfield-recipes/tools/report.py init <intake>
+python3 brownfield-recipes/tools/report.py --describe
+```
+
+### init
+
+Starts a draft from an intake file. It reads the intake (the answers to the audit's Stage 0 questions, [`audit-intake.schema.json`](../../schema/audit-intake.schema.json)), captures the target's provenance, and creates `<label>.audit-draft.<stamp>.json` in the intake's `output_dir`. A second run on the same repository starts a second draft with a new stamp; the earlier draft stays as it was, and a name that is taken gets `-2`, `-3`. The names are defined in [Output files](../../schema/SCHEMA.md#output-files).
+
+**Inputs**
+
+| Argument | Meaning |
+|---|---|
+| `<intake>` | The intake file, a JSON file of at most 32 MiB. Relative paths inside it, `target_path` and `output_dir`, are relative to the working directory. |
+
+**What it records**
+
+| Field | Source |
+|---|---|
+| `provenance.target.path` | The intake's `target_path`, resolved to an absolute path. |
+| `provenance.target.git_sha`, `branch`, `dirty` | Read from git with read-only commands. Each is `null` when it cannot be known: the target is not a repository, the repository has no commit, `HEAD` is detached (no branch), or git is missing. A target that is a subfolder of a repository records nothing and gives a warning, because a commit id says nothing about a subfolder. |
+| `provenance.target.label` | The intake's `repo_label`, or a label derived from the target directory's name. |
+| `provenance.framework_revision` | The commit of the framework checkout the tools run from, or `null` when they are not in one. |
+| `provenance.catalogue_version` | The version of [`catalogue.json`](../../catalogue.json). |
+| `provenance.agent` | The intake's `harness` and `model`. |
+| `provenance.started_at` | The UTC start time. Its `YYYYMMDDTHHMMSSZ` form is the stamp in the file name. |
+| `run_context` | The intake's `eval_mode`, `confirmation_policy`, `provider_exposure_acknowledged`, `index` (without `allow_install`), `probes` (default: nothing allowed, 120 seconds), `excluded` and `known_components`. `allow_install` and `output_dir` are instructions to the run and are not in the report. |
+
+The draft starts with no checks, no findings and a summary computed from them. The scan facts (`stack`, `components`) and the engine's checks arrive with `import-engine` (S2.5).
+
+**Outputs**
+
+`data` holds `draft` (the path written), `label`, `target` (`path`, `git_sha`, `branch`, `dirty`) and `status` (`draft`). Warnings are in the envelope.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The draft was written. |
+| `1` | A bad argument, an intake that is missing or too large, a target that is missing or not a directory, or an `output_dir` inside the target, including through a symlink. Nothing is written. |
+| `2` | The intake fails its schema or its rules, or is not valid JSON. `data.errors` lists every error. Nothing is written. |
+| `3` | Internal error. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `schema: /pointer: ...` | The pointer names the field of the intake that the schema refuses. |
+| `intake rule: /confirmation_policy: 'accept-all' is allowed only with eval_mode set to true` | `accept-all` confirms every finding without a person, so it is for evaluation runs. Set `eval_mode` or choose another policy. |
+| `intake rule: /confirmation_policy: an eval-mode run cannot be 'interactive'` | An evaluation run has no person to ask. Use `defer-all` or `accept-all`. |
+| `intake rule: /index/name: ... the index needs a name` | Name the index tool, or set `index.kind` to `none`. |
+| `target not found: ...` | Fix `target_path`. |
+| `refusing to write inside the target: ...` | Choose an `output_dir` outside the repository. |

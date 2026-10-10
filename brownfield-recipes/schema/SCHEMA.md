@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone who reads, writes or validates an audit report
 > **Source of truth:** [`audit-report.schema.json`](audit-report.schema.json) and [`audit-intake.schema.json`](audit-intake.schema.json). Where this page and a schema disagree, the schema wins and this page has a defect.
-> **Status:** Live for the schemas and examples. The validator, builder, renderer and engine adapter that use them are planned; each section that depends on one says so.
+> **Status:** Live for the schemas, the examples and the validator. The report builder is live for `init` and planned for its other subcommands; the renderer and the engine adapter are planned. Each section that depends on one says so.
 
 ---
 
@@ -85,12 +85,12 @@ A `?` marks an optional field. Every object is closed: a field the schema does n
 | `catalogue_version` | See Versioning. |
 | `engine` | Absent until an engine report is imported. `name`, `version`, `ruleset_revision`, `ruleset_hash`, and `scanned_at` as the engine reported them. |
 | `agent` | `harness` and `model`. Self-reported by the operator or the agent and unverified. `none` for both when no agent took part, as in a report that only imports an engine run. |
-| `target` | `label`, `path`, `git_sha`, `branch` and `dirty`. `label` is the short repository name used in output file names (see Output files). The last three are `null` when the target is not a git repository. The path is whatever the operator typed; anonymise it before sharing a report if the repository is private. |
+| `target` | `label`, `path`, `git_sha`, `branch` and `dirty`. `label` is the short repository name used in output file names (see Output files). The last three are `null` when the target is not a git repository. `report.py init` records the path resolved to an absolute one, so that later calls from another directory find the target; anonymise it before sharing a report if the repository is private. |
 | `started_at`, `finalised_at` | ISO 8601 with an offset. `finalised_at` is set with `status: final`. |
 
 ### `run_context`
 
-The intake answers, as the run used them. [`report.py init`](#intake-file) (planned, S2.3) copies them in.
+The intake answers, as the run used them. [`report.py init`](#intake-file) copies them in.
 
 | Field | Meaning |
 |---|---|
@@ -197,7 +197,7 @@ The report also shows the unattested list beside them. The spec defines no level
 Every file a run writes carries the repository's name, so that runs on several repositories sit side by side. No run replaces another run's output.
 
 > [!NOTE]
-> The engine report is written under this rule today, by [`tools/engine.py`](../tools/engine.py), with the helpers in [`tools/_common.py`](../tools/_common.py). The draft and final reports are planned: `report.py` is S2.3 and `render_report.py` is S2.4. They must keep to these names.
+> The engine report is written under this rule today, by [`tools/engine.py`](../tools/engine.py), and so is the draft, by [`report.py init`](../tools/report.py), with the helpers in [`tools/_common.py`](../tools/_common.py). The final report (`report.py finalise`, S2.3) and the Markdown file (`render_report.py`, S2.4) are planned. They must keep to these names.
 
 | File | Name | Written by |
 |---|---|---|
@@ -242,7 +242,7 @@ The subset has no `oneOf`, `anyOf`, `if` or `format`. What each evidence kind ne
 ## Rules beyond the schema
 
 > [!NOTE]
-> Live: [`tools/validate_report.py`](../tools/validate_report.py) applies all twelve rules. `tools/report.py` (S2.3), which enforces the intake rules at the end of this section, is planned.
+> Live: [`tools/validate_report.py`](../tools/validate_report.py) applies all twelve rules, and [`tools/report.py init`](../tools/report.py) enforces the intake rules at the end of this section.
 
 A report is valid when it meets the schema and every rule here. An error fails validation. A warning does not. The tool checks in two stages: the schema first, and the rules only for a report that passes it, because the rules read fields the schema guarantees. Warnings are reported once a report has no errors.
 
@@ -259,7 +259,7 @@ A report is valid when it meets the schema and every rule here. An error fails v
 11. **No secrets.** No `quote` or `output_tail` holds a string shaped like a credential, judged by the engine's redaction patterns.
 12. **Warnings.** A `file` path that does not exist in the target at `git_sha`, when the target can be reached. The tool reaches it only when given `--target`. It asks git (`git cat-file`, which writes nothing) whether the commit holds the path, and looks in the working tree when `git_sha` is `null`. When the target lacks the commit, or git is missing, the tool says so in one warning and checks nothing else.
 
-The intake file has its own rules, which `report.py init` enforces (planned, S2.3): `accept-all` needs `eval_mode: true`, `eval_mode: true` rules out `interactive`, `index.name` is present unless `kind` is `none`, `target_path` is an existing directory, and `output_dir` is not inside it.
+The intake file has its own rules, which `report.py init` enforces: `accept-all` needs `eval_mode: true`, `eval_mode: true` rules out `interactive`, `index.name` is present unless `kind` is `none`, `target_path` is an existing directory, and `output_dir` is not inside it.
 
 ---
 
