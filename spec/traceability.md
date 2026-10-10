@@ -80,6 +80,15 @@ Check IDs and severities are those printed by `python3 -m audit --list-checks`.
 | `HYG-10` | License present | COSMETIC | no (informational) | none: informational, reported and never scored |
 | `HYG-11` | Branch protection declared as code | COSMETIC | no (informational) | none: informational, reported and never scored |
 
+## Checks that do not yet verify their requirement
+
+The engine has not caught up with [decision 0001](decisions/0001-constraint-artifact.md). Until it does, these two checks do not verify the requirement they are listed against. The decision's "Engine changes not yet made" list says what changes.
+
+| Check | Requirement | What the engine does today |
+|---|---|---|
+| `CON-01` | [REQ-SH-037](readiness-requirements.md#req-sh-037--allow-and-deny-lists) | Blocked, weight 0. It reads nothing. |
+| `CON-02` | [REQ-SH-038](readiness-requirements.md#req-sh-038--test-directories-denied) | Reads root-level constraint files, ignore rules and CI text. It never reads the prohibitions section. |
+
 ## Requirements without a check
 
 7 of the 60 requirements have no check. The five attested ones are the engine's unattested list: the report shows them as unattested and they earn no credit.
