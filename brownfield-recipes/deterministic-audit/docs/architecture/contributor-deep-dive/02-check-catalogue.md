@@ -32,7 +32,7 @@
 
 Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
 
-Of the 56: `CON-01` carries weight 0 in v1 (its artifact contract is undefined at framework level) and `CON-04` is
+Of the 56: `CON-01` carries weight 0 in v1 (the engine does not read the artifact that the spec now defines) and `CON-04` is
 an emitter rather than a check, leaving **54 scoreable checks** in v1.
 
 > [!NOTE]
@@ -139,10 +139,11 @@ suspicious verdict.
 ## 9. `CON` — Constraints
 
 > [!WARNING]
-> `CON-01` is **blocked**: the framework requires initial Constraint Engineering allow/deny lists as a Phase-1
-> deliverable but defines no artifact name or schema for them anywhere in the framework or its templates. Until
-> that contract exists this check carries weight 0 and the audit instead *emits* a draft list derived from the
-> scan (`CON-04`).
+> `CON-01` is **blocked**: the engine was written when the framework required initial Constraint Engineering
+> allow/deny lists as a Phase-1 deliverable but named no artifact for them. The spec now names it, the prohibitions
+> section of the instruction file ([decision 0001](../../../../../spec/decisions/0001-constraint-artifact.md)), but
+> the engine does not read that section yet. Until it does this check carries weight 0, `CON-02` still reads
+> constraint files rather than the section, and the audit *emits* a draft list derived from the scan (`CON-04`).
 
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
