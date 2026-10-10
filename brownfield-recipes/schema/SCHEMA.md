@@ -128,7 +128,7 @@ The intake answers, as the run used them. [`report.py init`](#intake-file) (plan
 | `command`, `exit_code`, `output_tail`, `timed_out`, `duration_s`, `redactions` | `command` | The command that ran, how it ended, the end of its output after redaction, and how many redactions were made. |
 | `index_tool`, `query`, `result_summary` | `index_query` | The index function called, its query and a short summary of the result. |
 
-A search has `tool` (`glob`, `grep` or `index`), the `pattern`, the `scope` and the number of `hits`. A search with no hits is how an `agent` check shows that it looked.
+A search has `tool` (`glob`, `grep` or `index`), the `pattern`, the `scope` and the number of `hits`. It records a search the agent actually ran. A check that found nothing and ran no search says so in its `summary`; nothing is made up to show effort.
 
 ### `findings[]`
 
@@ -218,7 +218,7 @@ A report is valid when it meets the schema and every rule here. An error fails v
 2. **Catalogue.** Once the catalogue exists (S1.5), each check's `title`, `phase`, `severity`, `scored` and `method` agree with it, and each `playbook` names a playbook that exists.
 3. **Evidence by kind.** `file` evidence has a `path`, and `lines` only with a `path`. `command` evidence has a `command`. `index_query` evidence has an `index_tool` and a `query`. A `path` is relative to the target and does not leave it.
 4. **Who captured it.** Evidence with `captured_by: tool` names the `tool` and its `tool_version`. Evidence with `captured_by: agent` names neither.
-5. **Methods.** A check with an `engine_verdict` has `method: automated`, and the report has `provenance.engine`. An `automated` check needs no evidence of its own: the tool's recorded output is the evidence. An `agent` check has no `engine_verdict`; its `PASS` or `PARTIAL` has at least one evidence item, and its `FAIL` has at least one search.
+5. **Methods.** A check with an `engine_verdict` has `method: automated`, and the report has `provenance.engine`. An `automated` check needs no evidence of its own: the tool's recorded output is the evidence. An `agent` check has no `engine_verdict`; its `PASS` or `PARTIAL` has at least one evidence item. Its `FAIL` needs neither evidence nor a search: when the agent found nothing, its `summary` says "we did not find any evidence", and the report invents no evidence and no search to fill the gap.
 6. **Overrides.** When `verdict` differs from `engine_verdict`, the check has an `override_reason` and at least one agent-captured evidence item. When they agree there is no `override_reason`.
 7. **Findings.** A finding's `severity` is not higher than its check's. A finding on a check whose verdict is `PASS` or `NOT_APPLICABLE` has the disposition `rejected`. `confirmed_via` is present if and only if the disposition is not `pending`.
 8. **Final reports.** `status: final` needs `finalised_at`, no `pending` finding, `eval_mode` false, and `confirmed_via: interactive` on every finding of BLOCKER severity.
