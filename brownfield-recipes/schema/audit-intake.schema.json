@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:codebase-agentic-readiness-framework:audit-intake:0.1",
+  "title": "Audit intake",
+  "description": "The answers to the audit's Stage 0 questions, given in a file so that a run needs no interview. A person fills it in once and reuses it for re-audits; an evaluation run reads it unattended. report.py init copies it into the report's run_context. Rules a schema cannot express are in SCHEMA.md.",
+  "type": "object",
+  "required": [
+    "intake_version",
+    "target_path",
+    "harness",
+    "model",
+    "provider_exposure_acknowledged",
+    "index",
+    "confirmation_policy",
+    "output_dir"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "intake_version": {
+      "description": "Version of this schema. 0.x versions may break between releases.",
+      "const": "0.1"
+    },
+    "target_path": {
+      "description": "The repository to audit. A directory the audit only reads.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "harness": {
+      "description": "The agent harness that runs the recipe, as the operator names it. Self-reported and unverified.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "model": {
+      "description": "The model the harness uses, as the operator names it. Self-reported and unverified.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "provider_exposure_acknowledged": {
+      "description": "The operator confirms that the model provider receives whatever the agent reads from the target. There is no way to start without it.",
+      "const": true
+    },
+    "index": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "description": "How the agent reaches a code index: an MCP server, a command-line tool, or not at all.",
+          "enum": ["mcp", "cli", "none"]
+        },
+        "name": {
+          "description": "The index tool's name, for example codebase-memory-mcp. Needed when kind is mcp or cli.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "allow_install": {
+          "description": "Whether the recipe may install or build the index for the target. Off when absent. An installed index lives outside the target.",
+          "type": "boolean"
+        },
+        "notes": { "type": "string", "maxLength": 300 }
+      }
+    },
+    "probes": {
+      "description": "Which of the target's own commands the engine's probe runner may execute. None when absent. A target's commands run its code.",
+      "type": "object",
+      "required": ["allowed", "timeout_s"],
+      "additionalProperties": false,
+      "properties": {
+        "allowed": {
+          "type": "array",
+          "maxItems": 7,
+          "items": { "enum": ["format", "format:check", "lint", "typecheck", "test", "check", "security"] }
+        },
+        "timeout_s": { "type": "integer", "minimum": 1, "maximum": 3600 }
+      }
+    },
+    "excluded": {
+      "description": "Paths the audit leaves out, relative to the target.",
+      "type": "array",
+      "maxItems": 200,
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+    },
+    "known_components": {
+      "description": "Component roots the operator already knows, relative to the target.",
+      "type": "array",
+      "maxItems": 200,
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+    },
+    "confirmation_policy": {
+      "description": "interactive asks the person about each finding. defer-all leaves every disposition pending. accept-all confirms every finding and is allowed only with eval_mode.",
+      "enum": ["interactive", "defer-all", "accept-all"]
+    },
+    "output_dir": {
+      "description": "Where the report and its draft are written. Outside the target.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "eval_mode": {
+      "description": "True for a headless evaluation run. Its report is stamped eval_mode and can never be final. False when absent.",
+      "type": "boolean"
+    }
+  }
+}

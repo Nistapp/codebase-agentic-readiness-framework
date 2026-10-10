@@ -1,0 +1,14 @@
+{
+  "intake_version": "0.1",
+  "target_path": "/work/example-service",
+  "harness": "claude-code",
+  "model": "claude-sonnet-5-5",
+  "provider_exposure_acknowledged": true,
+  "index": { "kind": "mcp", "name": "codebase-memory-mcp", "allow_install": false },
+  "probes": { "allowed": ["test", "typecheck"], "timeout_s": 120 },
+  "excluded": ["dist/", "coverage/"],
+  "known_components": [],
+  "confirmation_policy": "interactive",
+  "output_dir": "/work/audit-output/example-service",
+  "eval_mode": false
+}
