@@ -24,7 +24,7 @@ import threading
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 from unittest import mock
 
 import _paths
@@ -38,6 +38,7 @@ TOOLS = _paths.TOOLS
 REALISTIC = TOOLS.parent / "schema" / "examples" / "realistic"
 DRAFT_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]*\.audit-draft\.[0-9]{8}T[0-9]{6}Z(-[0-9]+)?\.json$")
 MOMENT = datetime(2026, 10, 10, 9, 30, 0, tzinfo=timezone.utc)
+FINAL_MOMENT = datetime(2026, 10, 10, 11, 45, 30, tzinfo=timezone.utc)
 
 
 def call(argv: Sequence[str], stdin: str = "") -> tuple[int, dict[str, Any], str]:
@@ -149,6 +150,14 @@ class BuilderCase(unittest.TestCase):
         code, envelope, _ = self.decide(draft, "--via", "batch", "--from", "-", stdin=json.dumps(others))
         self.assertEqual(code, 0, envelope)
         return draft
+
+    def finalise(self, draft: Path) -> tuple[int, dict[str, Any], str]:
+        with mock.patch.object(rb, "utc_now", return_value=FINAL_MOMENT):
+            return call(["finalise", str(draft)])
+
+    def files(self) -> dict[str, bytes]:
+        """Every file in the output folder with its bytes, to show that nothing changed or was replaced."""
+        return {p.name: p.read_bytes() for p in sorted(self.out.iterdir())}
 
     def stdout_lines(self, *argv: str) -> int:
         """Run the tool as a script and count the lines it prints on stdout, which is what a recipe reads."""
@@ -1614,6 +1623,244 @@ class StatusTests(BuilderCase):
         self.assertEqual(self.status(draft)[0], 0)
 
 
+class FinaliseTests(BuilderCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.draft = self.complete_engine_draft()
+
+    def test_it_writes_the_final_report_as_a_new_file_and_leaves_the_draft_as_it_was(self) -> None:
+        before = self.files()
+        code, envelope, stderr = self.finalise(self.draft)
+        self.assertEqual(code, 0, envelope)
+        final = Path(envelope["data"]["report"])
+        self.assertEqual(final.name, "agentic-tdd.audit-report.20261010T114530Z.json")
+        self.assertEqual(final.parent, self.out)
+        after = self.files()
+        self.assertEqual({name: data for name, data in after.items() if name != final.name}, before)
+        self.assertEqual(set(after) - set(before), {final.name})
+        self.assertEqual(envelope["data"]["status"], "final")
+        self.assertEqual(envelope["data"]["finalised_at"], "2026-10-10T11:45:30+00:00")
+        self.assertEqual((envelope["data"]["checks"], envelope["data"]["findings"]), (71, 24))
+        self.assertEqual(envelope["data"]["summary"], read_json(final)["summary"])
+        self.assertRegex(
+            stderr,
+            r"^report: wrote agentic-tdd\.audit-report\.20261010T114530Z\.json \(phase-1 score [0-9.]+, 24 findings\)\n$",
+        )
+
+    def test_the_final_report_validates_and_is_the_draft_made_final(self) -> None:
+        _, envelope, _ = self.finalise(self.draft)
+        final = read_json(envelope["data"]["report"])
+        self.assertEqual(vr.validate_document(final).errors, [])
+        self.assertEqual((final["status"], final["provenance"]["finalised_at"]), ("final", "2026-10-10T11:45:30+00:00"))
+        self.assertEqual(final["summary"], _summary.compute_summary(final))
+        self.assertEqual(list(final["provenance"])[-2:], ["started_at", "finalised_at"])
+        reopened = json.loads(json.dumps(final))
+        reopened["status"] = "draft"
+        del reopened["provenance"]["finalised_at"]
+        self.assertEqual(reopened, read_json(self.draft))
+        done = subprocess.run(
+            [sys.executable, str(TOOLS / "validate_report.py"), envelope["data"]["report"]],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+    def test_a_second_finalise_leaves_every_earlier_file_byte_identical(self) -> None:
+        self.finalise(self.draft)
+        first = self.files()
+        code, envelope, _ = self.finalise(self.draft)
+        self.assertEqual(code, 0)
+        self.assertEqual(Path(envelope["data"]["report"]).name, "agentic-tdd.audit-report.20261010T114530Z-2.json")
+        after = self.files()
+        self.assertEqual({name: data for name, data in after.items() if name in first}, first)
+        self.assertEqual(len(after), len(first) + 1)
+        later = datetime(2026, 10, 10, 12, 0, 0, tzinfo=timezone.utc)
+        with mock.patch.object(rb, "utc_now", return_value=later):
+            code, envelope, _ = call(["finalise", str(self.draft)])
+        self.assertEqual(Path(envelope["data"]["report"]).name, "agentic-tdd.audit-report.20261010T120000Z.json")
+        self.assertEqual({name: data for name, data in self.files().items() if name in first}, first)
+
+    def test_a_second_run_on_the_same_repository_leaves_a_finished_report_alone(self) -> None:
+        _, envelope, _ = self.finalise(self.draft)
+        final = Path(envelope["data"]["report"])
+        final_bytes = final.read_bytes()
+        intake = self.write_intake()
+        later = datetime(2026, 10, 11, 8, 0, 0, tzinfo=timezone.utc)
+        with mock.patch.object(rb, "utc_now", return_value=later):
+            code, _, _ = call(["init", str(intake)])
+        self.assertEqual(code, 0)
+        self.assertEqual(final.read_bytes(), final_bytes)
+
+    def test_a_draft_with_a_finding_still_pending_is_refused_and_nothing_is_written(self) -> None:
+        self.decide(self.draft, "--finding", "F-001", "--disposition", "pending")
+        code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(code, 2)
+        self.assertEqual(envelope["data"]["error"], "the draft cannot be finalised: 1 problem")
+        self.assertEqual(envelope["data"]["errors"], ["1 finding still pending: F-001"])
+
+    def unchanged_dir(self, run: Any) -> tuple[int, dict[str, Any], str]:
+        before = self.files()
+        outcome: tuple[int, dict[str, Any], str] = run()
+        self.assertEqual(self.files(), before)
+        return outcome
+
+    def test_every_problem_is_listed_and_long_lists_are_cut(self) -> None:
+        draft = self.engine_draft()
+        code, envelope, _ = self.unchanged_dir(lambda: self.finalise(draft))
+        self.assertEqual(code, 2)
+        self.assertEqual(
+            envelope["data"]["errors"][:2], ["checks not recorded in AGT: AGT-11", "checks not recorded in CI: CI-04"]
+        )
+        self.assertEqual(envelope["data"]["errors"][2].split(":")[0], "24 findings still pending")
+        self.assertTrue(envelope["data"]["errors"][2].endswith(" and 4 more"))
+        shown = envelope["data"]["errors"][2].split(": ", 1)[1].split(" and ")[0].split()
+        self.assertEqual((len(shown), shown[0]), (20, "F-001"))
+        self.assertEqual(rb.listed(["F-1", "F-2"]), "F-1 F-2")
+
+    def test_an_eval_run_is_never_finalised(self) -> None:
+        draft = self.draft_with_findings(["a"], confirmation_policy="accept-all", eval_mode=True)
+        code, envelope, _ = self.unchanged_dir(lambda: self.finalise(draft))
+        self.assertEqual(code, 2)
+        self.assertEqual(envelope["data"]["errors"][0], "this is an eval-mode run, and its report is never final")
+
+    def test_a_blocker_that_no_person_decided_alone_is_refused(self) -> None:
+        document = read_json(self.draft)
+        blocker = next(f for f in document["findings"] if f["severity"] == "BLOCKER")
+        blocker["confirmed_via"] = "batch"
+        self.draft.write_text(rb.dumps(document), encoding="utf-8")
+        code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(code, 2)
+        self.assertEqual(envelope["data"]["errors"], [f"BLOCKER findings not decided interactively: {blocker['id']}"])
+
+    def test_a_final_report_that_would_not_be_valid_is_never_written(self) -> None:
+        real = vr.validate_document
+
+        def failing_for_final(document: Any, **kwargs: Any) -> Any:
+            if isinstance(document, dict) and document.get("status") == "final":
+                return vr.Outcome(errors=["rule 8: /: made up"])
+            return real(document, **kwargs)
+
+        with mock.patch.object(vr, "validate_document", failing_for_final):
+            code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(code, 2)
+        self.assertEqual(envelope["data"]["errors"], ["rule 8: /: made up"])
+        self.assertTrue(
+            envelope["data"]["error"].startswith("the final report would not be valid, so nothing was written")
+        )
+
+    def test_a_failed_write_leaves_no_partial_file_and_the_draft_intact(self) -> None:
+        with mock.patch("os.fsync", side_effect=OSError(28, "No space left on device")):
+            code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(code, 1)
+        self.assertIn("cannot write the final report", envelope["data"]["error"])
+
+    def test_a_final_report_is_never_changed_afterwards(self) -> None:
+        _, envelope, _ = self.finalise(self.draft)
+        final = Path(envelope["data"]["report"])
+        code, envelope, _ = self.unchanged_by(final, lambda: self.add_check(final, agent_check()))
+        self.assertEqual(code, 1)
+        self.assertIn("is a final report", envelope["data"]["error"])
+        code, envelope, _ = self.unchanged_dir(lambda: self.finalise(final))
+        self.assertEqual(code, 1)
+        self.assertIn("is a final report", envelope["data"]["error"])
+
+    def test_a_draft_inside_the_target_is_refused(self) -> None:
+        document = read_json(self.draft)
+        document["provenance"]["target"]["path"] = str(self.root)
+        self.draft.write_text(rb.dumps(document), encoding="utf-8")
+        code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(code, 1)
+        self.assertIn("refusing to write inside the target", envelope["data"]["error"])
+
+    def test_a_draft_that_is_missing_or_invalid_is_refused(self) -> None:
+        code, envelope, _ = self.finalise(self.out / "none.json")
+        self.assertEqual((code, "draft not found" in envelope["data"]["error"]), (1, True))
+        code, envelope, _ = self.finalise(self.root / "nowhere" / "d.json")
+        self.assertEqual((code, "draft not found" in envelope["data"]["error"]), (1, True))
+        document = read_json(self.draft)
+        document["summary"]["phase1_score"] = 0.5
+        self.draft.write_text(rb.dumps(document), encoding="utf-8")
+        code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(code, 2)
+        self.assertIn("the draft is not valid before the change", envelope["data"]["error"])
+
+    def test_cited_files_that_are_not_in_the_target_are_warnings_and_bounded(self) -> None:
+        code, envelope, _ = self.finalise(self.draft)
+        self.assertEqual(code, 0)
+        self.assertGreater(len(envelope["warnings"]), 0)
+        self.assertTrue(all(w.startswith("/") and "is not in the target" in w for w in envelope["warnings"]))
+
+    def test_it_waits_for_the_lock_and_writes_nothing_inside_the_target(self) -> None:
+        before = tree_state(self.target)
+        self.finalise(self.draft)
+        self.assertEqual(tree_state(self.target), before)
+        with mock.patch.object(rb, "LOCK_WAIT_S", 0.2), rb.write_lock(self.out):
+            code, envelope, _ = self.unchanged_dir(lambda: self.finalise(self.draft))
+        self.assertEqual(code, 1)
+        self.assertIn("another report command has held the lock", envelope["data"]["error"])
+
+    def test_status_says_ready_exactly_when_finalise_succeeds(self) -> None:
+        def one_pending() -> Path:
+            draft = self.complete_engine_draft()
+            self.decide(draft, "--finding", "F-003", "--disposition", "pending")
+            return draft
+
+        scenarios: dict[str, Callable[[], Path]] = {
+            "new": self.start,
+            "engine": self.engine_draft,
+            "complete": self.complete_engine_draft,
+            "one pending": one_pending,
+            "eval": lambda: self.draft_with_findings(["a"], confirmation_policy="accept-all", eval_mode=True),
+        }
+        outcomes: dict[str, tuple[Any, bool]] = {}
+        for name, make in scenarios.items():
+            self.out = self.root / f"out-{name.replace(' ', '-')}"
+            draft = make()
+            ready = self.data_of(draft)["ready_to_finalise"]
+            code, _, _ = self.finalise(draft)
+            outcomes[name] = (ready, code == 0)
+        self.assertEqual(
+            outcomes,
+            {
+                "new": (False, False),
+                "engine": (False, False),
+                "complete": (True, True),
+                "one pending": (False, False),
+                "eval": (False, False),
+            },
+        )
+
+    def data_of(self, draft: Path) -> dict[str, Any]:
+        _, envelope, _ = call(["status", str(draft)])
+        data: dict[str, Any] = envelope["data"]
+        return data
+
+    def test_a_scripted_sequence_builds_a_draft_that_validates_at_every_step(self) -> None:
+        draft = self.start()
+        steps: list[Callable[[], tuple[int, dict[str, Any], str]]] = [
+            lambda: self.add_check(draft, agent_check(verdict="FAIL", summary="Restates the README.")),
+            lambda: self.add_check(draft, agent_check(id="CI-04", verdict="FAIL", summary="No CI.", evidence=[])),
+            lambda: self.add_finding(draft, agent_finding()),
+            lambda: self.add_finding(draft, agent_finding(scope="docs")),
+            lambda: self.decide(draft, "--via", "interactive", "--finding", "F-001", "--disposition", "confirmed"),
+            lambda: self.decide(
+                draft, "--via", "batch", "--finding", "F-002", "--disposition", "deferred", "--note", "Later."
+            ),
+        ]
+        for number, step in enumerate(steps, start=1):
+            code, envelope, _ = step()
+            self.assertEqual(code, 0, (number, envelope))
+            document = read_json(draft)
+            self.assertEqual(vr.validate_document(document).errors, [], number)
+            self.assertEqual(document["summary"], _summary.compute_summary(document), number)
+        data = self.data_of(draft)
+        self.assertEqual((data["checks_recorded"], data["findings"], data["findings_pending"]), (2, 2, 0))
+        code, envelope, _ = self.unchanged_dir(lambda: self.finalise(draft))
+        self.assertEqual(code, 2, "the 69 checks of the engine arrive with import-engine (S2.5)")
+        self.assertEqual(len(envelope["data"]["errors"]), 13, "one line for each of the 13 families")
+
+
 class ConcurrencyTests(BuilderCase):
     def test_commands_that_run_at_the_same_time_lose_nothing(self) -> None:
         draft = self.failing_draft()
@@ -1704,6 +1951,7 @@ class ToolContractTests(BuilderCase):
         self.assertTrue(any(line.startswith("report.py add-finding") for line in manifest["synopsis"]))
         self.assertTrue(any(line.startswith("report.py set-disposition") for line in manifest["synopsis"]))
         self.assertTrue(any(line.startswith("report.py status") for line in manifest["synopsis"]))
+        self.assertTrue(any(line.startswith("report.py finalise") for line in manifest["synopsis"]))
 
     def test_a_missing_or_unknown_subcommand_is_exit_1(self) -> None:
         for argv in ([], ["nothing"]):

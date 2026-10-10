@@ -8,6 +8,7 @@
     report.py add-finding <draft> --from FILE|-
     report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
     report.py status <draft>
+    report.py finalise <draft>
 
 ``init`` reads the intake file, captures the target's provenance (commit, branch, whether the working tree is
 dirty), and creates ``<label>.audit-draft.<stamp>.json`` in the intake's ``output_dir``. It never replaces a file: a
@@ -58,11 +59,13 @@ INFO = _common.ToolInfo(
         "report.py add-finding <draft> --from FILE|-",
         "report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)",
         "report.py status <draft>",
+        "report.py finalise <draft>",
     ),
     writes=(
         "init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the "
         "target; a name that is taken is never replaced. add-check, add-finding and set-disposition: that draft, in "
-        "place and atomically, and no other file. status: nothing."
+        "place and atomically, and no other file. status: nothing. finalise: a new final report, "
+        "<label>.audit-report.<stamp>.json, beside the draft, which it leaves as it was."
     ),
 )
 
@@ -71,6 +74,8 @@ RECIPE_VERSION = "0.1.0"
 SCHEMA_VERSION = "0.1"
 DRAFT_KIND = "audit-draft"
 DEFAULT_PROBE_TIMEOUT_S = 120
+FINAL_KIND = "audit-report"
+LISTED_IDS = 20
 MAX_FRAGMENT_CHARS = 1024 * 1024
 LOCK_WAIT_S = 30
 STATUS_LINE_BUDGET = 40
@@ -387,6 +392,12 @@ def target_directory(document: Mapping[str, Any]) -> Path | None:
     return named.resolve() if named.is_dir() else None
 
 
+def refuse_inside_target(target: Path | None, path: Path) -> None:
+    """A draft that sits inside its own target is refused: the tools never write inside the repository they audit."""
+    if target is not None and _common.is_within(target, path.resolve().parent):
+        raise _common.PathNotAllowed(f"refusing to write inside the target: {path.resolve().parent}")
+
+
 def update_draft(argument: str, change: Callable[[dict[str, Any]], Change]) -> _common.Result:
     """Apply `change` to the draft named by `argument`: validate, then write atomically, or write nothing."""
     path = Path(argument).expanduser()
@@ -396,8 +407,7 @@ def update_draft(argument: str, change: Callable[[dict[str, Any]], Change]) -> _
     with write_lock(directory):
         working = read_draft(path)
         target = target_directory(working)
-        if target is not None and _common.is_within(target, path.resolve().parent):
-            raise _common.PathNotAllowed(f"refusing to write inside the target: {path.resolve().parent}")
+        refuse_inside_target(target, path)
         made = change(working)
         working["summary"] = _summary.compute_summary(working)
         outcome = vr.validate_document(working, target=target)
@@ -909,6 +919,17 @@ def pending_findings(document: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     return sorted(waiting, key=lambda finding: SEVERITY_ORDER[finding["severity"]])
 
 
+def undecided_blockers(document: Mapping[str, Any]) -> list[str]:
+    """The ids of the BLOCKER findings that have a decision, but not one a person gave for that finding alone."""
+    return [
+        finding["id"]
+        for finding in document["findings"]
+        if finding["severity"] == "BLOCKER"
+        and finding["disposition"] != "pending"
+        and finding.get("confirmed_via") != "interactive"
+    ]
+
+
 def blocking_reasons(document: Mapping[str, Any]) -> list[str]:
     """What stands between this draft and a final report, in a few words each. Empty when nothing does."""
     if document["status"] == "final":
@@ -922,13 +943,7 @@ def blocking_reasons(document: Mapping[str, Any]) -> list[str]:
     waiting = len(pending_findings(document))
     if waiting:
         reasons.append(f"{waiting} finding{'' if waiting == 1 else 's'} {'is' if waiting == 1 else 'are'} pending")
-    undecided = sum(
-        1
-        for finding in document["findings"]
-        if finding["severity"] == "BLOCKER"
-        and finding["disposition"] != "pending"
-        and finding.get("confirmed_via") != "interactive"
-    )
+    undecided = len(undecided_blockers(document))
     if undecided:
         reasons.append(f"{undecided} BLOCKER finding{'' if undecided == 1 else 's'} not decided interactively")
     return reasons
@@ -986,6 +1001,88 @@ def run_status(args: argparse.Namespace) -> _common.Result:
     )
 
 
+# --- finalise ------------------------------------------------------------------------------------------------
+
+
+def listed(ids: Sequence[str]) -> str:
+    """The first `LISTED_IDS` ids, and how many more there are."""
+    shown = " ".join(ids[:LISTED_IDS])
+    return shown if len(ids) <= LISTED_IDS else f"{shown} and {len(ids) - LISTED_IDS} more"
+
+
+def finalisation_errors(document: Mapping[str, Any]) -> list[str]:
+    """Everything that stops a draft becoming final, one problem to a line, the same facts `status` summarises."""
+    errors: list[str] = []
+    if document["run_context"]["eval_mode"]:
+        errors.append("this is an eval-mode run, and its report is never final")
+    for family, ids in missing_checks(document).items():
+        errors.append(f"checks not recorded in {family}: {' '.join(ids)}")
+    waiting = [finding["id"] for finding in pending_findings(document)]
+    if waiting:
+        errors.append(f"{len(waiting)} finding{'' if len(waiting) == 1 else 's'} still pending: {listed(waiting)}")
+    undecided = undecided_blockers(document)
+    if undecided:
+        errors.append(f"BLOCKER findings not decided interactively: {listed(undecided)}")
+    return errors
+
+
+def run_finalise(args: argparse.Namespace) -> _common.Result:
+    """Write the final report as a new file, beside the draft, which stays exactly as it was.
+
+    Every earlier file is left alone: a second `finalise` writes a second final report, with `-2` after the stamp.
+    The final report is the draft with `status: final` and the time it was finalised, and nothing else: the summary is
+    already the one the tools computed, and validating the result checks that.
+    """
+    path = Path(args.draft).expanduser()
+    directory = path.parent.resolve()
+    if not directory.is_dir():
+        raise _common.UsageError(f"draft not found: {path}")
+    moment = utc_now()
+    with write_lock(directory):
+        final = read_draft(path)
+        target = target_directory(final)
+        refuse_inside_target(target, path)
+        problems = finalisation_errors(final)
+        if problems:
+            count = len(problems)
+            raise _common.ValidationFailed(
+                f"the draft cannot be finalised: {count} problem{'' if count == 1 else 's'}", errors=problems
+            )
+        final["status"] = "final"
+        final["provenance"]["finalised_at"] = moment.isoformat()
+        outcome = vr.validate_document(final, target=target)
+        if outcome.errors:
+            count = len(outcome.errors)
+            raise _common.ValidationFailed(
+                f"the final report would not be valid, so nothing was written: {count} error{'' if count == 1 else 's'}",
+                errors=outcome.errors,
+            )
+        label = final["provenance"]["target"]["label"]
+        try:
+            written = _common.create_new(directory, label, FINAL_KIND, _common.utc_stamp(moment), "json", dumps(final))
+        except OSError as exc:
+            raise _common.UsageError(f"cannot write the final report in {directory}: {exc.strerror or exc}") from None
+    kept, omitted = _common.bound_items(outcome.warnings)
+    data: dict[str, Any] = {
+        "report": str(written),
+        "draft": str(path),
+        "status": final["status"],
+        "finalised_at": final["provenance"]["finalised_at"],
+        "checks": len(final["checks"]),
+        "findings": len(final["findings"]),
+        "summary": final["summary"],
+    }
+    if omitted:
+        data["warnings_omitted"] = omitted
+    score = final["summary"]["phase1_score"]
+    return _common.Result(
+        data=data,
+        summary=f"report: wrote {written.name} (phase-1 score {score}, {len(final['findings'])} findings)",
+        warnings=kept,
+        truncated=bool(omitted),
+    )
+
+
 # --- The command line ---------------------------------------------------------------------------------
 
 
@@ -1013,6 +1110,8 @@ def build_parser() -> _common.ToolParser:
         "status", help="say what is done, what remains and what awaits a decision", allow_abbrev=False
     )
     describe.add_argument("draft", help="the draft to describe")
+    finish = commands.add_parser("finalise", help="write the final report from a finished draft", allow_abbrev=False)
+    finish.add_argument("draft", help="the draft to finalise; it is left as it is")
     return parser
 
 
@@ -1022,6 +1121,7 @@ HANDLERS = {
     "add-finding": run_add_finding,
     "set-disposition": run_set_disposition,
     "status": run_status,
+    "finalise": run_finalise,
 }
 
 

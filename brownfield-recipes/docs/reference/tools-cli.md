@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init`, `add-check`, `add-finding`, `set-disposition` and `status`). The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py` and `report.py`, except its `import-engine` subcommand (S2.5). The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first five subcommands. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py`, `validate_report.py` and `report.py` exist. The sections for the other tools are filled in by roadmap steps S2.4 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | [`engine.py`](#enginepy) | Runs the deterministic engine from any directory | Live |
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
-| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init`, `add-check`, `add-finding`, `set-disposition` and `status`; `finalise`: Planned (S2.3) |
+| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live, except `import-engine`: Planned (S2.5) |
 | `render_report.py` | Renders a report to Markdown | Planned (S2.4) |
 | `facts.py` | Emits stack and inventory facts, no verdicts | Planned (S2.7) |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
@@ -155,7 +155,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-Only `init`, `add-check`, `add-finding`, `set-disposition` and `status` exist so far. `finalise` is planned in the same step (S2.3), and `import-engine` is S2.5.
+The subcommands are `init`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`. `import-engine`, which brings in the engine's checks, is planned (S2.5), and so is the Markdown file that `finalise` will write beside the final report (`render_report.py`, S2.4).
 
 Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
@@ -168,6 +168,7 @@ python3 brownfield-recipes/tools/report.py add-finding <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py set-disposition <draft> --via VIA
         (--finding ID --disposition DISPOSITION [--note TEXT] | --from FILE|-)
 python3 brownfield-recipes/tools/report.py status <draft>
+python3 brownfield-recipes/tools/report.py finalise <draft>
 python3 brownfield-recipes/tools/report.py --describe
 ```
 
@@ -421,3 +422,50 @@ The draft may be final: `status` then reports it and says it is already final. A
 | `1` | A bad argument, or the draft is missing or too large. |
 | `2` | The draft is not valid JSON, or fails its schema or a rule: it was edited by hand or by another tool. |
 | `3` | Internal error. |
+
+### finalise
+
+Writes the final report from a finished draft. It checks that nothing stands in the way, validates the result, and creates `<label>.audit-report.<stamp>.json` beside the draft. The draft is left exactly as it was, and no earlier file is touched: a second `finalise` writes a second final report, with `-2` after the stamp.
+
+```text
+python3 brownfield-recipes/tools/report.py finalise <draft>
+```
+
+The final report is the draft with `status: final` and `provenance.finalised_at`, and nothing else. The stamp in the name is the `finalised_at` time. A final report is never changed afterwards: every other subcommand refuses it.
+
+> [!NOTE]
+> Planned. The Markdown file that belongs beside the final report is written by the renderer, `render_report.py` (S2.4), which does not exist yet. Until it does, `finalise` writes the JSON file only.
+
+A draft can be finalised only when all of this holds, and each problem that does not is one line in `data.errors`:
+
+| Condition | Why |
+|---|---|
+| The run is not an eval-mode run. | An evaluation run has no person to decide, so its report is never final. |
+| Every phase-1 check of the catalogue is recorded, in every family. | A final report that leaves checks out would show a score over fewer checks than the audit has, with nothing to say so. A check that could not be evaluated is recorded as `UNKNOWN` with a summary that says why. |
+| No finding is `pending`. | Each finding has been confirmed, rejected, deferred or edited by a person. |
+| Every `BLOCKER` finding was decided with `--via interactive`. | A person decides on a blocker alone (rule 8). |
+| The final report passes [`validate_report.py`](#validate_reportpy). | The same schema and rules, applied to the file before it is written. |
+
+`status` reports the same conditions as `ready_to_finalise` and `blocking`, without writing anything.
+
+**Outputs.** `data` holds `report` (the path of the new file), `draft`, `status` (`final`), `finalised_at`, `checks`, `findings` and `summary` (the readiness summary: score, scored checks, blockers remaining and the two qualifiers). Warnings list each cited file that is not in the target at the recorded commit, for the whole report, bounded.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The final report was written. |
+| `1` | A bad argument; the draft is missing or too large, or is already a final report; its folder is inside the target; the lock could not be taken; the file could not be written. Nothing is written, and no partial file is left. |
+| `2` | The draft cannot be finalised (`data.errors` lists every problem), the draft was already invalid, or the final report would be. Nothing is written. |
+| `3` | Internal error. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `the draft cannot be finalised: N problems` | Read `data.errors`: record the checks it lists, ask the person about the findings it lists, then run `status` and `finalise` again. |
+| `checks not recorded in <FAMILY>: ...` | Record each check: `add-check` for an agent check, `import-engine` (S2.5) for the engine's. |
+| `N findings still pending: F-001 ...` | Ask the person, and record the answers with `set-disposition`. The list shows the first 20. |
+| `BLOCKER findings not decided interactively: ...` | Ask the person about each blocker, and record it with `--via interactive`. |
+| `this is an eval-mode run, and its report is never final` | An evaluation run writes drafts only. |
+| `the final report would not be valid, so nothing was written` | `data.errors` names the rule. This is a defect in the draft's state that `status` could not see, or a bug in the tool: report it. |
