@@ -13,8 +13,9 @@
 | [`audit-report.schema.json`](audit-report.schema.json) | The canonical result of an audit. JSON Schema 2020-12, `schema_version` `0.1`. |
 | [`audit-intake.schema.json`](audit-intake.schema.json) | The answers to the audit's Stage 0 questions, given in a file. `intake_version` `0.1`. |
 | [`examples/minimal.json`](examples/minimal.json) | The smallest valid report: one agent check, no findings. |
-| [`examples/realistic.json`](examples/realistic.json) | A finished report, modelled on an engine run against a real Node and TypeScript repository and anonymised. It shows an override, a deferred finding and one agent-only check. It is an illustration, not a measured result, and the ID of its agent-only check, `AGT-11`, is provisional until the check catalogue exists (S1.5). |
-| [`examples/intake.json`](examples/intake.json) | A valid intake file. |
+| [`examples/digital-assistant-sdk.audit-draft.20261006T100124Z.json`](examples/digital-assistant-sdk.audit-draft.20261006T100124Z.json) | The engine's real report on the Digital-Assistant-SDK repository, converted by the mapping below and nothing else: all 69 checks and 50 findings, every finding pending. No name is anonymised and nothing is invented; the repository is open source. The recomputed score, 0.4412, equals the engine's. |
+| [`examples/example-service.audit-report.20261010T094207Z.json`](examples/example-service.audit-report.20261010T094207Z.json) | A synthetic worked example of a finished report on a made-up service. It shows an override of the engine's verdict, an agent check with evidence, an agent `FAIL` that found nothing and says so, a dependency between findings, a finding less severe than its check, and confirmed, edited, rejected and deferred dispositions. It is documentation, not a measured result, and the ID of its agent-only checks, `AGT-11` and `CI-04`, is provisional until the check catalogue exists (S1.5). |
+| [`examples/audit-intake.example-service.json`](examples/audit-intake.example-service.json) | A valid intake file. |
 
 The Markdown report is a pure function of the JSON report: nothing the Markdown shows is absent from the JSON. Editorial wording, such as what a verdict means, lives in the renderer and never in the JSON, as in the engine's [ADR-0007](../deterministic-audit/docs/architecture/adrs/0007-json-report-render-contract.md).
 
@@ -170,7 +171,7 @@ The report also shows the unattested list beside them. The spec defines no level
 
 ## Intake file
 
-[`audit-intake.schema.json`](audit-intake.schema.json) describes `audit-intake.json`, which answers the audit's Stage 0 questions so that a run needs no interview. A person fills it in once and reuses it for re-audits; an evaluation run reads it unattended.
+[`audit-intake.schema.json`](audit-intake.schema.json) describes the intake file, named `audit-intake.<label>.json`, which answers the audit's Stage 0 questions so that a run needs no interview. A person fills it in once and reuses it for re-audits; an evaluation run reads it unattended.
 
 | Field | Required | Meaning |
 |---|---|---|
@@ -323,7 +324,7 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 | `unattested[]` | `unattested[]`; see the table above. |
 | `not_applicable[]` | `checks[]` with `verdict: NOT_APPLICABLE` |
 | `ratchet` | Not carried. A re-audit compares reports by finding `key`. |
-| (none) | `method: automated`, `disposition: pending`, and everything under `run_context` and `provenance` other than the engine's |
+| (none) | `method: automated` and `disposition: pending`; everything under `run_context`; `provenance` other than the engine's and the target's; `coverage.scopes_examined` and `scopes_skipped`, which start empty because the engine reports no scopes |
 
 ---
 
@@ -340,8 +341,9 @@ from jsonschema import Draft202012Validator
 root = Path("brownfield-recipes/schema")
 for schema_name, example in [
     ("audit-report.schema.json", "minimal.json"),
-    ("audit-report.schema.json", "realistic.json"),
-    ("audit-intake.schema.json", "intake.json"),
+    ("audit-report.schema.json", "digital-assistant-sdk.audit-draft.20261006T100124Z.json"),
+    ("audit-report.schema.json", "example-service.audit-report.20261010T094207Z.json"),
+    ("audit-intake.schema.json", "audit-intake.example-service.json"),
 ]:
     schema = json.loads((root / schema_name).read_text())
     Draft202012Validator.check_schema(schema)
@@ -350,4 +352,4 @@ for schema_name, example in [
 EOF
 ```
 
-The command prints `valid` three times.
+The command prints `valid` four times.

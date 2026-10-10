@@ -22,7 +22,7 @@
 
 ### Step 1: Optional: write an intake file
 
-- TBD: pre-answer the intake questions in `audit-intake.json`.
+- TBD: pre-answer the intake questions in `audit-intake.<label>.json`.
 
 ### Step 2: Start the agent with the kickoff prompt
 

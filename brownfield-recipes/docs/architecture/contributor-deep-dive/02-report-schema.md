@@ -16,7 +16,7 @@ One JSON file is the audit's result. The Markdown report is a pure function of i
 
 ```mermaid
 flowchart LR
-    Intake["audit-intake.json"] --> Builder["report.py (planned)"]
+    Intake["Intake file"] --> Builder["report.py (planned)"]
     Engine["Engine report, schema v2"] --> Adapter["import-engine (planned)"] --> Builder
     Agent["Agent: checks and findings"] --> Builder
     Builder --> Report["audit-report.json"]
