@@ -6,6 +6,7 @@
     report.py init <intake>
     report.py add-check <draft> --from FILE|-
     report.py add-finding <draft> --from FILE|-
+    report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
 
 ``init`` reads the intake file, captures the target's provenance (commit, branch, whether the working tree is
 dirty), and creates ``<label>.audit-draft.<stamp>.json`` in the intake's ``output_dir``. It never replaces a file: a
@@ -54,6 +55,7 @@ INFO = _common.ToolInfo(
         "report.py init <intake>",
         "report.py add-check <draft> --from FILE|-",
         "report.py add-finding <draft> --from FILE|-",
+        "report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)",
     ),
     writes=(
         "init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the "
@@ -735,6 +737,143 @@ def run_add_finding(args: argparse.Namespace) -> _common.Result:
     return result
 
 
+# --- set-disposition ---------------------------------------------------------------------------------------
+
+DISPOSITIONS = ("pending", "confirmed", "rejected", "deferred", "edited")
+VIA = ("interactive", "batch", "policy")
+MAX_DECISIONS = 2000
+
+
+def decisions_validator() -> subset.SubsetValidator:
+    """A validator for a list of decisions, each field with the report schema's own rule."""
+    schema = report_schema()
+    finding = schema["$defs"]["finding"]["properties"]
+    return subset.SubsetValidator(
+        {
+            "$defs": schema["$defs"],
+            "type": "array",
+            "minItems": 1,
+            "maxItems": MAX_DECISIONS,
+            "items": {
+                "type": "object",
+                "required": ["finding", "disposition"],
+                "additionalProperties": False,
+                "properties": {
+                    "finding": {"$ref": "#/$defs/findingId"},
+                    "disposition": finding["disposition"],
+                    "note": finding["disposition_note"],
+                },
+            },
+        }
+    )
+
+
+def read_decisions(args: argparse.Namespace) -> list[dict[str, Any]]:
+    """The decisions asked for: one from the arguments, or a list from a file or stdin."""
+    if args.source is not None:
+        if args.finding is not None or args.disposition is not None or args.note is not None:
+            raise _common.UsageError("--from cannot be combined with --finding, --disposition or --note")
+        decisions = read_fragment(args.source, "decision list")
+    else:
+        if args.finding is None or args.disposition is None:
+            raise _common.UsageError("give --finding and --disposition, or give a list with --from")
+        item = {"finding": args.finding, "disposition": args.disposition}
+        if args.note is not None:
+            item["note"] = args.note
+        decisions = [item]
+    problems = fragment_errors(decisions_validator(), decisions)
+    if problems:
+        count = len(problems)
+        raise _common.ValidationFailed(
+            f"the decisions are not valid: {count} error{'' if count == 1 else 's'}", errors=problems
+        )
+    checked: list[dict[str, Any]] = decisions
+    return checked
+
+
+def refused_decisions(
+    document: Mapping[str, Any], decisions: Sequence[Mapping[str, Any]], via: str | None
+) -> list[str]:
+    """What stops these decisions, as a list of problems, or an empty list.
+
+    The validator checks most of this too, in the rules, but only after the fact and in the rules' words. These are
+    the ways a decision can claim something false about who made it: a person where there is none, a batch for a
+    finding that must be decided alone, a policy that does not decide.
+    """
+    context = document["run_context"]
+    findings = {finding["id"]: finding for finding in document["findings"]}
+    problems: list[str] = []
+    seen: set[str] = set()
+    for number, decision in enumerate(decisions):
+        name = decision["finding"]
+        finding = findings.get(name)
+        if finding is None:
+            problems.append(f"fragment: /{number}/finding: {name} is not a finding in this draft")
+            continue
+        if name in seen:
+            problems.append(f"fragment: /{number}/finding: {name} appears twice in the list")
+        seen.add(name)
+        if decision["disposition"] != "pending" and via == "batch" and finding["severity"] == "BLOCKER":
+            problems.append(f"{name} is a BLOCKER, so a person decides on it alone: use --via interactive")
+    if any(decision["disposition"] != "pending" for decision in decisions):
+        if context["eval_mode"] and via != "policy":
+            problems.append("this is an eval-mode run, which has no person to decide: only --via policy is allowed")
+        if via == "policy" and context["confirmation_policy"] != "accept-all":
+            problems.append(
+                f"--via policy needs the 'accept-all' confirmation policy, and this run's is {context['confirmation_policy']!r}"
+            )
+    return problems
+
+
+def apply_decisions(document: dict[str, Any], decisions: Sequence[Mapping[str, Any]], via: str | None) -> Change:
+    """Set the dispositions, all or none. `pending` takes a decision back, so it keeps no `via` and no note."""
+    problems = refused_decisions(document, decisions, via)
+    if problems:
+        raise _common.ValidationFailed(
+            f"the decisions are refused: {len(problems)} problem{'' if len(problems) == 1 else 's'}", errors=problems
+        )
+    index = {finding["id"]: number for number, finding in enumerate(document["findings"])}
+    counts: dict[str, int] = {}
+    for decision in decisions:
+        finding = dict(document["findings"][index[decision["finding"]]])
+        for name in ("confirmed_via", "disposition_note"):
+            finding.pop(name, None)
+        finding["disposition"] = decision["disposition"]
+        if decision["disposition"] != "pending":
+            finding["confirmed_via"] = via
+            if "note" in decision:
+                finding["disposition_note"] = decision["note"]
+        document["findings"][index[decision["finding"]]] = in_schema_order(finding, "finding")
+        counts[decision["disposition"]] = counts.get(decision["disposition"], 0) + 1
+    return Change(data={"updated": len(decisions), "by_disposition": dict(sorted(counts.items()))})
+
+
+def decision_counts(document: Mapping[str, Any]) -> dict[str, int]:
+    pending = [finding for finding in document["findings"] if finding["disposition"] == "pending"]
+    return {
+        "findings": len(document["findings"]),
+        "findings_pending": len(pending),
+        "blockers_pending": sum(1 for finding in pending if finding["severity"] == "BLOCKER"),
+    }
+
+
+def run_set_disposition(args: argparse.Namespace) -> _common.Result:
+    decisions = read_decisions(args)
+    if args.via is None and any(decision["disposition"] != "pending" for decision in decisions):
+        raise _common.UsageError("--via is required when a finding gets a decision: interactive, batch or policy")
+    counts: dict[str, int] = {}
+
+    def change(document: dict[str, Any]) -> Change:
+        made = apply_decisions(document, decisions, args.via)
+        counts.update(decision_counts(document))
+        return made
+
+    result = update_draft(args.draft, change)
+    result.data.update(counts)
+    result.summary = f"report: {result.data['updated']} decision{'' if result.data['updated'] == 1 else 's'} recorded, {counts['findings_pending']} finding{'' if counts['findings_pending'] == 1 else 's'} pending"
+    return result
+
+
 # --- The command line ---------------------------------------------------------------------------------
 
 
@@ -751,10 +890,22 @@ def build_parser() -> _common.ToolParser:
     finding = commands.add_parser("add-finding", help="record an issue that a check raised", allow_abbrev=False)
     finding.add_argument("draft", help="the draft to change")
     finding.add_argument("--from", dest="source", required=True, help="a JSON file with the finding, or - for stdin")
+    decide = commands.add_parser("set-disposition", help="record a person's decision on findings", allow_abbrev=False)
+    decide.add_argument("draft", help="the draft to change")
+    decide.add_argument("--via", choices=VIA, help="how the decision was made; not needed to take one back (pending)")
+    decide.add_argument("--finding", help="the id of the finding, such as F-003")
+    decide.add_argument("--disposition", choices=DISPOSITIONS, help="the decision")
+    decide.add_argument("--note", help="why, in the person's words")
+    decide.add_argument("--from", dest="source", help="a JSON list of decisions, from a file or - for stdin")
     return parser
 
 
-HANDLERS = {"init": run_init, "add-check": run_add_check, "add-finding": run_add_finding}
+HANDLERS = {
+    "init": run_init,
+    "add-check": run_add_check,
+    "add-finding": run_add_finding,
+    "set-disposition": run_set_disposition,
+}
 
 
 def handler(argv: Sequence[str]) -> _common.Result:

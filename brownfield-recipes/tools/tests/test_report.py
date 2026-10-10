@@ -120,6 +120,17 @@ class BuilderCase(unittest.TestCase):
     def add_finding(self, draft: Path, fragment: Any) -> tuple[int, dict[str, Any], str]:
         return call(["add-finding", str(draft), "--from", "-"], json.dumps(fragment))
 
+    def decide(self, draft: Path, *args: str, stdin: str = "") -> tuple[int, dict[str, Any], str]:
+        return call(["set-disposition", str(draft), *args], stdin)
+
+    def draft_with_findings(self, scopes: Sequence[str] = ("a", "b", "c"), **changes: Any) -> Path:
+        """A draft in which AGT-11 failed and has one pending finding for each scope."""
+        draft = self.failing_draft(**changes)
+        for scope in scopes:
+            code, envelope, _ = self.add_finding(draft, agent_finding(scope=scope))
+            self.assertEqual(code, 0, envelope)
+        return draft
+
     def failing_draft(self, **changes: Any) -> Path:
         """A new draft in which AGT-11 has failed, so that it can have findings."""
         draft = self.start(**changes)
@@ -1097,6 +1108,318 @@ class AddFindingTests(BuilderCase):
         self.assertEqual(vr.validate_document(read_json(draft)).errors, [])
 
 
+class SetDispositionTests(BuilderCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.draft = self.draft_with_findings()
+
+    def finding(self, finding_id: str, draft: Path | None = None) -> dict[str, Any]:
+        found: dict[str, Any] = next(f for f in read_json(draft or self.draft)["findings"] if f["id"] == finding_id)
+        return found
+
+    def test_it_records_one_decision_and_who_made_it(self) -> None:
+        code, envelope, stderr = self.decide(
+            self.draft, "--via", "interactive", "--finding", "F-001", "--disposition", "confirmed"
+        )
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(
+            envelope["data"],
+            {
+                "draft": str(self.draft),
+                "updated": 1,
+                "by_disposition": {"confirmed": 1},
+                "findings": 3,
+                "findings_pending": 2,
+                "blockers_pending": 0,
+            },
+        )
+        self.assertEqual(stderr, "report: 1 decision recorded, 2 findings pending\n")
+        finding = self.finding("F-001")
+        self.assertEqual((finding["disposition"], finding["confirmed_via"]), ("confirmed", "interactive"))
+        self.assertNotIn("disposition_note", finding)
+        self.assertEqual(list(finding)[-2:], ["disposition", "confirmed_via"])
+        document = read_json(self.draft)
+        self.assertEqual(document["summary"]["unconfirmed_agent_findings"], 2)
+        self.assertEqual(vr.validate_document(document).errors, [])
+
+    def test_a_note_is_kept_and_a_later_decision_without_one_drops_it(self) -> None:
+        self.decide(
+            self.draft,
+            "--via",
+            "interactive",
+            "--finding",
+            "F-001",
+            "--disposition",
+            "rejected",
+            "--note",
+            "Placeholders in a test.",
+        )
+        finding = self.finding("F-001")
+        self.assertEqual((finding["disposition"], finding["disposition_note"]), ("rejected", "Placeholders in a test."))
+        self.assertEqual(list(finding)[-3:], ["disposition", "disposition_note", "confirmed_via"])
+        self.decide(self.draft, "--via", "interactive", "--finding", "F-001", "--disposition", "confirmed")
+        self.assertNotIn("disposition_note", self.finding("F-001"))
+
+    def test_taking_a_decision_back_clears_who_made_it_and_the_note(self) -> None:
+        self.decide(
+            self.draft, "--via", "interactive", "--finding", "F-002", "--disposition", "deferred", "--note", "Later."
+        )
+        code, envelope, _ = self.decide(self.draft, "--finding", "F-002", "--disposition", "pending")
+        self.assertEqual(code, 0, envelope)
+        finding = self.finding("F-002")
+        self.assertEqual(finding["disposition"], "pending")
+        self.assertNotIn("confirmed_via", finding)
+        self.assertNotIn("disposition_note", finding)
+        self.assertEqual(read_json(self.draft)["summary"]["unconfirmed_agent_findings"], 3)
+
+    def test_a_batch_sets_every_decision_in_one_write(self) -> None:
+        batch = [
+            {"finding": "F-001", "disposition": "confirmed"},
+            {"finding": "F-002", "disposition": "rejected", "note": "Not an issue."},
+            {"finding": "F-003", "disposition": "confirmed"},
+        ]
+        code, envelope, _ = self.decide(self.draft, "--via", "batch", "--from", "-", stdin=json.dumps(batch))
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(envelope["data"]["updated"], 3)
+        self.assertEqual(envelope["data"]["by_disposition"], {"confirmed": 2, "rejected": 1})
+        self.assertEqual(envelope["data"]["findings_pending"], 0)
+        self.assertEqual([f["confirmed_via"] for f in read_json(self.draft)["findings"]], ["batch"] * 3)
+
+    def test_a_batch_can_come_from_a_file(self) -> None:
+        source = self.root / "decisions.json"
+        source.write_text(json.dumps([{"finding": "F-001", "disposition": "confirmed"}]), encoding="utf-8")
+        code, _, _ = self.decide(self.draft, "--via", "batch", "--from", str(source))
+        self.assertEqual(code, 0)
+        self.assertEqual(self.finding("F-001")["confirmed_via"], "batch")
+
+    def test_a_batch_with_one_bad_decision_changes_nothing(self) -> None:
+        batch = [{"finding": "F-001", "disposition": "confirmed"}, {"finding": "F-009", "disposition": "confirmed"}]
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.decide(self.draft, "--via", "batch", "--from", "-", stdin=json.dumps(batch))
+        )
+        self.assertEqual(code, 2)
+        self.assertEqual(envelope["data"]["errors"], ["fragment: /1/finding: F-009 is not a finding in this draft"])
+
+    def test_a_finding_twice_in_one_list_is_refused(self) -> None:
+        batch = [{"finding": "F-001", "disposition": "confirmed"}, {"finding": "F-001", "disposition": "rejected"}]
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.decide(self.draft, "--via", "batch", "--from", "-", stdin=json.dumps(batch))
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("F-001 appears twice", envelope["data"]["errors"][0])
+
+    def test_a_bad_list_names_each_problem_by_place(self) -> None:
+        batch = [
+            {"finding": "F-1", "disposition": "maybe"},
+            {"disposition": "confirmed", "note": "n" * 501},
+            {"finding": "F-001", "disposition": "confirmed", "extra": 1},
+            {"finding": "F-002"},
+        ]
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.decide(self.draft, "--via", "batch", "--from", "-", stdin=json.dumps(batch))
+        )
+        self.assertEqual(code, 2)
+        errors = "\n".join(envelope["data"]["errors"])
+        for place in (
+            "/0/finding",
+            "/0/disposition",
+            "/1: missing the required property 'finding'",
+            "/1/note",
+            "/2: unexpected property: 'extra'",
+            "/3: missing the required property 'disposition'",
+        ):
+            self.assertIn(place, errors)
+        for text in ("[]", "{}", "{"):
+            with self.subTest(text=text):
+                code, _, _ = self.unchanged_by(
+                    self.draft, lambda: self.decide(self.draft, "--via", "batch", "--from", "-", stdin=text)
+                )
+                self.assertEqual(code, 2)
+
+    def test_a_decision_needs_to_say_how_it_was_made(self) -> None:
+        code, envelope, _ = self.unchanged_by(
+            self.draft, lambda: self.decide(self.draft, "--finding", "F-001", "--disposition", "confirmed")
+        )
+        self.assertEqual(code, 1)
+        self.assertIn("--via is required", envelope["data"]["error"])
+
+    def test_the_arguments_must_name_one_way_to_give_the_decisions(self) -> None:
+        cases = [
+            (["--via", "batch"], "give --finding and --disposition"),
+            (["--via", "batch", "--finding", "F-001"], "give --finding and --disposition"),
+            (["--via", "batch", "--disposition", "confirmed"], "give --finding and --disposition"),
+            (["--via", "batch", "--from", "-", "--finding", "F-001"], "--from cannot be combined"),
+            (["--via", "batch", "--from", "-", "--note", "x"], "--from cannot be combined"),
+            (["--via", "somehow", "--finding", "F-001", "--disposition", "confirmed"], "invalid choice"),
+            (["--via", "batch", "--finding", "F-001", "--disposition", "agreed"], "invalid choice"),
+        ]
+        for arguments, expected in cases:
+            with self.subTest(arguments=arguments):
+                code, envelope, _ = self.unchanged_by(
+                    self.draft, lambda: self.decide(self.draft, *arguments, stdin="[]")
+                )
+                self.assertEqual(code, 1)
+                self.assertIn(expected, envelope["data"]["error"])
+
+    def test_a_finding_that_is_not_in_the_draft_is_refused(self) -> None:
+        code, envelope, _ = self.unchanged_by(
+            self.draft,
+            lambda: self.decide(self.draft, "--via", "interactive", "--finding", "F-077", "--disposition", "confirmed"),
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("F-077 is not a finding in this draft", envelope["data"]["errors"][0])
+
+    def test_a_decision_on_a_finding_of_a_passing_check_must_be_a_rejection(self) -> None:
+        engine = self.engine_draft()
+        sec = next(f for f in read_json(engine)["findings"] if f["check"] == "SEC-01")
+        code, _, _ = self.add_check(
+            engine,
+            {
+                "id": "SEC-01",
+                "verdict": "PASS",
+                "summary": "Fixed.",
+                "override_reason": "r",
+                "evidence": [{"kind": "file", "path": "a"}],
+            },
+        )
+        self.assertEqual(code, 2, "the pending finding holds the check back")
+        code, envelope, _ = self.decide(
+            engine,
+            "--via",
+            "interactive",
+            "--finding",
+            sec["id"],
+            "--disposition",
+            "rejected",
+            "--note",
+            "Fixed since.",
+        )
+        self.assertEqual(code, 0, envelope)
+        code, envelope, _ = self.add_check(
+            engine,
+            {
+                "id": "SEC-01",
+                "verdict": "PASS",
+                "summary": "Fixed.",
+                "override_reason": "r",
+                "evidence": [{"kind": "file", "path": "a"}],
+            },
+        )
+        self.assertEqual(code, 0, envelope)
+        code, envelope, _ = self.unchanged_by(
+            engine,
+            lambda: self.decide(engine, "--via", "interactive", "--finding", sec["id"], "--disposition", "confirmed"),
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("its finding must be rejected", envelope["data"]["errors"][0])
+
+    def test_a_blocker_is_decided_by_a_person_alone_and_never_in_a_batch(self) -> None:
+        engine = self.engine_draft()
+        document = read_json(engine)
+        blocker = next(f["id"] for f in document["findings"] if f["severity"] == "BLOCKER")
+        other = next(f["id"] for f in document["findings"] if f["severity"] != "BLOCKER")
+        batch = [{"finding": other, "disposition": "confirmed"}, {"finding": blocker, "disposition": "confirmed"}]
+        code, envelope, _ = self.unchanged_by(
+            engine, lambda: self.decide(engine, "--via", "batch", "--from", "-", stdin=json.dumps(batch))
+        )
+        self.assertEqual(code, 2)
+        self.assertIn(f"{blocker} is a BLOCKER, so a person decides on it alone", envelope["data"]["errors"][0])
+        code, _, _ = self.decide(engine, "--via", "batch", "--from", "-", stdin=json.dumps(batch[:1]))
+        self.assertEqual(code, 0)
+        code, _, _ = self.decide(engine, "--via", "interactive", "--finding", blocker, "--disposition", "confirmed")
+        self.assertEqual(code, 0)
+        self.assertEqual(self.finding(blocker, engine)["confirmed_via"], "interactive")
+
+    def test_pending_blockers_are_counted(self) -> None:
+        engine = self.engine_draft()
+        document = read_json(engine)
+        blockers = [f["id"] for f in document["findings"] if f["severity"] == "BLOCKER"]
+        _, envelope, _ = self.decide(
+            engine, "--via", "interactive", "--finding", blockers[0], "--disposition", "confirmed"
+        )
+        self.assertEqual(envelope["data"]["blockers_pending"], len(blockers) - 1)
+
+    def test_an_eval_run_has_no_person_so_only_the_policy_decides(self) -> None:
+        draft = self.draft_with_findings(["a"], confirmation_policy="defer-all", eval_mode=True)
+        for via in ("interactive", "batch"):
+            with self.subTest(via=via):
+                code, envelope, _ = self.unchanged_by(
+                    draft, lambda: self.decide(draft, "--via", via, "--finding", "F-001", "--disposition", "confirmed")
+                )
+                self.assertEqual(code, 2)
+                self.assertIn("eval-mode run, which has no person", envelope["data"]["errors"][0])
+        code, envelope, _ = self.unchanged_by(
+            draft, lambda: self.decide(draft, "--via", "policy", "--finding", "F-001", "--disposition", "confirmed")
+        )
+        self.assertEqual(code, 2)
+        self.assertIn("needs the 'accept-all' confirmation policy", envelope["data"]["errors"][0])
+
+    def test_taking_a_decision_back_needs_no_person_even_in_an_eval_run(self) -> None:
+        draft = self.draft_with_findings(["a"], confirmation_policy="accept-all", eval_mode=True)
+        code, envelope, _ = self.decide(draft, "--finding", "F-001", "--disposition", "pending")
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(self.finding("F-001", draft)["disposition"], "pending")
+
+    def test_under_accept_all_the_policy_decides_and_nothing_else_does(self) -> None:
+        draft = self.draft_with_findings(["a"], confirmation_policy="accept-all", eval_mode=True)
+        self.assertEqual(self.finding("F-001", draft)["confirmed_via"], "policy")
+        code, _, _ = self.decide(draft, "--via", "policy", "--finding", "F-001", "--disposition", "deferred")
+        self.assertEqual(code, 0)
+        code, _, _ = self.unchanged_by(
+            draft,
+            lambda: self.decide(draft, "--via", "interactive", "--finding", "F-001", "--disposition", "confirmed"),
+        )
+        self.assertEqual(code, 2)
+
+    def test_the_policy_cannot_decide_when_a_person_is_to(self) -> None:
+        code, envelope, _ = self.unchanged_by(
+            self.draft,
+            lambda: self.decide(self.draft, "--via", "policy", "--finding", "F-001", "--disposition", "confirmed"),
+        )
+        self.assertEqual(code, 2)
+        self.assertIn(
+            "needs the 'accept-all' confirmation policy, and this run's is 'interactive'", envelope["data"]["errors"][0]
+        )
+
+    def test_a_person_can_decide_on_a_deferred_run_afterwards(self) -> None:
+        draft = self.draft_with_findings(["a"], confirmation_policy="defer-all")
+        self.assertEqual(self.finding("F-001", draft)["disposition"], "pending")
+        code, envelope, _ = self.decide(
+            draft, "--via", "interactive", "--finding", "F-001", "--disposition", "confirmed"
+        )
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(vr.validate_document(read_json(draft)).errors, [])
+
+    def test_it_writes_nothing_but_the_draft_and_does_not_touch_the_target(self) -> None:
+        before = tree_state(self.target)
+        self.decide(self.draft, "--via", "interactive", "--finding", "F-001", "--disposition", "confirmed")
+        self.assertEqual(tree_state(self.target), before)
+        self.assertEqual(sorted(p.name for p in self.out.iterdir()), [self.draft.name])
+
+    def test_a_failed_write_leaves_the_previous_draft(self) -> None:
+        with mock.patch("os.replace", side_effect=OSError(5, "Input/output error")):
+            code, envelope, _ = self.unchanged_by(
+                self.draft,
+                lambda: self.decide(
+                    self.draft, "--via", "interactive", "--finding", "F-001", "--disposition", "confirmed"
+                ),
+            )
+        self.assertEqual(code, 1)
+        self.assertIn("cannot write the draft", envelope["data"]["error"])
+
+    def test_the_agent_can_record_a_finding_again_after_the_decision_is_taken_back(self) -> None:
+        self.decide(
+            self.draft, "--via", "interactive", "--finding", "F-001", "--disposition", "edited", "--note", "Reworded."
+        )
+        code, _, _ = self.unchanged_by(self.draft, lambda: self.add_finding(self.draft, agent_finding(scope="a")))
+        self.assertEqual(code, 2)
+        self.decide(self.draft, "--finding", "F-001", "--disposition", "pending")
+        code, envelope, _ = self.add_finding(
+            self.draft, agent_finding(scope="a", statement="An agent cannot x because y.")
+        )
+        self.assertEqual((code, envelope["data"]["action"], envelope["data"]["finding"]), (0, "replaced", "F-001"))
+
+
 class ConcurrencyTests(BuilderCase):
     def test_commands_that_run_at_the_same_time_lose_nothing(self) -> None:
         draft = self.failing_draft()
@@ -1185,6 +1508,7 @@ class ToolContractTests(BuilderCase):
         self.assertTrue(any(line.startswith("report.py init") for line in manifest["synopsis"]))
         self.assertTrue(any(line.startswith("report.py add-check") for line in manifest["synopsis"]))
         self.assertTrue(any(line.startswith("report.py add-finding") for line in manifest["synopsis"]))
+        self.assertTrue(any(line.startswith("report.py set-disposition") for line in manifest["synopsis"]))
 
     def test_a_missing_or_unknown_subcommand_is_exit_1(self) -> None:
         for argv in ([], ["nothing"]):

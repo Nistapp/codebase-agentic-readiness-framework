@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init`, `add-check` and `add-finding`). The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init`, `add-check`, `add-finding` and `set-disposition`). The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first three subcommands. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first four subcommands. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | [`engine.py`](#enginepy) | Runs the deterministic engine from any directory | Live |
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
-| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init`, `add-check` and `add-finding`; the other subcommands: Planned (S2.3) |
+| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init`, `add-check`, `add-finding` and `set-disposition`; the other subcommands: Planned (S2.3) |
 | `render_report.py` | Renders a report to Markdown | Planned (S2.4) |
 | `facts.py` | Emits stack and inventory facts, no verdicts | Planned (S2.7) |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
@@ -155,7 +155,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-Only `init`, `add-check` and `add-finding` exist so far. `set-disposition`, `status` and `finalise` are planned in the same step (S2.3), and `import-engine` is S2.5.
+Only `init`, `add-check`, `add-finding` and `set-disposition` exist so far. `status` and `finalise` are planned in the same step (S2.3), and `import-engine` is S2.5.
 
 Every subcommand but `init` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
@@ -165,6 +165,8 @@ Every subcommand but `init` changes the draft it is given, in place. A change is
 python3 brownfield-recipes/tools/report.py init <intake>
 python3 brownfield-recipes/tools/report.py add-check <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py add-finding <draft> --from FILE|-
+python3 brownfield-recipes/tools/report.py set-disposition <draft> --via VIA
+        (--finding ID --disposition DISPOSITION [--note TEXT] | --from FILE|-)
 python3 brownfield-recipes/tools/report.py --describe
 ```
 
@@ -327,3 +329,61 @@ Recording a finding again with the same key replaces it in place and keeps its `
 | `rule 7: ... is PASS, so its finding must be rejected` | The check passes, so it raises no finding. Record the check as failing first, if it fails. |
 | `rule 2: ... the catalogue names no playbook ...` | Use a playbook named in [`catalogue.json`](../../catalogue.json), or leave `playbook` out. |
 | `rule 1: ... is not a finding in this report` | A `depends_on` entry must be the id of a finding already recorded. |
+
+### set-disposition
+
+Records what a person decided about findings, and how the decision was made. The agent asks the person and then calls this command; the tool never decides. It changes one finding or a list in a single write: if any decision in a list is refused, none is applied.
+
+```text
+python3 brownfield-recipes/tools/report.py set-disposition <draft> --via interactive \
+    --finding F-003 --disposition rejected --note "Placeholders in a unit test."
+python3 brownfield-recipes/tools/report.py set-disposition <draft> --via batch --from -
+```
+
+A list is a JSON array, each item with `finding` and `disposition` and, optionally, a `note`:
+
+```json
+[
+  { "finding": "F-004", "disposition": "confirmed" },
+  { "finding": "F-005", "disposition": "rejected", "note": "Not an issue here." }
+]
+```
+
+| Argument | Meaning |
+|---|---|
+| `--via` | How the decision was made: `interactive` (the person answered for this finding), `batch` (the person answered for a group, which cannot include a `BLOCKER`) or `policy` (the run's `accept-all` policy decided; evaluation runs only). It is recorded as `confirmed_via`. Not needed to take a decision back. |
+| `--finding`, `--disposition`, `--note` | One decision: the finding's id, `pending`, `confirmed`, `rejected`, `deferred` or `edited`, and the person's reason. |
+| `--from FILE|-` | A list of decisions, instead of `--finding`, `--disposition` and `--note`. |
+
+`pending` takes a decision back: the finding loses its `confirmed_via` and its note. Setting any other disposition replaces the old note with the new one, or with none. The tool does not edit a finding's text. To change what a decided finding says, set it back to `pending`, record it again with `add-finding`, and ask the person again.
+
+The tool refuses a decision that would claim something false about who made it:
+
+| Refused | Because |
+|---|---|
+| `--via batch` for a finding of severity `BLOCKER` | A person decides on a blocker alone; a final report needs `confirmed_via: interactive` for each (rule 8). |
+| `--via interactive` or `batch` in an eval-mode run | An evaluation run has no person. |
+| `--via policy` unless the policy is `accept-all` | Only that policy decides anything. Under `defer-all` every finding stays `pending` until a person decides later, with `--via interactive`. |
+| A decision on a finding of a passing check that is not `rejected` | A passing check has no standing finding (rule 7). |
+
+**Outputs.** `data` holds `draft`, `updated` (the number of decisions), `by_disposition` (a count for each), `findings`, `findings_pending` and `blockers_pending`.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The decisions were recorded. |
+| `1` | A bad argument: no decision given, both `--from` and `--finding`, a missing `--via`, a value outside the choices; or the draft or file is missing, the draft is final, or the file could not be written. |
+| `2` | A list that fails its schema; a finding that is not in the draft or appears twice; a refused decision; a draft that was invalid or would be. Nothing is written. |
+| `3` | Internal error. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `--via is required when a finding gets a decision` | Say how the decision was made. |
+| `<F-id> is a BLOCKER, so a person decides on it alone: use --via interactive` | Ask the person about the blocker, and call the command for it on its own. |
+| `this is an eval-mode run, which has no person to decide: only --via policy is allowed` | An evaluation run's findings are decided by the policy, or stay pending. |
+| `--via policy needs the 'accept-all' confirmation policy ...` | Use `--via interactive` or `batch`, for a person's decision. |
+| `<F-id> is not a finding in this draft` | Use an id from `status`. |
+| `fragment: /N/...` | Fix the item the pointer names. |
