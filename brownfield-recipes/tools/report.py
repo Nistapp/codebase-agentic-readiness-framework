@@ -4,10 +4,17 @@
 """Build the audit report. This tool is the only writer of the draft: the agent never edits the JSON by hand.
 
     report.py init <intake>
+    report.py add-check <draft> --from FILE|-
 
 ``init`` reads the intake file, captures the target's provenance (commit, branch, whether the working tree is
 dirty), and creates ``<label>.audit-draft.<stamp>.json`` in the intake's ``output_dir``. It never replaces a file: a
 second run on the same repository starts a second draft, and the earlier one stays as it was.
+
+Every other subcommand changes the draft in place, and only its own draft. A change is one read-modify-write under a
+lock on the output folder: the draft is read and validated, the change is made on a copy, the summary is recomputed,
+the copy is validated, and only then is it written, atomically. A change that would leave the draft invalid writes
+nothing and exits 2 with the errors. The agent supplies a fragment (JSON, from a file or from stdin), and the tool
+fills in everything it can compute: catalogue metadata, ids, keys and the summary.
 
 The shape of the report is ``schema/audit-report.schema.json`` and the rules a schema cannot express are in
 ``schema/SCHEMA.md``. Every file this tool writes is validated first with ``validate_report.validate_document``, and
@@ -20,14 +27,18 @@ fails its schema or its rules is exit 2, with every error in ``data.errors``.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
+import os
 import re
 import shutil
 import sys
+import time
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Iterator, Mapping, Sequence
 
 import _common
 import _jsonschema_subset as subset
@@ -37,10 +48,11 @@ import validate_report as vr
 INFO = _common.ToolInfo(
     name="report",
     summary="Build the audit report: the only writer of the draft, and every write is validated.",
-    synopsis=("report.py init <intake>",),
+    synopsis=("report.py init <intake>", "report.py add-check <draft> --from FILE|-"),
     writes=(
-        "A new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the target. "
-        "A name that is taken is never replaced."
+        "init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the "
+        "target; a name that is taken is never replaced. The other subcommands: that draft, in place and atomically, "
+        "and no other file."
     ),
 )
 
@@ -49,6 +61,8 @@ RECIPE_VERSION = "0.1.0"
 SCHEMA_VERSION = "0.1"
 DRAFT_KIND = "audit-draft"
 DEFAULT_PROBE_TIMEOUT_S = 120
+MAX_FRAGMENT_CHARS = 1024 * 1024
+LOCK_WAIT_S = 30
 
 INTAKE_SCHEMA = vr.RECIPES / "schema" / "audit-intake.schema.json"
 GIT_SHA = re.compile(r"^[0-9a-f]{40}\Z")
@@ -265,6 +279,321 @@ def run_init(args: argparse.Namespace) -> _common.Result:
     return _common.Result(data=data, summary=f"report: started {path.name} for {label}", warnings=warnings)
 
 
+# --- The draft: load, change, validate, write ----------------------------------------------------------
+
+
+@lru_cache(maxsize=1)
+def report_schema() -> dict[str, Any]:
+    schema: dict[str, Any] = json.loads(vr.REPORT_SCHEMA.read_text(encoding="utf-8"))
+    return schema
+
+
+def schema_order(definition: str) -> list[str]:
+    """The names of a `$defs` object's properties in the schema's order, which is the order every report uses."""
+    return list(report_schema()["$defs"][definition]["properties"])
+
+
+def in_schema_order(item: Mapping[str, Any], definition: str) -> dict[str, Any]:
+    order = schema_order(definition)
+    return {name: item[name] for name in order if name in item}
+
+
+def expected_checks() -> list[Mapping[str, Any]]:
+    """The checks a complete phase-1 audit records: every phase-1 check of the catalogue."""
+    return [check for check in vr.load_catalogue()["checks"] if check["phase"] == 1]
+
+
+def lock_directory(descriptor: int, directory: Path) -> None:
+    """Take an exclusive lock on an open folder, waiting up to `LOCK_WAIT_S`. A platform without `flock` takes none."""
+    try:
+        import fcntl
+    except ImportError:
+        return
+    deadline = time.monotonic() + LOCK_WAIT_S
+    while True:
+        try:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return
+        except BlockingIOError:
+            if time.monotonic() >= deadline:
+                raise _common.UsageError(
+                    f"another report command has held the lock on {directory} for {LOCK_WAIT_S} seconds",
+                    hint="run the commands one at a time, and run this one again",
+                ) from None
+            time.sleep(0.05)
+
+
+@contextlib.contextmanager
+def write_lock(directory: Path) -> Iterator[None]:
+    """Make the commands that change drafts in `directory` take turns.
+
+    Two commands that run at once would each read the draft, each add their part, and the second write would lose
+    the first's part. The lock is on the folder, which no command replaces, and the system drops it when the
+    process ends, so a crash leaves nothing behind that would stop a resume.
+    """
+    descriptor = os.open(directory, os.O_RDONLY)
+    try:
+        lock_directory(descriptor, directory)
+        yield
+    finally:
+        os.close(descriptor)
+
+
+@dataclass
+class Change:
+    """What a change made: the data to report, and the pointers of the items it touched (for cited-file warnings)."""
+
+    data: dict[str, Any]
+    touched: list[str] = field(default_factory=list)
+
+
+def read_draft(path: Path) -> dict[str, Any]:
+    """The draft at `path`, which must be a valid report with the status `draft`."""
+    document = vr.read_report(path, "draft")
+    outcome = vr.validate_document(document)
+    if outcome.errors:
+        count = len(outcome.errors)
+        raise _common.ValidationFailed(
+            f"the draft is not valid before the change: {count} error{'' if count == 1 else 's'} in the {outcome.stage} stage",
+            errors=outcome.errors,
+        )
+    if document["status"] != "draft":
+        raise _common.UsageError(f"{path.name} is a final report; only a draft can be changed")
+    checked: dict[str, Any] = document
+    return checked
+
+
+def target_directory(document: Mapping[str, Any]) -> Path | None:
+    """The target the draft names, when it is there. The draft's own folder must not be inside it."""
+    named = Path(document["provenance"]["target"]["path"])
+    return named.resolve() if named.is_dir() else None
+
+
+def update_draft(argument: str, change: Callable[[dict[str, Any]], Change]) -> _common.Result:
+    """Apply `change` to the draft named by `argument`: validate, then write atomically, or write nothing."""
+    path = Path(argument).expanduser()
+    directory = path.parent.resolve()
+    if not directory.is_dir():
+        raise _common.UsageError(f"draft not found: {path}")
+    with write_lock(directory):
+        working = read_draft(path)
+        target = target_directory(working)
+        if target is not None and _common.is_within(target, path.resolve().parent):
+            raise _common.PathNotAllowed(f"refusing to write inside the target: {path.resolve().parent}")
+        made = change(working)
+        working["summary"] = _summary.compute_summary(working)
+        outcome = vr.validate_document(working, target=target)
+        if outcome.errors:
+            count = len(outcome.errors)
+            raise _common.ValidationFailed(
+                f"the change would leave the draft invalid, so nothing was written: {count} error{'' if count == 1 else 's'}",
+                errors=outcome.errors,
+            )
+        try:
+            _common.atomic_write_text(path, dumps(working))
+        except OSError as exc:
+            raise _common.UsageError(f"cannot write the draft {path}: {exc.strerror or exc}") from None
+    warnings = [w for w in outcome.warnings if any(w.startswith(prefix) for prefix in made.touched)]
+    kept, omitted = _common.bound_items(warnings)
+    data = {"draft": str(path), **made.data}
+    if omitted:
+        data["warnings_omitted"] = omitted
+    return _common.Result(data=data, summary="", warnings=kept, truncated=bool(omitted))
+
+
+# --- Fragments: what the agent supplies ----------------------------------------------------------------
+
+
+def read_fragment(source: str, what: str) -> Any:
+    """The JSON fragment in the file `source`, or on stdin when `source` is `-`."""
+    if source == "-":
+        text = sys.stdin.read(MAX_FRAGMENT_CHARS + 1)
+        if len(text) > MAX_FRAGMENT_CHARS:
+            raise _common.UsageError(f"the {what} on stdin is over {MAX_FRAGMENT_CHARS} characters")
+        return vr.parse_report(text, what)
+    return vr.read_report(Path(source).expanduser(), what)
+
+
+def fragment_validator(fields: Sequence[str], required: Sequence[str], definition: str) -> subset.SubsetValidator:
+    """A validator for a fragment, made from the report schema's own definition of the same item.
+
+    A fragment holds some of the fields of a check or a finding, and none of the ones the tool computes, so
+    the schema refuses those as unknown fields. Each field's rule is the report schema's, never a copy of it.
+    """
+    schema = report_schema()
+    properties = schema["$defs"][definition]["properties"]
+    return subset.SubsetValidator(
+        {
+            "$defs": schema["$defs"],
+            "type": "object",
+            "required": list(required),
+            "additionalProperties": False,
+            "properties": {field_name: properties[field_name] for field_name in fields},
+        }
+    )
+
+
+def fragment_errors(validator: subset.SubsetValidator, fragment: Any) -> list[str]:
+    return [f"fragment: {violation}" for violation in validator.validate(fragment, limit=vr.MAX_SCHEMA_ERRORS)]
+
+
+def agent_evidence(fragment: dict[str, Any]) -> list[str]:
+    """Make the evidence in a fragment the agent's, and say what in it claims otherwise.
+
+    An agent writes `captured_by: agent` or leaves it out. Evidence that a tool captured is written by a tool, so a
+    fragment cannot carry it: the report must never show a deterministic source for something a model typed.
+    """
+    problems: list[str] = []
+    items = fragment.get("evidence")
+    if not isinstance(items, list):
+        return problems
+    for number, item in enumerate(items):
+        if not isinstance(item, dict) or "kind" not in item:
+            continue
+        claimed = item.get("captured_by", "agent")
+        if claimed != "agent" or "tool" in item or "tool_version" in item:
+            problems.append(
+                f"fragment: /evidence/{number}: the agent cannot record tool-captured evidence; "
+                "leave out captured_by, tool and tool_version"
+            )
+            continue
+        items[number] = {
+            "kind": item["kind"],
+            "captured_by": "agent",
+            **{k: v for k, v in item.items() if k not in ("kind", "captured_by")},
+        }
+    return problems
+
+
+def checked_fragment(source: str, what: str, validator: subset.SubsetValidator) -> dict[str, Any]:
+    """The fragment from `source`, with its evidence made the agent's, or `ValidationFailed` with every problem."""
+    fragment = read_fragment(source, what)
+    problems = (agent_evidence(fragment) if isinstance(fragment, dict) else []) + fragment_errors(validator, fragment)
+    if problems:
+        count = len(problems)
+        raise _common.ValidationFailed(
+            f"the {what} is not valid: {count} error{'' if count == 1 else 's'}", errors=problems
+        )
+    checked: dict[str, Any] = fragment
+    return checked
+
+
+# --- add-check -------------------------------------------------------------------------------------------
+
+CHECK_FIELDS = ("id", "verdict", "summary", "confidence", "evidence", "searches", "override_reason")
+CHECK_REQUIRED = ("id", "verdict", "summary")
+
+
+def check_validator() -> subset.SubsetValidator:
+    return fragment_validator(CHECK_FIELDS, CHECK_REQUIRED, "check")
+
+
+def recorded_checks(document: Mapping[str, Any]) -> dict[str, int]:
+    return {check["id"]: index for index, check in enumerate(document["checks"])}
+
+
+def check_counts(document: Mapping[str, Any]) -> dict[str, int]:
+    wanted = {check["id"] for check in expected_checks()}
+    return {"checks_recorded": len(wanted & set(recorded_checks(document))), "checks_expected": len(wanted)}
+
+
+def apply_check(document: dict[str, Any], fragment: Mapping[str, Any]) -> Change:
+    """Record the agent's result for one check.
+
+    A check the agent evaluates is added from the catalogue's entry, so the agent never writes its title, phase,
+    severity, `scored` or method. Recording it again replaces it. A check the engine ran is the engine's: the agent
+    can dispute its verdict, which keeps `engine_verdict` and the engine's evidence and adds the agent's reason
+    and evidence, but it cannot create such a check or change what the engine recorded.
+    """
+    check_id = fragment["id"]
+    entry = {check["id"]: check for check in vr.load_catalogue()["checks"]}.get(check_id)
+    if entry is None:
+        raise _common.ValidationFailed(
+            f"{check_id} is not a check in the catalogue",
+            errors=[f"fragment: /id: {check_id} is not in catalogue.json"],
+        )
+    index = recorded_checks(document).get(check_id)
+    if index is None:
+        if entry["method"] != "agent":
+            raise _common.ValidationFailed(
+                f"{check_id} is an automated check, so its verdict comes from the engine and an agent cannot add it",
+                errors=[
+                    f"{check_id} is recorded by importing the engine's report; an agent can only dispute that "
+                    "verdict afterwards, with a reason and evidence"
+                ],
+            )
+        base = entry
+        action = "added"
+    else:
+        current = document["checks"][index]
+        if "engine_verdict" in current:
+            return override_check(document, index, fragment)
+        if current["method"] != "agent":
+            raise _common.ValidationFailed(
+                f"{check_id} is an automated check with no engine verdict, so it cannot be changed here"
+            )
+        base = current
+        action = "replaced"
+    check: dict[str, Any] = {name: base[name] for name in ("id", "title", "phase", "severity", "scored", "method")}
+    check.update({name: fragment[name] for name in CHECK_FIELDS if name in fragment and name != "id"})
+    check.setdefault("evidence", [])
+    check.setdefault("searches", [])
+    if index is None:
+        index = len(document["checks"])
+        document["checks"].append({})
+    document["checks"][index] = in_schema_order(check, "check")
+    return Change(
+        data={"check": check_id, "action": action, "verdict": check["verdict"]}, touched=[f"/checks/{index}/"]
+    )
+
+
+def override_check(document: dict[str, Any], index: int, fragment: Mapping[str, Any]) -> Change:
+    """The agent's verdict for a check the engine ran.
+
+    The engine's evidence stays, and the agent's evidence replaces any it gave before, so recording the same dispute
+    twice does not pile up. A verdict equal to the engine's clears an earlier dispute.
+    """
+    current = document["checks"][index]
+    check = dict(current)
+    check["verdict"] = fragment["verdict"]
+    check["summary"] = fragment["summary"]
+    for name in ("confidence", "override_reason"):
+        if name in fragment:
+            check[name] = fragment[name]
+        else:
+            check.pop(name, None)
+    check["evidence"] = [e for e in current["evidence"] if e["captured_by"] == "tool"] + list(
+        fragment.get("evidence", [])
+    )
+    check["searches"] = list(fragment.get("searches", []))
+    document["checks"][index] = in_schema_order(check, "check")
+    action = "overridden" if check["verdict"] != current["engine_verdict"] else "agreed"
+    return Change(
+        data={
+            "check": check["id"],
+            "action": action,
+            "verdict": check["verdict"],
+            "engine_verdict": current["engine_verdict"],
+        },
+        touched=[f"/checks/{index}/"],
+    )
+
+
+def run_add_check(args: argparse.Namespace) -> _common.Result:
+    fragment = checked_fragment(args.source, "check fragment", check_validator())
+    counts: dict[str, int] = {}
+
+    def change(document: dict[str, Any]) -> Change:
+        made = apply_check(document, fragment)
+        counts.update(check_counts(document))
+        return made
+
+    result = update_draft(args.draft, change)
+    result.data.update(counts)
+    result.summary = f"report: {result.data['check']} {result.data['action']} as {result.data['verdict']}"
+    return result
+
+
 # --- The command line ---------------------------------------------------------------------------------
 
 
@@ -273,10 +602,15 @@ def build_parser() -> _common.ToolParser:
     commands = parser.add_subparsers(dest="command", required=True, metavar="command")
     start = commands.add_parser("init", help="start a draft from an intake file", allow_abbrev=False)
     start.add_argument("intake", help="the intake file, audit-intake.<label>.json")
+    record = commands.add_parser("add-check", help="record the result of one check", allow_abbrev=False)
+    record.add_argument("draft", help="the draft to change")
+    record.add_argument(
+        "--from", dest="source", required=True, help="a JSON file with the check's result, or - for stdin"
+    )
     return parser
 
 
-HANDLERS = {"init": run_init}
+HANDLERS = {"init": run_init, "add-check": run_add_check}
 
 
 def handler(argv: Sequence[str]) -> _common.Result:

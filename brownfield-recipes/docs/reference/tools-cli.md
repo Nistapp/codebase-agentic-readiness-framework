@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init`). The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py` and, in part, `report.py` (`init` and `add-check`). The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first subcommand. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py` and `validate_report.py` exist, and `report.py` has its first two subcommands. The sections for the other tools are filled in by roadmap steps S2.3 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | [`engine.py`](#enginepy) | Runs the deterministic engine from any directory | Live |
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
-| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init`; the other subcommands: Planned (S2.3) |
+| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live for `init` and `add-check`; the other subcommands: Planned (S2.3) |
 | `render_report.py` | Renders a report to Markdown | Planned (S2.4) |
 | `facts.py` | Emits stack and inventory facts, no verdicts | Planned (S2.7) |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
@@ -155,12 +155,15 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-Only `init` exists so far. `add-check`, `add-finding`, `set-disposition`, `status` and `finalise` are planned in the same step (S2.3), and `import-engine` is S2.5.
+Only `init` and `add-check` exist so far. `add-finding`, `set-disposition`, `status` and `finalise` are planned in the same step (S2.3), and `import-engine` is S2.5.
+
+Every subcommand but `init` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
 **Synopsis**
 
 ```text
 python3 brownfield-recipes/tools/report.py init <intake>
+python3 brownfield-recipes/tools/report.py add-check <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py --describe
 ```
 
@@ -212,3 +215,65 @@ The draft starts with no checks, no findings and a summary computed from them. T
 | `intake rule: /index/name: ... the index needs a name` | Name the index tool, or set `index.kind` to `none`. |
 | `target not found: ...` | Fix `target_path`. |
 | `refusing to write inside the target: ...` | Choose an `output_dir` outside the repository. |
+
+### Fragments
+
+`add-check` and the subcommands after it take a **fragment**: a JSON object with the fields the agent decides, from a file (`--from FILE`) or from stdin (`--from -`, for example with a here-document). The tool fills in everything it can compute, so a fragment holds nothing it could get wrong.
+
+- A field that the tool computes is refused as an unknown field, with its place: `fragment: /: unexpected property: 'title'`.
+- Evidence is the agent's. Leave out `captured_by`, `tool` and `tool_version`; the tool writes `captured_by: agent`. A fragment that claims a tool captured something is refused, because the report must never show a deterministic source for text a model wrote.
+- A fragment fails as a whole: every problem is listed in `data.errors`, each starting with `fragment:` and a JSON Pointer into the fragment.
+
+A fragment that is valid on its own can still leave the draft invalid, for example by citing a path that leaves the target. The tool then refuses it with the rule that fails (`rule 3: ...`) and writes nothing.
+
+### add-check
+
+Records the result for one check.
+
+```text
+python3 brownfield-recipes/tools/report.py add-check <draft> --from -
+```
+
+```json
+{
+  "id": "AGT-11",
+  "verdict": "PASS",
+  "confidence": "high",
+  "summary": "AGENTS.md states a release rule that the code does not reveal.",
+  "evidence": [{ "kind": "file", "path": "AGENTS.md", "lines": "14-15", "quote": "Never run npm publish by hand." }],
+  "searches": []
+}
+```
+
+| Fragment field | Meaning |
+|---|---|
+| `id`, `verdict`, `summary` | Required. The check's ID in [`catalogue.json`](../../catalogue.json), the verdict, and one short sentence. |
+| `confidence`, `evidence`, `searches` | Optional. As in the [report schema](../../schema/SCHEMA.md#evidence). |
+| `override_reason` | Only when disputing a verdict the engine gave; see below. |
+
+The tool adds the check's `title`, `phase`, `severity`, `scored` and `method` from the catalogue, so the agent cannot misstate them. The check is added at the end of `checks`; recording a check again replaces its verdict, summary, confidence, evidence and searches in place.
+
+**A check only the engine can run.** `add-check` cannot add an `automated` check, whose verdict comes from the engine (the checks arrive with `import-engine`, S2.5). It can dispute one the engine already ran: the engine's verdict stays in `engine_verdict`, with the engine's evidence and `data`, and the agent's `verdict`, `summary`, `override_reason` and agent-captured evidence are recorded beside them. A dispute needs an `override_reason` and at least one evidence item (rule 6). Disputing the same check again replaces the agent's earlier evidence. A fragment whose verdict equals the engine's clears an earlier dispute (and has no `override_reason`). A check whose finding is still `pending` cannot be disputed to `PASS`: reject the finding first (rule 7).
+
+**Outputs.** `data` holds `draft`, `check`, `action` (`added`, `replaced`, `overridden` or `agreed`), `verdict`, `engine_verdict` (for an engine check), `checks_recorded` and `checks_expected` (the phase-1 checks of the catalogue). Warnings list each cited file that is not in the target at the recorded commit, for this check only (rule 12).
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The check was recorded. |
+| `1` | A bad argument; the draft or the fragment file is missing or too large; the draft is a final report; the draft's folder is inside the target; the lock could not be taken; the file could not be written. |
+| `2` | The fragment is not valid JSON or fails its schema; the check is unknown, or automated and not yet in the draft; the draft was already invalid; or the change would leave it invalid (`data.errors` has the rule). Nothing is written. |
+| `3` | Internal error. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `fragment: /pointer: ...` | Fix the field the pointer names. |
+| `fragment: /evidence/N: the agent cannot record tool-captured evidence ...` | Leave out `captured_by`, `tool` and `tool_version`. |
+| `<ID> is an automated check, so its verdict comes from the engine ...` | Import the engine's report first; then dispute the verdict if the evidence says it is wrong. |
+| `the draft is not valid before the change` | The draft was edited by hand or by another tool. Fix it, or start a new draft with `init`. |
+| `the change would leave the draft invalid, so nothing was written` | `data.errors` names the rule and the place. Change the fragment. |
+| `rule 5: ... is an agent check with the verdict PASS and has no evidence` | Cite what shows the check passes, or record `FAIL` or `UNKNOWN` and say what was missing. |
+| `another report command has held the lock on ...` | Another `report.py` command is still running on a draft in the same folder. Wait for it, and run commands one at a time. |
