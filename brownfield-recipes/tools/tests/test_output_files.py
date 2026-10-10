@@ -88,7 +88,7 @@ class RepoLabelTests(unittest.TestCase):
             _common.repo_label("/x", "a" * 33)
 
     def test_an_explicit_label_that_breaks_the_pattern_is_a_usage_error(self) -> None:
-        for bad in ("", "Upper", "has space", "-leading", ".hidden", "a/b", "../x", "naïve"):
+        for bad in ("", "Upper", "has space", "-leading", ".hidden", "a/b", "../x", "naïve", "abc\n", "abc\n\n"):
             with self.subTest(label=bad):
                 with self.assertRaises(_common.UsageError):
                     _common.repo_label("/x", bad)
@@ -160,6 +160,10 @@ class OutputNameTests(unittest.TestCase):
             ("r", "engine-report", STAMP, "j/son"),
             ("r", "engine-report", STAMP, ""),
             ("r", "", STAMP, "json"),
+            ("r\n", "engine-report", STAMP, "json"),
+            ("r", "engine-report\n", STAMP, "json"),
+            ("r", "engine-report", STAMP + "\n", "json"),
+            ("r", "engine-report", STAMP, "json\n"),
         ]
         for label, kind, stamp, ext in bad:
             with self.subTest(label=label, kind=kind, stamp=stamp, ext=ext):

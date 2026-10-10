@@ -352,11 +352,12 @@ STAMP_FORMAT = "%Y%m%dT%H%M%SZ"
 DERIVED_LABEL_CHARS = 24
 MAX_NAME_ATTEMPTS = 1000
 
-# The same pattern as `repo_label` in schema/audit-intake.schema.json.
-EXPLICIT_LABEL = re.compile(r"^[a-z0-9][a-z0-9._-]{0,31}$")
-_STAMP = re.compile(r"^[0-9]{8}T[0-9]{6}Z$")
-_KIND = re.compile(r"^[a-z]+(-[a-z]+)*$")
-_EXTENSION = re.compile(r"^[a-z]+$")
+# The same pattern as `repo_label` in schema/audit-intake.schema.json. Each ends in `\Z` and not `$`, because
+# Python's `$` also matches before a final newline, and a newline must never reach a file name.
+EXPLICIT_LABEL = re.compile(r"^[a-z0-9][a-z0-9._-]{0,31}\Z")
+_STAMP = re.compile(r"^[0-9]{8}T[0-9]{6}Z\Z")
+_KIND = re.compile(r"^[a-z]+(-[a-z]+)*\Z")
+_EXTENSION = re.compile(r"^[a-z]+\Z")
 
 
 def derive_label(directory_name: str) -> str:
