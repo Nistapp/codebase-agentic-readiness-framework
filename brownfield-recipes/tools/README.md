@@ -71,7 +71,11 @@ No tool opens a socket, calls a package index or fetches a URL. The one thing th
 
 A tool reads the repository it is pointed at and never writes there: no report, no cache, no lock file, no temporary file. Output goes to an output directory outside the target, and a tool refuses an output directory that is inside the target, including through a symlink. A tool also refuses to read a path that resolves outside the target, so a symlink cannot lead it out.
 
-### 7. Check the Python version first
+### 7. Never replace a file
+
+A tool that writes a file gives it a name that carries the repository's name, `<label>.<kind>.<stamp>.<ext>`, and creates it only if the name is free. When the name is taken, which happens if two runs start in the same second, the tool adds `-2`, `-3` and so on after the stamp. No tool has an overwrite option. The one exception is a run updating its own draft report in place, atomically. The rule, the label and the stamp are defined under "Output files" in the [report schema notes](../schema/SCHEMA.md#output-files).
+
+### 8. Check the Python version first
 
 The minimum is Python 3.11. Before it does anything else a tool checks the interpreter, and below the minimum it prints the envelope with `ok: false`, a hint on stderr and exits `1`:
 
@@ -111,6 +115,10 @@ if __name__ == "__main__":
 | `resolve_within` | Read a path the target names, refusing one that leaves the target through `..` or a symlink. |
 | `output_directory` | Get the directory a tool may write to, refusing one inside the target. |
 | `atomic_write_text` | Replace a file the run itself owns, such as its own draft, in one step. |
+| `repo_label`, `derive_label` | Get the label for output file names: the intake's `repo_label`, or one derived from the target directory's name. |
+| `utc_stamp`, `output_name` | Build the stamp and the file name. |
+| `free_name` | Find the first name nothing occupies, for a program that writes the file itself and refuses to replace one. It creates nothing. |
+| `create_new` | Write a new file under the output name, creating it exclusively and numbering it `-2`, `-3` when the name is taken. |
 
 Tests are in [`tests/`](tests/) and run with `make test`. A test starts with `import _paths`, which puts this folder on the import path.
 

@@ -8,7 +8,8 @@ with ``raise SystemExit(run_tool(INFO, handler, sys.argv[1:]))``. :func:`run_too
 preflight, ``--describe``, one JSON envelope on stdout, a short summary on stderr, and the exit code.
 
 The module also holds the helpers a tool needs to keep its promises: paths that cannot leave the target,
-output directories that cannot be inside it, an atomic write, and a bound on how much a tool prints.
+output directories that cannot be inside it, an atomic write, a bound on how much a tool prints, and the names
+of output files, which carry the repository's name and are never replaced.
 
 Failure behaviour: a :class:`ToolError` becomes an envelope with ``ok: false`` and the error's exit code.
 Any other exception becomes exit code 3 with the traceback on stderr. The envelope is always printed.
@@ -23,11 +24,13 @@ import argparse
 import contextlib
 import json
 import os
+import re
 import stat
 import sys
 import tempfile
 import traceback
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, NoReturn, Sequence, TextIO
 
@@ -330,3 +333,100 @@ def atomic_write_text(path: str | Path, text: str) -> None:
         with contextlib.suppress(FileNotFoundError):
             os.unlink(temp)
         raise
+
+
+# --- Output files: names that carry the repository, and files that are never replaced -------------------
+#
+# The contract is "Output files" in brownfield-recipes/schema/SCHEMA.md. A name is
+# `<label>.<kind>.<stamp>.<ext>`; when it is taken, `-2`, `-3` and so on follow the stamp.
+
+STAMP_FORMAT = "%Y%m%dT%H%M%SZ"
+DERIVED_LABEL_CHARS = 24
+MAX_NAME_ATTEMPTS = 1000
+
+# The same pattern as `repo_label` in schema/audit-intake.schema.json.
+EXPLICIT_LABEL = re.compile(r"^[a-z0-9][a-z0-9._-]{0,31}$")
+_STAMP = re.compile(r"^[0-9]{8}T[0-9]{6}Z$")
+_KIND = re.compile(r"^[a-z]+(-[a-z]+)*$")
+_EXTENSION = re.compile(r"^[a-z]+$")
+
+
+def derive_label(directory_name: str) -> str:
+    """A short label from a directory name: lower case, each run of other characters one hyphen, 24 characters."""
+    label = re.sub(r"[^a-z0-9]+", "-", directory_name.lower()).strip("-")
+    return label[:DERIVED_LABEL_CHARS].rstrip("-") or "repo"
+
+
+def repo_label(directory: str | Path, explicit: str | None = None) -> str:
+    """The label for a repository's output files: the explicit `repo_label`, or one derived from the directory."""
+    if explicit is not None:
+        if not EXPLICIT_LABEL.match(explicit):
+            raise UsageError(
+                f"repo_label {explicit!r} is not allowed: use up to 32 of a-z, 0-9, dot, underscore and hyphen, "
+                "starting with a letter or digit"
+            )
+        return explicit
+    return derive_label(Path(directory).resolve().name)
+
+
+def utc_stamp(moment: datetime | None = None) -> str:
+    """The UTC time as `YYYYMMDDTHHMMSSZ`. Without an argument, now. A given time must carry a timezone."""
+    if moment is None:
+        moment = datetime.now(timezone.utc)
+    elif moment.tzinfo is None:
+        raise ValueError("the time must carry a timezone")
+    return moment.astimezone(timezone.utc).strftime(STAMP_FORMAT)
+
+
+def output_name(label: str, kind: str, stamp: str, ext: str, attempt: int = 1) -> str:
+    """`<label>.<kind>.<stamp>.<ext>`, with `-<attempt>` after the stamp from the second attempt on."""
+    if not EXPLICIT_LABEL.match(label):
+        raise ValueError(f"not a label: {label!r}")
+    if not _KIND.match(kind):
+        raise ValueError(f"not a kind: {kind!r}")
+    if not _STAMP.match(stamp):
+        raise ValueError(f"not a stamp: {stamp!r}")
+    if not _EXTENSION.match(ext):
+        raise ValueError(f"not an extension: {ext!r}")
+    suffix = "" if attempt == 1 else f"-{attempt}"
+    return f"{label}.{kind}.{stamp}{suffix}.{ext}"
+
+
+def free_name(directory: Path, label: str, kind: str, stamp: str, ext: str) -> Path:
+    """The first of the numbered names that nothing occupies. It creates nothing.
+
+    A dangling symlink occupies its name. Another run can take the name before the caller uses it, so a
+    caller that can must use `create_new`, or hand the name to a program that itself refuses to replace a file.
+    """
+    for attempt in range(1, MAX_NAME_ATTEMPTS + 1):
+        path = directory / output_name(label, kind, stamp, ext, attempt)
+        if not os.path.lexists(path):
+            return path
+    raise UsageError(f"no free name for {label}.{kind}.{stamp} in {directory}")
+
+
+def create_new(directory: Path, label: str, kind: str, stamp: str, ext: str, data: str | bytes) -> Path:
+    """Write `data` to a new file named by `output_name` and return its path. No existing file is touched.
+
+    The file is created with `O_EXCL`, so when two runs reach one name in the same second, each gets its own
+    and neither replaces the other. A write that fails removes the partial file it created and nothing else.
+    The caller gets `directory` from `output_directory`, which has kept it outside the target.
+    """
+    payload = data.encode("utf-8") if isinstance(data, str) else data
+    for attempt in range(1, MAX_NAME_ATTEMPTS + 1):
+        path = directory / output_name(label, kind, stamp, ext, attempt)
+        try:
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+        except FileExistsError:
+            continue
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+        except BaseException:
+            with contextlib.suppress(FileNotFoundError):
+                os.unlink(path)
+            raise
+        return path
+    raise UsageError(f"no free name for {label}.{kind}.{stamp} in {directory}")
