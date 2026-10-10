@@ -1,12 +1,12 @@
 # Brownfield Recipes — Documentation
 
-> **Status:** Planned. Nothing under `brownfield-recipes/` is implemented yet. Every page below is a placeholder that names the roadmap step that fills it. See [`STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 1.3.
+> **Status:** In development. The schemas, the check catalogue, the engine and the first tool are live; the recipes are not written yet. Each page below carries its own status, and a page marked Planned names the roadmap step that fills it. See [`STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 1.3.
 
 ## ADR Index
 
 | # | Title | Status | Date |
 |---|---|---|---|
-| — | No ADRs yet | — | — |
+| [0001](adrs/0001-tools-import-engine.md) | Tools Import the Engine in Process | Accepted | 2026-10-10 |
 
 ## Key Documents
 
@@ -36,7 +36,7 @@
 
 | Page | Purpose | Status |
 |---|---|---|
-| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Planned (S2.1–S2.8) |
+| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`; the rest Planned (S2.2–S2.8, S5.1) |
 | [Harness notes](../reference/harness-notes.md) | Claude Code, opencode, Codex, Cursor specifics | Planned (S4.6) |
 | [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; generated table Planned (S4.6) |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
@@ -53,7 +53,7 @@
 
 | Page | Purpose | Status |
 |---|---|---|
-| [1. Tool Contract](contributor-deep-dive/01-tool-contract.md) | The contract every tool follows | Live; the engine launcher section: Planned (S2.1) |
+| [1. Tool Contract](contributor-deep-dive/01-tool-contract.md) | The contract every tool follows | Live |
 | [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the tools that use it: Planned, S2.2–S2.5) |
 | [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live for the catalogue; rubric anatomy Planned (S3.1) |
 | [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Planned (S3.4) |

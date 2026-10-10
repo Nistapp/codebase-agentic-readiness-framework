@@ -11,7 +11,7 @@ Recipes that a coding agent runs to audit an existing repository for agentic rea
 | `implement/` | The implementation recipe and its playbooks | Planned |
 | [`schema/`](schema/SCHEMA.md) | The report and intake schemas, version 0.1, with examples. The progress schema is not written yet | Live (report, intake) |
 | `stacks/` | Stack profiles | Planned |
-| [`tools/`](tools/README.md) | The tool contract and shared helpers. The tools themselves follow | Live (contract, helpers); tools Planned |
+| [`tools/`](tools/README.md) | The tool contract and shared helpers. The tools themselves follow | Live (contract, helpers, the engine launcher); the other tools Planned |
 | [`deterministic-audit/`](deterministic-audit/README.md) | The deterministic engine, migrated with its history | Live |
 | [`docs/`](docs/architecture/README.md) | Documentation, Diátaxis layout | Placeholders |
 

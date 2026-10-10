@@ -2,10 +2,10 @@
 
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain the contract every deterministic tool follows, what enforces it, and why it has this shape.
-> **Status:** Live for the contract and its helpers. The engine launcher section is planned.
+> **Status:** Live.
 
 > [!NOTE]
-> Planned. Section 5, the engine launcher `tools/engine.py` and its decision record, is not written yet. Filled in by roadmap step S2.1. The tool catalogue generated from each tool's manifest is planned for S2.8.
+> Planned. The tool catalogue generated from each tool's manifest is planned for S2.8, and the validator, report builder and renderer that follow this contract are planned for S2.2 to S2.4.
 
 ---
 
@@ -61,4 +61,22 @@ The tests are in `test_output_files.py`: the label rule (including `Digital_Assi
 
 ## 5. Engine launcher
 
-- TBD: `tools/engine.py` and the import-path ADR.
+[`tools/engine.py`](../../../tools/engine.py) runs the deterministic engine from any directory, and it is the only way the recipes run it. It has two modes and no others:
+
+| Mode | Command | `data` holds |
+|---|---|---|
+| Scan | `engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N] [--exclude GLOB]... [--max-files N] [--run-gates --allow-probe VERB... [--timeout SECONDS]]` | The report's path, label and stamp, the target, and the engine's version and ruleset revision |
+| List | `engine.py --list-checks` | The engine's identity and its checks, bounded like any list |
+
+Every option is in the [Tools CLI reference](../../reference/tools-cli.md#enginepy). What matters for the contract:
+
+- **How it reaches the engine.** In process, through [`load_engine`](../../../tools/engine.py#L57-L66) and [`run_engine`](../../../tools/engine.py#L69-L83), as [ADR 0001](../adrs/0001-tools-import-engine.md) decides. The engine's stdout and stderr are captured, so the launcher's stdout stays one envelope. What the engine said on stderr, apart from its "report written" line, goes into the summary, and anything it printed on stdout becomes a warning.
+- **What the launcher decides, so that the engine cannot do otherwise.** It asks for `--format json` and nothing else, so no Markdown file appears beside the report. It names the report `<label>.engine-report.<stamp>.json` with [`free_name`](../../../tools/_common.py#L403-L413) and puts it in a directory that [`output_directory`](../../../tools/_common.py#L302-L318) has checked is outside the target. The engine skips that check when it is given `--out`, so this is where the guard lives.
+- **What it never passes.** The launcher's parser does not accept `--force`, `--out`, `--format`, `--fail-on`, `--baseline` or `--emit-baseline`, so the engine never gets them. `--force` is the one that matters most: the engine refuses to replace a JSON report without it, and that refusal is the backstop when another run takes the chosen name before the engine writes. `--emit-baseline` is withheld because the engine writes its `CON-04` draft beside the report without asking whether the file exists.
+- **Exit codes.** The engine's exit code `0` is `0`. Its `1`, a refusal such as `--run-gates` without `--allow-probe`, is `1`, with the engine's own reason in `data.error`. Any other code, an exception, or a success that left no report is `3`, because the launcher offers nothing that makes the engine exit `2`.
+- **The stamp** is the launch time. The engine records its own `scanned_at` inside the report.
+
+> [!WARNING]
+> Two runs on one repository that start in the same second can both choose the same name. The first to finish writes it, and the engine refuses to replace it for the second, which exits `1` and can simply be run again. No report is lost or overwritten, but the second run is not renumbered, because the launcher cannot reserve a name that the engine insists is free.
+
+The tests are in `test_engine.py`. They start the launcher as a script from the filesystem root, scan the engine's own fixtures, and check that the target is byte-for-byte unchanged afterwards.

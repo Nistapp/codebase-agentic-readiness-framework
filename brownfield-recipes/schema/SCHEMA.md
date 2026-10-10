@@ -197,7 +197,7 @@ The report also shows the unattested list beside them. The spec defines no level
 Every file a run writes carries the repository's name, so that runs on several repositories sit side by side. No run replaces another run's output.
 
 > [!NOTE]
-> Planned. The tools that write these files are S2.1 (the helpers and `tools/engine.py`), S2.3 (`report.py`) and S2.4 (`render_report.py`). The schema fixes the names and the `label` field now; the tools must keep to them.
+> The engine report is written under this rule today, by [`tools/engine.py`](../tools/engine.py), with the helpers in [`tools/_common.py`](../tools/_common.py). The draft and final reports are planned: `report.py` is S2.3 and `render_report.py` is S2.4. They must keep to these names.
 
 | File | Name | Written by |
 |---|---|---|
