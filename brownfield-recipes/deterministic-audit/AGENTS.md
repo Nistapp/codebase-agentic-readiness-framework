@@ -117,6 +117,7 @@ Commands that run the engine itself, from this directory:
 ```bash
 python3 -m unittest discover -s tests                                   # the test suite
 python3 -m audit --list-checks                                          # catalogue: implemented vs planned
+python3 -m audit --list-checks --format json                            # the same, as JSON
 python3 -m audit --verify-rules                                         # every anchor must resolve
 python3 tools/build.py && ./dist/audit.pyz --list-checks                # the single-file distributable
 ```

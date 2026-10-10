@@ -18,6 +18,7 @@ Turning this tool into a gate is a deliberate second step, never the default (AD
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -77,7 +78,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--exclude", action="append", default=[], metavar="GLOB", help="extra path glob to exclude; repeatable"
     )
     parser.add_argument("--max-files", type=int, default=250_000, help="hard cap on inspected files")
-    parser.add_argument("--list-checks", action="store_true", help="print the check catalogue and exit")
+    parser.add_argument(
+        "--list-checks",
+        action="store_true",
+        help="print the check catalogue and exit (a text table; with --format json, JSON)",
+    )
     parser.add_argument(
         "--verify-rules", action="store_true", help="resolve every rule pack's framework anchor and exit"
     )
@@ -97,7 +102,7 @@ def run(argv: list[str]) -> int:
     args = parser.parse_args(argv)
 
     if args.list_checks:
-        return _list_checks()
+        return _list_checks(args.format)
 
     try:
         if args.verify_rules:
@@ -111,8 +116,36 @@ def run(argv: list[str]) -> int:
         return EXIT_USAGE
 
 
-def _list_checks() -> int:
-    from audit.rules.registry import REGISTRY, scoreable
+def _list_checks(fmt: str) -> int:
+    """Print the catalogue: a text table by default, JSON with ``--format json``."""
+    from audit.rules.registry import REGISTRY, ruleset_hash, scoreable
+
+    if fmt == "json":
+        payload = {
+            "engine": {
+                "name": "python-agentic-audit",
+                "version": __version__,
+                "ruleset_revision": __ruleset_revision__,
+                "ruleset_hash": ruleset_hash(),
+            },
+            "checks": [
+                {
+                    "id": spec.id,
+                    "pack": spec.pack,
+                    "title": spec.title,
+                    "tier": spec.tier,
+                    "severity": spec.severity.value,
+                    "phase": spec.phase,
+                    "scored": spec.scored,
+                    "status": spec.status,
+                    "ecosystems": list(spec.ecosystems),
+                    "evidence_rule": spec.evidence_rule,
+                }
+                for spec in REGISTRY
+            ],
+        }
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
+        return EXIT_OK
 
     width = max(len(spec.id) for spec in REGISTRY)
     print(f"{'id'.ljust(width)}  tier  severity   status       title")

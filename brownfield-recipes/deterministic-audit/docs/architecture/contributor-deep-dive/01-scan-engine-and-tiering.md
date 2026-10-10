@@ -247,7 +247,7 @@ The auditor is verified the same way the framework verifies anything else: again
 | `--timeout <s>` | `300` | Per-probe timeout |
 | `--fail-on <severity>` | none | Exit 2 when a finding at or above this severity exists |
 | `--baseline <report.json>` | none | Ratchet: exit 2 only on regression |
-| `--list-checks` | — | Print the catalogue and exit 0 |
+| `--list-checks` | — | Print the catalogue and exit 0: a text table, or JSON with `--format json` |
 | `--verify-rules` | — | Resolve every rule pack's framework anchor |
 | `--force` | off | Overwrite an existing report |
 

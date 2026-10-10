@@ -46,7 +46,8 @@ python3 -m audit <target> --format both --out ./audit-out/<name>
 python3 -m audit <target> --run-gates --allow-probe check --allow-probe test --timeout 600
 
 # what is implemented right now, and whether every rule still traces to the framework
-python3 -m audit --list-checks
+python3 -m audit --list-checks                 # a text table
+python3 -m audit --list-checks --format json    # the same catalogue as JSON
 python3 -m audit --verify-rules
 
 # tests, and the single-file distributable
