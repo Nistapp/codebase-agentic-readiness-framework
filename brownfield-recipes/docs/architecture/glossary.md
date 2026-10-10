@@ -14,6 +14,7 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Implementation recipe | The recipe that applies confirmed findings on a branch. |
 | Engine | The deterministic, standard-library Python audit in `deterministic-audit/`. |
 | Tool | A deterministic script in `tools/` that follows the tool contract. |
+| Envelope | The one JSON object a tool prints on stdout: `tool`, `version`, `ok`, `data`, `warnings`, `truncated`. |
 | Check | A catalogue entry with an ID such as `CMD-01`, judged by a rubric. |
 | Finding | A non-passing check result with a statement, evidence and remediation. |
 | Disposition | The user's decision on a finding: confirmed, rejected, deferred or edited. |

@@ -1,7 +1,7 @@
 # Tools
 
 > **Audience:** Engineers who write or call a tool, and agents that run one.
-> **Source of truth:** `_common.py` and each tool's `--describe` output.
+> **Source of truth:** [`_common.py`](_common.py) and each tool's `--describe` output.
 > **Status:** The contract below is binding for every tool in this folder. The tools themselves arrive step by step; the [Tools CLI reference](../docs/reference/tools-cli.md) says which exist.
 
 Deterministic tools do the counting, validation and rendering for the brownfield recipes. The agent decides what a result means; a tool never judges, and its output overrides the agent's own arithmetic or formatting. Every tool is standard-library Python that runs from a fresh clone with no install step:
@@ -81,6 +81,38 @@ engine: needs Python 3.11 or newer, found 3.9.6
 ```
 
 For this to work, the file that holds the check and every file it imports first must parse as Python 3.9 syntax.
+
+---
+
+## Writing a tool
+
+A tool imports [`_common.py`](_common.py), which keeps the contract above, so a tool only says what it does:
+
+```python
+INFO = _common.ToolInfo(name="mytool", summary="...", synopsis=("mytool.py <target>",), writes="nothing")
+
+
+def handler(argv: Sequence[str]) -> _common.Result:
+    args = PARSER.parse_args(argv)  # a _common.ToolParser
+    return _common.Result(data={"target": args.target}, summary="one line for stderr")
+
+
+if __name__ == "__main__":
+    raise SystemExit(_common.run_tool(INFO, handler, sys.argv[1:]))
+```
+
+`run_tool` runs the Python check, answers `--describe`, prints the envelope and the summary, and turns an exception into the right exit code. A handler raises `UsageError` (exit 1), `ValidationFailed` (exit 2) or lets a bug escape (exit 3).
+
+| Helper | Use it to |
+|---|---|
+| `ToolParser` | Parse arguments. A bad argument becomes a `UsageError`, so it exits with 1 and an envelope, not with argparse's 2. |
+| `bound_items` | Keep a list within the output budget and learn how many items were left out. |
+| `resolve_target` | Turn the target argument into a resolved directory that exists. |
+| `resolve_within` | Read a path the target names, refusing one that leaves the target through `..` or a symlink. |
+| `output_directory` | Get the directory a tool may write to, refusing one inside the target. |
+| `atomic_write_text` | Replace a file the run itself owns, such as its own draft, in one step. |
+
+Tests are in [`tests/`](tests/) and run with `make test`. A test starts with `import _paths`, which puts this folder on the import path.
 
 ---
 

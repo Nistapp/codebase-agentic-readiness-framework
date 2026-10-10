@@ -53,7 +53,7 @@
 
 | Page | Purpose | Status |
 |---|---|---|
-| [1. Tool Contract](contributor-deep-dive/01-tool-contract.md) | The contract every tool follows | Planned (S2.1) |
+| [1. Tool Contract](contributor-deep-dive/01-tool-contract.md) | The contract every tool follows | Live; the engine launcher section: Planned (S2.1) |
 | [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the tools that use it: Planned, S2.2–S2.5) |
 | [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live for the catalogue; rubric anatomy Planned (S3.1) |
 | [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Planned (S3.4) |
