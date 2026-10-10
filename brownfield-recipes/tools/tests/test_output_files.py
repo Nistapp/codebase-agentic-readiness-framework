@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import os
 import re
+import stat
 import tempfile
 import threading
 import unittest
@@ -241,8 +242,9 @@ class CreateNewTests(unittest.TestCase):
         with mock.patch.object(_common, "MAX_NAME_ATTEMPTS", 3):
             for _ in range(3):
                 _common.create_new(self.dir, "repo", "audit-draft", STAMP, "json", "x")
-            with self.assertRaises(_common.UsageError):
+            with self.assertRaises(_common.UsageError) as caught:
                 _common.create_new(self.dir, "repo", "audit-draft", STAMP, "json", "x")
+        self.assertEqual(str(caught.exception), f"no free name for repo.audit-draft.{STAMP} in {self.dir}")
         self.assertEqual(len(self.names()), 3)
 
     def test_racing_writers_each_get_their_own_file(self) -> None:
@@ -288,7 +290,7 @@ class CreateFileTests(unittest.TestCase):
         old.write_text("somebody else's text", encoding="utf-8")
         with self.assertRaises(_common.UsageError) as caught:
             _common.create_file(old, "mine")
-        self.assertIn("already exists", str(caught.exception))
+        self.assertEqual(str(caught.exception), f"{old} already exists, and a tool never replaces a file")
         self.assertEqual(old.read_text(encoding="utf-8"), "somebody else's text")
         self.assertEqual(self.names(), ["report.md"])
 
@@ -311,6 +313,17 @@ class CreateFileTests(unittest.TestCase):
                 _common.create_file(link, "mine")
         self.assertFalse((self.dir / "nowhere.txt").exists())
         self.assertEqual(elsewhere.read_text(encoding="utf-8"), "kept")
+
+    @unittest.skipIf(os.name == "nt", "file modes are a POSIX notion")
+    def test_a_created_file_is_readable_by_others_and_writable_only_by_its_owner(self) -> None:
+        before = os.umask(0)
+        try:
+            single = _common.create_file(self.dir / "single.md", "x")
+            grouped = _common.create_new_group(self.dir, "repo", "audit-report", STAMP, [("json", "{}"), ("md", "#")])
+        finally:
+            os.umask(before)
+        for path in (single, *grouped):
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o644, path.name)
 
     def test_a_missing_folder_is_an_oserror_for_the_caller_to_explain(self) -> None:
         with self.assertRaises(FileNotFoundError):
@@ -475,16 +488,20 @@ class CreateNewGroupTests(unittest.TestCase):
     def test_a_group_needs_files_and_each_needs_its_own_extension(self) -> None:
         for files in ([], [("json", "a"), ("json", "b")]):
             with self.subTest(files=files):
-                with self.assertRaises(ValueError):
+                with self.assertRaises(ValueError) as caught:
                     _common.create_new_group(self.dir, "repo", "audit-report", STAMP, files)
+                self.assertEqual(
+                    str(caught.exception), "a group needs at least one file, and each must have its own extension"
+                )
         self.assertEqual(self.names(), [])
 
     def test_running_out_of_names_is_a_usage_error_and_leaves_only_the_strays(self) -> None:
         with mock.patch.object(_common, "MAX_NAME_ATTEMPTS", 2):
             for number in ("", "-2"):
                 (self.dir / f"repo.audit-report.{STAMP}{number}.md").write_text("stray", encoding="utf-8")
-            with self.assertRaises(_common.UsageError):
+            with self.assertRaises(_common.UsageError) as caught:
                 self.group()
+        self.assertEqual(str(caught.exception), f"no free name for repo.audit-report.{STAMP} in {self.dir}")
         self.assertEqual(self.names(), [f"repo.audit-report.{STAMP}-2.md", f"repo.audit-report.{STAMP}.md"])
 
     def test_racing_groups_each_get_their_own_pair(self) -> None:
