@@ -45,22 +45,22 @@
   "components": [],
   "checks": [
     {
-      "id": "AGT-01",
-      "title": "Instruction file present, canonical, and non-trivial",
+      "id": "AGT-11",
+      "title": "Instructions are specific and not inferable",
       "phase": 1,
-      "severity": "BLOCKER",
+      "severity": "DEGRADER",
       "scored": true,
       "method": "agent",
       "verdict": "PASS",
       "confidence": "high",
-      "summary": "AGENTS.md exists at the root and states the commands, boundaries and prohibitions.",
+      "summary": "AGENTS.md states a release rule and a boundary that the code does not reveal.",
       "evidence": [
         {
           "kind": "file",
           "captured_by": "agent",
           "path": "AGENTS.md",
-          "lines": "1-12",
-          "quote": "This file governs how AI coding agents work inside this repository."
+          "lines": "14-15",
+          "quote": "Never run `npm publish` by hand; releases go through the release workflow."
         }
       ],
       "searches": []

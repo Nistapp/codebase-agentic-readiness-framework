@@ -91,15 +91,7 @@
       "verdict": "FAIL",
       "engine_verdict": "FAIL",
       "summary": "index store /home/kc/.cache/codebase-memory-mcp records no project rooted at /home/kc/Projects/Nistapp-agentic-frameworks/agentic-tdd (14 project(s) present)",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "/home/kc/.cache/codebase-memory-mcp"
-        }
-      ],
+      "evidence": [],
       "searches": []
     },
     {
@@ -1569,15 +1561,7 @@
       "check": "IDX-02",
       "severity": "BLOCKER",
       "statement": "An agent cannot query a current index of this checkout because the index store contains no project whose root resolves to /home/kc/Projects/Nistapp-agentic-frameworks/agentic-tdd.",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "/home/kc/.cache/codebase-memory-mcp"
-        }
-      ],
+      "evidence": [],
       "searches": [],
       "remediation": {
         "summary": "Index this checkout with codebase-memory-mcp so agents have a graph to query."

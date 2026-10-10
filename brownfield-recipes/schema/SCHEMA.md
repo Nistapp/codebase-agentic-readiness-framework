@@ -320,7 +320,7 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 | `findings[].check`, `severity`, `statement` | `findings[].check`, `severity`, `statement` |
 | `findings[].phase`, `verdict` | Not carried. The check's phase and verdict apply. |
 | `findings[].remediation` (a string) | `findings[].remediation.summary` |
-| `findings[].evidence[]` `path`, `line`, `note` | `evidence[]` with `kind: file`, `captured_by: tool`, `path`, `lines`, `note`. The engine's `path` is not always a path: a `file:key` form is split into the path and a note, and a placeholder in parentheses is dropped. The same items are also gathered onto the check. |
+| `findings[].evidence[]` `path`, `line`, `note` | `evidence[]` with `kind: file`, `captured_by: tool`, `path`, `lines`, `note`. The engine's `path` is not always a path: a `file:key` form is split into the path and a note, and a placeholder in parentheses is dropped. A path that is absolute, or that climbs out of the target, names a place outside the repository, such as the index store that `IDX-02` cites; it is not carried, because evidence paths are inside the target (rule 3 below), and the finding's `statement` already says where the engine looked. The same items are also gathered onto the check. |
 | `probes[]` | `evidence[]` with `kind: command` and `captured_by: tool`, on the checks that used the probe: `command`, `exit_code`, `output_tail`, `timed_out`, `duration_s`, `redactions`. `verb` is not carried: it only says which check the probe belongs to. A probe with a `refused_reason` ran nothing and is not carried. |
 | `unattested[]` | `unattested[]`; see the table above. |
 | `not_applicable[]` | `checks[]` with `verdict: NOT_APPLICABLE` |
