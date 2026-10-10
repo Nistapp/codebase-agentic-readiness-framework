@@ -9,7 +9,7 @@
 #   make format:check   read-only: formatting and lint rules (alias: make format-check)
 #   make lint           read-only lint
 #   make typecheck      mypy, strict, on the typed scope below
-#   make test           the engine's unittest suite
+#   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks)
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check
 #   make security       secrets scan against the committed baseline
 #
@@ -26,7 +26,7 @@ DETECT_SECRETS_HOOK := uvx --from detect-secrets==1.5.0 detect-secrets-hook
 ENGINE := brownfield-recipes/deterministic-audit
 
 # Mypy covers the recipe tools and the engine's build script. The engine's own code joins later,
-# through a ratchet. brownfield-recipes/tools has no Python yet (S2.1), so the find may match nothing.
+# through a ratchet. The find picks up every Python file under brownfield-recipes/tools, tests included.
 TYPED_SOURCES := $(shell find brownfield-recipes/tools -name '*.py' 2>/dev/null | sort) $(ENGINE)/tools/build.py
 
 .DEFAULT_GOAL := help
@@ -54,6 +54,7 @@ typecheck:
 
 test:
 	cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests
+	$(PYTHON) -m unittest discover -s brownfield-recipes/tools/tests
 
 # Every framework anchor the engine cites must still resolve in this repository.
 verify-rules:

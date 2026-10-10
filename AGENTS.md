@@ -13,7 +13,7 @@ make format         # rewrite formatting in place
 make format:check   # read-only: formatting and lint rules (alias: make format-check)
 make lint           # read-only lint
 make typecheck      # mypy, strict, on brownfield-recipes/tools and the engine's tools/build.py
-make test           # the engine's unittest suite
+make test           # the engine's unittest suite, then the recipe tools' (the catalogue checks)
 make check          # THE gate: format:check, typecheck, test, and the engine's --verify-rules
 make security       # secrets scan against .secrets.baseline
 ```

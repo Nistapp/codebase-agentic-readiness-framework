@@ -105,7 +105,7 @@ The framework's verbs are the contract. The runner is the **root `Makefile`** of
 | `format:check` | `make format:check` (alias `make format-check`) | ruff format check plus ruff lint rules. |
 | `lint` | `make lint` | ruff lint rules, read-only. |
 | `typecheck` | `make typecheck` | mypy strict, on `tools/build.py` only. The rest of the engine joins later through a ratchet. |
-| `test` | `make test` | `python3 -m unittest discover -s tests` in this directory. |
+| `test` | `make test` | `python3 -m unittest discover -s tests` in this directory, then the recipe tools' suite in `brownfield-recipes/tools/tests`. |
 | `check` | `make check` | `format:check`, `typecheck`, `test`, then `--verify-rules`. |
 | `security` | `make security` | Secrets scan against the committed baseline. No dependency audit: there are no dependencies. |
 
