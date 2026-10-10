@@ -36,7 +36,7 @@
 
 | Page | Purpose | Status |
 |---|---|---|
-| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`, `validate_report.py` and `report.py`; the rest Planned (S2.4–S2.8, S5.1) |
+| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`, `validate_report.py`, `report.py` and `render_report.py`; the rest Planned (S2.5–S2.8, S5.1) |
 | [Harness notes](../reference/harness-notes.md) | Claude Code, opencode, Codex, Cursor specifics | Planned (S4.6) |
 | [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; generated table Planned (S4.6) |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
@@ -54,7 +54,7 @@
 | Page | Purpose | Status |
 |---|---|---|
 | [1. Tool Contract](contributor-deep-dive/01-tool-contract.md) | The contract every tool follows | Live |
-| [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the validator and the report builder are live; the renderer and the engine adapter: Planned, S2.4–S2.5) |
+| [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the validator, the report builder and the renderer are live; the engine adapter: Planned, S2.5) |
 | [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live for the catalogue; rubric anatomy Planned (S3.1) |
 | [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Planned (S3.4) |
 | [5. Evaluation](contributor-deep-dive/05-evaluation.md) | Corpus, metrics, models | Planned (S4.1) |

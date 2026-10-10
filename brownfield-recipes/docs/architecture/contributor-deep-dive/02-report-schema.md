@@ -3,10 +3,10 @@
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain why the audit report has the shape it has, how it differs from the engine's schema v2, and what keeps it honest. The field tables are in [`SCHEMA.md`](../../../schema/SCHEMA.md), and this page does not repeat them.
 > **Related ADRs:** the engine's [ADR-0007](../../../deterministic-audit/docs/architecture/adrs/0007-json-report-render-contract.md), which makes the JSON report the render contract.
-> **Status:** Live for the schemas ([`audit-report.schema.json`](../../../schema/audit-report.schema.json), [`audit-intake.schema.json`](../../../schema/audit-intake.schema.json)), the validator and the report builder. The renderer and the engine adapter are planned.
+> **Status:** Live for the schemas ([`audit-report.schema.json`](../../../schema/audit-report.schema.json), [`audit-intake.schema.json`](../../../schema/audit-intake.schema.json)), the validator, the report builder and the renderer. The engine adapter is planned.
 
 > [!NOTE]
-> Planned. `tools/render_report.py` (S2.4) and the engine adapter, `report.py import-engine` (S2.5), do not exist yet. `tools/validate_report.py` and `tools/report.py` do. Where this page names a tool that does not, it says what the schema requires of it, not what it does.
+> Planned. The engine adapter, `report.py import-engine` (S2.5), does not exist yet. `tools/validate_report.py`, `tools/report.py` and `tools/render_report.py` do. Where this page names a tool that does not, it says what the schema requires of it, not what it does.
 
 ---
 
@@ -21,7 +21,7 @@ flowchart LR
     Agent["Agent: checks and findings"] --> Builder
     Builder --> Report["audit-report.json"]
     Report --> Validator["validate_report.py"]
-    Report --> Renderer["render_report.py (planned)"] --> Markdown["audit-report.md"]
+    Report --> Renderer["render_report.py"] --> Markdown["audit-report.md"]
     Report --> Implement["Implementation recipe (planned)"]
 ```
 
@@ -87,10 +87,28 @@ What the builder does not do is judge. It does not decide that a check passes, t
 
 ---
 
-## 6. Invariants & Failure Modes
+## 6. The renderer
+
+[`render_report.py`](../../../tools/render_report.py) turns a valid report into Markdown. It has the shape it has because of who wrote the words in a report and who reads the page.
+
+- **A pure function, and tests that hold it to that ([`render`](../../../tools/render_report.py#L690-L706)).** It reads its argument and nothing else: no file, no clock, no process. The tests render every example twice, after a trip through JSON, and with the keys of every object in the opposite order, and require one text. They run it with `open`, the clocks and `subprocess` made to fail. Two examples have a golden file beside them in [`schema/examples/`](../../../schema/examples/), the smallest report and the worked example.
+- **The summary is recomputed and never read.** `render` calls `_summary.compute_summary` and ignores the `summary` in the file, so a stale or edited number cannot reach a reader. The command line refuses a report that fails the validator, rule 10 included, so the file and the page cannot disagree.
+- **Text from a repository is untrusted.** A statement, a note or a quote is the model's rewording of what it read in the audited repository. [`text`](../../../tools/render_report.py#L111-L113) escapes every Markdown special character, and an underscore only where it could open or close emphasis, so that `__tests__` is not bold and `pull_request` is not littered with backslashes. [`prose`](../../../tools/render_report.py#L116-L122) also escapes a first character that would start a block, because a paragraph that began with `# ` would be a heading. [`code`](../../../tools/render_report.py#L131-L138) and [`fenced`](../../../tools/render_report.py#L141-L150) use a delimiter longer than any run of backticks inside, [`cell`](../../../tools/render_report.py#L153-L165) stops a `|` adding a column, and [`clean`](../../../tools/render_report.py#L86-L103) writes out control characters and the ones that reorder or hide text. The tests render a report whose every free-text field holds an image, a tag, a link, a heading, a quotation, a table row, a fence and a right-to-left override, and check the page for each.
+- **The reader sees the verdict that counts, and the engine's beside it.** An override is in its own table, on the check's row, and in the check's block with the reason and the agent's evidence, because rule 6 forbids an override without them.
+- **Absence is said, not implied.** [`check_lines`](../../../tools/render_report.py#L507-L543) prints "We did not find any evidence." for a `FAIL` or `UNKNOWN` check for which [`shows_evidence`](../../../tools/render_report.py#L217-L221) finds nothing, on the check or on any of its findings. The sentence is the renderer's: the validator does not require the agent to write it (rule 5), and a summary that does not say it must not leave the reader to guess. It also appears on a check that a tool settled, where it is accurate and terse, and the check's `summary` beside it says what the engine looked for.
+- **One block for a check, with its findings under it.** [`needs_detail`](../../../tools/render_report.py#L224-L227) gives a block to every check that is not met, was overridden, was judged by the agent or raised a finding, and a passing check that a tool settled keeps its table row alone. The engine adapter copies a finding's evidence to its check, so [`finding_lines`](../../../tools/render_report.py#L463-L504) says "the same as under the check" when the two are equal, and prints the evidence once.
+
+The renderer does not judge either. It never decides that a check is worth a block because of what it says; the rules above are the whole of it.
+
+---
+
+## 7. Invariants & Failure Modes
 
 - **Invariant: the verdict that counts is `verdict`.** `engine_verdict` is kept beside it. A difference needs an `override_reason` and agent-captured counter-evidence, so the report shows the tool's word and the agent's side by side.
 - **Invariant: an eval-mode report is never final.** `eval_mode` is part of `run_context`, and `status: final` is forbidden with it, so evaluation output cannot pass as an audit.
+- **Invariant: the Markdown adds no fact.** Everything it shows is in the JSON, apart from the words that explain a verdict or a severity and the fixed sentences around them. A reader who wants more than the page shows opens the JSON, and the page says when that is so.
 - **Invariant: blockers are confirmed one by one.** A final report's BLOCKER findings all carry `confirmed_via: interactive`. Batch confirmation covers non-blockers only.
+- **Failure mode: a viewer without GitHub alerts.** The banners are `> [!WARNING]` and `> [!NOTE]` blocks. A viewer that does not know them shows a quotation whose first line reads `[!WARNING]`. The banner is still there and still says what it says.
+- **Failure mode: a report the renderer will not read.** The command line refuses a report that fails the validator, with exit 2 and the errors, and renders nothing. A report that `report.py` wrote is valid, so this means a hand edit. `render` itself, called on a report that breaks a rule, fails with a `KeyError` and not with a guess.
 - **Failure mode: a shape the 0.x schema cannot express.** The schema has no `oneOf`, so what each evidence kind needs is a rule of the validator, not of the schema. A consumer that reads only the schema accepts an evidence item with a `kind` and nothing else. Both the validator and `SCHEMA.md` carry the rules, and a consumer must run the validator.
 - **Failure mode: schema drift.** The subset keyword list is in `SCHEMA.md`, and the validator's lint ([`_jsonschema_subset.py`](../../../tools/_jsonschema_subset.py)) rejects any other keyword, so a later schema edit cannot quietly depend on a keyword the validator does not implement. A test holds all three schemas to the lint. The validator itself is held to the reference `jsonschema` package by `make crosscheck`, a dev-only script outside the shipped tools that CI runs as part of `make check`; `SCHEMA.md` describes it under "Validating".

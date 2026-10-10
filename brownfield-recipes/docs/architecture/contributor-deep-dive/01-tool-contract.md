@@ -5,7 +5,7 @@
 > **Status:** Live.
 
 > [!NOTE]
-> Planned. The tool catalogue generated from each tool's manifest is planned for S2.8, and the renderer that follows this contract is planned for S2.4. `engine.py`, `validate_report.py` and `report.py` follow it today.
+> Planned. The tool catalogue generated from each tool's manifest is planned for S2.8. `engine.py`, `validate_report.py`, `report.py` and `render_report.py` follow the contract today.
 
 ---
 
@@ -27,7 +27,7 @@ An agent that calls a dozen tools needs one way to read them all, so every tool 
 
 ## 2. Self-description
 
-Each tool declares a [`ToolInfo`](../../../tools/_common.py#L104-L123): its name, summary, synopsis and what it writes. `<tool>.py --describe` prints its `manifest()` as the envelope's `data`, runs no work and needs no other argument. The manifest says `network: false` and `writes_inside_target: false` as facts about every tool, and lists the exit codes.
+Each tool declares a [`ToolInfo`](../../../tools/_common.py#L103-L123): its name, summary, synopsis and what it writes. `<tool>.py --describe` prints its `manifest()` as the envelope's `data`, runs no work and needs no other argument. The manifest says `network: false` and `writes_inside_target: false` as facts about every tool, and lists the exit codes.
 
 The manifest is the machine-readable source for the [Tools CLI reference](../../reference/tools-cli.md). A catalogue that collects the manifests into `tools/CATALOGUE.md`, and a linter that fails when a recipe names a tool that does not exist, are planned for S2.8.
 
@@ -40,7 +40,7 @@ The manifest is the machine-readable source for the [Tools CLI reference](../../
 | No path escapes the target | `resolve_within` resolves symlinks and `..` first, then checks that the result is inside the target. A symlink that leads out is refused | [`resolve_within`](../../../tools/_common.py#L285-L299) | `PathTests` |
 | No write lands in the target | `output_directory` checks the resolved directory before it creates anything, so a directory that reaches the target through a symlink is refused | [`output_directory`](../../../tools/_common.py#L302-L318) | `PathTests` |
 | No half-written file | `atomic_write_text` writes a temporary file beside the destination and renames it over. A failure leaves the old file and removes the temporary one | [`atomic_write_text`](../../../tools/_common.py#L324-L343) | `AtomicWriteTests` |
-| No file is replaced | `create_new` and `create_new_group` open with `O_EXCL` and number a taken name; `create_file` refuses a path that is taken; `free_name` treats even a dangling symlink as taken | [`create_new_group`](../../../tools/_common.py#L476-L505) | `CreateNewTests`, `CreateNewGroupTests`, `CreateFileTests`, `FreeNameTests` |
+| No file is replaced | `create_new` and `create_new_group` open with `O_EXCL` and number a taken name; `create_file` refuses a path that is taken; `free_name` treats even a dangling symlink as taken | [`create_new_group`](../../../tools/_common.py#L476-L504) | `CreateNewTests`, `CreateNewGroupTests`, `CreateFileTests`, `FreeNameTests` |
 | No network | No tool imports a network module. The standard-library-only rule in the root [`AGENTS.md`](../../../../AGENTS.md) keeps third-party clients out, and a tool that needs the target's own commands goes through the engine's probe runner, which is opt-in | Review, and the engine's `--allow-probe` | Not tested; there is nothing to call |
 | An old Python gets a hint, not a traceback | `check_python` runs first in `run_tool`. It needs `_common.py` itself to parse as Python 3.9 | [`check_python`](../../../tools/_common.py#L199-L209) | `PreflightTests`, including a parse of every tool file with `feature_version=(3, 9)` |
 
@@ -54,7 +54,7 @@ Every file a run writes carries the repository's name, and no tool replaces a fi
 - **The label** is `repo_label` from the intake when given, and otherwise [`derive_label`](../../../tools/_common.py#L363-L366) of the target directory's name: lower case, each run of other characters one hyphen, 24 characters at most. An explicit label is checked against `EXPLICIT_LABEL`, the same pattern as `repo_label` in [`audit-intake.schema.json`](../../../schema/audit-intake.schema.json), by [`repo_label`](../../../tools/_common.py#L369-L378).
 - **The name** is `<label>.<kind>.<stamp>.<ext>`. [`utc_stamp`](../../../tools/_common.py#L381-L387) gives the stamp, and [`output_name`](../../../tools/_common.py#L390-L401) builds the name and refuses a label, kind, stamp or extension that could change the directory.
 - **Exclusive create.** [`create_new`](../../../tools/_common.py#L507-L514) opens the file with `O_EXCL`. When two runs reach one name in the same second, each gets its own file, the second with `-2` after the stamp, and the first is not touched. A failed write removes only the partial file it created.
-- **Files that share a name.** The final report is a JSON file and a Markdown file with one name apart from the extension. [`create_new_group`](../../../tools/_common.py#L476-L505) claims every name of the group with `O_EXCL` before it writes any of them. If either name is taken, it gives back the names it had claimed and moves both files to the next number, so the pair never comes apart. A failed write removes the files that call created and nothing else.
+- **Files that share a name.** The final report is a JSON file and a Markdown file with one name apart from the extension. [`create_new_group`](../../../tools/_common.py#L476-L504) claims every name of the group with `O_EXCL` before it writes any of them. If either name is taken, it gives back the names it had claimed and moves both files to the next number, so the pair never comes apart. A failed write removes the files that call created and nothing else.
 - **A path the caller named.** [`create_file`](../../../tools/_common.py#L460-L473) writes the file an `--out` argument names. It creates the file or refuses, and never replaces or writes through anything that is already there, a symlink included.
 - **A program that writes the file itself** asks [`free_name`](../../../tools/_common.py#L404-L414) for a name. It creates nothing, so another run can take the name first. That program must therefore refuse to replace a file too, which the engine does without `--force`.
 - **The one exception** is a run updating its own draft report. It uses `atomic_write_text` on a file it owns, and a second run starts a new draft.

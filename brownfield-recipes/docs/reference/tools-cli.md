@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py` and `report.py`, except its `import-engine` subcommand (S2.5). The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, except its `import-engine` subcommand (S2.5), and `render_report.py`. The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py`, `validate_report.py` and `report.py` exist. The sections for the other tools are filled in by roadmap steps S2.4 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py`, `validate_report.py`, `report.py` and `render_report.py` exist. The sections for the other tools are filled in by roadmap steps S2.5 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -16,7 +16,7 @@
 | [`engine.py`](#enginepy) | Runs the deterministic engine from any directory | Live |
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
 | [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live, except `import-engine`: Planned (S2.5) |
-| `render_report.py` | Renders a report to Markdown | Planned (S2.4) |
+| [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
 | `facts.py` | Emits stack and inventory facts, no verdicts | Planned (S2.7) |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
 | `progress.py` | Manages implementation progress | Planned (S5.1) |
@@ -155,7 +155,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. The draft's path may be a link: the draft it points to is changed, and the link stays a link. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-The subcommands are `init`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`. `import-engine`, which brings in the engine's checks, is planned (S2.5), and so is the Markdown file that `finalise` will write beside the final report (`render_report.py`, S2.4).
+The subcommands are `init`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`. `import-engine`, which brings in the engine's checks, is planned (S2.5), and so is the call that makes `finalise` write the Markdown file beside the final report with [`render_report.py`](#render_reportpy).
 
 Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
@@ -434,7 +434,7 @@ python3 brownfield-recipes/tools/report.py finalise <draft>
 The final report is the draft with `status: final` and `provenance.finalised_at`, and nothing else. The stamp in the name is the `finalised_at` time. A final report is never changed afterwards: every other subcommand refuses it.
 
 > [!NOTE]
-> Planned. The Markdown file that belongs beside the final report is written by the renderer, `render_report.py` (S2.4), which does not exist yet. Until it does, `finalise` writes the JSON file only.
+> Planned. `finalise` writes the JSON file only. The renderer, [`render_report.py`](#render_reportpy), exists, and the call that makes `finalise` write the Markdown file beside the final report is the next change (S2.4).
 
 A draft can be finalised only when all of this holds, and each problem that does not is one line in `data.errors`:
 
@@ -469,3 +469,62 @@ A draft can be finalised only when all of this holds, and each problem that does
 | `BLOCKER findings not decided interactively: ...` | Ask the person about each blocker, and record it with `--via interactive`. |
 | `this is an eval-mode run, and its report is never final` | An evaluation run writes drafts only. |
 | `the final report would not be valid, so nothing was written` | `data.errors` names the rule. This is a defect in the draft's state that `status` could not see, or a bug in the tool: report it. |
+
+---
+
+## render_report.py
+
+Renders an audit report to Markdown. The Markdown is a pure function of the JSON report: one report gives the same bytes every time, whatever order its keys come in, and nothing in the Markdown is absent from the JSON apart from the words that explain a verdict or a severity. The readiness summary is computed with [`_summary.py`](../../tools/_summary.py), the code that the validator and the report builder use, and never taken from the file. The source is [`render_report.py`](../../tools/render_report.py). It is a command of its own, for a draft or for a report written earlier. The next change makes [`report.py finalise`](#finalise) call it to write the Markdown beside the final report.
+
+**Synopsis**
+
+```text
+python3 brownfield-recipes/tools/render_report.py <report> --out <md>
+python3 brownfield-recipes/tools/render_report.py --describe
+```
+
+**Inputs**
+
+| Argument | Meaning |
+|---|---|
+| `<report>` | An audit report, draft or final: a JSON file of at most 32 MiB. It must be valid. The tool applies the checks of [`validate_report.py`](#validate_reportpy) and renders nothing when one fails, because it reads fields that only a valid report guarantees. |
+| `--out <md>` | The Markdown file to create. It must not exist, its folder must, and the folder must be outside the audited target. The tool never replaces a file. |
+
+**What the Markdown holds**
+
+| Section | What it shows |
+|---|---|
+| Title and banners | The repository, the commit, and when the report was finalised or started. A warning banner for an evaluation run, and a note banner for a draft, which counts the findings that await a decision. |
+| Readiness summary | The headline of [`spec/readiness-summary.md`](../../../spec/readiness-summary.md) and no other number: the phase-1 score to two places, the blockers remaining by state, and the unattested requirements, then the two qualifiers. |
+| Blockers remaining | Each scored BLOCKER check that is not PASS, with its verdict and summary. |
+| Overrides of the engine's verdicts | Each check whose verdict differs from the engine's, with both verdicts and the reason. |
+| Checks | How many checks have each verdict, what each verdict and severity means, and a table with a row for every check. |
+| Check details | A block for each check that is not met, was overridden, was judged by the agent or raised a finding, in order of severity. It shows who captured each piece of evidence, each quote in a fenced block, the searches, and the check's findings with their fix and the decision on them. |
+| Coverage, Stack and components, Provenance, Run context | What the audit examined and skipped, what was detected, where the report came from, and the intake answers the run used. |
+
+A check that is `FAIL` or `UNKNOWN` and shows no evidence and no search, on the check or on any of its findings, says "We did not find any evidence." A check that passed and was settled by a tool has only its row in the table: its evidence and the engine's payloads are in the JSON report. A finding whose evidence equals its check's says so and does not print it twice.
+
+The words of a report come from the audited repository, through a model, so the tool treats them as untrusted. Free text has every Markdown special character escaped, so that it cannot become a link, an image, a tag or a heading. A path or a command is in a code span, and a quote or an output tail in a fenced block, each with a delimiter longer than any run of backticks inside it. A control character, and a character that reorders or hides text, is written out as `{U+XXXX}`. A `|` cannot add a column to a table.
+
+**Outputs**
+
+`data` holds `markdown` (the path written), `report` (the path as given), `status` (`draft` or `final`), `lines` and `bytes`. Warnings are the validator's, bounded like every list.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The Markdown was written. |
+| `1` | A bad argument, a report that is missing, not a file or over the size limit, an `--out` that exists or has no folder, a folder inside the target, or a file that could not be written. Nothing is written, and no partial file is left. |
+| `2` | The report was read and is not valid: it fails the schema or a rule, or the file is not JSON. `data.errors` lists every error. Nothing is written. |
+| `3` | Internal error. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `the report is not valid, so it was not rendered: N errors in the S stage` | Run [`validate_report.py`](#validate_reportpy) on the report and fix what it names. A report that `report.py` wrote is valid, so this means it was edited by hand. |
+| `<path> already exists, and a tool never replaces a file` | Choose another `--out`. To refresh a golden file on purpose, delete it first and read the diff. |
+| `the folder for --out does not exist: <folder>` | Create the folder, or choose one that exists. The tool creates files and never folders. |
+| `refusing to write inside the target: <folder>` | Choose a folder outside the audited repository. The tools never write inside it. |
+| `cannot write <path>: <reason>` | The system's reason, such as a full disk or a missing permission. No partial file is left. |

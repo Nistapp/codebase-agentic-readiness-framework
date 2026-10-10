@@ -31,3 +31,5 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Draft | `<label>.audit-draft.<stamp>.json`: the report while it is being built. Only `report.py` writes it, and it becomes a final report when nothing is pending. |
 | Fragment | The JSON object an agent hands `report.py` for one check, finding or list of decisions. It holds only what the agent decides; the tool computes the rest. |
 | Builder | `report.py`: the only writer of the draft. Every change it makes is validated and written atomically. |
+| Renderer | `render_report.py`: turns a valid report into Markdown. A pure function of the JSON, so one report gives one text. |
+| Golden file | The Markdown that sits beside an example report and that the renderer's tests compare its output with. |
