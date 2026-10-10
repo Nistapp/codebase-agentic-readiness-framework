@@ -931,6 +931,21 @@ class HelperTests(unittest.TestCase):
     def test_a_parsed_report_keeps_the_order_of_its_keys(self) -> None:
         self.assertEqual(list(vr.parse_report('{"b": 1, "a": 2}')), ["b", "a"])
 
+    def test_the_reader_names_what_it_reads_and_says_report_by_default(self) -> None:
+        with self.assertRaises(_common.ValidationFailed) as default:
+            vr.parse_report("{")
+        with self.assertRaises(_common.ValidationFailed) as named:
+            vr.parse_report("{", "intake")
+        self.assertIn("the file is not a report: it is not valid JSON", str(default.exception))
+        self.assertIn("the file is not an intake: it is not valid JSON", str(named.exception))
+        with tempfile.TemporaryDirectory() as tmp:
+            with self.assertRaises(_common.UsageError) as missing:
+                vr.read_report(Path(tmp) / "none.json", "fragment")
+            with self.assertRaises(_common.UsageError) as folder:
+                vr.read_report(Path(tmp), "fragment")
+        self.assertIn("fragment not found:", str(missing.exception))
+        self.assertIn("the fragment is not a file:", str(folder.exception))
+
 
 if __name__ == "__main__":
     unittest.main()

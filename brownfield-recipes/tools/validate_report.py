@@ -108,32 +108,40 @@ def _refuse_constant(name: str) -> Any:
     raise ValueError(f"{name} is not valid JSON")
 
 
-def parse_report(text: str) -> Any:
-    """The JSON in `text`. A repeated key, `NaN` or `Infinity` is refused, because the file would mean two things."""
+def _a(what: str) -> str:
+    """`what` with its indefinite article: a report, an intake."""
+    return f"{'an' if what[:1] in 'aeiou' else 'a'} {what}"
+
+
+def parse_report(text: str, what: str = "report") -> Any:
+    """The JSON in `text`. A repeated key, `NaN` or `Infinity` is refused, because the file would mean two things.
+
+    `what` names the document in the messages, so that the report builder can read an intake with the same code.
+    """
     try:
         return json.loads(text, object_pairs_hook=_refuse_repeated_keys, parse_constant=_refuse_constant)
     except RecursionError:
-        raise _common.ValidationFailed("the file is not a report: its JSON is nested too deeply") from None
+        raise _common.ValidationFailed(f"the file is not {_a(what)}: its JSON is nested too deeply") from None
     except ValueError as exc:
-        raise _common.ValidationFailed(f"the file is not a report: it is not valid JSON ({exc})") from None
+        raise _common.ValidationFailed(f"the file is not {_a(what)}: it is not valid JSON ({exc})") from None
 
 
-def read_report(path: Path) -> Any:
+def read_report(path: Path, what: str = "report") -> Any:
     try:
         size = path.stat().st_size
     except OSError:
-        raise _common.UsageError(f"report not found: {path}") from None
+        raise _common.UsageError(f"{what} not found: {path}") from None
     if not path.is_file():
-        raise _common.UsageError(f"the report is not a file: {path}")
+        raise _common.UsageError(f"the {what} is not a file: {path}")
     if size > MAX_REPORT_BYTES:
-        raise _common.UsageError(f"the report is {size} bytes and the limit is {MAX_REPORT_BYTES}: {path}")
+        raise _common.UsageError(f"the {what} is {size} bytes and the limit is {MAX_REPORT_BYTES}: {path}")
     try:
         text = path.read_bytes().decode("utf-8")
     except OSError as exc:
-        raise _common.UsageError(f"cannot read the report {path}: {exc.strerror or exc}") from None
+        raise _common.UsageError(f"cannot read the {what} {path}: {exc.strerror or exc}") from None
     except UnicodeDecodeError:
-        raise _common.ValidationFailed("the file is not a report: it is not UTF-8 text") from None
-    return parse_report(text)
+        raise _common.ValidationFailed(f"the file is not {_a(what)}: it is not UTF-8 text") from None
+    return parse_report(text, what)
 
 
 @lru_cache(maxsize=1)
