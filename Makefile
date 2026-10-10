@@ -10,7 +10,7 @@
 #   make lint           read-only lint
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks)
-#   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check
+#   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check and the schema cross-check
 #   make security       secrets scan against the committed baseline
 #
 # `format:check` has a colon, which make reads as a rule separator. The target is spelled `format\:check`
@@ -22,20 +22,23 @@ RUFF := uvx ruff@0.16.10
 MYPY := uvx mypy@2.4.0
 DETECT_SECRETS := uvx --from detect-secrets==1.5.0 detect-secrets
 DETECT_SECRETS_HOOK := uvx --from detect-secrets==1.5.0 detect-secrets-hook
+# The reference JSON Schema package is installed for one run, in a throwaway environment. The tools never import it.
+CROSSCHECK := PYTHONPATH=brownfield-recipes/tools uv run --no-project --with jsonschema==4.23.0 python
 
 ENGINE := brownfield-recipes/deterministic-audit
 
-# Mypy covers the recipe tools and the engine's build script. The engine's own code joins later,
-# through a ratchet. The find picks up every Python file under brownfield-recipes/tools, tests included.
-TYPED_SOURCES := $(shell find brownfield-recipes/tools -name '*.py' 2>/dev/null | sort) $(ENGINE)/tools/build.py
+# Mypy covers the recipe tools, the dev-only checks and the engine's build script. The engine's own code joins
+# later, through a ratchet. The find picks up every Python file under brownfield-recipes/tools and
+# brownfield-recipes/dev, tests included.
+TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -name '*.py' 2>/dev/null | sort) $(ENGINE)/tools/build.py
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help format format-check format\:check lint typecheck test verify-rules check security update-secrets-baseline
+.PHONY: help format format-check format\:check lint typecheck test verify-rules crosscheck check security update-secrets-baseline
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: verify-rules  update-secrets-baseline"
+	@echo "extra: verify-rules  crosscheck  update-secrets-baseline"
 
 format:
 	$(RUFF) format brownfield-recipes
@@ -60,7 +63,12 @@ test:
 verify-rules:
 	cd $(ENGINE) && $(PYTHON) -m audit --verify-rules
 
-check: format-check typecheck test verify-rules
+# The subset validator that the tools use must agree with the reference JSON Schema package on every example
+# and on thousands of one-defect mutants of them. About half a minute; needs uv and, the first time, the network.
+crosscheck:
+	$(CROSSCHECK) brownfield-recipes/dev/crosscheck_jsonschema.py
+
+check: format-check typecheck test verify-rules crosscheck
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.

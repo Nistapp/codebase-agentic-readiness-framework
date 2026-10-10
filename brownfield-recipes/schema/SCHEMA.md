@@ -331,7 +331,9 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 
 ## Validating
 
-Until the stdlib validator exists, the reference `jsonschema` package checks the schemas, the examples and the catalogue. It runs in a throwaway environment, so nothing is installed in the project:
+The tools validate with their own standard-library code, [`_jsonschema_subset.py`](../tools/_jsonschema_subset.py). `make crosscheck`, which is part of `make check` and so of CI, holds it against the reference `jsonschema` package: both must accept the three schemas, every example, the catalogue and the intake example, and both must report the same errors (the same place and keyword) on the raw engine reports and on thousands of one-defect mutants of the examples, including values one below, at and one above every bound. The script is [`dev/crosscheck_jsonschema.py`](../dev/crosscheck_jsonschema.py); the reference package is installed for that run alone, in a throwaway environment, so nothing is installed in the project.
+
+The same reference package gives a quick manual check of the schemas, the examples and the catalogue:
 
 ```bash
 uv run --no-project --with jsonschema==4.23.0 python - <<'EOF'

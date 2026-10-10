@@ -12,9 +12,9 @@ The framework's seven verbs run through the root `Makefile`. CI runs the same co
 make format         # rewrite formatting in place
 make format:check   # read-only: formatting and lint rules (alias: make format-check)
 make lint           # read-only lint
-make typecheck      # mypy, strict, on brownfield-recipes/tools and the engine's tools/build.py
+make typecheck      # mypy, strict, on brownfield-recipes/tools and dev, and the engine's tools/build.py
 make test           # the engine's unittest suite, then the recipe tools' (the catalogue checks)
-make check          # THE gate: format:check, typecheck, test, and the engine's --verify-rules
+make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema cross-check
 make security       # secrets scan against .secrets.baseline
 ```
 
@@ -37,6 +37,7 @@ make security       # secrets scan against .secrets.baseline
 | `brownfield-recipes/deterministic-audit/` | The Python audit engine: reads a repository, never writes to it, no LLM, no network. | Standard library only. Read its `AGENTS.md` before changing it. |
 | `brownfield-recipes/audit/`, `implement/` | The LLM-driven recipes (`SKILL.md` files, checks, playbooks). | The model's judgment is backed by cited evidence; tools do the counting. |
 | `brownfield-recipes/tools/`, `schema/` | Deterministic tools the recipes call, and the JSON Schemas for their files. | Standard library only. No network. Never write inside a target repository. |
+| `brownfield-recipes/dev/` | Checks that run in CI and are not shipped. Today: the cross-check of the tools' schema validator against the reference `jsonschema` package. | May import dev packages, which `uv run --with` installs for one run. Nothing in `tools/` or the engine may import them. |
 | `brownfield-recipes/docs/` | Documentation for all of the above. | Follow `brownfield-recipes/docs/STYLE_GUIDE.md`; start at `docs/architecture/README.md`. |
 | `artefacts/` | Scratch notes and plans, git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
 
@@ -46,7 +47,7 @@ A folder with no files yet is not written yet; the docs page that describes it s
 
 - Never open, print or quote a `.env` file or any other secret store. Fixtures contain `.env` files on purpose; treat them as data you may not read.
 - Never push, push tags, open a pull request, or delete anything remote. The maintainer does those.
-- Never add a third-party import to the engine or to `brownfield-recipes/tools/`. Dev tools run through `uvx` only.
+- Never add a third-party import to the engine or to `brownfield-recipes/tools/`. Dev tools run through `uvx` only; the one place for dev-only imports is `brownfield-recipes/dev/`.
 - Never run another repository's own commands directly while auditing it. Use the engine's probe runner, which is opt-in
   (`--run-gates` plus `--allow-probe <verb>`).
 - Never describe a feature as working when it is only planned.
