@@ -13,9 +13,9 @@ Phase 1 of the framework asks a repository to "establish initial Constraint Engi
 
 The audit engine could not check what no document defined:
 
-- `CON-01` ("Allow/deny artifact present") is blocked and carries weight 0.
-- `CON-02` ("Test directories protected") accepts one of about twenty root-level file names, such as `.cursorignore`, `constraints.yaml` and `denylist.txt`. Without one it falls back to ignore rules and to CI text, and never passes.
-- Two equally well-governed repositories got different verdicts depending on the file name they happened to choose.
+* `CON-01` ("Allow/deny artifact present") is blocked and carries weight 0.
+* `CON-02` ("Test directories protected") accepts one of about twenty root-level file names, such as `.cursorignore`, `constraints.yaml` and `denylist.txt`. Without one it falls back to ignore rules and to CI text, and never passes.
+* Two equally well-governed repositories got different verdicts depending on the file name they happened to choose.
 
 An agent reads the instruction file at the start of every session. It reads no other file unless its harness is configured to. The framework's own template already has a "Do Not Do" section in that file ([greenfield `AGENTS.md`](../../greenfield-bootstrap/templates/AGENTS.md), section 10).
 
@@ -28,11 +28,11 @@ An agent reads the instruction file at the start of every session. It reads no o
 3. **Harness-native enforcement is optional hardening.** Claude Code permission rules, opencode permissions, `.cursorignore` and the like are neither required nor checked, and an audit gives them no verdict. A report may mention them as a way to enforce the list.
 4. **Scope.** This decides Phase 1. Where per-component constraints live in Phases 3 to 5 is not decided here.
 
-Three requirements read the same section, and each answers one question:
+Three requirements concern the deny list, and each answers one question:
 
 | Requirement | Question | Check |
 |---|---|---|
-| [REQ-SH-011](../readiness-requirements.md#req-sh-011--prohibitions-declared) | Does the file prohibit anything, and does that cover tests, generated files, the default branch and secrets? | `AGT-07` |
+| [REQ-SH-011](../readiness-requirements.md#req-sh-011--prohibitions-declared) | Does the file have a prohibitions section, and do its prohibitions, anywhere in the file, cover tests, generated files, the default branch and secrets? | `AGT-07` |
 | [REQ-SH-037](../readiness-requirements.md#req-sh-037--allow-and-deny-lists) | Is the section a concrete deny list, one that names paths, and not only prose? | `CON-01` |
 | [REQ-SH-038](../readiness-requirements.md#req-sh-038--test-directories-denied) | Does it name every test directory? | `CON-02` |
 

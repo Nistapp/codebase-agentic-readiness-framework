@@ -98,7 +98,7 @@ The instruction file MUST declare at least two architectural boundary rules, eac
 - **Checks:** AGT-06
 
 ### REQ-SH-011 — Prohibitions declared
-The instruction file MUST contain a prohibitions section that covers tests, generated files, the default branch and secrets.
+The instruction file MUST contain a prohibitions section, and the prohibitions in the file MUST cover tests, generated files, the default branch and secrets.
 
 - **Phase:** 1
 - **Verification:** automated
