@@ -222,7 +222,7 @@ The examples in this folder are documentation, not run outputs. Where one belong
 
 ## The keyword subset
 
-The three schemas use only the keywords below, so a small validator can check them. A schema lint (planned, S2.2) rejects any other keyword.
+The three schemas use only the keywords below, so a small validator can check them. [`tools/_jsonschema_subset.py`](../tools/_jsonschema_subset.py) is that validator, and it lints a schema before it uses it: a keyword outside this list is an error, so a constraint can never be written and silently ignored. The lint also refuses a `$ref` that is not `#/$defs/<name>` or has no target, a chain of `$ref` that leads back to itself, a `required` name that `properties` does not define, a range nothing can satisfy, and a `pattern` that Python and ECMAScript read differently (lookbehind, named groups, inline flags, back-references, possessive quantifiers, `\A` and `\Z`).
 
 | Keyword | Notes |
 |---|---|
@@ -232,7 +232,7 @@ The three schemas use only the keywords below, so a small validator can check th
 | `properties`, `required`, `additionalProperties` | `additionalProperties` is `false` on every object except `data`, which is `true`. |
 | `items` | One schema for every element. |
 | `enum`, `const` | Compared by JSON equality. |
-| `pattern` | Applies to strings only, and uses the subset of regular expressions that ECMAScript and Python share. |
+| `pattern` | Applies to strings only, and uses the subset of regular expressions that ECMAScript and Python share. It is not anchored unless it says so, and `$` means the end of the string, as in ECMAScript: a value that ends with a newline does not match `^...$`. The reference `jsonschema` package, which uses Python's `re`, would accept it. |
 | `minLength`, `maxLength`, `minItems`, `maxItems`, `minimum`, `maximum` | Inclusive bounds. |
 
 The subset has no `oneOf`, `anyOf`, `if` or `format`. What each evidence kind needs is therefore a rule below, not a schema branch.
