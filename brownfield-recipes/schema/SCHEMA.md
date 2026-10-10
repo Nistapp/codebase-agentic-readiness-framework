@@ -274,9 +274,9 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 | `summary.blockers`, `degraders`, `cosmetic` | Not carried. They count findings. `summary.blockers_remaining` counts checks, as the spec defines it, so the two differ by design. |
 | `summary.checks`, `checks_implemented`, `checks_applicable` | Not carried. Verdict counts are derivable, and implementation status is not a property of the audited repository. |
 | `summary.coverage_note` | Not carried. Editorial wording belongs to the renderer; the facts are `scored_checks` and `unknown_scored_checks`. |
-| `stack.*` | `stack.*`, names unchanged |
+| `stack.ecosystems`, `package_managers`, `ci_providers`, `test_frameworks`, `hook_managers`, `notes` | The same names under `stack` |
 | `inventory.files_inspected`, `files_skipped`, `truncated` | `coverage.inventory.*` |
-| `components[]` | `components[]`, fields unchanged, with `declared: true` |
+| `components[].name`, `path`, `declared`, `declared_by`, `manifest`, `agents_md` | The same names under `components[]`; `declared` is true |
 | `candidate_components[]` | `components[]` with `declared: false`, `name` and `path` both the engine's path |
 | `checks[].id`, `title`, `severity`, `phase`, `summary`, `data` | `checks[].id`, `title`, `severity`, `phase`, `summary`, `data` |
 | `checks[].verdict` | `checks[].verdict` and `checks[].engine_verdict` |
@@ -289,7 +289,7 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 | `findings[].phase`, `verdict` | Not carried. The check's phase and verdict apply. |
 | `findings[].remediation` (a string) | `findings[].remediation.summary` |
 | `findings[].evidence[]` `path`, `line`, `note` | `evidence[]` with `kind: file`, `captured_by: tool`, `path`, `lines`, `note`. The engine's `path` is not always a path: a `file:key` form is split into the path and a note, and a placeholder in parentheses is dropped. The same items are also gathered onto the check. |
-| `probes[]` | `evidence[]` with `kind: command` and `captured_by: tool`, on the checks that used the probe: `command`, `exit_code`, `output_tail`, `timed_out`, `duration_s`, `redactions`. A probe with a `refused_reason` ran nothing and is not carried. |
+| `probes[]` | `evidence[]` with `kind: command` and `captured_by: tool`, on the checks that used the probe: `command`, `exit_code`, `output_tail`, `timed_out`, `duration_s`, `redactions`. `verb` is not carried: it only says which check the probe belongs to. A probe with a `refused_reason` ran nothing and is not carried. |
 | `unattested[]` | `unattested[]`; see the table above. |
 | `not_applicable[]` | `checks[]` with `verdict: NOT_APPLICABLE` |
 | `ratchet` | Not carried. A re-audit compares reports by finding `key`. |
