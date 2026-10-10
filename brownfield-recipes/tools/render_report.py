@@ -27,6 +27,7 @@ target is exit 1. A report that fails the schema or a rule, and a file that is n
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 import unicodedata
@@ -52,15 +53,18 @@ NO_EVIDENCE = "We did not find any evidence."
 SEVERITIES = ("BLOCKER", "DEGRADER", "COSMETIC")
 VERDICTS = ("PASS", "PARTIAL", "FAIL", "UNKNOWN", "NOT_APPLICABLE")
 COMMIT_CHARS = 12
+BR = "<br>"
+EVIDENCE_IN_CELL = 8
+UNMET = ("PARTIAL", "FAIL", "UNKNOWN")
 
 # What a verdict and a severity mean, in the report's own words. The JSON carries the words PASS and BLOCKER; the
 # meaning is editorial and lives here.
 VERDICT_MEANINGS = {
-    "PASS": "The requirement is met. Full credit.",
-    "PARTIAL": "Part of the requirement is met. Half credit.",
-    "FAIL": "The requirement is not met. No credit.",
-    "UNKNOWN": "The evidence could not be gathered. No credit, and never read as a pass.",
-    "NOT_APPLICABLE": "The check does not apply to this repository. It is outside the score.",
+    "PASS": "The requirement is met.",
+    "PARTIAL": "Part of the requirement is met.",
+    "FAIL": "The requirement is not met.",
+    "UNKNOWN": "The evidence could not be gathered. It is never read as a pass.",
+    "NOT_APPLICABLE": "The check does not apply to this repository.",
 }
 SEVERITY_MEANINGS = {
     "BLOCKER": "Agent work is impossible, unsafe or unverifiable. Fix before onboarding agents.",
@@ -165,8 +169,13 @@ def cell(markup: str) -> str:
     return "".join(out)
 
 
-def table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
-    lines = ["| " + " | ".join(headers) + " |", "|" + "|".join("---" for _ in headers) + "|"]
+ALIGNMENTS = {"left": "---", "center": ":---:", "right": "---:"}
+
+
+def table(headers: Sequence[str], rows: Sequence[Sequence[str]], aligns: Sequence[str] | None = None) -> list[str]:
+    """A GFM table. A cell is made safe by `cell`, so `<br>` in a value would be the renderer's own line break."""
+    marks = [ALIGNMENTS[a] for a in aligns] if aligns else ["---"] * len(headers)
+    lines = ["| " + " | ".join(headers) + " |", "|" + "|".join(marks) + "|"]
     lines += ["| " + " | ".join(cell(item) for item in row) + " |" for row in rows]
     return lines
 
@@ -214,17 +223,22 @@ def findings_of(report: Mapping[str, Any]) -> dict[str, list[Mapping[str, Any]]]
     return grouped
 
 
-def shows_evidence(check: Mapping[str, Any], findings: Sequence[Mapping[str, Any]]) -> bool:
-    """Whether the report cites any evidence or any search for a check, on the check or on one of its findings."""
-    if check["evidence"] or check["searches"]:
-        return True
+def findings_cite_evidence(findings: Sequence[Mapping[str, Any]]) -> bool:
+    """Whether any finding of a check cites evidence or a search.
+
+    The row of a check or finding that has none of its own falls back to the check's, so a row with an empty cell
+    already belongs to a check with none, and what is left to ask is whether one of its findings has some.
+    """
     return any(finding["evidence"] or finding["searches"] for finding in findings)
 
 
-def needs_detail(check: Mapping[str, Any], findings: Sequence[Mapping[str, Any]]) -> bool:
-    """Whether a check gets a block of its own. A passing check that a tool settled has only its row in the table."""
-    unmet = check["verdict"] in ("PARTIAL", "FAIL", "UNKNOWN")
-    return unmet or overridden(check) or check["method"] == "agent" or bool(findings)
+def needs_attention(check: Mapping[str, Any], findings: Sequence[Mapping[str, Any]]) -> bool:
+    """Whether a check has a row in the tables of checks that need attention.
+
+    It does when it is not met, was overridden, was judged by the agent, or raised a finding. A passing check that a
+    tool settled has only its line in the appendix.
+    """
+    return check["verdict"] in UNMET or overridden(check) or check["method"] == "agent" or bool(findings)
 
 
 # --- Evidence ---------------------------------------------------------------------------------------------------------
@@ -265,29 +279,82 @@ def evidence_lines(items: Sequence[Mapping[str, Any]]) -> list[str]:
             head = f"Index query {code(item['query'])} through {code(item['index_tool'])}"
             if item.get("result_summary"):
                 head += f": {text(item['result_summary'])}"
-            tail = ""
+            tail = item.get("quote", "")
         lines.append(f"- {head} · {captured(item)}")
         lines += fenced(tail, indent="  ")
     return lines
 
 
-def search_lines(searches: Sequence[Mapping[str, Any]]) -> list[str]:
-    return [
-        f"- `{search['tool']}` search for {code(search['pattern'])} in {code(search['scope'])}: "
-        f"{count(search['hits'], 'hit') if search['hits'] else 'no hits'}"
-        for search in searches
-    ]
+def search_text(search: Mapping[str, Any]) -> str:
+    hits = count(search["hits"], "hit") if search["hits"] else "no hits"
+    return f"`{search['tool']}` for {code(search['pattern'])} in {code(search['scope'])}: {hits}"
+
+
+def evidence_item_text(item: Mapping[str, Any]) -> str:
+    """One piece of evidence on one line, for a table cell. A quote or command output is left to "Evidence in full"."""
+    notes: list[str] = []
+    if item["kind"] == "file":
+        head = code(item["path"] + (f":{item['lines']}" if item.get("lines") else ""))
+        if item.get("note"):
+            notes.append(text(item["note"]))
+        if item.get("quote"):
+            notes.append("quote in Evidence in full")
+    elif item["kind"] == "command":
+        head = f"command {code(item['command'])}"
+        if item.get("exit_code") is not None:
+            notes.append(f"exit {item['exit_code']}")
+        if item.get("timed_out"):
+            notes.append("timed out")
+        if item.get("duration_s") is not None:
+            notes.append(f"{item['duration_s']:g} s")
+        if item.get("redactions"):
+            notes.append(count(item["redactions"], "redaction"))
+        if item.get("output_tail"):
+            notes.append("output in Evidence in full")
+    else:
+        head = f"{code(item['query'])} through {code(item['index_tool'])}"
+        if item.get("result_summary"):
+            notes.append(text(item["result_summary"]))
+    return head + (f" ({'; '.join(notes)})" if notes else "")
+
+
+def capped(lines: Sequence[str], total: int) -> list[str]:
+    """The first `EVIDENCE_IN_CELL` lines, and a line that says how many more the JSON report holds."""
+    shown = list(lines[:EVIDENCE_IN_CELL])
+    if total > EVIDENCE_IN_CELL:
+        shown.append(f"and {total - EVIDENCE_IN_CELL} more, in the JSON report")
+    return shown
+
+
+def evidence_cell(
+    items: Sequence[Mapping[str, Any]], searches: Sequence[Mapping[str, Any]], engine: Mapping[str, Any] | None
+) -> str:
+    """The evidence and searches of one row, grouped by who captured them, one per line. Empty when there are none.
+
+    A tool's name and version are named only when they are not the engine's, which the provenance already names.
+    """
+    expected = f"{engine['name']} {engine['version']}" if engine else None
+    lines: list[str] = []
+    for who in ("tool", "agent"):
+        mine = [item for item in items if item["captured_by"] == who]
+        if not mine:
+            continue
+        identity = ""
+        if who == "tool":
+            names = sorted({f"{item['tool']} {item['tool_version']}" for item in mine})
+            if names != [expected]:
+                identity = f" ({', '.join(code(name) for name in names)})"
+        shown = capped([evidence_item_text(item) for item in mine], len(mine))
+        shown[0] = f"**{who}**{identity} {shown[0]}"
+        lines += shown
+    if searches:
+        shown = capped([search_text(search) for search in searches], len(searches))
+        shown[0] = f"**searches** {shown[0]}"
+        lines += shown
+    return BR.join(lines)
 
 
 # --- Sections --------------------------------------------------------------------------------------------------------
-
-
-def target_sentence(report: Mapping[str, Any]) -> str:
-    target = report["provenance"]["target"]
-    commit = f"at commit {code(target['git_sha'][:COMMIT_CHARS])}" if target["git_sha"] else "with no commit recorded"
-    branch = f" on branch {code(target['branch'])}" if target["branch"] else ""
-    tree = {True: " (uncommitted changes)", False: " (clean working tree)", None: ""}[target["dirty"]]
-    return f"Repository {code(target['label'])} {commit}{branch}{tree}."
 
 
 def banners(report: Mapping[str, Any]) -> list[str]:
@@ -311,22 +378,84 @@ def banners(report: Mapping[str, Any]) -> list[str]:
                 f"{count(waiting, 'finding')} {'awaits' if waiting == 1 else 'await'} a decision.",
             ]
         )
+    parts.append(
+        [
+            "> [!NOTE]",
+            "> This audit reports; it does not gate. A check that could not be settled is UNKNOWN: it earns no "
+            "credit and is never shown as a pass.",
+        ]
+    )
     return blocks(*parts)
 
 
 def title_section(report: Mapping[str, Any]) -> list[str]:
+    return blocks([f"# Agentic readiness audit: {text(report['provenance']['target']['label'])}"], banners(report))
+
+
+def engine_text(engine: Mapping[str, Any]) -> str:
+    parts = [f"{code(engine['name'])} {text(engine['version'])}"]
+    if engine.get("ruleset_revision"):
+        parts.append(f"ruleset {code(engine['ruleset_revision'])}")
+    parts.append(f"ruleset hash {code(engine['ruleset_hash'])}")
+    if engine.get("scanned_at"):
+        parts.append(f"scanned {code(engine['scanned_at'])}")
+    return ", ".join(parts)
+
+
+def agent_text(agent: Mapping[str, Any]) -> str:
+    if agent["harness"] == "none" and agent["model"] == "none":
+        return "none: no agent took part"
+    return f"{code(agent['harness'])} with {code(agent['model'])}"
+
+
+def provenance_section(report: Mapping[str, Any]) -> list[str]:
+    """What was audited, with what, and when: the first thing a reader sees after the title."""
     provenance = report["provenance"]
-    when = provenance.get("finalised_at") or provenance["started_at"]
-    return blocks(
-        [f"# Agentic readiness audit: {text(provenance['target']['label'])}"],
-        [f"{target_sentence(report)} {'Finalised' if 'finalised_at' in provenance else 'Started'} {code(when)}."],
-        banners(report),
-    )
+    target = provenance["target"]
+    engine = provenance.get("engine")
+    revision = provenance["framework_revision"]
+    probes = report["run_context"]["probes"]
+    if target["git_sha"]:
+        commit = code(target["git_sha"][:COMMIT_CHARS])
+        if target["branch"]:
+            commit += f" on {code(target['branch'])}"
+        commit += {True: " — **dirty working tree**", False: " — clean working tree", None: ""}[target["dirty"]]
+    else:
+        commit = "none recorded"
+    rows = [
+        ["Target", code(target["path"])],
+        ["Commit", commit],
+        ["Status", report["status"] + (" (evaluation run)" if report["run_context"]["eval_mode"] else "")],
+        ["Started", code(provenance["started_at"])],
+        ["Finalised", code(provenance["finalised_at"]) if "finalised_at" in provenance else "—"],
+        [
+            "Recipe",
+            f"{code(provenance['recipe']['name'])} {text(provenance['recipe']['version'])}, "
+            f"catalogue {code(provenance['catalogue_version'])}",
+        ],
+        ["Engine", engine_text(engine) if engine else "No engine report is part of this report."],
+        ["Framework revision", code(revision[:COMMIT_CHARS]) if revision else "—"],
+        ["Agent (self-reported)", agent_text(provenance["agent"])],
+        [
+            "Probes",
+            f"{joined(probes['allowed'])}, timeout {probes['timeout_s']} s"
+            if probes["allowed"]
+            else "none: no command of the target was run",
+        ],
+        ["Report schema", code(report["schema_version"])],
+    ]
+    return blocks(["## Provenance"], table(["Field", "Value"], rows))
 
 
 def blockers_phrase(blockers: Mapping[str, int]) -> str:
     states = [f"{blockers[state]} {state.upper()}" for state in _summary.BLOCKER_STATES if blockers[state]]
     return f"{count(blockers['total'], 'blocker')} remaining" + (f": {', '.join(states)}" if states else "")
+
+
+def credit_text(verdict: str) -> str:
+    """What a verdict earns in the score, from the same table that computes the score."""
+    half = _summary.HALF_CREDITS.get(verdict)
+    return "outside the score" if half is None else f"{half / 2:g}"
 
 
 def summary_section(report: Mapping[str, Any], summary: Mapping[str, Any]) -> list[str]:
@@ -389,83 +518,66 @@ def summary_section(report: Mapping[str, Any], summary: Mapping[str, Any]) -> li
     )
 
 
-def blockers_section(report: Mapping[str, Any]) -> list[str]:
-    unmet = _summary.open_blockers(report["checks"])
-    body = (
-        table(
-            ["Check", "Title", "Verdict", "Summary"],
-            [[code(c["id"]), text(c["title"]), c["verdict"], text(c["summary"]) or "—"] for c in unmet],
-        )
-        if unmet
-        else ["No scored BLOCKER check is open."]
-    )
-    return blocks(["## Blockers remaining"], body)
-
-
-def overrides_section(report: Mapping[str, Any]) -> list[str]:
-    changed = [check for check in report["checks"] if overridden(check)]
-    body = (
-        table(
-            ["Check", "Engine's verdict", "This report's verdict", "Reason"],
-            [
-                [
-                    code(c["id"]),
-                    c["engine_verdict"],
-                    c["verdict"],
-                    text(c["override_reason"]),
-                ]
-                for c in changed
-            ],
-        )
-        if changed
-        else ["No engine verdict was overridden."]
-    )
-    intro = (
-        [
-            "Where this report's verdict differs from the engine's, the agent's counter-evidence is under the check, "
-            "in the details below."
-        ]
-        if changed
-        else []
-    )
-    return blocks(["## Overrides of the engine's verdicts"], intro, body)
-
-
-def checks_section(report: Mapping[str, Any]) -> list[str]:
+def verdicts_section(report: Mapping[str, Any]) -> list[str]:
+    """How many checks have each verdict, and how many scored checks of each severity are not met."""
     checks = report["checks"]
-    scored_ids = {c["id"] for c in _summary.scored_checks(checks)}
-    tally = [f"{sum(1 for c in checks if c['verdict'] == v)} {v}" for v in VERDICTS]
-    tally = [entry for entry in tally if not entry.startswith("0 ")]
-    rows = [
+    scored = _summary.scored_checks(checks)
+    verdict_rows = [
         [
-            code(c["id"]),
-            text(c["title"]),
-            c["severity"],
-            c["method"],
-            yes_no(c["id"] in scored_ids),
-            c["verdict"],
-            c.get("engine_verdict", "—"),
-            text(c["summary"]) or "—",
+            verdict,
+            str(sum(1 for c in checks if c["verdict"] == verdict)),
+            credit_text(verdict),
+            VERDICT_MEANINGS[verdict],
         ]
-        for c in checks
+        for verdict in VERDICTS
     ]
-    legend = [f"- **{name}**: {VERDICT_MEANINGS[name]}" for name in VERDICTS] + [
-        f"- **{name}**: {SEVERITY_MEANINGS[name]}" for name in SEVERITIES
-    ]
+    verdict_rows.append(["**Total**", f"**{len(checks)}**", "", ""])
+    severity_rows = []
+    for severity in SEVERITIES:
+        mine = [c for c in scored if c["severity"] == severity]
+        severity_rows.append(
+            [
+                severity,
+                str(_summary.WEIGHTS[severity]),
+                SEVERITY_MEANINGS[severity],
+                str(len(mine)),
+                str(sum(1 for c in mine if c["verdict"] != "PASS")),
+            ]
+        )
     return blocks(
-        ["## Checks"],
-        [f"{count(len(checks), 'check')}: {', '.join(tally)}." if checks else "No check is recorded."],
-        legend,
-        table(["Check", "Title", "Severity", "Method", "Scored", "Verdict", "Engine", "Summary"], rows),
+        ["## Checks by verdict and severity"],
+        ["The first table counts every check in the report. The second counts the scored checks only."],
+        table(["Verdict", "Checks", "Credit", "Meaning"], verdict_rows, ["left", "right", "right", "left"]),
+        table(
+            ["Severity", "Weight", "Meaning", "Scored checks", "Not met"],
+            severity_rows,
+            ["left", "right", "left", "right", "right"],
+        ),
     )
 
 
-def finding_lines(finding: Mapping[str, Any], check: Mapping[str, Any]) -> list[str]:
-    """One finding: its statement, the fix, the decision on it, and its evidence."""
+def check_cell(check: Mapping[str, Any], finding: Mapping[str, Any] | None) -> str:
+    facts: list[str] = []
+    if finding is not None:
+        lower = f", severity {finding['severity']}" if finding["severity"] != check["severity"] else ""
+        facts.append(f"finding {code(finding['id'])}{lower}")
+    if check["method"] == "agent":
+        facts.append("agent" + (f", confidence {check['confidence']}" if check.get("confidence") else ""))
+    first = f"{code(check['id'])} {text(check['title'])}"
+    return BR.join([first, " · ".join(facts)] if facts else [first])
+
+
+def verdict_cell(check: Mapping[str, Any], scored: bool) -> str:
+    lines = [f"**{check['verdict']}**"]
+    if overridden(check):
+        lines.append(f"engine: {check['engine_verdict']}")
+    if not scored:
+        lines.append("not scored")
+    return BR.join(lines)
+
+
+def fix_cell(finding: Mapping[str, Any]) -> str:
     remediation = finding["remediation"]
-    head = f"**{finding['id']}** · {finding['severity']} · key {code(finding['key'])}"
-    if finding["severity"] != check["severity"]:
-        head += f" · on a {check['severity']} check"
     details: list[str] = []
     if remediation.get("playbook"):
         details.append(f"Playbook {code(remediation['playbook'])}")
@@ -475,94 +587,184 @@ def finding_lines(finding: Mapping[str, Any], check: Mapping[str, Any]) -> list[
         details.append(f"Depends on {joined(remediation['depends_on'])}")
     if remediation.get("touches"):
         details.append(f"Touches {joined(remediation['touches'])}")
+    return BR.join([text(remediation["summary"]), " · ".join(details)] if details else [text(remediation["summary"])])
+
+
+def decision_cell(finding: Mapping[str, Any]) -> str:
     if finding["disposition"] == "pending":
-        decision = "**Awaiting a decision.**"
-    else:
-        decision = f"**{finding['disposition'].capitalize()}.** {DECIDED_BY[finding['confirmed_via']]}"
-        if finding.get("disposition_note"):
-            decision += f" Note: {text(finding['disposition_note'])}"
-    proof: list[str] = []
-    if finding["evidence"]:
-        if finding["evidence"] == check["evidence"]:
-            proof = ["Evidence: the same as under the check."]
-        else:
-            proof = blocks([f"Evidence for {finding['id']}:"], evidence_lines(finding["evidence"]))
-    looked: list[str] = []
-    if finding["searches"]:
-        if finding["searches"] == check["searches"]:
-            looked = ["Searches: the same as under the check."]
-        else:
-            looked = blocks([f"Searches for {finding['id']}:"], search_lines(finding["searches"]))
-    return blocks(
-        [head],
-        [prose(finding["statement"])],
-        [f"**Fix.** {text(remediation['summary'])}"],
-        [" · ".join(details)] if details else [],
-        [decision],
-        proof,
-        looked,
-    )
+        return "**Awaiting a decision**"
+    decided = f"**{finding['disposition'].capitalize()}** ({finding['confirmed_via']})"
+    if finding.get("disposition_note"):
+        decided += BR + f"Note: {text(finding['disposition_note'])}"
+    return decided
 
 
-def check_lines(check: Mapping[str, Any], findings: Sequence[Mapping[str, Any]], scored: bool) -> list[str]:
-    """One check that needs detail: its verdict, any override, its evidence and searches, and its findings."""
-    facts = [
-        f"**{check['verdict']}**",
-        check["severity"],
-        check["method"],
-        "scored" if scored else "not scored",
-    ]
-    if check.get("confidence"):
-        facts.append(f"confidence {check['confidence']}")
-    override: list[str] = []
-    if overridden(check):
-        override = [
-            f"**Overridden.** The engine's verdict was **{check['engine_verdict']}**. This report says "
-            f"**{check['verdict']}**. Reason: {text(check['override_reason'])}"
-        ]
-    if check["evidence"]:
-        proof = blocks(["**Evidence**"], evidence_lines(check["evidence"]))
-    elif check["verdict"] in ("FAIL", "UNKNOWN") and not shows_evidence(check, findings):
-        proof = [f"**Evidence.** {NO_EVIDENCE}"]
-    else:
-        proof = []
-    looked = blocks(["**Searches**"], search_lines(check["searches"])) if check["searches"] else []
-    payload: list[str] = []
-    if check.get("data"):
-        of_kind = f", of kind {code(check['data']['kind'])}," if check["data"].get("kind") else ""
-        payload = [f"The engine's payload for this check{of_kind} is in the JSON report."]
-    return blocks(
-        [f"#### {check['id']}: {text(check['title'])}"],
-        [" · ".join(facts)],
-        [prose(check["summary"])] if check["summary"] else [],
-        override,
-        proof,
-        looked,
-        payload,
-        *(finding_lines(finding, check) for finding in findings),
-    )
-
-
-def details_section(report: Mapping[str, Any]) -> list[str]:
+def attention_rows(report: Mapping[str, Any], severity: str) -> list[list[str]]:
+    """One row for each finding of a check that needs attention, and one for such a check that has no finding."""
     grouped = findings_of(report)
     scored_ids = {c["id"] for c in _summary.scored_checks(report["checks"])}
-    shown = [c for c in report["checks"] if needs_detail(c, grouped.get(c["id"], []))]
-    parts: list[list[str]] = [["## Check details"]]
-    if not shown:
-        parts.append(["No check needs detail."])
+    engine = report["provenance"].get("engine")
+    rows: list[list[str]] = []
+    first_with_fix: dict[tuple[str, str], str] = {}
+    for check in report["checks"]:
+        findings = grouped.get(check["id"], [])
+        if check["severity"] != severity or not needs_attention(check, findings):
+            continue
+        entries: list[Mapping[str, Any] | None] = list(findings) if findings else [None]
+        for position, finding in enumerate(entries):
+            found = text(finding["statement"]) if finding is not None else (text(check["summary"]) or "—")
+            if position == 0 and overridden(check):
+                found += (
+                    BR + f"**Overridden.** The engine's verdict was {check['engine_verdict']}. "
+                    f"Reason: {text(check['override_reason'])}"
+                )
+            items, searches = (check["evidence"], check["searches"])
+            if finding is not None and (finding["evidence"] or finding["searches"]):
+                items, searches = finding["evidence"], finding["searches"]
+                if position == 0 and overridden(check):
+                    # The agent's counter-evidence for the override sits beside the engine's evidence.
+                    items = [*(i for i in check["evidence"] if i["captured_by"] == "agent" and i not in items), *items]
+                    searches = [*(s for s in check["searches"] if s not in searches), *searches]
+            proof = evidence_cell(items, searches, engine)
+            if not proof:
+                unproven = check["verdict"] in ("FAIL", "UNKNOWN") and not findings_cite_evidence(findings)
+                proof = NO_EVIDENCE if unproven else "—"
+            fix = "—"
+            if finding is not None:
+                fix = fix_cell(finding)
+                earlier = first_with_fix.setdefault((check["id"], fix), finding["id"])
+                if earlier != finding["id"]:
+                    fix = f"Same as {code(earlier)}"
+            rows.append(
+                [
+                    check_cell(check, finding),
+                    verdict_cell(check, check["id"] in scored_ids),
+                    found,
+                    proof,
+                    fix,
+                    decision_cell(finding) if finding is not None else "—",
+                ]
+            )
+    return rows
+
+
+def attention_sentence(severity: str, scored: int, unmet: int, listed: int) -> str:
+    if scored and listed:
+        return f"{unmet} of the {count(scored, f'scored {severity} check')} {'is' if unmet == 1 else 'are'} not met."
+    if scored:
+        return (
+            f"All {count(scored, f'scored {severity} check')} {'is' if scored == 1 else 'are'} met, and none was "
+            "overridden, judged by the agent or the subject of a finding."
+        )
+    if listed:
+        return f"There is no scored {severity} check; the table lists the checks that are not scored."
+    return f"There is no {severity} check in this report."
+
+
+def attention_section(report: Mapping[str, Any]) -> list[str]:
+    scored = _summary.scored_checks(report["checks"])
+    legend = [f"- **{via}**: {words}" for via, words in DECIDED_BY.items()]
+    parts: list[list[str]] = [
+        ["## Checks that need attention"],
+        [
+            "Each row is a finding, or a check that has none. A check is listed when it is not met, was overridden, was "
+            "judged by the agent, or raised a finding. Evidence is grouped by who captured it, and a quote or command "
+            "output is under Evidence in full. The decision on a finding is one of these:"
+        ],
+        legend,
+    ]
+    for severity in SEVERITIES:
+        mine = [c for c in scored if c["severity"] == severity]
+        rows = attention_rows(report, severity)
+        sentence = attention_sentence(severity, len(mine), sum(1 for c in mine if c["verdict"] != "PASS"), len(rows))
+        parts.append([f"### {severity.capitalize()} checks"])
+        parts.append([sentence])
+        if rows:
+            parts.append(table(["Check", "Verdict", "What we found", "Evidence", "Fix", "Decision"], rows))
+    return blocks(*parts)
+
+
+def overrides_section(report: Mapping[str, Any]) -> list[str]:
+    changed = [check for check in report["checks"] if overridden(check)]
+    body = (
+        table(
+            ["Check", "Engine's verdict", "This report's verdict", "Reason"],
+            [[code(c["id"]), c["engine_verdict"], c["verdict"], text(c["override_reason"])] for c in changed],
+        )
+        if changed
+        else ["No engine verdict was overridden."]
+    )
+    intro = (
+        [
+            "Where this report's verdict differs from the engine's, the row of the check above shows both, and the "
+            "agent's counter-evidence is in its Evidence column or under Evidence in full."
+        ]
+        if changed
+        else []
+    )
+    return blocks(["## Overrides of the engine's verdicts"], intro, body)
+
+
+def evidence_in_full_section(report: Mapping[str, Any]) -> list[str]:
+    """The quotes and command output that the tables point to, each under the check that cites it."""
+    grouped = findings_of(report)
+    parts: list[list[str]] = []
+    for severity in SEVERITIES:
+        for check in report["checks"]:
+            findings = grouped.get(check["id"], [])
+            if check["severity"] != severity or not needs_attention(check, findings):
+                continue
+            unique: list[Mapping[str, Any]] = []
+            seen: set[str] = set()
+            for item in [*check["evidence"], *(item for finding in findings for item in finding["evidence"])]:
+                key = json.dumps(item, sort_keys=True)
+                if key not in seen:
+                    seen.add(key)
+                    unique.append(item)
+            long = [item for item in unique if item.get("quote") or item.get("output_tail")]
+            if long:
+                parts.append([f"### {check['id']}: {text(check['title'])}"])
+                parts.append(evidence_lines(long))
+    if not parts:
+        return []
+    return blocks(
+        ["## Evidence in full"],
+        ["Quotes and command output that the tables above point to, each under the check that cites it."],
+        *parts,
+    )
+
+
+def appendix_section(report: Mapping[str, Any]) -> list[str]:
+    """Every check, grouped by family, including the passes that the tables above leave out."""
+    checks = report["checks"]
+    scored_ids = {c["id"] for c in _summary.scored_checks(checks)}
+    families: dict[str, list[list[str]]] = {}
+    for check in checks:
+        families.setdefault(check["id"].split("-")[0], []).append(
+            [
+                code(check["id"]),
+                text(check["title"]),
+                check["severity"],
+                check["method"],
+                yes_no(check["id"] in scored_ids),
+                check["verdict"],
+                check.get("engine_verdict", "—"),
+                text(check["summary"]) or "—",
+            ]
+        )
+    parts: list[list[str]] = [["## Appendix — all checks"]]
+    if not checks:
+        parts.append(["No check is recorded."])
     else:
         parts.append(
             [
-                "Each check below is one that is not met, was overridden, was judged by the agent, or raised a finding, "
-                "in order of severity. A check that passed and was settled by a tool has only its row in the table "
-                "above; its evidence is in the JSON report."
+                f"All {count(len(checks), 'check')}, grouped by family. The engine's structured payloads, such as the "
+                "verb matrix, are in the JSON report."
             ]
         )
-    for severity in SEVERITIES:
-        group = [c for c in shown if c["severity"] == severity]
-        if group:
-            parts.append([f"### {severity} checks"])
-            parts.extend(check_lines(c, grouped.get(c["id"], []), c["id"] in scored_ids) for c in group)
+    for family, rows in families.items():
+        parts.append([f"### {family}"])
+        parts.append(table(["Check", "Title", "Severity", "Method", "Scored", "Verdict", "Engine", "Summary"], rows))
     return blocks(*parts)
 
 
@@ -617,46 +819,9 @@ def stack_section(report: Mapping[str, Any]) -> list[str]:
     return blocks(["## Stack and components"], table(["Stack", "Detected"], rows), notes, listing)
 
 
-def engine_text(engine: Mapping[str, Any]) -> str:
-    parts = [f"{code(engine['name'])} {text(engine['version'])}"]
-    if engine.get("ruleset_revision"):
-        parts.append(f"ruleset {code(engine['ruleset_revision'])}")
-    parts.append(f"ruleset hash {code(engine['ruleset_hash'])}")
-    if engine.get("scanned_at"):
-        parts.append(f"scanned {code(engine['scanned_at'])}")
-    return ", ".join(parts)
-
-
-def provenance_section(report: Mapping[str, Any]) -> list[str]:
-    provenance = report["provenance"]
-    target = provenance["target"]
-    engine = provenance.get("engine")
-    revision = provenance["framework_revision"]
-    rows = [
-        ["Report status", report["status"]],
-        ["Schema version", code(report["schema_version"])],
-        ["Repository label", code(target["label"])],
-        ["Path", code(target["path"])],
-        ["Commit", code(target["git_sha"]) if target["git_sha"] else "none recorded"],
-        ["Branch", code(target["branch"]) if target["branch"] else "—"],
-        ["Started", code(provenance["started_at"])],
-        ["Finalised", code(provenance["finalised_at"]) if "finalised_at" in provenance else "—"],
-        ["Recipe", f"{code(provenance['recipe']['name'])} {text(provenance['recipe']['version'])}"],
-        ["Catalogue version", code(provenance["catalogue_version"])],
-        ["Framework revision", code(revision[:COMMIT_CHARS]) if revision else "—"],
-        ["Engine", engine_text(engine) if engine else "No engine report is part of this report."],
-        [
-            "Agent (self-reported)",
-            f"{code(provenance['agent']['harness'])} with {code(provenance['agent']['model'])}",
-        ],
-    ]
-    return blocks(["## Provenance"], table(["Field", "Value"], rows))
-
-
 def run_context_section(report: Mapping[str, Any]) -> list[str]:
     context = report["run_context"]
     index = context["index"]
-    probes = context["probes"]
     profile = context.get("stack_profile")
     rows = [
         ["Evaluation mode", yes_no(context["eval_mode"])],
@@ -667,12 +832,6 @@ def run_context_section(report: Mapping[str, Any]) -> list[str]:
             code(index["kind"])
             + (f" {code(index['name'])}" if index.get("name") else "")
             + (f" — {text(index['notes'])}" if index.get("notes") else ""),
-        ],
-        [
-            "Probes",
-            f"{joined(probes['allowed'])}, timeout {probes['timeout_s']} s"
-            if probes["allowed"]
-            else "none: no command of the target was run",
         ],
         ["Excluded", joined(context["excluded"], "none")],
         ["Known components", joined(context["known_components"], "none")],
@@ -692,15 +851,16 @@ def render(report: Mapping[str, Any]) -> str:
     summary = _summary.compute_summary(report)
     body = blocks(
         title_section(report),
+        provenance_section(report),
         summary_section(report, summary),
-        blockers_section(report),
+        verdicts_section(report),
+        attention_section(report),
         overrides_section(report),
-        checks_section(report),
-        details_section(report),
+        evidence_in_full_section(report),
         coverage_section(report),
         stack_section(report),
-        provenance_section(report),
         run_context_section(report),
+        appendix_section(report),
         ["---", "", "Rendered from the JSON report by `render_report.py`. The JSON report is the record."],
     )
     return "\n".join(body) + "\n"

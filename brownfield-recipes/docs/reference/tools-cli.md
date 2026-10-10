@@ -491,15 +491,17 @@ python3 brownfield-recipes/tools/render_report.py --describe
 
 | Section | What it shows |
 |---|---|
-| Title and banners | The repository, the commit, and when the report was finalised or started. A warning banner for an evaluation run, and a note banner for a draft, which counts the findings that await a decision. |
+| Title and banners | The repository's name. A warning banner for an evaluation run, a note banner for a draft that counts the findings awaiting a decision, and a note that the audit reports and does not gate. |
+| Provenance | A field and value table, straight after the title: the target, the commit (a bold flag for a dirty working tree), the status, when the audit started and finished, the recipe and catalogue, the engine and ruleset, the framework revision, the agent (self-reported) and the probes. |
 | Readiness summary | The headline of [`spec/readiness-summary.md`](../../../spec/readiness-summary.md) and no other number: the phase-1 score to two places, the blockers remaining by state, and the unattested requirements, then the two qualifiers. |
-| Blockers remaining | Each scored BLOCKER check that is not PASS, with its verdict and summary. |
+| Checks by verdict and severity | How many checks have each verdict and what each earns, and for each severity its weight, its scored checks and how many are not met. |
+| Checks that need attention | A table for each severity, with the columns Check, Verdict, What we found, Evidence, Fix and Decision. A row is a finding, or a check that has none. A check is listed when it is not met, was overridden, was judged by the agent, or raised a finding. |
 | Overrides of the engine's verdicts | Each check whose verdict differs from the engine's, with both verdicts and the reason. |
-| Checks | How many checks have each verdict, what each verdict and severity means, and a table with a row for every check. |
-| Check details | A block for each check that is not met, was overridden, was judged by the agent or raised a finding, in order of severity. It shows who captured each piece of evidence, each quote in a fenced block, the searches, and the check's findings with their fix and the decision on them. |
-| Coverage, Stack and components, Provenance, Run context | What the audit examined and skipped, what was detected, where the report came from, and the intake answers the run used. |
+| Evidence in full | Each quote and each command's output, in a fenced block, under the check that cites it. Left out when nothing is quoted. |
+| Coverage, Stack and components, Run context | What the audit examined and skipped, what was detected, and the intake answers the run used. |
+| Appendix — all checks | Every check, grouped by family: its severity, method, whether it is scored, its verdict, the engine's verdict and its summary. |
 
-A check that is `FAIL` or `UNKNOWN` and shows no evidence and no search, on the check or on any of its findings, says "We did not find any evidence." A check that passed and was settled by a tool has only its row in the table: its evidence and the engine's payloads are in the JSON report. A finding whose evidence equals its check's says so and does not print it twice.
+In the tables of checks that need attention, evidence is grouped by who captured it, so each item says whether a tool or the agent recorded it, and a tool is named only when it is not the engine that the provenance names. A cell shows at most eight items for each group and counts the rest, which are in the JSON report. A quote or output is not in a cell: the cell says where it is. A check that is `FAIL` or `UNKNOWN` and shows no evidence and no search, on the check or on any of its findings, has "We did not find any evidence." in its Evidence cell. A later finding of a check whose fix is the same as an earlier one's says "Same as" and the finding, instead of printing it again. A passing check that a tool settled is in the appendix and nowhere else, and the engine's structured payloads are in the JSON report.
 
 The words of a report come from the audited repository, through a model, so the tool treats them as untrusted. Free text has every Markdown special character escaped, so that it cannot become a link, an image, a tag or a heading. A path or a command is in a code span, and a quote or an output tail in a fenced block, each with a delimiter longer than any run of backticks inside it. A control character, and a character that reorders or hides text, is written out as `{U+XXXX}`. A `|` cannot add a column to a table.
 

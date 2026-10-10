@@ -36,6 +36,7 @@ TOOLS = _paths.TOOLS
 EXAMPLES = TOOLS.parent / "schema" / "examples"
 REALISTIC = EXAMPLES / "realistic"
 SERVICE = "example-service.audit-report.20261010T094207Z.json"
+BR = rr.BR
 
 
 def load(path: Path | str) -> dict[str, Any]:
@@ -81,12 +82,82 @@ def section(markdown: str, heading: str) -> str:
     return "\n".join(lines[start:end])
 
 
-def details_of(markdown: str, check_id: str) -> str:
-    """The block of one check in "Check details": from its heading to the next heading of any level."""
-    lines = markdown.split("\n")
-    start = next(i for i, line in enumerate(lines) if line.startswith(f"#### {check_id}: "))
-    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("#")), len(lines))
-    return "\n".join(lines[start:end])
+def subsection(markdown: str, heading: str) -> str:
+    """The text of the `### heading` block, up to the next heading of the second or third level."""
+    found = markdown.split("\n")
+    start = found.index(f"### {heading}")
+    end = next((i for i in range(start + 1, len(found)) if found[i].startswith(("## ", "### "))), len(found))
+    return "\n".join(found[start:end])
+
+
+def cells(line: str) -> list[str]:
+    """The cells of a table row, split at the pipes that are not escaped. A backslash escapes the next character."""
+    body = line.strip()
+    assert body.startswith("|") and body.endswith("|"), line
+    body = body[1:-1]
+    out: list[str] = []
+    current = ""
+    index = 0
+    while index < len(body):
+        char = body[index]
+        if char == "\\" and index + 1 < len(body):
+            current += body[index : index + 2]
+            index += 2
+            continue
+        if char == "|":
+            out.append(current.strip())
+            current = ""
+        else:
+            current += char
+        index += 1
+    out.append(current.strip())
+    return out
+
+
+def table_blocks(text: str) -> list[list[list[str]]]:
+    """Each table in `text` as its rows of cells, the header and the rule between the header and the body included."""
+    blocks: list[list[list[str]]] = []
+    current: list[list[str]] = []
+    for line in text.split("\n") + [""]:
+        if line.startswith("|"):
+            current.append(cells(line))
+        elif current:
+            blocks.append(current)
+            current = []
+    return blocks
+
+
+def rows_of(text: str) -> list[list[str]]:
+    """The body rows of every table in `text`."""
+    return [row for block in table_blocks(text) for row in block[2:]]
+
+
+def table_dicts(text: str) -> list[dict[str, str]]:
+    """The body rows of the first table in `text`, each as a dict from the header's cell to the row's cell."""
+    found = table_blocks(text)
+    if not found:
+        return []
+    header = found[0][0]
+    return [dict(zip(header, body)) for body in found[0][2:]]
+
+
+def attention(markdown: str, severity: str) -> list[dict[str, str]]:
+    return table_dicts(subsection(markdown, f"{severity.capitalize()} checks"))
+
+
+def listed_in(markdown: str, severity: str, check_id: str) -> bool:
+    return any(r["Check"].startswith(f"`{check_id}`") for r in attention(markdown, severity))
+
+
+def row(markdown: str, severity: str, check_id: str, finding_id: str | None = None) -> dict[str, str]:
+    """The one row of a severity table for a check, or for one of its findings."""
+    found = [
+        r
+        for r in attention(markdown, severity)
+        if r["Check"].startswith(f"`{check_id}`") and (finding_id is None or f"finding `{finding_id}`" in r["Check"])
+    ]
+    assert len(found) == 1, f"{len(found)} rows for {check_id} {finding_id}"
+    return found[0]
 
 
 def scan(markdown: str) -> Iterator[tuple[str, bool]]:
@@ -202,15 +273,15 @@ class TextTests(unittest.TestCase):
         cases = {
             "a\x00b": "a{U+0000}b",
             "\x1b[31m": "{U+001B}[31m",
-            "a‮b": "a{U+202E}b",
-            "a​b": "a{U+200B}b",
-            "a﻿b": "a{U+FEFF}b",
+            "a\u202eb": "a{U+202E}b",
+            "a\u200bb": "a{U+200B}b",
+            "a\ufeffb": "a{U+FEFF}b",
             "a\u0085b": "a{U+0085}b",
         }
         for raw, expected in cases.items():
             with self.subTest(raw=ascii(raw)):
                 self.assertEqual(rr.clean(raw), expected)
-        self.assertEqual(rr.clean("a\r\nb\rc\td e f"), "a\nb\nc\td\ne\nf")
+        self.assertEqual(rr.clean("a\r\nb\rc\td\u2028e\u2029f"), "a\nb\nc\td\ne\nf")
 
     def test_a_code_span_has_a_delimiter_longer_than_any_run_of_backticks_inside(self) -> None:
         self.assertEqual(rr.code("src/a.ts"), "`src/a.ts`")
@@ -249,6 +320,11 @@ class TextTests(unittest.TestCase):
     def test_a_table_has_one_header_one_rule_and_one_line_for_each_row_with_pipes_escaped(self) -> None:
         lines = rr.table(["A", "B"], [["1", "x|y"], ["2", "z"]])
         self.assertEqual(lines, ["| A | B |", "|---|---|", r"| 1 | x\|y |", "| 2 | z |"])
+
+    def test_a_table_can_align_its_columns(self) -> None:
+        lines = rr.table(["A", "B", "C"], [["1", "2", "3"]], ["left", "center", "right"])
+        self.assertEqual(lines[1], "|---|:---:|---:|")
+        self.assertEqual(rr.table(["A"], [])[1], "|---|")
 
     def test_blocks_are_separated_by_one_blank_line_and_empty_blocks_vanish(self) -> None:
         self.assertEqual(rr.blocks(["a"], [], ["b", "c"], [], ["d"]), ["a", "", "b", "c", "", "d"])
@@ -302,15 +378,6 @@ class SummaryTests(RenderCase):
             rr.blockers_phrase({"total": 0, "fail": 0, "partial": 0, "unknown": 0}), "0 blockers remaining"
         )
 
-    def test_a_report_without_open_blockers_says_so(self) -> None:
-        report = service()
-        for check in report["checks"]:
-            if check["severity"] == "BLOCKER":
-                set_verdict(check, "PASS")
-        markdown = self.render(report)
-        self.assertIn("- **0 blockers remaining**", markdown)
-        self.assertEqual(section(markdown, "Blockers remaining").split("\n")[2], "No scored BLOCKER check is open.")
-
     def test_the_summary_is_computed_from_the_checks_and_never_taken_from_the_file(self) -> None:
         report = service()
         report["summary"]["phase1_score"] = 0.9999
@@ -326,13 +393,6 @@ class SummaryTests(RenderCase):
         with mock.patch.object(_summary, "compute_summary", wraps=_summary.compute_summary) as computed:
             self.render(service())
         self.assertEqual(computed.call_count, 1)
-
-    def test_the_blockers_table_lists_the_scored_blocker_checks_that_are_not_met_with_their_summaries(self) -> None:
-        text = section(self.render(service()), "Blockers remaining")
-        rows = [line for line in text.split("\n") if line.startswith("| `")]
-        self.assertEqual([row.split("|")[1].strip() for row in rows], ["`CMD-01`", "`CMD-02`", "`EXEC-01`", "`SEC-02`"])
-        self.assertIn("| FAIL | unpinned: node |", text)
-        self.assertNotIn("IDX-01", text)
 
     def test_unknown_scored_checks_are_counted_and_explained(self) -> None:
         text = section(self.render(service()), "Readiness summary")
@@ -409,11 +469,124 @@ class SummaryTests(RenderCase):
         self.assertEqual(markdown.count("REQ-SH-004"), 1)
 
 
-class BannerTests(RenderCase):
-    def test_a_final_report_from_a_person_has_no_banner(self) -> None:
+class ProvenanceTests(RenderCase):
+    FIELDS = [
+        "Target",
+        "Commit",
+        "Status",
+        "Started",
+        "Finalised",
+        "Recipe",
+        "Engine",
+        "Framework revision",
+        "Agent (self-reported)",
+        "Probes",
+        "Report schema",
+    ]
+
+    def provenance(self, report: dict[str, Any]) -> dict[str, str]:
+        return {r[0]: r[1] for r in rows_of(section(self.render(report), "Provenance"))}
+
+    def test_provenance_is_the_first_section_once_and_comes_after_the_title_and_the_banners(self) -> None:
         markdown = self.render(service())
-        self.assertNotIn("[!WARNING]", markdown)
-        self.assertNotIn("[!NOTE]", markdown)
+        headings = [line for line in markdown.split("\n") if line.startswith("## ")]
+        self.assertEqual(headings[0], "## Provenance")
+        self.assertEqual(markdown.count("## Provenance"), 1)
+        self.assertLess(markdown.index("# Agentic readiness audit"), markdown.index("> [!NOTE]"))
+        self.assertLess(markdown.index("> [!NOTE]"), markdown.index("## Provenance"))
+        self.assertLess(markdown.index("## Provenance"), markdown.index("## Readiness summary"))
+
+    def test_the_table_is_a_field_and_value_table_with_one_row_for_each_fact_in_a_fixed_order(self) -> None:
+        text = section(self.render(service()), "Provenance")
+        self.assertEqual(table_dicts(text)[0].keys(), {"Field", "Value"})
+        self.assertEqual([r[0] for r in rows_of(text)], self.FIELDS)
+
+    def test_the_worked_example_says_what_was_audited_with_what_and_when(self) -> None:
+        values = self.provenance(service())
+        self.assertEqual(values["Target"], "`/work/example-service`")
+        self.assertEqual(values["Commit"], "`deadbeefdead` on `main` — clean working tree")
+        self.assertEqual(values["Status"], "final")
+        self.assertEqual(values["Started"], "`2026-10-10T09:00:00+00:00`")
+        self.assertEqual(values["Finalised"], "`2026-10-10T09:42:07+00:00`")
+        self.assertEqual(values["Recipe"], "`brownfield-audit` 0.1.0, catalogue `0.1.0`")
+        self.assertEqual(
+            values["Engine"],
+            "`python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2`, "
+            "scanned `2026-10-10T09:01:30+00:00`",
+        )
+        self.assertEqual(values["Framework revision"], "`cafecafecafe`")
+        self.assertEqual(values["Agent (self-reported)"], "`claude-code` with `claude-sonnet-5-5`")
+        self.assertEqual(values["Probes"], "none: no command of the target was run")
+        self.assertEqual(values["Report schema"], "`0.1`")
+
+    def test_a_dirty_working_tree_is_in_bold_and_an_unknown_one_says_nothing(self) -> None:
+        report = service()
+        target = report["provenance"]["target"]
+        target["dirty"] = True
+        self.assertEqual(self.provenance(report)["Commit"], "`deadbeefdead` on `main` — **dirty working tree**")
+        target["dirty"] = None
+        self.assertEqual(self.provenance(report)["Commit"], "`deadbeefdead` on `main`")
+        target["branch"] = None
+        self.assertEqual(self.provenance(report)["Commit"], "`deadbeefdead`")
+
+    def test_a_target_with_no_commit_says_so(self) -> None:
+        report = service()
+        report["provenance"]["target"].update(git_sha=None, branch=None, dirty=None)
+        self.assertEqual(self.provenance(report)["Commit"], "none recorded")
+
+    def test_a_draft_has_no_finalised_time_and_an_eval_run_says_so_in_its_status(self) -> None:
+        report = service()
+        report["status"] = "draft"
+        del report["provenance"]["finalised_at"]
+        self.assertEqual(self.provenance(report)["Finalised"], "—")
+        self.assertEqual(self.provenance(report)["Status"], "draft")
+        report["run_context"]["eval_mode"] = True
+        report["run_context"]["confirmation_policy"] = "defer-all"
+        self.assertEqual(self.provenance(report)["Status"], "draft (evaluation run)")
+
+    def test_an_engine_only_report_says_that_no_agent_took_part(self) -> None:
+        report = service()
+        report["provenance"]["agent"] = {"harness": "none", "model": "none"}
+        self.assertEqual(self.provenance(report)["Agent (self-reported)"], "none: no agent took part")
+        report["provenance"]["agent"] = {"harness": "none", "model": "claude-sonnet-5-5"}
+        self.assertEqual(self.provenance(report)["Agent (self-reported)"], "`none` with `claude-sonnet-5-5`")
+        report["provenance"]["agent"] = {"harness": "opencode", "model": "none"}
+        self.assertEqual(self.provenance(report)["Agent (self-reported)"], "`opencode` with `none`")
+
+    def test_probes_that_may_run_are_named_with_their_timeout(self) -> None:
+        report = service()
+        report["run_context"]["probes"] = {"allowed": ["test", "lint"], "timeout_s": 90}
+        self.assertEqual(self.provenance(report)["Probes"], "`test`, `lint`, timeout 90 s")
+
+    def test_a_report_with_no_engine_or_framework_revision_says_so(self) -> None:
+        values = self.provenance(minimal())
+        self.assertEqual(values["Engine"], "No engine report is part of this report.")
+        self.assertEqual(values["Framework revision"], "—")
+
+    def test_the_engine_row_names_only_what_the_report_records(self) -> None:
+        report = service()
+        engine = report["provenance"]["engine"]
+        del engine["ruleset_revision"], engine["scanned_at"]
+        self.assertEqual(
+            self.provenance(report)["Engine"], "`python-agentic-audit` 0.1.0, ruleset hash `a1b2a1b2a1b2a1b2`"
+        )
+        engine["ruleset_revision"] = "2026-09-28.13"
+        self.assertEqual(
+            self.provenance(report)["Engine"],
+            "`python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2`",
+        )
+
+
+class BannerTests(RenderCase):
+    NOTE = (
+        "> [!NOTE]\n> This audit reports; it does not gate. A check that could not be settled is UNKNOWN: it earns no "
+        "credit and is never shown as a pass."
+    )
+
+    def test_a_final_report_from_a_person_has_only_the_general_note(self) -> None:
+        markdown = self.render(service())
+        self.assertEqual(markdown.count(self.NOTE), 1)
+        self.assertEqual(markdown.count("> [!"), 1)
         self.assertNotIn("**Draft.**", markdown)
         self.assertNotIn("Evaluation run", markdown)
 
@@ -422,82 +595,632 @@ class BannerTests(RenderCase):
         report["run_context"]["eval_mode"] = True
         report["run_context"]["confirmation_policy"] = "defer-all"
         markdown = self.render(report)
-        self.assertIn("> [!WARNING]\n> **Evaluation run.**", markdown)
         self.assertIn(
-            "> **Evaluation run.** This report was produced to measure the audit recipe, not to guide work on the "
-            "repository. Its confirmation policy was `defer-all`, so no person decided on its findings, and it can "
-            "never be final.\n",
+            "> [!WARNING]\n> **Evaluation run.** This report was produced to measure the audit recipe, not to guide work "
+            "on the repository. Its confirmation policy was `defer-all`, so no person decided on its findings, and it "
+            "can never be final.\n",
             markdown,
         )
-        self.assertLess(markdown.index("Evaluation run"), markdown.index("## Readiness summary"))
+        self.assertLess(markdown.index("Evaluation run"), markdown.index("## Provenance"))
 
     def test_a_draft_has_a_banner_that_counts_the_findings_waiting_for_a_decision(self) -> None:
         report = service()
         report["status"] = "draft"
-        self.assertIn(
-            "> [!NOTE]\n> **Draft.** This report is not final and can still change. 0 findings await",
-            self.render(report),
-        )
+        banner = "> [!NOTE]\n> **Draft.** This report is not final and can still change. {} a decision.\n"
+        self.assertIn(banner.format("0 findings await"), self.render(report))
         for finding_id in ("F-001", "F-002"):
             finding = finding_of(report, finding_id)
             finding["disposition"] = "pending"
             del finding["confirmed_via"]
-        self.assertIn("2 findings await a decision.", self.render(report))
+        self.assertIn(banner.format("2 findings await"), self.render(report))
         finding_of(report, "F-001")["disposition"] = "rejected"
         finding_of(report, "F-001")["confirmed_via"] = "interactive"
-        self.assertIn("1 finding awaits a decision.", self.render(report))
+        self.assertIn(banner.format("1 finding awaits"), self.render(report))
 
-    def test_an_eval_draft_has_both_banners_with_the_warning_first(self) -> None:
+    def test_an_eval_draft_has_all_three_banners_with_the_warning_first_and_the_note_last(self) -> None:
         report = service()
         report["status"] = "draft"
         report["run_context"]["eval_mode"] = True
         report["run_context"]["confirmation_policy"] = "accept-all"
         markdown = self.render(report)
-        self.assertLess(markdown.index("[!WARNING]"), markdown.index("[!NOTE]"))
+        self.assertEqual(markdown.count("> [!"), 3)
+        self.assertLess(markdown.index("[!WARNING]"), markdown.index("**Draft.**"))
+        self.assertLess(markdown.index("**Draft.**"), markdown.index(self.NOTE))
 
-    def test_the_title_says_when_the_report_was_finalised_or_started_and_where_the_commit_is(self) -> None:
+    def test_the_title_names_the_repository_and_nothing_else_is_on_its_line(self) -> None:
+        self.assertEqual(self.render(service()).split("\n")[0], "# Agentic readiness audit: example-service")
+
+
+class VerdictTableTests(RenderCase):
+    def tables(self, report: dict[str, Any]) -> tuple[list[dict[str, str]], list[dict[str, str]]]:
+        text = section(self.render(report), "Checks by verdict and severity")
+        first, second = text.split("\n\n| Severity")
+        return table_dicts(first), table_dicts("| Severity" + second)
+
+    def test_the_verdict_table_counts_every_check_and_says_what_each_verdict_earns(self) -> None:
+        verdicts, _ = self.tables(service())
+        self.assertEqual(
+            [(v["Verdict"], v["Checks"], v["Credit"]) for v in verdicts],
+            [
+                ("PASS", "3", "1"),
+                ("PARTIAL", "2", "0.5"),
+                ("FAIL", "6", "0"),
+                ("UNKNOWN", "1", "0"),
+                ("NOT_APPLICABLE", "0", "outside the score"),
+                ("**Total**", "**12**", ""),
+            ],
+        )
+        for verdict in verdicts[:5]:
+            self.assertEqual(verdict["Meaning"], rr.VERDICT_MEANINGS[verdict["Verdict"]])
+
+    def test_the_credits_come_from_the_table_that_computes_the_score(self) -> None:
+        with mock.patch.object(_summary, "HALF_CREDITS", {"PASS": 4, "PARTIAL": 3, "FAIL": 0, "UNKNOWN": 1}):
+            verdicts, _ = self.tables(service())
+        self.assertEqual([v["Credit"] for v in verdicts[:5]], ["2", "1.5", "0", "0.5", "outside the score"])
+
+    def test_the_severity_table_counts_scored_checks_and_those_not_met(self) -> None:
+        _, severities = self.tables(service())
+        self.assertEqual(
+            [(s["Severity"], s["Weight"], s["Scored checks"], s["Not met"]) for s in severities],
+            [("BLOCKER", "3", "6", "4"), ("DEGRADER", "2", "6", "5"), ("COSMETIC", "1", "0", "0")],
+        )
+        for severity in severities:
+            self.assertEqual(severity["Meaning"], rr.SEVERITY_MEANINGS[severity["Severity"]])
+
+    def test_the_weights_come_from_the_shared_constants(self) -> None:
+        with mock.patch.object(_summary, "WEIGHTS", {"BLOCKER": 9, "DEGRADER": 8, "COSMETIC": 7}):
+            _, severities = self.tables(service())
+        self.assertEqual([s["Weight"] for s in severities], ["9", "8", "7"])
+
+    def test_a_check_that_is_not_scored_is_counted_in_the_verdicts_and_not_in_the_severities(self) -> None:
+        report = service()
+        check_of(report, "CMD-01")["scored"] = False
+        verdicts, severities = self.tables(report)
+        self.assertEqual(verdicts[2]["Checks"], "6")
+        self.assertEqual((severities[0]["Scored checks"], severities[0]["Not met"]), ("5", "3"))
+
+    def test_the_columns_that_hold_numbers_are_right_aligned(self) -> None:
+        text = section(self.render(service()), "Checks by verdict and severity")
+        self.assertIn("|---|---:|---:|---|", text.split("\n"))
+        self.assertIn("|---|---:|---|---:|---:|", text.split("\n"))
+
+    def test_a_report_with_no_check_has_zero_in_every_cell(self) -> None:
+        report = service()
+        report["checks"], report["findings"] = [], []
+        verdicts, severities = self.tables(report)
+        self.assertEqual([v["Checks"] for v in verdicts], ["0", "0", "0", "0", "0", "**0**"])
+        self.assertEqual([(s["Scored checks"], s["Not met"]) for s in severities], [("0", "0")] * 3)
+
+
+class AttentionTests(RenderCase):
+    HEADER = ["Check", "Verdict", "What we found", "Evidence", "Fix", "Decision"]
+
+    def test_there_is_a_table_for_each_severity_in_the_order_of_the_severities(self) -> None:
         markdown = self.render(service())
-        self.assertIn(
-            "Repository `example-service` at commit `deadbeefdead` on branch `main` (clean working tree). "
-            "Finalised `2026-10-10T09:42:07+00:00`.",
-            markdown,
+        self.assertEqual(
+            [line for line in markdown.split("\n") if line.startswith("### ") and "checks" in line],
+            ["### Blocker checks", "### Degrader checks", "### Cosmetic checks"],
+        )
+        text = subsection(markdown, "Blocker checks")
+        self.assertEqual(list(table_dicts(text)[0]), self.HEADER)
+
+    def test_the_blocker_table_has_a_row_for_each_finding_in_the_order_of_the_report(self) -> None:
+        markdown = self.render(service())
+        checks = [r["Check"] for r in attention(markdown, "BLOCKER")]
+        self.assertEqual(
+            [(c.split(BR)[0], c.split(BR)[1]) for c in checks],
+            [
+                ("`CMD-01` Seven verbs resolvable on one runner", "finding `F-001`"),
+                ("`CMD-02` check composes the read-only verbs", "finding `F-002`"),
+                ("`EXEC-01` Toolchain pinned / wrapper committed", "finding `F-003`"),
+                ("`SEC-02` No key-shaped strings in tracked files", "finding `F-004`"),
+                ("`SEC-02` No key-shaped strings in tracked files", "finding `F-005`"),
+            ],
+        )
+
+    def test_a_row_shows_the_verdict_the_finding_the_evidence_the_fix_and_the_decision(self) -> None:
+        found = row(self.render(service()), "BLOCKER", "CMD-01", "F-001")
+        self.assertEqual(found["Verdict"], "**FAIL**")
+        self.assertEqual(
+            found["What we found"],
+            "An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not "
+            "defined on any runner (format:check, typecheck, check, security).",
+        )
+        self.assertEqual(found["Evidence"], "**tool** `package.json`")
+        self.assertEqual(
+            found["Fix"],
+            "Define every verb as a script so an agent never has to invent a command."
+            f"{BR}Playbook `define-command-surface` · Effort S · Touches `package.json`",
+        )
+        self.assertEqual(found["Decision"], "**Confirmed** (interactive)")
+
+    def test_a_fix_with_no_playbook_effort_or_paths_is_its_summary_alone(self) -> None:
+        found = row(self.render(service()), "BLOCKER", "SEC-02", "F-005")
+        self.assertEqual(
+            found["Fix"],
+            "Remove the value from the file and its history, load it from the environment, and rotate the credential.",
         )
         report = service()
-        report["status"] = "draft"
-        del report["provenance"]["finalised_at"]
-        target = report["provenance"]["target"]
-        target.update(git_sha=None, branch=None, dirty=None)
-        self.assertIn(
-            "Repository `example-service` with no commit recorded. Started `2026-10-10T09:00:00+00:00`.",
-            self.render(report),
+        finding_of(report, "F-001")["remediation"]["playbook"] = None
+        self.assertNotIn("Playbook", row(self.render(report), "BLOCKER", "CMD-01", "F-001")["Fix"])
+
+    def test_a_fix_names_what_it_depends_on(self) -> None:
+        found = row(self.render(service()), "DEGRADER", "CI-04", "F-008")
+        self.assertEqual(
+            found["Fix"],
+            "Make the workflow run the check verb once it exists."
+            f"{BR}Playbook `add-ci-parity` · Effort M · Depends on `F-002` · Touches `.github/workflows/ci.yml`",
         )
-        target.update(git_sha="a" * 40, branch="dev", dirty=True)
-        self.assertIn("at commit `aaaaaaaaaaaa` on branch `dev` (uncommitted changes).", self.render(report))
+
+    def test_a_later_finding_of_a_check_with_the_same_fix_says_so_and_does_not_repeat_it(self) -> None:
+        report = service()
+        for finding_id, scope in (("F-097", "a"), ("F-098", "b")):
+            copied = copy.deepcopy(finding_of(report, "F-004"))
+            copied.update(id=finding_id, key=f"SEC-02:{scope}")
+            report["findings"].append(copied)
+        markdown = self.render(report)
+        first = row(markdown, "BLOCKER", "SEC-02", "F-004")["Fix"]
+        self.assertIn("Remove the value from the file", first)
+        self.assertEqual(row(markdown, "BLOCKER", "SEC-02", "F-097")["Fix"], "Same as `F-004`")
+        self.assertEqual(row(markdown, "BLOCKER", "SEC-02", "F-098")["Fix"], "Same as `F-004`")
+        self.assertIn("Remove the value from the file", row(markdown, "BLOCKER", "SEC-02", "F-005")["Fix"])
+
+    def test_the_same_fix_on_another_check_is_not_collapsed(self) -> None:
+        report = service()
+        finding_of(report, "F-002")["remediation"] = copy.deepcopy(finding_of(report, "F-001")["remediation"])
+        markdown = self.render(report)
+        self.assertEqual(
+            row(markdown, "BLOCKER", "CMD-02", "F-002")["Fix"], row(markdown, "BLOCKER", "CMD-01", "F-001")["Fix"]
+        )
+
+    def test_each_disposition_and_each_way_of_deciding_is_in_the_decision_cell(self) -> None:
+        for disposition in ("confirmed", "rejected", "deferred", "edited"):
+            for via in ("interactive", "batch", "policy"):
+                with self.subTest(disposition=disposition, via=via):
+                    report = service()
+                    finding = finding_of(report, "F-001")
+                    finding.update(disposition=disposition, confirmed_via=via)
+                    found = row(self.render(report), "BLOCKER", "CMD-01", "F-001")
+                    self.assertEqual(found["Decision"], f"**{disposition.capitalize()}** ({via})")
+
+    def test_a_pending_finding_awaits_a_decision(self) -> None:
+        report = service()
+        finding = finding_of(report, "F-001")
+        finding["disposition"] = "pending"
+        del finding["confirmed_via"]
+        self.assertEqual(row(self.render(report), "BLOCKER", "CMD-01", "F-001")["Decision"], "**Awaiting a decision**")
+
+    def test_the_persons_note_is_on_a_second_line_of_the_decision_and_absent_when_there_is_none(self) -> None:
+        markdown = self.render(service())
+        self.assertEqual(
+            row(markdown, "BLOCKER", "EXEC-01", "F-003")["Decision"],
+            f"**Edited** (interactive){BR}Note: The owner pins Node 22 in .nvmrc and leaves the engines field alone.",
+        )
+        self.assertNotIn("Note", row(markdown, "BLOCKER", "CMD-01", "F-001")["Decision"])
+
+    def test_the_decisions_are_explained_above_the_tables_in_the_renderers_own_words(self) -> None:
+        text = section(self.render(service()), "Checks that need attention")
+        for via, words in rr.DECIDED_BY.items():
+            self.assertIn(f"- **{via}**: {words}", text.split("\n"))
+
+    def test_a_finding_less_severe_than_its_check_is_in_its_checks_table_and_says_so(self) -> None:
+        markdown = self.render(service())
+        found = row(markdown, "DEGRADER", "AGT-08", "F-010")
+        self.assertTrue(found["Check"].endswith("finding `F-010`, severity COSMETIC"))
+        self.assertEqual(attention(markdown, "COSMETIC"), [])
+
+    def test_an_agent_check_says_so_and_its_confidence(self) -> None:
+        markdown = self.render(service())
+        self.assertTrue(
+            row(markdown, "DEGRADER", "AGT-11", "F-007")["Check"].endswith("finding `F-007` · agent, confidence medium")
+        )
+        report = service()
+        del check_of(report, "AGT-11")["confidence"]
+        self.assertTrue(row(self.render(report), "DEGRADER", "AGT-11", "F-007")["Check"].endswith(" · agent"))
+
+    def test_a_check_with_no_finding_has_one_row_with_dashes_for_the_fix_and_the_decision(self) -> None:
+        found = row(self.render(service()), "DEGRADER", "TST-02")
+        self.assertEqual(found["Check"], "`TST-02` Suite status known")
+        self.assertEqual(found["Verdict"], "**UNKNOWN**")
+        self.assertEqual(found["What we found"], "probe not run: probes disabled (pass --run-gates)")
+        self.assertEqual((found["Fix"], found["Decision"]), ("—", "—"))
+
+    def test_an_empty_summary_is_a_dash(self) -> None:
+        report = service()
+        check_of(report, "TST-02")["summary"] = ""
+        self.assertEqual(row(self.render(report), "DEGRADER", "TST-02")["What we found"], "—")
+
+    def test_the_sentence_for_each_state_of_a_table(self) -> None:
+        self.assertEqual(rr.attention_sentence("BLOCKER", 6, 4, 5), "4 of the 6 scored BLOCKER checks are not met.")
+        self.assertEqual(rr.attention_sentence("BLOCKER", 1, 1, 1), "1 of the 1 scored BLOCKER check is not met.")
+        self.assertEqual(
+            rr.attention_sentence("DEGRADER", 3, 0, 0),
+            "All 3 scored DEGRADER checks are met, and none was overridden, judged by the agent or the subject of a "
+            "finding.",
+        )
+        self.assertEqual(
+            rr.attention_sentence("DEGRADER", 1, 0, 0),
+            "All 1 scored DEGRADER check is met, and none was overridden, judged by the agent or the subject of a "
+            "finding.",
+        )
+        self.assertEqual(
+            rr.attention_sentence("COSMETIC", 0, 0, 2),
+            "There is no scored COSMETIC check; the table lists the checks that are not scored.",
+        )
+        self.assertEqual(rr.attention_sentence("COSMETIC", 0, 0, 0), "There is no COSMETIC check in this report.")
+
+    def test_the_sentences_in_the_worked_example(self) -> None:
+        markdown = self.render(service())
+        self.assertIn("4 of the 6 scored BLOCKER checks are not met.", markdown.split("\n"))
+        self.assertIn("5 of the 6 scored DEGRADER checks are not met.", markdown.split("\n"))
+        self.assertIn("There is no COSMETIC check in this report.", subsection(markdown, "Cosmetic checks"))
+
+    def test_a_table_for_a_severity_with_nothing_to_list_has_a_sentence_and_no_table(self) -> None:
+        report = service()
+        for check in report["checks"]:
+            if check["severity"] == "BLOCKER":
+                set_verdict(check, "PASS")
+        report["findings"] = [f for f in report["findings"] if check_of(report, f["check"])["severity"] != "BLOCKER"]
+        markdown = self.render(report)
+        self.assertIn("- **0 blockers remaining**", markdown.split("\n"))
+        text = subsection(markdown, "Blocker checks")
+        self.assertIn(
+            "All 6 scored BLOCKER checks are met, and none was overridden, judged by the agent or the subject of a finding.",
+            text,
+        )
+        self.assertNotIn("|", text)
+
+    def test_a_check_is_listed_when_it_is_not_met_overridden_judged_by_the_agent_or_has_a_finding(self) -> None:
+        for verdict, listed in {
+            "PARTIAL": True,
+            "FAIL": True,
+            "UNKNOWN": True,
+            "PASS": False,
+            "NOT_APPLICABLE": False,
+        }.items():
+            with self.subTest(verdict=verdict):
+                report = service()
+                report["findings"] = []
+                set_verdict(check_of(report, "IDX-01"), verdict)
+                self.assertEqual(listed_in(self.render(report), "BLOCKER", "IDX-01"), listed)
+        report = service()
+        check_of(report, "IDX-01")["method"] = "agent"
+        del check_of(report, "IDX-01")["engine_verdict"]
+        self.assertTrue(listed_in(self.render(report), "BLOCKER", "IDX-01"))
+        report = service()
+        finding = copy.deepcopy(finding_of(report, "F-001"))
+        finding.update(id="F-099", key="IDX-01", check="IDX-01", disposition="rejected")
+        report["findings"].append(finding)
+        self.assertTrue(listed_in(self.render(report), "BLOCKER", "IDX-01"))
+        report = service()
+        check_of(report, "IDX-01")["engine_verdict"] = "FAIL"
+        check_of(report, "IDX-01")["override_reason"] = "because"
+        self.assertTrue(listed_in(self.render(report), "BLOCKER", "IDX-01"))
+
+    def test_a_passing_check_that_a_tool_settled_has_no_row(self) -> None:
+        markdown = self.render(service())
+        self.assertFalse(listed_in(markdown, "BLOCKER", "IDX-01"))
+        self.assertFalse(listed_in(markdown, "BLOCKER", "CI-01"))
+
+    def test_a_check_that_is_not_scored_is_listed_and_says_so_and_is_left_out_of_the_sentence(self) -> None:
+        report = service()
+        check_of(report, "CMD-01")["scored"] = False
+        markdown = self.render(report)
+        self.assertEqual(row(markdown, "BLOCKER", "CMD-01", "F-001")["Verdict"], f"**FAIL**{BR}not scored")
+        self.assertIn("3 of the 5 scored BLOCKER checks are not met.", markdown.split("\n"))
+
+    def test_an_overridden_check_shows_the_engines_verdict_and_the_reason_on_its_first_row(self) -> None:
+        found = row(self.render(service()), "DEGRADER", "TOOL-03", "F-009")
+        self.assertEqual(found["Verdict"], f"**PASS**{BR}engine: PARTIAL")
+        self.assertTrue(
+            found["What we found"].endswith(
+                f"{BR}**Overridden.** The engine's verdict was PARTIAL. Reason: tsconfig.json extends "
+                "tsconfig.base.json, which sets strict: true; the engine reads only the leaf file."
+            )
+        )
+
+    def test_the_override_is_said_once_for_a_check_with_two_findings_and_the_counter_evidence_only_there(self) -> None:
+        report = service()
+        second = copy.deepcopy(finding_of(report, "F-009"))
+        second.update(id="F-099", key="TOOL-03:other", evidence=[])
+        second["searches"] = []
+        report["findings"].append(second)
+        markdown = self.render(report)
+        first, later = row(markdown, "DEGRADER", "TOOL-03", "F-009"), row(markdown, "DEGRADER", "TOOL-03", "F-099")
+        self.assertIn("**Overridden.**", first["What we found"])
+        self.assertNotIn("Overridden", later["What we found"])
+        self.assertIn("**agent** `tsconfig.base.json:4`", first["Evidence"])
+        self.assertEqual(
+            later["Evidence"],
+            "**agent** `tsconfig.base.json:4` (quote in Evidence in full)"
+            + BR
+            + "`tsconfig.json:2` (quote in Evidence in full)",
+        )
+
+    def test_only_the_agents_counter_evidence_joins_the_first_row_and_nothing_is_repeated(self) -> None:
+        report = service()
+        check = check_of(report, "TOOL-03")
+        shared = check["evidence"][0]
+        check["evidence"].append(
+            {
+                "kind": "file",
+                "captured_by": "tool",
+                "tool": "python-agentic-audit",
+                "tool_version": "0.1.0",
+                "path": "other.json",
+            }
+        )
+        finding_of(report, "F-009")["evidence"].append(copy.deepcopy(shared))
+        evidence = row(self.render(report), "DEGRADER", "TOOL-03", "F-009")["Evidence"]
+        self.assertEqual(evidence.count("tsconfig.base.json:4"), 1)
+        self.assertIn("`tsconfig.json:2`", evidence)
+        self.assertNotIn("other.json", evidence)
+
+    def test_the_agents_searches_for_an_override_join_the_first_row_once(self) -> None:
+        report = service()
+        check = check_of(report, "TOOL-03")
+        shared = {"tool": "grep", "pattern": "strict", "scope": ".", "hits": 2}
+        only_on_check = {"tool": "glob", "pattern": "tsconfig*.json", "scope": ".", "hits": 2}
+        check["searches"] = [shared, only_on_check]
+        finding_of(report, "F-009")["searches"] = [copy.deepcopy(shared)]
+        evidence = row(self.render(report), "DEGRADER", "TOOL-03", "F-009")["Evidence"]
+        self.assertEqual(evidence.count("`grep` for `strict`"), 1)
+        self.assertEqual(evidence.count("`glob` for `tsconfig*.json`"), 1)
+
+    def test_a_verdict_equal_to_the_engines_shows_no_engine_line(self) -> None:
+        self.assertEqual(row(self.render(service()), "BLOCKER", "CMD-01", "F-001")["Verdict"], "**FAIL**")
+
+    def test_findings_of_one_check_come_in_the_order_of_the_report(self) -> None:
+        report = service()
+        self.assertEqual(
+            [r["Check"].split(BR)[1] for r in attention(self.render(report), "BLOCKER")][3:],
+            ["finding `F-004`", "finding `F-005`"],
+        )
+        report["findings"].reverse()
+        self.assertEqual(
+            [r["Check"].split(BR)[1] for r in attention(self.render(report), "BLOCKER")][3:],
+            ["finding `F-005`", "finding `F-004`"],
+        )
+
+    def test_every_finding_of_every_example_has_exactly_one_row_and_every_scored_unmet_check_is_listed(self) -> None:
+        for path in [EXAMPLES / SERVICE, *drafts()]:
+            with self.subTest(path=path.name):
+                report = load(path)
+                markdown = self.render(report)
+                for finding in report["findings"]:
+                    self.assertEqual(markdown.count(f"{BR}finding `{finding['id']}`"), 1, finding["id"])
+                for check in _summary.scored_checks(report["checks"]):
+                    if check["verdict"] != "PASS":
+                        self.assertTrue(listed_in(markdown, check["severity"], check["id"]), check["id"])
 
 
-class EvidenceTests(RenderCase):
-    def test_a_quote_is_in_a_fenced_block_under_its_bullet_and_never_inline(self) -> None:
-        details = details_of(self.render(service()), "AGT-11")
+class EvidenceCellTests(RenderCase):
+    ENGINE = {"name": "python-agentic-audit", "version": "0.1.0"}
+
+    def file_item(self, path: str, by: str = "tool", **extra: Any) -> dict[str, Any]:
+        item: dict[str, Any] = {"kind": "file", "captured_by": by, "path": path}
+        if by == "tool":
+            item.update(tool="python-agentic-audit", tool_version="0.1.0")
+        item.update(extra)
+        return item
+
+    def test_the_evidence_is_grouped_by_who_captured_it_with_the_tool_first(self) -> None:
+        cell = rr.evidence_cell(
+            [self.file_item("a.ts", "agent"), self.file_item("b.ts"), self.file_item("c.ts", lines="3-4", note="n")],
+            [],
+            self.ENGINE,
+        )
+        self.assertEqual(cell, f"**tool** `b.ts`{BR}`c.ts:3-4` (n){BR}**agent** `a.ts`")
+
+    def test_a_tool_other_than_the_engine_is_named_and_the_engine_is_not(self) -> None:
+        other = self.file_item("a.ts", tool="other-tool", tool_version="2.0")
+        self.assertEqual(rr.evidence_cell([other], [], self.ENGINE), "**tool** (`other-tool 2.0`) `a.ts`")
+        both = [other, self.file_item("b.ts", tool="another", tool_version="1")]
+        self.assertEqual(
+            rr.evidence_cell(both, [], self.ENGINE), f"**tool** (`another 1`, `other-tool 2.0`) `a.ts`{BR}`b.ts`"
+        )
+        self.assertEqual(rr.evidence_cell([self.file_item("a.ts")], [], self.ENGINE), "**tool** `a.ts`")
+        self.assertEqual(
+            rr.evidence_cell([self.file_item("a.ts")], [], None), "**tool** (`python-agentic-audit 0.1.0`) `a.ts`"
+        )
+
+    def test_an_agent_is_never_named_beyond_the_word_agent(self) -> None:
+        self.assertEqual(rr.evidence_cell([self.file_item("a.ts", "agent")], [], None), "**agent** `a.ts`")
+
+    def test_only_the_first_eight_items_of_a_group_are_shown_and_the_rest_are_counted(self) -> None:
+        items = [self.file_item(f"f{n}.ts") for n in range(10)]
+        lines = rr.evidence_cell(items, [], self.ENGINE).split(BR)
+        self.assertEqual(len(lines), 9)
+        self.assertEqual(lines[0], "**tool** `f0.ts`")
+        self.assertEqual(lines[7], "`f7.ts`")
+        self.assertEqual(lines[8], "and 2 more, in the JSON report")
+        self.assertEqual(len(rr.evidence_cell(items[:8], [], self.ENGINE).split(BR)), 8)
+
+    def test_each_group_is_capped_on_its_own(self) -> None:
+        items = [self.file_item(f"t{n}.ts") for n in range(9)] + [self.file_item(f"a{n}.ts", "agent") for n in range(9)]
+        lines = rr.evidence_cell(items, [], self.ENGINE).split(BR)
+        self.assertEqual(lines.count("and 1 more, in the JSON report"), 2)
+
+    def test_searches_are_listed_after_the_evidence_with_their_hits_and_capped_too(self) -> None:
+        searches = [
+            {"tool": "grep", "pattern": "never", "scope": "AGENTS.md", "hits": 0},
+            {"tool": "glob", "pattern": "**/*.md", "scope": ".", "hits": 1},
+            {"tool": "index", "pattern": "release", "scope": "src/", "hits": 3},
+        ]
+        lines = rr.evidence_cell([self.file_item("a.ts")], searches, self.ENGINE).split(BR)
+        self.assertEqual(
+            lines,
+            [
+                "**tool** `a.ts`",
+                "**searches** `grep` for `never` in `AGENTS.md`: no hits",
+                "`glob` for `**/*.md` in `.`: 1 hit",
+                "`index` for `release` in `src/`: 3 hits",
+            ],
+        )
+        many = [{"tool": "grep", "pattern": f"p{n}", "scope": ".", "hits": 1} for n in range(10)]
+        self.assertEqual(rr.evidence_cell([], many, None).split(BR)[-1], "and 2 more, in the JSON report")
+
+    def test_a_quote_and_command_output_are_pointed_to_and_not_printed_in_the_cell(self) -> None:
+        quoted = self.file_item("a.ts", "agent", quote="the secret words", note="n")
+        command = {
+            "kind": "command",
+            "captured_by": "tool",
+            "tool": "python-agentic-audit",
+            "tool_version": "0.1.0",
+            "command": "make test",
+            "exit_code": 1,
+            "output_tail": "FAILED",
+            "timed_out": False,
+            "duration_s": 12.5,
+            "redactions": 2,
+        }
+        cell = rr.evidence_cell([quoted, command], [], self.ENGINE)
+        self.assertNotIn("the secret words", cell)
+        self.assertNotIn("FAILED", cell)
+        self.assertIn("`a.ts` (n; quote in Evidence in full)", cell)
+        self.assertIn("command `make test` (exit 1; 12.5 s; 2 redactions; output in Evidence in full)", cell)
+
+    def test_a_command_that_timed_out_and_one_that_exited_with_zero(self) -> None:
+        base = {"kind": "command", "captured_by": "agent", "command": "make lint"}
+        cell = rr.evidence_cell(
+            [{**base, "exit_code": 0, "duration_s": 3.0}, {**base, "exit_code": None, "timed_out": True}], [], None
+        )
+        self.assertEqual(cell, f"**agent** command `make lint` (exit 0; 3 s){BR}command `make lint` (timed out)")
+
+    def test_an_index_query_shows_the_query_the_tool_and_the_result(self) -> None:
+        item = {
+            "kind": "index_query",
+            "captured_by": "agent",
+            "index_tool": "search_graph",
+            "query": "scripts",
+            "result_summary": "7 scripts",
+        }
+        self.assertEqual(rr.evidence_cell([item], [], None), "**agent** `scripts` through `search_graph` (7 scripts)")
+        del item["result_summary"]
+        self.assertEqual(rr.evidence_cell([item], [], None), "**agent** `scripts` through `search_graph`")
+
+    def test_nothing_gives_an_empty_cell(self) -> None:
+        self.assertEqual(rr.evidence_cell([], [], None), "")
+
+    def test_a_row_shows_the_findings_evidence_and_falls_back_to_the_checks(self) -> None:
+        markdown = self.render(service())
+        self.assertEqual(
+            row(markdown, "BLOCKER", "SEC-02", "F-004")["Evidence"],
+            "**tool** `src/config/constants.ts:12` (credential-shaped string)",
+        )
+        report = service()
+        finding = finding_of(report, "F-004")
+        finding["evidence"], finding["searches"] = [], []
+        found = row(self.render(report), "BLOCKER", "SEC-02", "F-004")
+        self.assertEqual(found["Evidence"].count(BR), 2)
+
+    def test_a_path_with_backticks_and_a_scope_with_a_pipe_stay_in_their_cells(self) -> None:
+        report = service()
+        finding_of(report, "F-004")["evidence"][0]["path"] = "src/`rm -rf`.ts"
+        finding_of(report, "F-007")["searches"] = [{"tool": "grep", "pattern": "a`b", "scope": "x``y|z", "hits": 1}]
+        markdown = self.render(report)
+        self.assertIn("**tool** ``src/`rm -rf`.ts:12`` (credential-shaped string)", markdown)
+        self.assertIn("`grep` for ``a`b`` in ```x``y\\|z```: 1 hit", markdown)
+
+
+class NoEvidenceTests(RenderCase):
+    def evidence(self, report: dict[str, Any], severity: str, check_id: str, finding_id: str | None = None) -> str:
+        return row(self.render(report), severity, check_id, finding_id)["Evidence"]
+
+    def test_a_failed_or_unknown_check_with_no_evidence_and_no_searches_says_so(self) -> None:
+        markdown = self.render(service())
+        self.assertEqual(row(markdown, "DEGRADER", "TST-02")["Evidence"], rr.NO_EVIDENCE)
+        self.assertEqual(row(markdown, "DEGRADER", "CI-04", "F-008")["Evidence"], rr.NO_EVIDENCE)
+
+    def test_the_sentence_has_exactly_the_words_the_decision_gave(self) -> None:
+        self.assertEqual(rr.NO_EVIDENCE, "We did not find any evidence.")
+
+    def test_evidence_on_the_check_takes_the_sentence_away(self) -> None:
+        report = service()
+        check_of(report, "TST-02")["evidence"] = [{"kind": "file", "captured_by": "agent", "path": "Makefile"}]
+        self.assertEqual(self.evidence(report, "DEGRADER", "TST-02"), "**agent** `Makefile`")
+
+    def test_a_search_on_the_check_takes_the_sentence_away_and_is_listed(self) -> None:
+        report = service()
+        check_of(report, "CI-04")["searches"] = [
+            {"tool": "grep", "pattern": "make check", "scope": ".github/", "hits": 0}
+        ]
+        self.assertEqual(
+            self.evidence(report, "DEGRADER", "CI-04", "F-008"),
+            "**searches** `grep` for `make check` in `.github/`: no hits",
+        )
+
+    def test_evidence_only_on_a_finding_also_takes_the_sentence_away(self) -> None:
+        report = service()
+        finding_of(report, "F-008")["evidence"] = [{"kind": "file", "captured_by": "agent", "path": ".github/ci.yml"}]
+        self.assertEqual(self.evidence(report, "DEGRADER", "CI-04", "F-008"), "**agent** `.github/ci.yml`")
+
+    def test_a_second_finding_with_nothing_of_its_own_is_not_told_that_nothing_was_found(self) -> None:
+        report = service()
+        second = copy.deepcopy(finding_of(report, "F-008"))
+        second.update(id="F-099", key="CI-04:other")
+        report["findings"].append(second)
+        finding_of(report, "F-008")["evidence"] = [{"kind": "file", "captured_by": "agent", "path": "x.yml"}]
+        self.assertEqual(self.evidence(report, "DEGRADER", "CI-04", "F-099"), "—")
+
+    def test_a_search_only_on_a_finding_also_takes_the_sentence_away(self) -> None:
+        report = service()
+        finding_of(report, "F-008")["searches"] = [{"tool": "glob", "pattern": "*.yml", "scope": ".github/", "hits": 1}]
+        self.assertNotEqual(self.evidence(report, "DEGRADER", "CI-04", "F-008"), rr.NO_EVIDENCE)
+
+    def test_other_verdicts_never_get_the_sentence(self) -> None:
+        for verdict in ("PASS", "PARTIAL", "NOT_APPLICABLE"):
+            with self.subTest(verdict=verdict):
+                report = service()
+                set_verdict(check_of(report, "CI-04"), verdict)
+                finding_of(report, "F-008")["disposition"] = "rejected"
+                self.assertEqual(self.evidence(report, "DEGRADER", "CI-04", "F-008"), "—")
+
+    def test_the_sentence_applies_to_an_automated_check_too(self) -> None:
+        self.assertEqual(check_of(service(), "TST-02")["method"], "automated")
+        self.assertEqual(self.evidence(service(), "DEGRADER", "TST-02"), rr.NO_EVIDENCE)
+
+
+class EvidenceInFullTests(RenderCase):
+    def test_a_quote_is_in_a_fenced_block_under_its_bullet_and_under_the_check_that_cites_it(self) -> None:
+        text = subsection(self.render(service()), "AGT-11: Instructions are specific and not inferable")
         self.assertIn(
             "- `AGENTS.md:14-16` · captured by agent\n  ```text\n  Run `npm test` to run the tests. "
             "Run `npm run lint` to lint the code.\n  ```",
-            details,
+            text,
         )
 
-    def test_every_item_says_who_captured_it(self) -> None:
+    def test_the_section_holds_only_the_checks_that_cite_a_quote_or_output_in_severity_order(self) -> None:
         markdown = self.render(service())
-        self.assertIn(
-            "- `package.json` · captured by tool `python-agentic-audit` 0.1.0", details_of(markdown, "CMD-01")
+        headings = [h for h in section(markdown, "Evidence in full").split("\n") if h.startswith("### ")]
+        self.assertEqual(
+            headings,
+            ["### AGT-11: Instructions are specific and not inferable", "### TOOL-03: Type checker configured"],
         )
-        self.assertIn("· captured by agent", details_of(markdown, "TOOL-03"))
-        for check_id in ("AGT-11", "TOOL-03", "SEC-02", "CMD-01"):
-            for line in details_of(markdown, check_id).split("\n"):
-                if line.startswith("- ") and "search for" not in line:
-                    self.assertIn(" · captured by ", line, line)
+
+    def test_the_section_is_left_out_when_nothing_is_quoted(self) -> None:
+        for path in drafts():
+            with self.subTest(path=path.name):
+                self.assertNotIn("## Evidence in full", self.render(load(path)))
+
+    def test_it_comes_after_the_overrides_and_before_the_coverage(self) -> None:
+        markdown = self.render(service())
+        self.assertLess(markdown.index("## Overrides of the engine's verdicts"), markdown.index("## Evidence in full"))
+        self.assertLess(markdown.index("## Evidence in full"), markdown.index("## Coverage"))
+
+    def test_an_evidence_item_that_a_check_and_its_finding_share_is_printed_once(self) -> None:
+        text = section(self.render(service()), "Evidence in full")
+        self.assertEqual(text.count("`AGENTS.md:14-16` · captured by agent"), 1)
+
+    def test_an_item_with_no_quote_is_not_repeated_here(self) -> None:
+        text = section(self.render(service()), "Evidence in full")
+        self.assertNotIn("tsconfig.json — strict is not set", text)
+        self.assertNotIn("package.json", text)
 
     def test_a_quote_that_holds_backticks_gets_a_longer_fence_and_the_blocks_stay_balanced(self) -> None:
         report = service()
         check_of(report, "AGT-11")["evidence"][0]["quote"] = "before\n```\nafter\n````\nmore"
+        finding_of(report, "F-007")["evidence"] = []
         markdown = self.render(report)
         self.assertIn("  `````text\n  before\n  ```\n  after\n  ````\n  more\n  `````", markdown)
         list(scan(markdown))
@@ -518,49 +1241,62 @@ class EvidenceTests(RenderCase):
                 "redactions": 2,
             }
         )
-        details = details_of(self.render(report), "TST-02")
+        text = subsection(self.render(report), "TST-02: Suite status known")
         self.assertIn(
             "- Command `make test` (exit 1, 12.5 s, 2 redactions) · captured by tool `python-agentic-audit` 0.1.0\n"
             "  ````text\n  FAILED (failures=2)\n  ```\n  last line\n  ````",
-            details,
+            text,
         )
 
-    def test_a_command_that_timed_out_says_so_and_a_zero_exit_code_is_shown(self) -> None:
+    def test_a_note_on_a_quoted_item_follows_its_path_in_the_full_list(self) -> None:
         report = service()
-        base = {"kind": "command", "captured_by": "agent", "command": "make lint"}
-        check_of(report, "TST-02")["evidence"] += [
-            {**base, "exit_code": 0, "duration_s": 3.0},
-            {**base, "exit_code": None, "timed_out": True, "redactions": 0},
-        ]
-        details = details_of(self.render(report), "TST-02")
-        self.assertIn("- Command `make lint` (exit 0, 3 s) · captured by agent", details)
-        self.assertIn("- Command `make lint` (timed out) · captured by agent", details)
+        check_of(report, "AGT-11")["evidence"][0]["note"] = "a note"
+        finding_of(report, "F-007")["evidence"] = []
+        text = subsection(self.render(report), "AGT-11: Instructions are specific and not inferable")
+        self.assertIn("- `AGENTS.md:14-16` — a note · captured by agent", text.split("\n"))
 
-    def test_an_index_query_shows_the_tool_the_query_and_the_result(self) -> None:
-        details = details_of(self.render(service()), "AGT-11")
-        self.assertIn(
-            "- Index query `scripts defined in package.json` through `search_graph`: "
-            "7 scripts; 4 are named in AGENTS.md with no added context · captured by agent",
-            details,
-        )
-
-    def test_a_note_on_evidence_is_text_and_a_path_with_lines_is_code(self) -> None:
-        self.assertIn(
-            "- `src/config/constants.ts:12` — credential-shaped string · captured by tool", self.render(service())
-        )
-
-    def test_searches_say_how_many_hits_they_had(self) -> None:
+    def test_a_command_that_timed_out_says_so_in_the_full_list(self) -> None:
         report = service()
-        check_of(report, "AGT-11")["searches"] = [
-            {"tool": "grep", "pattern": "never", "scope": "AGENTS.md", "hits": 0},
-            {"tool": "glob", "pattern": "**/*.md", "scope": ".", "hits": 1},
-            {"tool": "index", "pattern": "release", "scope": "src/", "hits": 3},
-        ]
-        details = details_of(self.render(report), "AGT-11")
-        lines = details.split("\n")
-        self.assertIn("- `grep` search for `never` in `AGENTS.md`: no hits", lines)
-        self.assertIn("- `glob` search for `**/*.md` in `.`: 1 hit", lines)
-        self.assertIn("- `index` search for `release` in `src/`: 3 hits", lines)
+        check_of(report, "TST-02")["evidence"].append(
+            {
+                "kind": "command",
+                "captured_by": "agent",
+                "command": "make test",
+                "exit_code": None,
+                "output_tail": "partial output",
+                "timed_out": True,
+            }
+        )
+        text = subsection(self.render(report), "TST-02: Suite status known")
+        self.assertIn("- Command `make test` (timed out) · captured by agent", text.split("\n"))
+        self.assertIn("  partial output", text.split("\n"))
+
+    def test_an_index_query_that_carries_a_quote_is_in_the_full_list_with_its_query_tool_and_result(self) -> None:
+        report = service()
+        check_of(report, "TST-02")["evidence"].append(
+            {
+                "kind": "index_query",
+                "captured_by": "agent",
+                "index_tool": "search_graph",
+                "query": "scripts",
+                "result_summary": "7 scripts",
+                "quote": "the result",
+            }
+        )
+        text = subsection(self.render(report), "TST-02: Suite status known")
+        self.assertIn("- Index query `scripts` through `search_graph`: 7 scripts · captured by agent", text.split("\n"))
+        self.assertIn("  the result", text.split("\n"))
+
+    def test_an_item_that_the_check_and_its_finding_hold_with_the_keys_in_another_order_is_printed_once(self) -> None:
+        report = service()
+        finding_of(report, "F-007")["evidence"] = [reordered(item) for item in finding_of(report, "F-007")["evidence"]]
+        text = section(self.render(report), "Evidence in full")
+        self.assertEqual(text.count("`AGENTS.md:14-16` · captured by agent"), 1)
+
+    def test_the_table_row_points_to_the_quote_and_does_not_hold_it(self) -> None:
+        found = row(self.render(service()), "DEGRADER", "AGT-11", "F-007")
+        self.assertIn("`AGENTS.md:14-16` (quote in Evidence in full)", found["Evidence"])
+        self.assertNotIn("npm test", found["Evidence"])
 
     def test_every_fenced_block_of_every_example_is_closed(self) -> None:
         for path in [EXAMPLES / SERVICE, EXAMPLES / "minimal.json", *drafts()]:
@@ -571,28 +1307,17 @@ class EvidenceTests(RenderCase):
 class OverrideTests(RenderCase):
     def test_an_override_is_in_the_table_next_to_the_engines_verdict_with_its_reason(self) -> None:
         text = section(self.render(service()), "Overrides of the engine's verdicts")
-        self.assertIn("| `TOOL-03` | PARTIAL | PASS | tsconfig.json extends tsconfig.base.json,", text)
-        self.assertEqual(len([line for line in text.split("\n") if line.startswith("| `")]), 1)
-
-    def test_the_checks_table_shows_both_verdicts_on_the_row(self) -> None:
-        text = section(self.render(service()), "Checks")
-        row = next(line for line in text.split("\n") if line.startswith("| `TOOL-03`"))
-        cells = [c.strip() for c in row.strip("|").split("|")]
-        self.assertEqual(cells[5:7], ["PASS", "PARTIAL"])
-
-    def test_the_check_block_says_what_the_engine_said_what_this_report_says_and_why(self) -> None:
-        details = details_of(self.render(service()), "TOOL-03")
-        self.assertIn(
-            "**Overridden.** The engine's verdict was **PARTIAL**. This report says **PASS**. Reason: "
-            "tsconfig.json extends tsconfig.base.json, which sets strict: true; the engine reads only the leaf file.",
-            details,
+        self.assertEqual(
+            table_dicts(text),
+            [
+                {
+                    "Check": "`TOOL-03`",
+                    "Engine's verdict": "PARTIAL",
+                    "This report's verdict": "PASS",
+                    "Reason": "tsconfig.json extends tsconfig.base.json, which sets strict: true; the engine reads only the leaf file.",
+                }
+            ],
         )
-        self.assertIn("captured by agent", details)
-
-    def test_a_verdict_equal_to_the_engines_is_not_an_override(self) -> None:
-        markdown = self.render(service())
-        self.assertNotIn("**Overridden.**", details_of(markdown, "CMD-01"))
-        self.assertEqual(markdown.count("**Overridden.**"), 1)
 
     def test_with_no_override_the_section_says_so(self) -> None:
         for report in (minimal(), load(next(iter(drafts())))):
@@ -600,287 +1325,77 @@ class OverrideTests(RenderCase):
             self.assertIn("No engine verdict was overridden.", text)
             self.assertNotIn("| Check |", text)
 
-    def test_an_automated_pass_with_an_override_gets_a_block_and_a_plain_pass_does_not(self) -> None:
-        markdown = self.render(service())
-        self.assertIn("#### TOOL-03:", markdown)
-        self.assertNotIn("#### IDX-01:", markdown)
-        self.assertNotIn("#### CI-01:", markdown)
-
-
-class NoEvidenceTests(RenderCase):
-    SENTENCE = "**Evidence.** We did not find any evidence."
-
-    def test_a_failed_or_unknown_check_with_no_evidence_and_no_searches_says_so(self) -> None:
-        markdown = self.render(service())
-        self.assertIn(self.SENTENCE, details_of(markdown, "TST-02"))
-        self.assertIn(self.SENTENCE, details_of(markdown, "CI-04"))
-        self.assertEqual(markdown.count(self.SENTENCE), 2)
-
-    def test_the_sentence_has_exactly_the_words_the_decision_gave(self) -> None:
-        self.assertEqual(rr.NO_EVIDENCE, "We did not find any evidence.")
-
-    def test_evidence_on_the_check_takes_the_sentence_away(self) -> None:
-        report = service()
-        check_of(report, "TST-02")["evidence"] = [{"kind": "file", "captured_by": "agent", "path": "Makefile"}]
-        details = details_of(self.render(report), "TST-02")
-        self.assertNotIn(self.SENTENCE, details)
-        self.assertIn("**Evidence**\n\n- `Makefile` · captured by agent", details)
-
-    def test_a_search_on_the_check_takes_the_sentence_away_and_is_listed(self) -> None:
-        report = service()
-        check_of(report, "CI-04")["searches"] = [
-            {"tool": "grep", "pattern": "make check", "scope": ".github/", "hits": 0}
-        ]
-        details = details_of(self.render(report), "CI-04")
-        self.assertNotIn(self.SENTENCE, details)
-        self.assertIn("**Searches**\n\n- `grep` search for `make check` in `.github/`: no hits\n", details)
-
-    def test_evidence_only_on_a_finding_also_takes_the_sentence_away(self) -> None:
-        report = service()
-        finding_of(report, "F-008")["evidence"] = [
-            {"kind": "file", "captured_by": "agent", "path": ".github/workflows/ci.yml"}
-        ]
-        details = details_of(self.render(report), "CI-04")
-        self.assertNotIn(self.SENTENCE, details)
-        self.assertIn("Evidence for F-008:", details)
-
-    def test_a_search_only_on_a_finding_also_takes_the_sentence_away(self) -> None:
-        report = service()
-        finding_of(report, "F-008")["searches"] = [{"tool": "glob", "pattern": "*.yml", "scope": ".github/", "hits": 1}]
-        self.assertNotIn(self.SENTENCE, details_of(self.render(report), "CI-04"))
-
-    def test_other_verdicts_never_get_the_sentence(self) -> None:
-        for verdict in ("PASS", "PARTIAL", "NOT_APPLICABLE"):
-            with self.subTest(verdict=verdict):
-                report = service()
-                check = check_of(report, "CI-04")
-                set_verdict(check, verdict)
-                finding_of(report, "F-008")["disposition"] = "rejected"
-                self.assertNotIn(self.SENTENCE, details_of(self.render(report), "CI-04"))
-
-    def test_the_sentence_applies_to_an_automated_check_too(self) -> None:
-        report = service()
-        self.assertEqual(check_of(report, "TST-02")["method"], "automated")
-        self.assertIn(self.SENTENCE, details_of(self.render(report), "TST-02"))
-
-
-class FindingTests(RenderCase):
-    def test_a_finding_shows_its_statement_fix_and_everything_the_fix_names(self) -> None:
-        details = details_of(self.render(service()), "CI-04")
-        self.assertIn("**F-008** · DEGRADER · key `CI-04`", details)
-        self.assertIn("An agent cannot trust a green CI run to mean the local gate passed because", details)
-        self.assertIn("**Fix.** Make the workflow run the check verb once it exists.", details)
-        self.assertIn(
-            "Playbook `add-ci-parity` · Effort M · Depends on `F-002` · Touches `.github/workflows/ci.yml`", details
+    def test_the_section_points_to_where_the_counter_evidence_is(self) -> None:
+        text = section(self.render(service()), "Overrides of the engine's verdicts")
+        self.assertIn("the row of the check above shows both", text)
+        self.assertIn("Evidence column or under Evidence in full", text)
+        self.assertNotIn(
+            "the row of the check above", section(self.render(minimal()), "Overrides of the engine's verdicts")
         )
 
-    def test_a_fix_that_names_nothing_but_its_summary_has_no_details_line(self) -> None:
-        details = details_of(self.render(service()), "TOOL-03")
-        self.assertIn("**Fix.** Turn on strict mode.", details)
-        self.assertNotIn("Playbook", details)
-        report = service()
-        finding_of(report, "F-001")["remediation"]["playbook"] = None
-        self.assertNotIn("Playbook", details_of(self.render(report), "CMD-01"))
-
-    def test_a_finding_lower_than_its_check_says_so(self) -> None:
-        details = details_of(self.render(service()), "AGT-08")
-        self.assertIn("**F-010** · COSMETIC · key `AGT-08` · on a DEGRADER check", details)
-        self.assertNotIn("on a BLOCKER check", details_of(self.render(service()), "CMD-01"))
-
-    def test_each_disposition_and_each_way_of_deciding_has_its_own_words(self) -> None:
-        wording = {
-            "interactive": "Decided by the person, on this finding alone.",
-            "batch": "Decided by the person, as one of a group of findings that are not blockers.",
-            "policy": "Set by the confirmation policy, not by a person.",
-        }
-        for disposition in ("confirmed", "rejected", "deferred", "edited"):
-            for via, words in wording.items():
-                with self.subTest(disposition=disposition, via=via):
-                    report = service()
-                    finding = finding_of(report, "F-001")
-                    finding.update(disposition=disposition, confirmed_via=via)
-                    finding.pop("disposition_note", None)
-                    self.assertIn(f"**{disposition.capitalize()}.** {words}\n", self.render(report))
-
-    def test_a_pending_finding_awaits_a_decision_and_shows_no_way_of_deciding(self) -> None:
-        report = service()
-        finding = finding_of(report, "F-001")
-        finding["disposition"] = "pending"
-        del finding["confirmed_via"]
-        details = details_of(self.render(report), "CMD-01")
-        self.assertIn("**Awaiting a decision.**", details.split("\n"))
-        self.assertNotIn("Decided by", details)
-
-    def test_the_persons_note_is_shown_and_absent_when_there_is_none(self) -> None:
+    def test_a_verdict_equal_to_the_engines_is_not_an_override(self) -> None:
         markdown = self.render(service())
-        self.assertIn(
-            "**Edited.** Decided by the person, on this finding alone. Note: The owner pins Node 22", markdown
-        )
-        self.assertNotIn("Note:", details_of(markdown, "CMD-01"))
-
-    def test_evidence_equal_to_the_checks_is_not_printed_twice(self) -> None:
-        details = details_of(self.render(service()), "CMD-01")
-        self.assertIn("Evidence: the same as under the check.", details)
-        self.assertNotIn("Evidence for F-001", details)
-        self.assertEqual(details.count("- `package.json` · captured by"), 1)
-
-    def test_evidence_that_differs_from_the_checks_is_printed_under_the_finding(self) -> None:
-        details = details_of(self.render(service()), "SEC-02")
-        self.assertIn("Evidence for F-004:", details)
-        self.assertIn("Evidence for F-005:", details)
-        self.assertNotIn("the same as under the check", details)
-
-    def test_searches_equal_to_the_checks_are_not_printed_twice_and_different_ones_are(self) -> None:
-        details = details_of(self.render(service()), "AGT-11")
-        self.assertIn("Searches: the same as under the check.", details)
-        report = service()
-        finding_of(report, "F-007")["searches"] = [{"tool": "grep", "pattern": "x", "scope": ".", "hits": 2}]
-        details = details_of(self.render(report), "AGT-11")
-        self.assertIn("Searches for F-007:\n\n- `grep` search for `x` in `.`: 2 hits", details)
-
-    def test_every_finding_of_every_example_appears_once_under_its_check(self) -> None:
-        for path in [EXAMPLES / SERVICE, *drafts()]:
-            with self.subTest(path=path.name):
-                report = load(path)
-                markdown = self.render(report)
-                for finding in report["findings"]:
-                    self.assertEqual(markdown.count(f"**{finding['id']}** · "), 1, finding["id"])
-                    self.assertIn(finding["id"], details_of(markdown, finding["check"]).replace("**", ""))
-
-    def test_findings_of_one_check_come_in_the_order_of_the_report(self) -> None:
-        details = details_of(self.render(service()), "SEC-02")
-        self.assertLess(details.index("**F-004**"), details.index("**F-005**"))
-        report = service()
-        report["findings"].reverse()
-        details = details_of(self.render(report), "SEC-02")
-        self.assertLess(details.index("**F-005**"), details.index("**F-004**"))
+        self.assertEqual(len(table_dicts(section(markdown, "Overrides of the engine's verdicts"))), 1)
+        self.assertEqual(markdown.count("**Overridden.**"), 1)
 
 
-class DetailsTests(RenderCase):
-    def test_checks_are_grouped_by_severity_in_the_order_of_the_report(self) -> None:
-        markdown = self.render(service())
+class AppendixTests(RenderCase):
+    HEADER = ["Check", "Title", "Severity", "Method", "Scored", "Verdict", "Engine", "Summary"]
+
+    def test_the_families_are_in_the_order_they_first_appear_and_each_has_its_own_table(self) -> None:
+        text = section(self.render(service()), "Appendix — all checks")
         self.assertEqual(
-            [line for line in markdown.split("\n") if line.startswith("#### ")],
-            [
-                "#### CMD-01: Seven verbs resolvable on one runner",
-                "#### CMD-02: check composes the read-only verbs",
-                "#### EXEC-01: Toolchain pinned / wrapper committed",
-                "#### SEC-02: No key-shaped strings in tracked files",
-                "#### AGT-07: Do-not-do / deny rules present",
-                "#### AGT-08: No competing instruction files, and the reach matrix is stated",
-                "#### AGT-11: Instructions are specific and not inferable",
-                "#### TOOL-03: Type checker configured",
-                "#### CI-04: CI enforces the same gate as the local check",
-                "#### TST-02: Suite status known",
-            ],
-        )
-        self.assertIn("### BLOCKER checks", markdown)
-        self.assertIn("### DEGRADER checks", markdown)
-        self.assertNotIn("### COSMETIC checks", markdown)
-
-    def test_a_check_gets_a_block_when_it_is_not_met_overridden_judged_by_the_agent_or_has_a_finding(self) -> None:
-        cases = {
-            "PARTIAL": True,
-            "FAIL": True,
-            "UNKNOWN": True,
-            "PASS": False,
-            "NOT_APPLICABLE": False,
-        }
-        for verdict, expected in cases.items():
-            with self.subTest(verdict=verdict):
-                report = service()
-                report["findings"] = []
-                check = check_of(report, "IDX-01")
-                check["verdict"], check["engine_verdict"] = verdict, verdict
-                self.assertEqual("#### IDX-01:" in self.render(report), expected)
-        report = service()
-        check_of(report, "IDX-01")["method"] = "agent"
-        del check_of(report, "IDX-01")["engine_verdict"]
-        self.assertIn("#### IDX-01:", self.render(report))
-        report = service()
-        finding = copy.deepcopy(finding_of(report, "F-001"))
-        finding.update(id="F-099", key="IDX-01", check="IDX-01", disposition="rejected")
-        report["findings"].append(finding)
-        self.assertIn("#### IDX-01:", self.render(report))
-
-    def test_the_block_names_the_verdict_severity_method_scoring_and_confidence(self) -> None:
-        markdown = self.render(service())
-        self.assertIn("**PARTIAL** · DEGRADER · agent · scored · confidence medium", details_of(markdown, "AGT-11"))
-        self.assertIn("**FAIL** · BLOCKER · automated · scored\n", details_of(markdown, "CMD-01"))
-        report = service()
-        check_of(report, "CMD-01")["scored"] = False
-        self.assertIn(
-            "**FAIL** · BLOCKER · automated · not scored", details_of(self.render(report), "CMD-01").split("\n")
+            [h for h in text.split("\n") if h.startswith("### ")],
+            ["### IDX", "### AGT", "### CMD", "### TOOL", "### CI", "### EXEC", "### SEC", "### TST"],
         )
 
-    def test_an_engine_payload_is_named_and_left_in_the_json(self) -> None:
-        details = details_of(self.render(service()), "CMD-01")
-        self.assertIn("The engine's payload for this check, of kind `verb_surface`, is in the JSON report.", details)
-        self.assertNotIn("resolved_count", details)
-        self.assertNotIn("The engine's payload", details_of(self.render(service()), "AGT-11"))
-
-    def test_with_no_check_that_needs_a_block_the_section_says_so(self) -> None:
-        self.assertIn("#### AGT-11:", section(self.render(minimal()), "Check details"))
-        report = service()
-        report["checks"] = [check_of(report, "IDX-01")]
-        report["findings"] = []
-        text = section(self.render(report), "Check details")
-        self.assertIn("No check needs detail.", text.split("\n"))
-        self.assertNotIn("####", text)
-
-    def test_the_checks_table_has_a_row_for_every_check_in_report_order_with_the_scored_flag(self) -> None:
+    def test_every_check_of_every_example_has_a_row_in_report_order(self) -> None:
         for path in [EXAMPLES / SERVICE, EXAMPLES / "minimal.json", *drafts()]:
             with self.subTest(path=path.name):
                 report = load(path)
-                text = section(self.render(report), "Checks")
-                rows = [line for line in text.split("\n") if line.startswith("| `")]
-                self.assertEqual(
-                    [row.split("|")[1].strip() for row in rows], [f"`{c['id']}`" for c in report["checks"]]
-                )
-        text = section(self.render(service()), "Checks")
-        self.assertEqual(text.split("\n")[2], "12 checks: 3 PASS, 2 PARTIAL, 6 FAIL, 1 UNKNOWN.")
+                text = section(self.render(report), "Appendix — all checks")
+                found = [r[0] for r in rows_of(text)]
+                order: dict[str, int] = {}
+                for check in report["checks"]:
+                    order.setdefault(check["id"].split("-")[0], len(order))
+                expected = sorted(report["checks"], key=lambda c: order[c["id"].split("-")[0]])
+                self.assertEqual(found, [f"`{c['id']}`" for c in expected])
+        self.assertEqual(len(rows_of(section(self.render(load(drafts()[0])), "Appendix — all checks"))), 69)
 
-    def test_a_check_that_does_not_count_toward_the_score_says_no_in_the_table(self) -> None:
+    def test_a_row_gives_the_severity_method_scoring_both_verdicts_and_the_summary(self) -> None:
+        text = section(self.render(service()), "Appendix — all checks")
+        found = {r[0]: r for r in rows_of(text)}
+        self.assertEqual(
+            found["`TOOL-03`"],
+            [
+                "`TOOL-03`",
+                "Type checker configured",
+                "DEGRADER",
+                "automated",
+                "yes",
+                "PASS",
+                "PARTIAL",
+                "type checker configured and strict: tsconfig.base.json",
+            ],
+        )
+        self.assertEqual(found["`AGT-11`"][3:7], ["agent", "yes", "PARTIAL", "—"])
+
+    def test_a_check_that_is_not_scored_says_no_and_an_empty_summary_is_a_dash(self) -> None:
         report = service()
         check_of(report, "IDX-01")["scored"] = False
-        row = next(line for line in section(self.render(report), "Checks").split("\n") if line.startswith("| `IDX-01`"))
-        self.assertEqual([c.strip() for c in row.strip("|").split("|")][4], "no")
+        check_of(report, "IDX-01")["summary"] = ""
+        found = {r[0]: r for r in rows_of(section(self.render(report), "Appendix — all checks"))}
+        self.assertEqual((found["`IDX-01`"][4], found["`IDX-01`"][7]), ("no", "—"))
 
-    def test_the_legend_explains_every_verdict_and_severity_from_the_renderer_not_the_json(self) -> None:
-        text = section(self.render(service()), "Checks")
-        for name, meaning in {**rr.VERDICT_MEANINGS, **rr.SEVERITY_MEANINGS}.items():
-            self.assertIn(f"- **{name}**: {meaning}", text)
-        self.assertEqual(set(rr.VERDICT_MEANINGS), set(rr.VERDICTS))
-        self.assertEqual(set(rr.SEVERITY_MEANINGS), set(rr.SEVERITIES))
-
-    def test_an_empty_summary_is_a_dash_in_the_blockers_table_and_the_checks_table(self) -> None:
-        report = service()
-        check_of(report, "CMD-01")["summary"] = ""
-        markdown = self.render(report)
-        blockers = section(markdown, "Blockers remaining").split("\n")
-        self.assertIn("| `CMD-01` | Seven verbs resolvable on one runner | FAIL | — |", blockers)
-        row = next(line for line in section(markdown, "Checks").split("\n") if line.startswith("| `CMD-01`"))
-        self.assertTrue(row.endswith("| FAIL | FAIL | — |"), row)
-        block = details_of(markdown, "CMD-01").split("\n")
-        self.assertEqual(block[:4], ["#### CMD-01: Seven verbs resolvable on one runner", "", block[2], ""])
-        self.assertTrue(block[4].startswith("**Evidence**"))
-
-    def test_a_report_with_no_check_says_so_in_every_section_that_lists_checks(self) -> None:
+    def test_a_report_with_no_check_says_so(self) -> None:
         report = service()
         report["checks"], report["findings"] = [], []
-        markdown = self.render(report)
-        self.assertIn("No check is recorded.", section(markdown, "Checks").split("\n"))
-        self.assertIn("No scored BLOCKER check is open.", markdown.split("\n"))
-        self.assertIn("- **Phase-1 score: 0.00**, over 0 scored checks", markdown.split("\n"))
-        self.assertIn("No check needs detail.", markdown.split("\n"))
+        self.assertIn("No check is recorded.", section(self.render(report), "Appendix — all checks").split("\n"))
 
-    def test_an_engine_payload_without_a_kind_is_still_pointed_to(self) -> None:
-        report = service()
-        check_of(report, "CMD-01")["data"] = {"verbs": []}
-        details = details_of(self.render(report), "CMD-01")
-        self.assertIn("The engine's payload for this check is in the JSON report.", details.split("\n"))
-        check_of(report, "CMD-01").pop("data")
-        self.assertNotIn("payload", details_of(self.render(report), "CMD-01"))
+    def test_the_appendix_says_that_the_engines_payloads_are_in_the_json(self) -> None:
+        text = section(self.render(service()), "Appendix — all checks")
+        self.assertIn("All 12 checks, grouped by family.", text)
+        self.assertIn("The engine's structured payloads, such as the verb matrix, are in the JSON report.", text)
 
 
 class OtherSectionTests(RenderCase):
@@ -914,42 +1429,25 @@ class OtherSectionTests(RenderCase):
         self.assertIn("No component is recorded.", text)
         self.assertIn("- Monorepo with two packages\n- \\# not a heading", text)
 
-    def test_the_provenance_names_the_commit_the_engine_and_the_agent_as_self_reported(self) -> None:
-        text = section(self.render(service()), "Provenance")
-        self.assertIn("| Commit | `deadbeefdeadbeefdeadbeefdeadbeefdeadbeef` |", text)
-        self.assertIn(
-            "| Engine | `python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2`, "
-            "scanned `2026-10-10T09:01:30+00:00` |",
-            text,
-        )
-        self.assertIn("| Agent (self-reported) | `claude-code` with `claude-sonnet-5-5` |", text)
-        self.assertIn("| Framework revision | `cafecafecafe` |", text)
-        self.assertIn("| Report status | final |", text)
+    def test_a_component_with_no_declarer_or_manifest_has_dashes(self) -> None:
+        report = service()
+        report["components"][0].update(declared=False, declared_by=None, manifest=None, agents_md="unknown")
+        text = section(self.render(report), "Stack and components")
+        self.assertIn("| (root) | `.` | no | — | — | unknown |", text.split("\n"))
 
-    def test_a_report_with_no_engine_and_no_commit_says_so(self) -> None:
-        text = section(self.render(minimal()), "Provenance")
-        self.assertIn("| Engine | No engine report is part of this report. |", text)
-        report = minimal()
-        report["provenance"]["target"].update(git_sha=None, branch=None, dirty=None)
-        report["provenance"]["framework_revision"] = None
-        text = section(self.render(report), "Provenance")
-        self.assertIn("| Commit | none recorded |", text)
-        self.assertIn("| Framework revision | — |", text)
-        self.assertIn("| Finalised | — |", text)
-
-    def test_the_run_context_states_the_policy_the_index_the_probes_and_the_exposure_acknowledgement(self) -> None:
+    def test_the_run_context_states_the_policy_the_index_and_the_exposure_acknowledgement_and_not_the_probes(
+        self,
+    ) -> None:
         text = section(self.render(service()), "Run context")
         self.assertIn("| Confirmation policy | `interactive` |", text)
         self.assertIn("| Provider exposure acknowledged | yes: the model provider receives what the agent reads", text)
         self.assertIn("| Code index | `mcp` `codebase-memory-mcp` |", text)
-        self.assertIn("| Probes | none: no command of the target was run |", text)
         self.assertIn("| Stack profile | `typescript-node`, shipped, confirmed by the user |", text)
+        self.assertNotIn("Probes", text)
         report = service()
-        report["run_context"]["probes"] = {"allowed": ["test", "lint"], "timeout_s": 90}
         report["run_context"]["stack_profile"]["confirmed_by_user"] = False
         report["run_context"]["index"] = {"kind": "cli", "name": "gitnexus", "notes": "installed by the user"}
         text = section(self.render(report), "Run context")
-        self.assertIn("| Probes | `test`, `lint`, timeout 90 s |", text)
         self.assertIn("not confirmed by the user", text)
         self.assertIn("| Code index | `cli` `gitnexus` — installed by the user |", text)
         del report["run_context"]["stack_profile"]
@@ -961,15 +1459,16 @@ class OtherSectionTests(RenderCase):
         self.assertEqual(
             headings,
             [
+                "## Provenance",
                 "## Readiness summary",
-                "## Blockers remaining",
+                "## Checks by verdict and severity",
+                "## Checks that need attention",
                 "## Overrides of the engine's verdicts",
-                "## Checks",
-                "## Check details",
+                "## Evidence in full",
                 "## Coverage",
                 "## Stack and components",
-                "## Provenance",
                 "## Run context",
+                "## Appendix — all checks",
             ],
         )
         self.assertTrue(markdown.startswith("# Agentic readiness audit: example-service\n"))
@@ -977,22 +1476,6 @@ class OtherSectionTests(RenderCase):
         self.assertFalse(markdown.endswith("\n\n"))
         self.assertNotIn("\n\n\n", markdown)
         self.assertEqual(markdown.count("\n# "), 0)
-
-    def test_a_component_with_no_declarer_or_manifest_has_dashes(self) -> None:
-        report = service()
-        report["components"][0].update(declared=False, declared_by=None, manifest=None, agents_md="unknown")
-        text = section(self.render(report), "Stack and components")
-        self.assertIn("| (root) | `.` | no | — | — | unknown |", text.split("\n"))
-
-    def test_the_engine_row_names_only_what_the_report_records(self) -> None:
-        report = service()
-        engine = report["provenance"]["engine"]
-        del engine["ruleset_revision"], engine["scanned_at"]
-        row = "| Engine | `python-agentic-audit` 0.1.0, ruleset hash `a1b2a1b2a1b2a1b2` |"
-        self.assertIn(row, section(self.render(report), "Provenance").split("\n"))
-        engine["ruleset_revision"] = "2026-09-28.13"
-        row = "| Engine | `python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2` |"
-        self.assertIn(row, section(self.render(report), "Provenance").split("\n"))
 
 
 HOSTILE = {
@@ -1002,10 +1485,11 @@ HOSTILE = {
     "heading": "# Injected heading",
     "table": "| a | b |",
     "fence": "```\nbreak out",
-    "bidi": "name‮gnp.exe",
+    "bidi": "name\u202egnp.exe",
     "control": "bell\x07 escape\x1b[31m",
     "emphasis": "**bold** __bold__ _it_",
     "blockquote": "> a quotation",
+    "linebreak": "one<br>two",
 }
 
 
@@ -1051,11 +1535,14 @@ class InjectionTests(RenderCase):
                     [line for line in lines if line.startswith("# ")], ["# Agentic readiness audit: example-service"]
                 )
                 for line in lines:
-                    unspanned = re.sub(r"(`+).+?\1", "", line)
+                    unspanned = re.sub(r"(`+).+?\1", "", line).replace(BR, "")
                     self.assertIsNone(re.search(r"(?<!\\)!\[", unspanned), line)
                     self.assertIsNone(re.search(r"(?<!\\)\]\(", unspanned), line)
                     self.assertIsNone(re.search(r"(?<!\\)<", unspanned), line)
-                    self.assertFalse(line.startswith(("> ", ">")) and not line.startswith(("> [!", "> **")), line)
+                    self.assertFalse(
+                        line.startswith(("> ", ">")) and not line.startswith(("> [!", "> **", "> This audit reports")),
+                        line,
+                    )
 
     def test_no_text_adds_a_column_or_a_row_to_a_table(self) -> None:
         for kind in HOSTILE:
@@ -1090,23 +1577,20 @@ class InjectionTests(RenderCase):
         self.assertIn("evil.example/p.png", markdown)
         self.assertIn(r"!\[x\](https://evil.example/p.png?q=1)", markdown)
 
-    def test_a_path_a_command_and_a_scope_with_backticks_stay_in_their_spans(self) -> None:
-        report = service()
-        check_of(report, "SEC-02")["evidence"][0]["path"] = "src/`rm -rf`.ts"
-        check_of(report, "AGT-11")["searches"] = [
-            {"tool": "grep", "pattern": "a`b", "scope": "x``y|z", "hits": 1},
-        ]
-        markdown = self.render(report)
-        self.assertIn("- ``src/`rm -rf`.ts:12`` — credential-shaped string", markdown)
-        self.assertIn("`grep` search for ``a`b`` in ```x``y|z```: 1 hit", markdown)
-
     def test_a_pipe_inside_a_code_span_in_a_table_cell_does_not_add_a_column(self) -> None:
         report = service()
         report["components"][0]["path"] = "a|b"
         report["components"][0]["manifest"] = "c|d"
         text = section(self.render(report), "Stack and components")
-        row = next(line for line in text.split("\n") if line.startswith("| (root)"))
-        self.assertEqual(unescaped_pipes(row), 7)
+        found = next(line for line in text.split("\n") if line.startswith("| (root)"))
+        self.assertEqual(unescaped_pipes(found), 7)
+
+    def test_a_line_break_in_text_is_not_a_line_break_in_a_cell(self) -> None:
+        report = service()
+        finding_of(report, "F-001")["statement"] = "An agent cannot x because one<br>two"
+        found = row(self.render(report), "BLOCKER", "CMD-01", "F-001")
+        self.assertEqual(found["What we found"], "An agent cannot x because one\\<br>two")
+        self.assertIsNone(re.search(r"(?<!\\)<br>", found["What we found"]))
 
 
 class PurityTests(RenderCase):
@@ -1191,10 +1675,9 @@ class GoldenTests(RenderCase):
             with self.subTest(path=path.name):
                 report = load(path)
                 markdown = self.render(report)
-                rows = [line for line in section(markdown, "Checks").split("\n") if line.startswith("| `")]
-                self.assertEqual(len(rows), 69)
+                self.assertEqual(len(rows_of(section(markdown, "Appendix — all checks"))), 69)
                 for finding in report["findings"]:
-                    self.assertEqual(markdown.count(f"**{finding['id']}** · "), 1)
+                    self.assertEqual(markdown.count(f"{BR}finding `{finding['id']}`"), 1)
                 self.assertIn("> [!NOTE]\n> **Draft.**", markdown)
 
     def test_the_displayed_score_equals_the_engines_own_score_to_two_places(self) -> None:

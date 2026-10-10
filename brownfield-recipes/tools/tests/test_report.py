@@ -1708,7 +1708,8 @@ class FinaliseTests(BuilderCase):
         self.assertEqual(final.with_suffix(".md"), markdown)
         self.assertEqual(markdown.read_text(encoding="utf-8"), render_report.render(read_json(final)))
         text = markdown.read_text(encoding="utf-8")
-        self.assertIn("Finalised `2026-10-10T11:45:30+00:00`", text)
+        self.assertIn("| Finalised | `2026-10-10T11:45:30+00:00` |", text.split("\n"))
+        self.assertIn("| Status | final |", text.split("\n"))
         self.assertNotIn("**Draft.**", text)
         self.assertIn("## Readiness summary", text)
 
