@@ -353,7 +353,7 @@ A list is a JSON array, each item with `finding` and `disposition` and, optional
 |---|---|
 | `--via` | How the decision was made: `interactive` (the person answered for this finding), `batch` (the person answered for a group, which cannot include a `BLOCKER`) or `policy` (the run's `accept-all` policy decided; evaluation runs only). It is recorded as `confirmed_via`. Not needed to take a decision back. |
 | `--finding`, `--disposition`, `--note` | One decision: the finding's id, `pending`, `confirmed`, `rejected`, `deferred` or `edited`, and the person's reason. |
-| `--from FILE|-` | A list of decisions, instead of `--finding`, `--disposition` and `--note`. |
+| `--from FILE`, or `--from -` for stdin | A list of decisions, instead of `--finding`, `--disposition` and `--note`. |
 
 `pending` takes a decision back: the finding loses its `confirmed_via` and its note. Setting any other disposition replaces the old note with the new one, or with none. The tool does not edit a finding's text. To change what a decided finding says, set it back to `pending`, record it again with `add-finding`, and ask the person again.
 
