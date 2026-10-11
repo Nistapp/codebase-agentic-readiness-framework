@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone who reads, writes or validates an audit report
 > **Source of truth:** [`audit-report.schema.json`](audit-report.schema.json) and [`audit-intake.schema.json`](audit-intake.schema.json). Where this page and a schema disagree, the schema wins and this page has a defect.
-> **Status:** Live for the schemas, the examples, the validator, the report builder, except its `import-engine` subcommand, and the renderer. The engine adapter is planned. Each section that depends on it says so.
+> **Status:** Live for the schemas, the examples, the validator, the report builder, with its `import-engine` subcommand (the engine adapter), and the renderer.
 
 ---
 
@@ -14,7 +14,7 @@
 | [`audit-intake.schema.json`](audit-intake.schema.json) | The answers to the audit's Stage 0 questions, given in a file. `intake_version` `0.1`. |
 | [`catalogue.schema.json`](catalogue.schema.json) | The check catalogue, [`../catalogue.json`](../catalogue.json): every check in one ID namespace. |
 | [`examples/minimal.json`](examples/minimal.json) | The smallest valid report: one agent check, no findings. |
-| [`examples/realistic/`](examples/realistic/) | The engine's real reports on three open-source repositories, each beside its conversion: `agentic-tdd`, `Digital-Assistant-SDK` and `Digital-Assistant-Server`. They were scanned on 2026-10-10 at the commits named in each report's `provenance.target`, with the engine at ruleset revision `2026-09-28.13`. A `*.engine-report.*.json` file is the engine's output, untouched. A `*.audit-draft.*.json` file is that report converted by the mapping below and nothing else: all 69 checks, every finding pending, no name anonymised and nothing invented, because the repositories are open source. In all three the recomputed phase-1 score equals the engine's (0.7311, 0.6513 and 0.4244). Each pair is the input and the expected output for the engine adapter (S2.5). |
+| [`examples/realistic/`](examples/realistic/) | The engine's real reports on three open-source repositories, each beside its conversion: `agentic-tdd`, `Digital-Assistant-SDK` and `Digital-Assistant-Server`. They were scanned on 2026-10-10 at the commits named in each report's `provenance.target`, with the engine at ruleset revision `2026-09-28.13`. A `*.engine-report.*.json` file is the engine's output, untouched. A `*.audit-draft.*.json` file is that report converted by the mapping below and nothing else: all 69 checks, every finding pending, no name anonymised and nothing invented, because the repositories are open source. In all three the recomputed phase-1 score equals the engine's (0.7311, 0.6513 and 0.4244). Each pair is the input and the expected output of the engine adapter: a test imports each raw report into a draft made from the golden draft's own `init` fields and requires the draft beside it, byte for byte. When the mapping changes, the drafts are regenerated from the raw reports and the raw reports are left alone. |
 | [`examples/example-service.audit-report.20261010T094207Z.json`](examples/example-service.audit-report.20261010T094207Z.json) | A synthetic worked example of a finished report on a made-up service. It shows an override of the engine's verdict, an agent check with evidence, an agent `FAIL` that found nothing and says so, a dependency between findings, a finding less severe than its check, and confirmed, edited, rejected and deferred dispositions. It is documentation, not a measured result, and the ID of its agent-only checks, `AGT-11` and `CI-04`, is provisional until the check catalogue exists (S1.5). |
 | [`examples/audit-intake.example-service.json`](examples/audit-intake.example-service.json) | A valid intake file. |
 | [`examples/minimal.md`](examples/minimal.md) and [`examples/example-service.audit-report.20261010T094207Z.md`](examples/example-service.audit-report.20261010T094207Z.md) | What `render_report.py` writes for `minimal.json` and for the worked example, each beside its JSON under the same name. They are the golden files that the renderer's tests compare its output with, and the way to see what a finished report looks like. |
@@ -271,7 +271,7 @@ The engine's verdicts are in [findings.py](../deterministic-audit/audit/findings
 | Engine | Report |
 |---|---|
 | `PASS`, `PARTIAL`, `FAIL`, `UNKNOWN` | The same word, in `verdict` and in `engine_verdict`. |
-| `ATTEST` | No verdict. The requirement is listed in `unattested[]`. No engine check emits it today. |
+| `ATTEST` | No verdict, so the check is not a check of the report. Each requirement the catalogue gives it is listed in `unattested[]`, with `method` `attested` and the check's ID in lower case as the `property`. A draft that lists a check there has not left it out, and `status` and `finalise` count it as dealt with. A finding on such a check is refused. No engine check emits it today. |
 | a check ID in `not_applicable[]` | A check with `verdict: NOT_APPLICABLE` and `engine_verdict: NOT_APPLICABLE`. |
 | (not run by the engine) | A check with `method: agent` and no `engine_verdict`. |
 
@@ -290,7 +290,7 @@ The engine's five fixed unattested items become `unattested[]` entries:
 ## Engine schema v2 mapping
 
 > [!NOTE]
-> Planned. The adapter that applies this mapping, `report.py import-engine`, is S2.5. The table is the contract it implements. [`model.py`](../deterministic-audit/audit/report/model.py#L60-L158) builds the engine report.
+> Live: `report.py import-engine` applies this mapping once to a draft ([`apply_import`](../tools/report.py#L585-L645)), and the conversion is [`convert`](../tools/_engine_adapter.py#L717-L730), a pure function of the engine's report. [`model.py`](../deterministic-audit/audit/report/model.py#L60-L158) builds the engine report.
 
 Every field of the engine's schema v2 is either carried or named as not carried.
 
@@ -298,35 +298,37 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 |---|---|
 | `schema_version` | Not carried. The adapter accepts `"2"` and refuses any other value. |
 | `provenance.tool`, `version`, `ruleset_revision`, `ruleset_hash`, `scanned_at` | `provenance.engine.name`, `version`, `ruleset_revision`, `ruleset_hash`, `scanned_at` |
-| `provenance.target`, `git_sha`, `git_branch`, `git_dirty` | `provenance.target.path`, `git_sha`, `branch`, `dirty` |
+| `provenance.target`, `git_sha`, `git_branch`, `git_dirty` | Not copied. `init` recorded the target's facts from the directory itself, and the draft keeps them. The adapter requires the engine's `target` to be the same directory as the draft's, and its `git_sha` to equal the draft's when both are known, and refuses a report that differs in either. A commit that only one side knows is a warning. |
 | `provenance.framework_revision` | Not carried. The report records its own `provenance.framework_revision`. |
 | `provenance.phase` | Not carried. A 0.1 report covers Phase 1; the adapter refuses an engine report for another phase. |
 | `provenance.probes_enabled` | Not carried. `run_context.probes.allowed` says it. |
-| `summary.phase1_score` | `summary.phase1_score`, recomputed; the validator rejects a mismatch. |
+| `summary.phase1_score` | `summary.phase1_score`, recomputed from the checks; the validator rejects a mismatch. The adapter compares the engine's number with the recomputed one and warns when they differ, and keeps the recomputed one. |
 | `summary.checks_scoreable` | `summary.scored_checks` |
 | `summary.blockers`, `degraders`, `cosmetic` | Not carried. They count findings. `summary.blockers_remaining` counts checks, as the spec defines it, so the two differ by design. |
 | `summary.checks`, `checks_implemented`, `checks_applicable` | Not carried. Verdict counts are derivable, and implementation status is not a property of the audited repository. |
 | `summary.coverage_note` | Not carried. Editorial wording belongs to the renderer; the facts are `scored_checks` and `unknown_scored_checks`. |
-| `stack.ecosystems`, `package_managers`, `ci_providers`, `test_frameworks`, `hook_managers`, `notes` | The same names under `stack` |
-| `inventory.files_inspected`, `files_skipped`, `truncated` | `coverage.inventory.*` |
+| `stack.ecosystems`, `package_managers`, `ci_providers`, `test_frameworks`, `hook_managers`, `notes` | The same names under `stack`. `notes` is left out when there are none. |
+| `inventory.files_inspected`, `files_skipped`, `truncated` | `coverage.inventory.*`. A scan the engine cut short (`truncated`) is a warning. |
 | `components[].name`, `path`, `declared`, `declared_by`, `manifest`, `agents_md` | The same names under `components[]`; `declared` is true |
 | `candidate_components[]` | `components[]` with `declared: false`, `name` and `path` both the engine's path |
-| `checks[].id`, `title`, `severity`, `phase`, `summary`, `data` | `checks[].id`, `title`, `severity`, `phase`, `summary`, `data` |
+| `checks[].id`, `title`, `severity`, `phase`, `summary`, `data` | `checks[].id`, `title`, `severity`, `phase`, `summary`, `data`. A check must be one of the catalogue's automated checks. `data` is carried when it has content, and it must have a `kind`. |
 | `checks[].verdict` | `checks[].verdict` and `checks[].engine_verdict` |
 | `checks[].scored` | `checks[].scored`, false also when the engine's `status` is `blocked` |
 | `checks[].pack` | Not carried. It is the ID's prefix. |
 | `checks[].tier` | Not carried. It is the engine's evidence cost class; the report states `method` and `captured_by` instead. |
 | `checks[].status` | Not carried. `planned` and `blocked` checks arrive as `UNKNOWN`, with `scored` false when blocked. |
-| `findings[].id` | `findings[].key`. The builder assigns `findings[].id`. The engine's id is the check ID plus an optional path and is not always unique: `AGT-08` can raise two findings with no path. The adapter keeps the first as it is and adds `:2`, `:3` and so on to later ones, in the engine's order, so that keys stay unique. |
+| `findings[].id` | `findings[].key`. The builder assigns `findings[].id`, one past the highest in use. The engine's id is the check ID plus an optional path and is not always unique: `AGT-08` can raise two findings with no path. The adapter keeps the first as it is and adds `:2`, `:3` and so on to later ones, in the engine's order, so that keys stay unique, among the engine's findings and those the draft already holds. A key may not hold whitespace, so each whitespace character in the path is written as `%` and its UTF-8 bytes in hexadecimal (`%20`), and a path too long for a key is cut. |
 | `findings[].check`, `severity`, `statement` | `findings[].check`, `severity`, `statement` |
 | `findings[].phase`, `verdict` | Not carried. The check's phase and verdict apply. |
-| `findings[].remediation` (a string) | `findings[].remediation.summary` |
-| `findings[].evidence[]` `path`, `line`, `note` | `evidence[]` with `kind: file`, `captured_by: tool`, `path`, `lines`, `note`. The engine's `path` is not always a path: a `file:key` form is split into the path and a note, and a placeholder in parentheses is dropped. A path that is absolute, or that climbs out of the target, names a place outside the repository, such as the index store that `IDX-02` cites; it is not carried, because evidence paths are inside the target (rule 3 below), and the finding's `statement` already says where the engine looked. The same items are also gathered onto the check. |
-| `probes[]` | `evidence[]` with `kind: command` and `captured_by: tool`, on the checks that used the probe: `command`, `exit_code`, `output_tail`, `timed_out`, `duration_s`, `redactions`. `verb` is not carried: it only says which check the probe belongs to. A probe with a `refused_reason` ran nothing and is not carried. |
-| `unattested[]` | `unattested[]`; see the table above. |
-| `not_applicable[]` | `checks[]` with `verdict: NOT_APPLICABLE` |
+| `findings[].remediation` (a string) | `findings[].remediation.summary`. A missing or empty one becomes "The engine gave no remediation for this finding." |
+| `findings[].evidence[]` `path`, `line`, `note` | `evidence[]` with `kind: file`, `captured_by: tool`, `path`, `lines`, `note`; `line` becomes `lines` when it is a positive integer. The engine's `path` is not always a path, so each one goes through [`locate`](../tools/_engine_adapter.py#L248-L273). A text in parentheses (`(no example file)`) or in angle brackets (`<repository>`, the engine's mark for the repository as a whole) names no file and is dropped without a warning. A path that is absolute or climbs out of the target names a place outside the repository, such as the index store that `IDX-02` cites; it is dropped with a warning and counted, because evidence paths are inside the target (rule 3 below), and the finding's `statement` already says where the engine looked. A `file:key` form (`package.json:lint`) and a `file [tag]` form (`pyproject.toml [mypy/pyright]`) are split into the file and a `note` that is the key or the tag as the engine wrote it, and nothing more: the engine writes `file:key` for a key that is set (`BASE-01`) and for one that is not (`TOOL-03`), so the note does not say which. The same items are also gathered onto the check, in the order of its findings. |
+| `probes[]` | `evidence[]` with `kind: command` and `captured_by: tool`, on the check that ran the probe, after the file evidence gathered from its findings: `command` (the engine's argument list, written as a shell would read it), `exit_code`, `output_tail` (when there is one), `timed_out`, `duration_s` and `redactions`. The engine's probe record does not name its check, so the adapter holds a table of verb to check, today `test` to `TST-02`, and a test fails if the engine gains another check that builds a probe plan. `verb` is not carried. A probe with a `refused_reason` ran nothing, and its check's summary says why, so it is not carried and needs no warning. A probe that ran, whose verb or check the adapter does not know, is a warning. |
+| `unattested[]` | `unattested[]`, in the engine's order: each of the five fixed items as the requirement in the table above, with `method` `attested`, `property` the engine's item name and `why` the engine's own description of it (read from the engine, never copied). An item the table does not have is a warning and is not carried. Each requirement of a check the engine marks `ATTEST` follows; see the verdict table. |
+| `not_applicable[]` | `checks[]` with `verdict: NOT_APPLICABLE` and `engine_verdict: NOT_APPLICABLE`, the title, phase, severity and `scored` flag from the catalogue and a `summary` that says the engine did not run it. They follow the engine's checks. |
 | `ratchet` | Not carried. A re-audit compares reports by finding `key`. |
 | (none) | `method: automated` and `disposition: pending`; everything under `run_context`; `provenance` other than the engine's and the target's; `coverage.scopes_examined` and `scopes_skipped`, which start empty because the engine reports no scopes |
+
+**Limits.** The adapter reads each limit from the report schema and never copies it. A text over its limit is cut, with `…` as its last character, and a warning says so; a probe's output loses its start and not its end, because the end is what matters. A list over its limit (the evidence of a finding or a check, the names of the stack, the components) keeps its first items, and a warning says how many were left out. Nothing the engine said is dropped without a warning, except a placeholder and a probe the engine refused to run. An engine report that is not schema v2 for phase 1, that does not have the shape the mapping reads, or that holds a check the catalogue lacks or only an agent can judge is refused, with every problem listed, and nothing is written.
 
 ---
 
