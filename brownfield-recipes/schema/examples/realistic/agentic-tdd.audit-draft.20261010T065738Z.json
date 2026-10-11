@@ -7,7 +7,7 @@
       "version": "0.1.0"
     },
     "framework_revision": "7eedf23c99c39f94cad435e8a52eb28642308a92",
-    "catalogue_version": "0.1.0",
+    "catalogue_version": "0.2.0",
     "engine": {
       "name": "python-agentic-audit",
       "version": "0.1.0",
@@ -725,11 +725,11 @@
       "title": "Allow/deny artifact present",
       "phase": 1,
       "severity": "BLOCKER",
-      "scored": false,
+      "scored": true,
       "method": "automated",
       "verdict": "UNKNOWN",
       "engine_verdict": "UNKNOWN",
-      "summary": "blocked: the framework defines no artifact contract for this deliverable, so it carries weight 0 in v1 (see CON-01)",
+      "summary": "The engine did not evaluate this check: its ruleset had blocked it.",
       "evidence": [],
       "searches": []
     },
@@ -2111,15 +2111,15 @@
     }
   ],
   "summary": {
-    "phase1_score": 0.7311,
-    "scored_checks": 54,
+    "phase1_score": 0.7131,
+    "scored_checks": 55,
     "blockers_remaining": {
-      "total": 5,
+      "total": 6,
       "fail": 2,
       "partial": 2,
-      "unknown": 1
+      "unknown": 2
     },
-    "unknown_scored_checks": 3,
+    "unknown_scored_checks": 4,
     "unconfirmed_agent_findings": 0
   },
   "unattested": [

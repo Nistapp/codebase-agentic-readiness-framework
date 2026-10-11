@@ -6,7 +6,7 @@ Check IDs and severities are those of the [check catalogue](../brownfield-recipe
 
 ## Checks to requirements
 
-71 checks: 69 of the audit engine and 2 that only an agent runs. 56 scored checks and the blocked `CON-01` trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
+71 checks: 69 of the audit engine and 2 that only an agent runs. 57 scored checks trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
 
 | Check | Title | Severity | Scored | Requirements |
 |---|---|---|---|---|
@@ -46,7 +46,7 @@ Check IDs and severities are those of the [check catalogue](../brownfield-recipe
 | `BASE-02` | Current violation counts measured | DEGRADER | yes | [REQ-BF-002](readiness-requirements.md#req-bf-002--violation-count-recorded) |
 | `BASE-03` | No-new-violations mechanism | DEGRADER | yes | [REQ-BF-003](readiness-requirements.md#req-bf-003--no-new-violations) |
 | `BASE-04` | Coverage floor configured | DEGRADER | yes | [REQ-SH-036](readiness-requirements.md#req-sh-036--coverage-floor) |
-| `CON-01` | Allow/deny artifact present | BLOCKER | no (blocked) | [REQ-SH-037](readiness-requirements.md#req-sh-037--allow-and-deny-lists) |
+| `CON-01` | Allow/deny artifact present | BLOCKER | yes | [REQ-SH-037](readiness-requirements.md#req-sh-037--allow-and-deny-lists) |
 | `CON-02` | Test directories protected | BLOCKER | yes | [REQ-SH-038](readiness-requirements.md#req-sh-038--test-directories-denied) |
 | `CON-03` | artefacts/ excluded from index and agent reads | DEGRADER | yes | [REQ-SH-018](readiness-requirements.md#req-sh-018--scratch-and-tool-state-directories-ignored) |
 | `CON-04` | Draft allow/deny emitted | COSMETIC | no (emitter) | none: an emitter, not a check |
@@ -84,12 +84,10 @@ Check IDs and severities are those of the [check catalogue](../brownfield-recipe
 
 ## Checks that do not yet verify their requirement
 
-The engine has not caught up with [decision 0001](decisions/0001-constraint-artifact.md), and two agent-only checks have no rubric yet. Until then, these checks do not verify the requirement they are listed against. The decision's "Engine changes not yet made" list says what changes for the first two.
+Two agent-only checks have no rubric yet. Until they do, these checks do not verify the requirement they are listed against.
 
 | Check | Requirement | What the engine does today |
 |---|---|---|
-| `CON-01` | [REQ-SH-037](readiness-requirements.md#req-sh-037--allow-and-deny-lists) | Blocked, weight 0. It reads nothing. |
-| `CON-02` | [REQ-SH-038](readiness-requirements.md#req-sh-038--test-directories-denied) | Reads root-level constraint files, ignore rules and CI text. It never reads the prohibitions section. |
 | `AGT-11` | [REQ-SH-015](readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) | Catalogued only. The engine has no such check, and the rubric an agent follows is not written. |
 | `CI-04` | [REQ-SH-035](readiness-requirements.md#req-sh-035--ci-enforces-the-gate) | Catalogued only, as above. |
 

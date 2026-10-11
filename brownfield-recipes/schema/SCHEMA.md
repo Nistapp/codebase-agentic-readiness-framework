@@ -313,10 +313,10 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 | `candidate_components[]` | `components[]` with `declared: false`, `name` and `path` both the engine's path |
 | `checks[].id`, `title`, `severity`, `phase`, `summary`, `data` | `checks[].id`, `title`, `severity`, `phase`, `summary`, `data`. A check must be one of the catalogue's automated checks. `data` is carried when it has content, and it must have a `kind`. |
 | `checks[].verdict` | `checks[].verdict` and `checks[].engine_verdict` |
-| `checks[].scored` | `checks[].scored`, false also when the engine's `status` is `blocked` |
+| `checks[].scored` | `checks[].scored`. A check the engine reports `blocked` did not run, so it takes the catalogue's flag, which the engine's own report cannot give |
 | `checks[].pack` | Not carried. It is the ID's prefix. |
 | `checks[].tier` | Not carried. It is the engine's evidence cost class; the report states `method` and `captured_by` instead. |
-| `checks[].status` | Not carried. `planned` and `blocked` checks arrive as `UNKNOWN`, with `scored` false when blocked. |
+| `checks[].status` | Not carried. `planned` and `blocked` checks arrive as `UNKNOWN`. A `blocked` one also gets a summary that says the engine's ruleset did not evaluate it, and a warning; no engine check is blocked now, so only a report from a ruleset before `2026-10-11.1` has one (its `CON-01`). |
 | `findings[].id` | `findings[].key`. The builder assigns `findings[].id`, one past the highest in use. The engine's id is the check ID plus an optional path and is not always unique: `AGT-08` can raise two findings with no path. The adapter keeps the first as it is and adds `:2`, `:3` and so on to later ones, in the engine's order, so that keys stay unique, among the engine's findings and those the draft already holds. A key may not hold whitespace, so each whitespace character in the path is written as `%` and its UTF-8 bytes in hexadecimal (`%20`), and a path too long for a key is cut. |
 | `findings[].check`, `severity`, `statement` | `findings[].check`, `severity`, `statement` |
 | `findings[].phase`, `verdict` | Not carried. The check's phase and verdict apply. |

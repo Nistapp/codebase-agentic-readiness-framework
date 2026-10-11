@@ -17,7 +17,7 @@ Where the entries come from:
 
 - **Engine checks** are seeded from the engine's own list, `python3 -m audit --list-checks --format json` ([`cli.py`](../../../deterministic-audit/audit/cli.py)). After seeding the file is edited by hand. The engine's ID is the check's ID, and `engine_id` repeats it.
 - **Agent-only checks** are the ones no deterministic rule can settle. Today there are two: `AGT-11` (instructions are specific and not inferable, for [REQ-SH-015](../../../../spec/readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable)) and `CI-04` (CI enforces the same gate as the local check, for [REQ-SH-035](../../../../spec/readiness-requirements.md#req-sh-035--ci-enforces-the-gate)). They are numbered after the engine's highest number in their family, so an engine check added later cannot collide with one: the engine takes the next free number and the test fails if it takes an agent check's.
-- **`status`** is the engine's own status for an engine check, so `CON-01` is `blocked` while the engine cannot evaluate it. An agent-only check is `planned` until its rubric exists. A check that is planned or blocked is reported `UNKNOWN`. `scored` is also the engine's, which is why `CON-01` is not scored yet.
+- **`status`** is the engine's own status for an engine check. An agent-only check is `planned` until its rubric exists. A check that is planned or blocked is reported `UNKNOWN`. `scored` is also the engine's: `CON-01` was `blocked` and unscored until catalogue 0.2.0, when the engine began to read the prohibitions section.
 
 ## 2. Methods
 

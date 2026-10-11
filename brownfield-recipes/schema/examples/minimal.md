@@ -15,7 +15,7 @@
 | Status | draft |
 | Started | `2026-10-10T09:00:00+00:00` |
 | Finalised | — |
-| Recipe | `brownfield-audit` 0.1.0, catalogue `0.1.0` |
+| Recipe | `brownfield-audit` 0.1.0, catalogue `0.2.0` |
 | Engine | No engine report is part of this report. |
 | Framework revision | — |
 | Agent (self-reported) | `claude-code` with `claude-sonnet-5-5` |

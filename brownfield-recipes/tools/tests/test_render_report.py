@@ -508,7 +508,7 @@ class ProvenanceTests(RenderCase):
         self.assertEqual(values["Status"], "final")
         self.assertEqual(values["Started"], "`2026-10-10T09:00:00+00:00`")
         self.assertEqual(values["Finalised"], "`2026-10-10T09:42:07+00:00`")
-        self.assertEqual(values["Recipe"], "`brownfield-audit` 0.1.0, catalogue `0.1.0`")
+        self.assertEqual(values["Recipe"], "`brownfield-audit` 0.1.0, catalogue `0.2.0`")
         self.assertEqual(
             values["Engine"],
             "`python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2`, "
@@ -1687,12 +1687,16 @@ class GoldenTests(RenderCase):
                     self.assertEqual(markdown.count(f"{BR}finding `{finding['id']}`"), 1)
                 self.assertIn("> [!NOTE]\n> **Draft.**", markdown)
 
-    def test_the_displayed_score_equals_the_engines_own_score_to_two_places(self) -> None:
+    def test_the_displayed_score_is_the_reports_own_score_to_two_places(self) -> None:
         for path in drafts():
             with self.subTest(path=path.name):
+                report = load(path)
+                shown = f"**Phase-1 score: {rr.score_text(report['summary']['phase1_score'])}**"
+                self.assertIn(shown, self.render(report))
+                # The report counts CON-01, which the engine's ruleset blocked, so its score is a little below the
+                # engine's own.
                 engine = load(str(path).replace(".audit-draft.", ".engine-report."))
-                shown = f"**Phase-1 score: {rr.score_text(engine['summary']['phase1_score'])}**"
-                self.assertIn(shown, self.render(load(path)))
+                self.assertLess(report["summary"]["phase1_score"], engine["summary"]["phase1_score"])
 
 
 def call(argv: Sequence[str]) -> tuple[int, dict[str, Any], str]:

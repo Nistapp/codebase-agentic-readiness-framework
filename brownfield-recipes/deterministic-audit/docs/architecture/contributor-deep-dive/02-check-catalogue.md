@@ -2,7 +2,7 @@
 
 > **Audience:** Engineers & Maintainers
 > **Related ADRs:** [ADR-0003](../adrs/0003-component-depth-declared-depth-1.md) · [ADR-0004](../adrs/0004-no-llm-in-v1.md)
-> **Status:** Live for the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs (the `CON-04` emitter included); every catalogued check is implemented save the blocked `CON-01`. This page is the design of record; `audit/rules/registry.py` is its executable form, and `python3 -m audit --list-checks` prints the current truth.
+> **Status:** Live for the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs (the `CON-04` emitter included); every catalogued check is implemented. This page is the design of record; `audit/rules/registry.py` is its executable form, and `python3 -m audit --list-checks` prints the current truth.
 
 > [!NOTE]
 > The recipes' [`catalogue.json`](../../../../catalogue.json) is seeded from this registry through `--list-checks --format json`
@@ -36,8 +36,9 @@
 
 Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
 
-Of the 56: `CON-01` carries weight 0 in v1 (the engine does not read the artifact that the spec now defines) and `CON-04` is
-an emitter rather than a check, leaving **54 scoreable checks** in v1.
+Of the 56, `CON-04` is an emitter rather than a check, leaving **55 scoreable checks** in v1. (`CON-01` carried weight 0
+until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
+prohibitions section now.)
 
 > [!NOTE]
 > The tier columns sum to 55, not 56: `CON-04` is an emitter with no tier. The variant research added `AGT-10`.
@@ -142,16 +143,15 @@ suspicious verdict.
 
 ## 9. `CON` — Constraints
 
-> [!WARNING]
-> `CON-01` is **blocked**: the engine was written when the framework required initial Constraint Engineering
-> allow/deny lists as a Phase-1 deliverable but named no artifact for them. The spec now names it, the prohibitions
-> section of the instruction file ([decision 0001](../../../../../spec/decisions/0001-constraint-artifact.md)), but
-> the engine does not read that section yet. Until it does this check carries weight 0, `CON-02` still reads
-> constraint files rather than the section, and the audit *emits* a draft list derived from the scan (`CON-04`).
+The framework requires initial Constraint Engineering allow/deny lists as a Phase-1 deliverable. The artifact is the
+prohibitions section of the instruction file ([decision 0001](../../../../../spec/decisions/0001-constraint-artifact.md)),
+and `CON-01` and `CON-02` read it through one helper (`prohibitions_section`, `audit/rules/checks/_common.py`). A path or
+pattern is *named* when it stands in a code span of the section. The audit also *emits* a draft list derived from the scan
+(`CON-04`), as a starting point for what to write there.
 
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
-| `CON-01` | Allow/deny artifact present | B | BLOCKER | A machine-readable constraint file exists in the documented location | **Blocked — weight 0 in v1** |
+| `CON-01` | Allow/deny artifact present | B | BLOCKER | The prohibitions section of the instruction file names at least one path or pattern, in a code span, that matches a file or directory of the repository. `PARTIAL` when it names paths and none matches; `FAIL` when it names none; `UNKNOWN` with no instruction file or no section. A code span that is a command, a flag or a bare word that is not a path is not a path | Implemented |
 | `CON-02` | Test directories protected | B | BLOCKER | The prohibitions section of the instruction file names every test directory, or a pattern that covers it, in a code span ([decision 0001](../../../../../spec/decisions/0001-constraint-artifact.md)). A test directory is one named `test`, `tests` or `__tests__`; `spec` and `specs` hold feature specifications. `PARTIAL` names some, `FAIL` none; `UNKNOWN` with no instruction file, no section or no test directory. Constraint files, ignore rules and CI text are not read | Implemented |
 | `CON-03` | `artefacts/` excluded from index and agent reads | B | DEGRADER | Ignore rules cover `artefacts/`, `artifacts/`, and the tool's own state directory | Implemented |
 | `CON-04` | Draft allow/deny emitted | Emitter | — | Writes a draft from the scan: secrets, migrations, generated code, test dirs, IaC, production manifests | Implemented (not scored) |

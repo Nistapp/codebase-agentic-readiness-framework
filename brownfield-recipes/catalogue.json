@@ -1,6 +1,6 @@
 {
-  "catalogue_version": "0.1.0",
-  "fingerprint": "1d909dfea72c4005",
+  "catalogue_version": "0.2.0",
+  "fingerprint": "e33c95eda9f58b9d",
   "checks": [
     {
       "id": "IDX-01",
@@ -592,9 +592,9 @@
       "title": "Allow/deny artifact present",
       "phase": 1,
       "severity": "BLOCKER",
-      "scored": false,
+      "scored": true,
       "method": "automated",
-      "status": "blocked",
+      "status": "implemented",
       "req_ids": [
         "REQ-SH-037"
       ],

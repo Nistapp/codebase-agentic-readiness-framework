@@ -99,6 +99,9 @@ fixtures/
   base-03-no-ratchet/        baseline committed but never compared    -> BASE-03 FAIL
   base-04-no-coverage-floor/ ratchet present, no coverage threshold   -> BASE-04 FAIL
   base-ok/                   baseline + budget + ratchet + floor      -> BASE-01…04 PASS
+  con-01-names-existing-paths/ the "Do Not Do" section names `docs/`, which exists -> CON-01 PASS
+  con-01-names-missing-paths/  it names `legacy/` and `*.bak`, which match nothing    -> CON-01 PARTIAL
+  con-01-names-no-path/        it names no path in a code span                        -> CON-01 FAIL
   con-02-unprotected-tests/  the "Do Not Do" section names `docs/`, not `tests/`  -> CON-02 FAIL
   con-02-protected/          the "Do Not Do" section names `tests/`                -> CON-02 PASS
   con-02-partly-protected/   it names `tests/` but not `e2e/test/`                 -> CON-02 PARTIAL

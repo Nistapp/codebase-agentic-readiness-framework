@@ -725,13 +725,30 @@ class ImportUnattestedTests(ImportCase):
         self.assertIn("TOOL-01", rb.missing_checks(document)["TOOL"])
 
 
+#: What the adapter says on importing each raw report: the engine's score and the report's differ because the report
+#: counts CON-01, which the engine's ruleset (before `2026-10-11.1`) had blocked.
+BLOCKED_CON_01 = (
+    "CON-01: the engine's ruleset did not evaluate it, so it is recorded as UNKNOWN and is scored as the catalogue "
+    "scores it"
+)
 PAIRS = {
     "agentic-tdd": [
+        "the engine's phase-1 score is 0.7311 and the report's is 0.7131; the report's follows "
+        "spec/readiness-summary.md and is the one kept",
         "IDX-02: the evidence path '/home/kc/.cache/codebase-memory-mcp' is not carried: "
-        "the path is absolute, so it is outside the repository"
+        "the path is absolute, so it is outside the repository",
+        BLOCKED_CON_01,
     ],
-    "digital-assistant-sdk": [],
-    "digital-assistant-server": [],
+    "digital-assistant-sdk": [
+        "the engine's phase-1 score is 0.6513 and the report's is 0.6352; the report's follows "
+        "spec/readiness-summary.md and is the one kept",
+        BLOCKED_CON_01,
+    ],
+    "digital-assistant-server": [
+        "the engine's phase-1 score is 0.4244 and the report's is 0.4139; the report's follows "
+        "spec/readiness-summary.md and is the one kept",
+        BLOCKED_CON_01,
+    ],
 }
 
 
@@ -807,7 +824,7 @@ class GoldenPairTests(ImportCase):
                 adapter_warnings = [w for w in envelope["warnings"] if not w.startswith("/")]
                 self.assertEqual(adapter_warnings, expected)
 
-    def test_every_engine_verdict_and_finding_comes_through_and_the_score_is_the_engines(self) -> None:
+    def test_every_engine_verdict_and_finding_comes_through_and_the_score_is_the_engines_but_for_con_01(self) -> None:
         for name in PAIRS:
             with self.subTest(pair=name):
                 draft, _, _, engine, _ = self.run_pair(name)
@@ -817,7 +834,16 @@ class GoldenPairTests(ImportCase):
                     {c["id"]: (c["verdict"], c["verdict"]) for c in engine["checks"]},
                 )
                 self.assertEqual([f["check"] for f in document["findings"]], [f["check"] for f in engine["findings"]])
-                self.assertEqual(document["summary"]["phase1_score"], engine["summary"]["phase1_score"])
+                # The engine's ruleset had blocked CON-01 and left it out of its score; the report counts it, as the
+                # catalogue does. With it left out again, the report's score is the engine's.
+                con_01 = next(c for c in document["checks"] if c["id"] == "CON-01")
+                self.assertEqual(
+                    (con_01["scored"], con_01["verdict"], con_01["summary"]),
+                    (True, "UNKNOWN", "The engine did not evaluate this check: its ruleset had blocked it."),
+                )
+                self.assertLess(document["summary"]["phase1_score"], engine["summary"]["phase1_score"])
+                con_01["scored"] = False
+                self.assertEqual(_summary.compute_summary(document)["phase1_score"], engine["summary"]["phase1_score"])
                 self.assertEqual({c["method"] for c in document["checks"]}, {"automated"})
                 self.assertEqual({f["disposition"] for f in document["findings"]}, {"pending"})
 

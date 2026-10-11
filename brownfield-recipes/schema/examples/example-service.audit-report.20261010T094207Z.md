@@ -12,7 +12,7 @@
 | Status | final |
 | Started | `2026-10-10T09:00:00+00:00` |
 | Finalised | `2026-10-10T09:42:07+00:00` |
-| Recipe | `brownfield-audit` 0.1.0, catalogue `0.1.0` |
+| Recipe | `brownfield-audit` 0.1.0, catalogue `0.2.0` |
 | Engine | `python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2`, scanned `2026-10-10T09:01:30+00:00` |
 | Framework revision | `cafecafecafe` |
 | Agent (self-reported) | `claude-code` with `claude-sonnet-5-5` |

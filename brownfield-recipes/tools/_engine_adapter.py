@@ -54,6 +54,7 @@ UNATTESTED_REQUIREMENTS = {
     "gate-honoured": "REQ-SH-026",
 }
 NOT_APPLICABLE_SUMMARY = "The engine did not run this check: it does not apply to the detected stack."
+BLOCKED_SUMMARY = "The engine did not evaluate this check: its ruleset had blocked it."
 
 STACK_LISTS = ("ecosystems", "package_managers", "ci_providers", "test_frameworks", "hook_managers")
 
@@ -531,16 +532,24 @@ class Converter:
             self.problems.append(f"engine report: {where}/data: the payload of {check_id} has no kind")
             return None
         gathered = [dict(item) for finding in findings for item in finding["evidence"]]
+        blocked = raw["status"] == "blocked"
+        if blocked:
+            self.warnings.append(
+                f"{check_id}: the engine's ruleset did not evaluate it, so it is recorded as UNKNOWN and is scored "
+                "as the catalogue scores it"
+            )
         check: dict[str, Any] = {
             "id": check_id,
             "title": self.cut(raw["title"], maximum("check", "title"), check_id, "title"),
             "phase": raw["phase"],
             "severity": raw["severity"],
-            "scored": raw["scored"] and raw["status"] != "blocked",
+            "scored": entry["scored"] if blocked else raw["scored"],
             "method": "automated",
             "verdict": raw["verdict"],
             "engine_verdict": raw["verdict"],
-            "summary": self.cut(raw["summary"], maximum("check", "summary"), check_id, "summary"),
+            "summary": BLOCKED_SUMMARY
+            if blocked
+            else self.cut(raw["summary"], maximum("check", "summary"), check_id, "summary"),
             "evidence": self.capped(gathered, maximum("check", "evidence", "maxItems") - len(commands), check_id)
             + [dict(item) for item in commands],
             "searches": [],

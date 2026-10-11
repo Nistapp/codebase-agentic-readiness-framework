@@ -90,8 +90,7 @@ class CheckSpec:
                 self.phase,
                 Verdict.UNKNOWN,
                 self.status,
-                summary="blocked: the framework defines no artifact contract for this "
-                "deliverable, so it carries weight 0 in v1 (see CON-01)",
+                summary="blocked: this ruleset cannot evaluate the check, so it carries weight 0",
             )
         if self.impl is None:
             return CheckOutcome(
@@ -186,10 +185,8 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
         "Allow/deny artifact present",
         "B",
         _S.BLOCKER,
-        status="blocked",
-        scored=False,
-        rule="Blocked: the framework requires allow/deny lists in Phase 1 but defines no artifact "
-        "name or schema. Weight 0 in v1; the audit emits a draft instead (CON-04).",
+        rule="The prohibitions section of the instruction file is the deny list (decision 0001): it names at least "
+        "one path or pattern, in a code span, that matches a file or directory of the repository.",
     ),
     _c("CON-02", "Test directories protected", "B", _S.BLOCKER),
     _c("CON-03", "artefacts/ excluded from index and agent reads", "B", _S.DEGRADER),

@@ -58,12 +58,12 @@ baseline has nothing to measure; without a baseline, the constraints have no tee
 `constraints.draft.yaml` is a *draft*, derived from what the scan found: secrets and config, database migrations,
 generated code, test directories, infrastructure-as-code, and production manifests.
 
-> [!WARNING]
-> `CON-01` is unscored in v1 because the engine does not yet read the artifact that the spec defines for initial
-> allow/deny lists, the prohibitions section of the instruction file
-> ([decision 0001](../../../../spec/decisions/0001-constraint-artifact.md)). The draft is a starting point for a
-> human decision, not a conformance claim, and it is not that artifact: paste what you keep into the section.
-> Treat the draft as reviewed infrastructure — the framework records constraint erosion as a named risk.
+> [!NOTE]
+> The artifact the framework asks for as initial allow/deny lists is the prohibitions section of the instruction file
+> ([decision 0001](../../../../spec/decisions/0001-constraint-artifact.md)); `CON-01` and `CON-02` read it. The draft
+> is a starting point for a human decision, not a conformance claim, and it is not that artifact: paste what you
+> keep into the section, each path in a code span. Treat the draft as reviewed infrastructure — the framework
+> records constraint erosion as a named risk.
 
 ### Step 4: Re-scan and compare
 

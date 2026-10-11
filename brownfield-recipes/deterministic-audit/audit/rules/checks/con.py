@@ -5,13 +5,22 @@
 
 Anchor: `brownfield-legacy/Phased-Approach.md` § Key Deliverables ("Allow/deny lists").
 
-Implemented here: `CON-02`, `CON-03`, and the `CON-04` emitter. `CON-01` is deliberately **not**
-touched: the framework requires initial allow/deny lists as a Phase-1 deliverable but defines no
-artifact name or schema, so the registry keeps it `blocked` with weight 0. This pack does not invent
-an artifact contract, and it does not require one.
+Implemented here: `CON-01`, `CON-02`, `CON-03`, and the `CON-04` emitter.
+
+The framework requires initial allow/deny lists as a Phase-1 deliverable, and the spec names the artifact: the
+prohibitions section of the instruction file (decision 0001, ``spec/decisions/0001-constraint-artifact.md``).
+`CON-01` and `CON-02` read it through ``_common.prohibitions_section``; a path or a pattern is *named* when it
+stands in a code span of the section.
 
 What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
 
+* **CON-01** — *the deny list names paths*. The section names at least one path or pattern that matches a file
+  or directory of the repository ⇒ `PASS`. It names paths and none of them matches anything ⇒ `PARTIAL`. It
+  names no path or pattern ⇒ `FAIL`. No instruction file or no prohibitions section ⇒ `UNKNOWN` (`AGT-01` and
+  `AGT-07` report that once). A code span is a path or pattern when it has no command syntax and holds a slash,
+  a glob or a dot, or is a bare word that exists; ``git push --force`` and ``main`` are not paths. A literal
+  path is also looked for on disk, because the scan leaves out ``node_modules/`` and the like, which a deny
+  list often names.
 * **CON-02** — *test directories protected*. Reads the prohibitions section of the entry instruction file
   (``_common.prohibitions_section``; decision 0001, ``spec/decisions/0001-constraint-artifact.md``): a test
   directory is protected when the section names it, or a pattern that covers it, in a code span. Test
@@ -51,6 +60,7 @@ from __future__ import annotations
 
 import fnmatch
 import json
+from itertools import accumulate
 from pathlib import Path
 
 from audit.evaluate import CheckOutcome
@@ -183,17 +193,120 @@ def _present_roots(target: Target, inventory: Inventory) -> list[str]:
 
 
 # ===========================================================================
+# CON-01 — the deny list names paths
+# ===========================================================================
+
+_GLOB_CHARS = "*?["
+#: A code span with one of these in it is a command, a flag or an expression, not a path.
+_NOT_A_PATH_CHARS = frozenset(" \t$|;&<>()'\"=")
+
+
+def _path_like(span: str) -> bool:
+    """Whether a code span reads as a path or a pattern: no command syntax, and a slash, a glob or a dot in it."""
+    if not span or span.startswith("-") or any(char in _NOT_A_PATH_CHARS for char in span):
+        return False
+    return "/" in span or any(char in span for char in _GLOB_CHARS) or "." in span
+
+
+def _repository_paths(inventory: Inventory) -> list[str]:
+    """Every file of the scan and every directory above one, as paths from the root."""
+    paths: set[str] = set()
+    for entry in inventory.files:
+        paths.update(accumulate(entry.rel.split("/"), lambda above, name: f"{above}/{name}"))
+    return sorted(paths)
+
+
+def _exists_in_repository(span: str, target: Target, paths: list[str]) -> bool:
+    """Whether the path or pattern matches a file or directory of the repository.
+
+    The scan leaves out what an ignore rule or the hard excludes name (``node_modules/``, ``dist/``), and those
+    are the paths a deny list most often names, so a literal path is also looked for on disk.
+    """
+    if any(_names_directory(rel, span) for rel in paths):
+        return True
+    core, _anchored, _anywhere = _split_pattern(span)
+    return bool(core) and not any(char in core for char in _GLOB_CHARS) and (target.path / core).exists()
+
+
+def _listed(items: list[str], limit: int = 8) -> str:
+    shown = ", ".join(items[:limit])
+    extra = len(items) - limit
+    return f"{shown} (+{extra} more)" if extra > 0 else shown
+
+
+def check_con01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+    name, text = entry_instruction_file(inventory)
+    if not text:
+        return _unknown(spec, "no instruction file to read; AGT-01 owns that finding")
+    section = prohibitions_section(text)
+    if section is None:
+        return _unknown(spec, f"{name} has no prohibitions section to read; AGT-07 owns that finding")
+
+    paths = _repository_paths(inventory)
+    named: list[tuple[int, str]] = []
+    for line, span in section.code_spans():
+        if (line, span) not in named and (_path_like(span) or _exists_in_repository(span, target, paths)):
+            named.append((line, span))
+    names = [span for _line, span in named]
+    present = [span for span in dict.fromkeys(names) if _exists_in_repository(span, target, paths)]
+    data = PathList(paths=tuple(dict.fromkeys(names)))
+
+    if present:
+        return _outcome(
+            spec,
+            Verdict.PASS,
+            f"the prohibitions section of {name} names paths that exist: {_listed(present)}",
+            data=data,
+        )
+    if named:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"the prohibitions section of {name} names {_listed(list(dict.fromkeys(names)))}, and none of it matches "
+            "a file or directory of the repository",
+            [
+                _finding(
+                    spec,
+                    "trust the deny list to bound what an agent may change",
+                    f"none of the paths the prohibitions section of {name} names "
+                    f"({_listed(list(dict.fromkeys(names)))}) matches a file or directory of this repository",
+                    Verdict.PARTIAL,
+                    [Evidence(name, line=line, note=span) for line, span in named[:12]],
+                    "Name paths that exist in this repository, or patterns that match some of it, in code spans "
+                    f"in the prohibitions section of {name}.",
+                )
+            ],
+            data=data,
+        )
+    return _outcome(
+        spec,
+        Verdict.FAIL,
+        f"the prohibitions section of {name} names no path or pattern",
+        [
+            _finding(
+                spec,
+                "trust the deny list to bound what an agent may change",
+                f"the prohibitions section of {name} names no path or pattern in a code span",
+                Verdict.FAIL,
+                [Evidence(name, line=section.first_line, note=section.headings[0])],
+                "Name each path an agent must not change in a code span in the prohibitions section, for example "
+                "`dist/`, `tests/` and `.env`.",
+            )
+        ],
+        data=data,
+    )
+
+
+# ===========================================================================
 # CON-02 — test directories protected
 # ===========================================================================
 
 
-def _names_directory(rel: str, pattern: str) -> bool:
-    """Whether a path or pattern named in the prohibitions section covers the directory ``rel``.
+def _split_pattern(pattern: str) -> tuple[str, bool, bool]:
+    """``(core, anchored, anywhere)`` of a path or pattern named in the prohibitions section.
 
-    Read as an ignore entry is: a leading ``/`` anchors it to the repository root; a leading ``**/`` lets it
-    start at any depth; one with no slash inside it names a directory of that name at any depth, so ``tests/``
-    covers ``tests`` and ``packages/api/tests``; a trailing ``/``, ``/*`` or ``/**`` names the directory
-    itself; and a path covers every directory under it. A glob is matched with ``fnmatch``.
+    A leading ``/`` anchors it to the repository root, a leading ``**/`` lets it start at any depth, and a
+    trailing ``/``, ``/*`` or ``/**`` only says that the path is a directory. What is left is the ``core``.
     """
     core = pattern.strip()
     anchored = core.startswith("/")
@@ -208,6 +321,17 @@ def _names_directory(rel: str, pattern: str) -> bool:
             if core.endswith(suffix):
                 core = core[: -len(suffix)]
                 changed = True
+    return core, anchored, anywhere
+
+
+def _names_directory(rel: str, pattern: str) -> bool:
+    """Whether a path or pattern named in the prohibitions section covers the path ``rel``.
+
+    Read as an ignore entry is: anchored by a leading ``/``, at any depth after ``**/``, and, with no slash
+    inside it, naming a path of that name at any depth, so ``tests/`` covers ``tests`` and
+    ``packages/api/tests``. A path covers every path under it. A glob is matched with ``fnmatch``.
+    """
+    core, anchored, anywhere = _split_pattern(pattern)
     if not core:
         return False
     if fnmatch.fnmatch(rel, core) or fnmatch.fnmatch(rel, core + "/*"):
@@ -519,6 +643,7 @@ def check_con04(*, spec, target, inventory, stack, components, session) -> Check
 
 
 IMPLEMENTATIONS = {
+    "CON-01": check_con01,
     "CON-02": check_con02,
     "CON-03": check_con03,
     "CON-04": check_con04,

@@ -2,7 +2,7 @@
 
 > **Audience:** Engineers & Maintainers
 > **Related ADRs:** [ADR-0001](../adrs/0001-report-not-a-gate.md) · [ADR-0002](../adrs/0002-read-only-and-tier-c-opt-in.md) · [ADR-0003](../adrs/0003-component-depth-declared-depth-1.md) · [ADR-0004](../adrs/0004-no-llm-in-v1.md) · [ADR-0006](../adrs/0006-private-check-helpers-and-ignore-engine.md)
-> **Status:** Live for every pipeline stage (S0–S13) and every pack — `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` (the `CON-04` draft emitter included) and the informational `HYG` set. All 54 scoreable checks are implemented; only the blocked `CON-01` is not evaluated. The Tier-C probe checks (`IDX-03`, `TST-02`) report `UNKNOWN` unless probes are explicitly permitted, and checks that need certainty the scan cannot provide degrade to `UNKNOWN` rather than guessing.
+> **Status:** Live for every pipeline stage (S0–S13) and every pack — `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` (the `CON-04` draft emitter included) and the informational `HYG` set. All 55 scoreable checks are implemented. The Tier-C probe checks (`IDX-03`, `TST-02`) report `UNKNOWN` unless probes are explicitly permitted, and checks that need certainty the scan cannot provide degrade to `UNKNOWN` rather than guessing.
 
 ---
 

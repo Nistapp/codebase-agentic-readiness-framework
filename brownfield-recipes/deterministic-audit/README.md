@@ -1,6 +1,6 @@
 # python-agentic-audit
 
-> **Status:** v1 complete — the `audit/` package runs end to end, and the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs are live. All 54 scoreable checks are implemented; only the blocked `CON-01` is not evaluated, and the informational `HYG` set is reported with no credit. The fixture matrix covers every check, and a freshly generated `python-agentic-bootstrap` scaffold fails no implemented check. The documentation in [`docs/`](docs/) remains the design of record.
+> **Status:** v1 complete — the `audit/` package runs end to end, and the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs are live. All 55 scoreable checks are implemented, and the informational `HYG` set is reported with no credit. The fixture matrix covers every check, and a freshly generated `python-agentic-bootstrap` scaffold fails no implemented check. The documentation in [`docs/`](docs/) remains the design of record.
 
 `python-agentic-audit` scans an existing repository and reports what to improve so that **AI coding agents can
 work in it effectively**. It is the brownfield half of the agentic-readiness toolchain: `python-agentic-bootstrap`
@@ -20,7 +20,7 @@ against an accepted baseline, so it is safe to introduce into a legacy repositor
 
 | Scored | Reported, never scored | Never claimed |
 |---|---|---|
-| Phase 1 (Bootstrap) of the readiness framework — 54 scoreable checks (69 catalogued, 15 informational, blocked or emitter-only) | Phase 2–4 presence signals, repository hygiene | Whether the index is used, whether baselines are adequate, whether the suite is trustworthy, whether docs are accurate, whether the gate will be honoured |
+| Phase 1 (Bootstrap) of the readiness framework — 55 scoreable checks (69 catalogued, 14 informational or emitter-only) | Phase 2–4 presence signals, repository hygiene | Whether the index is used, whether baselines are adequate, whether the suite is trustworthy, whether docs are accurate, whether the gate will be honoured |
 
 Two axes are always reported separately: **phase** (which framework requirement — provenance) and **severity**
 (blocker / degrader / cosmetic — the work queue).
@@ -135,7 +135,7 @@ All documentation follows the shared [style guide](../docs/STYLE_GUIDE.md), whic
 
 | Version | Scope |
 |---|---|
-| v1 | Python, deterministic, Phase-1 scoring, tiers A–C, JSON + Markdown reports, baseline ratchet, self-verification fixtures. **Current state:** all packs live — `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set (54 of 54 scoreable checks, plus 13 informational reported and never scored; only the blocked `CON-01` is not evaluated) |
+| v1 | Python, deterministic, Phase-1 scoring, tiers A–C, JSON + Markdown reports, baseline ratchet, self-verification fixtures. **Current state:** all packs live — `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set (55 of 55 scoreable checks, plus 13 informational reported and never scored) |
 | v2 | TypeScript npm package with the same contract, matching the scaffolder's distribution path |
 | v3 | `--narrate` (prose only, never verdicts), Phase 2–4 rule packs with real depth, non-JS/TS ecosystem packs |
 

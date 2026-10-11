@@ -208,16 +208,38 @@ class ChecksTests(unittest.TestCase):
                 check = self.one(er.check("TOOL-01", verdict))
                 self.assertEqual((check["verdict"], check["engine_verdict"]), (verdict, verdict))
 
-    def test_a_check_is_scored_only_when_the_engine_scores_it_and_it_is_not_blocked(self) -> None:
-        cases = [
-            (True, "implemented", True),
-            (True, "blocked", False),
-            (False, "implemented", False),
-            (False, "blocked", False),
-        ]
-        for scored, status, expected in cases:
-            with self.subTest(scored=scored, status=status):
-                self.assertIs(self.one(er.check("TOOL-01", scored=scored, status=status))["scored"], expected)
+    def test_a_check_the_engine_ran_is_scored_as_the_engine_scores_it(self) -> None:
+        for status in ("implemented", "planned"):
+            for scored in (True, False):
+                with self.subTest(scored=scored, status=status):
+                    self.assertIs(self.one(er.check("TOOL-01", scored=scored, status=status))["scored"], scored)
+
+    def test_a_check_the_engine_blocked_is_unknown_and_scored_as_the_catalogue_scores_it(self) -> None:
+        # What an engine before ruleset 2026-10-11.1 reported for CON-01: blocked, unscored, UNKNOWN.
+        blocked = er.check("CON-01", "UNKNOWN", scored=False, status="blocked", summary="blocked: no contract")
+        conversion = convert(er.report(TARGET, [blocked]))
+        check = conversion.checks[0]
+        self.assertEqual(
+            (check["verdict"], check["engine_verdict"], check["scored"], check["summary"]),
+            ("UNKNOWN", "UNKNOWN", True, "The engine did not evaluate this check: its ruleset had blocked it."),
+        )
+        self.assertEqual(
+            conversion.warnings,
+            [
+                "CON-01: the engine's ruleset did not evaluate it, so it is recorded as UNKNOWN and is scored as the "
+                "catalogue scores it"
+            ],
+        )
+
+    def test_a_blocked_check_that_the_catalogue_does_not_score_stays_unscored(self) -> None:
+        for scored in (True, False):
+            with self.subTest(scored=scored):
+                check = self.one(er.check("NAV-04", "UNKNOWN", scored=scored, status="blocked"))
+                self.assertIs(check["scored"], False)
+
+    def test_only_a_blocked_check_draws_the_warning_and_the_summary(self) -> None:
+        conversion = convert(er.report(TARGET, [er.check("TOOL-01", "PASS", summary="fine")]))
+        self.assertEqual((conversion.checks[0]["summary"], conversion.warnings), ("fine", []))
 
     def test_the_engines_checks_come_in_the_engines_order(self) -> None:
         engine = er.report(TARGET, [er.check("TOOL-02"), er.check("AGT-01"), er.check("TOOL-01")])

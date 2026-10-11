@@ -7,7 +7,7 @@
       "version": "0.1.0"
     },
     "framework_revision": null,
-    "catalogue_version": "0.1.0",
+    "catalogue_version": "0.2.0",
     "agent": {
       "harness": "claude-code",
       "model": "claude-sonnet-5-5"

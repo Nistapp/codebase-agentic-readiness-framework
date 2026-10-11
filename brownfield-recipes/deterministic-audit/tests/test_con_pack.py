@@ -3,9 +3,9 @@
 
 """CON checks and the CON-04 emitter.
 
-`CON-01` stays blocked by design and is asserted to remain so. `CON-02` is exercised against its
-one-defect fixture and against inline repositories that add a real constraint file, an indirect
-ignore-rule mechanism, and nothing at all. `CON-03`'s tracked half needs git, so those fixtures are
+`CON-01` and `CON-02` read the prohibitions section of the instruction file (decision 0001) and are
+exercised against one fixture for each verdict of the record's table, and against inline repositories for
+the edges. `CON-03`'s tracked half needs git, so those fixtures are
 copied into a temporary git repository — never the audit repo. `CON-04` is an emitter, asserted end
 to end: the draft is written outside the target, is deterministic, and is absent unless requested.
 """
@@ -24,7 +24,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
-from audit.rules.checks.con import _TEST_DIR_NAMES, _names_directory, build_constraint_draft  # noqa: E402
+from audit.rules.checks.con import (  # noqa: E402
+    _TEST_DIR_NAMES,
+    _names_directory,
+    _path_like,
+    _repository_paths,
+    build_constraint_draft,
+)
 from audit.scan import build_inventory  # noqa: E402
 
 CON_CHECKS = ("CON-01", "CON-02", "CON-03", "CON-04")
@@ -49,11 +55,10 @@ class ConFixtureTests(unittest.TestCase):
         failing = sorted(cid for cid in CON_CHECKS if verdicts[cid] == "FAIL")
         self.assertEqual(failing, ["CON-03"], f"unexpected CON FAILs {failing}")
 
-    def test_con01_stays_blocked(self):
+    def test_con01_is_implemented_and_scored(self):
         report = support.run_audit(support.fixture("con-02-unprotected-tests"))
         check = next(c for c in report["checks"] if c["id"] == "CON-01")
-        self.assertEqual(check["status"], "blocked")
-        self.assertEqual(check["verdict"], "UNKNOWN")
+        self.assertEqual((check["status"], check["scored"], check["verdict"]), ("implemented", True, "PASS"))
 
 
 def deny_list(*entries: str, heading: str = "## Do Not Do") -> str:
@@ -65,6 +70,231 @@ def deny_list(*entries: str, heading: str = "## Do Not Do") -> str:
         "folder of documentation that follows the style guide.\n\n## Boundaries\n\n"
         "The application code is in `app.py`.\n\n" + heading + "\n\n" + body + "\n"
     )
+
+
+class Con01Tests(unittest.TestCase):
+    """CON-01 reads the prohibitions section: does it name a path or pattern that exists? Decision 0001's table."""
+
+    def audit(self, files: dict[str, str], dirs: tuple[str, ...] = ()):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "app.py", "print(1)\n")
+            for directory in dirs:
+                (root / directory).mkdir(parents=True, exist_ok=True)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            report = support.run_audit(root)
+        check = next(c for c in report["checks"] if c["id"] == "CON-01")
+        return check, [f for f in report["findings"] if f["check"] == "CON-01"]
+
+    def named(self, *entries: str, files: dict[str, str] | None = None, dirs: tuple[str, ...] = ()):
+        return self.audit({"AGENTS.md": deny_list(*entries), **(files or {})}, dirs)
+
+    def test_pass_when_the_section_names_a_path_that_exists(self):
+        report = support.run_audit(support.fixture("con-01-names-existing-paths"))
+        check = next(c for c in report["checks"] if c["id"] == "CON-01")
+        self.assertEqual(
+            (check["verdict"], check["summary"], check["status"], check["scored"]),
+            ("PASS", "the prohibitions section of AGENTS.md names paths that exist: docs/", "implemented", True),
+        )
+        self.assertEqual(check["data"]["paths"], ["docs/", "*.pem", ".env"])
+        self.assertEqual([f for f in report["findings"] if f["check"] == "CON-01"], [])
+
+    def test_partial_when_the_section_names_paths_and_none_matches_anything(self):
+        report = support.run_audit(support.fixture("con-01-names-missing-paths"))
+        check = next(c for c in report["checks"] if c["id"] == "CON-01")
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "PARTIAL",
+                "the prohibitions section of AGENTS.md names legacy/, *.bak, scratch/, and none of it matches a "
+                "file or directory of the repository",
+            ),
+        )
+        self.assertEqual(
+            [f for f in report["findings"] if f["check"] == "CON-01"],
+            [
+                {
+                    "id": "CON-01",
+                    "check": "CON-01",
+                    "phase": 1,
+                    "severity": "BLOCKER",
+                    "verdict": "PARTIAL",
+                    "statement": "An agent cannot trust the deny list to bound what an agent may change because none "
+                    "of the paths the prohibitions section of AGENTS.md names (legacy/, *.bak, scratch/) matches a "
+                    "file or directory of this repository.",
+                    "evidence": [
+                        {"path": "AGENTS.md", "line": 12, "note": "legacy/"},
+                        {"path": "AGENTS.md", "line": 13, "note": "*.bak"},
+                        {"path": "AGENTS.md", "line": 13, "note": "scratch/"},
+                    ],
+                    "remediation": "Name paths that exist in this repository, or patterns that match some of it, in "
+                    "code spans in the prohibitions section of AGENTS.md.",
+                }
+            ],
+        )
+
+    def test_fail_when_the_section_names_no_path_or_pattern(self):
+        report = support.run_audit(support.fixture("con-01-names-no-path"))
+        check = next(c for c in report["checks"] if c["id"] == "CON-01")
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("FAIL", "the prohibitions section of AGENTS.md names no path or pattern"),
+        )
+        self.assertEqual(
+            [f for f in report["findings"] if f["check"] == "CON-01"],
+            [
+                {
+                    "id": "CON-01",
+                    "check": "CON-01",
+                    "phase": 1,
+                    "severity": "BLOCKER",
+                    "verdict": "FAIL",
+                    "statement": "An agent cannot trust the deny list to bound what an agent may change because the "
+                    "prohibitions section of AGENTS.md names no path or pattern in a code span.",
+                    "evidence": [{"path": "AGENTS.md", "line": 10, "note": "Do Not Do"}],
+                    "remediation": "Name each path an agent must not change in a code span in the prohibitions "
+                    "section, for example `dist/`, `tests/` and `.env`.",
+                }
+            ],
+        )
+        self.assertEqual(check["data"]["paths"], [])
+
+    def test_unknown_with_no_instruction_file_and_agt_01_owns_it(self):
+        check, findings = self.audit({})
+        self.assertEqual(
+            (check["verdict"], check["summary"], findings),
+            ("UNKNOWN", "no instruction file to read; AGT-01 owns that finding", []),
+        )
+
+    def test_unknown_with_no_prohibitions_section_and_agt_07_owns_it(self):
+        check, findings = self.audit({"AGENTS.md": deny_list("Never edit `docs/`.", heading="## Commands")})
+        self.assertEqual(
+            (check["verdict"], check["summary"], findings),
+            ("UNKNOWN", "AGENTS.md has no prohibitions section to read; AGT-07 owns that finding", []),
+        )
+
+    def test_a_command_a_flag_a_branch_and_a_word_are_not_paths(self):
+        check, _ = self.named("Never run `git push --force` on `main`.", "Never `rm -rf` or `$HOME/x` or `a=b`.")
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("FAIL", "the prohibitions section of AGENTS.md names no path or pattern"),
+        )
+
+    def test_a_bare_word_that_is_a_directory_of_the_repository_is_a_path(self):
+        check, _ = self.named("Never edit `docs`.", dirs=("docs",))
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PASS", "the prohibitions section of AGENTS.md names paths that exist: docs"),
+        )
+
+    def test_a_file_a_glob_and_a_directory_above_a_file_all_match(self):
+        files = {"certs/server.pem": "x\n", "keys/a/b/c.key": "x\n"}
+        for entry in ("`app.py`", "`*.pem`", "`certs/`", "`certs`", "`**/*.key`", "`/certs/server.pem`", "`keys/a/`"):
+            with self.subTest(entry=entry):
+                check, _ = self.named(f"Never edit {entry}.", files=files)
+                self.assertEqual(check["verdict"], "PASS")
+
+    def test_a_path_the_scan_leaves_out_is_still_found_on_disk(self):
+        check, _ = self.named("Never edit `node_modules/` or `dist/`.", dirs=("node_modules/pkg", "dist"))
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PASS", "the prohibitions section of AGENTS.md names paths that exist: node_modules/, dist/"),
+        )
+
+    def test_a_path_under_a_directory_that_does_not_exist_is_missing(self):
+        check, _ = self.named("Never edit `nowhere/file.txt` or `nowhere/`.")
+        self.assertEqual(check["verdict"], "PARTIAL")
+
+    def test_the_names_are_listed_once_each_and_at_most_eight_are_shown(self):
+        entries = tuple(f"Never edit `dir{n}/`." for n in range(10)) + ("Never edit `dir0/` again.",)
+        dirs = tuple(f"dir{n}" for n in range(10))
+        check, _ = self.named(*entries, dirs=dirs)
+        self.assertEqual(
+            check["summary"],
+            "the prohibitions section of AGENTS.md names paths that exist: dir0/, dir1/, dir2/, dir3/, dir4/, dir5/, "
+            "dir6/, dir7/ (+2 more)",
+        )
+        self.assertEqual(check["data"]["paths"], [f"dir{n}/" for n in range(10)])
+
+    def test_eight_names_are_all_shown_and_nine_say_how_many_are_left_out(self):
+        for count, suffix in ((8, ""), (9, " (+1 more)")):
+            with self.subTest(count=count):
+                entries = tuple(f"Never edit `dir{n}/`." for n in range(count))
+                check, _ = self.named(*entries, dirs=tuple(f"dir{n}" for n in range(count)))
+                names = ", ".join(f"dir{n}/" for n in range(8))
+                self.assertEqual(
+                    check["summary"], f"the prohibitions section of AGENTS.md names paths that exist: {names}{suffix}"
+                )
+
+    def test_the_evidence_of_a_partial_is_cut_at_twelve_spans(self):
+        entries = tuple(f"Never edit `gone{n}/`." for n in range(14))
+        _, findings = self.named(*entries)
+        self.assertEqual(len(findings[0]["evidence"]), 12)
+        self.assertEqual(findings[0]["evidence"][0]["note"], "gone0/")
+        self.assertEqual(findings[0]["evidence"][-1]["note"], "gone11/")
+
+    def test_a_path_outside_the_section_is_not_named(self):
+        text = deny_list("Never commit a secret.").replace("`app.py`", "`app.py` and `docs/`")
+        check, _ = self.audit({"AGENTS.md": text}, dirs=("docs",))
+        self.assertEqual(check["verdict"], "FAIL")
+
+    def test_claude_md_is_read_when_there_is_no_agents_md(self):
+        check, _ = self.audit({"CLAUDE.md": deny_list("Never edit `app.py`.")})
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PASS", "the prohibitions section of CLAUDE.md names paths that exist: app.py"),
+        )
+
+
+class PathLikeTests(unittest.TestCase):
+    def test_what_reads_as_a_path_or_a_pattern(self):
+        for span in (
+            "dist/",
+            "src/app.py",
+            ".env",
+            "package.json",
+            "*.pem",
+            "a?b",
+            "a[bc]",
+            "**/x",
+            "/abs/path",
+            "v1.2",
+        ):
+            with self.subTest(span=span):
+                self.assertTrue(_path_like(span))
+
+    def test_what_does_not(self):
+        for span in (
+            "",
+            "main",
+            "true",
+            "git push",
+            "--force",
+            "-f",
+            "$HOME/x",
+            "a|b",
+            "a;b",
+            "a&b",
+            "a<b",
+            "a>b",
+            "f(x)",
+            "'x'",
+            '"x"',
+            "a=b",
+            "a\tb",
+            "--include/x",
+            "-r/x",
+        ):
+            with self.subTest(span=span):
+                self.assertFalse(_path_like(span))
+
+    def test_the_paths_of_a_scan_are_its_files_and_every_directory_above_them(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "a/b/c.txt", "x\n")
+            support.write(root, "top.txt", "x\n")
+            self.assertEqual(_repository_paths(build_inventory(root)), ["a", "a/b", "a/b/c.txt", "top.txt"])
 
 
 class Con02Tests(unittest.TestCase):

@@ -202,7 +202,14 @@ class ExamplesTests(unittest.TestCase):
             drafts = list(raw_path.parent.glob(f"{label}.audit-draft.*.json"))
             self.assertEqual(len(drafts), 1, raw_path.name)
             raw = json.loads(raw_path.read_text(encoding="utf-8"))
-            ours = _summary.compute_summary(json.loads(drafts[0].read_text(encoding="utf-8")))
+            draft = json.loads(drafts[0].read_text(encoding="utf-8"))
+            # A check the engine's ruleset blocked did not run: the draft scores it as the catalogue does, the engine's
+            # own number does not, so the engine's number is what the draft's is with that check left unscored.
+            blocked = {check["id"] for check in raw["checks"] if check["status"] == "blocked"}
+            for check in draft["checks"]:
+                if check["id"] in blocked:
+                    check["scored"] = False
+            ours = _summary.compute_summary(draft)
             with self.subTest(report=raw_path.name, stamp=stamp):
                 self.assertEqual(ours["phase1_score"], raw["summary"]["phase1_score"])
                 self.assertEqual(ours["scored_checks"], raw["summary"]["checks_scoreable"])
