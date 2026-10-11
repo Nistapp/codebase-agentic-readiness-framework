@@ -11,10 +11,10 @@
 
 Phase 1 of the framework asks a repository to "establish initial Constraint Engineering allow/deny lists" ([Phased-Approach.md](../../brownfield-legacy/Phased-Approach.md#activities)). Its Key Deliverables table gives the form as "Config files" and the consumer as agents. It names no file and no schema. Constraint Engineering itself is described in [Overview.md](../../shared/Overview.md#constraint-engineering).
 
-The audit engine could not check what no document defined:
+The audit engine could not check what no document defined. Before it adopted this decision:
 
-* `CON-01` ("Allow/deny artifact present") is blocked and carries weight 0.
-* `CON-02` ("Test directories protected") accepts one of about twenty root-level file names, such as `.cursorignore`, `constraints.yaml` and `denylist.txt`. Without one it falls back to ignore rules and to CI text, and never passes.
+* `CON-01` ("Allow/deny artifact present") was blocked and carried weight 0.
+* `CON-02` ("Test directories protected") accepted one of about twenty root-level file names, such as `.cursorignore`, `constraints.yaml` and `denylist.txt`. Without one it fell back to ignore rules and to CI text, and never passed.
 * Two equally well-governed repositories got different verdicts depending on the file name they happened to choose.
 
 An agent reads the instruction file at the start of every session. It reads no other file unless its harness is configured to. The framework's own template already has a "Do Not Do" section in that file ([greenfield `AGENTS.md`](../../greenfield-bootstrap/templates/AGENTS.md), section 10).
@@ -82,17 +82,6 @@ A prohibitions entry *names a path* when the path, or a pattern that covers it, 
 * The list is a statement, not a mechanism. An agent can ignore it, and optional native configuration is how a team enforces it.
 * A repository governed through ignore files loses the credit it had under the old `CON-02`.
 * The Key Deliverables table in [Phased-Approach.md](../../brownfield-legacy/Phased-Approach.md#key-deliverables) says "Config files". The spec reads that as the instruction file, and the table's wording is left to the framework's maintainer.
-
-### Engine changes not yet made
-
-The engine still behaves as described in the Context. These changes are planned, and this list is removed once they are done:
-
-1. **`CON-02`: stop reading `spec` and `specs` as test directories.** The framework's own `specs/` holds feature specifications. On a freshly generated scaffold `CON-02` names `specs/` today. This must come before change 3, or the scaffold would fail a BLOCKER check.
-2. **One helper that finds the prohibitions section**, used by `AGT-07`, `CON-01` and `CON-02`, so heading detection cannot drift between them. `AGT-07` keeps scanning the whole file for the four concerns.
-3. **`CON-02`: read the section.** Remove the constraint-file names, the ignore-rule fallback and the CI-text fallback. One fixture per verdict.
-4. **`CON-01`: implement and score it**, per the table above, with one fixture per verdict. The scored-check count and the score change, so the ruleset hash and the example reports change with them.
-5. **`CON-04`: emit Markdown**, keep the six categories and the path matchers, and drop the YAML renderer.
-6. **Documents:** the `CON` section of the engine's check catalogue, the pack's docstring, the registry text and the remediation how-to follow the code. The engine's changelog records the verdict changes.
 
 ---
 

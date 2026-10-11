@@ -37,6 +37,12 @@
 | [1. Scan Engine & Tiering](contributor-deep-dive/01-scan-engine-and-tiering.md) | Pipeline stages, bounded traversal, stage contracts, determinism, self-verification | Published |
 | [2. Check Catalogue](contributor-deep-dive/02-check-catalogue.md) | Every check: id, tier, phase, severity, evidence rule, implementation status | Published |
 
+## Reference
+
+| Page | Purpose | Status |
+|---|---|---|
+| [Changelog](../reference/changelog.md) | What changed between ruleset revisions, and which verdicts move | Live |
+
 ## How-To (Task Track)
 
 | Page | Purpose | Status |
