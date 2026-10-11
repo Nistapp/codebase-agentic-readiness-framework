@@ -18,6 +18,10 @@ checks (`TOOL-01`…`06`) are exercised by `../test_tool_pack.py`; the `CI` chec
 `../test_con_pack.py`; and the informational `HYG` checks (`HYG-01`…`11`) by
 `../test_hyg_pack.py`.
 
+A fixture is correct for the runner it names, not only for the engine. `../test_make_fixtures.py` runs
+`make -n -f <fixture>/Makefile check` on every fixture that has a `Makefile`, when `make` is installed, and requires
+success for all but `cmd-01-make-parse-error`, which it requires Make to refuse with the message the engine reports.
+
 ## Convention
 
 ```
