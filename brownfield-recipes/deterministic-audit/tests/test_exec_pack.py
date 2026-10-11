@@ -85,6 +85,84 @@ class ExecFixtureTests(unittest.TestCase):
         )
 
 
+class Exec01MessageTests(unittest.TestCase):
+    """What a person reads when EXEC-01 finds a toolchain with no pin, and when every one is pinned."""
+
+    def audit(self, files: dict[str, str]):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            report = support.run_audit(root)
+        check = next(c for c in report["checks"] if c["id"] == "EXEC-01")
+        return check, [f for f in report["findings"] if f["check"] == "EXEC-01"]
+
+    def test_an_unpinned_node_project(self):
+        check, findings = self.audit({"package.json": '{"name": "x"}\n'})
+        self.assertEqual((check["verdict"], check["summary"]), ("FAIL", "unpinned: node"))
+        self.assertEqual(
+            findings,
+            [
+                {
+                    "id": "EXEC-01:node",
+                    "check": "EXEC-01",
+                    "phase": 1,
+                    "severity": "BLOCKER",
+                    "verdict": "FAIL",
+                    "statement": "An agent cannot reproduce the node toolchain because the detected node project pins "
+                    "no toolchain version.",
+                    "evidence": [],
+                    "remediation": "Commit the pin appropriate to node — .nvmrc, .node-version — so the agent's "
+                    "runtime is the repository's, not the host's.",
+                }
+            ],
+        )
+
+    def test_an_ecosystem_with_no_pin_file_of_its_own_is_pointed_at_tool_versions(self):
+        _, findings = self.audit({"go.mod": "module x\n"})
+        self.assertEqual(
+            findings[0]["remediation"],
+            "Commit the pin appropriate to go — .tool-versions — so the agent's runtime is the repository's, not "
+            "the host's.",
+        )
+
+    def test_unpinned_ecosystems_are_named_in_order_in_the_summary_and_each_has_an_id(self):
+        check, findings = self.audit({"package.json": '{"name": "x"}\n', "go.mod": "module x\n", "Gemfile": "\n"})
+        self.assertEqual(check["summary"], "unpinned: go, node, ruby")
+        self.assertEqual([f["id"] for f in findings], ["EXEC-01:go", "EXEC-01:node", "EXEC-01:ruby"])
+
+    def test_every_pinned_ecosystem_is_named_with_its_evidence(self):
+        files = {
+            "package.json": '{"name": "x"}\n',
+            ".nvmrc": "20\n",
+            "pyproject.toml": "[project]\n",
+            ".python-version": "3.11\n",
+        }
+        check, findings = self.audit(files)
+        self.assertEqual(
+            (check["verdict"], check["summary"], findings),
+            ("PASS", "pinned: node (.nvmrc); python (.python-version)", []),
+        )
+
+    def test_an_ecosystem_pinned_in_two_places_names_both(self):
+        files = {"package.json": '{"name": "x", "engines": {"node": ">=20"}}\n', ".nvmrc": "20\n"}
+        check, _ = self.audit(files)
+        self.assertEqual(check["summary"], "pinned: node (.nvmrc, package.json (engines.node))")
+
+    def test_one_pinned_and_one_not_is_a_fail_naming_only_the_unpinned(self):
+        files = {"package.json": '{"name": "x"}\n', ".nvmrc": "20\n", "go.mod": "module x\n"}
+        check, findings = self.audit(files)
+        self.assertEqual((check["verdict"], check["summary"]), ("FAIL", "unpinned: go"))
+        self.assertEqual([f["id"] for f in findings], ["EXEC-01:go"])
+
+    def test_without_any_ecosystem_the_check_cannot_choose_a_pin(self):
+        check, findings = self.audit({"README.md": "# x\n"})
+        self.assertEqual(
+            (check["verdict"], check["summary"], findings),
+            ("UNKNOWN", "no recognised ecosystem, so no toolchain pin can be chosen", []),
+        )
+
+
 class Exec02LockfilePathTests(unittest.TestCase):
     """A lockfile is found at any depth, and is tracked or not by the path it was found at."""
 
@@ -230,6 +308,28 @@ class Exec02MessageTests(unittest.TestCase):
         )
         self.assertEqual(findings, [])
 
+    def test_every_ecosystem_recognised_from_source_alone_is_named(self):
+        from audit.rules.checks.execution import check_exec02
+        from audit.rules.registry import REGISTRY_BY_ID
+        from audit.scan import build_inventory
+        from audit.stack import Stack
+
+        with tempfile.TemporaryDirectory() as tmp:
+            stack = Stack(ecosystems={"python", "ruby"}, source_only={"python", "ruby"})
+            outcome = check_exec02(
+                spec=REGISTRY_BY_ID["EXEC-02"],
+                target=None,
+                inventory=build_inventory(Path(tmp)),
+                stack=stack,
+                components=None,
+                session=None,
+            )
+        self.assertEqual(
+            outcome.summary,
+            "python, ruby was recognised from its source files and no manifest declares dependencies, so no "
+            "lockfile is expected",
+        )
+
     def test_a_manifest_in_a_project_that_also_has_source_still_expects_its_lockfile(self):
         check, findings = self.audit({"pyproject.toml": "[project]\nname = 'x'\n", "src/app.py": "print(1)\n"})
         self.assertEqual(check["verdict"], "FAIL")
@@ -276,6 +376,20 @@ class Exec02MessageTests(unittest.TestCase):
                 )
             ],
         )
+
+    def test_each_kind_of_finding_has_an_id_of_its_own(self):
+        _, findings = self.audit({"package.json": self.NODE})
+        self.assertEqual([f["id"] for f in findings], ["EXEC-02:node"])
+        locks = {"a/package-lock.json": "{}\n", "z/package-lock.json": "{}\n"}
+        _, findings = self.audit({"package.json": self.NODE, **locks}, track=("package.json",))
+        self.assertEqual([f["id"] for f in findings], ["EXEC-02:a/package-lock.json"])
+        manifest = '{"dependencies": {"left-pad": "1"}}\n'
+        _, findings = self.audit({"package.json": manifest, "package-lock.json": self.OTHER_LOCK})
+        self.assertEqual([f["id"] for f in findings], ["EXEC-02:package-lock.json"])
+
+    def test_two_ecosystems_without_a_lockfile_are_two_findings_with_two_ids(self):
+        _, findings = self.audit({"package.json": self.NODE, "Cargo.toml": "[package]\n", "go.mod": "module x\n"})
+        self.assertEqual([f["id"] for f in findings], ["EXEC-02:go", "EXEC-02:node", "EXEC-02:rust"])
 
     def test_the_first_twelve_missing_dependencies_are_named(self):
         deps = ", ".join(f'"d{i:02d}": "1"' for i in range(13))

@@ -158,6 +158,7 @@ def check_exec01(*, spec, target, inventory, stack, components, session) -> Chec
                 remediation=f"Commit the pin appropriate to {ecosystem} — "
                 f"{', '.join(_PIN_FILES.get(ecosystem) or ('.tool-versions',))} "
                 f"— so the agent's runtime is the repository's, not the host's.",
+                path=ecosystem,
             )
         )
 
@@ -439,6 +440,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
                         f"whatever versions are current",
                     ),
                     remediation="Generate the lockfile with the project's package manager and commit it.",
+                    path=ecosystem,
                 )
             )
             continue
@@ -457,6 +459,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
                     evidence=[Evidence(p) for p in sorted(candidates)],
                     remediation="Commit the lockfile; add it to .gitignore only if the team has "
                     "deliberately chosen floating dependencies.",
+                    path=sorted(candidates)[0],
                 )
             )
             continue
@@ -475,6 +478,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
                     ),
                     evidence=[Evidence(lockfile, note="lockfile out of step with the manifest")],
                     remediation="Re-run the package manager's install/lock step and commit the updated lockfile.",
+                    path=lockfile,
                 )
             )
         elif state == "unverified":
