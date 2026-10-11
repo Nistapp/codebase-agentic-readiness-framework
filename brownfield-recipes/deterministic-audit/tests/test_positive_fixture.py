@@ -92,6 +92,11 @@ class PositiveFixtureTests(unittest.TestCase):
         failing = sorted(check for check in scoreable if verdicts[check] == "FAIL")
         self.assertEqual(failing, [], f"a freshly scaffolded project fails {failing}")
 
+        # Decision 0001: the scaffold's "Do Not Do" section names `docs/` and `artefacts/`, which it has, so the deny
+        # list names paths that exist; and it has no test directory yet (`specs/` holds feature specifications), so
+        # there is nothing to protect. If either differs, the engine is wrong, not this expectation.
+        self.assertEqual((verdicts["CON-01"], verdicts["CON-02"]), ("PASS", "UNKNOWN"))
+
         blockers = [f for f in report["findings"] if f["check"] in scoreable and f["severity"] == "BLOCKER"]
         self.assertEqual(blockers, [], f"BLOCKER findings among scoreable checks: {blockers}")
 
