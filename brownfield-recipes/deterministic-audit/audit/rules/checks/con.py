@@ -12,17 +12,14 @@ an artifact contract, and it does not require one.
 
 What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
 
-* **CON-02** — *test directories protected*. Test directories are located from the scan (a directory
-  segment named ``test``/``tests``/``__tests__``; ``spec`` and ``specs`` hold feature specifications, not
-  tests) plus the filesystem. A
-  dedicated constraint / allow-deny file — a documented name set of agent ignore files
-  (``.cursorignore``, ``.aiderignore``, …) and explicit constraint files
-  (``constraints.yaml``/``.json``, ``allowlist.txt``/``denylist.txt``) — that denies every test
-  directory is a `PASS`; one that denies only some is `PARTIAL`; one that denies none is `FAIL`.
-  With **no** constraint file the premise is absent, so the check never passes: ignore rules or a
-  CI guard that protects the test
-  directories is a `PARTIAL` (the mechanism is named), and nothing at all is `UNKNOWN`. Because
-  CON-01 defines no artifact, this check is deliberately artifact-agnostic and never requires one.
+* **CON-02** — *test directories protected*. Reads the prohibitions section of the entry instruction file
+  (``_common.prohibitions_section``; decision 0001, ``spec/decisions/0001-constraint-artifact.md``): a test
+  directory is protected when the section names it, or a pattern that covers it, in a code span. Test
+  directories are located from the scan (a directory segment named ``test``/``tests``/``__tests__``; ``spec``
+  and ``specs`` hold feature specifications, not tests) plus the filesystem. The section names every one ⇒
+  `PASS`; some ⇒ `PARTIAL`; none ⇒ `FAIL`. No instruction file or no prohibitions section ⇒ `UNKNOWN`, since
+  `AGT-01` and `AGT-07` report that once and the check does not pile on, and so is a repository with no test
+  directory. Constraint files, ignore rules and CI text are not read: they are not the artifact.
 * **CON-03** — *`artefacts/` excluded from the index and agent reads*. Candidate roots are the
   scratch spellings (``artefacts``, ``artifacts``) and the agent/tool state directories
   (``.codebase-memory``, ``.opencode``, ``.agentic-tdd``). A root that exists is covered when an
@@ -40,55 +37,29 @@ directory the report is written to, gated by the already-reserved ``--emit-basel
 filename the remediation how-to already names (``docs/how-to/hand-findings-to-remediation.md``).
 The emitter writes to a module-level target set by the CLI before the scan; nothing else reads it.
 
-Deliberate limits, recorded rather than hidden. Ignore matching is the documented subset in
-``audit.ignore`` (anchoring and ``**`` approximated). Constraint-file detection is a documented
-**root-level** name set, not a schema; a constraint file under an unrecognised name, format or
-depth is not seen and degrades to the ignore/CI fallback. Test-directory discovery is
-directory-based; a suite laid out as loose ``*_test.py`` files with no test-named directory is not
-seen and degrades to `UNKNOWN`. CI
-protection is a textual heuristic (a workflow line that names a test directory together with a
-deny/protect keyword). The emitter writes exactly one artifact (``constraints.draft.yaml``); the
-other S12 remediation inputs are out of scope for this pack.
+Deliberate limits, recorded rather than hidden. Ignore matching (``CON-03``) is the documented subset in
+``audit.ignore`` (anchoring and ``**`` approximated). The prohibitions section is prose, so ``CON-02`` is a
+heuristic: a path written without backticks is not seen, and a pattern is read like an ignore entry (a
+leading ``/`` anchors it, a leading ``**/`` is any depth, one with no inner slash names a directory of that
+name at any depth, ``fnmatch`` globs). Test-directory discovery is directory-based; a suite laid out as
+loose ``*_test.py`` files with no test-named directory is not seen and degrades to `UNKNOWN`, and so is a
+Ruby ``spec/`` directory. The emitter writes exactly one artifact (``constraints.draft.yaml``); the other S12
+remediation inputs are out of scope for this pack.
 """
 
 from __future__ import annotations
 
 import fnmatch
 import json
-import re
 from pathlib import Path
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.ignore import load_ignore_rules
-from audit.rules.checks._common import tracked_in_scope
+from audit.rules.checks._common import entry_instruction_file, prohibitions_section, tracked_in_scope
 from audit.scan import Inventory, Kind
 from audit.target import Target
 from audit.rules.payloads import PathList, Payload
-
-#: Constraint / allow-deny files, matched at the repository root. A documented name set, not a
-#: schema: the framework names no artifact (CON-01), so the pack recognises the common spellings.
-_CONSTRAINT_FILES: tuple[str, ...] = (
-    ".agentignore",
-    ".aiignore",
-    ".cursorignore",
-    ".aiderignore",
-    ".rooignore",
-    ".codeiumignore",
-    ".copilotignore",
-    ".geminiignore",
-    ".claudeignore",
-    ".codebaseignore",
-    ".agenticignore",
-    "constraints.yaml",
-    "constraints.yml",
-    "constraints.json",
-    "constraints.draft.yaml",
-    "allowlist.txt",
-    "denylist.txt",
-    "allowlist",
-    "denylist",
-)
 
 #: Directory names that make a directory a test directory. `spec` and `specs` are not among them: the framework's own
 #: `specs/` folder holds feature specifications (spec-driven development), not tests, so a repository that follows
@@ -99,20 +70,6 @@ _TEST_DIR_NAMES: frozenset[str] = frozenset({"test", "tests", "__tests__"})
 _SCRATCH_ROOTS: tuple[str, ...] = ("artefacts", "artifacts")
 _STATE_ROOTS: tuple[str, ...] = (".codebase-memory", ".opencode", ".agentic-tdd")
 _CON_ROOTS: tuple[str, ...] = _SCRATCH_ROOTS + _STATE_ROOTS
-
-#: CI workflow locations read for a textual protect-guard, and the guard keyword.
-_CI_FILES: tuple[str, ...] = (
-    ".github/workflows/*.yml",
-    ".github/workflows/*.yaml",
-    ".gitlab-ci.yml",
-    "Jenkinsfile",
-    "azure-pipelines.yml",
-    ".circleci/config.yml",
-)
-_CI_PROTECT_RE = re.compile(
-    r"(?i)\b(?:deny|denied|forbid|protect(?:ed|ion)?|read[- ]?only"
-    r"|no[- ]?edit|immutable)\b"
-)
 
 #: The draft artifact CON-04 writes, beside the report under ``--out``.
 DRAFT_FILENAME = "constraints.draft.yaml"
@@ -200,36 +157,6 @@ def _covered(rel: str, patterns: list[str]) -> bool:
     return any(_pattern_covers(rel, pattern) for pattern in patterns)
 
 
-def _constraint_files(inventory: Inventory) -> list[str]:
-    """Constraint/allow-deny files at the repository root.
-
-    Root-level by design, mirroring ``audit.ignore.load_ignore_rules``: the framework names no
-    location, the root is the least-surprising convention, and it keeps a nested fixture's ignore
-    file from being read as a top-level governance artifact. A nested constraint file is not seen
-    (a documented limit) and degrades to the ignore/CI fallback.
-    """
-    present = {entry.rel for entry in inventory.files}
-    return sorted(name for name in _CONSTRAINT_FILES if name in present)
-
-
-def _patterns_in(text: str) -> list[str]:
-    """Best-effort patterns from a constraint file's lines (ignore-style or YAML list entries).
-
-    Not a parser: comments are dropped, list/bullet markers and quotes are stripped, and a line
-    is split on the YAML flow delimiters so ``deny: [tests, src]`` yields both entries.
-    """
-    patterns: list[str] = []
-    for raw in text.splitlines():
-        line = raw.split("#", 1)[0].strip()
-        if not line:
-            continue
-        for token in re.split(r"[,\[\]{}]", line):
-            token = token.strip().strip("'\"").lstrip("-*").strip().strip("'\"")
-            if token:
-                patterns.append(token)
-    return patterns
-
-
 def _describe(roots: list[str], limit: int = 8) -> str:
     """A bounded, deterministic rendering of a root list for details and findings."""
     shown = ", ".join(root + "/" for root in roots[:limit])
@@ -260,113 +187,96 @@ def _present_roots(target: Target, inventory: Inventory) -> list[str]:
 # ===========================================================================
 
 
-def _ci_protection(inventory: Inventory, test_roots: list[str]) -> list[str]:
-    """CI workflow files with a line naming a test directory and a deny/protect keyword."""
-    names = {root.rsplit("/", 1)[-1] for root in test_roots}
-    hits: set[str] = set()
-    for pattern in _CI_FILES:
-        for rel in inventory.match(pattern):
-            text = inventory.read(rel)
-            if not text:
-                continue
-            for line in text.splitlines():
-                if _CI_PROTECT_RE.search(line) and any(name in line for name in names):
-                    hits.add(rel)
-                    break
-    return sorted(hits)
+def _names_directory(rel: str, pattern: str) -> bool:
+    """Whether a path or pattern named in the prohibitions section covers the directory ``rel``.
+
+    Read as an ignore entry is: a leading ``/`` anchors it to the repository root; a leading ``**/`` lets it
+    start at any depth; one with no slash inside it names a directory of that name at any depth, so ``tests/``
+    covers ``tests`` and ``packages/api/tests``; a trailing ``/``, ``/*`` or ``/**`` names the directory
+    itself; and a path covers every directory under it. A glob is matched with ``fnmatch``.
+    """
+    core = pattern.strip()
+    anchored = core.startswith("/")
+    core = core.lstrip("/")
+    anywhere = core.startswith("**/")
+    if anywhere:
+        core = core[3:]
+    changed = True
+    while changed:
+        changed = False
+        for suffix in ("/**", "/*", "/"):
+            if core.endswith(suffix):
+                core = core[: -len(suffix)]
+                changed = True
+    if not core:
+        return False
+    if fnmatch.fnmatch(rel, core) or fnmatch.fnmatch(rel, core + "/*"):
+        return True
+    if anchored:
+        return False
+    if anywhere:
+        return fnmatch.fnmatch(rel, "*/" + core) or fnmatch.fnmatch(rel, core)
+    return fnmatch.fnmatch(rel.split("/")[-1], core)
 
 
 def check_con02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+    name, text = entry_instruction_file(inventory)
+    if not text:
+        return _unknown(spec, "no instruction file to read; AGT-01 owns that finding")
+    section = prohibitions_section(text)
+    if section is None:
+        return _unknown(spec, f"{name} has no prohibitions section to read; AGT-07 owns that finding")
+
     test_roots = _test_roots(target, inventory)
     if not test_roots:
         return _unknown(spec, "no test directories detected, so there is nothing for a deny list to protect")
 
+    named = [span for _line, span in section.code_spans()]
+    covered = [root for root in test_roots if any(_names_directory(root, pattern) for pattern in named)]
+    uncovered = [root for root in test_roots if root not in covered]
     listed = _describe(test_roots)
-    files = _constraint_files(inventory)
     paths = PathList(paths=tuple(test_roots))
+    evidence = [Evidence(name, line=section.first_line, note=section.headings[0])]
 
-    if files:
-        patterns: list[str] = []
-        for rel in files:
-            patterns.extend(_patterns_in(inventory.read(rel) or ""))
-        covered = [root for root in test_roots if _covered(root, patterns)]
-        uncovered = [root for root in test_roots if not _covered(root, patterns)]
-
-        if not uncovered:
-            return _outcome(
-                spec,
-                Verdict.PASS,
-                f"constraint file denies the test directories ({listed}): {', '.join(files)}",
-                data=paths,
-            )
-        if covered:
-            return _outcome(
-                spec,
-                Verdict.PARTIAL,
-                f"constraint file covers {_describe(covered)} but not {_describe(uncovered)}",
-                [
-                    _finding(
-                        spec,
-                        "rely on the deny list to keep test directories out of an agent's reach",
-                        f"the constraint file(s) {', '.join(files)} do not deny {_describe(uncovered)}",
-                        Verdict.PARTIAL,
-                        [Evidence(rel) for rel in files],
-                        f"Add {_describe(uncovered)} to the constraint/deny list.",
-                    )
-                ],
-                data=paths,
-            )
+    if not uncovered:
         return _outcome(
             spec,
-            Verdict.FAIL,
-            f"a constraint file exists but denies none of the test directories ({listed})",
-            [
-                _finding(
-                    spec,
-                    "trust that a failing test is not rewritten to pass",
-                    f"the constraint file(s) {', '.join(files)} do not deny any test directory",
-                    Verdict.FAIL,
-                    [Evidence(rel) for rel in files],
-                    f"Add {listed} to the constraint/deny list so test edits are bounded and reviewed.",
-                )
-            ],
+            Verdict.PASS,
+            f"the prohibitions section of {name} names the test directories ({listed})",
             data=paths,
         )
-
-    rules = load_ignore_rules(target.path)
-    rule_patterns = [rule.pattern for rule in rules]
-    ignored = [root for root in test_roots if _covered(root, rule_patterns)]
-    ci = _ci_protection(inventory, test_roots)
-    mechanisms: list[str] = []
-    if ignored:
-        sources = sorted(
-            {rule.source for rule in rules if any(_pattern_covers(root, rule.pattern) for root in ignored)}
-        )
-        mechanisms.append(f"ignore rules ({', '.join(sources)})")
-    if ci:
-        mechanisms.append(f"CI guard ({', '.join(ci)})")
-
-    if mechanisms:
+    if covered:
         return _outcome(
             spec,
             Verdict.PARTIAL,
-            f"no dedicated constraint file; test directories protected by {'; '.join(mechanisms)}",
+            f"the prohibitions section covers {_describe(covered)} but not {_describe(uncovered)}",
             [
                 _finding(
                     spec,
-                    "point at one first-class deny list for test directories",
-                    f"no constraint file exists; protection is indirect ({'; '.join(mechanisms)})",
+                    "rely on the deny list to keep test directories out of an agent's reach",
+                    f"the prohibitions section of {name} does not name {_describe(uncovered)}",
                     Verdict.PARTIAL,
-                    [Evidence(ci[0] if ci else (rules[0].source if rules else "<repository>"))],
-                    "Add a constraint/allow-deny file that names the test directories explicitly.",
+                    evidence,
+                    f"Name {_describe(uncovered)} in a code span in the prohibitions section of {name}.",
                 )
             ],
             data=paths,
         )
-
-    return _unknown(
+    return _outcome(
         spec,
-        f"no constraint file protects the test directories ({listed}), and no ignore rule or CI guard does either",
+        Verdict.FAIL,
+        f"the prohibitions section names none of the test directories ({listed})",
+        [
+            _finding(
+                spec,
+                "trust that a failing test is not rewritten to pass",
+                f"the prohibitions section of {name} does not name any test directory",
+                Verdict.FAIL,
+                evidence,
+                f"Name {listed} in a code span in the prohibitions section of {name}, so test edits are bounded and "
+                "reviewed.",
+            )
+        ],
         data=paths,
     )
 

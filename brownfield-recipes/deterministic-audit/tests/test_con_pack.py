@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
-from audit.rules.checks.con import _TEST_DIR_NAMES, build_constraint_draft  # noqa: E402
+from audit.rules.checks.con import _TEST_DIR_NAMES, _names_directory, build_constraint_draft  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 
 CON_CHECKS = ("CON-01", "CON-02", "CON-03", "CON-04")
@@ -56,36 +56,210 @@ class ConFixtureTests(unittest.TestCase):
         self.assertEqual(check["verdict"], "UNKNOWN")
 
 
+def deny_list(*entries: str, heading: str = "## Do Not Do") -> str:
+    """An instruction file whose prohibitions section holds ``entries``, one list item each."""
+    body = "\n".join(f"- {entry}" for entry in entries)
+    return (
+        "# AGENTS.md\n\nThis file tells an agent how to work in this repository. Read it before you change anything.\n"
+        "Run the tests before you propose a change. The application is small: one module and its tests, and a\n"
+        "folder of documentation that follows the style guide.\n\n## Boundaries\n\n"
+        "The application code is in `app.py`.\n\n" + heading + "\n\n" + body + "\n"
+    )
+
+
 class Con02Tests(unittest.TestCase):
-    def _scan(self, files: dict[str, str]) -> dict:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            for rel, text in files.items():
-                support.write(root, rel, text)
-            (root / "tests").mkdir(exist_ok=True)
-            support.write(root, "tests/test_app.py", "def test_x():\n    assert True\n")
-            return support.run_audit(root)
+    """CON-02 reads the prohibitions section of the instruction file: every verdict of decision 0001's table."""
 
-    def test_dedicated_constraint_file_denying_tests_passes(self):
-        report = self._scan({".cursorignore": "tests/\nnode_modules/\n"})
-        self.assertEqual(support.verdicts(report)["CON-02"], "PASS")
-
-    def test_no_constraint_file_but_ignore_rule_is_partial(self):
-        report = self._scan({".gitignore": "tests/\nnode_modules/\n"})
-        check = next(c for c in report["checks"] if c["id"] == "CON-02")
-        self.assertEqual(check["verdict"], "PARTIAL")
-        self.assertIn("ignore rules", check["summary"])
-
-    def test_no_protection_at_all_is_unknown_never_pass(self):
-        report = self._scan({"app.py": "print(1)\n"})
-        self.assertEqual(support.verdicts(report)["CON-02"], "UNKNOWN")
-
-    def test_no_test_directory_is_unknown(self):
+    def scan(self, files: dict[str, str], test_dirs: tuple[str, ...] = ("tests",)) -> dict:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             support.write(root, "app.py", "print(1)\n")
+            for directory in test_dirs:
+                support.write(root, f"{directory}/test_app.py", "def test_x():\n    assert True\n")
+            for rel, text in files.items():
+                support.write(root, rel, text)
             report = support.run_audit(root)
-        self.assertEqual(support.verdicts(report)["CON-02"], "UNKNOWN")
+        return next(c for c in report["checks"] if c["id"] == "CON-02"), report
+
+    def con02(self, files: dict[str, str], test_dirs: tuple[str, ...] = ("tests",)):
+        check, report = self.scan(files, test_dirs)
+        return check, [f for f in report["findings"] if f["check"] == "CON-02"]
+
+    def test_pass_when_the_section_names_every_test_directory(self):
+        check, findings = self.con02({"AGENTS.md": deny_list("Never edit `tests/`.")})
+        self.assertEqual(
+            (check["verdict"], check["summary"], findings),
+            ("PASS", "the prohibitions section of AGENTS.md names the test directories (tests/)", []),
+        )
+        self.assertEqual(check["data"]["paths"], ["tests"])
+
+    def test_pass_names_every_directory_when_there_are_several(self):
+        files = {"AGENTS.md": deny_list("Never edit `tests/`.", "Never edit `e2e/test/`.")}
+        check, _ = self.con02(files, test_dirs=("tests", "e2e/test"))
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PASS", "the prohibitions section of AGENTS.md names the test directories (e2e/test/, tests/)"),
+        )
+
+    def test_partial_when_the_section_names_some_test_directories(self):
+        check, findings = self.con02({"AGENTS.md": deny_list("Never edit `tests/`.")}, test_dirs=("tests", "e2e/test"))
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PARTIAL", "the prohibitions section covers tests/ but not e2e/test/"),
+        )
+        self.assertEqual(
+            findings,
+            [
+                {
+                    "id": "CON-02",
+                    "check": "CON-02",
+                    "phase": 1,
+                    "severity": "BLOCKER",
+                    "verdict": "PARTIAL",
+                    "statement": "An agent cannot rely on the deny list to keep test directories out of an agent's "
+                    "reach because the prohibitions section of AGENTS.md does not name e2e/test/.",
+                    "evidence": [{"path": "AGENTS.md", "line": 11, "note": "Do Not Do"}],
+                    "remediation": "Name e2e/test/ in a code span in the prohibitions section of AGENTS.md.",
+                }
+            ],
+        )
+
+    def test_fail_when_the_section_names_none_of_them(self):
+        check, findings = self.con02({"AGENTS.md": deny_list("Never edit `docs/`.")})
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("FAIL", "the prohibitions section names none of the test directories (tests/)"),
+        )
+        self.assertEqual(
+            findings,
+            [
+                {
+                    "id": "CON-02",
+                    "check": "CON-02",
+                    "phase": 1,
+                    "severity": "BLOCKER",
+                    "verdict": "FAIL",
+                    "statement": "An agent cannot trust that a failing test is not rewritten to pass because the "
+                    "prohibitions section of AGENTS.md does not name any test directory.",
+                    "evidence": [{"path": "AGENTS.md", "line": 11, "note": "Do Not Do"}],
+                    "remediation": "Name tests/ in a code span in the prohibitions section of AGENTS.md, so test "
+                    "edits are bounded and reviewed.",
+                }
+            ],
+        )
+
+    def test_unknown_with_no_instruction_file_and_agt_01_owns_it(self):
+        check, findings = self.con02({})
+        self.assertEqual(
+            (check["verdict"], check["summary"], findings),
+            ("UNKNOWN", "no instruction file to read; AGT-01 owns that finding", []),
+        )
+
+    def test_unknown_with_no_prohibitions_section_and_agt_07_owns_it(self):
+        check, findings = self.con02({"AGENTS.md": deny_list("Never edit `tests/`.", heading="## Commands")})
+        self.assertEqual(
+            (check["verdict"], check["summary"], findings),
+            ("UNKNOWN", "AGENTS.md has no prohibitions section to read; AGT-07 owns that finding", []),
+        )
+
+    def test_unknown_when_the_repository_has_no_test_directory(self):
+        check, findings = self.con02({"AGENTS.md": deny_list("Never edit `docs/`.")}, test_dirs=())
+        self.assertEqual(
+            (check["verdict"], check["summary"], findings),
+            ("UNKNOWN", "no test directories detected, so there is nothing for a deny list to protect", []),
+        )
+
+    def test_claude_md_is_read_when_there_is_no_agents_md(self):
+        check, _ = self.con02({"CLAUDE.md": deny_list("Never edit `tests/`.")})
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PASS", "the prohibitions section of CLAUDE.md names the test directories (tests/)"),
+        )
+
+    def test_only_a_code_span_names_a_path(self):
+        check, _ = self.con02({"AGENTS.md": deny_list("Never edit tests/ or tests.")})
+        self.assertEqual(check["verdict"], "FAIL")
+
+    def test_only_the_prohibitions_section_names_a_path(self):
+        text = deny_list("Never edit `docs/`.").replace("`app.py`.", "`app.py`, and `tests/` holds the tests.")
+        check, _ = self.con02({"AGENTS.md": text})
+        self.assertEqual(check["verdict"], "FAIL")
+
+    def test_a_subsection_is_part_of_the_section(self):
+        text = deny_list("Never edit `docs/`.") + "\n### Tests\n\n- Do not touch `tests/`.\n"
+        check, _ = self.con02({"AGENTS.md": text})
+        self.assertEqual(check["verdict"], "PASS")
+
+    def test_a_code_span_in_a_second_prohibitions_section_counts(self):
+        text = deny_list("Never edit `docs/`.") + "\n## Forbidden\n\n- `tests/`\n"
+        check, _ = self.con02({"AGENTS.md": text})
+        self.assertEqual(check["verdict"], "PASS")
+
+    def test_the_old_artifacts_no_longer_protect_anything(self):
+        for name, content in (
+            (".cursorignore", "tests/\n"),
+            (".aiderignore", "tests/\n"),
+            ("denylist.txt", "tests/\n"),
+            ("constraints.yaml", "deny:\n  - tests/\n"),
+            (".gitignore", "tests/\n"),
+            (".github/workflows/ci.yml", "jobs:\n  guard:\n    steps:\n      - run: protect tests read-only\n"),
+        ):
+            with self.subTest(file=name):
+                files = {name: content, "AGENTS.md": deny_list("Never edit `docs/`.")}
+                check, _ = self.con02(files)
+                self.assertEqual(check["verdict"], "FAIL")
+                files = {name: content, "AGENTS.md": deny_list("Never edit `tests/`.", heading="## Commands")}
+                check, _ = self.con02(files)
+                self.assertEqual(check["verdict"], "UNKNOWN")
+
+
+class NamesDirectoryTests(unittest.TestCase):
+    """How a path or pattern in a code span covers a test directory."""
+
+    def test_the_forms_that_cover_a_directory(self):
+        for pattern, directory in (
+            ("tests/", "tests"),
+            ("tests", "tests"),
+            ("/tests", "tests"),
+            ("tests/", "pkg/tests"),
+            ("tests/*", "tests"),
+            ("tests/**", "tests"),
+            ("**/tests/**", "tests"),
+            ("**/tests/**", "pkg/tests"),
+            ("**/tests", "a/b/tests"),
+            ("pkg/tests/", "pkg/tests"),
+            ("pkg/", "pkg/tests"),
+            ("test*", "tests"),
+            ("**/e2e/test", "e2e/test"),
+            ("**/e2e/test", "x/e2e/test"),
+            ("  tests/  ", "tests"),
+            ("*", "tests"),
+            ("xtests/", "xtests"),
+            ("//tests//", "tests"),
+            ("tests/**/", "tests"),
+            ("tests/*/", "tests"),
+            ("**/tests/**/", "pkg/tests"),
+        ):
+            with self.subTest(pattern=pattern, directory=directory):
+                self.assertTrue(_names_directory(directory, pattern))
+
+    def test_the_forms_that_do_not(self):
+        for pattern, directory in (
+            ("/tests", "pkg/tests"),
+            ("pkg/tests/", "tests"),
+            ("tests/test_app.py", "tests"),
+            ("", "tests"),
+            ("   ", "tests"),
+            ("/", "tests"),
+            ("**/", "tests"),
+            ("src/", "tests"),
+            ("tests/", "tests-old"),
+            ("tests/", "mytests"),
+            ("e2e/test", "x/e2e/test"),
+            ("/e2e/test", "x/e2e/test"),
+        ):
+            with self.subTest(pattern=pattern, directory=directory):
+                self.assertFalse(_names_directory(directory, pattern))
 
 
 class SpecsAreNotTestsTests(unittest.TestCase):
@@ -100,6 +274,7 @@ class SpecsAreNotTestsTests(unittest.TestCase):
             support.write(root, "app.py", "print(1)\n")
             support.write(root, "specs/greeting.md", "# Greeting\n")
             support.write(root, "spec/other.md", "# Other\n")
+            support.write(root, "AGENTS.md", deny_list("Never edit `specs/`.", "Never edit `spec/`."))
             report = support.run_audit(root)
         check = next(c for c in report["checks"] if c["id"] == "CON-02")
         self.assertEqual(

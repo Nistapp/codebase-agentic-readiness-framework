@@ -152,7 +152,7 @@ suspicious verdict.
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
 | `CON-01` | Allow/deny artifact present | B | BLOCKER | A machine-readable constraint file exists in the documented location | **Blocked — weight 0 in v1** |
-| `CON-02` | Test directories protected | B | BLOCKER | Test paths appear on the deny list, or the constraint file excludes them. A test directory is one named `test`, `tests` or `__tests__`; `spec` and `specs` hold feature specifications | Implemented |
+| `CON-02` | Test directories protected | B | BLOCKER | The prohibitions section of the instruction file names every test directory, or a pattern that covers it, in a code span ([decision 0001](../../../../../spec/decisions/0001-constraint-artifact.md)). A test directory is one named `test`, `tests` or `__tests__`; `spec` and `specs` hold feature specifications. `PARTIAL` names some, `FAIL` none; `UNKNOWN` with no instruction file, no section or no test directory. Constraint files, ignore rules and CI text are not read | Implemented |
 | `CON-03` | `artefacts/` excluded from index and agent reads | B | DEGRADER | Ignore rules cover `artefacts/`, `artifacts/`, and the tool's own state directory | Implemented |
 | `CON-04` | Draft allow/deny emitted | Emitter | — | Writes a draft from the scan: secrets, migrations, generated code, test dirs, IaC, production manifests | Implemented (not scored) |
 

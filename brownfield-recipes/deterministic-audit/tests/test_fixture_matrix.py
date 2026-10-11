@@ -45,7 +45,7 @@ FIXTURES_DIR = support.FIXTURES_DIR
 #: appear here (``test_every_fixture_is_accounted_for``).
 MATRIX: dict[str, dict[str, str]] = {
     # -- AGT (content contract + competing files + indirection) -------------------------------
-    "agt-01-missing": {"AGT-01": "FAIL", "AGT-08": "PASS"},
+    "agt-01-missing": {"AGT-01": "FAIL", "AGT-08": "PASS", "CON-02": "UNKNOWN"},
     "agt-01-stub": {"AGT-01": "FAIL"},
     "agt-01-mis-cased": {"AGT-01": "FAIL"},
     "agt-01-shadowed": {"AGT-01": "PARTIAL"},
@@ -120,6 +120,9 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- CON ----------------------------------------------------------------------------------
     "con-02-unprotected-tests": {"CON-02": "FAIL"},
     "con-02-protected": {"CON-02": "PASS"},
+    "con-02-partly-protected": {"CON-02": "PARTIAL"},
+    "con-02-no-test-directory": {"CON-02": "UNKNOWN"},
+    "con-02-no-prohibitions-section": {"CON-02": "UNKNOWN"},
     "con-02-specs-are-not-tests": {"CON-02": "PASS"},
     "con-03-artefacts-not-ignored": {"CON-03": "FAIL"},
     # -- EXEC ---------------------------------------------------------------------------------

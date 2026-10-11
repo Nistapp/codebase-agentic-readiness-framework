@@ -99,9 +99,12 @@ fixtures/
   base-03-no-ratchet/        baseline committed but never compared    -> BASE-03 FAIL
   base-04-no-coverage-floor/ ratchet present, no coverage threshold   -> BASE-04 FAIL
   base-ok/                   baseline + budget + ratchet + floor      -> BASE-01…04 PASS
-  con-02-unprotected-tests/  a constraint file that omits test dirs   -> CON-02 FAIL
-  con-02-protected/          a denylist naming the test directory      -> CON-02 PASS
-  con-02-specs-are-not-tests/ `specs/` holds feature specifications, `tests/` is denied -> CON-02 PASS
+  con-02-unprotected-tests/  the "Do Not Do" section names `docs/`, not `tests/`  -> CON-02 FAIL
+  con-02-protected/          the "Do Not Do" section names `tests/`                -> CON-02 PASS
+  con-02-partly-protected/   it names `tests/` but not `e2e/test/`                 -> CON-02 PARTIAL
+  con-02-no-test-directory/  it names `docs/`; the repository has no test directory -> CON-02 UNKNOWN
+  con-02-no-prohibitions-section/ AGENTS.md has no such section; `tests/` exists   -> CON-02 UNKNOWN
+  con-02-specs-are-not-tests/ `specs/` holds feature specifications, `tests/` is named -> CON-02 PASS
   con-03-artefacts-not-ignored/ artefacts/ present, no ignore rule      -> CON-03 FAIL
   hyg-01-placeholder-readme/ README is a TODO stub                      -> HYG-01 FAIL
   hyg-10-no-license/         real README, no LICENSE at the root         -> HYG-10 FAIL
