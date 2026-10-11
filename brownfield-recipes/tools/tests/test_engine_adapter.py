@@ -945,9 +945,229 @@ class ProbeDriftTests(unittest.TestCase):
         self.assertTrue(self.checks_that_run_probes())
 
 
+def with_stack(**changes: Any) -> dict[str, Any]:
+    stack = dict(er.report(TARGET)["stack"])
+    stack.update(changes)
+    return stack
+
+
+class StackTests(unittest.TestCase):
+    def stack(self, **changes: Any) -> adapter.Conversion:
+        return convert(er.report(TARGET, stack=with_stack(**changes)))
+
+    def test_what_the_scan_detected_is_carried_under_the_engines_names_in_the_schemas_order(self) -> None:
+        conversion = self.stack(
+            ecosystems=["node"],
+            package_managers=["npm", "pnpm"],
+            ci_providers=["github"],
+            test_frameworks=["vitest"],
+            hook_managers=["husky"],
+            notes=["root has no manifest"],
+        )
+        self.assertEqual(
+            conversion.stack,
+            {
+                "ecosystems": ["node"],
+                "package_managers": ["npm", "pnpm"],
+                "ci_providers": ["github"],
+                "test_frameworks": ["vitest"],
+                "hook_managers": ["husky"],
+                "notes": ["root has no manifest"],
+            },
+        )
+        self.assertEqual(
+            list(conversion.stack),
+            ["ecosystems", "package_managers", "ci_providers", "test_frameworks", "hook_managers", "notes"],
+        )
+
+    def test_notes_are_left_out_when_there_are_none(self) -> None:
+        self.assertNotIn("notes", self.stack().stack)
+        stack = with_stack()
+        del stack["notes"]
+        self.assertNotIn("notes", convert(er.report(TARGET, stack=stack)).stack)
+
+    def test_a_field_of_the_engines_stack_that_the_report_has_no_place_for_is_ignored(self) -> None:
+        self.assertEqual(set(self.stack(new_field=["x"]).stack), set(adapter.STACK_LISTS))
+
+    def test_a_name_and_a_note_over_the_limit_are_cut_with_a_warning_each(self) -> None:
+        conversion = self.stack(ecosystems=["e" * 101], notes=["n" * 301])
+        self.assertEqual((len(conversion.stack["ecosystems"][0]), len(conversion.stack["notes"][0])), (100, 300))
+        self.assertEqual(
+            conversion.warnings,
+            [
+                "stack ecosystems: the name is 101 characters and the report allows 100, so it was cut",
+                "stack notes: the note is 301 characters and the report allows 300, so it was cut",
+            ],
+        )
+
+    def test_a_name_and_a_note_at_the_limit_are_not_cut(self) -> None:
+        conversion = self.stack(ecosystems=["e" * 100], notes=["n" * 300])
+        self.assertEqual((conversion.stack["ecosystems"], conversion.warnings), (["e" * 100], []))
+
+    def test_a_list_over_fifty_names_or_notes_keeps_the_first_fifty(self) -> None:
+        conversion = self.stack(package_managers=[f"m{n}" for n in range(51)], notes=[f"n{n}" for n in range(51)])
+        self.assertEqual(
+            (len(conversion.stack["package_managers"]), conversion.stack["package_managers"][-1]), (50, "m49")
+        )
+        self.assertEqual((len(conversion.stack["notes"]), conversion.stack["notes"][-1]), (50, "n49"))
+        self.assertEqual(
+            conversion.warnings,
+            [
+                "stack package_managers: 51 names, and the report allows 50, so the rest are left out",
+                "stack notes: 51 notes, and the report allows 50, so the rest are left out",
+            ],
+        )
+
+    def test_the_input_is_not_shared_with_the_result(self) -> None:
+        stack = with_stack(ecosystems=["node"])
+        conversion = convert(er.report(TARGET, stack=stack))
+        conversion.stack["ecosystems"].append("changed")
+        self.assertEqual(stack["ecosystems"], ["node"])
+
+
+class ComponentsTests(unittest.TestCase):
+    def components(self, declared: list[dict[str, Any]], candidates: list[str] | None = None) -> adapter.Conversion:
+        return convert(er.report(TARGET, components=declared, candidate_components=candidates or []))
+
+    def test_a_declared_component_keeps_the_engines_fields_in_the_order_of_the_schema(self) -> None:
+        raw = {
+            "name": "api",
+            "path": "services/api",
+            "declared": True,
+            "declared_by": "package.json workspaces",
+            "manifest": "services/api/package.json",
+            "agents_md": "missing",
+        }
+        conversion = self.components([raw])
+        self.assertEqual(conversion.components, [raw])
+        self.assertEqual(
+            list(conversion.components[0]), ["name", "path", "declared", "declared_by", "manifest", "agents_md"]
+        )
+
+    def test_a_field_the_engine_left_out_is_left_out_and_declared_is_true_by_default(self) -> None:
+        conversion = self.components([{"name": "(root)", "path": "."}])
+        self.assertEqual(conversion.components, [{"name": "(root)", "path": ".", "declared": True}])
+
+    def test_a_null_manifest_and_declared_by_are_carried(self) -> None:
+        conversion = self.components([{"name": "a", "path": "a", "declared_by": None, "manifest": None}])
+        self.assertEqual((conversion.components[0]["declared_by"], conversion.components[0]["manifest"]), (None, None))
+
+    def test_what_the_engine_says_about_declared_is_carried(self) -> None:
+        self.assertIs(self.components([{"name": "a", "path": "a", "declared": False}]).components[0]["declared"], False)
+
+    def test_a_candidate_is_a_component_nothing_declares_named_by_its_path(self) -> None:
+        conversion = self.components([{"name": "(root)", "path": "."}], ["tools/x", "tools/y"])
+        self.assertEqual(
+            conversion.components[1:],
+            [
+                {"name": "tools/x", "path": "tools/x", "declared": False},
+                {"name": "tools/y", "path": "tools/y", "declared": False},
+            ],
+        )
+        self.assertEqual(list(conversion.components[1]), ["name", "path", "declared"])
+
+    def test_a_long_name_and_manifest_and_declaration_are_cut_with_a_warning_each(self) -> None:
+        conversion = self.components(
+            [{"name": "n" * 201, "path": "p", "manifest": "m" * 301, "declared_by": "d" * 101}]
+        )
+        component = conversion.components[0]
+        self.assertEqual(
+            (len(component["name"]), len(component["manifest"]), len(component["declared_by"])), (200, 300, 100)
+        )
+        self.assertEqual(
+            conversion.warnings,
+            [
+                "p: the component name is 201 characters and the report allows 200, so it was cut",
+                "p: the declared_by is 101 characters and the report allows 100, so it was cut",
+                "p: the manifest is 301 characters and the report allows 300, so it was cut",
+            ],
+        )
+
+    def test_the_first_five_hundred_are_kept_declared_ones_first(self) -> None:
+        declared = [{"name": f"d{n}", "path": f"d{n}"} for n in range(400)]
+        conversion = self.components(declared, [f"c{n}" for n in range(150)])
+        self.assertEqual((len(conversion.components), conversion.components[-1]["path"]), (500, "c99"))
+        self.assertEqual(
+            conversion.warnings, ["components: 550 components, and the report allows 500, so the rest are left out"]
+        )
+
+    def test_the_input_is_not_shared_with_the_result(self) -> None:
+        raw = {"name": "a", "path": "a"}
+        conversion = self.components([raw])
+        conversion.components[0]["name"] = "changed"
+        self.assertEqual(raw["name"], "a")
+
+
+class InventoryTests(unittest.TestCase):
+    def test_the_counts_are_carried_in_the_order_of_the_schema(self) -> None:
+        conversion = convert(
+            er.report(TARGET, inventory={"truncated": False, "files_skipped": 3, "files_inspected": 149, "extra": 1})
+        )
+        self.assertEqual(conversion.inventory, {"files_inspected": 149, "files_skipped": 3, "truncated": False})
+        self.assertEqual(list(conversion.inventory), ["files_inspected", "files_skipped", "truncated"])
+        self.assertEqual(conversion.warnings, [])
+
+    def test_a_scan_the_engine_cut_short_is_said(self) -> None:
+        conversion = convert(
+            er.report(TARGET, inventory={"files_inspected": 5000, "files_skipped": 0, "truncated": True})
+        )
+        self.assertTrue(conversion.inventory["truncated"])
+        self.assertEqual(
+            conversion.warnings, ["the engine's scan was cut short, so what it did not reach is not in the report"]
+        )
+
+
+class EngineScoreTests(unittest.TestCase):
+    def test_the_engines_score_is_read_from_its_summary(self) -> None:
+        engine = er.report(TARGET, summary={"phase1_score": 0.7311, "blockers": 4})
+        self.assertEqual(convert(engine).engine_score, 0.7311)
+
+    def test_a_missing_or_null_score_is_none(self) -> None:
+        for summary in ({}, {"phase1_score": None}):
+            with self.subTest(summary=summary):
+                self.assertIsNone(convert(er.report(TARGET, summary=summary)).engine_score)
+        engine = er.report(TARGET)
+        del engine["summary"]
+        self.assertIsNone(convert(engine).engine_score)
+
+    def test_a_score_that_is_not_a_number_is_refused(self) -> None:
+        error = refused(self, er.report(TARGET, summary={"phase1_score": "high"}))
+        self.assertTrue(error.errors[0].startswith("engine report: /summary/phase1_score:"), error.errors)
+
+
 class ShapeTests(unittest.TestCase):
+    def test_a_scan_fact_missing_or_of_the_wrong_kind_is_refused(self) -> None:
+        cases: list[tuple[str, Any, str]] = [
+            ("stack", {"ecosystems": []}, "/stack"),
+            ("stack", with_stack(ecosystems="node"), "/stack/ecosystems"),
+            ("stack", with_stack(notes=[1]), "/stack/notes/0"),
+            ("inventory", {"files_inspected": 1, "files_skipped": 0}, "/inventory"),
+            (
+                "inventory",
+                {"files_inspected": "1", "files_skipped": 0, "truncated": False},
+                "/inventory/files_inspected",
+            ),
+            ("inventory", {"files_inspected": 1, "files_skipped": 0, "truncated": 0}, "/inventory/truncated"),
+            ("components", [{"path": "a"}], "/components/0"),
+            ("components", [{"name": "a", "path": "a", "declared": "yes"}], "/components/0/declared"),
+            ("components", [{"name": "a", "path": "a", "manifest": 3}], "/components/0/manifest"),
+            ("candidate_components", [5], "/candidate_components/0"),
+        ]
+        for name, value, pointer in cases:
+            with self.subTest(field=name, pointer=pointer):
+                errors = refused(self, er.report(TARGET, **{name: value})).errors
+                self.assertTrue(errors[0].startswith(f"engine report: {pointer}"), errors)
+
     def test_a_report_without_the_lists_the_adapter_reads_is_refused(self) -> None:
-        for name in ("checks", "findings", "not_applicable"):
+        for name in (
+            "stack",
+            "inventory",
+            "components",
+            "candidate_components",
+            "checks",
+            "findings",
+            "not_applicable",
+        ):
             with self.subTest(missing=name):
                 report = er.report(TARGET)
                 del report[name]

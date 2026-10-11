@@ -55,6 +55,8 @@ UNATTESTED_REQUIREMENTS = {
 }
 NOT_APPLICABLE_SUMMARY = "The engine did not run this check: it does not apply to the detected stack."
 
+STACK_LISTS = ("ecosystems", "package_managers", "ci_providers", "test_frameworks", "hook_managers")
+
 # The shape the adapter reads, and no more. The report schema's own limits apply to what is carried.
 _TEXT = {"type": "string"}
 _ENGINE_EVIDENCE = {
@@ -64,7 +66,18 @@ _ENGINE_EVIDENCE = {
 }
 ENGINE_SCHEMA: dict[str, Any] = {
     "type": "object",
-    "required": ["provenance", "checks", "findings", "not_applicable", "unattested", "probes"],
+    "required": [
+        "provenance",
+        "stack",
+        "inventory",
+        "components",
+        "candidate_components",
+        "checks",
+        "findings",
+        "not_applicable",
+        "unattested",
+        "probes",
+    ],
     "properties": {
         "provenance": {
             "type": "object",
@@ -113,6 +126,37 @@ ENGINE_SCHEMA: dict[str, Any] = {
                 },
             },
         },
+        "summary": {"type": "object", "properties": {"phase1_score": {"type": ["number", "null"]}}},
+        "stack": {
+            "type": "object",
+            "required": list(STACK_LISTS),
+            "properties": {name: {"type": "array", "items": _TEXT} for name in (*STACK_LISTS, "notes")},
+        },
+        "inventory": {
+            "type": "object",
+            "required": ["files_inspected", "files_skipped", "truncated"],
+            "properties": {
+                "files_inspected": {"type": "integer"},
+                "files_skipped": {"type": "integer"},
+                "truncated": {"type": "boolean"},
+            },
+        },
+        "components": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["name", "path"],
+                "properties": {
+                    "name": _TEXT,
+                    "path": _TEXT,
+                    "declared": {"type": "boolean"},
+                    "declared_by": {"type": ["string", "null"]},
+                    "manifest": {"type": ["string", "null"]},
+                    "agents_md": _TEXT,
+                },
+            },
+        },
+        "candidate_components": {"type": "array", "items": _TEXT},
         "not_applicable": {"type": "array", "items": _TEXT},
         "unattested": {"type": "array", "items": _TEXT},
         "probes": {
@@ -255,6 +299,10 @@ class Conversion:
     checks: list[dict[str, Any]]
     findings: list[dict[str, Any]]
     unattested: list[dict[str, Any]]
+    stack: dict[str, Any]
+    components: list[dict[str, Any]]
+    inventory: dict[str, Any]
+    engine_score: float | None
     warnings: list[str]
     evidence_not_carried: int
     probes_carried: int
@@ -330,14 +378,18 @@ class Converter:
             )
         return fit(text, limit)
 
-    def capped(self, items: list[dict[str, Any]], limit: int, where: str) -> list[dict[str, Any]]:
-        """The first `limit` evidence items, with a warning for the rest."""
+    def limited(self, items: Sequence[Any], limit: int, where: str, what: str) -> list[Any]:
+        """The first `limit` of `items`, with a warning for the rest."""
         if len(items) > limit:
             self.warnings.append(
-                f"{where}: {len(items)} evidence items, and the report allows {limit}, so the rest are left out"
+                f"{where}: {len(items)} {what}, and the report allows {limit}, so the rest are left out"
             )
-            self.not_carried += len(items) - limit
-        return items[:limit]
+        return list(items[:limit])
+
+    def capped(self, items: list[dict[str, Any]], limit: int, where: str) -> list[dict[str, Any]]:
+        """The first `limit` evidence items, with a warning for the rest."""
+        self.not_carried += max(len(items) - limit, 0)
+        return list(self.limited(items, limit, where, "evidence items"))
 
     def evidence_item(self, raw: Mapping[str, Any], where: str) -> dict[str, Any] | None:
         """One of an engine finding's evidence items as the report's `file` evidence, or None when it is not carried."""
@@ -524,6 +576,53 @@ class Converter:
             "searches": [],
         }
 
+    def inventory(self) -> dict[str, Any]:
+        """The engine's file counts, in the report's order. A scan the engine cut short is said."""
+        raw = self.engine["inventory"]
+        if raw["truncated"]:
+            self.warnings.append("the engine's scan was cut short, so what it did not reach is not in the report")
+        return {name: raw[name] for name in ("files_inspected", "files_skipped", "truncated")}
+
+    def stack(self) -> dict[str, Any]:
+        """What the scan detected, under the engine's names. A name or note over the report's limit is cut."""
+        raw = self.engine["stack"]
+        name_limit = report_schema()["$defs"]["nameList"]["items"]["maxLength"]
+        stack: dict[str, Any] = {}
+        for name in STACK_LISTS:
+            listed = self.limited(raw[name], report_schema()["$defs"]["nameList"]["maxItems"], f"stack {name}", "names")
+            stack[name] = [self.cut(item, name_limit, f"stack {name}", "name") for item in listed]
+        notes = raw.get("notes")
+        if notes:
+            note_schema = report_schema()["properties"]["stack"]["properties"]["notes"]
+            listed = self.limited(notes, note_schema["maxItems"], "stack notes", "notes")
+            stack["notes"] = [
+                self.cut(item, note_schema["items"]["maxLength"], "stack notes", "note") for item in listed
+            ]
+        return stack
+
+    def components(self) -> list[dict[str, Any]]:
+        """The declared components, then the candidates: a path that looks like one and that nothing declares."""
+        schema = report_schema()["properties"]["components"]
+        item = schema["items"]["properties"]
+        made: list[dict[str, Any]] = []
+        for raw in self.engine["components"]:
+            component: dict[str, Any] = {
+                "name": self.cut(raw["name"], item["name"]["maxLength"], raw["path"], "component name"),
+                "path": raw["path"],
+                "declared": raw.get("declared", True),
+            }
+            for field_name in ("declared_by", "manifest", "agents_md"):
+                if field_name in raw:
+                    limit = item[field_name].get("maxLength")
+                    value = raw[field_name]
+                    component[field_name] = (
+                        value if limit is None or value is None else self.cut(value, limit, raw["path"], field_name)
+                    )
+            made.append(component)
+        for path in self.engine["candidate_components"]:
+            made.append({"name": path, "path": path, "declared": False})
+        return self.limited(made, schema["maxItems"], "components", "components")
+
     def attest(self, number: int, raw: Mapping[str, Any]) -> list[dict[str, Any]]:
         """The requirements of a check the engine marks ATTEST, as unattested items. Such a check has no verdict."""
         check_id = raw["id"]
@@ -605,6 +704,10 @@ class Converter:
             checks=checks,
             findings=findings,
             unattested=self.unattested_items() + attested,
+            stack=self.stack(),
+            components=self.components(),
+            inventory=self.inventory(),
+            engine_score=(self.engine.get("summary") or {}).get("phase1_score"),
             warnings=self.warnings,
             evidence_not_carried=self.not_carried,
             probes_carried=self.probes_carried,

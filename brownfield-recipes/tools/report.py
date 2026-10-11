@@ -568,6 +568,18 @@ def engine_meanings() -> dict[str, str]:
     return dict(presentation.UNATTESTED_MEANINGS)
 
 
+def score_differences(document: Mapping[str, Any], conversion: adapter.Conversion) -> list[str]:
+    """Say so when the engine's phase-1 score and the report's differ. The report's is the spec's, and is the one kept."""
+    ours = _summary.compute_summary(document)["phase1_score"]
+    theirs = conversion.engine_score
+    if theirs is None or round(theirs, _summary.SCORE_PLACES) == ours:
+        return []
+    return [
+        f"the engine's phase-1 score is {theirs} and the report's is {ours}; the report's follows "
+        "spec/readiness-summary.md and is the one kept"
+    ]
+
+
 def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[str]]:
     """Bring the engine's results into the draft, once. A draft that already holds an engine report is refused.
 
@@ -607,6 +619,10 @@ def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[st
         finding = {"id": next_finding_id(document["findings"]), **found, **initial_decision(document)}
         document["findings"].append(in_schema_order(finding, "finding"))
     document["unattested"].extend(conversion.unattested)
+    document["stack"] = conversion.stack
+    document["components"] = conversion.components
+    document["coverage"]["inventory"] = conversion.inventory
+    warnings += score_differences(document, conversion)
     verdicts: dict[str, int] = {}
     for check in conversion.checks:
         verdicts[check["verdict"]] = verdicts.get(check["verdict"], 0) + 1

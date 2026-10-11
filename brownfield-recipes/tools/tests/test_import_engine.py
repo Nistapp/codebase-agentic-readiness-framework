@@ -588,6 +588,66 @@ class ImportUnattestedTests(ImportCase):
         self.assertIn("TOOL-01", rb.missing_checks(document)["TOOL"])
 
 
+class ImportScanFactsTests(ImportCase):
+    def test_the_stack_the_components_and_the_inventory_arrive(self) -> None:
+        report = er.report(
+            self.target,
+            stack=dict(
+                er.report(self.target)["stack"], ecosystems=["node"], package_managers=["npm"], notes=["a note"]
+            ),
+            components=[
+                {
+                    "name": "(root)",
+                    "path": ".",
+                    "declared": True,
+                    "declared_by": "implicit",
+                    "manifest": "package.json",
+                    "agents_md": "present",
+                }
+            ],
+            candidate_components=["tools/x"],
+            inventory={"files_inspected": 12, "files_skipped": 1, "truncated": False},
+        )
+        document = read_json(self.imported(report)[0])
+        self.assertEqual(document["stack"]["ecosystems"], ["node"])
+        self.assertEqual(document["stack"]["notes"], ["a note"])
+        self.assertEqual([c["path"] for c in document["components"]], [".", "tools/x"])
+        self.assertEqual(
+            document["coverage"]["inventory"], {"files_inspected": 12, "files_skipped": 1, "truncated": False}
+        )
+        self.assertEqual(document["coverage"]["scopes_examined"], [])
+        self.assertEqual(list(document["coverage"]), ["scopes_examined", "scopes_skipped", "inventory"])
+        self.assertEqual(vr.validate_document(document).errors, [])
+
+    def test_a_scan_the_engine_cut_short_is_a_warning_of_the_import(self) -> None:
+        report = er.report(self.target, inventory={"files_inspected": 5, "files_skipped": 0, "truncated": True})
+        _, envelope = self.imported(report)
+        self.assertEqual(
+            envelope["warnings"], ["the engine's scan was cut short, so what it did not reach is not in the report"]
+        )
+
+    def score_of(self, report: dict[str, Any]) -> float:
+        score: float = read_json(self.imported(report)[0])["summary"]["phase1_score"]
+        return score
+
+    def test_a_score_that_agrees_with_the_reports_needs_no_warning(self) -> None:
+        ours = self.score_of(sample_report(self.target))
+        for given in (ours, ours + 0.00001, None):
+            with self.subTest(given=given):
+                _, envelope = self.imported(sample_report(self.target, summary={"phase1_score": given}))
+                self.assertFalse([w for w in envelope["warnings"] if "score" in w], envelope["warnings"])
+
+    def test_a_score_that_differs_is_said_and_the_reports_is_kept(self) -> None:
+        ours = self.score_of(sample_report(self.target))
+        draft, envelope = self.imported(sample_report(self.target, summary={"phase1_score": 0.9999}))
+        self.assertIn(
+            f"the engine's phase-1 score is 0.9999 and the report's is {ours}; the report's follows "
+            "spec/readiness-summary.md and is the one kept",
+            envelope["warnings"],
+        )
+        self.assertEqual(read_json(draft)["summary"]["phase1_score"], ours)
+
+
 class RealProbeTests(ImportCase):
     """The engine runs on a small repository of its own, through the launcher, and its real report is imported."""
 
