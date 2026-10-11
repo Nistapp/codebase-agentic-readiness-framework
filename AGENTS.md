@@ -25,8 +25,6 @@ make security       # secrets scan against .secrets.baseline
 - Never weaken a gate to get green: no `.skip`, no rule turned off, no assertion relaxed. If you cannot pass a gate, say so.
 - `make test` skips the positive-fixture test when `CI=true` and its scaffolder (a sibling repository) is absent.
   Locally the test fails loudly without it; set `AUDIT_BOOTSTRAP=<path to bootstrap.py>` to point at the scaffolder.
-- Known engine defect: the engine's CMD-01 and CMD-02 report FAIL on this Makefile, because it does not read the escaped
-  `format\:check` target or follow `check`'s prerequisites. The Makefile is correct; do not rewrite it to quiet the engine.
 
 ## Boundaries
 
@@ -51,6 +49,8 @@ A folder with no files yet is not written yet; the docs page that describes it s
 - Never run another repository's own commands directly while auditing it. Use the engine's probe runner, which is opt-in
   (`--run-gates` plus `--allow-probe <verb>`).
 - Never describe a feature as working when it is only planned.
+- Never edit, skip or delete a test to make a failing test pass, in `brownfield-recipes/deterministic-audit/tests/` or
+  `brownfield-recipes/tools/tests/`. A fixture is data: change one only with the test that needs the change.
 
 ## Definition of done
 
