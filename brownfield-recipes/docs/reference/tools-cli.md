@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, except its `import-engine` subcommand (S2.5), and `render_report.py`. The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py` and `render_report.py`. The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py`, `validate_report.py`, `report.py` and `render_report.py` exist. The sections for the other tools are filled in by roadmap steps S2.5 to S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py`, `validate_report.py`, `report.py` and `render_report.py` exist. The sections for the other tools are filled in by roadmap steps S2.7, S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | [`engine.py`](#enginepy) | Runs the deterministic engine from any directory | Live |
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
-| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live, except `import-engine`: Planned (S2.5) |
+| [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live |
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
 | `facts.py` | Emits stack and inventory facts, no verdicts | Planned (S2.7) |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
@@ -155,7 +155,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. The draft's path may be a link: the draft it points to is changed, and the link stays a link. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-The subcommands are `init`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`. `import-engine`, which brings in the engine's checks, is planned (S2.5).
+The subcommands are `init`, `import-engine`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`.
 
 Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
@@ -163,6 +163,7 @@ Every subcommand but `init` and `status` changes the draft it is given, in place
 
 ```text
 python3 brownfield-recipes/tools/report.py init <intake>
+python3 brownfield-recipes/tools/report.py import-engine <draft> <engine report>
 python3 brownfield-recipes/tools/report.py add-check <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py add-finding <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py set-disposition <draft> --via VIA
@@ -195,7 +196,7 @@ Starts a draft from an intake file. It reads the intake (the answers to the audi
 | `provenance.started_at` | The UTC start time. Its `YYYYMMDDTHHMMSSZ` form is the stamp in the file name. |
 | `run_context` | The intake's `eval_mode`, `confirmation_policy`, `provider_exposure_acknowledged`, `index` (without `allow_install`), `probes` (default: nothing allowed, 120 seconds), `excluded` and `known_components`. `allow_install` and `output_dir` are instructions to the run and are not in the report. |
 
-The draft starts with no checks, no findings and a summary computed from them. The scan facts (`stack`, `components`) and the engine's checks arrive with `import-engine` (S2.5).
+The draft starts with no checks, no findings and a summary computed from them. The scan facts (`stack`, `components`) and the engine's checks arrive with [`import-engine`](#import-engine).
 
 **Outputs**
 
@@ -220,6 +221,76 @@ The draft starts with no checks, no findings and a summary computed from them. T
 | `intake rule: /index/name: ... the index needs a name` | Name the index tool, or set `index.kind` to `none`. |
 | `target not found: ...` | Fix `target_path`. |
 | `refusing to write inside the target: ...` | Choose an `output_dir` outside the repository. |
+
+### import-engine
+
+Brings the engine's report into a draft: its checks and findings, the stack and components it detected, its file counts, the probes it ran and its unattested items. The report is the JSON that [`engine.py`](#enginepy) wrote. The rules of the conversion are in [Engine schema v2 mapping](../../schema/SCHEMA.md#engine-schema-v2-mapping). The conversion is [`convert`](../../tools/_engine_adapter.py#L717-L730), a pure function of the engine's report, and [`apply_import`](../../tools/report.py#L585-L645) applies its result to the draft in one validated step, as every other change is applied.
+
+```text
+python3 brownfield-recipes/tools/report.py import-engine <draft> <engine report>
+```
+
+It runs once for a draft. A draft that already holds an engine report is refused, because a second import would replace the first one's checks and the decisions made on them: start a new draft with `init` to audit again. It also runs for the draft's own repository only: the engine report's `target` must be the draft's target, and its commit the draft's commit when both are known, otherwise the report is refused. The draft's own target facts are kept, because `init` read them from the directory.
+
+**Inputs**
+
+| Argument | Meaning |
+|---|---|
+| `<draft>` | The draft to change. A final report is refused. |
+| `<engine report>` | The engine's JSON report, schema v2 and phase 1, as `engine.py` wrote it: a file of at most 32 MiB. It is only read. |
+
+**What it records**
+
+| In the draft | From the engine's report |
+|---|---|
+| `provenance.engine` | The engine's name, version, ruleset revision and hash, and the scan time. |
+| `checks[]` | Each engine check with `method: automated` and the engine's verdict in both `verdict` and `engine_verdict`, after any check the agent has already recorded. A check the engine left out as not applicable has the verdict `NOT_APPLICABLE`. |
+| `checks[].evidence` | The evidence of the check's findings, gathered, then the probes the engine ran for it, as `command` evidence. |
+| `findings[]` | Each engine finding, with a `key` (the engine's id, and `:2`, `:3` after a repeat) and an `id` one past the highest in use. It is `pending`, or `confirmed` by policy under `accept-all`. |
+| `unattested[]` | The engine's five fixed items as the requirements they stand for, in the engine's words, and each requirement of a check the engine marks `ATTEST`. |
+| `stack`, `components`, `coverage.inventory` | The engine's own. A path that looks like a component and that nothing declares is a component with `declared: false`. |
+
+An engine evidence path is not always a path. A placeholder (`(no example file)`, `<repository>`) names no file and is dropped. A path outside the repository (the index store that `IDX-02` cites) is dropped with a warning. `package.json:lint` becomes the file `package.json` with the note `lint`, and the note does not say what it means, because the engine writes that form for a key that is set and for one that is not. [`locate`](../../tools/_engine_adapter.py#L248-L273) holds the rules.
+
+**Outputs**
+
+`data` holds `draft`, `engine_report` (the path read), `engine` (what was recorded in `provenance.engine`), `checks_imported`, `by_verdict` (a count for each verdict, including `NOT_APPLICABLE`), `findings_imported`, `unattested_listed`, `probes_carried`, `evidence_not_carried` (evidence items dropped with a warning), and the counts `checks_recorded`, `checks_expected`, `findings` and `findings_pending` of the draft as it now is. When the warnings are too many for the envelope, `warnings_omitted` says how many were left out and `truncated` is true.
+
+Nothing the engine said is dropped without a warning, except a placeholder and a probe the engine refused to run (the check's own summary says why).
+
+| Warning | Meaning |
+|---|---|
+| `<ID>: the evidence path 'P' is not carried: the path is absolute, so it is outside the repository` | The engine cited a place outside the repository. The finding's statement says where the engine looked. |
+| `<ID>: the <field> is N characters and the report allows M, so it was cut` | A text over the report schema's limit was cut, and ends in `…`. |
+| `<ID>: N evidence items, and the report allows M, so the rest are left out` | A list over its limit kept its first items. |
+| `probe <verb>: ...` | A probe that ran has no known check, no command, or output over the limit. A probe whose check the report does not hold says `probe: <ID> ran it, and the report holds no such check`. |
+| `the engine's scan was cut short, so what it did not reach is not in the report` | The engine's `inventory.truncated` is true. |
+| `the engine's phase-1 score is X and the report's is Y; ...` | The score the engine computed and the score the report computes from its checks differ. The report's is kept. |
+| `only the engine knows the target's commit, so the draft's cannot be compared` | One side recorded no commit, so the two could not be compared. The message says which side has one. |
+| `the engine lists the unattested item 'X', which maps to no requirement, so it is not carried` | The engine lists an item the adapter has no requirement for. |
+| `/checks/N/evidence/M: the file P is not in the target at C` | The validator's rule 12, for the imported checks, when the target is on this machine. |
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The engine's report was imported. |
+| `1` | A bad argument; the draft or the engine report is missing, a directory or too large; the draft is a final report; the draft's folder is inside the target; the lock could not be taken; the file could not be written. |
+| `2` | The engine report is not valid JSON, is not schema v2 for phase 1, lacks a field the mapping reads, holds a check the catalogue lacks or only an agent can judge, or is of another repository or commit than the draft's; the draft already holds an engine report; the draft was already invalid; or the change would leave it invalid (`data.errors` has the rule). Nothing is written. |
+| `3` | Internal error. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `the engine report has schema_version X, and the adapter reads only '2'` | Scan again with [`engine.py`](#enginepy). |
+| `the engine report is for phase N, and a 0.1 report covers phase 1` | Scan again without `--phase`. |
+| `the engine report has the wrong shape: N errors` | Each error starts `engine report: /pointer:` and names the field. The file is not an engine report, or was edited. |
+| `the engine report cannot be imported: N problems` | A check is not in [`catalogue.json`](../../catalogue.json), or only an agent can judge it, or appears twice, or a finding names a check the report does not hold. The engine and the catalogue are from different revisions of the framework. |
+| `the engine report is not of this draft's target` | `data.errors` names both directories, or both commits. Scan the draft's own repository at its commit, or start a new draft with `init`. |
+| `this draft already holds an engine report (ruleset H)` | Start a new draft with `init`. |
+| `the draft already records X` | The draft holds a check the engine reports. Start a new draft. |
+| `the change would leave the draft invalid, so nothing was written` | `data.errors` names the rule and the place, for example an engine finding more severe than its check (rule 7). |
 
 ### Fragments
 
@@ -258,7 +329,7 @@ python3 brownfield-recipes/tools/report.py add-check <draft> --from -
 
 The tool adds the check's `title`, `phase`, `severity`, `scored` and `method` from the catalogue, so the agent cannot misstate them. The check is added at the end of `checks`; recording a check again replaces its verdict, summary, confidence, evidence and searches in place.
 
-**A check only the engine can run.** `add-check` cannot add an `automated` check, whose verdict comes from the engine (the checks arrive with `import-engine`, S2.5). It can dispute one the engine already ran: the engine's verdict stays in `engine_verdict`, with the engine's evidence and `data`, and the agent's `verdict`, `summary`, `override_reason` and agent-captured evidence are recorded beside them. A dispute needs an `override_reason` and at least one evidence item (rule 6). Disputing the same check again replaces the agent's earlier evidence. A fragment whose verdict equals the engine's clears an earlier dispute (and has no `override_reason`). A check whose finding is still `pending` cannot be disputed to `PASS`: reject the finding first (rule 7).
+**A check only the engine can run.** `add-check` cannot add an `automated` check, whose verdict comes from the engine (the checks arrive with [`import-engine`](#import-engine)). It can dispute one the engine already ran: the engine's verdict stays in `engine_verdict`, with the engine's evidence and `data`, and the agent's `verdict`, `summary`, `override_reason` and agent-captured evidence are recorded beside them. A dispute needs an `override_reason` and at least one evidence item (rule 6). Disputing the same check again replaces the agent's earlier evidence. A fragment whose verdict equals the engine's clears an earlier dispute (and has no `override_reason`). A check whose finding is still `pending` cannot be disputed to `PASS`: reject the finding first (rule 7).
 
 **Outputs.** `data` holds `draft`, `check`, `action` (`added`, `replaced`, `overridden` or `agreed`), `verdict`, `engine_verdict` (for an engine check), `checks_recorded` and `checks_expected` (the phase-1 checks of the catalogue). Warnings list each cited file that is not in the target at the recorded commit, for this check only (rule 12).
 
@@ -461,7 +532,7 @@ A draft can be finalised only when all of this holds, and each problem that does
 | Message | Fix |
 |---|---|
 | `the draft cannot be finalised: N problems` | Read `data.errors`: record the checks it lists, ask the person about the findings it lists, then run `status` and `finalise` again. |
-| `checks not recorded in <FAMILY>: ...` | Record each check: `add-check` for an agent check, `import-engine` (S2.5) for the engine's. |
+| `checks not recorded in <FAMILY>: ...` | Record each check: `add-check` for an agent check, [`import-engine`](#import-engine) for the engine's. |
 | `N findings still pending: F-001 ...` | Ask the person, and record the answers with `set-disposition`. The list shows the first 20. |
 | `BLOCKER findings not decided interactively: ...` | Ask the person about each blocker, and record it with `--via interactive`. |
 | `this is an eval-mode run, and its report is never final` | An evaluation run writes drafts only. |
