@@ -124,6 +124,7 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- EXEC ---------------------------------------------------------------------------------
     "exec-01-unpinned": {"EXEC-01": "FAIL"},
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
+    "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},
     "exec-03-no-setup": {"EXEC-03": "FAIL"},
     "exec-04-missing-env": {"EXEC-04": "FAIL"},
     "exec-05-generated": {"EXEC-05": "FAIL"},
@@ -176,6 +177,7 @@ NEEDS_GIT = frozenset(
     {
         "doc-03-tracked-artefacts",
         "exec-02-no-lockfile",
+        "exec-02-nested-lockfile",
         "exec-05-generated",
         "exec-ok",
         "sec-01-ok",

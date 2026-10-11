@@ -163,7 +163,7 @@ suspicious verdict.
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
 | `EXEC-01` | Toolchain pinned / wrapper committed | A | BLOCKER | `.nvmrc`/`engines`, `.tool-versions`, `requires-python`, `global.json`, `gradlew`, `mvnw` — at least one appropriate to the detected stack | Implemented |
-| `EXEC-02` | Lockfile committed and consistent | B | BLOCKER | Lockfile tracked, and its declared dependencies agree with the manifest | Implemented |
+| `EXEC-02` | Lockfile committed and consistent | B | BLOCKER | Lockfile tracked (at any depth, by its path), and, for the root lockfile, its declared dependencies agree with the manifest | Implemented |
 | `EXEC-03` | Non-interactive setup path | A | BLOCKER | A devcontainer, compose file, or setup target/script exists and is documented | Implemented |
 | `EXEC-04` | Env-var inventory complete | B | BLOCKER | Set difference of env keys referenced in source against keys in the committed example file | Implemented |
 | `EXEC-05` | No generated artifacts committed in-tree | B | DEGRADER | Generated or vendored paths are either untracked or carry a generated-file header | Implemented |

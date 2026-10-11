@@ -17,7 +17,10 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   declared dependencies agree with the manifest. ``tracked_files`` returning ``None`` (not a git
   repository, git absent) makes the tracked half ``UNKNOWN`` — never a ``PASS``. Agreement is a
   best-effort stdlib parse; when a manifest or lockfile cannot be parsed reliably the tracked fact
-  is reported and consistency is left ``PARTIAL``, never ``PASS`` by inference.
+  is reported and consistency is left ``PARTIAL``, never ``PASS`` by inference. A lockfile is found at
+  any depth and is tracked or not by the path it was found at (``app/package-lock.json``, not its
+  basename); the shallowest is the one read. Only a lockfile at the root is compared with the root
+  manifest, so one in a subdirectory is tracked but its consistency is unverified.
 * **EXEC-03** — a devcontainer / compose file / Dockerfile / setup target-script, or a documented
   non-interactive install command in the fenced blocks of README/``AGENTS.md``. Present but
   undocumented ⇒ ``PARTIAL``. No recognised ecosystem ⇒ ``UNKNOWN``: with no build manifest there is
@@ -371,8 +374,21 @@ def _lock_deps(inv: Inventory, ecosystem: str, lockfile: str) -> set[str] | None
     return None
 
 
+def _lockfile_paths(inv: Inventory, ecosystem: str) -> list[str]:
+    """Every lockfile of the ecosystem, at any depth, as the path git would track it; the shallowest first."""
+    names = _lockfiles_for(ecosystem)
+    found = (rel for rel in inv.paths() if rel.split("/")[-1] in names)
+    return sorted(found, key=lambda rel: (rel.count("/"), rel))
+
+
 def _lock_consistency(inv: Inventory, ecosystem: str, lockfile: str) -> tuple[str, set[str]]:
-    """Return ``(state, extras)`` where state is ok | mismatch | unverified."""
+    """Return ``(state, extras)`` where state is ok | mismatch | unverified.
+
+    The manifest read is the root one, so only a lockfile at the root is compared with it; one in a
+    subdirectory is ``unverified``.
+    """
+    if "/" in lockfile:
+        return "unverified", set()
     manifest = _manifest_deps(inv, ecosystem)
     lock = _lock_deps(inv, ecosystem, lockfile)
     if manifest is None or lock is None:
@@ -398,8 +414,8 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
     verified: list[str] = []
     unverified: list[str] = []
     for ecosystem in ecosystems:
-        candidates = [f for f in _lockfiles_for(ecosystem) if inventory.has(f)]
-        tracked_candidates = sorted(f for f in candidates if f in tracked)
+        candidates = _lockfile_paths(inventory, ecosystem)
+        tracked_candidates = [rel for rel in candidates if rel in tracked]
         if not candidates:
             findings.append(
                 Finding(

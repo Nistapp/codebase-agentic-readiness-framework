@@ -63,6 +63,7 @@ fixtures/
   sec-01-ok/                 .env present but untracked + ignored (needs git) -> SEC-01…03 PASS
   exec-01-unpinned/          node project, no toolchain pin       -> EXEC-01 FAIL
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
+  exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
   exec-04-missing-env/       source reads an undeclared env var    -> EXEC-04 FAIL
   exec-05-generated/         tracked generated file, no header (needs git) -> EXEC-05 FAIL
