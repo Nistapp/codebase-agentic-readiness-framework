@@ -54,6 +54,22 @@ one-defect fixture, and the catalogue (`brownfield-recipes/catalogue.json`) move
 - A check the engine's ruleset had blocked arrives in a recipe draft as `UNKNOWN`, scored as the catalogue scores it
   ([engine mapping](../../../schema/SCHEMA.md)). No check is blocked now.
 
+### The example report
+
+`examples/digital-assistant-sdk/` is regenerated: the engine at this revision, run read-only on Digital-Assistant-SDK at
+`d44bbc672`, a clean commit of `fix/packaging-types-deps`. The previous report scanned a dirty working tree of `dev`
+(`748797977412`, 2026-10-06), which no longer exists, so it cannot be reproduced. Twenty verdicts differ between the
+two reports, and they are the repository's: the engine at `2026-09-28.13`, run on `d44bbc672`, gives the same verdict
+for all 69 checks as the engine now does. What the engine changed on that repository:
+
+| What | `2026-09-28.13` | `2026-10-11.1` |
+|---|---|---|
+| `SEC-02` | `FAIL`: 16 lines in 10 files | `FAIL`: 6 lines in 4 files. Of the six files that dropped out, four held property reads, `process.env` and other expressions; two held a ten-character test literal (`'mock-token'`), which the old rule read as twelve because it counted the quote and the comma after it |
+| Blockers | 12 | 6 (the six `SEC-02` findings) |
+| Phase-1 score | 0.6513 | 0.6352 (`CON-01` is scored, and `UNKNOWN` here because `AGENTS.md` has no prohibitions section) |
+| Scoreable checks | 54 | 55 |
+| `AGT-08` finding id | `AGT-08` | `AGT-08:harness-reach` |
+
 ### Not changed
 
 The scoring weights, the verdict credits, the report schema (v2) and the instruction-variant table. The

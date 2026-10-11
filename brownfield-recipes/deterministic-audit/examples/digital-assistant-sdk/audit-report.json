@@ -74,10 +74,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "does not name docs/, docs/STYLE_GUIDE.md, artefacts/",
+      "summary": "does not name docs/STYLE_GUIDE.md",
       "tier": "B",
       "title": "Documentation contract named",
-      "verdict": "FAIL"
+      "verdict": "PARTIAL"
     },
     {
       "data": {},
@@ -95,13 +95,8 @@
     {
       "data": {
         "kind": "verb_surface",
-        "missing": [
-          "format:check",
-          "typecheck",
-          "check",
-          "security"
-        ],
-        "resolved_count": 3,
+        "missing": [],
+        "resolved_count": 7,
         "verbs": [
           {
             "command": "prettier --write \"src/**/*.ts\"",
@@ -110,9 +105,9 @@
             "verb": "format"
           },
           {
-            "command": null,
-            "resolved": false,
-            "runner": null,
+            "command": "prettier --check \"src/**/*.ts\"",
+            "resolved": true,
+            "runner": "package.json",
             "verb": "format:check"
           },
           {
@@ -122,9 +117,9 @@
             "verb": "lint"
           },
           {
-            "command": null,
-            "resolved": false,
-            "runner": null,
+            "command": "tsc --noEmit",
+            "resolved": true,
+            "runner": "package.json",
             "verb": "typecheck"
           },
           {
@@ -134,15 +129,15 @@
             "verb": "test"
           },
           {
-            "command": null,
-            "resolved": false,
-            "runner": null,
+            "command": "npm run format:check && npm run typecheck && npm test",
+            "resolved": true,
+            "runner": "package.json",
             "verb": "check"
           },
           {
-            "command": null,
-            "resolved": false,
-            "runner": null,
+            "command": "npm audit --omit=dev --audit-level=high && npm audit --audit-level=critical",
+            "resolved": true,
+            "runner": "package.json",
             "verb": "security"
           }
         ]
@@ -153,10 +148,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "not named: format:check, security; not resolved: format:check, typecheck, check, security",
+      "summary": "all 7 verbs named in AGENTS.md and resolved on a runner",
       "tier": "B",
       "title": "Seven verbs named",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -166,7 +161,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "3 boundary rules reference real paths",
+      "summary": "4 boundary rules reference real paths",
       "tier": "B",
       "title": "Architectural boundaries declared",
       "verdict": "PASS"
@@ -241,10 +236,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "the branch model is stated but nothing says whether an agent may tag or release",
+      "summary": "the branch model and the release boundary are stated",
       "tier": "B",
       "title": "Branch and release boundary declared",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -293,10 +288,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "artefacts/ present but not matched by any ignore rule",
+      "summary": "artefacts/ present, ignored, and untracked",
       "tier": "B",
       "title": "artefacts/ exists and is ignored",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -314,13 +309,8 @@
     {
       "data": {
         "kind": "verb_surface",
-        "missing": [
-          "format:check",
-          "typecheck",
-          "check",
-          "security"
-        ],
-        "resolved_count": 3,
+        "missing": [],
+        "resolved_count": 7,
         "verbs": [
           {
             "command": "prettier --write \"src/**/*.ts\"",
@@ -329,9 +319,9 @@
             "verb": "format"
           },
           {
-            "command": null,
-            "resolved": false,
-            "runner": null,
+            "command": "prettier --check \"src/**/*.ts\"",
+            "resolved": true,
+            "runner": "package.json",
             "verb": "format:check"
           },
           {
@@ -341,9 +331,9 @@
             "verb": "lint"
           },
           {
-            "command": null,
-            "resolved": false,
-            "runner": null,
+            "command": "tsc --noEmit",
+            "resolved": true,
+            "runner": "package.json",
             "verb": "typecheck"
           },
           {
@@ -353,15 +343,15 @@
             "verb": "test"
           },
           {
-            "command": null,
-            "resolved": false,
-            "runner": null,
+            "command": "npm run format:check && npm run typecheck && npm test",
+            "resolved": true,
+            "runner": "package.json",
             "verb": "check"
           },
           {
-            "command": null,
-            "resolved": false,
-            "runner": null,
+            "command": "npm audit --omit=dev --audit-level=high && npm audit --audit-level=critical",
+            "resolved": true,
+            "runner": "package.json",
             "verb": "security"
           }
         ]
@@ -372,10 +362,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "format -> package.json; format:check -> missing; lint -> package.json; typecheck -> missing; test -> package.json; check -> missing; security -> missing",
+      "summary": "format -> package.json; format:check -> package.json; lint -> package.json; typecheck -> package.json; test -> package.json; check -> package.json; security -> package.json",
       "tier": "B",
       "title": "Seven verbs resolvable on one runner",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -385,10 +375,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the check verb is not defined on any runner",
+      "summary": "check (package.json) composes: format-check, typecheck, test",
       "tier": "B",
       "title": "check composes the read-only verbs",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -398,7 +388,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "no runner defines check, so there is nothing to diverge",
+      "summary": "one runner defines the gate",
       "tier": "B",
       "title": "No divergent second definition",
       "verdict": "PASS"
@@ -463,10 +453,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "no verb runs a dependency audit",
+      "summary": "security -> npm audit --omit=dev --audit-level=high && npm audit --audit-level=critical",
       "tier": "A",
       "title": "Dependency / security scan verb",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -502,10 +492,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "no CI workflow file (detected providers: none)",
+      "summary": "PR-triggered: .github/workflows/ci.yml (github); .github/workflows/enforce-dev-base.yml (github)",
       "tier": "B",
       "title": "Pipeline present, triggered on PRs",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -515,7 +505,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "CI verbs: none; local read-only verbs not exercised: lint, test",
+      "summary": "CI verbs: format:check, lint, security, test, typecheck; local read-only verbs not exercised: check",
       "tier": "B",
       "title": "Local\u2194CI parity",
       "verdict": "PASS"
@@ -528,10 +518,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "no CI-only steps",
+      "summary": "1 CI-only step(s)",
       "tier": "B",
       "title": "CI-only steps flagged",
-      "verdict": "PASS"
+      "verdict": "FAIL"
     },
     {
       "data": {},
@@ -541,7 +531,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "quality tooling is configured but no baseline artifact is committed: .eslintrc.js, package.json:lint",
+      "summary": "quality tooling is configured but no baseline artifact is committed: .eslintrc.js, package.json:lint, package.json:security, package.json:typecheck",
       "tier": "A",
       "title": "Baseline artifact exists",
       "verdict": "PARTIAL"
@@ -554,7 +544,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "counting surface present but no committed count/budget: .eslintrc.js, package.json:lint; method: static configuration scan; the target's own tools are never run",
+      "summary": "counting surface present but no committed count/budget: .eslintrc.js, package.json:lint, package.json:security, package.json:typecheck; method: static configuration scan; the target's own tools are never run",
       "tier": "B",
       "title": "Current violation counts measured",
       "verdict": "PARTIAL"
@@ -590,45 +580,23 @@
       "id": "CON-01",
       "pack": "CON",
       "phase": 1,
-      "scored": false,
+      "scored": true,
       "severity": "BLOCKER",
-      "status": "blocked",
-      "summary": "blocked: the framework defines no artifact contract for this deliverable, so it carries weight 0 in v1 (see CON-01)",
+      "status": "implemented",
+      "summary": "AGENTS.md has no prohibitions section to read; AGT-07 owns that finding",
       "tier": "B",
       "title": "Allow/deny artifact present",
       "verdict": "UNKNOWN"
     },
     {
-      "data": {
-        "kind": "path_list",
-        "paths": [
-          "src/services/__tests__",
-          "src/store/middleware/__tests__",
-          "src/store/slices/__tests__",
-          "src/store/utils/__tests__",
-          "src/util/__tests__",
-          "src/util/browser/__tests__",
-          "src/util/error/__tests__",
-          "src/util/headers/__tests__",
-          "src/util/node/__tests__",
-          "src/util/notification/__tests__",
-          "src/util/playback/__tests__",
-          "src/util/recording/__tests__",
-          "src/util/screen/__tests__",
-          "src/util/translate/__tests__",
-          "src/util/user/__tests__",
-          "src/util/validation/__tests__",
-          "test"
-        ],
-        "truncated": false
-      },
+      "data": {},
       "id": "CON-02",
       "pack": "CON",
       "phase": 1,
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "no constraint file protects the test directories (src/services/__tests__/, src/store/middleware/__tests__/, src/store/slices/__tests__/, src/store/utils/__tests__/, src/util/__tests__/, src/util/browser/__tests__/, src/util/error/__tests__/, src/util/headers/__tests__/ (+9 more)), and no ignore rule or CI guard does either",
+      "summary": "AGENTS.md has no prohibitions section to read; AGT-07 owns that finding",
       "tier": "B",
       "title": "Test directories protected",
       "verdict": "UNKNOWN"
@@ -641,10 +609,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "artefacts/ present but matched by no ignore rule",
+      "summary": "artefacts/ present, ignored, and untracked",
       "tier": "B",
       "title": "artefacts/ excluded from index and agent reads",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -654,7 +622,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "draft not emitted; pass --emit-baseline to write constraints.draft.yaml beside the report",
+      "summary": "draft not emitted; pass --emit-baseline to write do-not-do.draft.md beside the report",
       "tier": "\u2014",
       "title": "Draft allow/deny emitted",
       "verdict": "UNKNOWN"
@@ -667,10 +635,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "unpinned: node",
+      "summary": "pinned: node (package.json (engines.node))",
       "tier": "A",
       "title": "Toolchain pinned / wrapper committed",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -680,10 +648,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "",
+      "summary": "consistency unverified: package-lock.json",
       "tier": "B",
       "title": "Lockfile committed and consistent",
-      "verdict": "FAIL"
+      "verdict": "PARTIAL"
     },
     {
       "data": {},
@@ -693,10 +661,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "no setup path found",
+      "summary": "documented setup command: README.md: npm ci",
       "tier": "A",
       "title": "Non-interactive setup path",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {
@@ -744,7 +712,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "no fenced shell commands documented",
+      "summary": "5 documented command(s) resolve",
       "tier": "B",
       "title": "Documented commands resolve",
       "verdict": "PASS"
@@ -770,7 +738,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on package.json (jest); 103 test file(s)",
+      "summary": "test verb on package.json (jest); 105 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -801,7 +769,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 103 test file(s): no markers; total 0",
+      "summary": "skip/xfail census across 105 test file(s): no markers; total 0",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -814,7 +782,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "no single-test/subset invocation in fenced shell blocks (scope: AGENTS.md)",
+      "summary": "no single-test/subset invocation in fenced shell blocks (scope: README.md, AGENTS.md)",
       "tier": "B",
       "title": "Fast path documented",
       "verdict": "FAIL"
@@ -866,10 +834,10 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "oversized(>524288 B): 0; catch-all dirs(>50 files): 0; binaries: 0; minified: 0",
+      "summary": "oversized(>524288 B): 1; catch-all dirs(>50 files): 0; binaries: 0; minified: 0",
       "tier": "B",
       "title": "Structural red flags",
-      "verdict": "PASS"
+      "verdict": "PARTIAL"
     },
     {
       "data": {},
@@ -886,10 +854,10 @@
     },
     {
       "data": {
-        "denominator": 220,
+        "denominator": 228,
         "kind": "ratio",
         "method": "typescript: exported declarations",
-        "numerator": 161,
+        "numerator": 165,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -898,22 +866,23 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "161/220 public symbols documented (73%); method: typescript: exported declarations",
+      "summary": "165/228 public symbols documented (72%); method: typescript: exported declarations",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
     },
     {
       "data": {
-        "covered": [],
+        "covered": [
+          "dotenv"
+        ],
         "kind": "secret_shapes",
         "missing": [
-          "dotenv",
           "dotenv variant"
         ],
         "shapes": [
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv",
             "probe": ".env",
             "suggested": ".env"
@@ -932,7 +901,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "no tracked .env, but ignore rules miss dotenv, dotenv variant",
+      "summary": "no tracked .env, but ignore rules miss dotenv variant",
       "tier": "B",
       "title": ".env untracked and ignored",
       "verdict": "PARTIAL"
@@ -942,55 +911,21 @@
         "files": [
           {
             "lines": [
-              164
-            ],
-            "path": "src/config/constants.ts"
-          },
-          {
-            "lines": [
-              104,
-              189
-            ],
-            "path": "src/services/AuthManager.ts"
-          },
-          {
-            "lines": [
-              37,
-              66
-            ],
-            "path": "src/services/__tests__/AuthManager.test.ts"
-          },
-          {
-            "lines": [
               20
             ],
             "path": "src/services/__tests__/TranslateService.test.ts"
           },
           {
             "lines": [
-              151,
-              173,
-              189,
-              208
+              158,
+              186,
+              206
             ],
             "path": "src/services/__tests__/apiClient.test.ts"
           },
           {
             "lines": [
-              113,
-              128
-            ],
-            "path": "src/services/apiClient.ts"
-          },
-          {
-            "lines": [
-              25
-            ],
-            "path": "src/util/user/UDABindAccount.ts"
-          },
-          {
-            "lines": [
-              130
+              135
             ],
             "path": "src/util/user/__tests__/AuthDataConfig.test.ts"
           },
@@ -999,17 +934,11 @@
               84
             ],
             "path": "src/util/user/__tests__/UDABindAccount.test.ts"
-          },
-          {
-            "lines": [
-              33
-            ],
-            "path": "src/util/user/__tests__/UDASendSessionData.test.ts"
           }
         ],
         "kind": "credential_matrix",
         "source": "tracked text files",
-        "total": 16
+        "total": 6
       },
       "id": "SEC-02",
       "pack": "SEC",
@@ -1017,17 +946,18 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "16 credential-shaped line(s) across 10 file(s) in tracked text files",
+      "summary": "6 credential-shaped line(s) across 4 file(s) in tracked text files",
       "tier": "B",
       "title": "No key-shaped strings in tracked files",
       "verdict": "FAIL"
     },
     {
       "data": {
-        "covered": [],
+        "covered": [
+          "dotenv"
+        ],
         "kind": "secret_shapes",
         "missing": [
-          "dotenv",
           "dotenv variant",
           "ssh private key",
           "PEM",
@@ -1041,7 +971,7 @@
         ],
         "shapes": [
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv",
             "probe": ".env",
             "suggested": ".env"
@@ -1114,10 +1044,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "no secret shapes covered; missing: dotenv, dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials",
+      "summary": "covered: dotenv; missing: dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials",
       "tier": "B",
       "title": "Ignore patterns cover secret shapes",
-      "verdict": "FAIL"
+      "verdict": "PARTIAL"
     },
     {
       "data": {},
@@ -1127,10 +1057,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no README at the repository root",
+      "summary": "README.md present and non-placeholder",
       "tier": "A",
       "title": "README present and non-placeholder",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1205,10 +1135,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no CHANGELOG document",
+      "summary": "CHANGELOG.md last changed 0 day(s) before HEAD",
       "tier": "A",
       "title": "CHANGELOG present and recent",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1218,10 +1148,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no release document",
+      "summary": "release document present at RELEASE_PROCESS.md",
       "tier": "A",
       "title": "Release process documented",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1231,10 +1161,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no dependency update automation",
+      "summary": "dependency automation configured at .github/dependabot.yml",
       "tier": "A",
       "title": "Dependency update automation configured",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1257,10 +1187,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no CI provider recognised; whether branch protection can be declared as code is provider-dependent",
+      "summary": "github offers branch protection as code, none found",
       "tier": "B",
       "title": "Branch protection declared as code",
-      "verdict": "UNKNOWN"
+      "verdict": "FAIL"
     }
   ],
   "components": [
@@ -1274,78 +1204,6 @@
     }
   ],
   "findings": [
-    {
-      "check": "CI-01",
-      "evidence": [
-        {
-          "line": null,
-          "note": null,
-          "path": ".env"
-        }
-      ],
-      "id": "CI-01",
-      "phase": 1,
-      "remediation": "Add a PR-triggered workflow (for example .github/workflows/ci.yml) that runs the same verbs the local command surface defines.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot rely on CI to verify a change set because no CI workflow file exists.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "CMD-01",
-      "evidence": [
-        {
-          "line": null,
-          "note": null,
-          "path": "package.json"
-        }
-      ],
-      "id": "CMD-01",
-      "phase": 1,
-      "remediation": "Define every verb (format, format:check, lint, typecheck, test, check, security) as a script/target so an agent never has to invent a command.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not defined on any runner (format:check, typecheck, check, security).",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "CMD-02",
-      "evidence": [],
-      "id": "CMD-02",
-      "phase": 1,
-      "remediation": "Define check as format-check, then typecheck, then test.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot run one gate that composes the read-only verbs because no runner defines a check verb.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "EXEC-01",
-      "evidence": [],
-      "id": "EXEC-01",
-      "phase": 1,
-      "remediation": "Commit the pin appropriate to node \u2014 .nvmrc, .node-version \u2014 so the agent's runtime is the repository's, not the host's.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot reproduce the node toolchain because the detected node project pins no toolchain version.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "EXEC-02",
-      "evidence": [],
-      "id": "EXEC-02",
-      "phase": 1,
-      "remediation": "Generate the lockfile with the project's package manager and commit it.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot install identical dependencies on every run because the node project has no lockfile (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb), so a fresh install resolves whatever versions are current.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "EXEC-03",
-      "evidence": [],
-      "id": "EXEC-03",
-      "phase": 1,
-      "remediation": "Add a committed setup path (a devcontainer, compose file, or a documented install command in README.md) that runs with no prompts.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot prepare the environment non-interactively because no devcontainer, compose file, Dockerfile, setup target/script, or documented install command exists.",
-      "verdict": "FAIL"
-    },
     {
       "check": "EXEC-04",
       "evidence": [
@@ -1382,7 +1240,12 @@
         },
         {
           "line": null,
-          "note": "environments",
+          "note": ".env",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": "environments/*",
           "path": ".gitignore"
         },
         {
@@ -1399,77 +1262,14 @@
           "line": null,
           "note": ".DS_Store",
           "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".vscode",
-          "path": ".gitignore"
         }
       ],
       "id": "SEC-01",
       "phase": 1,
       "remediation": "Add the .env shape (for example `.env` and `.env.*`) to .gitignore so an environment file cannot be committed by accident.",
       "severity": "BLOCKER",
-      "statement": "An agent cannot trust that a future .env stays out of history because no ignore rule covers dotenv, dotenv variant.",
+      "statement": "An agent cannot trust that a future .env stays out of history because no ignore rule covers dotenv variant.",
       "verdict": "PARTIAL"
-    },
-    {
-      "check": "SEC-02",
-      "evidence": [
-        {
-          "line": 164,
-          "note": "credential-shaped string",
-          "path": "src/config/constants.ts"
-        }
-      ],
-      "id": "SEC-02:src/config/constants.ts",
-      "phase": 1,
-      "remediation": "Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot keep credentials out of the repository and its history because src/config/constants.ts contains 1 credential-shaped line(s).",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "SEC-02",
-      "evidence": [
-        {
-          "line": 104,
-          "note": "credential-shaped string",
-          "path": "src/services/AuthManager.ts"
-        },
-        {
-          "line": 189,
-          "note": "credential-shaped string",
-          "path": "src/services/AuthManager.ts"
-        }
-      ],
-      "id": "SEC-02:src/services/AuthManager.ts",
-      "phase": 1,
-      "remediation": "Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot keep credentials out of the repository and its history because src/services/AuthManager.ts contains 2 credential-shaped line(s).",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "SEC-02",
-      "evidence": [
-        {
-          "line": 37,
-          "note": "credential-shaped string",
-          "path": "src/services/__tests__/AuthManager.test.ts"
-        },
-        {
-          "line": 66,
-          "note": "credential-shaped string",
-          "path": "src/services/__tests__/AuthManager.test.ts"
-        }
-      ],
-      "id": "SEC-02:src/services/__tests__/AuthManager.test.ts",
-      "phase": 1,
-      "remediation": "Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot keep credentials out of the repository and its history because src/services/__tests__/AuthManager.test.ts contains 2 credential-shaped line(s).",
-      "verdict": "FAIL"
     },
     {
       "check": "SEC-02",
@@ -1491,22 +1291,17 @@
       "check": "SEC-02",
       "evidence": [
         {
-          "line": 151,
+          "line": 158,
           "note": "credential-shaped string",
           "path": "src/services/__tests__/apiClient.test.ts"
         },
         {
-          "line": 173,
+          "line": 186,
           "note": "credential-shaped string",
           "path": "src/services/__tests__/apiClient.test.ts"
         },
         {
-          "line": 189,
-          "note": "credential-shaped string",
-          "path": "src/services/__tests__/apiClient.test.ts"
-        },
-        {
-          "line": 208,
+          "line": 206,
           "note": "credential-shaped string",
           "path": "src/services/__tests__/apiClient.test.ts"
         }
@@ -1515,51 +1310,14 @@
       "phase": 1,
       "remediation": "Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself.",
       "severity": "BLOCKER",
-      "statement": "An agent cannot keep credentials out of the repository and its history because src/services/__tests__/apiClient.test.ts contains 4 credential-shaped line(s).",
+      "statement": "An agent cannot keep credentials out of the repository and its history because src/services/__tests__/apiClient.test.ts contains 3 credential-shaped line(s).",
       "verdict": "FAIL"
     },
     {
       "check": "SEC-02",
       "evidence": [
         {
-          "line": 113,
-          "note": "credential-shaped string",
-          "path": "src/services/apiClient.ts"
-        },
-        {
-          "line": 128,
-          "note": "credential-shaped string",
-          "path": "src/services/apiClient.ts"
-        }
-      ],
-      "id": "SEC-02:src/services/apiClient.ts",
-      "phase": 1,
-      "remediation": "Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot keep credentials out of the repository and its history because src/services/apiClient.ts contains 2 credential-shaped line(s).",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "SEC-02",
-      "evidence": [
-        {
-          "line": 25,
-          "note": "credential-shaped string",
-          "path": "src/util/user/UDABindAccount.ts"
-        }
-      ],
-      "id": "SEC-02:src/util/user/UDABindAccount.ts",
-      "phase": 1,
-      "remediation": "Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot keep credentials out of the repository and its history because src/util/user/UDABindAccount.ts contains 1 credential-shaped line(s).",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "SEC-02",
-      "evidence": [
-        {
-          "line": 130,
+          "line": 135,
           "note": "credential-shaped string",
           "path": "src/util/user/__tests__/AuthDataConfig.test.ts"
         }
@@ -1588,30 +1346,25 @@
       "verdict": "FAIL"
     },
     {
-      "check": "SEC-02",
+      "check": "AGT-03",
       "evidence": [
         {
-          "line": 33,
-          "note": "credential-shaped string",
-          "path": "src/util/user/__tests__/UDASendSessionData.test.ts"
+          "line": 133,
+          "note": "docs/",
+          "path": "AGENTS.md"
+        },
+        {
+          "line": 61,
+          "note": "artefacts/",
+          "path": "AGENTS.md"
         }
       ],
-      "id": "SEC-02:src/util/user/__tests__/UDASendSessionData.test.ts",
-      "phase": 1,
-      "remediation": "Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot keep credentials out of the repository and its history because src/util/user/__tests__/UDASendSessionData.test.ts contains 1 credential-shaped line(s).",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "AGT-03",
-      "evidence": [],
       "id": "AGT-03",
       "phase": 1,
       "remediation": "Name docs/ as the canonical home for permanent knowledge, docs/STYLE_GUIDE.md as the authoring rules, and artefacts/ as off-limits scratch.",
       "severity": "DEGRADER",
-      "statement": "An agent cannot know where permanent and scratch documentation live because AGENTS.md does not name docs/, docs/STYLE_GUIDE.md, artefacts/.",
-      "verdict": "FAIL"
+      "statement": "An agent cannot know where permanent and scratch documentation live because AGENTS.md does not name docs/STYLE_GUIDE.md.",
+      "verdict": "PARTIAL"
     },
     {
       "check": "AGT-04",
@@ -1621,16 +1374,6 @@
       "remediation": "State that a change altering a public interface, observable behaviour, architecture, a check's semantics or an ADR updates the affected docs and the ADR index in the same change set.",
       "severity": "DEGRADER",
       "statement": "An agent cannot keep code and its documentation in step because no definition-of-done sentence ties a documentation trigger to the same change set.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "AGT-05",
-      "evidence": [],
-      "id": "AGT-05",
-      "phase": 1,
-      "remediation": "List all seven verbs in AGENTS.md and define each on one runner so the instruction and the manifest agree.",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot use the project's own commands instead of inventing them because not named: format:check, security; not resolved: format:check, typecheck, check, security.",
       "verdict": "FAIL"
     },
     {
@@ -1650,22 +1393,6 @@
       "verdict": "FAIL"
     },
     {
-      "check": "AGT-09",
-      "evidence": [
-        {
-          "line": 30,
-          "note": null,
-          "path": "AGENTS.md"
-        }
-      ],
-      "id": "AGT-09",
-      "phase": 1,
-      "remediation": "State the branches that exist (for example main and dev) and whether an agent may tag or publish a release.",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot know which branch to work on and whether it may cut a release because the branch model is stated but nothing says whether an agent may tag or release.",
-      "verdict": "PARTIAL"
-    },
-    {
       "check": "BASE-01",
       "evidence": [
         {
@@ -1677,6 +1404,16 @@
           "line": null,
           "note": null,
           "path": "package.json:lint"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "package.json:security"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "package.json:typecheck"
         }
       ],
       "id": "BASE-01",
@@ -1698,6 +1435,16 @@
           "line": null,
           "note": null,
           "path": "package.json:lint"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "package.json:security"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "package.json:typecheck"
         }
       ],
       "id": "BASE-02",
@@ -1740,19 +1487,19 @@
       "verdict": "FAIL"
     },
     {
-      "check": "CON-03",
+      "check": "CI-03",
       "evidence": [
         {
-          "line": null,
-          "note": null,
-          "path": "artefacts/"
+          "line": 116,
+          "note": "npm stage publish --provenance --access public",
+          "path": ".github/workflows/release-and-sync.yml"
         }
       ],
-      "id": "CON-03",
+      "id": "CI-03",
       "phase": 1,
-      "remediation": "Add artefacts/ to .gitignore so agents and the index do not read transient state as source of truth.",
+      "remediation": "Add a local script/target for `stage`, or document why the step is CI-only.",
       "severity": "DEGRADER",
-      "statement": "An agent cannot keep scratch and agent-state directories out of the index and out of reads because artefacts/ exists but no ignore rule covers it.",
+      "statement": "An agent cannot reproduce a CI step on the local command surface because .github/workflows/release-and-sync.yml:116 runs `npm stage publish --provenance --access public` with no local runner entry for `stage`.",
       "verdict": "FAIL"
     },
     {
@@ -1776,32 +1523,6 @@
       "verdict": "FAIL"
     },
     {
-      "check": "DOC-03",
-      "evidence": [
-        {
-          "line": null,
-          "note": null,
-          "path": "artefacts/.gitignore"
-        },
-        {
-          "line": null,
-          "note": null,
-          "path": "artefacts/Misc.txt"
-        },
-        {
-          "line": null,
-          "note": null,
-          "path": "artefacts/refactoring-plan.md"
-        }
-      ],
-      "id": "DOC-03",
-      "phase": 1,
-      "remediation": "Add `artefacts/` to .gitignore so scratch documents cannot be committed and agents do not read them as source of truth.",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot rely on transient scratch staying out of the repository because artefacts/ exists but no ignore rule covers it.",
-      "verdict": "FAIL"
-    },
-    {
       "check": "SEC-03",
       "evidence": [
         {
@@ -1821,7 +1542,12 @@
         },
         {
           "line": null,
-          "note": "environments",
+          "note": ".env",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": "environments/*",
           "path": ".gitignore"
         },
         {
@@ -1838,19 +1564,14 @@
           "line": null,
           "note": ".DS_Store",
           "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".vscode",
-          "path": ".gitignore"
         }
       ],
       "id": "SEC-03",
       "phase": 1,
       "remediation": "Add the missing shapes to .gitignore \u2014 for example `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `id_rsa*`, `*.crt`, `*.cer`, `.aws/*`.",
       "severity": "DEGRADER",
-      "statement": "An agent cannot trust that secret shapes cannot be committed because ignore rules do not cover dotenv, dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials.",
-      "verdict": "FAIL"
+      "statement": "An agent cannot trust that secret shapes cannot be committed because ignore rules do not cover dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials.",
+      "verdict": "PARTIAL"
     },
     {
       "check": "TOOL-03",
@@ -1867,22 +1588,6 @@
       "severity": "DEGRADER",
       "statement": "An agent cannot trust the type checker to catch a whole class of defects because a type-check configuration exists but is not strict (tsconfig.json:strict).",
       "verdict": "PARTIAL"
-    },
-    {
-      "check": "TOOL-04",
-      "evidence": [
-        {
-          "line": null,
-          "note": null,
-          "path": "package.json"
-        }
-      ],
-      "id": "TOOL-04",
-      "phase": 1,
-      "remediation": "Add a dependency-audit verb (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, snyk).",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot know whether a dependency carries a known vulnerability because no resolvable verb runs a dependency-audit check.",
-      "verdict": "FAIL"
     },
     {
       "check": "TOOL-05",
@@ -1906,6 +1611,11 @@
         {
           "line": null,
           "note": null,
+          "path": "README.md"
+        },
+        {
+          "line": null,
+          "note": null,
           "path": "AGENTS.md"
         }
       ],
@@ -1913,13 +1623,13 @@
       "phase": 1,
       "remediation": "Document a fast path (for example `pytest -k <name>`, `npm test -- <name>`, or `go test -run <name>`) in a fenced shell block.",
       "severity": "DEGRADER",
-      "statement": "An agent cannot run one test or a subset without the whole suite because none of the entry documents shows a single-test or subset invocation (scope: AGENTS.md).",
+      "statement": "An agent cannot run one test or a subset without the whole suite because none of the entry documents shows a single-test or subset invocation (scope: README.md, AGENTS.md).",
       "verdict": "FAIL"
     },
     {
       "check": "AGT-08",
       "evidence": [],
-      "id": "AGT-08",
+      "id": "AGT-08:harness-reach",
       "phase": 1,
       "remediation": "Either state the supported harnesses in AGENTS.md, or add the vendor pointer files for the harnesses in use.",
       "severity": "COSMETIC",
@@ -1934,16 +1644,6 @@
       "remediation": "Add docs/architecture/adrs/ with NNNN-short-title.md files and a README index that lists them.",
       "severity": "COSMETIC",
       "statement": "An agent cannot find the decisions of record because no ADR directory (docs/architecture/adrs/ or docs/adr/) exists.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "HYG-01",
-      "evidence": [],
-      "id": "HYG-01",
-      "phase": 1,
-      "remediation": "Add a root README that says what the project is, how to run it, and how to contribute.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot orient itself in this project in seconds because no README exists at the repository root.",
       "verdict": "FAIL"
     },
     {
@@ -1997,36 +1697,6 @@
       "verdict": "FAIL"
     },
     {
-      "check": "HYG-07",
-      "evidence": [],
-      "id": "HYG-07",
-      "phase": 1,
-      "remediation": "Add CHANGELOG.md and record notable changes under a version heading.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot see what changed between two versions because no CHANGELOG (or CHANGES/HISTORY) document exists.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "HYG-08",
-      "evidence": [],
-      "id": "HYG-08",
-      "phase": 1,
-      "remediation": "Add docs/releasing.md (or RELEASE.md) describing how a version is cut and published.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot know how a release is cut because no text or markdown document describing the release process exists.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "HYG-09",
-      "evidence": [],
-      "id": "HYG-09",
-      "phase": 1,
-      "remediation": "Add .github/dependabot.yml (or renovate.json) with an update schedule.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot keep dependencies patched without manual sweeps because no Dependabot or Renovate configuration exists.",
-      "verdict": "FAIL"
-    },
-    {
       "check": "HYG-10",
       "evidence": [],
       "id": "HYG-10",
@@ -2035,6 +1705,32 @@
       "severity": "COSMETIC",
       "statement": "An agent cannot know the terms under which the code may be used because no LICENSE (or COPYING) file exists at the repository root.",
       "verdict": "FAIL"
+    },
+    {
+      "check": "HYG-11",
+      "evidence": [],
+      "id": "HYG-11",
+      "phase": 1,
+      "remediation": "Declare branch protection in code (a Terraform resource or .github/branch-protection) so it is reviewed like any other change.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot reproduce the protected-branch rules as code because the github provider is detected but no branch-protection configuration exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "NAV-03",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "package-lock.json"
+        }
+      ],
+      "id": "NAV-03",
+      "phase": 1,
+      "remediation": "Split oversized files, break up catch-all directories, and keep binaries and minified assets out of the tree (generate them in the build).",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot work in a codebase without obvious structural traps because 1 oversized file(s), 0 catch-all director(y/ies), 0 checked-in binary file(s) and 0 minified asset(s).",
+      "verdict": "PARTIAL"
     },
     {
       "check": "NAV-04",
@@ -2064,8 +1760,8 @@
     }
   ],
   "inventory": {
-    "files_inspected": 259,
-    "files_skipped": 1,
+    "files_inspected": 275,
+    "files_skipped": 3,
     "truncated": false
   },
   "not_applicable": [],
@@ -2084,48 +1780,52 @@
     }
   ],
   "provenance": {
-    "framework_revision": null,
-    "git_branch": "dev",
-    "git_dirty": true,
-    "git_sha": "74879797741239be107b7ad0f1351757a44a9442",
+    "framework_revision": "a2d27914afec95a5263fdc3de297dfee717e6a59",
+    "git_branch": "fix/packaging-types-deps",
+    "git_dirty": false,
+    "git_sha": "d44bbc6721a3ce46457b2933bf935b37e52595fc",
     "phase": 1,
     "probes_enabled": false,
-    "ruleset_hash": "f320b6e4a8e8b7cc",
-    "ruleset_revision": "2026-09-28.13",
-    "scanned_at": "2026-10-06T10:01:24+00:00",
+    "ruleset_hash": "970e6792f98eeeb5",
+    "ruleset_revision": "2026-10-11.1",
+    "scanned_at": "2026-10-11T16:32:08+00:00",
     "target": "/home/kc/Projects/UDAN/Digital-Assistant-SDK",
     "tool": "python-agentic-audit",
     "version": "0.1.0"
   },
   "schema_version": "2",
   "stack": {
-    "ci_providers": [],
+    "ci_providers": [
+      "github"
+    ],
     "ecosystems": [
       "node"
     ],
     "hook_managers": [],
     "notes": [],
-    "package_managers": [],
+    "package_managers": [
+      "npm"
+    ],
     "test_frameworks": [
       "jest"
     ]
   },
   "summary": {
-    "blockers": 18,
+    "blockers": 6,
     "checks": {
       "attest": 0,
-      "fail": 34,
-      "partial": 8,
-      "pass": 21,
-      "unknown": 6
+      "fail": 20,
+      "partial": 11,
+      "pass": 33,
+      "unknown": 5
     },
     "checks_applicable": 69,
-    "checks_implemented": 68,
-    "checks_scoreable": 54,
-    "cosmetic": 14,
-    "coverage_note": "54 of 54 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
-    "degraders": 18,
-    "phase1_score": 0.4412
+    "checks_implemented": 69,
+    "checks_scoreable": 55,
+    "cosmetic": 12,
+    "coverage_note": "55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
+    "degraders": 14,
+    "phase1_score": 0.6352
   },
   "unattested": [
     "index-in-use",
