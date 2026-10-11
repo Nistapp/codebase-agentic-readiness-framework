@@ -1,7 +1,7 @@
 format:
 	prettier --write .
 
-format:check:
+format\:check:
 	prettier --check .
 
 lint:

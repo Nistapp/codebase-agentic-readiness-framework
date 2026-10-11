@@ -16,11 +16,16 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   `_common.resolve_all_verbs` is read in full, so a verb declared on two runners is visible as a
   stray second definition. Missing verbs ⇒ `FAIL`; verbs split across (or duplicated on) more than
   one runner ⇒ `PARTIAL` — the stray definition is `CMD-03`'s territory. With **no runner manifest
-  at all** the verdict is `UNKNOWN`: an unrecognised ecosystem is not proof of absence.
+  at all** the verdict is `UNKNOWN`: an unrecognised ecosystem is not proof of absence. A verb is
+  read under the spelling its runner accepts (`audit.stack.FORMAT_CHECK_ALIASES`; the spec's table).
+  A `Makefile` that GNU Make refuses to parse is not a runner and is a finding of its own,
+  `CMD-01:Makefile`: `FAIL` when no other runner is left, otherwise at least `PARTIAL`.
 * **CMD-02** — the `check` verb's body invokes a format-check, a typecheck and a test command.
   Indirection through another verb (`npm run format:check`) and documented tool equivalents
-  (``prettier --check``, ``tsc --noEmit``, ``pytest``, …) both count. Some concerns present ⇒
-  `PARTIAL`; none ⇒ `FAIL`; no runner ⇒ `UNKNOWN`.
+  (``prettier --check``, ``tsc --noEmit``, ``pytest``, …) both count. In a `Makefile` the prerequisites
+  of `check` are its body, and a prerequisite that is not a verb is followed into its own recipe, once.
+  Some concerns present ⇒ `PARTIAL`; none ⇒ `FAIL`; no runner ⇒ `UNKNOWN` (so is a `Makefile` that
+  does not parse, which `CMD-01` already reported).
 * **CMD-03** — a second runner may define `check` only as a delegation to the first; a second runner
   that composes the gate itself is a finding. Detection is textual and deterministic: a delegating
   `check` invokes ``check`` through another runner. No runner ⇒ `UNKNOWN`.
@@ -45,11 +50,12 @@ from audit.probes import MUTATING_VERBS
 from audit.rules.checks._common import (
     RUNNER_PRECEDENCE,
     VerbBinding,
+    makefile_errors,
     resolve_all_verbs,
     resolve_verbs,
     runner_commands,
 )
-from audit.stack import VERBS
+from audit.stack import VERBS, canonical_verb
 from audit.rules.payloads import Payload, VerbEntry, VerbSurface
 
 #: The three read-only concerns a `check` gate must compose, in catalogue order.
@@ -66,7 +72,8 @@ _SEGMENT_SPLIT = re.compile(r"\s*(?:&&|\|\||;|\|)\s*")
 
 _NPM_RE = re.compile(r"\b(?:npm|pnpm|bun)\s+(?:run\s+)?([A-Za-z0-9:_-]+)")
 _YARN_RE = re.compile(r"\byarn\s+(?:run\s+)?([A-Za-z0-9:_-]+)")
-_TASK_RE = re.compile(r"\b(?:make|task|just|mise)\s+(?:-\S+\s+)*([A-Za-z0-9:_-]+)")
+# A shell passes `format\:check` and `'format:check'` to make as `format:check`, so both name that target.
+_TASK_RE = re.compile(r"\b(?:make|task|just|mise)\s+(?:-\S+\s+)*['\"]?([A-Za-z0-9:_\\-]+)")
 _RUNNER_INVOCATIONS = (_NPM_RE, _YARN_RE, _TASK_RE)
 
 #: Documented tool equivalents, used only when `check` calls a tool directly rather than a verb.
@@ -179,6 +186,14 @@ def _unknown(spec, reason: str) -> CheckOutcome:
     return _outcome(spec, Verdict.UNKNOWN, reason)
 
 
+def _no_runner(spec, inventory, cannot: str) -> CheckOutcome:
+    """``UNKNOWN`` for a repository with no runner to read. A Makefile that does not parse is no runner, and
+    ``CMD-01`` owns that defect, so it is named here and not reported again."""
+    if makefile_errors(inventory):
+        return _unknown(spec, f"the Makefile does not parse (see CMD-01), so {cannot}")
+    return _unknown(spec, f"no recognised verb runner, so {cannot}")
+
+
 def _rank(runner: str) -> int:
     try:
         return RUNNER_PRECEDENCE.index(runner)
@@ -195,7 +210,7 @@ def _runner_target(segment: str) -> str | None:
     for pattern in _RUNNER_INVOCATIONS:
         match = pattern.search(segment)
         if match:
-            return match.group(1)
+            return match.group(1).replace("\\:", ":")
     return None
 
 
@@ -208,13 +223,46 @@ def _ordered_runners(runners: set[str]) -> list[str]:
 # ===========================================================================
 
 
+def _makefile_parse_finding(spec, errors, severity: Severity) -> Finding:
+    first = errors[0]
+    return Finding(
+        check=spec.id,
+        severity=severity,
+        phase=spec.phase,
+        verdict=Verdict.FAIL,
+        statement=statement(
+            "run any verb through make",
+            f"GNU Make refuses the Makefile at line {first.line} ({first.message}), so no target in it can run",
+        ),
+        evidence=[Evidence("Makefile", line=error.line, note=error.text) for error in errors],
+        remediation="Escape the colon of a verb's name, `format\\:check:`, and define `format-check` as the alias, "
+        "so that `make format:check` and `make format-check` both run. An unescaped `format:check:` is a "
+        "static pattern rule, which needs a `%`.",
+        path="Makefile",
+    )
+
+
 def check_cmd01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     declared = runner_commands(inventory)
-    if not declared:
+    parse_errors = makefile_errors(inventory)
+    if not declared and not parse_errors:
         return _unknown(
             spec,
             "no recognised verb runner (package.json, Makefile, Taskfile, "
             "pyproject, gradle, maven), so no verb can be resolved",
+        )
+    if not declared:
+        first = parse_errors[0]
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            f"the Makefile does not parse (line {first.line}: {first.message}), so no verb on it can run",
+            [_makefile_parse_finding(spec, parse_errors, spec.severity)],
+            data=VerbSurface(
+                verbs=tuple(VerbEntry(verb=verb, resolved=False, runner=None, command=None) for verb in VERBS),
+                resolved_count=0,
+                missing=tuple(VERBS),
+            ),
         )
 
     bindings = resolve_all_verbs(inventory, stack)
@@ -240,55 +288,50 @@ def check_cmd01(*, spec, target, inventory, stack, components, session) -> Check
         missing=tuple(missing),
     )
 
+    verdict = Verdict.PASS
+    findings: list[Finding] = []
     if missing:
-        return _outcome(
-            spec,
-            Verdict.FAIL,
-            detail,
-            [
-                Finding(
-                    check=spec.id,
-                    severity=spec.severity,
-                    phase=spec.phase,
-                    verdict=Verdict.FAIL,
-                    statement=statement(
-                        "run the standardized command surface literally",
-                        f"{len(missing)} of {len(VERBS)} framework verbs are not defined on any runner "
-                        f"({', '.join(missing)})",
-                    ),
-                    evidence=[Evidence(runner) for runner, _cmds in declared],
-                    remediation="Define every verb (format, format:check, lint, typecheck, test, check, "
-                    "security) as a script/target so an agent never has to invent a command.",
-                )
-            ],
-            data=surface,
+        verdict = Verdict.FAIL
+        findings.append(
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement(
+                    "run the standardized command surface literally",
+                    f"{len(missing)} of {len(VERBS)} framework verbs are not defined on any runner "
+                    f"({', '.join(missing)})",
+                ),
+                evidence=[Evidence(runner) for runner, _cmds in declared],
+                remediation="Define every verb (format, format:check, lint, typecheck, test, check, "
+                "security) as a script/target so an agent never has to invent a command.",
+            )
         )
-
-    if len(runners_used) > 1:
-        return _outcome(
-            spec,
-            Verdict.PARTIAL,
-            detail,
-            [
-                Finding(
-                    check=spec.id,
-                    severity=Severity.DEGRADER,
-                    phase=spec.phase,
-                    verdict=Verdict.PARTIAL,
-                    statement=statement(
-                        "find every verb on one runner",
-                        f"verbs resolve across {len(runners_used)} runners "
-                        f"({', '.join(runners_used)}), so no single runner is the contract",
-                    ),
-                    evidence=[Evidence(resolved[verb].runner, note=verb) for verb in VERBS],
-                    remediation="Keep one runner as the authority for all verbs; reduce any second runner "
-                    "to a delegation (see CMD-03).",
-                )
-            ],
-            data=surface,
+    elif len(runners_used) > 1:
+        verdict = Verdict.PARTIAL
+        findings.append(
+            Finding(
+                check=spec.id,
+                severity=Severity.DEGRADER,
+                phase=spec.phase,
+                verdict=Verdict.PARTIAL,
+                statement=statement(
+                    "find every verb on one runner",
+                    f"verbs resolve across {len(runners_used)} runners "
+                    f"({', '.join(runners_used)}), so no single runner is the contract",
+                ),
+                evidence=[Evidence(resolved[verb].runner, note=verb) for verb in VERBS],
+                remediation="Keep one runner as the authority for all verbs; reduce any second runner "
+                "to a delegation (see CMD-03).",
+            )
         )
-
-    return _outcome(spec, Verdict.PASS, detail, data=surface)
+    if parse_errors:
+        # Another runner carries the verbs, but a Makefile that cannot run is still a defect, so the
+        # check is never a PASS beside one.
+        verdict = Verdict.PARTIAL if verdict is Verdict.PASS else verdict
+        findings.append(_makefile_parse_finding(spec, parse_errors, Severity.DEGRADER))
+    return _outcome(spec, verdict, detail, findings, data=surface)
 
 
 # ===========================================================================
@@ -296,14 +339,28 @@ def check_cmd01(*, spec, target, inventory, stack, components, session) -> Check
 # ===========================================================================
 
 
-def _composition_concerns(command: str, resolved: dict[str, VerbBinding]) -> set[str]:
+def _composition_concerns(
+    command: str,
+    resolved: dict[str, VerbBinding],
+    targets: dict[str, str] | None = None,
+    followed: frozenset[str] = frozenset(),
+) -> set[str]:
+    """The concerns ``command`` covers: a verb it invokes by name, or a documented tool.
+
+    ``targets`` is the runner's own ``{name: command}`` map, given for a runner whose targets are
+    prerequisites of one another (Make). An invoked name that is not a concern of its own is followed into
+    its command, once, so ``check: lint types test`` is read through ``types``. The alias of a verb names
+    that verb: ``format-check`` is ``format:check``.
+    """
     concerns: set[str] = set()
     for segment in _segments(command):
         target = _runner_target(segment)
-        if target and target in resolved:
-            concern = _CONCERN_OF_VERB.get(target)
-            if concern:
-                concerns.add(concern)
+        verb = canonical_verb(target) if target else None
+        concern = _CONCERN_OF_VERB.get(verb) if verb in resolved else None
+        if concern:
+            concerns.add(concern)
+        elif targets and target in targets and target not in followed:
+            concerns |= _composition_concerns(targets[target], resolved, targets, followed | {target})
         for concern, patterns in _DIRECT_CONCERN_PATTERNS:
             if concern not in concerns and any(re.search(p, segment) for p in patterns):
                 concerns.add(concern)
@@ -313,7 +370,7 @@ def _composition_concerns(command: str, resolved: dict[str, VerbBinding]) -> set
 def check_cmd02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     declared = runner_commands(inventory)
     if not declared:
-        return _unknown(spec, "no recognised verb runner, so no check verb can be read")
+        return _no_runner(spec, inventory, "no check verb can be read")
 
     resolved = resolve_verbs(inventory, stack)
     check = resolved.get("check")
@@ -336,7 +393,8 @@ def check_cmd02(*, spec, target, inventory, stack, components, session) -> Check
             ],
         )
 
-    concerns = _composition_concerns(check.command, resolved)
+    own_targets = dict(declared).get(check.runner, {}) if check.runner == "Makefile" else None
+    concerns = _composition_concerns(check.command, resolved, own_targets)
     present = [c for c in CONCERNS if c in concerns]
     missing = [c for c in CONCERNS if c not in concerns]
     detail = f"check ({check.runner}) composes: " + (", ".join(present) if present else "nothing")
@@ -410,7 +468,7 @@ def _invoked_runner(segment: str) -> str | None:
 def check_cmd03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     declared = runner_commands(inventory)
     if not declared:
-        return _unknown(spec, "no recognised verb runner, so no second definition can be read")
+        return _no_runner(spec, inventory, "no second definition can be read")
 
     check_defs = [(runner, commands["check"]) for runner, commands in declared if "check" in commands]
     if len(check_defs) <= 1:
@@ -473,7 +531,7 @@ def _write_invocations(command: str) -> list[str]:
 def check_cmd04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     declared = runner_commands(inventory)
     if not declared:
-        return _unknown(spec, "no recognised verb runner, so read-only verbs cannot be read")
+        return _no_runner(spec, inventory, "read-only verbs cannot be read")
 
     resolved = resolve_verbs(inventory, stack)
     offenders: list[tuple[str, VerbBinding, list[str]]] = []

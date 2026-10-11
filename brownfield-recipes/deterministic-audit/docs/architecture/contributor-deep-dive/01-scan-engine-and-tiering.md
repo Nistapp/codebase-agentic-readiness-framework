@@ -106,6 +106,24 @@ A check that cannot be certain of a tracked or ignore answer reports `UNKNOWN`, 
 Detection never guesses. An ecosystem it does not recognise yields `UNKNOWN` verdicts for the checks that
 depend on it, and a visible note in the report — never a pass by omission.
 
+### 4.1 Reading the verb runners
+
+`CMD`, `TOOL`, `TST`, `EXEC` and `AGT-05` all ask what each of the seven verbs runs. One helper, `runner_commands` in
+`audit/rules/checks/_common.py`, answers for every check, so a runner is read once. The spellings a runner accepts
+for `format:check` are the spec's ([Spelling per runner](../../../../../spec/command-surface.md#spelling-per-runner)),
+and this page does not restate them. The verb's own name is accepted on every runner; the other spellings are in
+`FORMAT_CHECK_ALIASES` in `audit/stack.py`, and a manifest that uses one is returned under `format:check`.
+
+| Runner | What the engine reads |
+|---|---|
+| `package.json` | The `scripts` map. |
+| `Makefile` | Every plain rule: its target names, its prerequisites in order and its recipe lines (`audit/stack.py`, `parse_makefile`). A colon escaped in a target name (`format\:check:`) is part of the name. What running a target does is each prerequisite that is itself a target of the file, as `make <name>`, then the recipe lines, joined with `&&`. A pattern rule, a variable in a name, an assignment and a `define` block are not read. |
+
+A Makefile that GNU Make refuses is not a runner, because nothing in it can run. The one refusal the engine detects
+is the one that sank its own fixture: an unescaped colon in a name (`format:check:`) is a static pattern rule whose
+pattern has no `%`. `CMD-01` reports it as a finding of its own, with the path `Makefile`, so its id is `CMD-01:Makefile`,
+and the checks that need a runner (`CMD-02` to `CMD-04`) are `UNKNOWN` and point to `CMD-01`.
+
 ---
 
 ## 5. Rule Packs

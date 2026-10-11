@@ -26,9 +26,12 @@ from dataclasses import dataclass
 
 from audit.scan import Inventory
 from audit.stack import (
+    FORMAT_CHECK_ALIASES,
     VERBS,
+    MakeError,
     Stack,
     extract_npm_scripts,
+    parse_makefile,
     parse_makefile_targets,
 )
 
@@ -99,8 +102,18 @@ def runner_commands(inventory: Inventory) -> tuple[tuple[str, dict[str, str]], .
 
     A runner is present when its manifest is present, whether or not it declares any framework verb;
     callers that care about verb coverage read the map, callers that care about runners read the name.
+    A ``Makefile`` that GNU Make refuses to parse is not a runner: nothing in it can run, so it is left
+    out, and :func:`makefile_errors` says why.
+
+    ``format:check`` is declared under the spelling its runner accepts (``FORMAT_CHECK_ALIASES``) and is
+    returned under its own name, so callers see one verb whichever spelling the manifest used.
     """
-    return tuple(_runner_commands(inventory))
+    return tuple((runner, _with_spellings(runner, commands)) for runner, commands in _runner_commands(inventory))
+
+
+def makefile_errors(inventory: Inventory) -> tuple[MakeError, ...]:
+    """What GNU Make refuses in the root ``Makefile``; empty when it parses or there is none."""
+    return parse_makefile(inventory).errors if inventory.has("Makefile") else ()
 
 
 #: Fenced-code languages treated as shell for command extraction.
@@ -145,7 +158,7 @@ def _runner_commands(inventory: Inventory):
     """Yield ``(runner, {verb: command})`` for every manifest present, in precedence order."""
     if inventory.has("package.json"):
         yield "package.json", extract_npm_scripts(inventory)
-    if inventory.has("Makefile"):
+    if inventory.has("Makefile") and not makefile_errors(inventory):
         yield "Makefile", parse_makefile_targets(inventory)
     for name in ("Taskfile.yml", "Taskfile.yaml"):
         if inventory.has(name):
@@ -165,6 +178,14 @@ def _runner_commands(inventory: Inventory):
         text = inventory.read("pom.xml")
         if text:
             yield "pom.xml", _parse_maven_goals(text, inventory)
+
+
+def _with_spellings(runner: str, commands: dict[str, str]) -> dict[str, str]:
+    """``commands`` with ``format:check`` bound to the first of its spellings that has a command."""
+    for spelling in ("format:check", *FORMAT_CHECK_ALIASES.get(runner, ())):
+        if commands.get(spelling):
+            return {**commands, "format:check": commands[spelling]}
+    return commands
 
 
 def _runner_rank(runner: str) -> int:

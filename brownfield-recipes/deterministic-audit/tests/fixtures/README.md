@@ -41,7 +41,10 @@ fixtures/
   cmd-03-divergent/          Makefile composes its own check      -> CMD-03 FAIL
   cmd-04-write-in-check/     check invokes the writing format verb -> CMD-04 FAIL
   cmd-ok-npm/                all seven verbs as npm scripts        -> CMD-01…04 PASS
-  cmd-ok-make/               all seven verbs as Makefile targets   -> CMD-01…04 PASS
+  cmd-ok-make/               all seven verbs as Makefile targets, `format\:check` escaped -> CMD-01…04 PASS
+  cmd-ok-make-prereqs/       `check` composes the verbs through its prerequisites -> CMD-01…04 PASS
+  cmd-ok-make-alias/         `format-check`, the alias, in place of `format\:check` -> CMD-01…04 PASS
+  cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
   sec-01-tracked-env/        tracked .env, comprehensive ignore (needs git) -> SEC-01 FAIL
   sec-02-key-shaped/         synthetic sk- value in a source file (needs git) -> SEC-02 FAIL
   sec-03-thin-ignore/        ignore rules cover no secret shapes   -> SEC-03 FAIL

@@ -83,6 +83,9 @@ MATRIX: dict[str, dict[str, str]] = {
     "cmd-04-write-in-check": {"CMD-04": "FAIL"},
     "cmd-ok-npm": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-ok-make": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
+    "cmd-ok-make-prereqs": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
+    "cmd-ok-make-alias": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
+    "cmd-01-make-parse-error": {"CMD-01": "FAIL", "CMD-02": "UNKNOWN", "CMD-03": "UNKNOWN", "CMD-04": "UNKNOWN"},
     # -- TOOL ---------------------------------------------------------------------------------
     "tool-01-no-formatter": {"TOOL-01": "FAIL"},
     "tool-02-no-linter": {"TOOL-02": "FAIL"},
@@ -196,6 +199,8 @@ NOT_IN_MATRIX: dict[str, str] = {}
 GOVERNED_FIXTURES = (
     "cmd-ok-npm",
     "cmd-ok-make",
+    "cmd-ok-make-prereqs",
+    "cmd-ok-make-alias",
     "tool-ok-node",
     "ci-ok-gh",
     "base-ok",
