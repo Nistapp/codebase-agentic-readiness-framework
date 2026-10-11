@@ -40,10 +40,11 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   the flag it is `UNKNOWN`, and it is refused outright if the resolved output would land inside the
   target (ADR-0002). The draft is deterministic: fixed sections, sorted entries.
 
-CON-04's output location is a contract choice not yet ratified by the framework (the framework
-defines no artifact contract — see CON-01). The least-surprising option is taken: the same ``--out``
-directory the report is written to, gated by the already-reserved ``--emit-baseline`` flag, with the
-filename the remediation how-to already names (``docs/how-to/hand-findings-to-remediation.md``).
+CON-04's draft is a Markdown list to paste under the prohibitions heading of the instruction file, one entry
+for each of six categories (secrets, migrations, generated code, tests, infrastructure as code, production
+configuration), with the paths in code spans. It is written to the same ``--out`` directory as the report, gated
+by ``--emit-baseline``, as ``do-not-do.draft.md`` (``docs/how-to/hand-findings-to-remediation.md``). It replaces
+the YAML ``constraints.draft.yaml``, which nothing reads any more.
 The emitter writes to a module-level target set by the CLI before the scan; nothing else reads it.
 
 Deliberate limits, recorded rather than hidden. Ignore matching (``CON-03``) is the documented subset in
@@ -52,14 +53,13 @@ heuristic: a path written without backticks is not seen, and a pattern is read l
 leading ``/`` anchors it, a leading ``**/`` is any depth, one with no inner slash names a directory of that
 name at any depth, ``fnmatch`` globs). Test-directory discovery is directory-based; a suite laid out as
 loose ``*_test.py`` files with no test-named directory is not seen and degrades to `UNKNOWN`, and so is a
-Ruby ``spec/`` directory. The emitter writes exactly one artifact (``constraints.draft.yaml``); the other S12
+Ruby ``spec/`` directory. The emitter writes exactly one artifact (``do-not-do.draft.md``); the other S12
 remediation inputs are out of scope for this pack.
 """
 
 from __future__ import annotations
 
 import fnmatch
-import json
 from itertools import accumulate
 from pathlib import Path
 
@@ -81,8 +81,9 @@ _SCRATCH_ROOTS: tuple[str, ...] = ("artefacts", "artifacts")
 _STATE_ROOTS: tuple[str, ...] = (".codebase-memory", ".opencode", ".agentic-tdd")
 _CON_ROOTS: tuple[str, ...] = _SCRATCH_ROOTS + _STATE_ROOTS
 
-#: The draft artifact CON-04 writes, beside the report under ``--out``.
-DRAFT_FILENAME = "constraints.draft.yaml"
+#: The draft artifact CON-04 writes, beside the report under ``--out``: a Markdown list to paste under the
+#: prohibitions heading of the instruction file (decision 0001).
+DRAFT_FILENAME = "do-not-do.draft.md"
 
 # ---------------------------------------------------------------------------
 # CON-04 emit target, configured once per process by the CLI before evaluation
@@ -485,7 +486,7 @@ def check_con03(*, spec, target, inventory, stack, components, session) -> Check
 
 
 # ===========================================================================
-# CON-04 — draft allow/deny emitter (not scored)
+# CON-04 — draft deny-list emitter (not scored)
 # ===========================================================================
 
 #: Canonical deny patterns per draft section. Emitted verbatim so the draft is useful even where the
@@ -571,49 +572,64 @@ _DRAFT_MATCHERS = {
 }
 
 
-def _allow_roots(inventory: Inventory) -> list[str]:
-    """Top-level roots that hold no denied path: the draft's read-allowed surface."""
-    denied: set[str] = set()
-    for entry in inventory.files:
-        if any(matcher(entry) for matcher in _DRAFT_MATCHERS.values()):
-            denied.add(entry.rel.split("/", 1)[0])
-    roots = {entry.rel.split("/", 1)[0] for entry in inventory.files if "/" in entry.rel}
-    return [
-        f"{root}/"
-        for root in sorted(roots)
-        if not root.startswith(".") and root not in denied and root != "node_modules"
-    ]
+#: What each draft entry says an agent must not do, by category. The paths follow in code spans, because a path
+#: counts as named in the prohibitions section when it stands in one.
+_DRAFT_OPENINGS: dict[str, str] = {
+    "secrets": "Never read, edit or commit a secret or a credential",
+    "migrations": "Never edit or rewrite a database migration",
+    "generated": "Never hand-edit a generated, built or vendored file",
+    "tests": "Never edit, skip or delete a test to make a failing test pass",
+    "iac": "Never change infrastructure as code without a review",
+    "production": "Never change a production configuration or manifest without a review",
+}
+
+#: The directory names that make a path belong to a category, so that an observed path is listed as its directory.
+_CATEGORY_DIRS: dict[str, frozenset[str]] = {
+    "migrations": _MIGRATION_DIRS,
+    "generated": _GENERATED_DIRS,
+    "tests": _TEST_DIR_NAMES,
+    "iac": _IAC_DIRS,
+    "production": frozenset({"prod", "production"}),
+}
 
 
-def build_constraint_draft(inventory: Inventory) -> str:
-    """The deterministic YAML text of the draft allow/deny list (CON-04).
+def _observed_entry(category: str, rel: str) -> str:
+    """The path to list for an observed file: its directory, from the root down to the one that made it belong."""
+    parts = rel.split("/")
+    for index, part in enumerate(parts[:-1]):
+        if part.lower() in _CATEGORY_DIRS.get(category, frozenset()):
+            return "/".join(parts[: index + 1]) + "/"
+    return rel
 
-    Sections are fixed and entries are sorted, so the same target always yields the same bytes.
+
+def _covered_by_another(entry: str, entries: list[str]) -> bool:
+    """Whether another entry already covers ``entry``, itself or a directory above it."""
+    above = list(accumulate(entry.rstrip("/").split("/"), lambda parent, name: f"{parent}/{name}"))
+    return any(other != entry and any(_names_directory(rel, other) for rel in above) for other in entries)
+
+
+def build_do_not_do_draft(inventory: Inventory) -> str:
+    """The Markdown draft of the prohibitions list (CON-04): one entry for each category, paths in code spans.
+
+    Sections are fixed and entries are sorted, so the same target always yields the same bytes. An observed
+    path is listed only when no other entry covers it, so the list stays as short as what it names.
     """
     lines = [
-        "# Generated by python-agentic-audit (CON-04) — DRAFT, review before use.",
-        "# The readiness framework defines no schema for allow/deny lists; this is a",
-        "# starting point derived deterministically from the scan. Treat it as reviewed",
-        "# infrastructure, not a conformance claim.",
-        "version: 1",
-        "deny:",
+        "<!-- Generated by python-agentic-audit (CON-04). A DRAFT: review every line before you use it.",
+        '     Paste the list under the prohibitions heading of AGENTS.md ("Do Not Do"), which the audit reads as',
+        "     the deny list, and keep each path in a code span: a path counts as named when it stands in one.",
+        "     Delete what does not apply to this repository. It is a starting point, not a conformance claim. -->",
+        "",
     ]
     for name, canonical in _DRAFT_PATTERNS:
-        observed = [entry.rel for entry in inventory.files if _DRAFT_MATCHERS[name](entry)]
-        entries = sorted(set(canonical) | set(observed))
-        lines.append(f"  {name}:")
-        lines.extend(f"    - {json.dumps(entry)}" for entry in entries)
-
-    lines.append("allow:")
-    allow = _allow_roots(inventory)
-    if allow:
-        lines.extend(f"  - {json.dumps(entry)}" for entry in allow)
-    else:
-        lines.append("  []")
+        observed = {_observed_entry(name, entry.rel) for entry in inventory.files if _DRAFT_MATCHERS[name](entry)}
+        candidates = sorted(set(canonical) | {entry for entry in observed if "`" not in entry})
+        entries = [entry for entry in candidates if not _covered_by_another(entry, candidates)]
+        lines.append(f"- {_DRAFT_OPENINGS[name]}: " + ", ".join(f"`{entry}`" for entry in entries) + ".")
     return "\n".join(lines) + "\n"
 
 
-def _write_constraint_draft(target: Target, out_path: Path, text: str) -> Path | None:
+def _write_draft(target: Target, out_path: Path, text: str) -> Path | None:
     """Write the draft beside the report. Returns the path, or None if it would land in-target."""
     out_dir = out_path.parent
     try:
@@ -632,14 +648,14 @@ def check_con04(*, spec, target, inventory, stack, components, session) -> Check
     if _EMIT_TARGET is None:
         return _unknown(spec, f"draft not emitted; pass --emit-baseline to write {DRAFT_FILENAME} beside the report")
 
-    draft = build_constraint_draft(inventory)
-    written = _write_constraint_draft(target, _EMIT_TARGET, draft)
+    draft = build_do_not_do_draft(inventory)
+    written = _write_draft(target, _EMIT_TARGET, draft)
     if written is None:
         return _unknown(
             spec, f"refusing to emit inside the target ({_EMIT_TARGET.parent}); pass an --out outside the repository"
         )
 
-    return _outcome(spec, Verdict.PASS, f"draft allow/deny list written: {written}")
+    return _outcome(spec, Verdict.PASS, f"draft deny list written: {written}")
 
 
 IMPLEMENTATIONS = {

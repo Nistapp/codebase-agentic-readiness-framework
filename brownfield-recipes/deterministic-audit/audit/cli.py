@@ -78,7 +78,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--emit-baseline",
         action="store_true",
         help="emit the remediation inputs the scan can derive; writes "
-        "constraints.draft.yaml beside the report (CON-04)",
+        "do-not-do.draft.md, a list to paste under the prohibitions heading of AGENTS.md, beside the report (CON-04)",
     )
     parser.add_argument(
         "--exclude",

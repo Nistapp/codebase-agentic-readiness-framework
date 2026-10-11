@@ -1,8 +1,8 @@
 # How to Hand Findings to Remediation
 
-> **Goal:** Convert a report into an ordered remediation plan and, where useful, a draft constraint list.
+> **Goal:** Convert a report into an ordered remediation plan and, where useful, a draft list of prohibitions.
 > **Audience:** Operators, engineering leads, consultants scoping an engagement
-> **Status:** Live for the implemented packs (`AGT`, `EXEC`, `CMD`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON`); the workflow below is what the tool does today. `--emit-baseline` now writes the draft constraint list (`constraints.draft.yaml`, `CON-04`); the other remediation inputs remain planned.
+> **Status:** Live for the implemented packs (`AGT`, `EXEC`, `CMD`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON`); the workflow below is what the tool does today. `--emit-baseline` now writes the draft list of prohibitions (`do-not-do.draft.md`, `CON-04`); the other remediation inputs remain planned.
 
 ---
 
@@ -19,14 +19,14 @@
 ### Step 1: Emit the remediation inputs
 
 The scan already knows things a remediation pass needs — the components, their governance gaps, the measured
-violation counts, and the paths that a constraint list should protect.
+violation counts, and the paths that the prohibitions list should name.
 
 ```bash
 python3 -m audit <target> --format both --out ./audit-out/<target-name> --emit-baseline
 ```
 
 > [!WARNING]
-> `--emit-baseline` currently writes `constraints.draft.yaml` (`CON-04`) beside `audit-report.json`/`.md`.
+> `--emit-baseline` currently writes `do-not-do.draft.md` (`CON-04`) beside `audit-report.json`/`.md`.
 > The remaining rows of the table below are the intended contract and are **not yet implemented**; the
 > flag writes no other artifacts.
 
@@ -35,7 +35,7 @@ python3 -m audit <target> --format both --out ./audit-out/<target-name> --emit-b
 | `findings.json` | The work queue | Planned |
 | `components.json` | Which components need `AGENTS.md` | Planned |
 | `baseline-inputs.json` | The numbers a quality baseline is built from (`BASE-01`, `BASE-02`) | Planned |
-| `constraints.draft.yaml` | The starting point for the allow/deny lists (`CON-04`) | Emitted |
+| `do-not-do.draft.md` | The starting point for the prohibitions section of the instruction file (`CON-04`) | Emitted |
 
 ### Step 2: Order the work by dependency, not by score
 
@@ -53,17 +53,18 @@ flowchart TB
 Without a deterministic install and a single command surface, the gates cannot be trusted; without gates, the
 baseline has nothing to measure; without a baseline, the constraints have no teeth.
 
-### Step 3: Triage the draft constraint list
+### Step 3: Triage the draft list of prohibitions
 
-`constraints.draft.yaml` is a *draft*, derived from what the scan found: secrets and config, database migrations,
-generated code, test directories, infrastructure-as-code, and production manifests.
+`do-not-do.draft.md` is a *draft*, derived from what the scan found: one entry for each of secrets and config, database
+migrations, generated code, test directories, infrastructure-as-code, and production manifests, with the paths in code
+spans. Paste the entries you keep under the "Do Not Do" heading of `AGENTS.md`.
 
 > [!NOTE]
 > The artifact the framework asks for as initial allow/deny lists is the prohibitions section of the instruction file
 > ([decision 0001](../../../../spec/decisions/0001-constraint-artifact.md)); `CON-01` and `CON-02` read it. The draft
-> is a starting point for a human decision, not a conformance claim, and it is not that artifact: paste what you
-> keep into the section, each path in a code span. Treat the draft as reviewed infrastructure — the framework
-> records constraint erosion as a named risk.
+> is a starting point for a human decision, not a conformance claim, and it is not that artifact. Keep each path in
+> a code span: a path counts as named only when it stands in one. Treat the draft as reviewed infrastructure — the
+> framework records constraint erosion as a named risk.
 
 ### Step 4: Re-scan and compare
 
@@ -80,7 +81,7 @@ python3 -m audit <target> --baseline ./audit-out/<target-name>/audit-report.json
 ## Verification
 
 - Every BLOCKER finding has an owner and a target date.
-- The draft constraint list has been reviewed line by line by a human, not accepted as generated.
+- The draft list of prohibitions has been reviewed line by line by a human, not accepted as generated.
 - The re-scan shows the expected verdict transitions and no new findings introduced by the remediation itself.
 
 ---

@@ -154,7 +154,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `CON-01` | Allow/deny artifact present | B | BLOCKER | The prohibitions section of the instruction file names at least one path or pattern, in a code span, that matches a file or directory of the repository. `PARTIAL` when it names paths and none matches; `FAIL` when it names none; `UNKNOWN` with no instruction file or no section. A code span that is a command, a flag or a bare word that is not a path is not a path | Implemented |
 | `CON-02` | Test directories protected | B | BLOCKER | The prohibitions section of the instruction file names every test directory, or a pattern that covers it, in a code span ([decision 0001](../../../../../spec/decisions/0001-constraint-artifact.md)). A test directory is one named `test`, `tests` or `__tests__`; `spec` and `specs` hold feature specifications. `PARTIAL` names some, `FAIL` none; `UNKNOWN` with no instruction file, no section or no test directory. Constraint files, ignore rules and CI text are not read | Implemented |
 | `CON-03` | `artefacts/` excluded from index and agent reads | B | DEGRADER | Ignore rules cover `artefacts/`, `artifacts/`, and the tool's own state directory | Implemented |
-| `CON-04` | Draft allow/deny emitted | Emitter | — | Writes a draft from the scan: secrets, migrations, generated code, test dirs, IaC, production manifests | Implemented (not scored) |
+| `CON-04` | Draft allow/deny emitted | Emitter | — | Writes `do-not-do.draft.md` from the scan, with `--emit-baseline`: a Markdown list to paste under the prohibitions heading, one entry for each of secrets, migrations, generated code, test dirs, IaC and production manifests, paths in code spans | Implemented (not scored) |
 
 ---
 
