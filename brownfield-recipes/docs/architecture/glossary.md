@@ -33,3 +33,6 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Builder | `report.py`: the only writer of the draft. Every change it makes is validated and written atomically. |
 | Renderer | `render_report.py`: turns a valid report into Markdown. A pure function of the JSON, so one report gives one text. |
 | Golden file | The Markdown that sits beside an example report and that the renderer's tests compare its output with. |
+| Engine report | `<label>.engine-report.<stamp>.json`: the JSON that `engine.py` writes, in the engine's schema v2. The adapter reads it and never changes it. |
+| Engine adapter | `report.py import-engine`, which applies `_engine_adapter.py`: brings the engine's checks, findings, stack, probes and unattested items into a draft. It runs once for a draft, and only for the draft's own repository. |
+| Golden pair | A raw engine report in `schema/examples/realistic/` and the draft that the adapter must make from it, byte for byte. |
