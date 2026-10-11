@@ -20,7 +20,9 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   is reported and consistency is left ``PARTIAL``, never ``PASS`` by inference. A lockfile is found at
   any depth and is tracked or not by the path it was found at (``app/package-lock.json``, not its
   basename); the shallowest is the one read. Only a lockfile at the root is compared with the root
-  manifest, so one in a subdirectory is tracked but its consistency is unverified.
+  manifest, so one in a subdirectory is tracked but its consistency is unverified. An ecosystem that was
+  recognised only from its source files (``Stack.source_only``) has no manifest and declares no
+  dependencies, so it is not expected to have a lockfile.
 * **EXEC-03** — a devcontainer / compose file / Dockerfile / setup target-script, or a documented
   non-interactive install command in the fenced blocks of README/``AGENTS.md``. Present but
   undocumented ⇒ ``PARTIAL``. No recognised ecosystem ⇒ ``UNKNOWN``: with no build manifest there is
@@ -402,8 +404,15 @@ def _lock_consistency(inv: Inventory, ecosystem: str, lockfile: str) -> tuple[st
 
 
 def check_exec02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    ecosystems = sorted(stack.ecosystems & set(_ECOSYSTEM_MANAGERS))
+    ecosystems = sorted((stack.ecosystems - stack.source_only) & set(_ECOSYSTEM_MANAGERS))
     if not ecosystems:
+        from_source = sorted(stack.source_only & set(_ECOSYSTEM_MANAGERS))
+        if from_source:
+            return _unknown(
+                spec,
+                f"{', '.join(from_source)} was recognised from its source files and no manifest declares "
+                "dependencies, so no lockfile is expected",
+            )
         return _unknown(spec, "no recognised ecosystem, so no lockfile is expected")
 
     tracked = tracked_in_scope(target, inventory)

@@ -84,7 +84,7 @@ class ScanEngineTests(unittest.TestCase):
         self._tmp = tempfile.TemporaryDirectory()
         self.root = Path(self._tmp.name)
         support.write(self.root, "AGENTS.md", "# Rules\n\n" + "Always run the tests.\n" * 40)
-        support.write(self.root, "src/app.py", "print('hi')\n")
+        support.write(self.root, "src/app.zig", "pub fn main() void {}\n")
         support.write(self.root, "node_modules/dep/index.js", "module.exports = 1\n")
         support.write(self.root, ".gitignore", "node_modules\n.env\n")
         (self.root / "bin.dat").write_bytes(b"\x00\x01\x02")

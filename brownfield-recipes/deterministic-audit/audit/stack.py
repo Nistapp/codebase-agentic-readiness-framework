@@ -6,6 +6,10 @@
 Decides which rule packs apply to a target. Detection never guesses: an ecosystem this module
 does not recognise produces ``UNKNOWN`` verdicts for the checks that need it, plus a visible note
 in the report. Nothing is ever passed by omission.
+
+A manifest names an ecosystem. Python is also recognised from its own source files when no manifest
+names it (:data:`SOURCE_SIGNALS`), because a standard-library-only project has nothing to declare; the
+stack records that in ``source_only`` and in its notes.
 """
 
 from __future__ import annotations
@@ -13,7 +17,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from audit.scan import Inventory
+from audit.scan import Inventory, Kind
 
 #: ecosystem -> (manifest globs, verb-runner hints)
 ECOSYSTEM_SIGNALS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
@@ -26,6 +30,11 @@ ECOSYSTEM_SIGNALS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
     "ruby": (("Gemfile",), ("Rakefile", "Makefile")),
     "php": (("composer.json",), ("composer.json",)),
 }
+
+#: ecosystem -> source suffix. An ecosystem that is also recognised from its own source files, so that a project
+#: with no manifest (a standard-library-only Python project) is not read as having no stack. Only source is
+#: counted: a test, a generated file or a fixture is not.
+SOURCE_SIGNALS: dict[str, str] = {"python": ".py"}
 
 PACKAGE_MANAGERS: dict[str, tuple[str, ...]] = {
     "npm": ("package-lock.json",),
@@ -111,6 +120,9 @@ def canonical_verb(name: str) -> str:
 @dataclass
 class Stack:
     ecosystems: set[str] = field(default_factory=set)
+    #: Ecosystems in ``ecosystems`` that were recognised from source files and no manifest names. Such a project
+    #: declares no dependencies, so a check that expects a lockfile has nothing to look for.
+    source_only: set[str] = field(default_factory=set)
     package_managers: set[str] = field(default_factory=set)
     ci_providers: set[str] = field(default_factory=set)
     test_frameworks: set[str] = field(default_factory=set)
@@ -138,9 +150,18 @@ def detect_stack(inv: Inventory) -> Stack:
                 if inv.match(pattern):
                     stack.ecosystems.add(eco)
                     break
-            elif pattern in names or inv.has(pattern):
+            elif pattern in names:
                 stack.ecosystems.add(eco)
                 break
+        suffix = SOURCE_SIGNALS.get(eco)
+        if (
+            eco not in stack.ecosystems
+            and suffix
+            and any(f.kind is Kind.SOURCE and f.rel.endswith(suffix) for f in inv.files)
+        ):
+            stack.ecosystems.add(eco)
+            stack.source_only.add(eco)
+            stack.notes.append(f"{eco} recognised from its source files: no manifest names it")
         for runner in runners:
             if runner in names and runner in VERB_RUNNERS and runner not in stack.verb_runners:
                 stack.verb_runners.append(runner)

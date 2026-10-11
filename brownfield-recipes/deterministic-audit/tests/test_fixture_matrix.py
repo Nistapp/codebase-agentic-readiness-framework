@@ -123,6 +123,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "con-03-artefacts-not-ignored": {"CON-03": "FAIL"},
     # -- EXEC ---------------------------------------------------------------------------------
     "exec-01-unpinned": {"EXEC-01": "FAIL"},
+    "exec-01-python-source-only": {"EXEC-01": "FAIL", "EXEC-02": "UNKNOWN"},
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
     "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},
     "exec-03-no-setup": {"EXEC-03": "FAIL"},

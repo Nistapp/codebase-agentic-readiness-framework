@@ -93,7 +93,7 @@ A check that cannot be certain of a tracked or ignore answer reports `UNKNOWN`, 
 | Signal | Detected from |
 |---|---|
 | Node / npm, pnpm, yarn, bun | `package.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb` |
-| Python | `pyproject.toml`, `requirements*.txt`, `setup.py`, `Pipfile`, `poetry.lock`, `uv.lock` |
+| Python | `pyproject.toml`, `requirements*.txt`, `setup.py`, `Pipfile`, `poetry.lock`, `uv.lock`; or, when none of them is present, a `.py` source file outside tests, generated code and vendored code. The stack then lists `python` in `source_only` and says so in its notes |
 | JVM | `pom.xml`, `build.gradle(.kts)`, `settings.gradle`, `gradlew` |
 | Go | `go.mod`, `go.sum`, `go.work` |
 | Rust | `Cargo.toml`, `Cargo.lock` |
@@ -105,7 +105,8 @@ A check that cannot be certain of a tracked or ignore answer reports `UNKNOWN`, 
 | Local hooks | `.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`, `core.hooksPath` |
 
 Detection never guesses. An ecosystem it does not recognise yields `UNKNOWN` verdicts for the checks that
-depend on it, and a visible note in the report — never a pass by omission.
+depend on it, and a visible note in the report — never a pass by omission. Source files count for Python alone, which is the one ecosystem whose projects are often a few
+standard-library scripts with nothing to declare; such a project is not expected to have a lockfile (`EXEC-02`).
 
 ### 4.1 Reading the verb runners
 

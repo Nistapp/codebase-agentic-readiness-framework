@@ -218,6 +218,23 @@ class Exec02MessageTests(unittest.TestCase):
         )
         self.assertEqual(findings, [])
 
+    def test_a_python_project_with_no_manifest_declares_no_dependencies_and_expects_no_lockfile(self):
+        check, findings = self.audit({"src/app.py": "print(1)\n"})
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "UNKNOWN",
+                "python was recognised from its source files and no manifest declares dependencies, so no "
+                "lockfile is expected",
+            ),
+        )
+        self.assertEqual(findings, [])
+
+    def test_a_manifest_in_a_project_that_also_has_source_still_expects_its_lockfile(self):
+        check, findings = self.audit({"pyproject.toml": "[project]\nname = 'x'\n", "src/app.py": "print(1)\n"})
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertIn("the python project has no lockfile", findings[0]["statement"])
+
     def test_without_git_the_tracked_state_is_unknown(self):
         check, _ = self.audit({"package.json": self.NODE}, git=False)
         self.assertEqual(

@@ -62,6 +62,7 @@ fixtures/
   sec-02-env-reference/      api_key, password and token that name an environment variable or a secret store -> SEC-02 PASS
   sec-01-ok/                 .env present but untracked + ignored (needs git) -> SEC-01…03 PASS
   exec-01-unpinned/          node project, no toolchain pin       -> EXEC-01 FAIL
+  exec-01-python-source-only/ a standard-library-only Python tool, no manifest, no pin -> EXEC-01 FAIL, EXEC-02 UNKNOWN
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
