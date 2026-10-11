@@ -104,10 +104,11 @@ class WalkTests(unittest.TestCase):
     def test_a_file_that_cannot_be_statted_is_skipped_and_named(self):
         real_stat = Path.stat
 
-        def stat(self, *args, **kwargs):
-            if self.name == "bad.txt":
+        def stat(self, *args, follow_symlinks=True, **kwargs):
+            # `is_symlink` asks for `stat(follow_symlinks=False)` on Python 3.11; only the walk's own call may fail.
+            if self.name == "bad.txt" and follow_symlinks:
                 raise PermissionError("denied")
-            return real_stat(self, *args, **kwargs)
+            return real_stat(self, *args, follow_symlinks=follow_symlinks, **kwargs)
 
         with mock.patch.object(Path, "stat", stat):
             inventory = self.walk({"bad.txt": "x", "good.txt": "x"})
