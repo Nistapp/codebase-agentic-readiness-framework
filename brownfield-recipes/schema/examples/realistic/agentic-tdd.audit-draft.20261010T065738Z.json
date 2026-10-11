@@ -635,7 +635,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "lint is not set"
+          "note": "lint"
         },
         {
           "kind": "file",
@@ -643,7 +643,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "security is not set"
+          "note": "security"
         },
         {
           "kind": "file",
@@ -651,7 +651,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "typecheck is not set"
+          "note": "typecheck"
         }
       ],
       "searches": []
@@ -673,7 +673,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "lint is not set"
+          "note": "lint"
         },
         {
           "kind": "file",
@@ -681,7 +681,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "security is not set"
+          "note": "security"
         },
         {
           "kind": "file",
@@ -689,7 +689,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "typecheck is not set"
+          "note": "typecheck"
         }
       ],
       "searches": []
@@ -704,15 +704,7 @@
       "verdict": "PARTIAL",
       "engine_verdict": "PARTIAL",
       "summary": "no ratchet and no baseline yet, so there is nothing to compare against",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": []
     },
     {
@@ -725,15 +717,7 @@
       "verdict": "FAIL",
       "engine_verdict": "FAIL",
       "summary": "no coverage threshold configured",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": []
     },
     {
@@ -991,15 +975,7 @@
       "verdict": "FAIL",
       "engine_verdict": "FAIL",
       "summary": "no coverage configuration",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": []
     },
     {
@@ -1736,7 +1712,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "lint is not set"
+          "note": "lint"
         },
         {
           "kind": "file",
@@ -1744,7 +1720,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "security is not set"
+          "note": "security"
         },
         {
           "kind": "file",
@@ -1752,7 +1728,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "typecheck is not set"
+          "note": "typecheck"
         }
       ],
       "searches": [],
@@ -1774,7 +1750,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "lint is not set"
+          "note": "lint"
         },
         {
           "kind": "file",
@@ -1782,7 +1758,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "security is not set"
+          "note": "security"
         },
         {
           "kind": "file",
@@ -1790,7 +1766,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "package.json",
-          "note": "typecheck is not set"
+          "note": "typecheck"
         }
       ],
       "searches": [],
@@ -1805,15 +1781,7 @@
       "check": "BASE-03",
       "severity": "DEGRADER",
       "statement": "An agent cannot stop the violation count from growing because no baseline, budget or comparison step exists, so the count is not guarded.",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": [],
       "remediation": {
         "summary": "Once a baseline exists, wire a comparison step (the audit's own `--baseline REPORT.JSON` is the reference pattern) so new findings fail the build."
@@ -1826,15 +1794,7 @@
       "check": "BASE-04",
       "severity": "DEGRADER",
       "statement": "An agent cannot know when coverage drops below an agreed floor because no coverage threshold is configured in the test runner.",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": [],
       "remediation": {
         "summary": "Configure a coverage floor for the test runner so a drop fails the gate."
@@ -2142,15 +2102,7 @@
       "check": "TST-05",
       "severity": "COSMETIC",
       "statement": "An agent cannot see how much of the code the suite actually covers because no coverage configuration or coverage-invoking command is present.",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": [],
       "remediation": {
         "summary": "Configure coverage for the test runner (a `coverage` block, `.coveragerc`/`.nycrc`, `--coverage`/`--cov`, or `go test -cover`)."

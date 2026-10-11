@@ -709,15 +709,7 @@
       "verdict": "FAIL",
       "engine_verdict": "FAIL",
       "summary": "no baseline or suppression artifact",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": []
     },
     {
@@ -730,15 +722,7 @@
       "verdict": "PARTIAL",
       "engine_verdict": "PARTIAL",
       "summary": "no violation-count mechanism found; method: static configuration scan; the target's own tools are never run",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": []
     },
     {
@@ -751,15 +735,7 @@
       "verdict": "PARTIAL",
       "engine_verdict": "PARTIAL",
       "summary": "no ratchet and no baseline yet, so there is nothing to compare against",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": []
     },
     {
@@ -772,15 +748,7 @@
       "verdict": "FAIL",
       "engine_verdict": "FAIL",
       "summary": "no coverage threshold configured",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": []
     },
     {
@@ -1110,15 +1078,7 @@
       "verdict": "FAIL",
       "engine_verdict": "FAIL",
       "summary": "no coverage configuration",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": []
     },
     {
@@ -1776,15 +1736,7 @@
       "check": "BASE-01",
       "severity": "DEGRADER",
       "statement": "An agent cannot distinguish pre-existing debt from new debt because no baseline or suppression artifact is committed.",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": [],
       "remediation": {
         "summary": "Commit a baseline/suppression artifact, or document the equivalent mechanism in `AGENTS.md`."
@@ -1797,15 +1749,7 @@
       "check": "BASE-02",
       "severity": "DEGRADER",
       "statement": "An agent cannot state how many violations exist today because no violation-counting tooling, budget or artifact is configured.",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": [],
       "remediation": {
         "summary": "Add linters/type-checkers/security scanners and commit the count they produce, so debt is measured rather than guessed."
@@ -1818,15 +1762,7 @@
       "check": "BASE-03",
       "severity": "DEGRADER",
       "statement": "An agent cannot stop the violation count from growing because no baseline, budget or comparison step exists, so the count is not guarded.",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": [],
       "remediation": {
         "summary": "Once a baseline exists, wire a comparison step (the audit's own `--baseline REPORT.JSON` is the reference pattern) so new findings fail the build."
@@ -1839,15 +1775,7 @@
       "check": "BASE-04",
       "severity": "DEGRADER",
       "statement": "An agent cannot know when coverage drops below an agreed floor because no coverage threshold is configured in the test runner.",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": [],
       "remediation": {
         "summary": "Configure a coverage floor for the test runner so a drop fails the gate."
@@ -2344,15 +2272,7 @@
       "check": "TST-05",
       "severity": "COSMETIC",
       "statement": "An agent cannot see how much of the code the suite actually covers because no coverage configuration or coverage-invoking command is present.",
-      "evidence": [
-        {
-          "kind": "file",
-          "captured_by": "tool",
-          "tool": "python-agentic-audit",
-          "tool_version": "0.1.0",
-          "path": "<repository>"
-        }
-      ],
+      "evidence": [],
       "searches": [],
       "remediation": {
         "summary": "Configure coverage for the test runner (a `coverage` block, `.coveragerc`/`.nycrc`, `--coverage`/`--cov`, or `go test -cover`)."
