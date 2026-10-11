@@ -10,7 +10,7 @@ a recipe sees. Every refusal must leave the draft's bytes and the folder's files
 
 from __future__ import annotations
 
-import io
+import copy
 import json
 import subprocess
 import sys
@@ -20,14 +20,12 @@ from typing import Any
 from unittest import mock
 
 import _paths
-import _common
 import _engine_reports as er
 import _summary
-import engine as launcher
 import render_report
 import report as rb
 import validate_report as vr
-from test_report import BuilderCase, agent_finding, call, read_json, tree_state
+from test_report import BuilderCase, agent_check, agent_finding, call, read_json, tree_state
 
 TOOLS = _paths.TOOLS
 REALISTIC = TOOLS.parent / "schema" / "examples" / "realistic"
@@ -588,6 +586,180 @@ class ImportUnattestedTests(ImportCase):
         self.assertIn("TOOL-01", rb.missing_checks(document)["TOOL"])
 
 
+PAIRS = {
+    "agentic-tdd": [
+        "IDX-02: the evidence path '/home/kc/.cache/codebase-memory-mcp' is not carried: "
+        "the path is absolute, so it is outside the repository"
+    ],
+    "digital-assistant-sdk": [],
+    "digital-assistant-server": [],
+}
+
+
+def golden_pair(name: str) -> tuple[Path, Path]:
+    """The raw engine report and the draft made from it, which the adapter must reproduce."""
+    (draft,) = REALISTIC.glob(f"{name}.audit-draft.*.json")
+    (engine,) = REALISTIC.glob(f"{name}.engine-report.*.json")
+    return engine, draft
+
+
+def started(golden: dict[str, Any]) -> dict[str, Any]:
+    """What `init` leaves of a draft: the golden draft without what `import-engine` fills in."""
+    document = copy.deepcopy(golden)
+    del document["provenance"]["engine"]
+    document["stack"] = {
+        name: [] for name in ("ecosystems", "package_managers", "ci_providers", "test_frameworks", "hook_managers")
+    }
+    document.update(components=[], checks=[], findings=[], unattested=[])
+    del document["coverage"]["inventory"]
+    document["summary"] = _summary.compute_summary(document)
+    return document
+
+
+class GoldenPairTests(ImportCase):
+    """Each raw engine report in `schema/examples/realistic/` imports to the draft beside it, byte for byte.
+
+    The draft is made from the golden draft's own fields that `init` supplies, so that nothing depends on the machine
+    the engine scanned. The pairs are golden for the ruleset they were produced with: when the mapping changes, the
+    drafts are regenerated from the raw reports.
+    """
+
+    def run_pair(self, name: str) -> tuple[Path, dict[str, Any], dict[str, Any], dict[str, Any], str]:
+        engine_path, golden_path = golden_pair(name)
+        self.out.mkdir(exist_ok=True)
+        draft = self.out / golden_path.name
+        golden_text = golden_path.read_text(encoding="utf-8")
+        draft.write_text(rb.dumps(started(json.loads(golden_text))), encoding="utf-8")
+        code, envelope, stderr = self.import_engine(draft, engine_path)
+        self.assertEqual(code, 0, (envelope, stderr))
+        return (
+            draft,
+            envelope,
+            json.loads(golden_text),
+            json.loads(engine_path.read_text(encoding="utf-8")),
+            golden_text,
+        )
+
+    def test_the_golden_drafts_are_in_the_tools_own_serialisation(self) -> None:
+        for name in PAIRS:
+            with self.subTest(pair=name):
+                text = golden_pair(name)[1].read_text(encoding="utf-8")
+                self.assertEqual(rb.dumps(json.loads(text)), text)
+
+    def test_each_raw_report_imports_to_the_draft_beside_it(self) -> None:
+        for name in PAIRS:
+            with self.subTest(pair=name):
+                draft, _, golden, _, golden_text = self.run_pair(name)
+                self.assertEqual(read_json(draft), golden)
+                self.assertEqual(draft.read_text(encoding="utf-8"), golden_text)
+
+    def test_the_imported_draft_validates_and_renders(self) -> None:
+        for name in PAIRS:
+            with self.subTest(pair=name):
+                draft = self.run_pair(name)[0]
+                document = read_json(draft)
+                self.assertEqual(vr.validate_document(document).errors, [])
+                self.assertTrue(render_report.render(document))
+
+    def test_the_adapters_own_warnings_are_the_ones_expected(self) -> None:
+        for name, expected in PAIRS.items():
+            with self.subTest(pair=name):
+                envelope = self.run_pair(name)[1]
+                adapter_warnings = [w for w in envelope["warnings"] if not w.startswith("/")]
+                self.assertEqual(adapter_warnings, expected)
+
+    def test_every_engine_verdict_and_finding_comes_through_and_the_score_is_the_engines(self) -> None:
+        for name in PAIRS:
+            with self.subTest(pair=name):
+                draft, _, _, engine, _ = self.run_pair(name)
+                document = read_json(draft)
+                self.assertEqual(
+                    {c["id"]: (c["verdict"], c["engine_verdict"]) for c in document["checks"]},
+                    {c["id"]: (c["verdict"], c["verdict"]) for c in engine["checks"]},
+                )
+                self.assertEqual([f["check"] for f in document["findings"]], [f["check"] for f in engine["findings"]])
+                self.assertEqual(document["summary"]["phase1_score"], engine["summary"]["phase1_score"])
+                self.assertEqual({c["method"] for c in document["checks"]}, {"automated"})
+                self.assertEqual({f["disposition"] for f in document["findings"]}, {"pending"})
+
+    def test_a_finding_the_engine_raised_twice_keeps_both_with_the_second_numbered(self) -> None:
+        draft = self.run_pair("digital-assistant-server")[0]
+        keys = [f["key"] for f in read_json(draft)["findings"] if f["check"] == "AGT-08"]
+        self.assertEqual(keys, ["AGT-08", "AGT-08:2"])
+
+    def test_no_evidence_item_names_a_place_outside_the_repository_or_a_placeholder(self) -> None:
+        for name in PAIRS:
+            with self.subTest(pair=name):
+                document = read_json(self.run_pair(name)[0])
+                paths = [
+                    item["path"]
+                    for finding in document["findings"]
+                    for item in finding["evidence"]
+                    if item["kind"] == "file"
+                ]
+                self.assertTrue(paths)
+                self.assertFalse([p for p in paths if p.startswith(("/", "<", "("))], paths)
+                self.assertFalse([p for p in paths if ":" in p], paths)
+
+    def test_a_key_in_an_evidence_path_is_a_note_that_does_not_say_what_it_means(self) -> None:
+        document = read_json(self.run_pair("agentic-tdd")[0])
+        base = next(f for f in document["findings"] if f["check"] == "BASE-01")
+        self.assertEqual(
+            [(i["path"], i["note"]) for i in base["evidence"]],
+            [("package.json", "lint"), ("package.json", "security"), ("package.json", "typecheck")],
+        )
+
+    def test_the_whole_audit_goes_on_from_the_imported_draft_to_a_final_report(self) -> None:
+        """Import the real report, dispute a check, add the agent's two checks, decide every finding, and finalise."""
+        engine_path, _ = golden_pair("digital-assistant-sdk")
+        engine = json.loads(engine_path.read_text(encoding="utf-8"))
+        engine["provenance"].update(target=str(self.target), git_sha=None)
+        draft = self.start()
+        code, envelope, _ = self.import_engine(draft, self.engine_file(engine))
+        self.assertEqual(code, 0, envelope)
+        before = read_json(draft)["summary"]["phase1_score"]
+        raised = next(f for f in read_json(draft)["findings"] if f["check"] == "TOOL-03")
+        code, envelope, _ = self.decide(
+            draft,
+            "--via",
+            "interactive",
+            "--finding",
+            raised["id"],
+            "--disposition",
+            "rejected",
+            "--note",
+            "Inherited.",
+        )
+        self.assertEqual(code, 0, envelope)
+        code, envelope, _ = self.add_check(
+            draft,
+            {
+                "id": "TOOL-03",
+                "verdict": "PASS",
+                "summary": "tsconfig.json extends a base that sets strict.",
+                "override_reason": "tsconfig.base.json sets strict: true and tsconfig.json extends it.",
+                "evidence": [{"kind": "file", "path": "tsconfig.base.json", "quote": "strict: true"}],
+            },
+        )
+        self.assertEqual((code, envelope["data"]["action"]), (0, "overridden"), envelope)
+        self.assertGreater(read_json(draft)["summary"]["phase1_score"], before)
+        for check_id in ("AGT-11", "CI-04"):
+            self.assertEqual(self.add_check(draft, agent_check(id=check_id))[0], 0)
+        findings = [f for f in read_json(draft)["findings"] if f["disposition"] == "pending"]
+        decisions = [{"finding": f["id"], "disposition": "confirmed"} for f in findings if f["severity"] != "BLOCKER"]
+        for finding in [f for f in findings if f["severity"] == "BLOCKER"]:
+            code, envelope, _ = self.decide(
+                draft, "--via", "interactive", "--finding", finding["id"], "--disposition", "confirmed"
+            )
+            self.assertEqual(code, 0, envelope)
+        self.assertEqual(self.decide(draft, "--via", "batch", "--from", "-", stdin=json.dumps(decisions))[0], 0)
+        code, envelope, _ = self.finalise(draft)
+        self.assertEqual(code, 0, envelope)
+        final = read_json(envelope["data"]["report"])
+        self.assertEqual((final["status"], len(final["checks"]), vr.validate_document(final).errors), ("final", 71, []))
+        self.assertTrue(Path(envelope["data"]["markdown"]).read_text(encoding="utf-8"))
+
+
 class ImportScanFactsTests(ImportCase):
     def test_the_stack_the_components_and_the_inventory_arrive(self) -> None:
         report = er.report(
@@ -653,16 +825,7 @@ class RealProbeTests(ImportCase):
 
     def scan(self, test_script: str, *extra: str) -> Path:
         (self.target / "package.json").write_text(json.dumps({"scripts": {"test": test_script}}), encoding="utf-8")
-        out, err = io.StringIO(), io.StringIO()
-        code = _common.run_tool(
-            launcher.INFO,
-            launcher.handler,
-            [str(self.target), "--out-dir", str(self.engine_dir), *extra],
-            stdout=out,
-            stderr=err,
-        )
-        self.assertEqual(code, 0, err.getvalue())
-        return Path(json.loads(out.getvalue())["data"]["report"])
+        return er.scan(self.target, self.engine_dir, *extra)
 
     def check(self, draft: Path, check_id: str) -> dict[str, Any]:
         found: dict[str, Any] = next(c for c in read_json(draft)["checks"] if c["id"] == check_id)

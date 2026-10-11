@@ -10,13 +10,28 @@ real reports are in `schema/examples/realistic/`; these are for the cases they d
 
 from __future__ import annotations
 
+import io
+import json
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import _paths  # noqa: F401
+import _common
+import engine as launcher
 import validate_report as vr
 
 CATALOGUE: dict[str, Mapping[str, Any]] = {entry["id"]: entry for entry in vr.load_catalogue()["checks"]}
+
+
+def scan(target: Path | str, out_dir: Path | str, *extra: str) -> Path:
+    """Run the real engine through the launcher on `target`, and return the path of the report it wrote."""
+    out, err = io.StringIO(), io.StringIO()
+    code = _common.run_tool(
+        launcher.INFO, launcher.handler, [str(target), "--out-dir", str(out_dir), *extra], stdout=out, stderr=err
+    )
+    if code != 0:
+        raise AssertionError(f"the engine failed on {target} with exit {code}: {err.getvalue()}")
+    return Path(json.loads(out.getvalue())["data"]["report"])
 
 
 def provenance(target: Path | str, **changes: Any) -> dict[str, Any]:
