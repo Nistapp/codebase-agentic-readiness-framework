@@ -770,6 +770,13 @@ def finding_counts(document: Mapping[str, Any]) -> dict[str, int]:
     }
 
 
+def initial_decision(document: Mapping[str, Any]) -> dict[str, str]:
+    """What a new finding starts with: `pending`, or `confirmed` by policy when the run's policy is `accept-all`."""
+    if document["run_context"]["confirmation_policy"] == "accept-all":
+        return {"disposition": "confirmed", "confirmed_via": "policy"}
+    return {"disposition": "pending"}
+
+
 def apply_finding(document: dict[str, Any], fragment: Mapping[str, Any]) -> Change:
     """Record an issue a check raised.
 
@@ -805,10 +812,8 @@ def apply_finding(document: dict[str, Any], fragment: Mapping[str, Any]) -> Chan
         "evidence": fragment.get("evidence", []),
         "searches": fragment.get("searches", []),
         "remediation": fragment["remediation"],
-        "disposition": "pending",
+        **initial_decision(document),
     }
-    if document["run_context"]["confirmation_policy"] == "accept-all":
-        finding.update(disposition="confirmed", confirmed_via="policy")
     if index is None:
         index = len(document["findings"])
         document["findings"].append({})
