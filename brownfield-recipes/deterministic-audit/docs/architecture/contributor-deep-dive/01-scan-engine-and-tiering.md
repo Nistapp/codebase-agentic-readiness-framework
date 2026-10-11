@@ -185,7 +185,7 @@ Same target, same commit, same flags → byte-identical report except the proven
 
 - Sorted traversal and sorted check evaluation.
 - No check-order dependence; no use of wall-clock time inside verdicts.
-- Finding ids are derived from `check id + path`, never from a counter.
+- Finding ids are derived from `check id + path`, never from a counter. A finding about no one path carries a scope in its place (`AGT-08:vendor-files`), so that every id in a report is unique; the fixture matrix checks this on every fixture.
 - The rule-set hash is recorded so a report can be attributed to an exact catalogue revision.
 
 ---

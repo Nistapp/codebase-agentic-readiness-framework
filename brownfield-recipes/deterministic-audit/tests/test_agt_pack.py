@@ -126,6 +126,33 @@ class StubReasonTests(unittest.TestCase):
         self.assertEqual(_trivial_reason("TODO"), "only 4 characters (minimum 400)")
 
 
+class FindingIdTests(unittest.TestCase):
+    """A finding's id is its check and a path, and the baseline ratchet compares ids, so two findings need two ids."""
+
+    def ids(self, fixture: str, *checks: str) -> list[str]:
+        report = support.run_audit(support.fixture(fixture))
+        return sorted(f["id"] for f in report["findings"] if f["check"] in checks)
+
+    def test_agt_08_names_each_of_its_findings(self):
+        self.assertEqual(
+            self.ids("agt-08-competitor", "AGT-08"),
+            ["AGT-08:CLAUDE.md>AGENTS.md", "AGT-08:harness-reach", "AGT-08:vendor-files"],
+        )
+
+    def test_a_shadowed_pair_is_named_by_the_pair(self):
+        self.assertEqual(
+            self.ids("agt-01-shadowed", "AGT-08"), ["AGT-08:AGENTS.override.md>AGENTS.md", "AGT-08:harness-reach"]
+        )
+
+    def test_agt_01_names_the_file_a_finding_is_about(self):
+        self.assertEqual(self.ids("agt-01-stub", "AGT-01"), ["AGT-01:AGENTS.md"])
+        self.assertEqual(self.ids("agt-01-shadowed", "AGT-01"), ["AGT-01:AGENTS.override.md"])
+        self.assertEqual(self.ids("agt-01-mis-cased", "AGT-01"), ["AGT-01:agents.md", "AGT-01:vendor-only"])
+
+    def test_with_no_instruction_file_the_one_finding_has_the_plain_id(self):
+        self.assertEqual(self.ids("agt-01-missing", "AGT-01"), ["AGT-01"])
+
+
 class Agt07SectionTests(unittest.TestCase):
     """AGT-07 finds the section through the helper that CON-01 and CON-02 share, and still scans the whole file."""
 

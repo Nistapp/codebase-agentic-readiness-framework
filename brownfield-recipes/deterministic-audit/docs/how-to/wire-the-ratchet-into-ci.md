@@ -35,7 +35,7 @@ git add .audit/baseline.json && git commit -m "chore(audit): record agentic-read
 The baseline records current findings. It is a statement of where you are, not of where you should be.
 
 > [!NOTE]
-> The ratchet compares **finding ids** — `check id + path` — not counts and not the score. A finding
+> The ratchet compares **finding ids** — `check id + path`, or a scope such as `AGT-08:vendor-files` for a finding about no one path — not counts and not the score. A finding
 > that is present now but absent from the baseline is a regression; moving or re-scoring existing
 > findings is not. A baseline that cannot be read (missing, malformed) is itself reported as a
 > regression rather than silently passing.

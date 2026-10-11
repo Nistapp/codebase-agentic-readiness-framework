@@ -68,6 +68,29 @@ class RatchetTests(unittest.TestCase):
                 all(fid.startswith(("DOC-03", "CON-03")) for fid in expected), f"unexpected regressions: {expected}"
             )
 
+    def test_findings_of_one_check_without_one_path_are_told_apart(self):
+        # AGT-08 raises up to three findings with no one path. They once all had the id `AGT-08`, so a baseline that
+        # held one of them hid the others. Each has an id of its own now.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = _seeded_target(root)
+            out_dir = root / "out"
+            out_dir.mkdir()
+            baseline = out_dir / "baseline.json"
+            support.run_audit_process(target, out=baseline)
+            agt_08 = {f["id"] for f in json.loads(baseline.read_text())["findings"] if f["check"] == "AGT-08"}
+            self.assertEqual(agt_08, {"AGT-08:harness-reach"})
+
+            support.write(target, "CLAUDE.md", "# Claude\n\nSee AGENTS.md.\n")
+            current = out_dir / "current.json"
+            proc, _ = support.run_audit_process(target, out=current, extra_args=("--baseline", str(baseline)))
+            self.assertEqual(proc.returncode, 2, proc.stderr)
+            regressions = json.loads(current.read_text())["ratchet"]["regressions"]
+            self.assertEqual(
+                [r for r in regressions if r.startswith("AGT-08")],
+                ["AGT-08:CLAUDE.md>AGENTS.md", "AGT-08:vendor-files"],
+            )
+
     def test_regression_list_is_sorted_and_stable(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

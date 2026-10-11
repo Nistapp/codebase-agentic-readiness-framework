@@ -284,14 +284,20 @@ class FixtureMatrixTests(unittest.TestCase):
         self.assertEqual(actual - declared, set(), "fixture directories with no explicit matrix row")
         self.assertEqual(declared - actual, set(), "matrix rows naming a fixture that does not exist")
 
-    def test_each_fixture_reports_its_documented_verdict(self):
+    def test_each_fixture_reports_its_documented_verdict_and_names_every_finding_once(self):
         for name in sorted(MATRIX):
             if not MATRIX[name]:
                 continue
             with self.subTest(fixture=name):
-                verdicts = support.verdicts(run(name))
+                report = run(name)
+                verdicts = support.verdicts(report)
                 for check, expected in MATRIX[name].items():
                     self.assertEqual(verdicts.get(check), expected, f"{name}: {check} expected {expected}")
+                # A finding's id is its check and its path; the baseline ratchet compares ids, so two findings
+                # with one id would be merged into one.
+                ids = [finding["id"] for finding in report["findings"]]
+                duplicated = sorted({i for i in ids if ids.count(i) > 1})
+                self.assertEqual(duplicated, [], f"{name}: finding ids that more than one finding has")
 
     def test_empty_directory_reports_nothing_and_does_not_crash(self):
         # A completed scan of an empty directory exits 0 (it reports, it does not gate) and emits a

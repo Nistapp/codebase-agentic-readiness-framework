@@ -7,7 +7,9 @@ Every finding is phrased as **"an agent cannot X today because Y"**. That phrasi
 it is what makes the report usable as a work queue instead of a compliance checklist.
 
 Finding ids are derived from ``check id + path`` and never from a counter, so two runs over the
-same repository produce comparable findings and a baseline diff is meaningful.
+same repository produce comparable findings and a baseline diff is meaningful. A finding that is about no
+one path carries a scope in its place (``AGT-08:vendor-files``), so that every finding of a report has an id
+of its own; the baseline ratchet compares ids, and two findings with one id would be one to it.
 """
 
 from __future__ import annotations

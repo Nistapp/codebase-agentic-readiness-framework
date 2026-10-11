@@ -131,10 +131,9 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
     present = instruction_paths(inventory)
     classified = V.classify_present(present)
     findings: list[Finding] = []
-    detail_parts: list[str] = []
 
     canonical_root = "AGENTS.md" in present
-    canonical_nested = sorted(p for p in present if p.endswith("/AGENTS.md") and p != "AGENTS.md")
+    canonical_nested = sorted(p for p in present if p.endswith("/AGENTS.md"))
     mis_cased = V.mis_cased_canonical_candidates(present)
     aliases = classified["aliases"]
     overrides = classified["overrides"]
@@ -171,6 +170,7 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
                         evidence=[Evidence("AGENTS.md", note=f"{_rule_line_count(text)} rule lines")],
                         remediation="Fill AGENTS.md from the framework template: verbs, boundaries, "
                         "definition of done, prohibitions.",
+                        path="AGENTS.md",
                     )
                 )
         if mis_cased:
@@ -187,6 +187,7 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
                     ),
                     evidence=[Evidence(p) for p in mis_cased],
                     remediation="Rename to AGENTS.md exactly (Warp also requires ALL CAPS).",
+                    path=mis_cased[0],
                 )
             )
         if not canonical_root and (aliases or vendor_only):
@@ -207,6 +208,7 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
                     ),
                     remediation="Add AGENTS.md as the canonical file and reduce vendor files to a "
                     "one-line pointer, or a symlink where the harness supports it.",
+                    path="vendor-only",
                 )
             )
         if overrides:
@@ -224,10 +226,9 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
                         ),
                         evidence=[Evidence(override)],
                         remediation="Delete the override, or make it a deliberate, documented superset.",
+                        path=override,
                     )
                 )
-        if canonical_nested:
-            detail_parts.append(f"{len(canonical_nested)} nested instruction file(s)")
 
     if not findings:
         verdict = Verdict.PASS
@@ -242,7 +243,7 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
         spec.phase,
         verdict,
         spec.status,
-        summary="; ".join(detail_parts),
+        summary=f"{len(canonical_nested)} nested instruction file(s)" if present and canonical_nested else "",
         findings=findings,
     )
 
@@ -321,10 +322,16 @@ def check_agt02(*, spec, target, inventory, stack, components, session) -> Check
 # ---------------------------------------------------------------------------
 
 
+#: The scopes of `AGT-08`'s findings, which have no one path, so that each finding has an id of its own: the id is
+#: the check and a path, and the baseline ratchet compares ids. A shadowed pair is named by the pair.
+_AGT08_COMPETITORS = "vendor-files"
+_AGT08_REACH = "harness-reach"
+
+
 def check_agt08(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     present = instruction_paths(inventory)
     classified = V.classify_present(present)
-    competitors = [p for p in classified["vendor_only"] if p.strip("/") != ""]
+    competitors = list(classified["vendor_only"])
     shadowed = classified["shadowed"]
     reached = classified["harnesses_reached"]
     missed = classified["harnesses_missed"]
@@ -345,6 +352,7 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
                 evidence=[Evidence(p) for p in competitors[:12]],
                 remediation="Keep AGENTS.md canonical; reduce each vendor file to a pointer at it, or "
                 "delete it if the harness reads AGENTS.md natively.",
+                path=_AGT08_COMPETITORS,
             )
         )
     for winner, loser in shadowed:
@@ -362,6 +370,7 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
                 evidence=[Evidence(winner), Evidence(loser)],
                 remediation="Reconcile the two files, or delete the shadowed one — a file nobody "
                 "reads still gets edited.",
+                path=f"{winner}>{loser}",
             )
         )
     if missed and ("AGENTS.md" in present or competitors):
@@ -379,6 +388,7 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
                 ),
                 remediation="Either state the supported harnesses in AGENTS.md, or add the vendor "
                 "pointer files for the harnesses in use.",
+                path=_AGT08_REACH,
             )
         )
 
