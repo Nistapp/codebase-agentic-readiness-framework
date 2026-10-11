@@ -44,7 +44,13 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument("target", nargs="?", default=".", help="repository to scan (default: .)")
-    parser.add_argument("--phase", type=int, default=1, help="highest framework phase to evaluate (default: 1)")
+    parser.add_argument(
+        "--phase",
+        type=int,
+        default=1,
+        help="the phase recorded in the report's provenance (default: 1); the engine implements phase 1 only, so a "
+        "higher value changes nothing else",
+    )
     parser.add_argument("--format", choices=("json", "md", "both"), default="both", help="report formats")
     parser.add_argument("--out", help="output path or directory; outside the target by default")
     parser.add_argument(

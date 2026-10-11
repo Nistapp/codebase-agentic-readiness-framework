@@ -99,7 +99,11 @@ def build_parser() -> _common.ToolParser:
     parser.add_argument("target", nargs="?", help="the repository to scan")
     parser.add_argument("--out-dir", help="where the report goes; outside the target (default: the current directory)")
     parser.add_argument("--repo-label", help="the label in the file name (default: derived from the target's name)")
-    parser.add_argument("--phase", type=int, help="highest framework phase to evaluate (the engine's default is 1)")
+    parser.add_argument(
+        "--phase",
+        type=int,
+        help="the phase recorded in the report (the engine's default is 1; it implements phase 1 only)",
+    )
     parser.add_argument("--exclude", action="append", default=[], metavar="GLOB", help="extra path glob to skip")
     parser.add_argument("--max-files", type=int, help="hard cap on inspected files")
     parser.add_argument("--run-gates", action="store_true", help="let the engine run the target's own commands")

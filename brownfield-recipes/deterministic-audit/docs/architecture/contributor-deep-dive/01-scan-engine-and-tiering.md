@@ -268,7 +268,7 @@ The auditor is verified the same way the framework verifies anything else: again
 | Flag | Default | Purpose |
 |---|---|---|
 | `<target>` | `.` | Repository to scan; must be a directory |
-| `--phase` | `1` | Highest framework phase to evaluate |
+| `--phase` | `1` | The phase recorded in the report's provenance. The engine implements phase 1 only, so a higher value changes nothing else |
 | `--format` | `both` | `json`, `md`, or `both` |
 | `--out` | stdout for Markdown, `audit-report.json` in the CWD for JSON | Output location. The writer **refuses** when the CWD is inside the target — a scanner must not drop a file into the repository it audits (ADR-0002) |
 | `--run-gates` | off | Enable Tier-C probes |
