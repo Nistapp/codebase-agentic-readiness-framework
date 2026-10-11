@@ -20,7 +20,11 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   never placed in the report (AGENTS.md §9). With no tracked set the scan falls back to the whole
   inventory and says so in `detail`. Committed templates (``*.example``/``*.sample``/``*.template``)
   and lines whose value is an obvious placeholder are skipped by a deterministic rule, so a
-  documentation file that quotes the shape does not fail the check.
+  documentation file that quotes the shape does not fail the check. A keyword (``token``, ``password``,
+  ``api_key``) counts only when what it is assigned is a literal: a quoted string that is not a reference
+  to the environment or a secret store (``os.environ/NAME``, ``${NAME}``, ``{{ secrets.NAME }}``), or,
+  outside source code, a single plain unquoted token. In source code an unquoted value is a name or an
+  expression (``token = match.group(1) or x``), never a literal.
 * **SEC-03** — ignore rules must cover a documented set of key/certificate/credential shapes
   (:data:`_SECRET_SHAPES`). Every required shape covered is `PASS`; some is `PARTIAL`; none is
   `FAIL`. The covered labels are stated in `detail`.
@@ -255,33 +259,85 @@ def check_sec01(*, spec, target, inventory, stack, components, session) -> Check
 _KEYWORD_PATTERN = next(p for p in REDACTION_PATTERNS if "api" in p.pattern)
 _SHAPE_PATTERNS = tuple(p for p in REDACTION_PATTERNS if p is not _KEYWORD_PATTERN)
 
-_ASSIGNMENT_RE = re.compile(r"[:=]\s*(.+)$")
+#: What a keyword assignment assigns: the rest of the line after ``:``, ``=`` or ``:=``.
+_ASSIGNED_VALUE_RE = re.compile(r"(?::=|[:=])\s*(.*)$")
 _SECRET_VALUE_CHARSET_RE = re.compile(r"[0-9A-Z]|[^A-Za-z0-9\s]")
+#: A string prefix that makes the literal a plain string (raw, bytes, unicode) and one that interpolates (f).
+_STRING_PREFIX_RE = re.compile(r"^([rRbBuUfF]{1,2})(?=['\"])")
+#: A value that names where a secret lives and is not the secret: a variable (``$X``, ``${X}``), a template
+#: (``{{ secrets.X }}``, ``<%= X %>``, ``%(X)s``), LiteLLM's ``os.environ/NAME`` or a process-environment read.
+_REFERENCE_RE = re.compile(r"^(?:\$|\{\{|<%|%\(|os\.environ/|process\.env\.|env:)")
+
+#: A file in one of these languages assigns names and expressions, so ``token = a.b(c)`` there is code. Only a
+#: quoted literal in it can be a credential. Configuration, scripts and documents assign plain values, so an
+#: unquoted value in them can be one.
+_CODE_SUFFIXES = (
+    ".py",
+    ".js",
+    ".jsx",
+    ".mjs",
+    ".cjs",
+    ".ts",
+    ".tsx",
+    ".java",
+    ".kt",
+    ".scala",
+    ".go",
+    ".rs",
+    ".rb",
+    ".cs",
+    ".php",
+    ".swift",
+    ".c",
+    ".h",
+    ".cc",
+    ".cpp",
+    ".hpp",
+)
 
 
-def _looks_secret_value(raw: str) -> bool:
-    """A deterministic value guard for the keyword pattern.
+def _looks_secret_value(raw: str, *, in_code: bool = False) -> bool:
+    """A deterministic guard for the keyword pattern: is what the keyword is assigned a credential?
 
-    A real secret value is long and mixes case, digits, or symbols. A bare keyword such as ``write``,
-    ``read`` or ``true`` — the shape of a CI permission — is neither. This is what keeps a legitimate
-    ``id-token: write`` from being read as a credential.
+    A credential is a literal. A quoted string is one unless it is a reference to a secret store or the
+    environment. An unquoted value is one only in configuration, a script or a document, where it is a single
+    plain token: in source code it is a name or an expression (``token = match.group(1) or x``), never a
+    literal. A literal is long (12 characters or more) and mixes in a capital, a digit or a symbol, which a
+    CI permission such as ``id-token: write`` and a bare word are not.
     """
-    value = raw.strip().strip("\"'").strip()
-    if len(value) < 12:
+    value = raw.strip()
+    prefix = _STRING_PREFIX_RE.match(value)
+    if prefix:
+        if "f" in prefix.group(1).lower():
+            return False
+        value = value[len(prefix.group(1)) :]
+    quote = value[:1]
+    if quote in ("'", '"'):
+        end = value.find(quote, 1)
+        literal = value[1 : end if end != -1 else len(value)]
+    elif in_code:
         return False
-    if value.lower() in {"write", "read", "true", "false", "none", "null"}:
+    else:
+        words = value.split()
+        if not words:
+            return False
+        literal = words[0].rstrip(",;")
+        if any(char in literal for char in "()[]"):
+            return False
+    literal = literal.strip()
+    if _REFERENCE_RE.match(literal) or len(literal) < 12:
         return False
-    return bool(_SECRET_VALUE_CHARSET_RE.search(value))
+    return bool(_SECRET_VALUE_CHARSET_RE.search(literal))
 
 
-def _line_is_secret(line: str) -> bool:
+def _line_is_secret(line: str, *, in_code: bool = False) -> bool:
     if any(pattern.search(line) for pattern in _SHAPE_PATTERNS):
         return True
     match = _KEYWORD_PATTERN.search(line)
     if not match:
         return False
-    assignment = _ASSIGNMENT_RE.search(match.group(0))
-    return bool(assignment) and _looks_secret_value(assignment.group(1))
+    assignment = _ASSIGNED_VALUE_RE.search(line, match.start(1))
+    return bool(assignment) and _looks_secret_value(assignment.group(1), in_code=in_code)
 
 
 def _scan_secrets(inventory: Inventory, tracked: set[str] | None) -> tuple[str, list[tuple[str, int]]]:
@@ -299,8 +355,9 @@ def _scan_secrets(inventory: Inventory, tracked: set[str] | None) -> tuple[str, 
         text = inventory.read(rel)
         if not text:
             continue
+        in_code = rel.endswith(_CODE_SUFFIXES)
         for line_no, line in enumerate(text.splitlines(), start=1):
-            if not _line_is_secret(line):
+            if not _line_is_secret(line, in_code=in_code):
                 continue
             if _PLACEHOLDER_RE.search(line):
                 continue

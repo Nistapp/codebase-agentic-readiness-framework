@@ -25,6 +25,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
+from audit.rules.checks.sec import _CODE_SUFFIXES, _line_is_secret, _looks_secret_value, _scan_secrets  # noqa: E402
+from audit.scan import build_inventory  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict, needs git, force-add .env)
 FIXTURES: dict[str, tuple[str, str, bool, bool]] = {
@@ -126,6 +128,233 @@ class Sec03CoverageTests(unittest.TestCase):
         self.assertEqual(check["verdict"], "PASS")
         self.assertEqual(check["data"]["missing"], [])
         self.assertTrue(check["data"]["covered"], "no covered shapes were named")
+
+
+# Credential-shaped text is built here, at run time, so that no file of this repository holds a literal that a
+# scanner would read as one. Nothing below is a usable credential.
+KEY = "api" + "_key"
+PASS = "pass" + "word"
+TOKEN = "to" + "ken"
+KEEP = "sec" + "ret"
+LITERAL = "Hunter2" * 3
+
+
+class KeywordValueTests(unittest.TestCase):
+    """What a keyword such as `api_key` or `token` is assigned: a literal is a credential, a name is not."""
+
+    def test_a_quoted_literal_is_a_credential_in_code_and_in_configuration(self):
+        for in_code in (True, False):
+            for quote in ('"', "'"):
+                with self.subTest(in_code=in_code, quote=quote):
+                    self.assertTrue(_looks_secret_value(f"{quote}{LITERAL}{quote}", in_code=in_code))
+
+    def test_an_unquoted_token_is_a_credential_in_configuration_and_not_in_code(self):
+        self.assertTrue(_looks_secret_value(LITERAL, in_code=False))
+        self.assertTrue(_looks_secret_value(LITERAL))
+        self.assertFalse(_looks_secret_value(LITERAL, in_code=True))
+
+    def test_an_unquoted_value_is_its_first_word(self):
+        self.assertTrue(_looks_secret_value(LITERAL + "  # a comment"))
+        self.assertFalse(_looks_secret_value("Hunter2 " + LITERAL))
+
+    def test_a_trailing_comma_or_semicolon_is_not_part_of_the_literal(self):
+        eleven = "Hunter2Hunt"
+        self.assertEqual(len(eleven), 11)
+        for tail in (",", ";", ",;"):
+            with self.subTest(tail=tail):
+                self.assertFalse(_looks_secret_value(eleven + tail))
+        self.assertTrue(_looks_secret_value(eleven + "x,"))
+
+    def test_a_bracket_makes_an_unquoted_value_an_expression(self):
+        for char in "()[]":
+            with self.subTest(char=char):
+                self.assertFalse(_looks_secret_value(f"Hunter2Hunter2{char}Hunter2"))
+        self.assertTrue(_looks_secret_value("Hunter2Hunter2{Hunter2}"))
+
+    def test_a_reference_to_a_secret_store_or_the_environment_is_not_a_credential(self):
+        for reference in (
+            "os.environ/PRIMARY_PROVIDER_KEY",
+            "${DATABASE_PASSWORD_VALUE}",
+            "$DATABASE_PASSWORD_VALUE",
+            "{{ secrets.DEPLOY_TOKEN_VALUE }}",
+            "<%= ENV_DEPLOY_TOKEN_VALUE %>",
+            "%(deploy_token_value)s",
+            "process.env.DEPLOY_TOKEN_VALUE",
+            "env:DEPLOY_TOKEN_VALUE",
+        ):
+            for form in (reference, f'"{reference}"', f"'{reference}'"):
+                with self.subTest(value=form):
+                    self.assertFalse(_looks_secret_value(form))
+
+    def test_a_value_that_only_starts_like_a_reference_is_a_value(self):
+        for value in ("os.environment/Abc123Abc123", "environment:Abc123Abc123", "process.environ.Abc123Abc123"):
+            with self.subTest(value=value):
+                self.assertTrue(_looks_secret_value(f'"{value}"'))
+
+    def test_the_literal_is_twelve_characters_or_more(self):
+        self.assertFalse(_looks_secret_value("Abcdefghijk"))
+        self.assertTrue(_looks_secret_value("Abcdefghijkl"))
+        self.assertFalse(_looks_secret_value('"Abcdefghijk"'))
+        self.assertTrue(_looks_secret_value('"Abcdefghijkl"'))
+
+    def test_the_literal_mixes_in_a_capital_a_digit_or_a_symbol(self):
+        self.assertFalse(_looks_secret_value("abcdefghijkl"))
+        self.assertTrue(_looks_secret_value("abcdefghijk1"))
+        self.assertTrue(_looks_secret_value("abcdefghijkL"))
+        self.assertTrue(_looks_secret_value("abcdefghij-k"))
+        self.assertFalse(_looks_secret_value("abcdefghij kl"))
+        self.assertFalse(_looks_secret_value('"abcdefghijkl"'))
+
+    def test_a_raw_bytes_or_unicode_prefix_leaves_a_literal_and_an_f_prefix_makes_an_expression(self):
+        for prefix in ("r", "R", "b", "B", "u", "U", "rb", "Rb", "bR", "BR"):
+            with self.subTest(prefix=prefix):
+                self.assertTrue(_looks_secret_value(f'{prefix}"{LITERAL}"', in_code=True))
+        for prefix in ("f", "F", "fr", "Rf", "rF"):
+            with self.subTest(prefix=prefix):
+                self.assertFalse(_looks_secret_value(f"{prefix}'{LITERAL}'", in_code=True))
+        self.assertFalse(_looks_secret_value(f'xyz"{LITERAL}"', in_code=True))
+
+    def test_the_first_quote_ends_the_literal_and_an_open_quote_runs_to_the_end(self):
+        self.assertFalse(_looks_secret_value(f"'short' {LITERAL}"))
+        self.assertTrue(_looks_secret_value(f'"{LITERAL}'))
+        self.assertTrue(_looks_secret_value(f"'{LITERAL} and more words'"))
+
+    def test_an_empty_quoted_value_ends_at_its_own_closing_quote(self):
+        self.assertFalse(_looks_secret_value('"" + ' + LITERAL + ' + "x"'))
+        self.assertFalse(_looks_secret_value("'' or " + LITERAL + " or 'x'"))
+
+    def test_an_open_quote_keeps_every_character_to_the_end_of_the_value(self):
+        self.assertTrue(_looks_secret_value('"Abcdefghijkl'))
+        self.assertFalse(_looks_secret_value('"Abcdefghijk'))
+
+    def test_nothing_assigned_is_not_a_credential(self):
+        for value in ("", "   ", '""', "''"):
+            with self.subTest(value=value):
+                self.assertFalse(_looks_secret_value(value))
+
+
+class KeywordLineTests(unittest.TestCase):
+    def test_each_keyword_assigned_a_quoted_literal_with_each_separator_is_a_credential(self):
+        for keyword in (KEY, PASS, TOKEN, KEEP, "api-key", "passwd", "pwd"):
+            for separator in ("=", ": ", " = ", " := ", ":"):
+                with self.subTest(keyword=keyword, separator=separator):
+                    self.assertTrue(_line_is_secret(f'{keyword}{separator}"{LITERAL}"', in_code=True))
+
+    def test_a_comparison_is_not_an_assignment(self):
+        self.assertFalse(_line_is_secret(f'if {TOKEN} == "{LITERAL}":', in_code=True))
+
+    def test_the_value_is_read_to_the_end_of_the_line_so_that_a_quoted_phrase_counts(self):
+        self.assertTrue(_line_is_secret(f'{PASS} = "{LITERAL} {LITERAL}"', in_code=True))
+
+    def test_an_expression_assigned_in_source_is_not_a_credential(self):
+        self.assertFalse(_line_is_secret(f"{TOKEN} = match.group(1) or settings.default_name", in_code=True))
+        self.assertFalse(
+            _line_is_secret(f"{PASS} = settings.get('db_value') or os.environ['APP_DB_VALUE']", in_code=True)
+        )
+        self.assertFalse(_line_is_secret(f"{KEY} = self.config.provider_name_long", in_code=True))
+
+    def test_a_line_is_read_as_configuration_unless_it_is_said_to_be_code(self):
+        self.assertTrue(_line_is_secret(f"{PASS}={LITERAL}"))
+        self.assertFalse(_line_is_secret(f"{PASS}={LITERAL}", in_code=True))
+
+    def test_a_shape_fires_in_code_and_in_configuration(self):
+        shape = "sk" + "-" + "a1" * 10
+        for in_code in (True, False):
+            with self.subTest(in_code=in_code):
+                self.assertTrue(_line_is_secret(f"endpoint = {shape}", in_code=in_code))
+
+    def test_a_line_without_the_keyword_assigned_is_not_a_credential(self):
+        for line in (f"{TOKEN}", f"the {TOKEN} is long", f"{TOKEN}_hash: {LITERAL}", "id-token: write", ""):
+            with self.subTest(line=line):
+                self.assertFalse(_line_is_secret(line))
+
+
+class KeywordScanTests(unittest.TestCase):
+    def hits(self, files: dict[str, str]) -> list[tuple[str, int]]:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            return _scan_secrets(build_inventory(root), None)[1]
+
+    def test_an_unquoted_value_is_a_credential_in_configuration_scripts_and_documents_not_in_source(self):
+        line = f"{PASS}={LITERAL}\n"
+        for name in ("settings.properties", "deploy.sh", "notes.md", ".env.test", "config.yaml", "x.ini"):
+            with self.subTest(file=name):
+                self.assertEqual(self.hits({name: line}), [(name, 1)])
+        for suffix in _CODE_SUFFIXES:
+            with self.subTest(suffix=suffix):
+                self.assertEqual(self.hits({f"module{suffix}": line}), [])
+
+    def test_the_tracked_set_decides_what_is_scanned_and_is_named(self):
+        line = f"{PASS}={LITERAL}\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "a.properties", line)
+            support.write(root, "b.properties", line)
+            inventory = build_inventory(root)
+            self.assertEqual(_scan_secrets(inventory, {"a.properties"}), ("tracked text files", [("a.properties", 1)]))
+            self.assertEqual(
+                _scan_secrets(inventory, None),
+                ("whole inventory (tracked state unavailable)", [("a.properties", 1), ("b.properties", 1)]),
+            )
+            self.assertEqual(_scan_secrets(inventory, set()), ("tracked text files", []))
+
+    def test_a_template_file_and_a_placeholder_line_are_not_scanned_for_a_credential(self):
+        line = f"{PASS}={LITERAL}\n"
+        self.assertEqual(self.hits({"settings.properties.example": line, "x.sample": line}), [])
+        self.assertEqual(self.hits({"a.properties": f"{PASS}=Your_Hunter2Hunter2\n"}), [])
+
+    def test_a_quoted_literal_is_a_credential_in_source_too(self):
+        for suffix in _CODE_SUFFIXES:
+            with self.subTest(suffix=suffix):
+                self.assertEqual(self.hits({f"module{suffix}": f'{PASS} = "{LITERAL}"\n'}), [(f"module{suffix}", 1)])
+
+    def test_source_in_a_test_directory_is_still_source(self):
+        self.assertEqual(self.hits({"tests/test_x.py": f"{TOKEN} = a.b(c)\n"}), [])
+        self.assertEqual(self.hits({"tests/data.properties": f"{TOKEN}={LITERAL}\n"}), [("tests/data.properties", 1)])
+
+    def test_the_code_suffixes_are_the_languages_the_scanner_calls_source(self):
+        self.assertEqual(
+            sorted(_CODE_SUFFIXES),
+            sorted(
+                [
+                    ".py",
+                    ".js",
+                    ".jsx",
+                    ".mjs",
+                    ".cjs",
+                    ".ts",
+                    ".tsx",
+                    ".java",
+                    ".kt",
+                    ".scala",
+                    ".go",
+                    ".rs",
+                    ".rb",
+                    ".cs",
+                    ".php",
+                    ".swift",
+                    ".c",
+                    ".h",
+                    ".cc",
+                    ".cpp",
+                    ".hpp",
+                ]
+            ),
+        )
+
+
+class Sec02FalsePositiveFixtureTests(unittest.TestCase):
+    def test_names_and_lookups_assigned_in_source_pass(self):
+        report = support.run_audit(support.fixture("sec-02-expression-assignment"))
+        self.assertEqual(support.verdicts(report)["SEC-02"], "PASS")
+        self.assertEqual([f for f in report["findings"] if f["check"] == "SEC-02"], [])
+
+    def test_references_to_the_environment_and_a_secret_store_pass(self):
+        report = support.run_audit(support.fixture("sec-02-env-reference"))
+        self.assertEqual(support.verdicts(report)["SEC-02"], "PASS")
+        self.assertEqual([f for f in report["findings"] if f["check"] == "SEC-02"], [])
 
 
 if __name__ == "__main__":

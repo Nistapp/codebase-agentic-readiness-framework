@@ -148,6 +148,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "sec-02-key-shaped": {"SEC-02": "FAIL"},
     "sec-03-thin-ignore": {"SEC-03": "FAIL"},
     "sec-01-ok": {"SEC-01": "PASS", "SEC-02": "PASS", "SEC-03": "PASS"},
+    "sec-02-expression-assignment": {"SEC-02": "PASS"},
+    "sec-02-env-reference": {"SEC-02": "PASS"},
     # -- IDX (machine-local; run with an isolated HOME and an absent index store) --------------
     "idx-01-no-mcp-config": {"IDX-01": "FAIL"},
     "idx-02-no-index": {"IDX-02": "UNKNOWN", "IDX-03": "UNKNOWN"},

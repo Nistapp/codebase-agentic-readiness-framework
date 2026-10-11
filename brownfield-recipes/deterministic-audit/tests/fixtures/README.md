@@ -57,6 +57,8 @@ fixtures/
   sec-01-tracked-env/        tracked .env, comprehensive ignore (needs git) -> SEC-01 FAIL
   sec-02-key-shaped/         synthetic sk- value in a source file (needs git) -> SEC-02 FAIL
   sec-03-thin-ignore/        ignore rules cover no secret shapes   -> SEC-03 FAIL
+  sec-02-expression-assignment/ names and lookups assigned to token, password and the like, in source -> SEC-02 PASS
+  sec-02-env-reference/      api_key, password and token that name an environment variable or a secret store -> SEC-02 PASS
   sec-01-ok/                 .env present but untracked + ignored (needs git) -> SEC-01…03 PASS
   exec-01-unpinned/          node project, no toolchain pin       -> EXEC-01 FAIL
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
