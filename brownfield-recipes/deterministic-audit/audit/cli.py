@@ -104,12 +104,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="framework checkout, for --verify-rules and the report's framework revision "
         "(default: the repository this tool lives in)",
     )
-    parser.add_argument("--force", action="store_true", help="overwrite an existing report")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite what already exists: the JSON report, the Markdown beside it and the CON-04 draft; "
+        "without it the run is refused before anything is written",
+    )
     parser.add_argument("--version", action="version", version=f"audit {__version__} (ruleset {__ruleset_revision__})")
     return parser
 
 
 def run(argv: list[str]) -> int:
+    from audit.report import ReportWriteError
+
     parser = build_parser()
     args = parser.parse_args(argv)
 
@@ -123,7 +130,7 @@ def run(argv: list[str]) -> int:
             print("audit: --run-gates requires at least one --allow-probe VERB", file=sys.stderr)
             return EXIT_USAGE
         return _scan(args)
-    except AuditUsageError as exc:
+    except (AuditUsageError, ReportWriteError) as exc:
         print(f"audit: {exc}", file=sys.stderr)
         return EXIT_USAGE
 
@@ -199,7 +206,7 @@ def _verify_rules(framework: str | None) -> int:
 def _scan(args: argparse.Namespace) -> int:
     """Wire the pipeline stages together. Stages are implemented incrementally."""
     from audit.evaluate import evaluate
-    from audit.report import emit, resolve_out_path
+    from audit.report import emit, planned_files, refuse_to_replace, resolve_out_path
     from audit.rules.checks import con
     from audit.scan import build_inventory
     from audit.stack import detect_stack
@@ -211,7 +218,12 @@ def _scan(args: argparse.Namespace) -> int:
 
     # CON-04's emitter writes beside the report, so it is handed the same resolved --out path the
     # report writer uses. Reset every scan: a long-lived process must not inherit a previous target.
-    con.set_emit_target(resolve_out_path(args, target.path) if args.emit_baseline else None)
+    out_path = resolve_out_path(args, target.path)
+    # Nothing is written before every output is known to be free: a refusal leaves no partial report, and the
+    # CON-04 draft, which is written while the checks run, is not replaced behind a refusal of the report.
+    draft = con.draft_path(target, out_path) if args.emit_baseline else None
+    refuse_to_replace(planned_files(args, out_path) + ([draft] if draft else []), force=args.force)
+    con.set_emit_target(out_path if args.emit_baseline else None, force=args.force)
 
     result = evaluate(target=target, inventory=inventory, stack=stack, args=args)
     emit(result, args=args)

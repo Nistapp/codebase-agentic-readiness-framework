@@ -44,6 +44,27 @@ def _resolve_out(args: argparse.Namespace, target_path: Path) -> Path:
     raise ReportWriteError("refusing to write the report inside the target — run from elsewhere or pass --out")
 
 
+def planned_files(args: argparse.Namespace, out_path: Path) -> list[Path]:
+    """The files the report writer will create: the JSON report, and the Markdown beside it for ``--format both``
+    with ``--out``. ``--format md`` prints and writes nothing."""
+    files: list[Path] = []
+    if args.format in ("json", "both"):
+        files.append(out_path)
+    if args.format == "both" and args.out:
+        files.append(out_path.with_suffix(".md"))
+    return files
+
+
+def refuse_to_replace(files: list[Path], *, force: bool) -> None:
+    """Refuse when any of ``files`` exists, unless ``--force``: the engine never replaces an output without being told.
+
+    Every file is named, and nothing has been written yet when this is called, so a refusal leaves no partial output.
+    """
+    taken = [path for path in files if path.exists()]
+    if taken and not force:
+        raise ReportWriteError("; ".join(f"{path} exists — pass --force to overwrite" for path in taken))
+
+
 def resolve_out_path(args: argparse.Namespace, target_path: Path) -> Path:
     """The report path the run will write to, resolved before checks run.
 
@@ -64,8 +85,7 @@ def emit(result: AuditResult, *, args: argparse.Namespace) -> None:
     markdown = render_markdown(payload) if payload is not None and args.format in ("md", "both") else None
 
     out_path = _resolve_out(args, result.target.path)
-    if out_path.exists() and not args.force and args.format != "md":
-        raise ReportWriteError(f"{out_path} exists — pass --force to overwrite")
+    refuse_to_replace(planned_files(args, out_path), force=args.force)
 
     if markdown is not None:
         if args.format == "md" or markdown and not args.out:

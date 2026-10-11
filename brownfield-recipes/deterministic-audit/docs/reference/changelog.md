@@ -46,6 +46,11 @@ one-defect fixture, and the catalogue (`brownfield-recipes/catalogue.json`) move
 - `CON-04` writes `do-not-do.draft.md`, a Markdown list to paste under the prohibitions heading, in place of
   `constraints.draft.yaml`. The allow list is gone: there is none.
 - `--phase` records the phase in the report's provenance and does nothing else; its help now says so.
+- The engine replaces an output only with `--force`. The existing-file check looked at the JSON path alone, so
+  `--format both`, the default, replaced the Markdown beside the report, and `--emit-baseline` replaced the `CON-04`
+  draft, without asking. Every output is now checked before the scan writes anything, a refusal names each file that
+  exists and exits 1 with a message rather than a traceback, and a refused run leaves no partial report or new draft.
+  `--format md` writes nothing and is not refused. A draft path inside the target is not checked: none is written there.
 - A check the engine's ruleset had blocked arrives in a recipe draft as `UNKNOWN`, scored as the catalogue scores it
   ([engine mapping](../../../schema/SCHEMA.md)). No check is blocked now.
 

@@ -52,7 +52,7 @@ flowchart TD
 | **S8** | Execute Tier-C probes if requested, from an allow-list, with per-command timeout | Timeout or non-zero exit is evidence, not an error |
 | **S9** | Convert evidence into verdicts; compute the Phase-1 score; build the unattested list | Weights sum to 1.0; no check may be scored twice |
 | **S10** | Emit findings with stable ids, evidence, severity, and remediation hint | — |
-| **S11** | Write JSON (machine) and Markdown (human) to the `--out` path | Refuses to overwrite an existing report without `--force` |
+| **S11** | Write JSON (machine) and Markdown (human) to the `--out` path | Refuses, before it writes anything, to replace the report, the Markdown beside it or the `CON-04` draft without `--force` |
 | **S12** | Optionally emit the inputs a remediation pass needs | — |
 | **S13** | Exit 0 / 1 / 2 per the readiness model | — |
 
@@ -278,7 +278,7 @@ The auditor is verified the same way the framework verifies anything else: again
 | `--baseline <report.json>` | none | Ratchet: exit 2 only on regression |
 | `--list-checks` | — | Print the catalogue and exit 0: a text table, or JSON with `--format json` |
 | `--verify-rules` | — | Resolve every rule pack's framework anchor |
-| `--force` | off | Overwrite an existing report |
+| `--force` | off | Overwrite what exists: the JSON report, the Markdown beside it (`--format both` with `--out`) and the `CON-04` draft. Without it every output is checked first, a refusal is a message and exit 1, and nothing is written |
 
 ---
 

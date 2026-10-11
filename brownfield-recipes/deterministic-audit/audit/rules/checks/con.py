@@ -90,17 +90,29 @@ DRAFT_FILENAME = "do-not-do.draft.md"
 # ---------------------------------------------------------------------------
 
 _EMIT_TARGET: Path | None = None
+_EMIT_FORCE = False
 
 
-def set_emit_target(out_path: Path | None) -> None:
-    """Record where the emitter may write for this run; ``None`` disables it.
+def draft_path(target: Target, out_path: Path) -> Path | None:
+    """Where the draft goes for a run whose report is ``out_path``: beside it, and never inside the target (``None``)."""
+    out_dir = out_path.parent
+    try:
+        out_dir.resolve().relative_to(target.path.resolve())
+    except ValueError:
+        return out_dir / DRAFT_FILENAME
+    return None
+
+
+def set_emit_target(out_path: Path | None, *, force: bool = False) -> None:
+    """Record where the emitter may write for this run, and whether it may replace a draft; ``None`` disables it.
 
     Called by ``audit.cli`` before checks run, from the same ``--out`` resolution the report
     writer uses. It is the only module state in the pack, it is set once per process, and it is
     reset on every scan so a long-lived process cannot inherit a previous run's target.
     """
-    global _EMIT_TARGET
+    global _EMIT_TARGET, _EMIT_FORCE
     _EMIT_TARGET = out_path
+    _EMIT_FORCE = force
 
 
 # ---------------------------------------------------------------------------
@@ -629,17 +641,18 @@ def build_do_not_do_draft(inventory: Inventory) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _write_draft(target: Target, out_path: Path, text: str) -> Path | None:
-    """Write the draft beside the report. Returns the path, or None if it would land in-target."""
-    out_dir = out_path.parent
-    try:
-        out_dir.resolve().relative_to(target.path.resolve())
-    except ValueError:
-        pass
-    else:
+def _write_draft(target: Target, out_path: Path, text: str, *, force: bool = False) -> Path | None:
+    """Write the draft beside the report. Returns the path, or None if it would land in-target.
+
+    An existing draft is not replaced without ``force``; ``FileExistsError`` says so. ``audit.cli`` has already
+    refused such a run, so this is the second line of defence for a caller that did not go through it.
+    """
+    path = draft_path(target, out_path)
+    if path is None:
         return None
-    out_dir.mkdir(parents=True, exist_ok=True)
-    path = out_dir / DRAFT_FILENAME
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if path.exists() and not force:
+        raise FileExistsError(str(path))
     path.write_text(text, encoding="utf-8")
     return path
 
@@ -649,7 +662,10 @@ def check_con04(*, spec, target, inventory, stack, components, session) -> Check
         return _unknown(spec, f"draft not emitted; pass --emit-baseline to write {DRAFT_FILENAME} beside the report")
 
     draft = build_do_not_do_draft(inventory)
-    written = _write_draft(target, _EMIT_TARGET, draft)
+    try:
+        written = _write_draft(target, _EMIT_TARGET, draft, force=_EMIT_FORCE)
+    except FileExistsError as exc:
+        return _unknown(spec, f"refusing to replace {exc}; pass --force to overwrite")
     if written is None:
         return _unknown(
             spec, f"refusing to emit inside the target ({_EMIT_TARGET.parent}); pass an --out outside the repository"
