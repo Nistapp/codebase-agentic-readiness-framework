@@ -4,6 +4,7 @@
 """Build the audit report. This tool is the only writer of the draft: the agent never edits the JSON by hand.
 
     report.py init <intake>
+    report.py import-engine <draft> <engine report>
     report.py add-check <draft> --from FILE|-
     report.py add-finding <draft> --from FILE|-
     report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
@@ -13,6 +14,10 @@
 ``init`` reads the intake file, captures the target's provenance (commit, branch, whether the working tree is
 dirty), and creates ``<label>.audit-draft.<stamp>.json`` in the intake's ``output_dir``. It never replaces a file: a
 second run on the same repository starts a second draft, and the earlier one stays as it was.
+
+``import-engine`` reads the engine's JSON report (schema v2, phase 1) and records the engine in the draft's provenance.
+It does so once, and only for the repository and the commit that the draft was started for: the report of another
+repository is refused. The conversion is `_engine_adapter.py`, a pure function of the engine's report.
 
 Every other subcommand changes the draft in place, and only its own draft. A change is one read-modify-write under a
 lock on the output folder: the draft is read and validated, the change is made on a copy, the summary is recomputed,
@@ -46,6 +51,7 @@ from pathlib import Path
 from typing import Any, Callable, Iterator, Mapping, Sequence
 
 import _common
+import _engine_adapter as adapter
 import _jsonschema_subset as subset
 import _summary
 import render_report
@@ -56,6 +62,7 @@ INFO = _common.ToolInfo(
     summary="Build the audit report: the only writer of the draft, and every write is validated.",
     synopsis=(
         "report.py init <intake>",
+        "report.py import-engine <draft> <engine report>",
         "report.py add-check <draft> --from FILE|-",
         "report.py add-finding <draft> --from FILE|-",
         "report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)",
@@ -64,8 +71,8 @@ INFO = _common.ToolInfo(
     ),
     writes=(
         "init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the "
-        "target; a name that is taken is never replaced. add-check, add-finding and set-disposition: that draft, in "
-        "place and atomically, and no other file. status: nothing. finalise: a new final report, "
+        "target; a name that is taken is never replaced. import-engine, add-check, add-finding and set-disposition: that "
+        "draft, in place and atomically, and no other file. status: nothing. finalise: a new final report, "
         "<label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, "
         "which it leaves as it was."
     ),
@@ -514,6 +521,78 @@ def checked_fragment(source: str, what: str, validator: subset.SubsetValidator) 
         )
     checked: dict[str, Any] = fragment
     return checked
+
+
+# --- import-engine ---------------------------------------------------------------------------------------
+
+
+def resolved_path(text: str) -> Path:
+    """A path as text, resolved without requiring it to exist, so that two spellings of one place compare equal."""
+    return Path(text).expanduser().resolve()
+
+
+def agree_with_target(document: Mapping[str, Any], conversion: adapter.Conversion) -> list[str]:
+    """Refuse an engine report of another repository or of another commit, and warn when only one side knows the commit.
+
+    The draft's target facts were captured by `init` from the directory itself, so they are kept. The engine's evidence
+    is checked against the draft's commit, so a scan of a different commit would be checked against the wrong files.
+    """
+    target = document["provenance"]["target"]
+    problems: list[str] = []
+    if resolved_path(target["path"]) != resolved_path(conversion.target_path):
+        problems.append(
+            f"the engine scanned {conversion.target_path}, and the draft's target is {target['path']}; "
+            "import a report of the draft's own repository"
+        )
+    recorded, scanned = target["git_sha"], conversion.git_sha
+    if recorded is not None and scanned is not None and recorded != scanned:
+        problems.append(
+            f"the engine scanned commit {scanned}, and the draft recorded commit {recorded}; scan again, or start a "
+            "new draft with init"
+        )
+    if problems:
+        raise _common.ValidationFailed("the engine report is not of this draft's target", errors=problems)
+    if (recorded is None) != (scanned is None):
+        known, other = ("the engine", "the draft") if recorded is None else ("the draft", "the engine")
+        return [f"only {known} knows the target's commit, so {other}'s cannot be compared"]
+    return []
+
+
+def apply_import(document: dict[str, Any], conversion: adapter.Conversion) -> tuple[Change, list[str]]:
+    """Bring the engine's results into the draft, once. A draft that already holds an engine report is refused."""
+    if "engine" in document["provenance"]:
+        engine = document["provenance"]["engine"]
+        raise _common.ValidationFailed(
+            f"this draft already holds an engine report (ruleset {engine['ruleset_hash']})",
+            errors=[
+                "a second import would replace the first one's checks and the decisions made on them; "
+                "start a new draft with init to audit again"
+            ],
+        )
+    warnings = agree_with_target(document, conversion)
+    provenance = document["provenance"]
+    names = list(report_schema()["properties"]["provenance"]["properties"])
+    provenance["engine"] = conversion.engine
+    document["provenance"] = {name: provenance[name] for name in names if name in provenance}
+    return Change(data={"engine": conversion.engine}), warnings
+
+
+def run_import_engine(args: argparse.Namespace) -> _common.Result:
+    engine_path = Path(args.engine_report).expanduser()
+    conversion = adapter.convert(vr.read_report(engine_path, "engine report"))
+    warnings: list[str] = []
+
+    def change(document: dict[str, Any]) -> Change:
+        made, found = apply_import(document, conversion)
+        warnings.extend(found)
+        return made
+
+    result = update_draft(args.draft, change)
+    result.data["engine_report"] = str(engine_path.resolve())
+    result.warnings = warnings + result.warnings
+    engine = result.data["engine"]
+    result.summary = f"report: imported the engine report from {engine['name']} {engine['version']}"
+    return result
 
 
 # --- add-check -------------------------------------------------------------------------------------------
@@ -1109,6 +1188,9 @@ def build_parser() -> _common.ToolParser:
     commands = parser.add_subparsers(dest="command", required=True, metavar="command")
     start = commands.add_parser("init", help="start a draft from an intake file", allow_abbrev=False)
     start.add_argument("intake", help="the intake file, audit-intake.<label>.json")
+    bring = commands.add_parser("import-engine", help="bring in the engine's report", allow_abbrev=False)
+    bring.add_argument("draft", help="the draft to change; it must not hold an engine report yet")
+    bring.add_argument("engine_report", help="the engine's JSON report, as tools/engine.py wrote it")
     record = commands.add_parser("add-check", help="record the result of one check", allow_abbrev=False)
     record.add_argument("draft", help="the draft to change")
     record.add_argument(
@@ -1135,6 +1217,7 @@ def build_parser() -> _common.ToolParser:
 
 HANDLERS = {
     "init": run_init,
+    "import-engine": run_import_engine,
     "add-check": run_add_check,
     "add-finding": run_add_finding,
     "set-disposition": run_set_disposition,
