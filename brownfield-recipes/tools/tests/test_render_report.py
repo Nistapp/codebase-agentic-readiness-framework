@@ -1429,6 +1429,13 @@ class OtherSectionTests(RenderCase):
         self.assertIn("No component is recorded.", text)
         self.assertIn("- Monorepo with two packages\n- \\# not a heading", text)
 
+    def test_a_component_the_engine_did_not_look_for_an_agents_md_in_has_a_dash(self) -> None:
+        # `agents_md` is optional in the schema, and the engine leaves it out of a candidate component.
+        report = service()
+        del report["components"][0]["agents_md"]
+        text = section(self.render(report), "Stack and components")
+        self.assertIn("| (root) | `.` | yes | implicit | `package.json` | — |", text.split("\n"))
+
     def test_a_component_with_no_declarer_or_manifest_has_dashes(self) -> None:
         report = service()
         report["components"][0].update(declared=False, declared_by=None, manifest=None, agents_md="unknown")

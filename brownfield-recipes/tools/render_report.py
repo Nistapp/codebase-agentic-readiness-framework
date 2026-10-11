@@ -807,7 +807,7 @@ def stack_section(report: Mapping[str, Any]) -> list[str]:
                     yes_no(c["declared"]),
                     text(c["declared_by"]) if c.get("declared_by") else "—",
                     code(c["manifest"]) if c.get("manifest") else "—",
-                    c["agents_md"],
+                    c.get("agents_md", "—"),
                 ]
                 for c in components
             ],
