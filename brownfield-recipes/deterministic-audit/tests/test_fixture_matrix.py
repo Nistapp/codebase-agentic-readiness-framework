@@ -120,6 +120,7 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- CON ----------------------------------------------------------------------------------
     "con-02-unprotected-tests": {"CON-02": "FAIL"},
     "con-02-protected": {"CON-02": "PASS"},
+    "con-02-specs-are-not-tests": {"CON-02": "PASS"},
     "con-03-artefacts-not-ignored": {"CON-03": "FAIL"},
     # -- EXEC ---------------------------------------------------------------------------------
     "exec-01-unpinned": {"EXEC-01": "FAIL"},

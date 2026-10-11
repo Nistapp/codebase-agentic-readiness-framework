@@ -13,7 +13,8 @@ an artifact contract, and it does not require one.
 What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
 
 * **CON-02** — *test directories protected*. Test directories are located from the scan (a directory
-  segment named ``test``/``tests``/``spec``/``specs``/``__tests__``) plus the filesystem. A
+  segment named ``test``/``tests``/``__tests__``; ``spec`` and ``specs`` hold feature specifications, not
+  tests) plus the filesystem. A
   dedicated constraint / allow-deny file — a documented name set of agent ignore files
   (``.cursorignore``, ``.aiderignore``, …) and explicit constraint files
   (``constraints.yaml``/``.json``, ``allowlist.txt``/``denylist.txt``) — that denies every test
@@ -89,8 +90,10 @@ _CONSTRAINT_FILES: tuple[str, ...] = (
     "denylist",
 )
 
-#: Directory names that make a directory a test directory.
-_TEST_DIR_NAMES: frozenset[str] = frozenset({"test", "tests", "spec", "specs", "__tests__"})
+#: Directory names that make a directory a test directory. `spec` and `specs` are not among them: the framework's own
+#: `specs/` folder holds feature specifications (spec-driven development), not tests, so a repository that follows
+#: it has no test directory there to protect.
+_TEST_DIR_NAMES: frozenset[str] = frozenset({"test", "tests", "__tests__"})
 
 #: Scratch spellings and agent/tool state directories CON-03 requires to be ignored.
 _SCRATCH_ROOTS: tuple[str, ...] = ("artefacts", "artifacts")
@@ -474,7 +477,7 @@ _DRAFT_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
         "generated",
         ("build/", "dist/", "generated/", "vendor/", "*.designer.cs", "*.g.cs", "*.min.css", "*.min.js", "*.pb.go"),
     ),
-    ("tests", ("__tests__/", "spec/", "specs/", "test/", "tests/")),
+    ("tests", ("__tests__/", "test/", "tests/")),
     ("iac", ("*.tf", "*.tf.json", "*.tfstate", "*.tfvars", "ansible/", "charts/", "helm/", "k8s/", "kubernetes/")),
     ("production", ("**/prod/**", "**/production/**", "environments/prod/", "environments/production/")),
 )

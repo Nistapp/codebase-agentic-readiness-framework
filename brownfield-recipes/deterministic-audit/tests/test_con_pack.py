@@ -24,6 +24,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
+from audit.rules.checks.con import _TEST_DIR_NAMES, build_constraint_draft  # noqa: E402
+from audit.scan import build_inventory  # noqa: E402
 
 CON_CHECKS = ("CON-01", "CON-02", "CON-03", "CON-04")
 
@@ -84,6 +86,42 @@ class Con02Tests(unittest.TestCase):
             support.write(root, "app.py", "print(1)\n")
             report = support.run_audit(root)
         self.assertEqual(support.verdicts(report)["CON-02"], "UNKNOWN")
+
+
+class SpecsAreNotTestsTests(unittest.TestCase):
+    """The framework's `specs/` holds feature specifications, so neither `spec` nor `specs` is a test directory."""
+
+    def test_the_names_that_make_a_directory_a_test_directory(self):
+        self.assertEqual(_TEST_DIR_NAMES, frozenset({"test", "tests", "__tests__"}))
+
+    def test_a_repository_whose_only_such_directories_hold_specifications_has_no_test_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "app.py", "print(1)\n")
+            support.write(root, "specs/greeting.md", "# Greeting\n")
+            support.write(root, "spec/other.md", "# Other\n")
+            report = support.run_audit(root)
+        check = next(c for c in report["checks"] if c["id"] == "CON-02")
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("UNKNOWN", "no test directories detected, so there is nothing for a deny list to protect"),
+        )
+
+    def test_denying_the_test_directory_alone_is_enough_beside_a_specs_directory(self):
+        report = support.run_audit(support.fixture("con-02-specs-are-not-tests"))
+        check = next(c for c in report["checks"] if c["id"] == "CON-02")
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertEqual(check["data"]["paths"], ["tests"])
+
+    def test_the_draft_does_not_list_specifications_as_tests(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "specs/greeting.md", "# Greeting\n")
+            support.write(root, "spec/other.md", "# Other\n")
+            support.write(root, "tests/test_app.py", "x\n")
+            text = build_constraint_draft(build_inventory(root))
+        section = text.split("  tests:\n", 1)[1].split("  iac:\n", 1)[0]
+        self.assertEqual(section, '    - "__tests__/"\n    - "test/"\n    - "tests/"\n    - "tests/test_app.py"\n')
 
 
 class Con03Tests(unittest.TestCase):

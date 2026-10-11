@@ -101,6 +101,7 @@ fixtures/
   base-ok/                   baseline + budget + ratchet + floor      -> BASE-01…04 PASS
   con-02-unprotected-tests/  a constraint file that omits test dirs   -> CON-02 FAIL
   con-02-protected/          a denylist naming the test directory      -> CON-02 PASS
+  con-02-specs-are-not-tests/ `specs/` holds feature specifications, `tests/` is denied -> CON-02 PASS
   con-03-artefacts-not-ignored/ artefacts/ present, no ignore rule      -> CON-03 FAIL
   hyg-01-placeholder-readme/ README is a TODO stub                      -> HYG-01 FAIL
   hyg-10-no-license/         real README, no LICENSE at the root         -> HYG-10 FAIL
