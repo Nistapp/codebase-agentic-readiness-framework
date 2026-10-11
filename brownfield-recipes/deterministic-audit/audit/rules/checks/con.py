@@ -59,7 +59,8 @@ from pathlib import Path
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.ignore import load_ignore_rules, tracked_files
+from audit.ignore import load_ignore_rules
+from audit.rules.checks._common import tracked_in_scope
 from audit.scan import Inventory, Kind
 from audit.target import Target
 from audit.rules.payloads import PathList, Payload
@@ -373,7 +374,7 @@ def check_con02(*, spec, target, inventory, stack, components, session) -> Check
 
 
 def check_con03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    tracked = tracked_files(target.path)
+    tracked = tracked_in_scope(target, inventory)
     tracked_members = sorted(rel for rel in (tracked or set()) if rel.split("/", 1)[0] in _CON_ROOTS)
 
     if tracked_members:

@@ -59,7 +59,7 @@ python3 brownfield-recipes/tools/engine.py --describe
 | `--out-dir DIR` | Where the report goes. It is created if it does not exist, and it must be outside the target. Default: the current directory, which is refused when it is inside the target. |
 | `--repo-label LABEL` | The label in the file name: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../schema/SCHEMA.md#output-files). |
 | `--phase N` | The highest framework phase to evaluate. The engine's default is 1. |
-| `--exclude GLOB` | An extra path pattern to skip. May be repeated. |
+| `--exclude GLOB` | An extra path pattern to leave out of the audit, matched against the whole path from the target's root, so `vendor-samples/*` covers every file under that directory. It applies to the checks that read git's tracked files as well as to the walk. May be repeated. |
 | `--max-files N` | A hard cap on the files the engine inspects. |
 | `--run-gates`, `--allow-probe VERB`, `--timeout SECONDS` | Let the engine run the target's own commands. Nothing runs unless `--run-gates` is given and every verb is named in an `--allow-probe`. `--timeout` is the limit per command. |
 | `--list-checks` | Print the engine's checks and exit. It takes no other argument. |

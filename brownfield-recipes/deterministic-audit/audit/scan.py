@@ -137,8 +137,13 @@ class Inventory:
     files: list[FileEntry] = field(default_factory=list)
     skipped: list[tuple[str, str]] = field(default_factory=list)
     truncated: bool = False
+    #: Path globs the operator took out of the audit with ``--exclude``.
+    excludes: tuple[str, ...] = ()
 
     # -- lookups ---------------------------------------------------------
+    def is_excluded(self, rel: str) -> bool:
+        return any(fnmatch.fnmatch(rel, pattern) for pattern in self.excludes)
+
     def paths(self, kind: Kind | None = None) -> list[str]:
         return [f.rel for f in self.files if kind is None or f.kind is kind]
 
@@ -225,7 +230,7 @@ def build_inventory(
     """Walk the target once. Never follows symlinks; never leaves ``root``."""
     root = root.resolve()
     patterns = ignore_patterns(root)
-    inv = Inventory(root=root)
+    inv = Inventory(root=root, excludes=extra_excludes)
 
     for dirpath, dirnames, filenames in os.walk(root, topdown=True, followlinks=False):
         current = Path(dirpath)
@@ -250,7 +255,7 @@ def build_inventory(
             if path.is_symlink():
                 inv.skipped.append((rel, "symlink"))
                 continue
-            if is_ignored(rel, patterns) or any(fnmatch.fnmatch(rel, p) for p in extra_excludes):
+            if is_ignored(rel, patterns) or inv.is_excluded(rel):
                 inv.skipped.append((rel, "ignored"))
                 continue
             try:

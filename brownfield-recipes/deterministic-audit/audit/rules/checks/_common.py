@@ -24,6 +24,7 @@ import re
 import shlex
 from dataclasses import dataclass
 
+from audit.ignore import tracked_files
 from audit.scan import Inventory
 from audit.stack import (
     FORMAT_CHECK_ALIASES,
@@ -64,6 +65,18 @@ RUNNER_PRECEDENCE: tuple[str, ...] = (
     "gradlew",
     "mvnw",
 )
+
+
+def tracked_in_scope(target, inventory: Inventory) -> set[str] | None:
+    """The paths git tracks under the target, less the ones ``--exclude`` took out of the audit.
+
+    ``None`` still means that git could not answer. A check that reads the tracked set asks here, so that an
+    excluded path is out of the audit for it as it is for the walk.
+    """
+    tracked = tracked_files(target.path)
+    if tracked is None:
+        return None
+    return {rel for rel in tracked if not inventory.is_excluded(rel)}
 
 
 def resolve_all_verbs(inventory: Inventory, stack: Stack) -> dict[str, tuple[VerbBinding, ...]]:

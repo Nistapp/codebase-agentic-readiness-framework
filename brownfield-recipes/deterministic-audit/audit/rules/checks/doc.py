@@ -36,7 +36,8 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.ignore import load_ignore_rules, tracked_files
+from audit.ignore import load_ignore_rules
+from audit.rules.checks._common import tracked_in_scope
 from audit.scan import Inventory
 from audit.target import Target
 from audit.rules.payloads import Payload
@@ -227,7 +228,7 @@ def check_doc03(*, spec, target, inventory, stack, components, session) -> Check
     fs_roots = {root for root in _SCRATCH_ROOTS if (target.path / root).is_dir()}
     present_roots = sorted(inventory_roots | fs_roots)
 
-    tracked = tracked_files(target.path)
+    tracked = tracked_in_scope(target, inventory)
     tracked_scratch = sorted(rel for rel in (tracked or set()) if rel.split("/", 1)[0] in _SCRATCH_ROOTS)
 
     if not present_roots and not tracked_scratch:

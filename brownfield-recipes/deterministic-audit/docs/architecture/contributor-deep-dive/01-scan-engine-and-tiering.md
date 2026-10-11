@@ -67,6 +67,7 @@ bounded by construction:
 |---|---|
 | Ignore semantics | `.gitignore` respected; `.cbmignore` respected when present; both lifted from the target, not invented. Matching is a **documented subset** owned by [`audit/ignore.py`](../../../audit/ignore.py) — see § 3.1 |
 | Hard excludes | `.git`, `node_modules`, `vendor`, `dist`, `build`, `target`, `.venv`, `venv`, `__pycache__`, `.next`, `coverage`, `.gradle` |
+| Operator excludes | `--exclude GLOB`, repeatable, matched against the whole path from the target's root, where `*` crosses directories. It leaves a file out of the walk and out of the set of tracked files that `SEC-01`, `DOC-03`, `CON-03` and `EXEC-02` read (`tracked_in_scope` in `audit/rules/checks/_common.py`) |
 | File-count cap | Configurable; on breach the scan reports `UNKNOWN` for the affected check rather than silently shrinking scope |
 | File-size cap | Files over the cap are inventoried but not read for content checks |
 | Encoding | Decode as UTF-8 with replacement; binary files are classified, never parsed |

@@ -145,6 +145,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "tst-05-no-coverage": {"TST-05": "FAIL"},
     # -- SEC ----------------------------------------------------------------------------------
     "sec-01-tracked-env": {"SEC-01": "FAIL"},
+    "sec-01-excluded-env": {"SEC-01": "FAIL"},
     "sec-02-key-shaped": {"SEC-02": "FAIL"},
     "sec-03-thin-ignore": {"SEC-03": "FAIL"},
     "sec-01-ok": {"SEC-01": "PASS", "SEC-02": "PASS", "SEC-03": "PASS"},
@@ -179,6 +180,7 @@ NEEDS_GIT = frozenset(
         "exec-ok",
         "sec-01-ok",
         "sec-01-tracked-env",
+        "sec-01-excluded-env",
         "sec-02-key-shaped",
         "con-03-artefacts-not-ignored",
     }
@@ -188,6 +190,7 @@ NEEDS_GIT = frozenset(
 FORCE_ADD: dict[str, str] = {
     "doc-03-tracked-artefacts": "artefacts/notes.md",
     "sec-01-tracked-env": ".env",
+    "sec-01-excluded-env": "vendor-samples/.env",
     "con-03-artefacts-not-ignored": "artefacts/notes.md",
 }
 

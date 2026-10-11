@@ -75,7 +75,13 @@ def build_parser() -> argparse.ArgumentParser:
         "constraints.draft.yaml beside the report (CON-04)",
     )
     parser.add_argument(
-        "--exclude", action="append", default=[], metavar="GLOB", help="extra path glob to exclude; repeatable"
+        "--exclude",
+        action="append",
+        default=[],
+        metavar="GLOB",
+        help="extra path glob to leave out of the audit, matched against the whole path from the target's root "
+        "(vendor-samples/* covers every file under it); it also applies to the checks that read git's tracked "
+        "files; repeatable",
     )
     parser.add_argument("--max-files", type=int, default=250_000, help="hard cap on inspected files")
     parser.add_argument(

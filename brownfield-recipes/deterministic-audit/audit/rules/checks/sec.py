@@ -42,7 +42,8 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.ignore import IgnoreRule, load_ignore_rules, tracked_files
+from audit.ignore import IgnoreRule, load_ignore_rules
+from audit.rules.checks._common import tracked_in_scope
 from audit.probes import REDACTION_PATTERNS
 from audit.scan import Inventory
 from audit.rules.payloads import (
@@ -193,7 +194,7 @@ def check_sec01(*, spec, target, inventory, stack, components, session) -> Check
     ignore_ok = not missing
     shapes = _shapes_payload(rules, _ENV_SHAPE_PROBES, _ENV_SHAPE_SUGGEST)
 
-    tracked = tracked_files(target.path)
+    tracked = tracked_in_scope(target, inventory)
     if tracked is None:
         ignore_note = "ignore rules cover .env" if ignore_ok else f"ignore rules miss {', '.join(missing)}"
         return _unknown(
@@ -366,7 +367,7 @@ def _scan_secrets(inventory: Inventory, tracked: set[str] | None) -> tuple[str, 
 
 
 def check_sec02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    tracked = tracked_files(target.path)
+    tracked = tracked_in_scope(target, inventory)
     source, hits = _scan_secrets(inventory, tracked)
 
     if not hits:

@@ -49,8 +49,7 @@ import shlex
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.ignore import tracked_files
-from audit.rules.checks._common import extract_fenced_commands, resolve_verbs
+from audit.rules.checks._common import extract_fenced_commands, resolve_verbs, tracked_in_scope
 from audit.scan import Inventory, Kind
 from audit.stack import PACKAGE_MANAGERS, extract_npm_scripts, parse_makefile_targets
 from audit.rules.payloads import EnvKeys, Payload
@@ -391,7 +390,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
     if not ecosystems:
         return _unknown(spec, "no recognised ecosystem, so no lockfile is expected")
 
-    tracked = tracked_files(target.path)
+    tracked = tracked_in_scope(target, inventory)
     if tracked is None:
         return _unknown(spec, "git could not report tracked files, so the lockfile's tracked state is unknown")
 
@@ -791,7 +790,7 @@ def _has_generated_header(text: str | None) -> bool:
 
 
 def check_exec05(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    tracked = tracked_files(target.path)
+    tracked = tracked_in_scope(target, inventory)
     if tracked is None:
         return _unknown(spec, "git could not report tracked files, so generated-file state is unknown")
 
