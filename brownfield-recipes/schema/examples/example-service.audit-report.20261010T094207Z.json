@@ -703,7 +703,7 @@
           "tool": "python-agentic-audit",
           "tool_version": "0.1.0",
           "path": "tsconfig.json",
-          "note": "strict is not set"
+          "note": "strict"
         }
       ],
       "searches": [],
