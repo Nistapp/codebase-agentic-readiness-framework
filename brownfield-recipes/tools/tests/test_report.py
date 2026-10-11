@@ -900,7 +900,7 @@ class OverrideTests(BuilderCase):
 
     def test_only_phase_1_checks_count_toward_what_a_draft_is_expected_to_hold(self) -> None:
         catalogue = {"checks": [{"id": "AGT-11", "phase": 1}, {"id": "CI-04", "phase": 2}]}
-        document = {"checks": [{"id": "AGT-11"}, {"id": "CI-04"}]}
+        document = {"checks": [{"id": "AGT-11"}, {"id": "CI-04"}], "unattested": []}
         with mock.patch.object(vr, "load_catalogue", return_value=catalogue):
             self.assertEqual(rb.check_counts(document), {"checks_recorded": 1, "checks_expected": 1})
 

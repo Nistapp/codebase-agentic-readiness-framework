@@ -27,6 +27,7 @@ import validate_report as vr
 from test_report import BuilderCase, agent_finding, call, read_json, tree_state
 
 TOOLS = _paths.TOOLS
+REALISTIC = TOOLS.parent / "schema" / "examples" / "realistic"
 SHA_A = "a" * 40
 SHA_B = "b" * 40
 
@@ -549,6 +550,39 @@ class ImportChecksTests(ImportCase):
         self.assertLess(len(envelope["warnings"]), 700)
         self.assertEqual(len(envelope["warnings"]) + envelope["data"]["warnings_omitted"], 700)
         self.assertEqual(envelope["data"]["evidence_not_carried"], 700)
+
+
+class ImportUnattestedTests(ImportCase):
+    def test_the_engines_five_items_are_listed_in_the_engines_own_words(self) -> None:
+        golden = read_json(next(REALISTIC.glob("agentic-tdd.audit-draft.*.json")))
+        items = ["index-in-use", "baseline-adequacy", "suite-trustworthiness", "doc-accuracy", "gate-honoured"]
+        draft, envelope = self.imported(er.report(self.target, unattested=items))
+        document = read_json(draft)
+        self.assertEqual(document["unattested"], golden["unattested"])
+        self.assertEqual(vr.validate_document(document).errors, [])
+        self.assertEqual(envelope["data"]["unattested_listed"], 5)
+
+    def test_a_check_marked_attest_is_not_a_check_but_is_not_missing_either(self) -> None:
+        report = er.report(self.target, [er.check("TOOL-01", "ATTEST"), er.check("TOOL-02")])
+        draft, envelope = self.imported(report)
+        document = read_json(draft)
+        self.assertEqual([c["id"] for c in document["checks"]], ["TOOL-02"])
+        self.assertEqual(
+            [(u["requirement"], u["property"]) for u in document["unattested"]], [("REQ-SH-027", "tool-01")]
+        )
+        self.assertEqual(vr.validate_document(document).errors, [])
+        self.assertEqual(envelope["data"]["unattested_listed"], 1)
+        self.assertNotIn("TOOL-01", rb.missing_checks(document).get("TOOL", []))
+        self.assertEqual(envelope["data"]["checks_recorded"], 2)
+        code, status, _ = call(["status", str(draft)])
+        self.assertEqual(code, 0)
+        self.assertEqual(status["data"]["checks_recorded"], 2)
+        self.assertNotIn("TOOL-01", status["data"]["families_remaining"].get("TOOL", ""))
+        self.assertNotIn("TOOL-01", " ".join(rb.finalisation_errors(document)))
+
+    def test_a_check_missing_from_the_engines_report_is_still_missing(self) -> None:
+        document = read_json(self.imported(er.report(self.target, [er.check("TOOL-02")]))[0])
+        self.assertIn("TOOL-01", rb.missing_checks(document)["TOOL"])
 
 
 class WriteFailureTests(ImportCase):

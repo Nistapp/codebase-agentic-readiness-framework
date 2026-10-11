@@ -11,6 +11,8 @@ Standard library only.
 from __future__ import annotations
 
 import copy
+import importlib
+import re
 import unittest
 from pathlib import Path
 from typing import Any
@@ -19,6 +21,7 @@ import _engine_reports as er
 import _paths  # noqa: F401
 import _common
 import _engine_adapter as adapter
+import engine as engine_launcher
 import validate_report as vr
 
 CATALOGUE = vr.load_catalogue()
@@ -271,10 +274,6 @@ class ChecksTests(unittest.TestCase):
         error = refused(self, er.report(TARGET, [engine_check]))
         self.assertEqual(error.errors, ["engine report: /checks/0/id: ZZZ-99 is not a check in catalogue.json"])
 
-    def test_a_check_with_the_verdict_attest_is_refused_until_it_has_a_place(self) -> None:
-        error = refused(self, er.report(TARGET, [er.check("TOOL-01", "ATTEST")]))
-        self.assertIn("has the verdict ATTEST", error.errors[0])
-
     def test_a_check_listed_twice_is_refused_once(self) -> None:
         error = refused(self, er.report(TARGET, [er.check("TOOL-01"), er.check("TOOL-01"), er.check("TOOL-02")]))
         self.assertEqual(
@@ -289,7 +288,7 @@ class ChecksTests(unittest.TestCase):
 
     def test_every_problem_is_listed_and_counted(self) -> None:
         engine = er.report(
-            TARGET, [er.check("AGT-11"), er.check("TOOL-01", "ATTEST"), er.check("CMD-01", data={"x": 1})]
+            TARGET, [er.check("AGT-11"), er.check("TOOL-01"), er.check("TOOL-01"), er.check("CMD-01", data={"x": 1})]
         )
         error = refused(self, engine)
         self.assertEqual(len(error.errors), 3)
@@ -585,6 +584,160 @@ class EvidenceTests(unittest.TestCase):
             conversion.warnings, ["SEC-02: 60 evidence items, and the report allows 50, so the rest are left out"]
         )
         self.assertEqual(conversion.evidence_not_carried, 10)
+
+
+MEANINGS = {
+    "index-in-use": "Whether the index is used.",
+    "baseline-adequacy": "Whether the baseline is adequate.",
+    "suite-trustworthiness": "Whether the suite catches regressions.",
+    "doc-accuracy": "Whether the docs are accurate.",
+    "gate-honoured": "Whether the gate is honoured.",
+}
+SPEC = Path(__file__).resolve().parents[3] / "spec"
+
+
+class UnattestedTests(unittest.TestCase):
+    def converted(self, unattested: list[str], **options: Any) -> adapter.Conversion:
+        return convert(er.report(TARGET, unattested=unattested), **options)
+
+    def test_each_fixed_item_becomes_the_attested_requirement_it_stands_for(self) -> None:
+        conversion = self.converted(list(MEANINGS), meanings=MEANINGS)
+        self.assertEqual(
+            [(u["requirement"], u["property"]) for u in conversion.unattested],
+            [
+                ("REQ-SH-004", "index-in-use"),
+                ("REQ-BF-004", "baseline-adequacy"),
+                ("REQ-SH-050", "suite-trustworthiness"),
+                ("REQ-SH-020", "doc-accuracy"),
+                ("REQ-SH-026", "gate-honoured"),
+            ],
+        )
+        self.assertEqual({u["method"] for u in conversion.unattested}, {"attested"})
+        self.assertEqual([u["why"] for u in conversion.unattested], list(MEANINGS.values()))
+        self.assertEqual(list(conversion.unattested[0]), ["requirement", "method", "property", "why"])
+
+    def test_the_items_come_in_the_engines_order_and_only_those_the_engine_lists_are_carried(self) -> None:
+        conversion = self.converted(["gate-honoured", "index-in-use"], meanings=MEANINGS)
+        self.assertEqual([u["property"] for u in conversion.unattested], ["gate-honoured", "index-in-use"])
+        self.assertEqual(self.converted([]).unattested, [])
+
+    def test_an_item_with_no_words_of_the_engines_gets_a_plain_sentence(self) -> None:
+        for meanings in (None, {}, {"index-in-use": ""}):
+            with self.subTest(meanings=meanings):
+                conversion = self.converted(["index-in-use"], meanings=meanings)
+                self.assertEqual(conversion.unattested[0]["why"], "The engine cannot settle index-in-use by scanning.")
+
+    def test_a_long_description_is_cut_with_a_warning(self) -> None:
+        conversion = self.converted(["doc-accuracy"], meanings={"doc-accuracy": "w" * 301})
+        why = conversion.unattested[0]["why"]
+        self.assertEqual((len(why), why[-1]), (300, "\u2026"))
+        self.assertEqual(
+            conversion.warnings,
+            ["doc-accuracy: the description is 301 characters and the report allows 300, so it was cut"],
+        )
+
+    def test_an_item_the_adapter_has_no_requirement_for_is_said_and_left_out(self) -> None:
+        conversion = self.converted(["index-in-use", "something-new", "doc-accuracy"], meanings=MEANINGS)
+        self.assertEqual([u["property"] for u in conversion.unattested], ["index-in-use", "doc-accuracy"])
+        self.assertEqual(
+            conversion.warnings,
+            [
+                "the engine lists the unattested item 'something-new', which maps to no requirement, so it is not carried"
+            ],
+        )
+
+
+class UnattestedDriftTests(unittest.TestCase):
+    """The table of items and requirements is the adapter's own, so these hold it to its sources."""
+
+    def test_the_table_has_the_engines_five_items_and_no_other(self) -> None:
+        engine_launcher.load_engine()
+        evaluate = importlib.import_module("audit.evaluate")
+        self.assertEqual(set(adapter.UNATTESTED_REQUIREMENTS), set(evaluate.UNATTESTED_ITEMS))
+
+    def test_the_engine_has_words_for_each_item(self) -> None:
+        engine_launcher.load_engine()
+        presentation = importlib.import_module("audit.report.presentation")
+        self.assertEqual(set(adapter.UNATTESTED_REQUIREMENTS), set(presentation.UNATTESTED_MEANINGS))
+
+    def test_the_requirements_are_those_the_spec_traces_the_items_to(self) -> None:
+        text = (SPEC / "traceability.md").read_text(encoding="utf-8")
+        traced = dict(
+            (item, requirement)
+            for requirement, item in re.findall(
+                r"\[(REQ-[A-Z]+-[0-9]+)\][^\n]*the engine's unattested item `([a-z-]+)`", text
+            )
+        )
+        self.assertEqual(traced, adapter.UNATTESTED_REQUIREMENTS)
+
+
+class AttestTests(unittest.TestCase):
+    def catalogue_with(self, check_id: str, req_ids: list[str]) -> dict[str, Any]:
+        catalogue = copy.deepcopy(dict(CATALOGUE))
+        next(c for c in catalogue["checks"] if c["id"] == check_id)["req_ids"] = req_ids
+        return catalogue
+
+    def test_a_check_marked_attest_has_no_verdict_and_its_requirements_are_listed(self) -> None:
+        catalogue = self.catalogue_with("TOOL-01", ["REQ-SH-027", "REQ-SH-028"])
+        engine = er.report(
+            TARGET, [er.check("TOOL-01", "ATTEST", summary="Only a person can say."), er.check("TOOL-02")]
+        )
+        conversion = adapter.convert(engine, catalogue=catalogue)
+        self.assertEqual([c["id"] for c in conversion.checks], ["TOOL-02"])
+        self.assertEqual(
+            conversion.unattested,
+            [
+                {
+                    "requirement": "REQ-SH-027",
+                    "method": "attested",
+                    "property": "tool-01",
+                    "why": "Only a person can say.",
+                },
+                {
+                    "requirement": "REQ-SH-028",
+                    "method": "attested",
+                    "property": "tool-01",
+                    "why": "Only a person can say.",
+                },
+            ],
+        )
+
+    def test_the_why_is_the_title_when_the_engine_gave_no_summary_and_is_cut_when_long(self) -> None:
+        conversion = convert(er.report(TARGET, [er.check("TOOL-01", "ATTEST", summary="")]))
+        self.assertEqual(conversion.unattested[0]["why"], CATALOGUE_TITLE["TOOL-01"])
+        conversion = convert(er.report(TARGET, [er.check("TOOL-01", "ATTEST", summary="s" * 301)]))
+        self.assertEqual(len(conversion.unattested[0]["why"]), 300)
+        self.assertEqual(
+            conversion.warnings, ["TOOL-01: the summary is 301 characters and the report allows 300, so it was cut"]
+        )
+
+    def test_the_fixed_items_come_before_the_checks_marked_attest(self) -> None:
+        engine = er.report(TARGET, [er.check("TOOL-01", "ATTEST")], unattested=["doc-accuracy"])
+        conversion = convert(engine)
+        self.assertEqual([u["property"] for u in conversion.unattested], ["doc-accuracy", "tool-01"])
+
+    def test_a_check_marked_attest_that_holds_findings_is_refused(self) -> None:
+        engine = er.report(TARGET, [er.check("TOOL-01", "ATTEST")], [er.finding("TOOL-01")])
+        error = refused(self, engine)
+        self.assertEqual(
+            error.errors,
+            [
+                "engine report: /findings/0/check: TOOL-01 has the verdict ATTEST, which is no verdict, "
+                "so it holds no findings"
+            ],
+        )
+
+    def test_a_check_marked_attest_that_the_catalogue_does_not_have_or_only_an_agent_judges_is_refused(self) -> None:
+        unknown = er.check("TOOL-01", "ATTEST")
+        unknown["id"] = "ZZZ-99"
+        error = refused(self, er.report(TARGET, [unknown, er.check("AGT-11", "ATTEST")]))
+        self.assertEqual(
+            error.errors,
+            [
+                "engine report: /checks/0/id: ZZZ-99 is not a check in catalogue.json",
+                "engine report: /checks/1/id: AGT-11 is a check that only an agent can judge",
+            ],
+        )
 
 
 class ShapeTests(unittest.TestCase):

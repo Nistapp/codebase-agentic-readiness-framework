@@ -37,6 +37,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import importlib
 import json
 import os
 import posixpath
@@ -52,6 +53,7 @@ from typing import Any, Callable, Iterator, Mapping, Sequence
 
 import _common
 import _engine_adapter as adapter
+import engine as engine_launcher
 import _jsonschema_subset as subset
 import _summary
 import render_report
@@ -558,6 +560,14 @@ def agree_with_target(document: Mapping[str, Any], conversion: adapter.Conversio
     return []
 
 
+@lru_cache(maxsize=1)
+def engine_meanings() -> dict[str, str]:
+    """The engine's own words for each unattested item. They come from the engine and are never copied here (ADR 0001)."""
+    engine_launcher.load_engine()
+    presentation = importlib.import_module("audit.report.presentation")
+    return dict(presentation.UNATTESTED_MEANINGS)
+
+
 def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[str]]:
     """Bring the engine's results into the draft, once. A draft that already holds an engine report is refused.
 
@@ -574,7 +584,10 @@ def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[st
             ],
         )
     conversion = adapter.convert(
-        engine, catalogue=vr.load_catalogue(), taken_keys=[finding["key"] for finding in document["findings"]]
+        engine,
+        catalogue=vr.load_catalogue(),
+        taken_keys=[finding["key"] for finding in document["findings"]],
+        meanings=engine_meanings(),
     )
     warnings = agree_with_target(document, conversion)
     recorded = recorded_checks(document)
@@ -593,6 +606,7 @@ def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[st
     for found in conversion.findings:
         finding = {"id": next_finding_id(document["findings"]), **found, **initial_decision(document)}
         document["findings"].append(in_schema_order(finding, "finding"))
+    document["unattested"].extend(conversion.unattested)
     verdicts: dict[str, int] = {}
     for check in conversion.checks:
         verdicts[check["verdict"]] = verdicts.get(check["verdict"], 0) + 1
@@ -601,6 +615,7 @@ def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[st
         "checks_imported": len(conversion.checks),
         "by_verdict": dict(sorted(verdicts.items())),
         "findings_imported": len(conversion.findings),
+        "unattested_listed": len(conversion.unattested),
         "evidence_not_carried": conversion.evidence_not_carried,
         **check_counts(document),
         **finding_counts(document),
@@ -646,9 +661,19 @@ def recorded_checks(document: Mapping[str, Any]) -> dict[str, int]:
     return {check["id"]: index for index, check in enumerate(document["checks"])}
 
 
+def accounted_checks(document: Mapping[str, Any]) -> set[str]:
+    """The checks the draft has dealt with: the recorded ones, and those the engine marked ATTEST.
+
+    A check marked ATTEST has no verdict, so it is not recorded; it is listed in `unattested` with its lower-case id as
+    the `property`, and a draft that lists it has not left it out.
+    """
+    attested = {item["property"].upper() for item in document["unattested"] if "property" in item}
+    return set(recorded_checks(document)) | attested
+
+
 def check_counts(document: Mapping[str, Any]) -> dict[str, int]:
     wanted = {check["id"] for check in expected_checks()}
-    return {"checks_recorded": len(wanted & set(recorded_checks(document))), "checks_expected": len(wanted)}
+    return {"checks_recorded": len(wanted & accounted_checks(document)), "checks_expected": len(wanted)}
 
 
 def apply_check(document: dict[str, Any], fragment: Mapping[str, Any]) -> Change:
@@ -1031,7 +1056,7 @@ def family_of(check_id: str) -> str:
 
 def missing_checks(document: Mapping[str, Any]) -> dict[str, list[str]]:
     """The expected checks that the draft does not hold, by family, in catalogue order."""
-    recorded = set(recorded_checks(document))
+    recorded = accounted_checks(document)
     missing: dict[str, list[str]] = {}
     for check in expected_checks():
         if check["id"] not in recorded:

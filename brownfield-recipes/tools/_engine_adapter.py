@@ -40,6 +40,15 @@ VERDICTS = ["PASS", "PARTIAL", "FAIL", "UNKNOWN", "ATTEST"]
 CUT_MARK = "…"
 KEY_ROOM = 8
 NO_REMEDIATION = "The engine gave no remediation for this finding."
+UNATTESTED_METHOD = "attested"
+# The engine's five fixed unattested items and the requirements they became (spec/traceability.md, D15 item 7).
+UNATTESTED_REQUIREMENTS = {
+    "index-in-use": "REQ-SH-004",
+    "baseline-adequacy": "REQ-BF-004",
+    "suite-trustworthiness": "REQ-SH-050",
+    "doc-accuracy": "REQ-SH-020",
+    "gate-honoured": "REQ-SH-026",
+}
 NOT_APPLICABLE_SUMMARY = "The engine did not run this check: it does not apply to the detected stack."
 
 # The shape the adapter reads, and no more. The report schema's own limits apply to what is carried.
@@ -51,7 +60,7 @@ _ENGINE_EVIDENCE = {
 }
 ENGINE_SCHEMA: dict[str, Any] = {
     "type": "object",
-    "required": ["provenance", "checks", "findings", "not_applicable"],
+    "required": ["provenance", "checks", "findings", "not_applicable", "unattested"],
     "properties": {
         "provenance": {
             "type": "object",
@@ -101,6 +110,7 @@ ENGINE_SCHEMA: dict[str, Any] = {
             },
         },
         "not_applicable": {"type": "array", "items": _TEXT},
+        "unattested": {"type": "array", "items": _TEXT},
     },
 }
 
@@ -109,9 +119,13 @@ ENGINE_SCHEMA: dict[str, Any] = {
 
 
 @lru_cache(maxsize=1)
-def definitions() -> dict[str, Any]:
+def report_schema() -> dict[str, Any]:
     document: dict[str, Any] = json.loads(vr.REPORT_SCHEMA.read_text(encoding="utf-8"))
-    defs: dict[str, Any] = document["$defs"]
+    return document
+
+
+def definitions() -> dict[str, Any]:
+    defs: dict[str, Any] = report_schema()["$defs"]
     return defs
 
 
@@ -124,6 +138,11 @@ def maximum(definition: str, name: str, keyword: str = "maxLength") -> int:
     while "$ref" in node:
         node = definitions()[node["$ref"].rsplit("/", 1)[1]]
     return int(node[keyword])
+
+
+def maximum_why() -> int:
+    """The longest `why` an unattested item may have."""
+    return int(report_schema()["properties"]["unattested"]["items"]["properties"]["why"]["maxLength"])
 
 
 def fit(text: str, limit: int) -> str:
@@ -209,6 +228,7 @@ class Conversion:
     git_sha: str | None
     checks: list[dict[str, Any]]
     findings: list[dict[str, Any]]
+    unattested: list[dict[str, Any]]
     warnings: list[str]
     evidence_not_carried: int
 
@@ -256,12 +276,20 @@ def engine_record(provenance: Mapping[str, Any]) -> dict[str, Any]:
 class Converter:
     """One conversion: the engine's tool, the catalogue, the finding keys already taken, and what has gone wrong."""
 
-    def __init__(self, engine: Mapping[str, Any], catalogue: Mapping[str, Any], taken_keys: Collection[str]) -> None:
+    def __init__(
+        self,
+        engine: Mapping[str, Any],
+        catalogue: Mapping[str, Any],
+        taken_keys: Collection[str],
+        meanings: Mapping[str, str],
+    ) -> None:
         self.engine = engine
+        self.meanings = meanings
         self.tool = engine["provenance"]["tool"]
         self.tool_version = engine["provenance"]["version"]
         self.entries = {entry["id"]: entry for entry in catalogue["checks"]}
-        self.check_ids = {check["id"] for check in engine["checks"]}
+        self.attested = {check["id"] for check in engine["checks"] if check["verdict"] == "ATTEST"}
+        self.check_ids = {check["id"] for check in engine["checks"]} - self.attested
         self.taken = set(taken_keys)
         self.warnings: list[str] = []
         self.problems: list[str] = []
@@ -325,6 +353,11 @@ class Converter:
     def finding(self, number: int, raw: Mapping[str, Any]) -> dict[str, Any] | None:
         engine_id, check = raw["id"], raw["check"]
         where = f"/findings/{number}"
+        if check in self.attested:
+            self.problems.append(
+                f"engine report: {where}/check: {check} has the verdict ATTEST, which is no verdict, so it holds no findings"
+            )
+            return None
         if check not in self.check_ids:
             self.problems.append(f"engine report: {where}/check: {check} is not a check in this report")
             return None
@@ -360,11 +393,6 @@ class Converter:
         if entry["method"] != "automated":
             self.problems.append(
                 f"engine report: {where}/id: {check_id} is a check that only an agent can judge, so the engine cannot report it"
-            )
-            return None
-        if raw["verdict"] == "ATTEST":
-            self.problems.append(
-                f"engine report: {where}/verdict: {check_id} has the verdict ATTEST, which a check cannot hold"
             )
             return None
         data = raw.get("data")
@@ -416,6 +444,41 @@ class Converter:
             "searches": [],
         }
 
+    def attest(self, number: int, raw: Mapping[str, Any]) -> list[dict[str, Any]]:
+        """The requirements of a check the engine marks ATTEST, as unattested items. Such a check has no verdict."""
+        check_id = raw["id"]
+        entry = self.entries.get(check_id)
+        if entry is None or entry["method"] != "automated":
+            kind = "not a check in catalogue.json" if entry is None else "a check that only an agent can judge"
+            self.problems.append(f"engine report: /checks/{number}/id: {check_id} is {kind}")
+            return []
+        why = self.cut(raw["summary"] or raw["title"], maximum_why(), check_id, "summary")
+        return [
+            {"requirement": requirement, "method": UNATTESTED_METHOD, "property": check_id.lower(), "why": why}
+            for requirement in entry["req_ids"]
+        ]
+
+    def unattested_items(self) -> list[dict[str, Any]]:
+        """The engine's fixed unattested items as the requirements they stand for. One it has no requirement for is said."""
+        items: list[dict[str, Any]] = []
+        for name in self.engine["unattested"]:
+            requirement = UNATTESTED_REQUIREMENTS.get(name)
+            if requirement is None:
+                self.warnings.append(
+                    f"the engine lists the unattested item {name!r}, which maps to no requirement, so it is not carried"
+                )
+                continue
+            why = self.meanings.get(name) or f"The engine cannot settle {name} by scanning."
+            items.append(
+                {
+                    "requirement": requirement,
+                    "method": UNATTESTED_METHOD,
+                    "property": name,
+                    "why": self.cut(why, maximum_why(), name, "description"),
+                }
+            )
+        return items
+
     def run(self) -> Conversion:
         raw_checks: list[Mapping[str, Any]] = self.engine["checks"]
         listed = [raw["id"] for raw in raw_checks] + list(self.engine["not_applicable"])
@@ -432,7 +495,11 @@ class Converter:
         for converted in findings:
             by_check.setdefault(converted["check"], []).append(converted)
         checks = []
+        attested: list[dict[str, Any]] = []
         for number, raw_check in enumerate(raw_checks):
+            if raw_check["verdict"] == "ATTEST":
+                attested.extend(self.attest(number, raw_check))
+                continue
             made = self.check(number, raw_check, by_check.get(raw_check["id"], []))
             if made is not None:
                 checks.append(made)
@@ -453,15 +520,23 @@ class Converter:
             git_sha=provenance.get("git_sha"),
             checks=checks,
             findings=findings,
+            unattested=self.unattested_items() + attested,
             warnings=self.warnings,
             evidence_not_carried=self.not_carried,
         )
 
 
-def convert(engine: Any, *, catalogue: Mapping[str, Any], taken_keys: Collection[str] = ()) -> Conversion:
+def convert(
+    engine: Any,
+    *,
+    catalogue: Mapping[str, Any],
+    taken_keys: Collection[str] = (),
+    meanings: Mapping[str, str] | None = None,
+) -> Conversion:
     """The parts of a draft that `engine` stands for. Raises `ValidationFailed` for a report it cannot read.
 
     `taken_keys` are the keys of the findings the draft already holds, so that an imported finding never repeats one.
+    `meanings` is the engine's own wording for each unattested item, which the caller takes from the engine.
     """
     check_engine_report(engine)
-    return Converter(engine, catalogue, taken_keys).run()
+    return Converter(engine, catalogue, taken_keys, meanings or {}).run()
