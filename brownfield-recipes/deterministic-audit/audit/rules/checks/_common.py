@@ -8,12 +8,14 @@ is deliberately absent from ``MODULE_NAMES`` in ``audit/rules/checks/__init__.py
 loaded by the registry and never appears in ``--list-checks``. Packs import it directly
 (``from audit.rules.checks._common import ...``).
 
-It exists only to answer questions more than one pack asks. The pair that motivated it:
+It exists only to answer questions more than one pack asks. The ones that motivated it:
 
 * **"what verbs exist, and what does each run?"** — CMD-01, EXEC-06, CI-02, AGT-05, TOOL-01/02/04
   and TST-01 all need one answer, so it is computed once (``resolve_verbs``);
 * **"which commands does the documentation actually show?"** — EXEC-06 and TST-04 both read fenced
-  shell blocks (``extract_fenced_commands``).
+  shell blocks (``extract_fenced_commands``);
+* **"where is the prohibitions section?"** — AGT-07, CON-01 and CON-02 all read it
+  (``prohibitions_section``), so heading detection cannot drift between them.
 
 Keep it small. If a helper is used by exactly one check it belongs in that pack, not here.
 """
@@ -25,6 +27,7 @@ import shlex
 from dataclasses import dataclass
 
 from audit.ignore import tracked_files
+from audit.rules import variants as V
 from audit.scan import Inventory
 from audit.stack import (
     FORMAT_CHECK_ALIASES,
@@ -161,6 +164,83 @@ def extract_fenced_commands(text: str) -> list[tuple[str, int, str]]:
             continue
         commands.append((language, line_no, command))
     return commands
+
+
+# ---------------------------------------------------------------------------
+# the instruction file and its prohibitions section
+# ---------------------------------------------------------------------------
+
+
+def entry_instruction_file(inventory: Inventory) -> tuple[str, str]:
+    """The entry instruction file and its text: canonical first, else the ``CLAUDE.md`` fallback.
+
+    ``("", "")`` when there is none (or it is empty), which is ``AGT-01``'s finding and not the reader's.
+    """
+    for name in (*V.CANONICAL_PATHS, "CLAUDE.md"):
+        text = inventory.read(name)
+        if text:
+            return name, text
+    return "", ""
+
+
+#: The words that make a heading a prohibitions heading: the template's "Do Not Do" and the other spellings of
+#: the same list (decision 0001, ``spec/decisions/0001-constraint-artifact.md``).
+PROHIBITION_HEADING_RE = re.compile(r"(?i)\b(do[- ]?not|don't|prohibit\w*|deny|forbidden|never|no[- ]?go)\b")
+
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$")
+_FENCE_LINE_RE = re.compile(r"^\s*(?:```|~~~)")
+_CODE_SPAN_RE = re.compile(r"(?<!`)(`{1,3})(?!`)(.+?)(?<!`)\1(?!`)")
+
+
+@dataclass(frozen=True)
+class Prohibitions:
+    """The prohibitions section of an instruction file: where it is and every line in it."""
+
+    headings: tuple[str, ...]
+    first_line: int
+    lines: tuple[tuple[int, str], ...]
+
+    def code_spans(self) -> tuple[tuple[int, str], ...]:
+        """``(line number, text)`` of every code span in the section, in order. A path or a pattern is *named*
+        when it stands in a code span."""
+        return tuple(
+            (number, match.group(2).strip())
+            for number, line in self.lines
+            for match in _CODE_SPAN_RE.finditer(line)
+            if match.group(2).strip()
+        )
+
+
+def prohibitions_section(text: str) -> Prohibitions | None:
+    """Find the prohibitions section: a heading with one of the prohibition words, and everything under it.
+
+    The section runs to the next heading of the same or a higher level (a subsection belongs to it). Every
+    matching heading counts, so a file with two such sections has both, in order. A heading inside a fenced
+    block is not a heading. ``None`` when there is no such heading. ``AGT-07``, ``CON-01`` and ``CON-02`` all
+    ask here, so that heading detection cannot drift between them.
+    """
+    headings: list[str] = []
+    first_line = 0
+    kept: list[tuple[int, str]] = []
+    open_level: int | None = None
+    in_fence = False
+    for number, line in enumerate(text.splitlines(), start=1):
+        if _FENCE_LINE_RE.match(line):
+            in_fence = not in_fence
+        heading = None if in_fence or _FENCE_LINE_RE.match(line) else _HEADING_RE.match(line)
+        if heading:
+            level = len(heading.group(1))
+            if open_level is not None and level <= open_level:
+                open_level = None
+            if open_level is None and PROHIBITION_HEADING_RE.search(heading.group(2)):
+                open_level = level
+                headings.append(heading.group(2))
+                first_line = first_line or number
+        if open_level is not None:
+            kept.append((number, line))
+    if not headings:
+        return None
+    return Prohibitions(headings=tuple(headings), first_line=first_line, lines=tuple(kept))
 
 
 # ---------------------------------------------------------------------------

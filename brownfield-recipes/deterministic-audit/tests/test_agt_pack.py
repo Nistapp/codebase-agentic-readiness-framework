@@ -11,6 +11,7 @@ end-to-end path, not the check functions in isolation.
 from __future__ import annotations
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -123,6 +124,39 @@ class StubReasonTests(unittest.TestCase):
 
     def test_a_short_file_is_a_stub_before_its_words_are_read(self):
         self.assertEqual(_trivial_reason("TODO"), "only 4 characters (minimum 400)")
+
+
+class Agt07SectionTests(unittest.TestCase):
+    """AGT-07 finds the section through the helper that CON-01 and CON-02 share, and still scans the whole file."""
+
+    BODY = "x" * 400 + "\n"
+
+    def audit(self, text: str) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "AGENTS.md", text)
+            report = support.run_audit(root)
+        return next(c for c in report["checks"] if c["id"] == "AGT-07")
+
+    def test_a_prohibitions_heading_that_only_stands_in_a_fenced_block_is_no_heading(self):
+        check = self.audit(self.BODY + "```bash\n# Never run this\n```\n")
+        self.assertEqual((check["verdict"], check["summary"]), ("FAIL", "no prohibitions section"))
+
+    def test_the_four_concerns_are_still_found_anywhere_in_the_file(self):
+        text = (
+            self.BODY
+            + "## Do Not Do\n- Never skip tests.\n## Elsewhere\n- Never edit generated files.\n"
+            + "- Never push to main.\n- Never commit a secret.\n"
+        )
+        check = self.audit(text)
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PASS", "prohibitions cover tests, generated files, the default branch and secrets"),
+        )
+
+    def test_a_file_with_no_such_heading_says_so(self):
+        check = self.audit(self.BODY + "- Never skip tests.\n")
+        self.assertEqual((check["verdict"], check["summary"]), ("FAIL", "no prohibitions section"))
 
 
 class Agt01ProseTests(unittest.TestCase):

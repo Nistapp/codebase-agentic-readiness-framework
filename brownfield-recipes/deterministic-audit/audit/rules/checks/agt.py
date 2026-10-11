@@ -29,7 +29,7 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
-from audit.rules.checks._common import resolve_verbs, runner_commands
+from audit.rules.checks._common import entry_instruction_file, prohibitions_section, resolve_verbs, runner_commands
 from audit.scan import Inventory
 from audit.stack import VERBS
 from audit.rules import variants as V
@@ -567,15 +567,6 @@ def _broken_pointer(spec, config_file: str, name: str) -> Finding:
 # ---------------------------------------------------------------------------
 
 
-def _entry(inventory: Inventory) -> tuple[str, str]:
-    """The entry instruction file and its text: canonical first, else the CLAUDE.md fallback."""
-    for name in (*V.CANONICAL_PATHS, "CLAUDE.md"):
-        text = inventory.read(name)
-        if text:
-            return name, text
-    return "", ""
-
-
 def _unknown(spec, reason: str) -> CheckOutcome:
     return CheckOutcome(
         spec.id, spec.title, spec.tier, spec.severity, spec.phase, Verdict.UNKNOWN, spec.status, summary=reason
@@ -599,7 +590,7 @@ _SCRATCH_DIR_RE = re.compile(r"\bartefacts?/|\bartifacts?/")
 
 
 def check_agt03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    name, text = _entry(inventory)
+    name, text = entry_instruction_file(inventory)
     if not text:
         return _unknown(spec, "no instruction file to read; AGT-01 owns that finding")
 
@@ -661,7 +652,7 @@ _DOD_TRIGGER_RE = re.compile(
 
 
 def check_agt04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    name, text = _entry(inventory)
+    name, text = entry_instruction_file(inventory)
     if not text:
         return _unknown(spec, "no instruction file to read; AGT-01 owns that finding")
 
@@ -757,7 +748,7 @@ def _verb_binding_surface(resolved: dict) -> VerbSurface:
 
 
 def check_agt05(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    name, text = _entry(inventory)
+    name, text = entry_instruction_file(inventory)
     named = _mentioned_verbs(text)
     missing_names = [v for v in VERBS if v not in named]
     names_complete = not missing_names
@@ -869,7 +860,7 @@ def _path_is_real(inventory: Inventory, token: str) -> bool:
 
 
 def check_agt06(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    name, text = _entry(inventory)
+    name, text = entry_instruction_file(inventory)
     if not text:
         return _unknown(spec, "no instruction file to read; AGT-01 owns that finding")
 
@@ -929,7 +920,6 @@ def check_agt06(*, spec, target, inventory, stack, components, session) -> Check
 # AGT-07 — prohibitions / do-not-do rules
 # ---------------------------------------------------------------------------
 
-_PROHIBITION_HEADING_RE = re.compile(r"(?i)\b(do[- ]?not|don't|prohibit\w*|deny|forbidden|never|no[- ]?go)\b")
 _PROHIBITION_LINE_RE = re.compile(
     r"(?i)\b(never|do not|don't|must not|mustn't|prohibit(?:ed)?|forbidden|off-limits)\b|❌"
 )
@@ -953,20 +943,12 @@ _AGT07_CONCERNS: tuple[tuple[str, re.Pattern], ...] = (
 )
 
 
-def _has_prohibition_section(text: str) -> bool:
-    for line in text.splitlines():
-        match = re.match(r"^(#{1,6})\s+(.*)$", line)
-        if match and _PROHIBITION_HEADING_RE.search(match.group(2)):
-            return True
-    return False
-
-
 def check_agt07(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    name, text = _entry(inventory)
+    name, text = entry_instruction_file(inventory)
     if not text:
         return _unknown(spec, "no instruction file to read; AGT-01 owns that finding")
 
-    if not _has_prohibition_section(text):
+    if prohibitions_section(text) is None:
         return CheckOutcome(
             spec.id,
             spec.title,
@@ -1049,7 +1031,7 @@ _RELEASE_RE = re.compile(r"(?i)\b(tag|release|publish|deploy|push)\b")
 
 
 def check_agt09(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    name, text = _entry(inventory)
+    name, text = entry_instruction_file(inventory)
     if not text:
         return _unknown(spec, "no instruction file to read; AGT-01 owns that finding")
 
