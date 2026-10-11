@@ -224,7 +224,7 @@ The draft starts with no checks, no findings and a summary computed from them. T
 
 ### import-engine
 
-Brings the engine's report into a draft: its checks and findings, the stack and components it detected, its file counts, the probes it ran and its unattested items. The report is the JSON that [`engine.py`](#enginepy) wrote. The rules of the conversion are in [Engine schema v2 mapping](../../schema/SCHEMA.md#engine-schema-v2-mapping). The conversion is [`convert`](../../tools/_engine_adapter.py#L717-L730), a pure function of the engine's report, and [`apply_import`](../../tools/report.py#L585-L645) applies its result to the draft in one validated step, as every other change is applied.
+Brings the engine's report into a draft: its checks and findings, the stack and components it detected, its file counts, the probes it ran and its unattested items. The report is the JSON that [`engine.py`](#enginepy) wrote. The rules of the conversion are in [Engine schema v2 mapping](../../schema/SCHEMA.md#engine-schema-v2-mapping). The conversion is [`convert`](../../tools/_engine_adapter.py#L726-L739), a pure function of the engine's report, and [`apply_import`](../../tools/report.py#L585-L645) applies its result to the draft in one validated step, as every other change is applied.
 
 ```text
 python3 brownfield-recipes/tools/report.py import-engine <draft> <engine report>
@@ -250,7 +250,7 @@ It runs once for a draft. A draft that already holds an engine report is refused
 | `unattested[]` | The engine's five fixed items as the requirements they stand for, in the engine's words, and each requirement of a check the engine marks `ATTEST`. |
 | `stack`, `components`, `coverage.inventory` | The engine's own. A path that looks like a component and that nothing declares is a component with `declared: false`. |
 
-An engine evidence path is not always a path. A placeholder (`(no example file)`, `<repository>`) names no file and is dropped. A path outside the repository (the index store that `IDX-02` cites) is dropped with a warning. `package.json:lint` becomes the file `package.json` with the note `lint`, and the note does not say what it means, because the engine writes that form for a key that is set and for one that is not. [`locate`](../../tools/_engine_adapter.py#L248-L273) holds the rules.
+An engine evidence path is not always a path. A placeholder (`(no example file)`, `<repository>`) names no file and is dropped. A path outside the repository (the index store that `IDX-02` cites) is dropped with a warning. `package.json:lint` becomes the file `package.json` with the note `lint`, and the note does not say what it means, because the engine writes that form for a key that is set and for one that is not. [`locate`](../../tools/_engine_adapter.py#L249-L274) holds the rules.
 
 **Outputs**
 
