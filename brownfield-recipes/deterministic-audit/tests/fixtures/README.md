@@ -49,6 +49,10 @@ fixtures/
   cmd-ok-make-prereqs/       `check` composes the verbs through its prerequisites -> CMD-01…04 PASS
   cmd-ok-make-alias/         `format-check`, the alias, in place of `format\:check` -> CMD-01…04 PASS
   cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
+  cmd-ok-pyproject-poe/      `format-check`, the pyproject task runners' spelling -> CMD-01…04 PASS
+  cmd-ok-gradle/             `formatCheck` registered, `test` and `check` built in -> CMD-01 PASS, CMD-02 UNKNOWN
+  cmd-ok-maven/              Spotless, Checkstyle and dependency-check declared, the lifecycle phases -> CMD-01 PASS, CMD-02 UNKNOWN
+  cmd-01-maven-no-formatter/ a plugin goal named `check`, and no formatter plugin -> CMD-01 FAIL, CMD-02 UNKNOWN
   sec-01-tracked-env/        tracked .env, comprehensive ignore (needs git) -> SEC-01 FAIL
   sec-02-key-shaped/         synthetic sk- value in a source file (needs git) -> SEC-02 FAIL
   sec-03-thin-ignore/        ignore rules cover no secret shapes   -> SEC-03 FAIL

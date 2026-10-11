@@ -75,7 +75,8 @@ def resolve_all_verbs(inventory: Inventory, stack: Stack) -> dict[str, tuple[Ver
     can pass the detected stack even though resolution reads the inventory directly in v1.
     """
     candidates: dict[str, list[VerbBinding]] = {}
-    for runner, commands in runner_commands(inventory):
+    for runner, declared in runner_commands(inventory):
+        commands = {**_lifecycle_commands(runner, inventory), **declared}
         for verb in VERBS:
             command = commands.get(verb)
             if command:
@@ -177,7 +178,7 @@ def _runner_commands(inventory: Inventory):
     if inventory.has("pom.xml"):
         text = inventory.read("pom.xml")
         if text:
-            yield "pom.xml", _parse_maven_goals(text, inventory)
+            yield "pom.xml", _parse_maven_plugins(text, inventory)
 
 
 def _with_spellings(runner: str, commands: dict[str, str]) -> dict[str, str]:
@@ -186,6 +187,22 @@ def _with_spellings(runner: str, commands: dict[str, str]) -> dict[str, str]:
         if commands.get(spelling):
             return {**commands, "format:check": commands[spelling]}
     return commands
+
+
+def _lifecycle_commands(runner: str, inventory: Inventory) -> dict[str, str]:
+    """The verbs a runner provides itself, which the repository does not declare.
+
+    Gradle's ``java`` plugin gives a build ``test`` and ``check`` tasks, and every Maven project has the
+    ``test`` and ``verify`` phases. They resolve as verbs, but are not a definition of ``check``: ``CMD-03``
+    reads ``runner_commands``, which leaves them out, so a Gradle build beside an npm project is not a second
+    gate.
+    """
+    if runner in ("build.gradle", "build.gradle.kts"):
+        text = inventory.read(runner)
+        return _gradle_lifecycle(text, inventory) if text else {}
+    if runner == "pom.xml":
+        return _maven_lifecycle(inventory)
+    return {}
 
 
 def _runner_rank(runner: str) -> int:
@@ -294,12 +311,27 @@ _GRADLE_TASK_PATTERNS = (
     re.compile(r"^\s*task\s+([A-Za-z0-9_:-]+)"),
 )
 
+#: How a build names a plugin: ``id 'java'``, ``id("java")``, ``apply plugin: 'java'`` and ``kotlin("jvm")``;
+#: a Kotlin build also lists a core plugin bare, in the ``plugins`` block (java, `java-library`).
+_GRADLE_PLUGIN_ID_RES = (
+    re.compile(r"""\bid\s*\(?\s*['"]([\w.\-]+)['"]"""),
+    re.compile(r"""\bapply\s+plugin\s*:\s*['"]([\w.\-]+)['"]"""),
+)
+_GRADLE_KOTLIN_JVM_RE = re.compile(r"""\bkotlin\s*\(\s*['"]jvm['"]\s*\)""")
+_GRADLE_PLUGINS_BLOCK_RE = re.compile(r"\bplugins\s*\{([^}]*)\}")
+_GRADLE_BARE_PLUGIN_RE = re.compile(r"^\s*`?([\w\-]+)`?\s*$")
+
+#: Plugins that register ``test`` and ``check`` on a build (Quarkus applies the ``java`` plugin itself).
+_GRADLE_LIFECYCLE_PLUGINS = frozenset(
+    {"java", "java-library", "application", "groovy", "scala", "war", "org.jetbrains.kotlin.jvm", "io.quarkus"}
+)
+
 
 def _parse_gradle_tasks(text: str, inventory: Inventory) -> dict[str, str]:
     """Declared Gradle task names, invoked through the committed wrapper when one exists.
 
-    Gradle has no verb table: a verb resolves only when the build file registers a task of that
-    name. Conventional lifecycle tasks that Gradle provides implicitly are not invented here.
+    Gradle has no verb table: a verb resolves when the build file registers a task of that name, or, for
+    ``test`` and ``check``, when a plugin gives the build one (:func:`_gradle_lifecycle`).
     """
     names: set[str] = set()
     for line in text.splitlines():
@@ -307,18 +339,58 @@ def _parse_gradle_tasks(text: str, inventory: Inventory) -> dict[str, str]:
             match = pattern.search(line)
             if match:
                 names.add(match.group(1))
-    launcher = "./gradlew" if inventory.has("gradlew") else "gradle"
+    launcher = _launcher(inventory, "gradlew", "gradle")
     return {name: f"{launcher} {name}" for name in sorted(names)}
 
 
-_MAVEN_GOAL_RE = re.compile(r"<goal>([A-Za-z0-9_:-]+)</goal>")
+def _gradle_plugins(text: str) -> set[str]:
+    plugins = {match for pattern in _GRADLE_PLUGIN_ID_RES for match in pattern.findall(text)}
+    if _GRADLE_KOTLIN_JVM_RE.search(text):
+        plugins.add("org.jetbrains.kotlin.jvm")
+    for block in _GRADLE_PLUGINS_BLOCK_RE.findall(text):
+        for line in block.splitlines():
+            bare = _GRADLE_BARE_PLUGIN_RE.match(line)
+            if bare:
+                plugins.add(bare.group(1))
+    return plugins
 
 
-def _parse_maven_goals(text: str, inventory: Inventory) -> dict[str, str]:
-    """Declared Maven plugin goals, invoked through the committed wrapper when one exists.
+def _gradle_lifecycle(text: str, inventory: Inventory) -> dict[str, str]:
+    """``test`` and ``check`` for a build that applies a plugin which registers them."""
+    if not _gradle_plugins(text) & _GRADLE_LIFECYCLE_PLUGINS:
+        return {}
+    launcher = _launcher(inventory, "gradlew", "gradle")
+    return {"test": f"{launcher} test", "check": f"{launcher} check"}
 
-    As with Gradle, only explicitly declared goals resolve; the Maven lifecycle is not assumed.
+
+#: Maven has no named tasks. A verb is a lifecycle phase, or a goal of a plugin the pom declares, spelled as
+#: the spec's table gives it; the plugins are the table's defaults (Spotless, Checkstyle, OWASP dependency-check).
+_MAVEN_PLUGIN_GOALS: tuple[tuple[str, tuple[tuple[str, str], ...]], ...] = (
+    ("spotless-maven-plugin", (("format", "spotless:apply"), ("format:check", "spotless:check"))),
+    ("maven-checkstyle-plugin", (("lint", "checkstyle:check"),)),
+    ("dependency-check-maven", (("security", "org.owasp:dependency-check-maven:check"),)),
+)
+_MAVEN_LIFECYCLE_PHASES = (("test", "test"), ("typecheck", "compile test-compile"), ("check", "verify"))
+
+
+def _launcher(inventory: Inventory, wrapper: str, fallback: str) -> str:
+    return f"./{wrapper}" if inventory.has(wrapper) else fallback
+
+
+def _parse_maven_plugins(text: str, inventory: Inventory) -> dict[str, str]:
+    """The verbs of the plugins a pom declares, invoked through the committed wrapper when one exists.
+
+    A plugin is declared by its ``artifactId``. A ``<goal>`` inside an execution is not a verb: it names
+    what the plugin runs, and ``./mvnw check`` is not a Maven command.
     """
-    names = sorted(set(_MAVEN_GOAL_RE.findall(text)))
-    launcher = "./mvnw" if inventory.has("mvnw") else "mvn"
-    return {name: f"{launcher} {name}" for name in names}
+    launcher = _launcher(inventory, "mvnw", "mvn")
+    commands: dict[str, str] = {}
+    for artifact, goals in _MAVEN_PLUGIN_GOALS:
+        if re.search(rf"<artifactId>\s*{re.escape(artifact)}\s*</artifactId>", text):
+            commands.update({verb: f"{launcher} {goal}" for verb, goal in goals})
+    return commands
+
+
+def _maven_lifecycle(inventory: Inventory) -> dict[str, str]:
+    launcher = _launcher(inventory, "mvnw", "mvn")
+    return {verb: f"{launcher} {phase}" for verb, phase in _MAVEN_LIFECYCLE_PHASES}

@@ -119,6 +119,15 @@ and this page does not restate them. The verb's own name is accepted on every ru
 | `package.json` | The `scripts` map. |
 | `Makefile` | Every plain rule: its target names, its prerequisites in order and its recipe lines (`audit/stack.py`, `parse_makefile`). A colon escaped in a target name (`format\:check:`) is part of the name. What running a target does is each prerequisite that is itself a target of the file, as `make <name>`, then the recipe lines, joined with `&&`. A pattern rule, a variable in a name, an assignment and a `define` block are not read. |
 
+| `Taskfile.yml`, `Taskfile.yaml` | The tasks of the top-level `tasks:` map, from `cmd:` and `cmds:`. `deps`, includes and templates are not read. |
+| `pyproject.toml` | The tasks of any `[tool.<runner>.tasks]` table (poethepoet, taskipy): `name = "cmd"` and `name = { cmd = "..." }`. |
+| `build.gradle`, `build.gradle.kts` | The tasks the build registers by name (`tasks.register`, `register`, `task`), and `test` and `check` when the build applies a plugin that registers them: `java`, `java-library`, `application`, `groovy`, `scala`, `war`, the Kotlin JVM plugin or Quarkus, named in the `plugins` block or by `apply plugin:`. A plugin applied some other way is not seen. |
+| `pom.xml` | The lifecycle phases of any pom (`test`, `compile test-compile` for `typecheck`, `verify` for `check`) and the goals of the Spotless, Checkstyle and OWASP dependency-check plugins, when the pom declares the plugin's `artifactId`. A `<goal>` is not a verb: it names what a plugin runs, and `./mvnw check` is not a Maven command. |
+
+Gradle's `test` and `check` and Maven's lifecycle phases resolve as verbs but are not a definition the repository
+wrote, so `CMD-03` does not count them as a second gate beside an npm project. `CMD-02` is `UNKNOWN` for a `check` on
+those runners: what a lifecycle task composes is set by the build's task graph, which the engine does not read.
+
 A Makefile that GNU Make refuses is not a runner, because nothing in it can run. The one refusal the engine detects
 is the one that sank its own fixture: an unescaped colon in a name (`format:check:`) is a static pattern rule whose
 pattern has no `%`. `CMD-01` reports it as a finding of its own, with the path `Makefile`, so its id is `CMD-01:Makefile`,

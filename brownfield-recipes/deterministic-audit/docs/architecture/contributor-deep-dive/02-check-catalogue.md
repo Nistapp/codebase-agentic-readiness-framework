@@ -100,7 +100,7 @@ suspicious verdict.
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
 | `CMD-01` | Seven verbs resolvable on one runner | B | BLOCKER | Each verb maps to a script in exactly one runner (package scripts, `Taskfile`, `Makefile`, `pyproject`, gradle, maven), under a spelling the spec accepts for that runner; a `Makefile` that GNU Make refuses is a finding, not a runner ([how runners are read](01-scan-engine-and-tiering.md#41-reading-the-verb-runners)) | Implemented |
-| `CMD-02` | `check` composes the read-only verbs | B | BLOCKER | The `check` definition invokes format-check, typecheck and test (or documented equivalents), by command or, in a `Makefile`, by prerequisite | Implemented |
+| `CMD-02` | `check` composes the read-only verbs | B | BLOCKER | The `check` definition invokes format-check, typecheck and test (or documented equivalents), by command or, in a `Makefile`, by prerequisite; `UNKNOWN` for a Gradle or Maven lifecycle `check`, whose dependencies the build sets | Implemented |
 | `CMD-03` | No divergent second definition | B | DEGRADER | A second runner may delegate; it must not define its own composition of the gate | Implemented |
 | `CMD-04` | Write verbs separated from read-only verbs | B | DEGRADER | A write verb is never invoked by a verification verb | Implemented |
 

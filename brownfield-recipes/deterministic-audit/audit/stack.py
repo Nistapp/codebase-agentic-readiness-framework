@@ -86,9 +86,14 @@ VERBS = ("format", "format:check", "lint", "typecheck", "test", "check", "securi
 
 #: Spellings of ``format:check`` that a runner accepts besides the verb's own name, which every runner
 #: accepts. The colon is not a portable name character: Make writes it ``format\:check`` (read as the
-#: verb's own name) or ``format-check``. Source: ``spec/command-surface.md``, "Spelling per runner".
+#: verb's own name) or ``format-check``, pyproject task runners ``format-check`` and Gradle ``formatCheck``.
+#: Source: ``spec/command-surface.md``, "Spelling per runner". Maven has no named tasks and is read by
+#: ``_common._parse_maven_plugins`` instead.
 FORMAT_CHECK_ALIASES: dict[str, tuple[str, ...]] = {
     "Makefile": ("format-check",),
+    "pyproject.toml": ("format-check",),
+    "build.gradle": ("formatCheck",),
+    "build.gradle.kts": ("formatCheck",),
 }
 
 _VERB_OF_SPELLING: dict[str, str] = {

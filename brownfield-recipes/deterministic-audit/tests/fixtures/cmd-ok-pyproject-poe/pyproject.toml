@@ -1,0 +1,12 @@
+[project]
+name = "cmd-ok-pyproject-poe"
+version = "0.1.0"
+
+[tool.poe.tasks]
+format = "ruff format ."
+format-check = "ruff format --check ."
+lint = "ruff check ."
+typecheck = "mypy ."
+test = "pytest"
+check = "ruff format --check . && mypy . && pytest"
+security = "pip-audit"

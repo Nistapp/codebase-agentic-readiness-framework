@@ -25,6 +25,7 @@ import support  # noqa: E402
 FIXTURES: dict[str, tuple[str, str]] = {
     "cmd-01-missing-verb": ("CMD-01", "FAIL"),
     "cmd-01-make-parse-error": ("CMD-01", "FAIL"),
+    "cmd-01-maven-no-formatter": ("CMD-01", "FAIL"),
     "cmd-02-weak-check": ("CMD-02", "FAIL"),
     "cmd-03-divergent": ("CMD-03", "FAIL"),
     "cmd-04-write-in-check": ("CMD-04", "FAIL"),
@@ -49,7 +50,7 @@ class CmdFixtureTests(unittest.TestCase):
     def test_all_seven_verbs_on_one_runner_passes_for_npm_and_make(self):
         # Two runners, the same seven verbs: CMD-01 must pass on both. This is the check that the
         # implementation is runner-independent rather than npm-specific.
-        for name in ("cmd-ok-npm", "cmd-ok-make", "cmd-ok-make-prereqs", "cmd-ok-make-alias"):
+        for name in ("cmd-ok-npm", "cmd-ok-make", "cmd-ok-make-prereqs", "cmd-ok-make-alias", "cmd-ok-pyproject-poe"):
             with self.subTest(fixture=name):
                 report = support.run_audit(support.fixture(name))
                 verdicts = support.verdicts(report)
@@ -316,6 +317,30 @@ class CmdMessageTests(unittest.TestCase):
 
     def test_a_check_that_composes_everything_says_what_it_composes(self):
         report = audit_files({"package.json": NPM_VERBS})
+        check = [c for c in report["checks"] if c["id"] == "CMD-02"][0]
+        self.assertEqual(check["summary"], "check (package.json) composes: format-check, typecheck, test")
+
+    def test_a_lifecycle_check_says_why_its_composition_is_not_read(self):
+        for runner, files in (
+            ("build.gradle", {"build.gradle": "plugins {\n    id 'java'\n}\n"}),
+            ("build.gradle.kts", {"build.gradle.kts": 'plugins {\n    id("java")\n}\n'}),
+            ("pom.xml", {"pom.xml": "<project/>"}),
+        ):
+            with self.subTest(runner=runner):
+                report = audit_files(files)
+                check = [c for c in report["checks"] if c["id"] == "CMD-02"][0]
+                self.assertEqual(
+                    (check["verdict"], check["summary"]),
+                    (
+                        "UNKNOWN",
+                        f"the {runner} check is a build lifecycle task, and what it composes is set by the build's "
+                        "task graph, which the engine does not read",
+                    ),
+                )
+                self.assertEqual(findings_of(report, "CMD-02"), [])
+
+    def test_a_check_in_package_json_is_read_even_beside_a_gradle_build(self):
+        report = audit_files({"package.json": NPM_VERBS, "build.gradle": "plugins {\n    id 'java'\n}\n"})
         check = [c for c in report["checks"] if c["id"] == "CMD-02"][0]
         self.assertEqual(check["summary"], "check (package.json) composes: format-check, typecheck, test")
 

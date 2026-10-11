@@ -25,7 +25,8 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   (``prettier --check``, ``tsc --noEmit``, ``pytest``, …) both count. In a `Makefile` the prerequisites
   of `check` are its body, and a prerequisite that is not a verb is followed into its own recipe, once.
   Some concerns present ⇒ `PARTIAL`; none ⇒ `FAIL`; no runner ⇒ `UNKNOWN` (so is a `Makefile` that
-  does not parse, which `CMD-01` already reported).
+  does not parse, which `CMD-01` already reported, and so is a `check` that is a Gradle or Maven
+  lifecycle task, whose dependencies are set by the build and not read here).
 * **CMD-03** — a second runner may define `check` only as a delegation to the first; a second runner
   that composes the gate itself is a finding. Detection is textual and deterministic: a delegating
   `check` invokes ``check`` through another runner. No runner ⇒ `UNKNOWN`.
@@ -67,6 +68,9 @@ _CONCERN_OF_VERB = {"format:check": "format-check", "typecheck": "typecheck", "t
 
 #: The read-only verbs `check` and CI may compose: every framework verb except a write verb.
 READ_ONLY_VERBS: tuple[str, ...] = tuple(v for v in VERBS if v not in MUTATING_VERBS)
+
+#: Runners whose `check` is a lifecycle task: what it runs is set by the build's task graph, not by a command.
+_LIFECYCLE_RUNNERS = ("build.gradle", "build.gradle.kts", "pom.xml")
 
 _SEGMENT_SPLIT = re.compile(r"\s*(?:&&|\|\||;|\|)\s*")
 
@@ -391,6 +395,13 @@ def check_cmd02(*, spec, target, inventory, stack, components, session) -> Check
                     remediation="Define check as format-check, then typecheck, then test.",
                 )
             ],
+        )
+
+    if check.runner in _LIFECYCLE_RUNNERS:
+        return _unknown(
+            spec,
+            f"the {check.runner} check is a build lifecycle task, and what it composes is set by the build's task "
+            "graph, which the engine does not read",
         )
 
     own_targets = dict(declared).get(check.runner, {}) if check.runner == "Makefile" else None
