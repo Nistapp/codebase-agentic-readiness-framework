@@ -25,6 +25,7 @@ from __future__ import annotations
 import copy
 import json
 import re
+import shlex
 from dataclasses import dataclass
 from functools import lru_cache
 from typing import Any, Collection, Mapping, NoReturn, Sequence
@@ -41,6 +42,9 @@ CUT_MARK = "…"
 KEY_ROOM = 8
 NO_REMEDIATION = "The engine gave no remediation for this finding."
 UNATTESTED_METHOD = "attested"
+# The check that runs each probe verb. The engine's probe records do not name a check, and today only TST-02 runs one
+# (`session.run` in audit/rules/checks/tst.py); a test holds this table to the engine's source.
+PROBE_CHECKS = {"test": "TST-02"}
 # The engine's five fixed unattested items and the requirements they became (spec/traceability.md, D15 item 7).
 UNATTESTED_REQUIREMENTS = {
     "index-in-use": "REQ-SH-004",
@@ -60,7 +64,7 @@ _ENGINE_EVIDENCE = {
 }
 ENGINE_SCHEMA: dict[str, Any] = {
     "type": "object",
-    "required": ["provenance", "checks", "findings", "not_applicable", "unattested"],
+    "required": ["provenance", "checks", "findings", "not_applicable", "unattested", "probes"],
     "properties": {
         "provenance": {
             "type": "object",
@@ -111,6 +115,23 @@ ENGINE_SCHEMA: dict[str, Any] = {
         },
         "not_applicable": {"type": "array", "items": _TEXT},
         "unattested": {"type": "array", "items": _TEXT},
+        "probes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["verb", "command", "exit_code", "duration_s", "timed_out"],
+                "properties": {
+                    "verb": _TEXT,
+                    "command": {"type": "array", "items": _TEXT},
+                    "exit_code": {"type": ["integer", "null"]},
+                    "duration_s": {"type": "number"},
+                    "timed_out": {"type": "boolean"},
+                    "output_tail": _TEXT,
+                    "refused_reason": {"type": ["string", "null"]},
+                    "redactions": {"type": "integer"},
+                },
+            },
+        },
     },
 }
 
@@ -138,6 +159,11 @@ def maximum(definition: str, name: str, keyword: str = "maxLength") -> int:
     while "$ref" in node:
         node = definitions()[node["$ref"].rsplit("/", 1)[1]]
     return int(node[keyword])
+
+
+def fit_tail(text: str, limit: int) -> str:
+    """`text` as it is, or its last `limit` characters with a mark at the start: the end of an output is what matters."""
+    return text if len(text) <= limit else CUT_MARK + text[len(text) - (limit - 1) :]
 
 
 def maximum_why() -> int:
@@ -231,6 +257,7 @@ class Conversion:
     unattested: list[dict[str, Any]]
     warnings: list[str]
     evidence_not_carried: int
+    probes_carried: int
 
 
 def refuse(message: str, errors: Sequence[str]) -> NoReturn:
@@ -294,6 +321,7 @@ class Converter:
         self.warnings: list[str] = []
         self.problems: list[str] = []
         self.not_carried = 0
+        self.probes_carried = 0
 
     def cut(self, text: str, limit: int, where: str, what: str) -> str:
         if len(text) > limit:
@@ -381,10 +409,61 @@ class Converter:
             },
         }
 
+    def command_evidence(self, probe: Mapping[str, Any]) -> dict[str, Any] | None:
+        """A probe the engine ran, as `command` evidence. The engine redacted its output when it captured it."""
+        where = f"probe {probe['verb']}"
+        command = shlex.join(probe["command"])
+        if not command:
+            self.warnings.append(f"{where}: the engine gave no command, so the probe is not carried")
+            return None
+        item: dict[str, Any] = {
+            "kind": "command",
+            "captured_by": "tool",
+            "tool": self.tool,
+            "tool_version": self.tool_version,
+            "command": self.cut(command, maximum("evidence", "command"), where, "command"),
+            "exit_code": probe["exit_code"],
+        }
+        tail = probe.get("output_tail")
+        if tail:
+            limit = maximum("evidence", "output_tail")
+            if len(tail) > limit:
+                self.warnings.append(
+                    f"{where}: the output is {len(tail)} characters and the report allows {limit}, so its start was cut"
+                )
+            item["output_tail"] = fit_tail(tail, limit)
+        item["timed_out"] = probe["timed_out"]
+        item["duration_s"] = probe["duration_s"]
+        if "redactions" in probe:
+            item["redactions"] = probe["redactions"]
+        return item
+
+    def probe_evidence(self) -> dict[str, list[dict[str, Any]]]:
+        """The probes the engine ran, as command evidence for the check that ran each.
+
+        A probe the engine refused ran nothing, and the check's own summary says why, so it is not carried.
+        """
+        by_check: dict[str, list[dict[str, Any]]] = {}
+        for probe in self.engine["probes"]:
+            if probe.get("refused_reason"):
+                continue
+            check_id = PROBE_CHECKS.get(probe["verb"])
+            if check_id is None:
+                self.warnings.append(f"probe {probe['verb']}: no check is known to run it, so it is not carried")
+                continue
+            item = self.command_evidence(probe)
+            if item is not None:
+                by_check.setdefault(check_id, []).append(item)
+        return by_check
+
     def check(
-        self, number: int, raw: Mapping[str, Any], findings: Sequence[Mapping[str, Any]]
+        self,
+        number: int,
+        raw: Mapping[str, Any],
+        findings: Sequence[Mapping[str, Any]],
+        commands: Sequence[dict[str, Any]] = (),
     ) -> dict[str, Any] | None:
-        """An engine check as an automated check. Its evidence is its findings' evidence, gathered."""
+        """An engine check as an automated check. Its evidence is its findings' evidence, gathered, then its probes."""
         check_id, where = raw["id"], f"/checks/{number}"
         entry = self.entries.get(check_id)
         if entry is None:
@@ -410,7 +489,8 @@ class Converter:
             "verdict": raw["verdict"],
             "engine_verdict": raw["verdict"],
             "summary": self.cut(raw["summary"], maximum("check", "summary"), check_id, "summary"),
-            "evidence": self.capped(gathered, maximum("check", "evidence", "maxItems"), check_id),
+            "evidence": self.capped(gathered, maximum("check", "evidence", "maxItems") - len(commands), check_id)
+            + [dict(item) for item in commands],
             "searches": [],
         }
         if data:
@@ -494,19 +574,23 @@ class Converter:
         by_check: dict[str, list[dict[str, Any]]] = {}
         for converted in findings:
             by_check.setdefault(converted["check"], []).append(converted)
+        commands = self.probe_evidence()
         checks = []
         attested: list[dict[str, Any]] = []
         for number, raw_check in enumerate(raw_checks):
             if raw_check["verdict"] == "ATTEST":
                 attested.extend(self.attest(number, raw_check))
                 continue
-            made = self.check(number, raw_check, by_check.get(raw_check["id"], []))
+            made = self.check(number, raw_check, by_check.get(raw_check["id"], []), commands.get(raw_check["id"], ()))
             if made is not None:
                 checks.append(made)
+                self.probes_carried += len(commands.get(raw_check["id"], ()))
         for number, check_id in enumerate(self.engine["not_applicable"]):
             skipped = self.not_applicable(number, check_id)
             if skipped is not None:
                 checks.append(skipped)
+        for check_id in sorted(set(commands) - {made["id"] for made in checks if made["verdict"] != "NOT_APPLICABLE"}):
+            self.warnings.append(f"probe: {check_id} ran it, and the report holds no such check, so it is not carried")
         if self.problems:
             count = len(self.problems)
             refuse(
@@ -523,6 +607,7 @@ class Converter:
             unattested=self.unattested_items() + attested,
             warnings=self.warnings,
             evidence_not_carried=self.not_carried,
+            probes_carried=self.probes_carried,
         )
 
 

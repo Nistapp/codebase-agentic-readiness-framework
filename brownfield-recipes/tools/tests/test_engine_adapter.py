@@ -10,12 +10,14 @@ Standard library only.
 
 from __future__ import annotations
 
+import ast
 import copy
 import importlib
 import re
 import unittest
 from pathlib import Path
 from typing import Any
+from unittest import mock
 
 import _engine_reports as er
 import _paths  # noqa: F401
@@ -738,6 +740,209 @@ class AttestTests(unittest.TestCase):
                 "engine report: /checks/1/id: AGT-11 is a check that only an agent can judge",
             ],
         )
+
+
+class ProbeTests(unittest.TestCase):
+    def tst02(self, *probes: dict[str, Any], findings: list[dict[str, Any]] | None = None) -> adapter.Conversion:
+        return convert(
+            er.report(TARGET, [er.check("TST-02", "PASS")], findings or [], probes=list(probes)),
+        )
+
+    def test_a_probe_that_ran_is_command_evidence_on_the_check_that_ran_it(self) -> None:
+        conversion = self.tst02(er.probe(command=("npm", "run", "test"), exit_code=1, output_tail="1 failed\n"))
+        self.assertEqual(
+            conversion.checks[0]["evidence"],
+            [
+                {
+                    "kind": "command",
+                    "captured_by": "tool",
+                    "tool": "python-agentic-audit",
+                    "tool_version": "0.1.0",
+                    "command": "npm run test",
+                    "exit_code": 1,
+                    "output_tail": "1 failed\n",
+                    "timed_out": False,
+                    "duration_s": 1.234,
+                    "redactions": 0,
+                }
+            ],
+        )
+        self.assertEqual(
+            list(conversion.checks[0]["evidence"][0]),
+            [
+                "kind",
+                "captured_by",
+                "tool",
+                "tool_version",
+                "command",
+                "exit_code",
+                "output_tail",
+                "timed_out",
+                "duration_s",
+                "redactions",
+            ],
+        )
+        self.assertEqual((conversion.probes_carried, conversion.warnings), (1, []))
+
+    def test_the_command_is_written_as_a_shell_would_read_it(self) -> None:
+        conversion = self.tst02(er.probe(command=("sh", "-c", "echo 'hi there'")))
+        self.assertEqual(conversion.checks[0]["evidence"][0]["command"], "sh -c 'echo '\"'\"'hi there'\"'\"''")
+
+    def test_a_probe_the_engine_refused_ran_nothing_and_is_not_carried_and_needs_no_warning(self) -> None:
+        conversion = self.tst02(er.refused_probe())
+        self.assertEqual(conversion.checks[0]["evidence"], [])
+        self.assertEqual((conversion.probes_carried, conversion.warnings, conversion.evidence_not_carried), (0, [], 0))
+
+    def test_a_probe_that_timed_out_is_carried_with_no_exit_code(self) -> None:
+        conversion = self.tst02(er.probe(exit_code=None, timed_out=True))
+        item = conversion.checks[0]["evidence"][0]
+        self.assertEqual((item["exit_code"], item["timed_out"]), (None, True))
+
+    def test_an_empty_or_missing_output_and_missing_redactions_are_left_out(self) -> None:
+        cases: list[dict[str, Any]] = [{"output_tail": ""}, {}]
+        for changes in cases:
+            with self.subTest(changes=changes):
+                probe = er.probe(**changes)
+                if not changes:
+                    del probe["output_tail"], probe["redactions"]
+                item = self.tst02(probe).checks[0]["evidence"][0]
+                self.assertNotIn("output_tail", item)
+        self.assertNotIn("redactions", item)
+        self.assertEqual(self.tst02(er.probe(redactions=2)).checks[0]["evidence"][0]["redactions"], 2)
+
+    def test_the_end_of_a_long_output_is_kept(self) -> None:
+        tail = "a" * 100 + "b" * 2000
+        conversion = self.tst02(er.probe(output_tail=tail))
+        kept = conversion.checks[0]["evidence"][0]["output_tail"]
+        self.assertEqual((len(kept), kept[0], kept[1:]), (2000, "\u2026", "b" * 1999))
+        self.assertEqual(
+            conversion.warnings,
+            ["probe test: the output is 2100 characters and the report allows 2000, so its start was cut"],
+        )
+
+    def test_an_output_at_the_limit_is_kept_whole(self) -> None:
+        conversion = self.tst02(er.probe(output_tail="b" * 2000))
+        self.assertEqual((conversion.checks[0]["evidence"][0]["output_tail"], conversion.warnings), ("b" * 2000, []))
+
+    def test_a_long_command_is_cut_with_a_warning(self) -> None:
+        conversion = self.tst02(er.probe(command=("x" * 501,)))
+        command = conversion.checks[0]["evidence"][0]["command"]
+        self.assertEqual((len(command), command[-1]), (500, "\u2026"))
+        self.assertEqual(
+            conversion.warnings, ["probe test: the command is 501 characters and the report allows 500, so it was cut"]
+        )
+
+    def test_a_probe_with_no_command_is_not_carried(self) -> None:
+        conversion = self.tst02(er.probe(command=()))
+        self.assertEqual(conversion.checks[0]["evidence"], [])
+        self.assertEqual(conversion.warnings, ["probe test: the engine gave no command, so the probe is not carried"])
+        self.assertEqual(conversion.probes_carried, 0)
+
+    def test_a_probe_no_check_is_known_to_run_is_said_and_left_out(self) -> None:
+        conversion = self.tst02(er.probe("lint"))
+        self.assertEqual(conversion.checks[0]["evidence"], [])
+        self.assertEqual(conversion.warnings, ["probe lint: no check is known to run it, so it is not carried"])
+
+    def test_a_probe_whose_check_is_not_in_the_report_is_said_and_left_out(self) -> None:
+        conversion = convert(er.report(TARGET, [er.check("TOOL-01")], probes=[er.probe()]))
+        self.assertEqual(conversion.probes_carried, 0)
+        self.assertEqual(
+            conversion.warnings, ["probe: TST-02 ran it, and the report holds no such check, so it is not carried"]
+        )
+
+    def test_a_probe_whose_check_the_engine_left_out_is_said_and_left_out(self) -> None:
+        conversion = convert(er.report(TARGET, not_applicable=["TST-02"], probes=[er.probe()]))
+        self.assertEqual(conversion.probes_carried, 0)
+        self.assertEqual(len(conversion.warnings), 1)
+        self.assertEqual(conversion.checks[0]["evidence"], [])
+
+    def test_the_probe_follows_the_files_the_checks_findings_cite(self) -> None:
+        findings = [er.finding("TST-02", evidence=[er.evidence("package.json", None, "npm test")])]
+        conversion = self.tst02(er.probe(exit_code=1), findings=findings)
+        self.assertEqual([i["kind"] for i in conversion.checks[0]["evidence"]], ["file", "command"])
+
+    def test_the_findings_do_not_get_the_probe(self) -> None:
+        conversion = self.tst02(er.probe(exit_code=1), findings=[er.finding("TST-02")])
+        self.assertEqual(conversion.findings[0]["evidence"], [])
+
+    def test_several_probes_for_one_check_are_all_carried_in_order(self) -> None:
+        with mock.patch.dict(adapter.PROBE_CHECKS, {"check": "TST-02"}):
+            conversion = self.tst02(er.probe(command=("one",)), er.probe("check", command=("two",)))
+        self.assertEqual([i["command"] for i in conversion.checks[0]["evidence"]], ["one", "two"])
+        self.assertEqual(conversion.probes_carried, 2)
+
+    def test_the_probe_keeps_its_place_when_the_files_fill_the_check(self) -> None:
+        findings = [er.finding("TST-02", evidence=[er.evidence(f"f{n}.ts") for n in range(50)])]
+        conversion = self.tst02(er.probe(), findings=findings)
+        evidence = conversion.checks[0]["evidence"]
+        self.assertEqual((len(evidence), evidence[-1]["kind"], evidence[-2]["path"]), (50, "command", "f48.ts"))
+        self.assertEqual(
+            conversion.warnings, ["TST-02: 50 evidence items, and the report allows 49, so the rest are left out"]
+        )
+
+    def test_the_input_probe_is_not_changed(self) -> None:
+        probe = er.probe()
+        before = copy.deepcopy(probe)
+        self.tst02(probe)
+        self.assertEqual(probe, before)
+
+    def test_a_probe_missing_a_field_or_of_the_wrong_kind_is_refused(self) -> None:
+        for name in ("verb", "command", "exit_code", "duration_s", "timed_out"):
+            with self.subTest(missing=name):
+                probe = er.probe()
+                del probe[name]
+                errors = refused(self, er.report(TARGET, probes=[probe])).errors
+                self.assertEqual(errors, [f"engine report: /probes/0: missing the required property '{name}'"])
+        bad: list[dict[str, Any]] = [
+            {"command": "npm test"},
+            {"exit_code": "0"},
+            {"duration_s": "1"},
+            {"timed_out": 0},
+            {"redactions": 1.5},
+        ]
+        for changes in bad:
+            with self.subTest(changes=changes):
+                probe = er.probe()
+                probe.update(changes)
+                errors = refused(self, er.report(TARGET, probes=[probe])).errors
+                self.assertTrue(errors[0].startswith("engine report: /probes/0/"), errors)
+
+    def test_a_report_without_probes_is_refused(self) -> None:
+        report = er.report(TARGET)
+        del report["probes"]
+        self.assertIn("'probes'", " ".join(refused(self, report).errors))
+
+
+class ProbeDriftTests(unittest.TestCase):
+    """The table of verbs and checks is the adapter's own, so this holds it to the engine's source."""
+
+    def checks_that_run_probes(self) -> dict[str, str]:
+        found: dict[str, str] = {}
+        folder = engine_launcher.ENGINE_DIR / "audit" / "rules" / "checks"
+        for source in sorted(folder.glob("*.py")):
+            for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
+                if not isinstance(node, ast.FunctionDef):
+                    continue
+                named = re.fullmatch(r"check_([a-z]+)([0-9]+)", node.name)
+                if named is None:
+                    continue
+                verbs: list[str] = []
+                for call in ast.walk(node):
+                    if not (isinstance(call, ast.Call) and getattr(call.func, "id", "") == "ProbePlan"):
+                        continue
+                    for keyword in call.keywords:
+                        value = keyword.value
+                        if keyword.arg == "verb" and isinstance(value, ast.Constant) and isinstance(value.value, str):
+                            verbs.append(value.value)
+                for verb in verbs:
+                    found[verb] = f"{named.group(1).upper()}-{named.group(2)}"
+        return found
+
+    def test_the_table_is_the_checks_that_build_a_probe_plan(self) -> None:
+        self.assertEqual(self.checks_that_run_probes(), adapter.PROBE_CHECKS)
+
+    def test_the_search_finds_something(self) -> None:
+        self.assertTrue(self.checks_that_run_probes())
 
 
 class ShapeTests(unittest.TestCase):

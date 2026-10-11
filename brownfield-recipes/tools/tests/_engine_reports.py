@@ -80,11 +80,42 @@ def finding(check_id: str, path: str | None = None, **changes: Any) -> dict[str,
     return document
 
 
+def probe(
+    verb: str = "test", command: Sequence[str] = ("npm", "test"), exit_code: int | None = 0, **changes: Any
+) -> dict[str, Any]:
+    """A probe the engine ran, as `ProbeResult` is written into the report."""
+    document: dict[str, Any] = {
+        "verb": verb,
+        "command": list(command),
+        "exit_code": exit_code,
+        "duration_s": 1.234,
+        "timed_out": False,
+        "output_tail": "ok\n",
+        "refused_reason": None,
+        "redactions": 0,
+    }
+    document.update(changes)
+    return document
+
+
+def refused_probe(verb: str = "test", command: Sequence[str] = ("npm", "test")) -> dict[str, Any]:
+    """A probe the engine refused to run, as the report records it by default."""
+    return probe(
+        verb,
+        command,
+        None,
+        duration_s=0.0,
+        output_tail="",
+        refused_reason="probes disabled (pass --run-gates)",
+    )
+
+
 def report(
     target: Path | str,
     checks: Sequence[Mapping[str, Any]] = (),
     findings: Sequence[Mapping[str, Any]] = (),
     not_applicable: Sequence[str] = (),
+    probes: Sequence[Mapping[str, Any]] = (),
     **changes: Any,
 ) -> dict[str, Any]:
     """An engine report with the parts given. The parts a test does not use are empty."""
@@ -100,7 +131,7 @@ def report(
         "findings": [dict(f) for f in findings],
         "unattested": [],
         "not_applicable": list(not_applicable),
-        "probes": [],
+        "probes": [dict(p) for p in probes],
     }
     document.update(changes)
     return document

@@ -616,6 +616,7 @@ def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[st
         "by_verdict": dict(sorted(verdicts.items())),
         "findings_imported": len(conversion.findings),
         "unattested_listed": len(conversion.unattested),
+        "probes_carried": conversion.probes_carried,
         "evidence_not_carried": conversion.evidence_not_carried,
         **check_counts(document),
         **finding_counts(document),

@@ -10,6 +10,7 @@ a recipe sees. Every refusal must leave the draft's bytes and the folder's files
 
 from __future__ import annotations
 
+import io
 import json
 import subprocess
 import sys
@@ -18,9 +19,11 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
-import _engine_reports as er
 import _paths
+import _common
+import _engine_reports as er
 import _summary
+import engine as launcher
 import render_report
 import report as rb
 import validate_report as vr
@@ -583,6 +586,71 @@ class ImportUnattestedTests(ImportCase):
     def test_a_check_missing_from_the_engines_report_is_still_missing(self) -> None:
         document = read_json(self.imported(er.report(self.target, [er.check("TOOL-02")]))[0])
         self.assertIn("TOOL-01", rb.missing_checks(document)["TOOL"])
+
+
+class RealProbeTests(ImportCase):
+    """The engine runs on a small repository of its own, through the launcher, and its real report is imported."""
+
+    def scan(self, test_script: str, *extra: str) -> Path:
+        (self.target / "package.json").write_text(json.dumps({"scripts": {"test": test_script}}), encoding="utf-8")
+        out, err = io.StringIO(), io.StringIO()
+        code = _common.run_tool(
+            launcher.INFO,
+            launcher.handler,
+            [str(self.target), "--out-dir", str(self.engine_dir), *extra],
+            stdout=out,
+            stderr=err,
+        )
+        self.assertEqual(code, 0, err.getvalue())
+        return Path(json.loads(out.getvalue())["data"]["report"])
+
+    def check(self, draft: Path, check_id: str) -> dict[str, Any]:
+        found: dict[str, Any] = next(c for c in read_json(draft)["checks"] if c["id"] == check_id)
+        return found
+
+    def test_a_scan_that_ran_no_probe_gives_a_check_with_no_command(self) -> None:
+        report = self.scan('python3 -c "pass"')
+        draft = self.start()
+        code, envelope, _ = self.import_engine(draft, report)
+        self.assertEqual(code, 0, envelope)
+        check = self.check(draft, "TST-02")
+        self.assertEqual((check["verdict"], check["engine_verdict"]), ("UNKNOWN", "UNKNOWN"))
+        self.assertEqual([i for i in check["evidence"] if i["kind"] == "command"], [])
+        self.assertEqual(envelope["data"]["probes_carried"], 0)
+        self.assertEqual(vr.validate_document(read_json(draft)).errors, [])
+
+    def test_a_probe_that_passed_is_command_evidence_on_the_check(self) -> None:
+        report = self.scan('python3 -c "pass"', "--run-gates", "--allow-probe", "test")
+        draft = self.start()
+        code, envelope, _ = self.import_engine(draft, report)
+        self.assertEqual(code, 0, envelope)
+        check = self.check(draft, "TST-02")
+        self.assertEqual((check["verdict"], check["engine_verdict"]), ("PASS", "PASS"))
+        (item,) = [i for i in check["evidence"] if i["kind"] == "command"]
+        self.assertEqual(
+            (item["captured_by"], item["tool"], item["exit_code"], item["timed_out"]),
+            ("tool", "python-agentic-audit", 0, False),
+        )
+        self.assertEqual(item["command"], "python3 -c pass")
+        self.assertEqual(envelope["data"]["probes_carried"], 1)
+        document = read_json(draft)
+        self.assertEqual(vr.validate_document(document).errors, [])
+        self.assertTrue(render_report.render(document))
+
+    def test_a_probe_that_failed_is_evidence_beside_the_finding_it_raised(self) -> None:
+        report = self.scan('python3 -c "raise SystemExit(3)"', "--run-gates", "--allow-probe", "test")
+        draft = self.start()
+        code, envelope, _ = self.import_engine(draft, report)
+        self.assertEqual(code, 0, envelope)
+        document = read_json(draft)
+        check = self.check(draft, "TST-02")
+        self.assertEqual(check["verdict"], "FAIL")
+        (item,) = [i for i in check["evidence"] if i["kind"] == "command"]
+        self.assertEqual(item["exit_code"], 3)
+        (finding,) = [f for f in document["findings"] if f["check"] == "TST-02"]
+        self.assertIn("exited 3", finding["statement"])
+        self.assertEqual([i["kind"] for i in finding["evidence"]], ["file"])
+        self.assertEqual(vr.validate_document(document).errors, [])
 
 
 class WriteFailureTests(ImportCase):
