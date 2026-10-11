@@ -558,40 +558,77 @@ def agree_with_target(document: Mapping[str, Any], conversion: adapter.Conversio
     return []
 
 
-def apply_import(document: dict[str, Any], conversion: adapter.Conversion) -> tuple[Change, list[str]]:
-    """Bring the engine's results into the draft, once. A draft that already holds an engine report is refused."""
+def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[str]]:
+    """Bring the engine's results into the draft, once. A draft that already holds an engine report is refused.
+
+    The engine's checks are added after any the agent has recorded, in the engine's order. Its findings follow the
+    run's policy as `add-finding` does. The draft's own target facts are kept.
+    """
     if "engine" in document["provenance"]:
-        engine = document["provenance"]["engine"]
+        held = document["provenance"]["engine"]
         raise _common.ValidationFailed(
-            f"this draft already holds an engine report (ruleset {engine['ruleset_hash']})",
+            f"this draft already holds an engine report (ruleset {held['ruleset_hash']})",
             errors=[
                 "a second import would replace the first one's checks and the decisions made on them; "
                 "start a new draft with init to audit again"
             ],
         )
+    conversion = adapter.convert(
+        engine, catalogue=vr.load_catalogue(), taken_keys=[finding["key"] for finding in document["findings"]]
+    )
     warnings = agree_with_target(document, conversion)
+    recorded = recorded_checks(document)
+    repeated = [check["id"] for check in conversion.checks if check["id"] in recorded]
+    if repeated:
+        raise _common.ValidationFailed(
+            f"the draft already records {', '.join(repeated)}",
+            errors=[f"{name} is already in the draft" for name in repeated],
+        )
     provenance = document["provenance"]
     names = list(report_schema()["properties"]["provenance"]["properties"])
     provenance["engine"] = conversion.engine
     document["provenance"] = {name: provenance[name] for name in names if name in provenance}
-    return Change(data={"engine": conversion.engine}), warnings
+    for check in conversion.checks:
+        document["checks"].append(in_schema_order(check, "check"))
+    for found in conversion.findings:
+        finding = {"id": next_finding_id(document["findings"]), **found, **initial_decision(document)}
+        document["findings"].append(in_schema_order(finding, "finding"))
+    verdicts: dict[str, int] = {}
+    for check in conversion.checks:
+        verdicts[check["verdict"]] = verdicts.get(check["verdict"], 0) + 1
+    data = {
+        "engine": conversion.engine,
+        "checks_imported": len(conversion.checks),
+        "by_verdict": dict(sorted(verdicts.items())),
+        "findings_imported": len(conversion.findings),
+        "evidence_not_carried": conversion.evidence_not_carried,
+        **check_counts(document),
+        **finding_counts(document),
+    }
+    return Change(data=data, touched=["/checks/", "/findings/"]), warnings + conversion.warnings
 
 
 def run_import_engine(args: argparse.Namespace) -> _common.Result:
     engine_path = Path(args.engine_report).expanduser()
-    conversion = adapter.convert(vr.read_report(engine_path, "engine report"))
+    engine = vr.read_report(engine_path, "engine report")
     warnings: list[str] = []
 
     def change(document: dict[str, Any]) -> Change:
-        made, found = apply_import(document, conversion)
+        made, found = apply_import(document, engine)
         warnings.extend(found)
         return made
 
     result = update_draft(args.draft, change)
+    kept, omitted = _common.bound_items(warnings)
     result.data["engine_report"] = str(engine_path.resolve())
-    result.warnings = warnings + result.warnings
-    engine = result.data["engine"]
-    result.summary = f"report: imported the engine report from {engine['name']} {engine['version']}"
+    result.warnings = kept + result.warnings
+    if omitted:
+        result.data["warnings_omitted"] = result.data.get("warnings_omitted", 0) + omitted
+        result.truncated = True
+    result.summary = (
+        f"report: imported {result.data['checks_imported']} checks and {result.data['findings_imported']} findings "
+        f"from {result.data['engine']['name']} {result.data['engine']['version']}"
+    )
     return result
 
 
