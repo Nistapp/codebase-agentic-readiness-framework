@@ -42,7 +42,19 @@ from audit.rules.payloads import (
 
 #: An instruction file below this size, or matching a stub marker, is present but not governance.
 MIN_INSTRUCTION_CHARS = 400
-STUB_MARKERS = ("todo", "tbd", "placeholder", "lorem ipsum", "<describe", "coming soon", "fill this in")
+#: Phrases that mark an unfilled template wherever they stand.
+STUB_PHRASES = ("lorem ipsum", "<describe", "coming soon", "fill this in")
+
+#: A word stands as a marker when it opens a line (after the punctuation that a list, a heading, a quote or a comment
+#: puts there, a list number included) and ends it or is followed by a colon, a dash or a closing bracket, or when it
+#: sits in brackets. In a sentence it is an ordinary word: "never commit placeholder values", "leave no TODO in a commit".
+_STUB_WORD_RES = (
+    re.compile(
+        r"^[\s>*#\-\u2022\[(<!/\d.)]*(todo|tbd|placeholder)\b\s*(?:[:\-\u2013\u2014\])>]|$)",
+        re.IGNORECASE | re.MULTILINE,
+    ),
+    re.compile(r"[\[(<]\s*(todo|tbd|placeholder)\s*[\])>]", re.IGNORECASE),
+)
 
 
 #: All basenames that could be an instruction file, derived from the variant table.
@@ -100,9 +112,13 @@ def _trivial_reason(text: str) -> str | None:
     if len(text.strip()) < MIN_INSTRUCTION_CHARS:
         return f"only {len(text.strip())} characters (minimum {MIN_INSTRUCTION_CHARS})"
     lowered = text.lower()
-    for marker in STUB_MARKERS:
-        if marker in lowered:
-            return f"contains the placeholder marker {marker!r}"
+    for phrase in STUB_PHRASES:
+        if phrase in lowered:
+            return f"contains the placeholder marker {phrase!r}"
+    for pattern in _STUB_WORD_RES:
+        found = pattern.search(text)
+        if found:
+            return f"contains the placeholder marker {found.group(1).lower()!r}"
     return None
 
 

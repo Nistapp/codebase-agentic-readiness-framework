@@ -49,6 +49,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "agt-01-stub": {"AGT-01": "FAIL"},
     "agt-01-mis-cased": {"AGT-01": "FAIL"},
     "agt-01-shadowed": {"AGT-01": "PARTIAL"},
+    "agt-01-marker-words-in-prose": {"AGT-01": "PASS"},
     "agt-02-uncovered": {"AGT-02": "PARTIAL"},
     "agt-03-incomplete": {"AGT-03": "PARTIAL"},
     "agt-04-missing": {"AGT-04": "FAIL"},

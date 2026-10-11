@@ -71,7 +71,7 @@ suspicious verdict.
 
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
-| `AGT-01` | Instruction file present, canonical, and non-trivial | A | BLOCKER | A canonical instruction file is present, over the minimum size, not a stub, not mis-cased, and not shadowed by an override in the same directory | Implemented |
+| `AGT-01` | Instruction file present, canonical, and non-trivial | A | BLOCKER | A canonical instruction file is present, over the minimum size, not a stub (a template phrase such as "coming soon", or `TODO`, `TBD` or `placeholder` as a marker: opening a line, or in brackets; the word inside a sentence is not one), not mis-cased, and not shadowed by an override in the same directory | Implemented |
 | `AGT-02` | Component coverage | A | DEGRADER | `components with AGENTS.md / declared components`, as a `PARTIAL` ratio | Implemented |
 | `AGT-03` | Documentation contract named | B | DEGRADER | Names `docs/`, names `docs/STYLE_GUIDE.md` as canonical, names `artefacts/` as off-limits | Implemented |
 | `AGT-04` | Definition of done stated | B | DEGRADER | A doc-trigger sentence exists and names the same change set | Implemented |
