@@ -15,9 +15,11 @@
 dirty), and creates ``<label>.audit-draft.<stamp>.json`` in the intake's ``output_dir``. It never replaces a file: a
 second run on the same repository starts a second draft, and the earlier one stays as it was.
 
-``import-engine`` reads the engine's JSON report (schema v2, phase 1) and records the engine in the draft's provenance.
-It does so once, and only for the repository and the commit that the draft was started for: the report of another
-repository is refused. The conversion is `_engine_adapter.py`, a pure function of the engine's report.
+``import-engine`` reads the engine's JSON report (schema v2, phase 1) and brings its checks, findings, stack,
+components, file counts, probes and unattested items into the draft, with the engine recorded in the provenance. It does
+so once, and only for the repository and the commit that the draft was started for: the report of another repository is
+refused, and so is a second import. The conversion is `_engine_adapter.py`, a pure function of the engine's report;
+what the report cannot hold is a warning, and nothing is dropped without one.
 
 Every other subcommand changes the draft in place, and only its own draft. A change is one read-modify-write under a
 lock on the output folder: the draft is read and validated, the change is made on a copy, the summary is recomputed,
@@ -613,6 +615,7 @@ def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[st
     names = list(report_schema()["properties"]["provenance"]["properties"])
     provenance["engine"] = conversion.engine
     document["provenance"] = {name: provenance[name] for name in names if name in provenance}
+    first_check, first_finding = len(document["checks"]), len(document["findings"])
     for check in conversion.checks:
         document["checks"].append(in_schema_order(check, "check"))
     for found in conversion.findings:
@@ -637,7 +640,9 @@ def apply_import(document: dict[str, Any], engine: Any) -> tuple[Change, list[st
         **check_counts(document),
         **finding_counts(document),
     }
-    return Change(data=data, touched=["/checks/", "/findings/"]), warnings + conversion.warnings
+    touched = [f"/checks/{n}/" for n in range(first_check, len(document["checks"]))]
+    touched += [f"/findings/{n}/" for n in range(first_finding, len(document["findings"]))]
+    return Change(data=data, touched=touched), warnings + conversion.warnings
 
 
 def run_import_engine(args: argparse.Namespace) -> _common.Result:

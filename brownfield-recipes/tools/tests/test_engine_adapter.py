@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import ast
 import copy
+import dataclasses
 import importlib
 import re
 import unittest
@@ -300,6 +301,12 @@ class ChecksTests(unittest.TestCase):
 
 
 class NotApplicableTests(unittest.TestCase):
+    def test_the_summary_of_a_check_that_does_not_apply_is_this_sentence(self) -> None:
+        self.assertEqual(
+            adapter.NOT_APPLICABLE_SUMMARY,
+            "The engine did not run this check: it does not apply to the detected stack.",
+        )
+
     def test_a_check_the_engine_left_out_is_the_catalogues_with_no_verdict_of_its_own(self) -> None:
         conversion = convert(er.report(TARGET, [er.check("TOOL-01")], not_applicable=["TOOL-02"]))
         self.assertEqual([c["id"] for c in conversion.checks], ["TOOL-01", "TOOL-02"])
@@ -423,6 +430,9 @@ class FindingsTests(unittest.TestCase):
         self.assertEqual(second, first + ":2")
         self.assertLessEqual(len(second), 400)
 
+    def test_the_sentence_for_a_missing_remediation_is_this_one(self) -> None:
+        self.assertEqual(adapter.NO_REMEDIATION, "The engine gave no remediation for this finding.")
+
     def test_a_remediation_the_engine_did_not_give_is_said_so(self) -> None:
         for given in (None, ""):
             with self.subTest(given=given):
@@ -476,10 +486,14 @@ class EvidenceTests(unittest.TestCase):
 
     def test_a_line_becomes_a_string_and_no_line_leaves_the_field_out(self) -> None:
         conversion = self.evidence(
-            er.evidence("a.ts", 5), er.evidence("b.ts"), er.evidence("c.ts", 0), er.evidence("d.ts", -3)
+            er.evidence("a.ts", 5),
+            er.evidence("b.ts"),
+            er.evidence("c.ts", 0),
+            er.evidence("d.ts", -3),
+            er.evidence("e.ts", 1),
         )
         items = conversion.findings[0]["evidence"]
-        self.assertEqual([i.get("lines") for i in items], ["5", None, None, None])
+        self.assertEqual([i.get("lines") for i in items], ["5", None, None, None, "1"])
 
     def test_a_note_is_carried_and_an_absent_or_empty_note_is_left_out(self) -> None:
         conversion = self.evidence(er.evidence("a.ts", None, "why"), er.evidence("b.ts"), er.evidence("c.ts", None, ""))
@@ -899,6 +913,8 @@ class ProbeTests(unittest.TestCase):
             {"duration_s": "1"},
             {"timed_out": 0},
             {"redactions": 1.5},
+            {"output_tail": 5},
+            {"refused_reason": 5},
         ]
         for changes in bad:
             with self.subTest(changes=changes):
@@ -1151,6 +1167,8 @@ class ShapeTests(unittest.TestCase):
             ("components", [{"path": "a"}], "/components/0"),
             ("components", [{"name": "a", "path": "a", "declared": "yes"}], "/components/0/declared"),
             ("components", [{"name": "a", "path": "a", "manifest": 3}], "/components/0/manifest"),
+            ("components", [{"name": "a", "path": "a", "declared_by": 3}], "/components/0/declared_by"),
+            ("components", [{"name": "a", "path": "a", "agents_md": 3}], "/components/0/agents_md"),
             ("candidate_components", [5], "/candidate_components/0"),
         ]
         for name, value, pointer in cases:
@@ -1218,6 +1236,57 @@ class ShapeTests(unittest.TestCase):
     def test_a_remediation_that_is_not_text_is_refused(self) -> None:
         report = er.report(TARGET, [er.check("TOOL-01", "FAIL")], [er.finding("TOOL-01", remediation=5)])
         self.assertTrue(refused(self, report).errors[0].startswith("engine report: /findings/0/remediation"))
+
+
+class MessageTests(unittest.TestCase):
+    """What a person reads when an engine report is refused, word for word."""
+
+    def test_a_report_that_is_not_an_object(self) -> None:
+        error = refused(self, [])
+        self.assertEqual(str(error), "the engine report is not a JSON object")
+        self.assertEqual(error.errors, ["engine report: the top level must be an object"])
+
+    def test_a_schema_version_other_than_2(self) -> None:
+        report = er.report(TARGET)
+        report["schema_version"] = "1"
+        error = refused(self, report)
+        self.assertEqual(str(error), "the engine report has schema_version '1', and the adapter reads only '2'")
+        self.assertEqual(error.errors, ["engine report: /schema_version: expected '2', found '1'"])
+
+    def test_a_phase_other_than_1(self) -> None:
+        error = refused(self, er.report(TARGET, provenance=er.provenance(TARGET, phase=2)))
+        self.assertEqual(str(error), "the engine report is for phase 2, and a 0.1 report covers phase 1")
+        self.assertEqual(error.errors, ["engine report: /provenance/phase: expected 1, found 2"])
+
+    def test_the_wrong_shape_with_one_error_and_with_two(self) -> None:
+        report = er.report(TARGET)
+        report["provenance"]["tool"] = 1
+        self.assertEqual(str(refused(self, report)), "the engine report has the wrong shape: 1 error")
+        report["provenance"]["version"] = 2
+        self.assertEqual(str(refused(self, report)), "the engine report has the wrong shape: 2 errors")
+
+    def test_problems_with_one_and_with_several(self) -> None:
+        self.assertEqual(
+            str(refused(self, er.report(TARGET, [er.check("AGT-11")]))),
+            "the engine report cannot be imported: 1 problem",
+        )
+        engine = er.report(TARGET, [er.check("AGT-11"), er.check("TOOL-01"), er.check("TOOL-01")])
+        self.assertEqual(str(refused(self, engine)), "the engine report cannot be imported: 2 problems")
+
+
+class ValueTests(unittest.TestCase):
+    """What the adapter hands back is not changed afterwards by anyone who holds it."""
+
+    def test_a_located_path_a_dropped_path_and_a_conversion_are_frozen(self) -> None:
+        conversion = convert(er.report(TARGET))
+        for value, name in (
+            (adapter.Located("a", None), "path"),
+            (adapter.NotCarried("why"), "reason"),
+            (conversion, "warnings"),
+        ):
+            with self.subTest(value=type(value).__name__):
+                with self.assertRaises(dataclasses.FrozenInstanceError):
+                    setattr(value, name, "changed")
 
 
 class PurityTests(unittest.TestCase):

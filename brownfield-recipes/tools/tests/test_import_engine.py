@@ -20,6 +20,7 @@ from typing import Any
 from unittest import mock
 
 import _paths
+import _common
 import _engine_reports as er
 import _summary
 import render_report
@@ -171,6 +172,20 @@ class OnceTests(ImportCase):
         self.assertIn("0123456789abcdef", envelope["data"]["error"])
         self.assertEqual(read_json(draft)["provenance"]["engine"]["ruleset_hash"], "0123456789abcdef")
 
+    def test_the_refusal_says_exactly_what_it_did_and_what_to_do(self) -> None:
+        draft, _ = self.imported()
+        envelope = self.refused(draft, self.engine_file(er.report(self.target), "again.json"))
+        self.assertEqual(
+            envelope["data"]["error"], "this draft already holds an engine report (ruleset 0123456789abcdef)"
+        )
+        self.assertEqual(
+            envelope["data"]["errors"],
+            [
+                "a second import would replace the first one's checks and the decisions made on them; "
+                "start a new draft with init to audit again"
+            ],
+        )
+
     def test_the_same_report_twice_is_refused_too(self) -> None:
         draft, _ = self.imported()
         self.refused(draft, self.engine_dir / "my-service.engine-report.20261010T065738Z.json")
@@ -233,6 +248,7 @@ class NotAnEngineReportTests(ImportCase):
             ("target", ["x"]),
             ("phase", "1"),
             ("scanned_at", 5),
+            ("ruleset_revision", 5),
             ("git_sha", 5),
         ):
             with self.subTest(field=name):
@@ -274,6 +290,20 @@ class NotAnEngineReportTests(ImportCase):
         source = self.engine_dir / "broken.json"
         source.write_text("{not json", encoding="utf-8")
         self.refused(self.draft, source)
+
+    def test_the_messages_about_the_file_call_it_an_engine_report(self) -> None:
+        broken = self.engine_dir / "broken.json"
+        broken.write_text("{not json", encoding="utf-8")
+        envelope = self.refused(self.draft, broken)
+        self.assertTrue(envelope["data"]["error"].startswith("the file is not an engine report: "), envelope["data"])
+        missing = self.engine_dir / "nothing.json"
+        self.assertEqual(
+            self.refused(self.draft, missing, code=1)["data"]["error"], f"engine report not found: {missing}"
+        )
+        self.assertEqual(
+            self.refused(self.draft, self.engine_dir, code=1)["data"]["error"],
+            f"the engine report is not a file: {self.engine_dir}",
+        )
 
     def test_a_file_that_repeats_a_key_is_refused(self) -> None:
         source = self.engine_dir / "repeated.json"
@@ -317,6 +347,33 @@ class SameTargetTests(ImportCase):
             with self.subTest(spelling=str(spelling)):
                 code, envelope, _ = self.import_engine(self.start(), self.engine_file(er.report(spelling)))
                 self.assertEqual(code, 0, envelope)
+
+    def test_the_refusal_of_another_repository_says_exactly_what_differs(self) -> None:
+        draft = self.start()
+        other = self.root / "Other_Service"
+        other.mkdir()
+        envelope = self.refused(draft, self.engine_file(er.report(other)))
+        self.assertEqual(envelope["data"]["error"], "the engine report is not of this draft's target")
+        self.assertEqual(
+            envelope["data"]["errors"],
+            [
+                f"the engine scanned {other}, and the draft's target is {self.target}; "
+                "import a report of the draft's own repository"
+            ],
+        )
+
+    def test_the_refusal_of_another_commit_says_exactly_what_differs(self) -> None:
+        draft = self.start()
+        self.set_commit(draft, SHA_A)
+        report = er.report(self.target, provenance=er.provenance(self.target, git_sha=SHA_B))
+        envelope = self.refused(draft, self.engine_file(report))
+        self.assertEqual(
+            envelope["data"]["errors"],
+            [
+                f"the engine scanned commit {SHA_B}, and the draft recorded commit {SHA_A}; "
+                "scan again, or start a new draft with init"
+            ],
+        )
 
     def test_another_commit_is_refused_and_both_are_named(self) -> None:
         draft = self.start()
@@ -517,6 +574,65 @@ class ImportChecksTests(ImportCase):
         envelope = self.refused(draft, self.engine_file(sample_report(self.target)))
         self.assertIn("already records TOOL-01", envelope["data"]["error"])
 
+    def test_every_check_the_draft_already_records_is_named(self) -> None:
+        draft = self.start()
+        document = read_json(draft)
+        for check_id in ("TOOL-01", "TOOL-02"):
+            entry = er.CATALOGUE[check_id]
+            document["checks"].append(
+                {
+                    "id": check_id,
+                    "title": entry["title"],
+                    "phase": 1,
+                    "severity": entry["severity"],
+                    "scored": entry["scored"],
+                    "method": "automated",
+                    "verdict": "PASS",
+                    "summary": "Made by hand.",
+                    "evidence": [],
+                    "searches": [],
+                }
+            )
+        document["summary"] = _summary.compute_summary(document)
+        draft.write_text(rb.dumps(document), encoding="utf-8")
+        report = er.report(self.target, [er.check("TOOL-01"), er.check("TOOL-02"), er.check("TOOL-03")])
+        envelope = self.refused(draft, self.engine_file(report))
+        self.assertEqual(envelope["data"]["error"], "the draft already records TOOL-01, TOOL-02")
+        self.assertEqual(
+            envelope["data"]["errors"], ["TOOL-01 is already in the draft", "TOOL-02 is already in the draft"]
+        )
+
+    def test_the_validators_warning_about_an_imported_check_reaches_the_envelope(self) -> None:
+        report = er.report(
+            self.target,
+            [er.check("SEC-02", "FAIL")],
+            [er.finding("SEC-02", "a", evidence=[er.evidence("src/missing.ts")])],
+        )
+        _, envelope = self.imported(report)
+        prefixes = sorted(w.split("/")[1] for w in envelope["warnings"] if w.startswith("/"))
+        self.assertEqual(prefixes, ["checks"])
+        self.assertTrue(all("src/missing.ts" in w for w in envelope["warnings"]), envelope["warnings"])
+
+    def test_a_path_cited_only_by_findings_beyond_the_checks_fifty_is_warned_about_at_the_finding(self) -> None:
+        findings = [er.finding("SEC-02", f"f{n}.ts", evidence=[er.evidence(f"missing/{n}.ts")]) for n in range(60)]
+        _, envelope = self.imported(er.report(self.target, [er.check("SEC-02", "FAIL")], findings))
+        warnings = [w for w in envelope["warnings"] if w.startswith("/")]
+        self.assertEqual(len([w for w in warnings if w.startswith("/checks/0/evidence/")]), 50)
+        self.assertEqual(
+            sorted(w.split(":")[0] for w in warnings if w.startswith("/findings/"))[:2],
+            ["/findings/50/evidence/0", "/findings/51/evidence/0"],
+        )
+        self.assertEqual(len([w for w in warnings if w.startswith("/findings/")]), 10)
+
+    def test_a_warning_about_a_check_the_agent_recorded_is_not_repeated_by_the_import(self) -> None:
+        draft = self.failing_draft()
+        self.assertEqual(
+            self.add_check(draft, agent_check(id="CI-04", evidence=[{"kind": "file", "path": "missing.yml"}]))[0], 0
+        )
+        code, envelope, _ = self.import_engine(draft, self.engine_file(sample_report(self.target)))
+        self.assertEqual(code, 0, envelope)
+        self.assertFalse([w for w in envelope["warnings"] if "missing.yml" in w], envelope["warnings"])
+
     def test_an_engine_finding_more_severe_than_its_check_is_refused_by_the_rules(self) -> None:
         report = er.report(self.target, [er.check("AGT-08", "FAIL")], [er.finding("AGT-08", severity="BLOCKER")])
         draft = self.start()
@@ -539,6 +655,29 @@ class ImportChecksTests(ImportCase):
         report["checks"].append(er.check("AGT-11"))
         envelope = self.refused(self.start(), self.engine_file(report))
         self.assertIn("cannot be imported", envelope["data"]["error"])
+
+    def test_the_omitted_warnings_of_the_adapter_and_of_the_validator_are_added_together(self) -> None:
+        def findings() -> list[dict[str, Any]]:
+            return [
+                er.finding("SEC-02", f"f{n}.ts", evidence=[er.evidence(f"/abs/{n}"), er.evidence(f"missing/{n}.ts")])
+                for n in range(12)
+            ]
+
+        report = er.report(self.target, [er.check("SEC-02", "FAIL")], findings())
+        _, whole = self.imported(report)
+        total = len(whole["warnings"])
+        self.assertGreater(total, 20)
+        self.assertNotIn("warnings_omitted", whole["data"])
+        original = _common.bound_items
+        with mock.patch.object(_common, "bound_items", lambda items, **_: original(items, limit_bytes=400)):
+            _, small = self.imported(er.report(self.target, [er.check("SEC-02", "FAIL")], findings()))
+        self.assertTrue(small["truncated"])
+        self.assertLess(
+            len([w for w in small["warnings"] if w.startswith("/")]), 12, "the validator's were bounded too"
+        )
+        self.assertLess(len([w for w in small["warnings"] if not w.startswith("/")]), 12, "the adapter's were bounded")
+        self.assertGreater(small["data"]["warnings_omitted"], 0)
+        self.assertEqual(len(small["warnings"]) + small["data"]["warnings_omitted"], total)
 
     def test_the_adapters_warnings_are_bounded_like_every_other_list(self) -> None:
         findings = [
