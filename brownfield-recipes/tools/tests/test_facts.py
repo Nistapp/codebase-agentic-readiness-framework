@@ -149,7 +149,7 @@ class ContractTests(RepoCase):
         self.assertEqual(
             manifest["summary"],
             "Describe a repository with counts and names and no verdicts, as facts.json. "
-            "In development: so far it writes facts_version, label, git, inventory and caps.",
+            "In development: so far it writes facts_version, label, git, inventory, caps and part of stack.",
         )
         self.assertIs(manifest["writes_inside_target"], False)
         self.assertIs(manifest["network"], False)
@@ -181,7 +181,8 @@ class ContractTests(RepoCase):
         self.assertIn(facts.INFO.summary, text)
         self.assertRegex(
             text,
-            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: so far the file holds facts_version, label, git, inventory and caps\.$",
+            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: so far the file holds facts_version, label, git, inventory, caps"
+            r" and part of stack \(ecosystems, source_only, package_managers, notes\)\.$",
         )
         self.assertRegex(text, r"(?m)^  target {2,}the repository to describe$")
         self.assertRegex(text, r"(?m)^  --out FILE {2,}the file to create; it must not exist$")
@@ -384,6 +385,14 @@ class FileTests(RepoCase):
                     f'    "max_files": {engine_default_cap()},',
                     '    "excludes": []',
                     "  },",
+                    '  "stack": {',
+                    '    "ecosystems": [],',
+                    '    "source_only": [],',
+                    '    "package_managers": [],',
+                    '    "notes": [',
+                    '      "no recognised build manifest \u2014 stack-dependent checks report UNKNOWN"',
+                    "    ]",
+                    "  },",
                     '  "caps": {',
                     '    "excludes": {',
                     '      "limit": 10,',
@@ -417,7 +426,7 @@ class FileTests(RepoCase):
                     walk(value)
 
         walk(self.written())
-        self.assertEqual(len(found), 3)
+        self.assertEqual(len(found), 4)
         for text in found:
             self.assertIsNone(re.match(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}", text), text)
             self.assertFalse(text.startswith("/"), text)
@@ -718,7 +727,7 @@ class InventoryTests(RepoCase):
 
     def test_a_ninth_skip_reason_stops_the_tool_and_writes_no_file(self) -> None:
         skipped = [("p", f"reason-{letter}") for letter in "abcdefghi"]
-        stub = types.SimpleNamespace(files=[], skipped=skipped, truncated=False, excludes=())
+        stub = self.scan.Inventory(root=self.repo, skipped=skipped)
         with mock.patch.object(facts, "walk_target", return_value=stub):
             code, envelope, _ = call([str(self.repo), "--out", str(self.out)])
         self.assertEqual(code, 3)

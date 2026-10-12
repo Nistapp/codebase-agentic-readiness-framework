@@ -8,8 +8,9 @@ IN DEVELOPMENT, until S2.7.5.3. One command::
     facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]
 
 The tool writes one new file, ``facts.json``, whose format is ``schema/facts.schema.json``. This version writes
-``facts_version``, ``label``, ``git`` and ``inventory``, with ``caps`` for the ``--exclude`` globs; the detections, the
-instruction files, the components and the size class arrive in the steps after this one. ``--exclude`` and
+``facts_version``, ``label``, ``git`` and ``inventory``, with ``caps`` for the ``--exclude`` globs, and the part of
+``stack`` that names ecosystems and package managers; the other detections, the instruction files, the components and
+the size class arrive in the steps after this one. ``--exclude`` and
 ``--max-files`` are spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the
 facts describe the inventory the engine sees. The inventory holds counts and never a path. A walk that ``--max-files``
 cut short says ``truncated`` in the file and gives a warning in the envelope; the engine records no skip reason for that.
@@ -47,7 +48,7 @@ INFO = _common.ToolInfo(
     name="facts",
     summary=(
         "Describe a repository with counts and names and no verdicts, as facts.json. "
-        "In development: so far it writes facts_version, label, git, inventory and caps."
+        "In development: so far it writes facts_version, label, git, inventory, caps and part of stack."
     ),
     synopsis=("facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]",),
     writes="One new file, the one --out names, which must be outside the target and must not exist. It is never replaced.",
@@ -121,6 +122,20 @@ def inventory_section(inventory: Any, *, max_files: int, excludes: Sequence[str]
     }
 
 
+def stack_section(inventory: Any) -> dict[str, Any]:
+    """The names `detect_stack` recognised in the inventory, sorted, and the engine's notes. No verdict, no error.
+
+    A repository the engine does not recognise gives empty lists and the engine's note, which says so.
+    """
+    found = engine_module("audit.stack").detect_stack(inventory)
+    return {
+        "ecosystems": sorted(found.ecosystems),
+        "source_only": sorted(found.source_only),
+        "package_managers": sorted(found.package_managers),
+        "notes": sorted(found.notes),
+    }
+
+
 def build_document(*, label: str, git: dict[str, Any], inventory: Any, max_files: int) -> dict[str, Any]:
     """The facts, in the schema's key order. Each later section is added here as its step lands."""
     listed, omitted = listed_excludes(inventory.excludes)
@@ -129,6 +144,7 @@ def build_document(*, label: str, git: dict[str, Any], inventory: Any, max_files
         "label": label,
         "git": git,
         "inventory": inventory_section(inventory, max_files=max_files, excludes=listed),
+        "stack": stack_section(inventory),
         "caps": {"excludes": {"limit": EXCLUDES_LIMIT, "omitted": omitted}},
     }
 
@@ -175,7 +191,10 @@ def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(
         prog="facts.py",
         description=INFO.summary,
-        epilog="IN DEVELOPMENT until S2.7.5.3: so far the file holds facts_version, label, git, inventory and caps.",
+        epilog=(
+            "IN DEVELOPMENT until S2.7.5.3: so far the file holds facts_version, label, git, inventory, caps "
+            "and part of stack (ecosystems, source_only, package_managers, notes)."
+        ),
     )
     parser.add_argument("target", help="the repository to describe")
     parser.add_argument("--out", required=True, metavar="FILE", help="the file to create; it must not exist")
