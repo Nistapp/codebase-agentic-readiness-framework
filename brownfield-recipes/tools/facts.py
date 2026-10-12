@@ -153,7 +153,7 @@ def variant_of(rel: str) -> str:
     order, once as written and once without its `**/`, so that a file straight in the folder has a name too.
     """
     names = engine_module("audit.rules.checks.agt").INSTRUCTION_BASENAMES
-    base = rel.rsplit("/", 1)[-1]
+    base = rel.rpartition("/")[2]
     if base in names:
         return str(base)
     for harness in engine_module("audit.rules.variants").HARNESSES:
