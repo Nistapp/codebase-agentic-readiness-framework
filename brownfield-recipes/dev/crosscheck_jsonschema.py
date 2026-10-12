@@ -11,8 +11,8 @@ part of ``make check``.
 
 What must agree, and the run fails if any of it does not:
 
-* both accept each of the three schemas;
-* both accept every example, and the check catalogue and the intake example;
+* both accept each of the four schemas;
+* both accept every example, and the check catalogue, the intake example and the facts example;
 * both give the same errors, as a set of ``(place in the document, keyword)``, on the raw engine reports, which are
   not reports of this schema and fail it in many ways;
 * both give the same answer, and the same errors, on a few thousand mutants of the examples, each with one defect:
@@ -241,6 +241,7 @@ def main() -> int:
         "report": "audit-report.schema.json",
         "intake": "audit-intake.schema.json",
         "catalogue": "catalogue.schema.json",
+        "facts": "facts.schema.json",
     }
     pairs: dict[str, tuple[Any, subset.SubsetValidator]] = {}
     schemas: dict[str, Any] = {}
@@ -265,6 +266,7 @@ def main() -> int:
         *(("report", "report", path) for path in sorted(EXAMPLES.rglob("*.audit-draft.*.json"))),
         *(("intake", "intake", path) for path in sorted(EXAMPLES.glob("audit-intake.*.json"))),
         ("catalogue", "catalogue", RECIPES / "catalogue.json"),
+        ("facts", "facts", EXAMPLES / "facts.minimal.json"),
     ]
     invalid_documents = [("report", path) for path in sorted(EXAMPLES.rglob("*.engine-report.*.json"))]
 

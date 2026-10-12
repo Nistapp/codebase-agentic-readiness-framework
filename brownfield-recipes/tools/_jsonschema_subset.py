@@ -3,10 +3,10 @@
 
 """A validator for the small subset of JSON Schema 2020-12 that this repository's schemas use, and a lint for it.
 
-The standard library has no JSON Schema validator, and the tools may import nothing else. The three schemas
-(report, intake, catalogue) are therefore limited to the keywords below, which are listed under "The keyword subset"
-in schema/SCHEMA.md. :func:`lint_schema` rejects any other keyword, so that a constraint can never be written and
-silently ignored. :class:`SubsetValidator` applies a linted schema to a document.
+The standard library has no JSON Schema validator, and the tools may import nothing else. The four schemas
+(report, intake, catalogue, facts) are therefore limited to the keywords below, which are listed under "The keyword
+subset" in schema/SCHEMA.md. :func:`lint_schema` rejects any other keyword, so that a constraint can never be written
+and silently ignored. :class:`SubsetValidator` applies a linted schema to a document.
 
 Behaviour follows the reference ``jsonschema`` package, which a dev-only check in CI compares against on every
 example and on mutations of each (brownfield-recipes/dev/crosscheck_jsonschema.py). Two deliberate points:

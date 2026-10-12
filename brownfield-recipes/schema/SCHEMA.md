@@ -334,7 +334,7 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 
 ## Validating
 
-The tools validate with their own standard-library code, [`_jsonschema_subset.py`](../tools/_jsonschema_subset.py). `make crosscheck`, which is part of `make check` and so of CI, holds it against the reference `jsonschema` package: both must accept the three schemas, every example, the catalogue and the intake example, and both must report the same errors (the same place and keyword) on the raw engine reports and on thousands of one-defect mutants of the examples, including values one below, at and one above every bound. The script is [`dev/crosscheck_jsonschema.py`](../dev/crosscheck_jsonschema.py); the reference package is installed for that run alone, in a throwaway environment, so nothing is installed in the project.
+The tools validate with their own standard-library code, [`_jsonschema_subset.py`](../tools/_jsonschema_subset.py). `make crosscheck`, which is part of `make check` and so of CI, holds it against the reference `jsonschema` package: both must accept the four schemas, every example, the catalogue, the intake example and the facts example, and both must report the same errors (the same place and keyword) on the raw engine reports and on thousands of one-defect mutants of the examples, including values one below, at and one above every bound. The script is [`dev/crosscheck_jsonschema.py`](../dev/crosscheck_jsonschema.py); the reference package is installed for that run alone, in a throwaway environment, so nothing is installed in the project.
 
 The same reference package gives a quick manual check of the schemas, the examples and the catalogue:
 
@@ -354,6 +354,7 @@ for schema_name, files in [
     ("audit-report.schema.json", report_examples),
     ("audit-intake.schema.json", intake_examples),
     ("catalogue.schema.json", [catalogue]),
+    ("facts.schema.json", [examples / "facts.minimal.json"]),
 ]:
     schema = json.loads((root / schema_name).read_text())
     Draft202012Validator.check_schema(schema)
@@ -364,4 +365,4 @@ for schema_name, files in [
 EOF
 ```
 
-The command prints `valid` once for each file: the minimal report, the three drafts in `examples/realistic/`, the worked example, the intake example and the catalogue. The raw engine reports are not reports of this schema and are skipped.
+The command prints `valid` once for each file: the minimal report, the three drafts in `examples/realistic/`, the worked example, the intake example, the catalogue and the facts example. The raw engine reports are not reports of this schema and are skipped.
