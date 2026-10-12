@@ -293,6 +293,31 @@ class DetectionTests(StackCase):
         self.fill(dict.fromkeys(["package.json", *NEAR_MISSES], "x\n"))
         self.assert_stack(self.repo, ecosystems=["node"])
 
+    def test_a_pattern_with_a_folder_matches_at_the_root_only_and_a_plain_name_at_any_depth(self) -> None:
+        """The engine's way, which the file inherits: a nested `.husky`, workflow or `src/test/java` is not named."""
+        self.fill(
+            dict.fromkeys(
+                [
+                    "package.json",
+                    "pkg/.husky/pre-commit",
+                    "svc/src/test/java/A.java",
+                    "web/.github/workflows/ci.yml",
+                    "api/tests/it.rs",
+                    "pkg/vitest.config.ts",
+                    "pkg/.pre-commit-config.yaml",
+                    "pkg/Jenkinsfile",
+                ],
+                "x\n",
+            )
+        )
+        self.assert_stack(
+            self.repo,
+            ecosystems=["node"],
+            ci_providers=["jenkins"],
+            test_frameworks=["vitest"],
+            hook_managers=["pre-commit"],
+        )
+
     def test_a_workflow_that_the_walk_leaves_out_is_not_a_ci_provider(self) -> None:
         self.fill({".github/workflows/ci.yml": "x\n", "package.json": "{}\n"})
         self.assertEqual(self.written_stack(self.repo)["ci_providers"], ["github"])
