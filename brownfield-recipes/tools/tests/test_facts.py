@@ -158,7 +158,7 @@ class ContractTests(RepoCase):
         self.assertEqual(
             manifest["summary"],
             "Describe a repository with counts and names and no verdicts, as facts.json. "
-            "In development: so far it writes facts_version, label, git, inventory, stack and caps.",
+            "In development: so far it writes facts_version, label, git, inventory, stack, instruction_files and caps.",
         )
         self.assertIs(manifest["writes_inside_target"], False)
         self.assertIs(manifest["network"], False)
@@ -190,8 +190,8 @@ class ContractTests(RepoCase):
         self.assertIn(facts.INFO.summary, text)
         self.assertRegex(
             text,
-            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: so far the file holds facts_version, label, git, inventory, stack"
-            r" and caps\.$",
+            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: so far the file holds facts_version, label, git, inventory, stack,"
+            r" instruction_files and caps\.$",
         )
         self.assertRegex(text, r"(?m)^  target {2,}the repository to describe$")
         self.assertRegex(text, r"(?m)^  --out FILE {2,}the file to create; it must not exist$")
@@ -405,9 +405,14 @@ class FileTests(RepoCase):
                     '      "no recognised build manifest \u2014 stack-dependent checks report UNKNOWN"',
                     "    ]",
                     "  },",
+                    '  "instruction_files": [],',
                     '  "caps": {',
                     '    "excludes": {',
                     '      "limit": 10,',
+                    '      "omitted": 0',
+                    "    },",
+                    '    "instruction_files": {',
+                    '      "limit": 25,',
                     '      "omitted": 0',
                     "    }",
                     "  }",
@@ -632,7 +637,7 @@ class InventoryTests(RepoCase):
         self.assertEqual((section["files"], section["bytes"], section["by_kind"]["doc"]), (12, 51, 1))
         self.assertEqual(section["skipped"], [{"reason": "ignored", "count": 2}, {"reason": "symlink", "count": 1}])
         self.assertEqual(section["excludes"], ["notes/*"])
-        self.assertEqual(self.written()["caps"], {"excludes": {"limit": 10, "omitted": 0}})
+        self.assertEqual(self.written()["caps"]["excludes"], {"limit": 10, "omitted": 0})
 
     def test_a_walk_that_the_cap_cuts_short_says_so_and_warns(self) -> None:
         self.fill({"a.txt": "x\n", "b.txt": "x\n"})
@@ -685,7 +690,7 @@ class InventoryTests(RepoCase):
         self.fill({"docs/\u00e9.md": "x\n", "docs/b.md": "x\n"})
         section = self.section("--exclude", "docs/\u00e9*", "--exclude", "docs/b*")
         self.assertEqual(section["excludes"], ["docs/b*"])
-        self.assertEqual(self.written()["caps"], {"excludes": {"limit": 10, "omitted": 1}})
+        self.assertEqual(self.written()["caps"]["excludes"], {"limit": 10, "omitted": 1})
         self.assertEqual((section["files"], section["skipped"]), (1, [{"reason": "ignored", "count": 2}]))
 
     def test_a_glob_fits_when_it_is_printable_ascii_of_one_to_100_characters(self) -> None:
@@ -707,10 +712,10 @@ class InventoryTests(RepoCase):
         self.fill({"notes/old.md": "old\n"})
         globs = [f"g{n}*" for n in range(1, 11)]
         self.assertEqual(self.section(*self.globs(*globs))["excludes"], globs)
-        self.assertEqual(self.written()["caps"], {"excludes": {"limit": 10, "omitted": 0}})
+        self.assertEqual(self.written()["caps"]["excludes"], {"limit": 10, "omitted": 0})
         section = self.section(*self.globs(*globs, "*.md"))
         self.assertEqual(section["excludes"], globs)
-        self.assertEqual(self.written()["caps"], {"excludes": {"limit": 10, "omitted": 1}})
+        self.assertEqual(self.written()["caps"]["excludes"], {"limit": 10, "omitted": 1})
         self.assertEqual((section["files"], section["skipped"]), (0, [{"reason": "ignored", "count": 2}]))
 
     def test_the_globs_that_fit_are_counted_toward_the_limit_and_the_others_are_omitted(self) -> None:

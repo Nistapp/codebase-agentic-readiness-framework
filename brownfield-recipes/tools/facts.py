@@ -8,11 +8,15 @@ IN DEVELOPMENT, until S2.7.5.3. One command::
     facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]
 
 The tool writes one new file, ``facts.json``, whose format is ``schema/facts.schema.json``. This version writes
-``facts_version``, ``label``, ``git``, ``inventory`` and ``stack``, with ``caps`` for the ``--exclude`` globs; the
-instruction files, the components and the size class arrive in the steps after this one. ``--exclude`` and
-``--max-files`` are spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the
-facts describe the inventory the engine sees. The inventory holds counts and never a path. A walk that ``--max-files``
-cut short says ``truncated`` in the file and gives a warning in the envelope; the engine records no skip reason for that.
+``facts_version``, ``label``, ``git``, ``inventory``, ``stack`` and ``instruction_files``, with ``caps`` for the lists
+that are cut; the components and the size class arrive in the steps after this one. ``--exclude`` and ``--max-files``
+are spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the facts describe the
+inventory the engine sees. The inventory holds counts and never a path. A walk that ``--max-files`` cut short says
+``truncated`` in the file and gives a warning in the envelope; the engine records no skip reason for that.
+
+The instruction files are the ones that the engine's ``AGT-01`` and ``AGT-08`` see (``instruction_paths`` in
+``audit.rules.checks.agt``), each with the pattern of the variants table that names it. The tool asks the engine and
+adds no search of its own, so the list has the engine's gaps and follows the engine when they are closed.
 
 The file holds no time, no absolute path and no machine name, so one repository state gives one file. The envelope on
 stdout names the file, its size and the format's version. The tool never writes inside the target: the file must be
@@ -28,6 +32,7 @@ is exit 3, because it can only be a bug in this tool; nothing is written then.
 
 from __future__ import annotations
 
+import fnmatch
 import importlib
 import inspect
 import json
@@ -47,7 +52,7 @@ INFO = _common.ToolInfo(
     name="facts",
     summary=(
         "Describe a repository with counts and names and no verdicts, as facts.json. "
-        "In development: so far it writes facts_version, label, git, inventory, stack and caps."
+        "In development: so far it writes facts_version, label, git, inventory, stack, instruction_files and caps."
     ),
     synopsis=("facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]",),
     writes="One new file, the one --out names, which must be outside the target and must not exist. It is never replaced.",
@@ -63,6 +68,9 @@ MAX_SCHEMA_ERRORS = 20
 # that a glob ending in a line break is out, as it is for the tools' validator.
 GLOB_FITS = re.compile(r"[ -~]{1,100}")
 EXCLUDES_LIMIT = 10
+# What the schema allows for an instruction file's path (`$defs/relpath`, `$defs/cap_instruction_files`).
+RELPATH_FITS = re.compile(r"(?![A-Za-z]:)(?!/)[ -~]{1,128}")
+INSTRUCTION_FILES_LIMIT = 25
 
 
 def engine_module(name: str) -> ModuleType:
@@ -138,16 +146,51 @@ def stack_section(inventory: Any) -> dict[str, Any]:
     }
 
 
+def variant_of(rel: str) -> str:
+    """The pattern of the engine's variants table that names the instruction file `rel`.
+
+    A plain name counts at any depth, as the engine counts it; a pattern with a folder in it is tried in the table's
+    order, once as written and once without its `**/`, so that a file straight in the folder has a name too.
+    """
+    names = engine_module("audit.rules.checks.agt").INSTRUCTION_BASENAMES
+    base = rel.rsplit("/", 1)[-1]
+    if base in names:
+        return str(base)
+    for harness in engine_module("audit.rules.variants").HARNESSES:
+        for pattern in harness.paths:
+            if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel, pattern.replace("**/", "")):
+                return str(pattern)
+    raise _common.ToolError(f"the engine sees {rel} as an instruction file and its variants table has no name for it")
+
+
+def instruction_files_section(inventory: Any) -> tuple[list[dict[str, Any]], int]:
+    """The files `AGT-01` and `AGT-08` see, sorted by path, and how many the file leaves out.
+
+    A path that does not fit the schema is left out, and so is each file after the first `INSTRUCTION_FILES_LIMIT` that
+    fit. Nothing here says whether a file is good, canonical or a stub: the entry has a path, a name and a size.
+    """
+    seen = sorted(engine_module("audit.rules.checks.agt").instruction_paths(inventory))
+    sizes = {entry.rel: entry.size for entry in inventory.files}
+    listed = [rel for rel in seen if RELPATH_FITS.fullmatch(rel)][:INSTRUCTION_FILES_LIMIT]
+    entries = [{"path": rel, "variant": variant_of(rel), "size_bytes": sizes[rel]} for rel in listed]
+    return entries, len(seen) - len(listed)
+
+
 def build_document(*, label: str, git: dict[str, Any], inventory: Any, max_files: int) -> dict[str, Any]:
     """The facts, in the schema's key order. Each later section is added here as its step lands."""
     listed, omitted = listed_excludes(inventory.excludes)
+    instruction_files, left_out = instruction_files_section(inventory)
     return {
         "facts_version": FACTS_VERSION,
         "label": label,
         "git": git,
         "inventory": inventory_section(inventory, max_files=max_files, excludes=listed),
         "stack": stack_section(inventory),
-        "caps": {"excludes": {"limit": EXCLUDES_LIMIT, "omitted": omitted}},
+        "instruction_files": instruction_files,
+        "caps": {
+            "excludes": {"limit": EXCLUDES_LIMIT, "omitted": omitted},
+            "instruction_files": {"limit": INSTRUCTION_FILES_LIMIT, "omitted": left_out},
+        },
     }
 
 
@@ -193,7 +236,10 @@ def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(
         prog="facts.py",
         description=INFO.summary,
-        epilog="IN DEVELOPMENT until S2.7.5.3: so far the file holds facts_version, label, git, inventory, stack and caps.",
+        epilog=(
+            "IN DEVELOPMENT until S2.7.5.3: so far the file holds facts_version, label, git, inventory, stack, "
+            "instruction_files and caps."
+        ),
     )
     parser.add_argument("target", help="the repository to describe")
     parser.add_argument("--out", required=True, metavar="FILE", help="the file to create; it must not exist")
