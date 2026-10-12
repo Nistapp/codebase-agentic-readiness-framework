@@ -43,7 +43,7 @@ flowchart TD
 |---|---|---|
 | **S0** | State the scope contract in the module docstring: read-only, no installs, no network, no LLM, exit codes | — |
 | **S1** | Parse arguments, validate combinations (`--run-gates` requires `--allow-probe` list or confirmation) | Exit 1 on bad usage |
-| **S2** | Resolve the target, refuse a non-directory, capture git SHA/branch/dirty state, framework revision, rule-set hash, timestamp | Exit 1; never partially scan a bad target |
+| **S2** | Resolve the target, refuse a non-directory, capture git SHA/branch/dirty state (every git query runs with `--no-optional-locks`, so that nothing is written in the target's `.git`), framework revision, rule-set hash, timestamp | Exit 1; never partially scan a bad target |
 | **S3** | Bounded walk; produce a file inventory with classification and hashes | Skips unreadable paths and records them as `UNKNOWN` inputs, never a silent pass |
 | **S4** | Identify languages, build manifests, test frameworks, CI provider, and package managers | Unknown stack → checks that need it go `UNKNOWN`, the rest still run |
 | **S5** | Filter the rule catalogue to applicable checks by ecosystem | A check excluded by applicability is reported as *not applicable*, not as a pass |

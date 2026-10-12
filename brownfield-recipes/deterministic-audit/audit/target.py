@@ -58,9 +58,11 @@ class Target:
 
 
 def _git(path: Path, *args: str) -> str | None:
+    # A plain `git status` rewrites .git/index when a file's time differs from the one the index holds, and the
+    # engine never writes in its target. `--no-optional-locks` makes every query here read-only.
     try:
         proc = subprocess.run(
-            ["git", "-C", str(path), *args],
+            ["git", "-C", str(path), "--no-optional-locks", *args],
             text=True,
             capture_output=True,
             timeout=10,

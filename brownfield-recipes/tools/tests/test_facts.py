@@ -435,17 +435,6 @@ class ReadOnlyTests(RepoCase):
         self.run_ok()
         self.assertEqual(self.state(), before)
 
-    def test_without_the_setting_the_engines_own_guard_does_rewrite_the_index(self) -> None:
-        make_stale(self.repo)
-        before = index_hash(self.repo)
-        guard = facts.engine_module("audit.target").resolve_target
-        with mock.patch.dict(os.environ):
-            os.environ.pop("GIT_OPTIONAL_LOCKS", None)
-            guard(self.repo)
-        self.assertNotEqual(
-            index_hash(self.repo), before, "the engine's guard no longer writes: the setting is not needed"
-        )
-
     def test_the_setting_is_on_while_the_guard_runs_and_restored_after(self) -> None:
         target_module = facts.engine_module("audit.target")
         seen: list[str | None] = []
