@@ -149,7 +149,7 @@
       }
     },
     "instruction_files": {
-      "description": "The instruction files of the engine's variants table that are present, sorted by path, up to the cap in `caps.instruction_files`. A file whose path is not printable ASCII or is over 128 characters is not listed and is counted in `omitted`. It says nothing about whether a file is good, canonical or a stub.",
+      "description": "The instruction files that the engine's `AGT-01` and `AGT-08` see, sorted by path, up to the cap in `caps.instruction_files`. A file whose path is not printable ASCII or is over 128 characters is not listed and is counted in `omitted`. It says nothing about whether a file is good, canonical or a stub.",
       "type": "array",
       "maxItems": 25,
       "items": {
@@ -159,7 +159,7 @@
         "properties": {
           "path": { "$ref": "#/$defs/relpath" },
           "variant": {
-            "description": "The variants table's name for the file's family.",
+            "description": "The pattern of the engine's variants table that names the file: its own name for a plain name at any depth, otherwise the first pattern in the table's order that matches.",
             "$ref": "#/$defs/label_text"
           },
           "size_bytes": { "$ref": "#/$defs/count" }

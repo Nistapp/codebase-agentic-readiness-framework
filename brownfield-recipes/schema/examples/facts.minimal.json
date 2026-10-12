@@ -37,7 +37,7 @@
   },
   "instruction_files": [
     { "path": "AGENTS.md", "variant": "AGENTS.md", "size_bytes": 3120 },
-    { "path": "CLAUDE.md", "variant": "Claude Code", "size_bytes": 410 },
+    { "path": "CLAUDE.md", "variant": "CLAUDE.md", "size_bytes": 410 },
     { "path": "packages/api/AGENTS.md", "variant": "AGENTS.md", "size_bytes": 880 }
   ],
   "components": {
