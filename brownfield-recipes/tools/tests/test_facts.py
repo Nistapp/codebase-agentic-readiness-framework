@@ -116,6 +116,15 @@ class RepoCase(unittest.TestCase):
         self.folder.mkdir()
         self.out = self.folder / "facts.json"
 
+    def fill(self, files: dict[str, str | bytes]) -> None:
+        for rel, content in files.items():
+            path = self.repo / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if isinstance(content, bytes):
+                path.write_bytes(content)
+            else:
+                path.write_text(content, encoding="utf-8")
+
     def run_ok(self, *extra: str, target: Path | None = None, out: Path | None = None) -> dict[str, Any]:
         code, envelope, _ = call([str(target or self.repo), "--out", str(out or self.out), *extra])
         self.assertEqual(code, 0, envelope)
@@ -477,15 +486,6 @@ class InventoryTests(RepoCase):
     def setUp(self) -> None:
         super().setUp()
         self.scan = engine_scan()
-
-    def fill(self, files: dict[str, str | bytes]) -> None:
-        for rel, content in files.items():
-            path = self.repo / rel
-            path.parent.mkdir(parents=True, exist_ok=True)
-            if isinstance(content, bytes):
-                path.write_bytes(content)
-            else:
-                path.write_text(content, encoding="utf-8")
 
     def rich(self) -> None:
         """Every kind, and three things the walk leaves out: an ignored file, a link and a hard-excluded folder."""
