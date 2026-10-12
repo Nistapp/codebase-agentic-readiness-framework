@@ -435,35 +435,6 @@ class ReadOnlyTests(RepoCase):
         self.run_ok()
         self.assertEqual(self.state(), before)
 
-    def test_the_setting_is_on_while_the_guard_runs_and_restored_after(self) -> None:
-        target_module = facts.engine_module("audit.target")
-        seen: list[str | None] = []
-
-        def spy(path: Path) -> Any:
-            seen.append(os.environ.get("GIT_OPTIONAL_LOCKS"))
-            return types.SimpleNamespace(git_sha=SHA, git_dirty=False)
-
-        for before in (None, "1"):
-            with (
-                self.subTest(before=before),
-                mock.patch.dict(os.environ),
-                mock.patch.object(target_module, "resolve_target", spy),
-            ):
-                if before is None:
-                    os.environ.pop("GIT_OPTIONAL_LOCKS", None)
-                else:
-                    os.environ["GIT_OPTIONAL_LOCKS"] = before
-                facts.git_state(self.repo)
-                self.assertEqual(os.environ.get("GIT_OPTIONAL_LOCKS"), before)
-        self.assertEqual(seen, ["0", "0"])
-
-    def test_the_setting_is_restored_when_the_guard_refuses(self) -> None:
-        with mock.patch.dict(os.environ):
-            os.environ.pop("GIT_OPTIONAL_LOCKS", None)
-            with self.assertRaises(_common.UsageError):
-                facts.git_state(Path("/"))
-            self.assertNotIn("GIT_OPTIONAL_LOCKS", os.environ)
-
 
 class EngineReuseTests(RepoCase):
     def test_git_is_what_the_engines_target_module_says(self) -> None:

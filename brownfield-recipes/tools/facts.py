@@ -16,9 +16,8 @@ The file holds no time, no absolute path and no machine name, so one repository 
 stdout names the file, its size and the format's version. The tool never writes inside the target: the file must be
 new, in a folder that exists and is outside the target, and nothing already there is replaced.
 
-``git`` comes from the engine's own target module (``audit.target``), run with ``GIT_OPTIONAL_LOCKS=0``. The module asks
-``git status``, which without that setting refreshes the index when file times differ and so writes a file inside the
-target's ``.git``. The setting is git's own switch for a status that changes nothing, and it is restored afterwards.
+``git`` comes from the engine's own target module (``audit.target``). That module asks git with ``--no-optional-locks``,
+so that ``git status`` does not refresh the index and write a file inside the target's ``.git``.
 
 Failure behaviour: a target that does not exist, is not a directory or is a filesystem root, an output that is not
 allowed, a bad option or a bad label is exit 1. A document that does not fit its schema, or is over ``MAX_FACTS_BYTES``,
@@ -27,15 +26,13 @@ is exit 3, because it can only be a bug in this tool; nothing is written then.
 
 from __future__ import annotations
 
-import contextlib
 import importlib
 import json
-import os
 import sys
 from functools import cache
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Iterator, Sequence
+from typing import Any, Sequence
 
 import _common
 import _jsonschema_subset as subset
@@ -65,30 +62,14 @@ def engine_module(name: str) -> ModuleType:
     return importlib.import_module(name)
 
 
-@contextlib.contextmanager
-def read_only_git() -> Iterator[None]:
-    """`GIT_OPTIONAL_LOCKS=0` for a block, so that `git status` takes no lock and refreshes no index. Restored after."""
-    name = "GIT_OPTIONAL_LOCKS"
-    before = os.environ.get(name)
-    os.environ[name] = "0"
-    try:
-        yield
-    finally:
-        if before is None:
-            os.environ.pop(name, None)
-        else:
-            os.environ[name] = before
-
-
 def git_state(target: Path) -> dict[str, Any]:
     """`sha` and `dirty`, from the engine's target guard, which also refuses a filesystem root."""
     guard = engine_module("audit.target").resolve_target
     refusal = engine_module("audit.cli").AuditUsageError
-    with read_only_git():
-        try:
-            found = guard(target)
-        except refusal as exc:
-            raise _common.UsageError(str(exc)) from None
+    try:
+        found = guard(target)
+    except refusal as exc:
+        raise _common.UsageError(str(exc)) from None
     return {"sha": found.git_sha, "dirty": found.git_dirty}
 
 
