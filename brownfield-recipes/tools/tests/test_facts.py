@@ -22,6 +22,7 @@ import sys
 import tempfile
 import types
 import unittest
+from collections import Counter
 from pathlib import Path
 from typing import Any, Sequence
 from unittest import mock
@@ -56,6 +57,19 @@ def engine_default_cap() -> int:
 
 
 KIND_NAMES = [kind.value for kind in engine_scan().Kind]
+# One file of each kind but `doc`, which the repository's own README.md is: 11 files and 45 bytes in all.
+KIND_FILES: dict[str, str | bytes] = {
+    "package.json": "{}\n",
+    "Makefile": "all:\n",
+    "settings.json": "{}\n",
+    "src/app.py": "print(1)\n",
+    "tests/test_app.py": "x\n",
+    ".github/workflows/ci.yml": "on: push\n",
+    "run.sh": "echo\n",
+    "app.min.js": "x\n",
+    "logo.png": b"\x00\x01",
+    "data.xyz": "\u00e9\n",
+}
 
 
 def snapshot(root: Path) -> dict[str, tuple[int, int]]:
@@ -446,6 +460,277 @@ class FileTests(RepoCase):
         _git.make_repo(fresh, commit=False)
         self.run_ok(target=fresh)
         self.assertEqual(self.written()["git"], {"sha": None, "dirty": True})
+
+
+class InventoryTests(RepoCase):
+    """The `inventory` section is the engine's own walk of the target: counts, and never a path."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.scan = engine_scan()
+
+    def fill(self, files: dict[str, str | bytes]) -> None:
+        for rel, content in files.items():
+            path = self.repo / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if isinstance(content, bytes):
+                path.write_bytes(content)
+            else:
+                path.write_text(content, encoding="utf-8")
+
+    def rich(self) -> None:
+        """Every kind, and three things the walk leaves out: an ignored file, a link and a hard-excluded folder."""
+        self.fill(
+            {
+                **KIND_FILES,
+                ".gitignore": "*.log\n",
+                "run.log": "x\n",
+                "notes/old.md": "old\n",
+                "node_modules/dep.js": "x\n",
+            }
+        )
+        (self.repo / "link.md").symlink_to("README.md")
+
+    def section(self, *extra: str) -> dict[str, Any]:
+        if self.out.exists():
+            self.out.unlink()
+        self.run_ok(*extra)
+        inventory: dict[str, Any] = self.written()["inventory"]
+        return inventory
+
+    def engine_says(self, *, excludes: Sequence[str] = (), max_files: int | None = None) -> dict[str, Any]:
+        """The counts of the engine's own `build_inventory` for the same target and options, counted afresh."""
+        cap = engine_default_cap() if max_files is None else max_files
+        inventory = self.scan.build_inventory(self.repo, extra_excludes=tuple(excludes), max_files=cap)
+        kinds = Counter(entry.kind for entry in inventory.files)
+        reasons = Counter(reason for _, reason in inventory.skipped)
+        return {
+            "files": len(inventory.files),
+            "bytes": sum(entry.size for entry in inventory.files),
+            "by_kind": {kind.value: kinds[kind] for kind in self.scan.Kind},
+            "skipped": [{"reason": reason, "count": reasons[reason]} for reason in sorted(reasons)],
+            "truncated": inventory.truncated,
+        }
+
+    def watch_walk(self, *, default: int) -> list[tuple[Path, tuple[str, ...], int]]:
+        """Swap the engine's `build_inventory` for a copy with another default cap that records how it is called."""
+        real = self.scan.build_inventory
+        calls: list[tuple[Path, tuple[str, ...], int]] = []
+
+        def build(
+            root: Path, *, extra_excludes: tuple[str, ...] = (), max_files: int = default, max_depth: int = 24
+        ) -> Any:
+            calls.append((root, extra_excludes, max_files))
+            return real(root, extra_excludes=extra_excludes, max_files=max_files, max_depth=max_depth)
+
+        patcher = mock.patch.object(self.scan, "build_inventory", build)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        return calls
+
+    def globs(self, *globs: str) -> list[str]:
+        return [item for glob in globs for item in ("--exclude", glob)]
+
+    def test_a_repository_of_one_file_of_each_kind_is_counted_by_kind(self) -> None:
+        self.fill(KIND_FILES)
+        section = self.section()
+        self.assertEqual((section["files"], section["bytes"]), (11, 45))
+        self.assertEqual(section["by_kind"], dict.fromkeys(KIND_NAMES, 1))
+        self.assertEqual(
+            list(section["by_kind"]),
+            ["manifest", "build", "config", "source", "test", "doc", "ci", "script", "generated", "binary", "other"],
+        )
+        self.assertEqual((section["skipped"], section["truncated"], section["excludes"]), ([], False, []))
+
+    def test_a_repository_that_leaves_nothing_out_gives_no_reason(self) -> None:
+        self.assertEqual(self.section()["skipped"], [])
+
+    def test_what_the_walk_leaves_out_is_counted_by_reason_and_no_path_is_named(self) -> None:
+        self.rich()
+        section = self.section()
+        self.assertEqual((section["files"], section["bytes"]), (13, 55))
+        self.assertEqual(
+            section["by_kind"],
+            {
+                "manifest": 1,
+                "build": 1,
+                "config": 1,
+                "source": 1,
+                "test": 1,
+                "doc": 2,
+                "ci": 1,
+                "script": 1,
+                "generated": 1,
+                "binary": 1,
+                "other": 2,
+            },
+        )
+        self.assertEqual(section["skipped"], [{"reason": "ignored", "count": 1}, {"reason": "symlink", "count": 1}])
+        text = self.out.read_text(encoding="utf-8")
+        for name in ("run.log", "link.md", "old.md", "dep.js", "README.md", ".gitignore", "app.py", "src"):
+            self.assertNotIn(name, text)
+
+    def test_every_reason_the_engine_gives_is_counted_and_the_reasons_are_sorted(self) -> None:
+        self.fill({".gitignore": "*.log\n", "a.log": "x\n", "b.log": "x\n", "bad.txt": "x\n"})
+        (self.repo / "link.md").symlink_to("README.md")
+        deep = self.repo.joinpath(*["d"] * 24)
+        deep.mkdir(parents=True)
+        (deep / "x.txt").write_text("x\n", encoding="utf-8")
+        real_stat = Path.stat
+
+        def stat(path: Path, *args: Any, follow_symlinks: bool = True, **kwargs: Any) -> os.stat_result:
+            if path.name == "bad.txt" and follow_symlinks:
+                raise PermissionError("denied")
+            return real_stat(path, *args, follow_symlinks=follow_symlinks, **kwargs)
+
+        with mock.patch.object(Path, "stat", stat):
+            section = self.section()
+        self.assertEqual(
+            section["skipped"],
+            [
+                {"reason": "ignored", "count": 2},
+                {"reason": "max-depth", "count": 1},
+                {"reason": "symlink", "count": 1},
+                {"reason": "unreadable", "count": 1},
+            ],
+        )
+        self.assertEqual((section["files"], section["bytes"]), (2, 8))
+
+    def test_every_count_is_what_build_inventory_returns_for_the_same_options(self) -> None:
+        self.rich()
+        cases: list[tuple[tuple[str, ...], int | None]] = [
+            ((), None),
+            (("notes/*",), None),
+            (("*.md", "src/*", "*.py"), None),
+            ((), 5),
+            (("notes/*",), 12),
+            (("*.json",), 3),
+        ]
+        for excludes, cap in cases:
+            with self.subTest(excludes=excludes, cap=cap):
+                extra = self.globs(*excludes) + ([] if cap is None else ["--max-files", str(cap)])
+                section = self.section(*extra)
+                expected = self.engine_says(excludes=excludes, max_files=cap)
+                self.assertEqual({key: section[key] for key in expected}, expected)
+                self.assertEqual(section["max_files"], engine_default_cap() if cap is None else cap)
+
+    def test_exclude_changes_the_counts_as_it_does_for_the_engine(self) -> None:
+        self.rich()
+        section = self.section("--exclude", "notes/*")
+        self.assertEqual((section["files"], section["bytes"], section["by_kind"]["doc"]), (12, 51, 1))
+        self.assertEqual(section["skipped"], [{"reason": "ignored", "count": 2}, {"reason": "symlink", "count": 1}])
+        self.assertEqual(section["excludes"], ["notes/*"])
+        self.assertEqual(self.written()["caps"], {"excludes": {"limit": 10, "omitted": 0}})
+
+    def test_a_walk_that_the_cap_cuts_short_says_so_and_warns(self) -> None:
+        self.fill({"a.txt": "x\n", "b.txt": "x\n"})
+        code, envelope, _ = call([str(self.repo), "--out", str(self.out), "--max-files", "2"])
+        self.assertEqual(code, 0)
+        section = self.written()["inventory"]
+        self.assertEqual(
+            (section["files"], section["bytes"], section["truncated"], section["max_files"]), (2, 4, True, 2)
+        )
+        # The engine gives no skip reason for a cut: `truncated` and `max_files` are what say why.
+        self.assertEqual(section["skipped"], [])
+        self.assertEqual(
+            envelope["warnings"],
+            ["the walk stopped at its cap of 2 files, so every count in the inventory is a lower bound"],
+        )
+        self.assertIs(envelope["truncated"], False)
+        expected = self.engine_says(max_files=2)
+        self.assertEqual({key: section[key] for key in expected}, expected)
+
+    def test_a_walk_that_just_fits_the_cap_is_not_cut_short(self) -> None:
+        self.fill({"a.txt": "x\n", "b.txt": "x\n"})
+        code, envelope, _ = call([str(self.repo), "--out", str(self.out), "--max-files", "3"])
+        self.assertEqual(code, 0)
+        section = self.written()["inventory"]
+        self.assertEqual((section["files"], section["truncated"], section["max_files"]), (3, False, 3))
+        self.assertEqual(envelope["warnings"], [])
+
+    def test_without_a_cap_the_file_holds_the_engines_own_default(self) -> None:
+        self.assertEqual(self.section()["max_files"], engine_default_cap())
+        self.assertEqual(facts.default_max_files(), engine_default_cap())
+
+    def test_the_default_cap_follows_the_engine_and_is_not_a_copy_of_its_number(self) -> None:
+        calls = self.watch_walk(default=17)
+        self.assertEqual(facts.default_max_files(), 17)
+        self.assertEqual(self.section()["max_files"], 17)
+        self.assertEqual(calls, [(self.repo, (), 17)])
+
+    def test_the_cap_the_operator_gives_is_the_cap_the_walk_uses(self) -> None:
+        calls = self.watch_walk(default=17)
+        self.assertEqual(self.section("--max-files", "7")["max_files"], 7)
+        self.assertEqual(calls, [(self.repo, (), 7)])
+
+    def test_every_glob_reaches_the_walk_as_given_whether_or_not_the_file_names_it(self) -> None:
+        calls = self.watch_walk(default=17)
+        given = ["b*", "a*", "\u00e9*", "x" * 101]
+        self.section(*self.globs(*given))
+        self.assertEqual(calls, [(self.repo, tuple(given), 17)])
+
+    def test_a_glob_the_schema_cannot_hold_is_left_out_and_counted_but_still_applies(self) -> None:
+        self.fill({"docs/\u00e9.md": "x\n", "docs/b.md": "x\n"})
+        section = self.section("--exclude", "docs/\u00e9*", "--exclude", "docs/b*")
+        self.assertEqual(section["excludes"], ["docs/b*"])
+        self.assertEqual(self.written()["caps"], {"excludes": {"limit": 10, "omitted": 1}})
+        self.assertEqual((section["files"], section["skipped"]), (1, [{"reason": "ignored", "count": 2}]))
+
+    def test_a_glob_fits_when_it_is_printable_ascii_of_one_to_100_characters(self) -> None:
+        fits = ["a" * 100, " ", "~", "a b", "*"]
+        unfit = ["a" * 101, "", "\u00e9", "\u20ac*", "a\n", "a\tb", "\x7f", "\x1f"]
+        for glob in fits:
+            with self.subTest(fits=glob):
+                self.assertEqual(facts.listed_excludes([glob]), ([glob], 0))
+        for glob in unfit:
+            with self.subTest(unfit=glob):
+                self.assertEqual(facts.listed_excludes([glob]), ([], 1))
+        self.assertEqual(facts.listed_excludes([*unfit[:3], *fits, *unfit[3:]]), (fits, len(unfit)))
+
+    def test_the_globs_are_named_in_the_order_given(self) -> None:
+        self.assertEqual(self.section(*self.globs("b*", "a*", "b*"))["excludes"], ["b*", "a*", "b*"])
+        self.assertEqual(self.written()["caps"]["excludes"]["omitted"], 0)
+
+    def test_ten_globs_are_named_and_the_eleventh_still_applies(self) -> None:
+        self.fill({"notes/old.md": "old\n"})
+        globs = [f"g{n}*" for n in range(1, 11)]
+        self.assertEqual(self.section(*self.globs(*globs))["excludes"], globs)
+        self.assertEqual(self.written()["caps"], {"excludes": {"limit": 10, "omitted": 0}})
+        section = self.section(*self.globs(*globs, "*.md"))
+        self.assertEqual(section["excludes"], globs)
+        self.assertEqual(self.written()["caps"], {"excludes": {"limit": 10, "omitted": 1}})
+        self.assertEqual((section["files"], section["skipped"]), (0, [{"reason": "ignored", "count": 2}]))
+
+    def test_the_globs_that_fit_are_counted_toward_the_limit_and_the_others_are_omitted(self) -> None:
+        fit = [f"g{n}*" for n in range(1, 12)]
+        given = [*fit[:2], "\u00e9", *fit[2:]]
+        self.assertEqual(facts.listed_excludes(given), (fit[:10], 2))
+        self.assertEqual(self.section(*self.globs(*given))["excludes"], fit[:10])
+        self.assertEqual(self.written()["caps"]["excludes"], {"limit": 10, "omitted": 2})
+
+    def test_the_limits_are_the_schemas(self) -> None:
+        schema = json.loads(facts.FACTS_SCHEMA.read_text(encoding="utf-8"))
+        defs = schema["$defs"]
+        self.assertEqual(facts.EXCLUDES_LIMIT, defs["cap_excludes"]["properties"]["limit"]["const"])
+        self.assertEqual(facts.EXCLUDES_LIMIT, schema["properties"]["inventory"]["properties"]["excludes"]["maxItems"])
+        self.assertEqual(defs["glob"]["pattern"], "^[ -~]+$")
+        self.assertEqual(facts.GLOB_FITS.pattern, "[ -~]{1,%d}" % defs["glob"]["maxLength"])
+
+    def test_a_ninth_skip_reason_stops_the_tool_and_writes_no_file(self) -> None:
+        skipped = [("p", f"reason-{letter}") for letter in "abcdefghi"]
+        stub = types.SimpleNamespace(files=[], skipped=skipped, truncated=False, excludes=())
+        with mock.patch.object(facts, "walk_target", return_value=stub):
+            code, envelope, _ = call([str(self.repo), "--out", str(self.out)])
+        self.assertEqual(code, 3)
+        self.assertEqual(envelope["data"]["errors"], ["/inventory/skipped: 9 items is above the maximum of 8"])
+        self.assertFalse(self.out.exists())
+
+    def test_the_walk_writes_nothing_in_the_target(self) -> None:
+        self.rich()
+        make_stale(self.repo)
+        before = (snapshot(self.repo), index_hash(self.repo))
+        self.run_ok()
+        self.assertEqual((snapshot(self.repo), index_hash(self.repo)), before)
 
 
 class ReadOnlyTests(RepoCase):
