@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone who reads, writes or validates an audit report
 > **Source of truth:** [`audit-report.schema.json`](audit-report.schema.json) and [`audit-intake.schema.json`](audit-intake.schema.json). Where this page and a schema disagree, the schema wins and this page has a defect.
-> **Status:** Live for the schemas, the examples, the validator, the report builder, with its `import-engine` subcommand (the engine adapter), and the renderer.
+> **Status:** Live for the schemas, the examples, the validator, the report builder, with its `import-engine` subcommand (the engine adapter), and the renderer. The facts schema and its example are live; the tool that writes the file, `facts.py`, is planned.
 
 ---
 
@@ -13,7 +13,9 @@
 | [`audit-report.schema.json`](audit-report.schema.json) | The canonical result of an audit. JSON Schema 2020-12, `schema_version` `0.1`. |
 | [`audit-intake.schema.json`](audit-intake.schema.json) | The answers to the audit's Stage 0 questions, given in a file. `intake_version` `0.1`. |
 | [`catalogue.schema.json`](catalogue.schema.json) | The check catalogue, [`../catalogue.json`](../catalogue.json): every check in one ID namespace. |
+| [`facts.schema.json`](facts.schema.json) | The file `facts.py` writes: counts and names that describe a repository, with no verdict. `facts_version` `0.1`. See [Facts file](#facts-file). |
 | [`examples/minimal.json`](examples/minimal.json) | The smallest valid report: one agent check, no findings. |
+| [`examples/facts.minimal.json`](examples/facts.minimal.json) | A valid facts file for a small made-up service. |
 | [`examples/realistic/`](examples/realistic/) | The engine's real reports on three open-source repositories, each beside its conversion: `agentic-tdd`, `Digital-Assistant-SDK` and `Digital-Assistant-Server`. They were scanned on 2026-10-10 at the commits named in each report's `provenance.target`, with the engine at ruleset revision `2026-09-28.13`. A `*.engine-report.*.json` file is the engine's output, untouched. A `*.audit-draft.*.json` file is that report converted by the mapping below and nothing else: all 69 checks, every finding pending, no name anonymised and nothing invented, because the repositories are open source. In all three the recomputed phase-1 score equals the engine's (0.7311, 0.6513 and 0.4244). Each pair is the input and the expected output of the engine adapter: a test imports each raw report into a draft made from the golden draft's own `init` fields and requires the draft beside it, byte for byte. When the mapping changes, the drafts are regenerated from the raw reports and the raw reports are left alone. |
 | [`examples/example-service.audit-report.20261010T094207Z.json`](examples/example-service.audit-report.20261010T094207Z.json) | A synthetic worked example of a finished report on a made-up service. It shows an override of the engine's verdict, an agent check with evidence, an agent `FAIL` that found nothing and says so, a dependency between findings, a finding less severe than its check, and confirmed, edited, rejected and deferred dispositions. It is documentation, not a measured result, and the ID of its agent-only checks, `AGT-11` and `CI-04`, is provisional until the check catalogue exists (S1.5). |
 | [`examples/audit-intake.example-service.json`](examples/audit-intake.example-service.json) | A valid intake file. |
@@ -29,6 +31,7 @@ The Markdown report, which [`tools/render_report.py`](../tools/render_report.py)
 |---|---|---|
 | `schema_version` | the report | The shape of the report. `0.1` today. |
 | `intake_version` | the intake file | The shape of the intake file. `0.1` today. |
+| `facts_version` | the facts file | The shape of the facts file. `0.1` today. |
 | `catalogue_version` | `provenance` | The check catalogue the report was built against, `MAJOR.MINOR.PATCH`, as in [`catalogue.json`](../catalogue.json). The bump rules are in [`catalogue.schema.json`](catalogue.schema.json). |
 | `provenance.recipe.version` | `provenance` | The audit recipe that produced the report. |
 | `provenance.engine.version`, `ruleset_hash` | `provenance` | The deterministic engine and its ruleset. |
@@ -193,6 +196,36 @@ The report also shows the unattested list beside them. The spec defines no level
 
 ---
 
+## Facts file
+
+[`facts.schema.json`](facts.schema.json) describes `facts.json`, the file that `facts.py` writes for the audit's recon stage: counts and names that describe a repository, taken with the engine's own inventory and detection. It gives no verdict. Nothing in it says that a file is good, that a stack is right or that a repository is ready.
+
+> [!NOTE]
+> Planned. The tool is written in roadmap steps S2.7.2 to S2.7.5. The schema and the example are live, and this section is the format the tool will write. Until it writes every section only `facts_version` and `label` are required; the schema then makes every section required.
+
+| Section | Holds | Comes from | Cut |
+|---|---|---|---|
+| `facts_version`, `label` | The schema's version, and the repository's short name, which follows the rule that names output files | The tool | None |
+| `git` | `sha` and `dirty`; `sha` is null when the target is not a repository or has no commit | The engine's `target` module | None |
+| `inventory` | File and byte counts, files per kind, paths left out counted per reason, whether the walk was cut short, the cap it used, and the `--exclude` globs | `audit.scan.build_inventory` | 8 reasons, 10 globs |
+| `stack` | Ecosystems, the ones recognised only from source, package managers, CI providers, test frameworks, hook managers, and the engine's notes | `audit.stack.detect_stack` | Bounded by the engine's tables; 4 notes |
+| `instruction_files` | `path`, `variant` and `size_bytes` of each file of the variants table that is present | `audit.rules.variants` | 25 files |
+| `components` | Declared components, candidate paths, and the engine's notes | `audit.components.detect_components` | 16 declared, 20 candidates, 4 notes |
+| `size` | `class`, the counts it used, whether the walk was cut short, and the thresholds, so that a reader sees the rule | The tool, from the inventory | None |
+| `caps` | The limit and `omitted` of each list that depends on the repository or on the operator | The tool | None |
+
+What the file never holds: a time, an absolute path, a machine or user name, a branch name, or the content of any file. One repository state gives one file, byte for byte, in whichever directory it sits and whenever the tool runs. A time may sit in the envelope that names the file; it never sits in the file.
+
+How a list is cut:
+
+- Every list is sorted. A list that depends on the repository or on the operator keeps its first entries up to its limit, and `caps` records the limit and `omitted`, the number of entries left out.
+- A string that comes from the repository or the operator (a path, a name, a glob) is printable ASCII and of limited length: 128 characters for a path, 64 for a name, 100 for a glob. An entry whose string does not fit is left out and counted in `omitted`, as if it were over the limit. That is how the largest file the schema allows is known: about 27 KB, under the 30 KB bound, and a test builds it.
+- The stack's lists have no cut. The engine's own tables bound them, and a test checks that each table fits its list.
+
+The size class is by the engine's file count: `small` below 1,000 files, `medium` below 10,000, `large` below 100,000, and `huge` from there on or when the walk was cut short. The file carries the thresholds it used, so a later change to them cannot mislead a reader of an older file.
+
+---
+
 ## Output files
 
 Every file a run writes carries the repository's name, so that runs on several repositories sit side by side. No run replaces another run's output.
@@ -223,7 +256,7 @@ The examples in this folder are documentation, not run outputs. Where one belong
 
 ## The keyword subset
 
-The three schemas use only the keywords below, so a small validator can check them. [`tools/_jsonschema_subset.py`](../tools/_jsonschema_subset.py) is that validator, and it lints a schema before it uses it: a keyword outside this list is an error, so a constraint can never be written and silently ignored. The lint also refuses a `$ref` that is not `#/$defs/<name>` or has no target, a chain of `$ref` that leads back to itself, a `required` name that `properties` does not define, a range nothing can satisfy, and a `pattern` that Python and ECMAScript read differently (lookbehind, named groups, inline flags, back-references, possessive quantifiers, `\A` and `\Z`).
+The four schemas use only the keywords below, so a small validator can check them. [`tools/_jsonschema_subset.py`](../tools/_jsonschema_subset.py) is that validator, and it lints a schema before it uses it: a keyword outside this list is an error, so a constraint can never be written and silently ignored. The lint also refuses a `$ref` that is not `#/$defs/<name>` or has no target, a chain of `$ref` that leads back to itself, a `required` name that `properties` does not define, a range nothing can satisfy, and a `pattern` that Python and ECMAScript read differently (lookbehind, named groups, inline flags, back-references, possessive quantifiers, `\A` and `\Z`).
 
 | Keyword | Notes |
 |---|---|
