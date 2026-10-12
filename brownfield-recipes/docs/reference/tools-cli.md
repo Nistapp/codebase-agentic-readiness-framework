@@ -5,7 +5,7 @@
 > **Status:** Live for `engine.py`, `validate_report.py`, `report.py` and `render_report.py`. `facts.py` exists and is in development. The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py`, `validate_report.py`, `report.py` and `render_report.py` are documented here. `facts.py` exists and is in development: so far it writes `facts_version`, `label`, `git`, `inventory` and `caps`, and its section is written in S2.7.5.3. The sections for the other tools are filled in by roadmap steps S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned. Only `engine.py`, `validate_report.py`, `report.py` and `render_report.py` are documented here. `facts.py` exists and is in development: so far it writes `facts_version`, `label`, `git`, `inventory`, `caps` and part of `stack`, and its section is written in S2.7.5.3. The sections for the other tools are filled in by roadmap steps S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
 
 ---
 
@@ -17,7 +17,7 @@
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
 | [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live |
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
-| `facts.py` | Emits stack and inventory facts, no verdicts | In development: writes the inventory so far (section in S2.7.5.3) |
+| `facts.py` | Emits stack and inventory facts, no verdicts | In development: writes the inventory and part of the stack so far (section in S2.7.5.3) |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
 | `progress.py` | Manages implementation progress | Planned (S5.1) |
 | `check_drift.py` | Lists findings affected by changes since the audit | Planned (S5.1) |

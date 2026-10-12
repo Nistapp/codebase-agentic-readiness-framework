@@ -201,7 +201,7 @@ The report also shows the unattested list beside them. The spec defines no level
 [`facts.schema.json`](facts.schema.json) describes `facts.json`, the file that `facts.py` writes for the audit's recon stage: counts and names that describe a repository, taken with the engine's own inventory and detection. It gives no verdict. Nothing in it says that a file is good, that a stack is right or that a repository is ready.
 
 > [!NOTE]
-> In development. [`tools/facts.py`](../tools/facts.py) writes `facts_version`, `label`, `git`, `inventory` and `caps` (the entry for `excludes`) so far; the other sections arrive in roadmap steps S2.7.3.1 to S2.7.4.2. The schema and the example are live, and this section is the format the finished tool will write. Until it writes every section only `facts_version` and `label` are required; the schema then makes every section required.
+> In development. [`tools/facts.py`](../tools/facts.py) writes `facts_version`, `label`, `git`, `inventory`, `caps` (the entry for `excludes`) and part of `stack` (`ecosystems`, `source_only`, `package_managers` and `notes`) so far; the rest of `stack` and the other sections arrive in roadmap steps S2.7.3.2 to S2.7.4.2. The schema and the example are live, and this section is the format the finished tool will write. Until it writes every section only `facts_version` and `label` are required; the schema then makes every section required.
 
 | Section | Holds | Comes from | Cut |
 |---|---|---|---|
@@ -223,6 +223,8 @@ How a list is cut:
 - The stack's lists have no cut. The engine's own tables bound them, and a test checks that each table fits its list.
 
 The inventory is the engine's own walk, shaped by `--exclude` and `--max-files` as they shape `engine.py`'s. It holds counts and never a path: `skipped` counts the paths the walk left out for each reason, such as `ignored` and `symlink`. A walk that `--max-files` cut short has `truncated` true and `max_files` set to the cap that cut it, and the tool warns in its envelope. The engine records no skip reason for a cut, so `skipped` does not say it. `excludes` names the globs as given, up to 10; a glob that is not printable ASCII or is over 100 characters is left out and counted in `caps.excludes.omitted`, though the engine applied it.
+
+The stack is the engine's `detect_stack` run on that same inventory, so `--exclude` and a cut walk shape it as they shape the engine's. Each list is sorted. `source_only` names the ecosystems recognised from source files because no manifest names them (Python is the only one today); such a project declares no dependencies, and the engine's note says so. A repository the engine does not recognise gives empty lists and the engine's note, and the tool adds no error and no wording of its own.
 
 The size class is by the engine's file count: `small` below 1,000 files, `medium` below 10,000, `large` below 100,000, and `huge` from there on or when the walk was cut short. The file carries the thresholds it used, so a later change to them cannot mislead a reader of an older file.
 
