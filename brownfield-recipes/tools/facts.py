@@ -8,15 +8,20 @@ IN DEVELOPMENT, until S2.7.5.3. One command::
     facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]
 
 The tool writes one new file, ``facts.json``, whose format is ``schema/facts.schema.json``. This version writes
-``facts_version``, ``label``, ``git``, ``inventory``, ``stack`` and ``instruction_files``, with ``caps`` for the lists
-that are cut; the components and the size class arrive in the steps after this one. ``--exclude`` and ``--max-files``
-are spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the facts describe the
-inventory the engine sees. The inventory holds counts and never a path. A walk that ``--max-files`` cut short says
-``truncated`` in the file and gives a warning in the envelope; the engine records no skip reason for that.
+``facts_version``, ``label``, ``git``, ``inventory``, ``stack``, ``instruction_files`` and ``components``, with
+``caps`` for the lists that are cut; the size class arrives in the step after this one. ``--exclude`` and
+``--max-files`` are spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the
+facts describe the inventory the engine sees. The inventory holds counts and never a path. A walk that ``--max-files``
+cut short says ``truncated`` in the file and gives a warning in the envelope; the engine records no skip reason for
+that.
 
 The instruction files are the ones that the engine's ``AGT-01`` and ``AGT-08`` see (``instruction_paths`` in
 ``audit.rules.checks.agt``), each with the pattern of the variants table that names it. The tool asks the engine and
 adds no search of its own, so the list has the engine's gaps and follows the engine when they are closed.
+
+The components are the engine's own ``audit.components.detect_components``: ``declared`` components that a build
+manifest names, and ``candidates`` that look like a component but that no manifest declares. The implicit root
+component is never listed. Nothing here says a component is complete or well-formed.
 
 The file holds no time, no absolute path and no machine name, so one repository state gives one file. The envelope on
 stdout names the file, its size and the format's version. The tool never writes inside the target: the file must be
@@ -52,7 +57,8 @@ INFO = _common.ToolInfo(
     name="facts",
     summary=(
         "Describe a repository with counts and names and no verdicts, as facts.json. "
-        "In development: so far it writes facts_version, label, git, inventory, stack, instruction_files and caps."
+        "In development: so far it writes facts_version, label, git, inventory, stack, instruction_files, "
+        "components and caps."
     ),
     synopsis=("facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]",),
     writes="One new file, the one --out names, which must be outside the target and must not exist. It is never replaced.",
@@ -71,6 +77,10 @@ EXCLUDES_LIMIT = 10
 # What the schema allows for an instruction file's path (`$defs/relpath`, `$defs/cap_instruction_files`).
 RELPATH_FITS = re.compile(r"(?![A-Za-z]:)(?!/)[ -~]{1,128}")
 INSTRUCTION_FILES_LIMIT = 25
+# What the schema allows for a component's name or the manifest key that declared it (`$defs/label_text`).
+LABEL_FITS = re.compile(r"[ -~]{1,64}")
+DECLARED_COMPONENTS_LIMIT = 16
+CANDIDATE_COMPONENTS_LIMIT = 20
 
 
 def engine_module(name: str) -> ModuleType:
@@ -176,10 +186,41 @@ def instruction_files_section(inventory: Any) -> tuple[list[dict[str, Any]], int
     return entries, len(seen) - len(listed)
 
 
+def components_section(inventory: Any) -> tuple[dict[str, Any], int, int]:
+    """`declared`, `candidates` and `notes` from the engine's `detect_components`, sorted by path and capped.
+
+    The implicit root component is never listed. A declared component whose name, path, declared-by or manifest does
+    not fit the schema is left out, and so is a candidate whose path does not; so is each entry after the first cap
+    that fits. Nothing here says whether a component is complete or well-formed.
+    """
+    model = engine_module("audit.components").detect_components(inventory)
+    members = sorted((member for member in model.components if not member.is_root), key=lambda member: member.path)
+    fit_members = [
+        member
+        for member in members
+        if LABEL_FITS.fullmatch(member.name)
+        and RELPATH_FITS.fullmatch(member.path)
+        and LABEL_FITS.fullmatch(member.declared_by)
+        and (member.manifest is None or RELPATH_FITS.fullmatch(member.manifest))
+    ]
+    listed_members = fit_members[:DECLARED_COMPONENTS_LIMIT]
+    declared = [
+        {"name": m.name, "path": m.path, "declared_by": m.declared_by, "manifest": m.manifest} for m in listed_members
+    ]
+
+    candidates = sorted(model.candidates)
+    fit_candidates = [path for path in candidates if RELPATH_FITS.fullmatch(path)]
+    listed_candidates = fit_candidates[:CANDIDATE_COMPONENTS_LIMIT]
+
+    section = {"declared": declared, "candidates": listed_candidates, "notes": sorted(model.notes)}
+    return section, len(members) - len(listed_members), len(candidates) - len(listed_candidates)
+
+
 def build_document(*, label: str, git: dict[str, Any], inventory: Any, max_files: int) -> dict[str, Any]:
     """The facts, in the schema's key order. Each later section is added here as its step lands."""
     listed, omitted = listed_excludes(inventory.excludes)
     instruction_files, left_out = instruction_files_section(inventory)
+    components, declared_omitted, candidate_omitted = components_section(inventory)
     return {
         "facts_version": FACTS_VERSION,
         "label": label,
@@ -187,9 +228,12 @@ def build_document(*, label: str, git: dict[str, Any], inventory: Any, max_files
         "inventory": inventory_section(inventory, max_files=max_files, excludes=listed),
         "stack": stack_section(inventory),
         "instruction_files": instruction_files,
+        "components": components,
         "caps": {
             "excludes": {"limit": EXCLUDES_LIMIT, "omitted": omitted},
             "instruction_files": {"limit": INSTRUCTION_FILES_LIMIT, "omitted": left_out},
+            "declared_components": {"limit": DECLARED_COMPONENTS_LIMIT, "omitted": declared_omitted},
+            "candidate_components": {"limit": CANDIDATE_COMPONENTS_LIMIT, "omitted": candidate_omitted},
         },
     }
 
@@ -238,7 +282,7 @@ def build_parser() -> _common.ToolParser:
         description=INFO.summary,
         epilog=(
             "IN DEVELOPMENT until S2.7.5.3: so far the file holds facts_version, label, git, inventory, stack, "
-            "instruction_files and caps."
+            "instruction_files, components and caps."
         ),
     )
     parser.add_argument("target", help="the repository to describe")

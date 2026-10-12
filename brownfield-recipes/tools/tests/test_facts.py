@@ -158,7 +158,8 @@ class ContractTests(RepoCase):
         self.assertEqual(
             manifest["summary"],
             "Describe a repository with counts and names and no verdicts, as facts.json. "
-            "In development: so far it writes facts_version, label, git, inventory, stack, instruction_files and caps.",
+            "In development: so far it writes facts_version, label, git, inventory, stack, instruction_files, "
+            "components and caps.",
         )
         self.assertIs(manifest["writes_inside_target"], False)
         self.assertIs(manifest["network"], False)
@@ -191,7 +192,7 @@ class ContractTests(RepoCase):
         self.assertRegex(
             text,
             r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: so far the file holds facts_version, label, git, inventory, stack,"
-            r" instruction_files and caps\.$",
+            r" instruction_files, components and caps\.$",
         )
         self.assertRegex(text, r"(?m)^  target {2,}the repository to describe$")
         self.assertRegex(text, r"(?m)^  --out FILE {2,}the file to create; it must not exist$")
@@ -406,6 +407,13 @@ class FileTests(RepoCase):
                     "    ]",
                     "  },",
                     '  "instruction_files": [],',
+                    '  "components": {',
+                    '    "declared": [],',
+                    '    "candidates": [],',
+                    '    "notes": [',
+                    '      "single-root repository: no component declarations found"',
+                    "    ]",
+                    "  },",
                     '  "caps": {',
                     '    "excludes": {',
                     '      "limit": 10,',
@@ -413,6 +421,14 @@ class FileTests(RepoCase):
                     "    },",
                     '    "instruction_files": {',
                     '      "limit": 25,',
+                    '      "omitted": 0',
+                    "    },",
+                    '    "declared_components": {',
+                    '      "limit": 16,',
+                    '      "omitted": 0',
+                    "    },",
+                    '    "candidate_components": {',
+                    '      "limit": 20,',
                     '      "omitted": 0',
                     "    }",
                     "  }",
@@ -443,7 +459,7 @@ class FileTests(RepoCase):
                     walk(value)
 
         walk(self.written())
-        self.assertEqual(len(found), 4)
+        self.assertEqual(len(found), 5)
         for text in found:
             self.assertIsNone(re.match(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}", text), text)
             self.assertFalse(text.startswith("/"), text)
