@@ -201,7 +201,7 @@ The report also shows the unattested list beside them. The spec defines no level
 [`facts.schema.json`](facts.schema.json) describes `facts.json`, the file that `facts.py` writes for the audit's recon stage: counts and names that describe a repository, taken with the engine's own inventory and detection. It gives no verdict. Nothing in it says that a file is good, that a stack is right or that a repository is ready.
 
 > [!NOTE]
-> In development. [`tools/facts.py`](../tools/facts.py) writes `facts_version`, `label` and `git` so far; the other sections arrive in roadmap steps S2.7.2.2 to S2.7.4.2. The schema and the example are live, and this section is the format the finished tool will write. Until it writes every section only `facts_version` and `label` are required; the schema then makes every section required.
+> In development. [`tools/facts.py`](../tools/facts.py) writes `facts_version`, `label`, `git`, `inventory` and `caps` (the entry for `excludes`) so far; the other sections arrive in roadmap steps S2.7.3.1 to S2.7.4.2. The schema and the example are live, and this section is the format the finished tool will write. Until it writes every section only `facts_version` and `label` are required; the schema then makes every section required.
 
 | Section | Holds | Comes from | Cut |
 |---|---|---|---|
@@ -218,9 +218,11 @@ What the file never holds: a time, an absolute path, a machine or user name, a b
 
 How a list is cut:
 
-- Every list is sorted. A list that depends on the repository or on the operator keeps its first entries up to its limit, and `caps` records the limit and `omitted`, the number of entries left out.
+- Every list is sorted, except `inventory.excludes`, which keeps the operator's order. A list that depends on the repository or on the operator keeps its first entries up to its limit, and `caps` records the limit and `omitted`, the number of entries left out.
 - A string that comes from the repository or the operator (a path, a name, a glob) is printable ASCII and of limited length: 128 characters for a path, 64 for a name, 100 for a glob. An entry whose string does not fit is left out and counted in `omitted`, as if it were over the limit. That is how the largest file the schema allows is known: about 27 KB, under the 30 KB bound, and a test builds it.
 - The stack's lists have no cut. The engine's own tables bound them, and a test checks that each table fits its list.
+
+The inventory is the engine's own walk, shaped by `--exclude` and `--max-files` as they shape `engine.py`'s. It holds counts and never a path: `skipped` counts the paths the walk left out for each reason, such as `ignored` and `symlink`. A walk that `--max-files` cut short has `truncated` true and `max_files` set to the cap that cut it, and the tool warns in its envelope. The engine records no skip reason for a cut, so `skipped` does not say it. `excludes` names the globs as given, up to 10; a glob that is not printable ASCII or is over 100 characters is left out and counted in `caps.excludes.omitted`, though the engine applied it.
 
 The size class is by the engine's file count: `small` below 1,000 files, `medium` below 10,000, `large` below 100,000, and `huge` from there on or when the walk was cut short. The file carries the thresholds it used, so a later change to them cannot mislead a reader of an older file.
 
