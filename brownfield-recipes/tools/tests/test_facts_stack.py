@@ -272,7 +272,7 @@ class DetectionTests(StackCase):
         self.assertEqual(counts, {"ci_providers": 4, "test_frameworks": 5, "hook_managers": 7})
 
     def test_every_name_at_once_is_listed_and_each_list_is_sorted(self) -> None:
-        paths = {path for _, name, path in DETECTIONS if path not in ("conftest.py",)}
+        paths = {path for _, _, path in DETECTIONS if path not in ("conftest.py",)}
         self.fill(dict.fromkeys(["package.json", *paths], "x\n"))
         self.assert_stack(
             self.repo,
