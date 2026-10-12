@@ -158,7 +158,7 @@ class ContractTests(RepoCase):
         self.assertEqual(
             manifest["summary"],
             "Describe a repository with counts and names and no verdicts, as facts.json. "
-            "In development: so far it writes facts_version, label, git, inventory, caps and part of stack.",
+            "In development: so far it writes facts_version, label, git, inventory, stack and caps.",
         )
         self.assertIs(manifest["writes_inside_target"], False)
         self.assertIs(manifest["network"], False)
@@ -190,8 +190,8 @@ class ContractTests(RepoCase):
         self.assertIn(facts.INFO.summary, text)
         self.assertRegex(
             text,
-            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: so far the file holds facts_version, label, git, inventory, caps"
-            r" and part of stack \(ecosystems, source_only, package_managers, notes\)\.$",
+            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: so far the file holds facts_version, label, git, inventory, stack"
+            r" and caps\.$",
         )
         self.assertRegex(text, r"(?m)^  target {2,}the repository to describe$")
         self.assertRegex(text, r"(?m)^  --out FILE {2,}the file to create; it must not exist$")
@@ -398,6 +398,9 @@ class FileTests(RepoCase):
                     '    "ecosystems": [],',
                     '    "source_only": [],',
                     '    "package_managers": [],',
+                    '    "ci_providers": [],',
+                    '    "test_frameworks": [],',
+                    '    "hook_managers": [],',
                     '    "notes": [',
                     '      "no recognised build manifest \u2014 stack-dependent checks report UNKNOWN"',
                     "    ]",

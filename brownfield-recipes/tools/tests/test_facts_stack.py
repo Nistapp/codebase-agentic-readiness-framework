@@ -23,17 +23,30 @@ import facts
 from test_facts import RepoCase, engine_default_cap
 
 FIXTURES = launcher.ENGINE_DIR / "tests" / "fixtures"
-KEYS = ["ecosystems", "source_only", "package_managers", "notes"]
+KEYS = [
+    "ecosystems",
+    "source_only",
+    "package_managers",
+    "ci_providers",
+    "test_frameworks",
+    "hook_managers",
+    "notes",
+]
+EMPTY: dict[str, list[str]] = {key: [] for key in KEYS}
 NO_MANIFEST = "no recognised build manifest \u2014 stack-dependent checks report UNKNOWN"
 PYTHON_FROM_SOURCE = "python recognised from its source files: no manifest names it"
 
-# fixture -> ecosystems, source_only, package_managers, notes
-FIXTURE_STACKS: dict[str, tuple[list[str], list[str], list[str], list[str]]] = {
-    "exec-01-python-source-only": (["python"], ["python"], [], [PYTHON_FROM_SOURCE]),
-    "exec-02-nested-lockfile": (["node"], [], ["npm"], []),
-    "cmd-ok-npm": (["node"], [], [], []),
-    "cmd-ok-gradle": (["jvm"], [], [], []),
-    "cmd-ok-maven": (["jvm"], [], ["maven"], []),
+# fixture -> the fields that are not empty
+FIXTURE_STACKS: dict[str, dict[str, list[str]]] = {
+    "exec-01-python-source-only": {
+        "ecosystems": ["python"],
+        "source_only": ["python"],
+        "notes": [PYTHON_FROM_SOURCE],
+    },
+    "exec-02-nested-lockfile": {"ecosystems": ["node"], "package_managers": ["npm"]},
+    "cmd-ok-npm": {"ecosystems": ["node"]},
+    "cmd-ok-gradle": {"ecosystems": ["jvm"]},
+    "cmd-ok-maven": {"ecosystems": ["jvm"], "package_managers": ["maven"]},
 }
 
 
@@ -58,46 +71,49 @@ class StackTests(RepoCase):
             "ecosystems": sorted(found.ecosystems),
             "source_only": sorted(found.source_only),
             "package_managers": sorted(found.package_managers),
+            "ci_providers": sorted(found.ci_providers),
+            "test_frameworks": sorted(found.test_frameworks),
+            "hook_managers": sorted(found.hook_managers),
             "notes": sorted(found.notes),
         }
 
-    def assert_stack(
-        self, target: Path, expected: tuple[list[str], list[str], list[str], list[str]], *extra: str
-    ) -> None:
-        written = self.written_stack(target, *extra)
+    def assert_stack(self, target: Path, **not_empty: list[str]) -> None:
+        """The section is these fields, as written out here, and every other field is empty; and it is the engine's."""
+        self.assertLessEqual(set(not_empty), set(KEYS))
+        written = self.written_stack(target)
         self.assertEqual(list(written), KEYS)
-        self.assertEqual(written, dict(zip(KEYS, expected)))
+        self.assertEqual(written, {**EMPTY, **not_empty})
         self.assertEqual(written, self.engine_says(target))
 
     def test_each_field_is_the_engines_for_the_same_inventory_on_five_fixtures(self) -> None:
-        for name, expected in FIXTURE_STACKS.items():
+        for name, not_empty in FIXTURE_STACKS.items():
             with self.subTest(fixture=name):
-                self.assert_stack(FIXTURES / name, expected)
+                self.assert_stack(FIXTURES / name, **not_empty)
 
     def test_python_with_no_manifest_is_source_only_and_says_so(self) -> None:
         self.fill({"src/app.py": "print(1)\n"})
-        self.assert_stack(self.repo, (["python"], ["python"], [], [PYTHON_FROM_SOURCE]))
+        self.assert_stack(self.repo, ecosystems=["python"], source_only=["python"], notes=[PYTHON_FROM_SOURCE])
 
     def test_a_manifest_that_names_python_leaves_source_only_empty(self) -> None:
         self.fill({"src/app.py": "print(1)\n", "pyproject.toml": "[project]\n", "requirements.txt": "x\n"})
-        self.assert_stack(self.repo, (["python"], [], ["pip"], []))
+        self.assert_stack(self.repo, ecosystems=["python"], package_managers=["pip"])
 
     def test_python_tests_alone_are_not_python_source(self) -> None:
         self.fill({"tests/test_app.py": "x\n"})
-        self.assert_stack(self.repo, ([], [], [], [NO_MANIFEST]))
+        self.assert_stack(self.repo, notes=[NO_MANIFEST])
 
     def test_a_repository_with_no_manifest_gives_empty_lists_and_the_engines_note(self) -> None:
-        self.assert_stack(self.repo, ([], [], [], [NO_MANIFEST]))
+        self.assert_stack(self.repo, notes=[NO_MANIFEST])
 
     def test_a_repository_of_only_unknown_files_gives_the_same(self) -> None:
         unknown = self.root / "unknown"
         _git.make_repo(unknown, files=("data.xyz", "notes.foo"))
-        self.assert_stack(unknown, ([], [], [], [NO_MANIFEST]))
+        self.assert_stack(unknown, notes=[NO_MANIFEST])
 
     def test_an_empty_directory_is_not_an_error(self) -> None:
         empty = self.root / "empty"
         empty.mkdir()
-        self.assert_stack(empty, ([], [], [], [NO_MANIFEST]))
+        self.assert_stack(empty, notes=[NO_MANIFEST])
 
     def test_names_are_sorted_whatever_order_the_engine_finds_them_in(self) -> None:
         manifests = ["package.json", "pom.xml", "go.mod", "Cargo.toml", "composer.json"]
@@ -105,12 +121,8 @@ class StackTests(RepoCase):
         self.fill(dict.fromkeys([*manifests, *locks], "x\n"))
         self.assert_stack(
             self.repo,
-            (
-                ["go", "jvm", "node", "php", "rust"],
-                [],
-                ["bun", "cargo", "composer", "gomod", "maven", "pnpm", "poetry", "yarn"],
-                [],
-            ),
+            ecosystems=["go", "jvm", "node", "php", "rust"],
+            package_managers=["bun", "cargo", "composer", "gomod", "maven", "pnpm", "poetry", "yarn"],
         )
 
     def test_every_list_is_sorted_and_the_notes_are_carried_as_the_engine_wrote_them(self) -> None:
@@ -118,6 +130,9 @@ class StackTests(RepoCase):
             ecosystems=["node", "go"],
             source_only=["python", "go"],
             package_managers=["yarn", "bun"],
+            ci_providers=["jenkins", "azure"],
+            test_frameworks=["vitest", "jest"],
+            hook_managers=["lefthook", "husky"],
             notes=["b \u2014 x", "a x"],
         )
         with mock.patch.object(facts.engine_module("audit.stack"), "detect_stack", return_value=found) as detect:
@@ -127,19 +142,22 @@ class StackTests(RepoCase):
         self.assertEqual(section["ecosystems"], ["go", "node"])
         self.assertEqual(section["source_only"], ["go", "python"])
         self.assertEqual(section["package_managers"], ["bun", "yarn"])
+        self.assertEqual(section["ci_providers"], ["azure", "jenkins"])
+        self.assertEqual(section["test_frameworks"], ["jest", "vitest"])
+        self.assertEqual(section["hook_managers"], ["husky", "lefthook"])
         self.assertEqual(section["notes"], ["a x", "b \u2014 x"])
 
     def test_a_walk_that_was_cut_short_gives_the_stack_of_the_files_it_saw(self) -> None:
         self.fill({"package.json": "{}\n"})
         self.assertEqual(self.written_stack(self.repo)["ecosystems"], ["node"])
         cut = self.written_stack(self.repo, "--max-files", "1")
-        self.assertEqual(cut, dict(zip(KEYS, ([], [], [], [NO_MANIFEST]))))
+        self.assertEqual(cut, {**EMPTY, "notes": [NO_MANIFEST]})
         self.assertEqual(cut, self.engine_says(self.repo, max_files=1))
 
     def test_an_excluded_manifest_is_not_a_manifest(self) -> None:
         self.fill({"package.json": "{}\n"})
         excluded = self.written_stack(self.repo, "--exclude", "package.json")
-        self.assertEqual(excluded, dict(zip(KEYS, ([], [], [], [NO_MANIFEST]))))
+        self.assertEqual(excluded, {**EMPTY, "notes": [NO_MANIFEST]})
         self.assertEqual(excluded, self.engine_says(self.repo, excludes=("package.json",)))
 
     def test_the_inventory_is_walked_once_and_feeds_both_sections(self) -> None:
