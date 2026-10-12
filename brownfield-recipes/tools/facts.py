@@ -8,9 +8,11 @@ IN DEVELOPMENT, until S2.7.5.3. One command::
     facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]
 
 The tool writes one new file, ``facts.json``, whose format is ``schema/facts.schema.json``. This version writes
-``facts_version``, ``label`` and ``git``; the inventory, the detections, the instruction files, the components and the
-size class arrive in the steps after this one. ``--exclude`` and ``--max-files`` are accepted and checked now, spelled as
-``engine.py`` spells them, because they shape the inventory section; until it is written they change nothing in the file.
+``facts_version``, ``label``, ``git`` and ``inventory``, with ``caps`` for the ``--exclude`` globs; the detections, the
+instruction files, the components and the size class arrive in the steps after this one. ``--exclude`` and
+``--max-files`` are spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the
+facts describe the inventory the engine sees. The inventory holds counts and never a path. A walk that ``--max-files``
+cut short says ``truncated`` in the file and gives a warning in the envelope; the engine records no skip reason for that.
 
 The file holds no time, no absolute path and no machine name, so one repository state gives one file. The envelope on
 stdout names the file, its size and the format's version. The tool never writes inside the target: the file must be
@@ -27,8 +29,11 @@ is exit 3, because it can only be a bug in this tool; nothing is written then.
 from __future__ import annotations
 
 import importlib
+import inspect
 import json
+import re
 import sys
+from collections import Counter
 from functools import cache
 from pathlib import Path
 from types import ModuleType
@@ -42,7 +47,7 @@ INFO = _common.ToolInfo(
     name="facts",
     summary=(
         "Describe a repository with counts and names and no verdicts, as facts.json. "
-        "In development: so far it writes facts_version, label and git."
+        "In development: so far it writes facts_version, label, git, inventory and caps."
     ),
     synopsis=("facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]",),
     writes="One new file, the one --out names, which must be outside the target and must not exist. It is never replaced.",
@@ -54,6 +59,10 @@ FACTS_VERSION = "0.1"
 # Under 30 KB whether a kilobyte is 1,000 or 1,024 bytes.
 MAX_FACTS_BYTES = 30_000
 MAX_SCHEMA_ERRORS = 20
+# What the schema allows for a glob (`$defs/glob`, `$defs/cap_excludes`); tests hold both to the schema. `fullmatch`, so
+# that a glob ending in a line break is out, as it is for the tools' validator.
+GLOB_FITS = re.compile(r"[ -~]{1,100}")
+EXCLUDES_LIMIT = 10
 
 
 def engine_module(name: str) -> ModuleType:
@@ -73,9 +82,59 @@ def git_state(target: Path) -> dict[str, Any]:
     return {"sha": found.git_sha, "dirty": found.git_dirty}
 
 
-def build_document(*, label: str, git: dict[str, Any]) -> dict[str, Any]:
+def default_max_files() -> int:
+    """The walk's cap when `--max-files` is not given: the engine's own default, read from `build_inventory`."""
+    parameter = inspect.signature(engine_module("audit.scan").build_inventory).parameters["max_files"]
+    return int(parameter.default)
+
+
+def walk_target(target: Path, *, excludes: Sequence[str], max_files: int) -> Any:
+    """The engine's inventory of `target`. The walk never follows a link, never leaves the target and writes nothing."""
+    build = engine_module("audit.scan").build_inventory
+    return build(target, extra_excludes=tuple(excludes), max_files=max_files)
+
+
+def listed_excludes(globs: Sequence[str]) -> tuple[list[str], int]:
+    """The globs the file names, in the order given, and how many it leaves out.
+
+    A glob that does not fit the schema is left out, and so is each glob after the first `EXCLUDES_LIMIT` that fit.
+    The engine applied every glob all the same.
+    """
+    listed = [glob for glob in globs if GLOB_FITS.fullmatch(glob)][:EXCLUDES_LIMIT]
+    return listed, len(globs) - len(listed)
+
+
+def inventory_section(inventory: Any, *, max_files: int, excludes: Sequence[str]) -> dict[str, Any]:
+    """Counts from the engine's `Inventory`, and never a path. `excludes` is what `listed_excludes` kept."""
+    by_kind = {kind.value: 0 for kind in engine_module("audit.scan").Kind}
+    for entry in inventory.files:
+        by_kind[entry.kind.value] += 1
+    reasons = Counter(reason for _, reason in inventory.skipped)
+    return {
+        "files": len(inventory.files),
+        "bytes": sum(entry.size for entry in inventory.files),
+        "by_kind": by_kind,
+        "skipped": [{"reason": reason, "count": count} for reason, count in sorted(reasons.items())],
+        "truncated": inventory.truncated,
+        "max_files": max_files,
+        "excludes": list(excludes),
+    }
+
+
+def build_document(*, label: str, git: dict[str, Any], inventory: Any, max_files: int) -> dict[str, Any]:
     """The facts, in the schema's key order. Each later section is added here as its step lands."""
-    return {"facts_version": FACTS_VERSION, "label": label, "git": git}
+    listed, omitted = listed_excludes(inventory.excludes)
+    return {
+        "facts_version": FACTS_VERSION,
+        "label": label,
+        "git": git,
+        "inventory": inventory_section(inventory, max_files=max_files, excludes=listed),
+        "caps": {"excludes": {"limit": EXCLUDES_LIMIT, "omitted": omitted}},
+    }
+
+
+def cut_warning(max_files: int) -> str:
+    return f"the walk stopped at its cap of {max_files} files, so every count in the inventory is a lower bound"
 
 
 @cache
@@ -116,7 +175,7 @@ def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(
         prog="facts.py",
         description=INFO.summary,
-        epilog="IN DEVELOPMENT until S2.7.5.3: the file holds only facts_version, label and git so far.",
+        epilog="IN DEVELOPMENT until S2.7.5.3: so far the file holds facts_version, label, git, inventory and caps.",
     )
     parser.add_argument("target", help="the repository to describe")
     parser.add_argument("--out", required=True, metavar="FILE", help="the file to create; it must not exist")
@@ -126,10 +185,12 @@ def build_parser() -> _common.ToolParser:
         action="append",
         default=[],
         metavar="GLOB",
-        help="a path glob to leave out of the inventory, as engine.py's does (no effect until the inventory is written)",
+        help=f"a path glob to leave out of the inventory, as engine.py's does; the file names up to {EXCLUDES_LIMIT}",
     )
     parser.add_argument(
-        "--max-files", type=int, help="stop the inventory walk after this many files (no effect until it is written)"
+        "--max-files",
+        type=int,
+        help="stop the inventory walk after this many files (default: the engine's own cap); a walk that stops is truncated",
     )
     return parser
 
@@ -142,7 +203,9 @@ def handler(argv: Sequence[str]) -> _common.Result:
     label = _common.repo_label(target, args.repo_label)
     git = git_state(target)
     out = output_file(args.out, target=target)
-    document = build_document(label=label, git=git)
+    cap = args.max_files if args.max_files is not None else default_max_files()
+    inventory = walk_target(target, excludes=args.exclude, max_files=cap)
+    document = build_document(label=label, git=git, inventory=inventory, max_files=cap)
     check_document(document)
     text = encode_facts(document)
     try:
@@ -153,6 +216,7 @@ def handler(argv: Sequence[str]) -> _common.Result:
     return _common.Result(
         data={"file": str(written), "bytes": size, "facts_version": FACTS_VERSION},
         summary=f"facts: wrote {written.name} ({size} bytes)",
+        warnings=[cut_warning(cap)] if inventory.truncated else [],
     )
 
 

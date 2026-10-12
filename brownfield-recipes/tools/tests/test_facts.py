@@ -11,6 +11,7 @@ starts the tool as a script from the filesystem root, which is how a recipe star
 from __future__ import annotations
 
 import hashlib
+import inspect
 import io
 import json
 import os
@@ -42,6 +43,19 @@ def call(argv: Sequence[str]) -> tuple[int, dict[str, Any], str]:
     code = _common.run_tool(facts.INFO, facts.handler, list(argv), stdout=out, stderr=err)
     envelope: dict[str, Any] = json.loads(out.getvalue())
     return code, envelope, err.getvalue()
+
+
+def engine_scan() -> Any:
+    """The engine's `audit.scan`, loaded through the tool's own launcher."""
+    return facts.engine_module("audit.scan")
+
+
+def engine_default_cap() -> int:
+    """The cap the engine's walk uses when it is not given one, read from its signature."""
+    return int(inspect.signature(engine_scan().build_inventory).parameters["max_files"].default)
+
+
+KIND_NAMES = [kind.value for kind in engine_scan().Kind]
 
 
 def snapshot(root: Path) -> dict[str, tuple[int, int]]:
@@ -121,7 +135,7 @@ class ContractTests(RepoCase):
         self.assertEqual(
             manifest["summary"],
             "Describe a repository with counts and names and no verdicts, as facts.json. "
-            "In development: so far it writes facts_version, label and git.",
+            "In development: so far it writes facts_version, label, git, inventory and caps.",
         )
         self.assertIs(manifest["writes_inside_target"], False)
         self.assertIs(manifest["network"], False)
@@ -152,7 +166,8 @@ class ContractTests(RepoCase):
         self.assertTrue(text.startswith("usage: facts.py "), text)
         self.assertIn(facts.INFO.summary, text)
         self.assertRegex(
-            text, r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: the file holds only facts_version, label and git so far\.$"
+            text,
+            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: so far the file holds facts_version, label, git, inventory and caps\.$",
         )
         self.assertRegex(text, r"(?m)^  target {2,}the repository to describe$")
         self.assertRegex(text, r"(?m)^  --out FILE {2,}the file to create; it must not exist$")
@@ -162,21 +177,15 @@ class ContractTests(RepoCase):
         )
         self.assertRegex(
             text,
-            r"(?m)^  --exclude GLOB {2,}a path glob to leave out of the inventory, as engine.py's does"
-            r" \(no effect until the inventory is written\)$",
+            r"(?m)^  --exclude GLOB {2,}a path glob to leave out of the inventory, as engine.py's does;"
+            r" the file names up to 10$",
         )
         self.assertRegex(
             text,
             r"(?m)^  --max-files MAX_FILES\n {2,}stop the inventory walk after this many files"
-            r" \(no effect until it is written\)$",
+            r" \(default: the engine's own cap\); a walk that stops is truncated$",
         )
-
-    def test_exclude_and_max_files_are_accepted_and_change_nothing_yet(self) -> None:
-        self.run_ok()
-        plain = self.out.read_bytes()
-        other = self.folder / "other.json"
-        self.run_ok("--exclude", "src/*", "--exclude", "*.md", "--max-files", "5", out=other)
-        self.assertEqual(other.read_bytes(), plain)
+        self.assertNotIn("no effect", text)
 
 
 class ScriptTests(RepoCase):
@@ -338,11 +347,39 @@ class FileTests(RepoCase):
     def test_the_file_is_exactly_this_text(self) -> None:
         self.run_ok()
         sha = _git.run_git(self.repo, "rev-parse", "HEAD")
+        kinds = [f'      "{kind}": {1 if kind == "doc" else 0}' for kind in KIND_NAMES]
         self.assertEqual(
             self.out.read_text(encoding="utf-8"),
-            '{\n  "facts_version": "0.1",\n  "label": "my-repo",\n  "git": {\n    "sha": "'
-            + sha
-            + '",\n    "dirty": false\n  }\n}\n',
+            "\n".join(
+                [
+                    "{",
+                    '  "facts_version": "0.1",',
+                    '  "label": "my-repo",',
+                    '  "git": {',
+                    f'    "sha": "{sha}",',
+                    '    "dirty": false',
+                    "  },",
+                    '  "inventory": {',
+                    '    "files": 1,',
+                    '    "bytes": 2,',
+                    '    "by_kind": {',
+                    ",\n".join(kinds),
+                    "    },",
+                    '    "skipped": [],',
+                    '    "truncated": false,',
+                    f'    "max_files": {engine_default_cap()},',
+                    '    "excludes": []',
+                    "  },",
+                    '  "caps": {',
+                    '    "excludes": {',
+                    '      "limit": 10,',
+                    '      "omitted": 0',
+                    "    }",
+                    "  }",
+                    "}",
+                    "",
+                ]
+            ),
         )
 
     def test_the_file_fits_its_schema(self) -> None:
@@ -360,6 +397,9 @@ class FileTests(RepoCase):
                 found.append(node)
             elif isinstance(node, dict):
                 for value in node.values():
+                    walk(value)
+            elif isinstance(node, list):
+                for value in node:
                     walk(value)
 
         walk(self.written())
