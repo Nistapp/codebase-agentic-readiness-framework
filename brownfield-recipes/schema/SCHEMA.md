@@ -201,7 +201,7 @@ The report also shows the unattested list beside them. The spec defines no level
 [`facts.schema.json`](facts.schema.json) describes `facts.json`, the file that `facts.py` writes for the audit's recon stage: counts and names that describe a repository, taken with the engine's own inventory and detection. It gives no verdict. Nothing in it says that a file is good, that a stack is right or that a repository is ready.
 
 > [!NOTE]
-> In development. [`tools/facts.py`](../tools/facts.py) writes `facts_version`, `label`, `git`, `inventory`, `stack`, `instruction_files`, `components` and `caps` (the entries for `excludes`, `instruction_files`, `declared_components` and `candidate_components`) so far; the size class arrives in roadmap step S2.7.4.2. The schema and the example are live, and this section is the format the finished tool will write. Until it writes every section only `facts_version` and `label` are required; the schema then makes every section required.
+> In development. [`tools/facts.py`](../tools/facts.py) now writes every section: `facts_version`, `label`, `git`, `inventory`, `stack`, `instruction_files`, `components`, `size` and `caps`. The schema and the example are live, and this section is the format the finished tool will write. Until roadmap step S2.7.5.3 tightens it, only `facts_version` and `label` are required; S2.7.5.3 makes every section required.
 
 | Section | Holds | Comes from | Cut |
 |---|---|---|---|
