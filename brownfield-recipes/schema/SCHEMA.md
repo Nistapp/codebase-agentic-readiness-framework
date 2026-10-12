@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone who reads, writes or validates an audit report
 > **Source of truth:** [`audit-report.schema.json`](audit-report.schema.json) and [`audit-intake.schema.json`](audit-intake.schema.json). Where this page and a schema disagree, the schema wins and this page has a defect.
-> **Status:** Live for the schemas, the examples, the validator, the report builder, with its `import-engine` subcommand (the engine adapter), and the renderer. The facts schema and its example are live; the tool that writes the file, `facts.py`, is planned.
+> **Status:** Live for the schemas, the examples, the validator, the report builder, with its `import-engine` subcommand (the engine adapter), and the renderer. The facts schema and its example are live; the tool that writes the file, [`facts.py`](../tools/facts.py), is in development.
 
 ---
 
@@ -201,7 +201,7 @@ The report also shows the unattested list beside them. The spec defines no level
 [`facts.schema.json`](facts.schema.json) describes `facts.json`, the file that `facts.py` writes for the audit's recon stage: counts and names that describe a repository, taken with the engine's own inventory and detection. It gives no verdict. Nothing in it says that a file is good, that a stack is right or that a repository is ready.
 
 > [!NOTE]
-> Planned. The tool is written in roadmap steps S2.7.2 to S2.7.5. The schema and the example are live, and this section is the format the tool will write. Until it writes every section only `facts_version` and `label` are required; the schema then makes every section required.
+> In development. [`tools/facts.py`](../tools/facts.py) writes `facts_version`, `label` and `git` so far; the other sections arrive in roadmap steps S2.7.2.2 to S2.7.4.2. The schema and the example are live, and this section is the format the finished tool will write. Until it writes every section only `facts_version` and `label` are required; the schema then makes every section required.
 
 | Section | Holds | Comes from | Cut |
 |---|---|---|---|
