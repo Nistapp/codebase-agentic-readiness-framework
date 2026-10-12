@@ -158,8 +158,8 @@ class ContractTests(RepoCase):
         self.assertEqual(
             manifest["summary"],
             "Describe a repository with counts and names and no verdicts, as facts.json. "
-            "In development: so far it writes facts_version, label, git, inventory, stack, instruction_files, "
-            "components and caps.",
+            "In development: writes facts_version, label, git, inventory, stack, instruction_files, components, "
+            "size and caps.",
         )
         self.assertIs(manifest["writes_inside_target"], False)
         self.assertIs(manifest["network"], False)
@@ -191,8 +191,8 @@ class ContractTests(RepoCase):
         self.assertIn(facts.INFO.summary, text)
         self.assertRegex(
             text,
-            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: so far the file holds facts_version, label, git, inventory, stack,"
-            r" instruction_files, components and caps\.$",
+            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: the file holds facts_version, label, git, inventory, stack,"
+            r" instruction_files, components, size and caps\.$",
         )
         self.assertRegex(text, r"(?m)^  target {2,}the repository to describe$")
         self.assertRegex(text, r"(?m)^  --out FILE {2,}the file to create; it must not exist$")
@@ -414,6 +414,17 @@ class FileTests(RepoCase):
                     '      "single-root repository: no component declarations found"',
                     "    ]",
                     "  },",
+                    '  "size": {',
+                    '    "class": "small",',
+                    '    "files": 1,',
+                    '    "bytes": 2,',
+                    '    "truncated": false,',
+                    '    "thresholds": {',
+                    '      "small_below": 1000,',
+                    '      "medium_below": 10000,',
+                    '      "large_below": 100000',
+                    "    }",
+                    "  },",
                     '  "caps": {',
                     '    "excludes": {',
                     '      "limit": 10,',
@@ -459,7 +470,7 @@ class FileTests(RepoCase):
                     walk(value)
 
         walk(self.written())
-        self.assertEqual(len(found), 5)
+        self.assertEqual(len(found), 6)
         for text in found:
             self.assertIsNone(re.match(r"^[0-9]{4}-[0-9]{2}-[0-9]{2}", text), text)
             self.assertFalse(text.startswith("/"), text)

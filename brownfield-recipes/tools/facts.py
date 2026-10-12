@@ -7,13 +7,13 @@ IN DEVELOPMENT, until S2.7.5.3. One command::
 
     facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]
 
-The tool writes one new file, ``facts.json``, whose format is ``schema/facts.schema.json``. This version writes
-``facts_version``, ``label``, ``git``, ``inventory``, ``stack``, ``instruction_files`` and ``components``, with
-``caps`` for the lists that are cut; the size class arrives in the step after this one. ``--exclude`` and
-``--max-files`` are spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the
-facts describe the inventory the engine sees. The inventory holds counts and never a path. A walk that ``--max-files``
-cut short says ``truncated`` in the file and gives a warning in the envelope; the engine records no skip reason for
-that.
+The tool writes one new file, ``facts.json``, whose format is ``schema/facts.schema.json``. This version writes every
+section: ``facts_version``, ``label``, ``git``, ``inventory``, ``stack``, ``instruction_files``, ``components`` and
+``size``, with ``caps`` for the lists that are cut. Only ``S2.7.5.3``'s tightening of the schema (every section
+required, not just ``facts_version`` and ``label``) and the golden files remain. ``--exclude`` and ``--max-files`` are
+spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the facts describe the
+inventory the engine sees. The inventory holds counts and never a path. A walk that ``--max-files`` cut short says
+``truncated`` in the file and gives a warning in the envelope; the engine records no skip reason for that.
 
 The instruction files are the ones that the engine's ``AGT-01`` and ``AGT-08`` see (``instruction_paths`` in
 ``audit.rules.checks.agt``), each with the pattern of the variants table that names it. The tool asks the engine and
@@ -22,6 +22,10 @@ adds no search of its own, so the list has the engine's gaps and follows the eng
 The components are the engine's own ``audit.components.detect_components``: ``declared`` components that a build
 manifest names, and ``candidates`` that look like a component but that no manifest declares. The implicit root
 component is never listed. Nothing here says a component is complete or well-formed.
+
+The size class is the tool's own rule on the inventory's file count: ``small`` under 1,000, ``medium`` under 10,000,
+``large`` under 100,000, and ``huge`` from there on or whenever the walk was cut short, whatever the count. The
+thresholds are written into the file so a reader sees the rule without reading this tool.
 
 The file holds no time, no absolute path and no machine name, so one repository state gives one file. The envelope on
 stdout names the file, its size and the format's version. The tool never writes inside the target: the file must be
@@ -57,8 +61,8 @@ INFO = _common.ToolInfo(
     name="facts",
     summary=(
         "Describe a repository with counts and names and no verdicts, as facts.json. "
-        "In development: so far it writes facts_version, label, git, inventory, stack, instruction_files, "
-        "components and caps."
+        "In development: writes facts_version, label, git, inventory, stack, instruction_files, components, "
+        "size and caps."
     ),
     synopsis=("facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]",),
     writes="One new file, the one --out names, which must be outside the target and must not exist. It is never replaced.",
@@ -81,6 +85,11 @@ INSTRUCTION_FILES_LIMIT = 25
 LABEL_FITS = re.compile(r"[ -~]{1,64}")
 DECLARED_COMPONENTS_LIMIT = 16
 CANDIDATE_COMPONENTS_LIMIT = 20
+# Q30's default: by the engine's file count, `small` under 1,000, `medium` under 10,000, `large` under 100,000, and
+# `huge` from there on or whenever the walk was cut short.
+SMALL_BELOW = 1_000
+MEDIUM_BELOW = 10_000
+LARGE_BELOW = 100_000
 
 
 def engine_module(name: str) -> ModuleType:
@@ -216,6 +225,30 @@ def components_section(inventory: Any) -> tuple[dict[str, Any], int, int]:
     return section, len(members) - len(listed_members), len(candidates) - len(listed_candidates)
 
 
+def size_class(*, files: int, truncated: bool) -> str:
+    """`huge` whatever the count when the walk was cut short; otherwise the engine's file count against Q30's bounds."""
+    if truncated or files >= LARGE_BELOW:
+        return "huge"
+    if files >= MEDIUM_BELOW:
+        return "large"
+    if files >= SMALL_BELOW:
+        return "medium"
+    return "small"
+
+
+def size_section(inventory: Any) -> dict[str, Any]:
+    """How large the repository is, by the engine's file count, with the thresholds the class used in the file."""
+    files = len(inventory.files)
+    truncated = inventory.truncated
+    return {
+        "class": size_class(files=files, truncated=truncated),
+        "files": files,
+        "bytes": sum(entry.size for entry in inventory.files),
+        "truncated": truncated,
+        "thresholds": {"small_below": SMALL_BELOW, "medium_below": MEDIUM_BELOW, "large_below": LARGE_BELOW},
+    }
+
+
 def build_document(*, label: str, git: dict[str, Any], inventory: Any, max_files: int) -> dict[str, Any]:
     """The facts, in the schema's key order. Each later section is added here as its step lands."""
     listed, omitted = listed_excludes(inventory.excludes)
@@ -229,6 +262,7 @@ def build_document(*, label: str, git: dict[str, Any], inventory: Any, max_files
         "stack": stack_section(inventory),
         "instruction_files": instruction_files,
         "components": components,
+        "size": size_section(inventory),
         "caps": {
             "excludes": {"limit": EXCLUDES_LIMIT, "omitted": omitted},
             "instruction_files": {"limit": INSTRUCTION_FILES_LIMIT, "omitted": left_out},
@@ -281,8 +315,8 @@ def build_parser() -> _common.ToolParser:
         prog="facts.py",
         description=INFO.summary,
         epilog=(
-            "IN DEVELOPMENT until S2.7.5.3: so far the file holds facts_version, label, git, inventory, stack, "
-            "instruction_files, components and caps."
+            "IN DEVELOPMENT until S2.7.5.3: the file holds facts_version, label, git, inventory, stack, "
+            "instruction_files, components, size and caps."
         ),
     )
     parser.add_argument("target", help="the repository to describe")
