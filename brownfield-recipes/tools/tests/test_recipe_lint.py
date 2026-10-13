@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""The recipe linter: each of its three rules (links, SKILL.md frontmatter, size) has a fixture that passes it
-and one that breaks it, and the tool honours the contract (envelope, exit codes, nothing written).
+"""The recipe linter: each of its four rules (links, SKILL.md frontmatter, size, tool references) has a fixture
+that passes it and one that breaks it, and the tool honours the contract (envelope, exit codes, nothing written).
 
 A fixture is a small repository tree built in a temporary folder, with its own `brownfield-recipes/` so the tool
 sees a real target. The project's own documentation is linted too, as the standing proof that the rule set the
@@ -52,9 +52,12 @@ class FixtureTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.repo = FixtureRepo(Path(self.temp.name).resolve())
 
-    def lint(self) -> rl.Outcome:
+    def lint(self, *, describe_timeout: float = rl.DESCRIBE_TIMEOUT_S) -> rl.Outcome:
         files = rl.find_markdown(self.repo.root)
-        return rl.lint(self.repo.root, files)
+        return rl.lint(self.repo.root, files, describe_timeout=describe_timeout)
+
+    def write_tool(self, name: str, source: str) -> Path:
+        return self.repo.write(f"brownfield-recipes/tools/{name}.py", source)
 
 
 # --- The link rule --------------------------------------------------------------------------------------
@@ -246,6 +249,105 @@ class SizeTests(FixtureTests):
         body = "\n".join(f"line {n}" for n in range(rl.LINE_BUDGET + 5))
         self.repo.write("brownfield-recipes/docs/01-not-a-check-family-file.md", body + "\n")
         self.assertEqual(self.lint().errors, [])
+
+
+# --- The tool-reference rule ---------------------------------------------------------------------------------
+
+GOOD_TOOL = (
+    "import json, sys\n"
+    "print(json.dumps({'tool': 'thing', 'version': '0.1.0', 'ok': True, 'data': {}, "
+    "'warnings': [], 'truncated': False}))\n"
+)
+BROKEN_EXIT_TOOL = "import sys\nprint('boom', file=sys.stderr)\nsys.exit(3)\n"
+INVALID_JSON_TOOL = "print('not json')\n"
+NOT_OK_TOOL = (
+    "import json\n"
+    "print(json.dumps({'tool': 'thing', 'version': '0.1.0', 'ok': False, 'data': {}, "
+    "'warnings': [], 'truncated': False}))\n"
+)
+SLOW_TOOL = "import time\ntime.sleep(5)\n"
+COUNTING_TOOL = (
+    "import json\n"
+    "from pathlib import Path\n"
+    "counter = Path(__file__).parent / 'calls.txt'\n"
+    "counter.write_text(str(int(counter.read_text()) + 1) if counter.exists() else '1')\n"
+    "print(json.dumps({'tool': 'thing', 'version': '0.1.0', 'ok': True, 'data': {}, "
+    "'warnings': [], 'truncated': False}))\n"
+)
+
+
+class ToolReferenceTests(FixtureTests):
+    def test_a_tool_that_exists_and_describes_itself_passes(self) -> None:
+        self.write_tool("thing", GOOD_TOOL)
+        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        self.assertEqual(self.lint().errors, [])
+
+    def test_a_missing_tool_is_reported(self) -> None:
+        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/gone.py`.\n")
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("does not exist", errors[0])
+
+    def test_a_tool_that_exits_nonzero_on_describe_is_reported(self) -> None:
+        self.write_tool("thing", BROKEN_EXIT_TOOL)
+        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("exited 3: boom", errors[0])
+
+    def test_a_tool_that_prints_invalid_json_is_reported(self) -> None:
+        self.write_tool("thing", INVALID_JSON_TOOL)
+        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("no valid JSON envelope", errors[0])
+
+    def test_a_tool_that_says_ok_false_on_describe_is_reported(self) -> None:
+        self.write_tool("thing", NOT_OK_TOOL)
+        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("printed ok: False", errors[0])
+
+    def test_a_tool_that_does_not_finish_in_time_is_reported(self) -> None:
+        self.write_tool("thing", SLOW_TOOL)
+        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        errors = self.lint(describe_timeout=0.2).errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("did not finish within 0.2s", errors[0])
+
+    def test_a_reference_inside_a_fenced_synopsis_is_still_checked(self) -> None:
+        self.repo.write(
+            "brownfield-recipes/docs/source.md",
+            "```text\npython3 brownfield-recipes/tools/gone.py <target>\n```\n",
+        )
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("does not exist", errors[0])
+
+    def test_a_tbd_line_is_skipped(self) -> None:
+        self.repo.write(
+            "brownfield-recipes/docs/source.md",
+            "- TBD: `python3 brownfield-recipes/tools/gone.py show` does the thing.\n",
+        )
+        self.assertEqual(self.lint().errors, [])
+
+    def test_a_bare_tools_reference_with_no_prefix_is_never_checked(self) -> None:
+        self.repo.write("brownfield-recipes/docs/source.md", "Run `tools/gone.py`, someone else's tool.\n")
+        self.assertEqual(self.lint().errors, [])
+
+    def test_a_tool_cited_twice_is_described_only_once(self) -> None:
+        tool = self.write_tool("thing", COUNTING_TOOL)
+        self.repo.write(
+            "brownfield-recipes/docs/a.md",
+            "Run `brownfield-recipes/tools/thing.py`.\n",
+        )
+        self.repo.write(
+            "brownfield-recipes/docs/b.md",
+            "Run `brownfield-recipes/tools/thing.py`.\n",
+        )
+        self.assertEqual(self.lint().errors, [])
+        self.assertEqual((tool.parent / "calls.txt").read_text(encoding="utf-8"), "1")
 
 
 # --- The tool contract -------------------------------------------------------------------------------------

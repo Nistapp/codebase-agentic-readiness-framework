@@ -7,7 +7,7 @@ oversize files.
     recipe_lint.py <root>
 
 ``<root>`` is the repository that holds ``brownfield-recipes/``; a link may climb out of that folder (a check
-file citing ``brownfield-legacy/Phased-Approach.md`` does), but never out of ``<root>``. Three checks, each
+file citing ``brownfield-legacy/Phased-Approach.md`` does), but never out of ``<root>``. Four checks, each
 independent of the others:
 
 - **Links.** Every inline Markdown link (``[text](target)``, never an image or a reference-style link, neither
@@ -22,13 +22,22 @@ independent of the others:
 - **Size.** A ``SKILL.md``, and a check-family file under ``audit/checks/`` (``NN-*.md``), must be 500 lines or
   fewer (R-10's ``SKILL.md`` budget, shared by the family files for the same reason: an agent loads the whole
   file at once, D46).
+- **Tool references.** Every ``brownfield-recipes/tools/<name>.py`` named in a command or a code span,
+  wherever it appears in a line, must exist and answer ``--describe`` with the contract's envelope, inside a
+  time limit. A line that admits the tool is not built yet (starts with ``TBD:``, after any list or quote
+  markers) is skipped, which is how this project already marks a tool that is Planned. A bare ``tools/...``
+  with no ``brownfield-recipes/`` prefix is some other project's own tools folder (the engine's
+  ``deterministic-audit/tools/build.py`` does not even follow this contract) and is never checked.
 
-Nothing is written. Standard library only.
+Nothing is written, apart from a tool's own ``--describe``, which the contract guarantees does no work and
+writes nothing either. Standard library only.
 """
 
 from __future__ import annotations
 
+import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -48,10 +57,14 @@ RECIPES_DIRNAME = "brownfield-recipes"
 LINE_BUDGET = 500  # SKILL.md's own budget (R-10); check-family files share it (D46).
 MAX_NAME_CHARS = 64
 MAX_DESCRIPTION_CHARS = 1024
+DESCRIBE_TIMEOUT_S = 15.0
 
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*\Z")
 CHECK_FAMILY_FILE = re.compile(r"^[0-9]{2}-[a-z0-9-]+\.md\Z")
 LINE_ANCHOR = re.compile(r"^L([0-9]+)(?:-L([0-9]+))?\Z")
+TOOL_REFERENCE = re.compile(rf"{re.escape(RECIPES_DIRNAME)}/tools/([A-Za-z_][A-Za-z0-9_]*)\.py")
+TBD_LINE = re.compile(r"^\s*(?:[-*>]\s*)*TBD:")
+ENVELOPE_KEYS = ("tool", "version", "ok", "data", "warnings", "truncated")
 
 # Whole files whose links are examples and are never meant to resolve, as a path prefix relative to <root>.
 EXCLUDED_FROM_LINKS = (f"{RECIPES_DIRNAME}/docs/templates/",)
@@ -246,6 +259,64 @@ def check_size(path: Path, lines: Sequence[str], out: Outcome) -> None:
         out.error(path, LINE_BUDGET + 1, f"{path.name} has {len(lines)} lines; the budget is {LINE_BUDGET}")
 
 
+# --- The tool-reference rule -------------------------------------------------------------------------------
+
+
+def tool_name_occurrences(lines: Sequence[str]) -> list[tuple[int, str]]:
+    """`(line number, tool name)` for each `brownfield-recipes/tools/<name>.py` the raw lines name.
+
+    Fenced code blocks are read too (unlike `scan_lines`): a Synopsis is exactly where the primary citation
+    lives. A line admitting the tool is not built yet (`TBD:`, after any list or quote markers) is skipped.
+    """
+    found: list[tuple[int, str]] = []
+    for number, line in enumerate(lines, start=1):
+        if TBD_LINE.match(line):
+            continue
+        for match in TOOL_REFERENCE.finditer(line):
+            found.append((number, match.group(1)))
+    return found
+
+
+def describe_tool(path: Path, timeout: float) -> str | None:
+    """`None` when `<path> --describe` prints a valid, successful envelope; otherwise why it did not."""
+    try:
+        result = subprocess.run(
+            [sys.executable, str(path), "--describe"], capture_output=True, text=True, timeout=timeout, check=False
+        )
+    except subprocess.TimeoutExpired:
+        return f"did not finish within {timeout}s"
+    except OSError as exc:
+        return f"could not be run: {exc.strerror or exc}"
+    if result.returncode != 0:
+        tail = result.stderr.strip().splitlines()[-1:] or [""]
+        return f"exited {result.returncode}: {tail[0]}"
+    try:
+        envelope = json.loads(result.stdout)
+    except ValueError:
+        return "printed no valid JSON envelope on stdout"
+    if not isinstance(envelope, dict) or any(key not in envelope for key in ENVELOPE_KEYS):
+        return f"printed an envelope missing one of {', '.join(ENVELOPE_KEYS)}"
+    if envelope["ok"] is not True:
+        return f"printed ok: {envelope['ok']!r}"
+    return None
+
+
+def check_tool_references(
+    root: Path, file: Path, lines: Sequence[str], cache: dict[str, str | None], out: Outcome, *, timeout: float
+) -> None:
+    for line_number, name in tool_name_occurrences(lines):
+        reference = f"{RECIPES_DIRNAME}/tools/{name}.py"
+        resolved = root / RECIPES_DIRNAME / "tools" / f"{name}.py"
+        if not resolved.is_file():
+            out.error(file, line_number, f"the tool {reference} does not exist")
+            continue
+        if name not in cache:
+            cache[name] = describe_tool(resolved, timeout)
+        problem = cache[name]
+        if problem is not None:
+            out.error(file, line_number, f"{reference} --describe {problem}")
+
+
 # --- Putting it together ----------------------------------------------------------------------------------
 
 
@@ -256,17 +327,19 @@ def find_markdown(root: Path) -> list[Path]:
     return sorted(recipes.rglob("*.md"))
 
 
-def lint(root: Path, files: Sequence[Path]) -> Outcome:
+def lint(root: Path, files: Sequence[Path], *, describe_timeout: float = DESCRIBE_TIMEOUT_S) -> Outcome:
     out = Outcome()
-    cache: dict[Path, set[str]] = {}
+    link_cache: dict[Path, set[str]] = {}
+    tool_cache: dict[str, str | None] = {}
     for file in files:
         text = file.read_text(encoding="utf-8")
         lines = text.splitlines()
         if not excluded_from_links(file, root):
-            check_links(root, file, lines, cache, out)
+            check_links(root, file, lines, link_cache, out)
         if file.name == "SKILL.md":
             check_frontmatter(file, text, out)
         check_size(file, lines, out)
+        check_tool_references(root, file, lines, tool_cache, out, timeout=describe_timeout)
     out.errors.sort()
     return out
 
