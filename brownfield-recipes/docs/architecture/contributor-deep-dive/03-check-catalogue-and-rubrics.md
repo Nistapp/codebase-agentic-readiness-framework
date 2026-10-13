@@ -2,10 +2,14 @@
 
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain how checks are defined once in `catalogue.json`, what keeps it true, and how a check is judged.
-> **Status:** Live for the catalogue. The rubrics that say how an agent judges a check are planned.
+> **Status:** Live for the catalogue and the anatomy. The check files themselves are still being written.
 
 > [!NOTE]
-> Planned. The check files that hold each check's rubric do not exist yet, so section 3 below is a placeholder. Filled in by roadmap steps S3.1–S3.3. The catalogue itself, [`catalogue.json`](../../../catalogue.json), exists and is tested.
+> Planned. Only the anatomy (section 3 below) and the `IDX` family are written so far
+> ([`audit/checks/README.md`](../../../audit/checks/README.md),
+> [`01-discovery-and-index.md`](../../../audit/checks/01-discovery-and-index.md), S3.1.1). The remaining
+> families are filled in by the rest of roadmap steps S3.1–S3.3. The catalogue itself,
+> [`catalogue.json`](../../../catalogue.json), exists and is tested.
 
 ---
 
@@ -32,7 +36,15 @@ A requirement verified by a person (`human`) or by the owner's declaration (`att
 
 ## 3. Rubric anatomy
 
-- TBD: why it matters, look for, rubric, evidence, absence proof, engine, pitfalls.
+Every check file under [`audit/checks/`](../../../audit/checks/) follows one fixed shape, set out in that
+folder's own [`README.md`](../../../audit/checks/README.md): `Why it matters`, `Severity`, `Engine`,
+`Method`, `Look for`, `Rubric` (a verdict per outcome, including when it is `UNKNOWN`), `Evidence to cite`,
+`Absence proof`, `Remediation` and `Pitfalls`. `Engine` and `Method` are additions beyond DP §5.2: they say
+which engine check backs this one (or `none` for an agent-only check) and repeat the catalogue's `method`,
+so the file is readable without a second lookup. A rubric names observable thresholds, never adjectives;
+a `FAIL` that claims an absence must record the `searches[]` entries that looked for it. See
+[`01-discovery-and-index.md`](../../../audit/checks/01-discovery-and-index.md) for the pattern applied to
+`IDX-01`–`IDX-03`.
 
 ## 4. Traceability and versions
 
