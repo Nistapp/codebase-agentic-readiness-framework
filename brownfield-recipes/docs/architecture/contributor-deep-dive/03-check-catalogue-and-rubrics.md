@@ -3,8 +3,8 @@
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain how checks are defined once in `catalogue.json`, what keeps it true, and how a check is judged.
 > **Status:** Live for the catalogue, the anatomy, S3.1's four check families (`IDX`, `AGT`, `DOC`,
-> `CMD`) and S3.2's four (`TOOL`, `CI`, `BASE`, `CON`); `S3.2` is closed. The remaining families (`S3.3`)
-> are still being written.
+> `CMD`), S3.2's four (`TOOL`, `CI`, `BASE`, `CON`) and S3.3's first family (`EXEC`); `S3.1` and `S3.2`
+> are closed, `S3.3` is in progress. The remaining `S3.3` families are still being written.
 
 > [!NOTE]
 > Planned. `S3.1` is closed:
@@ -18,10 +18,10 @@
 > rubric exists — its catalogue `status` is now `implemented`),
 > [`07-baselines-and-ratchet.md`](../../../audit/checks/07-baselines-and-ratchet.md) (`BASE`) and
 > [`08-constraints.md`](../../../audit/checks/08-constraints.md) (`CON`) are also written, closing `S3.2`
-> (18 more checks: `TOOL` 6, `CI` 4, `BASE` 4, `CON` 4). The remaining families (`EXEC`, `TST`, `NAV`,
-> `SEC`, `HYG`) are filled in by roadmap step `S3.3`. The catalogue itself,
-> [`catalogue.json`](../../../catalogue.json),
-> exists and is tested.
+> (18 more checks: `TOOL` 6, `CI` 4, `BASE` 4, `CON` 4).
+> [`09-execution-determinism.md`](../../../audit/checks/09-execution-determinism.md) (`EXEC`, 7 checks) is
+> the first family of `S3.3`. The remaining families (`TST`, `NAV`, `SEC`, `HYG`) are still being written.
+> The catalogue itself, [`catalogue.json`](../../../catalogue.json), exists and is tested.
 
 ---
 

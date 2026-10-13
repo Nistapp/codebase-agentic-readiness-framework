@@ -55,7 +55,7 @@
 |---|---|---|
 | [1. Tool Contract](contributor-deep-dive/01-tool-contract.md) | The contract every tool follows | Live |
 | [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the validator, the report builder, the engine adapter and the renderer are live) |
-| [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live for the catalogue, the anatomy, S3.1 (IDX, AGT, DOC, CMD) and S3.2 (TOOL, CI, BASE, CON), both closed; the rest Planned (S3.3) |
+| [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live for the catalogue, the anatomy, S3.1 (IDX, AGT, DOC, CMD) and S3.2 (TOOL, CI, BASE, CON), both closed, and S3.3's EXEC; the rest of S3.3 (TST, NAV, SEC, HYG) still being written |
 | [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Planned (S3.4) |
 | [5. Evaluation](contributor-deep-dive/05-evaluation.md) | Corpus, metrics, models | Planned (S4.1) |
 
