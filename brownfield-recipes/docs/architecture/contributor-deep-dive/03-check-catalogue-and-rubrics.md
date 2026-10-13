@@ -2,32 +2,31 @@
 
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain how checks are defined once in `catalogue.json`, what keeps it true, and how a check is judged.
-> **Status:** Live for the catalogue, the anatomy, S3.1's four check families (`IDX`, `AGT`, `DOC`,
-> `CMD`), S3.2's four (`TOOL`, `CI`, `BASE`, `CON`) and S3.3's first four (`EXEC`, `TST`, `NAV`, `SEC`);
-> `S3.1` and `S3.2` are closed, `S3.3` is in progress. The remaining `S3.3` family (`HYG`) is still being
-> written.
+> **Status:** Live for the catalogue, the anatomy, and every check family: S3.1 (`IDX`, `AGT`, `DOC`,
+> `CMD`), S3.2 (`TOOL`, `CI`, `BASE`, `CON`) and S3.3 (`EXEC`, `TST`, `NAV`, `SEC`, `HYG`). `S3.1`, `S3.2`
+> and `S3.3` are all closed.
 
-> [!NOTE]
-> Planned. `S3.1` is closed:
-> [`01-discovery-and-index.md`](../../../audit/checks/01-discovery-and-index.md) (`IDX`),
-> [`02-agent-governance.md`](../../../audit/checks/02-agent-governance.md) (`AGT`, including `AGT-11`,
-> the first agent-only check whose rubric exists — its catalogue `status` is now `implemented`),
-> [`03-documentation-contract.md`](../../../audit/checks/03-documentation-contract.md) (`DOC`) and
-> [`04-command-surface.md`](../../../audit/checks/04-command-surface.md) (`CMD`).
-> [`05-tooling.md`](../../../audit/checks/05-tooling.md) (`TOOL`),
-> [`06-ci.md`](../../../audit/checks/06-ci.md) (`CI`, including `CI-04`, the second agent-only check whose
-> rubric exists — its catalogue `status` is now `implemented`),
-> [`07-baselines-and-ratchet.md`](../../../audit/checks/07-baselines-and-ratchet.md) (`BASE`) and
-> [`08-constraints.md`](../../../audit/checks/08-constraints.md) (`CON`) are also written, closing `S3.2`
-> (18 more checks: `TOOL` 6, `CI` 4, `BASE` 4, `CON` 4).
-> [`09-execution-determinism.md`](../../../audit/checks/09-execution-determinism.md) (`EXEC`, 7 checks),
-> [`10-tests.md`](../../../audit/checks/10-tests.md) (`TST`, 5 checks, including `TST-02`, the pack's one
-> Tier-C probe), [`11-navigation.md`](../../../audit/checks/11-navigation.md) (`NAV`, 5 checks, including
-> `NAV-04` and `NAV-05`, informational and unscored) and
-> [`12-security-hygiene.md`](../../../audit/checks/12-security-hygiene.md) (`SEC`, 3 checks, with a
-> header note that no finding may quote a secret value) are `S3.3`'s first four families. The remaining
-> family (`HYG`) is still being written. The catalogue itself,
-> [`catalogue.json`](../../../catalogue.json), exists and is tested.
+Every check family under [`audit/checks/`](../../../audit/checks/) is now written, 71 checks across
+thirteen files:
+[`01-discovery-and-index.md`](../../../audit/checks/01-discovery-and-index.md) (`IDX`),
+[`02-agent-governance.md`](../../../audit/checks/02-agent-governance.md) (`AGT`, including `AGT-11`, the
+first agent-only check whose rubric exists — its catalogue `status` is now `implemented`),
+[`03-documentation-contract.md`](../../../audit/checks/03-documentation-contract.md) (`DOC`),
+[`04-command-surface.md`](../../../audit/checks/04-command-surface.md) (`CMD`),
+[`05-tooling.md`](../../../audit/checks/05-tooling.md) (`TOOL`),
+[`06-ci.md`](../../../audit/checks/06-ci.md) (`CI`, including `CI-04`, the second agent-only check whose
+rubric exists — its catalogue `status` is now `implemented`),
+[`07-baselines-and-ratchet.md`](../../../audit/checks/07-baselines-and-ratchet.md) (`BASE`),
+[`08-constraints.md`](../../../audit/checks/08-constraints.md) (`CON`),
+[`09-execution-determinism.md`](../../../audit/checks/09-execution-determinism.md) (`EXEC`),
+[`10-tests.md`](../../../audit/checks/10-tests.md) (`TST`, including `TST-02`, the pack's one Tier-C
+probe), [`11-navigation.md`](../../../audit/checks/11-navigation.md) (`NAV`, including `NAV-04` and
+`NAV-05`, informational and unscored),
+[`12-security-hygiene.md`](../../../audit/checks/12-security-hygiene.md) (`SEC`, with a header note that
+no finding may quote a secret value) and
+[`13-hygiene-informational.md`](../../../audit/checks/13-hygiene-informational.md) (`HYG`, eleven
+checks, all informational and unscored). The catalogue itself,
+[`catalogue.json`](../../../catalogue.json), exists and is tested.
 
 ---
 
