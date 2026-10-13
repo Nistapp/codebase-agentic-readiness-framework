@@ -64,8 +64,9 @@ Why it matters   A hardcoded credential is the same exposure as a tracked `.env`
 Severity         BLOCKER
 Engine           `SEC-02`. Scans tracked text files (falling back to the whole inventory, stated in
                  `detail`, when git cannot report tracked state) against `audit.probes.REDACTION_PATTERNS`:
-                 unambiguous shape patterns (`sk-...`, `ghp_...`, `AKIA...`, `BEGIN PRIVATE KEY`, a
-                 `Bearer` token) that always fire, plus one keyword-assignment pattern (`token`,
+                 unambiguous shape patterns (`sk-...`, `ghp_...`, `AKIA...`, a `Bearer` token, and the PEM
+                 private-key header `BEGIN PRIVATE KEY`) <!-- pragma: allowlist secret -->
+                 that always fire, plus one keyword-assignment pattern (`token`,
                  `password`, `api_key`, and the like) that fires only when a deterministic guard judges
                  the assigned value to actually look like a secret — a quoted literal that is not a
                  reference to the environment or a secret store (`${NAME}`, `os.environ/NAME`,
