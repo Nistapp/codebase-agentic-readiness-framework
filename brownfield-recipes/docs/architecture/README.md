@@ -29,7 +29,7 @@
 | [Run an audit](../how-to/run-an-audit.md) | Produce a confirmed report for a repo | Planned (S3.5) |
 | [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Planned (S5.4) |
 | [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits (S2.3); implementations Planned (S5.1) |
-| [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Planned (S3.4) |
+| [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Live; four profiles exist (S3.4 closed) |
 | [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Planned (S4.1) |
 
 ## Reference
@@ -56,7 +56,7 @@
 | [1. Tool Contract](contributor-deep-dive/01-tool-contract.md) | The contract every tool follows | Live |
 | [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the validator, the report builder, the engine adapter and the renderer are live) |
 | [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live; every check family is written (S3.1, S3.2, S3.3 all closed), 71 checks across thirteen files |
-| [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Planned (S3.4) |
+| [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Live; S3.4 is closed, four profiles written |
 | [5. Evaluation](contributor-deep-dive/05-evaluation.md) | Corpus, metrics, models | Planned (S4.1) |
 
 ## Framework Dependencies
