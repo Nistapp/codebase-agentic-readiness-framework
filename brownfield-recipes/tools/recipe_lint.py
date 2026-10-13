@@ -7,7 +7,7 @@ oversize files.
     recipe_lint.py <root>
 
 ``<root>`` is the repository that holds ``brownfield-recipes/``; a link may climb out of that folder (a check
-file citing ``brownfield-legacy/Phased-Approach.md`` does), but never out of ``<root>``. Four checks, each
+file citing ``brownfield-legacy/Phased-Approach.md`` does), but never out of ``<root>``. Seven checks, each
 independent of the others:
 
 - **Links.** Every inline Markdown link (``[text](target)``, never an image or a reference-style link, neither
@@ -28,6 +28,20 @@ independent of the others:
   markers) is skipped, which is how this project already marks a tool that is Planned. A bare ``tools/...``
   with no ``brownfield-recipes/`` prefix is some other project's own tools folder (the engine's
   ``deterministic-audit/tools/build.py`` does not even follow this contract) and is never checked.
+- **Check references.** A catalogue check ID (``CMD-01``, ``AGT-11``, ...), wherever a line names one, must be
+  in ``catalogue.json``.
+- **Requirement references.** A requirement ID (``REQ-SH-022``, ``REQ-BF-004``, ...) must be a heading in
+  ``spec/readiness-requirements.md``.
+- **Playbook references.** A playbook named as ``Playbook `<name>` `` or ``"playbook": "<name>"`` must be one
+  ``catalogue.json`` names. A playbook may be named before its file exists under ``implement/playbooks/``
+  (``schema/SCHEMA.md``, "Rules beyond the schema", rule 2: the catalogue, not the folder, is what "exists"
+  means, until S5.2 writes the files), so this never checks the folder.
+
+These last three read ``catalogue.json`` and ``spec/readiness-requirements.md`` under ``<root>``; when either is
+missing or unreadable, the check it feeds is silently skipped rather than failing the whole run, so the rule
+still works on a minimal tree that has no catalogue or spec of its own. They skip ``deterministic-audit/``
+entirely: the engine has its own check registry and its own fixtures, which are data, not recipe prose, and
+neither is governed by ``catalogue.json``.
 
 Nothing is written, apart from a tool's own ``--describe``, which the contract guarantees does no work and
 writes nothing either. Standard library only.
@@ -65,9 +79,14 @@ LINE_ANCHOR = re.compile(r"^L([0-9]+)(?:-L([0-9]+))?\Z")
 TOOL_REFERENCE = re.compile(rf"{re.escape(RECIPES_DIRNAME)}/tools/([A-Za-z_][A-Za-z0-9_]*)\.py")
 TBD_LINE = re.compile(r"^\s*(?:[-*>]\s*)*TBD:")
 ENVELOPE_KEYS = ("tool", "version", "ok", "data", "warnings", "truncated")
+REQUIREMENT_ID = re.compile(r"\bREQ-[A-Z]+-[0-9]+\b")
+REQUIREMENT_HEADING = re.compile(r"^### (REQ-[A-Z]+-[0-9]+)\b", re.MULTILINE)
+PLAYBOOK_REFERENCE = re.compile(r'Playbook `([a-z][a-z0-9-]*)`|"playbook":\s*"([a-z][a-z0-9-]*)"')
 
 # Whole files whose links are examples and are never meant to resolve, as a path prefix relative to <root>.
 EXCLUDED_FROM_LINKS = (f"{RECIPES_DIRNAME}/docs/templates/",)
+# Files the catalogue, requirement and playbook checks never read: the engine's own registry and fixtures.
+EXCLUDED_FROM_CATALOGUE = (f"{RECIPES_DIRNAME}/deterministic-audit/",)
 
 _FENCE = re.compile(r"^(```+|~~~+)")
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*\Z")
@@ -317,6 +336,76 @@ def check_tool_references(
             out.error(file, line_number, f"{reference} --describe {problem}")
 
 
+def excluded_from_catalogue_checks(file: Path, root: Path) -> bool:
+    relative = file.relative_to(root).as_posix()
+    return any(relative.startswith(prefix) for prefix in EXCLUDED_FROM_CATALOGUE)
+
+
+# --- The check-reference rule -------------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class Catalogue:
+    """What `catalogue.json` says exists, for the check and playbook reference rules."""
+
+    check_ids: frozenset[str]
+    playbooks: frozenset[str]
+    check_id_pattern: "re.Pattern[str] | None"
+
+
+def load_catalogue(root: Path) -> Catalogue | None:
+    """The catalogue under `<root>`, or `None` when it cannot be read: the check it feeds is then skipped."""
+    path = root / RECIPES_DIRNAME / "catalogue.json"
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+    checks = data.get("checks", [])
+    check_ids = frozenset(check["id"] for check in checks if "id" in check)
+    playbooks = frozenset(name for check in checks for name in check.get("playbooks", []))
+    families = sorted({check_id.split("-")[0] for check_id in check_ids if "-" in check_id}, key=len, reverse=True)
+    pattern = (
+        re.compile(rf"\b(?:{'|'.join(re.escape(family) for family in families)})-[0-9]{{2}}\b") if families else None
+    )
+    return Catalogue(check_ids=check_ids, playbooks=playbooks, check_id_pattern=pattern)
+
+
+def load_requirement_ids(root: Path) -> frozenset[str] | None:
+    """Every requirement ID headed in `spec/readiness-requirements.md` under `<root>`, or `None` if unreadable."""
+    path = root / "spec" / "readiness-requirements.md"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    return frozenset(REQUIREMENT_HEADING.findall(text))
+
+
+def check_catalogue_references(file: Path, lines: Sequence[str], catalogue: Catalogue, out: Outcome) -> None:
+    if catalogue.check_id_pattern is None:
+        return
+    for number, line in enumerate(lines, start=1):
+        for match in catalogue.check_id_pattern.finditer(line):
+            if match.group(0) not in catalogue.check_ids:
+                out.error(file, number, f"the check {match.group(0)!r} is not in catalogue.json")
+
+
+def check_requirement_references(
+    file: Path, lines: Sequence[str], requirement_ids: frozenset[str], out: Outcome
+) -> None:
+    for number, line in enumerate(lines, start=1):
+        for match in REQUIREMENT_ID.finditer(line):
+            if match.group(0) not in requirement_ids:
+                out.error(file, number, f"the requirement {match.group(0)!r} is not in spec/readiness-requirements.md")
+
+
+def check_playbook_references(file: Path, lines: Sequence[str], catalogue: Catalogue, out: Outcome) -> None:
+    for number, line in enumerate(lines, start=1):
+        for match in PLAYBOOK_REFERENCE.finditer(line):
+            name = match.group(1) or match.group(2)
+            if name not in catalogue.playbooks:
+                out.error(file, number, f"the catalogue names no playbook {name!r}")
+
+
 # --- Putting it together ----------------------------------------------------------------------------------
 
 
@@ -331,6 +420,8 @@ def lint(root: Path, files: Sequence[Path], *, describe_timeout: float = DESCRIB
     out = Outcome()
     link_cache: dict[Path, set[str]] = {}
     tool_cache: dict[str, str | None] = {}
+    catalogue = load_catalogue(root)
+    requirement_ids = load_requirement_ids(root)
     for file in files:
         text = file.read_text(encoding="utf-8")
         lines = text.splitlines()
@@ -340,6 +431,12 @@ def lint(root: Path, files: Sequence[Path], *, describe_timeout: float = DESCRIB
             check_frontmatter(file, text, out)
         check_size(file, lines, out)
         check_tool_references(root, file, lines, tool_cache, out, timeout=describe_timeout)
+        if not excluded_from_catalogue_checks(file, root):
+            if catalogue is not None:
+                check_catalogue_references(file, lines, catalogue, out)
+                check_playbook_references(file, lines, catalogue, out)
+            if requirement_ids is not None:
+                check_requirement_references(file, lines, requirement_ids, out)
     out.errors.sort()
     return out
 

@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""The recipe linter: each of its four rules (links, SKILL.md frontmatter, size, tool references) has a fixture
+"""The recipe linter: each of its seven rules (links, SKILL.md frontmatter, size, tool, check, requirement and
+playbook references) has a fixture
 that passes it and one that breaks it, and the tool honours the contract (envelope, exit codes, nothing written).
 
 A fixture is a small repository tree built in a temporary folder, with its own `brownfield-recipes/` so the tool
@@ -44,6 +45,16 @@ class FixtureRepo:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content, encoding="utf-8")
         return path
+
+    def write_catalogue(self, checks: list[dict[str, Any]]) -> Path:
+        return self.write(
+            "brownfield-recipes/catalogue.json",
+            json.dumps({"catalogue_version": "0.1.0", "fingerprint": "0" * 16, "checks": checks}),
+        )
+
+    def write_requirements(self, ids: list[str]) -> Path:
+        body = "\n\n".join(f"### {req_id} — Some requirement\n\nBody.\n" for req_id in ids)
+        return self.write("spec/readiness-requirements.md", body + "\n")
 
 
 class FixtureTests(unittest.TestCase):
@@ -348,6 +359,89 @@ class ToolReferenceTests(FixtureTests):
         )
         self.assertEqual(self.lint().errors, [])
         self.assertEqual((tool.parent / "calls.txt").read_text(encoding="utf-8"), "1")
+
+
+# --- The check, requirement and playbook reference rules -----------------------------------------------------
+
+
+def a_check(check_id: str, playbooks: Sequence[str] = ()) -> dict[str, Any]:
+    return {"id": check_id, "playbooks": list(playbooks)}
+
+
+class CatalogueReferenceTests(FixtureTests):
+    def test_a_known_check_id_passes(self) -> None:
+        self.repo.write_catalogue([a_check("CMD-01")])
+        self.repo.write("brownfield-recipes/docs/source.md", "See `CMD-01`.\n")
+        self.assertEqual(self.lint().errors, [])
+
+    def test_an_unknown_check_id_is_reported(self) -> None:
+        self.repo.write_catalogue([a_check("CMD-01")])
+        self.repo.write("brownfield-recipes/docs/source.md", "See `CMD-99`.\n")
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("the check 'CMD-99' is not in catalogue.json", errors[0])
+
+    def test_a_check_id_inside_a_fenced_json_example_is_still_checked(self) -> None:
+        self.repo.write_catalogue([a_check("SEC-02")])
+        self.repo.write("brownfield-recipes/docs/source.md", '```json\n{"check": "SEC-99"}\n```\n')
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("'SEC-99'", errors[0])
+
+    def test_a_requirement_id_like_fragment_of_another_check_family_is_not_a_false_positive(self) -> None:
+        # REQ-SH-022 must not look like a check in family "SH".
+        self.repo.write_catalogue([a_check("CMD-01")])
+        self.repo.write_requirements(["REQ-SH-022"])
+        self.repo.write("brownfield-recipes/docs/source.md", "See `REQ-SH-022`.\n")
+        self.assertEqual(self.lint().errors, [])
+
+    def test_a_known_requirement_id_passes(self) -> None:
+        self.repo.write_requirements(["REQ-SH-022"])
+        self.repo.write("brownfield-recipes/docs/source.md", "See `REQ-SH-022`.\n")
+        self.assertEqual(self.lint().errors, [])
+
+    def test_an_unknown_requirement_id_is_reported(self) -> None:
+        self.repo.write_requirements(["REQ-SH-022"])
+        self.repo.write("brownfield-recipes/docs/source.md", "See `REQ-SH-999`.\n")
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("the requirement 'REQ-SH-999' is not in spec/readiness-requirements.md", errors[0])
+
+    def test_a_known_playbook_cited_in_prose_passes(self) -> None:
+        self.repo.write_catalogue([a_check("CON-04", playbooks=["add-deny-rules"])])
+        self.repo.write("brownfield-recipes/docs/source.md", "Playbook `add-deny-rules` fixes it.\n")
+        self.assertEqual(self.lint().errors, [])
+
+    def test_a_known_playbook_cited_in_json_passes(self) -> None:
+        self.repo.write_catalogue([a_check("CON-04", playbooks=["add-deny-rules"])])
+        self.repo.write(
+            "brownfield-recipes/docs/source.md",
+            '```json\n{"remediation": {"playbook": "add-deny-rules"}}\n```\n',
+        )
+        self.assertEqual(self.lint().errors, [])
+
+    def test_an_unknown_playbook_is_reported(self) -> None:
+        self.repo.write_catalogue([a_check("CON-04", playbooks=["add-deny-rules"])])
+        self.repo.write("brownfield-recipes/docs/source.md", "Playbook `bogus-playbook` fixes it.\n")
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("the catalogue names no playbook 'bogus-playbook'", errors[0])
+
+    def test_a_playbook_with_no_file_yet_still_passes(self) -> None:
+        # schema/SCHEMA.md rule 2: the catalogue, not the implement/playbooks/ folder, is what "exists" means.
+        self.repo.write_catalogue([a_check("CON-04", playbooks=["add-deny-rules"])])
+        self.assertFalse((self.repo.root / "brownfield-recipes" / "implement").exists())
+        self.repo.write("brownfield-recipes/docs/source.md", "Playbook `add-deny-rules` fixes it.\n")
+        self.assertEqual(self.lint().errors, [])
+
+    def test_no_catalogue_or_requirements_file_skips_these_checks_without_crashing(self) -> None:
+        self.repo.write("brownfield-recipes/docs/source.md", "See `CMD-99` and `REQ-SH-999`.\n")
+        self.assertEqual(self.lint().errors, [])
+
+    def test_deterministic_audit_is_never_checked_against_the_catalogue(self) -> None:
+        self.repo.write_catalogue([a_check("CMD-01")])
+        self.repo.write("brownfield-recipes/deterministic-audit/docs/source.md", "See `CMD-99`, the engine's own.\n")
+        self.assertEqual(self.lint().errors, [])
 
 
 # --- The tool contract -------------------------------------------------------------------------------------
