@@ -73,7 +73,7 @@ A tool reads the repository it is pointed at and never writes there: no report, 
 
 ### 7. Never replace a file
 
-A tool that writes a file gives it a name that carries the repository's name, `<label>.<kind>.<stamp>.<ext>`, and creates it only if the name is free. When the name is taken, which happens if two runs start in the same second, the tool adds `-2`, `-3` and so on after the stamp. No tool has an overwrite option. The one exception is a run updating its own draft report in place, atomically. The rule, the label and the stamp are defined under "Output files" in the [report schema notes](../schema/SCHEMA.md#output-files).
+A tool that writes a file gives it a name that carries the repository's name, `<label>.<kind>.<stamp>.<ext>`, and creates it only if the name is free. When the name is taken, which happens if two runs start in the same second, the tool adds `-2`, `-3` and so on after the stamp. No tool has an overwrite option. There are two exceptions, each a run atomically replacing a file it owns in place: a run updating its own draft report, and `recipe_lint.py --write-catalogue` regenerating [`tools/CATALOGUE.md`](CATALOGUE.md). The rule, the label and the stamp are defined under "Output files" in the [report schema notes](../schema/SCHEMA.md#output-files).
 
 ### 8. Check the Python version first
 

@@ -1,11 +1,8 @@
 # Tools CLI Reference
 
 > **Audience:** Everyone
-> **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py` and all seven of `recipe_lint.py`'s rules. The rest is planned.
-
-> [!NOTE]
-> Planned. The generated `tools/CATALOGUE.md` (S2.8.3) is the rest of roadmap step S2.8; `progress.py` and `check_drift.py` are S5.1.
+> **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../tools/CATALOGUE.md)
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py` and all eight of `recipe_lint.py`'s rules, including the generated catalogue. `progress.py` and `check_drift.py` are planned (S5.1).
 
 ---
 
@@ -18,7 +15,7 @@
 | [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live |
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
 | [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
-| [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools and unknown check, requirement or playbook IDs | Live; `tools/CATALOGUE.md` planned (S2.8.3) |
+| [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, and a stale tool catalogue | Live |
 | `progress.py` | Manages implementation progress | Planned (S5.1) |
 | `check_drift.py` | Lists findings affected by changes since the audit | Planned (S5.1) |
 
@@ -649,15 +646,13 @@ A run writes one file, the one `--out` names, in `facts.schema.json`'s format: `
 
 ## recipe_lint.py
 
-Checks the Markdown under `brownfield-recipes/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10), every `brownfield-recipes/tools/<name>.py` the Markdown names exists and answers `--describe`, and every check, requirement and playbook ID named is one `catalogue.json` or `spec/readiness-requirements.md` actually has. It reads only, apart from running a named tool's own `--describe`, which the contract guarantees does no work; nothing is written. The source is [`recipe_lint.py`](../../tools/recipe_lint.py).
-
-> [!NOTE]
-> Planned. The generated, byte-stable `tools/CATALOGUE.md` (S2.8.3) is not implemented yet.
+Checks the Markdown under `brownfield-recipes/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10), every `brownfield-recipes/tools/<name>.py` the Markdown names exists and answers `--describe`, every check, requirement and playbook ID named is one `catalogue.json` or `spec/readiness-requirements.md` actually has, and the generated [`tools/CATALOGUE.md`](../../tools/CATALOGUE.md) matches what every tool's own `--describe` would produce today. It reads only, apart from running each tool's own `--describe`, which the contract guarantees does no work; nothing is written, unless `--write-catalogue` is given. The source is [`recipe_lint.py`](../../tools/recipe_lint.py).
 
 **Synopsis**
 
 ```text
 python3 brownfield-recipes/tools/recipe_lint.py <root>
+python3 brownfield-recipes/tools/recipe_lint.py <root> --write-catalogue
 ```
 
 **Inputs**
@@ -665,18 +660,19 @@ python3 brownfield-recipes/tools/recipe_lint.py <root>
 | Argument | Meaning |
 |---|---|
 | `<root>` | The repository that holds `brownfield-recipes/`. It must exist and be a directory. A link may resolve anywhere under it, even outside `brownfield-recipes/` (a check file citing `brownfield-legacy/Phased-Approach.md` does); a link that resolves outside `<root>` is an error. |
+| `--write-catalogue` | Regenerate `brownfield-recipes/tools/CATALOGUE.md` from every tool's own `--describe` output and exit; none of the other rules run in this mode. |
 
 **Outputs**
 
-Nothing is written. A clean run's `data` holds `root` and `files`, the count of Markdown files checked.
+Nothing is written by a plain `recipe_lint.py <root>`; a clean run's `data` holds `root` and `files`, the count of Markdown files checked. `--write-catalogue` atomically replaces `brownfield-recipes/tools/CATALOGUE.md` (the second documented exception to "a tool never replaces a file", alongside the draft report; `tools/README.md` rule 7) and its `data` holds `file`, `bytes` and `tools`, the count of tools described.
 
 **Exit codes**
 
 | Code | When |
 |---|---|
-| `0` | Every file is clean. |
+| `0` | Every file is clean, or (with `--write-catalogue`) the catalogue was written. |
 | `1` | A bad argument, or `<root>` has no `brownfield-recipes/` directory. |
-| `2` | A link does not resolve, an anchor matches nothing, a `SKILL.md`'s frontmatter is invalid, a file is over its line budget, a named tool is missing or fails `--describe`, or a named check, requirement or playbook ID does not exist. `data.errors` lists every one, as `path:line: message`. |
+| `2` | A link does not resolve, an anchor matches nothing, a `SKILL.md`'s frontmatter is invalid, a file is over its line budget, a named tool is missing or fails `--describe`, a named check, requirement or playbook ID does not exist, or `tools/CATALOGUE.md` is missing, stale or could not be generated. `data.errors` lists every one; the markdown rules give `path:line: message`. |
 
 **Errors**
 
@@ -700,3 +696,6 @@ Nothing is written. A clean run's `data` holds `root` and `files`, the count of 
 | `the check '...' is not in catalogue.json` | Fix the ID, or add the check to `catalogue.json`. Never checked inside `deterministic-audit/`, which has its own registry. |
 | `the requirement '...' is not in spec/readiness-requirements.md` | Fix the ID, or add the requirement to the spec. |
 | `the catalogue names no playbook '...'` | Fix the name, or add it to a check's `playbooks` in `catalogue.json`; the file under `implement/playbooks/` may not exist yet (`schema/SCHEMA.md`, rule 2). |
+| `brownfield-recipes/tools/CATALOGUE.md is missing; regenerate it with 'recipe_lint.py <root> --write-catalogue'` | Run `--write-catalogue` and commit the result. |
+| `brownfield-recipes/tools/CATALOGUE.md is stale; regenerate it with 'recipe_lint.py <root> --write-catalogue'` | A tool's manifest changed since the file was last generated; run `--write-catalogue` and commit the result. |
+| `N tool(s) could not be described` (with `--write-catalogue`) | Fix the tool named in each error so `--describe` succeeds, then try again; nothing is written while any tool fails. |

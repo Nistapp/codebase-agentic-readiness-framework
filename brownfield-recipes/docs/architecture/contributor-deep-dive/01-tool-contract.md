@@ -4,9 +4,6 @@
 > **Goal:** Explain the contract every deterministic tool follows, what enforces it, and why it has this shape.
 > **Status:** Live.
 
-> [!NOTE]
-> Planned. The tool catalogue generated from each tool's manifest is planned for S2.8.3. `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py` and `recipe_lint.py` follow the contract today.
-
 ---
 
 ## 1. Envelope and exit codes
@@ -29,7 +26,7 @@ An agent that calls a dozen tools needs one way to read them all, so every tool 
 
 Each tool declares a [`ToolInfo`](../../../tools/_common.py#L103-L123): its name, summary, synopsis and what it writes. `<tool>.py --describe` prints its `manifest()` as the envelope's `data`, runs no work and needs no other argument. The manifest says `network: false` and `writes_inside_target: false` as facts about every tool, and lists the exit codes.
 
-The manifest is the machine-readable source for the [Tools CLI reference](../../reference/tools-cli.md). A catalogue that collects the manifests into `tools/CATALOGUE.md`, and a linter that fails when a recipe names a tool that does not exist, are planned for S2.8.
+The manifest is the machine-readable source for the [Tools CLI reference](../../reference/tools-cli.md). [`recipe_lint.py`](../../../tools/recipe_lint.py) collects every tool's manifest into [`tools/CATALOGUE.md`](../../../tools/CATALOGUE.md), sorted by name and byte-stable, and fails `make check` when the file is stale or a recipe names a tool that does not exist.
 
 ## 3. Safety properties
 
