@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py` and `facts.py`. The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py` and `recipe_lint.py`'s links, frontmatter and size rules. The rest is planned.
 
 > [!NOTE]
-> Planned for the rest. `recipe_lint.py` and the generated `tools/CATALOGUE.md` are filled in by roadmap step S2.8, and `progress.py` and `check_drift.py` by S5.1.
+> Planned. `recipe_lint.py`'s reference checks (that a tool, check, playbook or requirement ID it names exists, S2.8.2) and the generated `tools/CATALOGUE.md` (S2.8.3) are the rest of roadmap step S2.8; `progress.py` and `check_drift.py` are S5.1.
 
 ---
 
@@ -18,7 +18,7 @@
 | [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live |
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
 | [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
-| `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
+| [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter and oversize files | Live (links, frontmatter, size); reference checks and `CATALOGUE.md` planned (S2.8.2, S2.8.3) |
 | `progress.py` | Manages implementation progress | Planned (S5.1) |
 | `check_drift.py` | Lists findings affected by changes since the audit | Planned (S5.1) |
 
@@ -646,3 +646,49 @@ A run writes one file, the one `--out` names, in `facts.schema.json`'s format: `
 | `repo_label ... is not allowed` | Use a label that matches the pattern above. |
 | `--max-files must be at least 1, not ...` | Pass a whole number of at least 1. |
 | `the facts do not fit facts.schema.json, which is a bug in the tool` | Report it; `data.errors` names each place. Nothing written. |
+
+## recipe_lint.py
+
+Checks the Markdown under `brownfield-recipes/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, and a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10). It reads only; nothing is written. The source is [`recipe_lint.py`](../../tools/recipe_lint.py).
+
+> [!NOTE]
+> Planned. That a tool, check, playbook or requirement ID named in the Markdown actually exists (S2.8.2) and the generated, byte-stable `tools/CATALOGUE.md` (S2.8.3) are not implemented yet.
+
+**Synopsis**
+
+```text
+python3 brownfield-recipes/tools/recipe_lint.py <root>
+```
+
+**Inputs**
+
+| Argument | Meaning |
+|---|---|
+| `<root>` | The repository that holds `brownfield-recipes/`. It must exist and be a directory. A link may resolve anywhere under it, even outside `brownfield-recipes/` (a check file citing `brownfield-legacy/Phased-Approach.md` does); a link that resolves outside `<root>` is an error. |
+
+**Outputs**
+
+Nothing is written. A clean run's `data` holds `root` and `files`, the count of Markdown files checked.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | Every file is clean. |
+| `1` | A bad argument, or `<root>` has no `brownfield-recipes/` directory. |
+| `2` | A link does not resolve, an anchor matches nothing, a `SKILL.md`'s frontmatter is invalid, or a file is over its line budget. `data.errors` lists every one, as `path:line: message`. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `<root> has no brownfield-recipes/ directory` | Point `<root>` at the repository root, not at `brownfield-recipes/` itself. |
+| `the link '...' does not resolve: no such file or directory` | Fix the path, or remove the link. A placeholder link under `docs/templates/` is exempt. |
+| `the link '...' leaves <root>` | A relative link climbed out of the repository; point it at a path inside `<root>`. |
+| `the anchor #... in '...' matches no heading` | The target file's heading changed, or the anchor was typed wrong; GitHub's slug is lower case with one hyphen per removed space. |
+| `'...': the anchor #... is out of range` | A `#L<n>-L<n>` line-range anchor outgrew the file it points at; update the range. |
+| `a SKILL.md must open with '---' frontmatter and a closing '---'` | Add the frontmatter block. |
+| `name '...' must be lowercase letters, digits and hyphens, at most 64 characters` | Fix `name` to match the pattern. |
+| `name '...' must match its folder, '...'` | Rename `name` or the folder so they agree. |
+| `description is N characters; at most 1024 are allowed` | Shorten `description`. |
+| `<file> has N lines; the budget is 500` | Split the file, or move content on demand into a file it links to. |
