@@ -36,7 +36,7 @@
 
 | Page | Purpose | Status |
 |---|---|---|
-| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py` and `recipe_lint.py`'s links, frontmatter, size and tool-reference rules; the rest Planned (S2.8.2.2, S2.8.3, S5.1) |
+| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py` and `recipe_lint.py`; `progress.py`, `check_drift.py` and `tools/CATALOGUE.md` Planned (S2.8.3, S5.1) |
 | [Harness notes](../reference/harness-notes.md) | Claude Code, opencode, Codex, Cursor specifics | Planned (S4.6) |
 | [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; generated table Planned (S4.6) |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
