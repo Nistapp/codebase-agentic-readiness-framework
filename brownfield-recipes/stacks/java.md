@@ -116,6 +116,22 @@ registered by name anywhere in the build file beyond the OWASP plugin's own defa
 missing tasks (Spotless, Checkstyle, a `security` task that depends on `dependencyCheckAnalyze`), not to
 distrust the verdict.
 
+## Maven
+
+Untested: no Maven repository is in this pack's corpus; read from the engine's own Maven reader
+(`_parse_maven_plugins`, `_maven_lifecycle` in `_common.py`), not checked against a real build.
+Detection: `pom.xml` maps to the same `jvm` ecosystem as `build.gradle`, so `facts.json` does not
+distinguish the two build tools. Command surface: Maven's lifecycle gives three verbs for free, no
+plugin needed — `test` → the `test` phase, `typecheck` → `compile test-compile`, `check` → `verify`,
+richer than Gradle's test/check-only pair — invoked through the wrapper (`./mvnw`) when committed.
+`format`, `format:check`, `lint` and `security` still need a named plugin, but the engine recognises
+three directly by `artifactId`: `spotless-maven-plugin`, `maven-checkstyle-plugin`,
+`dependency-check-maven`. `CMD-02` is `UNKNOWN` for a `check` resolved only through `verify`, the same
+rule as Gradle. A real engine gap, found by reading the check rather than a repository: `EXEC-02`'s
+lockfile table recognises only `gradle.lockfile` for `jvm`, never a Maven convention, so a pure-Maven
+project is still told it is missing `gradle.lockfile` — read the finding's own evidence before repeating
+that name.
+
 ## Verified
 
 2026-10-13, against the Digital-Assistant-Server (`/home/kc/Projects/UDAN/Digital-Assistant-Server`,
@@ -131,3 +147,4 @@ dependency locking is opt-in, through a `dependencyLocking { lockAllConfiguratio
 `--write-locks`, per [Gradle's own user guide](https://docs.gradle.org/current/userguide/dependency_locking.html);
 the OWASP Dependency-Check Gradle plugin's own task is named `dependencyCheckAnalyze`, not `security`, confirmed
 against [the plugin's configuration page](https://github.com/jeremylong/DependencyCheck/blob/main/src/site/markdown/dependency-check-gradle/configuration.md).
+The `## Maven` section above is **not** verified against a repository — flagged untested throughout, and the first thing to re-check once a Maven repository joins the corpus.
