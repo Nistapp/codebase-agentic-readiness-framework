@@ -1,5 +1,5 @@
 {
-  "catalogue_version": "0.2.0",
+  "catalogue_version": "0.2.1",
   "fingerprint": "e33c95eda9f58b9d",
   "checks": [
     {
@@ -231,7 +231,7 @@
       "severity": "DEGRADER",
       "scored": true,
       "method": "agent",
-      "status": "planned",
+      "status": "implemented",
       "req_ids": [
         "REQ-SH-015"
       ],

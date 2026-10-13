@@ -259,3 +259,197 @@ Remediation      `adapt-agents-md`
 Pitfalls         A path token that is real but incidental (mentioned in a sentence with boundary vocabulary
                  by coincidence, not as a stated rule) inflates the engine's count — the agent confirms each
                  match is actually a rule before accepting a borderline `PASS` or `PARTIAL` on its face.
+
+## AGT-07 — Do-not-do / deny rules present
+
+Why it matters   Explicit prohibitions work; implicit ones do not — an agent that is never told "never
+                  weaken a test" will weaken one
+                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+Severity         DEGRADER
+Engine           `AGT-07`. Finds the prohibitions section by its heading (one of `never`/`do not`/`don't`/
+                 `must not`/`prohibit`/`forbidden`/`off-limits`, or `❌`; the same heading-detection logic
+                 `CON-01` and `CON-02` share, so this family and `CON` cannot drift on what counts as a
+                 heading). No such section at all is `FAIL`. Inside the section, each line carrying a
+                 prohibition word is checked against four concerns — tests, generated files (including
+                 `artefacts/`/`artifacts/` and build output), the default branch, secrets — and the first
+                 line to match each concern is recorded; covering all four is `PASS`, some is `PARTIAL`,
+                 none is `FAIL`. Distrust a `FAIL` on heading detection when the project uses a heading the
+                 pattern does not word-match (a bare "Rules" heading whose first line is a prohibition) —
+                 verify by reading for a list of explicit prohibitions regardless of its heading text.
+Method           automated
+Look for         The prohibitions section itself; for each of the four concerns, whether the stated rule
+                 is specific to this project (A14) rather than a generic restatement ("don't break things").
+Rubric           PASS: a prohibitions section exists and covers all four concerns (tests, generated files,
+                 the default branch, secrets) with an explicit rule for each.
+                 PARTIAL: a prohibitions section exists but covers only some of the four.
+                 FAIL: no prohibitions section exists, or one exists but covers none of the four.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: no instruction file exists to read.
+Evidence to cite A `file` evidence item per covered concern, citing the instruction file, the matching
+                 line, and the concern it satisfies in `note`.
+Absence proof    A FAIL or PARTIAL names each uncovered concern and records a `grep` search for that
+                 concern's pattern scoped to the prohibitions section (or the whole file, when no section
+                 heading was found), with its hit count.
+Remediation      `add-deny-rules` (D4: this playbook writes only the prohibitions section, nothing else in
+                 `AGENTS.md`)
+Pitfalls         A prohibition stated outside a dedicated heading (scattered through prose) is real
+                 governance but the engine's section-finder will not see it — read the whole file once
+                 before accepting a `FAIL` that rests only on heading absence.
+
+## AGT-08 — No competing instruction files, and the reach matrix is stated
+
+Why it matters   `AGENTS.md`, `CLAUDE.md` and `.cursorrules` disagreeing is obeyed as ambiguity, not
+                  flagged as a defect — inconsistent behaviour across harnesses, with no way to trace why
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+Severity         DEGRADER
+Engine           `AGT-08`. Classifies every instruction-shaped path the variant table knows: vendor-only
+                 files with no canonical counterpart are competitors (`FAIL`); a pair where one file
+                 shadows another for the same harness (only one is ever loaded) is a shadowed pair
+                 (`PARTIAL` per pair); and, when a canonical file or a competitor exists but some known
+                 harness's own instruction path is never reached by anything present, that is a reach gap
+                 (`COSMETIC`, `PARTIAL`). No findings at all is `PASS`. Distrust a competitor finding when
+                 the vendor file is a deliberate, documented one-line pointer at the canonical file (A14
+                 accepts a pointer; it is only a true competitor when it carries independent rules) —
+                 verify by reading the vendor file's content, not just its presence.
+Method           automated
+Look for         Every instruction-shaped path present (the variant table's classification); for each
+                 vendor-only file found, whether it is a pointer or an independent rule set.
+Rubric           PASS: no vendor-only competitor exists, no shadowed pair exists, and either every known
+                 harness is reached or the file states which harnesses it does not reach.
+                 PARTIAL: a shadowed pair exists, or a reach gap exists while a canonical file or a
+                 competitor is present, with no vendor-only competitor.
+                 FAIL: at least one vendor-only file carries independent rules with no canonical file
+                 reconciling it.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: no instruction-shaped path of any kind exists (`AGT-01` already owns that
+                 absence).
+Evidence to cite A `file` evidence item per competitor, shadowed pair (both paths) or reach-gap tool name.
+Absence proof    A `FAIL` for "no canonical file reconciling it" records that `AGENTS.md` was searched for
+                 (`glob`, `AGENTS.md`, repository root, `0` hits).
+Remediation      `adapt-agents-md`
+Pitfalls         A vendor file that merely restates the canonical file's rules (not a pointer, but an exact
+                 copy) is still a competitor in spirit — restated rules drift, per the project's own style
+                 guide — even though the engine's classifier may not distinguish a stale copy from a
+                 current one; the agent reads the vendor file's content against the canonical one's current
+                 text before accepting a `PASS` here.
+
+## AGT-09 — Branch and release boundary declared
+
+Why it matters   Agents must know whether they may tag, release or push, or one triggers a release it had
+                  no authority to cut
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+Severity         DEGRADER
+Engine           `AGT-09`. Looks for one line naming the branch model (`branch`/`branches`/`branching`/
+                 `main`/`dev`/`trunk`) and one naming the release boundary (`tag`/`release`/`publish`/
+                 `deploy`/`push`); both present is `PASS`, one is `PARTIAL`, neither is `FAIL`. Distrust a
+                 `PARTIAL` or `FAIL` when the project states the rule as a flat prohibition elsewhere
+                 (`AGT-07`'s own default-branch concern, "never push to main") that this check's narrower
+                 word list does not independently recognise as the release half — verify by reading
+                 whether the two facts (which branches exist, what an agent may not do with them) are both
+                 actually stated anywhere in the file, even split across sections.
+Method           automated
+Look for         The instruction file's git-conventions section; cross-reference `AGT-07`'s own evidence
+                 for the default-branch prohibition, since the two checks can both be satisfied by the
+                 same sentence read two ways.
+Rubric           PASS: the file states which branches exist and whether an agent may tag, release, publish,
+                 deploy or push.
+                 PARTIAL: only one of the two halves is stated.
+                 FAIL: neither half is stated.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: no instruction file exists to read.
+Evidence to cite A `file` evidence item for each half found, citing the instruction file and the matching
+                 line.
+Absence proof    A FAIL or PARTIAL records a `grep` search for the missing half's pattern, scoped to the
+                 instruction file, with its hit count.
+Remediation      `adapt-agents-md`
+Pitfalls         "We only have `main`" is a complete branch-model statement for a trunk-based project —
+                 do not demand a multi-branch model where the project deliberately has none; the rubric
+                 asks only that the fact be stated, not that it be elaborate.
+
+## AGT-10 — Instruction indirection resolved
+
+Why it matters   A rule the agent is told to "read elsewhere first" is only as reliable as the harness's
+                  own willingness to follow that pointer — an unconfigured deferral is a rule that may
+                  never load
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+Severity         DEGRADER
+Engine           `AGT-10`. Reads harness configuration this project can parse without a third-party parser
+                 (`.aider.conf.yml`'s `read:`, `.codex/config.toml`'s instruction-file keys,
+                 `.gemini/settings.json`'s `contextFileName`, `opencode.json`'s `instructions`) for pointers
+                 at files that do not exist (`FAIL`, one finding per broken pointer); separately, scans the
+                 entry file for a deferral phrase ("read X first", "before you start, see Y") naming a real
+                 file that no harness configuration already names (`FAIL`: loading depends on the agent
+                 choosing to follow the pointer, not on configuration). No broken pointer and no
+                 unconfigured deferral is `PASS`. Distrust a `FAIL` on deferral when the harness in use
+                 reads the entry file in full regardless of pointers (so the deferral is redundant, not
+                 risky) — verify which harness the user actually runs before treating every deferral
+                 phrase as a gap.
+Method           automated
+Look for         Harness configuration files for named instruction targets; the entry file's own text for
+                 deferral phrasing naming another file.
+Rubric           PASS: no configured pointer names a missing file, and no deferral phrase in the entry file
+                 names a file left unconfigured.
+                 PARTIAL: not used by this check (the engine's outcome is binary per gap; an agent
+                 confirming a harness reads the full file regardless overrides a `FAIL` to `PASS` with a
+                 reason, rather than inventing a `PARTIAL`).
+                 FAIL: a configured pointer names a file that does not exist, or the entry file defers to a
+                 file no configuration names.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: no instruction file exists to read and no harness configuration exists
+                 either.
+Evidence to cite A `file` evidence item citing the configuration file and the missing target (for a broken
+                 pointer), or the entry file and the deferral line plus the file it names (for an
+                 unconfigured deferral).
+Absence proof    A PASS on the deferral half, when no deferral phrase is found at all, needs no search
+                 recorded (there is no absence being claimed); a FAIL always cites the specific line, so no
+                 separate absence proof applies to this check beyond the evidence itself.
+Remediation      `adapt-agents-md`
+Pitfalls         The deferral pattern is deliberately narrow (calibrated against two real repositories) so
+                 that ordinary citations — "see `package.json` for versions" — are not flagged as risky
+                 indirection; do not widen the agent's own reading of "defers to" beyond genuine
+                 "read this before you act" phrasing, or every well-cross-referenced file starts failing.
+
+## AGT-11 — Instructions are specific and not inferable
+
+Why it matters   This is where A14 (above) is judged directly: a file full of generic, inferable advice
+                  costs inference time for no benefit, which is R-16's own finding
+                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+Severity         DEGRADER
+Engine           none — no deterministic rule can tell a derivable instruction from a specific one; this is
+                 the one check in the family with `method: agent` and no `engine_id`. Status in the
+                 catalogue is `planned` until this rubric exists; this leaf makes it exist.
+Method           agent
+Look for         Read the canonical instruction file (and every per-component one `AGT-02` found) end to
+                 end. Classify each non-heading, non-blank, non-table-separator line (the same rule-line
+                 definition `AGT-01`'s triviality check uses) into one of two buckets:
+                 - **Specific:** the line states a fact an agent could not derive from reading the code —
+                   a verified command, a boundary rule naming a real path, a prohibition, or a convention
+                   that differs from the ecosystem's own default (the four categories A14 names).
+                 - **Generic:** the line restates something either inferable from the code itself (a
+                   standard test-running instruction with no project-specific gate) or a general software
+                   engineering maxim with no project-specific content ("write clear code", "keep functions
+                   small").
+                 For every line classified specific, confirm it against the repository directly: a cited
+                 command resolves, a cited path exists, a cited convention is observably true of the code.
+Rubric           PASS: at least 80% of rule lines are specific (by the count above) and every specific line
+                 checked resolves against the repository; no overview section exceeds roughly a fifth of
+                 the file (A14: the overview is optional and must not dominate).
+                 PARTIAL: between 50% and 80% of rule lines are specific, or one or more specific lines
+                 fail to resolve against the repository.
+                 FAIL: fewer than 50% of rule lines are specific, or the file reads as a largely unedited
+                 copy of the framework's own template with no project-specific substitutions.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: no instruction file exists to read (`AGT-01` already owns that absence).
+Evidence to cite An `index_query` or `file` evidence item for each line sampled, with `note` stating the
+                 bucket (specific/generic) and, for a specific line, the confirmation performed (command
+                 resolved, path exists, convention observed) or its failure.
+Absence proof    A FAIL or PARTIAL cites the count of rule lines classified generic as a `grep`-style tally
+                 (tool `grep`, pattern "rule line", scope the instruction file, hits = the generic count),
+                 so the ratio in the verdict is traceable to a number, not an impression.
+Remediation      `adapt-agents-md`
+Pitfalls         Counting lines is a proxy, not the goal (DP §5.2's own warning about the rubric being the
+                 lever for consistency): a short file that is entirely specific must not be penalised for
+                 having "too few" lines to sample confidently, and a long file padded with specific-sounding
+                 but unverifiable claims (a boundary rule naming a path that was since deleted) must not
+                 pass just because its language matches the specific bucket's shape. Always verify, never
+                 just classify.
