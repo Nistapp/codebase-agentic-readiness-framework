@@ -3,17 +3,17 @@
 
 """Describe a repository with counts and names and no verdicts, in a file the audit reads before it assesses.
 
-IN DEVELOPMENT, until S2.7.5.3. One command::
+One command::
 
     facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]
 
-The tool writes one new file, ``facts.json``, whose format is ``schema/facts.schema.json``. This version writes every
-section: ``facts_version``, ``label``, ``git``, ``inventory``, ``stack``, ``instruction_files``, ``components`` and
-``size``, with ``caps`` for the lists that are cut. Only ``S2.7.5.3``'s tightening of the schema (every section
-required, not just ``facts_version`` and ``label``) and the golden files remain. ``--exclude`` and ``--max-files`` are
-spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the facts describe the
-inventory the engine sees. The inventory holds counts and never a path. A walk that ``--max-files`` cut short says
-``truncated`` in the file and gives a warning in the envelope; the engine records no skip reason for that.
+The tool writes one new file, ``facts.json``, whose format is ``schema/facts.schema.json``. It writes every section
+the schema names: ``facts_version``, ``label``, ``git``, ``inventory``, ``stack``, ``instruction_files``,
+``components`` and ``size``, with ``caps`` for the lists that are cut; every section is required. ``--exclude`` and
+``--max-files`` are spelled as ``engine.py`` spells them and shape the walk of ``audit.scan.build_inventory``, so the
+facts describe the inventory the engine sees. The inventory holds counts and never a path. A walk that
+``--max-files`` cut short says ``truncated`` in the file and gives a warning in the envelope; the engine records no
+skip reason for that.
 
 The instruction files are the ones that the engine's ``AGT-01`` and ``AGT-08`` see (``instruction_paths`` in
 ``audit.rules.checks.agt``), each with the pattern of the variants table that names it. The tool asks the engine and
@@ -61,8 +61,7 @@ INFO = _common.ToolInfo(
     name="facts",
     summary=(
         "Describe a repository with counts and names and no verdicts, as facts.json. "
-        "In development: writes facts_version, label, git, inventory, stack, instruction_files, components, "
-        "size and caps."
+        "Writes facts_version, label, git, inventory, stack, instruction_files, components, size and caps."
     ),
     synopsis=("facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]",),
     writes="One new file, the one --out names, which must be outside the target and must not exist. It is never replaced.",
@@ -315,8 +314,7 @@ def build_parser() -> _common.ToolParser:
         prog="facts.py",
         description=INFO.summary,
         epilog=(
-            "IN DEVELOPMENT until S2.7.5.3: the file holds facts_version, label, git, inventory, stack, "
-            "instruction_files, components, size and caps."
+            "The file holds facts_version, label, git, inventory, stack, instruction_files, components, size and caps."
         ),
     )
     parser.add_argument("target", help="the repository to describe")

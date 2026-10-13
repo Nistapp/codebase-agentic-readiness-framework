@@ -101,10 +101,23 @@ class AcceptanceTests(FactsSchemaCase):
         self.assertEqual(self.schema["properties"]["facts_version"]["const"], "0.1")
         self.assertEqual(self.example["facts_version"], "0.1")
 
-    def test_until_the_tool_writes_every_section_two_keys_are_enough(self) -> None:
-        self.assertEqual(self.schema["required"], ["facts_version", "label"])
-        self.assertEqual(messages(self.schema, {"facts_version": "0.1", "label": "x"}), [])
-        self.assertEqual(messages(self.schema, {"facts_version": "0.1", "label": "x", "stack": {}, "caps": {}}), [])
+    def test_every_section_is_required_now_the_tool_writes_them_all(self) -> None:
+        self.assertEqual(
+            self.schema["required"],
+            ["facts_version", "label", "git", "inventory", "stack", "instruction_files", "components", "size", "caps"],
+        )
+        self.assertEqual(
+            messages(self.schema, {"facts_version": "0.1", "label": "x"}),
+            [
+                "/: missing the required property 'git'",
+                "/: missing the required property 'inventory'",
+                "/: missing the required property 'stack'",
+                "/: missing the required property 'instruction_files'",
+                "/: missing the required property 'components'",
+                "/: missing the required property 'size'",
+                "/: missing the required property 'caps'",
+            ],
+        )
 
     def test_a_target_that_is_not_a_git_repository_is_valid(self) -> None:
         self.assertEqual(self.changed(lambda d: d["git"].update(sha=None, dirty=False)), [])
@@ -266,23 +279,31 @@ KINDS = ["manifest", "build", "config", "source", "test", "doc", "ci", "script",
 
 # The format, written out. Where an object sits ("*" is the first element of a list), and which keys it must have.
 REQUIRED: dict[str, list[str]] = {
-    "": ["facts_version", "label"],
+    "": ["facts_version", "label", "git", "inventory", "stack", "instruction_files", "components", "size", "caps"],
     "git": ["sha", "dirty"],
     "inventory": ["files", "bytes", "by_kind", "skipped", "truncated", "max_files", "excludes"],
     "inventory.by_kind": KINDS,
     "inventory.skipped.*": ["reason", "count"],
+    "stack": [
+        "ecosystems",
+        "source_only",
+        "package_managers",
+        "ci_providers",
+        "test_frameworks",
+        "hook_managers",
+        "notes",
+    ],
     "instruction_files.*": ["path", "variant", "size_bytes"],
     "components": ["declared", "candidates", "notes"],
     "components.declared.*": ["name", "path", "declared_by", "manifest"],
     "size": ["class", "files", "bytes", "truncated", "thresholds"],
     "size.thresholds": ["small_below", "medium_below", "large_below"],
+    "caps": ["excludes", "instruction_files", "declared_components", "candidate_components"],
     "caps.excludes": ["limit", "omitted"],
     "caps.instruction_files": ["limit", "omitted"],
     "caps.declared_components": ["limit", "omitted"],
     "caps.candidate_components": ["limit", "omitted"],
 }
-# Objects with no required key while the tool is in development. They are closed all the same.
-OPEN_ENTRIES = ["stack", "caps"]
 
 LIST_CAPS: dict[str, int] = {
     "inventory.skipped": 8,
@@ -360,20 +381,13 @@ class FormatTableTests(FactsSchemaCase):
                     )
 
     def test_each_object_is_closed(self) -> None:
-        for path in [*REQUIRED, *OPEN_ENTRIES]:
+        for path in REQUIRED:
             with self.subTest(path=path):
                 document = copy.deepcopy(self.example)
                 at_path(document, path)["extra"] = 1
                 self.assertEqual(
                     messages(self.schema, document), [f"{pointer_of(path) or '/'}: unexpected property: 'extra'"]
                 )
-
-    def test_an_open_entry_may_be_empty_until_the_tool_writes_it_whole(self) -> None:
-        for path in OPEN_ENTRIES:
-            with self.subTest(path=path):
-                document = copy.deepcopy(self.example)
-                put(document, path, {})
-                self.assertEqual(messages(self.schema, document), [])
 
     def test_each_list_has_its_cap(self) -> None:
         for path, cap in LIST_CAPS.items():
@@ -445,7 +459,7 @@ class FormatTableTests(FactsSchemaCase):
                 self.assertEqual(messages(self.schema, document), [f"{pointer_of(path)}: is below the minimum of 1"])
 
     def test_the_paths_in_the_tables_exist_in_the_example(self) -> None:
-        for path in [*REQUIRED, *OPEN_ENTRIES, *LIST_CAPS, *(p for p in STRING_LIMITS if not p.endswith(".*"))]:
+        for path in [*REQUIRED, *LIST_CAPS, *(p for p in STRING_LIMITS if not p.endswith(".*"))]:
             with self.subTest(path=path):
                 at_path(self.example, path)
 

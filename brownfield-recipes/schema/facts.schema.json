@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:codebase-agentic-readiness-framework:facts:0.1",
   "title": "Repository facts",
-  "description": "What `tools/facts.py` writes: counts and names that describe a repository, taken with the engine's own inventory and detection, with no verdict. The file holds no time, no absolute path, no machine or user name and no file content, so one repository state gives one file. IN DEVELOPMENT: until the tool writes every section, only `facts_version` and `label` are required. Field semantics and the caps are in SCHEMA.md.",
+  "description": "What `tools/facts.py` writes: counts and names that describe a repository, taken with the engine's own inventory and detection, with no verdict. The file holds no time, no absolute path, no machine or user name and no file content, so one repository state gives one file. Field semantics and the caps are in SCHEMA.md.",
   "type": "object",
-  "required": ["facts_version", "label"],
+  "required": ["facts_version", "label", "git", "inventory", "stack", "instruction_files", "components", "size", "caps"],
   "additionalProperties": false,
   "properties": {
     "facts_version": {
@@ -102,6 +102,15 @@
     "stack": {
       "description": "What `audit.stack.detect_stack` recognised. Every list is sorted. A repository the engine does not recognise gives empty lists and a note. Each list is bounded by the engine's own table of names, so none has a cut in `caps`.",
       "type": "object",
+      "required": [
+        "ecosystems",
+        "source_only",
+        "package_managers",
+        "ci_providers",
+        "test_frameworks",
+        "hook_managers",
+        "notes"
+      ],
       "additionalProperties": false,
       "properties": {
         "ecosystems": {
@@ -238,6 +247,7 @@
     "caps": {
       "description": "The cut each list that depends on the repository or on the operator has, and how many entries it left out. `omitted` counts entries beyond the limit and entries that do not fit the field rules. A list that the engine's own tables bound has no entry.",
       "type": "object",
+      "required": ["excludes", "instruction_files", "declared_components", "candidate_components"],
       "additionalProperties": false,
       "properties": {
         "excludes": { "$ref": "#/$defs/cap_excludes" },

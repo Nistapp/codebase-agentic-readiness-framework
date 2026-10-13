@@ -158,8 +158,7 @@ class ContractTests(RepoCase):
         self.assertEqual(
             manifest["summary"],
             "Describe a repository with counts and names and no verdicts, as facts.json. "
-            "In development: writes facts_version, label, git, inventory, stack, instruction_files, components, "
-            "size and caps.",
+            "Writes facts_version, label, git, inventory, stack, instruction_files, components, size and caps.",
         )
         self.assertIs(manifest["writes_inside_target"], False)
         self.assertIs(manifest["network"], False)
@@ -184,16 +183,17 @@ class ContractTests(RepoCase):
         self.assertEqual(envelope["data"]["file"], str(self.out))
         self.assertTrue(self.out.is_file())
 
-    def test_help_says_the_tool_is_in_development(self) -> None:
+    def test_help_names_every_section_the_file_holds(self) -> None:
         with mock.patch.dict(os.environ, {"COLUMNS": "200"}):
             text = facts.build_parser().format_help()
         self.assertTrue(text.startswith("usage: facts.py "), text)
         self.assertIn(facts.INFO.summary, text)
         self.assertRegex(
             text,
-            r"(?m)^IN DEVELOPMENT until S2\.7\.5\.3: the file holds facts_version, label, git, inventory, stack,"
-            r" instruction_files, components, size and caps\.$",
+            r"(?m)^The file holds facts_version, label, git, inventory, stack, instruction_files, components, size"
+            r" and caps\.$",
         )
+        self.assertNotIn("in development", text.lower())
         self.assertRegex(text, r"(?m)^  target {2,}the repository to describe$")
         self.assertRegex(text, r"(?m)^  --out FILE {2,}the file to create; it must not exist$")
         self.assertRegex(
@@ -846,7 +846,8 @@ class DeterminismTests(RepoCase):
 
 class SchemaGuardTests(RepoCase):
     def test_a_document_that_fits_passes(self) -> None:
-        facts.check_document({"facts_version": "0.1", "label": "x", "git": {"sha": SHA, "dirty": False}})
+        example = json.loads((facts.FACTS_SCHEMA.parent / "examples" / "facts.minimal.json").read_text())
+        facts.check_document(example)
 
     def test_a_document_that_does_not_fit_is_a_bug_in_the_tool_and_exit_three(self) -> None:
         with mock.patch.object(facts, "git_state", return_value={"sha": "xyz", "dirty": False}):
