@@ -104,6 +104,26 @@ distrust the verdict. None of the four Node projects checked wires a local hook 
 `FAIL`/`UNKNOWN` throughout) or defines a `security` verb beyond the two that call `npm audit` directly
 (the CRA app and the NestJS service have none).
 
+## NestJS
+
+Detected by `@nestjs/core` in the manifest and `nest-cli.json`'s presence; neither is in the engine's
+own `ecosystems` table, so a profile-aware agent names it, the engine still only ever says `node`.
+Command-surface delta from `@nestjs/schematics`' own default scaffold: `build` → `nest build`
+(typechecks as a side effect, so a separate `typecheck` script is often absent); `lint` → `eslint
+"{src,apps,libs,test}/**/*.ts" --fix` — the `--fix` flag is a write invocation under a read-only verb
+name, a direct `CMD-04` `FAIL` the engine correctly reports, not a false positive; `test` → Jest reading
+`package.json`'s own `jest` key (`rootDir: src`); a separate `test:e2e` runs a second Jest config,
+`test/jest-e2e.json`. `format:check`, `check` and `security` are not in the scaffold and must be added.
+Tooling default: the schematic still generates legacy `.eslintrc.js`, not flat config. The scaffolded
+`tsconfig.json` sets neither `strict` nor any of its component flags (`strictNullChecks`,
+`noImplicitAny` default `false`) — `TOOL-03` reading `FAIL` on an untouched Nest scaffold is accurate,
+not a gap. Boundaries: Nest's own module system is the idiom — a provider a `@Module` does not list in
+`exports` is invisible outside it — enforced by Nest's DI container at run time, not by a lint rule;
+`eslint-plugin-boundaries` is additional, not idiomatic, and was not seen in this corpus. Env files
+often live under a non-root `environments/` directory (`local.env`, `local.env.example`) rather than a
+root `.env.example` — `EXEC-04` only reads root-named files, so a root-only miss here is the engine's
+real, root-only scope, not a defect to argue around; tell the user where the real example file is.
+
 ## Verified
 
 2026-10-13, against: `agentic-tdd` (npm, Prettier, `tsc --noEmit` under `lint`, no ESLint, Vitest,
