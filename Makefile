@@ -10,7 +10,8 @@
 #   make lint           read-only lint
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks)
-#   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check and the schema cross-check
+#   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
+#                       cross-check and the recipe linter
 #   make security       secrets scan against the committed baseline
 #
 # `format:check` has a colon, which make reads as a rule separator. The target is spelled `format\:check`
@@ -34,11 +35,11 @@ TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -n
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help format format-check format\:check lint typecheck test verify-rules crosscheck check security update-secrets-baseline
+.PHONY: help format format-check format\:check lint typecheck test verify-rules crosscheck recipe-lint check security update-secrets-baseline
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: verify-rules  crosscheck  update-secrets-baseline"
+	@echo "extra: verify-rules  crosscheck  recipe-lint  update-secrets-baseline"
 
 format:
 	$(RUFF) format brownfield-recipes
@@ -68,7 +69,11 @@ verify-rules:
 crosscheck:
 	$(CROSSCHECK) brownfield-recipes/dev/crosscheck_jsonschema.py
 
-check: format-check typecheck test verify-rules crosscheck
+# Lints the recipe Markdown and checks that tools/CATALOGUE.md matches every tool's own --describe output.
+recipe-lint:
+	$(PYTHON) brownfield-recipes/tools/recipe_lint.py .
+
+check: format-check typecheck test verify-rules crosscheck recipe-lint
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.
