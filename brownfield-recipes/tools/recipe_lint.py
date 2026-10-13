@@ -5,9 +5,10 @@
 oversize files.
 
     recipe_lint.py <root>
+    recipe_lint.py <root> --write-catalogue
 
 ``<root>`` is the repository that holds ``brownfield-recipes/``; a link may climb out of that folder (a check
-file citing ``brownfield-legacy/Phased-Approach.md`` does), but never out of ``<root>``. Seven checks, each
+file citing ``brownfield-legacy/Phased-Approach.md`` does), but never out of ``<root>``. Eight checks, each
 independent of the others:
 
 - **Links.** Every inline Markdown link (``[text](target)``, never an image or a reference-style link, neither
@@ -36,6 +37,10 @@ independent of the others:
   ``catalogue.json`` names. A playbook may be named before its file exists under ``implement/playbooks/``
   (``schema/SCHEMA.md``, "Rules beyond the schema", rule 2: the catalogue, not the folder, is what "exists"
   means, until S5.2 writes the files), so this never checks the folder.
+- **Tool catalogue.** ``brownfield-recipes/tools/CATALOGUE.md`` must be byte-identical to what every
+  ``<name>.py --describe`` in ``brownfield-recipes/tools/`` (every file there not starting with ``_``) would
+  generate, sorted by tool name. ``--write-catalogue`` regenerates it in place instead of linting; nothing
+  else runs in that mode.
 
 These last three read ``catalogue.json`` and ``spec/readiness-requirements.md`` under ``<root>``; when either is
 missing or unreadable, the check it feeds is silently skipped rather than failing the whole run, so the rule
@@ -43,8 +48,10 @@ still works on a minimal tree that has no catalogue or spec of its own. They ski
 entirely: the engine has its own check registry and its own fixtures, which are data, not recipe prose, and
 neither is governed by ``catalogue.json``.
 
-Nothing is written, apart from a tool's own ``--describe``, which the contract guarantees does no work and
-writes nothing either. Standard library only.
+Nothing is written, apart from a tool's own ``--describe`` (which the contract guarantees does no work and
+writes nothing either) and, with ``--write-catalogue``, an atomic in-place replace of
+``brownfield-recipes/tools/CATALOGUE.md`` itself: a second, documented exception to "a tool never replaces a
+file" (tools/README.md rule 7), alongside the draft report. Standard library only.
 """
 
 from __future__ import annotations
@@ -55,7 +62,7 @@ import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence
 
 import _common
 
@@ -63,8 +70,8 @@ INFO = _common.ToolInfo(
     name="recipe_lint",
     summary="Check the recipe Markdown under brownfield-recipes/ for broken links, bad SKILL.md frontmatter and "
     "oversize files.",
-    synopsis=("recipe_lint.py <root>",),
-    writes="nothing",
+    synopsis=("recipe_lint.py <root>", "recipe_lint.py <root> --write-catalogue"),
+    writes="nothing, unless --write-catalogue is given, which replaces brownfield-recipes/tools/CATALOGUE.md in place",
 )
 
 RECIPES_DIRNAME = "brownfield-recipes"
@@ -296,28 +303,33 @@ def tool_name_occurrences(lines: Sequence[str]) -> list[tuple[int, str]]:
     return found
 
 
-def describe_tool(path: Path, timeout: float) -> str | None:
-    """`None` when `<path> --describe` prints a valid, successful envelope; otherwise why it did not."""
+def describe_manifest(path: Path, timeout: float) -> tuple[dict[str, Any], None] | tuple[None, str]:
+    """`(manifest, None)` from a valid, successful `<path> --describe`; otherwise `(None, why not)`."""
     try:
         result = subprocess.run(
             [sys.executable, str(path), "--describe"], capture_output=True, text=True, timeout=timeout, check=False
         )
     except subprocess.TimeoutExpired:
-        return f"did not finish within {timeout}s"
+        return None, f"did not finish within {timeout}s"
     except OSError as exc:
-        return f"could not be run: {exc.strerror or exc}"
+        return None, f"could not be run: {exc.strerror or exc}"
     if result.returncode != 0:
         tail = result.stderr.strip().splitlines()[-1:] or [""]
-        return f"exited {result.returncode}: {tail[0]}"
+        return None, f"exited {result.returncode}: {tail[0]}"
     try:
         envelope = json.loads(result.stdout)
     except ValueError:
-        return "printed no valid JSON envelope on stdout"
+        return None, "printed no valid JSON envelope on stdout"
     if not isinstance(envelope, dict) or any(key not in envelope for key in ENVELOPE_KEYS):
-        return f"printed an envelope missing one of {', '.join(ENVELOPE_KEYS)}"
+        return None, f"printed an envelope missing one of {', '.join(ENVELOPE_KEYS)}"
     if envelope["ok"] is not True:
-        return f"printed ok: {envelope['ok']!r}"
-    return None
+        return None, f"printed ok: {envelope['ok']!r}"
+    return envelope["data"], None
+
+
+def describe_tool(path: Path, timeout: float) -> str | None:
+    """`None` when `<path> --describe` prints a valid, successful envelope; otherwise why it did not."""
+    return describe_manifest(path, timeout)[1]
 
 
 def check_tool_references(
@@ -406,6 +418,91 @@ def check_playbook_references(file: Path, lines: Sequence[str], catalogue: Catal
                 out.error(file, number, f"the catalogue names no playbook {name!r}")
 
 
+# --- The tool catalogue ---------------------------------------------------------------------------------
+
+CATALOGUE_HEADER = (
+    "# Tool Catalogue\n"
+    "\n"
+    "Generated by `recipe_lint.py <root> --write-catalogue` from every tool's own `--describe` output, sorted "
+    "by name. Do not edit by hand: a stale file fails `make check`.\n"
+)
+
+
+def catalogue_path(root: Path) -> Path:
+    return root / RECIPES_DIRNAME / "tools" / "CATALOGUE.md"
+
+
+def discover_tools(root: Path) -> list[Path]:
+    """Every `<name>.py` directly under `brownfield-recipes/tools/`, apart from the private `_*.py` helpers."""
+    tools_dir = root / RECIPES_DIRNAME / "tools"
+    if not tools_dir.is_dir():
+        return []
+    return sorted(path for path in tools_dir.glob("*.py") if not path.name.startswith("_"))
+
+
+def render_catalogue(manifests: Sequence[dict[str, Any]]) -> str:
+    """Byte-stable Markdown for `manifests`, which callers must already have sorted by name."""
+    parts = [CATALOGUE_HEADER]
+    for manifest in manifests:
+        parts.append(f"\n## {manifest['name']}.py\n\n")
+        parts.append(f"**Version:** {manifest['version']}  \n**Writes:** {manifest['writes']}\n\n")
+        parts.append(f"{manifest['summary']}\n\n")
+        parts.append("```text\n")
+        for line in manifest["synopsis"]:
+            parts.append(f"{line}\n")
+        parts.append("```\n")
+    return "".join(parts)
+
+
+def build_catalogue(root: Path, *, timeout: float) -> tuple[str | None, list[str]]:
+    """The catalogue text for `root`'s tools, or `(None, errors)` when one of them fails `--describe`."""
+    errors: list[str] = []
+    manifests: list[dict[str, Any]] = []
+    for path in discover_tools(root):
+        manifest, problem = describe_manifest(path, timeout)
+        if problem is not None or manifest is None:
+            errors.append(f"{RECIPES_DIRNAME}/tools/{path.name} --describe {problem}")
+            continue
+        manifests.append(manifest)
+    if errors:
+        return None, errors
+    manifests.sort(key=lambda manifest: manifest["name"])
+    return render_catalogue(manifests), []
+
+
+def check_catalogue_fresh(root: Path, out: Outcome, *, timeout: float) -> None:
+    if not (root / RECIPES_DIRNAME / "tools").is_dir():
+        return  # a minimal tree with no tools/ of its own has no catalogue to keep fresh.
+    path = catalogue_path(root)
+    expected, errors = build_catalogue(root, timeout=timeout)
+    if errors:
+        for message in errors:
+            out.error(path, 1, message)
+        return
+    assert expected is not None
+    how = "regenerate it with 'recipe_lint.py <root> --write-catalogue'"
+    if not path.is_file():
+        out.error(path, 1, f"{RECIPES_DIRNAME}/tools/CATALOGUE.md is missing; {how}")
+        return
+    if path.read_text(encoding="utf-8") != expected:
+        out.error(path, 1, f"{RECIPES_DIRNAME}/tools/CATALOGUE.md is stale; {how}")
+
+
+def write_catalogue(root: Path, *, timeout: float) -> _common.Result:
+    text, errors = build_catalogue(root, timeout=timeout)
+    if errors:
+        raise _common.ValidationFailed(
+            f"{len(errors)} tool{'' if len(errors) == 1 else 's'} could not be described", errors=errors
+        )
+    assert text is not None
+    path = catalogue_path(root)
+    _common.atomic_write_text(path, text)
+    return _common.Result(
+        data={"file": str(path), "bytes": len(text.encode("utf-8")), "tools": len(discover_tools(root))},
+        summary=f"recipe_lint: wrote {path}",
+    )
+
+
 # --- Putting it together ----------------------------------------------------------------------------------
 
 
@@ -444,15 +541,24 @@ def lint(root: Path, files: Sequence[Path], *, describe_timeout: float = DESCRIB
 def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(prog="recipe_lint.py", description=INFO.summary)
     parser.add_argument("root", help=f"the repository that holds {RECIPES_DIRNAME}/")
+    parser.add_argument(
+        "--write-catalogue",
+        action="store_true",
+        help="regenerate tools/CATALOGUE.md from every tool's --describe output and exit; lints nothing else",
+    )
     return parser
 
 
 def handler(argv: Sequence[str]) -> _common.Result:
     args = build_parser().parse_args(list(argv))
     root = _common.resolve_target(args.root)
+    if args.write_catalogue:
+        return write_catalogue(root, timeout=DESCRIBE_TIMEOUT_S)
     files = find_markdown(root)
     outcome = lint(root, files)
+    check_catalogue_fresh(root, outcome, timeout=DESCRIBE_TIMEOUT_S)
     if outcome.errors:
+        outcome.errors.sort()
         count = len(outcome.errors)
         raise _common.ValidationFailed(
             f"{count} problem{'' if count == 1 else 's'} in {len(files)} files under {RECIPES_DIRNAME}/",

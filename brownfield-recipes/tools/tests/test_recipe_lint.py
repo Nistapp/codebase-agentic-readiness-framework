@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""The recipe linter: each of its seven rules (links, SKILL.md frontmatter, size, tool, check, requirement and
-playbook references) has a fixture
-that passes it and one that breaks it, and the tool honours the contract (envelope, exit codes, nothing written).
+"""The recipe linter: each of its eight rules (links, SKILL.md frontmatter, size, tool, check, requirement,
+playbook references and the tool catalogue) has a fixture that passes it and one that breaks it, and the tool
+honours the contract (envelope, exit codes, nothing written unless `--write-catalogue` is given).
 
 A fixture is a small repository tree built in a temporary folder, with its own `brownfield-recipes/` so the tool
 sees a real target. The project's own documentation is linted too, as the standing proof that the rule set the
@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import io
 import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -453,11 +454,11 @@ class ToolContractTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
 
-    def test_describe_prints_the_manifest_and_writes_nothing(self) -> None:
+    def test_describe_prints_the_manifest(self) -> None:
         code, envelope, _ = call(["--describe"])
         self.assertEqual(code, 0)
         self.assertEqual(envelope["data"]["name"], "recipe_lint")
-        self.assertEqual(envelope["data"]["writes"], "nothing")
+        self.assertIn("CATALOGUE.md", envelope["data"]["writes"])
 
     def test_a_root_without_brownfield_recipes_is_a_usage_error(self) -> None:
         code, envelope, _ = call([str(self.root)])
@@ -486,6 +487,101 @@ class ToolContractTests(unittest.TestCase):
         self.assertIs(envelope["ok"], False)
         self.assertEqual(len(envelope["data"]["errors"]), 2)
         self.assertIn("2 problems in 2 files", err)
+
+
+# --- The tool catalogue ---------------------------------------------------------------------------------
+
+
+def tool_script(name: str, *, synopsis: Sequence[str] = ("thing.py",), writes: str = "nothing") -> str:
+    """Source for a fake tool whose `--describe` prints a full manifest, not just the bare envelope."""
+    manifest = {
+        "name": name,
+        "version": "0.1.0",
+        "summary": f"A test tool named {name}.",
+        "synopsis": list(synopsis),
+        "writes": writes,
+        "network": False,
+        "writes_inside_target": False,
+        "exit_codes": {"0": "ok"},
+    }
+    envelope = {"tool": name, "version": "0.1.0", "ok": True, "data": manifest, "warnings": [], "truncated": False}
+    return f"import json\nprint(json.dumps({envelope!r}))\n"
+
+
+class CatalogueGenerationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name).resolve()
+        (self.root / "brownfield-recipes" / "tools").mkdir(parents=True)
+
+    def write_tool(self, name: str, source: str) -> Path:
+        path = self.root / "brownfield-recipes" / "tools" / f"{name}.py"
+        path.write_text(source, encoding="utf-8")
+        return path
+
+    def catalogue_path(self) -> Path:
+        return self.root / "brownfield-recipes" / "tools" / "CATALOGUE.md"
+
+    def test_write_catalogue_generates_one_section_per_tool_sorted_by_name(self) -> None:
+        self.write_tool("zeta", tool_script("zeta"))
+        self.write_tool("alpha", tool_script("alpha"))
+        code, envelope, _ = call([str(self.root), "--write-catalogue"])
+        self.assertEqual(code, 0)
+        self.assertIs(envelope["ok"], True)
+        self.assertEqual(envelope["data"]["tools"], 2)
+        text = self.catalogue_path().read_text(encoding="utf-8")
+        self.assertLess(text.index("## alpha.py"), text.index("## zeta.py"))
+
+    def test_write_catalogue_is_byte_stable_across_runs(self) -> None:
+        self.write_tool("thing", tool_script("thing"))
+        call([str(self.root), "--write-catalogue"])
+        first = self.catalogue_path().read_text(encoding="utf-8")
+        call([str(self.root), "--write-catalogue"])
+        second = self.catalogue_path().read_text(encoding="utf-8")
+        self.assertEqual(first, second)
+
+    def test_write_catalogue_skips_a_leading_underscore_helper(self) -> None:
+        self.write_tool("thing", tool_script("thing"))
+        self.write_tool("_helper", "raise SystemExit(1)\n")
+        code, envelope, _ = call([str(self.root), "--write-catalogue"])
+        self.assertEqual(code, 0)
+        self.assertEqual(envelope["data"]["tools"], 1)
+
+    def test_write_catalogue_reports_a_tool_that_fails_describe(self) -> None:
+        self.write_tool("thing", BROKEN_EXIT_TOOL)
+        code, envelope, _ = call([str(self.root), "--write-catalogue"])
+        self.assertEqual(code, 2)
+        self.assertIs(envelope["ok"], False)
+        self.assertIn("exited 3: boom", envelope["data"]["errors"][0])
+        self.assertFalse(self.catalogue_path().exists())
+
+    def test_a_missing_catalogue_fails_the_lint(self) -> None:
+        self.write_tool("thing", tool_script("thing"))
+        code, envelope, _ = call([str(self.root)])
+        self.assertEqual(code, 2)
+        self.assertIn("CATALOGUE.md is missing", envelope["data"]["errors"][0])
+
+    def test_a_stale_catalogue_fails_the_lint(self) -> None:
+        self.write_tool("thing", tool_script("thing"))
+        call([str(self.root), "--write-catalogue"])
+        self.write_tool("thing", tool_script("thing", writes="something else now"))
+        code, envelope, _ = call([str(self.root)])
+        self.assertEqual(code, 2)
+        self.assertIn("CATALOGUE.md is stale", envelope["data"]["errors"][0])
+
+    def test_a_fresh_catalogue_lints_clean(self) -> None:
+        self.write_tool("thing", tool_script("thing"))
+        call([str(self.root), "--write-catalogue"])
+        code, envelope, _ = call([str(self.root)])
+        self.assertEqual(code, 0)
+        self.assertIs(envelope["ok"], True)
+
+    def test_no_tools_directory_at_all_skips_the_catalogue_check(self) -> None:
+        shutil.rmtree(self.root / "brownfield-recipes" / "tools")
+        code, envelope, _ = call([str(self.root)])
+        self.assertEqual(code, 0)
+        self.assertIs(envelope["ok"], True)
 
 
 # --- This project's own documentation -----------------------------------------------------------------------
