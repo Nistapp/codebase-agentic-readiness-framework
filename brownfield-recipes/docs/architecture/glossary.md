@@ -36,3 +36,4 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Engine report | `<label>.engine-report.<stamp>.json`: the JSON that `engine.py` writes, in the engine's schema v2. The adapter reads it and never changes it. |
 | Engine adapter | `report.py import-engine`, which applies `_engine_adapter.py`: brings the engine's checks, findings, stack, probes and unattested items into a draft. It runs once for a draft, and only for the draft's own repository. |
 | Golden pair | A raw engine report in `schema/examples/realistic/` and the draft that the adapter must make from it, byte for byte. |
+| Facts file | `facts.json`: the file `facts.py` writes before the audit's assessment stage. Counts and names only — inventory, stack, instruction files, components and a size class — with no verdict. |

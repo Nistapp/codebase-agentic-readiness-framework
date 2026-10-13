@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py` and `render_report.py`. `facts.py` exists and is in development. The other tools are planned.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py` and `facts.py`. The other tools are planned.
 
 > [!NOTE]
-> Planned. Only `engine.py`, `validate_report.py`, `report.py` and `render_report.py` are documented here. `facts.py` exists and is in development: it now writes every section (`facts_version`, `label`, `git`, `inventory`, `stack`, `instruction_files`, `components`, `size` and `caps`), and its own section here is written in S2.7.5.3. The sections for the other tools are filled in by roadmap steps S2.8 and S5.1, and the generated `tools/CATALOGUE.md` by S2.8.
+> Planned for the rest. `recipe_lint.py` and the generated `tools/CATALOGUE.md` are filled in by roadmap step S2.8, and `progress.py` and `check_drift.py` by S5.1.
 
 ---
 
@@ -17,7 +17,7 @@
 | [`validate_report.py`](#validate_reportpy) | Validates a report against schema and semantic rules | Live |
 | [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live |
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
-| `facts.py` | Emits stack and inventory facts, no verdicts | In development: writes every section (section here in S2.7.5.3) |
+| [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
 | `recipe_lint.py` | Checks recipes for broken references and budgets | Planned (S2.8) |
 | `progress.py` | Manages implementation progress | Planned (S5.1) |
 | `check_drift.py` | Lists findings affected by changes since the audit | Planned (S5.1) |
@@ -598,3 +598,51 @@ The words of a report come from the audited repository, through a model, so the 
 | `the folder for --out does not exist: <folder>` | Create the folder, or choose one that exists. The tool creates files and never folders. |
 | `refusing to write inside the target: <folder>` | Choose a folder outside the audited repository. The tools never write inside it. |
 | `cannot write <path>: <reason>` | The system's reason, such as a full disk or a missing permission. No partial file is left. |
+
+---
+
+## facts.py
+
+Describes a repository with counts and names and no verdicts, in a file the audit recipe reads before its assessment stage: inventory, stack, instruction files, components and a size class, taken with the engine's own `scan`, `stack`, `components`, `target` and `rules/variants` modules by [ADR 0001](../architecture/adrs/0001-tools-import-engine.md). It gives no verdict, and nothing in it says that a file is good, that a stack is right or that a repository is ready. The source is [`facts.py`](../../tools/facts.py); the format is [`facts.schema.json`](../../schema/facts.schema.json), described in [Facts file](../../schema/SCHEMA.md#facts-file).
+
+**Synopsis**
+
+```text
+python3 brownfield-recipes/tools/facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]
+python3 brownfield-recipes/tools/facts.py --describe
+```
+
+**Inputs**
+
+| Argument | Meaning |
+|---|---|
+| `<target>` | The repository to describe. It must exist and be a directory. The tool only reads it. |
+| `--out FILE` | The file to create. It must not exist, its folder must, and the folder must be outside the target. The tool never replaces a file. |
+| `--repo-label LABEL` | The label in the file: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../schema/SCHEMA.md#output-files). |
+| `--exclude GLOB` | An extra path pattern to leave out of the inventory, spelled as `engine.py`'s is, so the facts describe the inventory the engine sees. Up to 10 are named in the file; the rest still apply. May be repeated. |
+| `--max-files N` | A cap on the files the walk inspects. Default: the engine's own cap. A walk the cap stops is `truncated`, which pushes the size class to `huge` whatever the count. |
+
+**Outputs**
+
+A run writes one file, the one `--out` names, in `facts.schema.json`'s format: `facts_version`, `label`, `git` (`sha`, `dirty`), `inventory`, `stack`, `instruction_files`, `components`, `size` and `caps`, every section required. The file holds no time, no absolute path and no machine or user name, so one repository state gives one file. `data` holds `file` (the path written), `bytes` and `facts_version`. A walk `--max-files` cut short gives a warning, and every count in the file is then a lower bound.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The file was written. |
+| `1` | A bad argument, a missing or non-directory target, a filesystem root, a bad `--out` or label, or a write the system refused. |
+| `3` | The facts do not fit `facts.schema.json`, or are over the 30 KB bound: a bug in this tool. Nothing is written. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `target not found: ...`, `target is not a directory: ...`, `refusing to scan a filesystem root` | Point `<target>` at an existing repository directory. |
+| `the folder for --out does not exist: ...` | Create the folder, or choose one that exists. |
+| `refusing to write inside the target: ...` | Choose a folder outside the audited repository. |
+| `<path> already exists, and a tool never replaces a file` | Choose another `--out`. To refresh a golden file on purpose, delete it first and read the diff. |
+| `cannot write <path>: <reason>` | The system's reason, such as a full disk or a missing permission. |
+| `repo_label ... is not allowed` | Use a label that matches the pattern above. |
+| `--max-files must be at least 1, not ...` | Pass a whole number of at least 1. |
+| `the facts do not fit facts.schema.json, which is a bug in the tool` | Report it; `data.errors` names each place. Nothing written. |
