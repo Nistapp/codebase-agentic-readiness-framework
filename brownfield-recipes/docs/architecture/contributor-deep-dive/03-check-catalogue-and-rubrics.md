@@ -5,10 +5,12 @@
 > **Status:** Live for the catalogue and the anatomy. The check files themselves are still being written.
 
 > [!NOTE]
-> Planned. Only the anatomy (section 3 below) and the `IDX` family are written so far
+> Planned. Only the anatomy (section 3 below), the `IDX` family (S3.1.1) and half the `AGT` family
+> (`AGT-01`–`AGT-06`, S3.1.2.1) are written so far
 > ([`audit/checks/README.md`](../../../audit/checks/README.md),
-> [`01-discovery-and-index.md`](../../../audit/checks/01-discovery-and-index.md), S3.1.1). The remaining
-> families are filled in by the rest of roadmap steps S3.1–S3.3. The catalogue itself,
+> [`01-discovery-and-index.md`](../../../audit/checks/01-discovery-and-index.md),
+> [`02-agent-governance.md`](../../../audit/checks/02-agent-governance.md)). The remaining families, and
+> the rest of `AGT`, are filled in by the rest of roadmap steps S3.1–S3.3. The catalogue itself,
 > [`catalogue.json`](../../../catalogue.json), exists and is tested.
 
 ---
