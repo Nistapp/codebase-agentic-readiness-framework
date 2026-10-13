@@ -2,8 +2,8 @@
 
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain how checks are defined once in `catalogue.json`, what keeps it true, and how a check is judged.
-> **Status:** Live for the catalogue, the anatomy, and S3.1's four check families (`IDX`, `AGT`, `DOC`,
-> `CMD`). The remaining families (S3.2, S3.3) are still being written.
+> **Status:** Live for the catalogue, the anatomy, S3.1's four check families (`IDX`, `AGT`, `DOC`, `CMD`)
+> and `TOOL` (S3.2.1). The remaining families (the rest of S3.2, S3.3) are still being written.
 
 > [!NOTE]
 > Planned. `S3.1` is closed:
@@ -11,9 +11,11 @@
 > [`02-agent-governance.md`](../../../audit/checks/02-agent-governance.md) (`AGT`, including `AGT-11`,
 > the first agent-only check whose rubric exists — its catalogue `status` is now `implemented`),
 > [`03-documentation-contract.md`](../../../audit/checks/03-documentation-contract.md) (`DOC`) and
-> [`04-command-surface.md`](../../../audit/checks/04-command-surface.md) (`CMD`). The remaining families
-> (`TOOL`, `CI`, `BASE`, `CON`, `EXEC`, `TST`, `NAV`, `SEC`, `HYG`) are filled in by roadmap steps S3.2 and
-> S3.3. The catalogue itself, [`catalogue.json`](../../../catalogue.json), exists and is tested.
+> [`04-command-surface.md`](../../../audit/checks/04-command-surface.md) (`CMD`).
+> [`05-tooling.md`](../../../audit/checks/05-tooling.md) (`TOOL`) is also written, as the first leaf of
+> `S3.2`. The remaining families (`CI`, `BASE`, `CON`, `EXEC`, `TST`, `NAV`, `SEC`, `HYG`) are filled in by
+> the rest of roadmap steps S3.2 and S3.3. The catalogue itself, [`catalogue.json`](../../../catalogue.json),
+> exists and is tested.
 
 ---
 
