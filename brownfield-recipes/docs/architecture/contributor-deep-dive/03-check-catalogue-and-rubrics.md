@@ -3,8 +3,8 @@
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain how checks are defined once in `catalogue.json`, what keeps it true, and how a check is judged.
 > **Status:** Live for the catalogue, the anatomy, S3.1's four check families (`IDX`, `AGT`, `DOC`, `CMD`),
-> `TOOL` (S3.2.1) and `CI` (S3.2.2). The remaining families (the rest of S3.2, S3.3) are still being
-> written.
+> `TOOL` (S3.2.1), `CI` (S3.2.2) and `BASE` (S3.2.3). The remaining families (the rest of S3.2, S3.3) are
+> still being written.
 
 > [!NOTE]
 > Planned. `S3.1` is closed:
@@ -13,11 +13,13 @@
 > the first agent-only check whose rubric exists — its catalogue `status` is now `implemented`),
 > [`03-documentation-contract.md`](../../../audit/checks/03-documentation-contract.md) (`DOC`) and
 > [`04-command-surface.md`](../../../audit/checks/04-command-surface.md) (`CMD`).
-> [`05-tooling.md`](../../../audit/checks/05-tooling.md) (`TOOL`) and
+> [`05-tooling.md`](../../../audit/checks/05-tooling.md) (`TOOL`),
 > [`06-ci.md`](../../../audit/checks/06-ci.md) (`CI`, including `CI-04`, the second agent-only check whose
-> rubric exists — its catalogue `status` is now `implemented`) are also written, the first two leaves of
-> `S3.2`. The remaining families (`BASE`, `CON`, `EXEC`, `TST`, `NAV`, `SEC`, `HYG`) are filled in by the
-> rest of roadmap steps S3.2 and S3.3. The catalogue itself, [`catalogue.json`](../../../catalogue.json),
+> rubric exists — its catalogue `status` is now `implemented`) and
+> [`07-baselines-and-ratchet.md`](../../../audit/checks/07-baselines-and-ratchet.md) (`BASE`) are also
+> written, the first three leaves of `S3.2`. The remaining families (`CON`, `EXEC`, `TST`, `NAV`, `SEC`,
+> `HYG`) are filled in by the rest of roadmap steps S3.2 and S3.3. The catalogue itself,
+> [`catalogue.json`](../../../catalogue.json),
 > exists and is tested.
 
 ---
