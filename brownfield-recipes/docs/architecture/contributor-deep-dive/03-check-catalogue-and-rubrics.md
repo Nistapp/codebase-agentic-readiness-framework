@@ -5,11 +5,12 @@
 > **Status:** Live for the catalogue and the anatomy. The check files themselves are still being written.
 
 > [!NOTE]
-> Planned. Only the anatomy (section 3 below) and two families are written so far: `IDX`
-> ([`01-discovery-and-index.md`](../../../audit/checks/01-discovery-and-index.md), S3.1.1) and `AGT`
+> Planned. Only the anatomy (section 3 below) and three families are written so far: `IDX`
+> ([`01-discovery-and-index.md`](../../../audit/checks/01-discovery-and-index.md), S3.1.1), `AGT`
 > ([`02-agent-governance.md`](../../../audit/checks/02-agent-governance.md), S3.1.2, including `AGT-11`,
-> the first agent-only check whose rubric exists — its catalogue `status` is now `implemented`). The
-> remaining families (`DOC`, `CMD`, and the rest of M3) are filled in by roadmap steps S3.1.3 onward. The
+> the first agent-only check whose rubric exists — its catalogue `status` is now `implemented`) and `DOC`
+> ([`03-documentation-contract.md`](../../../audit/checks/03-documentation-contract.md), S3.1.3). The
+> remaining families (`CMD`, and the rest of M3) are filled in by roadmap steps S3.1.4 onward. The
 > catalogue itself, [`catalogue.json`](../../../catalogue.json), exists and is tested.
 
 ---
