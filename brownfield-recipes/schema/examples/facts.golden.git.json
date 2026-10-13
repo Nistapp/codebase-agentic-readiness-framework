@@ -1,0 +1,79 @@
+{
+  "facts_version": "0.1",
+  "label": "git-example",
+  "git": {
+    "sha": "d0acc3aa52552759970e658d6cde4c5cb9897e85",
+    "dirty": true
+  },
+  "inventory": {
+    "files": 7,
+    "bytes": 666,
+    "by_kind": {
+      "manifest": 1,
+      "build": 0,
+      "config": 3,
+      "source": 2,
+      "test": 0,
+      "doc": 1,
+      "ci": 0,
+      "script": 0,
+      "generated": 0,
+      "binary": 0,
+      "other": 0
+    },
+    "skipped": [],
+    "truncated": false,
+    "max_files": 250000,
+    "excludes": []
+  },
+  "stack": {
+    "ecosystems": [
+      "node"
+    ],
+    "source_only": [],
+    "package_managers": [],
+    "ci_providers": [],
+    "test_frameworks": [],
+    "hook_managers": [
+      "pre-commit"
+    ],
+    "notes": []
+  },
+  "instruction_files": [],
+  "components": {
+    "declared": [],
+    "candidates": [],
+    "notes": [
+      "single-root repository: no component declarations found"
+    ]
+  },
+  "size": {
+    "class": "small",
+    "files": 7,
+    "bytes": 666,
+    "truncated": false,
+    "thresholds": {
+      "small_below": 1000,
+      "medium_below": 10000,
+      "large_below": 100000
+    }
+  },
+  "caps": {
+    "excludes": {
+      "limit": 10,
+      "omitted": 0
+    },
+    "instruction_files": {
+      "limit": 25,
+      "omitted": 0
+    },
+    "declared_components": {
+      "limit": 16,
+      "omitted": 0
+    },
+    "candidate_components": {
+      "limit": 20,
+      "omitted": 0
+    }
+  }
+}

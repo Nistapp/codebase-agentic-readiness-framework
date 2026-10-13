@@ -1,0 +1,88 @@
+{
+  "facts_version": "0.1",
+  "label": "instruction-files-example",
+  "git": {
+    "sha": null,
+    "dirty": false
+  },
+  "inventory": {
+    "files": 2,
+    "bytes": 933,
+    "by_kind": {
+      "manifest": 0,
+      "build": 0,
+      "config": 0,
+      "source": 0,
+      "test": 0,
+      "doc": 2,
+      "ci": 0,
+      "script": 0,
+      "generated": 0,
+      "binary": 0,
+      "other": 0
+    },
+    "skipped": [],
+    "truncated": false,
+    "max_files": 250000,
+    "excludes": []
+  },
+  "stack": {
+    "ecosystems": [],
+    "source_only": [],
+    "package_managers": [],
+    "ci_providers": [],
+    "test_frameworks": [],
+    "hook_managers": [],
+    "notes": [
+      "no recognised build manifest — stack-dependent checks report UNKNOWN"
+    ]
+  },
+  "instruction_files": [
+    {
+      "path": "AGENTS.md",
+      "variant": "AGENTS.md",
+      "size_bytes": 706
+    },
+    {
+      "path": "AGENTS.override.md",
+      "variant": "AGENTS.override.md",
+      "size_bytes": 227
+    }
+  ],
+  "components": {
+    "declared": [],
+    "candidates": [],
+    "notes": [
+      "single-root repository: no component declarations found"
+    ]
+  },
+  "size": {
+    "class": "small",
+    "files": 2,
+    "bytes": 933,
+    "truncated": false,
+    "thresholds": {
+      "small_below": 1000,
+      "medium_below": 10000,
+      "large_below": 100000
+    }
+  },
+  "caps": {
+    "excludes": {
+      "limit": 10,
+      "omitted": 0
+    },
+    "instruction_files": {
+      "limit": 25,
+      "omitted": 0
+    },
+    "declared_components": {
+      "limit": 16,
+      "omitted": 0
+    },
+    "candidate_components": {
+      "limit": 20,
+      "omitted": 0
+    }
+  }
+}
