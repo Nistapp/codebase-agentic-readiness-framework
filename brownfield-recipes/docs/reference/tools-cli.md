@@ -2,10 +2,10 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated `tools/CATALOGUE.md` (planned, S2.8)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py` and `recipe_lint.py`'s links, frontmatter and size rules. The rest is planned.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py` and `recipe_lint.py`'s links, frontmatter, size and tool-reference rules. The rest is planned.
 
 > [!NOTE]
-> Planned. `recipe_lint.py`'s reference checks (that a tool, check, playbook or requirement ID it names exists, S2.8.2) and the generated `tools/CATALOGUE.md` (S2.8.3) are the rest of roadmap step S2.8; `progress.py` and `check_drift.py` are S5.1.
+> Planned. `recipe_lint.py`'s remaining reference check (that a check, playbook or requirement ID it names exists, S2.8.2.2) and the generated `tools/CATALOGUE.md` (S2.8.3) are the rest of roadmap step S2.8; `progress.py` and `check_drift.py` are S5.1.
 
 ---
 
@@ -18,7 +18,7 @@
 | [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live |
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
 | [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
-| [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter and oversize files | Live (links, frontmatter, size); reference checks and `CATALOGUE.md` planned (S2.8.2, S2.8.3) |
+| [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files and missing tools | Live (links, frontmatter, size, tool references); the ID reference check and `CATALOGUE.md` planned (S2.8.2.2, S2.8.3) |
 | `progress.py` | Manages implementation progress | Planned (S5.1) |
 | `check_drift.py` | Lists findings affected by changes since the audit | Planned (S5.1) |
 
@@ -649,10 +649,10 @@ A run writes one file, the one `--out` names, in `facts.schema.json`'s format: `
 
 ## recipe_lint.py
 
-Checks the Markdown under `brownfield-recipes/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, and a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10). It reads only; nothing is written. The source is [`recipe_lint.py`](../../tools/recipe_lint.py).
+Checks the Markdown under `brownfield-recipes/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10), and every `brownfield-recipes/tools/<name>.py` the Markdown names exists and answers `--describe`. It reads only, apart from running a named tool's own `--describe`, which the contract guarantees does no work; nothing is written. The source is [`recipe_lint.py`](../../tools/recipe_lint.py).
 
 > [!NOTE]
-> Planned. That a tool, check, playbook or requirement ID named in the Markdown actually exists (S2.8.2) and the generated, byte-stable `tools/CATALOGUE.md` (S2.8.3) are not implemented yet.
+> Planned. That a check, playbook or requirement ID named in the Markdown actually exists (S2.8.2.2) and the generated, byte-stable `tools/CATALOGUE.md` (S2.8.3) are not implemented yet.
 
 **Synopsis**
 
@@ -676,7 +676,7 @@ Nothing is written. A clean run's `data` holds `root` and `files`, the count of 
 |---|---|
 | `0` | Every file is clean. |
 | `1` | A bad argument, or `<root>` has no `brownfield-recipes/` directory. |
-| `2` | A link does not resolve, an anchor matches nothing, a `SKILL.md`'s frontmatter is invalid, or a file is over its line budget. `data.errors` lists every one, as `path:line: message`. |
+| `2` | A link does not resolve, an anchor matches nothing, a `SKILL.md`'s frontmatter is invalid, a file is over its line budget, or a named tool is missing or fails `--describe`. `data.errors` lists every one, as `path:line: message`. |
 
 **Errors**
 
@@ -692,3 +692,8 @@ Nothing is written. A clean run's `data` holds `root` and `files`, the count of 
 | `name '...' must match its folder, '...'` | Rename `name` or the folder so they agree. |
 | `description is N characters; at most 1024 are allowed` | Shorten `description`. |
 | `<file> has N lines; the budget is 500` | Split the file, or move content on demand into a file it links to. |
+| `the tool brownfield-recipes/tools/<name>.py does not exist` | Fix the name, or write the tool; mark the line `TBD:` if it is only planned. |
+| `brownfield-recipes/tools/<name>.py --describe exited N: ...` | `--describe` must not run any work; fix the tool so it only prints its manifest. |
+| `brownfield-recipes/tools/<name>.py --describe did not finish within Ns` | The tool hung or is slow; fix it, or raise the budget in `recipe_lint.py`. |
+| `brownfield-recipes/tools/<name>.py --describe printed no valid JSON envelope on stdout` | The tool wrote something other than the envelope to stdout. |
+| `brownfield-recipes/tools/<name>.py --describe printed ok: False` | `--describe` must always succeed; fix the tool. |
