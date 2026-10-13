@@ -3,8 +3,9 @@
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain how checks are defined once in `catalogue.json`, what keeps it true, and how a check is judged.
 > **Status:** Live for the catalogue, the anatomy, S3.1's four check families (`IDX`, `AGT`, `DOC`,
-> `CMD`), S3.2's four (`TOOL`, `CI`, `BASE`, `CON`) and S3.3's first three (`EXEC`, `TST`, `NAV`); `S3.1`
-> and `S3.2` are closed, `S3.3` is in progress. The remaining `S3.3` families are still being written.
+> `CMD`), S3.2's four (`TOOL`, `CI`, `BASE`, `CON`) and S3.3's first four (`EXEC`, `TST`, `NAV`, `SEC`);
+> `S3.1` and `S3.2` are closed, `S3.3` is in progress. The remaining `S3.3` family (`HYG`) is still being
+> written.
 
 > [!NOTE]
 > Planned. `S3.1` is closed:
@@ -21,9 +22,11 @@
 > (18 more checks: `TOOL` 6, `CI` 4, `BASE` 4, `CON` 4).
 > [`09-execution-determinism.md`](../../../audit/checks/09-execution-determinism.md) (`EXEC`, 7 checks),
 > [`10-tests.md`](../../../audit/checks/10-tests.md) (`TST`, 5 checks, including `TST-02`, the pack's one
-> Tier-C probe) and [`11-navigation.md`](../../../audit/checks/11-navigation.md) (`NAV`, 5 checks,
-> including `NAV-04` and `NAV-05`, informational and unscored) are `S3.3`'s first three families. The
-> remaining families (`SEC`, `HYG`) are still being written. The catalogue itself,
+> Tier-C probe), [`11-navigation.md`](../../../audit/checks/11-navigation.md) (`NAV`, 5 checks, including
+> `NAV-04` and `NAV-05`, informational and unscored) and
+> [`12-security-hygiene.md`](../../../audit/checks/12-security-hygiene.md) (`SEC`, 3 checks, with a
+> header note that no finding may quote a secret value) are `S3.3`'s first four families. The remaining
+> family (`HYG`) is still being written. The catalogue itself,
 > [`catalogue.json`](../../../catalogue.json), exists and is tested.
 
 ---
