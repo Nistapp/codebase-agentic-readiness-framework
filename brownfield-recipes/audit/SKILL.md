@@ -59,7 +59,11 @@ These apply through every stage, without exception:
 
 Stage 2 works through the catalogue's thirteen families in order: `IDX`, `AGT`, `DOC`, `CMD`, `TOOL`, `CI`,
 `BASE`, `CON`, `EXEC`, `TST`, `NAV`, `SEC`, `HYG`. Each family's check file is `audit/checks/NN-*.md`,
-listed in [`audit/checks/README.md`](checks/README.md).
+listed in [`audit/checks/README.md`](checks/README.md). Read that file's anatomy once, before the first
+family: a check file's `Evidence to cite` and `Absence proof` fields describe what belongs in the report,
+not the exact JSON shape — `Absence proof`'s "glob search" or "grep search" wording names a `searches[]`
+entry (`search.tool`), not `evidence[]` (whose `kind` is only `file`, `command` or `index_query`); the
+README's §6 spells this out, and `add-check`/`add-finding` refuse the wrong shape at exit `2`.
 
 ## Stage 0 — Intake
 
