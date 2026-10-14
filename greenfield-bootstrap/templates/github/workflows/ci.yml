@@ -5,16 +5,49 @@ on:
     branches: ["main", "dev"]
   pull_request:
     branches: ["main", "dev"]
+  schedule:
+    # Weekly audit-only run, independent of any code change.
+    - cron: "0 6 * * 1"
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/dev' }}
 
 jobs:
-  build-and-verify:
-    name: Build, Lint, Test & Audit
+  changes:
+    name: Detect changed paths
+    if: ${{ github.event_name != 'schedule' }}
     runs-on: ubuntu-latest
+    outputs:
+      docs-only: ${{ steps.filter.outputs.docs-only }}
+      deps: ${{ steps.filter.outputs.deps }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            docs-only:
+              - '!(**/*.md|LICENSE|CHANGELOG.md)'
+            deps:
+              - 'package.json'
+              - 'package-lock.json'
+
+  verify:
+    name: Verify (${{ matrix.os }})
+    needs: changes
+    # steps.filter.outputs.docs-only is the list of changed files that are NOT docs; empty means docs-only
+    if: ${{ github.event_name != 'schedule' && needs.changes.outputs.docs-only == '' }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 24
+      - name: Setup Node.js <node-version>
         uses: actions/setup-node@v4
         with:
           node-version: <node-version>
@@ -35,5 +68,45 @@ jobs:
       - name: Verify Build
         run: npm run build:full
 
+  audit:
+    name: Dependency Audit
+    needs: changes
+    if: ${{ needs.changes.outputs.deps != '' || github.ref == 'refs/heads/main' || github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js <node-version>
+        uses: actions/setup-node@v4
+        with:
+          node-version: <node-version>
+          cache: "npm"
+
+      - name: Install Dependencies
+        run: npm ci
+
       - name: Security Audit
         run: npm run security
+
+  ci-gate:
+    name: CI Gate
+    needs: [changes, verify, audit]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require verify and audit to have succeeded or been intentionally skipped
+        run: |
+          verify="${{ needs.verify.result }}"
+          audit="${{ needs.audit.result }}"
+          echo "verify: $verify"
+          echo "audit: $audit"
+          if [[ "$verify" != "success" && "$verify" != "skipped" ]]; then
+            echo "::error::verify did not pass"
+            exit 1
+          fi
+          if [[ "$audit" != "success" && "$audit" != "skipped" ]]; then
+            echo "::error::audit did not pass"
+            exit 1
+          fi
+          echo "CI Gate passed."
