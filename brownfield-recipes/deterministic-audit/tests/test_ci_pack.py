@@ -94,6 +94,21 @@ class CiInlineTests(unittest.TestCase):
         self.assertEqual(support.verdicts(report)["CI-02"], "PASS")
         self.assertEqual(support.verdicts(report)["CI-03"], "PASS")
 
+    def test_npm_stage_publish_is_a_builtin_not_ci_only(self):
+        # npm >= 11.21's staged-publish subcommand (`npm stage publish`), not a missing script
+        # named `stage`. Found auditing a freshly scaffolded project: the greenfield template's
+        # release workflow runs this and CI-03 flagged `stage` as a CI-only step.
+        report = self._scan(
+            {
+                ".github/workflows/release.yml": (
+                    "on:\n  push:\n    branches: [main]\njobs:\n  publish:\n    steps:\n"
+                    "      - run: npm stage publish --provenance --access public\n"
+                ),
+                "package.json": '{"scripts": {"check": "true"}}',
+            }
+        )
+        self.assertEqual(support.verdicts(report)["CI-03"], "PASS")
+
 
 if __name__ == "__main__":
     unittest.main()

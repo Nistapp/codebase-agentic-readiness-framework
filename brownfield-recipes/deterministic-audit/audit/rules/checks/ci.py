@@ -191,6 +191,7 @@ _PM_BUILTINS: frozenset[str] = frozenset(
         "add",
         "remove",
         "uninstall",
+        "stage",
     }
 )
 
