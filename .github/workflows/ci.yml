@@ -49,3 +49,27 @@ jobs:
         with:
           version: "0.12.10"
       - run: make security
+
+  # One required check that stands for the whole matrix, so adding or renaming a `check` leg (a Python
+  # version, an OS) never also requires a branch-protection edit.
+  ci-gate:
+    name: CI Gate
+    needs: [check, security]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require check and security to have succeeded
+        run: |
+          check="${{ needs.check.result }}"
+          security="${{ needs.security.result }}"
+          echo "check: $check"
+          echo "security: $security"
+          if [[ "$check" != "success" ]]; then
+            echo "::error::check did not pass"
+            exit 1
+          fi
+          if [[ "$security" != "success" ]]; then
+            echo "::error::security did not pass"
+            exit 1
+          fi
+          echo "CI Gate passed."
