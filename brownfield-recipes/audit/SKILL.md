@@ -47,7 +47,7 @@ These apply through every stage, without exception:
 |---|---|---|
 | 0 | [Intake](#stage-0--intake) | below |
 | 1 | [Recon](#stage-1--recon) | below |
-| 2 | Assess | S3.5.3 |
+| 2 | [Assess](#stage-2--assess) | part 1 below; the per-family loop is S3.5.3.2 |
 | 3 | Synthesize | S3.5.4 |
 | 4 | Confirm | S3.5.4 |
 | 5 | Finalise | S3.5.4 |
@@ -101,6 +101,23 @@ Everything else depends on the answers here; stop and ask rather than guess at a
 4. Unless this is an eval-mode run, show the person the plan before Stage 2 starts: the stack profile
    chosen, the thirteen families in the order above, what is excluded, and which probes (if any) will
    run. Let them approve or edit it.
+
+## Stage 2 — Assess
+
+This is the first of two parts (S3.5.3). It runs the engine once and imports its report. The per-family
+loop that verifies each check and resolves `UNKNOWN` and `ATTEST` items follows in S3.5.3.2, not yet
+written.
+
+1. Run `engine.py <target> --out-dir <dir> [--run-gates --allow-probe VERB]... [--emit-baseline]`, forwarding
+   the intake's `probes.allowed` verbs as `--allow-probe` (with `--run-gates` only when at least one was
+   named) and passing `--emit-baseline` — this engine run is the only one for this draft, so it is also the
+   one chance to have the engine write `do-not-do.draft.md` for CON-04 (D51). Read `data.report` and
+   `data.baseline_draft`, and tell the user both paths and any warning before moving on.
+2. Call `report.py import-engine <draft> <engine report>` straight after, using the `report` path from
+   step 1. This runs once per draft — see the tool table's `import-engine` row for what it fills in and
+   what to do when it refuses. Read `data.checks_imported`, `findings_pending` and `evidence_not_carried`,
+   and tell the user, in plain words, what the import carried over and what it cut or dropped; the tool
+   reports the counts, the model explains what they mean.
 
 ## Tools
 
