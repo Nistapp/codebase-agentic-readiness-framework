@@ -45,8 +45,8 @@ These apply through every stage, without exception:
 
 | Stage | Name | Written in |
 |---|---|---|
-| 0 | Intake | S3.5.2 |
-| 1 | Recon | S3.5.2 |
+| 0 | [Intake](#stage-0--intake) | below |
+| 1 | [Recon](#stage-1--recon) | below |
 | 2 | Assess | S3.5.3 |
 | 3 | Synthesize | S3.5.4 |
 | 4 | Confirm | S3.5.4 |
@@ -55,6 +55,52 @@ These apply through every stage, without exception:
 Stage 2 works through the catalogue's thirteen families in order: `IDX`, `AGT`, `DOC`, `CMD`, `TOOL`, `CI`,
 `BASE`, `CON`, `EXEC`, `TST`, `NAV`, `SEC`, `HYG`. Each family's check file is `audit/checks/NN-*.md`,
 listed in [`audit/checks/README.md`](checks/README.md).
+
+## Stage 0 — Intake
+
+Everything else depends on the answers here; stop and ask rather than guess at any of them.
+
+1. **An intake file was given.** If `audit-intake.<label>.json` exists, skip to step 5 and call
+   `report.py init <intake>` on it directly.
+2. **No intake file.** Ask the person, matching
+   [`audit-intake.schema.json`](../schema/audit-intake.schema.json) field for field:
+   - the target repository's path;
+   - the harness and model in use (self-reported, for `provenance.agent`);
+   - whether they have a code index (`index.kind`: `mcp`, `cli` or `none`) and its name. With `none`,
+     offer to help set one up, **opt-in only**: say plainly, before they answer, that the index itself
+     stays on their machine, but this skill still sends whatever it reads from the target to the model
+     provider regardless of whether an index exists, and that an install writes outside the target and
+     is recorded in `run_context.index`, never assumed;
+   - which of the seven verbs, if any, the engine's Tier-C runner may execute read-only against the
+     target (`probes.allowed`), and the per-command timeout. Default is none. A target's own command is
+     arbitrary code it owns, not a read-only operation this skill controls — say so, and suggest a
+     disposable worktree or container when any verb is allowed;
+   - paths to exclude, and component roots they already know;
+   - the confirmation policy: `interactive` for a person deciding on each finding (the default),
+     `defer-all` or `accept-all` only for a headless evaluation run (`eval_mode: true`);
+   - the output directory (outside the target) and, optionally, a short repository label.
+3. **Provider exposure.** Before accepting any answer, state once, plainly: this run sends whatever it
+   reads from the target to the model provider. The intake schema requires
+   `provider_exposure_acknowledged: true` and the run does not start without it (R-17).
+4. Write the answers as an intake file matching the schema.
+5. Call `report.py init <intake>` (see the tool table below). Read `data.draft`, `data.target` and the
+   warnings, and tell the user the draft's path before moving to Stage 1.
+
+## Stage 1 — Recon
+
+1. Run `facts.py <target> --out FILE`, passing the same `--exclude` paths the intake recorded, so the
+   facts describe the inventory Stage 2's engine run will also see.
+2. Read `facts.json`'s `stack` section. If it names an ecosystem a shipped profile covers, load that
+   `stacks/<id>.md`; otherwise follow the profile anatomy's own rules for a derived stack and tell the
+   user it is derived, not shipped. Carry the choice (`id`, `shipped` or `derived`) into Stage 2 as a
+   working note: the report schema has a place for it, `run_context.stack_profile`, but no `report.py`
+   subcommand writes it in v0.1 (found during this leaf, not fixed — flag it, do not invent a write path).
+3. If `run_context.index.kind` is `mcp` or `cli`, query it (for example `get_architecture`,
+   `list_projects`) to corroborate the facts — index first, grep second — and never let an unverified
+   grep outrank `facts.json`'s own counts, which a tool produced.
+4. Unless this is an eval-mode run, show the person the plan before Stage 2 starts: the stack profile
+   chosen, the thirteen families in the order above, what is excluded, and which probes (if any) will
+   run. Let them approve or edit it.
 
 ## Tools
 
