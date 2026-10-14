@@ -48,9 +48,9 @@ These apply through every stage, without exception:
 | 0 | [Intake](#stage-0--intake) | below |
 | 1 | [Recon](#stage-1--recon) | below |
 | 2 | [Assess](#stage-2--assess) | below |
-| 3 | Synthesize | S3.5.4 |
-| 4 | Confirm | S3.5.4 |
-| 5 | Finalise | S3.5.4 |
+| 3 | [Synthesize](#stage-3--synthesize) | below |
+| 4 | [Confirm](#stage-4--confirm) | below |
+| 5 | [Finalise](#stage-5--finalise) | below |
 
 Stage 2 works through the catalogue's thirteen families in order: `IDX`, `AGT`, `DOC`, `CMD`, `TOOL`, `CI`,
 `BASE`, `CON`, `EXEC`, `TST`, `NAV`, `SEC`, `HYG`. Each family's check file is `audit/checks/NN-*.md`,
@@ -134,13 +134,70 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      once per distinct scope, following the check's `Absence proof` field for what a `FAIL` must cite.
 4. After each family, `report.py status <draft>` is cheap enough (at most 40 lines) to call every time,
    not only to resume: its `families_remaining` says exactly what is left before moving to the next one.
+5. Stage 2 ends when `report.py status <draft>` shows `families_remaining` empty. Move to Stage 3 only
+   then; do not synthesize over a draft that still has unrecorded checks.
+
+## Stage 3 — Synthesize
+
+1. Render the draft as it stands: `render_report.py <draft> --out <preview.md>`. This is a direct call
+   (the `finalise` rendering in Stage 5 is separate and writes its own file), so pick a preview name that
+   is not the eventual report's — read it, then discard or overwrite it; it is not part of the report.
+2. Read the rendering end to end, not check by check. Look for what a per-check pass cannot see: the same
+   root cause scored under two different checks, a `summary.phase1_score` that looks wrong for the
+   findings listed beside it (the score is tool-computed, so a mismatch means a finding or check is
+   missing or misrecorded, not that the score is wrong), and a family whose findings contradict another
+   family's (for example `CMD-01`'s verdict and a `TOOL` finding both resting on the same missing command).
+   Fix what a mismatch reveals with `add-check` or `add-finding`, then re-render.
+3. Group the findings for the person by what Stage 4 will ask about them: `BLOCKER`s, which are confirmed
+   one at a time, then `DEGRADER`s and `COSMETIC`s, which are confirmed in batches. `report.py status`'s
+   `pending` list already sorts blockers first; use that order.
+4. Unless this is an eval-mode run, tell the person the shape of the result before asking them to decide
+   on anything: the score, how many findings of each severity, and which families have no finding at all.
+
+## Stage 4 — Confirm
+
+1. **Eval mode.** Do nothing here. Under `accept-all`, every finding was already `confirmed` by policy the
+   moment `add-finding` recorded it (the tool does this, not the recipe); under `defer-all`, every finding
+   stays `pending` on purpose, because an evaluation run has no person to ask (`set-disposition` refuses
+   `--via interactive` and `--via batch` in eval mode, and `--via policy` needs `accept-all`). Go straight
+   to Stage 5.
+2. **Blockers, one at a time.** For each `BLOCKER` in `status`'s `pending` list: show the person that one
+   finding — its evidence and the check it belongs to — and ask for a disposition. Record it with
+   `report.py set-disposition <draft> --via interactive --finding <id> --disposition <d> [--note "..."]`.
+   Never batch a blocker; the tool refuses `--via batch` on one anyway (rule 8).
+3. **Other findings, in batches.** Group the remaining `DEGRADER` and `COSMETIC` findings by family or by
+   theme, show each group to the person together, and record their answers in one call:
+   `report.py set-disposition <draft> --via batch --from -` with a JSON list of `{finding, disposition,
+   note?}`. A batch either all applies or all is refused; split it if the person wants to say yes to some
+   and no to others in the same group.
+4. After every decision, `report.py status <draft>` says `findings_pending` and `ready_to_finalise`. Keep
+   working through `pending` until it is empty (or, outside eval mode, only `pending` findings a person
+   explicitly asked to leave as `deferred` remain — `deferred` is itself a decision, not a skip).
+
+## Stage 5 — Finalise
+
+1. **Eval mode.** Stop at the draft. `report.py finalise` always refuses an eval-mode run ("this is an
+   eval-mode run, and its report is never final") — that is correct, not a bug to work around. The draft
+   itself, with whatever Stage 2–4 recorded, is this run's result; tell the person its path and that the
+   eval harness (S4.1) reads drafts, not final reports.
+2. **Otherwise,** run `report.py status <draft>` first and confirm `ready_to_finalise: true`. If not, its
+   `blocking` field says which of Stage 2's checks or Stage 4's decisions is still open; go back and finish
+   it rather than calling `finalise` to find out.
+3. Run `report.py finalise <draft>`. Read `data.report` and `data.markdown` (the two new files, beside the
+   draft) and `data.summary` (the score and its qualifiers), and give the person both paths and the score.
+   The draft itself is untouched and still there; `finalise` never edits or removes it.
+4. Exit `2` here lists every remaining problem in `data.errors`, in the same words as `status`'s
+   `blocking` — fix each one, confirm with `status`, then retry `finalise`. This should not happen if step
+   2 was followed; treat it as a sign something changed the draft between the two calls.
 
 ## Resuming
 
 Whenever a session on this draft starts mid-audit — after a crash, in a new session, or once context ran
 out — run `report.py status <draft>` before anything else. Trust `families_done`, `families_remaining`,
 `findings_pending` and `ready_to_finalise`/`blocking` over any memory of what should already be recorded;
-the draft is the one thing the tool itself checked.
+the draft is the one thing the tool itself checked. `families_remaining` empty means resume at Stage 3;
+`findings_pending` nonzero with every family done means resume at Stage 4; `ready_to_finalise: true` means
+resume at Stage 5.
 
 ## Tools
 
