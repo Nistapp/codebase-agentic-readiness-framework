@@ -56,6 +56,18 @@ greenfield TS/Node reference if it does not — telling the user which it is doi
 Detection signals section exists so a reader can sanity-check that mapping, not so an agent re-scans the
 repository by hand.
 
+`facts.json`'s `stack.ecosystems` entries are the engine's own ids (`audit/stack.py`'s `ECOSYSTEM_SIGNALS`),
+which do not always spell a profile's filename:
+
+| `facts.json` ecosystem id | Profile file | Shipped? |
+|---|---|---|
+| `node` | `typescript-node.md` | yes |
+| `jvm` | `java.md` | yes |
+| `python` | `python.md` | yes |
+| `go`, `rust`, `dotnet`, `ruby`, `php` | — | no; derive per §4 |
+
+A multi-ecosystem repository (for example `node` and `python` both present) may load more than one profile.
+
 ## 4. Shipped versus derived
 
 A toolchain with no profile here is not unsupported: the agent derives guidance from the check files'
