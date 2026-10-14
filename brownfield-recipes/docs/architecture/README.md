@@ -26,7 +26,7 @@
 
 | Page | Purpose | Status |
 |---|---|---|
-| [Run an audit](../how-to/run-an-audit.md) | Produce a confirmed report for a repo | Planned (S3.5) |
+| [Run an audit](../how-to/run-an-audit.md) | Produce a confirmed report for a repo | Live (S3.5) |
 | [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Planned (S5.4) |
 | [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits (S2.3); implementations Planned (S5.1) |
 | [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Live; four profiles exist (S3.4 closed) |
@@ -46,8 +46,8 @@
 | Page | Purpose | Status |
 |---|---|---|
 | [1. Purpose & Non-Goals](user-overview/01-purpose-and-non-goals.md) | What the recipes are and refuse to be | Planned (S4.6) |
-| [2. How the Recipes Work](user-overview/02-how-the-recipes-work.md) | Stages and decisions, for evaluators | Planned (S3.5, S5.4) |
-| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Planned (S3.5) |
+| [2. How the Recipes Work](user-overview/02-how-the-recipes-work.md) | Stages and decisions, for evaluators | Live for audits (S3.5); the implementation loop Planned (S5.4) |
+| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live for audits (S3.5); implementation safety Planned (S5.4) |
 
 ## Explanation — Contributor Deep Dive
 

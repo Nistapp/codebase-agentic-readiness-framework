@@ -2,10 +2,10 @@
 
 > **Goal:** Continue an audit or an implementation after a crash, a closed session or context exhaustion.
 > **Audience:** Operators / Engineers
-> **Status:** Live for audits, as far as the tools go. The recipe that calls them (S3.5) and the implementation half (S5.1) are planned.
+> **Status:** Live for audits (S3.5). The implementation half is Planned (S5.1).
 
 > [!NOTE]
-> Planned. The audit recipe does not exist yet, so the agent step below says what the recipe will do. `tools/progress.py` does not exist yet, so the implementation steps are placeholders. Filled in by roadmap steps S3.5 and S5.1.
+> Planned. `tools/progress.py` does not exist yet, so the implementation steps below are placeholders. Filled in by roadmap step S5.1.
 
 ---
 
@@ -41,13 +41,20 @@ For an implementation, `tools/progress.py show` plays this part. It is Planned (
 
 ### Step 2: Restart the agent with the same kickoff prompt
 
-- TBD: the audit recipe's kickoff prompt tells the agent to run `report.py status` first and to continue from `families_remaining` and `pending`, without repeating a recorded check (Planned, S3.5).
-
-Until the recipe exists, the agent can do the same by hand: record each remaining check with `report.py add-check`, ask the person about each pending finding and record the answer with `report.py set-disposition`, and then run `report.py finalise`. Recording a check again replaces it, so a check that was recorded just before the crash does no harm when it is recorded twice.
+Paste [`audit/prompts/kickoff.md`](../../audit/prompts/kickoff.md) again, naming the same output
+directory. Its third line is exactly this: run `report.py status` on an existing draft before anything
+else, and resume from what it reports — `families_remaining`, `pending` — instead of starting over. See
+[`SKILL.md`'s "Resuming"](../../audit/SKILL.md#resuming) for which stage each reading of `status` points
+back to. Recording a check again replaces it, so a check that was recorded just before the crash does no
+harm when it is recorded twice.
 
 ### Step 3: Check for drift
 
-- TBD: for implementations, `check_drift.py` before continuing (Planned, S5.1). For an audit, the target may have changed since the interruption. `status` does not compare; run `validate_report.py <draft> --target <repo>` to see which cited files are no longer in the target at the commit the draft recorded.
+For an audit, the target may have changed since the interruption. `status` does not compare; run
+`validate_report.py <draft> --target <repo>` to see which cited files are no longer in the target at the
+commit the draft recorded.
+
+- TBD: for implementations, `check_drift.py` before continuing (Planned, S5.1).
 
 ---
 
