@@ -1596,6 +1596,22 @@ class StatusTests(BuilderCase):
             (data["ready_to_finalise"], data["blocking"]), (False, "1 BLOCKER finding not decided interactively")
         )
 
+    def test_a_policy_confirmed_blocker_is_not_reported_as_undecided(self) -> None:
+        # `confirmed_via: "policy"` is reachable only under `accept-all`, itself legal only in eval mode
+        # (no person to ask). Found in S3.6.1's dry run: `status` named "N BLOCKER findings not decided
+        # interactively" as if it were a live count, when every one of them was already confirmed by the
+        # run's own sanctioned policy. The eval-mode reason alone should say the draft can never finalise.
+        draft = self.complete_engine_draft()
+        document = read_json(draft)
+        document["run_context"].update(eval_mode=True, confirmation_policy="accept-all")
+        blockers = [f for f in document["findings"] if f["severity"] == "BLOCKER"]
+        for blocker in blockers:
+            blocker.update(disposition="confirmed", confirmed_via="policy")
+        document["summary"] = _summary.compute_summary(document)
+        draft.write_text(rb.dumps(document), encoding="utf-8")
+        data = self.data(draft)
+        self.assertEqual(data["blocking"], "this is an eval-mode run, and its report is never final")
+
     def test_a_final_report_can_be_described_and_is_not_changeable(self) -> None:
         worked = next((TOOLS.parent / "schema" / "examples").glob("example-service.audit-report.*.json"))
         copy = self.out / worked.name

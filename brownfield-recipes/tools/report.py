@@ -1093,13 +1093,17 @@ def pending_findings(document: Mapping[str, Any]) -> list[Mapping[str, Any]]:
 
 
 def undecided_blockers(document: Mapping[str, Any]) -> list[str]:
-    """The ids of the BLOCKER findings that have a decision, but not one a person gave for that finding alone."""
+    """The ids of the BLOCKER findings that have a decision, but not one a person gave for that finding alone.
+
+    ``confirmed_via: "policy"`` is excluded: it is reachable only under `accept-all`, which is itself legal only
+    in eval mode (no person to ask), so a policy-confirmed BLOCKER is decided by design, not left undecided.
+    """
     return [
         finding["id"]
         for finding in document["findings"]
         if finding["severity"] == "BLOCKER"
         and finding["disposition"] != "pending"
-        and finding.get("confirmed_via") != "interactive"
+        and finding.get("confirmed_via") not in ("interactive", "policy")
     ]
 
 
