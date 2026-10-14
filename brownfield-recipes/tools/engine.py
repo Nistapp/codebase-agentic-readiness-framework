@@ -14,9 +14,11 @@ Two modes::
 
 The launcher decides everything the engine would otherwise leave to chance: it asks for JSON only, names the report
 ``<label>.engine-report.<stamp>.json`` in a directory outside the target, and never passes the engine's ``--force``,
-``--baseline``, ``--fail-on`` or ``--emit-baseline``. The engine refuses to replace an existing JSON report, so a
-name taken by another run in the same second is a loud failure, never an overwrite. See the tools README for the
-contract and ``schema/SCHEMA.md``, "Output files", for the names.
+``--baseline`` or ``--fail-on``. The one engine flag it does forward is ``--emit-baseline`` (D51): with it, the
+engine also writes ``do-not-do.draft.md`` beside the report, and this tool reports that path as
+``data.baseline_draft``. The engine refuses to replace an existing JSON report or draft, so a name taken by another
+run in the same second is a loud failure, never an overwrite. See the tools README for the contract and
+``schema/SCHEMA.md``, "Output files", for the names.
 
 Failure behaviour: a refusal by the engine (bad target, ``--run-gates`` without ``--allow-probe``) is exit 1 with the
 engine's message in ``data.error``. An engine that exits with any other code, or raises, is exit 3.
@@ -40,18 +42,24 @@ INFO = _common.ToolInfo(
     summary="Run the deterministic audit engine from any directory; the report is named for the repository.",
     synopsis=(
         "engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N] [--exclude GLOB]... [--max-files N]"
-        " [--run-gates --allow-probe VERB... [--timeout SECONDS]]",
+        " [--run-gates --allow-probe VERB... [--timeout SECONDS]] [--emit-baseline]",
         "engine.py --list-checks",
     ),
     writes=(
         "One file, <label>.engine-report.<stamp>.json, in --out-dir (default: the current directory), "
-        "which must be outside the target. A name that is taken is never replaced."
+        "which must be outside the target. With --emit-baseline, also do-not-do.draft.md beside it. "
+        "A name that is taken is never replaced."
     ),
 )
 
 ENGINE_DIR = Path(__file__).resolve().parent.parent / "deterministic-audit"
 REPORT_KIND = "engine-report"
 WARNING_CHARS = 500
+
+#: The CON-04 draft's fixed name, set by the engine's own ``audit.rules.checks.con.DRAFT_FILENAME`` and documented
+#: in ``audit/checks/08-constraints.md``. Named here, not imported, so this launcher does not reach into the
+#: engine's internals for one string.
+DRAFT_FILENAME = "do-not-do.draft.md"
 
 
 def load_engine() -> ModuleType:
@@ -109,6 +117,11 @@ def build_parser() -> _common.ToolParser:
     parser.add_argument("--run-gates", action="store_true", help="let the engine run the target's own commands")
     parser.add_argument("--allow-probe", action="append", default=[], metavar="VERB", help="a verb the engine may run")
     parser.add_argument("--timeout", type=int, metavar="SECONDS", help="the engine's per-command limit")
+    parser.add_argument(
+        "--emit-baseline",
+        action="store_true",
+        help="also write do-not-do.draft.md beside the report (CON-04's remediation draft, forwarded to the engine)",
+    )
     parser.add_argument("--list-checks", action="store_true", help="print the engine's checks and exit")
     return parser
 
@@ -125,6 +138,7 @@ def scan_options(args: Any) -> list[str]:
         "--run-gates": args.run_gates,
         "--allow-probe": bool(args.allow_probe),
         "--timeout": args.timeout is not None,
+        "--emit-baseline": args.emit_baseline,
     }
     return [name for name, was_given in given.items() if was_given]
 
@@ -167,6 +181,8 @@ def scan(args: Any) -> _common.Result:
         argv += ["--allow-probe", verb]
     if args.timeout is not None:
         argv += ["--timeout", str(args.timeout)]
+    if args.emit_baseline:
+        argv.append("--emit-baseline")
 
     code, stdout, stderr = run_engine(argv)
     if code == _common.EXIT_USAGE:
@@ -175,6 +191,9 @@ def scan(args: Any) -> _common.Result:
         raise _common.ToolError(f"the engine exited with code {code}: {engine_message(stderr)}")
     if not report.is_file():
         raise _common.ToolError(f"the engine reported success but wrote no report at {report}")
+    draft = out_dir / DRAFT_FILENAME
+    if args.emit_baseline and not draft.is_file():
+        raise _common.ToolError(f"the engine reported success but wrote no draft at {draft}")
 
     warnings = []
     if stdout.strip():
@@ -188,6 +207,7 @@ def scan(args: Any) -> _common.Result:
             "label": label,
             "stamp": stamp,
             "target": str(target),
+            "baseline_draft": str(draft) if args.emit_baseline else None,
             "engine": {
                 "version": getattr(package, "__version__", None),
                 "ruleset_revision": getattr(package, "__ruleset_revision__", None),

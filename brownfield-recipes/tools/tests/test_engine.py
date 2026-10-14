@@ -185,7 +185,7 @@ class ScanTests(unittest.TestCase):
         self.assertEqual(argv[argv.index("--format") + 1], "json")
         self.assertEqual(argv[argv.index("--out") + 1], envelope["data"]["report"])
         self.assertEqual(argv[argv.index("--phase") + 1], "1")
-        for never in ("--force", "--baseline", "--fail-on", "--emit-baseline"):
+        for never in ("--force", "--baseline", "--fail-on"):
             self.assertNotIn(never, argv)
 
     def test_options_are_passed_to_the_engine(self) -> None:
@@ -207,6 +207,31 @@ class ScanTests(unittest.TestCase):
         argv = spy.call_args.args[0]
         self.assertEqual([argv[i + 1] for i, a in enumerate(argv) if a == "--exclude"], ["docs/**", "*.md"])
         self.assertEqual(argv[argv.index("--max-files") + 1], "500")
+
+    def test_without_emit_baseline_no_draft_is_written_and_the_field_is_null(self) -> None:
+        code, envelope, _ = call([str(FIXTURE), "--out-dir", str(self.out)])
+        self.assertEqual(code, 0)
+        self.assertIsNone(envelope["data"]["baseline_draft"])
+        self.assertFalse((self.out / "do-not-do.draft.md").exists())
+
+    def test_emit_baseline_is_forwarded_and_the_draft_path_is_reported(self) -> None:
+        with mock.patch.object(engine, "run_engine", wraps=engine.run_engine) as spy:
+            code, envelope, _ = call([str(FIXTURE), "--out-dir", str(self.out), "--emit-baseline"])
+        self.assertEqual(code, 0)
+        self.assertIn("--emit-baseline", spy.call_args.args[0])
+        draft = self.out / "do-not-do.draft.md"
+        self.assertEqual(envelope["data"]["baseline_draft"], str(draft))
+        self.assertTrue(draft.is_file())
+
+    def test_the_engine_claims_success_but_wrote_no_draft_is_an_internal_error(self) -> None:
+        def fake(argv: list[str]) -> tuple[int, str, str]:
+            Path(argv[argv.index("--out") + 1]).write_text("{}", encoding="utf-8")
+            return 0, "", ""
+
+        with mock.patch.object(engine, "run_engine", side_effect=fake):
+            code, envelope, _ = call([str(FIXTURE), "--out-dir", str(self.out), "--emit-baseline"])
+        self.assertEqual(code, 3)
+        self.assertIn("wrote no draft", envelope["data"]["error"])
 
     def test_a_second_scan_in_the_same_second_gets_a_new_name_and_leaves_the_first_alone(self) -> None:
         with mock.patch.object(_common, "utc_stamp", return_value=FIXED_STAMP):
@@ -285,7 +310,6 @@ class ScanTests(unittest.TestCase):
             ["--format", "md"],
             ["--fail-on", "BLOCKER"],
             ["--baseline", "x"],
-            ["--emit-baseline"],
         ):
             with self.subTest(flags=flags):
                 code, envelope, _ = call([str(FIXTURE), "--out-dir", str(self.out), *flags])
