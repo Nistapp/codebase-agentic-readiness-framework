@@ -44,6 +44,7 @@ Runs the [deterministic engine](../../deterministic-audit/README.md) from any di
 python3 brownfield-recipes/tools/engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N]
                                            [--exclude GLOB]... [--max-files N]
                                            [--run-gates --allow-probe VERB... [--timeout SECONDS]]
+                                           [--emit-baseline]
 python3 brownfield-recipes/tools/engine.py --list-checks
 python3 brownfield-recipes/tools/engine.py --describe
 ```
@@ -59,19 +60,21 @@ python3 brownfield-recipes/tools/engine.py --describe
 | `--exclude GLOB` | An extra path pattern to leave out of the audit, matched against the whole path from the target's root, so `vendor-samples/*` covers every file under that directory. It applies to the checks that read git's tracked files as well as to the walk. May be repeated. |
 | `--max-files N` | A hard cap on the files the engine inspects. |
 | `--run-gates`, `--allow-probe VERB`, `--timeout SECONDS` | Let the engine run the target's own commands. Nothing runs unless `--run-gates` is given and every verb is named in an `--allow-probe`. `--timeout` is the limit per command. |
+| `--emit-baseline` | Forwarded to the engine's own `--emit-baseline` (D51): also writes `do-not-do.draft.md` beside the report, the CON-04 remediation draft. |
 | `--list-checks` | Print the engine's checks and exit. It takes no other argument. |
 
-The engine's `--force`, `--out`, `--format`, `--fail-on`, `--baseline` and `--emit-baseline` are not offered, and abbreviations of the options above are refused.
+The engine's `--force`, `--out`, `--format`, `--fail-on` and `--baseline` are not offered, and abbreviations of the options above are refused.
 
 **Outputs**
 
-A scan writes one file, `<label>.engine-report.<stamp>.json`, in the output directory. It is the engine's own JSON report, untouched. The envelope's `data` is:
+A scan writes one file, `<label>.engine-report.<stamp>.json`, in the output directory, and, with `--emit-baseline`, `do-not-do.draft.md` beside it. Both are the engine's own output, untouched. The envelope's `data` is:
 
 | Key | Meaning |
 |---|---|
 | `report` | The path of the file written. |
 | `label`, `stamp` | The two parts of the name. The stamp is the UTC launch time as `YYYYMMDDTHHMMSSZ`. |
 | `target` | The target's resolved path. |
+| `baseline_draft` | The draft's path, when `--emit-baseline` was given; `null` otherwise. |
 | `engine` | `version` and `ruleset_revision` of the engine that ran. |
 
 `--list-checks` writes nothing. Its `data` holds `engine` (name, version, ruleset revision and hash), `checks` (the engine's list, one entry per check) and `omitted`, the number of checks left out to stay within the output budget, which is `0` today.
@@ -82,7 +85,7 @@ A scan writes one file, `<label>.engine-report.<stamp>.json`, in the output dire
 |---|---|
 | `0` | The report was written, or the checks were listed. |
 | `1` | A bad argument, a missing target, an output directory inside the target, a bad label, or a refusal by the engine, whose reason is in `data.error`. |
-| `3` | The engine exited with any other code, raised, or reported success without writing the report. |
+| `3` | The engine exited with any other code, raised, or reported success without writing the report or (with `--emit-baseline`) the draft. |
 
 **Errors**
 
@@ -90,7 +93,7 @@ A scan writes one file, `<label>.engine-report.<stamp>.json`, in the output dire
 |---|---|
 | `refusing to write inside the target` | Pass `--out-dir` with a directory outside the repository, or run from outside it. |
 | `the engine refused the run: --run-gates requires at least one --allow-probe VERB` | Name each verb the engine may run with `--allow-probe`. |
-| `the engine refused the run: ... exists; nothing was replaced, run the tool again` | Another run took the name in the same second. Run the tool again. |
+| `the engine refused the run: ... exists; nothing was replaced, run the tool again` | Another run took the report's name in the same second, or `do-not-do.draft.md` already exists in `--out-dir` from an earlier `--emit-baseline` run. Run the tool again, or point `--out-dir` elsewhere. |
 | `repo_label ... is not allowed` | Use a label that matches the pattern above. |
 | `--list-checks takes no other argument` | Run `--list-checks` on its own. |
 
