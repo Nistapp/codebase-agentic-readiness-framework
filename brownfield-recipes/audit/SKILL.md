@@ -47,7 +47,7 @@ These apply through every stage, without exception:
 |---|---|---|
 | 0 | [Intake](#stage-0--intake) | below |
 | 1 | [Recon](#stage-1--recon) | below |
-| 2 | [Assess](#stage-2--assess) | part 1 below; the per-family loop is S3.5.3.2 |
+| 2 | [Assess](#stage-2--assess) | below |
 | 3 | Synthesize | S3.5.4 |
 | 4 | Confirm | S3.5.4 |
 | 5 | Finalise | S3.5.4 |
@@ -104,10 +104,6 @@ Everything else depends on the answers here; stop and ask rather than guess at a
 
 ## Stage 2 — Assess
 
-This is the first of two parts (S3.5.3). It runs the engine once and imports its report. The per-family
-loop that verifies each check and resolves `UNKNOWN` and `ATTEST` items follows in S3.5.3.2, not yet
-written.
-
 1. Run `engine.py <target> --out-dir <dir> [--run-gates --allow-probe VERB]... [--emit-baseline]`, forwarding
    the intake's `probes.allowed` verbs as `--allow-probe` (with `--run-gates` only when at least one was
    named) and passing `--emit-baseline` — this engine run is the only one for this draft, so it is also the
@@ -118,6 +114,33 @@ written.
    what to do when it refuses. Read `data.checks_imported`, `findings_pending` and `evidence_not_carried`,
    and tell the user, in plain words, what the import carried over and what it cut or dropped; the tool
    reports the counts, the model explains what they mean.
+3. Work through the thirteen families in the order above. For each, load its check file
+   (`audit/checks/NN-*.md`) and go check by check, in catalogue order:
+   - **An automated check already in the draft** (every check `import-engine` carried). Read its
+     `Engine` field. Verify independently whenever the severity is `BLOCKER`, or whenever the field's
+     distrust condition holds; a lower severity may be spot-checked instead. Agreeing needs nothing more
+     — the imported verdict stands. Disputing it needs `report.py add-check` with the new verdict, a
+     summary, an `override_reason` and the evidence the check's `Evidence to cite` field names; any
+     verdict that differs from `engine_verdict` is a dispute, whether the engine's own verdict was a firm
+     one or `UNKNOWN`. Disputing to `PASS` over a still-`pending` finding is refused until that finding is
+     rejected first: ask the person, then `report.py set-disposition --disposition rejected --via
+     interactive` for it (`--via batch` is refused for a `BLOCKER`), before retrying `add-check`.
+   - **A check the engine marked `ATTEST`.** Leave it alone — it carries no verdict, and `status` and
+     `finalise` already count it as dealt with through `unattested[]`.
+   - **A check with `method: agent`** (today `AGT-11` and `CI-04`), not yet in the draft. Gather the
+     evidence its `Evidence to cite` field names and record it fresh with `report.py add-check`; there is
+     no engine verdict to dispute.
+   - **Any check whose recorded verdict is not `PASS`.** Record the issue with `report.py add-finding`,
+     once per distinct scope, following the check's `Absence proof` field for what a `FAIL` must cite.
+4. After each family, `report.py status <draft>` is cheap enough (at most 40 lines) to call every time,
+   not only to resume: its `families_remaining` says exactly what is left before moving to the next one.
+
+## Resuming
+
+Whenever a session on this draft starts mid-audit — after a crash, in a new session, or once context ran
+out — run `report.py status <draft>` before anything else. Trust `families_done`, `families_remaining`,
+`findings_pending` and `ready_to_finalise`/`blocking` over any memory of what should already be recorded;
+the draft is the one thing the tool itself checked.
 
 ## Tools
 
