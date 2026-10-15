@@ -128,7 +128,7 @@ No component is recorded.
 
 ## Appendix — all checks
 
-All 1 check, grouped by family. The engine's structured payloads (the command surface, credential-shaped lines, missing secret-shape ignore rules, and so on) are in the JSON report only, for now.
+All 1 check, grouped by family. The engine's structured payloads (the command surface, missing secret-shape ignore rules, credential-shaped lines, and so on) are in the JSON report only, for now.
 
 ### AGT
 

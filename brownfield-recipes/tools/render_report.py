@@ -588,6 +588,37 @@ def command_surface_section(report: Mapping[str, Any]) -> list[str]:
     )
 
 
+def secret_shapes_section(report: Mapping[str, Any]) -> list[str]:
+    """Secret-shape ignore-rule coverage, merged from SEC-01's and SEC-03's structured payloads (backlog item
+    13b). A shape both checks name keeps SEC-01's row, the first found in catalogue order, matching how the
+    engine's own renderer merges the same payload kind. Nothing if neither check carries one yet."""
+    merged: dict[str, Mapping[str, Any]] = {}
+    for check in report["checks"]:
+        data = check.get("data") or {}
+        if data.get("kind") != "secret_shapes":
+            continue
+        for shape in data.get("shapes") or []:
+            merged.setdefault(shape["label"], shape)
+    if not merged:
+        return []
+    rows = [
+        [
+            text(shape["label"]),
+            "covered" if shape["covered"] else "**missing**",
+            code(shape["suggested"]) if shape.get("suggested") else "—",
+        ]
+        for shape in merged.values()
+    ]
+    return blocks(
+        ["## Missing secret-shape ignore rules"],
+        [
+            "The secret shapes SEC-01 and SEC-03 check for, and whether the repository's ignore rules cover "
+            "each one. The suggested entry is paste-ready into `.gitignore` for a shape that is missing."
+        ],
+        table(["Shape", "Status", "Suggested `.gitignore` entry"], rows, ["left", "center", "left"]),
+    )
+
+
 def check_cell(check: Mapping[str, Any], finding: Mapping[str, Any] | None) -> str:
     facts: list[str] = []
     if finding is not None:
@@ -766,6 +797,40 @@ def evidence_in_full_section(report: Mapping[str, Any]) -> list[str]:
     )
 
 
+#: (payload kind, phrase naming the section that renders it) — used only to keep the appendix's
+#: "payloads are in the JSON report" sentence accurate as more payload kinds get their own section
+#: (backlog item 13); add a row here when one does.
+_RENDERED_PAYLOAD_KINDS: tuple[tuple[str, str], ...] = (
+    ("verb_surface", "the command surface"),
+    ("secret_shapes", "the missing secret-shape ignore rules"),
+)
+
+
+def _and_join(phrases: Sequence[str]) -> str:
+    if not phrases:
+        return ""
+    if len(phrases) == 1:
+        return phrases[0]
+    return ", ".join(phrases[:-1]) + f" and {phrases[-1]}"
+
+
+def _payloads_note(checks: Sequence[Mapping[str, Any]]) -> str:
+    kinds = {(c.get("data") or {}).get("kind") for c in checks}
+    rendered = [phrase for kind, phrase in _RENDERED_PAYLOAD_KINDS if kind in kinds]
+    if not rendered:
+        return (
+            "The engine's structured payloads (the command surface, missing secret-shape ignore rules, "
+            "credential-shaped lines, and so on) are in the JSON report only, for now."
+        )
+    above = _and_join(rendered)
+    above = above[0].upper() + above[1:]
+    verb = "is" if len(rendered) == 1 else "are"
+    return (
+        f"{above} above {verb} rendered from the engine's structured payloads; the rest (credential-shaped "
+        "lines, and so on) are in the JSON report only, for now."
+    )
+
+
 def appendix_section(report: Mapping[str, Any]) -> list[str]:
     """Every check, grouped by family, including the passes that the tables above leave out."""
     checks = report["checks"]
@@ -784,15 +849,7 @@ def appendix_section(report: Mapping[str, Any]) -> list[str]:
                 text(check["summary"]) or "—",
             ]
         )
-    cmd01 = next((c for c in checks if c["id"] == "CMD-01"), None)
-    has_command_surface = ((cmd01 or {}).get("data") or {}).get("kind") == "verb_surface"
-    payloads_note = (
-        "The command surface above is one of the engine's structured payloads; the rest (credential-shaped "
-        "lines, missing secret-shape ignore rules, and so on) are in the JSON report only, for now."
-        if has_command_surface
-        else "The engine's structured payloads (the command surface, credential-shaped lines, missing "
-        "secret-shape ignore rules, and so on) are in the JSON report only, for now."
-    )
+    payloads_note = _payloads_note(checks)
     parts: list[list[str]] = [["## Appendix — all checks"]]
     if not checks:
         parts.append(["No check is recorded."])
@@ -891,6 +948,7 @@ def render(report: Mapping[str, Any]) -> str:
         summary_section(report, summary),
         verdicts_section(report),
         command_surface_section(report),
+        secret_shapes_section(report),
         attention_section(report),
         overrides_section(report),
         evidence_in_full_section(report),

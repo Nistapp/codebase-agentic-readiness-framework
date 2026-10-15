@@ -738,6 +738,73 @@ class CommandSurfaceTests(RenderCase):
         self.assertNotIn("## Command surface", markdown)
 
 
+def _secret_shapes_check(check_id: str, shapes: list[dict[str, Any]]) -> dict[str, Any]:
+    missing = [s["label"] for s in shapes if not s["covered"]]
+    return {
+        "id": check_id,
+        "title": "secret shapes",
+        "phase": 1,
+        "severity": "DEGRADER",
+        "scored": True,
+        "method": "automated",
+        "verdict": "FAIL" if missing else "PASS",
+        "summary": "secret shapes",
+        "evidence": [],
+        "searches": [],
+        "data": {
+            "kind": "secret_shapes",
+            "shapes": shapes,
+            "covered": [s["label"] for s in shapes if s["covered"]],
+            "missing": missing,
+        },
+    }
+
+
+class SecretShapesTests(RenderCase):
+    def test_each_shape_is_a_row_with_status_and_suggested_entry(self) -> None:
+        report = service()
+        report["checks"].append(
+            _secret_shapes_check(
+                "SEC-03",
+                [
+                    {"label": "dotenv", "probe": ".env", "suggested": ".env", "covered": True},
+                    {"label": "PEM", "probe": "server.pem", "suggested": "*.pem", "covered": False},
+                ],
+            )
+        )
+        text = section(self.render(report), "Missing secret-shape ignore rules")
+        rows = table_dicts(text)
+        self.assertEqual(
+            [(r["Shape"], r["Status"], r["Suggested `.gitignore` entry"]) for r in rows],
+            [("dotenv", "covered", "`.env`"), ("PEM", "**missing**", "`*.pem`")],
+        )
+
+    def test_sec01_and_sec03_merge_and_a_shared_label_keeps_sec01s_row(self) -> None:
+        report = service()
+        report["checks"].append(
+            _secret_shapes_check("SEC-01", [{"label": "dotenv", "probe": ".env", "suggested": ".env", "covered": True}])
+        )
+        report["checks"].append(
+            _secret_shapes_check(
+                "SEC-03",
+                [
+                    {"label": "dotenv", "probe": ".env", "suggested": ".env", "covered": False},
+                    {"label": "PEM", "probe": "server.pem", "suggested": "*.pem", "covered": False},
+                ],
+            )
+        )
+        text = section(self.render(report), "Missing secret-shape ignore rules")
+        rows = table_dicts(text)
+        self.assertEqual(
+            [(r["Shape"], r["Status"]) for r in rows],
+            [("dotenv", "covered"), ("PEM", "**missing**")],
+        )
+
+    def test_absent_when_no_check_carries_a_secret_shapes_payload(self) -> None:
+        markdown = self.render(service())
+        self.assertNotIn("## Missing secret-shape ignore rules", markdown)
+
+
 class AttentionTests(RenderCase):
     HEADER = ["Check", "Verdict", "What we found", "Evidence", "Fix", "Decision"]
 
@@ -1442,9 +1509,8 @@ class AppendixTests(RenderCase):
         text = section(self.render(service()), "Appendix — all checks")
         self.assertIn("All 12 checks, grouped by family.", text)
         self.assertIn(
-            "The command surface above is one of the engine's structured payloads; the rest "
-            "(credential-shaped lines, missing secret-shape ignore rules, and so on) are in the JSON report "
-            "only, for now.",
+            "The command surface above is rendered from the engine's structured payloads; the rest "
+            "(credential-shaped lines, and so on) are in the JSON report only, for now.",
             text,
         )
 
@@ -1453,8 +1519,38 @@ class AppendixTests(RenderCase):
         report["checks"] = [c for c in report["checks"] if c["id"] != "CMD-01"]
         text = section(self.render(report), "Appendix — all checks")
         self.assertIn(
-            "The engine's structured payloads (the command surface, credential-shaped lines, missing "
-            "secret-shape ignore rules, and so on) are in the JSON report only, for now.",
+            "The engine's structured payloads (the command surface, missing secret-shape ignore rules, "
+            "credential-shaped lines, and so on) are in the JSON report only, for now.",
+            text,
+        )
+
+    def test_the_appendix_names_both_rendered_payloads_when_both_are_present(self) -> None:
+        report = service()
+        report["checks"].append(
+            {
+                "id": "SEC-01",
+                "title": ".env untracked and ignored",
+                "phase": 1,
+                "severity": "BLOCKER",
+                "scored": True,
+                "method": "automated",
+                "verdict": "PASS",
+                "summary": "ignore rules cover .env",
+                "evidence": [],
+                "searches": [],
+                "data": {
+                    "kind": "secret_shapes",
+                    "shapes": [{"label": ".env", "probe": ".env", "suggested": ".env", "covered": True}],
+                    "covered": [".env"],
+                    "missing": [],
+                },
+            }
+        )
+        text = section(self.render(report), "Appendix — all checks")
+        self.assertIn(
+            "The command surface and the missing secret-shape ignore rules above are rendered from the "
+            "engine's structured payloads; the rest (credential-shaped lines, and so on) are in the JSON "
+            "report only, for now.",
             text,
         )
 

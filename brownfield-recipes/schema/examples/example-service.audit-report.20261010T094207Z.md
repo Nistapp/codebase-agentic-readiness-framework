@@ -185,7 +185,7 @@ Quotes and command output that the tables above point to, each under the check t
 
 ## Appendix — all checks
 
-All 12 checks, grouped by family. The command surface above is one of the engine's structured payloads; the rest (credential-shaped lines, missing secret-shape ignore rules, and so on) are in the JSON report only, for now.
+All 12 checks, grouped by family. The command surface above is rendered from the engine's structured payloads; the rest (credential-shaped lines, and so on) are in the JSON report only, for now.
 
 ### IDX
 
