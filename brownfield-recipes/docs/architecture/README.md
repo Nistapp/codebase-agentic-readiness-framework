@@ -30,7 +30,7 @@
 | [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Planned (S5.4) |
 | [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits (S2.3); implementations Planned (S5.1) |
 | [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Live; four profiles exist (S3.4 closed) |
-| [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Planned (S4.1) |
+| [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Partial: the corpus and expected-results format are Live (S4.1.1); the scorer and runners are Planned (S4.1.2, S4.1.3) |
 
 ## Reference
 

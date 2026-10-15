@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:codebase-agentic-readiness-framework:eval-expected:0.1",
+  "title": "Eval expected results",
+  "description": "Ground truth for one repository in the eval corpus: the acceptable verdict(s) for each check the scorer (tools/eval/score.py) checks a headless audit run against. Hand-written, or derived from the deterministic engine's own report and then corrected by a person (DP S11, review R-07). Pinned to one commit so repeat runs are comparable. Rules a schema cannot express are in SCHEMA.md.",
+  "type": "object",
+  "required": ["expected_version", "repo_label", "repo_sha", "checks"],
+  "additionalProperties": false,
+  "properties": {
+    "expected_version": {
+      "description": "Version of this schema. 0.x versions may break between releases.",
+      "const": "0.1"
+    },
+    "repo_label": {
+      "description": "The repository's short label, matching the audit report's own repo_label for the same run.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
+    },
+    "repo_sha": {
+      "description": "The commit this file's ground truth was written against. A run against a different commit is not comparable; the scorer records the mismatch rather than silently comparing anyway.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "notes": {
+      "description": "Free text about the repository: why it is in the corpus, and what it is meant to exercise (a fixture's known single defect, a real repo's particular mix of ecosystems, a planted-injection test, and so on).",
+      "type": "string",
+      "maxLength": 1000
+    },
+    "checks": {
+      "description": "One entry per check the corpus has ground truth for. A check this array is silent on is not scored for this repository; the scorer neither credits nor penalises it.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/expectedCheck" }
+    }
+  },
+  "$defs": {
+    "expectedCheck": {
+      "type": "object",
+      "required": ["id", "acceptable_verdicts"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "A check ID from the catalogue, for example EXEC-02.",
+          "type": "string",
+          "pattern": "^[A-Z]{2,5}-[0-9]{2,3}$"
+        },
+        "acceptable_verdicts": {
+          "description": "Any verdict in this list scores as a match. More than one acceptable verdict says the ground truth itself is not sharper than that — for example an ecosystem the engine can legitimately read as either PARTIAL or FAIL depending on exactly what it finds.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "items": { "enum": ["PASS", "PARTIAL", "FAIL", "UNKNOWN", "NOT_APPLICABLE"] }
+        },
+        "required_evidence_paths": {
+          "description": "Paths that must appear in this check's evidence for a run to count as right for the right reason, not just the right verdict by coincidence. Absent or empty means only the verdict is scored.",
+          "type": "array",
+          "maxItems": 20,
+          "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+        },
+        "notes": {
+          "description": "Why this is the ground truth: what a person found and confirmed, and anything a scorer or reader should know before disputing it.",
+          "type": "string",
+          "maxLength": 1000
+        }
+      }
+    }
+  }
+}

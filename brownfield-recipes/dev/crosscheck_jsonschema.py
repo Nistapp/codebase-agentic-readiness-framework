@@ -242,6 +242,7 @@ def main() -> int:
         "intake": "audit-intake.schema.json",
         "catalogue": "catalogue.schema.json",
         "facts": "facts.schema.json",
+        "eval_expected": "eval-expected.schema.json",
     }
     pairs: dict[str, tuple[Any, subset.SubsetValidator]] = {}
     schemas: dict[str, Any] = {}
@@ -267,6 +268,7 @@ def main() -> int:
         *(("intake", "intake", path) for path in sorted(EXAMPLES.glob("audit-intake.*.json"))),
         ("catalogue", "catalogue", RECIPES / "catalogue.json"),
         ("facts", "facts", EXAMPLES / "facts.minimal.json"),
+        *(("eval_expected", "eval_expected", path) for path in sorted(EXAMPLES.glob("eval-expected.*.json"))),
     ]
     invalid_documents = [("report", path) for path in sorted(EXAMPLES.rglob("*.engine-report.*.json"))]
 
