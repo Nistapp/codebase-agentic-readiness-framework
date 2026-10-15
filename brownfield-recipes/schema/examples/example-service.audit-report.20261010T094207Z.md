@@ -60,6 +60,22 @@ The first table counts every check in the report. The second counts the scored c
 | DEGRADER | 2 | Agent work is possible but unreliable or wasteful. | 6 | 5 |
 | COSMETIC | 1 | Hygiene. Fix when convenient. | 0 | 0 |
 
+## Command surface
+
+The framework's seven verbs, resolved verb by verb on the target's runners — CMD-01's structured payload; CMD-02, AGT-05 and CI-02 read the same surface.
+
+3 verbs of 7 verbs resolve. Missing: `format:check`, `typecheck`, `check`, `security`.
+
+| Verb | Resolved | Runner | Command |
+|---|:---:|---|---|
+| `format` | yes | `package.json` | `prettier --write "src/**/*.ts"` |
+| `format:check` | **no** | — | — |
+| `lint` | yes | `package.json` | `eslint "src/**/*.ts"` |
+| `typecheck` | **no** | — | — |
+| `test` | yes | `package.json` | `jest` |
+| `check` | **no** | — | — |
+| `security` | **no** | — | — |
+
 ## Checks that need attention
 
 Each row is a finding, or a check that has none. A check is listed when it is not met, was overridden, was judged by the agent, or raised a finding. Evidence is grouped by who captured it, and a quote or command output is under Evidence in full. The decision on a finding is one of these:
@@ -169,7 +185,7 @@ Quotes and command output that the tables above point to, each under the check t
 
 ## Appendix — all checks
 
-All 12 checks, grouped by family. The engine's structured payloads, such as the verb matrix, are in the JSON report.
+All 12 checks, grouped by family. The command surface above is one of the engine's structured payloads; the rest (credential-shaped lines, missing secret-shape ignore rules, and so on) are in the JSON report only, for now.
 
 ### IDX
 

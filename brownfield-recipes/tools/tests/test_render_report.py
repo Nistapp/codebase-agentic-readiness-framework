@@ -692,6 +692,52 @@ class VerdictTableTests(RenderCase):
         self.assertEqual([(s["Scored checks"], s["Not met"]) for s in severities], [("0", "0")] * 3)
 
 
+class CommandSurfaceTests(RenderCase):
+    def test_each_verb_is_a_row_with_its_runner_and_command(self) -> None:
+        text = section(self.render(service()), "Command surface")
+        rows = table_dicts(text)
+        self.assertEqual(
+            [(r["Verb"], r["Resolved"], r["Runner"], r["Command"]) for r in rows],
+            [
+                ("`format`", "yes", "`package.json`", '`prettier --write "src/**/*.ts"`'),
+                ("`format:check`", "**no**", "—", "—"),
+                ("`lint`", "yes", "`package.json`", '`eslint "src/**/*.ts"`'),
+                ("`typecheck`", "**no**", "—", "—"),
+                ("`test`", "yes", "`package.json`", "`jest`"),
+                ("`check`", "**no**", "—", "—"),
+                ("`security`", "**no**", "—", "—"),
+            ],
+        )
+
+    def test_the_summary_sentence_counts_resolved_verbs_and_names_the_missing_ones(self) -> None:
+        text = section(self.render(service()), "Command surface")
+        self.assertIn("3 verbs of 7 verbs resolve.", text)
+        self.assertIn("Missing: `format:check`, `typecheck`, `check`, `security`.", text)
+
+    def test_every_verb_resolved_says_so_instead_of_listing_nothing_missing(self) -> None:
+        report = service()
+        data = check_of(report, "CMD-01")["data"]
+        data["missing"] = []
+        data["resolved_count"] = len(data["verbs"])
+        for entry in data["verbs"]:
+            entry["resolved"] = True
+        text = section(self.render(report), "Command surface")
+        self.assertIn("Every verb resolves.", text)
+        self.assertNotIn("Missing:", text)
+
+    def test_absent_when_cmd01_is_not_yet_recorded(self) -> None:
+        report = service()
+        report["checks"] = [c for c in report["checks"] if c["id"] != "CMD-01"]
+        markdown = self.render(report)
+        self.assertNotIn("## Command surface", markdown)
+
+    def test_absent_when_cmd01_carries_no_verb_surface_payload(self) -> None:
+        report = service()
+        del check_of(report, "CMD-01")["data"]
+        markdown = self.render(report)
+        self.assertNotIn("## Command surface", markdown)
+
+
 class AttentionTests(RenderCase):
     HEADER = ["Check", "Verdict", "What we found", "Evidence", "Fix", "Decision"]
 
@@ -1395,7 +1441,22 @@ class AppendixTests(RenderCase):
     def test_the_appendix_says_that_the_engines_payloads_are_in_the_json(self) -> None:
         text = section(self.render(service()), "Appendix — all checks")
         self.assertIn("All 12 checks, grouped by family.", text)
-        self.assertIn("The engine's structured payloads, such as the verb matrix, are in the JSON report.", text)
+        self.assertIn(
+            "The command surface above is one of the engine's structured payloads; the rest "
+            "(credential-shaped lines, missing secret-shape ignore rules, and so on) are in the JSON report "
+            "only, for now.",
+            text,
+        )
+
+    def test_the_appendix_names_the_command_surface_as_json_only_when_it_is_not_rendered(self) -> None:
+        report = service()
+        report["checks"] = [c for c in report["checks"] if c["id"] != "CMD-01"]
+        text = section(self.render(report), "Appendix — all checks")
+        self.assertIn(
+            "The engine's structured payloads (the command surface, credential-shaped lines, missing "
+            "secret-shape ignore rules, and so on) are in the JSON report only, for now.",
+            text,
+        )
 
 
 class OtherSectionTests(RenderCase):
@@ -1469,6 +1530,7 @@ class OtherSectionTests(RenderCase):
                 "## Provenance",
                 "## Readiness summary",
                 "## Checks by verdict and severity",
+                "## Command surface",
                 "## Checks that need attention",
                 "## Overrides of the engine's verdicts",
                 "## Evidence in full",

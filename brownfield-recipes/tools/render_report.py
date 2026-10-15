@@ -556,6 +556,38 @@ def verdicts_section(report: Mapping[str, Any]) -> list[str]:
     )
 
 
+def command_surface_section(report: Mapping[str, Any]) -> list[str]:
+    """The seven-verb command surface, verb by verb, from CMD-01's structured payload (backlog item 13a).
+    Nothing if CMD-01 is not yet recorded or carries no such payload — the appendix still names every check."""
+    check = next((c for c in report["checks"] if c["id"] == "CMD-01"), None)
+    data = (check or {}).get("data") or {}
+    if data.get("kind") != "verb_surface":
+        return []
+    verbs = data.get("verbs") or []
+    missing = data.get("missing") or []
+    rows = [
+        [
+            code(entry["verb"]),
+            "yes" if entry["resolved"] else "**no**",
+            code(entry["runner"]) if entry.get("runner") else "—",
+            code(entry["command"]) if entry.get("command") else "—",
+        ]
+        for entry in verbs
+    ]
+    return blocks(
+        ["## Command surface"],
+        [
+            "The framework's seven verbs, resolved verb by verb on the target's runners — CMD-01's structured "
+            "payload; CMD-02, AGT-05 and CI-02 read the same surface."
+        ],
+        [
+            f"{count(data.get('resolved_count', 0), 'verb')} of {count(len(verbs), 'verb')} resolve."
+            + (f" Missing: {joined(missing)}." if missing else " Every verb resolves.")
+        ],
+        table(["Verb", "Resolved", "Runner", "Command"], rows, ["left", "center", "left", "left"]),
+    )
+
+
 def check_cell(check: Mapping[str, Any], finding: Mapping[str, Any] | None) -> str:
     facts: list[str] = []
     if finding is not None:
@@ -752,16 +784,20 @@ def appendix_section(report: Mapping[str, Any]) -> list[str]:
                 text(check["summary"]) or "—",
             ]
         )
+    cmd01 = next((c for c in checks if c["id"] == "CMD-01"), None)
+    has_command_surface = ((cmd01 or {}).get("data") or {}).get("kind") == "verb_surface"
+    payloads_note = (
+        "The command surface above is one of the engine's structured payloads; the rest (credential-shaped "
+        "lines, missing secret-shape ignore rules, and so on) are in the JSON report only, for now."
+        if has_command_surface
+        else "The engine's structured payloads (the command surface, credential-shaped lines, missing "
+        "secret-shape ignore rules, and so on) are in the JSON report only, for now."
+    )
     parts: list[list[str]] = [["## Appendix — all checks"]]
     if not checks:
         parts.append(["No check is recorded."])
     else:
-        parts.append(
-            [
-                f"All {count(len(checks), 'check')}, grouped by family. The engine's structured payloads, such as the "
-                "verb matrix, are in the JSON report."
-            ]
-        )
+        parts.append([f"All {count(len(checks), 'check')}, grouped by family. {payloads_note}"])
     for family, rows in families.items():
         parts.append([f"### {family}"])
         parts.append(table(["Check", "Title", "Severity", "Method", "Scored", "Verdict", "Engine", "Summary"], rows))
@@ -854,6 +890,7 @@ def render(report: Mapping[str, Any]) -> str:
         provenance_section(report),
         summary_section(report, summary),
         verdicts_section(report),
+        command_surface_section(report),
         attention_section(report),
         overrides_section(report),
         evidence_in_full_section(report),
