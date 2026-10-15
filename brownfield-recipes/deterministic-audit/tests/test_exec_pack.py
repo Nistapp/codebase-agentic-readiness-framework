@@ -163,6 +163,33 @@ class Exec01MessageTests(unittest.TestCase):
         )
 
 
+class Exec04EnvKeyTests(unittest.TestCase):
+    """EXEC-04's env-var extraction must capture a whole identifier, not stop at its first lower-case run."""
+
+    def _missing(self, files: dict[str, str]) -> list[str]:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            report = support.run_audit(root)
+        check = next(c for c in report["checks"] if c["id"] == "EXEC-04")
+        return list(check["data"]["missing"])
+
+    def test_a_mixed_case_suffix_after_an_upper_snake_prefix_is_captured_whole(self):
+        missing = self._missing({"src/a.ts": "if (levelNumber >= (process.env.UDA_LOG_LEVELNumber || 1)) {}\n"})
+        self.assertEqual(missing, ["UDA_LOG_LEVELNumber"])
+
+    def test_two_references_that_share_a_prefix_are_both_named_in_full(self):
+        missing = self._missing(
+            {"src/a.ts": ("const a = process.env.UDA_LOG_LEVEL;\nconst b = process.env.UDA_LOG_LEVELNumber;\n")}
+        )
+        self.assertEqual(missing, ["UDA_LOG_LEVEL", "UDA_LOG_LEVELNumber"])
+
+    def test_os_getenv_with_a_mixed_case_suffix_is_captured_whole(self):
+        missing = self._missing({"src/a.py": "import os\nos.getenv('FOO_BAZQux')\n"})
+        self.assertEqual(missing, ["FOO_BAZQux"])
+
+
 class Exec02LockfilePathTests(unittest.TestCase):
     """A lockfile is found at any depth, and is tracked or not by the path it was found at."""
 

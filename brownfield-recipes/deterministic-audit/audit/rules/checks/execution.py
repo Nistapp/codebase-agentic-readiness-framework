@@ -660,15 +660,18 @@ def check_exec03(*, spec, target, inventory, stack, components, session) -> Chec
 # EXEC-04 — env-var inventory complete
 # ===========================================================================
 
-_SHELL_ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Z0-9_]*)\}")
+#: The leading character anchors these on the env-var convention (upper-case first); the rest of
+#: the capture class permits lower-case and digits too, so an identifier such as
+#: ``UDA_LOG_LEVELNumber`` is captured whole rather than truncated at its first lower-case run.
+_SHELL_ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Za-z0-9_]*)\}")
 _CODE_ENV_PATTERNS: tuple[re.Pattern, ...] = (
-    re.compile(r"os\.environ\.get\(\s*[\"']([A-Z][A-Z0-9_]*)[\"']"),
-    re.compile(r"os\.environ\[\s*[\"']([A-Z][A-Z0-9_]*)[\"']\s*\]"),
-    re.compile(r"os\.getenv\(\s*[\"']([A-Z][A-Z0-9_]*)[\"']"),
-    re.compile(r"(?<!os\.)\bgetenv\(\s*[\"']([A-Z][A-Z0-9_]*)[\"']"),
-    re.compile(r"process\.env\.([A-Z][A-Z0-9_]*)"),
-    re.compile(r"process\.env\[\s*[\"']([A-Z][A-Z0-9_]*)[\"']\s*\]"),
-    re.compile(r"ENV\[\s*[\"']([A-Z][A-Z0-9_]*)[\"']\s*\]"),
+    re.compile(r"os\.environ\.get\(\s*[\"']([A-Z][A-Za-z0-9_]*)[\"']"),
+    re.compile(r"os\.environ\[\s*[\"']([A-Z][A-Za-z0-9_]*)[\"']\s*\]"),
+    re.compile(r"os\.getenv\(\s*[\"']([A-Z][A-Za-z0-9_]*)[\"']"),
+    re.compile(r"(?<!os\.)\bgetenv\(\s*[\"']([A-Z][A-Za-z0-9_]*)[\"']"),
+    re.compile(r"process\.env\.([A-Z][A-Za-z0-9_]*)"),
+    re.compile(r"process\.env\[\s*[\"']([A-Z][A-Za-z0-9_]*)[\"']\s*\]"),
+    re.compile(r"ENV\[\s*[\"']([A-Z][A-Za-z0-9_]*)[\"']\s*\]"),
 )
 
 #: Files where ``${VAR}`` is an environment reference rather than a language-level string
