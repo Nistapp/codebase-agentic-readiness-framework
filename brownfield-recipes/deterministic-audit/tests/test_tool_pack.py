@@ -88,6 +88,38 @@ class ToolInlineTests(unittest.TestCase):
         )
         self.assertEqual(support.verdicts(report)["TOOL-03"], "PASS")
 
+    def test_strict_tsconfig_with_a_trailing_comment_is_pass(self):
+        report = self._scan(
+            {
+                "tsconfig.json": '{\n  "compilerOptions": {\n    "strict": true, // Enable all strict type-checking options.\n  }\n}\n',
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-03"], "PASS")
+
+    def test_nonstrict_tsconfig_with_a_block_comment_is_partial(self):
+        report = self._scan(
+            {
+                "tsconfig.json": '{\n  "compilerOptions": {\n    /* loosened for migration */\n    "strict": false\n  }\n}\n',
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-03"], "PARTIAL")
+
+    def test_a_trailing_comma_left_by_a_stripped_comment_is_tolerated(self):
+        report = self._scan(
+            {
+                "tsconfig.json": '{\n  "compilerOptions": {\n    "target": "es2020",\n    "strict": true, // kept\n  }\n}\n',
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-03"], "PASS")
+
+    def test_a_comment_like_substring_inside_a_string_value_is_not_stripped(self):
+        report = self._scan(
+            {
+                "tsconfig.json": '{\n  "compilerOptions": {\n    "strict": true\n  },\n  "comment": "see https://example.com // not a real comment"\n}\n',
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-03"], "PASS")
+
     def test_no_ecosystem_and_no_config_is_unknown_not_fail(self):
         report = self._scan({"notes.txt": "nothing executable here\n"})
         verdicts = support.verdicts(report)

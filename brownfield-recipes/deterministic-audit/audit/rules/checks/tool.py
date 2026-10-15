@@ -241,9 +241,87 @@ def _linter_config(inventory) -> list[str]:
     return found
 
 
+def _strip_jsonc_comments(text: str) -> str:
+    """Strip ``//`` and ``/* */`` comments outside string literals, as `tsconfig.json`/`jsconfig.json`
+    readers (and TypeScript's own parser) do; ``json.loads`` alone rejects them as invalid JSON."""
+    out: list[str] = []
+    in_string = False
+    escape = False
+    i = 0
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        if in_string:
+            out.append(ch)
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == "/" and i + 1 < n and text[i + 1] == "/":
+            i += 2
+            while i < n and text[i] not in "\r\n":
+                i += 1
+            continue
+        if ch == "/" and i + 1 < n and text[i + 1] == "*":
+            i += 2
+            while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
+                i += 1
+            i = min(i + 2, n)
+            continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
+def _strip_trailing_commas(text: str) -> str:
+    """Drop a ``,`` that precedes a closing ``}``/``]`` (ignoring whitespace), outside string literals —
+    TypeScript's own `tsconfig.json`/`jsconfig.json` reader accepts a trailing comma the stdlib does not."""
+    out: list[str] = []
+    in_string = False
+    escape = False
+    i = 0
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        if in_string:
+            out.append(ch)
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            i += 1
+            continue
+        if ch == '"':
+            in_string = True
+            out.append(ch)
+            i += 1
+            continue
+        if ch == ",":
+            j = i + 1
+            while j < n and text[j] in " \t\r\n":
+                j += 1
+            if j < n and text[j] in "}]":
+                i += 1
+                continue
+        out.append(ch)
+        i += 1
+    return "".join(out)
+
+
 def _json_true(text: str, key: str) -> bool:
     try:
-        data = json.loads(text)
+        data = json.loads(_strip_trailing_commas(_strip_jsonc_comments(text)))
     except (json.JSONDecodeError, ValueError):
         return False
     if not isinstance(data, dict):
