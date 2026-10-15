@@ -69,7 +69,10 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  its consistency is left `PARTIAL`, because only the root manifest is read. Distrust a
                  `FAIL` for "no lockfile" when the manager is one the engine does not recognise for that
                  ecosystem — verify against `PACKAGE_MANAGERS` in `audit/stack.py` before concluding the
-                 project truly has none.
+                 project truly has none. Distrust a `PARTIAL` citing "consistency unverified" when the
+                 lockfile is larger than `CONTENT_READ_LIMIT` (`audit/scan.py`, 2 MiB) — the engine never
+                 read the file at all, so this is a tooling limit, not evidence of drift; compare the
+                 manifest's and lockfile's declared dependency names directly before accepting the gap.
 Method           automated
 Look for         Every lockfile name for each detected package manager, at any depth; `git ls-files` (or
                  equivalent) for whether the shallowest one is tracked; for node/python/rust/go, the
