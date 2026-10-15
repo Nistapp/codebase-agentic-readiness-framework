@@ -738,6 +738,32 @@ class CommandSurfaceTests(RenderCase):
         self.assertNotIn("## Command surface", markdown)
 
 
+class CredentialTotalTests(RenderCase):
+    def test_the_total_names_lines_files_and_source_from_sec02s_payload(self) -> None:
+        text = section(self.render(service()), "Credential-shaped lines")
+        self.assertIn("3 credential-shaped lines across 2 files in git ls-files.", text)
+
+    def test_the_total_points_to_the_attention_tables_for_the_file_by_file_detail(self) -> None:
+        text = section(self.render(service()), "Credential-shaped lines")
+        self.assertIn("The file-by-file detail is in the attention tables above", text)
+
+    def test_no_second_table_duplicates_the_attention_tables_file_by_file_rows(self) -> None:
+        text = section(self.render(service()), "Credential-shaped lines")
+        self.assertNotIn("|", text)
+
+    def test_absent_when_sec02_is_not_yet_recorded(self) -> None:
+        report = service()
+        report["checks"] = [c for c in report["checks"] if c["id"] != "SEC-02"]
+        markdown = self.render(report)
+        self.assertNotIn("## Credential-shaped lines", markdown)
+
+    def test_absent_when_sec02_carries_no_credential_matrix_payload(self) -> None:
+        report = service()
+        del check_of(report, "SEC-02")["data"]
+        markdown = self.render(report)
+        self.assertNotIn("## Credential-shaped lines", markdown)
+
+
 def _secret_shapes_check(check_id: str, shapes: list[dict[str, Any]]) -> dict[str, Any]:
     missing = [s["label"] for s in shapes if not s["covered"]]
     return {
@@ -1505,26 +1531,38 @@ class AppendixTests(RenderCase):
         report["checks"], report["findings"] = [], []
         self.assertIn("No check is recorded.", section(self.render(report), "Appendix — all checks").split("\n"))
 
-    def test_the_appendix_says_that_the_engines_payloads_are_in_the_json(self) -> None:
+    def test_the_appendix_names_the_two_payloads_service_already_renders(self) -> None:
+        # service() carries CMD-01's verb_surface and SEC-02's credential_matrix out of the box.
         text = section(self.render(service()), "Appendix — all checks")
         self.assertIn("All 12 checks, grouped by family.", text)
         self.assertIn(
-            "The command surface above is rendered from the engine's structured payloads; the rest "
-            "(credential-shaped lines, and so on) are in the JSON report only, for now.",
+            "The command surface and the credential-shaped-lines total above are rendered from the "
+            "engine's structured payloads; other payloads (env-key inventories, harness-reach matrices, "
+            "and so on) are in the JSON report only, for now.",
             text,
         )
 
-    def test_the_appendix_names_the_command_surface_as_json_only_when_it_is_not_rendered(self) -> None:
+    def test_the_appendix_names_only_the_one_payload_actually_rendered(self) -> None:
         report = service()
-        report["checks"] = [c for c in report["checks"] if c["id"] != "CMD-01"]
+        del check_of(report, "SEC-02")["data"]
         text = section(self.render(report), "Appendix — all checks")
         self.assertIn(
-            "The engine's structured payloads (the command surface, missing secret-shape ignore rules, "
-            "credential-shaped lines, and so on) are in the JSON report only, for now.",
+            "The command surface above is rendered from the engine's structured payloads; other payloads "
+            "(env-key inventories, harness-reach matrices, and so on) are in the JSON report only, for now.",
             text,
         )
 
-    def test_the_appendix_names_both_rendered_payloads_when_both_are_present(self) -> None:
+    def test_the_appendix_says_nothing_is_rendered_when_nothing_is(self) -> None:
+        report = service()
+        report["checks"] = [c for c in report["checks"] if c["id"] not in ("CMD-01", "SEC-02")]
+        text = section(self.render(report), "Appendix — all checks")
+        self.assertIn(
+            "The engine's structured payloads (the command surface, the credential-shaped-lines total, "
+            "missing secret-shape ignore rules, and so on) are in the JSON report only, for now.",
+            text,
+        )
+
+    def test_the_appendix_names_all_three_rendered_payloads_when_all_are_present(self) -> None:
         report = service()
         report["checks"].append(
             {
@@ -1548,9 +1586,9 @@ class AppendixTests(RenderCase):
         )
         text = section(self.render(report), "Appendix — all checks")
         self.assertIn(
-            "The command surface and the missing secret-shape ignore rules above are rendered from the "
-            "engine's structured payloads; the rest (credential-shaped lines, and so on) are in the JSON "
-            "report only, for now.",
+            "The command surface, the credential-shaped-lines total and the missing secret-shape ignore "
+            "rules above are rendered from the engine's structured payloads; other payloads (env-key "
+            "inventories, harness-reach matrices, and so on) are in the JSON report only, for now.",
             text,
         )
 
@@ -1627,6 +1665,7 @@ class OtherSectionTests(RenderCase):
                 "## Readiness summary",
                 "## Checks by verdict and severity",
                 "## Command surface",
+                "## Credential-shaped lines",
                 "## Checks that need attention",
                 "## Overrides of the engine's verdicts",
                 "## Evidence in full",

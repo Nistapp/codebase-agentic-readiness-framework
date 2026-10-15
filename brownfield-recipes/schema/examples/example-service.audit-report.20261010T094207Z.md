@@ -76,6 +76,10 @@ The framework's seven verbs, resolved verb by verb on the target's runners — C
 | `check` | **no** | — | — |
 | `security` | **no** | — | — |
 
+## Credential-shaped lines
+
+3 credential-shaped lines across 2 files in git ls-files. The file-by-file detail is in the attention tables above; the report never records the value itself.
+
 ## Checks that need attention
 
 Each row is a finding, or a check that has none. A check is listed when it is not met, was overridden, was judged by the agent, or raised a finding. Evidence is grouped by who captured it, and a quote or command output is under Evidence in full. The decision on a finding is one of these:
@@ -185,7 +189,7 @@ Quotes and command output that the tables above point to, each under the check t
 
 ## Appendix — all checks
 
-All 12 checks, grouped by family. The command surface above is rendered from the engine's structured payloads; the rest (credential-shaped lines, and so on) are in the JSON report only, for now.
+All 12 checks, grouped by family. The command surface and the credential-shaped-lines total above are rendered from the engine's structured payloads; other payloads (env-key inventories, harness-reach matrices, and so on) are in the JSON report only, for now.
 
 ### IDX
 

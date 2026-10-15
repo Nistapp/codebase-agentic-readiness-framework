@@ -588,6 +588,25 @@ def command_surface_section(report: Mapping[str, Any]) -> list[str]:
     )
 
 
+def credential_total_section(report: Mapping[str, Any]) -> list[str]:
+    """The credential_matrix payload's total (SEC-02's structured payload, backlog item 13c). The per-file,
+    per-line detail is already in the attention tables above (one finding per file); this adds only the
+    total the payload computes, not a second table duplicating that detail."""
+    check = next((c for c in report["checks"] if (c.get("data") or {}).get("kind") == "credential_matrix"), None)
+    data = (check or {}).get("data") or {}
+    if data.get("kind") != "credential_matrix":
+        return []
+    files = data.get("files") or []
+    return blocks(
+        ["## Credential-shaped lines"],
+        [
+            f"{count(data.get('total', 0), 'credential-shaped line')} across {count(len(files), 'file')} in "
+            f"{text(data['source']) if data.get('source') else 'the repository'}. The file-by-file detail is "
+            "in the attention tables above; the report never records the value itself."
+        ],
+    )
+
+
 def secret_shapes_section(report: Mapping[str, Any]) -> list[str]:
     """Secret-shape ignore-rule coverage, merged from SEC-01's and SEC-03's structured payloads (backlog item
     13b). A shape both checks name keeps SEC-01's row, the first found in catalogue order, matching how the
@@ -802,6 +821,7 @@ def evidence_in_full_section(report: Mapping[str, Any]) -> list[str]:
 #: (backlog item 13); add a row here when one does.
 _RENDERED_PAYLOAD_KINDS: tuple[tuple[str, str], ...] = (
     ("verb_surface", "the command surface"),
+    ("credential_matrix", "the credential-shaped-lines total"),
     ("secret_shapes", "the missing secret-shape ignore rules"),
 )
 
@@ -819,15 +839,15 @@ def _payloads_note(checks: Sequence[Mapping[str, Any]]) -> str:
     rendered = [phrase for kind, phrase in _RENDERED_PAYLOAD_KINDS if kind in kinds]
     if not rendered:
         return (
-            "The engine's structured payloads (the command surface, missing secret-shape ignore rules, "
-            "credential-shaped lines, and so on) are in the JSON report only, for now."
+            "The engine's structured payloads (the command surface, the credential-shaped-lines total, "
+            "missing secret-shape ignore rules, and so on) are in the JSON report only, for now."
         )
     above = _and_join(rendered)
     above = above[0].upper() + above[1:]
     verb = "is" if len(rendered) == 1 else "are"
     return (
-        f"{above} above {verb} rendered from the engine's structured payloads; the rest (credential-shaped "
-        "lines, and so on) are in the JSON report only, for now."
+        f"{above} above {verb} rendered from the engine's structured payloads; other payloads (env-key "
+        "inventories, harness-reach matrices, and so on) are in the JSON report only, for now."
     )
 
 
@@ -948,6 +968,7 @@ def render(report: Mapping[str, Any]) -> str:
         summary_section(report, summary),
         verdicts_section(report),
         command_surface_section(report),
+        credential_total_section(report),
         secret_shapes_section(report),
         attention_section(report),
         overrides_section(report),
