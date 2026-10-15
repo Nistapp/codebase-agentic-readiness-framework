@@ -13,8 +13,34 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-10-15.3` | 2026-10-15 | 55 | S3.6.4: real-defect fixes found by the Digital-Assistant-SDK dry run (S3.6.3) — `TOOL-03`'s comment-intolerant JSON parse, `EXEC-04`'s truncated identifier capture, and `EXEC-02`'s undersized content-read cap — plus `CI-03`'s npm staged-publish fix (`3fb090d`, S3.6.1), which moved a verdict without a revision bump at the time |
 | `2026-10-11.1` | 2026-10-11 | 55 | S2.6: the Makefile reader, the false positives the self-audit found, and the constraint pack |
 | `2026-09-28.13` | 2026-09-28 | 54 | The engine as it was imported into this repository |
+
+---
+
+## `2026-10-15.3`
+
+Three real defects found by a live, interactive audit run against Digital-Assistant-SDK (S3.6.3), recorded in
+`artefacts/audit-runs/digital-assistant-sdk/digital-assistant-sdk.engine-defects.20261015T041602Z.md`, fixed in
+S3.6.4. Also folds in `CI-03`'s fix (`3fb090d`, S3.6.1), which changed a verdict but was never given its own
+revision bump — this revision is the first to carry it.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `TOOL-03` | `PARTIAL` for a `tsconfig.json`/`jsconfig.json` with a `//` or `/* */` comment (or a trailing comma a stripped comment leaves behind) | `PASS` when `strict`/`checkJs` is actually `true` | `_json_true` parsed the file with plain `json.loads`, which TypeScript's own parser does not require; it now strips comments and trailing commas first. |
+| `EXEC-04` | A missing key named one character short, e.g. `UDA_LOG_LEVELN` for a reference to `process.env.UDA_LOG_LEVELNumber` | The full identifier | The extraction regexes capped their capture group at `[A-Z0-9_]*` (upper-case and digits only), so a mixed-case identifier was truncated at its first lower-case run. The class now also accepts lower-case after the leading upper-case character. |
+| `EXEC-02` | `PARTIAL` ("consistency unverified") for any lockfile over 256 KiB, even a consistent one | Verified normally up to 2 MiB | `CONTENT_READ_LIMIT` (`audit/scan.py`) was 256 KiB; a real `package-lock.json` at 514 KiB tripped it. Raised to 2 MiB. `NAV-03`'s separate 512 KiB oversized-file threshold is unrelated and unchanged. |
+| `CI-03` | `FAIL` for a CI step that runs `npm stage publish` (npm's native staged-publish subcommand) | `PASS` | Already fixed in `3fb090d` (S3.6.1); listed here because that fix never bumped the ruleset revision. |
+
+### The example report
+
+`examples/digital-assistant-sdk/` is regenerated at the same commit as before, `d44bbc672` (clean, `fix/packaging-types-deps`
+of Digital-Assistant-SDK). `CI-03`, `EXEC-02` and `TOOL-03` move `FAIL`/`PARTIAL` → `PASS`; `EXEC-04` stays `FAIL` but
+now names `UDA_LOG_LEVELNumber` instead of the truncated `UDA_LOG_LEVELN`. Blockers are unchanged at 6 (none of the
+moved checks were blocking). Phase-1 score: `0.6352` → `0.6721`.
 
 ---
 

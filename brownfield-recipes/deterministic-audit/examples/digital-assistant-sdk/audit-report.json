@@ -440,10 +440,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "type checker configured but not strict: tsconfig.json:strict",
+      "summary": "strict config: tsconfig.json:strict",
       "tier": "A",
       "title": "Type checker configured",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -518,10 +518,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "1 CI-only step(s)",
+      "summary": "no CI-only steps",
       "tier": "B",
       "title": "CI-only steps flagged",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -648,10 +648,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "consistency unverified: package-lock.json",
+      "summary": "tracked: package-lock.json",
       "tier": "B",
       "title": "Lockfile committed and consistent",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -671,12 +671,12 @@
         "kind": "env_keys",
         "missing": [
           "UDA_LOG_LEVEL",
-          "UDA_LOG_LEVELN"
+          "UDA_LOG_LEVELNumber"
         ],
         "referenced": [
           "NODE_ENV",
           "UDA_LOG_LEVEL",
-          "UDA_LOG_LEVELN"
+          "UDA_LOG_LEVELNumber"
         ],
         "templates": []
       },
@@ -686,7 +686,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "2 referenced key(s) are absent from any committed example file: UDA_LOG_LEVEL, UDA_LOG_LEVELN",
+      "summary": "2 referenced key(s) are absent from any committed example file: UDA_LOG_LEVEL, UDA_LOG_LEVELNumber",
       "tier": "B",
       "title": "Env-var inventory complete",
       "verdict": "FAIL"
@@ -1217,7 +1217,7 @@
       "phase": 1,
       "remediation": "Add the missing keys to .env.example (values redacted) so the environment can be provisioned without reading the source.",
       "severity": "BLOCKER",
-      "statement": "An agent cannot know every variable the code needs before running it because 2 referenced key(s) are absent from any committed example file: UDA_LOG_LEVEL, UDA_LOG_LEVELN.",
+      "statement": "An agent cannot know every variable the code needs before running it because 2 referenced key(s) are absent from any committed example file: UDA_LOG_LEVEL, UDA_LOG_LEVELNumber.",
       "verdict": "FAIL"
     },
     {
@@ -1487,22 +1487,6 @@
       "verdict": "FAIL"
     },
     {
-      "check": "CI-03",
-      "evidence": [
-        {
-          "line": 116,
-          "note": "npm stage publish --provenance --access public",
-          "path": ".github/workflows/release-and-sync.yml"
-        }
-      ],
-      "id": "CI-03",
-      "phase": 1,
-      "remediation": "Add a local script/target for `stage`, or document why the step is CI-only.",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot reproduce a CI step on the local command surface because .github/workflows/release-and-sync.yml:116 runs `npm stage publish --provenance --access public` with no local runner entry for `stage`.",
-      "verdict": "FAIL"
-    },
-    {
       "check": "DOC-01",
       "evidence": [],
       "id": "DOC-01",
@@ -1571,22 +1555,6 @@
       "remediation": "Add the missing shapes to .gitignore \u2014 for example `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `id_rsa*`, `*.crt`, `*.cer`, `.aws/*`.",
       "severity": "DEGRADER",
       "statement": "An agent cannot trust that secret shapes cannot be committed because ignore rules do not cover dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials.",
-      "verdict": "PARTIAL"
-    },
-    {
-      "check": "TOOL-03",
-      "evidence": [
-        {
-          "line": null,
-          "note": null,
-          "path": "tsconfig.json:strict"
-        }
-      ],
-      "id": "TOOL-03",
-      "phase": 1,
-      "remediation": "Turn on strict mode (tsconfig `strict: true`, mypy `strict = true`, pyright `typeCheckingMode: \"strict\"`) so the checker's findings are trustworthy.",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot trust the type checker to catch a whole class of defects because a type-check configuration exists but is not strict (tsconfig.json:strict).",
       "verdict": "PARTIAL"
     },
     {
@@ -1780,15 +1748,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "a2d27914afec95a5263fdc3de297dfee717e6a59",
+    "framework_revision": "4b66e673c8fe02ee49f7e97d1e7cdb9540ee1cfe",
     "git_branch": "fix/packaging-types-deps",
     "git_dirty": false,
     "git_sha": "d44bbc6721a3ce46457b2933bf935b37e52595fc",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "970e6792f98eeeb5",
-    "ruleset_revision": "2026-10-11.1",
-    "scanned_at": "2026-10-11T16:32:08+00:00",
+    "ruleset_revision": "2026-10-15.3",
+    "scanned_at": "2026-10-15T10:00:36+00:00",
     "target": "/home/kc/Projects/UDAN/Digital-Assistant-SDK",
     "tool": "python-agentic-audit",
     "version": "0.1.0"
@@ -1814,9 +1782,9 @@
     "blockers": 6,
     "checks": {
       "attest": 0,
-      "fail": 20,
-      "partial": 11,
-      "pass": 33,
+      "fail": 19,
+      "partial": 9,
+      "pass": 36,
       "unknown": 5
     },
     "checks_applicable": 69,
@@ -1824,8 +1792,8 @@
     "checks_scoreable": 55,
     "cosmetic": 12,
     "coverage_note": "55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
-    "degraders": 14,
-    "phase1_score": 0.6352
+    "degraders": 12,
+    "phase1_score": 0.6721
   },
   "unattested": [
     "index-in-use",

@@ -11,23 +11,23 @@
 | Target | `/home/kc/Projects/UDAN/Digital-Assistant-SDK` |
 | Commit | `d44bbc6721a3` on `fix/packaging-types-deps` |
 | Tool | `python-agentic-audit` `0.1.0` |
-| Ruleset | `2026-10-11.1` (hash `970e6792f98eeeb5`) |
-| Framework revision | `a2d27914afec95a5263fdc3de297dfee717e6a59` |
+| Ruleset | `2026-10-15.3` (hash `970e6792f98eeeb5`) |
+| Framework revision | `4b66e673c8fe02ee49f7e97d1e7cdb9540ee1cfe` |
 | Phase evaluated | 1 |
-| Scanned | `2026-10-11T16:32:08+00:00` |
+| Scanned | `2026-10-15T10:00:36+00:00` |
 | Probes enabled | no |
 
 ## Scorecard
 
-**Phase-1 score:** `0.64` (33 pass · 11 partial · 20 fail · 5 unknown · 0 attest)
+**Phase-1 score:** `0.67` (36 pass · 9 partial · 19 fail · 5 unknown · 0 attest)
 
 ### Verdict distribution (applicable checks)
 
 | Verdict | Checks | Share | Earns credit | Meaning |
 |---|--:|--:|:--:|---|
-| PASS | 33 | 47.8% | yes | Evidence found; requirement met. |
-| PARTIAL | 11 | 15.9% | no | Some of the requirement is met; the ratio is the useful number. |
-| FAIL | 20 | 29.0% | no | Requirement not met; a finding is emitted. |
+| PASS | 36 | 52.2% | yes | Evidence found; requirement met. |
+| PARTIAL | 9 | 13.0% | no | Some of the requirement is met; the ratio is the useful number. |
+| FAIL | 19 | 27.5% | no | Requirement not met; a finding is emitted. |
 | UNKNOWN | 5 | 7.2% | no | Evidence could not be gathered. An open question about tool coverage. |
 | ATTEST | 0 | 0.0% | no | Requires human attestation; not machine-verifiable. |
 | **Total** | **69** | **100%** |  | 69 applicable checks |
@@ -37,9 +37,9 @@
 | Severity | Findings | Fix window | Checks affected |
 |---|--:|---|---|
 | BLOCKER | 6 | Before any agent work | `EXEC-04`, `SEC-01`, `SEC-02` |
-| DEGRADER | 14 | Schedule | `AGT-03`, `AGT-04`, `AGT-07`, `BASE-01`, `BASE-02`, `BASE-03`, `BASE-04`, `CI-03`, `DOC-01`, `DOC-02`, `SEC-03`, `TOOL-03`, `TOOL-05`, `TST-04` |
+| DEGRADER | 12 | Schedule | `AGT-03`, `AGT-04`, `AGT-07`, `BASE-01`, `BASE-02`, `BASE-03`, `BASE-04`, `DOC-01`, `DOC-02`, `SEC-03`, `TOOL-05`, `TST-04` |
 | COSMETIC | 12 | Note and move on | `AGT-08`, `DOC-04`, `HYG-02`, `HYG-03`, `HYG-04`, `HYG-05`, `HYG-06`, `HYG-10`, `HYG-11`, `NAV-03`, `NAV-04`, `TOOL-06` |
-| **Total** | **32** |  |  |
+| **Total** | **30** |  |  |
 
 > [!IMPORTANT]
 > **Coverage caveat.** 55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it
@@ -104,7 +104,7 @@ The framework's seven verbs, resolved verb by verb on the target's runners.
 
 | Check | Title | Verdict | Specifics | Evidence | Fix |
 |---|---|:--:|---|---|---|
-| `EXEC-04` | Env-var inventory complete | FAIL | Missing env keys: `UDA_LOG_LEVEL`, `UDA_LOG_LEVELN`. | `(no example file)` | Add the missing keys to .env.example (values redacted) so the environment can be provisioned without reading the source. |
+| `EXEC-04` | Env-var inventory complete | FAIL | Missing env keys: `UDA_LOG_LEVEL`, `UDA_LOG_LEVELNumber`. | `(no example file)` | Add the missing keys to .env.example (values redacted) so the environment can be provisioned without reading the source. |
 | `SEC-01` | .env untracked and ignored | PARTIAL | Missing: dotenv variant. | `.gitignore` (node_modules)<br>`.gitignore` (dist)<br>`.gitignore` (build)<br>`.gitignore` (.env)<br>`.gitignore` (environments/*)<br>`.gitignore` (coverage)<br>`.gitignore` (.jest-cache)<br>`.gitignore` (.DS_Store) | Add the .env shape (for example `.env` and `.env.*`) to .gitignore so an environment file cannot be committed by accident. |
 | `SEC-02` | No key-shaped strings in tracked files | FAIL | 1 credential-shaped line(s). | `src/services/__tests__/TranslateService.test.ts:20` (credential-shaped string) | Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself. |
 | `SEC-02` | No key-shaped strings in tracked files | FAIL | 3 credential-shaped line(s). | `src/services/__tests__/apiClient.test.ts:158` (credential-shaped string)<br>`src/services/__tests__/apiClient.test.ts:186` (credential-shaped string)<br>`src/services/__tests__/apiClient.test.ts:206` (credential-shaped string) | Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself. |
@@ -122,11 +122,9 @@ The framework's seven verbs, resolved verb by verb on the target's runners.
 | `BASE-02` | Current violation counts measured | PARTIAL | counting surface present but no committed count/budget: .eslintrc.js, package.json:lint, package.json:security, package.json:typecheck; method: static configuration scan; the target's own tools are never run | `.eslintrc.js`<br>`package.json:lint`<br>`package.json:security`<br>`package.json:typecheck` | Commit the count or configure a budget (`--max-warnings N`, `max-issues`, or a `violation budget`) so a regression has a baseline number to compare against. |
 | `BASE-03` | No-new-violations mechanism | PARTIAL | no ratchet and no baseline yet, so there is nothing to compare against | `<repository>` | Once a baseline exists, wire a comparison step (the audit's own `--baseline REPORT.JSON` is the reference pattern) so new findings fail the build. |
 | `BASE-04` | Coverage floor configured | FAIL | no coverage threshold configured | `<repository>` | Configure a coverage floor for the test runner so a drop fails the gate. |
-| `CI-03` | CI-only steps flagged | FAIL | 1 CI-only step(s) | `.github/workflows/release-and-sync.yml:116` (npm stage publish --provenance --access public) | Add a local script/target for `stage`, or document why the step is CI-only. |
 | `DOC-01` | docs/ exists | FAIL | no docs/ directory | — | Create docs/ as the canonical home for permanent knowledge, with docs/STYLE_GUIDE.md holding the authoring rules. |
 | `DOC-02` | docs/STYLE_GUIDE.md exists | FAIL | docs/STYLE_GUIDE.md is not present | — | Create docs/STYLE_GUIDE.md and name it from the instruction file so writers have one set of authoring rules. |
 | `SEC-03` | Ignore patterns cover secret shapes | PARTIAL | Missing: dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials. | `.gitignore` (node_modules)<br>`.gitignore` (dist)<br>`.gitignore` (build)<br>`.gitignore` (.env)<br>`.gitignore` (environments/*)<br>`.gitignore` (coverage)<br>`.gitignore` (.jest-cache)<br>`.gitignore` (.DS_Store) | Add the missing shapes to .gitignore — for example `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `id_rsa*`, `*.crt`, `*.cer`, `.aws/*`. |
-| `TOOL-03` | Type checker configured | PARTIAL | type checker configured but not strict: tsconfig.json:strict | `tsconfig.json:strict` | Turn on strict mode (tsconfig `strict: true`, mypy `strict = true`, pyright `typeCheckingMode: "strict"`) so the checker's findings are trustworthy. |
 | `TOOL-05` | Local hook chain active | FAIL | no hook chain configured | `package.json` | Adopt a hook manager (pre-commit, lefthook, husky) and wire it so checks run before a commit rather than only in CI. |
 | `TST-04` | Fast path documented | FAIL | no single-test/subset invocation in fenced shell blocks (scope: README.md, AGENTS.md) | `README.md`<br>`AGENTS.md` | Document a fast path (for example `pytest -k <name>`, `npm test -- <name>`, or `go test -run <name>`) in a fenced shell block. |
 
@@ -149,7 +147,7 @@ The framework's seven verbs, resolved verb by verb on the target's runners.
 
 ## Appendix — full check results
 
-All 69 checks in the catalogue, grouped by pack, including the 33 passes and 5 unknowns the findings tables omit. `69` of `69` applicable checks are implemented in this ruleset; `55` are scoreable.
+All 69 checks in the catalogue, grouped by pack, including the 36 passes and 5 unknowns the findings tables omit. `69` of `69` applicable checks are implemented in this ruleset; `55` are scoreable.
 
 ### IDX
 
@@ -198,7 +196,7 @@ All 69 checks in the catalogue, grouped by pack, including the 33 passes and 5 u
 |---|---|---|:--:|:--:|---|---|
 | `TOOL-01` | Formatter configured | DEGRADER | B | PASS | implemented | formatter .prettierrc.js, package.json prettier + package.json format verb |
 | `TOOL-02` | Linter configured | DEGRADER | B | PASS | implemented | linter .eslintrc.js + package.json lint verb |
-| `TOOL-03` | Type checker configured | DEGRADER | A | PARTIAL | implemented | type checker configured but not strict: tsconfig.json:strict |
+| `TOOL-03` | Type checker configured | DEGRADER | A | PASS | implemented | strict config: tsconfig.json:strict |
 | `TOOL-04` | Dependency / security scan verb | DEGRADER | A | PASS | implemented | security -> npm audit --omit=dev --audit-level=high && npm audit --audit-level=critical |
 | `TOOL-05` | Local hook chain active | DEGRADER | B | FAIL | implemented | no hook chain configured |
 | `TOOL-06` | Commit convention enforced | COSMETIC | A | FAIL | implemented | no commit-message rule |
@@ -209,7 +207,7 @@ All 69 checks in the catalogue, grouped by pack, including the 33 passes and 5 u
 |---|---|---|:--:|:--:|---|---|
 | `CI-01` | Pipeline present, triggered on PRs | BLOCKER | B | PASS | implemented | PR-triggered: .github/workflows/ci.yml (github); .github/workflows/enforce-dev-base.yml (github) |
 | `CI-02` | Local↔CI parity | BLOCKER | B | PASS | implemented | CI verbs: format:check, lint, security, test, typecheck; local read-only verbs not exercised: check |
-| `CI-03` | CI-only steps flagged | DEGRADER | B | FAIL | implemented | 1 CI-only step(s) |
+| `CI-03` | CI-only steps flagged | DEGRADER | B | PASS | implemented | no CI-only steps |
 
 ### BASE
 
@@ -234,9 +232,9 @@ All 69 checks in the catalogue, grouped by pack, including the 33 passes and 5 u
 | ID | Title | Severity | Tier | Verdict | Status | Detail |
 |---|---|---|:--:|:--:|---|---|
 | `EXEC-01` | Toolchain pinned / wrapper committed | BLOCKER | A | PASS | implemented | pinned: node (package.json (engines.node)) |
-| `EXEC-02` | Lockfile committed and consistent | BLOCKER | B | PARTIAL | implemented | consistency unverified: package-lock.json |
+| `EXEC-02` | Lockfile committed and consistent | BLOCKER | B | PASS | implemented | tracked: package-lock.json |
 | `EXEC-03` | Non-interactive setup path | BLOCKER | A | PASS | implemented | documented setup command: README.md: npm ci |
-| `EXEC-04` | Env-var inventory complete | BLOCKER | B | FAIL | implemented | 2 referenced key(s) are absent from any committed example file: UDA_LOG_LEVEL, UDA_LOG_LEVELN |
+| `EXEC-04` | Env-var inventory complete | BLOCKER | B | FAIL | implemented | 2 referenced key(s) are absent from any committed example file: UDA_LOG_LEVEL, UDA_LOG_LEVELNumber |
 | `EXEC-05` | No generated artifacts committed in-tree | DEGRADER | B | PASS | implemented | no tracked generated or vendored paths |
 | `EXEC-06` | Documented commands resolve | DEGRADER | B | PASS | implemented | 5 documented command(s) resolve |
 | `EXEC-07` | No competing configs for one concern | DEGRADER | B | PASS | implemented | format: .prettierrc.js; lint: .eslintrc.js; test: jest.config.ts; types: tsconfig.json |
