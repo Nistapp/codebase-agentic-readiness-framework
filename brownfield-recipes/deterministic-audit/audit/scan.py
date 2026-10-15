@@ -25,7 +25,10 @@ from audit.ignore import ignore_patterns, is_ignored
 from audit.target import HARD_EXCLUDE_DIRS
 
 #: Files larger than this are inventoried but their content is never read for content checks.
-CONTENT_READ_LIMIT = 256 * 1024
+#: Raised from 256 KiB (S3.6.4): a real `package-lock.json` at 514 KiB tripped it, degrading
+#: `EXEC-02` to "unverified" for a lockfile that was in fact consistent. 2 MiB covers lockfiles of
+#: realistic size while still bounding memory for the pathological case.
+CONTENT_READ_LIMIT = 2 * 1024 * 1024
 
 #: Bytes sniffed to decide whether a file is binary.
 BINARY_SNIFF = 8192

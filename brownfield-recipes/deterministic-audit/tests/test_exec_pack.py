@@ -13,6 +13,7 @@ fixtures are also exercised *without* git to prove the checks degrade to `UNKNOW
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import sys
@@ -161,6 +162,33 @@ class Exec01MessageTests(unittest.TestCase):
             (check["verdict"], check["summary"], findings),
             ("UNKNOWN", "no recognised ecosystem, so no toolchain pin can be chosen", []),
         )
+
+
+class Exec02LargeLockfileTests(unittest.TestCase):
+    """A lockfile over the old 256 KiB `CONTENT_READ_LIMIT` must still be read, not degrade to
+    "unverified" — found against a real 514 KiB `package-lock.json` in S3.6.3/S3.6.4."""
+
+    def test_a_consistent_lockfile_over_the_old_cap_is_verified_ok(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        support.write(root, "package.json", '{"name": "p", "dependencies": {"left-pad": "^1.0.0"}}\n')
+        lock = {
+            "name": "p",
+            "lockfileVersion": 3,
+            "packages": {
+                "": {"name": "p"},
+                "node_modules/left-pad": {"version": "1.0.0"},
+                "_padding": "x" * (300 * 1024),
+            },
+        }
+        support.write(root, "package-lock.json", json.dumps(lock))
+        self.assertGreater((root / "package-lock.json").stat().st_size, 256 * 1024)
+        self.assertEqual(_git(root, "init").returncode, 0)
+        self.assertEqual(_git(root, "add", "-A").returncode, 0)
+        report = support.run_audit(root)
+        check = next(c for c in report["checks"] if c["id"] == "EXEC-02")
+        self.assertEqual(check["verdict"], "PASS")
 
 
 class Exec04EnvKeyTests(unittest.TestCase):
