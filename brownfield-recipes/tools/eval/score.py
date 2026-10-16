@@ -65,6 +65,14 @@ def catalogue_severities() -> dict[str, str]:
     return {check["id"]: check["severity"] for check in validate_report.load_catalogue()["checks"]}
 
 
+def expected_by_id(expected: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+    return {entry["id"]: entry for entry in expected["checks"]}
+
+
+def report_verdicts(report: Mapping[str, Any]) -> dict[str, str]:
+    return {check["id"]: check["verdict"] for check in report["checks"]}
+
+
 # --- Matching the report to its ground truth -------------------------------------------------------------
 
 
@@ -119,6 +127,38 @@ def blocker_recall(
     }
 
 
+# --- false_positive_candidates -----------------------------------------------------------------------------
+
+
+def false_positive_candidates(report: Mapping[str, Any], expected: Mapping[str, Any]) -> dict[str, Any]:
+    """Expected-PASS-only checks the report did not verdict PASS: candidates for a wrongly flagged check."""
+    verdicts = report_verdicts(report)
+    should_pass = [entry["id"] for entry in expected["checks"] if entry["acceptable_verdicts"] == ["PASS"]]
+    flagged = [check_id for check_id in should_pass if verdicts.get(check_id) != "PASS"]
+    return {
+        "rate": round(len(flagged) / len(should_pass), 4) if should_pass else None,
+        "expected_total": len(should_pass),
+        "ids": flagged,
+    }
+
+
+# --- override_precision --------------------------------------------------------------------------------------
+
+
+def override_precision(report: Mapping[str, Any], expected: Mapping[str, Any]) -> dict[str, Any]:
+    """Of the report's overridden checks the expected file has ground truth for, the share landing acceptably."""
+    by_id = expected_by_id(expected)
+    overridden = [check for check in report["checks"] if check.get("override_reason") and check["id"] in by_id]
+    correct = [check["id"] for check in overridden if check["verdict"] in by_id[check["id"]]["acceptable_verdicts"]]
+    incorrect = [check["id"] for check in overridden if check["id"] not in correct]
+    return {
+        "ratio": round(len(correct) / len(overridden), 4) if overridden else None,
+        "overridden_total": len(overridden),
+        "correct": correct,
+        "incorrect": incorrect,
+    }
+
+
 # --- Putting it together -----------------------------------------------------------------------------------
 
 
@@ -147,6 +187,8 @@ def score(report: Mapping[str, Any], expected: Mapping[str, Any]) -> dict[str, A
     severities = catalogue_severities()
     data["metrics"] = {
         "blocker_recall": blocker_recall(report, expected, severities),
+        "false_positive_candidates": false_positive_candidates(report, expected),
+        "override_precision": override_precision(report, expected),
     }
     return data
 
@@ -170,8 +212,12 @@ def handler(argv: Sequence[str]) -> _common.Result:
     elif comparable is False:
         summary = f"score: not comparable ({data['comparable_reason']})"
     else:
-        recall = data["metrics"]["blocker_recall"]["ratio"]
-        summary = f"score: blocker_recall={recall}"
+        metrics = data["metrics"]
+        summary = (
+            f"score: blocker_recall={metrics['blocker_recall']['ratio']} "
+            f"false_positive_rate={metrics['false_positive_candidates']['rate']} "
+            f"override_precision={metrics['override_precision']['ratio']}"
+        )
     return _common.Result(data=data, summary=summary)
 
 

@@ -123,6 +123,68 @@ class BlockerRecallTests(unittest.TestCase):
         self.assertEqual(result["expected_total"], 0)
 
 
+class FalsePositiveCandidatesTests(unittest.TestCase):
+    def test_an_expected_pass_check_the_report_fails_is_a_candidate(self) -> None:
+        report = base_report()
+        exp = expected(entry("IDX-01", "PASS"))
+        result = score.false_positive_candidates(report, exp)
+        self.assertEqual(result["ids"], [])
+        self.assertEqual(result["rate"], 0.0)
+
+    def test_an_expected_pass_check_the_report_also_passes_is_not_a_candidate(self) -> None:
+        report = base_report()
+        check_of(report, "IDX-01")["verdict"] = "FAIL"
+        exp = expected(entry("IDX-01", "PASS"))
+        result = score.false_positive_candidates(report, exp)
+        self.assertEqual(result["ids"], ["IDX-01"])
+        self.assertEqual(result["rate"], 1.0)
+
+    def test_a_check_with_more_than_one_acceptable_verdict_is_never_a_candidate(self) -> None:
+        report = base_report()
+        exp = expected(entry("AGT-08", "PASS", "PARTIAL"))
+        result = score.false_positive_candidates(report, exp)
+        self.assertEqual(result["expected_total"], 0)
+        self.assertIsNone(result["rate"])
+
+    def test_no_expected_pass_only_checks_gives_a_null_rate(self) -> None:
+        report = base_report()
+        exp = expected(entry("CMD-02", "FAIL"))
+        result = score.false_positive_candidates(report, exp)
+        self.assertIsNone(result["rate"])
+        self.assertEqual(result["expected_total"], 0)
+
+
+class OverridePrecisionTests(unittest.TestCase):
+    def test_an_override_landing_on_an_acceptable_verdict_is_correct(self) -> None:
+        report = base_report()  # TOOL-03 already carries an override_reason in the worked example.
+        exp = expected(entry("TOOL-03", "PASS"))
+        result = score.override_precision(report, exp)
+        self.assertEqual(result["ratio"], 1.0)
+        self.assertEqual(result["correct"], ["TOOL-03"])
+        self.assertEqual(result["incorrect"], [])
+
+    def test_an_override_landing_on_an_unacceptable_verdict_is_incorrect(self) -> None:
+        report = base_report()
+        exp = expected(entry("TOOL-03", "FAIL"))
+        result = score.override_precision(report, exp)
+        self.assertEqual(result["ratio"], 0.0)
+        self.assertEqual(result["incorrect"], ["TOOL-03"])
+
+    def test_an_override_the_expected_file_is_silent_on_is_not_judged(self) -> None:
+        report = base_report()
+        exp = expected(entry("CMD-02", "FAIL"))
+        result = score.override_precision(report, exp)
+        self.assertIsNone(result["ratio"])
+        self.assertEqual(result["overridden_total"], 0)
+
+    def test_no_overrides_at_all_gives_a_null_ratio(self) -> None:
+        report = base_report()
+        check_of(report, "TOOL-03").pop("override_reason")
+        exp = expected(entry("TOOL-03", "PASS"))
+        result = score.override_precision(report, exp)
+        self.assertIsNone(result["ratio"])
+
+
 class ScoreTests(unittest.TestCase):
     def test_a_schema_invalid_report_is_not_comparable(self) -> None:
         report = base_report()
