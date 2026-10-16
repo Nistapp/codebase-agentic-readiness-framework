@@ -30,10 +30,11 @@ Standard library only.
 
 from __future__ import annotations
 
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -159,10 +160,75 @@ def override_precision(report: Mapping[str, Any], expected: Mapping[str, Any]) -
     }
 
 
+# --- evidence_validity --------------------------------------------------------------------------------------
+
+_LINES = re.compile(r"^([0-9]+)(?:-([0-9]+))?$")
+
+
+def lines_fit(count: int | None, spec: str) -> bool:
+    """Whether the 1-based line range `spec` (`validate_report`'s `evidence.lines` pattern) fits a file of `count` lines."""
+    if count is None:
+        return False
+    match = _LINES.match(spec)
+    if not match:
+        return False
+    start = int(match.group(1))
+    end = int(match.group(2)) if match.group(2) else start
+    return 1 <= start <= end <= count
+
+
+def commit_line_count(target: Path, sha: str, path: str) -> int | None:
+    result = validate_report.git_output(target, ["cat-file", "-p", f"{sha}:{path}"])
+    if result is None or result.returncode != 0:
+        return None
+    return len(result.stdout.splitlines())
+
+
+def tree_line_count(target: Path, path: str) -> int | None:
+    try:
+        resolved = _common.resolve_within(target, path)
+        return len(resolved.read_text(encoding="utf-8", errors="replace").splitlines())
+    except (OSError, _common.PathNotAllowed):
+        return None
+
+
+def evidence_validity(report: Mapping[str, Any], target: Path) -> dict[str, Any]:
+    """Of the report's `kind: file` evidence citations, the share whose path and `lines` (if given) check out."""
+    items = [
+        (pointer, ev["path"], ev.get("lines"))
+        for pointer, ev in validate_report.evidence_items(report)
+        if ev["kind"] == "file" and ev.get("path") is not None and validate_report.leaves_target(ev["path"]) is None
+    ]
+    if not items:
+        return {"ratio": None, "total": 0, "invalid": []}
+
+    paths = sorted({path for _, path, _ in items})
+    sha = report["provenance"]["target"]["git_sha"]
+    line_count: Callable[[str], int | None]
+    if sha is None:
+        missing = set(validate_report.missing_in_tree(target, paths))
+        line_count = lambda path: tree_line_count(target, path)  # noqa: E731
+    else:
+        found = validate_report.missing_in_commit(target, sha, paths)
+        if isinstance(found, str):
+            return {"ratio": None, "total": len(items), "invalid": [], "warning": found}
+        missing = set(found)
+        line_count = lambda path: commit_line_count(target, sha, path)  # noqa: E731
+
+    invalid = []
+    for pointer, path, lines in items:
+        if path in missing:
+            invalid.append(pointer)
+        elif lines is not None and not lines_fit(line_count(path), lines):
+            invalid.append(pointer)
+    valid = len(items) - len(invalid)
+    return {"ratio": round(valid / len(items), 4), "total": len(items), "invalid": invalid}
+
+
 # --- Putting it together -----------------------------------------------------------------------------------
 
 
-def score(report: Mapping[str, Any], expected: Mapping[str, Any]) -> dict[str, Any]:
+def score(report: Mapping[str, Any], expected: Mapping[str, Any], *, target: Path | None = None) -> dict[str, Any]:
     outcome = validate_report.validate_document(report)
     schema_valid = outcome.stage != "schema"
     data: dict[str, Any] = {
@@ -189,6 +255,7 @@ def score(report: Mapping[str, Any], expected: Mapping[str, Any]) -> dict[str, A
         "blocker_recall": blocker_recall(report, expected, severities),
         "false_positive_candidates": false_positive_candidates(report, expected),
         "override_precision": override_precision(report, expected),
+        "evidence_validity": evidence_validity(report, target) if target is not None else {"ratio": None, "total": 0},
     }
     return data
 
@@ -205,8 +272,12 @@ def handler(argv: Sequence[str]) -> _common.Result:
     args = build_parser().parse_args(list(argv))
     report = read_json(Path(args.report).expanduser(), "report")
     expected = read_json(Path(args.expected).expanduser(), "expected-results file")
-    data = score(report, expected)
+    target = _common.resolve_target(args.target) if args.target is not None else None
+    data = score(report, expected, target=target)
     comparable = data.get("comparable")
+    warnings = []
+    if target is None and data["schema_valid"] and comparable:
+        warnings.append("evidence_validity not computed: no --target given")
     if not data["schema_valid"]:
         summary = "score: the report is not schema-valid"
     elif comparable is False:
@@ -216,9 +287,10 @@ def handler(argv: Sequence[str]) -> _common.Result:
         summary = (
             f"score: blocker_recall={metrics['blocker_recall']['ratio']} "
             f"false_positive_rate={metrics['false_positive_candidates']['rate']} "
-            f"override_precision={metrics['override_precision']['ratio']}"
+            f"override_precision={metrics['override_precision']['ratio']} "
+            f"evidence_validity={metrics['evidence_validity']['ratio']}"
         )
-    return _common.Result(data=data, summary=summary)
+    return _common.Result(data=data, summary=summary, warnings=warnings)
 
 
 if __name__ == "__main__":

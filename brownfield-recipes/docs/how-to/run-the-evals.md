@@ -2,12 +2,11 @@
 
 > **Goal:** Run the recipes headlessly on fixtures and real repos and score the results.
 > **Audience:** Operators / Engineers
-> **Status:** Partial. The corpus and expected-results format are Live (S4.1.1). The scorer
-> (`tools/eval/score.py`, S4.1.2) and the headless runners (`tools/eval/run-*.sh`, S4.1.3) are Planned.
+> **Status:** Partial. The corpus, the expected-results format (S4.1.1) and the scorer (`tools/eval/score.py`,
+> S4.1.2) are Live. The headless runners (`tools/eval/run-*.sh`, S4.1.3) are Planned.
 
 > [!NOTE]
-> Planned. Steps 2 through 4 below cannot run yet: the scorer and the headless runners do not exist.
-> Filled in by roadmap steps S4.1.2 and S4.1.3.
+> Planned. Step 2 below cannot run yet: the headless runners do not exist. Filled in by roadmap step S4.1.3.
 
 ---
 
@@ -53,9 +52,23 @@ verify-independently method the audit recipe itself uses (`SKILL.md`, Stage 2).
 
 ### Step 3: Score
 
-- Planned (S4.1.2): `tools/eval/score.py`, computing blocker recall, false-positive candidates, evidence
-  validity (cited paths and lines in the target at the recorded SHA), schema validity and override
-  precision, each against the expected-results file from Step 1.
+Run `tools/eval/score.py <report> <expected> [--target <repo>]`. It computes, each against the
+expected-results file from Step 1:
+
+- `schema_valid`: whether the report validates against `audit-report.schema.json`.
+- `blocker_recall`: of the expected checks that are ground-truth blockers (catalogue severity `BLOCKER`,
+  `PASS` not an acceptable verdict), the share the report also reports as an open blocker.
+- `false_positive_candidates`: expected checks whose only acceptable verdict is `PASS` but whose report
+  verdict is not.
+- `override_precision`: of the report's checks that carry `override_reason` and that the expected file has
+  ground truth for, the share whose resulting verdict is acceptable.
+- `evidence_validity`: with `--target` only, the share of the report's `kind: file` evidence citations
+  whose path exists in the target at the recorded commit, and whose `lines` (when given) fit the file.
+
+A report whose `provenance.target.label`/`git_sha` does not match the expected file's `repo_label`/`repo_sha`
+is recorded as not comparable rather than scored anyway, and every ground-truth metric comes back `null`.
+A ratio is `null`, not `0`, when there was nothing of that kind to score (no expected blockers, no overrides,
+and so on) — a run's own stderr summary line shows all four ratios.
 
 ### Step 4: Publish
 
@@ -68,4 +81,6 @@ verify-independently method the audit recipe itself uses (`SKILL.md`, Stage 2).
 - [x] An expected-results file validates against `eval-expected.schema.json`
       (`validate_report.py` does not yet cover this schema; validate with the reference `jsonschema`
       package via `make crosscheck`, or by hand with `_jsonschema_subset.SubsetValidator`).
-- [ ] Planned: the scorer prints metrics for every run and every report is schema-valid.
+- [x] `tools/eval/score.py` prints all five metrics for a comparable report
+      (`python3 brownfield-recipes/tools/eval/score.py <report> <expected> --target <repo>`).
+- [ ] Planned (S4.1.3): a headless runner completes a fixture end to end, unattended.
