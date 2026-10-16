@@ -57,7 +57,7 @@
 | [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the validator, the report builder, the engine adapter and the renderer are live) |
 | [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live; every check family is written (S3.1, S3.2, S3.3 all closed), 71 checks across thirteen files |
 | [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Live; S3.4 is closed, four profiles written |
-| [5. Evaluation](contributor-deep-dive/05-evaluation.md) | Corpus, metrics, models | Planned (S4.1) |
+| [5. Evaluation](contributor-deep-dive/05-evaluation.md) | Corpus, metrics, models | Partial: the corpus format, scorer and Claude Code runner are Live (S4.1); results (S4.2–S4.4) are Planned |
 
 ## Framework Dependencies
 
