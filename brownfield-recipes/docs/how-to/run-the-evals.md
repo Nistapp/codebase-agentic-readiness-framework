@@ -2,11 +2,13 @@
 
 > **Goal:** Run the recipes headlessly on fixtures and real repos and score the results.
 > **Audience:** Operators / Engineers
-> **Status:** Partial. The corpus, the expected-results format (S4.1.1) and the scorer (`tools/eval/score.py`,
-> S4.1.2) are Live. The headless runners (`tools/eval/run-*.sh`, S4.1.3) are Planned.
+> **Status:** Partial. The corpus, the expected-results format (S4.1.1), the scorer (`tools/eval/score.py`,
+> S4.1.2) and the Claude Code runner (`tools/eval/run-claude.sh`, S4.1.3) are Live. Runners for other
+> harnesses (`run-opencode.sh`, `run-codex.sh`) are Planned.
 
 > [!NOTE]
-> Planned. Step 2 below cannot run yet: the headless runners do not exist. Filled in by roadmap step S4.1.3.
+> Planned. Step 2 below covers `run-claude.sh` only; a runner for another harness is filled in when one
+> exists.
 
 ---
 
@@ -47,8 +49,25 @@ verify-independently method the audit recipe itself uses (`SKILL.md`, Stage 2).
 
 ### Step 2: Run a harness runner
 
-- Planned (S4.1.3): `tools/eval/run-claude.sh` and siblings for other harnesses, each recording tokens,
-  cost and time wherever the harness reports them.
+Run `tools/eval/run-claude.sh <target> <out-dir> [<repo-label>]`. `<target>` is the repository to audit,
+as an absolute path; `<out-dir>` is where the recipe's own report files land, and must already exist; an
+intake file, `<out-dir>/audit-intake.<repo-label>.json`, must already exist with `"eval_mode": true` and a
+fixed `confirmation_policy` so Stage 0 never has to ask a question. The script runs
+`claude -p --dangerously-skip-permissions` unattended and writes, in `<out-dir>`:
+
+- `<repo-label>.harness-run.<stamp>.json` — harness, model, `started_at`, `duration_s`, cost/tokens
+  (best-effort, from Claude Code's own `--output-format json`), and the exit code.
+- `<repo-label>.harness-transcript.<stamp>.jsonl` — the harness's raw `--output-format json` line, unparsed.
+
+The recipe writes its usual output files (the draft, the engine report, `facts.json`) into the same
+`<out-dir>`, found by the file names `SCHEMA.md`'s [Output files](../../schema/SCHEMA.md#output-files)
+section gives them. Score the draft with Step 3 below.
+
+Runners for other harnesses (`run-opencode.sh`, `run-codex.sh`) are Planned: writing an unattended,
+auto-approving runner script was refused by Claude Code's own safety classifier in the session that
+otherwise did this work (not a `permissions.allow` rule — adding one had no effect), and `codex` was not
+installed in that environment to verify its headless flags against. Carried to a session or environment
+where either is possible.
 
 ### Step 3: Score
 
@@ -83,4 +102,6 @@ and so on) — a run's own stderr summary line shows all four ratios.
       package via `make crosscheck`, or by hand with `_jsonschema_subset.SubsetValidator`).
 - [x] `tools/eval/score.py` prints all five metrics for a comparable report
       (`python3 brownfield-recipes/tools/eval/score.py <report> <expected> --target <repo>`).
-- [ ] Planned (S4.1.3): a headless runner completes a fixture end to end, unattended.
+- [x] A headless runner completes a fixture end to end, unattended (`run-claude.sh` on
+      `tests/fixtures/cmd-02-weak-check`, S4.1.3: `schema_valid: true`, `comparable: true`,
+      `blocker_recall: 1.0`, `evidence_validity: 1.0`).
