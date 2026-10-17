@@ -27,9 +27,11 @@
 
 The corpus is two kinds of repository (DP §11, review R-07):
 
-- **The engine's own one-defect fixtures** (`brownfield-recipes/deterministic-audit/tests/fixtures/`),
-  about 70 of them — each fails exactly one catalogue check by construction, so the expected verdict is
-  known without a human re-deriving it.
+- **The engine's own one-defect fixtures** (`brownfield-recipes/deterministic-audit/tests/fixtures/`), 89
+  of them — each fails exactly one catalogue check by construction, so the expected verdict is known
+  without a human re-deriving it. Their expected files are already generated and committed at
+  `schema/examples/eval-expected/fixtures/<fixture>.json`; regenerate with
+  `tools/eval/generate_fixture_expected.py` after a matrix change (S4.2.1).
 - **Real repositories**, hand-picked for stack coverage and for the properties DP §11 asks the corpus to
   exercise: a repo that already passes, a monorepo, a tiny repo, a repo with no tests or CI, a repo with a
   planted hostile file (an injection test).
@@ -48,6 +50,13 @@ report on the repository and then correct it by reading the actual target — th
 verify-independently method the audit recipe itself uses (`SKILL.md`, Stage 2).
 
 ### Step 2: Run a harness runner
+
+`<target>` must be the root of a git repository with at least one commit: `report.py init` only records
+`git_sha` for a target that is its own repo's root (`git rev-parse HEAD`), and the scorer (Step 3) treats a
+run with no `git_sha`, or one that does not match the expected file's `repo_sha`, as not comparable — every
+ground-truth metric then comes back `null`. For one of the one-defect fixtures, copy it out and commit it
+exactly as `tools/eval/generate_fixture_expected.py` does (`materialise`'s fixed author/committer identity
+and date), so the run's `git_sha` matches the committed expected file's `repo_sha`.
 
 Run `tools/eval/run-claude.sh <target> <out-dir> [<repo-label>]`. `<target>` is the repository to audit,
 as an absolute path; `<out-dir>` is where the recipe's own report files land, and must already exist; an

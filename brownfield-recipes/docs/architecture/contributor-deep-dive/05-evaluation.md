@@ -23,10 +23,12 @@ otherwise, and `finalise` always refuses an eval-mode draft (`brownfield-recipes
 
 Two kinds of repository (DP §11):
 
-- **The engine's own one-defect fixtures** (`brownfield-recipes/deterministic-audit/tests/fixtures/`),
-  about 70 of them. Each fails exactly one catalogue check by construction (`test_fixture_matrix.py`'s own
-  `MATRIX`), so the expected verdict needs no human re-derivation — a cheap ground-truth suite, planned to
-  be run in full for the strongest model and sampled for the model matrix (S4.2).
+- **The engine's own one-defect fixtures** (`brownfield-recipes/deterministic-audit/tests/fixtures/`), 89
+  of them. Each fails exactly one catalogue check by construction (`test_fixture_matrix.py`'s own
+  `MATRIX`), so the expected verdict needs no human re-derivation. Their ground-truth files are generated
+  (`tools/eval/generate_fixture_expected.py`) and committed at
+  `schema/examples/eval-expected/fixtures/<fixture>.json` (S4.2.1) — a cheap ground-truth suite, planned to
+  be run in full for the strongest model and sampled for the model matrix (S4.2.2–S4.2.5).
 - **Real repositories**, hand-picked for stack coverage and for the properties DP §11 asks the corpus to
   exercise: a repo that already passes, a monorepo, a tiny repo, a repo with no tests or CI, a repo with a
   planted hostile file (an injection test), plus the required NestJS and Java/Quarkus coverage (S4.3).
