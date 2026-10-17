@@ -20,7 +20,8 @@ What must agree, and the run fails if any of it does not:
   too short, and, wherever the schema sets a bound, a value one below, at and one above it. A mutant is made for
   each kind of change at each distinct place in the schema, not at each copy of it.
   The three realistic drafts have one shape, so only the first is mutated, cut to its first few checks and findings
-  because every mutant is validated whole. The engine payloads under ``data`` are an open object that the schema does
+  because every mutant is validated whole. The engine fixture corpus's expected files (S4.2.1) likewise share one
+  shape, so only the first is mutated. The engine payloads under ``data`` are an open object that the schema does
   not constrain, so only its ``kind`` is mutated.
 
 One difference is deliberate and is not tried here. The schemas' patterns are ECMAScript, where ``$`` means the end
@@ -269,6 +270,7 @@ def main() -> int:
         ("catalogue", "catalogue", RECIPES / "catalogue.json"),
         ("facts", "facts", EXAMPLES / "facts.minimal.json"),
         *(("eval_expected", "eval_expected", path) for path in sorted(EXAMPLES.glob("eval-expected.*.json"))),
+        *(("eval_expected", "eval_expected", path) for path in sorted(EXAMPLES.glob("eval-expected/fixtures/*.json"))),
     ]
     invalid_documents = [("report", path) for path in sorted(EXAMPLES.rglob("*.engine-report.*.json"))]
 
@@ -300,6 +302,10 @@ def main() -> int:
 
     total = invalid = 0
     unmutated = set(sorted(EXAMPLES.rglob("*.audit-draft.*.json"))[1:])
+    # One fixture's expected file stands in for the other 88 (the engine's one-defect fixture corpus,
+    # S4.2.1): they all share one schema and the same shape, so mutating all of them adds runtime with
+    # no new coverage.
+    unmutated |= set(sorted(EXAMPLES.glob("eval-expected/fixtures/*.json"))[1:])
     for _, name, path in valid_documents:
         if name not in pairs:
             continue
