@@ -30,7 +30,7 @@
 | [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Planned (S5.4) |
 | [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits (S2.3); implementations Planned (S5.1) |
 | [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Live; four profiles exist (S3.4 closed) |
-| [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Partial: the corpus, expected-results format, scorer and the Claude Code runner are Live (S4.1.1–S4.1.3); runners for other harnesses are Planned |
+| [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Partial: the corpus, expected-results format, scorer, the Claude Code runner and the fixture sweep are Live (S4.1.1–S4.1.3, S4.2); runners for other harnesses and real-repo runs are Planned |
 
 ## Reference
 
@@ -40,6 +40,7 @@
 | [Harness notes](../reference/harness-notes.md) | Claude Code, opencode, Codex, Cursor specifics | Planned (S4.6) |
 | [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; generated table Planned (S4.6) |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
+| [Evaluation Results](../reference/eval-results.md) | Fixture-sweep and real-repo results, cost/time, misses | Live for the fixture sweep (S4.2); real-repo results (S4.3) Planned |
 
 ## Explanation — User Overview
 
@@ -57,7 +58,7 @@
 | [2. Report Schema](contributor-deep-dive/02-report-schema.md) | Schema, versioning, engine mapping | Live (the validator, the report builder, the engine adapter and the renderer are live) |
 | [3. Check Catalogue & Rubrics](contributor-deep-dive/03-check-catalogue-and-rubrics.md) | Catalogue, methods, rubric anatomy | Live; every check family is written (S3.1, S3.2, S3.3 all closed), 71 checks across thirteen files |
 | [4. Stack Profiles](contributor-deep-dive/04-stack-profiles.md) | How profiles adapt checks and playbooks | Live; S3.4 is closed, four profiles written |
-| [5. Evaluation](contributor-deep-dive/05-evaluation.md) | Corpus, metrics, models | Partial: the corpus format, scorer and Claude Code runner are Live (S4.1); results (S4.2–S4.4) are Planned |
+| [5. Evaluation](contributor-deep-dive/05-evaluation.md) | Corpus, metrics, models | Partial: the corpus format, scorer, Claude Code runner and fixture sweep are Live (S4.1, S4.2); real-repo runs and the rubric-tightening loop (S4.3–S4.4) are Planned |
 
 ## Framework Dependencies
 

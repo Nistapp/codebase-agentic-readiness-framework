@@ -3,8 +3,9 @@
 > **Goal:** Run the recipes headlessly on fixtures and real repos and score the results.
 > **Audience:** Operators / Engineers
 > **Status:** Partial. The corpus, the expected-results format (S4.1.1), the scorer (`tools/eval/score.py`,
-> S4.1.2) and the Claude Code runner (`tools/eval/run-claude.sh`, S4.1.3) are Live. Runners for other
-> harnesses (`run-opencode.sh`, `run-codex.sh`) are Planned.
+> S4.1.2), the Claude Code runner (`tools/eval/run-claude.sh`, S4.1.3), and the fixture sweep and its
+> published results (S4.2) are Live. Runners for other harnesses (`run-opencode.sh`, `run-codex.sh`) and
+> real-repo runs (S4.3) are Planned.
 
 > [!NOTE]
 > Planned. Step 2 below covers `run-claude.sh` only; a runner for another harness is filled in when one
@@ -100,7 +101,10 @@ and so on) — a run's own stderr summary line shows all four ratios.
 
 ### Step 4: Publish
 
-- Planned (S4.1.4 and later): a results table under `docs/eval/` with model names and dates.
+Results live in [Evaluation Results](../reference/eval-results.md) (D59 places them under `docs/reference/`,
+not the literal `docs/eval/` the roadmap originally named — `STYLE_GUIDE.md` has no `eval/` category and a
+results table is reference-shaped data; extends D54's precedent). The fixture sweep (S4.2) is there now;
+real-repo results (S4.3) are added the same way once those runs exist.
 
 ---
 

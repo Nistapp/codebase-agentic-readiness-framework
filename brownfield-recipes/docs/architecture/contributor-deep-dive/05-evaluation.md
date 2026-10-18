@@ -2,8 +2,8 @@
 
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain how the recipes are evaluated and what the published results mean.
-> **Status:** Partial. The corpus format, the scorer and the Claude Code runner are Live (S4.1). The
-> fixture sweep and real-repo runs that actually populate results (S4.2–S4.4) are Planned.
+> **Status:** Partial. The corpus format, the scorer, the Claude Code runner and the fixture sweep are Live
+> (S4.1, S4.2). Real-repo runs (S4.3) are Planned.
 
 ---
 
@@ -94,5 +94,9 @@ and real-repo runs (S4.2–S4.4), and on `run-opencode.sh` existing to reach a n
 
 ## 6. Publishing
 
-Results are planned for `docs/eval/`, with model names and dates, once the fixture sweep (S4.2) and
-real-repo runs (S4.3) produce them — see [Run the Evals](../../how-to/run-the-evals.md) Step 4.
+Results live in [Evaluation Results](../../reference/eval-results.md) (D59: a Reference page, not the
+roadmap's literal `docs/eval/` — extending D54's precedent, since `STYLE_GUIDE.md` has no `eval/` category
+and a results table is reference-shaped data, not a how-to or explanation page). The fixture sweep's full
+results (89/89 fixtures, 98.9% expected-verdict rate, cost and time, the one miss and its triage, two
+evidence-validity findings) are there now; real-repo results (S4.3) are added once those runs exist. See
+[Run the Evals](../../how-to/run-the-evals.md) Step 4.
