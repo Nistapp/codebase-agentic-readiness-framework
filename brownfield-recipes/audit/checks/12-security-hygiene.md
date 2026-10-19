@@ -78,9 +78,16 @@ Engine           `SEC-02`. Scans tracked text files (falling back to the whole i
                  `Finding`'s evidence carries path, line number and the fixed note `"credential-shaped
                  string"` only. Distrust a `FAIL` on the keyword pattern specifically (never the
                  unambiguous shape patterns, which are unconditional) when the line is a CI permission
-                 grant (`id-token: write`) or another non-secret keyword use the guard's heuristic does
-                 not yet exclude — verify by reading the line's own context, never its literal value in
-                 the report.
+                 grant (`id-token: write`), or a short, descriptive mock literal assigned to a credential-
+                 shaped keyword inside the target's own test code (confirmed twice in real audits: a test
+                 suite's `token`/`apikey` assignments to hyphenated placeholder labels, none matching the
+                 deterministic placeholder filter's fixed word list) — verify by reading the line's own
+                 context (the file's role, the variable's name, a nearby comment), never its literal value
+                 in the report. The unambiguous shape patterns stay unconditional even inside a test file:
+                 a real credential pasted there by accident is exactly the case this check exists to
+                 catch, and the engine's own test fixtures for this very detector are a known,
+                 self-referential exception specific to auditing this engine's own repository, not a
+                 reason to distrust a shape match anywhere else.
 Method           automated
 Look for         Every tracked text file (or the whole inventory, when tracked state is unavailable) for
                  a line matching `REDACTION_PATTERNS`; the matched line's path and line number only.
