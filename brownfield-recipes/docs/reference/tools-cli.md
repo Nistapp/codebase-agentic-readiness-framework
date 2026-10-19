@@ -716,9 +716,13 @@ and schema docs, read by the model) and `scripts/` (the tools the recipe calls, 
 `catalogue.json` they read at a fixed path next to themselves, the engine's `audit` package mirroring the one
 folder level `engine.py` expects, and `audit.pyz`, the engine's single-file build). It is replaced whole on
 every run, so a stale file from an earlier build can never survive. The source is
-[`build_skills.py`](../../tools/build_skills.py). `skills-ref validate` (S4.5.2) and an install smoke-run
-(S4.5.3) act on its output; some of `SKILL.md`'s own links point outside what the bundle carries (found, not
-fixed, by this tool — see its own module docstring), which those later steps may need to account for.
+[`build_skills.py`](../../tools/build_skills.py). `make validate-skills` builds the bundle and validates it
+with [`skills-ref`](https://agentskills.io/specification#validation), the Agent Skills specification's own
+reference validator (PyPI package `skills-ref`, CLI entry point `agentskills`; a dev-only tool, run through
+`uvx` and pinned in the Makefile, never imported by the tools or the engine). An install smoke-run (S4.5.3)
+acts on the bundle too; some of `SKILL.md`'s own links point outside what the bundle carries (found, not
+fixed, by this tool — see its own module docstring; confirmed not something `skills-ref` itself checks, since
+it validates only the frontmatter and the directory-name match), which the smoke run may need to account for.
 
 **Synopsis**
 

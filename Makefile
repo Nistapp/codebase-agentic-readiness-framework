@@ -25,6 +25,9 @@ DETECT_SECRETS := uvx --from detect-secrets==1.5.0 detect-secrets
 DETECT_SECRETS_HOOK := uvx --from detect-secrets==1.5.0 detect-secrets-hook
 # The reference JSON Schema package is installed for one run, in a throwaway environment. The tools never import it.
 CROSSCHECK := PYTHONPATH=brownfield-recipes/tools uv run --no-project --with jsonschema==4.23.0 python
+# The Agent Skills spec's own reference validator (agentskills.io); its CLI entry point is `agentskills`,
+# installed for one run, in a throwaway environment. Not the tools' or the engine's dependency.
+SKILLS_REF := uvx --from skills-ref==0.1.1 agentskills
 
 ENGINE := brownfield-recipes/deterministic-audit
 
@@ -35,11 +38,11 @@ TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -n
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help format format-check format\:check lint typecheck test verify-rules crosscheck recipe-lint check security update-secrets-baseline
+.PHONY: help format format-check format\:check lint typecheck test verify-rules crosscheck recipe-lint check security update-secrets-baseline validate-skills
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: verify-rules  crosscheck  recipe-lint  update-secrets-baseline"
+	@echo "extra: verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
 
 format:
 	$(RUFF) format brownfield-recipes
@@ -83,3 +86,10 @@ security:
 # Run this after a deliberate change to a fixture or test that holds a key-shaped string, then review the diff.
 update-secrets-baseline:
 	$(DETECT_SECRETS) scan --baseline .secrets.baseline
+
+# Builds the agentic-readiness-audit skill bundle fresh and validates it against the Agent Skills
+# specification (S4.5.2). Not part of `check`: it is not one of the framework's seven verbs, and the
+# validator needs the network the first time, same as `crosscheck`'s reference package.
+validate-skills:
+	$(PYTHON) brownfield-recipes/tools/build_skills.py
+	$(SKILLS_REF) validate brownfield-recipes/dist/skills/agentic-readiness-audit
