@@ -36,12 +36,21 @@ def run_git(root: Path, *args: str) -> str:
 
 
 def make_repo(root: Path, files: Sequence[str] = ("README.md",), *, commit: bool = True, branch: str = "main") -> None:
-    """Turn `root` into a git repository holding `files`, on `branch`, with one commit unless `commit` is false."""
+    """Turn `root` into a git repository holding `files`, on `branch`, with one commit unless `commit` is false.
+
+    `git commit`'s own auto-gc check (`maybe_auto_gc`) can fork a background `git gc`/`git maintenance`
+    process that keeps rewriting `.git/objects/` after this function returns — observed on macOS CI,
+    where it raced a later snapshot's read of an object file's size, and separately created and removed
+    a `maintenance.lock` mid-walk. Both are this repository's own commit triggering it, not an external
+    scheduler, so disabling it locally before the first commit is the actual fix, not a tolerance for it.
+    """
     root.mkdir(parents=True, exist_ok=True)
     for name in files:
         (root / name).parent.mkdir(parents=True, exist_ok=True)
         (root / name).write_text("x\n", encoding="utf-8")
     run_git(root, "init", "-q", "-b", branch)
+    run_git(root, "config", "gc.auto", "0")
+    run_git(root, "config", "maintenance.auto", "false")
     if commit:
         run_git(root, "add", "-A")
         run_git(root, "commit", "-q", "-m", "x")
