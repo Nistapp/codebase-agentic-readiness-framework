@@ -94,6 +94,10 @@ PLAYBOOK_REFERENCE = re.compile(r'Playbook `([a-z][a-z0-9-]*)`|"playbook":\s*"([
 EXCLUDED_FROM_LINKS = (f"{RECIPES_DIRNAME}/docs/templates/",)
 # Files the catalogue, requirement and playbook checks never read: the engine's own registry and fixtures.
 EXCLUDED_FROM_CATALOGUE = (f"{RECIPES_DIRNAME}/deterministic-audit/",)
+# Never swept at all: gitignored build output (build_skills.py's bundle, the engine's audit.pyz), not
+# authored content. A bundle's own copy of a check file has links relative to the bundle, not to <root>,
+# so it is never this tool's to lint; `skills-ref validate` (S4.5.2) is.
+EXCLUDED_DIRNAMES = (f"{RECIPES_DIRNAME}/dist/",)
 
 _FENCE = re.compile(r"^(```+|~~~+)")
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*\Z")
@@ -506,11 +510,16 @@ def write_catalogue(root: Path, *, timeout: float) -> _common.Result:
 # --- Putting it together ----------------------------------------------------------------------------------
 
 
+def excluded_dirname(file: Path, root: Path) -> bool:
+    relative = file.relative_to(root).as_posix()
+    return any(relative.startswith(prefix) for prefix in EXCLUDED_DIRNAMES)
+
+
 def find_markdown(root: Path) -> list[Path]:
     recipes = root / RECIPES_DIRNAME
     if not recipes.is_dir():
         raise _common.UsageError(f"{root} has no {RECIPES_DIRNAME}/ directory")
-    return sorted(recipes.rglob("*.md"))
+    return sorted(path for path in recipes.rglob("*.md") if not excluded_dirname(path, root))
 
 
 def lint(root: Path, files: Sequence[Path], *, describe_timeout: float = DESCRIBE_TIMEOUT_S) -> Outcome:

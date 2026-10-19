@@ -72,6 +72,30 @@ class FixtureTests(unittest.TestCase):
         return self.repo.write(f"brownfield-recipes/tools/{name}.py", source)
 
 
+# --- The markdown sweep ----------------------------------------------------------------------------------
+
+
+class FindMarkdownTests(FixtureTests):
+    def test_a_file_under_dist_is_never_swept(self) -> None:
+        self.repo.write("brownfield-recipes/docs/reference/kept.md", "# Kept\n")
+        self.repo.write(
+            "brownfield-recipes/dist/skills/agentic-readiness-audit/SKILL.md",
+            "---\nname: audit\ndescription: x\n---\n\n[broken](../does-not-exist.md)\n",
+        )
+        files = rl.find_markdown(self.repo.root)
+        relative = {path.relative_to(self.repo.root).as_posix() for path in files}
+        self.assertIn("brownfield-recipes/docs/reference/kept.md", relative)
+        self.assertFalse(any(path.startswith("brownfield-recipes/dist/") for path in relative))
+
+    def test_a_broken_link_under_dist_does_not_fail_the_lint(self) -> None:
+        self.repo.write(
+            "brownfield-recipes/dist/skills/agentic-readiness-audit/SKILL.md",
+            "---\nname: audit\ndescription: x\n---\n\n[broken](../does-not-exist.md)\n",
+        )
+        outcome = self.lint()
+        self.assertEqual(outcome.errors, [])
+
+
 # --- The link rule --------------------------------------------------------------------------------------
 
 
