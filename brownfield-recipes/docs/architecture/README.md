@@ -40,7 +40,7 @@
 | [Harness notes](../reference/harness-notes.md) | Claude Code, opencode, Codex, Cursor specifics | Planned (S4.6) |
 | [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; generated table Planned (S4.6) |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
-| [Evaluation Results](../reference/eval-results.md) | Fixture-sweep and real-repo results, cost/time, misses | Live for the fixture sweep (S4.2); real-repo results (S4.3) Planned |
+| [Evaluation Results](../reference/eval-results.md) | Fixture-sweep and real-repo results, cost/time, misses | Live for the fixture sweep (S4.2) and the real-repo runs (S4.3) |
 
 ## Explanation — User Overview
 

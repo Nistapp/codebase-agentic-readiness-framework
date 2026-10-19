@@ -5,7 +5,8 @@
 > artifacts; this page is the durable, published summary). See [Run the Evals](../how-to/run-the-evals.md)
 > for the method and [5. Evaluation](../architecture/contributor-deep-dive/05-evaluation.md) for what the
 > metrics mean.
-> **Status:** Live for the fixture sweep (S4.2). Real-repo results (S4.3) are Planned.
+> **Status:** Live for the fixture sweep (S4.2) and the real-repo runs (S4.3, one run per repo under
+> `D61`). A second harness/model (`S4.3.4`) stays Planned, deferred per `D57`.
 
 ---
 
@@ -114,8 +115,93 @@ a re-run after rubric fixes) exists to compare against.
 
 ---
 
-## Real-repo runs (S4.3)
+## Real-repo runs — Claude Code on Sonnet 5.5, 2026-10-19 (S4.3)
 
-Planned. Three repositories (the Digital-Assistant-SDK, the Digital-Assistant-Server, and the engine repo
-at `dev`), three runs each with the primary model plus one run with a second harness, per the roadmap's
-`S4.3`.
+One run each against three real repositories (`S4.3.3`), scored with `tools/eval/score.py --target` against
+a hand-corrected expected-findings sheet per repo (`S4.3.2`). **One run per repo, not three** (`D61`,
+2026-10-19): KC decided this after the first run, trading the roadmap's and the DP's original "three runs
+for each repo" plan for a faster calibration pass — this round's purpose was real cost/time numbers and a
+first read on quality, not a statistically firm per-repo average. A second harness/model (`S4.3.4`) stays
+deferred per `D57`.
+
+### Real-repo headline numbers
+
+| Metric | Result |
+|---|---|
+| Repos run | 3 / 3 (Digital-Assistant-SDK, Digital-Assistant-Server, the engine repo at `dev`) |
+| Schema-valid, comparable reports | 3 / 3 (100%) |
+| Total cost | $6.83 (including $0.66 spent on the engine repo's superseded run 1); $6.17 for the three final scored runs alone |
+| Total wall time | 1,420s (~23.7 min) including the superseded run; 1,249s (~20.8 min) for the three final runs |
+| `blocker_recall` (per repo) | SDK 1.0 (4/4); Server 1.0 (5/5); engine repo 1.0 (10/10) |
+| `evidence_validity` (aggregate) | 257 / 275 (93.5%) |
+| `false_positive_candidates` (aggregate) | 5 / 87 (5.7%) |
+
+The v0.1 exit criterion (§2.1 of the roadmap) asks for `blocker_recall` ≥ 0.9, ≥ 98% valid citations, and
+KC rejecting at most 10% of findings, each **across three runs per repo** — not yet measured that way under
+`D61`'s one-run-per-repo plan, so none of the boxes below are ticked against that criterion yet. Read
+individually, against this single data point per repo:
+
+- **`blocker_recall` is 1.0 on every repo** — Digital-Assistant-Server's first score (0.7143) was revised
+  after `S4.3.6`'s triage (`D62`) accepted four of the agent's own evidence-backed overrides as correct and
+  updated the sheet to match; see "Ground truth corrected" below.
+- **93.5% evidence validity is below the 98% target**, driven almost entirely by one known, already-
+  diagnosed defect (the engine repo's fixture bleed, 18 of 18 total invalid citations), not by the model
+  misreading the target.
+- **5.7% of findings would need KC's rejection, within the 10% target in aggregate** — but the engine
+  repo alone is at 15.4% (4/26), again the same fixture-bleed defect.
+
+### Per-repo breakdown
+
+| Repo | Cost | Time | Turns | `blocker_recall` | `evidence_validity` | `false_positive_candidates` | `override_precision` |
+|---|---|---|---|---|---|---|---|
+| Digital-Assistant-SDK | $1.91 | 302s | 54 | 1.0 (4/4) | 1.0 (92/92) | 0.0278 (1/36) | null (0 overrides) |
+| Digital-Assistant-Server | $3.02 | 679s | 80 | 1.0 (5/5) | 1.0 (69/69) | 0.0 (0/25) | 1.0 (4/4) |
+| Engine repo (`dev`), final run | $1.24 | 268s | 45 | 1.0 (10/10) | 0.8421 (96/114) | 0.1538 (4/26) | null (0 overrides) |
+
+### Ground truth corrected: Digital-Assistant-Server's four overrides
+
+The agent's four overridden verdicts (`AGT-07`, `CON-01`, `CON-02`, `EXEC-04`) first scored as "incorrect"
+against the sheet, driving both the apparent missed-blocker count and `override_precision: 0.0` — but read
+individually, they were a substantive, evidence-backed disagreement with a judgment call this same
+evaluation round had made, not a quality defect. The agent's own `EXEC-04` override reasoned that four
+flagged "missing env vars" (`GREEN`, `YELLOW`, `RED`, `NC`) are local ANSI-colour shell variables, never
+read from the process environment — the *exact* diagnosis this round had already surfaced for KC during
+`S4.3.2.2`'s sheet-building, where KC had chosen to keep the engine's literal `FAIL` as ground truth rather
+than correct it. The agent independently re-derived the same finding and, unlike the sheet, acted on it.
+`AGT-07`'s override was a new, separate finding: the engine's heading-word match requires a trigger word in
+the prohibitions section's own heading, but AGENTS.md's section is headed "Security & Safety Guardrails"
+with no such word, despite being a real prohibitions section in substance — a candidate `AGT-07` detector
+gap, carried to `S4.4`. `CON-01`/`CON-02`'s overrides build on that same corrected reading. Put to KC during
+`S4.3.6`'s triage, who accepted all four overrides as correct (`D62`, 2026-10-19) and had the sheet revised
+to match, reversing `S4.3.2.2`'s original `EXEC-04` call — the table above reflects the corrected sheet.
+
+### Found, not fixed: a real `SKILL.md` forwarding defect
+
+The engine repo needed two runs. Run 1 (no `excluded` field in its intake, $0.66, 171s) reproduced a fixture-
+bleed bug already found and excluded when building its sheet (`S4.3.2.3`): `tests/fixtures/**` holds the
+engine's own one-defect-per-check synthetic fixtures (tiny Node/TS repos used to test the checks), and the
+engine's scan of its own repository was citing fixture files as if they were the real root's configuration
+(for example `SEC-02` citing `tests/fixtures/sec-02-key-shaped/config.py`, the engine's own synthetic-secret
+fixture, as a third "credential-shaped line" beyond the sheet's two real ones). Run 2 added
+`excluded: ["tests/fixtures/**"]` to the intake ($1.24, 268s) and got the *identical* four false positives
+anyway. Traced to the actual cause: `brownfield-recipes/audit/SKILL.md` line 111 tells the agent to forward
+the intake's `excluded` paths to `facts.py`; its Stage 2 instructions for running `engine.py` never mention
+forwarding `excluded` at all, so the field reaches `facts.json` but never the engine scan that produces
+checks and findings. **This is a real recipe-text defect, not specific to this repo or this round** — any
+audit that relies on `intake.excluded` to keep the scan off some path gets it honoured for `facts.py` only.
+KC chose to record it rather than spend a third run (2026-10-19); carried to `S4.4` or a dedicated leaf to
+fix `SKILL.md`'s Stage 2 so it forwards `excluded` to `engine.py` the same way it already does for
+`facts.py`.
+
+### KC's triage and the licence check (S4.3.6)
+
+Of the findings across the three runs that the agent did not itself dispute, KC rejected eight as false
+positives, all driven by the two defects above: Digital-Assistant-SDK's four `SEC-02` findings (mock
+credential literals in test code) and the engine repo's `AGT-01`/`EXEC-05`/`NAV-03`/`SEC-02` findings (the
+fixture bleed). Digital-Assistant-Server's four overrides were accepted, not rejected — see "Ground truth
+corrected" above. Licences: Digital-Assistant-SDK carries no `LICENSE` file (`package.json` declares `ISC`,
+not actually present as a file); Digital-Assistant-Server and the engine repo are both `AGPL-3.0`. KC
+confirmed on 2026-10-19 that all three repositories are their own, clearing the gate to publish findings
+about them.
+
+Full detail in `phase-M4-evaluate-release.md`'s `S4.3.2.1`–`S4.3.6` log entries.
