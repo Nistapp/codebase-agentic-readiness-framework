@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py` and all eight of `recipe_lint.py`'s rules, including the generated catalogue. `progress.py` and `check_drift.py` are planned (S5.1).
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) and `build_skills.py`. `progress.py` and `check_drift.py` are planned (S5.1).
 
 ---
 
@@ -16,6 +16,7 @@
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
 | [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
 | [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, and a stale tool catalogue | Live |
+| [`build_skills.py`](#build_skillspy) | Builds the agentic-readiness-audit skill bundle under `dist/skills/` | Live |
 | `progress.py` | Manages implementation progress | Planned (S5.1) |
 | `check_drift.py` | Lists findings affected by changes since the audit | Planned (S5.1) |
 
@@ -702,3 +703,42 @@ Nothing is written by a plain `recipe_lint.py <root>`; a clean run's `data` hold
 | `brownfield-recipes/tools/CATALOGUE.md is missing; regenerate it with 'recipe_lint.py <root> --write-catalogue'` | Run `--write-catalogue` and commit the result. |
 | `brownfield-recipes/tools/CATALOGUE.md is stale; regenerate it with 'recipe_lint.py <root> --write-catalogue'` | A tool's manifest changed since the file was last generated; run `--write-catalogue` and commit the result. |
 | `N tool(s) could not be described` (with `--write-catalogue`) | Fix the tool named in each error so `--describe` succeeds, then try again; nothing is written while any tool fails. |
+
+---
+
+## build_skills.py
+
+Builds the `agentic-readiness-audit` skill bundle: a self-contained copy of the audit recipe, under
+`dist/skills/` (gitignored), that a harness installs and runs with no checkout of this repository. The
+bundle has three parts — `SKILL.md` (the recipe's own file, with its frontmatter `name` rewritten from
+`audit`, the source folder's name, to the bundle's own name), `references/` (the check files, stack profiles
+and schema docs, read by the model) and `scripts/` (the tools the recipe calls, the schema files and
+`catalogue.json` they read at a fixed path next to themselves, the engine's `audit` package mirroring the one
+folder level `engine.py` expects, and `audit.pyz`, the engine's single-file build). It is replaced whole on
+every run, so a stale file from an earlier build can never survive. The source is
+[`build_skills.py`](../../tools/build_skills.py). `skills-ref validate` (S4.5.2) and an install smoke-run
+(S4.5.3) act on its output; some of `SKILL.md`'s own links point outside what the bundle carries (found, not
+fixed, by this tool — see its own module docstring), which those later steps may need to account for.
+
+**Synopsis**
+
+```text
+python3 brownfield-recipes/tools/build_skills.py [--out-dir DIR]
+```
+
+**Inputs**
+
+| Argument | Meaning |
+|---|---|
+| `--out-dir` | Where to build `skills/` itself (default: `brownfield-recipes/dist/skills`). The bundle always lands at `<out-dir>/agentic-readiness-audit/`. |
+
+**Outputs**
+
+`data` holds `bundle`, the bundle's path, and `files`, how many files it has.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | The bundle was built. |
+| `1` | The engine's own `deterministic-audit/tools/build.py` failed to produce `audit.pyz`; `data.errors` carries its stderr. |
