@@ -29,7 +29,13 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
-from audit.rules.checks._common import entry_instruction_file, prohibitions_section, resolve_verbs, runner_commands
+from audit.rules.checks._common import (
+    PROHIBITION_LINE_RE,
+    entry_instruction_file,
+    prohibitions_section,
+    resolve_verbs,
+    runner_commands,
+)
 from audit.scan import Inventory
 from audit.stack import VERBS
 from audit.rules import variants as V
@@ -930,10 +936,6 @@ def check_agt06(*, spec, target, inventory, stack, components, session) -> Check
 # AGT-07 — prohibitions / do-not-do rules
 # ---------------------------------------------------------------------------
 
-_PROHIBITION_LINE_RE = re.compile(
-    r"(?i)\b(never|do not|don't|must not|mustn't|prohibit(?:ed)?|forbidden|off-limits)\b|❌"
-)
-
 #: The four concerns the framework names for the prohibitions list. Generated build output and
 #: transient scratch are treated together: both are machine-produced and must not be hand-edited.
 _AGT07_CONCERNS: tuple[tuple[str, re.Pattern], ...] = (
@@ -984,7 +986,7 @@ def check_agt07(*, spec, target, inventory, stack, components, session) -> Check
 
     covered: dict[str, int] = {}
     for no, line in enumerate(text.splitlines(), start=1):
-        if not _PROHIBITION_LINE_RE.search(line):
+        if not PROHIBITION_LINE_RE.search(line):
             continue
         for label, pattern in _AGT07_CONCERNS:
             if label not in covered and pattern.search(line):

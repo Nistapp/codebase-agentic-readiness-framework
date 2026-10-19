@@ -187,6 +187,22 @@ def entry_instruction_file(inventory: Inventory) -> tuple[str, str]:
 #: the same list (decision 0001, ``spec/decisions/0001-constraint-artifact.md``).
 PROHIBITION_HEADING_RE = re.compile(r"(?i)\b(do[- ]?not|don't|prohibit\w*|deny|forbidden|never|no[- ]?go)\b")
 
+#: A line that reads as a prohibition rather than a passing mention — the same vocabulary AGT-07 labels
+#: each prohibition line with, shared here so "is this a prohibitions section" and "is this a
+#: prohibition line" cannot drift apart.
+PROHIBITION_LINE_RE = re.compile(
+    r"(?i)\b(never|do not|don't|must not|mustn't|prohibit(?:ed)?|forbidden|off-limits)\b|❌"
+)
+
+#: A heading with no trigger word still counts as a prohibitions heading when the block beneath it (to
+#: the next heading of the same or a higher level) already reads like a do-not list: at least this many
+#: lines matching ``PROHIBITION_LINE_RE``. Found on Digital-Assistant-Server (S4.3.3, AGT-07 override
+#: accepted as correct, D62): its prohibitions section is headed "Security & Safety Guardrails" — no
+#: trigger word — but lists five "must not" bullets underneath. Set above 1 so a single incidental
+#: mention in prose (a "Rules" heading whose body merely says "Never commit secrets.") still does not
+#: qualify, matching the existing fixture for that case.
+PROHIBITION_LINE_THRESHOLD = 3
+
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$")
 _FENCE_LINE_RE = re.compile(r"^\s*(?:```|~~~)")
 _CODE_SPAN_RE = re.compile(r"(?<!`)(`{1,3})(?!`)(.+?)(?<!`)\1(?!`)")
@@ -211,20 +227,57 @@ class Prohibitions:
         )
 
 
+def _heading_qualifies(lines: list[str], raw_headings: list[tuple[int, int, str]], idx: int) -> bool:
+    """Whether the heading at ``raw_headings[idx]`` opens a prohibitions section — by a trigger word, or
+    by its own direct body's line content (see ``PROHIBITION_LINE_THRESHOLD``).
+
+    The body counted here runs only to the *next heading of any level*, not to the next heading of the
+    same or a higher level the way the section's eventual extent does — otherwise a heading several
+    levels up (a document's own ``# Title``) would count every prohibition line in every subsection
+    beneath it as its own, and open a "prohibitions section" spanning the whole file.
+    """
+    number, _level, title = raw_headings[idx]
+    if PROHIBITION_HEADING_RE.search(title):
+        return True
+    end = raw_headings[idx + 1][0] if idx + 1 < len(raw_headings) else len(lines) + 1
+    body = lines[number : end - 1]
+    hits = sum(1 for body_line in body if PROHIBITION_LINE_RE.search(body_line))
+    return hits >= PROHIBITION_LINE_THRESHOLD
+
+
 def prohibitions_section(text: str) -> Prohibitions | None:
-    """Find the prohibitions section: a heading with one of the prohibition words, and everything under it.
+    """Find the prohibitions section: a heading with one of the prohibition words, or (failing that) a
+    heading whose body already reads like a do-not list, and everything under it.
 
     The section runs to the next heading of the same or a higher level (a subsection belongs to it). Every
     matching heading counts, so a file with two such sections has both, in order. A heading inside a fenced
     block is not a heading. ``None`` when there is no such heading. ``AGT-07``, ``CON-01`` and ``CON-02`` all
     ask here, so that heading detection cannot drift between them.
     """
+    lines = text.splitlines()
+
+    raw_headings: list[tuple[int, int, str]] = []
+    in_fence = False
+    for number, line in enumerate(lines, start=1):
+        if _FENCE_LINE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        heading = _HEADING_RE.match(line)
+        if heading:
+            raw_headings.append((number, len(heading.group(1)), heading.group(2)))
+
+    qualifies = {
+        number: _heading_qualifies(lines, raw_headings, idx) for idx, (number, _, _) in enumerate(raw_headings)
+    }
+
     headings: list[str] = []
     first_line = 0
     kept: list[tuple[int, str]] = []
     open_level: int | None = None
     in_fence = False
-    for number, line in enumerate(text.splitlines(), start=1):
+    for number, line in enumerate(lines, start=1):
         if _FENCE_LINE_RE.match(line):
             in_fence = not in_fence
         heading = None if in_fence or _FENCE_LINE_RE.match(line) else _HEADING_RE.match(line)
@@ -232,7 +285,7 @@ def prohibitions_section(text: str) -> Prohibitions | None:
             level = len(heading.group(1))
             if open_level is not None and level <= open_level:
                 open_level = None
-            if open_level is None and PROHIBITION_HEADING_RE.search(heading.group(2)):
+            if open_level is None and qualifies.get(number, False):
                 open_level = level
                 headings.append(heading.group(2))
                 first_line = first_line or number

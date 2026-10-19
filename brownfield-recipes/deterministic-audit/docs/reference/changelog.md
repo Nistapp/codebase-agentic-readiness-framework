@@ -13,9 +13,45 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-10-19.1` | 2026-10-19 | 55 | S4.4.2.1: `AGT-07`'s heading-word detector gap, found on Digital-Assistant-Server (S4.3.3, `D62`) — a prohibitions heading with no trigger word now also qualifies when its own body already reads as a do-not list |
 | `2026-10-15.3` | 2026-10-15 | 55 | S3.6.4: real-defect fixes found by the Digital-Assistant-SDK dry run (S3.6.3) — `TOOL-03`'s comment-intolerant JSON parse, `EXEC-04`'s truncated identifier capture, and `EXEC-02`'s undersized content-read cap — plus `CI-03`'s npm staged-publish fix (`3fb090d`, S3.6.1), which moved a verdict without a revision bump at the time |
 | `2026-10-11.1` | 2026-10-11 | 55 | S2.6: the Makefile reader, the false positives the self-audit found, and the constraint pack |
 | `2026-09-28.13` | 2026-09-28 | 54 | The engine as it was imported into this repository |
+
+---
+
+## `2026-10-19.1`
+
+`AGT-07`'s heading-word detector gap, the first fix from the rubric-tightening loop (S4.4.2.1). Found on
+Digital-Assistant-Server (S4.3.3): its `AGENTS.md` has a real prohibitions section headed "Security &
+Safety Guardrails" — five "must not" bullets covering secrets only — but the heading carries none of
+`AGT-07`'s trigger words, so the engine reported `FAIL` ("no prohibitions section") instead of `PARTIAL`.
+KC accepted the S4.3.3 agent's override to `PARTIAL` as correct (`D62`), reversing an earlier
+`S4.3.2.2` judgment call that had kept the engine's literal `FAIL`.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `AGT-07` | `FAIL` when the prohibitions heading carries no trigger word, however many prohibition lines sit beneath it | `PARTIAL`/`PASS` when that heading's own direct body has at least 3 lines matching the prohibition-line vocabulary (`never`, `do not`, `must not`, …) | `prohibitions_section` (`audit/rules/checks/_common.py`), shared by `AGT-07`, `CON-01` and `CON-02`, only recognised a heading by a trigger word in its title. A heading's own direct body (to the next heading of any level, so a nested subsection's content is not borrowed) now also qualifies it. |
+| `CON-01` | `UNKNOWN` ("no prohibitions section to read") whenever `AGT-07`'s heading match failed | Scored normally once a section is found by either route | `CON-01` reads `prohibitions_section`'s result directly; it was never wrong on its own, only starved of a section to read. |
+| `CON-02` | Same `UNKNOWN`, same cause | Scored normally | Same fix, same shared helper. |
+
+### The example report
+
+`examples/digital-assistant-sdk/` is not regenerated: Digital-Assistant-SDK's `AGENTS.md` has no
+prohibitions-shaped heading at all (re-run and confirmed directly against `d44bbc672`), so `AGT-07`,
+`CON-01` and `CON-02` are unchanged there. The moved verdicts above are confirmed against
+Digital-Assistant-Server directly (`7f351b0`, read-only, output outside the target) rather than a
+committed example, matching `S4.3.2.2`'s own corrected sheet exactly: `AGT-07` `PARTIAL`, `CON-01`
+`PASS`, `CON-02` `FAIL`.
+
+### Not changed
+
+The scoring weights, the verdict credits, the report schema (v2) and the instruction-variant table. The
+`ruleset_hash` is unchanged: it hashes the catalogue and the variant table, neither of which this fix
+touches — only the revision string, which this page's own docstring (`audit/__init__.py`) says to bump
+for exactly this kind of detector change.
 
 ---
 

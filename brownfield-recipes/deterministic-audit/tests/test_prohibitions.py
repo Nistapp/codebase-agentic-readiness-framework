@@ -84,6 +84,25 @@ class HeadingTests(unittest.TestCase):
         self.assertIsNone(section(""))
         self.assertIsNone(section("# Rules\n\nNever commit secrets.\n\n## Boundaries\n- `src/`\n"))
 
+    def test_a_heading_with_no_trigger_word_qualifies_when_its_body_reads_as_a_do_not_list(self):
+        # Digital-Assistant-Server, S4.3.3/D62: headed "Security & Safety Guardrails", no trigger
+        # word, but five "must not" bullets underneath.
+        text = (
+            "## Security & Safety Guardrails\n"
+            "- You must not commit secrets.\n"
+            "- You must not force-push to main.\n"
+            "- You must not skip tests.\n"
+            "- You must not edit generated files.\n"
+            "- You must not disable CI.\n"
+        )
+        found = section(text)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.headings, ("Security & Safety Guardrails",))
+
+    def test_a_heading_with_no_trigger_word_and_too_few_body_lines_does_not_qualify(self):
+        text = "## Security & Safety Guardrails\n- You must not commit secrets.\n- You must not force-push.\n"
+        self.assertIsNone(section(text))
+
 
 class ExtentTests(unittest.TestCase):
     TEXT = (
