@@ -867,13 +867,35 @@ class ToolContractTests(unittest.TestCase):
             "nan.json": b'{"a": NaN}',
             "infinity.json": b'{"a": Infinity}',
             "latin1.json": b'{"a": "\xe9"}',
-            "deep.json": b"[" * 100000 + b"]" * 100000,
         }
         for name, content in cases.items():
             with self.subTest(file=name):
                 code, envelope, _ = call([str(self.write(name, content))])
                 self.assertEqual(code, 2)
                 self.assertIn("the file is not a report", envelope["data"]["error"])
+
+    def test_a_json_document_nested_too_deeply_is_exit_2(self) -> None:
+        # Whether a real document this deep actually overflows the C stack, and at what depth, depends
+        # on the platform's stack size and the Python build (observed: reliable on some CI legs, never
+        # triggered on others at 100_000 levels) — CPython 3.14 also changed the json decoder's guard from
+        # a frame-count check to a raw stack-memory one, unaffected by sys.setrecursionlimit. Mocking
+        # json.loads to raise RecursionError tests parse_report's own handling of it deterministically,
+        # independent of any platform's actual stack headroom. The mock only intercepts the one call
+        # parse_report makes on this file's own marker content, so `call()`'s own json.loads (parsing the
+        # tool's JSON envelope back out) still runs for real.
+        marker = "__test_a_json_document_nested_too_deeply_is_exit_2__"
+        path = self.write("deep.json", marker)
+        real_loads = json.loads
+
+        def fake_loads(text: str, **kwargs: Any) -> Any:
+            if text == marker:
+                raise RecursionError("too deep")
+            return real_loads(text, **kwargs)
+
+        with mock.patch.object(vr.json, "loads", side_effect=fake_loads):
+            code, envelope, _ = call([str(path)])
+        self.assertEqual(code, 2)
+        self.assertIn("the file is not a report", envelope["data"]["error"])
 
     def test_a_target_that_does_not_exist_is_exit_1(self) -> None:
         code, envelope, _ = call([str(WORKED), "--target", str(self.root / "nope")])

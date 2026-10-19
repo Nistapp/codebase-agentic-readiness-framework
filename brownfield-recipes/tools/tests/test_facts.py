@@ -73,10 +73,19 @@ KIND_FILES: dict[str, str | bytes] = {
 
 
 def snapshot(root: Path) -> dict[str, tuple[int, int]]:
-    """Every file and directory under `root`, `.git` included, with size and modification time."""
+    """Every file and directory under `root`, `.git` included, with size and modification time.
+
+    Git's own background maintenance can create and remove a file under `.git/objects/` (a
+    `maintenance.lock`, observed on macOS) between this walk listing a path and stating it; that
+    file is git's transient internal state, never this test's own content, so a path that vanishes
+    mid-walk is skipped rather than treated as a snapshot failure.
+    """
     state: dict[str, tuple[int, int]] = {}
     for path in sorted(root.rglob("*")):
-        info = path.lstat()
+        try:
+            info = path.lstat()
+        except FileNotFoundError:
+            continue
         state[str(path.relative_to(root))] = (info.st_size, info.st_mtime_ns)
     return state
 
