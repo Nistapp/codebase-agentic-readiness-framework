@@ -46,6 +46,7 @@ import re
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.rules.checks._common import resolve_verbs, runner_commands
+from audit.scan import Kind
 from audit.stack import extract_npm_scripts
 from audit.rules.payloads import Payload
 
@@ -394,7 +395,10 @@ def _hook_wiring(inventory) -> tuple[list[str], list[str]]:
     wired = _present(inventory, _WIRED_HOOK_FILES)
     configured: list[str] = []
 
-    hooks_path = inventory.grep(r"core\.hooksPath")
+    hooks_path = inventory.grep(
+        r"core\.hooksPath",
+        kinds=(Kind.MANIFEST, Kind.CONFIG, Kind.SCRIPT, Kind.CI, Kind.BUILD),
+    )
     if hooks_path:
         wired.append(f"{hooks_path[0][0]} core.hooksPath")
 

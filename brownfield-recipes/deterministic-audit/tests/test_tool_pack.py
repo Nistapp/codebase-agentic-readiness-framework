@@ -80,6 +80,32 @@ class ToolInlineTests(unittest.TestCase):
         )
         self.assertEqual(support.verdicts(report)["TOOL-05"], "PASS")
 
+    def test_core_hookspath_mentioned_in_a_doc_does_not_wire_the_chain(self):
+        """A planning document that merely *describes* the check must not count as wiring.
+
+        Regression for the self-audit false positive found on this engine's own pre-migration
+        repository: a Markdown file about this very check reporting ``core.hooksPath`` matched the
+        unscoped grep and was cited as wiring evidence, though no real hook-chain existed.
+        """
+        report = self._scan(
+            {
+                "package.json": '{"scripts": {"build": "echo build"}}',
+                "docs/implementation-plan/07-tool-pack.md": (
+                    "TOOL-05 checks for hook-chain wiring, e.g. via `core.hooksPath` or `.husky/`.\n"
+                ),
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-05"], "FAIL")
+
+    def test_core_hookspath_wired_via_a_shell_script_still_passes(self):
+        report = self._scan(
+            {
+                "scripts/setup.sh": "#!/bin/sh\ngit config core.hooksPath .githooks\n",
+                ".githooks/pre-commit": "#!/bin/sh\n",
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-05"], "PASS")
+
     def test_python_strict_mypy_is_pass(self):
         report = self._scan(
             {
