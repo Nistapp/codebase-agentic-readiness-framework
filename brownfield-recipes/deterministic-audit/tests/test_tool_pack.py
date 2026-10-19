@@ -152,6 +152,15 @@ class ToolInlineTests(unittest.TestCase):
         for check in TOOL_CHECKS:
             self.assertIn(verdicts[check], ("UNKNOWN", "PASS"), f"{check} guessed")
 
+    def test_evidence_cites_a_nested_manifests_real_path_not_a_hardcoded_basename(self):
+        """A monorepo whose only ``package.json`` is nested has no manifest at the literal name
+        ``"package.json"``; TOOL-01's FAIL evidence must cite a path that actually exists."""
+        report = self._scan({"packages/app/package.json": '{"name": "app", "scripts": {}}'})
+        self.assertEqual(support.verdicts(report)["TOOL-01"], "FAIL")
+        evidence_paths = {e["path"] for f in report["findings"] if f["check"] == "TOOL-01" for e in f["evidence"]}
+        self.assertIn("packages/app/package.json", evidence_paths)
+        self.assertNotIn("package.json", evidence_paths)
+
 
 if __name__ == "__main__":
     unittest.main()

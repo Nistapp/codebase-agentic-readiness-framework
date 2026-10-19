@@ -55,6 +55,7 @@ from audit.rules.checks._common import (
     resolve_all_verbs,
     resolve_verbs,
     runner_commands,
+    runner_kind,
 )
 from audit.stack import VERBS, canonical_verb
 from audit.rules.payloads import Payload, VerbEntry, VerbSurface
@@ -200,7 +201,7 @@ def _no_runner(spec, inventory, cannot: str) -> CheckOutcome:
 
 def _rank(runner: str) -> int:
     try:
-        return RUNNER_PRECEDENCE.index(runner)
+        return RUNNER_PRECEDENCE.index(runner_kind(runner))
     except ValueError:
         return len(RUNNER_PRECEDENCE)
 
@@ -397,14 +398,14 @@ def check_cmd02(*, spec, target, inventory, stack, components, session) -> Check
             ],
         )
 
-    if check.runner in _LIFECYCLE_RUNNERS:
+    if runner_kind(check.runner) in _LIFECYCLE_RUNNERS:
         return _unknown(
             spec,
             f"the {check.runner} check is a build lifecycle task, and what it composes is set by the build's task "
             "graph, which the engine does not read",
         )
 
-    own_targets = dict(declared).get(check.runner, {}) if check.runner == "Makefile" else None
+    own_targets = dict(declared).get(check.runner, {}) if runner_kind(check.runner) == "Makefile" else None
     concerns = _composition_concerns(check.command, resolved, own_targets)
     present = [c for c in CONCERNS if c in concerns]
     missing = [c for c in CONCERNS if c not in concerns]
@@ -454,14 +455,14 @@ _DELEGATION_PATTERNS: dict[str, re.Pattern] = {
 
 
 def _delegates_to(command: str, primary: str, secondary: str) -> bool:
-    pattern = _DELEGATION_PATTERNS.get(primary)
+    pattern = _DELEGATION_PATTERNS.get(runner_kind(primary))
     if pattern and pattern.search(command):
         return True
     for segment in _segments(command):
         target = _runner_target(segment)
         if target == "check":
             invoked = _invoked_runner(segment)
-            if invoked != secondary:
+            if invoked != runner_kind(secondary):
                 return True
     return False
 
