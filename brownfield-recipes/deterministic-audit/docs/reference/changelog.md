@@ -13,10 +13,33 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-10-19.2` | 2026-10-19 | 55 | S4.4.2.3/.4/.6/.8: `EXEC-04`'s shell-variable/env-var ambiguity, `NAV-02`'s Quarkus entry-point gap, `TOOL-05`'s self-referential hook-wiring false positive, and `TOOL-01`–`06`/`CMD-01`'s evidence citing a hardcoded manifest basename instead of its real nested path |
 | `2026-10-19.1` | 2026-10-19 | 55 | S4.4.2.1: `AGT-07`'s heading-word detector gap, found on Digital-Assistant-Server (S4.3.3, `D62`) — a prohibitions heading with no trigger word now also qualifies when its own body already reads as a do-not list |
 | `2026-10-15.3` | 2026-10-15 | 55 | S3.6.4: real-defect fixes found by the Digital-Assistant-SDK dry run (S3.6.3) — `TOOL-03`'s comment-intolerant JSON parse, `EXEC-04`'s truncated identifier capture, and `EXEC-02`'s undersized content-read cap — plus `CI-03`'s npm staged-publish fix (`3fb090d`, S3.6.1), which moved a verdict without a revision bump at the time |
 | `2026-10-11.1` | 2026-10-11 | 55 | S2.6: the Makefile reader, the false positives the self-audit found, and the constraint pack |
 | `2026-09-28.13` | 2026-09-28 | 54 | The engine as it was imported into this repository |
+
+---
+
+## `2026-10-19.2`
+
+Four more rubric-tightening fixes (S4.4.2.3, `.4`, `.6`, `.8`), landed in parallel and merged together.
+All four were found the same way `.1` (`AGT-07`, above) was: a real false positive on a pinned real
+repository, verified directly against the source before any code changed.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `EXEC-04` | `FAIL` for a shell variable the same script assigns and uses locally (e.g. `GREEN='\033[0;32m'` then `${GREEN}`), misread as a required, undeclared process-env key | `PASS`/unaffected for such a variable | `_referenced_env_keys` (`audit/rules/checks/execution.py`) now excludes a `${VAR}` reference from a shell file's contribution when that same file also assigns `VAR` a literal value. Found on Digital-Assistant-Server: `start-server.sh`/`pre-flight-check.sh` assign `GREEN`/`YELLOW`/`RED`/`NC` as local ANSI colour codes, never read from the process environment. |
+| `NAV-02` | `FAIL` ("no jvm entry point found") for a Quarkus app with no literal `main` | `PASS` | `_jvm_entry` (`audit/rules/checks/nav.py`) now also recognises an `io.quarkus` build dependency (pom.xml/build.gradle) and `@QuarkusMain`, the same way it already recognised `@SpringBootApplication`. Found on Digital-Assistant-Server: a Quarkus REST service (`RestApplication.java`, JAX-RS `@ApplicationPath`, no main method anywhere), which the Quarkus runtime itself launches. |
+| `TOOL-05` | `PASS` ("wired") when the literal string `core.hooksPath` appears anywhere, including a Markdown document merely describing this check | `FAIL`/unaffected once the mention is confined to documentation | `_hook_wiring`'s grep (`audit/rules/checks/tool.py`) now scopes `core.hooksPath` to `(MANIFEST, CONFIG, SCRIPT, CI, BUILD)` files, excluding `DOC`. Found on this engine's own pre-migration repository: a planning document *about* `TOOL-05` was read as real git-hooks wiring. |
+| `TOOL-01`–`TOOL-06`, `CMD-01` | Evidence can cite a hardcoded manifest basename (e.g. `package.json`) that does not exist anywhere in the repository, when the real manifest is nested (e.g. `packages/app/package.json`) | Evidence cites the manifest's real, shallowest-matched path | `_runner_commands`/`runner_commands` (`audit/rules/checks/_common.py`) yielded a literal basename even though `Inventory.has` matches at any depth; now it yields the actual matched path. No verdict moves anywhere in the existing suite or fixture corpus — confirmed by diffing full reports before/after on the monorepo-shaped `exec-02-nested-lockfile` fixture; only evidence *paths* change. (This corrects the roadmap's original filing of this item as an `EXEC-02` defect: `EXEC-02`'s own `_lock_consistency` already handles a nested lockfile correctly, by design — the real defect was in this shared helper.) |
+
+### Not changed
+
+The scoring weights, the verdict credits, the report schema (v2) and the instruction-variant table. The
+`ruleset_hash` is unchanged: none of the four fixes touch the catalogue or the variant table.
 
 ---
 
