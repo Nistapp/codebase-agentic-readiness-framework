@@ -2,8 +2,8 @@
 
 Canonical definitions of terms used by the brownfield recipes. Terms from the readiness framework are cited, not redefined; see [`shared/Glossary.md`](../../../shared/Glossary.md).
 
-> [!NOTE]
-> Planned. Definitions are provisional until the step that introduces each term ships.
+> **Status:** Live. Every term below names a thing that ships today, except the two marked "not built
+> yet" — the implementation recipe and its playbooks, both v0.2, milestone M5.
 
 ---
 
@@ -11,14 +11,14 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 |---|---|
 | Recipe | A Markdown instruction document (`SKILL.md`) that a coding agent executes. |
 | Audit recipe | The read-only recipe that produces the audit report. |
-| Implementation recipe | The recipe that applies confirmed findings on a branch. |
+| Implementation recipe | The recipe that will apply confirmed findings on a branch. Not built yet (v0.2, milestone M5). |
 | Engine | The deterministic, standard-library Python audit in `deterministic-audit/`. |
 | Tool | A deterministic script in `tools/` that follows the tool contract. |
 | Envelope | The one JSON object a tool prints on stdout: `tool`, `version`, `ok`, `data`, `warnings`, `truncated`. |
 | Check | A catalogue entry with an ID such as `CMD-01`, judged by a rubric. |
 | Finding | A non-passing check result with a statement, evidence and remediation. |
-| Disposition | The user's decision on a finding: confirmed, rejected, deferred or edited. |
-| Playbook | A remediation procedure the implementation recipe follows for one finding class. |
+| Disposition | A finding's state: `pending` until set, then the user's decision — `confirmed`, `rejected`, `deferred` or `edited`. |
+| Playbook | A remediation procedure the implementation recipe will follow for one finding class. Not built yet (v0.2, milestone M5); a check's catalogue entry already names its intended playbook. |
 | Stack profile | A file that maps the checks and playbooks to one toolchain. |
 | Evidence | A cited file, command or index query that supports a verdict. |
 | `captured_by` | Whether evidence was captured by a tool or reported by the agent. |

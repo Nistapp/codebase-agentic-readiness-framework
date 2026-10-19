@@ -2,8 +2,10 @@
 
 > **Audience:** Engineers, maintainers
 > **Goal:** Explain how the recipes are evaluated and what the published results mean.
-> **Status:** Partial. The corpus format, the scorer, the Claude Code runner and the fixture sweep are Live
-> (S4.1, S4.2). Real-repo runs (S4.3) are Planned.
+> **Status:** Live for the corpus format, the scorer, the Claude Code runner, the fixture sweep (S4.1,
+> S4.2), the real-repo runs (S4.3) and the rubric-tightening round they fed (S4.4). A second harness/model
+> through `opencode` was smoke-run (S4.5.3) but not through a dedicated runner script; `run-opencode.sh`/
+> `run-codex.sh` themselves stay Planned (§4), and three-runs-per-repo variance is deferred (`D61`).
 
 ---
 
@@ -58,11 +60,15 @@ that would discard the `schema_valid` finding the same run already made. A ratio
 there is nothing of that kind to score (no expected blockers, no overrides, and so on).
 
 DP §11 also names run-to-run variance (three runs per repo, to characterise non-determinism rather than
-eliminate it) and cost/time. The runners (§4 below) record cost and time per run; variance and the
-false-positive *rate* DP §11 means (findings a human rejects, as opposed to `false_positive_candidates`,
-which is scored against written ground truth) are computed once the fixture sweep and real-repo runs exist
-(S4.2–S4.3). Review R-27: cost and time have metrics now but no targets — those are set after the first
-baseline runs, not before.
+eliminate it) and cost/time. The runners (§4 below) record cost and time per run, published for the
+fixture sweep and the real-repo runs in [Evaluation Results](../../reference/eval-results.md).
+Run-to-run blocker agreement stayed unmeasured by deliberate choice (`D61`: one Claude-Code-on-Sonnet run
+per repo, not three, to get real-repo numbers faster) — KC accepted this gap at `S4.4.3`'s close (`D63`)
+rather than spending on the two further runs per repo `D61` traded away. The false-positive *rate* DP §11
+means (findings a human rejects, as opposed to `false_positive_candidates`, which is scored against
+written ground truth) is in the triage section of [Evaluation Results](../../reference/eval-results.md).
+Review R-27: cost and time have metrics now but no targets — those are set after the first baseline runs,
+not before.
 
 ## 4. Headless runs
 
@@ -83,20 +89,31 @@ never a harness's own shell access.
   heredoc) and of an explicit `permissions.allow` rule added for the purpose, which had no effect on the
   classifier. `codex` was also not installed in that environment, so its current headless flags could not
   be verified against `--help` rather than secondhand documentation. Carried forward to a session or
-  environment where either is possible, rather than shipped unverified.
+  environment where either is possible, rather than shipped unverified. Separately, `S4.5.3` did reach a
+  second harness — `opencode` driving the installed skill bundle, DeepSeek flash as the model — without
+  this script, by giving the agent a single chained shell command as the literal instruction rather than a
+  multi-step natural-language list (each `opencode run` is a fresh, memoryless session, so a numbered
+  multi-step prompt either hung or silently re-ran already-done steps; see
+  [Harness Notes](../../reference/harness-notes.md)). That proves the recipe itself is harness-neutral; it
+  is not a replacement for the unattended, cost-tracked runner script this item still names as missing.
 
 ## 5. Models
 
 DP §11's model matrix: at least one top-tier model, one mid-tier, one small/cheap model, and one
 non-Anthropic model through opencode — "wherever a smaller model fails, tighten the rubric wording, not the
-model choice." Only the first leg runs today, Claude Code on Sonnet (D5); the rest wait on the fixture sweep
-and real-repo runs (S4.2–S4.4), and on `run-opencode.sh` existing to reach a non-Anthropic model at all.
+model choice." Claude Code on Sonnet (D5) is the one leg scored against ground truth, across the fixture
+sweep and all three real repos (S4.2–S4.4). The non-Anthropic leg was smoke-run, not scored: `opencode` on
+DeepSeek flash completed the installed skill bundle on one fixture (`S4.5.3`), reaching a non-Anthropic
+model without `run-opencode.sh`, but with no expected-results comparison the way the Claude Code runs got.
+The mid-tier and small/cheap legs of the matrix remain unrun.
 
 ## 6. Publishing
 
 Results live in [Evaluation Results](../../reference/eval-results.md) (D59: a Reference page, not the
 roadmap's literal `docs/eval/` — extending D54's precedent, since `STYLE_GUIDE.md` has no `eval/` category
-and a results table is reference-shaped data, not a how-to or explanation page). The fixture sweep's full
-results (89/89 fixtures, 98.9% expected-verdict rate, cost and time, the one miss and its triage, two
-evidence-validity findings) are there now; real-repo results (S4.3) are added once those runs exist. See
+and a results table is reference-shaped data, not a how-to or explanation page). Both the fixture sweep's
+full results (89/89 fixtures, 98.9% expected-verdict rate, cost and time, the one miss and its triage, two
+evidence-validity findings) and the three real-repo runs (one per repo under `D61`; KC's triage, the
+licence check and `D62`'s Digital-Assistant-Server override revision) are published there now. A second
+harness/model's scored comparison (`S4.3.4`) stays Planned, deferred per `D57`. See
 [Run the Evals](../../how-to/run-the-evals.md) Step 4.
