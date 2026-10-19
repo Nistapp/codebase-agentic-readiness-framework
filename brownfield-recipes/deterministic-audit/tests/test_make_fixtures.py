@@ -32,6 +32,15 @@ ENV = {**os.environ, "LC_ALL": "C", "MAKEFLAGS": "", "MFLAGS": ""}
 MAKE = shutil.which("make")
 
 
+def _normalize_make_quotes(text: str) -> str:
+    """GNU Make's own quoting of a name in a message is version-dependent, not content:
+    older builds (seen on macOS CI) wrap it ```like this'``, newer ones ``'like this'``. Both
+    quote the same word, so a straight apostrophe on both sides is the canonical form compared
+    against; everything else about the message is still checked byte for byte.
+    """
+    return text.replace("`", "'")
+
+
 def makefile_fixtures() -> list[str]:
     return sorted(p.name for p in support.FIXTURES_DIR.iterdir() if (p / "Makefile").is_file())
 
@@ -67,7 +76,8 @@ class MakeFixtureTests(unittest.TestCase):
             with self.subTest(fixture=name):
                 done = dry_run(name)
                 self.assertNotEqual(done.returncode, 0)
-                self.assertEqual(done.stderr.strip().replace(str(support.fixture(name)) + "/", ""), message)
+                actual = done.stderr.strip().replace(str(support.fixture(name)) + "/", "")
+                self.assertEqual(_normalize_make_quotes(actual), _normalize_make_quotes(message))
 
     def test_the_only_fixtures_that_are_refused_are_the_ones_named_here(self):
         self.assertEqual(set(REFUSED_ON_PURPOSE) - set(makefile_fixtures()), set())
