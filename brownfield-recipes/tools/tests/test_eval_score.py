@@ -318,6 +318,45 @@ class EvidenceValidityTests(unittest.TestCase):
         self.assertIsNone(result["ratio"])
         self.assertIn("warning", result)
 
+    def test_a_directory_cited_with_no_lines_is_a_valid_absence_proof(self) -> None:
+        # CI-04's own spec asks the agent, on finding nothing, to cite the location it searched; the
+        # repository root is a legitimate such citation (git's <tree>:"." lookup is the one that was
+        # broken, not the citation itself — "." resolves fine via "./" or "").
+        sha = self.commit(
+            {
+                "AGENTS.md": 40,
+                "package.json": 1,
+                "tsconfig.base.json": 4,
+                "tsconfig.json": 4,
+                "src/config/constants.ts": 12,
+                "src/services/__tests__/auth.test.ts": 60,
+            }
+        )
+        report = self.report_at(sha)
+        check_of(report, "CI-04")["evidence"] = [{"kind": "file", "captured_by": "agent", "path": "."}]
+        result = score.evidence_validity(report, self.target)
+        self.assertEqual(result["ratio"], 1.0)
+        self.assertNotIn("CI-04", check_ids_of_pointers(report, result["invalid"]))
+
+    def test_a_directory_cited_with_lines_is_still_invalid(self) -> None:
+        # A directory has no lines, so a citation that claims some is a genuinely bad one and must still
+        # score as invalid - the fix for "." must not make the metric blind to this.
+        sha = self.commit(
+            {
+                "AGENTS.md": 40,
+                "package.json": 1,
+                "tsconfig.base.json": 4,
+                "tsconfig.json": 4,
+                "src/config/constants.ts": 12,
+                "src/services/__tests__/auth.test.ts": 60,
+            }
+        )
+        report = self.report_at(sha)
+        check_of(report, "CI-04")["evidence"] = [{"kind": "file", "captured_by": "agent", "path": ".", "lines": "1-3"}]
+        result = score.evidence_validity(report, self.target)
+        self.assertLess(result["ratio"], 1.0)
+        self.assertIn("CI-04", check_ids_of_pointers(report, result["invalid"]))
+
 
 class ScoreTests(unittest.TestCase):
     def test_a_schema_invalid_report_is_not_comparable(self) -> None:
