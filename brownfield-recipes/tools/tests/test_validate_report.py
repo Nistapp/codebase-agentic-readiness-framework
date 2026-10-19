@@ -892,7 +892,7 @@ class ToolContractTests(unittest.TestCase):
                 raise RecursionError("too deep")
             return real_loads(text, **kwargs)
 
-        with mock.patch.object(vr.json, "loads", side_effect=fake_loads):
+        with mock.patch("json.loads", side_effect=fake_loads):
             code, envelope, _ = call([str(path)])
         self.assertEqual(code, 2)
         self.assertIn("the file is not a report", envelope["data"]["error"])
