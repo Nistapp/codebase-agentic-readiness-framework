@@ -523,7 +523,11 @@ def missing_in_commit(target: Path, sha: str, paths: Sequence[str]) -> list[str]
         return f"the target does not hold the commit {sha[:12]}"
     # A path with a newline cannot be sent through the line protocol, and no real file evidence has one.
     askable = [path for path in paths if "\n" not in path]
-    answer = git_output(target, ["cat-file", "--batch-check"], stdin="".join(f"{sha}:{path}\n" for path in askable))
+    # git's <tree>:<path> syntax does not resolve a bare "." to the root tree (it looks for a path literally
+    # named "."), even though "." is a legitimate citation of the repository root itself. "" and "./" both
+    # resolve correctly, so ask git with "" for that one spelling while still reporting on the original path.
+    queries = ["" if path == "." else path for path in askable]
+    answer = git_output(target, ["cat-file", "--batch-check"], stdin="".join(f"{sha}:{query}\n" for query in queries))
     if answer is None or answer.returncode != 0 or len(answer.stdout.splitlines()) != len(askable):
         return "git could not look the paths up"
     missing = {path for path, line in zip(askable, answer.stdout.splitlines()) if line.endswith(" missing")}
