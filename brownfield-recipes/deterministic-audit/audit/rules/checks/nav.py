@@ -14,7 +14,9 @@ informational (`scored=False` in the registry) and are reported but earn no cred
   nothing declares it. Nothing at all is ``UNKNOWN``, not `FAIL`: an unrecognised ecosystem is not
   proof that boundaries are absent.
 * **NAV-02** — a language-appropriate entry point (npm `main`/`bin`/`exports`, an `__main__` or
-  `if __name__ == "__main__"`, JVM `main`, Go/Rust `func main`, a `bin/` script) is `PASS`. A
+  `if __name__ == "__main__"`, JVM `main`, a `@SpringBootApplication`/`@QuarkusMain` annotation or a
+  build dependency on `io.quarkus` (Quarkus apps conventionally have no literal `main` — the
+  Quarkus runtime itself is the entry point), Go/Rust `func main`, a `bin/` script) is `PASS`. A
   recognised ecosystem with none is `FAIL`; no recognised ecosystem is ``UNKNOWN``.
 * **NAV-03** — a census, never a verdict on heuristics: oversized files, catch-all directories,
   checked-in binaries and minified assets. All-zero is `PASS`; any count is `PARTIAL`, with the
@@ -192,11 +194,17 @@ def _grep_sources(inventory: Inventory, pattern: str, limit: int = 10) -> list[s
 
 
 def _jvm_entry(inventory: Inventory) -> list[str]:
-    return _grep_sources(
+    found = _grep_sources(
         inventory,
         r"public\s+static\s+void\s+main\s*\(|fun\s+main\s*\(|"
-        r"@SpringBootApplication",
+        r"@SpringBootApplication|@QuarkusMain",
     )
+    # Quarkus apps conventionally have no literal main method at all: the Quarkus runtime itself
+    # is the entry point, launched by its own build plugin/dependency. A build dependency on
+    # `io.quarkus` is that framework's own bootstrap convention, the same way `@SpringBootApplication`
+    # is Spring Boot's — so it is read from the build manifest, not guessed from source shape.
+    found += [rel for rel, _line, _text in inventory.grep(r"io\.quarkus", kinds=(Kind.BUILD,), limit=5)]
+    return found
 
 
 def _go_entry(inventory: Inventory) -> list[str]:

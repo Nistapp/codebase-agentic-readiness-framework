@@ -25,6 +25,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
+from audit.rules.checks.nav import _jvm_entry  # noqa: E402
+from audit.scan import build_inventory  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict)
 FIXTURES: dict[str, tuple[str, str]] = {
@@ -114,6 +116,108 @@ class Doc03TrackedStateTests(unittest.TestCase):
         self.assertEqual(
             support.verdicts(report)["DOC-03"], "UNKNOWN", "without git the tracked set cannot be ruled out"
         )
+
+
+class Nav02JvmEntryTests(unittest.TestCase):
+    """`_jvm_entry` on minimal, directly-built inventories — no subprocess, no fixture directory.
+
+    Covers the Quarkus-shaped repository that motivated widening the detector (a build dependency
+    on `io.quarkus`, a `@Path`-annotated JAX-RS resource, no literal `main`), alongside the three
+    conventions it already recognised, to show the addition is additive rather than a replacement.
+    """
+
+    def _inventory(self, files: dict[str, str]):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        for rel, text in files.items():
+            support.write(root, rel, text)
+        return build_inventory(root)
+
+    def test_java_public_static_void_main_is_found(self):
+        inventory = self._inventory(
+            {
+                "build.gradle": "apply plugin: 'java'\n",
+                "src/Main.java": "public class Main {\n    public static void main(String[] args) {}\n}\n",
+            }
+        )
+        self.assertTrue(_jvm_entry(inventory))
+
+    def test_kotlin_fun_main_is_found(self):
+        inventory = self._inventory(
+            {
+                "build.gradle.kts": 'plugins { kotlin("jvm") version "2.0.0" }\n',
+                "src/Main.kt": 'fun main() {\n    println("hi")\n}\n',
+            }
+        )
+        self.assertTrue(_jvm_entry(inventory))
+
+    def test_spring_boot_annotation_is_found(self):
+        inventory = self._inventory(
+            {
+                "pom.xml": "<project></project>\n",
+                "src/App.java": "@SpringBootApplication\npublic class App {}\n",
+            }
+        )
+        self.assertTrue(_jvm_entry(inventory))
+
+    def test_quarkus_dependency_with_no_main_is_found(self):
+        """The defect this change fixes: Quarkus apps have no literal `main` at all — the Quarkus
+        runtime is the entry point, declared only as a build dependency."""
+        inventory = self._inventory(
+            {
+                "build.gradle": (
+                    "plugins {\n    id 'io.quarkus' version '3.2.10.Final'\n}\n"
+                    "dependencies {\n    implementation 'io.quarkus:quarkus-resteasy'\n}\n"
+                ),
+                "src/RestApplication.java": (
+                    "import jakarta.ws.rs.ApplicationPath;\n"
+                    "import jakarta.ws.rs.core.Application;\n\n"
+                    '@ApplicationPath("/api")\n'
+                    "public class RestApplication extends Application {}\n"
+                ),
+                "src/Greeting.java": (
+                    "import jakarta.ws.rs.GET;\nimport jakarta.ws.rs.Path;\n\n"
+                    '@Path("/hello")\npublic class Greeting {\n'
+                    '    @GET\n    public String hello() { return "hi"; }\n}\n'
+                ),
+            }
+        )
+        self.assertTrue(_jvm_entry(inventory))
+
+    def test_quarkus_pom_dependency_with_no_main_is_found(self):
+        inventory = self._inventory(
+            {
+                "pom.xml": (
+                    "<project>\n  <dependencies>\n    <dependency>\n"
+                    "      <groupId>io.quarkus</groupId>\n"
+                    "      <artifactId>quarkus-resteasy</artifactId>\n"
+                    "    </dependency>\n  </dependencies>\n</project>\n"
+                ),
+                "src/RestApplication.java": '@ApplicationPath("/api")\npublic class RestApplication {}\n',
+            }
+        )
+        self.assertTrue(_jvm_entry(inventory))
+
+    def test_quarkus_main_annotation_is_found(self):
+        inventory = self._inventory(
+            {
+                "build.gradle": "plugins {\n    id 'io.quarkus' version '3.2.10.Final'\n}\n",
+                "src/Launcher.java": "@QuarkusMain\npublic class Launcher {}\n",
+            }
+        )
+        self.assertTrue(_jvm_entry(inventory))
+
+    def test_a_jvm_manifest_with_no_recognised_signal_is_not_found(self):
+        """A plain JVM manifest with none of the recognised conventions — not even `io.quarkus` —
+        still finds nothing, the same as before this change."""
+        inventory = self._inventory(
+            {
+                "build.gradle": "apply plugin: 'java'\n",
+                "src/Util.java": "public class Util {\n    public static int add(int a, int b) { return a + b; }\n}\n",
+            }
+        )
+        self.assertFalse(_jvm_entry(inventory))
 
 
 if __name__ == "__main__":
