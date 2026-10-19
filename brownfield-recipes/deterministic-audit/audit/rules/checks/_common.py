@@ -301,35 +301,61 @@ def prohibitions_section(text: str) -> Prohibitions | None:
 # ---------------------------------------------------------------------------
 
 
+def _manifest_path(inventory: Inventory, name: str) -> str:
+    """The real, actually-matched path of manifest ``name`` — the shallowest when more than one exists.
+
+    ``Inventory.has(name)`` matches at any depth (``rel == name or rel.endswith("/" + name)``), so a
+    caller that already confirmed ``inventory.has(name)`` and then uses the literal ``name`` as the
+    manifest's path is citing a path that may not exist at all, on a target whose only manifest of
+    that kind is nested (mirrors :func:`audit.rules.checks.execution._lockfile_paths`, which picks
+    the shallowest lockfile first for the analogous problem).
+    """
+    matches = sorted(
+        (rel for rel in inventory.paths() if rel == name or rel.endswith("/" + name)),
+        key=lambda rel: (rel.count("/"), rel),
+    )
+    return matches[0] if matches else name
+
+
 def _runner_commands(inventory: Inventory):
-    """Yield ``(runner, {verb: command})`` for every manifest present, in precedence order."""
+    """Yield ``(runner, {verb: command})`` for every manifest present, in precedence order.
+
+    ``runner`` is the manifest's real, actually-matched relative path (:func:`_manifest_path`), not a
+    hardcoded literal basename — on a target whose only manifest of a kind is nested, the literal name
+    is a path that does not exist anywhere in the repository.
+    """
     if inventory.has("package.json"):
-        yield "package.json", extract_npm_scripts(inventory)
+        path = _manifest_path(inventory, "package.json")
+        yield path, extract_npm_scripts(inventory, manifest=path)
     if inventory.has("Makefile") and not makefile_errors(inventory):
-        yield "Makefile", parse_makefile_targets(inventory)
+        yield _manifest_path(inventory, "Makefile"), parse_makefile_targets(inventory)
     for name in ("Taskfile.yml", "Taskfile.yaml"):
         if inventory.has(name):
-            text = inventory.read(name)
+            path = _manifest_path(inventory, name)
+            text = inventory.read(path)
             if text:
-                yield name, _parse_taskfile(text)
+                yield path, _parse_taskfile(text)
     if inventory.has("pyproject.toml"):
-        text = inventory.read("pyproject.toml")
+        path = _manifest_path(inventory, "pyproject.toml")
+        text = inventory.read(path)
         if text:
-            yield "pyproject.toml", _parse_pyproject_tasks(text)
+            yield path, _parse_pyproject_tasks(text)
     for name in ("build.gradle", "build.gradle.kts"):
         if inventory.has(name):
-            text = inventory.read(name)
+            path = _manifest_path(inventory, name)
+            text = inventory.read(path)
             if text:
-                yield name, _parse_gradle_tasks(text, inventory)
+                yield path, _parse_gradle_tasks(text, inventory)
     if inventory.has("pom.xml"):
-        text = inventory.read("pom.xml")
+        path = _manifest_path(inventory, "pom.xml")
+        text = inventory.read(path)
         if text:
-            yield "pom.xml", _parse_maven_plugins(text, inventory)
+            yield path, _parse_maven_plugins(text, inventory)
 
 
 def _with_spellings(runner: str, commands: dict[str, str]) -> dict[str, str]:
     """``commands`` with ``format:check`` bound to the first of its spellings that has a command."""
-    for spelling in ("format:check", *FORMAT_CHECK_ALIASES.get(runner, ())):
+    for spelling in ("format:check", *FORMAT_CHECK_ALIASES.get(runner_kind(runner), ())):
         if commands.get(spelling):
             return {**commands, "format:check": commands[spelling]}
     return commands
@@ -343,17 +369,30 @@ def _lifecycle_commands(runner: str, inventory: Inventory) -> dict[str, str]:
     reads ``runner_commands``, which leaves them out, so a Gradle build beside an npm project is not a second
     gate.
     """
-    if runner in ("build.gradle", "build.gradle.kts"):
+    kind = runner_kind(runner)
+    if kind in ("build.gradle", "build.gradle.kts"):
         text = inventory.read(runner)
         return _gradle_lifecycle(text, inventory) if text else {}
-    if runner == "pom.xml":
+    if kind == "pom.xml":
         return _maven_lifecycle(inventory)
     return {}
 
 
+def runner_kind(runner: str) -> str:
+    """The manifest name a runner path was matched on, e.g. ``"packages/app/package.json"`` -> ``"package.json"``.
+
+    ``_runner_commands`` yields the real, actually-matched path (:func:`_manifest_path`) so evidence
+    cites a path that exists, but the literal manifest name is still what every precedence table,
+    alias table and delegation pattern in this module and in ``cmd.py`` is keyed on — a root-level
+    runner's kind and path are the same string, which is why those tables were never wrong for a
+    root manifest.
+    """
+    return runner.rsplit("/", 1)[-1]
+
+
 def _runner_rank(runner: str) -> int:
     try:
-        return RUNNER_PRECEDENCE.index(runner)
+        return RUNNER_PRECEDENCE.index(runner_kind(runner))
     except ValueError:
         return len(RUNNER_PRECEDENCE)
 

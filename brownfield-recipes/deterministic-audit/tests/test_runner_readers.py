@@ -221,6 +221,41 @@ class MavenTests(unittest.TestCase):
         )
 
 
+class NestedManifestTests(unittest.TestCase):
+    """``Inventory.has`` matches a manifest at any depth; the runner name read must follow it there.
+
+    A monorepo whose only ``package.json`` lives under ``packages/app`` has no manifest at the literal
+    name ``"package.json"`` — a caller that cites that literal name as a path is citing one that does not
+    exist anywhere in the repository (the defect this leaf fixes).
+    """
+
+    def test_a_nested_only_package_json_is_named_by_its_real_path(self):
+        verbs, commands = read({"packages/app/package.json": '{"scripts": {"test": "vitest run"}}'})
+        self.assertEqual(verbs["test"].runner, "packages/app/package.json")
+        self.assertIn("packages/app/package.json", commands)
+        self.assertNotIn("package.json", commands)
+
+    def test_the_shallowest_of_two_nested_manifests_is_named(self):
+        _, commands = read(
+            {
+                "apps/web/package.json": '{"scripts": {"test": "jest"}}',
+                "apps/web/deep/nested/package.json": '{"scripts": {"test": "mocha"}}',
+            }
+        )
+        self.assertIn("apps/web/package.json", commands)
+        self.assertNotIn("apps/web/deep/nested/package.json", commands)
+
+    def test_a_nested_only_makefile_is_named_by_its_real_path(self):
+        _, commands = read({"packages/app/Makefile": "check:\n\techo ok\n"})
+        self.assertIn("packages/app/Makefile", commands)
+        self.assertNotIn("Makefile", commands)
+
+    def test_a_root_manifest_is_unaffected(self):
+        """The common case: a root-level manifest's path is already its literal name."""
+        _, commands = read({"package.json": '{"scripts": {"test": "vitest run"}}'})
+        self.assertIn("package.json", commands)
+
+
 class ResolutionTests(unittest.TestCase):
     def test_a_verb_on_two_runners_keeps_both_bindings_in_precedence_order(self):
         with tempfile.TemporaryDirectory() as tmp:
