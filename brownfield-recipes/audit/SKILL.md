@@ -131,9 +131,11 @@ Everything else depends on the answers here; stop and ask rather than guess at a
 
 1. Run `engine.py <target> --out-dir <dir> [--run-gates --allow-probe VERB]... [--emit-baseline]`, forwarding
    the intake's `probes.allowed` verbs as `--allow-probe` (with `--run-gates` only when at least one was
-   named) and passing `--emit-baseline` — this engine run is the only one for this draft, so it is also the
-   one chance to have the engine write `do-not-do.draft.md` for CON-04 (D51). Read `data.report` and
-   `data.baseline_draft`, and tell the user both paths and any warning before moving on.
+   named), passing the same `--exclude` paths the intake recorded (as Stage 1 step 1 already did for
+   `facts.py`, so the engine scans the same inventory the facts describe), and passing `--emit-baseline`
+   — this engine run is the only one for this draft, so it is also the one chance to have the engine
+   write `do-not-do.draft.md` for CON-04 (D51). Read `data.report` and `data.baseline_draft`, and tell the
+   user both paths and any warning before moving on.
 2. Call `report.py import-engine <draft> <engine report>` straight after, using the `report` path from
    step 1. This runs once per draft — see the tool table's `import-engine` row for what it fills in and
    what to do when it refuses. Read `data.checks_imported`, `findings_pending` and `evidence_not_carried`,
