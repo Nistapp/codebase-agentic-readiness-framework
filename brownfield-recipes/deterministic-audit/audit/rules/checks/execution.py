@@ -664,6 +664,14 @@ def check_exec03(*, spec, target, inventory, stack, components, session) -> Chec
 #: the capture class permits lower-case and digits too, so an identifier such as
 #: ``UDA_LOG_LEVELNumber`` is captured whole rather than truncated at its first lower-case run.
 _SHELL_ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Za-z0-9_]*)\}")
+
+#: A shell assignment to the same identifier class the reference pattern above captures —
+#: ``GREEN='\033[0;32m'``, optionally ``export``-ed. A file that assigns ``VAR`` itself is
+#: declaring a local shell variable, not requiring it from the process environment, so a
+#: ``${VAR}`` use of it is excluded from that file's contribution to the referenced-keys set.
+#: Scoped per key, per file (the capture group names exactly which identifier was assigned) —
+#: never a single blanket pattern that can't tell one variable name from another.
+_SHELL_ASSIGN_PATTERN = re.compile(r"(?m)^[ \t]*(?:export[ \t]+)?([A-Z][A-Za-z0-9_]*)[ \t]*=")
 _CODE_ENV_PATTERNS: tuple[re.Pattern, ...] = (
     re.compile(r"os\.environ\.get\(\s*[\"']([A-Z][A-Za-z0-9_]*)[\"']"),
     re.compile(r"os\.environ\[\s*[\"']([A-Z][A-Za-z0-9_]*)[\"']\s*\]"),
@@ -738,7 +746,9 @@ def _referenced_env_keys(inv: Inventory) -> set[str]:
             continue
         text = inv.read(path)
         if text:
-            keys |= {m.group(1) for m in _SHELL_ENV_PATTERN.finditer(text)}
+            referenced_here = {m.group(1) for m in _SHELL_ENV_PATTERN.finditer(text)}
+            assigned_here = {m.group(1) for m in _SHELL_ASSIGN_PATTERN.finditer(text)}
+            keys |= referenced_here - assigned_here
     for pattern in _CODE_ENV_PATTERNS:
         for _rel, _line, text in inv.grep(pattern, kinds=(Kind.SOURCE, Kind.SCRIPT), limit=2000):
             keys |= {m.group(1) for m in pattern.finditer(text) if m.group(1)}

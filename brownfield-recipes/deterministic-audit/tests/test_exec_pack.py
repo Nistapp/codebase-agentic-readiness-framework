@@ -217,6 +217,34 @@ class Exec04EnvKeyTests(unittest.TestCase):
         missing = self._missing({"src/a.py": "import os\nos.getenv('FOO_BAZQux')\n"})
         self.assertEqual(missing, ["FOO_BAZQux"])
 
+    def test_a_shell_variable_assigned_then_used_is_not_a_referenced_env_key(self):
+        """Found against Digital-Assistant-Server's start-server.sh / pre-flight-check.sh: colour
+        codes assigned locally (``GREEN='\\033[0;32m'``) and later interpolated (``${GREEN}``) are
+        not reads of the process environment and must not be flagged as missing from .env.example."""
+        missing = self._missing(
+            {
+                "start.sh": (
+                    "#!/bin/bash\n"
+                    "GREEN='\\033[0;32m'\n"
+                    "NC='\\033[0m' # No Color\n"
+                    'echo -e "Initializing...${GREEN}done${NC}"\n'
+                )
+            }
+        )
+        self.assertEqual(missing, [])
+
+    def test_a_shell_variable_read_but_never_assigned_is_still_flagged(self):
+        """Regression guard: a genuine, unassigned env reference in a shell script must still be
+        reported — only a variable the same file assigns to a literal is excluded."""
+        missing = self._missing({"start.sh": '#!/bin/bash\necho "${DATABASE_URL}"\n'})
+        self.assertEqual(missing, ["DATABASE_URL"])
+
+    def test_exported_local_variable_is_also_excluded(self):
+        """``export`` only marks the variable for child processes; the file still defines it, so
+        it is still a local assignment, not an externally-required key."""
+        missing = self._missing({"start.sh": "#!/bin/bash\nexport GREEN='green'\necho \"${GREEN}\"\n"})
+        self.assertEqual(missing, [])
+
 
 class Exec02LockfilePathTests(unittest.TestCase):
     """A lockfile is found at any depth, and is tracked or not by the path it was found at."""
