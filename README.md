@@ -48,6 +48,7 @@ Follow our phased, incremental methodology to make any existing codebase agentic
 - 🗺️ **[7-Phase Migration Guide](brownfield-legacy/Phased-Approach.md)**:
   - **Part I: Readiness Foundation (Phases 1–4)** — Bootstrap, Source Docs, Agent Docs, and Behavioral Baselines. *(Mandatory)*
   - **Part II: Post-Readiness Roadmap (Phases 5–7)** — Agent-driven refactoring, human-facing docs, and Spec-Driven Development (SDD/BDD + TDD).
+- 🤖 **[Brownfield Recipes](brownfield-recipes/README.md)** (v0.1.0) — An agent-run audit that scores a Phase 1 readiness report for an existing repository, with a deterministic engine doing the counting and the agent's judgment backed by cited evidence. Install it as a skill bundle or run it from a clone; no installation beyond Python 3.11+.
 
 ---
 
@@ -73,4 +74,4 @@ Both tracks share the same core intelligence layer and architectural invariants:
 
 ## 📄 License
 
-This documentation is licensed under the [GNU Free Documentation License, Version 1.3](LICENSE).
+Documentation is licensed under the [GNU Free Documentation License, Version 1.3](LICENSE) (`GFDL-1.3-only`). `brownfield-recipes/tools/` and the migrated audit engine are code, licensed separately under the [GNU Affero General Public License, Version 3 or later](brownfield-recipes/deterministic-audit/LICENSE) (`AGPL-3.0-or-later`); that licence covers the tools themselves, never the repositories they analyse or the reports they produce. Full detail in [Licensing](brownfield-recipes/docs/reference/licensing.md).
