@@ -7,6 +7,10 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Reports record commit ids (`provenance.framework_revision`, `provenance.target.git_sha`) as their first 12 hex digits
+  instead of 40. A full id has the shape of an access token, and a report committed to a repository with a secret scan
+  (gitleaks' default rules) failed it. The schema still accepts a full id, so earlier reports stay valid; `import-engine`
+  compares the short id with the engine's full one by prefix. See `schema/SCHEMA.md`, "Commit ids".
 - v0.2 (the implementation MVP): the progress schema, `progress.py`, `check_drift.py`, and seven
   playbooks covering every BLOCKER class in the MVP catalogue. Not started (milestone M5).
 

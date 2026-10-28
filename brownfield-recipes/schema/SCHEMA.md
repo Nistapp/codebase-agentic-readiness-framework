@@ -72,6 +72,10 @@ A `?` marks an optional field. Every object is closed: a field the schema does n
 
 ---
 
+## Commit ids
+
+The tools write every commit id in a report (`provenance.framework_revision` and `provenance.target.git_sha`) as its first 12 hex digits. A full 40-digit id has the same shape as an access token, and secret scanners (gitleaks' default rules, for one) flag it in a file they read, so a report committed to a repository with a scan would fail it. The schema still accepts a full id so that earlier reports stay valid. Twelve digits name the commit unambiguously in any realistic repository, and `git` accepts them.
+
 ## Fields
 
 ### Top level
@@ -85,11 +89,11 @@ A `?` marks an optional field. Every object is closed: a field the schema does n
 | Field | Meaning |
 |---|---|
 | `recipe` | Name and version of the audit recipe. |
-| `framework_revision` | Git SHA of the framework repository the recipe ran from. `null` when it was not a git checkout. |
+| `framework_revision` | Short Git SHA (12 hex digits) of the framework repository the recipe ran from. `null` when it was not a git checkout. See Commit ids. |
 | `catalogue_version` | See Versioning. |
 | `engine` | Absent until an engine report is imported. `name`, `version`, `ruleset_revision`, `ruleset_hash`, and `scanned_at` as the engine reported them. |
 | `agent` | `harness` and `model`. Self-reported by the operator or the agent and unverified. `none` for both when no agent took part, as in a report that only imports an engine run. |
-| `target` | `label`, `path`, `git_sha`, `branch` and `dirty`. `label` is the short repository name used in output file names (see Output files). The last three are `null` when the target is not a git repository. `report.py init` records the path resolved to an absolute one, so that later calls from another directory find the target; anonymise it before sharing a report if the repository is private. |
+| `target` | `label`, `path`, `git_sha` (12 hex digits; see Commit ids), `branch` and `dirty`. `label` is the short repository name used in output file names (see Output files). The last three are `null` when the target is not a git repository. `report.py init` records the path resolved to an absolute one, so that later calls from another directory find the target; anonymise it before sharing a report if the repository is private. |
 | `started_at`, `finalised_at` | ISO 8601 with an offset. `finalised_at` is set with `status: final`. |
 
 ### `run_context`
@@ -336,7 +340,7 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 |---|---|
 | `schema_version` | Not carried. The adapter accepts `"2"` and refuses any other value. |
 | `provenance.tool`, `version`, `ruleset_revision`, `ruleset_hash`, `scanned_at` | `provenance.engine.name`, `version`, `ruleset_revision`, `ruleset_hash`, `scanned_at` |
-| `provenance.target`, `git_sha`, `git_branch`, `git_dirty` | Not copied. `init` recorded the target's facts from the directory itself, and the draft keeps them. The adapter requires the engine's `target` to be the same directory as the draft's, and its `git_sha` to equal the draft's when both are known, and refuses a report that differs in either. A commit that only one side knows is a warning. |
+| `provenance.target`, `git_sha`, `git_branch`, `git_dirty` | Not copied. `init` recorded the target's facts from the directory itself, and the draft keeps them. The adapter requires the engine's `target` to be the same directory as the draft's, and its `git_sha` to name the same commit as the draft's (the draft keeps 12 digits, the engine reports all 40) when both are known, and refuses a report that differs in either. A commit that only one side knows is a warning. |
 | `provenance.framework_revision` | Not carried. The report records its own `provenance.framework_revision`. |
 | `provenance.phase` | Not carried. A 0.1 report covers Phase 1; the adapter refuses an engine report for another phase. |
 | `provenance.probes_enabled` | Not carried. `run_context.probes.allowed` says it. |

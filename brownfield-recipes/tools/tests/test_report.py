@@ -335,7 +335,7 @@ class InitTests(BuilderCase):
         recorded = document["provenance"]["framework_revision"]
         root = vr.RECIPES.parent
         if rb.git_toplevel(root) == root.resolve():
-            self.assertEqual(recorded, _git.run_git(root, "rev-parse", "HEAD"))
+            self.assertEqual(recorded, _git.run_git(root, "rev-parse", "HEAD")[: rb.SHORT_SHA_CHARS])
         else:
             self.assertIsNone(recorded)
         with mock.patch.object(rb, "git_toplevel", return_value=self.root):
@@ -355,8 +355,18 @@ class TargetFactsTests(BuilderCase):
     def test_a_clean_repository_gives_its_commit_and_branch(self) -> None:
         _git.make_repo(self.target, branch="trunk")
         facts = self.facts()
-        self.assertEqual(facts["git_sha"], _git.run_git(self.target, "rev-parse", "HEAD"))
+        self.assertEqual(facts["git_sha"], _git.run_git(self.target, "rev-parse", "HEAD")[: rb.SHORT_SHA_CHARS])
         self.assertEqual((facts["branch"], facts["dirty"]), ("trunk", False))
+
+    def test_a_recorded_commit_is_short_so_no_secret_scanner_reads_it_as_a_token(self) -> None:
+        _git.make_repo(self.target)
+        self.assertRegex(self.facts()["git_sha"], r"^[0-9a-f]{12}$")
+
+    def test_a_short_and_a_full_commit_id_name_the_same_commit_only_when_one_starts_the_other(self) -> None:
+        full = "0123456789abcdef" * 2 + "01234567"
+        self.assertTrue(rb.same_commit(full[: rb.SHORT_SHA_CHARS], full))
+        self.assertTrue(rb.same_commit(full, full))
+        self.assertFalse(rb.same_commit("f" * 12, full))
 
     def test_a_change_in_the_working_tree_makes_it_dirty(self) -> None:
         _git.make_repo(self.target)
@@ -367,7 +377,7 @@ class TargetFactsTests(BuilderCase):
         _git.make_repo(self.target)
         _git.run_git(self.target, "checkout", "-q", "--detach")
         facts = self.facts()
-        self.assertEqual(facts["git_sha"], _git.run_git(self.target, "rev-parse", "HEAD"))
+        self.assertEqual(facts["git_sha"], _git.run_git(self.target, "rev-parse", "HEAD")[: rb.SHORT_SHA_CHARS])
         self.assertIsNone(facts["branch"])
 
     def test_a_repository_without_a_commit_has_a_branch_and_no_commit(self) -> None:
