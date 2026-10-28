@@ -147,7 +147,7 @@ class Agt01Tests(unittest.TestCase):
                 "DEGRADER",
                 "PARTIAL",
                 "An agent cannot share one set of project rules across harnesses because instruction content lives "
-                "only in vendor-specific files (AGENT.md, GEMINI.md) that Amp, Devin, Roo Code, Zed reads.",
+                "only in vendor-specific files (AGENT.md, GEMINI.md) that Devin, Roo Code, Zed reads.",
                 "Add AGENTS.md as the canonical file and reduce vendor files to a one-line pointer, or a symlink "
                 "where the harness supports it.",
             ),
@@ -229,13 +229,13 @@ class Agt08Tests(unittest.TestCase):
     def test_a_harness_that_no_file_reaches_is_one_cosmetic_finding_with_a_count_and_the_names(self):
         report = audit({"AGENTS.md": BODY})
         check = check_of(report, "AGT-08")
-        self.assertEqual((check["verdict"], check["summary"]), ("PARTIAL", "20/28 harnesses reached"))
+        self.assertEqual((check["verdict"], check["summary"]), ("PARTIAL", "19/27 harnesses reached"))
         self.assertEqual(
             check["data"],
             {
                 "kind": "harness_matrix",
-                "reached": 20,
-                "total": 28,
+                "reached": 19,
+                "total": 27,
                 "reached_tools": [
                     "Augment Code",
                     "Bolt (StackBlitz)",
@@ -251,7 +251,6 @@ class Agt08Tests(unittest.TestCase):
                     "Kiro (AWS)",
                     "OpenAI Codex CLI",
                     "Roo Code",
-                    "Sourcegraph Amp",
                     "Trae",
                     "Warp",
                     "Windsurf / Devin Desktop",
@@ -277,7 +276,7 @@ class Agt08Tests(unittest.TestCase):
                 "AGT-08:harness-reach",
                 "COSMETIC",
                 "PARTIAL",
-                "An agent cannot assume every harness on the team sees the project rules because 20 of 28 known "
+                "An agent cannot assume every harness on the team sees the project rules because 19 of 27 known "
                 "harnesses reach an instruction file; Aider, Amazon Q Developer, Anthropic Claude Code, Continue, "
                 "Google Gemini CLI, Qwen Code, Replit Agent, Void reach nothing.",
                 "Either state the supported harnesses in AGENTS.md, or add the vendor pointer files for the "
@@ -305,7 +304,7 @@ class Agt08Tests(unittest.TestCase):
     def test_with_no_instruction_file_at_all_the_reach_is_not_a_finding(self):
         report = audit({"README.md": "# x\n"})
         check = check_of(report, "AGT-08")
-        self.assertEqual((check["verdict"], check["summary"]), ("PASS", "0/28 harnesses reached"))
+        self.assertEqual((check["verdict"], check["summary"]), ("PASS", "0/27 harnesses reached"))
         self.assertEqual(findings_of(report, "AGT-08"), [])
 
     def test_vendor_files_beside_the_canonical_one_are_a_fail_that_names_eight_and_cites_twelve(self):

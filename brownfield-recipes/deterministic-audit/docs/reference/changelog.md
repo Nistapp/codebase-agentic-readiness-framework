@@ -13,11 +13,32 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-10-28.1` | 2026-10-28 | 55 | One harness removed from the instruction-variant table (`AGT-08`): the known-harness count drops from 28 to 27. The harness's name made secret scanners (gitleaks' default `sourcegraph-access-token` rule) read the report's two git commit hashes as access tokens, so a report committed to a repository with a secret scan failed it |
 | `2026-10-19.2` | 2026-10-19 | 55 | S4.4.2.3/.4/.6/.8: `EXEC-04`'s shell-variable/env-var ambiguity, `NAV-02`'s Quarkus entry-point gap, `TOOL-05`'s self-referential hook-wiring false positive, and `TOOL-01`–`06`/`CMD-01`'s evidence citing a hardcoded manifest basename instead of its real nested path |
 | `2026-10-19.1` | 2026-10-19 | 55 | S4.4.2.1: `AGT-07`'s heading-word detector gap, found on Digital-Assistant-Server (S4.3.3, `D62`) — a prohibitions heading with no trigger word now also qualifies when its own body already reads as a do-not list |
 | `2026-10-15.3` | 2026-10-15 | 55 | S3.6.4: real-defect fixes found by the Digital-Assistant-SDK dry run (S3.6.3) — `TOOL-03`'s comment-intolerant JSON parse, `EXEC-04`'s truncated identifier capture, and `EXEC-02`'s undersized content-read cap — plus `CI-03`'s npm staged-publish fix (`3fb090d`, S3.6.1), which moved a verdict without a revision bump at the time |
 | `2026-10-11.1` | 2026-10-11 | 55 | S2.6: the Makefile reader, the false positives the self-audit found, and the constraint pack |
 | `2026-09-28.13` | 2026-09-28 | 54 | The engine as it was imported into this repository |
+
+---
+
+## `2026-10-28.1`
+
+The first real reports committed to repositories with a secret scan (gitleaks, default rules) failed that scan:
+the harness list in `AGT-08`'s `data` held a vendor name that the scanner's token rule uses as a keyword, and the
+report's `framework_revision` and `git_sha` (40-character hex) then matched the rule's pattern. The harness is
+removed from the table so no report carries the name.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `AGT-08` | Counted 28 known harnesses; the removed harness reached by `AGENTS.md`, `AGENT.md` or `CLAUDE.md` counted as reached | Counts 27; `reached` and `total` are one lower wherever the removed harness was reached | The harness is no longer in `HARNESSES`. The verdict (`PASS`/`PARTIAL`) moves only for a repository whose unreached share crosses the check's threshold; the finding text says `N of 27`. |
+
+### Not changed
+
+The scoring weights, the report schema (v2) and every other check. The `ruleset_hash` changes, because it covers the
+instruction-variant table.
 
 ---
 

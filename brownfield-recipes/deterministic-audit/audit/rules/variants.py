@@ -55,7 +55,7 @@ CANONICAL_PATHS: tuple[str, ...] = ("AGENTS.md",)
 #: Read as fallbacks by some harnesses, but NOT part of the AGENTS.md standard. The standard's own
 #: migration advice is `mv AGENT.md AGENTS.md && ln -s AGENTS.md AGENT.md`.
 NON_CANONICAL_ALIASES: dict[str, tuple[str, ...]] = {
-    "AGENT.md": ("Zed", "Amp", "Devin", "Roo Code"),
+    "AGENT.md": ("Zed", "Devin", "Roo Code"),
     ".rules": ("Zed",),
     "AGENTS.local.md": ("Devin",),
 }
@@ -242,14 +242,6 @@ HARNESSES: tuple[Harness, ...] = (
         doc_url="https://opencode.ai/docs/rules/",
         note="AGENTS.md wins; CLAUDE.md is a fallback only when no AGENTS.md exists. "
         "opencode.json `instructions` can add paths, globs and URLs.",
-    ),
-    Harness(
-        "Sourcegraph Amp",
-        "native",
-        True,
-        paths=("AGENTS.md", "AGENT.md", "CLAUDE.md"),
-        doc_url="https://ampcode.com/docs/customize/agents-md",
-        note="AGENT.md / CLAUDE.md are per-directory fallbacks when that directory has no AGENTS.md.",
     ),
     Harness(
         "Warp",

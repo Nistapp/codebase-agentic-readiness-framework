@@ -24,7 +24,7 @@ __version__ = "0.1.0"
 #: Bumped whenever a rule pack, a check, or the instruction-variant table changes.
 #: Recorded in every report's provenance block so a report can be attributed to an
 #: exact catalogue revision (docs: Scan Engine & Tiering, § 7 Determinism).
-__ruleset_revision__ = "2026-10-19.2"
+__ruleset_revision__ = "2026-10-28.1"
 
 #: Highest framework phase this build evaluates. Phase 1 only in v1.
 __phase_ceiling__ = 1
