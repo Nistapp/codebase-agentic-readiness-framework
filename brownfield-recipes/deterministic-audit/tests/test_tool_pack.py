@@ -1,0 +1,166 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
+"""TOOL tooling checks against their one-defect fixtures.
+
+Every fixture is a small node project that fails exactly one TOOL check (or returns `PARTIAL` for the
+non-strict and unwired-hooks cases); `tool-ok-node` passes all six. The inline cases cover the
+verdicts the fixtures deliberately avoid — a config with no verb, a `security` verb that runs no
+audit, `core.hooksPath` wiring, and the no-ecosystem `UNKNOWN` floor.
+"""
+
+from __future__ import annotations
+
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import support  # noqa: E402
+
+TOOL_CHECKS = ("TOOL-01", "TOOL-02", "TOOL-03", "TOOL-04", "TOOL-05", "TOOL-06")
+
+#: fixture directory -> (check id under test, expected verdict)
+FIXTURES: dict[str, tuple[str, str]] = {
+    "tool-01-no-formatter": ("TOOL-01", "FAIL"),
+    "tool-02-no-linter": ("TOOL-02", "FAIL"),
+    "tool-03-nonstrict-ts": ("TOOL-03", "PARTIAL"),
+    "tool-04-no-audit-verb": ("TOOL-04", "FAIL"),
+    "tool-05-unwired-hooks": ("TOOL-05", "PARTIAL"),
+    "tool-06-no-commit-rule": ("TOOL-06", "FAIL"),
+}
+
+
+class ToolFixtureTests(unittest.TestCase):
+    def test_each_fixture_fails_exactly_its_check(self):
+        for name, (check, expected) in FIXTURES.items():
+            with self.subTest(fixture=name):
+                report = support.run_audit(support.fixture(name))
+                verdicts = support.verdicts(report)
+                self.assertEqual(verdicts[check], expected, f"{name}: {check}")
+
+                failing = sorted(cid for cid in TOOL_CHECKS if verdicts[cid] == "FAIL")
+                expected_failing = [check] if expected == "FAIL" else []
+                self.assertEqual(failing, expected_failing, f"{name}: unexpected TOOL FAILs {failing}")
+
+    def test_positive_fixture_passes_all_six(self):
+        report = support.run_audit(support.fixture("tool-ok-node"))
+        verdicts = support.verdicts(report)
+        for check in TOOL_CHECKS:
+            self.assertEqual(verdicts[check], "PASS", f"tool-ok-node: {check}")
+
+
+class ToolInlineTests(unittest.TestCase):
+    """Cases where the verdict is the point and a whole fixture directory would be noise."""
+
+    def _scan(self, files: dict[str, str]) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            return support.run_audit(root)
+
+    def test_formatter_config_without_a_verb_is_partial(self):
+        report = self._scan({".prettierrc.json": '{"singleQuote": true}\n'})
+        self.assertEqual(support.verdicts(report)["TOOL-01"], "PARTIAL")
+
+    def test_security_verb_that_runs_no_audit_is_partial(self):
+        report = self._scan({"package.json": '{"scripts": {"security": "echo checked"}}'})
+        self.assertEqual(support.verdicts(report)["TOOL-04"], "PARTIAL")
+
+    def test_core_hookspath_wires_the_chain(self):
+        report = self._scan(
+            {
+                "package.json": '{"scripts": {"prepare": "git config core.hooksPath .githooks"}}',
+                ".githooks/pre-commit": "#!/bin/sh\n",
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-05"], "PASS")
+
+    def test_core_hookspath_mentioned_in_a_doc_does_not_wire_the_chain(self):
+        """A planning document that merely *describes* the check must not count as wiring.
+
+        Regression for the self-audit false positive found on this engine's own pre-migration
+        repository: a Markdown file about this very check reporting ``core.hooksPath`` matched the
+        unscoped grep and was cited as wiring evidence, though no real hook-chain existed.
+        """
+        report = self._scan(
+            {
+                "package.json": '{"scripts": {"build": "echo build"}}',
+                "docs/implementation-plan/07-tool-pack.md": (
+                    "TOOL-05 checks for hook-chain wiring, e.g. via `core.hooksPath` or `.husky/`.\n"
+                ),
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-05"], "FAIL")
+
+    def test_core_hookspath_wired_via_a_shell_script_still_passes(self):
+        report = self._scan(
+            {
+                "scripts/setup.sh": "#!/bin/sh\ngit config core.hooksPath .githooks\n",
+                ".githooks/pre-commit": "#!/bin/sh\n",
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-05"], "PASS")
+
+    def test_python_strict_mypy_is_pass(self):
+        report = self._scan(
+            {
+                "pyproject.toml": "[tool.mypy]\nstrict = true\n",
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-03"], "PASS")
+
+    def test_strict_tsconfig_with_a_trailing_comment_is_pass(self):
+        report = self._scan(
+            {
+                "tsconfig.json": '{\n  "compilerOptions": {\n    "strict": true, // Enable all strict type-checking options.\n  }\n}\n',
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-03"], "PASS")
+
+    def test_nonstrict_tsconfig_with_a_block_comment_is_partial(self):
+        report = self._scan(
+            {
+                "tsconfig.json": '{\n  "compilerOptions": {\n    /* loosened for migration */\n    "strict": false\n  }\n}\n',
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-03"], "PARTIAL")
+
+    def test_a_trailing_comma_left_by_a_stripped_comment_is_tolerated(self):
+        report = self._scan(
+            {
+                "tsconfig.json": '{\n  "compilerOptions": {\n    "target": "es2020",\n    "strict": true, // kept\n  }\n}\n',
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-03"], "PASS")
+
+    def test_a_comment_like_substring_inside_a_string_value_is_not_stripped(self):
+        report = self._scan(
+            {
+                "tsconfig.json": '{\n  "compilerOptions": {\n    "strict": true\n  },\n  "comment": "see https://example.com // not a real comment"\n}\n',
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TOOL-03"], "PASS")
+
+    def test_no_ecosystem_and_no_config_is_unknown_not_fail(self):
+        report = self._scan({"notes.txt": "nothing executable here\n"})
+        verdicts = support.verdicts(report)
+        for check in TOOL_CHECKS:
+            self.assertIn(verdicts[check], ("UNKNOWN", "PASS"), f"{check} guessed")
+
+    def test_evidence_cites_a_nested_manifests_real_path_not_a_hardcoded_basename(self):
+        """A monorepo whose only ``package.json`` is nested has no manifest at the literal name
+        ``"package.json"``; TOOL-01's FAIL evidence must cite a path that actually exists."""
+        report = self._scan({"packages/app/package.json": '{"name": "app", "scripts": {}}'})
+        self.assertEqual(support.verdicts(report)["TOOL-01"], "FAIL")
+        evidence_paths = {e["path"] for f in report["findings"] if f["check"] == "TOOL-01" for e in f["evidence"]}
+        self.assertIn("packages/app/package.json", evidence_paths)
+        self.assertNotIn("package.json", evidence_paths)
+
+
+if __name__ == "__main__":
+    unittest.main()

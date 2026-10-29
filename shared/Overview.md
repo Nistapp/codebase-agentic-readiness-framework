@@ -1,14 +1,12 @@
 # Overview
 
-[[_TOC_]]
-
 ## What Is an Agentic-Ready Codebase?
 
 An **agentic-ready codebase** provides AI coding agents with the structure they need to work safely and accurately:
 
 - **Focused and reliable context** — agents reason over relevant information, not the entire repo.
 - **Clear interfaces and relationships** — boundaries are explicit, not implicit.
-- **Deterministic development commands** — one command surface (`format`, `lint`, `typecheck`, `test`, `check`, `security`, realised as package scripts, a `Taskfile`, or a `Makefile`) produces identical results for agents, humans, and CI.
+- **Deterministic development commands** — one command surface (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`, realised as package scripts, a `Taskfile`, or a `Makefile`) produces identical results for agents, humans, and CI.
 - **Executable quality gates** — automated checks that agents must pass before changes are accepted.
 - **Tests that protect existing behavior** — characterization tests, contracts, and unit tests.
 - **Documentation that evolves with the code** — generated, maintained, and indexed automatically.
@@ -69,7 +67,7 @@ flowchart TD
 | [Phase 3](../brownfield-legacy/Phased-Approach.md#phase-3-agent-oriented-documentation-) | `agentic-agentDocs` generates per-component constraint definitions: forbidden dependencies, data classification, ownership rules. |
 | [Phase 4](../brownfield-legacy/Phased-Approach.md#phase-4-contracts-and-behavior-baselines-) | Contracts become enforceable constraints — agents must not break published interfaces. |
 | [Phase 5](../brownfield-legacy/Phased-Approach.md#phase-5-optional-refactoring) | Refactoring is bounded to single components. Agents cannot weaken tests. |
-| [Phase 7](../brownfield-legacy/Phased-Approach.md#phase-7-spec-driven-feature-development-) | Implementation plans are cross-checked against `codebase-memory-mcp` for impact before approval. |
+| [Phase 7](../brownfield-legacy/Phased-Approach.md#phase-7-spec-driven-feature-development) | Implementation plans are cross-checked against `codebase-memory-mcp` for impact before approval. |
 
 ---
 
@@ -78,7 +76,7 @@ flowchart TD
 This approach is based on the following assumptions:
 
 1. **Better context → better agent output.** Context engineering is possible only with high-quality, purpose-built documentation.
-2. **Model reasoning capacity is finite.** Providing an LLM with unstructured information produces broken or incomplete results. The less that the LLM has to discover during runtime, the more capacity it has to understand the task and apply correct reasoning. Structured repository information can be built asynchronously and delivered synchronously. See [`codebase-memory-mcp`](https://github.com/nicobailon/codebase-memory-mcp).
+2. **Model reasoning capacity is finite.** Providing an LLM with unstructured information produces broken or incomplete results. The less that the LLM has to discover during runtime, the more capacity it has to understand the task and apply correct reasoning. Structured repository information can be built asynchronously and delivered synchronously. See [`codebase-memory-mcp`](https://github.com/DeusData/codebase-memory-mcp).
 3. **Smaller, task-specific context outperforms whole-repo context.**
 4. **Deterministic commands and automated quality gates reduce rework and agent uncertainty.**
 5. **Tests, contracts, and documentation preserve existing structure and behavior.**

@@ -1,0 +1,455 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:codebase-agentic-readiness-framework:audit-report:0.1",
+  "title": "Audit report",
+  "description": "The canonical, machine-readable result of a brownfield readiness audit. The Markdown report is a pure function of this file. Field semantics, the keyword subset this schema is limited to and the rules a schema cannot express are in SCHEMA.md.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "status",
+    "provenance",
+    "run_context",
+    "stack",
+    "components",
+    "checks",
+    "findings",
+    "summary",
+    "unattested",
+    "coverage"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Version of this schema. 0.x versions may break between releases; consumers refuse a version they do not know.",
+      "const": "0.1"
+    },
+    "status": {
+      "description": "draft until every finding has a disposition and the report is validated; set to final only by `report.py finalise`.",
+      "enum": ["draft", "final"]
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["recipe", "framework_revision", "catalogue_version", "agent", "target", "started_at"],
+      "additionalProperties": false,
+      "properties": {
+        "recipe": {
+          "type": "object",
+          "required": ["name", "version"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+            "version": { "type": "string", "minLength": 1, "maxLength": 40 }
+          }
+        },
+        "framework_revision": {
+          "description": "Git SHA of the framework repository the recipe ran from; null when it was not a git checkout.",
+          "type": ["string", "null"],
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "catalogue_version": {
+          "description": "Version of the check catalogue the report was built against: MAJOR.MINOR.PATCH, as in catalogue.json.",
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "engine": {
+          "description": "The deterministic engine that produced the automated verdicts. Absent until an engine report is imported.",
+          "type": "object",
+          "required": ["name", "version", "ruleset_hash"],
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+            "version": { "type": "string", "minLength": 1, "maxLength": 40 },
+            "ruleset_revision": { "type": "string", "minLength": 1, "maxLength": 40 },
+            "ruleset_hash": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+            "scanned_at": { "$ref": "#/$defs/timestamp" }
+          }
+        },
+        "agent": {
+          "description": "The harness and model that ran the recipe. Both are self-reported and unverified.",
+          "type": "object",
+          "required": ["harness", "model"],
+          "additionalProperties": false,
+          "properties": {
+            "harness": { "type": "string", "minLength": 1, "maxLength": 100 },
+            "model": { "type": "string", "minLength": 1, "maxLength": 100 }
+          }
+        },
+        "target": {
+          "type": "object",
+          "required": ["label", "path", "git_sha", "branch", "dirty"],
+          "additionalProperties": false,
+          "properties": {
+            "label": { "$ref": "#/$defs/repoLabel" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 1000 },
+            "git_sha": { "$ref": "#/$defs/gitShaOrNull" },
+            "branch": { "type": ["string", "null"], "maxLength": 255 },
+            "dirty": { "type": ["boolean", "null"] }
+          }
+        },
+        "started_at": { "$ref": "#/$defs/timestamp" },
+        "finalised_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "run_context": {
+      "description": "The answers given at intake, as the run used them.",
+      "type": "object",
+      "required": [
+        "eval_mode",
+        "confirmation_policy",
+        "provider_exposure_acknowledged",
+        "index",
+        "probes",
+        "excluded",
+        "known_components"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "eval_mode": {
+          "description": "True for a headless evaluation run. An eval-mode report is never final.",
+          "type": "boolean"
+        },
+        "confirmation_policy": { "$ref": "#/$defs/confirmationPolicy" },
+        "provider_exposure_acknowledged": {
+          "description": "The operator confirmed, in the intake, that the model provider receives whatever the agent reads from the target. Always true: a run does not start without it.",
+          "const": true
+        },
+        "index": { "$ref": "#/$defs/indexContext" },
+        "probes": { "$ref": "#/$defs/probeContext" },
+        "excluded": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/relativePath" } },
+        "known_components": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/relativePath" } },
+        "stack_profile": {
+          "type": "object",
+          "required": ["id", "source", "confirmed_by_user"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,40}$" },
+            "source": { "enum": ["shipped", "derived"] },
+            "confirmed_by_user": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "stack": {
+      "description": "What the scan detected. Names follow the engine's.",
+      "type": "object",
+      "required": ["ecosystems", "package_managers", "ci_providers", "test_frameworks", "hook_managers"],
+      "additionalProperties": false,
+      "properties": {
+        "ecosystems": { "$ref": "#/$defs/nameList" },
+        "package_managers": { "$ref": "#/$defs/nameList" },
+        "ci_providers": { "$ref": "#/$defs/nameList" },
+        "test_frameworks": { "$ref": "#/$defs/nameList" },
+        "hook_managers": { "$ref": "#/$defs/nameList" },
+        "notes": { "type": "array", "maxItems": 50, "items": { "type": "string", "maxLength": 300 } }
+      }
+    },
+    "components": {
+      "description": "Declared components, and candidates the scan found but nothing declares.",
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "required": ["name", "path", "declared"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+          "path": { "$ref": "#/$defs/relativePath" },
+          "declared": { "type": "boolean" },
+          "declared_by": { "type": ["string", "null"], "maxLength": 100 },
+          "manifest": { "type": ["string", "null"], "maxLength": 300 },
+          "agents_md": { "enum": ["present", "missing", "unknown"] }
+        }
+      }
+    },
+    "checks": {
+      "description": "One entry per check evaluated, including passes.",
+      "type": "array",
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "findings": {
+      "description": "One entry per issue a check raised.",
+      "type": "array",
+      "maxItems": 2000,
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "summary": {
+      "description": "The readiness summary of spec/readiness-summary.md. Computed by the tools from checks and findings, never written by the model; the validator recomputes it and fails on a mismatch.",
+      "type": "object",
+      "required": [
+        "phase1_score",
+        "scored_checks",
+        "blockers_remaining",
+        "unknown_scored_checks",
+        "unconfirmed_agent_findings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "phase1_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "scored_checks": { "type": "integer", "minimum": 0 },
+        "blockers_remaining": {
+          "type": "object",
+          "required": ["total", "fail", "partial", "unknown"],
+          "additionalProperties": false,
+          "properties": {
+            "total": { "type": "integer", "minimum": 0 },
+            "fail": { "type": "integer", "minimum": 0 },
+            "partial": { "type": "integer", "minimum": 0 },
+            "unknown": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "unknown_scored_checks": { "type": "integer", "minimum": 0 },
+        "unconfirmed_agent_findings": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "unattested": {
+      "description": "Requirements verified by a person or by the owner's declaration. They have no verdict and earn no credit.",
+      "type": "array",
+      "maxItems": 100,
+      "items": {
+        "type": "object",
+        "required": ["requirement", "method", "why"],
+        "additionalProperties": false,
+        "properties": {
+          "requirement": { "$ref": "#/$defs/requirementId" },
+          "method": { "enum": ["human", "attested"] },
+          "property": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,60}$" },
+          "why": { "type": "string", "minLength": 1, "maxLength": 300 }
+        }
+      }
+    },
+    "coverage": {
+      "description": "What the audit looked at and what it left out.",
+      "type": "object",
+      "required": ["scopes_examined", "scopes_skipped"],
+      "additionalProperties": false,
+      "properties": {
+        "scopes_examined": { "type": "array", "maxItems": 500, "items": { "type": "string", "minLength": 1, "maxLength": 300 } },
+        "scopes_skipped": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "type": "object",
+            "required": ["scope", "reason"],
+            "additionalProperties": false,
+            "properties": {
+              "scope": { "type": "string", "minLength": 1, "maxLength": 300 },
+              "reason": { "type": "string", "minLength": 1, "maxLength": 300 }
+            }
+          }
+        },
+        "inventory": {
+          "type": "object",
+          "required": ["files_inspected", "files_skipped", "truncated"],
+          "additionalProperties": false,
+          "properties": {
+            "files_inspected": { "type": "integer", "minimum": 0 },
+            "files_skipped": { "type": "integer", "minimum": 0 },
+            "truncated": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "timestamp": {
+      "description": "ISO 8601 date and time with an offset.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "repoLabel": {
+      "description": "A short name for the repository, used in output file names: lower case letters, digits, dot, underscore and hyphen, at most 32 characters.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
+    },
+    "gitShaOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "checkId": {
+      "type": "string",
+      "pattern": "^[A-Z]{2,5}-[0-9]{2,3}$"
+    },
+    "requirementId": {
+      "type": "string",
+      "pattern": "^REQ-(BF|GF|SH)-[0-9]{3}$"
+    },
+    "findingId": {
+      "type": "string",
+      "pattern": "^F-[0-9]{3,}$"
+    },
+    "findingKey": {
+      "description": "Stable across runs: the check ID, then an optional scope (a path or component) after a colon. The builder computes it.",
+      "type": "string",
+      "maxLength": 400,
+      "pattern": "^[A-Z]{2,5}-[0-9]{2,3}(:[^\\s]+)?$"
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "nameList": {
+      "type": "array",
+      "maxItems": 50,
+      "items": { "type": "string", "minLength": 1, "maxLength": 100 }
+    },
+    "severity": {
+      "enum": ["BLOCKER", "DEGRADER", "COSMETIC"]
+    },
+    "verdict": {
+      "enum": ["PASS", "PARTIAL", "FAIL", "UNKNOWN", "NOT_APPLICABLE"]
+    },
+    "confirmationPolicy": {
+      "description": "interactive asks the person about each finding. defer-all leaves every disposition pending. accept-all confirms every finding and is allowed only in eval mode.",
+      "enum": ["interactive", "defer-all", "accept-all"]
+    },
+    "probeVerb": {
+      "enum": ["format", "format:check", "lint", "typecheck", "test", "check", "security"]
+    },
+    "indexContext": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["mcp", "cli", "none"] },
+        "name": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "notes": { "type": "string", "maxLength": 300 }
+      }
+    },
+    "probeContext": {
+      "type": "object",
+      "required": ["allowed", "timeout_s"],
+      "additionalProperties": false,
+      "properties": {
+        "allowed": { "type": "array", "maxItems": 7, "items": { "$ref": "#/$defs/probeVerb" } },
+        "timeout_s": { "type": "integer", "minimum": 1, "maximum": 3600 }
+      }
+    },
+    "evidence": {
+      "description": "One cited fact. file: path (lines, quote and note optional). command: command, exit_code and output_tail. index_query: index_tool, query and result_summary. Which fields each kind needs is a rule in SCHEMA.md.",
+      "type": "object",
+      "required": ["kind", "captured_by"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "enum": ["file", "command", "index_query"] },
+        "captured_by": {
+          "description": "tool: a deterministic tool recorded it. agent: the model recorded it.",
+          "enum": ["tool", "agent"]
+        },
+        "tool": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "tool_version": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "path": { "$ref": "#/$defs/relativePath" },
+        "lines": { "type": "string", "pattern": "^[0-9]+(-[0-9]+)?$" },
+        "quote": { "type": "string", "maxLength": 300 },
+        "note": { "type": "string", "maxLength": 300 },
+        "command": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "exit_code": { "type": ["integer", "null"] },
+        "output_tail": { "type": "string", "maxLength": 2000 },
+        "timed_out": { "type": "boolean" },
+        "duration_s": { "type": "number", "minimum": 0 },
+        "redactions": { "type": "integer", "minimum": 0 },
+        "index_tool": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "query": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "result_summary": { "type": "string", "maxLength": 500 }
+      }
+    },
+    "search": {
+      "description": "What was looked for when the answer is \"not found\".",
+      "type": "object",
+      "required": ["tool", "pattern", "scope", "hits"],
+      "additionalProperties": false,
+      "properties": {
+        "tool": { "enum": ["glob", "grep", "index"] },
+        "pattern": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "scope": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "hits": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": ["id", "title", "phase", "severity", "scored", "method", "verdict", "summary", "evidence", "searches"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/checkId" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "phase": { "type": "integer", "minimum": 1, "maximum": 7 },
+        "severity": { "$ref": "#/$defs/severity" },
+        "scored": {
+          "description": "Whether the check enters the Phase-1 score. False for informational checks and checks the engine cannot evaluate yet.",
+          "type": "boolean"
+        },
+        "method": {
+          "description": "How the verdict is established: automated (a tool) or agent (a model with cited evidence). Requirements verified by a person or by declaration have no check; they are listed in unattested.",
+          "enum": ["automated", "agent"]
+        },
+        "verdict": {
+          "description": "The verdict that counts, after any override.",
+          "$ref": "#/$defs/verdict"
+        },
+        "engine_verdict": {
+          "description": "The deterministic engine's verdict for the same check, kept beside the report's verdict. Absent for a check the engine does not run.",
+          "$ref": "#/$defs/verdict"
+        },
+        "override_reason": {
+          "description": "Why the verdict differs from engine_verdict. Present exactly when they differ.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "summary": { "type": "string", "maxLength": 500 },
+        "evidence": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/evidence" } },
+        "searches": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/search" } },
+        "data": {
+          "description": "A typed payload from the engine (see the engine's ADR-0007), carried unchanged. Its kind says what it holds.",
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": true,
+          "properties": {
+            "kind": { "type": "string", "minLength": 1, "maxLength": 60 }
+          }
+        }
+      }
+    },
+    "remediation": {
+      "type": "object",
+      "required": ["summary"],
+      "additionalProperties": false,
+      "properties": {
+        "summary": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "playbook": { "type": ["string", "null"], "pattern": "^[a-z][a-z0-9-]{0,60}$" },
+        "effort": { "enum": ["S", "M", "L"] },
+        "depends_on": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/findingId" } },
+        "touches": { "type": "array", "maxItems": 100, "items": { "$ref": "#/$defs/relativePath" } }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": ["id", "key", "check", "severity", "statement", "evidence", "searches", "remediation", "disposition"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/findingId" },
+        "key": { "$ref": "#/$defs/findingKey" },
+        "check": { "$ref": "#/$defs/checkId" },
+        "severity": { "$ref": "#/$defs/severity" },
+        "statement": {
+          "description": "Always \"An agent cannot X because Y.\"",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600,
+          "pattern": "^An agent cannot .+ because .+$"
+        },
+        "evidence": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/evidence" } },
+        "searches": { "type": "array", "maxItems": 50, "items": { "$ref": "#/$defs/search" } },
+        "remediation": { "$ref": "#/$defs/remediation" },
+        "disposition": { "enum": ["pending", "confirmed", "rejected", "deferred", "edited"] },
+        "disposition_note": { "type": "string", "maxLength": 500 },
+        "confirmed_via": {
+          "description": "How the disposition was set. interactive: the person answered for this finding. batch: the person answered for a group of non-blockers. policy: the confirmation policy set it (eval mode only).",
+          "enum": ["interactive", "batch", "policy"]
+        }
+      }
+    }
+  }
+}

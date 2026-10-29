@@ -40,7 +40,9 @@
     "build:full": "npm run clean && npm run build",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run check && npm run build:full",
-    "prepare": "husky"
+    "prepare": "husky",
+    "git:clean:dry": "node scripts/git-branch-janitor.mjs",
+    "git:clean": "node scripts/git-branch-janitor.mjs --apply"
   },
   "keywords": [],
   "author": "<author>",

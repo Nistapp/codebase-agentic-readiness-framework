@@ -34,7 +34,7 @@ flowchart TD
 Follow our step-by-step recipe to initialize a TypeScript / Node.js repository with world-class instrumentation before writing a single line of application logic.  While our example is for TS/Node, the principles are the same for any tech/framework. You can point your coding agent to this structure and ask it to regenerate the same structure for your tech/framework. You should have something to review withing minutes.
 
 - 📖 **[Project Initialization Recipe](greenfield-bootstrap/README.md)** — Step-by-step guide across 8 phases.
-- 📦 **[Reusable Scaffolding Templates](greenfield-bootstrap/templates/)** — Copy-ready `AGENTS.md`, `biome.json`, GitHub Actions CI/CD workflows, `vitest.config.ts`, DI port interfaces, Diátaxis documentation templates (`docs/STYLE_GUIDE.md`, ADR templates), and the standardized six-verb command surface (`format`, `lint`, `typecheck`, `test`, `check`, `security`).
+- 📦 **[Reusable Scaffolding Templates](greenfield-bootstrap/templates/)** — Copy-ready `AGENTS.md`, `biome.json`, GitHub Actions CI/CD workflows, `vitest.config.ts`, DI port interfaces, Diátaxis documentation templates (`docs/STYLE_GUIDE.md`, ADR templates), and the standardized seven-verb command surface (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`).
 
 ---
 
@@ -48,6 +48,7 @@ Follow our phased, incremental methodology to make any existing codebase agentic
 - 🗺️ **[7-Phase Migration Guide](brownfield-legacy/Phased-Approach.md)**:
   - **Part I: Readiness Foundation (Phases 1–4)** — Bootstrap, Source Docs, Agent Docs, and Behavioral Baselines. *(Mandatory)*
   - **Part II: Post-Readiness Roadmap (Phases 5–7)** — Agent-driven refactoring, human-facing docs, and Spec-Driven Development (SDD/BDD + TDD).
+- 🤖 **[Brownfield Recipes](brownfield-recipes/README.md)** (v0.1.0) — An agent-run audit that scores a Phase 1 readiness report for an existing repository, with a deterministic engine doing the counting and the agent's judgment backed by cited evidence. Install it as a skill bundle or run it from a clone; no installation beyond Python 3.11+.
 
 ---
 
@@ -67,10 +68,10 @@ Both tracks share the same core intelligence layer and architectural invariants:
 
 ## 🧠 Core Intelligence Layer
 
-[`codebase-memory-mcp`](https://github.com/nicobailon/codebase-memory-mcp) serves as the shared knowledge backbone across all workflows. Both human developers and AI agents query this graph to identify symbols, callers, callees, dependencies, contracts, and relevant documentation before making changes.
+[`codebase-memory-mcp`](https://github.com/DeusData/codebase-memory-mcp) serves as the shared knowledge backbone across all workflows. Both human developers and AI agents query this graph to identify symbols, callers, callees, dependencies, contracts, and relevant documentation before making changes.
 
 ---
 
 ## 📄 License
 
-This documentation is licensed under the [GNU Free Documentation License, Version 1.3](LICENSE).
+Documentation is licensed under the [GNU Free Documentation License, Version 1.3](LICENSE) (`GFDL-1.3-only`). `brownfield-recipes/tools/` and the migrated audit engine are code, licensed separately under the [GNU Affero General Public License, Version 3 or later](brownfield-recipes/deterministic-audit/LICENSE) (`AGPL-3.0-or-later`); that licence covers the tools themselves, never the repositories they analyse or the reports they produce. Full detail in [Licensing](brownfield-recipes/docs/reference/licensing.md).

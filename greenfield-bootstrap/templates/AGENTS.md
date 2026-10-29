@@ -48,7 +48,7 @@ Agents MUST respect the following structural rules:
 
 ### 3.1 Standardized command surface
 
-These six verbs are the **only** sanctioned way to verify work in this repository. Use
+These seven verbs are the **only** sanctioned way to verify work in this repository. Use
 them exactly as written — do not invent ad-hoc invocations (`npx vitest`, `tsc file.ts`,
 `eslint .`) and do not run a check that CI does not run.
 

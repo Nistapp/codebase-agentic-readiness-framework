@@ -1,0 +1,74 @@
+{
+  "facts_version": "0.1",
+  "label": "example-service",
+  "git": { "sha": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef", "dirty": false },
+  "inventory": {
+    "files": 214,
+    "bytes": 1893502,
+    "by_kind": {
+      "manifest": 2,
+      "build": 1,
+      "config": 9,
+      "source": 98,
+      "test": 61,
+      "doc": 12,
+      "ci": 2,
+      "script": 3,
+      "generated": 0,
+      "binary": 4,
+      "other": 22
+    },
+    "skipped": [
+      { "reason": "ignored", "count": 37 },
+      { "reason": "symlink", "count": 1 }
+    ],
+    "truncated": false,
+    "max_files": 250000,
+    "excludes": ["docs/legacy/*"]
+  },
+  "stack": {
+    "ecosystems": ["node"],
+    "source_only": [],
+    "package_managers": ["npm"],
+    "ci_providers": ["github"],
+    "test_frameworks": ["jest"],
+    "hook_managers": ["husky"],
+    "notes": []
+  },
+  "instruction_files": [
+    { "path": "AGENTS.md", "variant": "AGENTS.md", "size_bytes": 3120 },
+    { "path": "CLAUDE.md", "variant": "CLAUDE.md", "size_bytes": 410 },
+    { "path": "packages/api/AGENTS.md", "variant": "AGENTS.md", "size_bytes": 880 }
+  ],
+  "components": {
+    "declared": [
+      {
+        "name": "api",
+        "path": "packages/api",
+        "declared_by": "package.json:workspaces",
+        "manifest": "packages/api/package.json"
+      },
+      {
+        "name": "web",
+        "path": "packages/web",
+        "declared_by": "package.json:workspaces",
+        "manifest": "packages/web/package.json"
+      }
+    ],
+    "candidates": ["services/worker"],
+    "notes": []
+  },
+  "size": {
+    "class": "small",
+    "files": 214,
+    "bytes": 1893502,
+    "truncated": false,
+    "thresholds": { "small_below": 1000, "medium_below": 10000, "large_below": 100000 }
+  },
+  "caps": {
+    "excludes": { "limit": 10, "omitted": 0 },
+    "instruction_files": { "limit": 25, "omitted": 0 },
+    "declared_components": { "limit": 16, "omitted": 0 },
+    "candidate_components": { "limit": 20, "omitted": 0 }
+  }
+}

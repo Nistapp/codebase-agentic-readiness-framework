@@ -1,0 +1,19 @@
+# python
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+
+# build output (root-scoped so fixture directories that deliberately use these names are still committed)
+/brownfield-recipes/dist/
+*.pyz
+
+# environment files (secrets never committed; templates are)
+/.env
+/.env.*
+!/.env.example
+
+# editor / OS noise
+.DS_Store
+Thumbs.db
+*.swp

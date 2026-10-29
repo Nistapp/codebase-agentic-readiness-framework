@@ -121,7 +121,7 @@ git checkout -b dev          # dev is the working branch from day one
   "files": ["dist"],                 // what npm publishes — nothing else leaves the repo
   "publishConfig": { "access": "public" },
   "scripts": {
-    // the six verbs from §1.4, plus clean/build/build:full/dev
+    // the seven verbs from §1.4, plus clean/build/build:full/dev
     "check": "npm run format:check && npm run typecheck && npm test",
     "prepublishOnly": "npm run check && npm run build:full",
     "prepare": "husky"
@@ -137,32 +137,9 @@ git checkout -b dev          # dev is the working branch from day one
 > `license` is intentionally absent until you choose one — see "Before you publish" in the
 > generated `README.md`.
 
-    "test:coverage": "vitest run --coverage",
-    "check": "npm run format:check && npm run typecheck && npm test",
-    "security": "npm audit --audit-level=high",
-    "check:fix": "biome check --fix .",
-    "build": "tsc && npm run copy:agents",
-    "copy:agents": "rm -rf dist/agents && mkdir -p dist/agents && cp -r src/agents/* dist/agents/ && cp config.default.json dist/config.default.json && echo '{\"type\":\"module\"}' > dist/package.json",
-    "build:full": "npm run clean && npm run build",
-    "dev": "tsc --watch",
-    "docs": "typedoc --out docs/api src/core/index.ts",
-    "prepublishOnly": "npm run check && npm run build:full",
-    "prepare": "husky"
-  },
-  "keywords": [],
-  "author": "<your-name>",
-  "license": "AGPL-3.0",
-  "dependencies": {},
-  "devDependencies": {},
-  "files": [
-    "dist"
-  ]
-}
-```
+### 1.4 The standardized command surface — seven verbs
 
-### 1.4 The standardized command surface — six verbs
-
-Every repository MUST expose the same six verbs. The **verbs are the contract**; the
+Every repository MUST expose the same seven verbs. The **verbs are the contract**; the
 runner is a local choice: `package.json` scripts (shown here, and what the
 [`agentic-tdd`](https://github.com/Nistapp/agentic-tdd) reference implementation uses), a
 `Taskfile`, or a `Makefile`. A language-neutral `make check` wrapper that shells out to
@@ -180,7 +157,7 @@ runner is a local choice: `package.json` scripts (shown here, and what the
 
 > [!IMPORTANT]
 > **One command surface, three consumers — and never two definitions of it.** Write the
-> six verbs into `AGENTS.md` §3 and CI runs the *same script names* you run locally
+> seven verbs into `AGENTS.md` §3 and CI runs the *same script names* you run locally
 > (`npm run check`, `npm run security`). Never let CI run a step that has no local
 > equivalent: a gate an agent cannot reach is a gate an agent cannot honour, and a local
 > gate weaker than its CI counterpart produces rework rather than safety.

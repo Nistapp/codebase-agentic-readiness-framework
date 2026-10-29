@@ -1,0 +1,1113 @@
+{
+  "catalogue_version": "0.2.2",
+  "fingerprint": "e33c95eda9f58b9d",
+  "checks": [
+    {
+      "id": "IDX-01",
+      "family": "IDX",
+      "title": "codebase-memory-mcp registered for this repository",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-001"
+      ],
+      "engine_id": "IDX-01",
+      "playbooks": [
+        "register-index"
+      ]
+    },
+    {
+      "id": "IDX-02",
+      "family": "IDX",
+      "title": "An index exists for this checkout",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-002"
+      ],
+      "engine_id": "IDX-02",
+      "playbooks": [
+        "register-index"
+      ]
+    },
+    {
+      "id": "IDX-03",
+      "family": "IDX",
+      "title": "Index freshness",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-003"
+      ],
+      "engine_id": "IDX-03",
+      "playbooks": [
+        "register-index"
+      ]
+    },
+    {
+      "id": "AGT-01",
+      "family": "AGT",
+      "title": "Instruction file present, canonical, and non-trivial",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-005"
+      ],
+      "engine_id": "AGT-01",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-02",
+      "family": "AGT",
+      "title": "Component coverage by instruction files",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-006"
+      ],
+      "engine_id": "AGT-02",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-03",
+      "family": "AGT",
+      "title": "Documentation contract named",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-007"
+      ],
+      "engine_id": "AGT-03",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-04",
+      "family": "AGT",
+      "title": "Definition of done stated",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-008"
+      ],
+      "engine_id": "AGT-04",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-05",
+      "family": "AGT",
+      "title": "Seven verbs named",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-009"
+      ],
+      "engine_id": "AGT-05",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-06",
+      "family": "AGT",
+      "title": "Architectural boundaries declared",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-010"
+      ],
+      "engine_id": "AGT-06",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-07",
+      "family": "AGT",
+      "title": "Do-not-do / deny rules present",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-011"
+      ],
+      "engine_id": "AGT-07",
+      "playbooks": [
+        "add-deny-rules"
+      ]
+    },
+    {
+      "id": "AGT-08",
+      "family": "AGT",
+      "title": "No competing instruction files, and the reach matrix is stated",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-012"
+      ],
+      "engine_id": "AGT-08",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-09",
+      "family": "AGT",
+      "title": "Branch and release boundary declared",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-013"
+      ],
+      "engine_id": "AGT-09",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-10",
+      "family": "AGT",
+      "title": "Instruction indirection resolved",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-014"
+      ],
+      "engine_id": "AGT-10",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-11",
+      "family": "AGT",
+      "title": "Instructions are specific and not inferable",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "agent",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-015"
+      ],
+      "engine_id": null,
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "DOC-01",
+      "family": "DOC",
+      "title": "docs/ exists",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-016"
+      ],
+      "engine_id": "DOC-01",
+      "playbooks": []
+    },
+    {
+      "id": "DOC-02",
+      "family": "DOC",
+      "title": "docs/STYLE_GUIDE.md exists",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-017"
+      ],
+      "engine_id": "DOC-02",
+      "playbooks": []
+    },
+    {
+      "id": "DOC-03",
+      "family": "DOC",
+      "title": "artefacts/ exists and is ignored",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-018"
+      ],
+      "engine_id": "DOC-03",
+      "playbooks": []
+    },
+    {
+      "id": "DOC-04",
+      "family": "DOC",
+      "title": "ADR directory and index",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-019"
+      ],
+      "engine_id": "DOC-04",
+      "playbooks": []
+    },
+    {
+      "id": "CMD-01",
+      "family": "CMD",
+      "title": "Seven verbs resolvable on one runner",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-021"
+      ],
+      "engine_id": "CMD-01",
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    {
+      "id": "CMD-02",
+      "family": "CMD",
+      "title": "check composes the read-only verbs",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-022"
+      ],
+      "engine_id": "CMD-02",
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    {
+      "id": "CMD-03",
+      "family": "CMD",
+      "title": "No divergent second definition",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-023"
+      ],
+      "engine_id": "CMD-03",
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    {
+      "id": "CMD-04",
+      "family": "CMD",
+      "title": "Write verbs separated from read-only verbs",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-024"
+      ],
+      "engine_id": "CMD-04",
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    {
+      "id": "TOOL-01",
+      "family": "TOOL",
+      "title": "Formatter configured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-027"
+      ],
+      "engine_id": "TOOL-01",
+      "playbooks": []
+    },
+    {
+      "id": "TOOL-02",
+      "family": "TOOL",
+      "title": "Linter configured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-028"
+      ],
+      "engine_id": "TOOL-02",
+      "playbooks": []
+    },
+    {
+      "id": "TOOL-03",
+      "family": "TOOL",
+      "title": "Type checker configured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-029"
+      ],
+      "engine_id": "TOOL-03",
+      "playbooks": []
+    },
+    {
+      "id": "TOOL-04",
+      "family": "TOOL",
+      "title": "Dependency / security scan verb",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-030"
+      ],
+      "engine_id": "TOOL-04",
+      "playbooks": []
+    },
+    {
+      "id": "TOOL-05",
+      "family": "TOOL",
+      "title": "Local hook chain active",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-031"
+      ],
+      "engine_id": "TOOL-05",
+      "playbooks": []
+    },
+    {
+      "id": "TOOL-06",
+      "family": "TOOL",
+      "title": "Commit convention enforced",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-032"
+      ],
+      "engine_id": "TOOL-06",
+      "playbooks": []
+    },
+    {
+      "id": "CI-01",
+      "family": "CI",
+      "title": "Pipeline present, triggered on PRs",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-033"
+      ],
+      "engine_id": "CI-01",
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    {
+      "id": "CI-02",
+      "family": "CI",
+      "title": "Local↔CI parity",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-034"
+      ],
+      "engine_id": "CI-02",
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    {
+      "id": "CI-03",
+      "family": "CI",
+      "title": "CI-only steps flagged",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-034"
+      ],
+      "engine_id": "CI-03",
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    {
+      "id": "CI-04",
+      "family": "CI",
+      "title": "CI enforces the same gate as the local check",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "agent",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-035"
+      ],
+      "engine_id": null,
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    {
+      "id": "BASE-01",
+      "family": "BASE",
+      "title": "Baseline artifact exists",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-BF-001"
+      ],
+      "engine_id": "BASE-01",
+      "playbooks": []
+    },
+    {
+      "id": "BASE-02",
+      "family": "BASE",
+      "title": "Current violation counts measured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-BF-002"
+      ],
+      "engine_id": "BASE-02",
+      "playbooks": []
+    },
+    {
+      "id": "BASE-03",
+      "family": "BASE",
+      "title": "No-new-violations mechanism",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-BF-003"
+      ],
+      "engine_id": "BASE-03",
+      "playbooks": []
+    },
+    {
+      "id": "BASE-04",
+      "family": "BASE",
+      "title": "Coverage floor configured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-036"
+      ],
+      "engine_id": "BASE-04",
+      "playbooks": []
+    },
+    {
+      "id": "CON-01",
+      "family": "CON",
+      "title": "Allow/deny artifact present",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-037"
+      ],
+      "engine_id": "CON-01",
+      "playbooks": [
+        "add-deny-rules"
+      ]
+    },
+    {
+      "id": "CON-02",
+      "family": "CON",
+      "title": "Test directories protected",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-038"
+      ],
+      "engine_id": "CON-02",
+      "playbooks": [
+        "add-deny-rules"
+      ]
+    },
+    {
+      "id": "CON-03",
+      "family": "CON",
+      "title": "artefacts/ excluded from index and agent reads",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-018"
+      ],
+      "engine_id": "CON-03",
+      "playbooks": [
+        "add-deny-rules"
+      ]
+    },
+    {
+      "id": "CON-04",
+      "family": "CON",
+      "title": "Draft allow/deny emitted",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "CON-04",
+      "playbooks": []
+    },
+    {
+      "id": "EXEC-01",
+      "family": "EXEC",
+      "title": "Toolchain pinned / wrapper committed",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-039"
+      ],
+      "engine_id": "EXEC-01",
+      "playbooks": [
+        "pin-execution-environment"
+      ]
+    },
+    {
+      "id": "EXEC-02",
+      "family": "EXEC",
+      "title": "Lockfile committed and consistent",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-040"
+      ],
+      "engine_id": "EXEC-02",
+      "playbooks": [
+        "pin-execution-environment"
+      ]
+    },
+    {
+      "id": "EXEC-03",
+      "family": "EXEC",
+      "title": "Non-interactive setup path",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-041"
+      ],
+      "engine_id": "EXEC-03",
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    {
+      "id": "EXEC-04",
+      "family": "EXEC",
+      "title": "Env-var inventory complete",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-042"
+      ],
+      "engine_id": "EXEC-04",
+      "playbooks": [
+        "env-inventory-and-secrets"
+      ]
+    },
+    {
+      "id": "EXEC-05",
+      "family": "EXEC",
+      "title": "No generated artifacts committed in-tree",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-043"
+      ],
+      "engine_id": "EXEC-05",
+      "playbooks": []
+    },
+    {
+      "id": "EXEC-06",
+      "family": "EXEC",
+      "title": "Documented commands resolve",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-025"
+      ],
+      "engine_id": "EXEC-06",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "EXEC-07",
+      "family": "EXEC",
+      "title": "No competing configs for one concern",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-044"
+      ],
+      "engine_id": "EXEC-07",
+      "playbooks": []
+    },
+    {
+      "id": "TST-01",
+      "family": "TST",
+      "title": "Test verb exists, suite non-empty",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-045"
+      ],
+      "engine_id": "TST-01",
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    {
+      "id": "TST-02",
+      "family": "TST",
+      "title": "Suite status known",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-046"
+      ],
+      "engine_id": "TST-02",
+      "playbooks": []
+    },
+    {
+      "id": "TST-03",
+      "family": "TST",
+      "title": "Skip / xfail census",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-047"
+      ],
+      "engine_id": "TST-03",
+      "playbooks": []
+    },
+    {
+      "id": "TST-04",
+      "family": "TST",
+      "title": "Fast path documented",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-048"
+      ],
+      "engine_id": "TST-04",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "TST-05",
+      "family": "TST",
+      "title": "Coverage configuration present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-049"
+      ],
+      "engine_id": "TST-05",
+      "playbooks": []
+    },
+    {
+      "id": "NAV-01",
+      "family": "NAV",
+      "title": "Declared component boundaries",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-051"
+      ],
+      "engine_id": "NAV-01",
+      "playbooks": []
+    },
+    {
+      "id": "NAV-02",
+      "family": "NAV",
+      "title": "Obvious entry points",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-052"
+      ],
+      "engine_id": "NAV-02",
+      "playbooks": []
+    },
+    {
+      "id": "NAV-03",
+      "family": "NAV",
+      "title": "Structural red flags",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-053"
+      ],
+      "engine_id": "NAV-03",
+      "playbooks": []
+    },
+    {
+      "id": "NAV-04",
+      "family": "NAV",
+      "title": "Architecture orientation artifact",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "NAV-04",
+      "playbooks": []
+    },
+    {
+      "id": "NAV-05",
+      "family": "NAV",
+      "title": "Public-symbol documentation coverage",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "NAV-05",
+      "playbooks": []
+    },
+    {
+      "id": "SEC-01",
+      "family": "SEC",
+      "title": ".env untracked and ignored",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-054"
+      ],
+      "engine_id": "SEC-01",
+      "playbooks": [
+        "env-inventory-and-secrets"
+      ]
+    },
+    {
+      "id": "SEC-02",
+      "family": "SEC",
+      "title": "No key-shaped strings in tracked files",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-055"
+      ],
+      "engine_id": "SEC-02",
+      "playbooks": [
+        "env-inventory-and-secrets"
+      ]
+    },
+    {
+      "id": "SEC-03",
+      "family": "SEC",
+      "title": "Ignore patterns cover secret shapes",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-056"
+      ],
+      "engine_id": "SEC-03",
+      "playbooks": [
+        "env-inventory-and-secrets"
+      ]
+    },
+    {
+      "id": "HYG-01",
+      "family": "HYG",
+      "title": "README present and non-placeholder",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-01",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-02",
+      "family": "HYG",
+      "title": "CODEOWNERS present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-02",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-03",
+      "family": "HYG",
+      "title": "Pull-request template present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-03",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-04",
+      "family": "HYG",
+      "title": "Issue templates present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-04",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-05",
+      "family": "HYG",
+      "title": "CONTRIBUTING present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-05",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-06",
+      "family": "HYG",
+      "title": "SECURITY present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-06",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-07",
+      "family": "HYG",
+      "title": "CHANGELOG present and recent",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-07",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-08",
+      "family": "HYG",
+      "title": "Release process documented",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-08",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-09",
+      "family": "HYG",
+      "title": "Dependency update automation configured",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-09",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-10",
+      "family": "HYG",
+      "title": "License present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-10",
+      "playbooks": []
+    },
+    {
+      "id": "HYG-11",
+      "family": "HYG",
+      "title": "Branch protection declared as code",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [],
+      "engine_id": "HYG-11",
+      "playbooks": []
+    }
+  ]
+}

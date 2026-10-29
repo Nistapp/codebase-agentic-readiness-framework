@@ -1,0 +1,9 @@
+model_list:
+  - model_name: primary
+    litellm_params:
+      api_key: "os.environ/PRIMARY_PROVIDER_KEY"
+  - model_name: secondary
+    litellm_params:
+      api_key: os.environ/SECONDARY_PROVIDER_KEY
+      password: ${DATABASE_PASSWORD_VALUE}
+      token: "${{ secrets.DEPLOY_TOKEN_VALUE }}"

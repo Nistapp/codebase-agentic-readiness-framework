@@ -1,0 +1,30 @@
+{
+  "expected_version": "0.1",
+  "repo_label": "example-service",
+  "repo_sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9011223344",
+  "notes": "A synthetic worked example, matching example-service.audit-report.*.json. It shows a single acceptable verdict, more than one acceptable verdict, required evidence, and a check the corpus is silent on by simply not listing it.",
+  "checks": [
+    {
+      "id": "CMD-02",
+      "acceptable_verdicts": ["FAIL"],
+      "required_evidence_paths": ["package.json"],
+      "notes": "The repository's check script does not run lint, so an agent cannot trust green CI to have caught a lint defect; this is the fixture's one planted defect and must come out FAIL, not PARTIAL."
+    },
+    {
+      "id": "TOOL-03",
+      "acceptable_verdicts": ["PASS"],
+      "required_evidence_paths": ["tsconfig.json"],
+      "notes": "tsconfig.json sets strict: true with an inline comment on the same line; a scorer run against an engine older than ruleset 2026-10-15.3 is expected to disagree here (see docs/reference/changelog.md), which is exactly the kind of regression this corpus exists to catch."
+    },
+    {
+      "id": "EXEC-02",
+      "acceptable_verdicts": ["PASS", "PARTIAL"],
+      "notes": "The lockfile agrees with the manifest. PARTIAL is also acceptable: a harness whose engine build predates the CONTENT_READ_LIMIT raise (S3.6.4) correctly reports consistency as unverified, which is not a recipe defect."
+    },
+    {
+      "id": "SEC-02",
+      "acceptable_verdicts": ["PASS"],
+      "notes": "No credential-shaped literal exists anywhere in the fixture, by construction; a FAIL here on a real scorer run is worth investigating, not auto-accepting."
+    }
+  ]
+}

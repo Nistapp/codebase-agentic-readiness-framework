@@ -1,0 +1,1869 @@
+{
+  "candidate_components": [],
+  "checks": [
+    {
+      "data": {},
+      "id": "IDX-01",
+      "pack": "IDX",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "codebase-memory-mcp registered in: /home/kc/.config/opencode/opencode.jsonc (user)",
+      "tier": "A",
+      "title": "codebase-memory-mcp registered for this repository",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "IDX-02",
+      "pack": "IDX",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "index store /home/kc/.cache/codebase-memory-mcp contains a project rooted at /home/kc/Projects/UDAN/Digital-Assistant-Server",
+      "tier": "A",
+      "title": "An index exists for this checkout",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "IDX-03",
+      "pack": "IDX",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "index freshness is a Tier-C probe; re-run with --run-gates to compare the indexed revision against HEAD",
+      "tier": "C",
+      "title": "Index freshness",
+      "verdict": "UNKNOWN"
+    },
+    {
+      "data": {},
+      "id": "AGT-01",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "",
+      "tier": "A",
+      "title": "Instruction file present, canonical, and non-trivial",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "AGT-02",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "single-root repository: no component-level instruction files required",
+      "tier": "A",
+      "title": "Component coverage by instruction files",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "AGT-03",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "does not name docs/STYLE_GUIDE.md, artefacts/",
+      "tier": "B",
+      "title": "Documentation contract named",
+      "verdict": "PARTIAL"
+    },
+    {
+      "data": {},
+      "id": "AGT-04",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no definition-of-done sentence ties a documentation trigger to the same change set",
+      "tier": "B",
+      "title": "Definition of done stated",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {
+        "kind": "verb_surface",
+        "missing": [
+          "format",
+          "format:check",
+          "lint",
+          "typecheck",
+          "test",
+          "check",
+          "security"
+        ],
+        "resolved_count": 0,
+        "verbs": [
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "format"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "format:check"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "lint"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "typecheck"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "test"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "check"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "security"
+          }
+        ]
+      },
+      "id": "AGT-05",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "not named: format:check, lint, typecheck, check; not resolved: format, format:check, lint, typecheck, test, check, security",
+      "tier": "B",
+      "title": "Seven verbs named",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "AGT-06",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no boundary rule references a path that exists in this repository",
+      "tier": "B",
+      "title": "Architectural boundaries declared",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "AGT-07",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no prohibitions section",
+      "tier": "B",
+      "title": "Do-not-do / deny rules present",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {
+        "kind": "harness_matrix",
+        "reached": 21,
+        "reached_tools": [
+          "Aider",
+          "Augment Code",
+          "Bolt (StackBlitz)",
+          "Charm Crush",
+          "Cline",
+          "Cursor",
+          "Devin (Cognition)",
+          "Firebase Studio (ex-IDX)",
+          "GitHub Copilot / VS Code",
+          "Goose (Block)",
+          "JetBrains Junie",
+          "Jules (Google)",
+          "Kiro (AWS)",
+          "OpenAI Codex CLI",
+          "Roo Code",
+          "Sourcegraph Amp",
+          "Trae",
+          "Warp",
+          "Windsurf / Devin Desktop",
+          "Zed",
+          "opencode"
+        ],
+        "total": 28,
+        "unreached_tools": [
+          "Amazon Q Developer",
+          "Anthropic Claude Code",
+          "Continue",
+          "Google Gemini CLI",
+          "Qwen Code",
+          "Replit Agent",
+          "Void"
+        ]
+      },
+      "id": "AGT-08",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "21/28 harnesses reached",
+      "tier": "B",
+      "title": "No competing instruction files, and the reach matrix is stated",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "AGT-09",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "the branch model is stated but nothing says whether an agent may tag or release",
+      "tier": "B",
+      "title": "Branch and release boundary declared",
+      "verdict": "PARTIAL"
+    },
+    {
+      "data": {},
+      "id": "AGT-10",
+      "pack": "AGT",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "",
+      "tier": "B",
+      "title": "Instruction indirection resolved",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "DOC-01",
+      "pack": "DOC",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no docs/ directory",
+      "tier": "A",
+      "title": "docs/ exists",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "DOC-02",
+      "pack": "DOC",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "docs/STYLE_GUIDE.md is not present",
+      "tier": "A",
+      "title": "docs/STYLE_GUIDE.md exists",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "DOC-03",
+      "pack": "DOC",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no scratch directory in use",
+      "tier": "B",
+      "title": "artefacts/ exists and is ignored",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "DOC-04",
+      "pack": "DOC",
+      "phase": 1,
+      "scored": true,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no ADR directory",
+      "tier": "A",
+      "title": "ADR directory and index",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {
+        "kind": "verb_surface",
+        "missing": [
+          "format",
+          "format:check",
+          "lint",
+          "typecheck",
+          "test",
+          "check",
+          "security"
+        ],
+        "resolved_count": 0,
+        "verbs": [
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "format"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "format:check"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "lint"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "typecheck"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "test"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "check"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "security"
+          }
+        ]
+      },
+      "id": "CMD-01",
+      "pack": "CMD",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "format -> missing; format:check -> missing; lint -> missing; typecheck -> missing; test -> missing; check -> missing; security -> missing",
+      "tier": "B",
+      "title": "Seven verbs resolvable on one runner",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "CMD-02",
+      "pack": "CMD",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "the check verb is not defined on any runner",
+      "tier": "B",
+      "title": "check composes the read-only verbs",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "CMD-03",
+      "pack": "CMD",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no runner defines check, so there is nothing to diverge",
+      "tier": "B",
+      "title": "No divergent second definition",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "CMD-04",
+      "pack": "CMD",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no read-only verb invokes a write verb",
+      "tier": "B",
+      "title": "Write verbs separated from read-only verbs",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "TOOL-01",
+      "pack": "TOOL",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no formatter config and no format verb",
+      "tier": "B",
+      "title": "Formatter configured",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "TOOL-02",
+      "pack": "TOOL",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no linter config and no lint verb",
+      "tier": "B",
+      "title": "Linter configured",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "TOOL-03",
+      "pack": "TOOL",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no recognised strict type-check configuration and no ecosystem this pack knows one for, so type-checking cannot be judged",
+      "tier": "A",
+      "title": "Type checker configured",
+      "verdict": "UNKNOWN"
+    },
+    {
+      "data": {},
+      "id": "TOOL-04",
+      "pack": "TOOL",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no verb runs a dependency audit",
+      "tier": "A",
+      "title": "Dependency / security scan verb",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "TOOL-05",
+      "pack": "TOOL",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no hook chain configured",
+      "tier": "B",
+      "title": "Local hook chain active",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "TOOL-06",
+      "pack": "TOOL",
+      "phase": 1,
+      "scored": true,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no commit-message rule",
+      "tier": "A",
+      "title": "Commit convention enforced",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "CI-01",
+      "pack": "CI",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "PR-triggered: .github/workflows/gemini-pr-review.yml (github)",
+      "tier": "B",
+      "title": "Pipeline present, triggered on PRs",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "CI-02",
+      "pack": "CI",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "no local verb resolves on any runner, so CI cannot be compared to it",
+      "tier": "B",
+      "title": "Local\u2194CI parity",
+      "verdict": "UNKNOWN"
+    },
+    {
+      "data": {},
+      "id": "CI-03",
+      "pack": "CI",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no CI-only steps",
+      "tier": "B",
+      "title": "CI-only steps flagged",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "BASE-01",
+      "pack": "BASE",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no baseline or suppression artifact",
+      "tier": "A",
+      "title": "Baseline artifact exists",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "BASE-02",
+      "pack": "BASE",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no violation-count mechanism found; method: static configuration scan; the target's own tools are never run",
+      "tier": "B",
+      "title": "Current violation counts measured",
+      "verdict": "PARTIAL"
+    },
+    {
+      "data": {},
+      "id": "BASE-03",
+      "pack": "BASE",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no ratchet and no baseline yet, so there is nothing to compare against",
+      "tier": "B",
+      "title": "No-new-violations mechanism",
+      "verdict": "PARTIAL"
+    },
+    {
+      "data": {},
+      "id": "BASE-04",
+      "pack": "BASE",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no coverage threshold configured",
+      "tier": "A",
+      "title": "Coverage floor configured",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "CON-01",
+      "pack": "CON",
+      "phase": 1,
+      "scored": false,
+      "severity": "BLOCKER",
+      "status": "blocked",
+      "summary": "blocked: the framework defines no artifact contract for this deliverable, so it carries weight 0 in v1 (see CON-01)",
+      "tier": "B",
+      "title": "Allow/deny artifact present",
+      "verdict": "UNKNOWN"
+    },
+    {
+      "data": {
+        "kind": "path_list",
+        "paths": [
+          "src/test"
+        ],
+        "truncated": false
+      },
+      "id": "CON-02",
+      "pack": "CON",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "no constraint file protects the test directories (src/test/), and no ignore rule or CI guard does either",
+      "tier": "B",
+      "title": "Test directories protected",
+      "verdict": "UNKNOWN"
+    },
+    {
+      "data": {},
+      "id": "CON-03",
+      "pack": "CON",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no scratch or agent-state directory in use",
+      "tier": "B",
+      "title": "artefacts/ excluded from index and agent reads",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "CON-04",
+      "pack": "CON",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "draft not emitted; pass --emit-baseline to write constraints.draft.yaml beside the report",
+      "tier": "\u2014",
+      "title": "Draft allow/deny emitted",
+      "verdict": "UNKNOWN"
+    },
+    {
+      "data": {},
+      "id": "EXEC-01",
+      "pack": "EXEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "pinned: jvm (gradlew)",
+      "tier": "A",
+      "title": "Toolchain pinned / wrapper committed",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "EXEC-02",
+      "pack": "EXEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "",
+      "tier": "B",
+      "title": "Lockfile committed and consistent",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "EXEC-03",
+      "pack": "EXEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "no setup path found",
+      "tier": "A",
+      "title": "Non-interactive setup path",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {
+        "kind": "env_keys",
+        "missing": [
+          "GREEN",
+          "NC",
+          "RED",
+          "YELLOW"
+        ],
+        "referenced": [
+          "GREEN",
+          "NC",
+          "RED",
+          "YELLOW"
+        ],
+        "templates": []
+      },
+      "id": "EXEC-04",
+      "pack": "EXEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "4 referenced key(s) are absent from any committed example file: GREEN, NC, RED, YELLOW",
+      "tier": "B",
+      "title": "Env-var inventory complete",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "EXEC-05",
+      "pack": "EXEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no tracked generated or vendored paths",
+      "tier": "B",
+      "title": "No generated artifacts committed in-tree",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "EXEC-06",
+      "pack": "EXEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no fenced shell commands documented",
+      "tier": "B",
+      "title": "Documented commands resolve",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "EXEC-07",
+      "pack": "EXEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no concern configs found",
+      "tier": "B",
+      "title": "No competing configs for one concern",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "TST-01",
+      "pack": "TST",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "11 test file(s) but no resolvable test verb",
+      "tier": "A",
+      "title": "Test verb exists, suite non-empty",
+      "verdict": "PARTIAL"
+    },
+    {
+      "data": {},
+      "id": "TST-02",
+      "pack": "TST",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no test verb resolves on any runner, so the suite cannot be run",
+      "tier": "C",
+      "title": "Suite status known",
+      "verdict": "UNKNOWN"
+    },
+    {
+      "data": {
+        "breakdown": {},
+        "kind": "counter",
+        "unit": "skip/xfail markers",
+        "value": 0
+      },
+      "id": "TST-03",
+      "pack": "TST",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "skip/xfail census across 11 test file(s): no markers; total 0",
+      "tier": "B",
+      "title": "Skip / xfail census",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "TST-04",
+      "pack": "TST",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no single-test/subset invocation in fenced shell blocks (scope: AGENTS.md, CONTRIBUTING.md)",
+      "tier": "B",
+      "title": "Fast path documented",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "TST-05",
+      "pack": "TST",
+      "phase": 1,
+      "scored": true,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no coverage configuration",
+      "tier": "A",
+      "title": "Coverage configuration present",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "NAV-01",
+      "pack": "NAV",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "single-root repository declares build.gradle",
+      "tier": "A",
+      "title": "Declared component boundaries",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "NAV-02",
+      "pack": "NAV",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no entry point found for jvm",
+      "tier": "B",
+      "title": "Obvious entry points",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "NAV-03",
+      "pack": "NAV",
+      "phase": 1,
+      "scored": true,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "oversized(>524288 B): 0; catch-all dirs(>50 files): 0; binaries: 0; minified: 0",
+      "tier": "B",
+      "title": "Structural red flags",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "NAV-04",
+      "pack": "NAV",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no architecture orientation artifact",
+      "tier": "A",
+      "title": "Architecture orientation artifact",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "NAV-05",
+      "pack": "NAV",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no recognised source language, so 'public' cannot be defined",
+      "tier": "B",
+      "title": "Public-symbol documentation coverage",
+      "verdict": "UNKNOWN"
+    },
+    {
+      "data": {
+        "covered": [
+          "dotenv",
+          "dotenv variant"
+        ],
+        "kind": "secret_shapes",
+        "missing": [],
+        "shapes": [
+          {
+            "covered": true,
+            "label": "dotenv",
+            "probe": ".env",
+            "suggested": ".env"
+          },
+          {
+            "covered": true,
+            "label": "dotenv variant",
+            "probe": ".env.local",
+            "suggested": ".env.*"
+          }
+        ]
+      },
+      "id": "SEC-01",
+      "pack": "SEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "no tracked .env and ignore rules cover the shape",
+      "tier": "B",
+      "title": ".env untracked and ignored",
+      "verdict": "PASS"
+    },
+    {
+      "data": {
+        "files": [],
+        "kind": "credential_matrix",
+        "source": "tracked text files",
+        "total": 0
+      },
+      "id": "SEC-02",
+      "pack": "SEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "BLOCKER",
+      "status": "implemented",
+      "summary": "no credential-shaped strings in tracked text files",
+      "tier": "B",
+      "title": "No key-shaped strings in tracked files",
+      "verdict": "PASS"
+    },
+    {
+      "data": {
+        "covered": [
+          "dotenv",
+          "dotenv variant",
+          "PEM",
+          "key",
+          "PKCS#12"
+        ],
+        "kind": "secret_shapes",
+        "missing": [
+          "ssh private key",
+          "PFX",
+          "keystore",
+          "certificate (.crt)",
+          "certificate (.cer)",
+          "AWS credentials"
+        ],
+        "shapes": [
+          {
+            "covered": true,
+            "label": "dotenv",
+            "probe": ".env",
+            "suggested": ".env"
+          },
+          {
+            "covered": true,
+            "label": "dotenv variant",
+            "probe": ".env.local",
+            "suggested": ".env.*"
+          },
+          {
+            "covered": false,
+            "label": "ssh private key",
+            "probe": "id_rsa",
+            "suggested": "id_rsa*"
+          },
+          {
+            "covered": true,
+            "label": "PEM",
+            "probe": "server.pem",
+            "suggested": "*.pem"
+          },
+          {
+            "covered": true,
+            "label": "key",
+            "probe": "server.key",
+            "suggested": "*.key"
+          },
+          {
+            "covered": true,
+            "label": "PKCS#12",
+            "probe": "server.p12",
+            "suggested": "*.p12"
+          },
+          {
+            "covered": false,
+            "label": "PFX",
+            "probe": "server.pfx",
+            "suggested": "*.pfx"
+          },
+          {
+            "covered": false,
+            "label": "keystore",
+            "probe": "app.keystore",
+            "suggested": "*.keystore"
+          },
+          {
+            "covered": false,
+            "label": "certificate (.crt)",
+            "probe": "server.crt",
+            "suggested": "*.crt"
+          },
+          {
+            "covered": false,
+            "label": "certificate (.cer)",
+            "probe": "server.cer",
+            "suggested": "*.cer"
+          },
+          {
+            "covered": false,
+            "label": "AWS credentials",
+            "probe": ".aws/credentials",
+            "suggested": ".aws/*"
+          }
+        ]
+      },
+      "id": "SEC-03",
+      "pack": "SEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "covered: dotenv, dotenv variant, PEM, key, PKCS#12; missing: ssh private key, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials",
+      "tier": "B",
+      "title": "Ignore patterns cover secret shapes",
+      "verdict": "PARTIAL"
+    },
+    {
+      "data": {},
+      "id": "HYG-01",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "README present and non-placeholder",
+      "tier": "A",
+      "title": "README present and non-placeholder",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "HYG-02",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no CODEOWNERS file",
+      "tier": "A",
+      "title": "CODEOWNERS present",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "HYG-03",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no pull-request template",
+      "tier": "A",
+      "title": "Pull-request template present",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "HYG-04",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no issue templates",
+      "tier": "A",
+      "title": "Issue templates present",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "HYG-05",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "CONTRIBUTING present at CONTRIBUTING.md",
+      "tier": "A",
+      "title": "CONTRIBUTING present",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "HYG-06",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no SECURITY document",
+      "tier": "A",
+      "title": "SECURITY present",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "HYG-07",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no CHANGELOG document",
+      "tier": "A",
+      "title": "CHANGELOG present and recent",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "HYG-08",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no release document",
+      "tier": "A",
+      "title": "Release process documented",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "HYG-09",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "no dependency update automation",
+      "tier": "A",
+      "title": "Dependency update automation configured",
+      "verdict": "FAIL"
+    },
+    {
+      "data": {},
+      "id": "HYG-10",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "license present at LICENSE",
+      "tier": "A",
+      "title": "License present",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "HYG-11",
+      "pack": "HYG",
+      "phase": 1,
+      "scored": false,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "github offers branch protection as code, none found",
+      "tier": "B",
+      "title": "Branch protection declared as code",
+      "verdict": "FAIL"
+    }
+  ],
+  "components": [
+    {
+      "agents_md": "present",
+      "declared": true,
+      "declared_by": "implicit",
+      "manifest": "build.gradle",
+      "name": "(root)",
+      "path": "."
+    }
+  ],
+  "findings": [
+    {
+      "check": "CMD-01",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "build.gradle"
+        }
+      ],
+      "id": "CMD-01",
+      "phase": 1,
+      "remediation": "Define every verb (format, format:check, lint, typecheck, test, check, security) as a script/target so an agent never has to invent a command.",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot run the standardized command surface literally because 7 of 7 framework verbs are not defined on any runner (format, format:check, lint, typecheck, test, check, security).",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "CMD-02",
+      "evidence": [],
+      "id": "CMD-02",
+      "phase": 1,
+      "remediation": "Define check as format-check, then typecheck, then test.",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot run one gate that composes the read-only verbs because no runner defines a check verb.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "EXEC-02",
+      "evidence": [],
+      "id": "EXEC-02",
+      "phase": 1,
+      "remediation": "Generate the lockfile with the project's package manager and commit it.",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot install identical dependencies on every run because the jvm project has no lockfile (gradle.lockfile), so a fresh install resolves whatever versions are current.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "EXEC-03",
+      "evidence": [],
+      "id": "EXEC-03",
+      "phase": 1,
+      "remediation": "Add a committed setup path (a devcontainer, compose file, or a documented install command in README.md) that runs with no prompts.",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot prepare the environment non-interactively because no devcontainer, compose file, Dockerfile, setup target/script, or documented install command exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "EXEC-04",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "(no example file)"
+        }
+      ],
+      "id": "EXEC-04",
+      "phase": 1,
+      "remediation": "Add the missing keys to .env.example (values redacted) so the environment can be provisioned without reading the source.",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot know every variable the code needs before running it because 4 referenced key(s) are absent from any committed example file: GREEN, NC, RED, YELLOW.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "AGT-03",
+      "evidence": [
+        {
+          "line": 103,
+          "note": "docs/",
+          "path": "AGENTS.md"
+        }
+      ],
+      "id": "AGT-03",
+      "phase": 1,
+      "remediation": "Name docs/ as the canonical home for permanent knowledge, docs/STYLE_GUIDE.md as the authoring rules, and artefacts/ as off-limits scratch.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot know where permanent and scratch documentation live because AGENTS.md does not name docs/STYLE_GUIDE.md, artefacts/.",
+      "verdict": "PARTIAL"
+    },
+    {
+      "check": "AGT-04",
+      "evidence": [],
+      "id": "AGT-04",
+      "phase": 1,
+      "remediation": "State that a change altering a public interface, observable behaviour, architecture, a check's semantics or an ADR updates the affected docs and the ADR index in the same change set.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot keep code and its documentation in step because no definition-of-done sentence ties a documentation trigger to the same change set.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "AGT-05",
+      "evidence": [],
+      "id": "AGT-05",
+      "phase": 1,
+      "remediation": "List all seven verbs in AGENTS.md and define each on one runner so the instruction and the manifest agree.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot use the project's own commands instead of inventing them because not named: format:check, lint, typecheck, check; not resolved: format, format:check, lint, typecheck, test, check, security.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "AGT-06",
+      "evidence": [],
+      "id": "AGT-06",
+      "phase": 1,
+      "remediation": "State at least two boundaries as rules naming real paths \u2014 for example where application code lives and where tests live.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot learn where code may live and what may cross a boundary because no boundary rule references a path that exists in this repository.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "AGT-07",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "AGENTS.md"
+        }
+      ],
+      "id": "AGT-07",
+      "phase": 1,
+      "remediation": "Add an explicit prohibitions section covering tests, generated files, the default branch and secrets.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot rely on an explicit do-not list because AGENTS.md has no prohibitions section.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "AGT-08",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "CONVENTIONS.md"
+        }
+      ],
+      "id": "AGT-08",
+      "phase": 1,
+      "remediation": "Keep AGENTS.md canonical; reduce each vendor file to a pointer at it, or delete it if the harness reads AGENTS.md natively.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot know which instruction file is authoritative because 1 vendor-specific instruction files exist alongside the canonical one (CONVENTIONS.md).",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "AGT-09",
+      "evidence": [
+        {
+          "line": 62,
+          "note": null,
+          "path": "AGENTS.md"
+        }
+      ],
+      "id": "AGT-09",
+      "phase": 1,
+      "remediation": "State the branches that exist (for example main and dev) and whether an agent may tag or publish a release.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot know which branch to work on and whether it may cut a release because the branch model is stated but nothing says whether an agent may tag or release.",
+      "verdict": "PARTIAL"
+    },
+    {
+      "check": "AGT-10",
+      "evidence": [
+        {
+          "line": null,
+          "note": "deferral found: CONVENTIONS.md",
+          "path": "AGENTS.md"
+        }
+      ],
+      "id": "AGT-10",
+      "phase": 1,
+      "remediation": "Inline the rules that must always apply, or name the referenced file in each harness's config (aider read:, opencode.json instructions, Codex model_instructions_file).",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot trust that the referenced rules are actually loaded because the instruction file defers its content to CONVENTIONS.md and no harness configuration names that file, so loading depends on the agent choosing to follow the pointer.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "BASE-01",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "<repository>"
+        }
+      ],
+      "id": "BASE-01",
+      "phase": 1,
+      "remediation": "Commit a baseline/suppression artifact, or document the equivalent mechanism in `AGENTS.md`.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot distinguish pre-existing debt from new debt because no baseline or suppression artifact is committed.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "BASE-02",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "<repository>"
+        }
+      ],
+      "id": "BASE-02",
+      "phase": 1,
+      "remediation": "Add linters/type-checkers/security scanners and commit the count they produce, so debt is measured rather than guessed.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot state how many violations exist today because no violation-counting tooling, budget or artifact is configured.",
+      "verdict": "PARTIAL"
+    },
+    {
+      "check": "BASE-03",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "<repository>"
+        }
+      ],
+      "id": "BASE-03",
+      "phase": 1,
+      "remediation": "Once a baseline exists, wire a comparison step (the audit's own `--baseline REPORT.JSON` is the reference pattern) so new findings fail the build.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot stop the violation count from growing because no baseline, budget or comparison step exists, so the count is not guarded.",
+      "verdict": "PARTIAL"
+    },
+    {
+      "check": "BASE-04",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "<repository>"
+        }
+      ],
+      "id": "BASE-04",
+      "phase": 1,
+      "remediation": "Configure a coverage floor for the test runner so a drop fails the gate.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot know when coverage drops below an agreed floor because no coverage threshold is configured in the test runner.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "DOC-01",
+      "evidence": [],
+      "id": "DOC-01",
+      "phase": 1,
+      "remediation": "Create docs/ as the canonical home for permanent knowledge, with docs/STYLE_GUIDE.md holding the authoring rules.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot find the project's documentation because no docs/ directory exists in the repository.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "DOC-02",
+      "evidence": [],
+      "id": "DOC-02",
+      "phase": 1,
+      "remediation": "Create docs/STYLE_GUIDE.md and name it from the instruction file so writers have one set of authoring rules.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot find the canonical authoring rules for documentation because docs/STYLE_GUIDE.md does not exist.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "NAV-02",
+      "evidence": [],
+      "id": "NAV-02",
+      "phase": 1,
+      "remediation": "Declare the entry point in the manifest (package.json main/bin, pyproject scripts, a Gradle main class) or name the executable file so an agent can tell live code from dead code.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot find where execution begins because the jvm project declares no entry point (main, bin, __main__, Application or func main).",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "SEC-03",
+      "evidence": [
+        {
+          "line": null,
+          "note": ".project",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": ".classpath",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": ".settings",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": "bin",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": ".idea",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": "*.ipr",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": "*.iml",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": "*.iws",
+          "path": ".gitignore"
+        }
+      ],
+      "id": "SEC-03",
+      "phase": 1,
+      "remediation": "Add the missing shapes to .gitignore \u2014 for example `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `id_rsa*`, `*.crt`, `*.cer`, `.aws/*`.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot trust that secret shapes cannot be committed because ignore rules do not cover ssh private key, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials.",
+      "verdict": "PARTIAL"
+    },
+    {
+      "check": "TOOL-01",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "build.gradle"
+        }
+      ],
+      "id": "TOOL-01",
+      "phase": 1,
+      "remediation": "Add a formatter config and a format write verb (prettier, black, ruff format, \u2026).",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot format a change set the same way every time because no formatter is configured and no format verb is defined.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "TOOL-02",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "build.gradle"
+        }
+      ],
+      "id": "TOOL-02",
+      "phase": 1,
+      "remediation": "Add a linter config and a lint read-only verb (eslint, ruff, flake8, golangci-lint, \u2026).",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot catch lint regressions before they land because no linter is configured and no lint verb is defined.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "TOOL-04",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "build.gradle"
+        }
+      ],
+      "id": "TOOL-04",
+      "phase": 1,
+      "remediation": "Add a dependency-audit verb (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, snyk).",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot know whether a dependency carries a known vulnerability because no resolvable verb runs a dependency-audit check.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "TOOL-05",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "build.gradle"
+        }
+      ],
+      "id": "TOOL-05",
+      "phase": 1,
+      "remediation": "Adopt a hook manager (pre-commit, lefthook, husky) and wire it so checks run before a commit rather than only in CI.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot rely on local hooks to run before a commit because no hook manager is configured.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "TST-01",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/DomainTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/StatusResourceTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/UserResourceTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/UsersResourceTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/config/GlobalExceptionMapperTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/config/SecurityHeadersFilterTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/services/ClickeventsResourceTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/services/SequenceListServiceTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/services/VotesResourceTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/users/AdminResourceTest.java"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "src/test/java/com/nistapp/uda/index/utils/InputSanitizerTest.java"
+        }
+      ],
+      "id": "TST-01",
+      "phase": 1,
+      "remediation": "Define a test verb on the runner (for example `npm test`, a Makefile `test` target, or `pytest`) so the suite is reachable without inventing a command.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot run the suite by name because test files exist but no runner exposes a test verb.",
+      "verdict": "PARTIAL"
+    },
+    {
+      "check": "TST-04",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "AGENTS.md"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "CONTRIBUTING.md"
+        }
+      ],
+      "id": "TST-04",
+      "phase": 1,
+      "remediation": "Document a fast path (for example `pytest -k <name>`, `npm test -- <name>`, or `go test -run <name>`) in a fenced shell block.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot run one test or a subset without the whole suite because none of the entry documents shows a single-test or subset invocation (scope: AGENTS.md, CONTRIBUTING.md).",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "AGT-08",
+      "evidence": [],
+      "id": "AGT-08",
+      "phase": 1,
+      "remediation": "Either state the supported harnesses in AGENTS.md, or add the vendor pointer files for the harnesses in use.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot assume every harness on the team sees the project rules because 21 of 28 known harnesses reach an instruction file; Amazon Q Developer, Anthropic Claude Code, Continue, Google Gemini CLI, Qwen Code, Replit Agent, Void reach nothing.",
+      "verdict": "PARTIAL"
+    },
+    {
+      "check": "DOC-04",
+      "evidence": [],
+      "id": "DOC-04",
+      "phase": 1,
+      "remediation": "Add docs/architecture/adrs/ with NNNN-short-title.md files and a README index that lists them.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot find the decisions of record because no ADR directory (docs/architecture/adrs/ or docs/adr/) exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "HYG-02",
+      "evidence": [],
+      "id": "HYG-02",
+      "phase": 1,
+      "remediation": "Add .github/CODEOWNERS mapping paths to owners so review routing is machine-readable.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot know who owns a path before changing it because no CODEOWNERS file exists at the root, under .github/, or under docs/.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "HYG-03",
+      "evidence": [],
+      "id": "HYG-03",
+      "phase": 1,
+      "remediation": "Add .github/pull_request_template.md describing what a good change records.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot file a change with the information reviewers need because no .github/pull_request_template file exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "HYG-04",
+      "evidence": [],
+      "id": "HYG-04",
+      "phase": 1,
+      "remediation": "Add at least one file under .github/ISSUE_TEMPLATE/ (a bug report and a feature request are a good start).",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot report a bug or request in a structured way because no .github/ISSUE_TEMPLATE entry exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "HYG-06",
+      "evidence": [],
+      "id": "HYG-06",
+      "phase": 1,
+      "remediation": "Add SECURITY.md with a private disclosure channel and a response expectation.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot report a vulnerability responsibly because no SECURITY document exists at the root, under .github/, or under docs/.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "HYG-07",
+      "evidence": [],
+      "id": "HYG-07",
+      "phase": 1,
+      "remediation": "Add CHANGELOG.md and record notable changes under a version heading.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot see what changed between two versions because no CHANGELOG (or CHANGES/HISTORY) document exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "HYG-08",
+      "evidence": [],
+      "id": "HYG-08",
+      "phase": 1,
+      "remediation": "Add docs/releasing.md (or RELEASE.md) describing how a version is cut and published.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot know how a release is cut because no text or markdown document describing the release process exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "HYG-09",
+      "evidence": [],
+      "id": "HYG-09",
+      "phase": 1,
+      "remediation": "Add .github/dependabot.yml (or renovate.json) with an update schedule.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot keep dependencies patched without manual sweeps because no Dependabot or Renovate configuration exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "HYG-11",
+      "evidence": [],
+      "id": "HYG-11",
+      "phase": 1,
+      "remediation": "Declare branch protection in code (a Terraform resource or .github/branch-protection) so it is reviewed like any other change.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot reproduce the protected-branch rules as code because the github provider is detected but no branch-protection configuration exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "NAV-04",
+      "evidence": [],
+      "id": "NAV-04",
+      "phase": 1,
+      "remediation": "Add a short architecture page (with a diagram) so an agent can orient before it explores.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot orient itself from a map instead of exploring blindly because no docs/architecture/, ADR directory or diagram exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "TOOL-06",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "build.gradle"
+        }
+      ],
+      "id": "TOOL-06",
+      "phase": 1,
+      "remediation": "Add a commitlint config or a commit-msg hook so commit messages follow one convention.",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot rely on a consistent commit-message convention because no commitlint config, commit-msg hook, or equivalent exists.",
+      "verdict": "FAIL"
+    },
+    {
+      "check": "TST-05",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "<repository>"
+        }
+      ],
+      "id": "TST-05",
+      "phase": 1,
+      "remediation": "Configure coverage for the test runner (a `coverage` block, `.coveragerc`/`.nycrc`, `--coverage`/`--cov`, or `go test -cover`).",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot see how much of the code the suite actually covers because no coverage configuration or coverage-invoking command is present.",
+      "verdict": "FAIL"
+    }
+  ],
+  "inventory": {
+    "files_inspected": 100,
+    "files_skipped": 2,
+    "truncated": false
+  },
+  "not_applicable": [],
+  "probes": [],
+  "provenance": {
+    "framework_revision": "7eedf23c99c39f94cad435e8a52eb28642308a92",
+    "git_branch": "dev",
+    "git_dirty": false,
+    "git_sha": "7f351b02112ea6b6385a35b6e96daa6356a9215b",
+    "phase": 1,
+    "probes_enabled": false,
+    "ruleset_hash": "f320b6e4a8e8b7cc",
+    "ruleset_revision": "2026-09-28.13",
+    "scanned_at": "2026-10-10T06:57:39+00:00",
+    "target": "/home/kc/Projects/UDAN/Digital-Assistant-Server",
+    "tool": "python-agentic-audit",
+    "version": "0.1.0"
+  },
+  "schema_version": "2",
+  "stack": {
+    "ci_providers": [
+      "github"
+    ],
+    "ecosystems": [
+      "jvm"
+    ],
+    "hook_managers": [],
+    "notes": [],
+    "package_managers": [],
+    "test_frameworks": [
+      "junit"
+    ]
+  },
+  "summary": {
+    "blockers": 5,
+    "checks": {
+      "attest": 0,
+      "fail": 33,
+      "partial": 6,
+      "pass": 22,
+      "unknown": 8
+    },
+    "checks_applicable": 69,
+    "checks_implemented": 68,
+    "checks_scoreable": 54,
+    "cosmetic": 13,
+    "coverage_note": "54 of 54 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
+    "degraders": 22,
+    "phase1_score": 0.4244
+  },
+  "unattested": [
+    "index-in-use",
+    "baseline-adequacy",
+    "suite-trustworthiness",
+    "doc-accuracy",
+    "gate-honoured"
+  ]
+}
