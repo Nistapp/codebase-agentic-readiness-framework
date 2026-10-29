@@ -96,6 +96,9 @@ PENDING_SHOWN = 8
 
 INTAKE_SCHEMA = vr.RECIPES / "schema" / "audit-intake.schema.json"
 GIT_SHA = re.compile(r"^[0-9a-f]{40}\Z")
+#: A report records commits in this many hex digits, never the full 40. A full commit id is exactly the shape that
+#: secret scanners (gitleaks' default rules) read as an access token, so a committed report would fail the scan.
+SHORT_SHA_CHARS = 12
 
 
 # --- Time and JSON ------------------------------------------------------------------------------------
@@ -144,7 +147,7 @@ def git_facts(target: Path) -> tuple[dict[str, Any], list[str]]:
     if head is not None and head.returncode == 0:
         found = head.stdout.strip()
         if GIT_SHA.match(found):
-            sha = found
+            sha = found[:SHORT_SHA_CHARS]
         else:
             warnings.append("the target's commit id is not 40 hexadecimal digits, so it is not recorded")
     branch: str | None = None
@@ -160,6 +163,11 @@ def git_facts(target: Path) -> tuple[dict[str, Any], list[str]]:
     return {"git_sha": sha, "branch": branch, "dirty": dirty}, warnings
 
 
+def same_commit(recorded: str, scanned: str) -> bool:
+    """True when two commit ids name one commit: the report keeps a short id, the engine reports the full one."""
+    return scanned.startswith(recorded) or recorded.startswith(scanned)
+
+
 def framework_revision() -> str | None:
     """The commit of the framework repository these tools run from, or None when they are not in a checkout of it."""
     root = vr.RECIPES.parent.resolve()
@@ -168,7 +176,7 @@ def framework_revision() -> str | None:
     head = vr.git_output(root, ["rev-parse", "HEAD"])
     if head is None or head.returncode != 0 or not GIT_SHA.match(head.stdout.strip()):
         return None
-    return head.stdout.strip()
+    return head.stdout.strip()[:SHORT_SHA_CHARS]
 
 
 # --- The intake ---------------------------------------------------------------------------------------
@@ -549,7 +557,7 @@ def agree_with_target(document: Mapping[str, Any], conversion: adapter.Conversio
             "import a report of the draft's own repository"
         )
     recorded, scanned = target["git_sha"], conversion.git_sha
-    if recorded is not None and scanned is not None and recorded != scanned:
+    if recorded is not None and scanned is not None and not same_commit(recorded, scanned):
         problems.append(
             f"the engine scanned commit {scanned}, and the draft recorded commit {recorded}; scan again, or start a "
             "new draft with init"

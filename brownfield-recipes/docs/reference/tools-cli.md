@@ -189,9 +189,9 @@ Starts a draft from an intake file. It reads the intake (the answers to the audi
 | Field | Source |
 |---|---|
 | `provenance.target.path` | The intake's `target_path`, resolved to an absolute path. |
-| `provenance.target.git_sha`, `branch`, `dirty` | Read from git with read-only commands. Each is `null` when it cannot be known: the target is not a repository, the repository has no commit, `HEAD` is detached (no branch), or git is missing. A target that is a subfolder of a repository records nothing and gives a warning, because a commit id says nothing about a subfolder. |
+| `provenance.target.git_sha`, `branch`, `dirty` | Read from git with read-only commands. The commit id is recorded as its first 12 hex digits, because a full id is what secret scanners read as an access token. Each is `null` when it cannot be known: the target is not a repository, the repository has no commit, `HEAD` is detached (no branch), or git is missing. A target that is a subfolder of a repository records nothing and gives a warning, because a commit id says nothing about a subfolder. |
 | `provenance.target.label` | The intake's `repo_label`, or a label derived from the target directory's name. |
-| `provenance.framework_revision` | The commit of the framework checkout the tools run from, or `null` when they are not in one. |
+| `provenance.framework_revision` | The commit (first 12 hex digits) of the framework checkout the tools run from, or `null` when they are not in one. |
 | `provenance.catalogue_version` | The version of [`catalogue.json`](../../catalogue.json). |
 | `provenance.agent` | The intake's `harness` and `model`. |
 | `provenance.started_at` | The UTC start time. Its `YYYYMMDDTHHMMSSZ` form is the stamp in the file name. |
