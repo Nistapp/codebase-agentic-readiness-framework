@@ -19,6 +19,8 @@ make security       # secrets scan against .secrets.baseline
 ```
 
 - Run `make check` and `make security` before you propose a change. Do not run an ad-hoc substitute.
+- When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
+  `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`).
 - Python 3.11 or newer, and `uv` for the pinned dev tools (ruff, mypy, detect-secrets). Nothing is installed into the project.
 - After a deliberate change to a fixture or test that holds a key-shaped string, run `make update-secrets-baseline`
   and review the diff.
@@ -35,7 +37,7 @@ make security       # secrets scan against .secrets.baseline
 | `brownfield-recipes/deterministic-audit/` | The Python audit engine: reads a repository, never writes to it, no LLM, no network. | Standard library only. Read its `AGENTS.md` before changing it. |
 | `brownfield-recipes/audit/`, `implement/` | The LLM-driven recipes (`SKILL.md` files, checks, playbooks). | The model's judgment is backed by cited evidence; tools do the counting. |
 | `brownfield-recipes/tools/`, `schema/` | Deterministic tools the recipes call, and the JSON Schemas for their files. | Standard library only. No network. Never write inside a target repository. |
-| `brownfield-recipes/dev/` | Checks that run in CI and are not shipped. Today: the cross-check of the tools' schema validator against the reference `jsonschema` package. | May import dev packages, which `uv run --with` installs for one run. Nothing in `tools/` or the engine may import them. |
+| `brownfield-recipes/dev/` | Checks that run in CI and are not shipped. Today: the cross-check of the tools' schema validator against the reference `jsonschema` package, and the Mermaid render check. | May import dev packages, which `uv run --with` installs for one run. Nothing in `tools/` or the engine may import them. |
 | `brownfield-recipes/docs/` | Documentation for all of the above. | Follow `brownfield-recipes/docs/STYLE_GUIDE.md`; start at `docs/architecture/README.md`. |
 | `artefacts/` | Scratch notes and plans, git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
 
@@ -57,6 +59,7 @@ A folder with no files yet is not written yet; the docs page that describes it s
 A change is done when all of this holds:
 
 - `make check` and `make security` pass.
+- `make docs-lint` passes when Markdown changed, and a new Markdown file under a ratchet path is clean.
 - New code has tests, and a new engine check has a fixture that fails exactly that check.
 - The documentation a change affects is updated in the same set of commits. When you fill in a page marked `Planned`,
   remove that note and update the doc router.

@@ -1,0 +1,18 @@
+// Markdown lint rules for this repository (markdownlint-cli2, pinned in the Makefile).
+// `make docs-lint` lints the path list in the Makefile and fails on any violation; `make docs-lint-all`
+// reports on every Markdown file and never fails. The tuning matches how the repository is written.
+{
+  "config": {
+    "default": true,
+    // Prose wraps at about 110-120 columns; tables and code blocks may run longer.
+    "MD013": { "line_length": 120, "tables": false, "code_blocks": false },
+    // Both table delimiter styles (|---| and | --- |) are already in use.
+    "MD060": false,
+    // <br/> inside table cells only.
+    "MD033": { "allowed_elements": ["br"] },
+    // Templates repeat sub-headings under different parents.
+    "MD024": { "siblings_only": true }
+  },
+  // Fixtures are data; artefacts/ is scratch; dist/ is build output.
+  "ignores": ["**/fixtures/**", "artefacts/**", "brownfield-recipes/dist/**", "**/node_modules/**"]
+}
