@@ -102,13 +102,18 @@ class Result:
 
 @dataclass(frozen=True)
 class ToolInfo:
-    """A tool's identity. `manifest` is what `--describe` prints."""
+    """A tool's identity. `manifest` is what `--describe` prints.
+
+    `writes_inside_target` stays `False` for every tool but one: `progress.py` writes the target's two state files,
+    the documented exception to rule 6 in README.md (ADR 0002).
+    """
 
     name: str
     summary: str
     synopsis: tuple[str, ...]
     writes: str
     version: str = TOOLS_VERSION
+    writes_inside_target: bool = False
 
     def manifest(self) -> dict[str, Any]:
         return {
@@ -118,7 +123,7 @@ class ToolInfo:
             "synopsis": list(self.synopsis),
             "writes": self.writes,
             "network": False,
-            "writes_inside_target": False,
+            "writes_inside_target": self.writes_inside_target,
             "exit_codes": dict(EXIT_CODES),
         }
 
@@ -324,8 +329,8 @@ def output_directory(path: str | Path, *, target: Path) -> Path:
 def atomic_write_text(path: str | Path, text: str) -> None:
     """Replace `path` with `text` in one step, so a reader sees the old file or the new one and never half of it.
 
-    Use it only for a file the run itself owns, such as its own draft report. A file another run wrote must
-    never be passed here.
+    Use it only for a file the run itself owns, such as its own draft report or the state `progress.py` keeps. A
+    file another run wrote must never be passed here.
     """
     target = Path(path)
     mode = stat.S_IMODE(target.stat().st_mode) if target.exists() else 0o644

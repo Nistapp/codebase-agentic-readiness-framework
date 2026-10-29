@@ -9,7 +9,7 @@
 #   make format:check   read-only: formatting and lint rules (alias: make format-check)
 #   make lint           read-only lint
 #   make typecheck      mypy, strict, on the typed scope below
-#   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks)
+#   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
 #                       cross-check and the recipe linter
 #   make security       secrets scan against the committed baseline
@@ -28,6 +28,12 @@ CROSSCHECK := PYTHONPATH=brownfield-recipes/tools uv run --no-project --with jso
 # The Agent Skills spec's own reference validator (agentskills.io); its CLI entry point is `agentskills`,
 # installed for one run, in a throwaway environment. Not the tools' or the engine's dependency.
 SKILLS_REF := uvx --from skills-ref==0.1.1 agentskills
+# Markdown lint (rules in .markdownlint-cli2.jsonc) and the Mermaid check need Node; neither is part of `check`.
+MARKDOWNLINT := npx --yes markdownlint-cli2@0.24.0
+
+# The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
+# only grows. Everything else is reported by `docs-lint-all` and never fails.
+DOCS_LINT_PATHS := 'brownfield-recipes/implement/**/*.md'
 
 ENGINE := brownfield-recipes/deterministic-audit
 
@@ -38,11 +44,12 @@ TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -n
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help format format-check format\:check lint typecheck test verify-rules crosscheck recipe-lint check security update-secrets-baseline validate-skills
+.PHONY: help format format-check format\:check lint typecheck test verify-rules crosscheck recipe-lint check security update-secrets-baseline validate-skills docs-lint docs-lint-all docs-mermaid
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "extra: verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
+	@echo "docs:  docs-lint  docs-lint-all  docs-mermaid FILES=..."
 
 format:
 	$(RUFF) format brownfield-recipes
@@ -62,6 +69,7 @@ typecheck:
 test:
 	cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests
 	$(PYTHON) -m unittest discover -s brownfield-recipes/tools/tests
+	$(PYTHON) -m unittest discover -s brownfield-recipes/dev/tests
 
 # Every framework anchor the engine cites must still resolve in this repository.
 verify-rules:
@@ -93,3 +101,17 @@ update-secrets-baseline:
 validate-skills:
 	$(PYTHON) brownfield-recipes/tools/build_skills.py
 	$(SKILLS_REF) validate brownfield-recipes/dist/skills/agentic-readiness-audit
+
+# Lints the Markdown in DOCS_LINT_PATHS and fails on any violation. Needs Node (npx); the first run fetches the
+# pinned CLI. CI runs it in the `docs` job when a Markdown file changed.
+docs-lint:
+	$(MARKDOWNLINT) $(DOCS_LINT_PATHS)
+
+# Reports violations in every tracked Markdown file (fixtures excluded by the config). Never fails: the debt
+# outside DOCS_LINT_PATHS is recorded, not gated.
+docs-lint-all:
+	-git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)
+
+# Renders every Mermaid block in FILES with the pinned mermaid-cli; fails on a block that does not render.
+docs-mermaid:
+	$(PYTHON) brownfield-recipes/dev/mermaid_check.py $(MERMAID_FLAGS) $(FILES)

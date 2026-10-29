@@ -36,6 +36,19 @@ Describe a repository with counts and names and no verdicts, as facts.json. Writ
 facts.py <target> --out FILE [--repo-label LABEL] [--exclude GLOB]... [--max-files N]
 ```
 
+## progress.py
+
+**Version:** 0.1.0  
+**Writes:** Inside the target, and only there: docs/agentic-readiness/<label>-agentic-readiness-state.json (init) and <label>-agentic-readiness-STATE.md (init, render), each replaced atomically. init never replaces a state; show writes nothing.
+
+Create, show and render the implement recipe's per-repository state from a final audit report.
+
+```text
+progress.py init --report REPORT --target REPO [--default-branch BRANCH] [--phase PHASE] [--date YYYY-MM-DD] [--framework-rev SHA]
+progress.py show --target REPO [--label LABEL] [--json]
+progress.py render --target REPO [--label LABEL]
+```
+
 ## recipe_lint.py
 
 **Version:** 0.1.0  

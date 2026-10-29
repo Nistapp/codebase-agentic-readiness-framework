@@ -1,0 +1,371 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:codebase-agentic-readiness-framework:readiness-state:0.1",
+  "title": "Readiness state",
+  "description": "The implement recipe's per-repository state: which audit findings are queued, done, partial, skipped or deferred, the owner's preferences, each theme's branch and PR, and a log. It lives in the target at docs/agentic-readiness/<label>-agentic-readiness-state.json and is written only by tools/progress.py. The rules the subset cannot express (a reason for some statuses, unique ids, the theme of each check) are checked by progress.py; they are listed in SCHEMA.md and implement/state.md.",
+  "type": "object",
+  "required": ["schema_version", "repo", "recipe", "source_reports", "preferences", "themes", "items", "not_queued", "log"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "description": "Version of this schema. 0.x versions may break between releases; consumers refuse a version they do not know.",
+      "const": "0.1"
+    },
+    "repo": {
+      "type": "object",
+      "required": ["label", "default_branch"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "description": "The audit report's provenance.target.label. It names the two state files.",
+          "$ref": "#/$defs/repoLabel"
+        },
+        "default_branch": {
+          "description": "The branch every theme's PR goes into.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 255
+        }
+      }
+    },
+    "recipe": {
+      "type": "object",
+      "required": ["name", "version", "framework_rev"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "const": "brownfield-implement"
+        },
+        "version": {
+          "description": "The implement recipe's version when the state was created.",
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$"
+        },
+        "framework_rev": {
+          "description": "Git SHA of the framework repository the state was created from; null when it was not a git checkout.",
+          "$ref": "#/$defs/shaOrNull"
+        }
+      }
+    },
+    "source_reports": {
+      "description": "The final audit reports the items come from, oldest first. The report folders are never edited.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "required": ["path", "git_sha", "catalogue_version"],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "description": "The report's path, relative to the target root, with forward slashes.",
+            "$ref": "#/$defs/relativePath"
+          },
+          "git_sha": {
+            "description": "The report's provenance.target.git_sha, copied as it is; null when the report has none.",
+            "$ref": "#/$defs/shaOrNull"
+          },
+          "catalogue_version": {
+            "type": "string",
+            "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+          }
+        }
+      }
+    },
+    "preferences": {
+      "description": "Every owner choice: a tool, a style or a scope limit. A playbook step that conflicts with one stops and asks.",
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "required": ["key", "value", "reason", "by", "date", "phase"],
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$"
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "reason": {
+            "$ref": "#/$defs/reason"
+          },
+          "by": {
+            "const": "owner"
+          },
+          "date": {
+            "$ref": "#/$defs/date"
+          },
+          "phase": {
+            "$ref": "#/$defs/phase"
+          }
+        }
+      }
+    },
+    "themes": {
+      "description": "One entry per theme, T1 to T8 in order. A theme is one branch and one PR in the target.",
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "status", "phase", "branch", "pr", "merged_sha"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "$ref": "#/$defs/themeId"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "status": {
+            "enum": ["not_started", "branch_open", "pr_open", "merged"]
+          },
+          "phase": {
+            "description": "The step that is working on the theme, or null before it starts.",
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "branch": {
+            "type": ["string", "null"],
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "pr": {
+            "type": ["integer", "null"],
+            "minimum": 1
+          },
+          "merged_sha": {
+            "$ref": "#/$defs/shaOrNull"
+          }
+        }
+      }
+    },
+    "items": {
+      "description": "One item per finding the audit confirmed, edited or deferred. A finding appears once, here or in not_queued.",
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/item"
+      }
+    },
+    "not_queued": {
+      "description": "Findings the audit rejected. They are never items and are never proposed again.",
+      "type": "array",
+      "maxItems": 1000,
+      "items": {
+        "type": "object",
+        "required": ["finding", "check", "severity", "note"],
+        "additionalProperties": false,
+        "properties": {
+          "finding": {
+            "$ref": "#/$defs/findingId"
+          },
+          "check": {
+            "$ref": "#/$defs/checkId"
+          },
+          "severity": {
+            "$ref": "#/$defs/severity"
+          },
+          "note": {
+            "description": "The audit's disposition_note, or an empty string when it has none.",
+            "type": "string",
+            "maxLength": 500
+          }
+        }
+      }
+    },
+    "log": {
+      "description": "What happened, oldest first. Entries are only ever appended.",
+      "type": "array",
+      "maxItems": 5000,
+      "items": {
+        "type": "object",
+        "required": ["date", "phase", "event"],
+        "additionalProperties": false,
+        "properties": {
+          "date": {
+            "$ref": "#/$defs/date"
+          },
+          "phase": {
+            "$ref": "#/$defs/phase"
+          },
+          "event": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "repoLabel": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
+    },
+    "sha": {
+      "description": "A git commit SHA in lower case, 7 to 40 hex digits, as it was given.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "shaOrNull": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "date": {
+      "description": "A calendar date, YYYY-MM-DD.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "phase": {
+      "description": "The step or session that made the change, such as IR04.2 or init.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000,
+      "pattern": "^[^/\\\\]"
+    },
+    "findingId": {
+      "type": "string",
+      "pattern": "^F-[0-9]{3,}$"
+    },
+    "checkId": {
+      "type": "string",
+      "pattern": "^[A-Z]{2,5}-[0-9]{2,3}$"
+    },
+    "severity": {
+      "enum": ["BLOCKER", "DEGRADER", "COSMETIC"]
+    },
+    "themeId": {
+      "enum": ["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8"]
+    },
+    "item": {
+      "type": "object",
+      "required": [
+        "finding",
+        "check",
+        "severity",
+        "theme",
+        "statement",
+        "status",
+        "by",
+        "date",
+        "reason",
+        "commits",
+        "verification",
+        "debt",
+        "notes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "finding": {
+          "$ref": "#/$defs/findingId"
+        },
+        "check": {
+          "$ref": "#/$defs/checkId"
+        },
+        "severity": {
+          "$ref": "#/$defs/severity"
+        },
+        "theme": {
+          "$ref": "#/$defs/themeId"
+        },
+        "statement": {
+          "description": "The finding's statement, copied from the report.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 600
+        },
+        "status": {
+          "enum": ["queued", "in_progress", "done", "partial", "failed", "blocked", "deferred", "skipped"]
+        },
+        "by": {
+          "description": "Who made the last transition.",
+          "enum": ["owner", "agent"]
+        },
+        "date": {
+          "description": "When the last transition was made.",
+          "$ref": "#/$defs/date"
+        },
+        "reason": {
+          "description": "Why the item has its status. progress.py requires it for skipped, deferred, failed and blocked.",
+          "type": ["string", "null"],
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "commits": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/sha"
+          }
+        },
+        "verification": {
+          "description": "The command that verifies the check and what it gave, or null before it has run.",
+          "type": ["object", "null"],
+          "required": ["command", "result"],
+          "additionalProperties": false,
+          "properties": {
+            "command": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            },
+            "result": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 500
+            }
+          }
+        },
+        "debt": {
+          "description": "What the repository does not pass yet, counted. An item with debt is partial, never done.",
+          "type": "array",
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "required": ["what", "count", "baseline_file"],
+            "additionalProperties": false,
+            "properties": {
+              "what": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "baseline_file": {
+                "type": ["string", "null"],
+                "minLength": 1,
+                "maxLength": 1000
+              }
+            }
+          }
+        },
+        "notes": {
+          "description": "Free text. For an edited finding it starts with the audit's disposition_note, so the owner's edit reaches the playbook.",
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    }
+  }
+}

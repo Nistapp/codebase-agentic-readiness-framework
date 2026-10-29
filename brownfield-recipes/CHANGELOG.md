@@ -7,8 +7,17 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
-- v0.2 (the implementation MVP): the progress schema, `progress.py`, `check_drift.py`, and seven
-  playbooks covering every BLOCKER class in the MVP catalogue. Not started (milestone M5).
+- v0.2 (the implementation MVP), skeleton in: `implement/SKILL.md` with its hard rules and the stage table,
+  the playbook anatomy and the list of thirteen playbooks (`implement/playbooks/README.md`), and the
+  per-repository state contract (`implement/state.md`). Stages, playbooks, the state schema and its tools
+  are still Planned.
+- The readiness state: `schema/readiness-state.schema.json` (`schema_version` `0.1`) with two examples and their
+  rendered Markdown, and `tools/progress.py` `init`, `show` and `render`. `progress.py` is the one tool that
+  writes inside a target, and only its two state files (ADR 0002); `ToolInfo` gains `writes_inside_target`,
+  default `False`. Transitions, skip, defer and preferences are still Planned (IR02.2).
+- Docs tooling for this repository: `.markdownlint-cli2.jsonc`, `make docs-lint` (gating, on a path list that
+  only grows) and `make docs-lint-all` (report-only), and a CI `docs` job that lints and renders every
+  Mermaid block in changed Markdown (`brownfield-recipes/dev/mermaid_check.py`).
 
 ## [0.1.0] — 2026-10-19
 

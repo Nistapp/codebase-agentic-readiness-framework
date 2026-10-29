@@ -1,0 +1,290 @@
+{
+  "schema_version": "0.1",
+  "repo": {
+    "label": "example-service",
+    "default_branch": "main"
+  },
+  "recipe": {
+    "name": "brownfield-implement",
+    "version": "0.2.0-dev",
+    "framework_rev": "cafecafecafecafecafecafecafecafecafecafe"
+  },
+  "source_reports": [
+    {
+      "path": "docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json",
+      "git_sha": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+      "catalogue_version": "0.2.0"
+    }
+  ],
+  "preferences": [
+    {
+      "key": "node.version-file",
+      "value": ".nvmrc",
+      "reason": "The owner pins Node 22 in .nvmrc and leaves the engines field alone.",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR05.2"
+    },
+    {
+      "key": "scope.mass-reformat",
+      "value": "no",
+      "reason": "Formatting debt is ratcheted, never fixed in one change.",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR04.2"
+    }
+  ],
+  "themes": [
+    {
+      "id": "T1",
+      "title": "Command surface and quality tools",
+      "status": "merged",
+      "phase": "IR04.2",
+      "branch": "agentic-readiness/ir04-command-surface",
+      "pr": 12,
+      "merged_sha": "aaaabbbbcccc"
+    },
+    {
+      "id": "T2",
+      "title": "Execution determinism",
+      "status": "pr_open",
+      "phase": "IR05.2",
+      "branch": "agentic-readiness/ir05-execution-determinism",
+      "pr": 14,
+      "merged_sha": null
+    },
+    {
+      "id": "T3",
+      "title": "Secrets and env",
+      "status": "not_started",
+      "phase": null,
+      "branch": null,
+      "pr": null,
+      "merged_sha": null
+    },
+    {
+      "id": "T4",
+      "title": "CI parity, hooks, commits",
+      "status": "not_started",
+      "phase": null,
+      "branch": null,
+      "pr": null,
+      "merged_sha": null
+    },
+    {
+      "id": "T5",
+      "title": "Tests and baselines",
+      "status": "not_started",
+      "phase": null,
+      "branch": null,
+      "pr": null,
+      "merged_sha": null
+    },
+    {
+      "id": "T6",
+      "title": "Docs and navigation",
+      "status": "not_started",
+      "phase": null,
+      "branch": null,
+      "pr": null,
+      "merged_sha": null
+    },
+    {
+      "id": "T7",
+      "title": "AGENTS.md and governance",
+      "status": "not_started",
+      "phase": null,
+      "branch": null,
+      "pr": null,
+      "merged_sha": null
+    },
+    {
+      "id": "T8",
+      "title": "Hygiene and index",
+      "status": "not_started",
+      "phase": null,
+      "branch": null,
+      "pr": null,
+      "merged_sha": null
+    }
+  ],
+  "items": [
+    {
+      "finding": "F-001",
+      "check": "CMD-01",
+      "severity": "BLOCKER",
+      "theme": "T1",
+      "statement": "An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not defined on any runner (format:check, typecheck, check, security).",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-10-30",
+      "reason": null,
+      "commits": [
+        "11112222aaaa"
+      ],
+      "verification": {
+        "command": "npm run check",
+        "result": "fails: 41 lint errors (debt)"
+      },
+      "debt": [
+        {
+          "what": "eslint errors",
+          "count": 41,
+          "baseline_file": "eslint-baseline.json"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-002",
+      "check": "CMD-02",
+      "severity": "BLOCKER",
+      "theme": "T1",
+      "statement": "An agent cannot run one command that proves a change is safe because the check verb is not defined on any runner.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-30",
+      "reason": null,
+      "commits": [
+        "11112222aaaa"
+      ],
+      "verification": {
+        "command": "npm run check",
+        "result": "the verb exists and runs every gate"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-003",
+      "check": "EXEC-01",
+      "severity": "BLOCKER",
+      "theme": "T2",
+      "statement": "An agent cannot reproduce the toolchain because node is not pinned by a version file, an engines constraint or a wrapper.",
+      "status": "in_progress",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": "Edited during the audit: The owner pins Node 22 in .nvmrc and leaves the engines field alone."
+    },
+    {
+      "finding": "F-004",
+      "check": "SEC-02",
+      "severity": "BLOCKER",
+      "theme": "T3",
+      "statement": "An agent cannot keep credentials out of the repository and its history because src/config/constants.ts contains 1 credential-shaped line(s).",
+      "status": "skipped",
+      "by": "owner",
+      "date": "2026-10-31",
+      "reason": "The value is a public demo key; the owner accepts it.",
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-006",
+      "check": "AGT-07",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot rely on an explicit do-not list because AGENTS.md has no prohibitions section.",
+      "status": "queued",
+      "by": "agent",
+      "date": "2026-10-29",
+      "reason": null,
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-007",
+      "check": "AGT-11",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot learn the project's non-obvious rules from AGENTS.md because most of its lines restate what the manifests already show.",
+      "status": "queued",
+      "by": "agent",
+      "date": "2026-10-29",
+      "reason": null,
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-008",
+      "check": "CI-04",
+      "severity": "DEGRADER",
+      "theme": "T4",
+      "statement": "An agent cannot trust a green CI run to mean the local gate passed because we did not find any evidence that the workflow runs the check verb.",
+      "status": "queued",
+      "by": "agent",
+      "date": "2026-10-29",
+      "reason": null,
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-010",
+      "check": "AGT-08",
+      "severity": "COSMETIC",
+      "theme": "T7",
+      "statement": "An agent cannot be reached by every agent harness because 8 of 28 known harnesses cannot read AGENTS.md.",
+      "status": "deferred",
+      "by": "owner",
+      "date": "2026-10-29",
+      "reason": "The team uses two of the harnesses it lacks files for; revisit when it adds a third.",
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    }
+  ],
+  "not_queued": [
+    {
+      "finding": "F-005",
+      "check": "SEC-02",
+      "severity": "BLOCKER",
+      "note": "Placeholder values in a unit test, not credentials."
+    },
+    {
+      "finding": "F-009",
+      "check": "TOOL-03",
+      "severity": "DEGRADER",
+      "note": "Overridden to PASS: strict is set in the extended base config."
+    }
+  ],
+  "log": [
+    {
+      "date": "2026-10-29",
+      "phase": "init",
+      "event": "State created from docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json: 7 queued, 1 deferred, 2 not queued."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR04.2",
+      "event": "T1 PR #12 opened"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR04.2",
+      "event": "F-001 partial: 41 eslint errors baselined"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR04.2",
+      "event": "T1 PR #12 merged"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "F-004 skipped by the owner"
+    }
+  ]
+}

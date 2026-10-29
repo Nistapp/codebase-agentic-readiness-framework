@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) and `build_skills.py`. `progress.py` and `check_drift.py` are planned (S5.1).
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) `build_skills.py`, and `progress.py` `init`, `show` and `render`. The other `progress.py` commands are Planned (IR02.2) and `check_drift.py` is Planned (IR02.3).
 
 ---
 
@@ -17,12 +17,12 @@
 | [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
 | [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, and a stale tool catalogue | Live |
 | [`build_skills.py`](#build_skillspy) | Builds the agentic-readiness-audit skill bundle under `dist/skills/` | Live |
-| `progress.py` | Manages implementation progress | Planned (S5.1) |
-| `check_drift.py` | Lists findings affected by changes since the audit | Planned (S5.1) |
+| [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state; the only tool that writes inside a target | Live for `init`, `show`, `render`; transitions Planned (IR02.2) |
+| `check_drift.py` | Lists findings affected by changes since the audit | Planned (IR02.3) |
 
 ## Every tool
 
-Every tool follows the [tool contract](../../tools/README.md#the-contract): one JSON envelope on stdout, the exit codes below, `--describe`, bounded output, no network, no writes inside the target, and a Python 3.11 check first. The explanation is in [Tool Contract](../architecture/contributor-deep-dive/01-tool-contract.md).
+Every tool follows the [tool contract](../../tools/README.md#the-contract): one JSON envelope on stdout, the exit codes below, `--describe`, bounded output, no network, no writes inside the target (`progress.py` writes the target's two state files, the one exception), and a Python 3.11 check first. The explanation is in [Tool Contract](../architecture/contributor-deep-dive/01-tool-contract.md).
 
 | Exit code | Meaning |
 |---|---|
@@ -746,3 +746,65 @@ python3 brownfield-recipes/tools/build_skills.py [--out-dir DIR]
 |---|---|
 | `0` | The bundle was built. |
 | `1` | The engine's own `deterministic-audit/tools/build.py` failed to produce `audit.pyz`; `data.errors` carries its stderr. |
+
+## progress.py
+
+Creates the implement recipe's state for a target from a final audit report, summarises it, and renders its
+Markdown view. It is the one tool that writes inside a target, and only the two state files, by
+[ADR 0002](../architecture/adrs/0002-progress-writes-state-in-target.md). The source is
+[`progress.py`](../../tools/progress.py); the format is
+[`readiness-state.schema.json`](../../schema/readiness-state.schema.json), described in
+[Readiness state](../../schema/SCHEMA.md#readiness-state); the rules are the [state contract](../../implement/state.md).
+
+**Synopsis**
+
+```text
+python3 brownfield-recipes/tools/progress.py init --report REPORT --target REPO [--default-branch BRANCH] [--phase PHASE] [--date YYYY-MM-DD] [--framework-rev SHA]
+python3 brownfield-recipes/tools/progress.py show --target REPO [--label LABEL] [--json]
+python3 brownfield-recipes/tools/progress.py render --target REPO [--label LABEL]
+python3 brownfield-recipes/tools/progress.py --describe
+```
+
+**Inputs**
+
+| Argument | Meaning |
+|---|---|
+| `--report` | `init`: the final audit report (JSON). It must be inside the target, so the state can point at it, and `validate_report.py` must accept it. |
+| `--target` | The repository. The state is `docs/agentic-readiness/<label>-agentic-readiness-state.json` in it, and its view `<label>-agentic-readiness-STATE.md`. |
+| `--default-branch` | `init`: the branch the theme PRs go into. Default: the report's `provenance.target.branch`, else `main`. |
+| `--phase` | `init`: the step recorded in the first log entry. Default: `init`. |
+| `--date` | `init`: the date recorded on the items and the log, `YYYY-MM-DD`. Default: today, UTC. |
+| `--framework-rev` | `init`: the framework commit to record. Default: `git rev-parse HEAD` of the framework checkout, or null. |
+| `--label` | `show`, `render`: which state to read when the folder holds more than one. |
+| `--json` | `show`: print the state itself instead of the summary. Long lists are cut to fit the output and `truncated` is set; the log keeps its newest entries. |
+
+**Outputs**
+
+`init` writes the JSON and the Markdown and puts their paths, the label, the item count, the count per status and
+the `not_queued` count in `data`. `show` puts the summary in `data`: counts per status and per theme (`items` and
+`open`, which is neither `done` nor `skipped`), the skipped finding ids, and the number of preferences, debt
+entries and log entries. `show --json` puts the state under `data.state`. `render` writes the Markdown and puts
+its path and size in `data`. Each write is atomic; a temporary file a killed write left behind is removed, with a
+warning.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | Done. |
+| `1` | A bad argument, a missing report or target, a report outside the target, an existing state for `init`, no state for `show` or `render`, a state folder that leaves the target, or a state file that is a symlink. |
+| `2` | The report is invalid, not final, or has a finding on a check with no theme; or the state fails the schema or its rules. `data.errors` lists what to fix. |
+| `3` | Internal error, including a write the system refused. The old file is left whole. |
+
+**Errors**
+
+| Message | Fix |
+|---|---|
+| `the report is a draft, not final` | Finalise it with `report.py finalise` and pass the final report. |
+| `the report must be inside the target, so the state can point at it` | Commit the report folder to the target and pass that path. |
+| `a state already exists: ...; init never replaces one` | Use `show` and `render`; transitions come with the next commands. |
+| `the report has findings on checks with no theme: ...` | Add the checks to `THEMES` in `progress.py`. |
+| `no state in ...` | Run `init` first. |
+| `N states in ...; pick one with --label` | Pass `--label`. |
+| `the state is not valid: N errors` | Fix each entry in `data.errors`; `schema:` errors come from the schema, `rule:` errors from the rules above. |
+| `refusing a state file that is a symlink` | Replace the link with the real file. |

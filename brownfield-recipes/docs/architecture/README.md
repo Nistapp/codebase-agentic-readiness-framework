@@ -2,8 +2,9 @@
 
 > **Status:** Live for v0.1 (the audit MVP): the schemas, the check catalogue, the engine, the tools, the
 > audit recipe, the eval harness and the fixture-sweep plus real-repo results are all built and published.
-> The implementation recipe (v0.2, milestone M5) is not written yet. Each page below carries its own
-> status, and a page marked Planned names the roadmap step that fills it. See
+> The implementation recipe (v0.2) is a skeleton: its stages, playbooks and state contract are laid out and
+> marked Planned. Each page below carries its own status, and a page marked Planned names the roadmap step
+> that fills it. See
 > [`STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 1.3.
 
 ## ADR Index
@@ -11,6 +12,7 @@
 | # | Title | Status | Date |
 |---|---|---|---|
 | [0001](adrs/0001-tools-import-engine.md) | Tools Import the Engine in Process | Accepted | 2026-10-10 |
+| [0002](adrs/0002-progress-writes-state-in-target.md) | `progress.py` Writes the State Files Inside the Target | Accepted | 2026-10-29 |
 
 ## Key Documents
 
@@ -19,6 +21,17 @@
 | [Style guide](../STYLE_GUIDE.md) | — | Canonical authoring rules |
 | [Glossary](glossary.md) | Reference | Canonical terms |
 | [Deterministic engine docs](../../deterministic-audit/docs/architecture/README.md) | Explanation | The engine's own doc router and ADR index |
+
+## Implementation Recipe
+
+Agent directives, not `docs/` pages (see [`STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 7); listed here so they can be
+found.
+
+| File | Purpose | Status |
+|---|---|---|
+| [`implement/SKILL.md`](../../implement/SKILL.md) | The recipe: hard rules, stages 0-5, themes | Skeleton; hard rules live, every stage Planned (IR03.3, IR04.1-IR11.3, IR12, IR14) |
+| [`implement/playbooks/README.md`](../../implement/playbooks/README.md) | Playbook anatomy and the list of thirteen playbooks | Anatomy live; every playbook Planned (IR04.1-IR11.1) |
+| [`implement/state.md`](../../implement/state.md) | The per-repository state contract: files, statuses, skip, preferences, continue on error | Rules live; schema and `progress.py init\|show\|render` live (IR02.1); transitions, skip, defer and preferences Planned (IR02.2) |
 
 ## Tutorials
 
@@ -31,8 +44,8 @@
 | Page | Purpose | Status |
 |---|---|---|
 | [Run an audit](../how-to/run-an-audit.md) | Produce a confirmed report for a repo | Live (S3.5) |
-| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Planned (S5.4) |
-| [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits (S2.3); implementations Planned (S5.1) |
+| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Planned (IR15) |
+| [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits (S2.3); implementations Planned (IR15) |
 | [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Live; four profiles exist (S3.4 closed) |
 | [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Live for the corpus, expected-results format, scorer and the Claude Code runner (S4.1); other harnesses' own runner scripts stay Planned, deferred per `D57` |
 
@@ -40,7 +53,7 @@
 
 | Page | Purpose | Status |
 |---|---|---|
-| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules), the generated `tools/CATALOGUE.md` and `build_skills.py`; `progress.py` and `check_drift.py` Planned (S5.1) |
+| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules), the generated `tools/CATALOGUE.md`, `build_skills.py` and `progress.py` `init`, `show` and `render` (IR02.1); the other `progress.py` commands Planned (IR02.2), `check_drift.py` Planned (IR02.3) |
 | [Harness notes](../reference/harness-notes.md) | Claude Code, opencode, Codex, Cursor specifics | Live for Claude Code and opencode, the two actually run (S4.1.3, S4.5.3); Codex and Cursor untested |
 | [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; the generated table covers all 71 checks |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
@@ -50,9 +63,9 @@
 
 | Page | Purpose | Status |
 |---|---|---|
-| [1. Purpose & Non-Goals](user-overview/01-purpose-and-non-goals.md) | What the recipes are and refuse to be | Live for the audit recipe; the implementation recipe it describes is Planned (M5) |
-| [2. How the Recipes Work](user-overview/02-how-the-recipes-work.md) | Stages and decisions, for evaluators | Live for audits (S3.5); the implementation loop Planned (S5.4) |
-| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live for audits (S3.5); implementation safety Planned (S5.4) |
+| [1. Purpose & Non-Goals](user-overview/01-purpose-and-non-goals.md) | What the recipes are and refuse to be | Live for the audit recipe; the implementation recipe it describes is Planned (IR15) |
+| [2. How the Recipes Work](user-overview/02-how-the-recipes-work.md) | Stages and decisions, for evaluators | Live for audits (S3.5); the implementation loop Planned (IR15) |
+| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live for audits (S3.5); implementation safety Planned (IR15) |
 
 ## Explanation — Contributor Deep Dive
 
