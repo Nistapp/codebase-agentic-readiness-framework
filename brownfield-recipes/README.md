@@ -49,7 +49,7 @@ is plain `SKILL.md` plus command-line tools, runnable by any agent with shell ac
 | Folder | Contents | Status |
 |---|---|---|
 | [`audit/`](audit/SKILL.md) | The audit recipe and its check files | Live |
-| `implement/` | The implementation recipe and its playbooks | Planned (v0.2, milestone M5) |
+| [`implement/`](implement/SKILL.md) | The implementation recipe, its playbooks and the state contract | Skeleton (v0.2 in progress): hard rules, playbook anatomy and state contract written; stages and playbooks Planned |
 | [`schema/`](schema/SCHEMA.md) | The report, intake, facts, catalogue and eval-expected schemas, with examples | Live |
 | [`stacks/`](stacks/README.md) | Stack profiles (`typescript-node`, `java`, `python`) | Live |
 | [`tools/`](tools/README.md) | The tool contract, shared helpers and the tools themselves — engine launcher, facts, report builder, renderer, validator, recipe linter, skill bundler | Live |
