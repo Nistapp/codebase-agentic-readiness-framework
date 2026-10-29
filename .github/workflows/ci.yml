@@ -3,6 +3,8 @@
 #
 # CI runs the same verbs a human or agent runs locally (see the Makefile): `make check` and `make security`.
 # Python 3.11 is the supported minimum and 3.14 the newest release (Q8); Windows is supported through WSL only.
+# The `docs` job runs `make docs-lint` and the Mermaid check when a Markdown file changed; it needs Node, so it
+# stays out of `make check` and the matrix.
 name: CI
 
 on:
@@ -50,26 +52,74 @@ jobs:
           version: "0.12.10"
       - run: make security
 
+  # Markdown lint (the DOCS_LINT_PATHS ratchet) and a real-parser render of every Mermaid block in the changed
+  # Markdown. The job always runs and is a no-op when no Markdown changed, so CI Gate never sees it skipped.
+  docs:
+    name: docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: List changed Markdown
+        id: changed
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          list="$RUNNER_TEMP/changed-md.txt"
+          if [[ -n "$BASE" && ! "$BASE" =~ ^0+$ ]] && git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            git diff --name-only --diff-filter=d "$BASE" "$HEAD_SHA" -- '*.md' > "$list"
+          else
+            git ls-files '*.md' > "$list"
+          fi
+          echo "Changed Markdown:"
+          cat "$list"
+          if [[ -s "$list" ]]; then echo "any=true" >> "$GITHUB_OUTPUT"; else echo "any=false" >> "$GITHUB_OUTPUT"; fi
+      - if: steps.changed.outputs.any == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+      - if: steps.changed.outputs.any == 'true'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/puppeteer
+            ~/.npm
+          key: docs-${{ runner.os }}-markdownlint-cli2-0.24.0-mermaid-cli-12.0.0
+      - if: steps.changed.outputs.any == 'true'
+        run: make docs-lint
+      - if: steps.changed.outputs.any == 'true'
+        name: Validate Mermaid blocks in changed Markdown
+        run: xargs -d '\n' -a "$RUNNER_TEMP/changed-md.txt" python3 brownfield-recipes/dev/mermaid_check.py --no-sandbox
+
   # One required check that stands for the whole matrix, so adding or renaming a `check` leg (a Python
   # version, an OS) never also requires a branch-protection edit.
   ci-gate:
     name: CI Gate
-    needs: [check, security]
+    needs: [check, security, docs]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Require check and security to have succeeded
+      - name: Require check, security and docs to have succeeded
         run: |
           check="${{ needs.check.result }}"
           security="${{ needs.security.result }}"
+          docs="${{ needs.docs.result }}"
           echo "check: $check"
           echo "security: $security"
+          echo "docs: $docs"
           if [[ "$check" != "success" ]]; then
             echo "::error::check did not pass"
             exit 1
           fi
           if [[ "$security" != "success" ]]; then
             echo "::error::security did not pass"
+            exit 1
+          fi
+          if [[ "$docs" != "success" ]]; then
+            echo "::error::docs did not pass"
             exit 1
           fi
           echo "CI Gate passed."
