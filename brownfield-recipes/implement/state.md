@@ -5,9 +5,10 @@ stop after any theme and resume another day, and it is where the owner's skips a
 page is an agent directive: MUST and MUST NOT are used in the RFC 2119 sense.
 
 > [!NOTE]
-> Planned. The rules on this page bind every session now. The JSON Schema and the tool that writes the state
-> do not exist yet: the schema is `Planned (IR02.1)`, the transitions, skip, defer and preference commands are
-> `Planned (IR02.2)`. Until then a session writes the state by hand, in the draft shape below.
+> The rules on this page bind every session. The schema and `progress.py init`, `show` and `render` are live.
+> The transition, skip, defer, preference and theme commands are `Planned (IR02.2)`; until then a session that
+> must change an existing state edits the JSON by hand, in the schema's shape, and runs `progress.py render`,
+> which refuses a state the schema or the rules below reject.
 
 ## Files and paths
 
@@ -27,9 +28,20 @@ edited; the state points at it.
 - The target's root `AGENTS.md` MUST carry one line that points at the STATE.md file and says: read it before
   changing tooling, CI, docs or `AGENTS.md`; skipped findings in it are final.
 
-TBD: `brownfield-recipes/tools/progress.py` will be the only writer of the JSON and the
-renderer of the Markdown view (IR02.1). Writing inside a target repository is an exception to the tools rule,
-limited to the state files, and gets its own ADR in IR02.1.
+[`progress.py`](../tools/progress.py) is the only writer of the JSON and the renderer of the Markdown view.
+Writing inside a target repository is an exception to the tools rule, limited to these two files and decided in
+[ADR 0002](../docs/architecture/adrs/0002-progress-writes-state-in-target.md).
+
+```bash
+python3 brownfield-recipes/tools/progress.py init --report <target>/<report folder>/<final report>.json --target <target>
+python3 brownfield-recipes/tools/progress.py show --target <target> [--json]
+python3 brownfield-recipes/tools/progress.py render --target <target>
+```
+
+`init` refuses a report that is not final or that `validate_report.py` rejects, a report outside the target, and an
+existing state. It queues confirmed and edited findings (an edited finding's note goes into `notes`), imports a
+finding the owner deferred during the audit as `deferred` with the owner's note as its reason, and lists rejected
+findings as `not_queued`. Each item gets the theme of its check from the table in the tool.
 
 ## Item statuses
 
@@ -93,37 +105,20 @@ CI step. When the repository does not pass it yet (unformatted code, lint debt, 
 A session MUST NOT mass-fix, suppress rules or lower a gate unless the owner chooses that, and MUST NOT
 record `done` for an item that is `partial`.
 
-## Draft JSON shape
+## JSON shape
 
-Planned (IR02.1): the schema will be `schema/readiness-state.schema.json`. Until then this is the shape, with
-example values:
+The schema is [`schema/readiness-state.schema.json`](../schema/readiness-state.schema.json), `schema_version`
+`0.1`; field notes are in [the schema reference](../schema/SCHEMA.md#readiness-state). Two examples are under
+`schema/examples/`: `readiness-state.example-service.json`, which `init` writes for the framework's example
+report, and `readiness-state.example-service.in-progress.json`, a state some themes later. Each has its rendered
+Markdown beside it.
 
-```json
-{
-  "schema_version": "0.1",
-  "repo": { "label": "example-service", "default_branch": "dev" },
-  "recipe": { "name": "brownfield-implement", "version": "0.2.0-dev", "framework_rev": "<12 hex>" },
-  "source_reports": [
-    { "path": "docs/agentic-readiness-report/<report>.json", "git_sha": "<12 hex>", "catalogue_version": "0.2.2" }
-  ],
-  "preferences": [
-    { "key": "java.formatter", "value": "palantir-java-format", "reason": "...", "by": "owner",
-      "date": "2026-11-02", "phase": "IR04.2" }
-  ],
-  "themes": [
-    { "id": "T1", "phase": "IR04.2", "status": "pr_open",
-      "branch": "agentic-readiness/ir04-command-surface", "pr": 110, "merged_sha": null }
-  ],
-  "items": [
-    {
-      "finding": "F-001", "check": "CMD-01", "severity": "BLOCKER", "theme": "T1",
-      "status": "partial", "by": "agent", "date": "2026-11-02", "reason": null,
-      "commits": ["<12 hex>"],
-      "verification": { "command": "./gradlew check", "result": "fails: 312 checkstyle violations (debt)" },
-      "debt": [ { "what": "checkstyle violations", "count": 312, "baseline_file": "config/checkstyle/baseline.xml" } ],
-      "notes": ""
-    }
-  ],
-  "log": [ { "date": "2026-11-02", "phase": "IR04.2", "event": "T1 PR #110 opened" } ]
-}
-```
+The schema subset cannot express these rules, so `progress.py` checks them on every read and write:
+
+- `skipped`, `deferred`, `failed` and `blocked` need a `reason`; `skipped` and `deferred` need `by: owner`.
+- An item with `debt` is never `done`.
+- A finding appears once, in `items` or in `not_queued`.
+- `themes` holds T1 to T8, each once, in order; preference keys and source report paths are unique.
+
+Commit SHAs (`git_sha`, `framework_rev`, `commits`, `merged_sha`) are copied as given, 7 to 40 lower-case hex
+digits.

@@ -94,12 +94,12 @@ The playbooks for each theme, and the checks they resolve, are listed in
 ## Tools
 
 > [!NOTE]
-> Planned. The state and comparison tools are not built yet. The existing `validate_report.py`,
-> `engine.py` and `render_report.py` are reused unchanged.
+> Partly built. `progress.py init`, `show` and `render` exist; the rest below is Planned. The existing
+> `validate_report.py`, `engine.py` and `render_report.py` are reused unchanged.
 
-- TBD: `brownfield-recipes/tools/progress.py` creates the state from a final report,
-  applies validated status transitions, skip, defer and preferences, and renders the Markdown view (IR02.1,
-  IR02.2).
+- `brownfield-recipes/tools/progress.py` creates the state from a final report (`init`), summarises it
+  (`show`) and renders the Markdown view (`render`); see the [state contract](state.md#files-and-paths).
+- TBD: `progress.py` applies validated status transitions, skip, defer and preferences (IR02.2).
 - TBD: `brownfield-recipes/tools/check_drift.py` compares the report's commit with the
   current `HEAD` and lists the findings whose evidence changed (IR02.3).
 - TBD: `brownfield-recipes/tools/compare_reports.py` lists which checks and findings
