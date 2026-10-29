@@ -12,6 +12,7 @@
 | # | Title | Status | Date |
 |---|---|---|---|
 | [0001](adrs/0001-tools-import-engine.md) | Tools Import the Engine in Process | Accepted | 2026-10-10 |
+| [0002](adrs/0002-progress-writes-state-in-target.md) | `progress.py` Writes the State Files Inside the Target | Accepted | 2026-10-29 |
 
 ## Key Documents
 
@@ -30,7 +31,7 @@ found.
 |---|---|---|
 | [`implement/SKILL.md`](../../implement/SKILL.md) | The recipe: hard rules, stages 0-5, themes | Skeleton; hard rules live, every stage Planned (IR03.3, IR04.1-IR11.3, IR12, IR14) |
 | [`implement/playbooks/README.md`](../../implement/playbooks/README.md) | Playbook anatomy and the list of thirteen playbooks | Anatomy live; every playbook Planned (IR04.1-IR11.1) |
-| [`implement/state.md`](../../implement/state.md) | The per-repository state contract: files, statuses, skip, preferences, continue on error | Rules live; schema Planned (IR02.1), tool Planned (IR02.1, IR02.2) |
+| [`implement/state.md`](../../implement/state.md) | The per-repository state contract: files, statuses, skip, preferences, continue on error | Rules live; schema and `progress.py init\|show\|render` live (IR02.1); transitions, skip, defer and preferences Planned (IR02.2) |
 
 ## Tutorials
 
@@ -52,7 +53,7 @@ found.
 
 | Page | Purpose | Status |
 |---|---|---|
-| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules), the generated `tools/CATALOGUE.md` and `build_skills.py`; `progress.py` Planned (IR02.1), `check_drift.py` Planned (IR02.3) |
+| [Tools CLI](../reference/tools-cli.md) | Every tool's synopsis, inputs, outputs and exit codes | Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules), the generated `tools/CATALOGUE.md`, `build_skills.py` and `progress.py` `init`, `show` and `render` (IR02.1); the other `progress.py` commands Planned (IR02.2), `check_drift.py` Planned (IR02.3) |
 | [Harness notes](../reference/harness-notes.md) | Claude Code, opencode, Codex, Cursor specifics | Live for Claude Code and opencode, the two actually run (S4.1.3, S4.5.3); Codex and Cursor untested |
 | [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; the generated table covers all 71 checks |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
