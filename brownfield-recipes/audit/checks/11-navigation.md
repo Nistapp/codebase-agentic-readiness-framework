@@ -49,7 +49,7 @@ Evidence to cite A `file` evidence item per declared component (up to 6 named in
 Absence proof    A PARTIAL names every candidate component the engine's own layout heuristic found, so
                  "nothing declares them" is a checked list, not an assumption; the UNKNOWN case records
                  that no manifest exists at all as its own stated reason.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `NAV-01`); point
+Remediation      playbook `establish-docs-contract` (`catalogue.json` lists it for `NAV-01`); point
                  at the workspace mechanism appropriate to the detected ecosystem inline.
 Pitfalls         A single-package repository with a root manifest is a legitimate `PASS`, not a weaker
                  result than a declared multi-component layout — "the boundary is just the root" is the
@@ -84,7 +84,7 @@ Evidence to cite A `file`/`command` evidence item per entry-point signal found (
 Absence proof    A FAIL names the detected ecosystem(s) explicitly and states that the engine's full
                  signal set for each was checked and matched nothing, so the absence is scoped to a named
                  search, not a general impression.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `NAV-02`); name
+Remediation      playbook `establish-docs-contract` (`catalogue.json` lists it for `NAV-02`); name
                  the entry point in the manifest or the conventional filename for the detected ecosystem.
 Pitfalls         A library package with genuinely no runnable entry point (no `main`, no CLI, no server)
                  still reads `FAIL` here — the engine does not distinguish "library, no entry point
@@ -124,7 +124,7 @@ Evidence to cite A `file` evidence item per flagged path (up to 12, across all f
 Absence proof    A PARTIAL states each category's own count explicitly (`oversized(>512 KB): N`,
                  `catch-all dirs(>50 files): N`, and so on) before listing the paths, so the total is
                  checkable category by category, not just as one combined number.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `NAV-03`); each
+Remediation      playbook `establish-docs-contract` (`catalogue.json` lists it for `NAV-03`); each
                  category has its own fix (split, reorganise, untrack, generate in the build), so name
                  which category the finding actually flags before recommending one.
 Pitfalls         A `PARTIAL` here is never escalated to a blocking read — the catalogue's own severity
@@ -159,7 +159,7 @@ Evidence to cite A `file` evidence item per artifact kind found (up to all three
                  specific to cite for FAIL beyond the absence proof.
 Absence proof    A FAIL states plainly that none of `docs/architecture/`, an ADR directory at either
                  conventional path, or any diagram-suffixed file was found anywhere in the tree.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `NAV-04`); note
+Remediation      playbook `establish-docs-contract` (`catalogue.json` lists it for `NAV-04`); note
                  that any one of a short architecture page, an ADR directory or a diagram resolves it.
 Pitfalls         Being unscored does not mean the finding is optional to report — an agent still writes
                  up a `NAV-04` `FAIL` like any other, it simply carries no score weight; do not drop it
@@ -199,7 +199,7 @@ Evidence to cite An `index_query` or `file` evidence item citing the engine's `R
 Absence proof    Not applicable — this check never records a FAIL, so no absence search applies; an
                  UNKNOWN states the specific reason (no recognised language, or zero public symbols)
                  directly.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `NAV-05`); point at
+Remediation      playbook `establish-docs-contract` (`catalogue.json` lists it for `NAV-05`); point at
                  the specific undocumented symbols the `Ratio` payload's own breakdown would need to name
                  if the recipe later adds that detail.
 Pitfalls         A multi-language repository's reported ratio covers only the one language the engine

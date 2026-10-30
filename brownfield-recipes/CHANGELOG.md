@@ -27,6 +27,12 @@ history (which verdicts moved and why), see
   key-names-only variable inventory, example-file rules, tracked secret-file handling that never prints or
   rotates, and the ignore-shape step with a negation check. Scanner currency table checked 2026-10-30.
   `catalogue.json` is unchanged (the four checks already list the playbook).
+- The T6 playbook: `implement/playbooks/establish-docs-contract.md` (DOC-01 to DOC-04, NAV-01 to NAV-05): a docs
+  index, a one-page style guide named from the instruction file, an ADR directory with template, index and
+  `proposed` first records, an architecture page from the code index with a validated Mermaid diagram, a
+  census-and-document step for NAV-03, and a ratcheted docs lint with `mmdc` in a separate CI job. Tool currency
+  checked 2026-10-30. `catalogue.json` 0.2.5 (PATCH: playbook names only; fingerprint unchanged) adds the
+  playbook to DOC-01 to DOC-04 and NAV-01 to NAV-05.
 - The readiness state: `schema/readiness-state.schema.json` (`schema_version` `0.1`) with two examples and their
   rendered Markdown, and `tools/progress.py` `init`, `show` and `render`. `progress.py` is the one tool that
   writes inside a target, and only its two state files (ADR 0002); `ToolInfo` gains `writes_inside_target`,
