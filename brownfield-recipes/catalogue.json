@@ -1,5 +1,5 @@
 {
-  "catalogue_version": "0.2.2",
+  "catalogue_version": "0.2.3",
   "fingerprint": "e33c95eda9f58b9d",
   "checks": [
     {
@@ -381,7 +381,9 @@
         "REQ-SH-027"
       ],
       "engine_id": "TOOL-01",
-      "playbooks": []
+      "playbooks": [
+        "configure-quality-tools"
+      ]
     },
     {
       "id": "TOOL-02",
@@ -396,7 +398,9 @@
         "REQ-SH-028"
       ],
       "engine_id": "TOOL-02",
-      "playbooks": []
+      "playbooks": [
+        "configure-quality-tools"
+      ]
     },
     {
       "id": "TOOL-03",
@@ -411,7 +415,9 @@
         "REQ-SH-029"
       ],
       "engine_id": "TOOL-03",
-      "playbooks": []
+      "playbooks": [
+        "configure-quality-tools"
+      ]
     },
     {
       "id": "TOOL-04",
@@ -426,7 +432,9 @@
         "REQ-SH-030"
       ],
       "engine_id": "TOOL-04",
-      "playbooks": []
+      "playbooks": [
+        "configure-quality-tools"
+      ]
     },
     {
       "id": "TOOL-05",

@@ -5,8 +5,9 @@ for a theme; each playbook is an agent directive and follows the anatomy below, 
 agent can read any of them the same way.
 
 > [!NOTE]
-> Planned. No playbook is written yet. The anatomy below is fixed; each playbook file is written in the
-> roadmap step named in the table (`IRnn.1` drafts it, `IRnn.2` and `IRnn.3` apply and correct it).
+> Partly written. The two T1 playbooks are drafted (IR04.1) and are applied and corrected in IR04.2 and IR04.3.
+> The other eleven are Planned: each is written in the roadmap step named in the table (`IRnn.1` drafts it,
+> `IRnn.2` and `IRnn.3` apply and correct it). The anatomy below is fixed.
 
 ## Anatomy
 
@@ -36,12 +37,13 @@ Rules for every playbook:
 ## Playbook list
 
 Thirteen playbooks, grouped by theme in dependency order. "In catalogue" says whether `catalogue.json`
-already names the playbook; the six new ones are added there by the step that writes them.
+already names the playbook; the new ones are added there by the step that writes them (`configure-quality-tools`
+in IR04.1).
 
 | Playbook | Theme | Checks | In catalogue | Status |
 |---|---|---|---|---|
-| `define-command-surface` | T1 Command surface and quality tools | CMD-01, CMD-02, CMD-03, CMD-04, EXEC-03, TST-01 | yes | Planned (IR04.1) |
-| `configure-quality-tools` | T1 Command surface and quality tools | TOOL-01, TOOL-02, TOOL-03, TOOL-04 | no | Planned (IR04.1) |
+| [`define-command-surface`](define-command-surface.md) | T1 Command surface and quality tools | CMD-01, CMD-02, CMD-03, CMD-04, EXEC-03, TST-01 | yes | Drafted (IR04.1); applied in IR04.2, IR04.3 |
+| [`configure-quality-tools`](configure-quality-tools.md) | T1 Command surface and quality tools | TOOL-01, TOOL-02, TOOL-03, TOOL-04 | yes | Drafted (IR04.1); applied in IR04.2, IR04.3 |
 | `pin-execution-environment` | T2 Execution determinism | EXEC-01, EXEC-02 | yes | Planned (IR05.1) |
 | `untrack-generated` | T2 Execution determinism | EXEC-05, EXEC-07 | no | Planned (IR05.1) |
 | `env-inventory-and-secrets` | T3 Secrets and env | EXEC-04, SEC-01, SEC-02, SEC-03 | yes | Planned (IR06.1) |
