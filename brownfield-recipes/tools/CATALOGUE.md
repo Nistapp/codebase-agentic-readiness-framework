@@ -24,6 +24,17 @@ List the audit findings whose cited files changed between the audited commit and
 check_drift.py REPORT REPO [--json]
 ```
 
+## compare_reports.py
+
+**Version:** 0.1.0  
+**Writes:** nothing
+
+Compare two audit reports: which checks and findings moved, and which moves the readiness state explains.
+
+```text
+compare_reports.py BEFORE AFTER [--state STATE] [--json]
+```
+
 ## engine.py
 
 **Version:** 0.1.0  

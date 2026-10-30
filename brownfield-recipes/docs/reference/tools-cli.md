@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), and `check_drift.py`.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
 
 ---
 
@@ -19,6 +19,7 @@
 | [`build_skills.py`](#build_skillspy) | Builds the agentic-readiness-audit skill bundle under `dist/skills/` | Live |
 | [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state; the only tool that writes inside a target | Live |
 | [`check_drift.py`](#check_driftpy) | Lists the audit findings whose cited files changed between the audited commit and `HEAD` | Live |
+| [`compare_reports.py`](#compare_reportspy) | Compares two audit reports: which checks and findings moved, and which moves the readiness state explains | Live |
 
 ## Every tool
 
@@ -874,4 +875,49 @@ between the two trees and a warning says so. Long lists are bounded: `changed_pa
 | `0` | Done, whatever the status. Read `data.status`. |
 | `1` | A bad argument, a missing report or target, or a target that is not a git repository. |
 | `2` | The report is not valid; `data.errors` lists what to fix. |
+| `3` | Internal error. |
+
+## compare_reports.py
+
+Compares two audit reports of one repository, normally the report the implementation started from and the
+re-audit after it. It writes nothing. Both reports must validate (exit 2 otherwise). The source is
+[`compare_reports.py`](../../tools/compare_reports.py).
+
+**Synopsis**
+
+```text
+python3 brownfield-recipes/tools/compare_reports.py BEFORE AFTER [--state STATE] [--json]
+python3 brownfield-recipes/tools/compare_reports.py --describe
+```
+
+**How it compares**
+
+- A check is matched by id. `improved` and `regressed` follow FAIL < PARTIAL < PASS. A move to or from `UNKNOWN`
+  or `NOT_APPLICABLE` is `changed`, because no order exists. A check in one report only is `added` or `removed`.
+- A finding is matched by its `key`. A key only in `BEFORE` is `closed`, only in `AFTER` is `new`, in both is
+  `moved` when the severity differs and `unchanged` otherwise. Findings with disposition `rejected` were never
+  confirmed gaps and are left out on both sides; their number is `summary.rejected_ignored`.
+- With `--state`, every move gets a `label`. The state's items name findings of the `BEFORE` report; an item whose
+  check disagrees with that report is ignored with a warning. A closed finding, or an improved check, is
+  `explained:done` or `explained:partial` when an item reached that status. Everything else is `unexplained`
+  (a closed finding adds the item's status, for example `unexplained:in_progress`, or none when no item exists).
+  A regression and a new finding are always `unexplained`. Without `--state` the label is `-`.
+- It does not know which audit-engine defects distorted a verdict. The caller annotates a result that an open
+  `audit-engine` issue explains.
+
+**Output**
+
+By default `data` holds `summary` and `markdown` (the deterministic report: summary lines, checks that moved,
+findings that moved, findings still open). With `--json` it holds `summary`, `checks` and `findings` as rows
+instead. `summary` has the two reports' file names, commits and scores, the counts per move, `rejected_ignored`,
+and `unexplained`. A warning is raised when the reports name different repositories. Long lists are bounded:
+`truncated` is `true` and the markdown (or `data.omitted`) says how many rows were left out.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | Done. A comparison with moves is not an error. |
+| `1` | A bad argument, or a missing report or state file. |
+| `2` | A report or the state is not valid; `data.errors` lists what to fix. |
 | `3` | Internal error. |

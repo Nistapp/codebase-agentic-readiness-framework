@@ -94,7 +94,7 @@ The playbooks for each theme, and the checks they resolve, are listed in
 ## Tools
 
 > [!NOTE]
-> Partly built. `progress.py` and `check_drift.py` are complete. The existing
+> Partly built. `progress.py`, `check_drift.py` and `compare_reports.py` are complete. The existing
 > `validate_report.py`, `engine.py` and `render_report.py` are reused unchanged.
 
 - `brownfield-recipes/tools/progress.py` creates the state from a final report (`init`), summarises it
@@ -104,8 +104,9 @@ The playbooks for each theme, and the checks they resolve, are listed in
 - `brownfield-recipes/tools/check_drift.py <report> <repo>` compares the report's commit with the current `HEAD`
   and lists the findings whose evidence or `touches` paths changed; see the
   [tools reference](../docs/reference/tools-cli.md#check_driftpy).
-- TBD: `brownfield-recipes/tools/compare_reports.py` lists which checks and findings
-  moved between two audit reports, and which moves the state explains (IR14.1).
+- `brownfield-recipes/tools/compare_reports.py <before> <after> [--state <state>]` lists which checks and
+  findings moved between two audit reports, and which moves the state explains; see the
+  [tools reference](../docs/reference/tools-cli.md#compare_reportspy).
 
 Not tools of this skill: formatters, linters, coverage and hooks. Those belong to the target repository and
 are chosen per repository by the owner.
