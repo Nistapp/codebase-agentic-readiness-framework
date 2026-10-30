@@ -5,10 +5,10 @@ for a theme; each playbook is an agent directive and follows the anatomy below, 
 agent can read any of them the same way.
 
 > [!NOTE]
-> Partly written. The two T1 playbooks (IR04.1), the two T2 playbooks (IR05.1) and the T3 playbook (IR06.1) are
-> drafted and are applied and corrected in IR04.2, IR04.3, IR05.2, IR05.3, IR06.2 and IR06.3. The other eight are
-> Planned: each is written in the roadmap step named in the table (`IRnn.1` drafts it, `IRnn.2` and `IRnn.3`
-> apply and correct it). The anatomy below is fixed.
+> Partly written. The two T1 playbooks (IR04.1), the two T2 playbooks (IR05.1), the T3 playbook (IR06.1) and
+> the T6 playbook (IR09.1) are drafted. They are applied and corrected in IR04.2, IR04.3, IR05.2, IR05.3,
+> IR06.2, IR06.3, IR09.2 and IR09.3. The other seven are Planned: each is written in the roadmap step named in
+> the table (`IRnn.1` drafts it, `IRnn.2` and `IRnn.3` apply and correct it). The anatomy below is fixed.
 
 ## Anatomy
 
@@ -39,7 +39,7 @@ Rules for every playbook:
 
 Thirteen playbooks, grouped by theme in dependency order. "In catalogue" says whether `catalogue.json`
 already names the playbook; the new ones are added there by the step that writes them (`configure-quality-tools`
-in IR04.1, `untrack-generated` in IR05.1).
+in IR04.1, `untrack-generated` in IR05.1, `establish-docs-contract` in IR09.1).
 
 | Playbook | Theme | Checks | In catalogue | Status |
 |---|---|---|---|---|
@@ -51,7 +51,7 @@ in IR04.1, `untrack-generated` in IR05.1).
 | `add-ci-parity` | T4 CI parity, hooks, commits | CI-01, CI-02, CI-03, CI-04 | yes | Planned (IR07.1) |
 | `add-hooks-and-commit-rules` | T4 CI parity, hooks, commits | TOOL-05, TOOL-06 | no | Planned (IR07.1) |
 | `add-baselines-and-ratchet` | T5 Tests and baselines | BASE-01, BASE-02, BASE-03, BASE-04, TST-02, TST-03, TST-05 | no | Planned (IR08.1) |
-| `establish-docs-contract` | T6 Docs and navigation | DOC-01, DOC-02, DOC-03, DOC-04, NAV-01, NAV-02, NAV-03, NAV-04, NAV-05 | no | Planned (IR09.1) |
+| [`establish-docs-contract`](establish-docs-contract.md) | T6 Docs and navigation | DOC-01, DOC-02, DOC-03, DOC-04, NAV-01, NAV-02, NAV-03, NAV-04, NAV-05 | yes | Drafted (IR09.1); applied in IR09.2, IR09.3 |
 | `adapt-agents-md` | T7 AGENTS.md and governance | AGT-01, AGT-02, AGT-03, AGT-04, AGT-05, AGT-06, AGT-08, AGT-09, AGT-10, AGT-11, EXEC-06, TST-04 | yes | Planned (IR10.1) |
 | `add-deny-rules` | T7 AGENTS.md and governance | AGT-07, CON-01, CON-02, CON-03 | yes | Planned (IR10.1) |
 | `add-repo-hygiene` | T8 Hygiene and index | HYG-01 to HYG-11 | no | Planned (IR11.1) |

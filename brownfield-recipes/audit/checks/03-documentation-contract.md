@@ -6,11 +6,8 @@
 > documentation scatters and nothing is canonical — an agent cannot tell a settled architecture decision
 > from a stale scratch note.
 
-No check in this family has an MVP implementation playbook yet (`catalogue.json`'s `playbooks` is empty
-for all four): `add-docs-contract` and `add-adr-scaffold` are backlog items (DP §5.5's starting map; the
-roadmap's backlog §5 item 3), not among the seven playbooks `S5.2`–`S5.3` ship. Until one exists, each
-check's **Remediation** says what to create directly; a human applies it, or a later roadmap step adds the
-playbook.
+The implement recipe's playbook [`establish-docs-contract`](../../implement/playbooks/establish-docs-contract.md)
+resolves all four checks. Each check's **Remediation** below says what to create; the playbook says how, in order.
 
 ---
 
@@ -40,7 +37,7 @@ Evidence to cite A `file` evidence item citing `docs/` (for the PARTIAL/FAIL cas
                  Markdown path under it (for PASS), with the file count in `note`.
 Absence proof    A FAIL records a `glob` search entry for `docs/**/*.md` (and `.markdown`) scoped to the
                  repository root, with a `0` hit count.
-Remediation      No MVP playbook yet (backlog: `add-docs-contract`). Create `docs/` with, at minimum, a
+Remediation      Playbook: `establish-docs-contract`. Create `docs/` with, at minimum, a
                  project overview and `docs/STYLE_GUIDE.md` (`DOC-02`).
 Pitfalls         A repository whose only documentation is a root `README.md` is correctly `FAIL` here —
                  a root README is not `docs/`, and conflating the two hides a real gap.
@@ -73,7 +70,7 @@ Evidence to cite A `file` evidence item citing `docs/STYLE_GUIDE.md`, plus a sec
 Absence proof    A FAIL records a `glob` search for `docs/STYLE_GUIDE.md` exactly, with a `0` hit count;
                  a PARTIAL's "unnamed" half records a `grep` search for the literal string `STYLE_GUIDE.md`
                  scoped to the instruction file, also with a `0` hit count.
-Remediation      No MVP playbook yet (backlog: `add-docs-contract`). Create `docs/STYLE_GUIDE.md` and name
+Remediation      Playbook: `establish-docs-contract`. Create `docs/STYLE_GUIDE.md` and name
                  it from the instruction file (ties into `AGT-03`).
 Pitfalls         A project that names a *different* canonical style document (not literally
                  `STYLE_GUIDE.md`) by a project-specific convention still fails this check as written — the
@@ -118,7 +115,7 @@ Evidence to cite A `file` evidence item citing the scratch directory and the mat
                  `git ls-files`-equivalent call that could not run (for UNKNOWN).
 Absence proof    A FAIL for "not matched by any ignore rule" records the ignore-rule search performed
                  (tool `grep`, the directory name as pattern, `.gitignore` as scope, `0` hits).
-Remediation      No MVP playbook yet (backlog: this is also `CON-03`'s concern, REQ-SH-018 is shared
+Remediation      Playbook: `establish-docs-contract` (this is also `CON-03`'s concern, REQ-SH-018 is shared
                  between the two checks). Add `artefacts/` (or the project's own scratch directory name)
                  to `.gitignore`, and `git rm --cached` anything already tracked under it.
 Pitfalls         A directory ignored by a broad rule that also happens to ignore the scratch path
@@ -158,7 +155,7 @@ Evidence to cite A `file` evidence item per unlisted entry (for the omits-some c
                  alone (for the no-directory or no-entry cases).
 Absence proof    A FAIL records a `glob` search for `docs/architecture/adrs/*.md` and `docs/adr/*.md`, each
                  with a `0` hit count.
-Remediation      No MVP playbook yet (backlog: `add-adr-scaffold`). Add `docs/architecture/adrs/` with
+Remediation      Playbook: `establish-docs-contract`. Add `docs/architecture/adrs/` with
                  `NNNN-short-title.md` entries and a `README.md` index that links each one.
 Pitfalls         `COSMETIC` severity means this check never blocks a Phase-1 score on its own, but a
                  missing ADR index is still worth recording precisely — cosmetic is a severity, not a
