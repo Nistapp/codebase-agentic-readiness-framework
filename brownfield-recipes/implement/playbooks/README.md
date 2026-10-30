@@ -5,9 +5,10 @@ for a theme; each playbook is an agent directive and follows the anatomy below, 
 agent can read any of them the same way.
 
 > [!NOTE]
-> Partly written. The two T1 playbooks (IR04.1) and the two T2 playbooks (IR05.1) are drafted and are applied and
-> corrected in IR04.2, IR04.3, IR05.2 and IR05.3. The other nine are Planned: each is written in the roadmap
-> step named in the table (`IRnn.1` drafts it, `IRnn.2` and `IRnn.3` apply and correct it). The anatomy below is fixed.
+> Partly written. The two T1 playbooks (IR04.1), the two T2 playbooks (IR05.1) and the T3 playbook (IR06.1) are
+> drafted and are applied and corrected in IR04.2, IR04.3, IR05.2, IR05.3, IR06.2 and IR06.3. The other eight are
+> Planned: each is written in the roadmap step named in the table (`IRnn.1` drafts it, `IRnn.2` and `IRnn.3`
+> apply and correct it). The anatomy below is fixed.
 
 ## Anatomy
 
@@ -46,7 +47,7 @@ in IR04.1, `untrack-generated` in IR05.1).
 | [`configure-quality-tools`](configure-quality-tools.md) | T1 Command surface and quality tools | TOOL-01, TOOL-02, TOOL-03, TOOL-04 | yes | Drafted (IR04.1); applied in IR04.2, IR04.3 |
 | [`pin-execution-environment`](pin-execution-environment.md) | T2 Execution determinism | EXEC-01, EXEC-02 | yes | Drafted (IR05.1); applied in IR05.2, IR05.3 |
 | [`untrack-generated`](untrack-generated.md) | T2 Execution determinism | EXEC-05, EXEC-07 | yes | Drafted (IR05.1); applied in IR05.2, IR05.3 |
-| `env-inventory-and-secrets` | T3 Secrets and env | EXEC-04, SEC-01, SEC-02, SEC-03 | yes | Planned (IR06.1) |
+| [`env-inventory-and-secrets`](env-inventory-and-secrets.md) | T3 Secrets and env | EXEC-04, SEC-01, SEC-02, SEC-03 | yes | Drafted (IR06.1); applied in IR06.2, IR06.3 |
 | `add-ci-parity` | T4 CI parity, hooks, commits | CI-01, CI-02, CI-03, CI-04 | yes | Planned (IR07.1) |
 | `add-hooks-and-commit-rules` | T4 CI parity, hooks, commits | TOOL-05, TOOL-06 | no | Planned (IR07.1) |
 | `add-baselines-and-ratchet` | T5 Tests and baselines | BASE-01, BASE-02, BASE-03, BASE-04, TST-02, TST-03, TST-05 | no | Planned (IR08.1) |

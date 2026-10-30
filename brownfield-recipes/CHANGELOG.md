@@ -23,6 +23,10 @@ history (which verdicts moved and why), see
   checked 2026-10-30 (Volta dropped: its README says it is unmaintained). `catalogue.json` 0.2.4 (PATCH: playbook
   names only; fingerprint unchanged) adds `untrack-generated` to EXEC-05 and EXEC-07, and
   `audit/checks/09-execution-determinism.md` names it as their remediation.
+- The T3 playbook: `implement/playbooks/env-inventory-and-secrets.md` (EXEC-04, SEC-01, SEC-02, SEC-03): a
+  key-names-only variable inventory, example-file rules, tracked secret-file handling that never prints or
+  rotates, and the ignore-shape step with a negation check. Scanner currency table checked 2026-10-30.
+  `catalogue.json` is unchanged (the four checks already list the playbook).
 - The readiness state: `schema/readiness-state.schema.json` (`schema_version` `0.1`) with two examples and their
   rendered Markdown, and `tools/progress.py` `init`, `show` and `render`. `progress.py` is the one tool that
   writes inside a target, and only its two state files (ADR 0002); `ToolInfo` gains `writes_inside_target`,
