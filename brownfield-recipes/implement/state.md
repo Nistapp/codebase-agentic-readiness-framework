@@ -5,10 +5,9 @@ stop after any theme and resume another day, and it is where the owner's skips a
 page is an agent directive: MUST and MUST NOT are used in the RFC 2119 sense.
 
 > [!NOTE]
-> The rules on this page bind every session. The schema and `progress.py init`, `show` and `render` are live.
-> The transition, skip, defer, preference and theme commands are `Planned (IR02.2)`; until then a session that
-> must change an existing state edits the JSON by hand, in the schema's shape, and runs `progress.py render`,
-> which refuses a state the schema or the rules below reject.
+> The rules on this page bind every session. The schema and every `progress.py` command are live. A session
+> changes an existing state only with `set-status`, `skip`, `unskip`, `defer`, `undefer`, `pref` and `theme`,
+> which check the whole state, append a log entry and refuse a move the diagram below does not allow.
 
 ## Files and paths
 

@@ -94,12 +94,13 @@ The playbooks for each theme, and the checks they resolve, are listed in
 ## Tools
 
 > [!NOTE]
-> Partly built. `progress.py init`, `show` and `render` exist; the rest below is Planned. The existing
+> Partly built. `progress.py` is complete; `check_drift.py` is Planned. The existing
 > `validate_report.py`, `engine.py` and `render_report.py` are reused unchanged.
 
 - `brownfield-recipes/tools/progress.py` creates the state from a final report (`init`), summarises it
   (`show`) and renders the Markdown view (`render`); see the [state contract](state.md#files-and-paths).
-- TBD: `progress.py` applies validated status transitions, skip, defer and preferences (IR02.2).
+- `progress.py` applies validated status transitions (`set-status`), `skip`, `defer`, preferences (`pref`) and
+  theme progress (`theme`); see the [tools reference](../docs/reference/tools-cli.md#progresspy).
 - TBD: `brownfield-recipes/tools/check_drift.py` compares the report's commit with the
   current `HEAD` and lists the findings whose evidence changed (IR02.3).
 - TBD: `brownfield-recipes/tools/compare_reports.py` lists which checks and findings
