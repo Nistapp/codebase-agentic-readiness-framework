@@ -13,6 +13,11 @@ history (which verdicts moved and why), see
   are still Planned.
 - Implement recipe Stages 0 (intake) and 1 (triage) written and live in `implement/SKILL.md`, from the two
   onboarding runs, with a first `implement/prompts/kickoff.md`. Stages 2 to 5 are still Planned.
+- The two T1 playbooks: `implement/playbooks/define-command-surface.md` (CMD-01 to CMD-04, EXEC-03, TST-01) and
+  `implement/playbooks/configure-quality-tools.md` (TOOL-01 to TOOL-04, with a tool-currency table checked
+  2026-10-30). `catalogue.json` 0.2.3 (PATCH: playbook names only; fingerprint unchanged) adds
+  `configure-quality-tools` to TOOL-01 to TOOL-04, and `audit/checks/05-tooling.md` names it as their
+  remediation.
 - The readiness state: `schema/readiness-state.schema.json` (`schema_version` `0.1`) with two examples and their
   rendered Markdown, and `tools/progress.py` `init`, `show` and `render`. `progress.py` is the one tool that
   writes inside a target, and only its two state files (ADR 0002); `ToolInfo` gains `writes_inside_target`,

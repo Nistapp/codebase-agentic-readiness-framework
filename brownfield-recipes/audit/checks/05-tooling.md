@@ -3,9 +3,9 @@
 > Follows the anatomy in [`README.md`](README.md). Six checks, all `method: automated`. See
 > [Why These Checks §6](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#6-tooling-tool)
 > for the consequence behind this family: a tool that is installed but not reachable through the command
-> surface, or configured but not strict, gives an agent false confidence. No MVP playbook covers this
-> family yet (S5.2–S5.3 ship seven playbooks, none of them `TOOL`'s); each check's **Remediation** names
-> the backlog playbook and says what to create directly in the meantime.
+> surface, or configured but not strict, gives an agent false confidence. TOOL-01 to TOOL-04 are remediated
+> by `configure-quality-tools`; TOOL-05 and TOOL-06 have no playbook yet, so their **Remediation** names the
+> backlog playbook and says what to create directly in the meantime.
 
 ---
 
@@ -37,9 +37,7 @@ Evidence to cite A `file` evidence item citing the config file found, or the run
                  command, matching whichever side of the pair is present.
 Absence proof    A FAIL cites every runner manifest read as evidence that no `format` verb resolves on any
                  of them, alongside the absence of every config filename the engine's list checked.
-Remediation      No MVP playbook yet (backlog: `add-formatter-config`). Add a formatter config file and a
-                 `format` write verb on the project's runner so the two are both present and the pair
-                 resolves to `PASS`.
+Remediation      `configure-quality-tools`
 Pitfalls         A formatter config with no way to invoke it is not a formatter an agent can run — `PARTIAL`
                  is the correct verdict, not a lenient `PASS`, because the config alone gives no reachable
                  command. Conversely, crediting a bare `format` verb without a config file risks the tool's
@@ -72,8 +70,7 @@ Evidence to cite A `file` evidence item citing the config file found, or the run
                  command, matching whichever side of the pair is present.
 Absence proof    A FAIL cites every runner manifest read as evidence that no `lint` verb resolves on any of
                  them, alongside the absence of every config filename the engine's list checked.
-Remediation      No MVP playbook yet (backlog: `add-linter-config`). Add a linter config file and a `lint`
-                 read-only verb on the project's runner so the two are both present.
+Remediation      `configure-quality-tools`
 Pitfalls         A `lint` verb that runs the formatter in check mode (`prettier --check`) is not this
                  check's concern and does not earn credit here — `TOOL-02` reads for a dedicated linter
                  config, not any read-only verb that happens to exist under the `lint` name.
@@ -115,10 +112,7 @@ Evidence to cite A `file` evidence item per config file read, citing the exact k
                  non-strict.
 Absence proof    A FAIL cites every runner manifest and detected ecosystem as the evidence that no
                  type-check configuration of any kind was found for it.
-Remediation      No MVP playbook yet (backlog: `enable-strict-typecheck`). Turn on strict mode
-                 (`tsconfig.json` `strict: true`, mypy/pyright `strict = true` /
-                 `typeCheckingMode: "strict"`, or `.NET` `<Nullable>enable</Nullable>`) so the checker's
-                 findings can be trusted.
+Remediation      `configure-quality-tools`
 Pitfalls         `UNKNOWN` for go, rust, jvm, ruby or php is not a lesser result than `PASS` — these
                  ecosystems have their own type-safety story (the compiler itself, for go/rust/jvm) that
                  this check does not model; do not read an `UNKNOWN` here as a gap to close by inventing a
@@ -154,9 +148,7 @@ Evidence to cite A `command` evidence item citing the matching verb and its reso
                  `PARTIAL`, the `security` verb's own non-matching command.
 Absence proof    A FAIL cites every runner manifest read as the evidence that no verb on any of them
                  resolves to a known dependency-audit invocation.
-Remediation      No MVP playbook yet (backlog: `add-dependency-audit`). Add a dependency-audit verb (`npm
-                 audit`, `pip-audit`, `osv-scanner`, `cargo audit`, `govulncheck`, `snyk`) on `security` or
-                 another resolvable verb.
+Remediation      `configure-quality-tools`
 Pitfalls         The audit tool does not have to live on the `security` verb by name — a `test` or `check`
                  verb that happens to run `npm audit` as one of its steps still earns `PASS`; read every
                  resolved command before concluding the repository has no dependency scan at all.
