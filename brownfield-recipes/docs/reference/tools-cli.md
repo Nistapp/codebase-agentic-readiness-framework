@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) `build_skills.py`, and `progress.py` (all commands). `check_drift.py` is Planned (IR02.3).
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), and `check_drift.py`.
 
 ---
 
@@ -18,7 +18,7 @@
 | [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, and a stale tool catalogue | Live |
 | [`build_skills.py`](#build_skillspy) | Builds the agentic-readiness-audit skill bundle under `dist/skills/` | Live |
 | [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state; the only tool that writes inside a target | Live |
-| `check_drift.py` | Lists findings affected by changes since the audit | Planned (IR02.3) |
+| [`check_drift.py`](#check_driftpy) | Lists the audit findings whose cited files changed between the audited commit and `HEAD` | Live |
 
 ## Every tool
 
@@ -833,3 +833,45 @@ warning.
 | `N states in ...; pick one with --label` | Pass `--label`. |
 | `the state is not valid: N errors` | Fix each entry in `data.errors`; `schema:` errors come from the schema, `rule:` errors from the rules above. |
 | `refusing a state file that is a symlink` | Replace the link with the real file. |
+
+## check_drift.py
+
+Tells which audit findings the target has moved under since the audit. It reads the report's
+`provenance.target.git_sha`, compares it with `HEAD` of the target using read-only git, and lists the paths that
+changed and the findings whose cited `file` evidence or `remediation.touches` intersect them. A changed path
+matches a cited path when they are equal or the changed path is below a cited directory. It judges nothing: a
+listed finding is one to re-check before acting on the report's text. It writes nothing. The source is
+[`check_drift.py`](../../tools/check_drift.py).
+
+**Synopsis**
+
+```text
+python3 brownfield-recipes/tools/check_drift.py REPORT REPO [--json]
+python3 brownfield-recipes/tools/check_drift.py --describe
+```
+
+`--json` is accepted for symmetry; the output is always the JSON envelope.
+
+**Output**
+
+`data.status` is one of:
+
+| Status | Meaning |
+|---|---|
+| `current` | `HEAD` is the audited commit. |
+| `drifted` | `HEAD` differs. `changed_count`, `changed_paths` and `findings` (each with `id`, `check`, `changed_paths`) are set, and `drifted` is `true`. |
+| `sha_missing` | The audited commit is not in the target's history (rewritten or not fetched). Nothing is compared; a warning says to re-check every finding. |
+| `no_sha` | The report recorded no `git_sha`. A warning says to re-check every finding. |
+
+`audited_sha` and `head_sha` are always present. When the audited commit is not an ancestor of `HEAD`, the diff is
+between the two trees and a warning says so. Long lists are bounded: `changed_paths_omitted` and
+`findings_omitted` count what was left out, and `truncated` is `true`.
+
+**Exit codes**
+
+| Code | When |
+|---|---|
+| `0` | Done, whatever the status. Read `data.status`. |
+| `1` | A bad argument, a missing report or target, or a target that is not a git repository. |
+| `2` | The report is not valid; `data.errors` lists what to fix. |
+| `3` | Internal error. |

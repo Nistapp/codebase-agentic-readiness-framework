@@ -13,6 +13,17 @@ Build the agentic-readiness-audit skill bundle under dist/skills/.
 build_skills.py [--out-dir DIR]
 ```
 
+## check_drift.py
+
+**Version:** 0.1.0  
+**Writes:** nothing
+
+List the audit findings whose cited files changed between the audited commit and HEAD.
+
+```text
+check_drift.py REPORT REPO [--json]
+```
+
 ## engine.py
 
 **Version:** 0.1.0  
