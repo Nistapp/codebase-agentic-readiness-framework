@@ -5,9 +5,9 @@ for a theme; each playbook is an agent directive and follows the anatomy below, 
 agent can read any of them the same way.
 
 > [!NOTE]
-> Partly written. The two T1 playbooks are drafted (IR04.1) and are applied and corrected in IR04.2 and IR04.3.
-> The other eleven are Planned: each is written in the roadmap step named in the table (`IRnn.1` drafts it,
-> `IRnn.2` and `IRnn.3` apply and correct it). The anatomy below is fixed.
+> Partly written. The two T1 playbooks (IR04.1) and the two T2 playbooks (IR05.1) are drafted and are applied and
+> corrected in IR04.2, IR04.3, IR05.2 and IR05.3. The other nine are Planned: each is written in the roadmap
+> step named in the table (`IRnn.1` drafts it, `IRnn.2` and `IRnn.3` apply and correct it). The anatomy below is fixed.
 
 ## Anatomy
 
@@ -38,14 +38,14 @@ Rules for every playbook:
 
 Thirteen playbooks, grouped by theme in dependency order. "In catalogue" says whether `catalogue.json`
 already names the playbook; the new ones are added there by the step that writes them (`configure-quality-tools`
-in IR04.1).
+in IR04.1, `untrack-generated` in IR05.1).
 
 | Playbook | Theme | Checks | In catalogue | Status |
 |---|---|---|---|---|
 | [`define-command-surface`](define-command-surface.md) | T1 Command surface and quality tools | CMD-01, CMD-02, CMD-03, CMD-04, EXEC-03, TST-01 | yes | Drafted (IR04.1); applied in IR04.2, IR04.3 |
 | [`configure-quality-tools`](configure-quality-tools.md) | T1 Command surface and quality tools | TOOL-01, TOOL-02, TOOL-03, TOOL-04 | yes | Drafted (IR04.1); applied in IR04.2, IR04.3 |
-| `pin-execution-environment` | T2 Execution determinism | EXEC-01, EXEC-02 | yes | Planned (IR05.1) |
-| `untrack-generated` | T2 Execution determinism | EXEC-05, EXEC-07 | no | Planned (IR05.1) |
+| [`pin-execution-environment`](pin-execution-environment.md) | T2 Execution determinism | EXEC-01, EXEC-02 | yes | Drafted (IR05.1); applied in IR05.2, IR05.3 |
+| [`untrack-generated`](untrack-generated.md) | T2 Execution determinism | EXEC-05, EXEC-07 | yes | Drafted (IR05.1); applied in IR05.2, IR05.3 |
 | `env-inventory-and-secrets` | T3 Secrets and env | EXEC-04, SEC-01, SEC-02, SEC-03 | yes | Planned (IR06.1) |
 | `add-ci-parity` | T4 CI parity, hooks, commits | CI-01, CI-02, CI-03, CI-04 | yes | Planned (IR07.1) |
 | `add-hooks-and-commit-rules` | T4 CI parity, hooks, commits | TOOL-05, TOOL-06 | no | Planned (IR07.1) |

@@ -18,6 +18,11 @@ history (which verdicts moved and why), see
   2026-10-30). `catalogue.json` 0.2.3 (PATCH: playbook names only; fingerprint unchanged) adds
   `configure-quality-tools` to TOOL-01 to TOOL-04, and `audit/checks/05-tooling.md` names it as their
   remediation.
+- The two T2 playbooks: `implement/playbooks/pin-execution-environment.md` (EXEC-01, EXEC-02; EXEC-03 as a
+  check only) and `implement/playbooks/untrack-generated.md` (EXEC-05, EXEC-07), with tool-currency tables
+  checked 2026-10-30 (Volta dropped: its README says it is unmaintained). `catalogue.json` 0.2.4 (PATCH: playbook
+  names only; fingerprint unchanged) adds `untrack-generated` to EXEC-05 and EXEC-07, and
+  `audit/checks/09-execution-determinism.md` names it as their remediation.
 - The readiness state: `schema/readiness-state.schema.json` (`schema_version` `0.1`) with two examples and their
   rendered Markdown, and `tools/progress.py` `init`, `show` and `render`. `progress.py` is the one tool that
   writes inside a target, and only its two state files (ADR 0002); `ToolInfo` gains `writes_inside_target`,

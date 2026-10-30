@@ -204,9 +204,8 @@ Evidence to cite A `file` evidence item per offending path (up to 12) for FAIL; 
                  tracked generated paths found, with headers.
 Absence proof    A FAIL lists every offending tracked path explicitly (up to 12, with the total count
                  stated when there are more), so the missing-header claim is checkable path by path.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `EXEC-05`); note
-                 in the finding that untracking the path or adding a generated-file header both resolve
-                 it, and record the gap for S5.2/S5.3 playbook scope.
+Remediation      `untrack-generated` (untrack the path with the owner's yes, or add a generated-file
+                 header where the file type carries one; both resolve the check).
 Pitfalls         The scan's own `GENERATED` classification, not this check, decides what counts — a
                  hand-written file that merely looks machine-produced (a long data table, say) is not
                  reclassified here; if a finding looks wrong, question the scan's classification, not
@@ -283,8 +282,8 @@ Evidence to cite A `file` evidence item per competing path, grouped by concern, 
                  single authoritative config path found for each concern that has one.
 Absence proof    A FAIL names every concern with more than one config and lists every competing path
                  found for it, so "competing" is the literal file list, not an inference.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `EXEC-07`); the
-                 fix is to keep one config and document any deliberate delegation, so note it inline.
+Remediation      `untrack-generated` (detection and documentation only: keep one config per concern and
+                 document any deliberate delegation; the playbook never deletes a config).
 Pitfalls         `biome.json` matches both the `lint` and `format` globs by design (Biome itself combines
                  the two); a repository with only `biome.json` for both concerns is not competition —
                  only a second file matching the same single concern is.
