@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) `build_skills.py`, and `progress.py` `init`, `show` and `render`. The other `progress.py` commands are Planned (IR02.2) and `check_drift.py` is Planned (IR02.3).
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) `build_skills.py`, and `progress.py` (all commands). `check_drift.py` is Planned (IR02.3).
 
 ---
 
@@ -17,7 +17,7 @@
 | [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
 | [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, and a stale tool catalogue | Live |
 | [`build_skills.py`](#build_skillspy) | Builds the agentic-readiness-audit skill bundle under `dist/skills/` | Live |
-| [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state; the only tool that writes inside a target | Live for `init`, `show`, `render`; transitions Planned (IR02.2) |
+| [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state; the only tool that writes inside a target | Live |
 | `check_drift.py` | Lists findings affected by changes since the audit | Planned (IR02.3) |
 
 ## Every tool
@@ -85,7 +85,7 @@ A scan writes one file, `<label>.engine-report.<stamp>.json`, in the output dire
 | Code | When |
 |---|---|
 | `0` | The report was written, or the checks were listed. |
-| `1` | A bad argument, a missing target, an output directory inside the target, a bad label, or a refusal by the engine, whose reason is in `data.error`. |
+| `1` | A bad argument, a move the state diagram or the owner-only rules refuse, an unknown or rejected finding, a missing target, an output directory inside the target, a bad label, or a refusal by the engine, whose reason is in `data.error`. |
 | `3` | The engine exited with any other code, raised, or reported success without writing the report or (with `--emit-baseline`) the draft. |
 
 **Errors**
@@ -749,8 +749,9 @@ python3 brownfield-recipes/tools/build_skills.py [--out-dir DIR]
 
 ## progress.py
 
-Creates the implement recipe's state for a target from a final audit report, summarises it, and renders its
-Markdown view. It is the one tool that writes inside a target, and only the two state files, by
+Creates the implement recipe's state for a target from a final audit report, summarises it, renders its
+Markdown view, and applies the validated changes to it: status transitions, skip and defer, preferences and
+theme progress. It is the one tool that writes inside a target, and only the two state files, by
 [ADR 0002](../architecture/adrs/0002-progress-writes-state-in-target.md). The source is
 [`progress.py`](../../tools/progress.py); the format is
 [`readiness-state.schema.json`](../../schema/readiness-state.schema.json), described in
@@ -762,6 +763,12 @@ Markdown view. It is the one tool that writes inside a target, and only the two 
 python3 brownfield-recipes/tools/progress.py init --report REPORT --target REPO [--default-branch BRANCH] [--phase PHASE] [--date YYYY-MM-DD] [--framework-rev SHA]
 python3 brownfield-recipes/tools/progress.py show --target REPO [--label LABEL] [--json]
 python3 brownfield-recipes/tools/progress.py render --target REPO [--label LABEL]
+python3 brownfield-recipes/tools/progress.py set-status FINDING STATUS --target REPO --phase PHASE [--commit SHA] [--verification-command CMD --verification-result TEXT] [--debt what=TEXT,count=N[,baseline=FILE]] [--clear-debt] [--reason TEXT] [--note TEXT] [--by owner|agent] [--date YYYY-MM-DD] [--label LABEL] [--render]
+python3 brownfield-recipes/tools/progress.py skip|defer FINDING --reason TEXT --by owner --target REPO --phase PHASE [--render]
+python3 brownfield-recipes/tools/progress.py unskip|undefer FINDING --by owner --target REPO --phase PHASE [--reason TEXT] [--render]
+python3 brownfield-recipes/tools/progress.py pref set KEY VALUE --reason TEXT --by owner --target REPO --phase PHASE [--render]
+python3 brownfield-recipes/tools/progress.py pref unset KEY --reason TEXT --by owner --target REPO --phase PHASE [--render]
+python3 brownfield-recipes/tools/progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --target REPO --phase PHASE [--render]
 python3 brownfield-recipes/tools/progress.py --describe
 ```
 
@@ -775,7 +782,17 @@ python3 brownfield-recipes/tools/progress.py --describe
 | `--phase` | `init`: the step recorded in the first log entry. Default: `init`. |
 | `--date` | `init`: the date recorded on the items and the log, `YYYY-MM-DD`. Default: today, UTC. |
 | `--framework-rev` | `init`: the framework commit to record. Default: `git rev-parse HEAD` of the framework checkout, or null. |
-| `--label` | `show`, `render`: which state to read when the folder holds more than one. |
+| `--label` | Every command but `init`: which state to use when the folder holds more than one. |
+| `FINDING STATUS` | `set-status`: the item and the status to move it to. The move must be in the state diagram of the [state contract](../../implement/state.md#item-statuses). `skipped`, `deferred` and the moves back out of them have their own commands. |
+| `--commit` | `set-status`: a commit SHA to add to the item (repeatable). |
+| `--verification-command`, `--verification-result` | `set-status`: the verification and what it gave; given together. `done` needs one. |
+| `--debt`, `--clear-debt` | `set-status`: record debt (repeatable; same `what` replaces) or drop it. `partial` needs debt; `done` needs none. |
+| `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer` and `pref`. |
+| `--note` | `set-status`: text appended to the item's notes. |
+| `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer` and `pref` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
+| `--phase` | Every write: the step recorded in the log entry and on the item or preference. |
+| `--render` | Every write: also replace the Markdown view. Without it the tool warns that the view is out of date. |
+| `--status`, `--branch`, `--pr`, `--merged-sha` | `theme`: the theme's new status (it only moves forward) and the data that status needs: a branch, then a PR, then the merge SHA. |
 | `--json` | `show`: print the state itself instead of the summary. Long lists are cut to fit the output and `truncated` is set; the log keeps its newest entries. |
 
 **Outputs**
@@ -784,7 +801,8 @@ python3 brownfield-recipes/tools/progress.py --describe
 the `not_queued` count in `data`. `show` puts the summary in `data`: counts per status and per theme (`items` and
 `open`, which is neither `done` nor `skipped`), the skipped finding ids, and the number of preferences, debt
 entries and log entries. `show --json` puts the state under `data.state`. `render` writes the Markdown and puts
-its path and size in `data`. Each write is atomic; a temporary file a killed write left behind is removed, with a
+its path and size in `data`. Every other command checks the changed state whole, appends one log entry, replaces
+the JSON and puts the path and the count per status in `data`. A refused command changes nothing. Each write is atomic; a temporary file a killed write left behind is removed, with a
 warning.
 
 **Exit codes**
@@ -802,7 +820,14 @@ warning.
 |---|---|
 | `the report is a draft, not final` | Finalise it with `report.py finalise` and pass the final report. |
 | `the report must be inside the target, so the state can point at it` | Commit the report folder to the target and pass that path. |
-| `a state already exists: ...; init never replaces one` | Use `show` and `render`; transitions come with the next commands. |
+| `a state already exists: ...; init never replaces one` | Use `show`, `render` and the transition commands. |
+| `F-nnn is done and done is final` | A regression is a new finding in the next audit. |
+| `F-nnn is skipped and only the owner can bring it back` | Ask the owner, then `unskip --by owner`. |
+| `F-nnn is queued and must be in_progress before it can be ...` | Move it to `in_progress` first. |
+| `F-nnn: ... has its own command` | Use `skip`, `defer`, `unskip` or `undefer` with `--by owner`. |
+| `... is an owner decision` | Ask the owner and pass `--by owner`. |
+| `F-nnn cannot be done without a verification` / `... still has N debt entries` / `... cannot be partial without debt` | Give the verification, use `partial`, or record the debt. |
+| `theme Tn is ... and a theme only moves forward` | Themes go `not_started`, `branch_open`, `pr_open`, `merged`. |
 | `the report has findings on checks with no theme: ...` | Add the checks to `THEMES` in `progress.py`. |
 | `no state in ...` | Run `init` first. |
 | `N states in ...; pick one with --label` | Pass `--label`. |

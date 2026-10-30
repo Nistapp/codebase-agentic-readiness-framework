@@ -7,6 +7,7 @@
                      [--framework-rev SHA]
     progress.py show --target <repo> [--label LABEL] [--json]
     progress.py render --target <repo> [--label LABEL]
+    progress.py set-status|skip|unskip|defer|undefer|pref|theme ...   (the transitions; see --help of each)
 
 The state is ``docs/agentic-readiness/<label>-agentic-readiness-state.json`` in the target, the source of truth, and
 ``<label>-agentic-readiness-STATE.md`` beside it, rendered from the JSON. Its format is
@@ -20,6 +21,11 @@ new one and never half of one. The folder must resolve inside the target, and ne
 findings become ``queued`` items, a finding the owner deferred during the audit becomes a ``deferred`` item with the
 owner's note as its reason, and rejected findings are listed in ``not_queued``. Each item gets the theme of its check
 from :data:`THEMES`. ``init`` never replaces a state; the transitions come in a later step.
+
+The transition commands change one thing, check the whole state again, append a log entry and replace the JSON
+atomically; ``--render`` replaces the Markdown too. They enforce the state diagram in :data:`LEGAL` and refuse every
+other move with a message of its own. Only the owner skips, defers, unskips, undefers and sets preferences, which the
+caller states with ``--by owner`` (the agent relays what the owner said; the tool cannot see who is typing).
 
 ``render`` is a pure function of the JSON: the same state, in any key order, gives the same bytes.
 """
@@ -83,11 +89,20 @@ INFO = _common.ToolInfo(
         " [--framework-rev SHA]",
         "progress.py show --target REPO [--label LABEL] [--json]",
         "progress.py render --target REPO [--label LABEL]",
+        "progress.py set-status FINDING STATUS --target REPO --phase PHASE [--commit SHA] [--verification-command CMD"
+        " --verification-result TEXT] [--debt what=..,count=N[,baseline=FILE]] [--clear-debt] [--reason TEXT]"
+        " [--note TEXT] [--by owner|agent] [--date YYYY-MM-DD] [--label LABEL] [--render]",
+        "progress.py skip|defer FINDING --reason TEXT --by owner --target REPO --phase PHASE [--render]",
+        "progress.py unskip|undefer FINDING --by owner --target REPO --phase PHASE [--reason TEXT] [--render]",
+        "progress.py pref set KEY VALUE --reason TEXT --by owner --target REPO --phase PHASE [--render]",
+        "progress.py pref unset KEY --reason TEXT --by owner --target REPO --phase PHASE [--render]",
+        "progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA]"
+        " --target REPO --phase PHASE [--render]",
     ),
     writes=(
         "Inside the target, and only there: docs/agentic-readiness/<label>-agentic-readiness-state.json (init) and "
-        "<label>-agentic-readiness-STATE.md (init, render), each replaced atomically. init never replaces a state; "
-        "show writes nothing."
+        "<label>-agentic-readiness-STATE.md (init, render, and any command given --render), each replaced atomically. "
+        "init never replaces a state; show writes nothing; every other command rewrites the JSON after validating it."
     ),
     writes_inside_target=True,
 )
@@ -347,6 +362,12 @@ def _date(text: str) -> str:
 def _sha(text: str) -> str:
     if not re.fullmatch(r"[0-9a-f]{7,40}", text):
         raise _common.UsageError(f"--framework-rev must be 7 to 40 lower-case hex digits, not {text!r}")
+    return text
+
+
+def _sha_option(text: str) -> str:
+    if not re.fullmatch(r"[0-9a-f]{7,40}", text):
+        raise _common.UsageError(f"--merged-sha must be 7 to 40 lower-case hex digits, not {text!r}")
     return text
 
 
@@ -658,6 +679,294 @@ def run_render(args: Any) -> _common.Result:
     )
 
 
+# --- Transitions --------------------------------------------------------------------------------------
+
+# The state diagram (PLAN.md section 5): where an item may go from each status. `done` is final.
+LEGAL: dict[str, tuple[str, ...]] = {
+    "queued": ("in_progress", "skipped", "deferred"),
+    "in_progress": ("done", "partial", "failed", "blocked"),
+    "partial": ("in_progress",),
+    "failed": ("in_progress",),
+    "blocked": ("queued",),
+    "deferred": ("queued",),
+    "skipped": ("queued",),
+    "done": (),
+}
+# Moves that have a command of their own, so `set-status` refuses them and names the command.
+OWN_COMMAND = {
+    ("queued", "skipped"): "skip",
+    ("queued", "deferred"): "defer",
+    ("skipped", "queued"): "unskip",
+    ("deferred", "queued"): "undefer",
+}
+THEME_ORDER = ("not_started", "branch_open", "pr_open", "merged")
+DEBT_FORMAT = re.compile(r"^what=(?P<what>.+?),count=(?P<count>[0-9]+)(?:,baseline=(?P<baseline>.+))?$")
+LOG_REASON_CHARS = 200
+
+
+def _refuse(message: str, hint: str = "") -> _common.UsageError:
+    return _common.UsageError(message, hint=hint)
+
+
+def illegal_transition(finding: str, old: str, new: str) -> _common.UsageError:
+    """The refusal for moving `finding` from `old` to `new`. Each kind of illegal move has its own message."""
+    if old == new:
+        return _refuse(f"{finding} is already {old}")
+    if old == "done":
+        return _refuse(f"{finding} is done and done is final", "a regression is a new finding in the next audit")
+    if old == "skipped":
+        return _refuse(
+            f"{finding} is skipped and only the owner can bring it back", f"unskip {finding} --by owner --phase ..."
+        )
+    if new in ("skipped", "deferred"):
+        return _refuse(
+            f"{finding} is {old}; only a queued item can be {new}",
+            "bring it back to queued first" if old != "queued" else "",
+        )
+    if old == "queued":
+        return _refuse(f"{finding} is queued and must be in_progress before it can be {new}")
+    if old == "deferred":
+        return _refuse(f"{finding} is deferred and goes back to queued only with undefer --by owner")
+    if old == "in_progress" and new in ("queued", "in_progress"):
+        return _refuse(f"{finding} is in_progress; end it as done, partial, failed or blocked")
+    if old in ("partial", "failed") and new in ("done", "blocked", "queued", "partial", "failed"):
+        return _refuse(f"{finding} is {old} and can only go back to in_progress, then be ended again")
+    if old == "blocked":
+        return _refuse(f"{finding} is blocked and can only go back to queued")
+    return _refuse(
+        f"{finding}: {old} to {new} is not allowed; from {old} it may go to {', '.join(LEGAL[old]) or 'nowhere'}"
+    )
+
+
+def short(text: str) -> str:
+    text = " ".join(text.split())
+    return text if len(text) <= LOG_REASON_CHARS else text[: LOG_REASON_CHARS - 3] + "..."
+
+
+def parse_debt(text: str) -> dict[str, Any]:
+    found = DEBT_FORMAT.match(text.strip())
+    if not found:
+        raise _refuse(f"--debt must look like what=TEXT,count=N[,baseline=FILE], not {text!r}")
+    return {"what": found["what"].strip(), "count": int(found["count"]), "baseline_file": found["baseline"]}
+
+
+def _commit(text: str) -> str:
+    if not re.fullmatch(r"[0-9a-f]{7,40}", text):
+        raise _refuse(f"--commit must be 7 to 40 lower-case hex digits, not {text!r}")
+    return text
+
+
+def find_item(state: dict[str, Any], finding: str) -> dict[str, Any]:
+    for item in state["items"]:
+        if item["finding"] == finding:
+            return item  # type: ignore[no-any-return]
+    for entry in state["not_queued"]:
+        if entry["finding"] == finding:
+            raise _refuse(f"{finding} was rejected in the audit and is never queued")
+    raise _refuse(f"no item for {finding}", "see the findings with: progress.py show --target REPO --json")
+
+
+def require_owner(args: Any, action: str) -> None:
+    if args.by != "owner":
+        raise _refuse(
+            f"{action} is an owner decision",
+            "ask the owner, then record their answer with --by owner",
+        )
+
+
+def apply_status(item: dict[str, Any], new: str, args: Any) -> None:
+    """Move `item` to `new` as `set-status` asks. Raises a refusal; changes `item` only when nothing is refused."""
+    old = item["status"]
+    if new not in LEGAL[old] or old == "skipped":
+        raise illegal_transition(item["finding"], old, new)
+    if (old, new) in OWN_COMMAND:
+        command = OWN_COMMAND[(old, new)]
+        raise _refuse(f"{item['finding']}: {old} to {new} has its own command", f"use {command} --by owner")
+    debt = [dict(entry) for entry in item["debt"]]
+    if args.clear_debt:
+        debt = []
+    for text in args.debt or ():
+        entry = parse_debt(text)
+        debt = [existing for existing in debt if existing["what"] != entry["what"]] + [entry]
+    verification = item["verification"]
+    if args.verification_command or args.verification_result:
+        if not (args.verification_command and args.verification_result):
+            raise _refuse("--verification-command and --verification-result go together")
+        verification = {"command": args.verification_command, "result": args.verification_result}
+    if new == "done":
+        if verification is None:
+            raise _refuse(
+                f"{item['finding']} cannot be done without a verification",
+                "give --verification-command and --verification-result",
+            )
+        if debt:
+            raise _refuse(
+                f"{item['finding']} still has {len(debt)} debt entries, and an item with debt is partial, never done",
+                "use partial, or --clear-debt if the debt is paid",
+            )
+    if new == "partial" and not debt:
+        raise _refuse(f"{item['finding']} cannot be partial without debt", "give --debt what=..,count=N")
+    if new in NEEDS_REASON and not args.reason:
+        raise _refuse(f"{item['finding']} cannot be {new} without --reason")
+    item["status"] = new
+    item["reason"] = args.reason if new in NEEDS_REASON else None
+    item["verification"] = verification
+    item["debt"] = debt
+    for sha in args.commit or ():
+        if sha not in item["commits"]:
+            item["commits"].append(sha)
+    if args.note:
+        item["notes"] = (item["notes"] + " " + args.note).strip()
+
+
+def owner_move(item: dict[str, Any], new: str, args: Any) -> None:
+    """`skip`, `defer`, `unskip` and `undefer`: the moves only the owner makes."""
+    old = item["status"]
+    if new not in LEGAL[old]:
+        raise illegal_transition(item["finding"], old, new)
+    leaves = {"unskip": "skipped", "undefer": "deferred"}.get(args.command)
+    if leaves and old != leaves:
+        raise _refuse(f"{item['finding']} is {old}, not {leaves}; {args.command} only brings back a {leaves} item")
+    item["status"] = new
+    item["reason"] = args.reason if new in OWNER_ONLY else None
+
+
+def record(state: dict[str, Any], args: Any, event: str) -> None:
+    state["log"].append({"date": args.date, "phase": args.phase, "event": event})
+
+
+def commit_change(args: Any, label: str, path: Path, state: dict[str, Any], summary: str) -> _common.Result:
+    """Check the changed `state` whole, replace the JSON atomically, and the Markdown when `--render` is given."""
+    errors = state_errors(state)
+    if errors:
+        raise _common.ValidationFailed(f"the change would make the state invalid: {len(errors)} errors", errors=errors)
+    json_name, md_name = state_names(label)
+    swept = sweep_temporaries(path.parent, (json_name, md_name))
+    md_path = state_file(path.parent, md_name)
+    _common.atomic_write_text(path, encode_state(state))
+    data: dict[str, Any] = {"state": str(path), "label": label, "statuses": status_counts(state)}
+    if args.render:
+        _common.atomic_write_text(md_path, render(state))
+        data["markdown"] = str(md_path)
+    warnings = [f"removed {swept} temporary files an interrupted write left in {path.parent}"] if swept else []
+    if not args.render:
+        warnings.append(f"{md_name} is out of date; run render or pass --render")
+    return _common.Result(data=data, summary=f"progress: {summary}", warnings=warnings)
+
+
+def open_state(args: Any) -> tuple[str, Path, dict[str, Any]]:
+    args.date = _date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    target = _common.resolve_target(args.target)
+    label, path = find_state(target, args.label)
+    state = read_state(path)
+    if state["repo"]["label"] != label:
+        raise _common.ValidationFailed(f"the state in {path.name} is for {state['repo']['label']!r}, not {label!r}")
+    return label, path, state
+
+
+def stamp(item: dict[str, Any], args: Any) -> None:
+    item["by"] = args.by
+    item["date"] = args.date
+
+
+def run_set_status(args: Any) -> _common.Result:
+    label, path, state = open_state(args)
+    item = find_item(state, args.finding)
+    old = item["status"]
+    apply_status(item, args.status, args)
+    stamp(item, args)
+    why = f": {short(args.reason)}" if args.reason else ""
+    record(state, args, f"{args.finding} {old} to {args.status} by {args.by}{why}")
+    return commit_change(args, label, path, state, f"{args.finding} {old} to {args.status}")
+
+
+def run_owner_move(args: Any) -> _common.Result:
+    new = {"skip": "skipped", "unskip": "queued", "defer": "deferred", "undefer": "queued"}[args.command]
+    require_owner(args, args.command)
+    if new in OWNER_ONLY and not args.reason:
+        raise _refuse(f"{args.command} needs --reason")
+    label, path, state = open_state(args)
+    item = find_item(state, args.finding)
+    old = item["status"]
+    owner_move(item, new, args)
+    stamp(item, args)
+    why = f": {short(args.reason)}" if args.reason else ""
+    record(state, args, f"{args.finding} {old} to {new} by owner{why}")
+    return commit_change(args, label, path, state, f"{args.finding} {old} to {new}")
+
+
+def run_pref(args: Any) -> _common.Result:
+    require_owner(args, f"pref {args.action}")
+    if args.action == "set" and args.value is None:
+        raise _refuse("pref set needs a value: pref set KEY VALUE --reason TEXT")
+    if args.action == "unset" and args.value is not None:
+        raise _refuse("pref unset takes only the key")
+    label, path, state = open_state(args)
+    existing = next((pref for pref in state["preferences"] if pref["key"] == args.key), None)
+    if args.action == "unset":
+        if existing is None:
+            raise _refuse(f"there is no preference {args.key}")
+        state["preferences"].remove(existing)
+        record(state, args, f"preference {args.key} unset: {short(args.reason)}")
+        return commit_change(args, label, path, state, f"unset preference {args.key}")
+    entry = {
+        "key": args.key,
+        "value": args.value,
+        "reason": args.reason,
+        "by": "owner",
+        "date": args.date,
+        "phase": args.phase,
+    }
+    if existing is None:
+        state["preferences"].append(entry)
+        record(state, args, f"preference {args.key} set to {short(args.value)}: {short(args.reason)}")
+    else:
+        if existing["value"] == args.value:
+            raise _refuse(f"preference {args.key} already has that value")
+        state["preferences"][state["preferences"].index(existing)] = entry
+        record(
+            state,
+            args,
+            f"preference {args.key} changed from {short(existing['value'])} to {short(args.value)}: "
+            f"{short(args.reason)}",
+        )
+    return commit_change(args, label, path, state, f"set preference {args.key}")
+
+
+def run_theme(args: Any) -> _common.Result:
+    label, path, state = open_state(args)
+    theme = next(entry for entry in state["themes"] if entry["id"] == args.theme)
+    old, new = theme["status"], args.status
+    if THEME_ORDER.index(new) <= THEME_ORDER.index(old):
+        raise _refuse(
+            f"theme {args.theme} is {old} and a theme only moves forward ({' to '.join(THEME_ORDER)})",
+            "" if old != new else "it is already there",
+        )
+    branch = args.branch or theme["branch"]
+    pr = args.pr if args.pr is not None else theme["pr"]
+    merged_sha = args.merged_sha or theme["merged_sha"]
+    if branch is None:
+        raise _refuse(f"theme {args.theme} to {new} needs --branch")
+    if new in ("pr_open", "merged") and pr is None:
+        raise _refuse(f"theme {args.theme} to {new} needs --pr")
+    if new == "merged" and merged_sha is None:
+        raise _refuse(f"theme {args.theme} to merged needs --merged-sha")
+    if new != "merged" and args.merged_sha:
+        raise _refuse("--merged-sha belongs to the merged status")
+    theme.update(status=new, phase=args.phase, branch=branch, pr=pr, merged_sha=merged_sha if new == "merged" else None)
+    detail = ", ".join(
+        part
+        for part in (
+            f"branch {branch}",
+            f"PR #{pr}" if pr else "",
+            f"merged as {merged_sha}" if merged_sha and new == "merged" else "",
+        )
+        if part
+    )
+    record(state, args, f"theme {args.theme} {old} to {new}: {detail}")
+    return commit_change(args, label, path, state, f"theme {args.theme} {old} to {new}")
+
+
 # --- Arguments ----------------------------------------------------------------------------------------
 
 
@@ -678,6 +987,46 @@ def build_parser() -> _common.ToolParser:
     render_command = commands.add_parser("render", help="write the Markdown view from the JSON")
     render_command.add_argument("--target", required=True)
     render_command.add_argument("--label", help="the state to render when the target holds more than one")
+
+    def write_options(command: _common.ToolParser, *, by_default: str = "agent") -> None:
+        command.add_argument("--target", required=True)
+        command.add_argument("--label", help="the state to change when the target holds more than one")
+        command.add_argument("--phase", required=True, help="the step or session making the change, for the log")
+        command.add_argument(
+            "--by", choices=("owner", "agent"), default=by_default, help="who decided (default: agent)"
+        )
+        command.add_argument("--date", help="the date to record, YYYY-MM-DD (default: today, UTC)")
+        command.add_argument("--render", action="store_true", help="also replace the Markdown view")
+
+    set_status = commands.add_parser("set-status", help="move an item to a status the state diagram allows")
+    set_status.add_argument("finding")
+    set_status.add_argument("status", choices=ITEM_STATUSES)
+    set_status.add_argument("--commit", action="append", type=_commit, help="a commit SHA (repeatable)")
+    set_status.add_argument("--verification-command", help="the command that verifies the check")
+    set_status.add_argument("--verification-result", help="what the command gave")
+    set_status.add_argument("--debt", action="append", help="what=TEXT,count=N[,baseline=FILE] (repeatable)")
+    set_status.add_argument("--clear-debt", action="store_true", help="drop the recorded debt (it is paid)")
+    set_status.add_argument("--reason", help="required for failed and blocked")
+    set_status.add_argument("--note", help="text added to the item's notes")
+    write_options(set_status)
+    for name, needs_reason in (("skip", True), ("unskip", False), ("defer", True), ("undefer", False)):
+        owner = commands.add_parser(name, help=f"{name} an item (owner decision, needs --by owner)")
+        owner.add_argument("finding")
+        owner.add_argument("--reason", required=needs_reason, help="why" if needs_reason else "optional, for the log")
+        write_options(owner)
+    pref = commands.add_parser("pref", help="set or unset an owner preference (needs --by owner)")
+    pref.add_argument("action", choices=("set", "unset"))
+    pref.add_argument("key")
+    pref.add_argument("value", nargs="?")
+    pref.add_argument("--reason", required=True)
+    write_options(pref)
+    theme = commands.add_parser("theme", help="record a theme's branch, PR and merge")
+    theme.add_argument("theme", choices=THEME_IDS)
+    theme.add_argument("--status", required=True, choices=THEME_ORDER[1:])
+    theme.add_argument("--branch")
+    theme.add_argument("--pr", type=int)
+    theme.add_argument("--merged-sha", type=_sha_option)
+    write_options(theme)
     return parser
 
 
@@ -687,6 +1036,14 @@ def handler(argv: Sequence[str]) -> _common.Result:
         return run_init(args)
     if args.command == "show":
         return run_show(args)
+    if args.command == "set-status":
+        return run_set_status(args)
+    if args.command in ("skip", "unskip", "defer", "undefer"):
+        return run_owner_move(args)
+    if args.command == "pref":
+        return run_pref(args)
+    if args.command == "theme":
+        return run_theme(args)
     return run_render(args)
 
 
