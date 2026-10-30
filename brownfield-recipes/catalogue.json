@@ -1,5 +1,5 @@
 {
-  "catalogue_version": "0.2.3",
+  "catalogue_version": "0.2.4",
   "fingerprint": "e33c95eda9f58b9d",
   "checks": [
     {
@@ -739,7 +739,9 @@
         "REQ-SH-043"
       ],
       "engine_id": "EXEC-05",
-      "playbooks": []
+      "playbooks": [
+        "untrack-generated"
+      ]
     },
     {
       "id": "EXEC-06",
@@ -771,7 +773,9 @@
         "REQ-SH-044"
       ],
       "engine_id": "EXEC-07",
-      "playbooks": []
+      "playbooks": [
+        "untrack-generated"
+      ]
     },
     {
       "id": "TST-01",
