@@ -45,8 +45,8 @@ in IR04.1, `untrack-generated` in IR05.1, `establish-docs-contract` in IR09.1).
 |---|---|---|---|---|
 | [`define-command-surface`](define-command-surface.md) | T1 Command surface and quality tools | CMD-01, CMD-02, CMD-03, CMD-04, EXEC-03, TST-01 | yes | Drafted (IR04.1); applied in IR04.2, IR04.3 |
 | [`configure-quality-tools`](configure-quality-tools.md) | T1 Command surface and quality tools | TOOL-01, TOOL-02, TOOL-03, TOOL-04 | yes | Drafted (IR04.1); applied in IR04.2, IR04.3 |
-| [`pin-execution-environment`](pin-execution-environment.md) | T2 Execution determinism | EXEC-01, EXEC-02 | yes | Drafted (IR05.1); applied in IR05.2, IR05.3 |
-| [`untrack-generated`](untrack-generated.md) | T2 Execution determinism | EXEC-05, EXEC-07 | yes | Drafted (IR05.1); applied in IR05.2, IR05.3 |
+| [`pin-execution-environment`](pin-execution-environment.md) | T2 Execution determinism | EXEC-01, EXEC-02 | yes | Drafted (IR05.1); applied and corrected in IR05.2, IR05.3 (T2 closed) |
+| [`untrack-generated`](untrack-generated.md) | T2 Execution determinism | EXEC-05, EXEC-07 | yes | Drafted (IR05.1); applied and corrected in IR05.2, IR05.3 (T2 closed) |
 | [`env-inventory-and-secrets`](env-inventory-and-secrets.md) | T3 Secrets and env | EXEC-04, SEC-01, SEC-02, SEC-03 | yes | Drafted (IR06.1); applied in IR06.2, IR06.3 |
 | `add-ci-parity` | T4 CI parity, hooks, commits | CI-01, CI-02, CI-03, CI-04 | yes | Planned (IR07.1) |
 | `add-hooks-and-commit-rules` | T4 CI parity, hooks, commits | TOOL-05, TOOL-06 | no | Planned (IR07.1) |

@@ -112,6 +112,10 @@ Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#execution
 folder that a proxy container serves is the case that needs the owner's yes: read the compose file and the
 proxy config for the bind mount, and read the stack script for the build that fills the folder before the proxy
 starts. `package-lock.json` is never generated output in this sense.
+A tracked file that an ignore rule matches is not always build output: an env file with values appears in the
+same `git ls-files -ci` list and goes to the secrets theme, not here. Applied once on a repository with a
+static bundle bind-mounted read-only into a proxy: the stack script rebuilt the folder before the proxy
+started, so untracking was safe once the owner said yes.
 
 ## Continue on error
 
