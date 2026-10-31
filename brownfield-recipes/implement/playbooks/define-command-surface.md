@@ -120,6 +120,11 @@ Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#command-s
   reference, never copy it.
 - A NestJS scaffold's `lint` carries `--fix`: make `lint` read-only and add `lint:fix` for the writer
   ([NestJS section](../../stacks/typescript-node.md#nestjs)).
+- Multi-component repository, per-app layout: no root dispatcher unless the owner asks; each component keeps its
+  own verbs and the instruction file lists them per component. The "needs a lockfile" block on `security` applies
+  only where the lockfile is missing; a component that has one gets the verb now.
+- Read each component's own `tsconfig.json` before judging TOOL-03: the engine does not see nested ones, and
+  one component may already be strict while the other is not.
 - A Create React App component ships only `start`, `build`, `test`, `eject`. Add the missing verbs as scripts;
   `react-scripts test` is interactive by default, so `test` sets `CI=true` (or `--watchAll=false`) to run once.
 - `typecheck` = `tsc --noEmit -p tsconfig.json` (and a second `-p` for a separate test config when one exists).
