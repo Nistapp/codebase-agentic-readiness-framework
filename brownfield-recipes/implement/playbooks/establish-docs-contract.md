@@ -89,7 +89,11 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 
 1. **Baseline.** Run the drift check. List the Markdown files under `docs/`, in the root and in sub-folders. Count
    Markdown lint violations with the pinned linter on every tracked Markdown file (report only, nothing is
-   fixed). The count is the debt baseline.
+   fixed). Record the count, but it is a draft: `progress.py render` adds a generated state view that is itself
+   Markdown with a few violations, and so do the new pages, so **measure the final baseline after the last render**
+   (with the new pages staged, since the report lists tracked files) and set it then.
+   The census numbers in the finding text are another thing to re-measure: a stale NAV-03 count usually comes from
+   untracked data on disk, so count with `git ls-files`.
 2. **Docs index (DOC-01).** If `docs/README.md` (or `index.md`) does not exist, write it: one paragraph on what
    `docs/` holds, a list of the pages with one line each, and the places to look for decisions
    (`docs/adr/`) and the map (`docs/architecture/`). A frozen report folder from the first audit is listed in
@@ -138,10 +142,18 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       Template folders that must start with a non-heading line (rule MD041) are the usual case.
    2. Add the lint as a **ratchet**: the gating command lints a path list that only grows (the new docs plus any
       file that is already clean); a second command reports on every Markdown file and never fails. Record the
-      baseline count from step 1.
+      baseline count from step 1 (final value after the last render, see step 1). `progress.py` has no field for
+      lint debt on the docs items, so it lives in three places: the script's `BASELINE` constant, a `docs.lint_ratchet`
+      preference, and the status file. Put the `partial` note on the nearest finding (NAV-03) or say so in the PR;
+      a note can only be added when the item moves to a status, so set it in the same call that sets `partial`.
    3. Add a separate CI job, path-filtered to changed Markdown, that runs the linter and renders every Mermaid
       block with `mmdc` (`--no-sandbox` in CI, cache the npm and Puppeteer directories keyed by the pinned
-      versions). Pin both versions exactly; never use an unpinned `npx`. Check the repository's merge-gate job: a
+      versions). Pin both versions exactly; never use an unpinned `npx`. If the repository already has Node,
+      reuse the pinned `setup-node` step it uses elsewhere (same SHA and major version); otherwise leave setup out
+      until a verified SHA exists. In a private repository, check out with `fetch-depth: 0` and diff the two
+      commits locally: a `git fetch` fails there because `persist-credentials: false` leaves no token. Run the
+      workflow linter on the changed workflow before pushing: a new job can turn the merge gate red through it.
+      Check the repository's merge-gate job: a
       new job that must be green needs adding to it, which is the owner's call.
    4. If `lychee` was chosen: relative links only, report-only at first.
 9. **Verify and commit.** Lint every new and changed Markdown file, validate every Mermaid block, run the
@@ -159,8 +171,18 @@ Node job; the Gradle build, wrapper and dependency set do not change.
 
 Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#boundaries). Components: workspace or
 per-app `package.json` files and compose service names; entry points: `main.ts`, the `start` script, the
-compose file. In a per-app layout (`layout.command_runner`), put the lint config at the root and run the docs
-job once from there. The repository already has Node, so the job can reuse its pinned Node version.
+compose file. In a per-app layout (`layout.command_runner`), put the lint config and the script at the root and
+run the docs job once from there. For infrastructure folders, read the routing from the files that are actually
+active (a gateway may enable its upstream rules per environment); say in the page what you could not verify.
+The repository already has Node, so the job can reuse its pinned Node version.
+
+## Re-recording preferences
+
+An earlier owner-answers commit on a side branch (the docs preferences from the brief pass) conflicts with the state
+JSON as soon as the default branch has moved. Do not cherry-pick it; re-record the preferences with `progress.py
+pref set --by owner` quoting the owner's words. Close earlier themes the state still shows `pr_open` although their
+PRs are merged (`progress.py theme Tn --status merged --pr <n> --merged-sha <sha>`). `theme T6 --status pr_open`
+needs `--pr`, so open the PR before the final state commit. `git add` named paths, never `commit -a`.
 
 ## Continue on error
 
