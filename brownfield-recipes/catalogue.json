@@ -1,5 +1,5 @@
 {
-  "catalogue_version": "0.2.5",
+  "catalogue_version": "0.2.6",
   "fingerprint": "e33c95eda9f58b9d",
   "checks": [
     {
@@ -457,7 +457,9 @@
         "REQ-SH-031"
       ],
       "engine_id": "TOOL-05",
-      "playbooks": []
+      "playbooks": [
+        "add-hooks-and-commit-rules"
+      ]
     },
     {
       "id": "TOOL-06",
@@ -472,7 +474,9 @@
         "REQ-SH-032"
       ],
       "engine_id": "TOOL-06",
-      "playbooks": []
+      "playbooks": [
+        "add-hooks-and-commit-rules"
+      ]
     },
     {
       "id": "CI-01",

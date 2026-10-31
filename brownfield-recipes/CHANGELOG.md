@@ -33,6 +33,12 @@ history (which verdicts moved and why), see
   census-and-document step for NAV-03, and a ratcheted docs lint with `mmdc` in a separate CI job. Tool currency
   checked 2026-10-30. `catalogue.json` 0.2.5 (PATCH: playbook names only; fingerprint unchanged) adds the
   playbook to DOC-01 to DOC-04 and NAV-01 to NAV-05.
+- The two T4 playbooks: `implement/playbooks/add-ci-parity.md` (CI-01 to CI-04: wrappers call the verbs, no green
+  no-op, report-only steps named as such, a committed branch-protection record) and
+  `implement/playbooks/add-hooks-and-commit-rules.md` (TOOL-05, TOOL-06: lefthook default, husky dropped on
+  currency, three commit-rule options with the engine blind spot). Currency checked 2026-10-31.
+  `catalogue.json` 0.2.6 (PATCH: playbook names only; fingerprint unchanged) adds the second playbook to TOOL-05
+  and TOOL-06, and `audit/checks/05-tooling.md` names it as their remediation.
 - The readiness state: `schema/readiness-state.schema.json` (`schema_version` `0.1`) with two examples and their
   rendered Markdown, and `tools/progress.py` `init`, `show` and `render`. `progress.py` is the one tool that
   writes inside a target, and only its two state files (ADR 0002); `ToolInfo` gains `writes_inside_target`,

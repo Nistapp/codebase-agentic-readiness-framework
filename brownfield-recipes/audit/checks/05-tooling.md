@@ -4,8 +4,7 @@
 > [Why These Checks §6](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#6-tooling-tool)
 > for the consequence behind this family: a tool that is installed but not reachable through the command
 > surface, or configured but not strict, gives an agent false confidence. TOOL-01 to TOOL-04 are remediated
-> by `configure-quality-tools`; TOOL-05 and TOOL-06 have no playbook yet, so their **Remediation** names the
-> backlog playbook and says what to create directly in the meantime.
+> by `configure-quality-tools`; TOOL-05 and TOOL-06 are remediated by `add-hooks-and-commit-rules`.
 
 ---
 
@@ -184,9 +183,7 @@ Evidence to cite A `file` evidence item citing the wiring file (`.pre-commit-con
                  unwired hook directory found.
 Absence proof    A FAIL cites every runner manifest or detected ecosystem signal as the evidence that no
                  hook-manager file, `core.hooksPath` entry, or referenced `.husky/` was found.
-Remediation      No MVP playbook yet (backlog: `wire-local-hooks`). Adopt a hook manager (pre-commit,
-                 lefthook, husky) and wire it — set `core.hooksPath`, add a `prepare`/install script, or
-                 commit a `.pre-commit-config.yaml` — so checks run before a commit, not only in CI.
+Remediation      `add-hooks-and-commit-rules`
 Pitfalls         A `.husky/` directory with files in it is not itself evidence of wiring — husky only runs
                  once `npm install` (or an equivalent) has executed its `prepare` script; a repository that
                  committed the directory but never wired the install step is `PARTIAL`, not `PASS`.
@@ -221,9 +218,7 @@ Evidence to cite A `file` evidence item citing the commitlint config, the `commi
                  hook-manager config line that matched.
 Absence proof    A FAIL cites every runner manifest or detected ecosystem signal as the evidence that no
                  commitlint config, `commit-msg` hook, or equivalent stage was found.
-Remediation      No MVP playbook yet (backlog: `enforce-commit-convention`). Add a commitlint config or a
-                 `commit-msg` hook so commit messages follow one convention that release automation can
-                 parse.
+Remediation      `add-hooks-and-commit-rules`
 Pitfalls         `COSMETIC` severity means this check never raises a repository's audit to BLOCKER on its
                  own — do not treat a `TOOL-06` `FAIL` as equivalent in urgency to a `DEGRADER` finding
                  elsewhere in this family.
