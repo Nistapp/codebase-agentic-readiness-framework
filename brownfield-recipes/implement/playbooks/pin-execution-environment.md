@@ -97,8 +97,10 @@ the pins in CI, Dockerfiles and version files agree with each other.
    otherwise list the mismatches as debt and stop short of the edit. The CI theme repeats this check.
 7. **Keep claims true.** A comment or document that says "versions are locked" must be true after this change or
    be corrected: `dependabot.yml` headers and `AGENTS.md` lines are typical. A claim that is stale for a reason
-   other than this playbook (an `AGENTS.md` description of lockfiles, say) is recorded and left to the
-   `AGENTS.md` theme.
+   other than this playbook is recorded and left to the `AGENTS.md` theme, **except** a false claim about the
+   lockfiles or the pin this playbook just made true or checked (for example "component X has no tracked
+   lockfile" when it has one): correct that line in its own small commit once the owner agrees, and look the
+   line up by text, not by the finding's line number (earlier themes move lines).
 8. **Tell the scanner theme.** If a scanner reads the lockfile (OSV-Scanner reads `gradle.lockfile` and
    `package-lock.json`), note in the item that the lockfile now exists, so `configure-quality-tools` can unblock
    its `security` verb.
@@ -137,11 +139,15 @@ Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#execution
   the pinned Node; if that happens, the manifest and lockfile disagree and the owner decides how to repair it.
 - Setup is `npm ci` (never a bare `npm install`). Run it in every component on the pinned major and run the
   component's build once.
+  A stack start-up script that installs dependencies when `node_modules` is missing must use `npm ci` too; it is
+  a one-line edit the owner approves like any script change.
 - Create React App components ship `react-scripts` 5, whose build chain predates recent Node majors: build on
   the chosen major before committing the pin, and surface a failure to the owner rather than lowering the pin
   silently.
 - CI uses `actions/setup-node` with `node-version-file` pointing at the component's `.nvmrc`
   (`cache-dependency-path` for the component's lockfile).
+- A second Dockerfile for the same app (a dev image) may already name the target major while the finding text
+  still says an old one: copy every value from the files and list only the places that really differ.
 - Docker images build only through the repository's own scripts, never by hand. Align the Dockerfile `FROM`
   and any dev Dockerfile with the pin.
 
@@ -204,6 +210,10 @@ python3 brownfield-recipes/tools/progress.py pref set tools.node_major <value> -
 python3 brownfield-recipes/tools/progress.py theme T2 --status branch_open \
   --branch agentic-readiness/<phase>-determinism --target <repo> --phase <phase> --render
 ```
+
+`set-status ... partial` requires `--debt`, and `theme --status pr_open` requires `--pr`: open the pull request
+first, then set the theme row in a second state commit. Run `git add` on named paths when committing the code,
+so the state JSON that `progress.py` rewrites does not ride along in an unrelated commit.
 
 A `blocked` status is reached through `in_progress` and needs `--reason`. Record each owner choice as a
 preference: runtime major, pin mechanism, Gradle lock width, accepted per-component lockfiles.
