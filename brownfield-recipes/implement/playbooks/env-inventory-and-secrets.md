@@ -80,7 +80,9 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    a rule above it ignores.
 2. **Inventory the reads, names only.** Search for variable reads with a pattern per source kind (the stack
    subsections give the patterns). Never open a `.env`-like file for this; the code and the scripts are the
-   source. Output one table: `name | required or optional | read by (script, app or CI) | source file:line`.
+   source. In a repository whose scripts and apps were added after the audit, run the inventory over the
+   current tree, not the audit's list (new script directories carry variables the audit never saw). Output
+   one table: `name | required or optional | read by (script, app or CI) | source file:line`.
    Rules for the table:
    - Shell `${VAR:-default}` or `${VAR-}` marks an optional variable; `${VAR:?msg}` or a bare `${VAR}` under
      `set -u` marks a required one.
@@ -90,15 +92,22 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
      record each as a false positive with the reason, and say in the example file's header that the
      engine's list is not the inventory.
    - A name assigned in a script and read by a later script is an input of the second one only if no caller sets
-     it.
+     it. A literal assigned at the top of a script (`NAME=value`, no `${NAME:-...}`) is a constant, not an input,
+     even when its name looks like a setting; a name that appears only inside a printed hint is container-side.
+   - A name the code reads through a multi-line call (the key on the next line) is missed by a one-line grep:
+     check each declared-but-unread name with a plain `grep -rn NAME` before calling it stale.
 3. **Find tracked secret-bearing files** from the baseline and apply the owner's answer (Inputs step 2).
    Untracking, when the owner chooses it, is `git rm --cached <path>`: keep the working-tree file, fix any doc
    that names it, and do not rotate or rewrite history. If the file is read by a stack script or a compose
    file, find the reader first and say what breaks; verify through the repository's own script, never by
    starting containers by hand. A kept file stays as it is (no edit, no ignore rule changed for it).
-4. **Write the example file** (Inputs step 1) with names only: `NAME=` with a one-line comment (what reads it,
-   required or optional, a placeholder format such as `<aws-role-arn>`; low-entropy, never a real-looking
-   value). Optional variables are commented out or marked `# optional`. Do not copy a value from any real file.
+4. **Write the example file(s)** (Inputs step 1). In a per-app repository write one file per app plus one for
+   the script areas (CI, deploy, identity-provider scripts), each with its own false-positive header. Extend an
+   existing example file: add the names it lacks, mark a declared name the code never reads `# legacy` (do not
+   delete it). In a public-bundle app (`REACT_APP_*`, `VITE_*`) say in the header that every value is published.
+   Names only: `NAME=` with a one-line comment (what reads it, required or optional, a placeholder format
+   such as `<aws-role-arn>`; low-entropy, never a real-looking value).
+   Optional variables are commented out or marked `# optional`. Do not copy a value from any real file.
 5. **Cross-check.** Every name in the inventory is in an example file or is on the false-positive list with a
    reason; every name in an example file is read somewhere (a stale name is removed or marked legacy). In a
    per-app layout, check each app's file against its own reads.
@@ -107,7 +116,11 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
       public certificate, a test fixture) gets a named `!` exception with a comment, never a silent gap.
    2. Add the missing shapes from the check's own suggestion list (the audit's SEC-03 output names them): SSH
       private keys, PKCS#12, PFX, keystore, `.crt`, `.cer`, the AWS credentials folder. Append, do not reorder.
+      `*.cer` and `*.crt` share one caveat: a future public certificate needs a named `!` line. Verify with
+      `git check-ignore -q` on one sample path per shape, including one under a directory a negation re-includes.
    3. Read each existing `!` line: if it re-includes a secret shape, report it to the owner (do not remove it).
+      When the owner keeps the files, add one comment above the negation block saying they are retained by owner
+      decision (comment only, no rule change), so the next reader does not try to untrack them.
    4. Re-run `git ls-files -ci --exclude-standard`. A path newly listed was tracked and is now matched by a
       rule: hand it to step 3. An ignore rule never untracks a file, which is why a force-added key stays
       tracked until `git rm --cached`.
@@ -116,9 +129,10 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    are listed as such and recorded in the scanner's allowlist only if the owner agrees.
 8. **Realm and identity exports** (Inputs step 4): write the path list and counts into the state note and
    "Found on the way". No change to the files.
-9. **Docs.** Add the example file to the instruction file's variables paragraph and to the CI README, if either
+9. **Docs.** Add the example file(s) to the instruction file's variables paragraph and to the CI README, if either
    documents variables by hand: one pointer, not a second copy. If the instruction file says env files are
-   ignored and a tracked one exists, record the contradiction; the AGENTS.md theme fixes it.
+   ignored and a tracked one exists, record the contradiction; the AGENTS.md theme fixes it. A deploy doc that
+   names variables by hand gets one pointer line to the example file, not a copy.
 10. Commit per logical change (example file, ignore rules, untracking), each revertible alone.
 
 ### Gradle and Quarkus
@@ -203,6 +217,9 @@ python3 brownfield-recipes/tools/progress.py pref set layout.env_example <path> 
 python3 brownfield-recipes/tools/progress.py theme T3 --status branch_open \
   --branch agentic-readiness/<phase>-secrets-env --target <repo> --phase <phase> --render
 ```
+
+`theme T3 --status pr_open` requires `--pr <number>`, so open the PR first and commit the final state files
+after it (a theme with a skipped item still closes when every other item is `done`).
 
 Only the owner skips an item. A keystore decision is already a preference (`extra.t3`) when the owner made
 it; do not ask again, confirm it in one line.
