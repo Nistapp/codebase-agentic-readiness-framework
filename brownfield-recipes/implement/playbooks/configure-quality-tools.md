@@ -113,8 +113,9 @@ Profile: [`stacks/java.md`](../../stacks/java.md#tooling-defaults).
 - Spotless: `spotless { ratchetFrom 'origin/<integration branch>' }` makes `spotlessCheck` and `spotlessApply`
   touch only files changed since that ref. `formatCheck` depends on `spotlessCheck`, `format` on
   `spotlessApply`. CI needs the integration branch fetched (no shallow clone, or fetch the ref first), or
-  `ratchetFrom` fails with "No such reference". The full report-only run uses a property that disables the
-  ratchet (for example `-PspotlessFull`), read in the build file.
+  `ratchetFrom` fails with "No such reference". Every CI job that has its own checkout and runs the build
+  (a code-scanning job included, not only the main build job) needs `fetch-depth: 0`. The full report-only
+  run uses a property that disables the ratchet (for example `-PspotlessFull`), read in the build file.
 - Eclipse JDT profile: export or write a formatter XML under `config/` that encodes the style document (tabs,
   line endings, width, brace placement), and point `java { eclipse().configFile(...) }` at it.
 - PMD: `pmd { toolVersion = '<7.x>'; ruleSetFiles = files('config/pmd/ruleset.xml'); ruleSets = [] }`.
@@ -143,6 +144,22 @@ Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#tooling-d
 - `typecheck` = `tsc --noEmit -p <config>`. A NestJS scaffold has `strict` off (see the
   [NestJS section](../../stacks/typescript-node.md#nestjs)); count the errors `strict: true` gives before
   proposing the flip, and ratchet if there are any.
+- Strict ratchet (TypeScript): `strict: true` does not override an option the base config sets explicitly to
+  `false`, so a second config (`tsconfig.strict.json`, extends the base) must set each of those flags to
+  `true` itself, or it measures a weaker check than it claims. `tsc` reports errors in imported files, so an
+  include list of "clean files" cannot isolate them: include the whole source, run `tsc`, and fail only on
+  errors in files absent from a committed debt list (a small script; the list only shrinks, new files are strict
+  at once). Count debt with the final config, not with a `--strict` command-line run.
+- Changed-files ratchets (`format:check`, `lint`) on a per-app layout: a small script prints the files changed
+  since the merge-base with `origin/<branch>` (committed, uncommitted and untracked), the verbs call it, and it
+  fails with a clear message when the ref is missing. A writer verb (`format`) that only touches changed files
+  keeps `format.mass_reformat=no` safe; a whole-tree writer gets a separate name (`format:all`) and the
+  instruction file says it needs the owner's approval.
+- A component with no formatter (for example a Create React App component, which bundles only ESLint) gets the
+  formatter the other component uses, pinned exact, with the same config; the lockfile diff must be the new
+  package only (check `git diff --stat` after `npm install --save-exact`).
+- `npm audit` as the `security` verb is red on most real repositories: the item is `partial` (verb exists, debt
+  recorded as counts per severity and a review date), never `done`, and the verb stays out of `check`.
 - A Create React App component may already be TypeScript and strict: read its `tsconfig.json` before treating
   TOOL-03 as open for it.
 - The greenfield [`biome.json`](../../../greenfield-bootstrap/templates/biome.json) and
@@ -201,3 +218,5 @@ python3 brownfield-recipes/tools/progress.py set-status F-nnn blocked --target <
 ```
 
 `blocked` and `partial` are reached through `in_progress`. An item with debt is never `done`.
+Preference keys are lowercase (`^[a-z0-9][a-z0-9._-]{0,63}$`), and a `partial` item cannot go straight to
+`done`: set it `in_progress` first.
