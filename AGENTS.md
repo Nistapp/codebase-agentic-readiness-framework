@@ -32,7 +32,7 @@ no vendor-specific instruction file exists beside it.
 - Run `make check` and `make security` before you propose a change. Do not run an ad-hoc substitute.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
   `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`).
-- Python 3.11 or newer, and `uv` for the pinned dev tools (ruff, mypy, detect-secrets). Nothing is installed into the project.
+- Python 3.11 or newer (pinned in `.python-version`), and `uv` for the pinned dev tools (ruff, mypy, detect-secrets). Nothing is installed into the project.
 - After a deliberate change to a fixture or test that holds a key-shaped string, run `make update-secrets-baseline`
   and review the diff.
 - Never weaken a gate to get green: no `.skip`, no rule turned off, no assertion relaxed. If you cannot pass a gate, say so.
