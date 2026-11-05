@@ -48,12 +48,21 @@ TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -n
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline validate-skills docs-lint docs-lint-all docs-mermaid
+.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline validate-skills docs-lint docs-lint-all docs-mermaid
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: coverage  verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-mermaid FILES=..."
+
+# There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
+# through uvx and npx at pinned versions. This target checks the prerequisites without a prompt, exits 1 naming the
+# first one that is missing, and writes nothing.
+setup:
+	@$(PYTHON) -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else "setup: Python 3.11 or newer is required (see .python-version)")'
+	@command -v uv >/dev/null || { echo "setup: uv is required (https://docs.astral.sh/uv/)" >&2; exit 1; }
+	@command -v git >/dev/null || { echo "setup: git is required" >&2; exit 1; }
+	@echo "setup: prerequisites present (python, uv, git); nothing to install"
 
 format:
 	$(RUFF) format brownfield-recipes

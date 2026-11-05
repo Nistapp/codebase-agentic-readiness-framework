@@ -9,6 +9,7 @@ deterministic engine under them. Read this file first; the engine has its own, s
 The framework's seven verbs run through the root `Makefile`. CI runs the same commands.
 
 ```bash
+make setup          # check the prerequisites (Python 3.11+, uv, git); nothing is installed
 make format         # rewrite formatting in place
 make format:check   # read-only: formatting and lint rules (alias: make format-check)
 make lint           # read-only lint
