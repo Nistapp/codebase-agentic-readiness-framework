@@ -64,6 +64,8 @@ def build_report(result: AuditResult, args: argparse.Namespace) -> dict[str, Any
     prov = provenance(result.target, args)
     prov["framework_revision"] = _framework_revision(args)
     prov["ruleset_hash"] = ruleset_hash()
+    # Host-dependence, stated: what outside the target the checks read, or that nothing was allowed to be.
+    prov["user_config"] = {"read_allowed": result.user_config, "paths_read": result.user_reads}
 
     counts = {v.value.lower(): result.counts(v) for v in Verdict}
 

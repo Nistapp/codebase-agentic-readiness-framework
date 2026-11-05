@@ -42,7 +42,7 @@ INFO = _common.ToolInfo(
     summary="Run the deterministic audit engine from any directory; the report is named for the repository.",
     synopsis=(
         "engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N] [--exclude GLOB]... [--max-files N]"
-        " [--run-gates --allow-probe VERB... [--timeout SECONDS]] [--emit-baseline]",
+        " [--run-gates --allow-probe VERB... [--timeout SECONDS]] [--emit-baseline] [--no-user-config]",
         "engine.py --list-checks",
     ),
     writes=(
@@ -122,6 +122,11 @@ def build_parser() -> _common.ToolParser:
         action="store_true",
         help="also write do-not-do.draft.md beside the report (CON-04's remediation draft, forwarded to the engine)",
     )
+    parser.add_argument(
+        "--no-user-config",
+        action="store_true",
+        help="forwarded to the engine: read no user-level configuration ($HOME, XDG), so the verdicts do not depend on the machine",
+    )
     parser.add_argument("--list-checks", action="store_true", help="print the engine's checks and exit")
     return parser
 
@@ -139,6 +144,7 @@ def scan_options(args: Any) -> list[str]:
         "--allow-probe": bool(args.allow_probe),
         "--timeout": args.timeout is not None,
         "--emit-baseline": args.emit_baseline,
+        "--no-user-config": args.no_user_config,
     }
     return [name for name, was_given in given.items() if was_given]
 
@@ -183,6 +189,8 @@ def scan(args: Any) -> _common.Result:
         argv += ["--timeout", str(args.timeout)]
     if args.emit_baseline:
         argv.append("--emit-baseline")
+    if args.no_user_config:
+        argv.append("--no-user-config")
 
     code, stdout, stderr = run_engine(argv)
     if code == _common.EXIT_USAGE:

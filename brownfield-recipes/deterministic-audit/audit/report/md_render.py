@@ -20,6 +20,18 @@ def _esc(text: Any) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ").strip()
 
 
+def _user_config_cell(info: object) -> str:
+    """Say whether the verdicts can depend on the machine the scan ran on."""
+    if not isinstance(info, dict):
+        return "—"
+    paths = info.get("paths_read") or []
+    if not info.get("read_allowed", True):
+        return "not read (`--no-user-config`)" + (
+            f"; read by explicit override: {', '.join(f'`{p}`' for p in paths)}" if paths else ""
+        )
+    return "read: " + ", ".join(f"`{p}`" for p in paths) if paths else "allowed, none found"
+
+
 def _table(headers: tuple[str, ...], rows: list[list[str]], aligns: tuple[str, ...] | None = None) -> list[str]:
     aligns = aligns or tuple("left" for _ in headers)
     sep = {"left": "---", "center": ":--:", "right": "--:"}
@@ -114,6 +126,7 @@ def _provenance(report: dict) -> list[str]:
         ["Phase evaluated", f"{prov.get('phase', 1)}"],
         ["Scanned", f"`{prov['scanned_at']}`"],
         ["Probes enabled", "yes" if prov.get("probes_enabled") else "no"],
+        ["User-level configuration", _user_config_cell(prov.get("user_config"))],
     ]
     return _table(("Field", "Value"), rows)
 

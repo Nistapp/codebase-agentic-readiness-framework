@@ -104,7 +104,7 @@ def run_engine(target: Path, name: str, out_dir: Path, env: dict[str, str] | Non
         code = _common.run_tool(
             launcher.INFO,
             launcher.handler,
-            [str(target), "--out-dir", str(out_dir), "--repo-label", name],
+            [str(target), "--out-dir", str(out_dir), "--repo-label", name, "--no-user-config"],
             stdout=out,
             stderr=err,
         )

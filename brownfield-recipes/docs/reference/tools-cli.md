@@ -46,7 +46,7 @@ Runs the [deterministic engine](../../deterministic-audit/README.md) from any di
 python3 brownfield-recipes/tools/engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N]
                                            [--exclude GLOB]... [--max-files N]
                                            [--run-gates --allow-probe VERB... [--timeout SECONDS]]
-                                           [--emit-baseline]
+                                           [--emit-baseline] [--no-user-config]
 python3 brownfield-recipes/tools/engine.py --list-checks
 python3 brownfield-recipes/tools/engine.py --describe
 ```
@@ -63,6 +63,7 @@ python3 brownfield-recipes/tools/engine.py --describe
 | `--max-files N` | A hard cap on the files the engine inspects. |
 | `--run-gates`, `--allow-probe VERB`, `--timeout SECONDS` | Let the engine run the target's own commands. Nothing runs unless `--run-gates` is given and every verb is named in an `--allow-probe`. `--timeout` is the limit per command. |
 | `--emit-baseline` | Forwarded to the engine's own `--emit-baseline` (D51): also writes `do-not-do.draft.md` beside the report, the CON-04 remediation draft. |
+| `--no-user-config` | Forwarded to the engine: read no user-level configuration (`$HOME`, XDG), so the `IDX` verdicts do not depend on the machine. The report's `provenance.user_config` says what was read. |
 | `--list-checks` | Print the engine's checks and exit. It takes no other argument. |
 
 The engine's `--force`, `--out`, `--format`, `--fail-on` and `--baseline` are not offered, and abbreviations of the options above are refused.

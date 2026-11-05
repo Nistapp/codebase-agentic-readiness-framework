@@ -122,8 +122,10 @@ def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[E
 # ---------------------------------------------------------------------------
 
 
-def _user_configs() -> tuple[Path, ...]:
-    """User-level MCP configuration candidates, resolved against ``$HOME`` at call time."""
+def _user_configs(session) -> tuple[Path, ...]:
+    """User-level MCP configuration candidates, resolved against ``$HOME`` at call time; none under ``--no-user-config``."""
+    if not session.user_config:
+        return ()
     home = Path.home()
     return (
         home / ".config" / "opencode" / "opencode.json",
@@ -170,28 +172,37 @@ def _read_projects(db: Path) -> list[dict] | None:
         connection.close()
 
 
-def _locate_store(target) -> tuple[Path | None, list[str]]:
+def _locate_store(target, session) -> tuple[Path | None, list[str]]:
     """Resolve the index store, returning ``(store_or_None, searched_locations)``.
 
     Fixed precedence: the ``AUDIT_INDEX_STORE`` override, then the user-level default locations,
-    then the team-sharing artifact inside the target.
+    then the team-sharing artifact inside the target. Under ``--no-user-config`` the default locations under
+    ``$HOME`` are not looked at; the override is an explicit operator choice and still applies. Every path outside the
+    target that is used is recorded on the session, for the report's provenance.
     """
     searched: list[str] = []
     override = os.environ.get(INDEX_STORE_ENV)
     if override:
         path = Path(override).expanduser()
         searched.append(f"{INDEX_STORE_ENV}={path}")
-        return (path if path.exists() else None), searched
-
-    home = Path.home()
-    for path in (
-        home / ".codebase-memory",
-        home / ".cache" / "codebase-memory",
-        home / ".cache" / "codebase-memory-mcp",
-    ):
-        searched.append(str(path))
         if path.exists():
+            session.note_user_read(path)
             return path, searched
+        return None, searched
+
+    if session.user_config:
+        home = Path.home()
+        for path in (
+            home / ".codebase-memory",
+            home / ".cache" / "codebase-memory",
+            home / ".cache" / "codebase-memory-mcp",
+        ):
+            searched.append(str(path))
+            if path.exists():
+                session.note_user_read(path)
+                return path, searched
+    else:
+        searched.append("user-level locations (not read: --no-user-config)")
 
     artifact = target.path / _TEAM_ARTIFACT
     searched.append(str(artifact))
@@ -238,9 +249,10 @@ def check_idx01(*, spec, target, inventory, stack, components, session) -> Check
         elif SERVER_NAME in text:
             named.append(f"{rel} (project)")
 
-    for path in _user_configs():
+    for path in _user_configs(session):
         if not path.is_file():
             continue
+        session.note_user_read(path)
         label = str(path)
         present.append(label)
         text = _read_user(path)
@@ -253,7 +265,9 @@ def check_idx01(*, spec, target, inventory, stack, components, session) -> Check
         return _outcome(
             spec,
             Verdict.FAIL,
-            "no project- or user-level MCP configuration found",
+            "no project-level MCP configuration found (user-level configuration not read: --no-user-config)"
+            if not session.user_config
+            else "no project- or user-level MCP configuration found",
             [
                 _finding(
                     spec,
@@ -296,7 +310,7 @@ def check_idx01(*, spec, target, inventory, stack, components, session) -> Check
 
 
 def check_idx02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    store, searched = _locate_store(target)
+    store, searched = _locate_store(target, session)
     locations = f"searched: {', '.join(searched)}"
 
     if store is None:
@@ -393,7 +407,7 @@ def check_idx03(*, spec, target, inventory, stack, components, session) -> Check
             "index freshness is a Tier-C probe; re-run with --run-gates to compare the indexed revision against HEAD",
         )
 
-    store, searched = _locate_store(target)
+    store, searched = _locate_store(target, session)
     if store is None:
         return _unknown(spec, f"index store could not be located; searched: {', '.join(searched)}")
 

@@ -43,7 +43,7 @@ compare_reports.py BEFORE AFTER [--state STATE] [--json]
 Run the deterministic audit engine from any directory; the report is named for the repository.
 
 ```text
-engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N] [--exclude GLOB]... [--max-files N] [--run-gates --allow-probe VERB... [--timeout SECONDS]] [--emit-baseline]
+engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N] [--exclude GLOB]... [--max-files N] [--run-gates --allow-probe VERB... [--timeout SECONDS]] [--emit-baseline] [--no-user-config]
 engine.py --list-checks
 ```
 
