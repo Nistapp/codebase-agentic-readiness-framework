@@ -26,7 +26,7 @@ import re
 import shlex
 from dataclasses import dataclass
 
-from audit.ignore import tracked_files
+from audit.ignore import IgnoreDecision, IgnoreRule, decide, load_scoped_rules, tracked_files
 from audit.rules import variants as V
 from audit.scan import Inventory
 from audit.stack import (
@@ -82,6 +82,48 @@ def tracked_in_scope(target, inventory: Inventory) -> set[str] | None:
     if tracked is None:
         return None
     return {rel for rel in tracked if not inventory.is_excluded(rel) and not inventory.is_set_aside(rel)}
+
+
+#: A file name no ignore file is likely to name, used to ask "would a new file dropped here be ignored?".
+_PROBE_NAME = "untracked-scratch-file"
+
+
+def scoped_rules(target, inventory: Inventory) -> list[IgnoreRule]:
+    """Every ignore rule the scan can see, scoped to its directory and in git's order (ADR-0009).
+
+    The root ignore files plus each nested ``.gitignore`` the inventory holds, plus the ones git tracks. The
+    tracked ones matter because ``--exclude`` takes a directory's *files* out of the audit and must not also
+    take out the rule that decides whether the directory is ignored (``artefacts/.gitignore`` with ``*``
+    while ``artefacts/**`` is excluded). A nested file inside a set-aside directory scopes nothing outside it
+    and is left out.
+    """
+    nested = {entry.rel for entry in inventory.files if "/" in entry.rel and entry.rel.endswith(".gitignore")}
+    for rel in tracked_files(target.path) or ():
+        if "/" in rel and rel.endswith(".gitignore") and not inventory.is_set_aside(rel):
+            nested.add(rel)
+    return load_scoped_rules(target.path, nested)
+
+
+def directory_decision(root: str, rules: list[IgnoreRule]) -> IgnoreDecision:
+    """Whether the directory ``root`` is kept out: it is ignored itself, or a new file in it would be.
+
+    The second form is what ``artefacts/.gitignore`` containing ``*`` does: the directory is not named by a
+    rule, its contents are.
+    """
+    whole = decide(root, rules, is_dir=True)
+    if whole.ignored:
+        return whole
+    probe = decide(f"{root}/{_PROBE_NAME}", rules)
+    return probe if probe.ignored else whole
+
+
+def is_sanctioned_member(rel: str, root: str, rules: list[IgnoreRule]) -> bool:
+    """Whether a tracked file under a scratch directory is one the directory's own ignore file lets through.
+
+    That is the directory's own ``.gitignore`` and any path a ``!`` rule re-includes beside an ignoring rule
+    (``artefacts/README.md`` next to ``*``). Any other tracked member is scratch committed by mistake.
+    """
+    return rel == f"{root}/.gitignore" or decide(rel, rules).reincluded
 
 
 def resolve_all_verbs(inventory: Inventory, stack: Stack) -> dict[str, tuple[VerbBinding, ...]]:

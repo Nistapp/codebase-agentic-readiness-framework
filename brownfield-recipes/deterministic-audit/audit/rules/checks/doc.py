@@ -31,13 +31,12 @@ through the filesystem, so DOC-01 consults the target directly for that one case
 
 from __future__ import annotations
 
-import fnmatch
 import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.ignore import load_ignore_rules
-from audit.rules.checks._common import tracked_in_scope
+from audit.ignore import decide
+from audit.rules.checks._common import directory_decision, is_sanctioned_member, scoped_rules, tracked_in_scope
 from audit.scan import Inventory
 from audit.target import Target
 from audit.rules.payloads import Payload
@@ -82,32 +81,6 @@ def _instruction_text(inventory: Inventory) -> tuple[str, str]:
 def _has_exact(inventory: Inventory, rel: str) -> bool:
     """Exact path membership: unlike ``Inventory.has``, never a suffix match at any depth."""
     return any(f.rel == rel for f in inventory.files)
-
-
-def _rule_covers(rel: str, rules) -> bool:
-    """Whether an ignore rule covers ``rel``, including a rule that names a parent directory."""
-    base = rel.rsplit("/", 1)[-1]
-    for rule in rules:
-        pattern = rule.pattern.rstrip("/")
-        if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(base, pattern):
-            return True
-        if fnmatch.fnmatch(rel, pattern + "/*") or fnmatch.fnmatch(rel, pattern + "/**"):
-            return True
-    return False
-
-
-def _rule_covers_root(root: str, rules) -> bool:
-    """Whether a rule ignores a whole directory, including ``root/*`` and ``root/**`` forms."""
-    for rule in rules:
-        pattern = rule.pattern.strip().rstrip("/")
-        core = pattern
-        for suffix in ("/*", "/**"):
-            if core.endswith(suffix):
-                core = core[: -len(suffix)]
-        core = core.rstrip("/")
-        if core == root or fnmatch.fnmatch(root, pattern):
-            return True
-    return False
 
 
 def _inventory_scratch(inventory: Inventory) -> list[str]:
@@ -229,7 +202,12 @@ def check_doc03(*, spec, target, inventory, stack, components, session) -> Check
     present_roots = sorted(inventory_roots | fs_roots)
 
     tracked = tracked_in_scope(target, inventory)
-    tracked_scratch = sorted(rel for rel in (tracked or set()) if rel.split("/", 1)[0] in _SCRATCH_ROOTS)
+    rules = scoped_rules(target, inventory)
+    tracked_scratch = sorted(
+        rel
+        for rel in (tracked or set())
+        if rel.split("/", 1)[0] in _SCRATCH_ROOTS and not is_sanctioned_member(rel, rel.split("/", 1)[0], rules)
+    )
 
     if not present_roots and not tracked_scratch:
         return _outcome(spec, Verdict.PASS, "no scratch directory in use")
@@ -258,11 +236,15 @@ def check_doc03(*, spec, target, inventory, stack, components, session) -> Check
             ],
         )
 
-    rules = load_ignore_rules(target.path)
-    covered = any(
-        _rule_covers_root(root, rules) or any(_rule_covers(rel, rules) for rel in scratch if rel.startswith(root + "/"))
-        for root in present_roots
-    )
+    decisions = {root: directory_decision(root, rules) for root in present_roots}
+    for root in present_roots:
+        if not decisions[root].ignored:
+            for rel in scratch:
+                inside = decide(rel, rules)
+                if rel.startswith(root + "/") and inside.ignored:
+                    decisions[root] = inside
+                    break
+    covered = any(decision.ignored for decision in decisions.values())
     if not covered:
         return _outcome(
             spec,
@@ -292,7 +274,9 @@ def check_doc03(*, spec, target, inventory, stack, components, session) -> Check
             f"ignore rules cover {', '.join(present_roots)}/, but git could not report the tracked set",
         )
 
-    return _outcome(spec, Verdict.PASS, f"{', '.join(present_roots)}/ present, ignored, and untracked")
+    by = sorted({d.rule.source for d in decisions.values() if d.ignored and d.rule is not None})
+    via = f" by {', '.join(by)}" if by else ""
+    return _outcome(spec, Verdict.PASS, f"{', '.join(present_roots)}/ present, ignored{via}, and untracked")
 
 
 # ===========================================================================

@@ -37,13 +37,12 @@ oversized, or ignored out of the walk is not scanned, and SEC-02 says which set 
 
 from __future__ import annotations
 
-import fnmatch
 import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.ignore import IgnoreRule, load_ignore_rules
-from audit.rules.checks._common import tracked_in_scope
+from audit.ignore import IgnoreRule, decide
+from audit.rules.checks._common import scoped_rules, tracked_in_scope
 from audit.rules.checks._secret_allowlist import SecretAllowlist, load_secret_allowlist
 from audit.probes import REDACTION_PATTERNS
 from audit.scan import Inventory
@@ -151,23 +150,27 @@ def _is_template_file(rel: str) -> bool:
 
 
 def _path_covered(rel: str, rules: list[IgnoreRule]) -> bool:
-    """Whether any rule covers ``rel``, including a rule that names a parent directory."""
-    base = rel.rsplit("/", 1)[-1]
-    for rule in rules:
-        pattern = rule.pattern.rstrip("/")
-        if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(base, pattern):
-            return True
-        if fnmatch.fnmatch(rel, pattern + "/*") or fnmatch.fnmatch(rel, pattern + "/**"):
-            return True
-    return False
+    """Whether the rules ignore ``rel`` after every ``!`` exception, at the root and in a nested directory.
+
+    A rule anchored with a leading ``/`` covers the root only (``/.env`` skips ``a/.env``); that is
+    :func:`_root_only`. A rule that names a path with a slash inside it (``.aws/*``) is read as git reads it,
+    anchored to the directory of its ignore file, and is credited as it always was.
+    """
+    return decide(rel, rules).ignored and (_nested_ignored(rel, rules) or not _leading_slash_rule(rel, rules))
+
+
+def _nested_ignored(rel: str, rules: list[IgnoreRule]) -> bool:
+    return decide("pkg/" + rel, rules).ignored
+
+
+def _leading_slash_rule(rel: str, rules: list[IgnoreRule]) -> bool:
+    rule = decide(rel, rules).rule
+    return rule is not None and rule.pattern.startswith("/")
 
 
 def _root_only(rel: str, rules: list[IgnoreRule]) -> bool:
-    """Whether ``rel`` is covered only by root-anchored rules (``/.env``), which skip the nested ``a/.env``."""
-    if _path_covered(rel, rules):
-        return False
-    anchored = [IgnoreRule(r.pattern.lstrip("/"), r.source) for r in rules if r.pattern.startswith("/")]
-    return _path_covered(rel, anchored)
+    """Whether ``rel`` is covered only by a root-anchored rule (``/.env``), which skips the nested ``a/.env``."""
+    return decide(rel, rules).ignored and not _path_covered(rel, rules)
 
 
 def _shape_coverage(
@@ -219,7 +222,7 @@ def _gaps(root_only: list[str], missing: list[str]) -> str:
 
 
 def check_sec01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    rules = load_ignore_rules(target.path)
+    rules = scoped_rules(target, inventory)
     covered, root_only, missing = _shape_coverage(rules, _ENV_SHAPE_PROBES)
     ignore_ok = not missing and not root_only
     shapes = _shapes_payload(rules, _ENV_SHAPE_PROBES, _ENV_SHAPE_SUGGEST)
@@ -491,7 +494,7 @@ def check_sec02(*, spec, target, inventory, stack, components, session) -> Check
 
 
 def check_sec03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    rules = load_ignore_rules(target.path)
+    rules = scoped_rules(target, inventory)
     no_rules_shapes = SecretShapes(
         shapes=tuple(
             SecretShape(label=label, probe=sample, suggested=_SECRET_SHAPE_SUGGEST.get(label, ""), covered=False)
