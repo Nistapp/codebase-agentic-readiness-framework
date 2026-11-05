@@ -86,7 +86,7 @@ A scan writes one file, `<label>.engine-report.<stamp>.json`, in the output dire
 | Code | When |
 |---|---|
 | `0` | The report was written, or the checks were listed. |
-| `1` | A bad argument, a move the state diagram or the owner-only rules refuse, an unknown or rejected finding, a missing target, an output directory inside the target, a bad label, or a refusal by the engine, whose reason is in `data.error`. |
+| `1` | A bad argument, a missing target, an output directory inside the target, a bad label, or a refusal by the engine, whose reason is in `data.error`. |
 | `3` | The engine exited with any other code, raised, or reported success without writing the report or (with `--emit-baseline`) the draft. |
 
 **Errors**
@@ -146,7 +146,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 | Message | Fix |
 |---|---|
 | `rule 1: ...` to `rule 12: ...` | The rule is in [Rules beyond the schema](../../schema/SCHEMA.md#rules-beyond-the-schema). The message says which item to change. |
-| `rule 10: /summary/...: the report says X and its checks and findings give Y` | The summary is stale. It is never edited by hand: the report builder (S2.3) writes it, and until it exists the number Y is the one to use. |
+| `rule 10: /summary/...: the report says X and its checks and findings give Y` | The summary is stale. It is never edited by hand: the report builder, [`report.py`](#reportpy), recomputes it on every change, so the report was changed outside the builder. Y is the correct number. |
 | `rule 11: ... it looks like a credential` | Shorten the quote or the output tail, or leave it out. The patterns are the engine's, so a line such as `token: abc` is flagged even when it is not a secret. |
 | `schema: /path: ...` | The pointer names the field. The schema is [`audit-report.schema.json`](../../schema/audit-report.schema.json). |
 | `the file is not a report: ...` | The file is not one JSON document that this tool accepts. |
