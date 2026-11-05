@@ -157,7 +157,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. The draft's path may be a link: the draft it points to is changed, and the link stays a link. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-The subcommands are `init`, `import-engine`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`.
+The subcommands are `init`, `import-engine`, `add-check`, `add-finding`, `set-disposition`, `set-stack-profile`, `status` and `finalise`.
 
 Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
@@ -170,6 +170,7 @@ python3 brownfield-recipes/tools/report.py add-check <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py add-finding <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py set-disposition <draft> --via VIA
         (--finding ID --disposition DISPOSITION [--note TEXT] | --from FILE|-)
+python3 brownfield-recipes/tools/report.py set-stack-profile <draft> <id> [--derived] [--confirmed]
 python3 brownfield-recipes/tools/report.py status <draft>
 python3 brownfield-recipes/tools/report.py finalise <draft>
 python3 brownfield-recipes/tools/report.py --describe
@@ -462,6 +463,26 @@ The tool refuses a decision that would claim something false about who made it:
 | `--via policy needs the 'accept-all' confirmation policy ...` | Use `--via interactive` or `batch`, for a person's decision. |
 | `<F-id> is not a finding in this draft` | Use an id from `status`. |
 | `fragment: /N/...` | Fix the item the pointer names. |
+
+### set-stack-profile
+
+Records `run_context.stack_profile` in a draft: which stack profile the audit used, whether it shipped or was
+derived, and whether the user confirmed the choice ([`stacks/README.md`](../../stacks/README.md#4-shipped-versus-derived)).
+Audit Stage 1 calls it once the user has agreed the stack. A second call replaces the first. The eval scorer
+(`tools/eval/score.py`) does not read the field; an eval-mode run records it the same way.
+
+| Argument | Meaning |
+|---|---|
+| `<id>` | A shipped profile id, one of `java`, `python`, `typescript-node` (the files in `stacks/`; a test holds the list and the folder together). With `--derived`, any id of lower-case letters, digits and hyphens, up to 41 characters. |
+| `--derived` | No profile ships for this stack, so guidance was derived from the check files. Refused for a shipped id. |
+| `--confirmed` | The user confirmed the choice. Without it `confirmed_by_user` is `false`. |
+
+**Outputs.** `data` holds the recorded `id`, `source` (`shipped` or `derived`) and `confirmed_by_user`, and the draft's path.
+
+| Error | What to do |
+|---|---|
+| `no shipped stack profile 'X'; the shipped ones are ...` | Use a shipped id, or pass `--derived` to name a stack with no profile. |
+| `X is a shipped profile; drop --derived` | A shipped profile is never "derived". |
 
 ### status
 

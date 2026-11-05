@@ -70,12 +70,13 @@ INFO = _common.ToolInfo(
         "report.py add-check <draft> --from FILE|-",
         "report.py add-finding <draft> --from FILE|-",
         "report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)",
+        "report.py set-stack-profile <draft> <id> [--derived] [--confirmed]",
         "report.py status <draft>",
         "report.py finalise <draft>",
     ),
     writes=(
         "init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the "
-        "target; a name that is taken is never replaced. import-engine, add-check, add-finding and set-disposition: that "
+        "target; a name that is taken is never replaced. import-engine, add-check, add-finding, set-disposition and set-stack-profile: that "
         "draft, in place and atomically, and no other file. status: nothing. finalise: a new final report, "
         "<label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, "
         "which it leaves as it was."
@@ -95,6 +96,10 @@ STATUS_LINE_BUDGET = 40
 PENDING_SHOWN = 8
 
 INTAKE_SCHEMA = vr.RECIPES / "schema" / "audit-intake.schema.json"
+# The ids of the profiles in stacks/ (a test holds this tuple and the folder together; the bundle has no stacks/ beside
+# the tools). A profile outside it is "derived": the agent worked from the check files' stack-neutral rubrics.
+SHIPPED_STACK_PROFILES = ("java", "python", "typescript-node")
+STACK_PROFILE_ID = re.compile(r"^[a-z][a-z0-9-]{0,40}\Z")
 GIT_SHA = re.compile(r"^[0-9a-f]{40}\Z")
 
 
@@ -1067,6 +1072,33 @@ def run_set_disposition(args: argparse.Namespace) -> _common.Result:
     return result
 
 
+# --- set-stack-profile -------------------------------------------------------------------------------------
+
+
+def run_set_stack_profile(args: argparse.Namespace) -> _common.Result:
+    """Record `run_context.stack_profile`: which profile the audit used, shipped or derived, and whether the user agreed."""
+    profile = args.profile
+    if not STACK_PROFILE_ID.match(profile):
+        raise _common.UsageError(f"not a profile id: {profile!r}", hint="lower case letters, digits and hyphens")
+    shipped = profile in SHIPPED_STACK_PROFILES
+    if args.derived and shipped:
+        raise _common.UsageError(f"{profile} is a shipped profile; drop --derived")
+    if not args.derived and not shipped:
+        raise _common.UsageError(
+            f"no shipped stack profile {profile!r}; the shipped ones are {', '.join(SHIPPED_STACK_PROFILES)}",
+            hint="for a stack with no profile, name it and pass --derived",
+        )
+    entry = {"id": profile, "source": "derived" if args.derived else "shipped", "confirmed_by_user": args.confirmed}
+
+    def change(document: dict[str, Any]) -> Change:
+        document["run_context"]["stack_profile"] = entry
+        return Change(data=dict(entry))
+
+    result = update_draft(args.draft, change)
+    result.summary = f"report: stack profile {profile} ({entry['source']}) recorded"
+    return result
+
+
 # --- status ------------------------------------------------------------------------------------------------
 
 SEVERITY_ORDER = {"BLOCKER": 0, "DEGRADER": 1, "COSMETIC": 2}
@@ -1299,6 +1331,17 @@ def build_parser() -> _common.ToolParser:
     decide.add_argument("--disposition", choices=DISPOSITIONS, help="the decision")
     decide.add_argument("--note", help="why, in the person's words")
     decide.add_argument("--from", dest="source", help="a JSON list of decisions, from a file or - for stdin")
+    stack = commands.add_parser(
+        "set-stack-profile", help="record which stack profile the audit used", allow_abbrev=False
+    )
+    stack.add_argument("draft", help="the draft to change")
+    stack.add_argument(
+        "profile", help=f"a shipped profile id ({', '.join(SHIPPED_STACK_PROFILES)}), or any id with --derived"
+    )
+    stack.add_argument("--derived", action="store_true", help="no profile ships for this stack; guidance was derived")
+    stack.add_argument(
+        "--confirmed", action="store_true", help="the user confirmed the choice (default: not confirmed)"
+    )
     describe = commands.add_parser(
         "status", help="say what is done, what remains and what awaits a decision", allow_abbrev=False
     )
@@ -1314,6 +1357,7 @@ HANDLERS = {
     "add-check": run_add_check,
     "add-finding": run_add_finding,
     "set-disposition": run_set_disposition,
+    "set-stack-profile": run_set_stack_profile,
     "status": run_status,
     "finalise": run_finalise,
 }

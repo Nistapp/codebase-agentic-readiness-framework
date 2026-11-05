@@ -1469,6 +1469,56 @@ class SetDispositionTests(BuilderCase):
         self.assertEqual((code, envelope["data"]["action"], envelope["data"]["finding"]), (0, "replaced", "F-001"))
 
 
+class SetStackProfileTests(BuilderCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.draft = self.start()
+
+    def stack_profile(self) -> Any:
+        return read_json(self.draft)["run_context"].get("stack_profile")
+
+    def test_the_shipped_ids_are_the_files_in_the_stacks_folder(self) -> None:
+        stacks = TOOLS.parent / "stacks"
+        shipped = sorted(path.stem for path in stacks.glob("*.md") if path.name != "README.md")
+        self.assertEqual(shipped, sorted(rb.SHIPPED_STACK_PROFILES))
+
+    def test_a_shipped_profile_is_recorded_and_the_draft_stays_valid(self) -> None:
+        self.assertIsNone(self.stack_profile())
+        code, envelope, err = call(["set-stack-profile", str(self.draft), "java", "--confirmed"])
+        self.assertEqual(code, 0, (envelope, err))
+        expected = {"id": "java", "source": "shipped", "confirmed_by_user": True}
+        self.assertEqual(self.stack_profile(), expected)
+        self.assertEqual({key: envelope["data"][key] for key in expected}, expected)
+        self.assertEqual(vr.validate_document(read_json(self.draft)).errors, [])
+
+    def test_confirmed_is_false_unless_asked_for(self) -> None:
+        self.assertEqual(call(["set-stack-profile", str(self.draft), "python"])[0], 0)
+        self.assertIs(self.stack_profile()["confirmed_by_user"], False)
+
+    def test_a_derived_profile_takes_any_id_and_a_second_call_replaces_the_first(self) -> None:
+        self.assertEqual(call(["set-stack-profile", str(self.draft), "go", "--derived"])[0], 0)
+        self.assertEqual(self.stack_profile(), {"id": "go", "source": "derived", "confirmed_by_user": False})
+        self.assertEqual(call(["set-stack-profile", str(self.draft), "typescript-node"])[0], 0)
+        self.assertEqual(self.stack_profile()["source"], "shipped")
+
+    def test_an_unknown_id_without_derived_is_refused_and_names_the_shipped_ones(self) -> None:
+        code, envelope, _ = self.unchanged_by(self.draft, lambda: call(["set-stack-profile", str(self.draft), "go"]))
+        self.assertEqual((code, envelope["ok"]), (1, False))
+        self.assertIn("java, python, typescript-node", envelope["data"]["error"])
+
+    def test_derived_on_a_shipped_id_and_a_malformed_id_are_refused(self) -> None:
+        for argv in (["java", "--derived"], ["Java"], ["-x"], ["a" * 50, "--derived"]):
+            with self.subTest(argv):
+                code, envelope, _ = self.unchanged_by(
+                    self.draft, lambda: call(["set-stack-profile", str(self.draft), *argv])
+                )
+                self.assertEqual((code, envelope["ok"]), (1, False))
+
+    def test_describe_lists_the_subcommand(self) -> None:
+        _, envelope, _ = call(["--describe"])
+        self.assertTrue(any(line.startswith("report.py set-stack-profile") for line in envelope["data"]["synopsis"]))
+
+
 class StatusTests(BuilderCase):
     def status(self, draft: Path) -> tuple[int, dict[str, Any], str]:
         return call(["status", str(draft)])

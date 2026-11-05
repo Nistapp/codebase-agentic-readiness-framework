@@ -10,6 +10,8 @@ history (which verdicts moved and why), see
 - `progress.py init` records the SHA-256 of the report file in `source_reports[].sha256` (readiness state
   `schema_version` `0.2`; a `0.1` state stays valid). `check_drift.py` recomputes it and reports `report_changed`, and
   reports a dirty working tree as `dirty` (MR04).
+- `report.py set-stack-profile <draft> <id> [--derived] [--confirmed]` writes `run_context.stack_profile`; audit Stage 1 calls
+  it and no longer says the field has no write path (MR04).
 - v0.2 (the implementation MVP), skeleton in: `implement/SKILL.md` with its hard rules and the stage table,
   the playbook anatomy and the list of thirteen playbooks (`implement/playbooks/README.md`), and the
   per-repository state contract (`implement/state.md`). The recipe is still partial: Stages 2 to 5 and five
