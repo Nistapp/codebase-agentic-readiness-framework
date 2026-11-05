@@ -117,6 +117,8 @@ def build_report(result: AuditResult, args: argparse.Namespace) -> dict[str, Any
             "files_inspected": len(result.inventory.files),
             "files_skipped": len(result.inventory.skipped),
             "truncated": result.inventory.truncated,
+            "files_set_aside": result.inventory.files_set_aside,
+            "set_aside": [{"path": entry.path, "files": entry.files} for entry in result.inventory.set_aside],
         },
         "components": [
             {

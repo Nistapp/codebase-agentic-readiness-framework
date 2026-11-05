@@ -72,15 +72,16 @@ RUNNER_PRECEDENCE: tuple[str, ...] = (
 
 
 def tracked_in_scope(target, inventory: Inventory) -> set[str] | None:
-    """The paths git tracks under the target, less the ones ``--exclude`` took out of the audit.
+    """The paths git tracks under the target, less the ones ``--exclude`` took out of the audit and the ones
+    set aside as carried data (ADR-0008).
 
     ``None`` still means that git could not answer. A check that reads the tracked set asks here, so that an
-    excluded path is out of the audit for it as it is for the walk.
+    excluded or set-aside path is out of the audit for it as it is for the walk.
     """
     tracked = tracked_files(target.path)
     if tracked is None:
         return None
-    return {rel for rel in tracked if not inventory.is_excluded(rel)}
+    return {rel for rel in tracked if not inventory.is_excluded(rel) and not inventory.is_set_aside(rel)}
 
 
 def resolve_all_verbs(inventory: Inventory, stack: Stack) -> dict[str, tuple[VerbBinding, ...]]:

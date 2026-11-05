@@ -83,6 +83,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "cmd-03-divergent": {"CMD-03": "FAIL"},
     "cmd-04-write-in-check": {"CMD-04": "FAIL"},
     "cmd-ok-npm": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
+    "cmd-ok-root-make-nested-template": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-ok-make": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-ok-make-prereqs": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-ok-make-alias": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},

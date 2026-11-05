@@ -359,6 +359,7 @@ def _structural(report: dict) -> list[str]:
         [
             ["Files inspected", str(inv["files_inspected"])],
             ["Files skipped", str(inv["files_skipped"])],
+            ["Files set aside as carried data", str(inv.get("files_set_aside", 0))],
             ["Traversal truncated", "yes" if inv["truncated"] else "no"],
             ["Ecosystems", ", ".join(stack["ecosystems"]) or "—"],
             ["Package managers", ", ".join(stack["package_managers"]) or "—"],
@@ -368,6 +369,11 @@ def _structural(report: dict) -> list[str]:
         ],
     )
     out.append("")
+    set_aside = inv.get("set_aside") or []
+    if set_aside:
+        listed = ", ".join(f"`{entry['path']}` ({entry['files']})" for entry in set_aside)
+        out.append(f"Set aside as carried data, not read by any check: {listed}")
+        out.append("")
 
     out.append("### Probes")
     out.append("")
