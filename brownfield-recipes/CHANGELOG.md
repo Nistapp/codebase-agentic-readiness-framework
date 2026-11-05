@@ -7,6 +7,11 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Engine ruleset `2026-11-05.1` (MR05): `EXEC-06` cuts a trailing shell comment from a fenced command
+  (`make test   # run`) in the shared extractor and resolves `make`/`npm run` through the verb resolver (#8);
+  `SEC-02` subtracts what `.secrets.baseline`, `.gitleaksignore` and `.gitleaks.toml` allowlist and lists the
+  suppressed lines (#10 still needs sentinel tokens and badge URLs); `SEC-01` and `SEC-03` say "root-anchored only"
+  for `/.env` instead of "missing", with verdict `PARTIAL`.
 - The handoff from the audit to the implement recipe is written: how-to Step 1, `implement/SKILL.md` Stage 0 step 4
   and one sentence in audit Stage 5 say who copies the report into `docs/agentic-readiness-report/`, commits it,
   and runs `progress.py init`; Stage 0 reads `dirty` and `report_changed` from `check_drift.py` (MR04).

@@ -13,11 +13,34 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-11-05.1` | 2026-11-05 | 55 | MR05: `EXEC-06` trailing shell comments and the shared verb resolver, `SEC-02` reads the repository's own scanner allowlist, `SEC-01`/`SEC-03` say "root-anchored only" for `/.env` |
 | `2026-10-19.2` | 2026-10-19 | 55 | S4.4.2.3/.4/.6/.8: `EXEC-04`'s shell-variable/env-var ambiguity, `NAV-02`'s Quarkus entry-point gap, `TOOL-05`'s self-referential hook-wiring false positive, and `TOOL-01`–`06`/`CMD-01`'s evidence citing a hardcoded manifest basename instead of its real nested path |
 | `2026-10-19.1` | 2026-10-19 | 55 | S4.4.2.1: `AGT-07`'s heading-word detector gap, found on Digital-Assistant-Server (S4.3.3, `D62`) — a prohibitions heading with no trigger word now also qualifies when its own body already reads as a do-not list |
 | `2026-10-15.3` | 2026-10-15 | 55 | S3.6.4: real-defect fixes found by the Digital-Assistant-SDK dry run (S3.6.3) — `TOOL-03`'s comment-intolerant JSON parse, `EXEC-04`'s truncated identifier capture, and `EXEC-02`'s undersized content-read cap — plus `CI-03`'s npm staged-publish fix (`3fb090d`, S3.6.1), which moved a verdict without a revision bump at the time |
 | `2026-10-11.1` | 2026-10-11 | 55 | S2.6: the Makefile reader, the false positives the self-audit found, and the constraint pack |
 | `2026-09-28.13` | 2026-09-28 | 54 | The engine as it was imported into this repository |
+
+---
+
+## `2026-11-05.1`
+
+Two false blockers the self-audit and the real-repository evaluations raised on every target (MR05; issues #8
+and #10), and one misleading label.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `EXEC-06` | `FAIL` for `make test   # run the suite`: the comment's words were read as make targets | `PASS` when the command alone resolves | `extract_fenced_commands` (`audit/rules/checks/_common.py`) cuts an unquoted trailing `#` comment once, so `EXEC-03`, `TST-04` and `EXEC-06` see the same tokens. A `#` inside quotes or inside a word is kept. |
+| `EXEC-06` | `FAIL` for `make format:check` when the Makefile spells the target `format-check` | `PASS` | `make <t>` and `npm run <s>` also resolve when the shared verb resolver binds `<t>`/`<s>` on that runner, the answer `AGT-05` already used (#8). |
+| `SEC-02` | `FAIL` for a line the repository's own `.secrets.baseline`, `.gitleaksignore` or `.gitleaks.toml` allowlists | `PASS` for allowlisted lines; `FAIL` only for hits outside the allowlist | `audit/rules/checks/_secret_allowlist.py` reads the three files from the root. A baseline entry matches on path and line, so a stale entry never hides a new hit. The summary says "N allowlisted by `<file>`" and the payload lists the suppressed lines. Severity is unchanged (`BLOCKER`). Sentinel tokens and badge URLs (#10) are still reported. |
+| `SEC-01` | `PARTIAL` "ignore rules miss dotenv" for a root-anchored `/.env` | `PARTIAL` "root-anchored only: dotenv ..." | The rule covers the root, not a nested `a/.env`; the label says so. |
+| `SEC-03` | `FAIL` "missing: dotenv, ..." when `/.env` is the only rule | `PARTIAL` with "root-anchored only: dotenv" | A root-anchored shape counts as partial coverage, not as none. |
+
+### Not changed
+
+The `SEC-02` patterns and placeholder rules, the severity of every check, and the ignore matcher itself (anchored
+and nested ignore files are `MR06.2`).
 
 ---
 
