@@ -52,9 +52,9 @@ toolchain block (`java { toolchain { languageVersion = JavaLanguageVersion.of(21
 version read by the build itself; its absence leaves the JDK to whatever `JAVA_HOME` resolves to, which
 `EXEC-01` cannot see from the manifest alone. Gradle has no project-level lockfile analogous to
 `package-lock.json` by default: dependency locking is an opt-in feature
-(`dependencyLocking { lockAllConfigurations() }`, writing `gradle.lockfile` files) that `EXEC-02`'s
-three-lockfile-name list does not recognise, so an unlocked Gradle build reads `UNKNOWN`, not `FAIL`, for
-that check (see Pitfalls).
+(`dependencyLocking { lockAllConfigurations() }`, writing `gradle.lockfile` files). `EXEC-02` recognises
+`gradle.lockfile`, at any depth, as the one lockfile name for `jvm`, so a Gradle build without it reads
+`FAIL` for that check (see Pitfalls).
 
 ## CI idiom
 
@@ -127,10 +127,11 @@ richer than Gradle's test/check-only pair — invoked through the wrapper (`./mv
 `format`, `format:check`, `lint` and `security` still need a named plugin, but the engine recognises
 three directly by `artifactId`: `spotless-maven-plugin`, `maven-checkstyle-plugin`,
 `dependency-check-maven`. `CMD-02` is `UNKNOWN` for a `check` resolved only through `verify`, the same
-rule as Gradle. A real engine gap, found by reading the check rather than a repository: `EXEC-02`'s
-lockfile table recognises only `gradle.lockfile` for `jvm`, never a Maven convention, so a pure-Maven
-project is still told it is missing `gradle.lockfile` — read the finding's own evidence before repeating
-that name.
+rule as Gradle. A real engine gap, found by reading the check rather than a repository
+(issue #29): `EXEC-02`'s lockfile table recognises only `gradle.lockfile` for `jvm` (`_lockfiles_for` in
+`audit/rules/checks/execution.py`, fed by `PACKAGE_MANAGERS` in `audit/stack.py`), never a Maven convention,
+so a pure-Maven project is still told it is missing `gradle.lockfile` — read the finding's own evidence
+before repeating that name.
 
 ## Verified
 
