@@ -61,7 +61,10 @@ Pitfalls         A tracked `.env.example`-style committed template is not a find
 Why it matters   A hardcoded credential is the same exposure as a tracked `.env` file, just inside source
                   or configuration instead of a dedicated file
                   ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
-Severity         BLOCKER
+Severity         BLOCKER. The severity stays BLOCKER when a repository has a secret scanner and a baseline;
+                 the way to remove false positives is an allowlist the check honours (Planned (MR05)), not
+                 a lower severity. The engine reads none today, and the check file will say which marker
+                 it reads once it does.
 Engine           `SEC-02`. Scans tracked text files (falling back to the whole inventory, stated in
                  `detail`, when git cannot report tracked state) against `audit.probes.REDACTION_PATTERNS`:
                  unambiguous shape patterns (`sk-...`, `ghp_...`, `AKIA...`, a `Bearer` token, and the PEM
