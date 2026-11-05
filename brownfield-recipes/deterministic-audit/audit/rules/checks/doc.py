@@ -291,11 +291,17 @@ def _adr_dir(inventory: Inventory) -> str | None:
     return None
 
 
+#: ``0000-template.md`` is the blank a new ADR is copied from, not a decision.
+_ADR_TEMPLATE_RE = re.compile(r"^\d{3,4}-(?:adr-)?template[._-]", re.IGNORECASE)
+
+
 def _adr_entries(inventory: Inventory, directory: str) -> list[str]:
     return sorted(
         f.rel
         for f in inventory.files
-        if f.rel.startswith(directory + "/") and _ADR_FILE_RE.match(f.rel.rsplit("/", 1)[-1])
+        if f.rel.startswith(directory + "/")
+        and _ADR_FILE_RE.match(f.rel.rsplit("/", 1)[-1])
+        and not _ADR_TEMPLATE_RE.match(f.rel.rsplit("/", 1)[-1])
     )
 
 

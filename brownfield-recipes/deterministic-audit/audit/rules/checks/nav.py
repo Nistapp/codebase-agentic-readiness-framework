@@ -172,6 +172,10 @@ def _node_entry(inventory: Inventory) -> list[str]:
     return found
 
 
+#: A line that *starts* with the guard. A check module that holds the pattern in a regex or a docstring is not an entry point.
+_MAIN_GUARD_RE = r"^\s*if\s+__name__\s*==\s*['\"]__main__['\"]"
+
+
 def _python_entry(inventory: Inventory) -> list[str]:
     found: list[str] = []
     for entry in inventory.files:
@@ -180,7 +184,7 @@ def _python_entry(inventory: Inventory) -> list[str]:
     for rel in ("main.py", "app.py", "src/main.py", "src/app.py", "manage.py"):
         if _has_exact(inventory, rel):
             found.append(rel)
-    hits = inventory.grep(r"if\s+__name__\s*==\s*['\"]__main__['\"]", kinds=(Kind.SOURCE, Kind.SCRIPT), limit=10)
+    hits = inventory.grep(_MAIN_GUARD_RE, kinds=(Kind.SOURCE, Kind.SCRIPT), limit=10)
     found += [rel for rel, _line, _text in hits if rel not in found]
     for manifest in ("pyproject.toml", "setup.py", "setup.cfg"):
         text = inventory.read(manifest)
