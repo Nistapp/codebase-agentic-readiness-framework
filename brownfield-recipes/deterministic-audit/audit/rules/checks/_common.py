@@ -54,8 +54,9 @@ class VerbBinding:
     argv: tuple[str, ...]
 
 
-#: Runner precedence when more than one manifest defines the same verb. Fixed and documented so a
-#: target with both a Makefile and package.json resolves deterministically.
+#: Runner precedence among manifests at the same depth when more than one defines the same verb. A shallower
+#: manifest outranks a deeper one first (:func:`runner_rank`, ADR-0008). Fixed and documented so a target
+#: with both a Makefile and package.json resolves deterministically.
 RUNNER_PRECEDENCE: tuple[str, ...] = (
     "package.json",
     "Makefile",
@@ -99,9 +100,7 @@ def resolve_all_verbs(inventory: Inventory, stack: Stack) -> dict[str, tuple[Ver
                 candidates.setdefault(verb, []).append(
                     VerbBinding(verb=verb, runner=runner, command=command, argv=_split_argv(command))
                 )
-    return {
-        verb: tuple(sorted(bindings, key=lambda b: _runner_rank(b.runner))) for verb, bindings in candidates.items()
-    }
+    return {verb: tuple(sorted(bindings, key=lambda b: runner_rank(b.runner))) for verb, bindings in candidates.items()}
 
 
 def resolve_verbs(inventory: Inventory, stack: Stack) -> dict[str, VerbBinding]:
@@ -115,7 +114,8 @@ def resolve_verbs(inventory: Inventory, stack: Stack) -> dict[str, VerbBinding]:
 
 
 def runner_commands(inventory: Inventory) -> tuple[tuple[str, dict[str, str]], ...]:
-    """Every present verb runner and its declared ``{verb: command}`` map, in precedence order.
+    """Every present verb runner and its declared ``{verb: command}`` map, in precedence order
+    (:func:`runner_rank`: shallowest first, then by kind).
 
     A runner is present when its manifest is present, whether or not it declares any framework verb;
     callers that care about verb coverage read the map, callers that care about runners read the name.
@@ -342,39 +342,41 @@ def _manifest_path(inventory: Inventory, name: str) -> str:
 
 
 def _runner_commands(inventory: Inventory):
-    """Yield ``(runner, {verb: command})`` for every manifest present, in precedence order.
+    """Yield ``(runner, {verb: command})`` for every manifest present, in :func:`runner_rank` order.
 
     ``runner`` is the manifest's real, actually-matched relative path (:func:`_manifest_path`), not a
     hardcoded literal basename — on a target whose only manifest of a kind is nested, the literal name
     is a path that does not exist anywhere in the repository.
     """
+    found: list[tuple[str, dict[str, str]]] = []
     if inventory.has("package.json"):
         path = _manifest_path(inventory, "package.json")
-        yield path, extract_npm_scripts(inventory, manifest=path)
+        found.append((path, extract_npm_scripts(inventory, manifest=path)))
     if inventory.has("Makefile") and not makefile_errors(inventory):
-        yield _manifest_path(inventory, "Makefile"), parse_makefile_targets(inventory)
+        found.append((_manifest_path(inventory, "Makefile"), parse_makefile_targets(inventory)))
     for name in ("Taskfile.yml", "Taskfile.yaml"):
         if inventory.has(name):
             path = _manifest_path(inventory, name)
             text = inventory.read(path)
             if text:
-                yield path, _parse_taskfile(text)
+                found.append((path, _parse_taskfile(text)))
     if inventory.has("pyproject.toml"):
         path = _manifest_path(inventory, "pyproject.toml")
         text = inventory.read(path)
         if text:
-            yield path, _parse_pyproject_tasks(text)
+            found.append((path, _parse_pyproject_tasks(text)))
     for name in ("build.gradle", "build.gradle.kts"):
         if inventory.has(name):
             path = _manifest_path(inventory, name)
             text = inventory.read(path)
             if text:
-                yield path, _parse_gradle_tasks(text, inventory)
+                found.append((path, _parse_gradle_tasks(text, inventory)))
     if inventory.has("pom.xml"):
         path = _manifest_path(inventory, "pom.xml")
         text = inventory.read(path)
         if text:
-            yield path, _parse_maven_plugins(text, inventory)
+            found.append((path, _parse_maven_plugins(text, inventory)))
+    yield from sorted(found, key=lambda item: runner_rank(item[0]))
 
 
 def _with_spellings(runner: str, commands: dict[str, str]) -> dict[str, str]:
@@ -414,11 +416,17 @@ def runner_kind(runner: str) -> str:
     return runner.rsplit("/", 1)[-1]
 
 
-def _runner_rank(runner: str) -> int:
+def runner_rank(runner: str) -> tuple[int, int, str]:
+    """The sort key that orders runners: shallowest manifest first, then :data:`RUNNER_PRECEDENCE`, then path.
+
+    A root manifest of any kind outranks a nested one (ADR-0008), so a nested ``package.json`` cannot take
+    the verbs from the root ``Makefile``. Every reader that asks "which runner first" uses this key.
+    """
     try:
-        return RUNNER_PRECEDENCE.index(runner_kind(runner))
+        kind = RUNNER_PRECEDENCE.index(runner_kind(runner))
     except ValueError:
-        return len(RUNNER_PRECEDENCE)
+        kind = len(RUNNER_PRECEDENCE)
+    return (runner.count("/"), kind, runner)
 
 
 def _split_argv(command: str) -> tuple[str, ...]:
