@@ -102,6 +102,9 @@ Engine           `NAV-03`. A census, never a verdict on a heuristic: counts file
                  (`LARGE_FILE_BYTES`), directories with more than 50 immediate files (`CATCH_ALL_FILES`),
                  files the scan classifies `Kind.BINARY`, and generated files whose name contains
                  `.min.`. Both thresholds are documented constants in `nav.py`, not tuned per repository.
+                 Carried-data directories (`templates/`, `fixtures/`, `examples/`) are not counted, so a
+                 test corpus of a hundred fixtures is not a catch-all directory; the report's
+                 `inventory.set_aside` lists them.
                  **The engine never returns `FAIL`** — an all-zero census is `PASS`, and any nonzero count
                  is `PARTIAL`, however large. This check runs regardless of detected ecosystem — there is
                  no `UNKNOWN` path. Distrust a `PARTIAL` whose flagged paths are intentional and

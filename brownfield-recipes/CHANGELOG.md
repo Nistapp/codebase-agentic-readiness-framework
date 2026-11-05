@@ -7,6 +7,12 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Engine ruleset `2026-11-05.2` (MR06.1, ADR-0008): the engine decides what counts as the repository. Runner
+  precedence is depth first (a root `Makefile` beats a nested `package.json`); files under a directory named
+  `templates`, `template`, `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` are carried data,
+  read by no check and listed in the report (`inventory.set_aside`); `HYG-02/03/05/06/07/08/09` count a file only at
+  the root or under `.github/`, `.gitlab/` or `docs/`. `--exclude` is no longer needed for template or fixture
+  directories. New fixture `cmd-ok-root-make-nested-template`. Component scoping (#20) is unchanged.
 - Engine ruleset `2026-11-05.1` (MR05): `EXEC-06` cuts a trailing shell comment from a fenced command
   (`make test   # run`) in the shared extractor and resolves `make`/`npm run` through the verb resolver (#8);
   `SEC-02` subtracts what `.secrets.baseline`, `.gitleaksignore` and `.gitleaks.toml` allowlist and lists the

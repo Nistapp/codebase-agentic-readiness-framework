@@ -13,12 +13,41 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-11-05.2` | 2026-11-05 | 55 | MR06.1 ([ADR-0008](../architecture/adrs/0008-what-counts-as-the-repository.md)): runner precedence by depth, carried-data directories (`templates/`, `examples/`, `fixtures/`, ...) set aside and listed in the report, hygiene presence bounded to the root, `.github/`, `.gitlab/` and `docs/` |
 | `2026-11-05.1` | 2026-11-05 | 55 | MR05: `EXEC-06` trailing shell comments and the shared verb resolver, `SEC-02` reads the repository's own scanner allowlist, `SEC-01`/`SEC-03` say "root-anchored only" for `/.env` |
 | `2026-10-19.2` | 2026-10-19 | 55 | S4.4.2.3/.4/.6/.8: `EXEC-04`'s shell-variable/env-var ambiguity, `NAV-02`'s Quarkus entry-point gap, `TOOL-05`'s self-referential hook-wiring false positive, and `TOOL-01`–`06`/`CMD-01`'s evidence citing a hardcoded manifest basename instead of its real nested path |
 | `2026-10-19.1` | 2026-10-19 | 55 | S4.4.2.1: `AGT-07`'s heading-word detector gap, found on Digital-Assistant-Server (S4.3.3, `D62`) — a prohibitions heading with no trigger word now also qualifies when its own body already reads as a do-not list |
 | `2026-10-15.3` | 2026-10-15 | 55 | S3.6.4: real-defect fixes found by the Digital-Assistant-SDK dry run (S3.6.3) — `TOOL-03`'s comment-intolerant JSON parse, `EXEC-04`'s truncated identifier capture, and `EXEC-02`'s undersized content-read cap — plus `CI-03`'s npm staged-publish fix (`3fb090d`, S3.6.1), which moved a verdict without a revision bump at the time |
 | `2026-10-11.1` | 2026-10-11 | 55 | S2.6: the Makefile reader, the false positives the self-audit found, and the constraint pack |
 | `2026-09-28.13` | 2026-09-28 | 54 | The engine as it was imported into this repository |
+
+---
+
+## `2026-11-05.2`
+
+What counts as the repository (MR06.1, [ADR-0008](../architecture/adrs/0008-what-counts-as-the-repository.md);
+issue #20 stays open). A nested `templates/package.json` no longer outranks the root `Makefile`, and a hygiene file
+a template ships no longer counts as the repository's.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `CMD-01`, `CMD-02`, `CMD-04`, `TOOL-*`, `TST-*`, `AGT-05`, `CI-02` | Resolved the verbs against the first manifest by kind (`package.json` before `Makefile`), at any depth | Resolve them against the shallowest manifest first, then by kind | `runner_rank` (`audit/rules/checks/_common.py`) orders by `(depth, kind, path)`, so a root `Makefile` beats a nested `package.json`. Applied per verb. |
+| `CMD-03` | `FAIL` when a template's manifest defined its own `check` beside the root runner | `PASS` | The template is carried data and no runner; the primary runner is the first by `runner_rank`. |
+| Every check that reads a file | Read files under `templates/`, `template/`, `examples/`, `example/`, `fixtures/`, `samples/`, `testdata/` and `scaffold/` | Do not read them | `build_inventory` moves them out of `Inventory.files` into `Inventory.set_aside` (`CARRIED_DATA_DIRS` in `audit/scan.py`). Nothing is set aside when the only manifests in the repository are inside such a directory. The git-backed checks drop the same paths from the tracked set. |
+| `HYG-02`, `HYG-03`, `HYG-05`, `HYG-06`, `HYG-07`, `HYG-08`, `HYG-09` | `PASS` for a file at any depth, such as `packages/web/CONTRIBUTING.md` or `templates/github/CODEOWNERS` | `PASS` only at the root or under `.github/`, `.gitlab/` or `docs/` | The text of `HYG-02` already said so. These checks are informational and never score. |
+| `NAV-03`, `BASE-01`, `BASE-02`, `EXEC-02`, `EXEC-03`, `TST-05`, `TOOL-05`, `TOOL-06`, `AGT-01` | Credited or counted fixture and template files | Do not | The same set-aside. A repository whose only evidence was a template now reports the real verdict. |
+
+### Report
+
+`inventory.set_aside` lists each outermost carried-data directory with its file count, and `inventory.files_set_aside`
+totals them; the Markdown report shows both under "Scan coverage". `files_inspected` no longer counts those files.
+
+### Not changed
+
+`--exclude` (still the way to leave anything else out), component discovery (ADR-0003, issue #20), and the ignore
+matcher (`MR06.2`).
 
 ---
 

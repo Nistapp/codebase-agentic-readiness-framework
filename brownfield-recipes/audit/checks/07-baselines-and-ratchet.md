@@ -19,7 +19,9 @@ Why it matters   Gates cannot be turned on over existing debt without mass failu
                   that separates old debt from new debt must land first
                   ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
 Severity         DEGRADER
-Engine           `BASE-01`. Matches a fixed set of baseline/suppression artifact names at any depth
+Engine           `BASE-01`. Matches a fixed set of baseline/suppression artifact names at any depth outside
+                 carried-data directories (`templates/`, `fixtures/`, `examples/`: a baseline a test fixture
+                 ships is not the repository's)
                  (`.eslint-baseline*`, `.ruff-baseline*`, `.mypy-baseline*`, `baseline.json`,
                  `*baseline*.json`, `*baseline*.xml`, `coverage-baseline.*`, `*.baseline`,
                  `.secrets.baseline`, `.snyk`, `.gitleaksignore`), or a documented equivalent mechanism
@@ -30,7 +32,8 @@ Engine           `BASE-01`. Matches a fixed set of baseline/suppression artifact
                  project names its baseline artifact something this fixed list does not carry — verify
                  by reading the project's own documentation for how it tracks existing debt.
 Method           automated
-Look for         Any filename matching the fixed baseline-artifact glob list, at any depth; failing
+Look for         Any filename matching the fixed baseline-artifact glob list, at any depth outside carried
+                 data; failing
                  that, `AGENTS.md`/`CLAUDE.md` for a documented equivalent mechanism.
 Rubric           PASS: a baseline/suppression artifact is committed, or an equivalent mechanism is
                  documented in `AGENTS.md` or `CLAUDE.md`.

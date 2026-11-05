@@ -57,6 +57,12 @@ python3 tools/build.py && ./dist/audit.pyz <target>
 
 Full walkthrough: [How to run an audit](docs/how-to/run-an-audit.md).
 
+The engine decides what counts as the repository ([ADR-0008](docs/architecture/adrs/0008-what-counts-as-the-repository.md)):
+a root manifest outranks a nested one, and files under a directory named `templates`, `examples`, `fixtures`,
+`samples`, `testdata` or `scaffold` (singular forms too) are carried data that no check reads. The report lists them
+in `inventory.set_aside`. `--exclude` is therefore no longer needed for template, example or fixture directories; it
+stays for anything else you want left out (`artefacts/**`, a vendored tree).
+
 ---
 
 ## Examples
