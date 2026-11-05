@@ -140,6 +140,21 @@ class OutputFileTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(stderr, f"audit: {self.out / 'audit-report.json'} exists — pass --force to overwrite\n")
 
+    def test_an_out_file_with_no_suffix_gets_json_and_the_markdown_gets_md(self):
+        bare = self.out / "run-1"
+        code, _, stderr = scan(str(self.target), "--out", str(bare))
+        self.assertEqual(code, 0, stderr)
+        self.assertEqual(stderr, f"\nreport written: {bare}.json\nreport written: {bare}.md\n")
+        self.assert_absent(bare)
+        self.assertTrue(bare.with_name("run-1.json").is_file())
+        self.assertTrue(bare.with_name("run-1.md").is_file())
+
+    def test_an_out_file_with_a_suffix_is_used_as_given(self):
+        named = self.out / "report.v2"
+        code, _, stderr = scan(str(self.target), "--format", "json", "--out", str(named))
+        self.assertEqual(code, 0, stderr)
+        self.assertTrue(named.is_file())
+
     def test_with_no_out_the_report_goes_to_audit_report_json_in_the_current_directory(self):
         before = os.getcwd()
         os.chdir(self.root)
