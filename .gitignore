@@ -9,9 +9,23 @@ __pycache__/
 *.pyz
 
 # environment files (secrets never committed; templates are)
+# `.env` is root-anchored on purpose: the engine's fixtures contain `.env` files as data (tests/fixtures/*/.env) and
+# must stay committable. The root file is the only one a developer creates here.
 /.env
 /.env.*
 !/.env.example
+
+# secret and key material by shape. A fixture that needs one of these is added with `git add -f` and a note in its
+# test; nothing in the repository's own configuration should ever be one.
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+id_rsa*
+*.crt
+*.cer
+.aws/
 
 # editor / OS noise
 .DS_Store
