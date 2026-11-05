@@ -171,7 +171,7 @@ The report also shows the unattested list beside them. The spec defines no level
 
 | Field | Meaning |
 |---|---|
-| `unattested[]` | Each requirement verified by `human` or `attested`: `requirement` (an ID such as `REQ-SH-004`), the `method`, an optional short `property` name and `why`. Such a requirement has no verdict and earns no credit. A declaration or a person's outcome cannot be recorded in 0.1, so the item stays listed. |
+| `unattested[]` | Each requirement verified by `human` or `attested`: `requirement` (an ID such as `REQ-SH-004`), the `method`, an optional short `property` name and `why`. Such a requirement has no verdict and earns no credit. A declaration or a person's outcome cannot be recorded in 0.1 or 0.2, so the item stays listed: in 0.2 `unattested[]` is informational. A command to record a declaration (`report.py attest`) is a v0.3 item. |
 | `coverage.scopes_examined`, `scopes_skipped` | What the audit looked at, and each scope it left out with the reason. |
 | `coverage.inventory` | The engine's file counts: inspected, skipped, and whether the scan was cut short. |
 
