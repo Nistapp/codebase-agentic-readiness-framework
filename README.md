@@ -50,6 +50,12 @@ Follow our phased, incremental methodology to make any existing codebase agentic
   - **Part II: Post-Readiness Roadmap (Phases 5–7)** — Agent-driven refactoring, human-facing docs, and Spec-Driven Development (SDD/BDD + TDD).
 - 🤖 **[Brownfield Recipes](brownfield-recipes/README.md)** (v0.1.0) — An agent-run audit that scores a Phase 1 readiness report for an existing repository, with a deterministic engine doing the counting and the agent's judgment backed by cited evidence. Install it as a skill bundle or run it from a clone; no installation beyond Python 3.11+.
 
+The normative requirements a repository must meet live in [`spec/`](spec/README.md); the guides above and the tools both trace to them.
+
+**Audit a repository in five minutes:** open [`brownfield-recipes/README.md`](brownfield-recipes/README.md#quick-start), paste the kickoff prompt into a coding agent with shell access (Python 3.11+), and name the repository's path.
+Answer Stage 0's questions and approve Stage 1's plan.
+The result is an evidence-cited Phase 1 readiness report.
+
 ---
 
 ## 🏛️ Shared Framework Concepts
