@@ -750,7 +750,7 @@ python3 brownfield-recipes/tools/build_skills.py [--out-dir DIR]
 
 ## progress.py
 
-Creates the implement recipe's state for a target from a final audit report, summarises it, renders its
+Creates the implement recipe's state for a target from a final audit report (recording the SHA-256 of the report file in `source_reports[].sha256`), summarises it, renders its
 Markdown view, and applies the validated changes to it: status transitions, skip and defer, preferences and
 theme progress. It is the one tool that writes inside a target, and only the two state files, by
 [ADR 0002](../architecture/adrs/0002-progress-writes-state-in-target.md). The source is
@@ -864,7 +864,18 @@ python3 brownfield-recipes/tools/check_drift.py --describe
 | `sha_missing` | The audited commit is not in the target's history (rewritten or not fetched). Nothing is compared; a warning says to re-check every finding. |
 | `no_sha` | The report recorded no `git_sha`. A warning says to re-check every finding. |
 
-`audited_sha` and `head_sha` are always present. When the audited commit is not an ancestor of `HEAD`, the diff is
+`audited_sha` and `head_sha` are always present. Two more fields never change the status or the exit code:
+
+- `dirty` is `true` when the target's working tree has uncommitted or untracked changes (`git status --porcelain` is
+  not empty), `false` when it is clean, `null` when git could not say. A warning and a line in the text output say so
+  when it is `true`, so the recipe does not ask the agent to run `git status` by hand.
+- `report_changed` compares the report file's SHA-256 with `source_reports[].sha256` in the target's state
+  (`progress.py init` records it). `true` means the report was edited since the state was created: a warning says not
+  to trust its text until the owner confirms the change. `false` means it matches. `null` means there is nothing to
+  compare: the target has no state, the state predates the digest (schema `0.1`), or the state does not list this
+  report.
+
+When the audited commit is not an ancestor of `HEAD`, the diff is
 between the two trees and a warning says so. Long lists are bounded: `changed_paths_omitted` and
 `findings_omitted` count what was left out, and `truncated` is `true`.
 

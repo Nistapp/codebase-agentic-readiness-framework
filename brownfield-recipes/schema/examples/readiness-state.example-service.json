@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "repo": {
     "label": "example-service",
     "default_branch": "main"
@@ -13,7 +13,8 @@
     {
       "path": "docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json",
       "git_sha": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-      "catalogue_version": "0.2.0"
+      "catalogue_version": "0.2.0",
+      "sha256": "6deeb580fb116df5b17cb6fd148858b62426ba8cf1139be1a10684542a61d867"
     }
   ],
   "preferences": [],

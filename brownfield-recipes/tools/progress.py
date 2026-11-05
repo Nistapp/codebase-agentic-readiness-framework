@@ -32,6 +32,7 @@ caller states with ``--by owner`` (the agent relays what the owner said; the too
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import subprocess
@@ -46,7 +47,8 @@ import validate_report
 
 RECIPE_NAME = "brownfield-implement"
 RECIPE_VERSION = "0.2.0-dev"
-SCHEMA_VERSION = "0.1"
+SCHEMA_VERSION = "0.2"
+SUPPORTED_SCHEMA_VERSIONS = ("0.1", "0.2")
 
 RECIPES = Path(__file__).resolve().parent.parent
 FRAMEWORK_ROOT = RECIPES.parent
@@ -272,6 +274,7 @@ def build_state(
     phase: str,
     date: str,
     framework_rev: str | None,
+    report_sha256: str | None = None,
 ) -> dict[str, Any]:
     """The first state for a final, valid `report`. Raises `ValidationFailed` for a check that has no theme."""
     unmapped = sorted({finding["check"] for finding in report["findings"] if finding["check"] not in CHECK_THEME})
@@ -321,6 +324,7 @@ def build_state(
                 "path": report_path,
                 "git_sha": provenance["target"]["git_sha"],
                 "catalogue_version": provenance["catalogue_version"],
+                **({"sha256": report_sha256} if report_sha256 else {}),
             }
         ],
         "preferences": [],
@@ -349,6 +353,11 @@ def build_state(
             }
         ],
     }
+
+
+def file_sha256(path: Path) -> str:
+    """SHA-256 of the file's bytes, as 64 lower-case hex digits."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def _date(text: str) -> str:
@@ -406,6 +415,7 @@ def run_init(args: Any) -> _common.Result:
         phase=args.phase,
         date=_date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         framework_rev=_sha(args.framework_rev) if args.framework_rev else framework_revision(),
+        report_sha256=file_sha256(report_file),
     )
     errors = state_errors(state)
     if errors:

@@ -38,8 +38,9 @@ python3 brownfield-recipes/tools/progress.py render --target <target>
 ```
 
 The report is committed on the integration branch at
-`docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.{json,md}`. `init` is to record the report file's SHA-256,
-so a later session can detect an edit (Planned (MR04)).
+`docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.{json,md}`. `init` records the report file's SHA-256 in
+`source_reports[].sha256`; `check_drift.py` recomputes it and reports `report_changed` when the file was edited
+since. A state made before schema `0.2` has no digest, and `report_changed` is then `null`, not `false`.
 
 `init` refuses a report that is not final or that `validate_report.py` rejects, a report outside the target, and an
 existing state. It queues confirmed and edited findings (an edited finding's note goes into `notes`), imports a
