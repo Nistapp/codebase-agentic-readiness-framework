@@ -45,7 +45,7 @@ found.
 | Page | Purpose | Status |
 |---|---|---|
 | [Run an audit](../how-to/run-an-audit.md) | Produce a confirmed report for a repo | Live (S3.5) |
-| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Partial (Stages 0-1 runnable; Step 1 Planned (MR04), the rest Planned (IR12)) |
+| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Partial (Stages 0-1 runnable; Step 1 written, the rest Planned (IR12)) |
 | [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits and for implementations (`progress.py show`, `check_drift.py`) |
 | [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Live; three profiles plus `stacks/README.md` |
 | [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Live for the corpus, expected-results format, scorer and the Claude Code runner (S4.1); other harnesses' own runner scripts stay Planned, deferred per `D57` |

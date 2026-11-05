@@ -7,6 +7,9 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- The handoff from the audit to the implement recipe is written: how-to Step 1, `implement/SKILL.md` Stage 0 step 4
+  and one sentence in audit Stage 5 say who copies the report into `docs/agentic-readiness-report/`, commits it,
+  and runs `progress.py init`; Stage 0 reads `dirty` and `report_changed` from `check_drift.py` (MR04).
 - `progress.py` papercuts (MR04): a refused move names the states the item may go to; `set-status` to the same
   status with `--note` adds the note; a bad preference key says "lower case"; `none` is the documented value for
   "no preference"; `render` wraps item details at 110 columns and cuts long preference cells (full text below the

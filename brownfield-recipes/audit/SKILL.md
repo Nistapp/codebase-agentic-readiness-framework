@@ -218,7 +218,9 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    it rather than calling `finalise` to find out.
 3. Run `report.py finalise <draft>`. Read `data.report` and `data.markdown` (the two new files, beside the
    draft) and `data.summary` (the score and its qualifiers), and give the person both paths and the score.
-   The draft itself is untouched and still there; `finalise` never edits or removes it.
+   The draft itself is untouched and still there; `finalise` never edits or removes it. The report is written
+   outside the target; to implement it, the owner copies the pair into the target and runs `progress.py init`
+   ([hand-over steps](../docs/how-to/implement-an-audit-report.md#step-1-hand-the-report-over-to-the-target-and-create-the-state)).
 4. Exit `2` here lists every remaining problem in `data.errors`, in the same words as `status`'s
    `blocking` — fix each one, confirm with `status`, then retry `finalise`. This should not happen if step
    2 was followed; treat it as a sign something changed the draft between the two calls.

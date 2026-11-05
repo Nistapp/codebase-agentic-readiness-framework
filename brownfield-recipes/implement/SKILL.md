@@ -93,15 +93,21 @@ checkout; `<repo>` is the target's path and `<report>` the final report JSON ins
    - `current`: nothing moved; go on.
    - `drifted`: for each finding in `data.findings`, re-verify it against the current tree with the check's
      own method before you use it, then tell the owner which findings still hold, which are partly fixed and
-     which are outdated, with the evidence. Never keep or drop one silently. Drift sees commits only, not
-     uncommitted changes; run `git -C <repo> status --short` and say so if the tree is dirty.
+     which are outdated, with the evidence. Never keep or drop one silently. Drift compares commits;
+     the tool also reports `data.dirty`, true when the tree has uncommitted changes: say so.
+   - Whatever the status, `data.report_changed` true means the report file was edited after `init` recorded its
+     SHA-256 (`null` means no digest was recorded): stop and tell the owner; the text is no longer the audit's.
    - `sha_missing` or `no_sha`: re-verify every queued finding when its theme comes up, and say so now.
-4. **State.** The report must be committed inside the target (`init` refuses one outside it). Create:
+4. **State.** The owner hands the report over: they copy the final `.json` and `.md` into the target at
+   `docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.{json,md}` and commit them on the integration branch
+   (the steps are in the [how-to, Step 1](../docs/how-to/implement-an-audit-report.md); `init` refuses a report
+   outside the target). If they have not, ask them to; do not copy it yourself. Create:
    `python3 brownfield-recipes/tools/progress.py init --report <report> --target <repo> --default-branch <branch>
    --phase <phase>` where `<branch>` is the integration branch (for example `dev`). Expect exit 0 and
-   `data.items` and `data.not_queued` counts. To resume instead, run `progress.py show --target <repo>` and read
-   `data.skipped`, the preference count and the theme progress. `init` never replaces a state; if it says a
-   state exists, resume. If the folder holds more than one state, pass `--label`.
+   `data.items` and `data.not_queued` counts, then commit the two state files on the integration branch. To resume
+   instead, run `progress.py show --target <repo>` and read `data.skipped`, the preference count and the theme
+   progress. `init` never replaces a state; if it says a state exists, resume. If the folder holds more than one
+   state, pass `--label`.
 5. **Index.** Re-index the target with the code-graph tool if the session has one (for example codebase-memory
    `index_repository`); otherwise note that you read files directly.
 
