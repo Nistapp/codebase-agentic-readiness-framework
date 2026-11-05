@@ -7,6 +7,11 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Engine ruleset `2026-11-05.3` (MR06.2, ADR-0009): `DOC-03`, `CON-03`, `SEC-01` and `SEC-03` read every nested
+  `.gitignore` (scoped to its directory, including the tracked ones under `--exclude`) and interpret `!` negation,
+  anchoring, directory-only rules and `**`. A scratch directory with its own `.gitignore` holding `*` passes, and a
+  tracked file it re-includes (`artefacts/README.md`) is not scratch. New fixtures `ignore-ok-nested-gitignore` and
+  `sec-03-ok-negated-exception`. Refs #12, #22 (partly; they stay open).
 - Engine ruleset `2026-11-05.2` (MR06.1, ADR-0008): the engine decides what counts as the repository. Runner
   precedence is depth first (a root `Makefile` beats a nested `package.json`); files under a directory named
   `templates`, `template`, `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` are carried data,

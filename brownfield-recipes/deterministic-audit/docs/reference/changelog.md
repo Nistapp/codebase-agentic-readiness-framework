@@ -13,6 +13,7 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-11-05.3` | 2026-11-05 | 55 | MR06.2 ([ADR-0009](../architecture/adrs/0009-nested-ignore-files-and-negation.md)): `DOC-03`, `CON-03`, `SEC-01` and `SEC-03` read nested `.gitignore` files and `!` negation |
 | `2026-11-05.2` | 2026-11-05 | 55 | MR06.1 ([ADR-0008](../architecture/adrs/0008-what-counts-as-the-repository.md)): runner precedence by depth, carried-data directories (`templates/`, `examples/`, `fixtures/`, ...) set aside and listed in the report, hygiene presence bounded to the root, `.github/`, `.gitlab/` and `docs/` |
 | `2026-11-05.1` | 2026-11-05 | 55 | MR05: `EXEC-06` trailing shell comments and the shared verb resolver, `SEC-02` reads the repository's own scanner allowlist, `SEC-01`/`SEC-03` say "root-anchored only" for `/.env` |
 | `2026-10-19.2` | 2026-10-19 | 55 | S4.4.2.3/.4/.6/.8: `EXEC-04`'s shell-variable/env-var ambiguity, `NAV-02`'s Quarkus entry-point gap, `TOOL-05`'s self-referential hook-wiring false positive, and `TOOL-01`–`06`/`CMD-01`'s evidence citing a hardcoded manifest basename instead of its real nested path |
@@ -22,6 +23,19 @@ the record of how; git has the rest.
 | `2026-09-28.13` | 2026-09-28 | 54 | The engine as it was imported into this repository |
 
 ---
+
+## `2026-11-05.3`
+
+Nested ignore files and negation (MR06.2, [ADR-0009](../architecture/adrs/0009-nested-ignore-files-and-negation.md);
+issues #12 and #22 stay open). A scratch directory that carries its own `.gitignore` is now seen.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `DOC-03`, `CON-03` | `FAIL` ("matched by no ignore rule") for `artefacts/` ignored by `artefacts/.gitignore`; `FAIL` ("tracked") for the `README.md` and `.gitignore` that file re-includes | `PASS` | The scoped matcher reads the nested file, including when `--exclude` took the directory's files out of the audit. A tracked file the directory's own `.gitignore` re-includes with `!`, and that `.gitignore` itself, are not scratch. Any other tracked member still fails. |
+| `SEC-03`, `SEC-01` | A `!` line was dropped; a shape ignored by a rule that a later `!` re-includes was credited | Not credited | `decide` applies `!` in git's order. A `!` for another name changes nothing. |
+| `SEC-01`, `SEC-03` | A shape covered only by a rule in a nested `.gitignore` could not be credited | Credited at that directory only | The nested rule is scoped to its directory, so it does not cover the root probe. |
 
 ## `2026-11-05.2`
 

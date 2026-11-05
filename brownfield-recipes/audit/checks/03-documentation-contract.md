@@ -86,15 +86,21 @@ Severity         DEGRADER
 Engine           `DOC-03`. No scratch directory (`artefacts/` or `artifacts/`) present anywhere, on disk or
                  in the inventory, is `PASS` ("no scratch directory in use" — there is nothing to get
                  wrong). Any path under the directory that git tracks is `FAIL` outright, independent of
-                 ignore rules (the directory's purpose is defeated the moment one file is committed).
-                 Otherwise: the directory must be matched by an ignore rule (the engine's own subset
-                 matcher, `audit.ignore` — anchoring and `**` approximated, not a full `.gitignore`
-                 implementation); unmatched is `FAIL`. Matched, with git able to confirm nothing is
+                 ignore rules (the directory's purpose is defeated the moment one file is committed) —
+                 except the directory's own `.gitignore` and a file that `.gitignore` re-includes with
+                 `!` (`artefacts/README.md` beside `*`).
+                 Otherwise: the directory must be kept out by an ignore rule, read by the engine's scoped
+                 matcher (`audit.ignore.decide`, [ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
+                 every nested `.gitignore` scoped to its directory, `!` negation, anchoring, directory-only
+                 rules and `**`. A directory is kept out when it is ignored itself or a new file in it
+                 would be (`artefacts/.gitignore` holding `*`); the summary names the file that decided.
+                 Not a full `.gitignore` implementation (no `.git/info/exclude`, no global excludes);
+                 unmatched is `FAIL`. Matched, with git able to confirm nothing is
                  tracked, is `PASS`; matched but git cannot report the tracked set at all is `UNKNOWN`
                  (the same degradation `SEC-01` uses when git is unavailable — absence of evidence is not
                  a pass). Distrust a `FAIL` on the ignore-rule match when the project uses a `.gitignore`
-                 construct the engine's approximated matcher does not parse (a negated pattern, a complex
-                 brace expansion) — verify by testing `git check-ignore` on a sample path directly.
+                 construct the engine's matcher does not parse (a global excludes file,
+                 `.git/info/exclude`) — verify by testing `git check-ignore` on a sample path directly.
 Method           automated
 Look for         `.gitignore` (and any other ignore file the engine's loader reads) for a rule covering the
                  scratch directory; `git ls-files` (or the equivalent) for whether anything under it is

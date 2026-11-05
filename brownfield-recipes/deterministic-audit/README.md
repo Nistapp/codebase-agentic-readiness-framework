@@ -63,6 +63,9 @@ a root manifest outranks a nested one, and files under a directory named `templa
 in `inventory.set_aside`. `--exclude` is therefore no longer needed for template, example or fixture directories; it
 stays for anything else you want left out (`artefacts/**`, a vendored tree).
 
+The checks that ask whether a path is ignored (`DOC-03`, `CON-03`, `SEC-01`, `SEC-03`) read every nested `.gitignore`,
+scoped to its directory, and honour `!` negation ([ADR-0009](docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)).
+
 ---
 
 ## Examples

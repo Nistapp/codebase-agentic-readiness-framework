@@ -25,7 +25,8 @@ Severity         BLOCKER
 Engine           `SEC-01`. Two independent halves: whether `.env`/`.env.*` (excluding committed templates
                  such as `.env.example`, `.env.sample`, `.env.template`, `.env.dist`, `.env.defaults`,
                  `env.example`) is git-tracked, read from `tracked_files`; and whether the ignore rules
-                 cover the `.env` shape, read from the ignore files directly — so a tracked `.env` that
+                 cover the `.env` shape, read from the ignore files directly (every nested `.gitignore` scoped to
+                 its directory, `!` negation applied in git's order, [ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)) — so a tracked `.env` that
                  is *also* git-ignored is still caught, because tracked state and ignore coverage are
                  checked independently, not inferred from one another. A tracked `.env`/`.env.*` is the
                  blocker (`FAIL`) regardless of ignore coverage. No tracked `.env`, but the ignore rules
@@ -35,7 +36,7 @@ Engine           `SEC-01`. Two independent halves: whether `.env`/`.env.*` (excl
                  `UNKNOWN` — never inferred as a pass — whatever the ignore coverage reads as. Distrust a
                  `PARTIAL`/`FAIL` on ignore coverage when the repository uses an ignore mechanism beyond
                  `.gitignore` that the engine's loader does not yet read — verify by checking
-                 `audit.ignore.load_ignore_rules`'s own source list before treating the gap as real.
+                 `audit.ignore.IGNORE_FILE_NAMES` before treating the gap as real.
 Method           automated
 Look for         `tracked_files` for any path named `.env` or `.env.*` (excluding the committed-template
                  basenames); the loaded ignore rules for coverage of the `.env` and `.env.*` shapes. Cite
@@ -137,13 +138,17 @@ Severity         DEGRADER
 Engine           `SEC-03`. Checks ignore-rule coverage of eleven documented secret/certificate/credential
                  shapes (dotenv and its variants, SSH private keys, PEM, generic `.key`, PKCS#12, PFX,
                  keystore, `.crt`/`.cer` certificates, AWS credentials), each probed by a representative
-                 sample path (`_SECRET_SHAPES`) against the loaded ignore rules. No ignore file at all is
+                 sample path (`_SECRET_SHAPES`) against the loaded ignore rules. The rules are read as git reads them
+                 ([ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
+                 a `!` line re-includes, so `*.crt` with `!server.crt` leaves the certificate shape
+                 uncovered while `!public.crt` does not, and a nested `.gitignore` covers its own directory,
+                 not the root. No ignore file at all is
                  `FAIL` outright — there is no coverage to measure. Every shape covered is `PASS`; some
                  covered, or covered from the root only (`/.env`, reported as "root-anchored only"), is `PARTIAL`; an ignore file exists but covers none of the eleven is `FAIL`.
                  There is no `UNKNOWN` path — the presence and coverage of ignore rules is always
                  determinable. Distrust a `PARTIAL`/`FAIL` for a shape covered by a broader rule the
-                 engine's documented ignore-matching subset does not recognise (full gitignore semantics
-                 beyond simple glob anchoring and `**`) — verify by reading the ignore file's own rule
+                 engine's documented ignore-matching subset does not recognise (`.git/info/exclude`, a global
+                 excludes file, escapes beyond `\#` and `\!`) — verify by reading the ignore file's own rule
                  directly before treating the gap as real.
 Method           automated
 Look for         The loaded ignore rules (`.gitignore` or equivalent) for coverage of each of the eleven
