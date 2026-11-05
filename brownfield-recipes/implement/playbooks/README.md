@@ -50,8 +50,8 @@ in IR04.1, `untrack-generated` in IR05.1, `establish-docs-contract` in IR09.1,
 | [`pin-execution-environment`](pin-execution-environment.md) | T2 Execution determinism | EXEC-01, EXEC-02 | yes | Drafted (IR05.1); applied and corrected in IR05.2, IR05.3 (T2 closed) |
 | [`untrack-generated`](untrack-generated.md) | T2 Execution determinism | EXEC-05, EXEC-07 | yes | Drafted (IR05.1); applied and corrected in IR05.2, IR05.3 (T2 closed) |
 | [`env-inventory-and-secrets`](env-inventory-and-secrets.md) | T3 Secrets and env | EXEC-04, SEC-01, SEC-02, SEC-03 | yes | Applied and corrected (IR06.1-IR06.3) |
-| [`add-ci-parity`](add-ci-parity.md) | T4 CI parity, hooks, commits | CI-01, CI-02, CI-03, CI-04 | yes | Drafted (IR07.1); applied in IR07.2, IR07.3 |
-| [`add-hooks-and-commit-rules`](add-hooks-and-commit-rules.md) | T4 CI parity, hooks, commits | TOOL-05, TOOL-06 | yes | Drafted (IR07.1); applied in IR07.2, IR07.3 |
+| [`add-ci-parity`](add-ci-parity.md) | T4 CI parity, hooks, commits | CI-01, CI-02, CI-03, CI-04 | yes | Drafted (IR07.1); applied and corrected in IR07.2, IR07.3 (T4 closed) |
+| [`add-hooks-and-commit-rules`](add-hooks-and-commit-rules.md) | T4 CI parity, hooks, commits | TOOL-05, TOOL-06 | yes | Drafted (IR07.1); applied and corrected in IR07.2, IR07.3 (T4 closed) |
 | `add-baselines-and-ratchet` | T5 Tests and baselines | BASE-01, BASE-02, BASE-03, BASE-04, TST-02, TST-03, TST-05 | no | Planned (IR08.1) |
 | [`establish-docs-contract`](establish-docs-contract.md) | T6 Docs and navigation | DOC-01, DOC-02, DOC-03, DOC-04, NAV-01, NAV-02, NAV-03, NAV-04, NAV-05 | yes | Drafted (IR09.1); applied in IR09.2, IR09.3 |
 | `adapt-agents-md` | T7 AGENTS.md and governance | AGT-01, AGT-02, AGT-03, AGT-04, AGT-05, AGT-06, AGT-08, AGT-09, AGT-10, AGT-11, EXEC-06, TST-04 | yes | Planned (IR10.1) |

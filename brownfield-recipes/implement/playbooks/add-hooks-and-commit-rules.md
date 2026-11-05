@@ -84,6 +84,20 @@ formatter out and say why (never run a full-tree format in a hook).
 With no root manifest a Node-based manager has no home, which is another reason the binary manager is the default.
 The hook runs each app's changed-files verb from that app's directory (`layout.command_runner`).
 
+With lefthook (IR07.3):
+
+- Use one command per app with `root: <app>/` and `npx --no-install prettier --check {staged_files}`; the file
+  list is then relative to that app. `glob` patterns are matched against the path from the repository root, and a
+  `**` needs at least one folder in between: list a direct-child pattern and a nested one for each folder
+  (`app/src/*.ts` and `app/src/**/*.ts`). Check with a throwaway config that prints `{staged_files}`.
+- Test with `lefthook run pre-commit` in a scratch clone (no `lefthook install`, so nothing is written into a shared
+  git directory) and a staged file with a format violation and a fake token. gitleaks allowlists the well-known
+  example keys (such as the AWS documentation key); use a token-shaped value that is not on that list.
+- A hook blocks on the files the commit touches, including a staged file that was already unformatted before the
+  change. That is the ratchet working; say so in the install text rather than adding an exception.
+- Fetch the test binary into a scratch directory and compare its SHA-256 with the digest GitHub publishes for the
+  release asset; do not put it on the owner's `PATH`.
+
 ## Continue on error
 
 - If the changed-files verb reveals existing debt in a staged file, the hook blocks only on files the commit
