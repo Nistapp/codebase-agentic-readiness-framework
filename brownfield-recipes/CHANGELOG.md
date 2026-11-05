@@ -9,10 +9,10 @@ history (which verdicts moved and why), see
 
 - v0.2 (the implementation MVP), skeleton in: `implement/SKILL.md` with its hard rules and the stage table,
   the playbook anatomy and the list of thirteen playbooks (`implement/playbooks/README.md`), and the
-  per-repository state contract (`implement/state.md`). Stages, playbooks, the state schema and its tools
-  are still Planned.
+  per-repository state contract (`implement/state.md`). The recipe is still partial: Stages 2 to 5 and five
+  of the thirteen playbooks are Planned (IR08.1, IR10.1, IR11.1, IR12).
 - Implement recipe Stages 0 (intake) and 1 (triage) written and live in `implement/SKILL.md`, from the two
-  onboarding runs, with a first `implement/prompts/kickoff.md`. Stages 2 to 5 are still Planned.
+  onboarding runs, with a first `implement/prompts/kickoff.md`. Stages 2 to 5 are Planned (IR12).
 - The two T1 playbooks: `implement/playbooks/define-command-surface.md` (CMD-01 to CMD-04, EXEC-03, TST-01) and
   `implement/playbooks/configure-quality-tools.md` (TOOL-01 to TOOL-04, with a tool-currency table checked
   2026-10-30). `catalogue.json` 0.2.3 (PATCH: playbook names only; fingerprint unchanged) adds
@@ -42,7 +42,12 @@ history (which verdicts moved and why), see
 - The readiness state: `schema/readiness-state.schema.json` (`schema_version` `0.1`) with two examples and their
   rendered Markdown, and `tools/progress.py` `init`, `show` and `render`. `progress.py` is the one tool that
   writes inside a target, and only its two state files (ADR 0002); `ToolInfo` gains `writes_inside_target`,
-  default `False`. Transitions, skip, defer and preferences are still Planned (IR02.2).
+  default `False`.
+- `progress.py` transitions, skip, defer and preferences (IR02.2), so the state moves through its whole life.
+- `tools/check_drift.py` (IR02.3): compares the audited commit in a report with `HEAD` of the target and lists
+  the findings whose cited paths changed in between. It writes nothing.
+- `tools/compare_reports.py` (IR14.1): compares two audit reports of one repository and says which checks and
+  findings moved, and which moves the readiness state explains. It writes nothing.
 - Docs tooling for this repository: `.markdownlint-cli2.jsonc`, `make docs-lint` (gating, on a path list that
   only grows) and `make docs-lint-all` (report-only), and a CI `docs` job that lints and renders every
   Mermaid block in changed Markdown (`brownfield-recipes/dev/mermaid_check.py`).
