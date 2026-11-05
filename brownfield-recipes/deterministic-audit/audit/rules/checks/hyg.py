@@ -19,18 +19,19 @@ protection. It is never used merely because an artifact is absent.
   :data:`MIN_README_CHARS` characters of body, free of a :data:`STUB_MARKERS` marker and not a bare
   title, is `PASS`. Present but below the bar is `FAIL` (with the file as evidence); present but
   unreadable (binary or oversized) is ``UNKNOWN``; absent is `FAIL`.
-* **HYG-02** — `CODEOWNERS` at the root, under `.github/`, or under `docs/`.
+* **HYG-02** — `CODEOWNERS` at the root, under `.github/`, `.gitlab/` or `docs/`.
 * **HYG-03** — any `pull_request_template*` (case-insensitive), normally under `.github/`.
 * **HYG-04** — at least one file under `.github/ISSUE_TEMPLATE/`, or `.github/ISSUE_TEMPLATE.md`.
-* **HYG-05** — a `CONTRIBUTING*` document anywhere in the tree.
-* **HYG-06** — a `SECURITY*` document anywhere in the tree.
+* **HYG-05** — a `CONTRIBUTING*` document at the root or under `.github/`, `.gitlab/` or `docs/`.
+* **HYG-06** — a `SECURITY*` document at the same places.
 * **HYG-07** — a `CHANGELOG*` document, **dated recently**. This is the only time-sensitive rule.
   Recency is derived from the repository's own git history, never from wall-clock time (AGENTS.md §5):
   the changelog's last commit date is compared with the `HEAD` commit date and is "recent" when it
   falls within :data:`RECENT_WINDOW`. When git cannot supply either date — no repository, git absent,
   or the changelog untracked — the verdict is ``UNKNOWN``, not ``FAIL`` and never ``date.today()``.
 * **HYG-08** — a text/markdown document whose filename contains "release" (a release process or
-  release-notes page). CI workflow files named `release.yml` are not documents and do not count.
+  release-notes page), at the same places. CI workflow files named `release.yml` are not documents and do
+  not count.
 * **HYG-09** — Dependabot or Renovate configuration at any of its conventional locations.
 * **HYG-10** — a root license file: `LICENSE*`, `LICENCE*`, `COPYING*`, `COPYRIGHT*` or `UNLICENSE*`
   (case-insensitive, bare name or document suffix).
@@ -39,6 +40,10 @@ protection. It is never used merely because an artifact is absent.
   document describing the provider's config is `PASS`. None found is `FAIL` when the CI provider is
   one that offers config-as-code (GitHub, GitLab); it is ``UNKNOWN`` when no such provider is
   recognised, because whether protection *can* be declared as code is provider-dependent.
+
+Presence is repository-level (ADR-0008): a hygiene file counts at the root or under `.github/`, `.gitlab/` or
+`docs/` (:func:`_repository_level`), never in a component's or a template's directory. Carried data
+(`templates/`, `examples/`, `fixtures/`) is not in the inventory at all.
 
 Deliberate limit, recorded rather than hidden: "recently" is always relative to the repository's
 latest commit, so an abandoned repository is judged on its own clock, not the audit machine's.
@@ -132,21 +137,33 @@ def _basename(rel: str) -> str:
     return rel.rsplit("/", 1)[-1]
 
 
+#: The top-level directories where a repository-level file may live besides the root itself.
+_REPOSITORY_LEVEL_DIRS = frozenset({".github", ".gitlab", "docs"})
+
+
+def _repository_level(rel: str) -> bool:
+    """Whether ``rel`` is at the root or under ``.github/``, ``.gitlab/`` or ``docs/`` (ADR-0008)."""
+    return "/" not in rel or rel.split("/", 1)[0] in _REPOSITORY_LEVEL_DIRS
+
+
 def _present(inventory: Inventory, *names: str) -> list[str]:
-    """Files whose path equals, or ends with, one of ``names`` (any depth)."""
+    """Repository-level files whose path equals, or ends with, one of ``names``."""
     wanted = tuple(name.strip("/") for name in names)
     return sorted(
         f.rel
         for f in inventory.files
-        if f.rel.strip("/") in wanted or any(f.rel.strip("/").endswith("/" + name) for name in wanted)
+        if _repository_level(f.rel)
+        and (f.rel.strip("/") in wanted or any(f.rel.strip("/").endswith("/" + name) for name in wanted))
     )
 
 
 def _named_documents(inventory: Inventory, prefixes: tuple[str, ...], *, root_only: bool = False) -> list[str]:
-    """Files whose basename starts with a prefix and is a bare name or a document suffix."""
+    """Repository-level files whose basename starts with a prefix and is a bare name or a document suffix."""
     out: list[str] = []
     for entry in inventory.files:
         if root_only and "/" in entry.rel:
+            continue
+        if not _repository_level(entry.rel):
             continue
         base = _basename(entry.rel).lower()
         if not any(base.startswith(prefix) for prefix in prefixes):
@@ -160,7 +177,9 @@ def _documents_containing(inventory: Inventory, needle: str) -> list[str]:
     return sorted(
         f.rel
         for f in inventory.files
-        if needle in _basename(f.rel).lower() and _basename(f.rel).lower().endswith(_DOC_SUFFIXES)
+        if _repository_level(f.rel)
+        and needle in _basename(f.rel).lower()
+        and _basename(f.rel).lower().endswith(_DOC_SUFFIXES)
     )
 
 
@@ -272,7 +291,7 @@ def check_hyg02(*, spec, target, inventory, stack, components, session) -> Check
                 spec,
                 Verdict.FAIL,
                 "know who owns a path before changing it",
-                "no CODEOWNERS file exists at the root, under .github/, or under docs/",
+                "no CODEOWNERS file exists at the root, under .github/, .gitlab/ or docs/",
                 remediation="Add .github/CODEOWNERS mapping paths to owners so review routing is machine-readable.",
             ),
         ],
@@ -285,7 +304,11 @@ def check_hyg02(*, spec, target, inventory, stack, components, session) -> Check
 
 
 def check_hyg03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    found = sorted(f.rel for f in inventory.files if _basename(f.rel).lower().startswith("pull_request_template"))
+    found = sorted(
+        f.rel
+        for f in inventory.files
+        if _repository_level(f.rel) and _basename(f.rel).lower().startswith("pull_request_template")
+    )
     if found:
         return _outcome(spec, Verdict.PASS, f"pull-request template present at {found[0]}")
     return _outcome(
@@ -377,7 +400,7 @@ def check_hyg06(*, spec, target, inventory, stack, components, session) -> Check
                 spec,
                 Verdict.FAIL,
                 "report a vulnerability responsibly",
-                "no SECURITY document exists at the root, under .github/, or under docs/",
+                "no SECURITY document exists at the root, under .github/, .gitlab/ or docs/",
                 remediation="Add SECURITY.md with a private disclosure channel and a response expectation.",
             ),
         ],
