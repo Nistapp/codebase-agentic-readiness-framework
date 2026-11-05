@@ -13,7 +13,7 @@ pre-commit:
       glob: "{brownfield-recipes/implement/**/*.md,docs/**/*.md}"
       run: make docs-lint
     secrets:
-      run: uvx --from detect-secrets==1.5.0 detect-secrets-hook --baseline .secrets.baseline {staged_files}
+      run: uvx --from detect-secrets==1.5.0 detect-secrets-hook --baseline .secrets.baseline {staged_files}  # pragma: allowlist secret
 
 # Conventional Commits: `type(scope): subject`. The trailer `Roadmap-Step:` is checked in review, not here.
 commit-msg:
