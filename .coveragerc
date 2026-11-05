@@ -1,0 +1,15 @@
+# coverage.py settings for `make coverage` (the engine's suite and the recipe tools' suite, measured together).
+# The paths are wildcards because the engine's suite runs with its own directory as the working directory.
+[run]
+include =
+    */brownfield-recipes/deterministic-audit/audit/*
+    */brownfield-recipes/tools/*
+omit =
+    */tests/*
+
+[report]
+# The floor is the measured total rounded down, and it only goes up: raise it when coverage rises, never lower it
+# to get green. Subprocess-run code (the CLI entry points under test) is not measured, so the number is a floor.
+fail_under = 91
+show_missing = false
+skip_empty = true

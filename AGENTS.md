@@ -37,6 +37,9 @@ no vendor-specific instruction file exists beside it.
 - Local hooks are `lefthook.yml` (format check on staged Python, `make docs-lint` on staged ratchet Markdown, a secrets
   scan, a Conventional Commits check). The developer runs `lefthook install` once per clone; an agent never does.
   Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
+- `make coverage` runs the engine's and the tools' suites under coverage.py and fails below the floor in `.coveragerc`
+  (`fail_under`). CI runs it as the `coverage` job. The floor is debt that only goes up: raise it when coverage rises,
+  never lower it to get green.
 - After a deliberate change to a fixture or test that holds a key-shaped string, run `make update-secrets-baseline`
   and review the diff.
 - Never weaken a gate to get green: no `.skip`, no rule turned off, no assertion relaxed. If you cannot pass a gate, say so.

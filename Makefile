@@ -13,6 +13,7 @@
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
 #                       cross-check and the recipe linter
 #   make security       secrets scan against the committed baseline
+#   make coverage       (extra) both unittest suites under coverage.py; fails below the floor in .coveragerc
 #
 # `format:check` has a colon, which make reads as a rule separator. The target is spelled `format\:check`
 # and `format-check` is the alias; the unescaped form `format:check:` would define a different rule.
@@ -30,6 +31,9 @@ CROSSCHECK := PYTHONPATH=brownfield-recipes/tools uv run --no-project --with jso
 SKILLS_REF := uvx --from skills-ref==0.1.1 agentskills
 # Markdown lint (rules in .markdownlint-cli2.jsonc) and the Mermaid check need Node; neither is part of `check`.
 MARKDOWNLINT := npx --yes markdownlint-cli2@0.24.0
+COVERAGE := uvx coverage@7.17.2
+# The coverage data stays under the git-ignored build output; settings (the floor) are in .coveragerc.
+COVERAGE_DATA := $(CURDIR)/brownfield-recipes/dist/coverage/.coverage
 
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
@@ -44,11 +48,11 @@ TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -n
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help format format-check format\:check lint typecheck test verify-rules crosscheck recipe-lint check security update-secrets-baseline validate-skills docs-lint docs-lint-all docs-mermaid
+.PHONY: help format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline validate-skills docs-lint docs-lint-all docs-mermaid
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
+	@echo "extra: coverage  verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-mermaid FILES=..."
 
 format:
@@ -70,6 +74,15 @@ test:
 	cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests
 	$(PYTHON) -m unittest discover -s brownfield-recipes/tools/tests
 	$(PYTHON) -m unittest discover -s brownfield-recipes/dev/tests
+
+# Runs the engine's suite and the recipe tools' suite under coverage.py and fails when the total drops below the
+# floor in .coveragerc (`fail_under`). Not part of `check`; CI runs it as its own job. Needs uv.
+coverage:
+	mkdir -p $(dir $(COVERAGE_DATA))
+	rm -f $(COVERAGE_DATA)
+	cd $(ENGINE) && COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc -m unittest discover -s tests
+	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s brownfield-recipes/tools/tests
+	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) report --rcfile=.coveragerc
 
 # Every framework anchor the engine cites must still resolve in this repository.
 verify-rules:
