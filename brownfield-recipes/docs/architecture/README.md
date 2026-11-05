@@ -13,6 +13,7 @@
 |---|---|---|---|
 | [0001](adrs/0001-tools-import-engine.md) | Tools Import the Engine in Process | Accepted | 2026-10-10 |
 | [0002](adrs/0002-progress-writes-state-in-target.md) | `progress.py` Writes the State Files Inside the Target | Accepted | 2026-10-29 |
+| [0003](adrs/0003-push-and-pr-policy.md) | The Implement Recipe Pushes and Opens a Pull Request Only When the Owner Opted In | Accepted | 2026-11-05 |
 
 ## Key Documents
 
@@ -65,7 +66,7 @@ found.
 |---|---|---|
 | [1. Purpose & Non-Goals](user-overview/01-purpose-and-non-goals.md) | What the recipes are and refuse to be | Live; the implementation recipe it describes is partial (Stages 2-5 Planned (IR12)) |
 | [2. How the Recipes Work](user-overview/02-how-the-recipes-work.md) | Stages and decisions, for evaluators | Live for audits and implementation Stages 0-1; Stages 2-5 Planned (IR12) |
-| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live; the implementation recipe's push/PR rule is under decision (MR03) |
+| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live; the implementation recipe's push/PR rule is [ADR 0003](adrs/0003-push-and-pr-policy.md) |
 
 ## Explanation — Contributor Deep Dive
 

@@ -48,8 +48,10 @@ not judge on its own (`UNKNOWN`); and it may override an engine verdict, but onl
   readiness at one point in time; it is not a badge, a ranking or a vendor comparison.
 - **No CI gate.** The audit is read-only and advisory. Nothing here fails a pull request or blocks a merge
   — that decision, if a team wants one, is theirs to build on top of a report.
-- **No auto-push, no auto-merge.** Even once the implementation recipe exists (v0.2), it will branch,
-  change, and stop for the operator to review and push; it will never push, open a PR or merge on its own.
+- **No auto-merge, and no push unless the owner opted in.** The implementation recipe branches, changes
+  and stops for the operator to review and push. It pushes the branch and opens a pull request only when the
+  owner recorded `ci.pr_by_agent=yes` at triage. It never merges, tags or force-pushes
+  ([ADR 0003](../adrs/0003-push-and-pr-policy.md)).
 - **No Phase 2–4 work.** These recipes cover Phase 1 (Agentic Bootstrap) only. The framework's later
   phases are out of scope for this project entirely, not merely deferred.
 - **No finished implementation recipe yet.** `implement/` (v0.2) runs Stages 0 and 1 today; Stages 2 to 5

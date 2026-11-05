@@ -2,8 +2,8 @@
 
 > **Audience:** CTOs, security reviewers
 > **Goal:** State what the recipes may and may not do to a repository and to the operator's machine.
-> **Status:** Audit rules live (§1–§4, S3.5); implementation safety (§5) live, except the push and pull
-> request rule, which is under decision (MR03).
+> **Status:** Audit rules live (§1–§4, S3.5); implementation safety (§5) live; the push and pull request
+> rule is [ADR 0003](../adrs/0003-push-and-pr-policy.md).
 
 ---
 
@@ -57,4 +57,9 @@ and bind every stage. In short:
 - The owner chooses every tool and approves every new dependency.
 - It never opens, prints or quotes a `.env` file or other secret store, and runs no destructive command
   unless asked for that exact action.
-- Whether it pushes the theme branch and opens a pull request is under decision (MR03).
+- It stops at a local branch unless the owner recorded `ci.pr_by_agent=yes` at triage (`progress.py pref`).
+  Only then does it push the theme branch and open one pull request into the integration branch. It never
+  merges, never pushes tags and never force-pushes. See [ADR 0003](../adrs/0003-push-and-pr-policy.md).
+- **Credentials.** With the opt-in the agent needs a `gh` login that can push a branch and open a pull request
+  on the target. It needs no merge, tag or force-push rights and must not use them. Without the opt-in it
+  needs no push credential.
