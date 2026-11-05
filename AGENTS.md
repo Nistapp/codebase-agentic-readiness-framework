@@ -90,6 +90,8 @@ A change is done when all of this holds:
 
 ## Where to look
 
+- Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
+  `docs/architecture/adrs/README.md`.
 - Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.
 - Terms: `brownfield-recipes/docs/architecture/glossary.md` and `shared/Glossary.md`.
 - The engine's design, checks and ADRs: `brownfield-recipes/deterministic-audit/docs/architecture/README.md`.
