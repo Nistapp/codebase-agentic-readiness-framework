@@ -2,8 +2,8 @@
 
 Canonical definitions of terms used by the brownfield recipes. Terms from the readiness framework are cited, not redefined; see [`shared/Glossary.md`](../../../shared/Glossary.md).
 
-> **Status:** Live. Every term below names a thing that ships today, except the two marked "not built
-> yet" — the implementation recipe and its playbooks, both v0.2, milestone M5.
+> **Status:** Live. Every term below names a thing that exists today. The implementation recipe and its
+> playbooks (v0.2) are partial; their rows say what is missing.
 
 ---
 
@@ -11,14 +11,14 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 |---|---|
 | Recipe | A Markdown instruction document (`SKILL.md`) that a coding agent executes. |
 | Audit recipe | The read-only recipe that produces the audit report. |
-| Implementation recipe | The recipe that will apply confirmed findings on a branch. Not built yet (v0.2, milestone M5). |
+| Implementation recipe | `implement/SKILL.md`: the recipe that closes confirmed findings one theme at a time, a branch per theme. Partial (v0.2): Stages 0 and 1 live, Stages 2 to 5 Planned (IR12). |
 | Engine | The deterministic, standard-library Python audit in `deterministic-audit/`. |
 | Tool | A deterministic script in `tools/` that follows the tool contract. |
 | Envelope | The one JSON object a tool prints on stdout: `tool`, `version`, `ok`, `data`, `warnings`, `truncated`. |
 | Check | A catalogue entry with an ID such as `CMD-01`, judged by a rubric. |
 | Finding | A non-passing check result with a statement, evidence and remediation. |
 | Disposition | A finding's state: `pending` until set, then the user's decision — `confirmed`, `rejected`, `deferred` or `edited`. |
-| Playbook | A remediation procedure the implementation recipe will follow for one finding class. Not built yet (v0.2, milestone M5); a check's catalogue entry already names its intended playbook. |
+| Playbook | A remediation procedure the implementation recipe follows for one finding class, in `implement/playbooks/`. Eight of thirteen are written; the other five are Planned (IR08.1, IR10.1, IR11.1). A check's catalogue entry names its playbook. |
 | Stack profile | A file that maps the checks and playbooks to one toolchain. |
 | Evidence | A cited file, command or index query that supports a verdict. |
 | `captured_by` | Whether evidence was captured by a tool or reported by the agent. |
