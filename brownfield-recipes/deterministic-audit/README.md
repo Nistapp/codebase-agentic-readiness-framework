@@ -135,7 +135,7 @@ All documentation follows the shared [style guide](../docs/STYLE_GUIDE.md), whic
 
 | Version | Scope |
 |---|---|
-| v1 | Python, deterministic, Phase-1 scoring, tiers A–C, JSON + Markdown reports, baseline ratchet, self-verification fixtures. **Current state:** all packs live — `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set (55 of 55 scoreable checks, plus 13 informational reported and never scored) |
+| v1 | Python, deterministic, Phase-1 scoring, tiers A–C, JSON + Markdown reports, baseline ratchet, self-verification fixtures. **Current state:** all packs live — `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set (55 of 55 scoreable checks, plus 14 informational or emitter-only reported and never scored, as `--list-checks` prints) |
 | v2 | TypeScript npm package with the same contract, matching the scaffolder's distribution path |
 | v3 | `--narrate` (prose only, never verdicts), Phase 2–4 rule packs with real depth, non-JS/TS ecosystem packs |
 

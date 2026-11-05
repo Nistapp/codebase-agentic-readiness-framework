@@ -41,7 +41,7 @@ fixtures/
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
   agt-05-ok/                 all verbs named and resolved on a runner -> AGT-05 PASS
-  cmd-01-missing-verb/       six verbs on npm, security missing    -> CMD-01 FAIL
+  cmd-01-missing-verb/       six of seven verbs, security missing -> CMD-01 FAIL
   cmd-02-weak-check/         check runs only lint, not the gate   -> CMD-02 FAIL
   cmd-03-divergent/          Makefile composes its own check      -> CMD-03 FAIL
   cmd-04-write-in-check/     check invokes the writing format verb -> CMD-04 FAIL

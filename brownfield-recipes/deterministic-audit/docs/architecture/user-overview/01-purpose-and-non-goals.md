@@ -2,7 +2,7 @@
 
 > **Target Audience:** CTOs, engineering leads, architects, and consulting clients evaluating a legacy codebase for agentic work.
 > **Key Goal:** Explain what this audit does, what it deliberately refuses to do, and how to read what it produces.
-> **Status:** Published — Page 1 of the User Overview; see [the index](../README.md). The `AGT`, `EXEC`, `CMD`, `SEC`, `TOOL` and `CI` packs are implemented today; the rest of the catalogue reports `UNKNOWN`.
+> **Status:** Published — Page 1 of the User Overview; see [the index](../README.md). All thirteen packs (`IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set) are implemented.
 
 ---
 
