@@ -4,8 +4,9 @@
 > **Audience:** Operators / Engineers
 > **Status:** Partial. The corpus, the expected-results format (S4.1.1), the scorer (`tools/eval/score.py`,
 > S4.1.2), the Claude Code runner (`tools/eval/run-claude.sh`, S4.1.3), and the fixture sweep and its
-> published results (S4.2) are Live. Runners for other harnesses (`run-opencode.sh`, `run-codex.sh`) and
-> real-repo runs (S4.3) are Planned.
+> published results (S4.2) are Live. The real-repo runs (S4.3) are Live and published in
+> [Evaluation Results](../reference/eval-results.md). Runners for other harnesses (`run-opencode.sh`,
+> `run-codex.sh`) are Planned.
 
 > [!NOTE]
 > Planned. Step 2 below covers `run-claude.sh` only; a runner for another harness is filled in when one
@@ -44,7 +45,7 @@ worked example. It maps each check the corpus has ground truth for to its accept
 one when the ground truth genuinely is not sharper than that), the evidence paths a correct run must cite,
 and a note explaining why. A check the file is silent on is not scored for that repository. Pin `repo_sha`
 to the exact commit the file was written against; a run against a different commit is not comparable, and
-the scorer (once it exists) records that mismatch rather than silently comparing anyway.
+the scorer records that mismatch rather than silently comparing anyway.
 
 Write the file by hand for a small fixture, or derive a first draft from the deterministic engine's own
 report on the repository and then correct it by reading the actual target — the same engine-first,
@@ -103,8 +104,8 @@ and so on) — a run's own stderr summary line shows all four ratios.
 
 Results live in [Evaluation Results](../reference/eval-results.md) (D59 places them under `docs/reference/`,
 not the literal `docs/eval/` the roadmap originally named — `STYLE_GUIDE.md` has no `eval/` category and a
-results table is reference-shaped data; extends D54's precedent). The fixture sweep (S4.2) is there now;
-real-repo results (S4.3) are added the same way once those runs exist.
+results table is reference-shaped data; extends D54's precedent). The fixture sweep (S4.2) and the
+real-repo runs (S4.3) are both there.
 
 ---
 

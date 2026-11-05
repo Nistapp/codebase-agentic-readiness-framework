@@ -2,10 +2,7 @@
 
 > **Goal:** Continue an audit or an implementation after a crash, a closed session or context exhaustion.
 > **Audience:** Operators / Engineers
-> **Status:** Live for audits (S3.5). The implementation half uses `progress.py` and `check_drift.py`.
-
-> [!NOTE]
-> Planned. `tools/progress.py` does not exist yet, so the implementation steps below are placeholders. Filled in by roadmap step S5.1.
+> **Status:** Live for audits (S3.5) and for implementations, which use `progress.py` and `check_drift.py`.
 
 ---
 
@@ -13,7 +10,7 @@
 
 - [ ] The draft report from the interrupted audit, `<label>.audit-draft.<stamp>.json`, in the output directory the intake named
 - [ ] Python 3.11+ on `PATH`
-- [ ] The progress file from the interrupted run (implementations only; Planned, S5.1)
+- [ ] For an implementation, the target repository with its state file, `docs/agentic-readiness/<label>-agentic-readiness-state.json` (see the [state contract](../../implement/state.md))
 
 ---
 
@@ -37,7 +34,15 @@ Read these fields of `data`:
 
 `report.py status` exits 2 when the draft does not validate. That means the file was edited by hand or by another program. Fix what `data.errors` names, or start again with `report.py init`, which creates a new draft and leaves this one alone.
 
-For an implementation, `tools/progress.py show` plays this part.
+For an implementation, the state file inside the target plays this part. Summarise it with:
+
+```bash
+python3 brownfield-recipes/tools/progress.py show --target <repo> [--label <label>]
+```
+
+Pass `--label` only when the target holds more than one state; add `--json` to print the state itself. Read
+the skipped items, the preferences and the theme progress, and respect every skip and preference before
+changing anything.
 
 ### Step 2: Restart the agent with the same kickoff prompt
 
@@ -54,7 +59,7 @@ For an audit, the target may have changed since the interruption. `status` does 
 `validate_report.py <draft> --target <repo>` to see which cited files are no longer in the target at the
 commit the draft recorded.
 
-- For implementations, run `check_drift.py <report> <repo>` before continuing: it lists the findings whose cited files changed since the audited commit.
+- For implementations, run `python3 brownfield-recipes/tools/check_drift.py <report> <repo>` before continuing: it lists the findings whose cited files changed since the audited commit. It exits 0 whatever it finds, so read `data.status` (`current`, `drifted`, `sha_missing` or `no_sha`).
 
 ---
 

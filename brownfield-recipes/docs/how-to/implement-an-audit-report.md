@@ -2,10 +2,12 @@
 
 > **Goal:** Apply confirmed findings to a branch of the target, one reviewed commit per item.
 > **Audience:** Operators / Engineers
-> **Status:** Planned (placeholder).
+> **Status:** Partial (placeholder steps).
 
 > [!NOTE]
-> Planned. The implementation recipe does not exist yet. Filled in by roadmap step S5.4.
+> Partial. The [implementation recipe](../../implement/SKILL.md) runs Stages 0 and 1 (intake and triage)
+> today; start it with [`implement/prompts/kickoff.md`](../../implement/prompts/kickoff.md). Step 1 below
+> (the handoff from the audit) is written in MR04, and the remaining steps in IR12.
 
 ---
 
