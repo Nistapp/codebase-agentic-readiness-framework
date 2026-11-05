@@ -21,7 +21,7 @@ An **agentic-ready codebase** provides AI coding agents with the structure they 
 | Codebase Type | Supported | Notes |
 |---------------|-----------|-------|
 | Monoliths | ✅ | Primary target |
-| Monorepos | ✅ | Supported with component-level scoping |
+| Monorepos | ✅ | Supported with component-level scoping (component scoping: v0.3) |
 | Microservices | ⚠️ | Not explicitly validated but no architectural reason to exclude |
 
 ---
