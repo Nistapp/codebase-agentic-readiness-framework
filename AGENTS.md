@@ -70,7 +70,7 @@ A change is done when all of this holds:
 
 ## Where to look
 
-- Requirements: `spec/README.md`, and `spec/readiness-requirements.md` once it exists.
+- Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.
 - Terms: `brownfield-recipes/docs/architecture/glossary.md` and `shared/Glossary.md`.
 - The engine's design, checks and ADRs: `brownfield-recipes/deterministic-audit/docs/architecture/README.md`.
 - Tool ecosystem and index tooling: `shared/Tool-Ecosystem.md`. If `codebase-memory-mcp` is available, query it
