@@ -10,7 +10,7 @@ A verb is the name of one command. The verbs are the contract; the runner that c
 |---|---|---|---|
 | `format` | Rewrites formatting in place. | Yes | No |
 | `format:check` | Read-only verification of formatting and lint rules. Exits non-zero on drift. | No | Yes, first |
-| `lint` | Read-only lint. | No | No |
+| `lint` | Read-only lint. Its rules MUST also run inside `format:check`. | No | No |
 | `typecheck` | Strict type check of source and tests. Zero errors. | No | Yes, second |
 | `test` | The full test suite. Every test passes. | No | Yes, third |
 | `check` | The single pre-PR and CI gate. Runs `format:check`, `typecheck` and `test`, in that order. | No | — |

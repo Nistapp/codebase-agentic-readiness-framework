@@ -190,7 +190,7 @@ The repository MUST define every verb of the [command surface](command-surface.m
 - **Checks:** CMD-01
 
 ### REQ-SH-022 — `check` composes the read-only verbs
-The `check` verb MUST run `format:check`, `typecheck` and `test`.
+The `check` verb MUST run `format:check`, `typecheck` and `test`. The `format:check` verb MUST include the repository's lint rules, so a repository gates lint through `format:check`; see [decision 0002](decisions/0002-lint-in-the-gate.md).
 
 - **Phase:** 1
 - **Verification:** automated
