@@ -44,6 +44,7 @@ from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.ignore import IgnoreRule, load_ignore_rules
 from audit.rules.checks._common import tracked_in_scope
+from audit.rules.checks._secret_allowlist import SecretAllowlist, load_secret_allowlist
 from audit.probes import REDACTION_PATTERNS
 from audit.scan import Inventory
 from audit.rules.payloads import (
@@ -161,26 +162,55 @@ def _path_covered(rel: str, rules: list[IgnoreRule]) -> bool:
     return False
 
 
-def _shape_coverage(rules: list[IgnoreRule], probes: tuple[tuple[str, str], ...]) -> tuple[list[str], list[str]]:
+def _root_only(rel: str, rules: list[IgnoreRule]) -> bool:
+    """Whether ``rel`` is covered only by root-anchored rules (``/.env``), which skip the nested ``a/.env``."""
+    if _path_covered(rel, rules):
+        return False
+    anchored = [IgnoreRule(r.pattern.lstrip("/"), r.source) for r in rules if r.pattern.startswith("/")]
+    return _path_covered(rel, anchored)
+
+
+def _shape_coverage(
+    rules: list[IgnoreRule], probes: tuple[tuple[str, str], ...]
+) -> tuple[list[str], list[str], list[str]]:
+    """``(covered, root_only, missing)`` labels. Root-anchored rules cover the root, not nested files."""
     covered = [label for label, sample in probes if _path_covered(sample, rules)]
-    missing = [label for label, sample in probes if not _path_covered(sample, rules)]
-    return covered, missing
+    root_only = [label for label, sample in probes if _root_only(sample, rules)]
+    missing = [label for label, sample in probes if label not in covered and label not in root_only]
+    return covered, root_only, missing
 
 
 def _shapes_payload(
     rules: list[IgnoreRule], probes: tuple[tuple[str, str], ...], suggest: dict[str, str]
 ) -> SecretShapes:
-    covered, missing = _shape_coverage(rules, probes)
+    covered, root_only, missing = _shape_coverage(rules, probes)
     return SecretShapes(
         shapes=tuple(
             SecretShape(
-                label=label, probe=sample, suggested=suggest.get(label, ""), covered=_path_covered(sample, rules)
+                label=label,
+                probe=sample,
+                suggested=suggest.get(label, ""),
+                covered=label in covered,
+                root_only=label in root_only,
             )
             for label, sample in probes
         ),
         covered=tuple(covered),
         missing=tuple(missing),
+        root_only=tuple(root_only),
     )
+
+
+def _gaps(root_only: list[str], missing: list[str]) -> str:
+    """The reason ignore coverage is incomplete, saying which shapes cover the root only."""
+    parts = []
+    if root_only:
+        parts.append(
+            f"root-anchored only: {', '.join(root_only)} (the rule covers the root, not nested files such as `a/.env`)"
+        )
+    if missing:
+        parts.append(f"missing: {', '.join(missing)}")
+    return "; ".join(parts)
 
 
 # ===========================================================================
@@ -190,13 +220,13 @@ def _shapes_payload(
 
 def check_sec01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     rules = load_ignore_rules(target.path)
-    covered, missing = _shape_coverage(rules, _ENV_SHAPE_PROBES)
-    ignore_ok = not missing
+    covered, root_only, missing = _shape_coverage(rules, _ENV_SHAPE_PROBES)
+    ignore_ok = not missing and not root_only
     shapes = _shapes_payload(rules, _ENV_SHAPE_PROBES, _ENV_SHAPE_SUGGEST)
 
     tracked = tracked_in_scope(target, inventory)
     if tracked is None:
-        ignore_note = "ignore rules cover .env" if ignore_ok else f"ignore rules miss {', '.join(missing)}"
+        ignore_note = "ignore rules cover .env" if ignore_ok else f"ignore rules: {_gaps(root_only, missing)}"
         return _unknown(
             spec, f"git could not report tracked files, so a tracked .env cannot be ruled out ({ignore_note})"
         )
@@ -231,7 +261,7 @@ def check_sec01(*, spec, target, inventory, stack, components, session) -> Check
     return _outcome(
         spec,
         Verdict.PARTIAL,
-        f"no tracked .env, but ignore rules miss {', '.join(missing)}",
+        f"no tracked .env, but ignore rules are incomplete: {_gaps(root_only, missing)}",
         [
             Finding(
                 check=spec.id,
@@ -239,11 +269,12 @@ def check_sec01(*, spec, target, inventory, stack, components, session) -> Check
                 phase=spec.phase,
                 verdict=Verdict.PARTIAL,
                 statement=statement(
-                    "trust that a future .env stays out of history", f"no ignore rule covers {', '.join(missing)}"
+                    "trust that a future .env stays out of history",
+                    f"ignore rules are incomplete ({_gaps(root_only, missing)})",
                 ),
                 evidence=[Evidence(rule.source, note=rule.pattern) for rule in rules[:8]],
-                remediation="Add the .env shape (for example `.env` and `.env.*`) to .gitignore so an "
-                "environment file cannot be committed by accident.",
+                remediation="Add the .env shape without a leading slash (for example `.env` and `.env.*`) to "
+                ".gitignore so an environment file cannot be committed by accident, at any depth.",
             ),
         ],
         data=shapes,
@@ -341,7 +372,10 @@ def _line_is_secret(line: str, *, in_code: bool = False) -> bool:
     return bool(assignment) and _looks_secret_value(assignment.group(1), in_code=in_code)
 
 
-def _scan_secrets(inventory: Inventory, tracked: set[str] | None) -> tuple[str, list[tuple[str, int]]]:
+def _scan_secrets_allowlisted(
+    inventory: Inventory, tracked: set[str] | None, allowlist: SecretAllowlist | None
+) -> tuple[str, list[tuple[str, int]], list[tuple[str, int, str]]]:
+    """``(scope, hits, suppressed)``: hits the repository has not allowlisted, and the ones it has (with the file)."""
     if tracked is None:
         scan_rels = sorted(f.rel for f in inventory.files if f.has_text)
         source = "whole inventory (tracked state unavailable)"
@@ -350,6 +384,7 @@ def _scan_secrets(inventory: Inventory, tracked: set[str] | None) -> tuple[str, 
         source = "tracked text files"
 
     hits: set[tuple[str, int]] = set()
+    suppressed: set[tuple[str, int, str]] = set()
     for rel in scan_rels:
         if _is_template_file(rel):
             continue
@@ -362,25 +397,59 @@ def _scan_secrets(inventory: Inventory, tracked: set[str] | None) -> tuple[str, 
                 continue
             if _PLACEHOLDER_RE.search(line):
                 continue
-            hits.add((rel, line_no))
-    return source, sorted(hits)
+            by = allowlist.covering_source(rel, line_no, line) if allowlist else None
+            if by:
+                suppressed.add((rel, line_no, by))
+            else:
+                hits.add((rel, line_no))
+    return source, sorted(hits), sorted(suppressed)
+
+
+def _scan_secrets(inventory: Inventory, tracked: set[str] | None) -> tuple[str, list[tuple[str, int]]]:
+    source, hits, _suppressed = _scan_secrets_allowlisted(inventory, tracked, None)
+    return source, hits
+
+
+def _by_file(pairs: list[tuple[str, int]]) -> dict[str, list[int]]:
+    grouped: dict[str, list[int]] = {}
+    for rel, line in pairs:
+        grouped.setdefault(rel, []).append(line)
+    return grouped
 
 
 def check_sec02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     tracked = tracked_in_scope(target, inventory)
-    source, hits = _scan_secrets(inventory, tracked)
+    allowlist = load_secret_allowlist(inventory)
+    source, hits, suppressed = _scan_secrets_allowlisted(inventory, tracked, allowlist)
+
+    allowed_note = ""
+    if suppressed:
+        sources = sorted({by for _rel, _line, by in suppressed})
+        allowed_note = f"{len(suppressed)} allowlisted by {', '.join(f'`{name}`' for name in sources)}"
+    suppressed_files = tuple(
+        CredentialFile(path=rel, lines=tuple(lines))
+        for rel, lines in sorted(_by_file([(rel, line) for rel, line, _by in suppressed]).items())
+    )
+    allowlisted_by = tuple(sorted({by for _rel, _line, by in suppressed}))
 
     if not hits:
+        summary = f"no credential-shaped strings in {source}"
+        if allowed_note:
+            summary = f"0 credential-shaped lines outside the allowlist in {source}; {allowed_note}"
         return _outcome(
             spec,
             Verdict.PASS,
-            f"no credential-shaped strings in {source}",
-            data=CredentialMatrix(total=0, source=source),
+            summary,
+            data=CredentialMatrix(
+                total=0,
+                source=source,
+                allowlisted=len(suppressed),
+                allowlisted_by=allowlisted_by,
+                suppressed=suppressed_files,
+            ),
         )
 
-    by_file: dict[str, list[int]] = {}
-    for rel, line in hits:
-        by_file.setdefault(rel, []).append(line)
+    by_file = _by_file(hits)
 
     findings: list[Finding] = []
     for rel in sorted(by_file)[:_MAX_SECRET_FILES]:
@@ -406,8 +475,13 @@ def check_sec02(*, spec, target, inventory, stack, components, session) -> Check
         total=len(hits),
         source=source,
         files=tuple(CredentialFile(path=rel, lines=tuple(by_file[rel])) for rel in sorted(by_file)),
+        allowlisted=len(suppressed),
+        allowlisted_by=allowlisted_by,
+        suppressed=suppressed_files,
     )
     because = f"{len(hits)} credential-shaped line(s) across {len(by_file)} file(s) in {source}"
+    if allowed_note:
+        because += f"; {allowed_note}"
     return _outcome(spec, Verdict.FAIL, because, findings, data=matrix)
 
 
@@ -447,17 +521,17 @@ def check_sec03(*, spec, target, inventory, stack, components, session) -> Check
             data=no_rules_shapes,
         )
 
-    covered, missing = _shape_coverage(rules, _SECRET_SHAPES)
+    covered, root_only, missing = _shape_coverage(rules, _SECRET_SHAPES)
     shapes = _shapes_payload(rules, _SECRET_SHAPES, _SECRET_SHAPE_SUGGEST)
     detail = f"covered: {', '.join(covered)}" if covered else "no secret shapes covered"
-    if not missing:
+    if not missing and not root_only:
         return _outcome(spec, Verdict.PASS, detail, data=shapes)
 
-    verdict = Verdict.PARTIAL if covered else Verdict.FAIL
+    verdict = Verdict.PARTIAL if covered or root_only else Verdict.FAIL
     return _outcome(
         spec,
         verdict,
-        f"{detail}; missing: {', '.join(missing)}",
+        f"{detail}; {_gaps(root_only, missing)}",
         [
             Finding(
                 check=spec.id,
@@ -465,7 +539,8 @@ def check_sec03(*, spec, target, inventory, stack, components, session) -> Check
                 phase=spec.phase,
                 verdict=verdict,
                 statement=statement(
-                    "trust that secret shapes cannot be committed", f"ignore rules do not cover {', '.join(missing)}"
+                    "trust that secret shapes cannot be committed",
+                    f"ignore rules are incomplete ({_gaps(root_only, missing)})",
                 ),
                 evidence=[Evidence(rule.source, note=rule.pattern) for rule in rules[:8]],
                 remediation="Add the missing shapes to .gitignore — for example `.env.*`, `*.pem`, "

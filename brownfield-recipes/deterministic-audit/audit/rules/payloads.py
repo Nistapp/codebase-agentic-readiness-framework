@@ -85,6 +85,7 @@ class SecretShape:
     probe: str
     suggested: str
     covered: bool
+    root_only: bool = False
 
 
 @dataclass(frozen=True)
@@ -95,6 +96,7 @@ class SecretShapes(Payload):
     shapes: tuple[SecretShape, ...] = ()
     covered: tuple[str, ...] = ()
     missing: tuple[str, ...] = ()
+    root_only: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------
@@ -112,12 +114,19 @@ class CredentialFile:
 
 @dataclass(frozen=True)
 class CredentialMatrix(Payload):
-    """Every tracked file with credential-shaped lines, and the total line count."""
+    """Every tracked file with credential-shaped lines, and the total line count.
+
+    ``total`` and ``files`` hold the lines the repository has **not** allowlisted. ``suppressed`` lists
+    the ones its own scanner allowlist accepts (``allowlisted`` of them, from ``allowlisted_by``).
+    """
 
     kind: ClassVar[str] = "credential_matrix"
     total: int = 0
     source: str = ""
     files: tuple[CredentialFile, ...] = ()
+    allowlisted: int = 0
+    allowlisted_by: tuple[str, ...] = ()
+    suppressed: tuple[CredentialFile, ...] = ()
 
 
 # ---------------------------------------------------------------------------

@@ -56,7 +56,9 @@ def _specifics(check: dict, finding: dict | None) -> str:
     if kind == "env_keys":
         return f"Missing env keys: {_codes(data.get('missing') or [])}."
     if kind == "secret_shapes":
-        return f"Missing: {', '.join(data.get('missing') or []) or 'none'}."
+        root_only = data.get("root_only") or []
+        note = f" Root-anchored only: {', '.join(root_only)}." if root_only else ""
+        return f"Missing: {', '.join(data.get('missing') or []) or 'none'}.{note}"
     if kind == "credential_matrix":
         if finding is not None:
             return f"{len(finding.get('evidence') or [])} credential-shaped line(s)."
@@ -208,19 +210,27 @@ def _verb_surface_block(report: dict) -> list[str] | None:
 def _credential_matrix_block(report: dict) -> list[str] | None:
     checks = _checks_with_kind(report, "credential_matrix")
     data = checks[0]["data"] if checks else None
-    matrix = data if data and data.get("total") else None
+    matrix = data if data and (data.get("total") or data.get("allowlisted")) else None
     if not matrix:
         return None
-    out = [
-        f"{matrix['total']} credential-shaped line(s) across {len(matrix['files'])} tracked "
-        f"file(s) in {matrix.get('source') or 'the repository'}. The report never records the "
-        f"value itself.",
-        "",
-    ]
-    rows = [[f"`{f['path']}`", ", ".join(str(n) for n in f["lines"]), str(len(f["lines"]))] for f in matrix["files"]]
-    rows.append(["**Total**", "", f"**{matrix['total']}**"])
-    out += _table(("File", "Lines", "Count"), rows, ("left", "left", "right"))
-    return out
+    out: list[str] = []
+    if matrix.get("total"):
+        out += [
+            f"{matrix['total']} credential-shaped line(s) across {len(matrix['files'])} tracked "
+            f"file(s) in {matrix.get('source') or 'the repository'}. The report never records the "
+            f"value itself.",
+            "",
+        ]
+        rows = [
+            [f"`{f['path']}`", ", ".join(str(n) for n in f["lines"]), str(len(f["lines"]))] for f in matrix["files"]
+        ]
+        rows.append(["**Total**", "", f"**{matrix['total']}**"])
+        out += _table(("File", "Lines", "Count"), rows, ("left", "left", "right"))
+    if matrix.get("allowlisted"):
+        by = ", ".join(f"`{name}`" for name in matrix.get("allowlisted_by") or [])
+        out += ["" if out else "", f"{matrix['allowlisted']} more line(s) are allowlisted by {by} and not counted:", ""]
+        out += [f"- `{f['path']}`: {', '.join(str(n) for n in f['lines'])}" for f in matrix.get("suppressed") or []]
+    return [line for i, line in enumerate(out) if not (i == 0 and line == "")]
 
 
 def _secret_shapes_block(report: dict) -> list[str] | None:
@@ -233,7 +243,7 @@ def _secret_shapes_block(report: dict) -> list[str] | None:
     rows = [
         [
             shape["label"],
-            "covered" if shape["covered"] else "**missing**",
+            "covered" if shape["covered"] else "root-anchored only" if shape.get("root_only") else "**missing**",
             f"`{shape['suggested']}`" if shape.get("suggested") else "—",
         ]
         for shape in merged.values()
