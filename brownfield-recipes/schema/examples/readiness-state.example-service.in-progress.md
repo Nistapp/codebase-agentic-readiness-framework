@@ -65,7 +65,8 @@ A skipped finding is final until the owner unskips it, and every preference bind
 |---|---|---|---|---|---|---|
 | F-003 | EXEC-01 | BLOCKER | in_progress | agent | 2026-10-31 | An agent cannot reproduce the toolchain because node is not pinned by a version file, an engines constraint or a wrapper. |
 
-- **F-003**: notes: Edited during the audit: The owner pins Node 22 in .nvmrc and leaves the engines field alone.
+- **F-003**: notes: Edited during the audit: The owner pins Node 22 in .nvmrc and leaves the engines field
+  alone.
 
 ### T3 Secrets and env
 

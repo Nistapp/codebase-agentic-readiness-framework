@@ -7,6 +7,11 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- `progress.py` papercuts (MR04): a refused move names the states the item may go to; `set-status` to the same
+  status with `--note` adds the note; a bad preference key says "lower case"; `none` is the documented value for
+  "no preference"; `render` wraps item details at 110 columns and cuts long preference cells (full text below the
+  table) so the generated STATE.md lints clean. The state contract documents the transitions, the debt syntax, the
+  theme order (open the PR first: `pr_open` still needs `--pr`) and that the tools run without `python3 -I`.
 - `progress.py init` records the SHA-256 of the report file in `source_reports[].sha256` (readiness state
   `schema_version` `0.2`; a `0.1` state stays valid). `check_drift.py` recomputes it and reports `report_changed`, and
   reports a dirty working tree as `dirty` (MR04).

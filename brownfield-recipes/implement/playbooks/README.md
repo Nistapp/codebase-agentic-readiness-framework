@@ -28,6 +28,19 @@ Every playbook file, `<name>.md` in this folder, has these sections in this orde
 | Do-not-do | What this playbook never does (for example, no mass reformat, no rule turned off) |
 | State updates | The status, debt, preference and log entries the playbook records in the state file (see the [state contract](../state.md)) |
 
+How to write the State updates section so each line runs as written:
+
+- Debt goes on `set-status` as `--debt what=TEXT,count=N[,baseline=FILE]`, repeatable (the same `what` replaces
+  its entry): `set-status F-001 partial --debt "what=unformatted files,count=212,baseline=.ruff-baseline"`.
+  A `partial` item needs debt; a `done` item has none.
+- Mind the allowed transitions ([state contract](../state.md#item-statuses)): `blocked` goes back to `queued`, and
+  `partial` or `failed` back to `in_progress`, before they can end again. A note on an item that stays where it is:
+  `set-status F-001 in_progress --note "..."`.
+- Theme order: `theme T1 --status branch_open --branch B`, then open the pull request, then
+  `theme T1 --status pr_open --branch B --pr N` (`pr_open` and `merged` need `--pr`, so the state records a real
+  pull request and the state commit comes after the PR exists), then `--status merged --merged-sha SHA`.
+- Preference keys are lower case. "The owner has no preference" is recorded as the value `none`.
+
 Rules for every playbook:
 
 - A playbook never restates a check's rubric or a requirement; it links to the check file in

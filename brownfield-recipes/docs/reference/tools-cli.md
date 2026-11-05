@@ -771,6 +771,10 @@ python3 brownfield-recipes/tools/build_skills.py [--out-dir DIR]
 
 ## progress.py
 
+`progress.py` and `check_drift.py` import their sibling modules (`_common`, `validate_report`, `_jsonschema_subset`),
+so run them as `python3 brownfield-recipes/tools/<tool>.py`, **without** `python3 -I` (isolated mode drops the script's
+folder from the import path and the import of `_common` fails).
+
 Creates the implement recipe's state for a target from a final audit report (recording the SHA-256 of the report file in `source_reports[].sha256`), summarises it, renders its
 Markdown view, and applies the validated changes to it: status transitions, skip and defer, preferences and
 theme progress. It is the one tool that writes inside a target, and only the two state files, by
@@ -810,7 +814,8 @@ python3 brownfield-recipes/tools/progress.py --describe
 | `--verification-command`, `--verification-result` | `set-status`: the verification and what it gave; given together. `done` needs one. |
 | `--debt`, `--clear-debt` | `set-status`: record debt (repeatable; same `what` replaces) or drop it. `partial` needs debt; `done` needs none. |
 | `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer` and `pref`. |
-| `--note` | `set-status`: text appended to the item's notes. |
+| `KEY VALUE` | `pref set`: a lower-case key (letters, digits, dot, underscore, hyphen; at most 64) and its value. The value `none` records that the owner was asked and has no preference. |
+| `--note` | `set-status`: text appended to the item's notes. When the item already has the given status, this is the only effect (the note and any `--commit` are added and the log says "note added"); without `--note` that case is refused. |
 | `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer` and `pref` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
 | `--phase` | Every write: the step recorded in the log entry and on the item or preference. |
 | `--render` | Every write: also replace the Markdown view. Without it the tool warns that the view is out of date. |
@@ -824,7 +829,7 @@ the `not_queued` count in `data`. `show` puts the summary in `data`: counts per 
 `open`, which is neither `done` nor `skipped`), the skipped finding ids, and the number of preferences, debt
 entries and log entries. `show --json` puts the state under `data.state`. `render` writes the Markdown and puts
 its path and size in `data`. Every other command checks the changed state whole, appends one log entry, replaces
-the JSON and puts the path and the count per status in `data`. A refused command changes nothing. Each write is atomic; a temporary file a killed write left behind is removed, with a
+the JSON and puts the path and the count per status in `data`. A refused command changes nothing, and a refused move says which states the item may go to. The Markdown view keeps prose lines (item details, the full text of a cut preference cell) under 110 columns so it passes MD013; a preference's value or reason longer than 100 characters is cut in its table row and given in full in a list below the table. Each write is atomic; a temporary file a killed write left behind is removed, with a
 warning.
 
 **Exit codes**

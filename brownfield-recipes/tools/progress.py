@@ -37,6 +37,7 @@ import json
 import re
 import subprocess
 import sys
+import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
@@ -520,6 +521,30 @@ def code(text: object) -> str:
     return f"`{text}`" if text not in (None, "") and "`" not in str(text) else cell(text)
 
 
+WRAP_COLUMNS = 110  # prose lines in the Markdown view stay under markdownlint's MD013 limit (120)
+CELL_LIMIT = 100  # a preference cell longer than this is cut in its table row and given in full below the table
+
+
+def bullet(text: str) -> str:
+    """One Markdown list item, wrapped at `WRAP_COLUMNS`, continuation lines indented under the text."""
+    return "\n".join(
+        textwrap.wrap(
+            text,
+            WRAP_COLUMNS,
+            initial_indent="- ",
+            subsequent_indent="  ",
+            break_long_words=False,
+            break_on_hyphens=False,
+        )
+    )
+
+
+def clipped(text: object) -> str:
+    """`cell(text)`, cut to `CELL_LIMIT` characters with an ellipsis."""
+    value = cell(text)
+    return value if len(value) <= CELL_LIMIT else value[: CELL_LIMIT - 3].rstrip() + "..."
+
+
 def _table(header: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
     lines = ["| " + " | ".join(header) + " |", "|" + "|".join("---" for _ in header) + "|"]
     lines += ["| " + " | ".join(row) + " |" for row in rows]
@@ -577,10 +602,19 @@ def render(state: dict[str, Any]) -> str:
         out += _table(
             ("Key", "Value", "Reason", "By", "Date", "Phase"),
             [
-                (code(p["key"]), cell(p["value"]), cell(p["reason"]), p["by"], p["date"], cell(p["phase"]))
+                (code(p["key"]), clipped(p["value"]), clipped(p["reason"]), p["by"], p["date"], cell(p["phase"]))
                 for p in preferences
             ],
         )
+        long_text = [
+            p
+            for p in preferences
+            if clipped(p["value"]) != cell(p["value"]) or clipped(p["reason"]) != cell(p["reason"])
+        ]
+        if long_text:
+            out.append("")
+        for p in long_text:
+            out.append(bullet(f"{code(p['key'])}: value: {cell(p['value'])}; reason: {cell(p['reason'])}"))
     else:
         out.append("None recorded.")
     out += ["", "## Themes", ""]
@@ -629,7 +663,7 @@ def render(state: dict[str, Any]) -> str:
             if item["verification"]:
                 verification = item["verification"]
                 parts.append(f"verification: {code(verification['command'])} gave {cell(verification['result'])}")
-            out.append(f"- **{item['finding']}**: " + "; ".join(parts))
+            out.append(bullet(f"**{item['finding']}**: " + "; ".join(parts)))
     for heading, status in (("Skipped", "skipped"), ("Deferred", "deferred")):
         chosen = [item for item in items if item["status"] == status]
         out += ["", f"## {heading}", ""]
@@ -719,7 +753,15 @@ def _refuse(message: str, hint: str = "") -> _common.UsageError:
 
 
 def illegal_transition(finding: str, old: str, new: str) -> _common.UsageError:
-    """The refusal for moving `finding` from `old` to `new`. Each kind of illegal move has its own message."""
+    """The refusal for moving `finding` from `old` to `new`. Each kind of illegal move has its own message, and every
+    one ends by naming the states `old` may go to."""
+    refusal = _illegal_transition(finding, old, new)
+    allowed = f"from {old} it may go to: {', '.join(LEGAL[old])}" if LEGAL[old] else f"{old} has no next state"
+    hint = f"{refusal.hint}; {allowed}" if refusal.hint else allowed
+    return _refuse(str(refusal), hint)
+
+
+def _illegal_transition(finding: str, old: str, new: str) -> _common.UsageError:
     if old == new:
         return _refuse(f"{finding} is already {old}")
     if old == "done":
@@ -784,9 +826,24 @@ def require_owner(args: Any, action: str) -> None:
         )
 
 
+def add_note(item: dict[str, Any], args: Any) -> None:
+    """`set-status F S` when F is already S: record `--note` and any `--commit`, change nothing else."""
+    if not args.note:
+        raise _refuse(
+            f"{item['finding']} is already {item['status']}", "to add a note or commit without a move, pass --note"
+        )
+    item["notes"] = (item["notes"] + " " + args.note).strip()
+    for sha in args.commit or ():
+        if sha not in item["commits"]:
+            item["commits"].append(sha)
+
+
 def apply_status(item: dict[str, Any], new: str, args: Any) -> None:
     """Move `item` to `new` as `set-status` asks. Raises a refusal; changes `item` only when nothing is refused."""
     old = item["status"]
+    if old == new:
+        add_note(item, args)
+        return
     if new not in LEGAL[old] or old == "skipped":
         raise illegal_transition(item["finding"], old, new)
     if (old, new) in OWN_COMMAND:
@@ -885,6 +942,9 @@ def run_set_status(args: Any) -> _common.Result:
     old = item["status"]
     apply_status(item, args.status, args)
     stamp(item, args)
+    if old == args.status:
+        record(state, args, f"{args.finding} note added by {args.by}: {short(args.note)}")
+        return commit_change(args, label, path, state, f"{args.finding} note added at {old}")
     why = f": {short(args.reason)}" if args.reason else ""
     record(state, args, f"{args.finding} {old} to {args.status} by {args.by}{why}")
     return commit_change(args, label, path, state, f"{args.finding} {old} to {args.status}")
@@ -905,8 +965,17 @@ def run_owner_move(args: Any) -> _common.Result:
     return commit_change(args, label, path, state, f"{args.finding} {old} to {new}")
 
 
+PREF_KEY = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
+
+
 def run_pref(args: Any) -> _common.Result:
     require_owner(args, f"pref {args.action}")
+    if not PREF_KEY.match(args.key):
+        raise _common.ValidationFailed(
+            f"the change would make the state invalid: {args.key!r} is not a preference key",
+            hint="keys are lower case letters, digits, dot, underscore and hyphen (at most 64, not starting with a "
+            "symbol), for example node.version-file",
+        )
     if args.action == "set" and args.value is None:
         raise _refuse("pref set needs a value: pref set KEY VALUE --reason TEXT")
     if args.action == "unset" and args.value is not None:
