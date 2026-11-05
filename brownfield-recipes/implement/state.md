@@ -37,6 +37,10 @@ python3 brownfield-recipes/tools/progress.py show --target <target> [--json]
 python3 brownfield-recipes/tools/progress.py render --target <target>
 ```
 
+The report is committed on the integration branch at
+`docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.{json,md}`. `init` is to record the report file's SHA-256,
+so a later session can detect an edit (Planned (MR04)).
+
 `init` refuses a report that is not final or that `validate_report.py` rejects, a report outside the target, and an
 existing state. It queues confirmed and edited findings (an edited finding's note goes into `notes`), imports a
 finding the owner deferred during the audit as `deferred` with the owner's note as its reason, and lists rejected
