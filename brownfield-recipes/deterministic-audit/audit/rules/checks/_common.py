@@ -140,11 +140,35 @@ _FENCE_RE = re.compile(r"^\s*(?:```|~~~)\s*([A-Za-z0-9_+-]*)\s*$")
 _PROMPT_RE = re.compile(r"^\s*(?:\$|>|%|❯|PS>)\s+")
 
 
+def strip_shell_comment(line: str) -> str:
+    """``line`` without a trailing shell comment.
+
+    A ``#`` starts a comment only at the start of a word and outside single or double quotes (and not
+    after a backslash), the way a shell reads it; ``a#b``, ``"# x"`` and ``'#'`` keep their ``#``.
+    """
+    quote = ""
+    escaped = False
+    for i, ch in enumerate(line):
+        if escaped:
+            escaped = False
+        elif ch == "\\" and quote != "'":
+            escaped = True
+        elif quote:
+            if ch == quote:
+                quote = ""
+        elif ch in "'\"":
+            quote = ch
+        elif ch == "#" and (i == 0 or line[i - 1].isspace()):
+            return line[:i].rstrip()
+    return line
+
+
 def extract_fenced_commands(text: str) -> list[tuple[str, int, str]]:
     """Extract shell commands from fenced ``bash``/``sh``/``shell``/``console`` blocks.
 
     Returns ``(language, line_no, command)`` with ``line_no`` 1-based within ``text``. A leading
-    shell prompt is stripped; comment lines are skipped. In a ``console`` block a line without a
+    shell prompt is stripped; comment lines are skipped and a trailing comment is cut off
+    (:func:`strip_shell_comment`), so every caller sees the same tokens. In a ``console`` block a line without a
     prompt is treated as program output and skipped, since a transcript interleaves both.
     """
     commands: list[tuple[str, int, str]] = []
@@ -157,8 +181,8 @@ def extract_fenced_commands(text: str) -> list[tuple[str, int, str]]:
         if language is None or language not in SHELL_FENCE_LANGS:
             continue
         prompt = _PROMPT_RE.match(raw)
-        command = _PROMPT_RE.sub("", raw).strip()
-        if not command or command.startswith("#"):
+        command = strip_shell_comment(_PROMPT_RE.sub("", raw).strip())
+        if not command:
             continue
         if language == "console" and prompt is None:
             continue

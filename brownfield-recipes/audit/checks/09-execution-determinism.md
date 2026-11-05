@@ -219,12 +219,16 @@ Why it matters   An agent runs the documented command literally; a command that 
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
 Engine           `EXEC-06`. Extracts every fenced shell command from README.md, AGENTS.md and CLAUDE.md
-                 (deliberately not `docs/**`, whose fences routinely mix languages), joins trailing-`\`
-                 line continuations, de-duplicates, skips lines carrying an obvious placeholder marker
+                 (deliberately not `docs/**`, whose fences routinely mix languages), cuts a trailing shell
+                 comment (`make test   # run the suite`: a `#` that starts a word outside quotes, done once in
+                 the shared extractor so `EXEC-03`, `TST-04` and this check read the same tokens), joins
+                 trailing-`\` line continuations, de-duplicates, skips lines carrying an obvious placeholder marker
                  (`<...>`, `...`, `your-`, `tbd`, `xxx`, `placeholder`), and checks each remaining
                  command's head token against a fixed table of known tools and shell builtins, the
                  command surface's own verbs, `npm`/`pnpm`/`yarn` scripts, Makefile targets, declared
-                 package binaries, or a real repository path. This check runs regardless of detected
+                 package binaries, or a real repository path. A `make <t>` or `npm run <s>` also resolves
+                 when `<t>`/`<s>` is a verb the shared resolver binds on that runner, so `make format:check`
+                 reads the same here and in `AGT-05` when the Makefile spells it `format-check`. This check runs regardless of detected
                  ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` naming a tool the fixed table
                  does not yet carry — verify the tool is genuinely unresolvable, not merely missing from
                  `_KNOWN_TOOLS` in `audit/rules/checks/execution.py`, before treating the finding as a

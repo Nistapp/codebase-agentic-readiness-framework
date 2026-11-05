@@ -54,7 +54,13 @@ import shlex
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.rules.checks._common import extract_fenced_commands, resolve_verbs, tracked_in_scope
+from audit.rules.checks._common import (
+    extract_fenced_commands,
+    resolve_all_verbs,
+    resolve_verbs,
+    runner_kind,
+    tracked_in_scope,
+)
 from audit.scan import Inventory, Kind
 from audit.stack import PACKAGE_MANAGERS, extract_npm_scripts, parse_makefile_targets
 from audit.rules.payloads import EnvKeys, Payload
@@ -1177,6 +1183,15 @@ def check_exec06(*, spec, target, inventory, stack, components, session) -> Chec
     verbs = resolve_verbs(inventory, stack)
     scripts = extract_npm_scripts(inventory)
     make_targets = parse_makefile_targets(inventory)
+    # A verb is also invoked under its other spelling (``format:check`` for ``format-check``); the
+    # resolver already knows which runner binds it, so ask it rather than re-reading the manifest.
+    for verb, bindings in resolve_all_verbs(inventory, stack).items():
+        for binding in bindings:
+            kind = runner_kind(binding.runner)
+            if kind == "Makefile" and make_targets:
+                make_targets.setdefault(verb, binding.command)
+            elif kind == "package.json":
+                scripts.setdefault(verb, binding.command)
     bins = _package_bins(inventory)
 
     unresolved: list[tuple[str, int, str]] = []
