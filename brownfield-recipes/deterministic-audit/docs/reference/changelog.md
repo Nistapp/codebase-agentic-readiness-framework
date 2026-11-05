@@ -13,6 +13,7 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-11-05.4` | 2026-11-05 | 55 | MR06.3: `NAV-02` entry point is a guard line, `DOC-04` ignores the ADR template, `--out` without a suffix, `--no-user-config` and `provenance.user_config` |
 | `2026-11-05.3` | 2026-11-05 | 55 | MR06.2 ([ADR-0009](../architecture/adrs/0009-nested-ignore-files-and-negation.md)): `DOC-03`, `CON-03`, `SEC-01` and `SEC-03` read nested `.gitignore` files and `!` negation |
 | `2026-11-05.2` | 2026-11-05 | 55 | MR06.1 ([ADR-0008](../architecture/adrs/0008-what-counts-as-the-repository.md)): runner precedence by depth, carried-data directories (`templates/`, `examples/`, `fixtures/`, ...) set aside and listed in the report, hygiene presence bounded to the root, `.github/`, `.gitlab/` and `docs/` |
 | `2026-11-05.1` | 2026-11-05 | 55 | MR05: `EXEC-06` trailing shell comments and the shared verb resolver, `SEC-02` reads the repository's own scanner allowlist, `SEC-01`/`SEC-03` say "root-anchored only" for `/.env` |
@@ -23,6 +24,23 @@ the record of how; git has the rest.
 | `2026-09-28.13` | 2026-09-28 | 54 | The engine as it was imported into this repository |
 
 ---
+
+## `2026-11-05.4`
+
+Small defects and user-level isolation (MR06.3; issue #16 stays open).
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `NAV-02` | `PASS` from a Python file that held `if __name__ == "__main__"` inside a regex, a string or a comment | `FAIL` when nothing else is an entry point | Only a line that starts with the guard counts. |
+| `DOC-04` | `0000-template.md` counted as a numbered ADR, so an index that omitted it read `PARTIAL`, and a directory holding only the template read as having a decision | The template is not counted | It is the blank a new ADR is copied from. |
+
+### Behaviour that is not a verdict
+
+- `--out FILE` with no suffix writes `FILE.json`, and `FILE.md` beside it for `--format both`. A name with a suffix is used as given; a directory still gets `audit-report.json`.
+- `--no-user-config` reads nothing under `$HOME`: `IDX-01` looks at the repository's own configuration, and `IDX-02`/`IDX-03` skip the default store locations. An `AUDIT_INDEX_STORE` override is an explicit choice and still applies.
+- `provenance.user_config` is `{"read_allowed": bool, "paths_read": [...]}` in every report, so a reader sees whether a verdict can depend on the machine.
 
 ## `2026-11-05.3`
 

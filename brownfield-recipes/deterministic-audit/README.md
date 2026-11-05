@@ -40,7 +40,10 @@ Two axes are always reported separately: **phase** (which framework requirement 
 
 ```bash
 # from brownfield-recipes/deterministic-audit/ — no install step, no dependencies
-python3 -m audit <target> --format both --out ./audit-out/<name>
+python3 -m audit <target> --format both --out ./audit-out/<name>   # writes <name>.json and <name>.md
+
+# verdicts that do not depend on this machine: read nothing under $HOME (the IDX checks)
+python3 -m audit <target> --no-user-config --out ./audit-out/<name>
 
 # add executed probes, explicitly and with a time budget
 python3 -m audit <target> --run-gates --allow-probe check --allow-probe test --timeout 600

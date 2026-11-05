@@ -15,7 +15,8 @@ Why it matters   Every later check and playbook assumes an agent can reach the i
 Severity         BLOCKER
 Engine           `IDX-01`. Reads project-level MCP configs inside the target (`opencode.json`/`.jsonc`,
                  `.mcp.json`, `.cursor/mcp.json`, `.vscode/mcp.json`, `.gemini/settings.json`,
-                 `.codex/config.toml`) and user-level configs under `$HOME`, for the literal
+                 `.codex/config.toml`) and user-level configs under `$HOME` (not read under `--no-user-config`; the report's
+                 `provenance.user_config` lists what was read), for the literal
                  `codebase-memory-mcp`. Distrust a `FAIL` when the harness in use names a config file the
                  engine's list does not cover yet — ask the user which harness and config they use, then
                  look there directly. A config present but unreadable is `UNKNOWN`, not `FAIL`.
@@ -26,7 +27,8 @@ Look for         Ask the user which harness they run (Stage 0 intake) and which 
                  checkout on that machine, not only this one.
 Rubric           PASS: a readable project- or user-level config names `codebase-memory-mcp`.
                  PARTIAL: a config exists but the server name is absent or commented out.
-                 FAIL: no MCP config of any known kind exists, project- or user-level.
+                 FAIL: no MCP config of any known kind exists, project- or user-level. Under
+                 `--no-user-config` this reads "no project-level config", and says so in the summary.
                  NOT_APPLICABLE: never — every repository can register an index.
                  UNKNOWN when: a candidate config exists but cannot be read (permissions, encoding), or the
                  user names a harness whose config file this check's engine list does not cover.

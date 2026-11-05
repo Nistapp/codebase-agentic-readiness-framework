@@ -7,6 +7,11 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Engine ruleset `2026-11-05.4` (MR06.3): `NAV-02` counts a line that starts with the `if __name__` guard, not a
+  file that only holds the text; `DOC-04` no longer counts `0000-template.md` as a numbered ADR; `--out FILE` with no
+  suffix writes `FILE.json` (and `FILE.md`); new `--no-user-config` (also on `tools/engine.py`) reads nothing under
+  `$HOME`, and every report's `provenance.user_config` lists the paths outside the target that were read. Refs #16 (not
+  resolved: Claude Code's own MCP registration is still not read).
 - Engine ruleset `2026-11-05.3` (MR06.2, ADR-0009): `DOC-03`, `CON-03`, `SEC-01` and `SEC-03` read every nested
   `.gitignore` (scoped to its directory, including the tracked ones under `--exclude`) and interpret `!` negation,
   anchoring, directory-only rules and `**`. A scratch directory with its own `.gitignore` holding `*` passes, and a

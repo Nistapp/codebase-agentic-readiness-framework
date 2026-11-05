@@ -137,7 +137,8 @@ Why it matters   Architectural decisions need a location and a registry, or the 
                   ([greenfield-bootstrap/README.md § 5.2 Templates & Guides](../../../greenfield-bootstrap/README.md#52-templates--guides)).
 Severity         COSMETIC
 Engine           `DOC-04`. Looks for `docs/architecture/adrs/` or `docs/adr/` holding at least one file
-                 matching the numbered-ADR filename pattern (3–4 digits, a hyphen, a slug, `.md`). No such
+                 matching the numbered-ADR filename pattern (3–4 digits, a hyphen, a slug, `.md`); a `0000-template.md`
+                 (or `NNNN-adr-template.md`) is the blank an ADR is copied from and is not counted. No such
                  directory is `FAIL`; a directory with no numbered entry is `PARTIAL`; entries with no
                  index (a `README.md`/`index.md`/`_index.md` beside them, or the parent directory's own
                  README) is `PARTIAL`; an index that lists some but not all entries (matched by filename or
