@@ -246,9 +246,9 @@ Evidence to cite A `file` evidence item per unresolved command (up to 12), citin
 Absence proof    A FAIL names every unresolved command verbatim with its doc file and line number (up to
                  8 in the summary, up to 12 as evidence), so "does not resolve" is checkable command by
                  command.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `EXEC-06`); the
-                 fix is specific to the one command named in the finding, so note it inline rather than
-                 pointing at a generic playbook.
+Remediation      `adapt-agents-md` (the catalogue's playbook for `EXEC-06`, Planned: IR08.1); the fix is
+                 specific to the one command named in the finding, so note that command inline rather
+                 than pointing at a generic step.
 Pitfalls         A command that mixes a Python snippet inside a fenced ```bash``` block is a documentation
                  defect this check is not chartered to police — the engine reads README/AGENTS.md/
                  CLAUDE.md only for exactly this reason; do not extend the absence search into `docs/**`

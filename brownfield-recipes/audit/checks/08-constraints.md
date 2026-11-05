@@ -186,15 +186,11 @@ Absence proof    Not applicable — this check never records a FAIL, so no absen
 Remediation      none — `CON-04` is itself a remediation input, not a defect with a fix. Its draft is
                  `add-deny-rules`'s deterministic starting point, not something `add-deny-rules` fixes
                  on this check's behalf.
-Pitfalls         **Open point, carried from S2.6 (settled here as D51, not implemented in this leaf):**
-                 the recipe's own launcher, `tools/engine.py`, does not pass `--emit-baseline` through to
-                 the engine today, so `CON-04` reports `UNKNOWN` ("draft not emitted") on every recipe
-                 run and no `do-not-do.draft.md` exists for `add-deny-rules` (S5.3.3) to read. The chosen
-                 fix is a launcher option: `tools/engine.py` gains a passthrough flag that forwards to
-                 the engine's own `--emit-baseline`, requested by the audit recipe's Stage 2 the first
-                 time it runs the engine (S3.5.3.1). Rejected: the facts tool (`facts.py` never runs the
-                 engine, and the draft needs the engine's own category scan, not a second one) and
+Pitfalls         **Settled as D51.** The recipe's own launcher, `tools/engine.py`, accepts
+                 `--emit-baseline` and forwards it to the engine, so a run that asks for it writes
+                 `do-not-do.draft.md` for `add-deny-rules` (Planned: IR10.1) to read; without the flag
+                 `CON-04` reports `UNKNOWN` ("draft not emitted"). Rejected: the facts tool (`facts.py`
+                 never runs the engine, and the draft needs the engine's own category scan, not a second one) and
                  having the model write the candidate list itself (decision 0001's own "Alternatives
                  Considered" already rejects this — the scan is deterministic and tested, so a model
-                 should not rediscover the same paths). This is a tool change and is not made in this
-                 leaf; it is deferred to `S3.5.3.1`.
+                 should not rediscover the same paths).
