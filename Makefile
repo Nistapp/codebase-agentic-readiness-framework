@@ -142,12 +142,13 @@ security:
 update-secrets-baseline:
 	$(DETECT_SECRETS) scan --baseline .secrets.baseline
 
-# Builds the agentic-readiness-audit skill bundle fresh and validates it against the Agent Skills
-# specification (S4.5.2). Not part of `check`: it is not one of the framework's seven verbs, and the
+# Builds the agentic-readiness-audit and agentic-readiness-implement skill bundles fresh and validates both
+# against the Agent Skills specification (S4.5.2). Not part of `check`: it is not one of the framework's seven verbs, and the
 # validator needs the network the first time, same as `crosscheck`'s reference package.
 validate-skills:
 	$(PYTHON) brownfield-recipes/tools/build_skills.py
 	$(SKILLS_REF) validate brownfield-recipes/dist/skills/agentic-readiness-audit
+	$(SKILLS_REF) validate brownfield-recipes/dist/skills/agentic-readiness-implement
 
 # Lints the Markdown in DOCS_LINT_PATHS and fails on any violation. Needs Node (npx); the first run fetches the
 # pinned CLI. CI runs it in the `docs` job when a Markdown file changed.

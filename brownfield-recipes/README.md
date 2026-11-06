@@ -23,14 +23,16 @@ Full walkthrough: [`docs/how-to/run-an-audit.md`](docs/how-to/run-an-audit.md).
 
 ### As an installed skill
 
-1. Build the bundle: `python3 brownfield-recipes/tools/build_skills.py` (or `make validate-skills` to also
-   check it against the Agent Skills specification's reference validator).
+1. Build the bundles: `python3 brownfield-recipes/tools/build_skills.py` (or `make validate-skills` to also
+   check them against the Agent Skills specification's reference validator).
 2. Copy `brownfield-recipes/dist/skills/agentic-readiness-audit/` to `.claude/skills/agentic-readiness-audit/`
    under the project you want to audit — this path is a supported, documented skill location for both
-   Claude Code and opencode.
+   Claude Code and opencode. To implement a report as well, copy `agentic-readiness-implement/` beside it, from
+   the same build: it runs the audit skill's engine.
 3. Invoke the installed `agentic-readiness-audit` skill, naming the target repository's path. The bundle
    carries the recipe, the check files and stack profiles, and the tools it calls; no checkout of this
-   repository is needed at run time.
+   repository is needed at run time. The `agentic-readiness-implement` skill starts from
+   `references/prompts/kickoff.md` inside it.
 
 Tool reference: [`docs/reference/tools-cli.md`](docs/reference/tools-cli.md#build_skillspy).
 

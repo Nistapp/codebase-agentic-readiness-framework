@@ -31,7 +31,8 @@ collapsed into one shell call.
 
 **Install path:** `.claude/skills/agentic-readiness-audit/` at the project root, built by
 `tools/build_skills.py` (confirmed against Claude Code's own docs, `code.claude.com/docs/en/skills`, not
-assumed).
+assumed). The implement skill installs beside it, at `.claude/skills/agentic-readiness-implement/`, and needs the
+audit skill there: its `engine.py` loads the audit skill's engine (not yet run as an installed skill).
 
 ## opencode
 

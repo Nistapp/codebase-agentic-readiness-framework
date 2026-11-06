@@ -16,7 +16,7 @@
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
 | [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
 | [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, and a stale tool catalogue | Live |
-| [`build_skills.py`](#build_skillspy) | Builds the agentic-readiness-audit skill bundle under `dist/skills/` | Live |
+| [`build_skills.py`](#build_skillspy) | Builds the agentic-readiness-audit and agentic-readiness-implement skill bundles under `dist/skills/` | Live |
 | [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state; the only tool that writes inside a target | Live |
 | [`check_drift.py`](#check_driftpy) | Lists the audit findings whose cited files changed between the audited commit and `HEAD` | Live |
 | [`compare_reports.py`](#compare_reportspy) | Compares two audit reports: which checks and findings moved, and which moves the readiness state explains | Live |
@@ -731,21 +731,33 @@ Nothing is written by a plain `recipe_lint.py <root>`; a clean run's `data` hold
 
 ## build_skills.py
 
-Builds the `agentic-readiness-audit` skill bundle: a self-contained copy of the audit recipe, under
-`dist/skills/` (gitignored), that a harness installs and runs with no checkout of this repository. The
-bundle has three parts — `SKILL.md` (the recipe's own file, with its frontmatter `name` rewritten from
-`audit`, the source folder's name, to the bundle's own name), `references/` (the check files, stack profiles
-and schema docs, read by the model) and `scripts/` (the tools the recipe calls, the schema files and
-`catalogue.json` they read at a fixed path next to themselves, the engine's `audit` package mirroring the one
-folder level `engine.py` expects, and `audit.pyz`, the engine's single-file build). It is replaced whole on
-every run, so a stale file from an earlier build can never survive. The source is
-[`build_skills.py`](../../tools/build_skills.py). `make validate-skills` builds the bundle and validates it
-with [`skills-ref`](https://agentskills.io/specification#validation), the Agent Skills specification's own
-reference validator (PyPI package `skills-ref`, CLI entry point `agentskills`; a dev-only tool, run through
-`uvx` and pinned in the Makefile, never imported by the tools or the engine). An install smoke-run (S4.5.3)
-acts on the bundle too; some of `SKILL.md`'s own links point outside what the bundle carries (found, not
-fixed, by this tool — see its own module docstring; confirmed not something `skills-ref` itself checks, since
-it validates only the frontmatter and the directory-name match), which the smoke run may need to account for.
+Builds the two skill bundles under `dist/skills/` (gitignored), self-contained copies that a harness installs and
+runs with no checkout of this repository. The source is [`build_skills.py`](../../tools/build_skills.py). Each
+bundle is replaced whole on every run, so a stale file from an earlier build can never survive, and each has three
+parts: `SKILL.md` (the recipe's own file, with its frontmatter `name` rewritten from the source folder's name to the
+bundle's own name), `references/` (read by the model) and `scripts/` (run by it).
+
+- **`agentic-readiness-audit`**: `references/` holds the check files, stack profiles and schema docs; `scripts/`
+  holds the tools the recipe calls, the schema files and `catalogue.json` they read at a fixed path next to
+  themselves, the engine's `audit` package mirroring the one folder level `engine.py` expects, and `audit.pyz`, the
+  engine's single-file build. Some of its `SKILL.md`'s links point outside what the bundle carries (found, not
+  fixed; `skills-ref` validates only the frontmatter and the directory-name match).
+- **`agentic-readiness-implement`**: `references/` holds the state contract, the playbooks, the kickoff prompt, the
+  check files, the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the state schema and
+  its docs, and the sections of this page for the tools it carries; `scripts/` holds `progress.py`,
+  `check_drift.py`, `compare_reports.py` and `validate_report.py` with their private modules, the schema files,
+  `catalogue.json`, and an `engine.py` shim. The engine is not copied: the shim loads `engine.py` from the
+  `agentic-readiness-audit` skill installed in the same skills folder, so both skills run one engine, and a tool
+  that needs the engine without it exits 1 naming the missing skill. Every carried Markdown file is rewritten: a
+  `python3 brownfield-recipes/tools/<tool>.py` command becomes the path from the skill's own folder
+  (`python3 scripts/tools/<tool>.py`, or the audit skill's path for `engine.py`), a link to a carried file points at
+  its place in the bundle, and any other relative link becomes plain text naming the framework path. No link leaves
+  the bundle.
+
+`make validate-skills` builds both bundles and validates each with
+[`skills-ref`](https://agentskills.io/specification#validation), the Agent Skills specification's own reference
+validator (PyPI package `skills-ref`, CLI entry point `agentskills`; a dev-only tool, run through `uvx` and pinned in
+the Makefile, never imported by the tools or the engine). An install smoke-run (S4.5.3) acts on the audit bundle.
 
 **Synopsis**
 
@@ -757,18 +769,19 @@ python3 brownfield-recipes/tools/build_skills.py [--out-dir DIR]
 
 | Argument | Meaning |
 |---|---|
-| `--out-dir` | Where to build `skills/` itself (default: `brownfield-recipes/dist/skills`). The bundle always lands at `<out-dir>/agentic-readiness-audit/`. |
+| `--out-dir` | Where to build `skills/` itself (default: `brownfield-recipes/dist/skills`). The bundles always land at `<out-dir>/agentic-readiness-audit/` and `<out-dir>/agentic-readiness-implement/`. |
 
 **Outputs**
 
-`data` holds `bundle`, the bundle's path, and `files`, how many files it has.
+`data.bundles` lists both bundles, each with `name`, `bundle` (its path) and `files` (how many files it has).
+`data.bundle` and `data.files` repeat the audit bundle's path and count.
 
 **Exit codes**
 
 | Code | When |
 |---|---|
 | `0` | The bundle was built. |
-| `1` | The engine's own `deterministic-audit/tools/build.py` failed to produce `audit.pyz`; `data.errors` carries its stderr. |
+| `1` | The engine's own `deterministic-audit/tools/build.py` failed to produce `audit.pyz` (`data.errors` carries its stderr), or a source file lacks the frontmatter `name` line or a Tools CLI section the builder rewrites. |
 
 ## progress.py
 
