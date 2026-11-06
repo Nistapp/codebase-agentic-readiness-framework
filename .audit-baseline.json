@@ -531,7 +531,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "baseline/suppression mechanism present: .secrets.baseline",
+      "summary": "baseline/suppression mechanism present: .audit-baseline.json, .secrets.baseline",
       "tier": "A",
       "title": "Baseline artifact exists",
       "verdict": "PASS"
@@ -544,7 +544,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "counting surface present but no committed count/budget: .secrets.baseline, Makefile:lint, Makefile:security, Makefile:typecheck, mypy.ini, ruff.toml; method: static configuration scan; the target's own tools are never run",
+      "summary": "counting surface present but no committed count/budget: .audit-baseline.json, .secrets.baseline, Makefile:lint, Makefile:security, Makefile:typecheck, mypy.ini; method: static configuration scan; the target's own tools are never run",
       "tier": "B",
       "title": "Current violation counts measured",
       "verdict": "PARTIAL"
@@ -557,7 +557,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "ratchet present: comparison step documented in AGENTS.md",
+      "summary": "ratchet present: baseline compared in CI (.github/workflows/ci.yml)",
       "tier": "B",
       "title": "No-new-violations mechanism",
       "verdict": "PASS"
@@ -820,7 +820,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "fast path documented: AGENTS.md:26 `python3 -m unittest tests.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md)",
+      "summary": "fast path documented: AGENTS.md:26 `python3 -m unittest tests.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md, CONTRIBUTING.md)",
       "tier": "B",
       "title": "Fast path documented",
       "verdict": "PASS"
@@ -892,10 +892,10 @@
     },
     {
       "data": {
-        "denominator": 1436,
+        "denominator": 1438,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 637,
+        "numerator": 638,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -904,7 +904,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "637/1436 public symbols documented (44%); method: python: module-level def/class not starting with '_'",
+      "summary": "638/1438 public symbols documented (44%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1152,10 +1152,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no CONTRIBUTING document",
+      "summary": "CONTRIBUTING present at CONTRIBUTING.md",
       "tier": "A",
       "title": "CONTRIBUTING present",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1178,10 +1178,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no CHANGELOG document",
+      "summary": "CHANGELOG.md last changed 0 day(s) before HEAD",
       "tier": "A",
       "title": "CHANGELOG present and recent",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1191,10 +1191,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no release document",
+      "summary": "release document present at RELEASE_PROCESS.md",
       "tier": "A",
       "title": "Release process documented",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1204,10 +1204,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no dependency update automation",
+      "summary": "dependency automation configured at .github/dependabot.yml",
       "tier": "A",
       "title": "Dependency update automation configured",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1320,6 +1320,11 @@
         {
           "line": null,
           "note": null,
+          "path": ".audit-baseline.json"
+        },
+        {
+          "line": null,
+          "note": null,
           "path": ".secrets.baseline"
         },
         {
@@ -1341,11 +1346,6 @@
           "line": null,
           "note": null,
           "path": "mypy.ini"
-        },
-        {
-          "line": null,
-          "note": null,
-          "path": "ruff.toml"
         }
       ],
       "id": "BASE-02",
@@ -1433,16 +1433,6 @@
       "verdict": "FAIL"
     },
     {
-      "check": "HYG-05",
-      "evidence": [],
-      "id": "HYG-05",
-      "phase": 1,
-      "remediation": "Add CONTRIBUTING.md covering setup, the gate, and the review flow.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot contribute without reverse-engineering the process because no CONTRIBUTING document exists.",
-      "verdict": "FAIL"
-    },
-    {
       "check": "HYG-06",
       "evidence": [],
       "id": "HYG-06",
@@ -1451,42 +1441,12 @@
       "severity": "COSMETIC",
       "statement": "An agent cannot report a vulnerability responsibly because no SECURITY document exists at the root, under .github/, .gitlab/ or docs/.",
       "verdict": "FAIL"
-    },
-    {
-      "check": "HYG-07",
-      "evidence": [],
-      "id": "HYG-07",
-      "phase": 1,
-      "remediation": "Add CHANGELOG.md and record notable changes under a version heading.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot see what changed between two versions because no CHANGELOG (or CHANGES/HISTORY) document exists.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "HYG-08",
-      "evidence": [],
-      "id": "HYG-08",
-      "phase": 1,
-      "remediation": "Add docs/releasing.md (or RELEASE.md) describing how a version is cut and published.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot know how a release is cut because no text or markdown document describing the release process exists.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "HYG-09",
-      "evidence": [],
-      "id": "HYG-09",
-      "phase": 1,
-      "remediation": "Add .github/dependabot.yml (or renovate.json) with an update schedule.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot keep dependencies patched without manual sweeps because no Dependabot or Renovate configuration exists.",
-      "verdict": "FAIL"
     }
   ],
   "inventory": {
-    "files_inspected": 345,
-    "files_set_aside": 438,
-    "files_skipped": 1997,
+    "files_inspected": 352,
+    "files_set_aside": 439,
+    "files_skipped": 2000,
     "set_aside": [
       {
         "files": 3,
@@ -1501,7 +1461,7 @@
         "path": "brownfield-recipes/docs/templates"
       },
       {
-        "files": 115,
+        "files": 116,
         "path": "brownfield-recipes/schema/examples"
       },
       {
@@ -1549,15 +1509,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "ee5683fc68a3371353d7ac2fabeb76db61123cd5",
+    "framework_revision": "f012b766d7df07940f1e212aaa21e6092a8dde03",
     "git_branch": "feat/implement-recipe",
     "git_dirty": false,
-    "git_sha": "ee5683fc68a3371353d7ac2fabeb76db61123cd5",
+    "git_sha": "f012b766d7df07940f1e212aaa21e6092a8dde03",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "970e6792f98eeeb5",
     "ruleset_revision": "2026-11-06.1",
-    "scanned_at": "2026-11-06T02:30:23+00:00",
+    "scanned_at": "2026-11-06T02:46:01+00:00",
     "target": "/home/kc/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework",
     "tool": "python-agentic-audit",
     "user_config": {
@@ -1587,15 +1547,15 @@
     "blockers": 2,
     "checks": {
       "attest": 0,
-      "fail": 7,
+      "fail": 3,
       "partial": 5,
-      "pass": 51,
+      "pass": 55,
       "unknown": 6
     },
     "checks_applicable": 69,
     "checks_implemented": 69,
     "checks_scoreable": 55,
-    "cosmetic": 6,
+    "cosmetic": 2,
     "coverage_note": "55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
     "degraders": 3,
     "phase1_score": 0.8402

@@ -21,8 +21,11 @@ score from falling.
 | Engine | `python-agentic-audit` 0.1.0 |
 | Ruleset | `2026-11-06.1` (hash `970e6792f98eeeb5`) |
 | Applicable checks | 69 (55 scoreable) |
-| Findings | 11: 2 BLOCKER, 3 DEGRADER, 6 COSMETIC |
+| Findings | 7: 2 BLOCKER, 3 DEGRADER, 2 COSMETIC |
 | Scope | the whole repository except `artefacts/` and `dist/`; no user-level configuration read |
+
+`HYG-05`, `HYG-07`, `HYG-08` and `HYG-09` closed with `CONTRIBUTING.md`, the root changelog, `RELEASE_PROCESS.md` and
+`.github/dependabot.yml` (MR08); the score did not move because those checks are cosmetic.
 
 The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 requirements it asks of others
 (see the [changelog](../../CHANGELOG.md) and the engine's
@@ -30,9 +33,9 @@ The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 re
 
 | Verdict | Checks |
 | --- | --: |
-| PASS | 51 |
+| PASS | 55 |
 | PARTIAL | 5 |
-| FAIL | 7 |
+| FAIL | 3 |
 | UNKNOWN | 6 |
 | ATTEST | 0 |
 | **Total** | **69** |
@@ -52,9 +55,8 @@ Every check that is not `PASS`, with the reason it is open.
 | `SEC-03` | PARTIAL | DEGRADER | Same cause as `SEC-01` for the dotenv shapes; the key, certificate and keystore shapes are covered |
 | `BASE-02` | PARTIAL | DEGRADER | The counting surface exists, but no committed violation count or budget. Open, no owner decision |
 | `TOOL-04` | PARTIAL | DEGRADER | `make security` is a secrets scan; there is no dependency to audit, so no dependency audit exists. Open |
-| `HYG-02`, `HYG-05` | FAIL | COSMETIC | Need values only the owner has (`CODEOWNERS` names, the contributing contact). Stay open until supplied (D22) |
-| `HYG-06`, `HYG-07`, `HYG-08`, `HYG-09` | FAIL | COSMETIC | Security policy, a root changelog, a release document and dependency-update automation. Planned in MR08 |
-| `NAV-05` | PARTIAL | COSMETIC | 44% of public symbols documented (637 of 1436) |
+| `HYG-02`, `HYG-06` | FAIL | COSMETIC | Need values only the owner has: `CODEOWNERS` names and a private disclosure contact for `SECURITY.md`. Stay open until supplied (D22) |
+| `NAV-05` | PARTIAL | COSMETIC | 44% of public symbols documented (638 of 1438) |
 | `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, user-level configuration, or `--emit-baseline`; not run here |
 | `EXEC-02`, `NAV-01` | UNKNOWN | mixed | The repository declares no dependencies and no components, so there is nothing for the check to read |
 
