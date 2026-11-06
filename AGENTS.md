@@ -91,6 +91,7 @@ A change is done when all of this holds:
 
 ## Where to look
 
+- Setting up and contributing, for a person: `CONTRIBUTING.md`. Cutting a release (the maintainer only): `RELEASE_PROCESS.md`.
 - Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
   `docs/architecture/adrs/README.md`.
 - Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.

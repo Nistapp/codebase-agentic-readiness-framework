@@ -38,7 +38,8 @@ COVERAGE_DATA := $(CURDIR)/brownfield-recipes/dist/coverage/.coverage
 
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
-DOCS_LINT_PATHS := 'brownfield-recipes/implement/**/*.md' 'docs/**/*.md'
+DOCS_LINT_PATHS := 'brownfield-recipes/implement/**/*.md' 'docs/**/*.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' \
+	'brownfield-recipes/docs/architecture/user-overview/03-trust-and-safety.md'
 
 ENGINE := brownfield-recipes/deterministic-audit
 
