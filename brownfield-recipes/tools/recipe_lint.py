@@ -9,7 +9,8 @@ oversize files.
 
 ``<root>`` is the repository that holds ``brownfield-recipes/``; a link may climb out of that folder (a check
 file citing ``brownfield-legacy/Phased-Approach.md`` does), but never out of ``<root>``. Eight checks, each
-independent of the others:
+independent of the others. The link rule also covers the framework pages outside that folder (the root
+``README.md``, ``shared/``, ``spec/``, ``greenfield-bootstrap/`` and ``brownfield-legacy/``); no other check reads them:
 
 - **Links.** Every inline Markdown link (``[text](target)``, never an image or a reference-style link, neither
   of which this project's recipes use today) whose target is not an external URL must resolve inside ``<root>``.
@@ -91,7 +92,12 @@ REQUIREMENT_HEADING = re.compile(r"^### (REQ-[A-Z]+-[0-9]+)\b", re.MULTILINE)
 PLAYBOOK_REFERENCE = re.compile(r'Playbook `([a-z][a-z0-9-]*)`|"playbook":\s*"([a-z][a-z0-9-]*)"')
 
 # Whole files whose links are examples and are never meant to resolve, as a path prefix relative to <root>.
-EXCLUDED_FROM_LINKS = (f"{RECIPES_DIRNAME}/docs/templates/",)
+EXCLUDED_FROM_LINKS = (f"{RECIPES_DIRNAME}/docs/templates/", "greenfield-bootstrap/templates/")
+# The framework pages outside brownfield-recipes/ whose links are checked, and nothing else about them: the root
+# README.md and the folders below. Templates under greenfield-bootstrap/ are copied into new projects, so their
+# links are examples relative to the destination and are skipped by EXCLUDED_FROM_LINKS above.
+ROOT_PAGE_FILES = ("README.md",)
+ROOT_PAGE_DIRS = ("shared", "spec", "greenfield-bootstrap", "brownfield-legacy")
 # Files the catalogue, requirement and playbook checks never read: the engine's own registry and fixtures.
 EXCLUDED_FROM_CATALOGUE = (f"{RECIPES_DIRNAME}/deterministic-audit/",)
 # Never swept at all: gitignored build output (build_skills.py's bundle, the engine's audit.pyz), not
@@ -522,7 +528,23 @@ def find_markdown(root: Path) -> list[Path]:
     return sorted(path for path in recipes.rglob("*.md") if not excluded_dirname(path, root))
 
 
-def lint(root: Path, files: Sequence[Path], *, describe_timeout: float = DESCRIBE_TIMEOUT_S) -> Outcome:
+def find_root_pages(root: Path) -> list[Path]:
+    """The framework pages outside `brownfield-recipes/` whose relative links are checked (MR08, I20)."""
+    found = [root / name for name in ROOT_PAGE_FILES if (root / name).is_file()]
+    for dirname in ROOT_PAGE_DIRS:
+        folder = root / dirname
+        if folder.is_dir():
+            found.extend(folder.rglob("*.md"))
+    return sorted(found)
+
+
+def lint(
+    root: Path,
+    files: Sequence[Path],
+    *,
+    describe_timeout: float = DESCRIBE_TIMEOUT_S,
+    root_pages: Sequence[Path] = (),
+) -> Outcome:
     out = Outcome()
     link_cache: dict[Path, set[str]] = {}
     tool_cache: dict[str, str | None] = {}
@@ -543,6 +565,9 @@ def lint(root: Path, files: Sequence[Path], *, describe_timeout: float = DESCRIB
                 check_playbook_references(file, lines, catalogue, out)
             if requirement_ids is not None:
                 check_requirement_references(file, lines, requirement_ids, out)
+    for page in root_pages:
+        if not excluded_from_links(page, root):
+            check_links(root, page, page.read_text(encoding="utf-8").splitlines(), link_cache, out)
     out.errors.sort()
     return out
 
@@ -564,7 +589,8 @@ def handler(argv: Sequence[str]) -> _common.Result:
     if args.write_catalogue:
         return write_catalogue(root, timeout=DESCRIBE_TIMEOUT_S)
     files = find_markdown(root)
-    outcome = lint(root, files)
+    root_pages = find_root_pages(root)
+    outcome = lint(root, files, root_pages=root_pages)
     check_catalogue_fresh(root, outcome, timeout=DESCRIBE_TIMEOUT_S)
     if outcome.errors:
         outcome.errors.sort()

@@ -96,6 +96,37 @@ class FindMarkdownTests(FixtureTests):
         self.assertEqual(outcome.errors, [])
 
 
+class RootPageLinkTests(FixtureTests):
+    def lint_root_pages(self) -> rl.Outcome:
+        files = rl.find_markdown(self.repo.root)
+        return rl.lint(self.repo.root, files, root_pages=rl.find_root_pages(self.repo.root))
+
+    def test_the_root_pages_are_found(self) -> None:
+        for relative in ("README.md", "shared/A.md", "spec/B.md", "brownfield-legacy/C.md", "other/D.md"):
+            self.repo.write(relative, "# T\n")
+        found = {path.relative_to(self.repo.root).as_posix() for path in rl.find_root_pages(self.repo.root)}
+        self.assertEqual(found, {"README.md", "shared/A.md", "spec/B.md", "brownfield-legacy/C.md"})
+
+    def test_a_broken_link_in_a_root_page_is_reported(self) -> None:
+        self.repo.write("shared/Glossary.md", "# G\n\n[gone](Missing.md)\n")
+        errors = self.lint_root_pages().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("shared/Glossary.md:3", errors[0])
+
+    def test_a_good_link_and_anchor_in_a_root_page_pass(self) -> None:
+        self.repo.write("README.md", "# R\n\n[g](shared/Glossary.md#terms)\n")
+        self.repo.write("shared/Glossary.md", "# G\n\n## Terms\n")
+        self.assertEqual(self.lint_root_pages().errors, [])
+
+    def test_the_template_placeholders_are_skipped(self) -> None:
+        self.repo.write("greenfield-bootstrap/templates/docs/STYLE_GUIDE.md", "# S\n\n[x](../src/core/a.ts#L1)\n")
+        self.assertEqual(self.lint_root_pages().errors, [])
+
+    def test_root_pages_get_no_other_check(self) -> None:
+        self.repo.write("spec/Long.md", "# L\n" + "line\n" * 600)
+        self.assertEqual(self.lint_root_pages().errors, [])
+
+
 # --- The link rule --------------------------------------------------------------------------------------
 
 
