@@ -14,6 +14,7 @@
 #                       cross-check and the recipe linter
 #   make security       secrets scan against the committed baseline
 #   make coverage       (extra) both unittest suites under coverage.py; fails below the floor in .coveragerc
+#   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
 #
 # `format:check` has a colon, which make reads as a rule separator. The target is spelled `format\:check`
 # and `format-check` is the alias; the unescaped form `format:check:` would define a different rule.
@@ -48,11 +49,11 @@ TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -n
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline validate-skills docs-lint docs-lint-all docs-mermaid
+.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-mermaid
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-mermaid FILES=..."
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -92,6 +93,24 @@ coverage:
 	cd $(ENGINE) && COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc -m unittest discover -s tests
 	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s brownfield-recipes/tools/tests
 	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) report --rcfile=.coveragerc
+
+# The engine on this repository, read-only. Reports go under dist/self-audit/ (git-ignored); only artefacts/ and dist/
+# are left out. --baseline is the ratchet (ADR-0001): exit 2 when a finding appears that .audit-baseline.json did not
+# have, exit 0 otherwise. --no-user-config keeps the verdict the same on every machine. Publication:
+# brownfield-recipes/docs/reference/self-audit.md.
+SELF_AUDIT_OUT := $(CURDIR)/dist/self-audit
+SELF_AUDIT_FLAGS := --out $(SELF_AUDIT_OUT)/ --force --format both --no-user-config --exclude 'artefacts/*' --exclude 'dist/*'
+
+self-audit:
+	mkdir -p $(SELF_AUDIT_OUT)
+	cd $(ENGINE) && $(PYTHON) -m audit $(CURDIR) $(SELF_AUDIT_FLAGS) --baseline $(CURDIR)/.audit-baseline.json
+
+# Accepts today's findings as the new baseline: a deliberate act, never run to get green. Review the diff; the
+# baseline only shrinks.
+update-audit-baseline:
+	mkdir -p $(SELF_AUDIT_OUT)
+	cd $(ENGINE) && $(PYTHON) -m audit $(CURDIR) $(SELF_AUDIT_FLAGS)
+	cp $(SELF_AUDIT_OUT)/audit-report.json .audit-baseline.json
 
 # Every framework anchor the engine cites must still resolve in this repository.
 verify-rules:

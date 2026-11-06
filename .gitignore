@@ -6,6 +6,8 @@ __pycache__/
 
 # build output (root-scoped so fixture directories that deliberately use these names are still committed)
 /brownfield-recipes/dist/
+# `make self-audit` output
+/dist/
 *.pyz
 
 # environment files (secrets never committed; templates are)
