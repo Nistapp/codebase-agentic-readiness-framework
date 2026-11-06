@@ -470,7 +470,8 @@ The tool refuses a decision that would claim something false about who made it:
 Records `run_context.stack_profile` in a draft: which stack profile the audit used, whether it shipped or was
 derived, and whether the user confirmed the choice ([`stacks/README.md`](../../stacks/README.md#4-shipped-versus-derived)).
 Audit Stage 1 calls it once the user has agreed the stack. A second call replaces the first. The eval scorer
-(`tools/eval/score.py`) does not read the field; an eval-mode run records it the same way.
+(`tools/eval/score.py`) reports the field as `stack_profile` beside its metrics, informational and never scored; an
+eval-mode run records it the same way.
 
 | Argument | Meaning |
 |---|---|

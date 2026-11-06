@@ -21,6 +21,8 @@ Metrics, each against the expected file:
   verdict is not — candidates for the run having flagged something that was not actually wrong.
 - ``override_precision``: of the report's checks that carry ``override_reason`` and that the expected file
   has ground truth for, the share whose resulting verdict is acceptable.
+- ``stack_profile``: informational, not a metric: the report's ``run_context.stack_profile`` (``id``, ``source``,
+  ``confirmed_by_user``) as recorded, or null when the report has none, so scores can be grouped by stack.
 - ``evidence_validity``: with ``--target`` only — of the report's ``kind: file`` evidence citations, the
   share whose path exists in the target at the recorded commit, and whose ``lines`` (when given) fit the
   file.
@@ -228,12 +230,20 @@ def evidence_validity(report: Mapping[str, Any], target: Path) -> dict[str, Any]
 # --- Putting it together -----------------------------------------------------------------------------------
 
 
+def stack_profile(report: Mapping[str, Any]) -> dict[str, Any] | None:
+    """The report's recorded stack profile, unchanged; informational, never scored. None when it records none."""
+    context = report.get("run_context")
+    profile = context.get("stack_profile") if isinstance(context, Mapping) else None
+    return dict(profile) if isinstance(profile, Mapping) else None
+
+
 def score(report: Mapping[str, Any], expected: Mapping[str, Any], *, target: Path | None = None) -> dict[str, Any]:
     outcome = validate_report.validate_document(report)
     schema_valid = outcome.stage != "schema"
     data: dict[str, Any] = {
         "repo_label": expected["repo_label"],
         "schema_valid": schema_valid,
+        "stack_profile": stack_profile(report),
     }
     if not schema_valid:
         kept, omitted = _common.bound_items(outcome.errors, limit_bytes=_common.ITEM_BUDGET_BYTES // 2)
