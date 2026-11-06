@@ -10,7 +10,17 @@ histories:
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-06
+
+Release notes: the implement recipe (`brownfield-recipes/implement/`) is live with Stages 0-5, thirteen playbooks and
+its own skill bundle, and the release workflow attaches both bundles. A real run is published as a draft
+[worked example](brownfield-recipes/schema/examples/server-worked-example/README.md) (IR15). The engine defects found
+on the way are open `audit-engine` issues on GitHub (for example #45 and #49-#52); they are known, not fixed in 0.2.0.
+
 ### Framework pages (since v0.1)
+
+- A quality baseline for this repository, by the `add-baselines-and-ratchet` playbook: `.quality-baseline.json` and a
+  compare step that fails when the ruff, mypy or Markdown lint count goes up (MR08.3).
 
 - The framework pages say the implement recipe is in development and no longer promise features that are only
   planned; the verb count is seven everywhere; the greenfield README and `AGENTS.md` template (now 1.1.1) state what

@@ -1,5 +1,5 @@
 {
-  "catalogue_version": "0.2.7",
+  "catalogue_version": "0.2.8",
   "fingerprint": "e33c95eda9f58b9d",
   "checks": [
     {
@@ -1026,7 +1026,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-01",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-02",
@@ -1039,7 +1041,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-02",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-03",
@@ -1052,7 +1056,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-03",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-04",
@@ -1065,7 +1071,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-04",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-05",
@@ -1078,7 +1086,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-05",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-06",
@@ -1091,7 +1101,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-06",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-07",
@@ -1104,7 +1116,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-07",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-08",
@@ -1117,7 +1131,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-08",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-09",
@@ -1130,7 +1146,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-09",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-10",
@@ -1143,7 +1161,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-10",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     },
     {
       "id": "HYG-11",
@@ -1156,7 +1176,9 @@
       "status": "implemented",
       "req_ids": [],
       "engine_id": "HYG-11",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     }
   ]
 }

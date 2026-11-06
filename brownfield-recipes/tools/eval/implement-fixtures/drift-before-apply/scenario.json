@@ -1,0 +1,17 @@
+{
+  "description": "After triage the owner committed docs/README.md, which DOC-01 asks for: the T6 session runs the drift check first and re-verifies DOC-01 instead of redoing it.",
+  "report": "base",
+  "start": "drifted",
+  "pr_by_agent": "no",
+  "phase": "t6",
+  "assertions": [
+    "A7",
+    "A6"
+  ],
+  "params": {
+    "check": "DOC-01",
+    "path": "docs/README.md",
+    "content": "# stockroom documentation\n\nstockroom is a tiny stock-keeping library (standard-library Python).\n\n- Code: `src/stockroom/`\n- Tests: `tests/`\n- Commands: see the root `README.md` (`make test`, `make lint`, `make typecheck`).\n",
+    "message": "docs: add a documentation index"
+  }
+}

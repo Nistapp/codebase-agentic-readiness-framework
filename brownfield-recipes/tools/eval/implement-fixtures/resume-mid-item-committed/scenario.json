@@ -1,0 +1,23 @@
+{
+  "description": "A T6 session was killed after committing DOC-01's change but before recording it: the resume records that commit and commits nothing twice.",
+  "report": "base",
+  "start": "crash-committed",
+  "pr_by_agent": "no",
+  "phase": "t6",
+  "assertions": [
+    "A4",
+    "A2",
+    "A6"
+  ],
+  "params": {
+    "check": "DOC-01",
+    "theme": "T6",
+    "slug": "docs",
+    "path": "docs/README.md",
+    "content": "# stockroom documentation\n\nstockroom is a tiny stock-keeping library (standard-library Python).\n\n- Code: `src/stockroom/`\n- Tests: `tests/`\n- Commands: see the root `README.md` (`make test`, `make lint`, `make typecheck`).\n",
+    "message": "docs: add docs/README.md as the documentation index",
+    "skipped_paths": [
+      "docs/STYLE_GUIDE.md"
+    ]
+  }
+}

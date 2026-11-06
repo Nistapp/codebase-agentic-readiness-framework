@@ -17,7 +17,8 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done ([`SKILL.md`](../SKILL.md#stage-1-triage)). Read it first.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `layout.command_runner`, `ci.edits_authorised`,
   `tests.stack_dependent` (a stack the build scripts start), and any `extra.*` entry that already decides a
   tracked-but-ignored path (for example a secret-bearing file assigned to the secrets theme). A step that
@@ -75,8 +76,8 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 
 ## Steps
 
-1. Work in a worktree from the up-to-date integration branch on the theme branch
-   (`agentic-readiness/<phase>-determinism`). Set each item `in_progress`.
+1. Same T2 branch as `pin-execution-environment`: `agentic-readiness/<phase>-determinism`
+   ([Stage 3](../SKILL.md#stage-3-apply), step 1).
 2. **Find** the candidates with `git ls-files -ci --exclude-standard` and the EXEC-05 evidence. Sort them by
    the path-kind table. Anything secret-bearing is noted and left alone.
 3. **Collect readers** (Inputs step 2) and the regenerating command for each build-output path.
@@ -96,7 +97,6 @@ lines, and every concern (lint, format, test, types, security) has one authorita
    merge or rename a config: the choice of tool is the owner's (see `configure-quality-tools`). The engine
    counts repository-root configs only, and `biome.json` alone for lint and format is not competition.
    With no competing pair, this step is a no-op and the item is not raised.
-9. Commit per logical change, each revertible alone.
 
 ### Gradle
 
@@ -153,18 +153,13 @@ ignore rule or a header goes with its own commit.
 
 ## State updates
 
-Through [`progress.py`](../../docs/reference/tools-cli.md#progresspy), on the theme branch, `--phase` the
-current step:
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, the theme rows) and
+[Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "git ls-files -ci --exclude-standard" \
   --verification-result "<no build output listed; regenerating command recreates it>"
 python3 brownfield-recipes/tools/progress.py skip F-nnn --target <repo> --phase <phase> \
   --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py theme T2 --status branch_open \
-  --branch agentic-readiness/<phase>-determinism --target <repo> --phase <phase> --render
 ```
-
-A `blocked` status is reached through `in_progress` and needs `--reason`. Only the owner skips an item.

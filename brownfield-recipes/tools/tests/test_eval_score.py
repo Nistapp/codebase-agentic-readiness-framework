@@ -359,6 +359,18 @@ class EvidenceValidityTests(unittest.TestCase):
 
 
 class ScoreTests(unittest.TestCase):
+    def test_the_stack_profile_is_reported_as_recorded(self) -> None:
+        report = base_report()
+        data = score.score(report, expected(entry("CMD-02", "FAIL")))
+        self.assertEqual(data["stack_profile"], report["run_context"]["stack_profile"])
+        self.assertNotIn("stack_profile", data["metrics"])
+
+    def test_a_report_without_a_stack_profile_reports_null(self) -> None:
+        report = base_report()
+        del report["run_context"]["stack_profile"]
+        data = score.score(report, expected(entry("CMD-02", "FAIL"), repo_sha="ab" * 20))
+        self.assertIsNone(data["stack_profile"])
+
     def test_a_schema_invalid_report_is_not_comparable(self) -> None:
         report = base_report()
         del report["schema_version"]

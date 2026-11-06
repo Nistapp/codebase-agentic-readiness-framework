@@ -1,7 +1,7 @@
 # Brownfield Recipes
 
 Recipes that a coding agent runs against an existing repository: first to audit it for agentic readiness,
-then (v0.2) to implement the confirmed findings. A deterministic engine does the counting — it reads the
+then (v0.2.0) to implement the confirmed findings. A deterministic engine does the counting — it reads the
 repository, never writes to it, and never calls an LLM — while the agent does the judgment: verifying
 every blocker independently, citing evidence, and stopping to ask rather than guessing. See
 [`README.md`](../README.md) at the repository root for the framework these recipes check against.
@@ -23,14 +23,16 @@ Full walkthrough: [`docs/how-to/run-an-audit.md`](docs/how-to/run-an-audit.md).
 
 ### As an installed skill
 
-1. Build the bundle: `python3 brownfield-recipes/tools/build_skills.py` (or `make validate-skills` to also
-   check it against the Agent Skills specification's reference validator).
+1. Build the bundles: `python3 brownfield-recipes/tools/build_skills.py` (or `make validate-skills` to also
+   check them against the Agent Skills specification's reference validator).
 2. Copy `brownfield-recipes/dist/skills/agentic-readiness-audit/` to `.claude/skills/agentic-readiness-audit/`
    under the project you want to audit — this path is a supported, documented skill location for both
-   Claude Code and opencode.
+   Claude Code and opencode. To implement a report as well, copy `agentic-readiness-implement/` beside it, from
+   the same build: it runs the audit skill's engine.
 3. Invoke the installed `agentic-readiness-audit` skill, naming the target repository's path. The bundle
    carries the recipe, the check files and stack profiles, and the tools it calls; no checkout of this
-   repository is needed at run time.
+   repository is needed at run time. The `agentic-readiness-implement` skill starts from
+   `references/prompts/kickoff.md` inside it.
 
 Tool reference: [`docs/reference/tools-cli.md`](docs/reference/tools-cli.md#build_skillspy).
 
@@ -53,11 +55,11 @@ is plain `SKILL.md` plus command-line tools, runnable by any agent with shell ac
 | Folder | Contents | Status |
 |---|---|---|
 | [`audit/`](audit/SKILL.md) | The audit recipe and its check files | Live |
-| [`implement/`](implement/SKILL.md) | The implementation recipe, its playbooks and the state contract | Partial (v0.2 in progress): Stages 0-1, the state contract and eight of thirteen playbooks are live; Stages 2-5 and five playbooks Planned (IR08-IR12) |
+| [`implement/`](implement/SKILL.md) | The implementation recipe, its playbooks and the state contract | Live (v0.2.0): Stages 0-5, the state contract, the thirteen playbooks and the skill bundle |
 | [`schema/`](schema/SCHEMA.md) | The report, intake, facts, catalogue and eval-expected schemas, with examples | Live |
 | [`stacks/`](stacks/README.md) | Stack profiles (`typescript-node`, `java`, `python`) | Live |
 | [`tools/`](tools/README.md) | The tool contract, shared helpers and the tools themselves — engine launcher, facts, report builder, renderer, validator, recipe linter, skill bundler | Live |
 | [`deterministic-audit/`](deterministic-audit/README.md) | The deterministic engine, migrated with its history | Live |
-| [`docs/`](docs/architecture/README.md) | Documentation, Diátaxis layout | Partial — see the doc router for what each page still marks `Planned` |
+| [`docs/`](docs/architecture/README.md) | Documentation, Diátaxis layout | Live — see the doc router; the only pages marked `Planned` are the deferred second-harness items |
 
 Licensing: [docs/reference/licensing.md](docs/reference/licensing.md).

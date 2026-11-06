@@ -66,7 +66,7 @@ def _span(prefix: str, first: int, last: int, *, skip: Sequence[int] = ()) -> tu
 
 
 # The themes, in dependency order, and the checks each one owns. Every check in catalogue.json has exactly one theme;
-# a test holds the two together. CON-04 sits with CON-01..03 until the governance playbooks confirm or move it.
+# a test holds the two together. CON-04 (unscored, no playbook) sits with CON-01..03: add-deny-rules reads its draft.
 THEMES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("T1", "Command surface and quality tools", _span("CMD", 1, 4) + _span("TOOL", 1, 4)),
     ("T2", "Execution determinism", _span("EXEC", 1, 7, skip=(4,))),

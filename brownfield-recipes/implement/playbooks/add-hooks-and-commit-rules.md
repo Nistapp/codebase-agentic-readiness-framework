@@ -18,16 +18,16 @@ elsewhere (the pull-request title) by the owner's decision.
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done. Read it first. **Respect every `skipped` item**: if the
-  owner skipped the commit-convention finding, do not re-propose it; write only the hook chain.
-- T1 done: the formatter and linter verbs exist, with a changed-files form ([`define-command-surface`](define-command-surface.md),
-  [`configure-quality-tools`](configure-quality-tools.md)). A hook calls those verbs; it never defines its own
-  commands.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
+- If the owner skipped the commit-convention finding, write only the hook chain.
+- T1 done: the formatter and linter verbs exist, with a changed-files form
+  ([`define-command-surface`](define-command-surface.md), [`configure-quality-tools`](configure-quality-tools.md)). A
+  hook calls those verbs; it never defines its own commands.
 - Preferences read, when present: `format.mass_reformat` (a `no` means hooks check changed files only, never the
   full tree), `lint.mode`, `layout.command_runner`, `hooks.manager`, `commit.convention`.
-- **Run the drift check first.** A finding saying "no hook manager" can be stale; look for `lefthook.yml`,
-  `.pre-commit-config.yaml`, `.husky/`, `.githooks/` and `core.hooksPath` on the current default branch.
-- Public/private boundary as in the other playbooks.
+- **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a finding saying "no hook manager" can be stale; look for
+  `lefthook.yml`, `.pre-commit-config.yaml`, `.husky/`, `.githooks/` and `core.hooksPath` on the current default branch.
 
 ## Inputs to ask
 
@@ -131,6 +131,9 @@ The engine reads TOOL-06 as a file or stage check; option A leaves it `FAIL` by 
 
 ## State updates
 
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, the theme rows) and
+[Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
+
 ```bash
 python3 brownfield-recipes/tools/progress.py pref set hooks.manager <lefthook|pre-commit|...> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
@@ -139,5 +142,3 @@ python3 brownfield-recipes/tools/progress.py skip F-nnn --target <repo> --phase 
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "test -f lefthook.yml" --verification-result "present; install documented"
 ```
-
-Only the owner skips an item.

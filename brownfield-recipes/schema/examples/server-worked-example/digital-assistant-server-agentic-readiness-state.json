@@ -1,0 +1,2290 @@
+{
+  "schema_version": "0.1",
+  "repo": {
+    "label": "digital-assistant-server",
+    "default_branch": "dev"
+  },
+  "recipe": {
+    "name": "brownfield-implement",
+    "version": "0.2.0-dev",
+    "framework_rev": "a7e5e023654d48620e4439168bee4158f4a7deaf"
+  },
+  "source_reports": [
+    {
+      "path": "docs/agentic-readiness-report/digital-assistant-server-first-audit-20261028T131409Z.json",
+      "git_sha": "4a48e1976e424f3f424d2510049413c1c3f38dd6",
+      "catalogue_version": "0.2.2"
+    }
+  ],
+  "preferences": [
+    {
+      "key": "format.mass_reformat",
+      "value": "no",
+      "reason": "Q2: formatter in check-only/ratchet mode, violation count recorded as debt, never reformat the tree; other Server PRs are in flight (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "format.java_family",
+      "value": "decide-in-IR04.2",
+      "reason": "Q3: tool chosen in IR04.2; constraint is CONVENTIONS.md style (tabs, LF, 120 columns); Spotless is the likely tool (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "tests.stack_dependent",
+      "value": "live-stack-with-offline-subset",
+      "reason": "IR08.2 Q1=1: measure with the live stack through the scripts; the 5 non-QuarkusTest classes are the offline subset (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR08.2"
+    },
+    {
+      "key": "agents_md.pointer_section",
+      "value": "section-5",
+      "reason": "Q6: pointer line goes in AGENTS.md section 5 (Development & Contribution Workflow) (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "extra.t3",
+      "value": "keystore-untrack",
+      "reason": "Q5 item 1: git rm --cached config/keycloak-keystore.jks (keep the file locally if useful), fix the CONVENTIONS.md tree line; no key rotation; git history left as is. Consequence of the owner's statement that nothing tracked holds a live secret and all secrets come from the AWS store; recorded as a preference, executed in IR06.2 (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "extra.t2",
+      "value": "jdk-toolchain-pin-and-readme-rename",
+      "reason": "Q5 items 4 and 8: add a java toolchain block (JDK 21) to build.gradle; rename README to README.md and fix the .dockerignore, CONVENTIONS.md and scripts/ci/test.sh references (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "extra.t5",
+      "value": "offline-test-verb: done as 5 named classes plus fenced command in AGENTS.md; 15 of 20 classes need the live stack (debt on F-038); no Testcontainers",
+      "reason": "owner 2026-10-30 (via Hermes), applied in IR08.2; the state said three classes, there are now five",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR08.2"
+    },
+    {
+      "key": "overlap.section_b",
+      "value": "covered-by-findings",
+      "reason": "Q5 items 2, 3, 5, 6, 9 are not extra work: 2=F-003 (keep the dependabot comment true), 3=F-040(a)/F-024 (rename the no-op job first), 5=F-039/F-012/F-014, 6=F-001/F-022/F-023/F-024/F-041, 9=F-040(c) with F-035 deferred (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "github.owner_handle",
+      "value": "@kcramakrishna",
+      "reason": "Use for F-029 CODEOWNERS and F-040(c) branch protection: the repository owner's verified account (gh auth status). Any other person's handle stays a named placeholder for the owner to fill (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "codeowners.default",
+      "value": "owner-owns-all",
+      "reason": "F-029: @kcramakrishna owns * and the areas in research/p4-owner-asks.md item 1; second reviewer left as a placeholder; do not enable required code-owner review with a single owner (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "security.disclosure",
+      "value": "github-private-vulnerability-reporting",
+      "reason": "F-032: SECURITY.md uses GitHub private vulnerability reporting plus the skeleton; the owner must enable the setting and fill any mailbox/response-time placeholder (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "scanner.choice",
+      "value": "osv-scanner-on-lockfile",
+      "reason": "F-024: OSV-Scanner on gradle.lockfile (after F-003), no secret needed; rename the no-op Dependency Scan job and correct AGENTS.md line 27 first; drop or leave the OWASP plugin as decided in IR04.2 (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "ci.image_scan_debt",
+      "value": "accept-38-with-ratchet",
+      "reason": "F-040(b): accept the 38 fixable HIGH/CRITICAL image findings as recorded debt with a list that may only shrink; do not make the scan blocking now; review date placeholder for the owner (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "ci.branch_protection_runbook",
+      "value": "admin-owner",
+      "reason": "F-040(c): runbook under docs/ after T6 names CI Gate as the required check; the admin is @kcramakrishna; the agent cannot read or set the GitHub setting (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "agents_md.section6",
+      "value": "move-to-docs-stance-b",
+      "reason": "F-039: move section 6 intact to docs/workflow-profiles.md, link it from section 5 steps 3-4; EntityManager rule marked target state for new code, the 14 existing files tolerated and listed in the first ADR (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "agents_md.release_tags",
+      "value": "never-tag-or-release",
+      "reason": "F-013: add a section 4 bullet: agents must not create, move or delete tags or releases; Release Please owns both (owner answer via Hermes 2026-10-30)",
+      "by": "owner",
+      "date": "2026-10-30",
+      "phase": "IR03.1"
+    },
+    {
+      "key": "ci.edits_authorised",
+      "value": "yes",
+      "reason": "restored: IR07.2 did not change this preference",
+      "by": "owner",
+      "date": "2026-11-01",
+      "phase": "IR07.2"
+    },
+    {
+      "key": "tools.jdk_major",
+      "value": "21",
+      "reason": "IR05.2 Q1: toolchain block only, JDK 21 (answered via Hermes 2026-10-31)",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR05.2"
+    },
+    {
+      "key": "lock.gradle_width",
+      "value": "lockAllConfigurations",
+      "reason": "IR05.1 Q1: dependencyLocking lockAllConfigurations + --write-locks, one gradle.lockfile",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR05.2"
+    },
+    {
+      "key": "exec03.owner",
+      "value": "define-command-surface",
+      "reason": "IR05.1 Q2: F-004 owned by define-command-surface; IR05.2 only verifies",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR05.2"
+    },
+    {
+      "key": "lock.verify_configurations",
+      "value": "all-resolvable",
+      "reason": "IR05.2 Q2: before/after compare over all resolvable configurations",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR05.2"
+    },
+    {
+      "key": "ci.t2_edits",
+      "value": "none",
+      "reason": "IR05.2 Q4: no workflow or Dockerfile edit; all already name JDK 21",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR05.2"
+    },
+    {
+      "key": "dependabot.header_names_lockfile",
+      "value": "yes",
+      "reason": "IR05.2 Q5: reword dependabot.yml header with gradle.lockfile and regenerate command (comment only)",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR05.2"
+    },
+    {
+      "key": "order.ir05_before_ir04",
+      "value": "yes",
+      "reason": "IR05.2 Q3: run ahead of IR04.2; IR04.2 regenerates the lock when it adds plugins",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR05.2"
+    },
+    {
+      "key": "format.java",
+      "value": "spotless-eclipse-jdt",
+      "reason": "owner via Hermes 2026-10-31: accept all recommendations (Q1)",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR04.2"
+    },
+    {
+      "key": "lint.java",
+      "value": "pmd",
+      "reason": "Q2 recommended option",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR04.2"
+    },
+    {
+      "key": "ci.t1_minimum",
+      "value": "fetch-depth-only",
+      "reason": "Q4 option 1: only fetch-depth 0; report-only steps in IR07.2",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR04.2"
+    },
+    {
+      "key": "check.verify_without_stack",
+      "value": "yes",
+      "reason": "Q5 option 1: check -x test and --dry-run locally; CI proves the test leg",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR04.2"
+    },
+    {
+      "key": "security.verb.deferred-to-t2",
+      "value": "yes",
+      "reason": "Q3 option 1: no security verb until OSV-Scanner on gradle.lockfile; OWASP plugin left in place",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR04.2"
+    },
+    {
+      "key": "layout.env_example",
+      "value": "scripts/ci/env.example",
+      "reason": "Owner Q1 \"Yes.\" (via Hermes 2026-10-30); IR06.2 Q1-Q5 recommended option each (via Hermes 2026-10-31): QUARKUS_*/UDAN_* overrides listed as optional names only",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR06.2"
+    },
+    {
+      "key": "docs.lint_tools",
+      "value": "markdownlint-cli2+mmdc",
+      "reason": "Owner approved Node-based docs lint twice in IR09.1; IR09.2 Q1 via Hermes 2026-10-31: separate advisory CI job, not in gate",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR09.2"
+    },
+    {
+      "key": "docs.adr_dir",
+      "value": "docs/adr",
+      "reason": "IR09.1 Q1/Q5 via Hermes 2026-10-30; IR09.2 Q3: three ADRs, status proposed until owner accepts",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR09.2"
+    },
+    {
+      "key": "docs.agents_line",
+      "value": "yes",
+      "reason": "IR09.1 Q4 / IR09.2 Q6 via Hermes: one AGENTS.md line in section 5 naming style guide, ADR and architecture dirs",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR09.2"
+    },
+    {
+      "key": "docs.lychee",
+      "value": "skip",
+      "reason": "IR09.2 Q7 via Hermes 2026-10-31: accept recommendation, skip link checker for Server; revisit if docs grow",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR09.2"
+    },
+    {
+      "key": "docs.lint_ratchet",
+      "value": "growing-path-list",
+      "reason": "IR09.2 Q2 via Hermes 2026-10-31: gating list that only grows plus report-only run over all Markdown; no mass reformat",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR09.2"
+    },
+    {
+      "key": "docs.nav03",
+      "value": "document-only",
+      "reason": "IR09.2 Q5 via Hermes 2026-10-31: document census, move nothing",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR09.2"
+    },
+    {
+      "key": "docs.style_guide_source",
+      "value": "framework-diataxis",
+      "reason": "IR09.2 Q4 via Hermes 2026-10-31: adapt framework STYLE_GUIDE.md to one page",
+      "by": "owner",
+      "date": "2026-10-31",
+      "phase": "IR09.2"
+    },
+    {
+      "key": "ci.shape",
+      "value": "keep-wrappers",
+      "reason": "IR07.2 Q2 option 1: keep scripts/ci wrappers, build.sh + test.sh equal check",
+      "by": "owner",
+      "date": "2026-11-01",
+      "phase": "IR07.2"
+    },
+    {
+      "key": "hooks.manager",
+      "value": "lefthook-2.2.2-secrets-only",
+      "reason": "IR07.2 Q4 option 1: lefthook v2.2.2, gitleaks 8.30.1 pre-commit; formatCheck dropped for cold-start time",
+      "by": "owner",
+      "date": "2026-11-01",
+      "phase": "IR07.2"
+    },
+    {
+      "key": "scanner.version",
+      "value": "osv-scanner-2.7.0",
+      "reason": "IR07.2 Q1 option 1: pinned binary with SHA-256 check on gradle.lockfile",
+      "by": "owner",
+      "date": "2026-11-01",
+      "phase": "IR07.2"
+    },
+    {
+      "key": "ci.scan_policy",
+      "value": "report-only-101-advisories",
+      "reason": "IR07.2 Q1: first run found 101 advisories in 29 packages, so stays report-only; out of gate.needs; review date placeholder for the owner",
+      "by": "owner",
+      "date": "2026-11-01",
+      "phase": "IR07.2"
+    },
+    {
+      "key": "ci.commit_rule",
+      "value": "pr-title-doc-only",
+      "reason": "IR07.2 Q5 option 1: CONTRIBUTING names PR Title workflow; no commitlint; F-037 stays skipped",
+      "by": "owner",
+      "date": "2026-11-01",
+      "phase": "IR07.2"
+    },
+    {
+      "key": "ci.branch_protection_record",
+      "value": "docs/branch-protection.md",
+      "reason": "IR07.2 Q6 option 1: ruleset Protect dev id 25616141, confirmed 2026-10-31",
+      "by": "owner",
+      "date": "2026-11-01",
+      "phase": "IR07.2"
+    },
+    {
+      "key": "ci.t4_scope",
+      "value": "items-a-b-only",
+      "reason": "IR07.2 Q7: docs-lint pin/cache and AGENTS.md/ci.yml text only; OWASP dependency-check plugin left alone",
+      "by": "owner",
+      "date": "2026-11-01",
+      "phase": "IR07.2"
+    },
+    {
+      "key": "tests.coverage_gate",
+      "value": "ci",
+      "reason": "IR08.2 Q2=2: floor in build.gradle, run by a CI step only; check stays stack-free (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR08.2"
+    },
+    {
+      "key": "tests.coverage_tool",
+      "value": "quarkus-jacoco-plus-core-jacoco",
+      "reason": "IR08.2 Q3=1: add io.quarkus:quarkus-jacoco as a test dependency (owner approves, rule 7) plus the core jacoco plugin (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR08.2"
+    },
+    {
+      "key": "baseline.form",
+      "value": "counts-file-plus-native",
+      "reason": "IR08.2 Q4=1: native baselines kept; counts file compared in formatCheck for offline tools and in the CI scan job for OSV (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR08.2"
+    },
+    {
+      "key": "tests.coverage_metric",
+      "value": "line-only",
+      "reason": "IR08.2 Q5=1: line coverage only (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR08.2"
+    },
+    {
+      "key": "ci.pr_by_agent",
+      "value": "yes",
+      "reason": "STATE.md Q1 default 3: UDAN repositories record yes (D5/D11); sessions open the PR, never merge",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR08.2"
+    },
+    {
+      "key": "agents_md.stubs",
+      "value": "keep",
+      "reason": "IR10.2 Q3=1: CLAUDE.md stays the pointer stub; no new harness file (Q4=1) (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR10.2"
+    },
+    {
+      "key": "agents_md.deferral",
+      "value": "inline",
+      "reason": "IR10.2 Q3=1: must-always rules move into a Code conventions block, CONVENTIONS.md not edited (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR10.2"
+    },
+    {
+      "key": "agents_md.generic_text",
+      "value": "move-to-docs",
+      "reason": "IR10.2 Q2=1: section 6 and persona lines move to docs/workflow-profiles.md (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR10.2"
+    },
+    {
+      "key": "agents_md.contradicted_rules",
+      "value": "target-state",
+      "reason": "IR10.2 Q2=1: EntityManager rule becomes target state with exception count; no code edit (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR10.2"
+    },
+    {
+      "key": "agents_md.harness_files",
+      "value": "none",
+      "reason": "IR10.2 Q4=1: F-027 recorded partial with the six harnesses; no file created (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR10.2"
+    },
+    {
+      "key": "agents_md.scratch_ignore",
+      "value": "artefacts/",
+      "reason": "IR10.2 Q5=1: artefacts/ added to .gitignore in its own commit (owner answer via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR10.2"
+    },
+    {
+      "key": "security.contact",
+      "value": "TODO(owner) placeholders",
+      "reason": "Owner answer 2026-11-06 (IR11.2 Q1=2): SECURITY.md keeps TODO(owner) placeholders for the mailbox and response time; the owner fills them before a release is announced",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR11.2"
+    },
+    {
+      "key": "reaudit.stage4",
+      "value": "accept-engine-verdicts",
+      "reason": "IR14.2 Q2=1: engine verdicts accepted; blockers independently verified; engine-only pending findings listed as unconfirmed by owner; PR awaits owner Stage 4 confirmation (via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR14.2"
+    },
+    {
+      "key": "reaudit.verbs",
+      "value": "same-as-first-audit",
+      "reason": "IR14.2 Q1=1: same probe verbs as the first audit (none allowed), nothing added (via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR14.2"
+    },
+    {
+      "key": "reaudit.issue_annotation",
+      "value": "mr-phase-and-issue",
+      "reason": "IR14.2 Q4=1: annotate engine-explained moves with MR phase and issue number; list issues under owner may close (via Hermes 2026-11-06)",
+      "by": "owner",
+      "date": "2026-11-06",
+      "phase": "IR14.2"
+    }
+  ],
+  "themes": [
+    {
+      "id": "T1",
+      "title": "Command surface and quality tools",
+      "status": "merged",
+      "phase": "IR08.2",
+      "branch": "agentic-readiness/ir04-command-surface",
+      "pr": 111,
+      "merged_sha": "eb134b78fef966a1aa94d807b4f2536fa433fd06"
+    },
+    {
+      "id": "T2",
+      "title": "Execution determinism",
+      "status": "merged",
+      "phase": "IR08.2",
+      "branch": "agentic-readiness/ir05-determinism",
+      "pr": 110,
+      "merged_sha": "a5baa0980f9100e972300d33c76555c0bf4c746c"
+    },
+    {
+      "id": "T3",
+      "title": "Secrets and env",
+      "status": "merged",
+      "phase": "IR08.2",
+      "branch": "agentic-readiness/ir06-secrets-env",
+      "pr": 112,
+      "merged_sha": "30007cbabca4ca973eea6ab68caf3d0b76f2e591"
+    },
+    {
+      "id": "T4",
+      "title": "CI parity, hooks, commits",
+      "status": "merged",
+      "phase": "IR08.2",
+      "branch": "agentic-readiness/ir07-ci-hooks",
+      "pr": 116,
+      "merged_sha": "f246aab5b9b1c81ac32deedd90ab683da5a97114"
+    },
+    {
+      "id": "T5",
+      "title": "Tests and baselines",
+      "status": "merged",
+      "phase": "IR10.2",
+      "branch": "agentic-readiness/ir08-baselines",
+      "pr": 121,
+      "merged_sha": "57621d6b47c6981c7ef420fe8e73ee3a86d37848"
+    },
+    {
+      "id": "T6",
+      "title": "Docs and navigation",
+      "status": "merged",
+      "phase": "IR08.2",
+      "branch": "agentic-readiness/ir09-docs",
+      "pr": 113,
+      "merged_sha": "d40cf99d70ed9688bc0b1940472b13057dc3f477"
+    },
+    {
+      "id": "T7",
+      "title": "AGENTS.md and governance",
+      "status": "merged",
+      "phase": "IR14.2",
+      "branch": "agentic-readiness/ir10-agents-md",
+      "pr": 122,
+      "merged_sha": "1d429d58a2d1e963ac10d2204768c953b45e1305"
+    },
+    {
+      "id": "T8",
+      "title": "Hygiene and index",
+      "status": "merged",
+      "phase": "IR14.2",
+      "branch": "agentic-readiness/ir11-hygiene",
+      "pr": 123,
+      "merged_sha": "7226273b1588efadfad37dde5fe74b702e4ed5f8"
+    }
+  ],
+  "items": [
+    {
+      "finding": "F-001",
+      "check": "CMD-01",
+      "severity": "BLOCKER",
+      "theme": "T1",
+      "statement": "An agent cannot run the standardized command surface literally because 5 of 7 framework verbs are not defined on any runner (format, format:check, lint, typecheck, security).",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "8a291b2"
+      ],
+      "verification": {
+        "command": "./gradlew format formatCheck lint typecheck test check --dry-run",
+        "result": "6 of 7 verbs resolve; security does not"
+      },
+      "debt": [
+        {
+          "what": "security verb missing (waits for lockfile scanner)",
+          "count": 1,
+          "baseline_file": null
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-002",
+      "check": "CON-02",
+      "severity": "BLOCKER",
+      "theme": "T7",
+      "statement": "An agent cannot trust that a failing test is not rewritten to pass because the prohibitions section of AGENTS.md does not name any test directory.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "93a56b7"
+      ],
+      "verification": {
+        "command": "engine.py: CON-02",
+        "result": "CON-02 PASS, src/test/ named"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-003",
+      "check": "EXEC-02",
+      "severity": "BLOCKER",
+      "theme": "T2",
+      "statement": "An agent cannot install identical dependencies on every run because the jvm project has no lockfile (gradle.lockfile), so a fresh install resolves whatever versions are current.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "dc0c8dd"
+      ],
+      "verification": {
+        "command": "resolved-version report over all resolvable configurations (+buildscript), before vs after; ./gradlew build -x test on JDK 21",
+        "result": "5674 lines identical before/after; gradle.lockfile tracked, unchanged by build; lock regenerated under JDK 21 equals JDK 17 run. Engine cannot see dependencyLocking: re-audit may read EXEC-02 UNKNOWN (engine limit). gradle.lockfile now exists: unblocks the security verb (osv-scanner) in configure-quality-tools/IR04.2. Toolchain pin ed0b169; dependabot header bde7928. Quarkus-generated configurations are in the lock; none left unlocked."
+      },
+      "debt": [],
+      "notes": "Regenerate with ./gradlew dependencies --write-locks whenever IR04.2 adds plugins."
+    },
+    {
+      "finding": "F-004",
+      "check": "EXEC-03",
+      "severity": "BLOCKER",
+      "theme": "T2",
+      "statement": "An agent cannot prepare the environment non-interactively because no devcontainer, compose file, Dockerfile, setup target/script, or documented install command exists.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "5296eb3"
+      ],
+      "verification": {
+        "command": "./gradlew assemble",
+        "result": "BUILD SUCCESSFUL on JDK 21; documented in AGENTS.md Build & Validation"
+      },
+      "debt": [],
+      "notes": "Check only (owner: define-command-surface owns the fix, IR05.1 Q2). README.md and AGENTS.md document ./sync-credentials.sh then ./start-server.sh (neither prompts), but there is no single build/install setup command and the stack must already be up. Added no script. Engine may now PASS EXEC-03 on the README.md rename alone (engine limit)."
+    },
+    {
+      "finding": "F-005",
+      "check": "EXEC-04",
+      "severity": "BLOCKER",
+      "theme": "T3",
+      "statement": "An agent cannot know the CI variables the scripts need because AWS_ROLE_ARN, INSTANCE_ID, SSM_DOCUMENT (repository variables), IMAGE_TAR and CACHE_DIR (optional script inputs) are documented only in scripts/ci/README.md and script headers, not in a committed example file (SECONDS, also reported by the engine, is a bash builtin and is not a gap).",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "2fb9426"
+      ],
+      "verification": {
+        "command": "compare inventory with scripts/ci/env.example",
+        "result": "every read name declared or on the header's not-inventory list; no values"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-007",
+      "check": "AGT-03",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot know where permanent and scratch documentation live because AGENTS.md does not name docs/STYLE_GUIDE.md, artefacts/.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "9b0eeca",
+        "e70df4b"
+      ],
+      "verification": {
+        "command": "engine.py: AGT-03",
+        "result": "AGT-03 PASS"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-008",
+      "check": "AGT-04",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot keep code and its documentation in step because no definition-of-done sentence ties a documentation trigger to the same change set.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "8d68dcf"
+      ],
+      "verification": {
+        "command": "engine.py: AGT-04",
+        "result": "AGT-04 PASS"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-009",
+      "check": "AGT-05",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot use the project's own commands instead of inventing them because not named: format:check, lint, typecheck; not resolved: format, format:check, lint, typecheck, security.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [],
+      "verification": {
+        "command": "engine.py: AGT-05, EXEC-06",
+        "result": "AGT-05 PASS 7 verbs, EXEC-06 PASS"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-010",
+      "check": "AGT-07",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot rely on an explicit do-not list because AGENTS.md does not prohibit edits to tests, generated files.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "93a56b7"
+      ],
+      "verification": {
+        "command": "engine.py: AGT-07",
+        "result": "AGT-07 PASS; harness permission review: none present"
+      },
+      "debt": [],
+      "notes": "Harness permission review: no harness config present."
+    },
+    {
+      "finding": "F-011",
+      "check": "AGT-08",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot be sure that both files are read because CLAUDE.md shadows AGENTS.md for the harness that defines the pair, so only one of the two is ever loaded.",
+      "status": "skipped",
+      "by": "owner",
+      "date": "2026-10-30",
+      "reason": "CLAUDE.md is an @AGENTS.md import stub (11 bytes), not a shadowing file; the audit could not tell the pattern apart. Owner: go with the recommendations (owner answer via Hermes 2026-10-30)",
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-012",
+      "check": "AGT-08",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot know which instruction file is authoritative because 2 vendor-specific instruction files exist alongside the canonical one (CLAUDE.md, CONVENTIONS.md).",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "a2dec46"
+      ],
+      "verification": {
+        "command": "engine.py: AGT-08",
+        "result": "reach line true; vendor-files check still FAIL: CLAUDE.md stub and CONVENTIONS.md kept"
+      },
+      "debt": [
+        {
+          "what": "vendor instruction files beside AGENTS.md",
+          "count": 2,
+          "baseline_file": null
+        }
+      ],
+      "notes": "Owner Q3=1: stub kept, CONVENTIONS.md not edited; staleness reported in the PR"
+    },
+    {
+      "finding": "F-013",
+      "check": "AGT-09",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot know which branch to work on and whether it may cut a release because the branch model is stated but nothing says whether an agent may tag or release.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "400a9e6"
+      ],
+      "verification": {
+        "command": "engine.py: AGT-09",
+        "result": "AGT-09 PASS; master verified in release.yml"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-014",
+      "check": "AGT-10",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot trust that the referenced rules are actually loaded because the instruction file defers its content to CONVENTIONS.md and no harness configuration names that file, so loading depends on the agent choosing to follow the pointer.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "191ff4d"
+      ],
+      "verification": {
+        "command": "engine.py: AGT-10",
+        "result": "AGT-10 PASS"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-015",
+      "check": "BASE-01",
+      "severity": "DEGRADER",
+      "theme": "T5",
+      "statement": "An agent cannot distinguish pre-existing debt from new debt because no baseline or suppression artifact is committed.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "02b3460",
+        "b98c4f8"
+      ],
+      "verification": {
+        "command": "ls docs/agentic-readiness/digital-assistant-server-quality-baseline.json config/pmd/ruleset.xml; grep -n 'quality baseline' AGENTS.md",
+        "result": "counts file and native baselines exist; AGENTS.md Baselines and floors names each"
+      },
+      "debt": [
+        {
+          "what": "PMD violations in excluded files (exclude list)",
+          "count": 34,
+          "baseline_file": "config/pmd/ruleset.xml"
+        },
+        {
+          "what": "Spotless unformatted files (full run)",
+          "count": 45,
+          "baseline_file": "docs/agentic-readiness/digital-assistant-server-quality-baseline.json"
+        },
+        {
+          "what": "OSV advisories",
+          "count": 101,
+          "baseline_file": "docs/agentic-readiness/digital-assistant-server-quality-baseline.json"
+        },
+        {
+          "what": "image scan fixable HIGH or CRITICAL",
+          "count": 38,
+          "baseline_file": "docs/agentic-readiness/digital-assistant-server-quality-baseline.json"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-016",
+      "check": "BASE-02",
+      "severity": "DEGRADER",
+      "theme": "T5",
+      "statement": "An agent cannot state how many violations exist today because no violation-counting tooling, budget or artifact is configured.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "02b3460"
+      ],
+      "verification": {
+        "command": "scripts/ci/check-baseline.sh; scripts/ci/scan.sh",
+        "result": "each count matches a fresh run"
+      },
+      "debt": [
+        {
+          "what": "debt kinds counted in the quality baseline (PMD 34 in 18 files / Spotless 45 of 73 / OSV 101 in 29 packages / image scan 38 / skip markers 0)",
+          "count": 5,
+          "baseline_file": "docs/agentic-readiness/digital-assistant-server-quality-baseline.json"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-017",
+      "check": "BASE-03",
+      "severity": "DEGRADER",
+      "theme": "T5",
+      "statement": "An agent cannot stop the violation count from growing because no baseline, budget or comparison step exists, so the count is not guarded.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "02b3460"
+      ],
+      "verification": {
+        "command": "./gradlew formatCheck; raise each count by one",
+        "result": "real tree exit 0; each raised count exits 1 naming the tool; scan.sh osv 102 exits 1"
+      },
+      "debt": [
+        {
+          "what": "debt kinds guarded by the no-new-violations check (PMD exclude list / Spotless full run / OSV / skip markers)",
+          "count": 4,
+          "baseline_file": "docs/agentic-readiness/digital-assistant-server-quality-baseline.json"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-018",
+      "check": "BASE-04",
+      "severity": "DEGRADER",
+      "theme": "T5",
+      "statement": "An agent cannot know when coverage drops below an agreed floor because no coverage threshold is configured in the test runner.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "eaf8fab"
+      ],
+      "verification": {
+        "command": "./gradlew jacocoTestCoverageVerification -x test (minimum 0.70 then 0.71)",
+        "result": "0.70 passes (70.6 percent measured, two identical runs); 0.71 fails Rule violated"
+      },
+      "debt": [
+        {
+          "what": "coverage floor (line %)",
+          "count": 70,
+          "baseline_file": "build.gradle"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-019",
+      "check": "DOC-01",
+      "severity": "DEGRADER",
+      "theme": "T6",
+      "statement": "An agent cannot find the project's documentation because no docs/ directory exists in the repository.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "312a8e3"
+      ],
+      "verification": {
+        "command": "git ls-files 'docs/*.md'",
+        "result": "docs/ already existed (report folders); docs/README.md index added"
+      },
+      "debt": [],
+      "notes": "Stale finding: docs/ existed at head e8b3728 (drift); index added to the existing folder, no second docs/"
+    },
+    {
+      "finding": "F-020",
+      "check": "DOC-02",
+      "severity": "DEGRADER",
+      "theme": "T6",
+      "statement": "An agent cannot find the canonical authoring rules for documentation because docs/STYLE_GUIDE.md does not exist.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "312a8e3"
+      ],
+      "verification": {
+        "command": "test -f docs/STYLE_GUIDE.md && grep -n STYLE_GUIDE.md AGENTS.md",
+        "result": "present; named in AGENTS.md"
+      },
+      "debt": [],
+      "notes": "one-page guide adapted from the framework guide"
+    },
+    {
+      "finding": "F-021",
+      "check": "SEC-03",
+      "severity": "DEGRADER",
+      "theme": "T3",
+      "statement": "An agent cannot trust that secret shapes cannot be committed because ignore rules do not cover ssh private key, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "3631fea"
+      ],
+      "verification": {
+        "command": "git ls-files -ci --exclude-standard",
+        "result": "empty after untracking config/keycloak-keystore.jks (c0a9735); all eleven shapes covered"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-022",
+      "check": "TOOL-01",
+      "severity": "DEGRADER",
+      "theme": "T1",
+      "statement": "An agent cannot format a change set the same way every time because no formatter is configured and no format verb is defined.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "73eccae"
+      ],
+      "verification": {
+        "command": "./gradlew formatCheck",
+        "result": "exit 0 on changed files (ratchet vs origin/dev); ./gradlew spotlessCheck -PspotlessFull reports 51 of 89 files; a touched unformatted file fails formatCheck"
+      },
+      "debt": [
+        {
+          "what": "files not matching the Eclipse JDT profile (full tree)",
+          "count": 51,
+          "baseline_file": "config/spotless/eclipse-formatter.xml"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-023",
+      "check": "TOOL-02",
+      "severity": "DEGRADER",
+      "theme": "T1",
+      "statement": "An agent cannot catch lint regressions before they land because no linter is configured and no lint verb is defined.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "73eccae"
+      ],
+      "verification": {
+        "command": "./gradlew lint",
+        "result": "exit 0 under the exclude list; 32 violations in 18 files before the list"
+      },
+      "debt": [
+        {
+          "what": "files excluded from PMD (32 violations: 29 main, 3 test)",
+          "count": 18,
+          "baseline_file": "config/pmd/ruleset.xml"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-024",
+      "check": "TOOL-04",
+      "severity": "DEGRADER",
+      "theme": "T1",
+      "statement": "An agent cannot know whether a dependency carries a known vulnerability because no resolvable verb runs a dependency-audit check.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-01",
+      "reason": null,
+      "commits": [
+        "09e783a"
+      ],
+      "verification": {
+        "command": "./gradlew security --dry-run; scripts/ci/scan.sh",
+        "result": "task resolves; first OSV-Scanner run: 101 advisories in 29 packages (report-only debt)"
+      },
+      "debt": [],
+      "notes": "security verb defined; dependency findings recorded as debt, review date placeholder for the owner"
+    },
+    {
+      "finding": "F-025",
+      "check": "TOOL-05",
+      "severity": "DEGRADER",
+      "theme": "T4",
+      "statement": "An agent cannot rely on local hooks to run before a commit because no hook manager is configured.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-01",
+      "reason": null,
+      "commits": [
+        "bdc847b"
+      ],
+      "verification": {
+        "command": "gitleaks hook timed; ./gradlew formatCheck timed",
+        "result": "secret hook ~0.4 s; formatCheck 5.2 s cold (0.7-1.2 s warm)"
+      },
+      "debt": [
+        {
+          "what": "formatCheck not a hook (cold start over budget)",
+          "count": 1,
+          "baseline_file": null
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-027",
+      "check": "AGT-08",
+      "severity": "COSMETIC",
+      "theme": "T7",
+      "statement": "An agent cannot assume every harness on the team sees the project rules because 21 of 27 known harnesses reach an instruction file; Amazon Q Developer, Continue, Google Gemini CLI, Qwen Code, Replit Agent, Void reach nothing.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [],
+      "verification": {
+        "command": "engine.py: AGT-08",
+        "result": "22/28 harnesses reached"
+      },
+      "debt": [
+        {
+          "what": "harnesses that reach no instruction file",
+          "count": 6,
+          "baseline_file": null
+        }
+      ],
+      "notes": "Owner Q4=1: no harness file created; unreached: Amazon Q Developer, Continue, Gemini CLI, Qwen Code, Replit Agent, Void"
+    },
+    {
+      "finding": "F-028",
+      "check": "DOC-04",
+      "severity": "COSMETIC",
+      "theme": "T6",
+      "statement": "An agent cannot find the decisions of record because no ADR directory (docs/architecture/adrs/ or docs/adr/) exists.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "4299ae6"
+      ],
+      "verification": {
+        "command": "ls docs/adr",
+        "result": "template, index, 3 ADRs (proposed)"
+      },
+      "debt": [],
+      "notes": "ADRs wait for owner acceptance"
+    },
+    {
+      "finding": "F-029",
+      "check": "HYG-02",
+      "severity": "COSMETIC",
+      "theme": "T8",
+      "statement": "An agent cannot know who owns a path before changing it because no CODEOWNERS file exists at the root, under .github/, or under docs/.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "d3ca037"
+      ],
+      "verification": {
+        "command": "test -e .github/CODEOWNERS && grep -n '^\\*' .github/CODEOWNERS",
+        "result": "default * line present; /.github/ and /scripts/ci/ rules kept"
+      },
+      "debt": [],
+      "notes": "owner (2026-11-06): confirm @kcramakrishna for the default line; required code-owner review stays off"
+    },
+    {
+      "finding": "F-030",
+      "check": "HYG-03",
+      "severity": "COSMETIC",
+      "theme": "T8",
+      "statement": "An agent cannot file a change with the information reviewers need because no .github/pull_request_template file exists.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "1f80b72"
+      ],
+      "verification": {
+        "command": "test -e .github/pull_request_template.md",
+        "result": "present"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-031",
+      "check": "HYG-04",
+      "severity": "COSMETIC",
+      "theme": "T8",
+      "statement": "An agent cannot report a bug or request in a structured way because no .github/ISSUE_TEMPLATE entry exists.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "5c023c6"
+      ],
+      "verification": {
+        "command": "ls .github/ISSUE_TEMPLATE/",
+        "result": "bug_report.md, feature_request.md"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-032",
+      "check": "HYG-06",
+      "severity": "COSMETIC",
+      "theme": "T8",
+      "statement": "An agent cannot report a vulnerability responsibly because no SECURITY document exists at the root, under .github/, or under docs/.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "d2c8787"
+      ],
+      "verification": {
+        "command": "ls SECURITY.md",
+        "result": "present; TODO(owner) placeholders for mailbox and response time"
+      },
+      "debt": [],
+      "notes": "owner action: enable private vulnerability reporting in the repository settings; fill the TODO(owner) mailbox and response time before a release is announced (owner answer 2026-11-06, Q1=2)"
+    },
+    {
+      "finding": "F-033",
+      "check": "HYG-07",
+      "severity": "COSMETIC",
+      "theme": "T8",
+      "statement": "An agent cannot see what changed between two versions because no CHANGELOG (or CHANGES/HISTORY) document exists.",
+      "status": "deferred",
+      "by": "owner",
+      "date": "2026-10-30",
+      "reason": "Release Please (release-type simple) creates and maintains CHANGELOG.md at the first release; a hand-written file would fight it. Revisit after the first release PR (owner answer via Hermes 2026-10-30)",
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-034",
+      "check": "HYG-08",
+      "severity": "COSMETIC",
+      "theme": "T8",
+      "statement": "An agent cannot know how a release is cut because no text or markdown document describing the release process exists.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "37f0bef"
+      ],
+      "verification": {
+        "command": "ls docs/release-process.md",
+        "result": "present; linked from docs/README.md"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-035",
+      "check": "HYG-11",
+      "severity": "COSMETIC",
+      "theme": "T8",
+      "statement": "An agent cannot reproduce the protected-branch rules as code because the github provider is detected but no branch-protection configuration exists.",
+      "status": "deferred",
+      "by": "owner",
+      "date": "2026-10-30",
+      "reason": "Branch protection as code needs repo-admin access and an infra repo outside this track; the runbook half is covered by F-040(c) (owner answer via Hermes 2026-10-30)",
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-036",
+      "check": "NAV-04",
+      "severity": "COSMETIC",
+      "theme": "T6",
+      "statement": "An agent cannot orient itself from a map instead of exploring blindly because no docs/architecture/, ADR directory or diagram exists.",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "824e2cf"
+      ],
+      "verification": {
+        "command": "test -f docs/architecture/overview.md",
+        "result": "present; Mermaid diagram validated (MCP and mmdc 12.0.0)"
+      },
+      "debt": [],
+      "notes": "census in Repository notes"
+    },
+    {
+      "finding": "F-037",
+      "check": "TOOL-06",
+      "severity": "COSMETIC",
+      "theme": "T4",
+      "statement": "An agent cannot rely on a consistent commit-message convention because no commitlint config, commit-msg hook, or equivalent exists.",
+      "status": "skipped",
+      "by": "owner",
+      "date": "2026-10-30",
+      "reason": "Commit format already enforced where it counts: pr-title.yml rejects non-Conventional-Commit PR titles and merges are squashed, so a local hook adds install friction for no change in dev history (owner answer via Hermes 2026-10-30)",
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-038",
+      "check": "TST-05",
+      "severity": "COSMETIC",
+      "theme": "T5",
+      "statement": "An agent cannot see how much of the code the suite actually covers because no coverage configuration or coverage-invoking command is present.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "eaf8fab",
+        "b98c4f8"
+      ],
+      "verification": {
+        "command": "./gradlew test jacocoTestReport (local stack up, flock <lock-file>)",
+        "result": "167 tests 0 failures 0 skipped; report build/reports/jacoco/test; Quarkus own report agrees (396 missed 951 covered lines)"
+      },
+      "debt": [
+        {
+          "what": "test classes that need the live local stack (no offline path; 5 of 20 classes run without it)",
+          "count": 15,
+          "baseline_file": "AGENTS.md"
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-039",
+      "check": "AGT-11",
+      "severity": "DEGRADER",
+      "theme": "T7",
+      "statement": "An agent cannot rely on AGENTS.md being specific because about 62% of its rule lines are generic (section 6 role-play prompts, persona lines) and its EntityManager rule is contradicted by the code in several services.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-06",
+      "reason": null,
+      "commits": [
+        "64a2336"
+      ],
+      "verification": {
+        "command": "grep -rln EntityManager src/main | wc -l",
+        "result": "14 files"
+      },
+      "debt": [
+        {
+          "what": "files that break the EntityManager rule",
+          "count": 14,
+          "baseline_file": null
+        }
+      ],
+      "notes": "EntityManager rule kept as target state (Q2=1); section 6 and persona moved"
+    },
+    {
+      "finding": "F-040",
+      "check": "CI-04",
+      "severity": "DEGRADER",
+      "theme": "T4",
+      "statement": "An agent cannot trust a green CI because the dependency scan job is a placeholder that always passes, the image scan is continue-on-error, and no committed evidence shows the CI Gate is a required status check.",
+      "status": "partial",
+      "by": "agent",
+      "date": "2026-11-01",
+      "reason": null,
+      "commits": [
+        "09e783a",
+        "a3107ce",
+        "507ff84",
+        "bdc847b"
+      ],
+      "verification": {
+        "command": "scripts/ci/lint-workflows.sh",
+        "result": "actionlint/zizmor clean; branch protection recorded (ruleset Protect dev 25616141, CI Gate required, confirmed 2026-10-31)"
+      },
+      "debt": [
+        {
+          "what": "image scan fixable HIGH/CRITICAL findings (non-blocking; review date placeholder for the owner)",
+          "count": 38,
+          "baseline_file": null
+        }
+      ],
+      "notes": ""
+    },
+    {
+      "finding": "F-041",
+      "check": "CMD-02",
+      "severity": "DEGRADER",
+      "theme": "T1",
+      "statement": "An agent cannot treat ./gradlew check as the pre-merge gate because it composes only test: no format-check or typecheck task exists (same root cause as the missing verbs in CMD-01).",
+      "status": "done",
+      "by": "agent",
+      "date": "2026-10-31",
+      "reason": null,
+      "commits": [
+        "8a291b2"
+      ],
+      "verification": {
+        "command": "./gradlew check --dry-run",
+        "result": "order: formatCheck, typecheck, test; check -x test BUILD SUCCESSFUL"
+      },
+      "debt": [],
+      "notes": ""
+    },
+    {
+      "finding": "F-042",
+      "check": "IDX-03",
+      "severity": "COSMETIC",
+      "theme": "T8",
+      "statement": "An agent cannot be sure the index matches HEAD because the index predates the HEAD commit by one commit (CI files only, no indexed symbols affected).",
+      "status": "skipped",
+      "by": "owner",
+      "date": "2026-10-30",
+      "reason": "Moment-in-time observation (index one commit behind HEAD at audit time), not a repository artefact; re-indexing before agent work is the remedy (owner answer via Hermes 2026-10-30)",
+      "commits": [],
+      "verification": null,
+      "debt": [],
+      "notes": ""
+    }
+  ],
+  "not_queued": [
+    {
+      "finding": "F-006",
+      "check": "SEC-02",
+      "severity": "BLOCKER",
+      "note": "Owner: sentinel token in 401 smoke test"
+    },
+    {
+      "finding": "F-026",
+      "check": "TST-04",
+      "severity": "DEGRADER",
+      "note": ""
+    }
+  ],
+  "log": [
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "State created from docs/agentic-readiness-report/digital-assistant-server-first-audit-20261028T131409Z.json: 40 queued, 0 deferred, 2 not queued."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "F-011 queued to skipped by owner: CLAUDE.md is an @AGENTS.md import stub (11 bytes), not a shadowing file; the audit could not tell the pattern apart. Owner: go with the recommendations (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "F-037 queued to skipped by owner: Commit format already enforced where it counts: pr-title.yml rejects non-Conventional-Commit PR titles and merges are squashed, so a local hook adds install friction for no change in dev history (o..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "F-042 queued to skipped by owner: Moment-in-time observation (index one commit behind HEAD at audit time), not a repository artefact; re-indexing before agent work is the remedy (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "F-033 queued to deferred by owner: Release Please (release-type simple) creates and maintains CHANGELOG.md at the first release; a hand-written file would fight it. Revisit after the first release PR (owner answer via Hermes 2026-10..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "F-035 queued to deferred by owner: Branch protection as code needs repo-admin access and an infra repo outside this track; the runbook half is covered by F-040(c) (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference format.mass_reformat set to no: Q2: formatter in check-only/ratchet mode, violation count recorded as debt, never reformat the tree; other Server PRs are in flight (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference format.java_family set to decide-in-IR04.2: Q3: tool chosen in IR04.2; constraint is CONVENTIONS.md style (tabs, LF, 120 columns); Spotless is the likely tool (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference tests.stack_dependent set to decide-in-IR08.2: Q4: strategy decided in IR08.2; today tests need the live local stack through local-up.sh (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference agents_md.pointer_section set to section-5: Q6: pointer line goes in AGENTS.md section 5 (Development & Contribution Workflow) (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference extra.t3 set to keystore-untrack: Q5 item 1: git rm --cached config/keycloak-keystore.jks (keep the file locally if useful), fix the CONVENTIONS.md tree line; no key rotation; git history left as is. Consequence of the owner's stat..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference extra.t2 set to jdk-toolchain-pin-and-readme-rename: Q5 items 4 and 8: add a java toolchain block (JDK 21) to build.gradle; rename README to README.md and fix the .dockerignore, CONVENTIONS.md and scripts/ci/test.sh references (owner answer via Herme..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference extra.t5 set to offline-test-verb: Q5 item 7, offline half only: name the three non-QuarkusTest classes as a unit-test subset and state the stack prerequisite in AGENTS.md and the command table. No Testcontainers; record it as debt ..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference overlap.section_b set to covered-by-findings: Q5 items 2, 3, 5, 6, 9 are not extra work: 2=F-003 (keep the dependabot comment true), 3=F-040(a)/F-024 (rename the no-op job first), 5=F-039/F-012/F-014, 6=F-001/F-022/F-023/F-024/F-041, 9=F-040(c..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference github.owner_handle set to @kcramakrishna: Use for F-029 CODEOWNERS and F-040(c) branch protection: the repository owner's verified account (gh auth status). Any other person's handle stays a named placeholder for the owner to fill (owner a..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference codeowners.default set to owner-owns-all: F-029: @kcramakrishna owns * and the areas in research/p4-owner-asks.md item 1; second reviewer left as a placeholder; do not enable required code-owner review with a single owner (owner answer via..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference security.disclosure set to github-private-vulnerability-reporting: F-032: SECURITY.md uses GitHub private vulnerability reporting plus the skeleton; the owner must enable the setting and fill any mailbox/response-time placeholder (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference scanner.choice set to osv-scanner-on-lockfile: F-024: OSV-Scanner on gradle.lockfile (after F-003), no secret needed; rename the no-op Dependency Scan job and correct AGENTS.md line 27 first; drop or leave the OWASP plugin as decided in IR04.2 ..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference ci.image_scan_debt set to accept-38-with-ratchet: F-040(b): accept the 38 fixable HIGH/CRITICAL image findings as recorded debt with a list that may only shrink; do not make the scan blocking now; review date placeholder for the owner (owner answe..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference ci.branch_protection_runbook set to admin-owner: F-040(c): runbook under docs/ after T6 names CI Gate as the required check; the admin is @kcramakrishna; the agent cannot read or set the GitHub setting (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference agents_md.section6 set to move-to-docs-stance-b: F-039: move section 6 intact to docs/workflow-profiles.md, link it from section 5 steps 3-4; EntityManager rule marked target state for new code, the 14 existing files tolerated and listed in the f..."
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference agents_md.release_tags set to never-tag-or-release: F-013: add a section 4 bullet: agents must not create, move or delete tags or releases; Release Please owns both (owner answer via Hermes 2026-10-30)"
+    },
+    {
+      "date": "2026-10-30",
+      "phase": "IR03.1",
+      "event": "preference ci.edits_authorised set to yes: The owner's go-with-the-recommendations answer is the explicit instruction AGENTS.md lines 56 and 59 ask for: T1 may add build plugins, T4 may edit ci.yml and image.yml, within the kept findings (o..."
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "preference tools.jdk_major set to 21: IR05.2 Q1: toolchain block only, JDK 21 (answered via Hermes 2026-10-31)"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "preference lock.gradle_width set to lockAllConfigurations: IR05.1 Q1: dependencyLocking lockAllConfigurations + --write-locks, one gradle.lockfile"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "preference exec03.owner set to define-command-surface: IR05.1 Q2: F-004 owned by define-command-surface; IR05.2 only verifies"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "preference lock.verify_configurations set to all-resolvable: IR05.2 Q2: before/after compare over all resolvable configurations"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "preference ci.t2_edits set to none: IR05.2 Q4: no workflow or Dockerfile edit; all already name JDK 21"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "preference dependabot.header_names_lockfile set to yes: IR05.2 Q5: reword dependabot.yml header with gradle.lockfile and regenerate command (comment only)"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "preference order.ir05_before_ir04 set to yes: IR05.2 Q3: run ahead of IR04.2; IR04.2 regenerates the lock when it adds plugins"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "F-003 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "F-004 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "F-003 in_progress to done by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "F-004 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR05.2",
+      "event": "theme T2 not_started to pr_open: branch agentic-readiness/ir05-determinism, PR #110"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "preference format.java set to spotless-eclipse-jdt: owner via Hermes 2026-10-31: accept all recommendations (Q1)"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "preference lint.java set to pmd: Q2 recommended option"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "preference ci.t1_minimum set to fetch-depth-only: Q4 option 1: only fetch-depth 0; report-only steps in IR07.2"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "preference check.verify_without_stack set to yes: Q5 option 1: check -x test and --dry-run locally; CI proves the test leg"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "preference security.verb.deferred-to-t2 set to yes: Q3 option 1: no security verb until OSV-Scanner on gradle.lockfile; OWASP plugin left in place"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-001 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-041 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-022 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-023 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-024 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-041 in_progress to done by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-022 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-023 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-024 in_progress to blocked by agent: needs T2 lockfile scanner (OSV-Scanner on gradle.lockfile); no security verb defined in T1 (Q3)"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-001 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-004 partial to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "F-004 in_progress to done by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR04.2",
+      "event": "theme T1 not_started to pr_open: branch agentic-readiness/ir04-command-surface, PR #111"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR06.2",
+      "event": "preference layout.env_example set to scripts/ci/env.example: Owner Q1 \"Yes.\" (via Hermes 2026-10-30); IR06.2 Q1-Q5 recommended option each (via Hermes 2026-10-31): QUARKUS_*/UDAN_* overrides listed as optional names only"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR06.2",
+      "event": "F-005 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR06.2",
+      "event": "F-005 in_progress to done by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR06.2",
+      "event": "F-021 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR06.2",
+      "event": "F-021 in_progress to done by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR06.2",
+      "event": "theme T3 not_started to pr_open: branch agentic-readiness/ir06-secrets-env, PR #112"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "preference docs.lint_tools set to markdownlint-cli2+mmdc: Owner approved Node-based docs lint twice in IR09.1; IR09.2 Q1 via Hermes 2026-10-31: separate advisory CI job, not in gate"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "preference docs.adr_dir set to docs/adr: IR09.1 Q1/Q5 via Hermes 2026-10-30; IR09.2 Q3: three ADRs, status proposed until owner accepts"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "preference docs.agents_line set to yes: IR09.1 Q4 / IR09.2 Q6 via Hermes: one AGENTS.md line in section 5 naming style guide, ADR and architecture dirs"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "preference docs.lychee set to skip: IR09.2 Q7 via Hermes 2026-10-31: accept recommendation, skip link checker for Server; revisit if docs grow"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "preference docs.lint_ratchet set to growing-path-list: IR09.2 Q2 via Hermes 2026-10-31: gating list that only grows plus report-only run over all Markdown; no mass reformat"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "preference docs.nav03 set to document-only: IR09.2 Q5 via Hermes 2026-10-31: document census, move nothing"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "preference docs.style_guide_source set to framework-diataxis: IR09.2 Q4 via Hermes 2026-10-31: adapt framework STYLE_GUIDE.md to one page"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "F-019 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "F-019 in_progress to done by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "F-020 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "F-020 in_progress to done by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "F-028 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "F-028 in_progress to done by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "F-036 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "F-036 in_progress to done by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "theme T6 not_started to branch_open: branch agentic-readiness/ir09-docs"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR09.2",
+      "event": "theme T6 branch_open to pr_open: branch agentic-readiness/ir09-docs, PR #113"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "F-025 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "F-040 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "preference ci.shape set to keep-wrappers: IR07.2 Q2 option 1: keep scripts/ci wrappers, build.sh + test.sh equal check"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "preference hooks.manager set to lefthook-2.2.2-secrets-only: IR07.2 Q4 option 1: lefthook v2.2.2, gitleaks 8.30.1 pre-commit; formatCheck dropped for cold-start time"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "preference scanner.version set to osv-scanner-2.7.0: IR07.2 Q1 option 1: pinned binary with SHA-256 check on gradle.lockfile"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "preference ci.scan_policy set to report-only-101-advisories: IR07.2 Q1: first run found 101 advisories in 29 packages, so stays report-only; out of gate.needs; review date placeholder for the owner"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "preference ci.commit_rule set to pr-title-doc-only: IR07.2 Q5 option 1: CONTRIBUTING names PR Title workflow; no commitlint; F-037 stays skipped"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "preference ci.branch_protection_record set to docs/branch-protection.md: IR07.2 Q6 option 1: ruleset Protect dev id 25616141, confirmed 2026-10-31"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "preference ci.t4_scope set to items-a-b-only: IR07.2 Q7: docs-lint pin/cache and AGENTS.md/ci.yml text only; OWASP dependency-check plugin left alone"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "preference ci.edits_authorised changed from yes to no-until-IR07-done: T4 edits finished in IR07.2 (P20 answer)"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "preference ci.edits_authorised changed from no-until-IR07-done to yes: restored: IR07.2 did not change this preference"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "F-024 blocked to queued by agent"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "F-024 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "F-024 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "F-025 in_progress to partial by agent: format hook dropped per owner Q4 time budget"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "F-040 in_progress to partial by agent: image scan debt (Q3 option 1); dependency scan report-only 101 advisories"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "theme T4 not_started to branch_open: branch agentic-readiness/ir07-ci-hooks"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR07.2",
+      "event": "theme T4 branch_open to pr_open: branch agentic-readiness/ir07-ci-hooks, PR #116"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "preference tests.stack_dependent changed from decide-in-IR08.2 to live-stack-with-offline-subset: IR08.2 Q1=1: measure with the live stack through the scripts; the 5 non-QuarkusTest classes are the offline subset (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "preference tests.coverage_gate set to ci: IR08.2 Q2=2: floor in build.gradle, run by a CI step only; check stays stack-free (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "preference tests.coverage_tool set to quarkus-jacoco-plus-core-jacoco: IR08.2 Q3=1: add io.quarkus:quarkus-jacoco as a test dependency (owner approves, rule 7) plus the core jacoco plugin (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "preference baseline.form set to counts-file-plus-native: IR08.2 Q4=1: native baselines kept; counts file compared in formatCheck for offline tools and in the CI scan job for OSV (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "preference tests.coverage_metric set to line-only: IR08.2 Q5=1: line coverage only (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "preference ci.pr_by_agent set to yes: STATE.md Q1 default 3: UDAN repositories record yes (D5/D11); sessions open the PR, never merge"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-015 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-016 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-017 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-018 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-038 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR08.2",
+      "event": "theme T1 pr_open to merged: branch agentic-readiness/ir04-command-surface, PR #111, merged as eb134b78fef966a1aa94d807b4f2536fa433fd06"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR08.2",
+      "event": "theme T2 pr_open to merged: branch agentic-readiness/ir05-determinism, PR #110, merged as a5baa0980f9100e972300d33c76555c0bf4c746c"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR08.2",
+      "event": "theme T3 pr_open to merged: branch agentic-readiness/ir06-secrets-env, PR #112, merged as 30007cbabca4ca973eea6ab68caf3d0b76f2e591"
+    },
+    {
+      "date": "2026-11-01",
+      "phase": "IR08.2",
+      "event": "theme T4 pr_open to merged: branch agentic-readiness/ir07-ci-hooks, PR #116, merged as f246aab5b9b1c81ac32deedd90ab683da5a97114"
+    },
+    {
+      "date": "2026-10-31",
+      "phase": "IR08.2",
+      "event": "theme T6 pr_open to merged: branch agentic-readiness/ir09-docs, PR #113, merged as d40cf99d70ed9688bc0b1940472b13057dc3f477"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-015 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-016 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-017 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-018 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-038 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-016 partial to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-017 partial to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-016 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "F-017 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "preference extra.t5 changed from offline-test-verb to offline-test-verb: done as 5 named classes plus fenced command in AGENTS.md; 15 of 20 classes need the live stack (debt on F-038); no Testcontainers: owner 2026-10-30 (via Hermes), applied in IR08.2; the state said three classes, there are now five"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "theme T5 not_started to branch_open: branch agentic-readiness/ir08-baselines"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR08.2",
+      "event": "theme T5 branch_open to pr_open: branch agentic-readiness/ir08-baselines, PR #121"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "theme T5 pr_open to merged: branch agentic-readiness/ir08-baselines, PR #121, merged as 57621d6b47c6981c7ef420fe8e73ee3a86d37848"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "preference agents_md.stubs set to keep: IR10.2 Q3=1: CLAUDE.md stays the pointer stub; no new harness file (Q4=1) (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "preference agents_md.deferral set to inline: IR10.2 Q3=1: must-always rules move into a Code conventions block, CONVENTIONS.md not edited (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "preference agents_md.generic_text set to move-to-docs: IR10.2 Q2=1: section 6 and persona lines move to docs/workflow-profiles.md (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "preference agents_md.contradicted_rules set to target-state: IR10.2 Q2=1: EntityManager rule becomes target state with exception count; no code edit (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "preference agents_md.harness_files set to none: IR10.2 Q4=1: F-027 recorded partial with the six harnesses; no file created (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "preference agents_md.scratch_ignore set to artefacts/: IR10.2 Q5=1: artefacts/ added to .gitignore in its own commit (owner answer via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-002 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-010 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-007 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-008 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-009 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-013 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-014 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-012 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-027 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-039 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-002 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-010 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-007 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-008 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-009 in_progress to done by agent: Resolved by drift: T1 named and resolved all seven verbs"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-013 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-014 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-012 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-027 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "F-039 in_progress to partial by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR10.2",
+      "event": "theme T7 not_started to pr_open: branch agentic-readiness/ir10-agents-md, PR #122"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-029 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-030 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-031 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-032 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-034 queued to in_progress by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-029 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-030 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-031 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-032 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "F-034 in_progress to done by agent"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "preference security.contact set to TODO(owner) placeholders: Owner answer 2026-11-06 (IR11.2 Q1=2): SECURITY.md keeps TODO(owner) placeholders for the mailbox and response time; the owner fills them before a release is announced"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR11.2",
+      "event": "theme T8 not_started to pr_open: branch agentic-readiness/ir11-hygiene, PR #123"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR14.2",
+      "event": "theme T7 pr_open to merged: branch agentic-readiness/ir10-agents-md, PR #122, merged as 1d429d58a2d1e963ac10d2204768c953b45e1305"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR14.2",
+      "event": "theme T8 pr_open to merged: branch agentic-readiness/ir11-hygiene, PR #123, merged as 7226273b1588efadfad37dde5fe74b702e4ed5f8"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR14.2",
+      "event": "preference reaudit.stage4 set to accept-engine-verdicts: IR14.2 Q2=1: engine verdicts accepted; blockers independently verified; engine-only pending findings listed as unconfirmed by owner; PR awaits owner Stage 4 confirmation (via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR14.2",
+      "event": "preference reaudit.verbs set to same-as-first-audit: IR14.2 Q1=1: same probe verbs as the first audit (none allowed), nothing added (via Hermes 2026-11-06)"
+    },
+    {
+      "date": "2026-11-06",
+      "phase": "IR14.2",
+      "event": "preference reaudit.issue_annotation set to mr-phase-and-issue: IR14.2 Q4=1: annotate engine-explained moves with MR phase and issue number; list issues under owner may close (via Hermes 2026-11-06)"
+    }
+  ]
+}

@@ -2,8 +2,8 @@
 # Copyright (C) 2026 K. C. Ramakrishna
 #
 # Publishes a GitHub release when the maintainer pushes a tag `v*`: the single-file engine (audit.pyz), the
-# agentic-readiness-audit skill bundle as a zip, and their SHA-256 sums. Runs the same gates as CI first. No secret
-# beyond GITHUB_TOKEN; `contents: write` is the only permission. Actions are pinned by commit SHA. A session of an AI
+# agentic-readiness-audit and agentic-readiness-implement skill bundles as zips, and their SHA-256 sums. Runs the
+# same gates as CI first. No secret beyond GITHUB_TOKEN; `contents: write` is the only permission. Actions are pinned by commit SHA. A session of an AI
 # agent never triggers this workflow. How to cut a release: RELEASE_PROCESS.md.
 name: Release
 
@@ -49,7 +49,8 @@ jobs:
           mkdir -p "$out"
           cp brownfield-recipes/deterministic-audit/dist/audit.pyz "$out/audit.pyz"
           (cd brownfield-recipes/dist/skills && zip -qr "$out/agentic-readiness-audit-$TAG.zip" agentic-readiness-audit)
-          (cd "$out" && sha256sum audit.pyz "agentic-readiness-audit-$TAG.zip" > SHA256SUMS)
+          (cd brownfield-recipes/dist/skills && zip -qr "$out/agentic-readiness-implement-$TAG.zip" agentic-readiness-implement)
+          (cd "$out" && sha256sum audit.pyz "agentic-readiness-audit-$TAG.zip" "agentic-readiness-implement-$TAG.zip" > SHA256SUMS)
           cat "$out/SHA256SUMS"
           echo "RELEASE_DIR=$out" >> "$GITHUB_ENV"
       - name: Create the release

@@ -26,12 +26,13 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done ([`SKILL.md`](../SKILL.md#stage-1-triage)). Read it first.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `layout.command_runner` (per component or one root runner),
   `format.mass_reformat` (forbids a whole-tree rewrite), `tests.stack_dependent` (whether `test` needs a live
   local stack), `ci.edits_authorised` (whether build files and CI may be changed). A step that conflicts with
   one stops and asks.
-- No earlier theme is needed. T1 runs first because later themes (CI, hooks, baselines, `AGENTS.md`) name
+- No earlier theme is needed. T1 runs before T4, T5 and T7 because those themes (CI, hooks, baselines, `AGENTS.md`) name
   these verbs.
 - A tool choice made by `configure-quality-tools` for each verb, or a recorded decision that the verb is
   `blocked` (see the `security` lockfile rule there).
@@ -67,8 +68,7 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 
 ## Steps
 
-1. Work in a worktree from the up-to-date integration branch, on the theme branch
-   (`agentic-readiness/<phase>-command-surface`). Set each T1 item `in_progress` before touching it.
+1. Theme branch `agentic-readiness/<phase>-command-surface` ([Stage 3](../SKILL.md#stage-3-apply), step 1).
 2. **Name every verb** on the authoritative runner, spelled as the runner row in
    [`spec/command-surface.md`](../../../spec/command-surface.md#spelling-per-runner) says. The command each verb
    runs comes from `configure-quality-tools`.
@@ -91,7 +91,7 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 8. **Write the verbs down.** The instruction file (`AGENTS.md`, else `CONTRIBUTING.md`) lists the exact command
    for each verb per component (`spec/command-surface.md` rule 4). Fill an existing placeholder; do not
    rewrite the file, which is T7's job.
-9. Commit per logical change (verbs, then the split writer, then the doc lines), each revertible alone.
+9. Commits: the verbs, then the split writer, then the doc lines.
 
 ### Gradle
 
@@ -173,19 +173,14 @@ order. The verbs add no dependency by themselves; tool dependencies roll back wi
 
 ## State updates
 
-Through [`progress.py`](../../docs/reference/tools-cli.md#progresspy), on the theme branch, `--phase` the
-current step:
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, the theme rows) and
+[Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "./gradlew check --dry-run" --verification-result "<what it showed>"
 python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --debt "what=security verb waits for T2 lockfile,count=1" --note "<which verb, why>"
-python3 brownfield-recipes/tools/progress.py theme T1 --status branch_open \
-  --branch agentic-readiness/<phase>-command-surface --target <repo> --phase <phase> --render
 ```
 
-A `blocked` status is reached through `in_progress` (`queued` to `blocked` is not a valid transition) and
-needs `--reason`. Record any new owner choice (runner shape, a failing check allowed in `check`) with
-`progress.py pref set <key> <value> --by owner`.
+Owner choices to record as preferences: the runner shape, and a failing check allowed in `check`.

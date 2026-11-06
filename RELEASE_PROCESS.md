@@ -37,9 +37,9 @@ On a pushed tag matching `v*` it runs, on Ubuntu with `contents: write` as the o
 1. `make check` and `make security`, so a tag on a red commit publishes nothing.
 2. `python3 brownfield-recipes/deterministic-audit/tools/build.py`, which builds the reproducible single-file
    engine, `audit.pyz`.
-3. `make validate-skills`, which builds the `agentic-readiness-audit` skill bundle and validates it against the
-   Agent Skills specification.
-4. Zips the bundle under `dist/skills/`.
+3. `make validate-skills`, which builds the `agentic-readiness-audit` and `agentic-readiness-implement` skill
+   bundles and validates both against the Agent Skills specification.
+4. Zips the audit bundle and the implement bundle under `dist/skills/` and lists both in `SHA256SUMS`.
 5. Writes `SHA256SUMS` over `audit.pyz` and the zip.
 6. Creates the GitHub release for the tag and attaches `audit.pyz`, the skill zip and `SHA256SUMS`.
 

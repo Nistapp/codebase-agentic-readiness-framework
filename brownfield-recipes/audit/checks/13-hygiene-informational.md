@@ -61,7 +61,7 @@ Evidence to cite A `file` evidence item citing the README path and the specific 
                  marker text, or "a title with no body") for a placeholder FAIL.
 Absence proof    A FAIL for "no README" states that no file at the repository root starts with `readme`;
                  a FAIL for a placeholder cites the exact reason the content check failed.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-01`).
+Remediation      `add-repo-hygiene`
 Pitfalls         A `FAIL` here never lowers the score — this check is informational; do not treat it as
                  equivalent in severity to a scored `BLOCKER` elsewhere just because the README is the
                  first thing a reader sees.
@@ -83,7 +83,7 @@ Rubric           PASS: a `CODEOWNERS` file exists at one of the recognised locat
 Evidence to cite A `file` evidence item citing the `CODEOWNERS` path found, for PASS.
 Absence proof    A FAIL states that none of the recognised locations (root, `.github/`, `.gitlab/`,
                  `docs/`) holds a `CODEOWNERS` file.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-02`).
+Remediation      `add-repo-hygiene`
 Pitfalls         Do not read `CODEOWNERS`'s own content to judge whether it is well-formed or complete —
                  this check only establishes that the file exists; a model that wants to compare its
                  entries against the deny list is doing its own analysis, not reading an engine verdict.
@@ -106,7 +106,7 @@ Rubric           PASS: at least one `pull_request_template*` file exists.
 Evidence to cite A `file` evidence item citing the template path found, for PASS.
 Absence proof    A FAIL states that no file at a repository-level location has a basename starting with
                  `pull_request_template`.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-03`).
+Remediation      `add-repo-hygiene`
 Pitfalls         A template referenced only in a GitHub organisation-level `.github` repository is
                  invisible to this check — it reads this repository's own tree only, never an
                  organisation default.
@@ -129,7 +129,7 @@ Rubric           PASS: at least one file exists under `.github/ISSUE_TEMPLATE/`,
 Evidence to cite A `file` evidence item per issue-template file found (or the single-file form), for PASS.
 Absence proof    A FAIL states that `.github/ISSUE_TEMPLATE/` is empty or absent and
                  `.github/ISSUE_TEMPLATE.md` does not exist.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-04`).
+Remediation      `add-repo-hygiene`
 Pitfalls         A GitHub "issue forms" YAML (`.github/ISSUE_TEMPLATE/bug_report.yml`) counts exactly like
                  a Markdown template — the check reads the directory's presence, not the file format.
 
@@ -152,7 +152,7 @@ Rubric           PASS: at least one `CONTRIBUTING`-prefixed document exists at a
 Evidence to cite A `file` evidence item citing the document path found, for PASS.
 Absence proof    A FAIL states that no repository-level file has a basename starting with
                  `contributing` and a recognised document form.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-05`).
+Remediation      `add-repo-hygiene`
 Pitfalls         A `CONTRIBUTING` section embedded inside `README.md` rather than its own file does not
                  count — the check looks for a separate document, however good the README's own section
                  is.
@@ -176,7 +176,7 @@ Rubric           PASS: at least one `SECURITY`-prefixed document exists at a rep
 Evidence to cite A `file` evidence item citing the document path found, for PASS.
 Absence proof    A FAIL states that no repository-level file has a basename starting with `security`
                  and a recognised document form.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-06`).
+Remediation      `add-repo-hygiene`
 Pitfalls         Do not confuse this with `SEC-01`–`SEC-03` (the scored `SECURITY HYGIENE` family in
                  [`12-security-hygiene.md`](12-security-hygiene.md)): `HYG-06` only checks whether a
                  disclosure policy document exists, unscored; it says nothing about tracked secrets or
@@ -211,7 +211,8 @@ Evidence to cite A `file` evidence item citing the changelog path and its age in
 Absence proof    A FAIL for "no changelog" states that no repository-level file matches the three recognised name
                  prefixes; a staleness FAIL states the exact day count since the changelog's last commit
                  and the 365-day window it exceeds.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-07`).
+Remediation      `add-repo-hygiene` (a changelog that a release tool writes is not hand-written; the item
+                 waits for the first release)
 Pitfalls         An abandoned repository with no commits in two years reads `FAIL` here — correctly, by
                  the engine's own documented design ("judged on its own clock, not the audit machine's")
                  — but a repository frozen in a known-stable state should still have this reported as a
@@ -236,7 +237,7 @@ Rubric           PASS: at least one text/Markdown document whose name contains `
 Evidence to cite A `file` evidence item citing the release document path found, for PASS.
 Absence proof    A FAIL states that no document (as opposed to a CI workflow file) whose name contains
                  `release` exists at a repository-level location.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-08`).
+Remediation      `add-repo-hygiene`
 Pitfalls         A repository automating its release entirely through `.github/workflows/release.yml`,
                  with no page describing the process in prose, is a correct `FAIL` — automation is not
                  documentation, and the two checks (this one and `HYG-09`) read different evidence.
@@ -260,7 +261,7 @@ Rubric           PASS: a Dependabot or Renovate configuration file exists at a c
 Evidence to cite A `file` evidence item citing the configuration path found, for PASS.
 Absence proof    A FAIL states that none of the fixed Dependabot/Renovate filenames were found at any of
                  their conventional locations.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-09`).
+Remediation      `add-repo-hygiene`
 Pitfalls         A third-party dependency-update bot configured entirely through an external SaaS
                  dashboard, with no file committed to the repository, is invisible to this check and
                  reads `FAIL` — the engine can only see what is committed.
@@ -283,7 +284,7 @@ Rubric           PASS: a root license file (one of the five recognised name pref
                  UNKNOWN when: never.
 Evidence to cite A `file` evidence item citing the license file path found, for PASS.
 Absence proof    A FAIL states that no root-level file starts with any of the five recognised prefixes.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-10`).
+Remediation      `add-repo-hygiene`
 Pitfalls         A license mentioned only in `package.json`'s `license` field, or only in `README.md`'s
                  prose, does not satisfy this check — root-only, by design, matches how a license file is
                  conventionally expected and how most tooling discovers it.
@@ -314,7 +315,7 @@ Evidence to cite A `file` evidence item citing the branch-protection file or Ter
                  was available but unused.
 Absence proof    A FAIL names the CI provider(s) detected that offer config-as-code protection and states
                  that no file or Terraform resource declaring it was found.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-11`).
+Remediation      `add-repo-hygiene`
 Pitfalls         A provider this check does not recognise as offering config-as-code (anything outside
                  github/gitlab) always reads `UNKNOWN`, even if that provider genuinely has no
                  equivalent mechanism — do not read the `UNKNOWN` as "probably fine", only as "not

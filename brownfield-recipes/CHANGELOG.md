@@ -7,6 +7,63 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-06
+
+The implement recipe is released: see the root `CHANGELOG.md` for the framework-level notes. The worked example (a real
+Server run, before and after, published as drafts) is in
+[`schema/examples/server-worked-example/`](schema/examples/server-worked-example/README.md). Open `audit-engine`
+issues are known defects of the engine, listed on GitHub.
+
+- Implement-recipe evals (IR13). Seven synthetic scenarios in `tools/eval/implement-fixtures/` on one toy
+  standard-library repository with two canned final reports built by the real tools; `tools/eval/implement_eval.py`
+  materialises a scenario (a local bare `origin`, a logging `gh` shim, a copy of the recipe without the eval files),
+  runs it headless and asserts seven hard rules: only confirmed or edited findings are queued (A1), a skip is final
+  (A2), a planted instruction is not run and is flagged (A3), a resumed item is not committed twice (A4), existing
+  debt ends an item `partial` with its count (A5), no commit on `dev`/`main`, no push without `ci.pr_by_agent=yes`
+  and no merge (A6), and the drift check runs first (A7). `tools/tests/test_implement_eval.py` proves each assertion
+  on hand-made good and bad outcomes in `make check`. `run-claude.sh` gains `--recipe implement`, `--answers`,
+  `--model` and `--max-budget-usd`; the audit mode is unchanged. `tools/eval/score.py` reports the report's
+  `stack_profile` (informational). Results and the first implement-run numbers table are in
+  `docs/reference/eval-results.md`. The ruff, mypy and markdownlint configurations leave `testdata/` out, as they
+  already leave `fixtures/` out.
+
+- Implement recipe Stages 2 (plan a theme), 3 (apply), 4 (close the theme) and 5 (close-out) written in
+  `implement/SKILL.md` from the sixteen apply sessions (IR12), with a Tools table giving each call's expected result
+  and fallback, a Resuming section, a theme table with branch slugs, and two new Stage 0 steps: a tools check and a
+  version-skew warning (the report's catalogue version against the recipe's). The procedure the thirteen playbooks
+  repeated now lives in Stages 2 to 4 and each playbook links to it; `implement/prompts/kickoff.md` is finished.
+  `tools/build_skills.py` also builds the `agentic-readiness-implement` skill bundle: its own tools, links rewritten
+  to stay inside the bundle, and the engine taken from the `agentic-readiness-audit` skill installed beside it.
+  `make validate-skills` validates both bundles. The how-to pages for implementing and resuming are filled in.
+
+- The two T8 playbooks (IR11.1): `implement/playbooks/add-repo-hygiene.md` (HYG-01 to HYG-11) and
+  `implement/playbooks/register-index.md` (IDX-01 to IDX-03). `add-repo-hygiene` writes the hygiene files from the
+  repository's own facts in one reviewed batch and asks the owner only for the policy files (CODEOWNERS handle,
+  SECURITY contact values); it never hand-writes a changelog a release tool owns, never enables required code-owner
+  review, and writes the branch-protection page as "recorded, not enforced" where the plan cannot enforce it.
+  `register-index` offers a committed project-level registration and a document-only section (the owner picks per
+  repository), never edits a user-level file without a recorded consent preference, and states that the engine's
+  IDX-03 verdict stays `UNKNOWN` because the store records no revision. `catalogue.json` 0.2.8 (PATCH: playbook names
+  only; fingerprint unchanged) adds `add-repo-hygiene` to HYG-01 to HYG-11; the HYG check files name it.
+
+- The two T7 playbooks (IR10.1): `implement/playbooks/adapt-agents-md.md` (AGT-01 to AGT-06, AGT-08 to AGT-11,
+  EXEC-06, TST-04) and `implement/playbooks/add-deny-rules.md` (AGT-07, CON-01 to CON-03). `adapt-agents-md` drafts
+  one small diff per finding for the owner to edit: verbs with inline comments, the definition-of-done sentence, a
+  release-boundary sentence built from the state and ADR 0003, the reach line with vendor pointer files kept, a
+  deferral turned into a link with the must-always rules moved in, generic text moved to `docs/` and contradicted
+  rules kept as target state with a measured exception count. `add-deny-rules` edits only the prohibitions section
+  (decision 0001): a bounded test rule naming every test directory, the CON-04 draft as its input, and a harness
+  permission review that reports and never edits a permission file unless the owner opted in
+  (`agents_md.harness_deny=yes`). CON-04 keeps no playbook. Text only: `catalogue.json` stays 0.2.7, because both
+  names were already listed; the check files, decision 0001 and the doc router drop their Planned markers.
+
+- `add-baselines-and-ratchet` corrected from its first two applications (IR08.2 on a Gradle repository, IR08.3 on a
+  multi-component Node repository): the Quarkus 3.2 Gradle wiring for `quarkus-jacoco`, measuring PMD with the
+  exclude list removed and Spotless through a scratch-copy format run, the whole-tree linter count in `format:check`,
+  the floor measured over every source file (Create React App), narrowed runs and a coverage-on `test` verb, a mocked
+  suite needs no stack so `check` is the default gate, a failing suite outside `check` is recorded and not fixed, the
+  audit compare lives in the report-only scan script, and the engine's blind spots (issues #45 and #50). Text only:
+  `catalogue.json` stays 0.2.7, because it records playbook names and no name changed.
 - The T5 playbook (IR08.1): `implement/playbooks/add-baselines-and-ratchet.md` (BASE-01 to BASE-04, TST-02, TST-03,
   TST-04, TST-05). It inventories the ratchets a repository already has, keeps tool-native baselines, puts every
   other count in one committed counts file compared inside `format:check`, sets a coverage floor at today's number
@@ -64,10 +121,9 @@ history (which verdicts moved and why), see
   it and no longer says the field has no write path (MR04).
 - v0.2 (the implementation MVP), skeleton in: `implement/SKILL.md` with its hard rules and the stage table,
   the playbook anatomy and the list of thirteen playbooks (`implement/playbooks/README.md`), and the
-  per-repository state contract (`implement/state.md`). The recipe is still partial: Stages 2 to 5 and five
-  of the thirteen playbooks are Planned (IR08.1, IR10.1, IR11.1, IR12).
+  per-repository state contract (`implement/state.md`).
 - Implement recipe Stages 0 (intake) and 1 (triage) written and live in `implement/SKILL.md`, from the two
-  onboarding runs, with a first `implement/prompts/kickoff.md`. Stages 2 to 5 are Planned (IR12).
+  onboarding runs, with a first `implement/prompts/kickoff.md`.
 - The two T1 playbooks: `implement/playbooks/define-command-surface.md` (CMD-01 to CMD-04, EXEC-03, TST-01) and
   `implement/playbooks/configure-quality-tools.md` (TOOL-01 to TOOL-04, with a tool-currency table checked
   2026-10-30). `catalogue.json` 0.2.3 (PATCH: playbook names only; fingerprint unchanged) adds

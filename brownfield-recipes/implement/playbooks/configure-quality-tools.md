@@ -24,7 +24,8 @@ The verb names, `check`'s composition and the split of write verbs belong to
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done. Read it first; respect every `skipped` item.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `format.mass_reformat` (`no` forbids reformatting the tree:
   check-only or ratchet), any `format.*`, `lint.*` or `scanner.*` choice already made, `ci.edits_authorised`
   (build-file and CI edits), and any rule that dependency versions stay locked. A step that conflicts stops
@@ -79,7 +80,7 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
 
 ## Steps
 
-1. Same worktree and branch as `define-command-surface`. Set each TOOL item `in_progress` before touching it.
+1. Same worktree and branch as `define-command-surface`: T1 is one branch.
 2. Per tool, in this order: formatter, linter, type checker, scan. For each one:
    1. Add the config file (or reuse the existing one) and the dependency, pinned to an exact version.
    2. Point the verb at it (`define-command-surface`).
@@ -187,8 +188,8 @@ Record each count on its item (`--debt what=...,count=N[,baseline=FILE]`) and se
 | TOOL-03 | The type-check config; run `typecheck` | Strict flag on where the codebase allows; `typecheck` exits 0. JVM: compile passes; the engine's `UNKNOWN` is expected |
 | TOOL-04 | Run `security` | Runs the scanner with its threshold and exits as the scanner says; a `blocked` item names the theme it waits for |
 
-Re-run the engine's TOOL checks on the branch (`engine.py` against the worktree) and compare with the report;
-explain every remaining non-`PASS` with the evidence above.
+[Stage 4](../SKILL.md#stage-4-close-the-theme), step 1 re-runs the engine; explain each remaining TOOL non-`PASS` with
+the evidence above.
 
 ## Rollback
 
@@ -206,17 +207,15 @@ report-only CI steps go with them. Nothing outside those files changes.
 
 ## State updates
 
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, the theme rows) and
+[Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
+
 ```bash
 python3 brownfield-recipes/tools/progress.py pref set lint.java pmd --reason "<owner's words>" --by owner \
   --target <repo> --phase <phase>
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --commit <sha> --debt "what=PMD violations,count=<N>,baseline=config/pmd/ruleset.xml" \
   --verification-command "./gradlew lint" --verification-result "exit 0 under the exclude list"
 python3 brownfield-recipes/tools/progress.py set-status F-nnn blocked --target <repo> --phase <phase> \
   --reason "needs T2 lockfile"
 ```
-
-`blocked` and `partial` are reached through `in_progress`. An item with debt is never `done`.
-Preference keys are lowercase (`^[a-z0-9][a-z0-9._-]{0,63}$`), and a `partial` item cannot go straight to
-`done`: set it `in_progress` first.
