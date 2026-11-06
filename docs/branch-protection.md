@@ -6,13 +6,16 @@ updates this page in the same step when a rule changes.
 
 ## Rules
 
+Rules marked "proposed, not confirmed" are not yet checked against the real settings; the maintainer compares this
+table with Settings, Branches and removes the mark or corrects the row.
+
 | Rule | Setting |
 | --- | --- |
-| Changes arrive through a pull request | Required; no direct pushes to `main` |
+| Changes arrive through a pull request | Required; no direct pushes to `main` (proposed, not confirmed) |
 | Required status check | `CI Gate`, and no other: it stands for the whole matrix |
-| Branch up to date before merge | Required |
-| Force pushes and branch deletion | Blocked |
-| Conversations | Resolved before merge |
+| Branch up to date before merge | Required (proposed, not confirmed) |
+| Force pushes and branch deletion | Blocked (proposed, not confirmed) |
+| Conversations | Resolved before merge (proposed, not confirmed) |
 | Who applies and changes these rules | The maintainer |
 
 ## The required check
