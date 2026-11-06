@@ -7,6 +7,11 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Self-audit published (MR07.2): `make self-audit` runs the engine on this repository against the committed
+  `.audit-baseline.json` (exit 2 on a regression) and CI runs it as the `self-audit` job that `CI Gate` needs;
+  `make update-audit-baseline` accepts a smaller baseline on purpose. The report is the worked example
+  `schema/examples/self-audit/2026-11-06.json` and [Self-Audit](docs/reference/self-audit.md) states the score
+  (0.8402, ruleset `2026-11-06.1`), the open findings and the owner exception `IDX-01`.
 - Engine ruleset `2026-11-06.1` (MR06.4): `TST-04` recognises `python3 -m unittest <module> -k <name>` (and `python`) as
   a single-test invocation; `AGT-08` no longer reports the reach gap when the root `AGENTS.md` has a line saying "read
   by" or "supported harnesses" that names a known harness, and its summary cites that line. Refs #26 (the engine
