@@ -53,7 +53,7 @@ is plain `SKILL.md` plus command-line tools, runnable by any agent with shell ac
 | Folder | Contents | Status |
 |---|---|---|
 | [`audit/`](audit/SKILL.md) | The audit recipe and its check files | Live |
-| [`implement/`](implement/SKILL.md) | The implementation recipe, its playbooks and the state contract | Partial (v0.2 in progress): Stages 0-1, the state contract and eight of thirteen playbooks are live; Stages 2-5 and five playbooks Planned (IR08-IR12) |
+| [`implement/`](implement/SKILL.md) | The implementation recipe, its playbooks and the state contract | Partial (v0.2 in progress): Stages 0-1, the state contract and eleven of thirteen playbooks are live; Stages 2-5 and two playbooks Planned (IR11-IR12) |
 | [`schema/`](schema/SCHEMA.md) | The report, intake, facts, catalogue and eval-expected schemas, with examples | Live |
 | [`stacks/`](stacks/README.md) | Stack profiles (`typescript-node`, `java`, `python`) | Live |
 | [`tools/`](tools/README.md) | The tool contract, shared helpers and the tools themselves — engine launcher, facts, report builder, renderer, validator, recipe linter, skill bundler | Live |

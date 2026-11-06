@@ -55,4 +55,4 @@ not judge on its own (`UNKNOWN`); and it may override an engine verdict, but onl
 - **No Phase 2–4 work.** These recipes cover Phase 1 (Agentic Bootstrap) only. The framework's later
   phases are out of scope for this project entirely, not merely deferred.
 - **No finished implementation recipe yet.** `implement/` (v0.2) runs Stages 0 and 1 today; Stages 2 to 5
-  are Planned (IR12), and five of its thirteen playbooks are Planned (IR08.1, IR10.1, IR11.1).
+  are Planned (IR12), and two of its thirteen playbooks are Planned (IR11.1).

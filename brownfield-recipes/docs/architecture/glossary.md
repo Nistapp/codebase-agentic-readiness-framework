@@ -18,7 +18,7 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Check | A catalogue entry with an ID such as `CMD-01`, judged by a rubric. |
 | Finding | A non-passing check result with a statement, evidence and remediation. |
 | Disposition | A finding's state: `pending` until set, then the user's decision — `confirmed`, `rejected`, `deferred` or `edited`. |
-| Playbook | A remediation procedure the implementation recipe follows for one finding class, in `implement/playbooks/`. Eight of thirteen are written; the other five are Planned (IR08.1, IR10.1, IR11.1). A check's catalogue entry names its playbook. |
+| Playbook | A remediation procedure the implementation recipe follows for one finding class, in `implement/playbooks/`. Eleven of thirteen are written; the other two are Planned (IR11.1). A check's catalogue entry names its playbook. |
 | Stack profile | A file that maps the checks and playbooks to one toolchain. |
 | Evidence | A cited file, command or index query that supports a verdict. |
 | `captured_by` | Whether evidence was captured by a tool or reported by the agent. |

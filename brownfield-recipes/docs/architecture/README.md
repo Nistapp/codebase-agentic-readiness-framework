@@ -2,8 +2,8 @@
 
 > **Status:** Live for v0.1 (the audit MVP): the schemas, the check catalogue, the engine, the tools, the
 > audit recipe, the eval harness and the fixture-sweep plus real-repo results are all built and published.
-> The implementation recipe (v0.2) is partial: Stages 0 and 1, the state contract and its tools, and eight of
-> thirteen playbooks are live; Stages 2 to 5 and five playbooks are Planned. Each page below carries its own
+> The implementation recipe (v0.2) is partial: Stages 0 and 1, the state contract and its tools, and eleven of
+> thirteen playbooks are live; Stages 2 to 5 and two playbooks are Planned. Each page below carries its own
 > status, and a page marked Planned names the roadmap step that fills it. See
 > [`STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 1.3.
 
@@ -31,7 +31,7 @@ found.
 | File | Purpose | Status |
 |---|---|---|
 | [`implement/SKILL.md`](../../implement/SKILL.md) | The recipe: hard rules, stages 0-5, themes | Partial (Stages 2-5 Planned (IR12)); hard rules and Stages 0-1 live |
-| [`implement/playbooks/README.md`](../../implement/playbooks/README.md) | Playbook anatomy and the list of thirteen playbooks | Partial (five playbooks Planned (IR08.1, IR10.1, IR11.1)); anatomy and eight playbooks live |
+| [`implement/playbooks/README.md`](../../implement/playbooks/README.md) | Playbook anatomy and the list of thirteen playbooks | Partial (two playbooks Planned (IR11.1)); anatomy and eleven playbooks live |
 | [`implement/state.md`](../../implement/state.md) | The per-repository state contract: files, statuses, skip, preferences, continue on error | Live; the schema and every `progress.py` command |
 
 ## Tutorials

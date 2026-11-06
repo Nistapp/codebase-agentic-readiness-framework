@@ -30,8 +30,8 @@ A14 — the review's R-16 — governs every one of those rubrics:
   below that reads the file for content adds this as its own finding, scored `DEGRADER`, independent of
   that check's own severity and verdict — a file can `PASS` its specific rubric and still carry a
   length-budget finding.
-- **The remediation playbook drafts minimal content and asks for a human edit.** `adapt-agents-md`
-  (Planned: IR08.1) never fills a section with generic prose; it proposes the shortest sentence that states the
+- **The remediation playbook drafts minimal content and asks for a human edit.** [`adapt-agents-md`](../../implement/playbooks/adapt-agents-md.md)
+  never fills a section with generic prose; it proposes the shortest sentence that states the
   project's own fact, and nothing in this family's rubrics rewards a playbook-generated file that a human
   has not reviewed.
 

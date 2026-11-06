@@ -7,6 +7,17 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- The two T7 playbooks (IR10.1): `implement/playbooks/adapt-agents-md.md` (AGT-01 to AGT-06, AGT-08 to AGT-11,
+  EXEC-06, TST-04) and `implement/playbooks/add-deny-rules.md` (AGT-07, CON-01 to CON-03). `adapt-agents-md` drafts
+  one small diff per finding for the owner to edit: verbs with inline comments, the definition-of-done sentence, a
+  release-boundary sentence built from the state and ADR 0003, the reach line with vendor pointer files kept, a
+  deferral turned into a link with the must-always rules moved in, generic text moved to `docs/` and contradicted
+  rules kept as target state with a measured exception count. `add-deny-rules` edits only the prohibitions section
+  (decision 0001): a bounded test rule naming every test directory, the CON-04 draft as its input, and a harness
+  permission review that reports and never edits a permission file unless the owner opted in
+  (`agents_md.harness_deny=yes`). CON-04 keeps no playbook. Text only: `catalogue.json` stays 0.2.7, because both
+  names were already listed; the check files, decision 0001 and the doc router drop their Planned markers.
+
 - `add-baselines-and-ratchet` corrected from its first two applications (IR08.2 on a Gradle repository, IR08.3 on a
   multi-component Node repository): the Quarkus 3.2 Gradle wiring for `quarkus-jacoco`, measuring PMD with the
   exclude list removed and Spotless through a scratch-copy format run, the whole-tree linter count in `format:check`,
