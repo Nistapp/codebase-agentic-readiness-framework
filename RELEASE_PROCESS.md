@@ -39,7 +39,7 @@ On a pushed tag matching `v*` it runs, on Ubuntu with `contents: write` as the o
    engine, `audit.pyz`.
 3. `make validate-skills`, which builds the `agentic-readiness-audit` and `agentic-readiness-implement` skill
    bundles and validates both against the Agent Skills specification.
-4. Zips the audit bundle under `dist/skills/`. The implement bundle is built and validated but not attached yet.
+4. Zips the audit bundle and the implement bundle under `dist/skills/` and lists both in `SHA256SUMS`.
 5. Writes `SHA256SUMS` over `audit.pyz` and the zip.
 6. Creates the GitHub release for the tag and attaches `audit.pyz`, the skill zip and `SHA256SUMS`.
 
