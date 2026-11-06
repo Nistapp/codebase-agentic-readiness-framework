@@ -7,6 +7,13 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- `add-baselines-and-ratchet` corrected from its first two applications (IR08.2 on a Gradle repository, IR08.3 on a
+  multi-component Node repository): the Quarkus 3.2 Gradle wiring for `quarkus-jacoco`, measuring PMD with the
+  exclude list removed and Spotless through a scratch-copy format run, the whole-tree linter count in `format:check`,
+  the floor measured over every source file (Create React App), narrowed runs and a coverage-on `test` verb, a mocked
+  suite needs no stack so `check` is the default gate, a failing suite outside `check` is recorded and not fixed, the
+  audit compare lives in the report-only scan script, and the engine's blind spots (issues #45 and #50). Text only:
+  `catalogue.json` stays 0.2.7, because it records playbook names and no name changed.
 - The T5 playbook (IR08.1): `implement/playbooks/add-baselines-and-ratchet.md` (BASE-01 to BASE-04, TST-02, TST-03,
   TST-04, TST-05). It inventories the ratchets a repository already has, keeps tool-native baselines, puts every
   other count in one committed counts file compared inside `format:check`, sets a coverage floor at today's number

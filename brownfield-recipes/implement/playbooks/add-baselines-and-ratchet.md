@@ -1,7 +1,7 @@
 # Playbook: `add-baselines-and-ratchet`
 
 > Theme T5 (tests and baselines). Follows the anatomy in [`README.md`](README.md). Written in IR08.1; applied and
-> corrected on a Gradle repository (IR08.2) and a multi-component Node repository (IR08.3).
+> corrected on a Gradle repository (IR08.2) and a multi-component Node repository (IR08.3), and corrected from both.
 
 ## Goal
 
@@ -135,7 +135,9 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    similar), measure, set the floor (Inputs 4) in the runner's own configuration, and wire it per
    `tests.coverage_gate`. One floor per component in a multi-component repository.
 8. **Suite status (TST-02).** Run `test` once (with the services it needs, through the repository's own start
-   scripts) and record the result: green, or the failing tests by name as debt. The engine reads TST-02 only from a
+   scripts) and record the result: green, or the failing tests by name as debt. A separate suite outside `check` (an
+   end-to-end suite, for example) that fails to load counts too: record it as one failing suite with 0 tests run, in the
+   counts file as an informational entry, and do not fix it inside this theme unless the owner chooses. The engine reads TST-02 only from a
    Tier-C probe; this record is for the agent, not a substitute verdict.
 9. **Skip census (TST-03).** List every skip, ignore and expected-failure marker. Judge each one: a test that can be
    fixed is an item for the owner; a deliberate skip gets a one-line reason next to it. Never delete or un-skip in
@@ -158,7 +160,15 @@ Profile: [`stacks/java.md`](../../stacks/java.md#baseline--ratchet).
 - **Quarkus.** `@QuarkusTest` classes run inside the Quarkus application; Gradle's JaCoCo agent alone reports them
   wrongly low, and a floor taken from that number is wrong. Add `io.quarkus:quarkus-jacoco` (test scope, version
   from the platform BOM) and have the verification task read the data file Quarkus writes, following the Quarkus
-  test-coverage guide for the repository's Quarkus version. Measure only with that in place.
+  test-coverage guide for the repository's Quarkus version. Measure only with that in place. On Quarkus 3.2 with
+  Gradle the working wiring is `test { jacoco { excludeClassLoaders = ['*QuarkusClassLoader']; destinationFile =
+  <a file under the build directory, for example jacoco-quarkus.exec> } }` plus the `quarkus-jacoco` test dependency; the
+  report and verification tasks read that one file. Run the suite twice and check the two numbers are identical
+  before setting the floor.
+- **Measuring the other counts.** A PMD violation count needs the exclude list taken out of the ruleset (in a scratch
+  copy), because with the list in place PMD reports nothing for those files. A Spotless full-tree count has no usable
+  output (the tool truncates its list), so run the full format task in a scratch copy and count the files that
+  changed against the original. Neither goes into the working tree.
 - **Engine blind spot.** BASE-04 reads no Gradle build file, so a correct `jacocoTestCoverageVerification` floor
   still reads `FAIL`. Add one sentence with the floor to `AGENTS.md` ("coverage floor: NN% line coverage, enforced by
   `jacocoTestCoverageVerification`") so the audit reads at least `PARTIAL`, and verify from the build file.
@@ -181,13 +191,33 @@ Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#baseline-
 - **Engine visibility.** BASE-04 reads the root `package.json` and `jest.config.*`/`vitest.config.*` files at any
   depth, not a `jest` key in a nested component's `package.json`. In a multi-component repository either keep the
   key where it is and add the floor sentence to `AGENTS.md`, or (owner choice) move that component's Jest config to a
-  `jest.config.*` file. Verify from the real config either way.
+  `jest.config.*` file. Verify from the real config either way. BASE-02 reads only a budget flag, so a counts file
+  alone reads `PARTIAL`, and TST-04 accepts a Jest line only with `-t` or `--testNamePattern`; a path-only
+  `npx jest <file>` reads `FAIL` (issues #45 and #50). Write the fast-path block in the form the engine reads and
+  keep the path-only form out of the verification.
+- **Whole-tree counts in `format:check`.** ESLint older than 9.24 has no baseline file, so the compare script runs
+  the linter over the whole tree with JSON output and counts errors and files with errors. That adds the linter's
+  full run (15-20 s on a mid-sized app) to `format:check`; say so in the paragraph in `AGENTS.md`. The script resolves
+  the counts file by an absolute path, because the verb runs it from the component's directory.
+- **Floor measured over every source file.** Create React App's Jest collects coverage from every source file, not
+  only imported ones, so its measured number is the honest one; leave `collectCoverageFrom` as measured unless the
+  owner asks. `coverageThreshold` in the `jest` key of `package.json` is accepted by `react-scripts` 5; prove it by
+  running the suite with the floor one point higher, which must fail.
+- **Coverage on in `test`, narrowed runs.** With `tests.coverage_gate=check` the `test` verb runs with coverage, so a
+  narrowed run (`npm test -- <name>`) measures only some files and fails the floor. The documented fast path turns
+  coverage off (`npm test -- --coverage=false --watchAll=false <file>`) or calls the runner directly
+  (`npx jest <file> -t "<name>"`).
 - **`npm audit` and other scans**: the count per severity goes into the counts file with the review date already
-  recorded; the compare step fails on a higher count, not on any finding.
-- **Fast path**: `npx jest <path/to/file.spec.ts>` or `npm test -- <name>`; for Create React App,
-  `npm test -- --watchAll=false <pattern>`.
+  recorded; the compare step fails on a higher count, not on any finding. Run it from the report-only scan script
+  (the same script that writes the job summary), so the step stays report-only; it can turn red when an advisory is
+  published against an unchanged lockfile, by design.
+- **Fast path**: `npx jest <path/to/file.spec.ts> -t "<name>"` or `npm test -- <name>`; for Create React App,
+  `npm test -- --watchAll=false <pattern>` (add `--coverage=false` when `test` runs with coverage).
 
 ### Stack-dependent tests
+
+When the unit suites are mocked and need no live service, there is nothing to start: measure with the plain test verb,
+skip the stack lock, and take the default `tests.coverage_gate=check`.
 
 When tests need live services (a database, a search engine), measure coverage with the services up, started
 through the repository's own scripts, and leave them as found. Two options to offer the owner, never to do unasked:
