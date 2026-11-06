@@ -136,9 +136,9 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    `tests.coverage_gate`. One floor per component in a multi-component repository.
 8. **Suite status (TST-02).** Run `test` once (with the services it needs, through the repository's own start
    scripts) and record the result: green, or the failing tests by name as debt. A separate suite outside `check` (an
-   end-to-end suite, for example) that fails to load counts too: record it as one failing suite with 0 tests run, in the
-   counts file as an informational entry, and do not fix it inside this theme unless the owner chooses. The engine reads TST-02 only from a
-   Tier-C probe; this record is for the agent, not a substitute verdict.
+   end-to-end suite, for example) that fails to load counts too: record it as one failing suite with 0 tests run, in
+   the counts file as an informational entry, and do not fix it inside this theme unless the owner chooses. The engine
+   reads TST-02 only from a Tier-C probe; this record is for the agent, not a substitute verdict.
 9. **Skip census (TST-03).** List every skip, ignore and expected-failure marker. Judge each one: a test that can be
    fixed is an item for the owner; a deliberate skip gets a one-line reason next to it. Never delete or un-skip in
    bulk. The count is debt with the marker list as its baseline.
