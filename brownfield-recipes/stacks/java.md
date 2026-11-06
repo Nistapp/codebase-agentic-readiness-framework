@@ -74,6 +74,12 @@ needs an incremental, changed-files-only invocation wired into CI to behave like
 pattern described in `typescript-node.md`'s own Baseline / ratchet section. Not seen in the one repository
 checked; `BASE-01` reads `FAIL` or `UNKNOWN` there, not verified further here.
 
+Coverage: the core `jacoco` plugin gives `jacocoTestReport` and `jacocoTestCoverageVerification` (a
+`violationRules` `minimum` is the floor). Quarkus `@QuarkusTest` classes need `io.quarkus:quarkus-jacoco`
+(version from the platform BOM); Gradle's agent alone reports them wrongly low. `BASE-04` reads no Gradle build
+file, so a floor configured there reads `FAIL`; verify it from the build file. The implement playbook
+`add-baselines-and-ratchet` covers both.
+
 ## Boundaries
 
 A multi-module Gradle build (`settings.gradle`'s `include()` calls) expresses boundaries through each

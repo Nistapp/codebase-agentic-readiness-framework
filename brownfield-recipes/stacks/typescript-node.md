@@ -71,6 +71,12 @@ stricter ruleset. A `tsconfig.json` migrating to `strict` can ratchet file by fi
 per-file `// @ts-strict-ignore`-style comments as each file is proven strict, rather than flipping the
 flag repository-wide at once.
 
+Coverage: Jest's `coverageThreshold` (Vitest's `coverage.thresholds`) is the floor; Create React App passes it
+through the `jest` key in `package.json`. `BASE-04` reads the root `package.json` and `jest.config.*`/
+`vitest.config.*` at any depth, not a `jest` key in a nested component's `package.json`. ESLint 9.24 and newer
+have a native baseline, `eslint-suppressions.json`. The implement playbook
+`add-baselines-and-ratchet` covers both.
+
 ## Boundaries
 
 None of the three repositories uses npm/pnpm/yarn workspaces (each is a single package, or — the
