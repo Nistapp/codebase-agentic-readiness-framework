@@ -54,6 +54,9 @@ file (`<report> <expected> [--target <repo>]`):
 | `override_precision` | Of the report's `override_reason` checks the expected file has ground truth for, what share lands on an acceptable verdict? | No |
 | `evidence_validity` | What share of `kind: file` evidence citations have a path that exists in the target at the recorded commit, with `lines` (when given) fitting the file? | Yes |
 
+Beside the metrics, `score.py` reports the report's `run_context.stack_profile` as `stack_profile`, so results can
+be grouped by stack; it is informational and never scored.
+
 A report whose `provenance.target.label`/`git_sha` does not match the expected file's `repo_label`/
 `repo_sha` is recorded `comparable: false` rather than scored anyway — deliberately not a hard stop, since
 that would discard the `schema_valid` finding the same run already made. A ratio is `null`, not `0`, when
@@ -82,7 +85,12 @@ never a harness's own shell access.
   unattended run cannot answer a permission prompt either — an eval-harness choice, not a recommendation
   for a real audit. Verified end to end on `tests/fixtures/cmd-02-weak-check`: exit 0, 131s, $0.92, 30
   turns; the resulting draft validated and scored `blocker_recall: 1.0`, `evidence_validity: 1.0` against a
-  one-check expected file.
+  one-check expected file. With `--recipe implement` (IR13) it runs the implement recipe on one materialised
+  eval scenario instead, inside a contained layout it checks before starting (a local bare `origin`, a logging
+  `gh` shim that fails every call, a recipe copy without the eval files), and records a `stream-json` transcript
+  so every tool call can be asserted on. The implement scenarios have no ground-truth verdicts: they assert the
+  recipe's hard rules (A1-A7) with `tools/eval/implement_eval.py`; see
+  [Run the Evals](../../how-to/run-the-evals.md#implement-recipe-scenarios).
 - **`run-opencode.sh`, `run-codex.sh`** (Planned). Writing an unattended, auto-approving runner script for
   another harness was refused outright by Claude Code's own safety classifier ("Create Unsafe Agents") in
   the session that built `run-claude.sh`'s siblings — refused regardless of tool (the `Write` tool, a Bash

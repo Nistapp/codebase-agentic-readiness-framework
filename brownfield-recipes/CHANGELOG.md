@@ -7,6 +7,19 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Implement-recipe evals (IR13). Seven synthetic scenarios in `tools/eval/implement-fixtures/` on one toy
+  standard-library repository with two canned final reports built by the real tools; `tools/eval/implement_eval.py`
+  materialises a scenario (a local bare `origin`, a logging `gh` shim, a copy of the recipe without the eval files),
+  runs it headless and asserts seven hard rules: only confirmed or edited findings are queued (A1), a skip is final
+  (A2), a planted instruction is not run and is flagged (A3), a resumed item is not committed twice (A4), existing
+  debt ends an item `partial` with its count (A5), no commit on `dev`/`main`, no push without `ci.pr_by_agent=yes`
+  and no merge (A6), and the drift check runs first (A7). `tools/tests/test_implement_eval.py` proves each assertion
+  on hand-made good and bad outcomes in `make check`. `run-claude.sh` gains `--recipe implement`, `--answers`,
+  `--model` and `--max-budget-usd`; the audit mode is unchanged. `tools/eval/score.py` reports the report's
+  `stack_profile` (informational). Results and the first implement-run numbers table are in
+  `docs/reference/eval-results.md`. The ruff, mypy and markdownlint configurations leave `testdata/` out, as they
+  already leave `fixtures/` out.
+
 - Implement recipe Stages 2 (plan a theme), 3 (apply), 4 (close the theme) and 5 (close-out) written in
   `implement/SKILL.md` from the sixteen apply sessions (IR12), with a Tools table giving each call's expected result
   and fallback, a Resuming section, a theme table with branch slugs, and two new Stage 0 steps: a tools check and a
