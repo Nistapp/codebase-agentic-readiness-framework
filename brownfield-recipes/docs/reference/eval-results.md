@@ -8,8 +8,8 @@
 > **Status:** Live for the fixture sweep (S4.2), the real-repo runs (S4.3, one run per repo under
 > `D61`), the implement-recipe scenarios (IR13) and the first implement-run numbers. A second harness/model
 > (`S4.3.4`) stays Planned, deferred per `D57`; the before/after audit scores of the implement runs are in
-> [Before and after](#before-and-after-the-second-audits) (the Server second audit is final; the private
-> repository's is a draft).
+> [Before and after](#before-and-after-the-second-audits) (both second audits are final: the owner decided
+> every finding).
 
 ---
 
@@ -329,17 +329,16 @@ sessions, $31.55, of which the IR12 execute alone was $15.63) is not in the tabl
 
 ### Before and after: the second audits
 
-Each repository was audited again after the implement run (IR14.2). The Server second report is **final**: the
-owner decided every finding in Stage 4 (10 rejected, 4 deferred, 1 edited), and the decisions do not change the
-score. The private repository's second report is still a **draft**, so its figures are the engine's, not confirmed
-results. The Server pair, its comparison and its state are published as a
+Each repository was audited again after the implement run (IR14.2). Both second reports are **final**: the owner
+decided every finding in Stage 4 (Server: 10 rejected, 4 deferred, 1 edited; private repository: 12 rejected,
+6 deferred), and the decisions do not change a score. The Server pair, its comparison and its state are published as a
 [worked example](../../schema/examples/server-worked-example/README.md); nothing of the private two-app Node
 repository is published.
 
 | Repository | Phase 1 score before | Phase 1 score after | Blockers before / after | Report status after |
 | --- | --- | --- | --- | --- |
 | Digital-Assistant-Server | 0.5437 | 0.7262 | 6 / 7 | final |
-| A private two-app Node repository | not published | not published | not published | draft |
+| A private two-app Node repository | not published | not published | not published | final |
 
 Read the figures with care:
 
