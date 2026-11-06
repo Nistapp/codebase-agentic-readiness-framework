@@ -48,8 +48,8 @@ ENGINE := brownfield-recipes/deterministic-audit
 
 # Mypy covers the recipe tools, the dev-only checks and the engine's build script. The engine's own code joins
 # later, through a ratchet. The find picks up every Python file under brownfield-recipes/tools and
-# brownfield-recipes/dev, tests included.
-TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -name '*.py' 2>/dev/null | sort) $(ENGINE)/tools/build.py
+# brownfield-recipes/dev, tests included, except the toy repositories under testdata/ (eval data).
+TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -name '*.py' -not -path '*/testdata/*' 2>/dev/null | sort) $(ENGINE)/tools/build.py
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:

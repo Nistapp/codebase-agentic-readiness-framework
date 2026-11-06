@@ -1,0 +1,9 @@
+{
+  "description": "Stages 0-1 on a fresh handover: only confirmed and edited findings are queued, the owner's skip is recorded, nothing is pushed.",
+  "report": "base",
+  "start": "handover",
+  "pr_by_agent": "no",
+  "phase": "s1",
+  "assertions": ["A1", "A2", "A6"],
+  "params": {"owner_skips": ["HYG-05"]}
+}

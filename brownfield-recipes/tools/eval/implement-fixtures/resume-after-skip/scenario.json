@@ -1,0 +1,9 @@
+{
+  "description": "A later session plans and applies T6 after triage: the finding the owner skipped at triage (DOC-02) is not proposed, touched or fixed.",
+  "report": "base",
+  "start": "triaged",
+  "pr_by_agent": "no",
+  "phase": "t6",
+  "assertions": ["A2", "A6"],
+  "params": {"skipped_paths": ["docs/STYLE_GUIDE.md"]}
+}

@@ -13,6 +13,6 @@
     // Templates repeat sub-headings under different parents.
     "MD024": { "siblings_only": true }
   },
-  // Fixtures are data; artefacts/ is scratch; dist/ is build output.
-  "ignores": ["**/fixtures/**", "artefacts/**", "brownfield-recipes/dist/**", "**/node_modules/**"]
+  // Fixtures and testdata are data; artefacts/ is scratch; dist/ is build output.
+  "ignores": ["**/fixtures/**", "**/testdata/**", "artefacts/**", "brownfield-recipes/dist/**", "**/node_modules/**"]
 }

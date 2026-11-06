@@ -1,0 +1,2188 @@
+{
+  "schema_version": "0.1",
+  "status": "final",
+  "provenance": {
+    "recipe": {
+      "name": "brownfield-audit",
+      "version": "0.1.0"
+    },
+    "framework_revision": "ee5da5b99005ca561d3f71fe1a69f9b4e505ab19",
+    "catalogue_version": "0.2.8",
+    "engine": {
+      "name": "python-agentic-audit",
+      "version": "0.1.0",
+      "ruleset_revision": "2026-11-06.1",
+      "ruleset_hash": "970e6792f98eeeb5",
+      "scanned_at": "2026-11-06T08:53:11+00:00"
+    },
+    "agent": {
+      "harness": "none",
+      "model": "none"
+    },
+    "target": {
+      "label": "stockroom",
+      "path": "stockroom",
+      "git_sha": "091b85c59f6a0d885fe6cac5e1e5f76e82a08f1d",
+      "branch": "main",
+      "dirty": false
+    },
+    "started_at": "2026-11-06T08:53:11+00:00",
+    "finalised_at": "2026-11-06T08:53:15+00:00"
+  },
+  "run_context": {
+    "eval_mode": false,
+    "confirmation_policy": "interactive",
+    "provider_exposure_acknowledged": true,
+    "index": {
+      "kind": "none"
+    },
+    "probes": {
+      "allowed": [],
+      "timeout_s": 120
+    },
+    "excluded": [],
+    "known_components": [],
+    "stack_profile": {
+      "id": "python",
+      "source": "shipped",
+      "confirmed_by_user": true
+    }
+  },
+  "stack": {
+    "ecosystems": [
+      "python"
+    ],
+    "package_managers": [],
+    "ci_providers": [],
+    "test_frameworks": [],
+    "hook_managers": [],
+    "notes": [
+      "python recognised from its source files: no manifest names it"
+    ]
+  },
+  "components": [
+    {
+      "name": "(root)",
+      "path": ".",
+      "declared": true,
+      "declared_by": "implicit",
+      "manifest": null,
+      "agents_md": "missing"
+    }
+  ],
+  "checks": [
+    {
+      "id": "IDX-01",
+      "title": "codebase-memory-mcp registered for this repository",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no project-level MCP configuration found (user-level configuration not read: --no-user-config)",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "IDX-02",
+      "title": "An index exists for this checkout",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "index store could not be located; searched: user-level locations (not read: --no-user-config), stockroom/.codebase-memory/graph.db.zst",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "IDX-03",
+      "title": "Index freshness",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "index freshness is a Tier-C probe; re-run with --run-gates to compare the indexed revision against HEAD",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-01",
+      "title": "Instruction file present, canonical, and non-trivial",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-02",
+      "title": "Component coverage by instruction files",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "single-root repository: no component-level instruction files required",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-03",
+      "title": "Documentation contract named",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "no instruction file to read; AGT-01 owns that finding",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-04",
+      "title": "Definition of done stated",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "no instruction file to read; AGT-01 owns that finding",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-05",
+      "title": "Seven verbs named",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "not named: format, format:check, lint, typecheck, test, check, security; not resolved: format, format:check, check, security",
+      "evidence": [],
+      "searches": [],
+      "data": {
+        "kind": "verb_surface",
+        "missing": [
+          "format",
+          "format:check",
+          "check",
+          "security"
+        ],
+        "resolved_count": 3,
+        "verbs": [
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "format"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "format:check"
+          },
+          {
+            "command": "$(PYTHON) tools/style_check.py src tests",
+            "resolved": true,
+            "runner": "Makefile",
+            "verb": "lint"
+          },
+          {
+            "command": "$(PYTHON) -m compileall -q src tests",
+            "resolved": true,
+            "runner": "Makefile",
+            "verb": "typecheck"
+          },
+          {
+            "command": "PYTHONPATH=src $(PYTHON) -m unittest discover -s tests -t .",
+            "resolved": true,
+            "runner": "Makefile",
+            "verb": "test"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "check"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "security"
+          }
+        ]
+      }
+    },
+    {
+      "id": "AGT-06",
+      "title": "Architectural boundaries declared",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "no instruction file to read; AGT-01 owns that finding",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-07",
+      "title": "Do-not-do / deny rules present",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "no instruction file to read; AGT-01 owns that finding",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-08",
+      "title": "No competing instruction files, and the reach matrix is stated",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "0/28 harnesses reached",
+      "evidence": [],
+      "searches": [],
+      "data": {
+        "kind": "harness_matrix",
+        "reached": 0,
+        "reached_tools": [],
+        "total": 28,
+        "unreached_tools": [
+          "Aider",
+          "Amazon Q Developer",
+          "Anthropic Claude Code",
+          "Augment Code",
+          "Bolt (StackBlitz)",
+          "Charm Crush",
+          "Cline",
+          "Continue",
+          "Cursor",
+          "Devin (Cognition)",
+          "Firebase Studio (ex-IDX)",
+          "GitHub Copilot / VS Code",
+          "Google Gemini CLI",
+          "Goose (Block)",
+          "JetBrains Junie",
+          "Jules (Google)",
+          "Kiro (AWS)",
+          "OpenAI Codex CLI",
+          "Qwen Code",
+          "Replit Agent",
+          "Roo Code",
+          "Sourcegraph Amp",
+          "Trae",
+          "Void",
+          "Warp",
+          "Windsurf / Devin Desktop",
+          "Zed",
+          "opencode"
+        ]
+      }
+    },
+    {
+      "id": "AGT-09",
+      "title": "Branch and release boundary declared",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "no instruction file to read; AGT-01 owns that finding",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-10",
+      "title": "Instruction indirection resolved",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "DOC-01",
+      "title": "docs/ exists",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no docs/ directory",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "DOC-02",
+      "title": "docs/STYLE_GUIDE.md exists",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "docs/STYLE_GUIDE.md is not present",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "DOC-03",
+      "title": "artefacts/ exists and is ignored",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no scratch directory in use",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "DOC-04",
+      "title": "ADR directory and index",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no ADR directory",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CMD-01",
+      "title": "Seven verbs resolvable on one runner",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "format -> missing; format:check -> missing; lint -> Makefile; typecheck -> Makefile; test -> Makefile; check -> missing; security -> missing",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": [],
+      "data": {
+        "kind": "verb_surface",
+        "missing": [
+          "format",
+          "format:check",
+          "check",
+          "security"
+        ],
+        "resolved_count": 3,
+        "verbs": [
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "format"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "format:check"
+          },
+          {
+            "command": "$(PYTHON) tools/style_check.py src tests",
+            "resolved": true,
+            "runner": "Makefile",
+            "verb": "lint"
+          },
+          {
+            "command": "$(PYTHON) -m compileall -q src tests",
+            "resolved": true,
+            "runner": "Makefile",
+            "verb": "typecheck"
+          },
+          {
+            "command": "PYTHONPATH=src $(PYTHON) -m unittest discover -s tests -t .",
+            "resolved": true,
+            "runner": "Makefile",
+            "verb": "test"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "check"
+          },
+          {
+            "command": null,
+            "resolved": false,
+            "runner": null,
+            "verb": "security"
+          }
+        ]
+      }
+    },
+    {
+      "id": "CMD-02",
+      "title": "check composes the read-only verbs",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "the check verb is not defined on any runner",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CMD-03",
+      "title": "No divergent second definition",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no runner defines check, so there is nothing to diverge",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CMD-04",
+      "title": "Write verbs separated from read-only verbs",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no read-only verb invokes a write verb",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "TOOL-01",
+      "title": "Formatter configured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no formatter config and no format verb",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "TOOL-02",
+      "title": "Linter configured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PARTIAL",
+      "engine_verdict": "PARTIAL",
+      "summary": "lint verb on Makefile but no linter config file",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "$(PYTHON) tools/style_check.py src tests"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "TOOL-03",
+      "title": "Type checker configured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no strict type-check configuration",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "TOOL-04",
+      "title": "Dependency / security scan verb",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no verb runs a dependency audit",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "TOOL-05",
+      "title": "Local hook chain active",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no hook chain configured",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "TOOL-06",
+      "title": "Commit convention enforced",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no commit-message rule",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "CI-01",
+      "title": "Pipeline present, triggered on PRs",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no CI workflow file (detected providers: none)",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "CI-02",
+      "title": "Local↔CI parity",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "CI verbs: none; local read-only verbs not exercised: lint, test, typecheck",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CI-03",
+      "title": "CI-only steps flagged",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no CI-only steps",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "BASE-01",
+      "title": "Baseline artifact exists",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PARTIAL",
+      "engine_verdict": "PARTIAL",
+      "summary": "quality tooling is configured but no baseline artifact is committed: Makefile:lint, Makefile:typecheck",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "lint"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "typecheck"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "BASE-02",
+      "title": "Current violation counts measured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PARTIAL",
+      "engine_verdict": "PARTIAL",
+      "summary": "counting surface present but no committed count/budget: Makefile:lint, Makefile:typecheck; method: static configuration scan; the target's own tools are never run",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "lint"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "typecheck"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "BASE-03",
+      "title": "No-new-violations mechanism",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PARTIAL",
+      "engine_verdict": "PARTIAL",
+      "summary": "no ratchet and no baseline yet, so there is nothing to compare against",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "BASE-04",
+      "title": "Coverage floor configured",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no coverage threshold configured",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CON-01",
+      "title": "Allow/deny artifact present",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "no instruction file to read; AGT-01 owns that finding",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CON-02",
+      "title": "Test directories protected",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "no instruction file to read; AGT-01 owns that finding",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CON-03",
+      "title": "artefacts/ excluded from index and agent reads",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no scratch or agent-state directory in use",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CON-04",
+      "title": "Draft allow/deny emitted",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "draft not emitted; pass --emit-baseline to write do-not-do.draft.md beside the report",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "EXEC-01",
+      "title": "Toolchain pinned / wrapper committed",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "unpinned: python",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "EXEC-02",
+      "title": "Lockfile committed and consistent",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "python was recognised from its source files and no manifest declares dependencies, so no lockfile is expected",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "EXEC-03",
+      "title": "Non-interactive setup path",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PARTIAL",
+      "engine_verdict": "PARTIAL",
+      "summary": "present but undocumented: Makefile:setup",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "setup"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "EXEC-04",
+      "title": "Env-var inventory complete",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no environment keys referenced",
+      "evidence": [],
+      "searches": [],
+      "data": {
+        "kind": "env_keys",
+        "missing": [],
+        "referenced": [],
+        "templates": []
+      }
+    },
+    {
+      "id": "EXEC-05",
+      "title": "No generated artifacts committed in-tree",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no tracked generated or vendored paths",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "EXEC-06",
+      "title": "Documented commands resolve",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no fenced shell commands documented",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "EXEC-07",
+      "title": "No competing configs for one concern",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no concern configs found",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "TST-01",
+      "title": "Test verb exists, suite non-empty",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "test verb on Makefile (PYTHONPATH=src $(PYTHON) -m unittest discover -s tests -t .); 2 test file(s)",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "TST-02",
+      "title": "Suite status known",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "probe not run: probes disabled (pass --run-gates)",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "TST-03",
+      "title": "Skip / xfail census",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "skip/xfail census across 2 test file(s): no markers; total 0",
+      "evidence": [],
+      "searches": [],
+      "data": {
+        "breakdown": {},
+        "kind": "counter",
+        "unit": "skip/xfail markers",
+        "value": 0
+      }
+    },
+    {
+      "id": "TST-04",
+      "title": "Fast path documented",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no single-test/subset invocation in fenced shell blocks (scope: README.md)",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "README.md"
+        }
+      ],
+      "searches": []
+    },
+    {
+      "id": "TST-05",
+      "title": "Coverage configuration present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no coverage configuration",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "NAV-01",
+      "title": "Declared component boundaries",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "no build manifest declares a component; stack not recognised",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "NAV-02",
+      "title": "Obvious entry points",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "entry point(s): tools/style_check.py",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "NAV-03",
+      "title": "Structural red flags",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "oversized(>524288 B): 0; catch-all dirs(>50 files): 0; binaries: 0; minified: 0",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "NAV-04",
+      "title": "Architecture orientation artifact",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no architecture orientation artifact",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "NAV-05",
+      "title": "Public-symbol documentation coverage",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "PARTIAL",
+      "engine_verdict": "PARTIAL",
+      "summary": "1/3 public symbols documented (33%); method: python: module-level def/class not starting with '_'",
+      "evidence": [],
+      "searches": [],
+      "data": {
+        "denominator": 3,
+        "kind": "ratio",
+        "method": "python: module-level def/class not starting with '_'",
+        "numerator": 1,
+        "unit": "public symbols"
+      }
+    },
+    {
+      "id": "SEC-01",
+      "title": ".env untracked and ignored",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PARTIAL",
+      "engine_verdict": "PARTIAL",
+      "summary": "no tracked .env, but ignore rules are incomplete: missing: dotenv, dotenv variant",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore",
+          "note": "__pycache__"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore",
+          "note": "*.pyc"
+        }
+      ],
+      "searches": [],
+      "data": {
+        "covered": [],
+        "kind": "secret_shapes",
+        "missing": [
+          "dotenv",
+          "dotenv variant"
+        ],
+        "root_only": [],
+        "shapes": [
+          {
+            "covered": false,
+            "label": "dotenv",
+            "probe": ".env",
+            "root_only": false,
+            "suggested": ".env"
+          },
+          {
+            "covered": false,
+            "label": "dotenv variant",
+            "probe": ".env.local",
+            "root_only": false,
+            "suggested": ".env.*"
+          }
+        ]
+      }
+    },
+    {
+      "id": "SEC-02",
+      "title": "No key-shaped strings in tracked files",
+      "phase": 1,
+      "severity": "BLOCKER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "no credential-shaped strings in tracked text files",
+      "evidence": [],
+      "searches": [],
+      "data": {
+        "allowlisted": 0,
+        "allowlisted_by": [],
+        "files": [],
+        "kind": "credential_matrix",
+        "source": "tracked text files",
+        "suppressed": [],
+        "total": 0
+      }
+    },
+    {
+      "id": "SEC-03",
+      "title": "Ignore patterns cover secret shapes",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no secret shapes covered; missing: dotenv, dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore",
+          "note": "__pycache__"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore",
+          "note": "*.pyc"
+        }
+      ],
+      "searches": [],
+      "data": {
+        "covered": [],
+        "kind": "secret_shapes",
+        "missing": [
+          "dotenv",
+          "dotenv variant",
+          "ssh private key",
+          "PEM",
+          "key",
+          "PKCS#12",
+          "PFX",
+          "keystore",
+          "certificate (.crt)",
+          "certificate (.cer)",
+          "AWS credentials"
+        ],
+        "root_only": [],
+        "shapes": [
+          {
+            "covered": false,
+            "label": "dotenv",
+            "probe": ".env",
+            "root_only": false,
+            "suggested": ".env"
+          },
+          {
+            "covered": false,
+            "label": "dotenv variant",
+            "probe": ".env.local",
+            "root_only": false,
+            "suggested": ".env.*"
+          },
+          {
+            "covered": false,
+            "label": "ssh private key",
+            "probe": "id_rsa",
+            "root_only": false,
+            "suggested": "id_rsa*"
+          },
+          {
+            "covered": false,
+            "label": "PEM",
+            "probe": "server.pem",
+            "root_only": false,
+            "suggested": "*.pem"
+          },
+          {
+            "covered": false,
+            "label": "key",
+            "probe": "server.key",
+            "root_only": false,
+            "suggested": "*.key"
+          },
+          {
+            "covered": false,
+            "label": "PKCS#12",
+            "probe": "server.p12",
+            "root_only": false,
+            "suggested": "*.p12"
+          },
+          {
+            "covered": false,
+            "label": "PFX",
+            "probe": "server.pfx",
+            "root_only": false,
+            "suggested": "*.pfx"
+          },
+          {
+            "covered": false,
+            "label": "keystore",
+            "probe": "app.keystore",
+            "root_only": false,
+            "suggested": "*.keystore"
+          },
+          {
+            "covered": false,
+            "label": "certificate (.crt)",
+            "probe": "server.crt",
+            "root_only": false,
+            "suggested": "*.crt"
+          },
+          {
+            "covered": false,
+            "label": "certificate (.cer)",
+            "probe": "server.cer",
+            "root_only": false,
+            "suggested": "*.cer"
+          },
+          {
+            "covered": false,
+            "label": "AWS credentials",
+            "probe": ".aws/credentials",
+            "root_only": false,
+            "suggested": ".aws/*"
+          }
+        ]
+      }
+    },
+    {
+      "id": "HYG-01",
+      "title": "README present and non-placeholder",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "PASS",
+      "engine_verdict": "PASS",
+      "summary": "README.md present and non-placeholder",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-02",
+      "title": "CODEOWNERS present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no CODEOWNERS file",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-03",
+      "title": "Pull-request template present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no pull-request template",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-04",
+      "title": "Issue templates present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no issue templates",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-05",
+      "title": "CONTRIBUTING present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no CONTRIBUTING document",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-06",
+      "title": "SECURITY present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no SECURITY document",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-07",
+      "title": "CHANGELOG present and recent",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no CHANGELOG document",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-08",
+      "title": "Release process documented",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no release document",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-09",
+      "title": "Dependency update automation configured",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no dependency update automation",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-10",
+      "title": "License present",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "FAIL",
+      "engine_verdict": "FAIL",
+      "summary": "no license file at the repository root",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-11",
+      "title": "Branch protection declared as code",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "engine_verdict": "UNKNOWN",
+      "summary": "no CI provider recognised; whether branch protection can be declared as code is provider-dependent",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "AGT-11",
+      "title": "Instructions are specific and not inferable",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "agent",
+      "verdict": "UNKNOWN",
+      "summary": "Not judged: eval fixture.",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CI-04",
+      "title": "CI enforces the same gate as the local check",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "agent",
+      "verdict": "UNKNOWN",
+      "summary": "Not judged: eval fixture.",
+      "evidence": [],
+      "searches": []
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-001",
+      "key": "AGT-01",
+      "check": "AGT-01",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot learn the project's conventions because no agent-instruction file exists anywhere in the repository.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Create AGENTS.md at the repository root using the framework template (codebase-agentic-readiness-framework templates/AGENTS.md)."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-002",
+      "key": "CI-01",
+      "check": "CI-01",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot rely on CI to verify a change set because no CI workflow file exists.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Add a PR-triggered workflow (for example .github/workflows/ci.yml) that runs the same verbs the local command surface defines."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-003",
+      "key": "CMD-01",
+      "check": "CMD-01",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not defined on any runner (format, format:check, check, security).",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Define every verb (format, format:check, lint, typecheck, test, check, security) as a script/target so an agent never has to invent a command."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-004",
+      "key": "CMD-02",
+      "check": "CMD-02",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot run one gate that composes the read-only verbs because no runner defines a check verb.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Define check as format-check, then typecheck, then test."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-005",
+      "key": "EXEC-01:python",
+      "check": "EXEC-01",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot reproduce the python toolchain because the detected python project pins no toolchain version.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Commit the pin appropriate to python — .python-version — so the agent's runtime is the repository's, not the host's."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-006",
+      "key": "EXEC-03",
+      "check": "EXEC-03",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot provision the environment from the repository alone because Makefile:setup exists but no doc names it.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "setup"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Reference the setup path in README.md or AGENTS.md so an agent finds it without guessing."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-007",
+      "key": "IDX-01",
+      "check": "IDX-01",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot discover the codebase through an MCP index because no MCP configuration names codebase-memory-mcp for this repository.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Register the server in a project config (for example `opencode.json`) or a user config (`~/.config/opencode/opencode.json`)."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-008",
+      "key": "SEC-01",
+      "check": "SEC-01",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot trust that a future .env stays out of history because ignore rules are incomplete (missing: dotenv, dotenv variant).",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore",
+          "note": "__pycache__"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore",
+          "note": "*.pyc"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Add the .env shape without a leading slash (for example `.env` and `.env.*`) to .gitignore so an environment file cannot be committed by accident, at any depth."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-009",
+      "key": "AGT-05",
+      "check": "AGT-05",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot use the project's own commands instead of inventing them because not named: format, format:check, lint, typecheck, test, check, security; not resolved: format, format:check, check, security.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "List all seven verbs in AGENTS.md and define each on one runner so the instruction and the manifest agree."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-010",
+      "key": "BASE-01",
+      "check": "BASE-01",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot diff today's findings against an accepted baseline because quality tooling is configured but no baseline or suppression artifact is committed.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "lint"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "typecheck"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Commit a baseline or suppression artifact (for example `baseline.json`, an eslint/ruff baseline, or `.gitleaksignore`), or document the equivalent mechanism in `AGENTS.md`."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-011",
+      "key": "BASE-02",
+      "check": "BASE-02",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot state how many violations exist today because a counting surface exists but no numeric violation budget or count is committed.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "lint"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile",
+          "note": "typecheck"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Commit the count or configure a budget (`--max-warnings N`, `max-issues`, or a `violation budget`) so a regression has a baseline number to compare against."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-012",
+      "key": "BASE-03",
+      "check": "BASE-03",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot stop the violation count from growing because no baseline, budget or comparison step exists, so the count is not guarded.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Once a baseline exists, wire a comparison step (the audit's own `--baseline REPORT.JSON` is the reference pattern) so new findings fail the build."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-013",
+      "key": "BASE-04",
+      "check": "BASE-04",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot know when coverage drops below an agreed floor because no coverage threshold is configured in the test runner.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Configure a coverage floor for the test runner so a drop fails the gate."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-014",
+      "key": "DOC-01",
+      "check": "DOC-01",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot find the project's documentation because there is no docs/ folder with an index.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Create docs/README.md as the documentation index.",
+        "playbook": "establish-docs-contract",
+        "effort": "S",
+        "touches": [
+          "docs/README.md"
+        ]
+      },
+      "disposition": "confirmed",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-015",
+      "key": "DOC-02",
+      "check": "DOC-02",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot follow a house writing style because docs/STYLE_GUIDE.md does not exist (edited by the owner: a short guide is enough).",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add a short docs/STYLE_GUIDE.md.",
+        "playbook": "establish-docs-contract",
+        "effort": "S",
+        "touches": [
+          "docs/STYLE_GUIDE.md"
+        ]
+      },
+      "disposition": "edited",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-016",
+      "key": "SEC-03",
+      "check": "SEC-03",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot trust that secret shapes cannot be committed because ignore rules are incomplete (missing: dotenv, dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials).",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore",
+          "note": "__pycache__"
+        },
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": ".gitignore",
+          "note": "*.pyc"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Add the missing shapes to .gitignore — for example `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `id_rsa*`, `*.crt`, `*.cer`, `.aws/*`."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-017",
+      "key": "TOOL-01",
+      "check": "TOOL-01",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot format a change set the same way every time because no formatter is configured and no format verb is defined.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Add a formatter config and a format write verb (prettier, black, ruff format, …)."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-018",
+      "key": "TOOL-02",
+      "check": "TOOL-02",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot use make lint as a gate because the house style check fails on today's code and has no ratchet, so a new violation looks like the old ones.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Adopt the existing style check in ratchet mode, so the existing violations are counted and cannot grow.",
+        "playbook": "configure-quality-tools",
+        "effort": "S",
+        "touches": [
+          "Makefile",
+          "tools/style_check.py"
+        ]
+      },
+      "disposition": "confirmed",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-019",
+      "key": "TOOL-03",
+      "check": "TOOL-03",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot trust the type checker to catch a whole class of defects because no strict type-check configuration is present for the detected ecosystem (python).",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Add a strict type-check configuration (tsconfig.json strict, mypy/pyright strict, or .NET `<Nullable>enable</Nullable>`)."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-020",
+      "key": "TOOL-04",
+      "check": "TOOL-04",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot know whether a dependency carries a known vulnerability because no resolvable verb runs a dependency-audit check.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Add a dependency-audit verb (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, snyk)."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-021",
+      "key": "TOOL-05",
+      "check": "TOOL-05",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot rely on local hooks to run before a commit because no hook manager is configured.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Adopt a hook manager (pre-commit, lefthook, husky) and wire it so checks run before a commit rather than only in CI."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-022",
+      "key": "TST-04",
+      "check": "TST-04",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot run one test or a subset without the whole suite because none of the entry documents shows a single-test or subset invocation (scope: README.md).",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "README.md"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Document a fast path (for example `pytest -k <name>`, `npm test -- <name>`, or `go test -run <name>`) in a fenced shell block."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-023",
+      "key": "DOC-04",
+      "check": "DOC-04",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot find past decisions because there is no ADR folder.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add docs/architecture/adrs/ with an index.",
+        "playbook": "establish-docs-contract",
+        "effort": "S",
+        "touches": [
+          "docs/architecture/adrs/README.md"
+        ]
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-024",
+      "key": "HYG-02",
+      "check": "HYG-02",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot know who owns a path before changing it because no CODEOWNERS file exists at the root, under .github/, .gitlab/ or docs/.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add .github/CODEOWNERS mapping paths to owners so review routing is machine-readable."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-025",
+      "key": "HYG-03",
+      "check": "HYG-03",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot file a change with the information reviewers need because no .github/pull_request_template file exists.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add .github/pull_request_template.md describing what a good change records."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-026",
+      "key": "HYG-04",
+      "check": "HYG-04",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot report a bug or request in a structured way because no .github/ISSUE_TEMPLATE entry exists.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add at least one file under .github/ISSUE_TEMPLATE/ (a bug report and a feature request are a good start)."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-027",
+      "key": "HYG-05",
+      "check": "HYG-05",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot learn how contributions are made because CONTRIBUTING.md is missing.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add a CONTRIBUTING.md.",
+        "playbook": "add-repo-hygiene",
+        "effort": "S",
+        "touches": [
+          "CONTRIBUTING.md"
+        ]
+      },
+      "disposition": "confirmed",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-028",
+      "key": "HYG-06",
+      "check": "HYG-06",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot report a vulnerability responsibly because no SECURITY document exists at the root, under .github/, .gitlab/ or docs/.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add SECURITY.md with a private disclosure channel and a response expectation."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-029",
+      "key": "HYG-07",
+      "check": "HYG-07",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot see what changed between two versions because no CHANGELOG (or CHANGES/HISTORY) document exists.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add CHANGELOG.md and record notable changes under a version heading."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-030",
+      "key": "HYG-08",
+      "check": "HYG-08",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot know how a release is cut because no text or markdown document describing the release process exists.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add docs/releasing.md (or RELEASE.md) describing how a version is cut and published."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-031",
+      "key": "HYG-09",
+      "check": "HYG-09",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot keep dependencies patched without manual sweeps because no Dependabot or Renovate configuration exists.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add .github/dependabot.yml (or renovate.json) with an update schedule."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-032",
+      "key": "HYG-10",
+      "check": "HYG-10",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot tell under which terms the code may be used because there is no LICENSE file.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add a LICENSE file.",
+        "playbook": "add-repo-hygiene",
+        "effort": "S",
+        "touches": [
+          "LICENSE"
+        ]
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-033",
+      "key": "NAV-04",
+      "check": "NAV-04",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot orient itself from a map instead of exploring blindly because no docs/architecture/, ADR directory or diagram exists.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Add a short architecture page (with a diagram) so an agent can orient before it explores."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-034",
+      "key": "TOOL-06",
+      "check": "TOOL-06",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot rely on a consistent commit-message convention because no commitlint config, commit-msg hook, or equivalent exists.",
+      "evidence": [
+        {
+          "kind": "file",
+          "captured_by": "tool",
+          "tool": "python-agentic-audit",
+          "tool_version": "0.1.0",
+          "path": "Makefile"
+        }
+      ],
+      "searches": [],
+      "remediation": {
+        "summary": "Add a commitlint config or a commit-msg hook so commit messages follow one convention."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    },
+    {
+      "id": "F-035",
+      "key": "TST-05",
+      "check": "TST-05",
+      "severity": "COSMETIC",
+      "statement": "An agent cannot see how much of the code the suite actually covers because no coverage configuration or coverage-invoking command is present.",
+      "evidence": [],
+      "searches": [],
+      "remediation": {
+        "summary": "Configure coverage for the test runner (a `coverage` block, `.coveragerc`/`.nycrc`, `--coverage`/`--cov`, or `go test -cover`)."
+      },
+      "disposition": "rejected",
+      "disposition_note": "owner: not now",
+      "confirmed_via": "interactive"
+    }
+  ],
+  "summary": {
+    "phase1_score": 0.3651,
+    "scored_checks": 57,
+    "blockers_remaining": {
+      "total": 12,
+      "fail": 6,
+      "partial": 2,
+      "unknown": 4
+    },
+    "unknown_scored_checks": 14,
+    "unconfirmed_agent_findings": 0
+  },
+  "unattested": [
+    {
+      "requirement": "REQ-SH-004",
+      "method": "attested",
+      "property": "index-in-use",
+      "why": "Whether the codebase index is actually used during agent work."
+    },
+    {
+      "requirement": "REQ-BF-004",
+      "method": "attested",
+      "property": "baseline-adequacy",
+      "why": "Whether the committed baseline or budget is adequate."
+    },
+    {
+      "requirement": "REQ-SH-050",
+      "method": "attested",
+      "property": "suite-trustworthiness",
+      "why": "Whether the passing test suite actually catches regressions."
+    },
+    {
+      "requirement": "REQ-SH-020",
+      "method": "attested",
+      "property": "doc-accuracy",
+      "why": "Whether the documentation matches the code it describes."
+    },
+    {
+      "requirement": "REQ-SH-026",
+      "method": "attested",
+      "property": "gate-honoured",
+      "why": "Whether the gate is actually run and honoured before merge."
+    }
+  ],
+  "coverage": {
+    "scopes_examined": [],
+    "scopes_skipped": [],
+    "inventory": {
+      "files_inspected": 9,
+      "files_skipped": 0,
+      "truncated": false
+    }
+  }
+}

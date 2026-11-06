@@ -1,0 +1,15 @@
+{
+  "description": "T1 adopts the repository's own style check as the linter; it has 3 existing violations, so TOOL-02 ends partial with that count. With ci.pr_by_agent=yes the branch reaches the local origin; dev and main do not move and nothing merges.",
+  "report": "base",
+  "start": "triaged",
+  "pr_by_agent": "yes",
+  "phase": "t1",
+  "assertions": [
+    "A5",
+    "A6"
+  ],
+  "params": {
+    "check": "TOOL-02",
+    "debt_count": 3
+  }
+}
