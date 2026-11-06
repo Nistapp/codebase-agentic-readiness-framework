@@ -145,7 +145,7 @@ Engine           `TST-04`. With no test-source file at all, this is `UNKNOWN` â€
                  fast path to act on, and the absence is `TST-01`'s own finding, not doubled here. With at
                  least one test file, reads the four entry documents (README.md, AGENTS.md, CLAUDE.md,
                  CONTRIBUTING.md) for a fenced shell command matching a per-runner single-test/subset
-                 pattern (`pytest -k`, `pytest ... ::Name`, `npm test -- <name>`, `go test -run`,
+                 pattern (`pytest -k`, `pytest ... ::Name`, `python3 -m unittest <module> -k <name>`, `npm test -- <name>`, `go test -run`,
                  `cargo test <name>`, `gradlew ... --tests`, `mvn -Dtest=`, and more), deliberately
                  excluding a plain full-suite invocation (`npm test`, `pytest` alone), which is `TST-01`'s
                  concern, not this one's. Distrust a `FAIL` when the fast path is documented in a doc file
