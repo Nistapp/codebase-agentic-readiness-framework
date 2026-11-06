@@ -12,6 +12,9 @@ histories:
 
 ### Framework pages (since v0.1)
 
+- A quality baseline for this repository, by the `add-baselines-and-ratchet` playbook: `.quality-baseline.json` and a
+  compare step that fails when the ruff, mypy or Markdown lint count goes up (MR08.3).
+
 - The framework pages say the implement recipe is in development and no longer promise features that are only
   planned; the verb count is seven everywhere; the greenfield README and `AGENTS.md` template (now 1.1.1) state what
   the scaffold satisfies (MR01.3).
