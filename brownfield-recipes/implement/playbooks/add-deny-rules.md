@@ -107,6 +107,10 @@ No tool is installed. Ask:
      tracked on purpose (an owner decision in the state), the rule says which and what they may hold; it does not
      claim they are ignored.
 
+   When the file has no prohibitions section (the do-nots are scattered bullets), add one `## Do not` section with
+   one line per concern and leave the scattered bullets where they are. The secrets line states every env file the
+   owner tracks on purpose (names, and that it may hold local values only).
+
    Add a rule only where the section lacks one; reword an existing rule only to add the path span it lacks. Keep
    the owner's other prohibitions as they are.
 4. **Scratch and tool state (CON-03).** For every present root among `artefacts/`, `artifacts/`,

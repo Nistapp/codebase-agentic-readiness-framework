@@ -154,6 +154,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 6. **Release boundary (AGT-09).** Build one sentence from facts, never from a template:
    - the branches that exist: the integration branch (from the state or the branch rule already in the file) and
      the default branch (`git symbolic-ref refs/remotes/origin/HEAD`);
+     the branch that receives releases comes from the release workflow's trigger (`on.push.branches`), not from the
+     default branch: the two can differ, and the old line "default remote branch is `main`" may be the stale one;
    - whether an agent may push a branch and open a pull request: only when the state records `ci.pr_by_agent=yes`
      ([ADR 0003](../../docs/architecture/adrs/0003-push-and-pr-policy.md)); otherwise it stops at a local branch;
    - that an agent never merges, tags, publishes a release or pushes to the default branch;
