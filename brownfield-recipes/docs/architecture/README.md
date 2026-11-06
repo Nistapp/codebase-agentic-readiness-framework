@@ -67,7 +67,7 @@ found.
 |---|---|---|
 | [1. Purpose & Non-Goals](user-overview/01-purpose-and-non-goals.md) | What the recipes are and refuse to be | Live; the implementation recipe it describes is partial (Stages 2-5 Planned (IR12)) |
 | [2. How the Recipes Work](user-overview/02-how-the-recipes-work.md) | Stages and decisions, for evaluators | Live for audits and implementation Stages 0-1; Stages 2-5 Planned (IR12) |
-| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live; the implementation recipe's push/PR rule is [ADR 0003](adrs/0003-push-and-pr-policy.md) |
+| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live; §5 is a table of what the implement recipe may and never does; the push/PR rule is [ADR 0003](adrs/0003-push-and-pr-policy.md); the risks are in the [risk register](../../../shared/Risks-and-Mitigations.md) (R9-R14) |
 
 ## Explanation — Contributor Deep Dive
 

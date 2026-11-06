@@ -7,6 +7,10 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Framework-level documentation and release (MR08): `recipe_lint.py` checks the relative links of the root framework
+  pages; the trust page's implementation section is a table; the root `CHANGELOG.md`, `CONTRIBUTING.md`,
+  `RELEASE_PROCESS.md` and a release workflow (not yet run) are added. See the
+  [root changelog](../CHANGELOG.md).
 - Self-audit published (MR07.2): `make self-audit` runs the engine on this repository against the committed
   `.audit-baseline.json` (exit 2 on a regression) and CI runs it as the `self-audit` job that `CI Gate` needs;
   `make update-audit-baseline` accepts a smaller baseline on purpose. The report is the worked example

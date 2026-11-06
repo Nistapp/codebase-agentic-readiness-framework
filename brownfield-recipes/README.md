@@ -34,6 +34,10 @@ Full walkthrough: [`docs/how-to/run-an-audit.md`](docs/how-to/run-an-audit.md).
 
 Tool reference: [`docs/reference/tools-cli.md`](docs/reference/tools-cli.md#build_skillspy).
 
+A tagged release carries the built `audit.pyz`, the skill bundle as a zip and their SHA-256 sums, so a one-off user
+need not clone and build; the workflow is described in [`RELEASE_PROCESS.md`](../RELEASE_PROCESS.md) and has not
+run yet.
+
 ## How this differs from prior art
 
 Readiness checkers exist already — Factory's Agent Readiness (nine pillars, five levels, an 80% rule to

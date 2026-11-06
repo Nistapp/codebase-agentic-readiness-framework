@@ -18,4 +18,5 @@ describe, in three sets.
 - Writing or changing a page: [`STYLE_GUIDE.md`](STYLE_GUIDE.md).
 - Deciding something or looking up a decision: [`architecture/adrs/README.md`](architecture/adrs/README.md).
 - Orienting before you explore the code: [`architecture/README.md`](architecture/README.md).
-- Running the gates and the commit rules: [`AGENTS.md`](../AGENTS.md).
+- Running the gates and the commit rules: [`AGENTS.md`](../AGENTS.md); setting up and contributing: [`CONTRIBUTING.md`](../CONTRIBUTING.md).
+- What changed: [`CHANGELOG.md`](../CHANGELOG.md). How a release is cut: [`RELEASE_PROCESS.md`](../RELEASE_PROCESS.md).
