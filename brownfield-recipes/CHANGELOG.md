@@ -7,6 +7,14 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- The T5 playbook (IR08.1): `implement/playbooks/add-baselines-and-ratchet.md` (BASE-01 to BASE-04, TST-02, TST-03,
+  TST-04, TST-05). It inventories the ratchets a repository already has, keeps tool-native baselines, puts every
+  other count in one committed counts file compared inside `format:check`, sets a coverage floor at today's number
+  rounded down (`tests.coverage_gate` chooses `check` or CI), and records an owner-approved raise as a
+  `baseline.exception.*` preference plus a `Baseline-Exception:` commit line. Currency checked 2026-11-05; `betterer`
+  dropped. `catalogue.json` 0.2.7 (PATCH: playbook names only; fingerprint unchanged) adds the playbook to those eight
+  checks (TST-04 keeps `adapt-agents-md` as well); the check files `07-baselines-and-ratchet.md` and `10-tests.md`
+  name it, and the Java and TypeScript stack profiles gain a coverage note.
 - Framework-level documentation and release (MR08): `recipe_lint.py` checks the relative links of the root framework
   pages; the trust page's implementation section is a table; the root `CHANGELOG.md`, `CONTRIBUTING.md`,
   `RELEASE_PROCESS.md` and a release workflow (not yet run) are added. See the
