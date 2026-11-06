@@ -7,6 +7,10 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Engine ruleset `2026-11-06.1` (MR06.4): `TST-04` recognises `python3 -m unittest <module> -k <name>` (and `python`) as
+  a single-test invocation; `AGT-08` no longer reports the reach gap when the root `AGENTS.md` has a line saying "read
+  by" or "supported harnesses" that names a known harness, and its summary cites that line. Refs #26 (the engine
+  takes the statement as given; it does not check that each named harness loads the file).
 - Engine ruleset `2026-11-05.4` (MR06.3): `NAV-02` counts a line that starts with the `if __name__` guard, not a
   file that only holds the text; `DOC-04` no longer counts `0000-template.md` as a numbered ADR; `--out FILE` with no
   suffix writes `FILE.json` (and `FILE.md`); new `--no-user-config` (also on `tools/engine.py`) reads nothing under

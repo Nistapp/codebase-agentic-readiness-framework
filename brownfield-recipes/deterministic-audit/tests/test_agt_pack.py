@@ -153,6 +153,32 @@ class FindingIdTests(unittest.TestCase):
         self.assertEqual(self.ids("agt-01-missing", "AGT-01"), ["AGT-01"])
 
 
+class Agt08StatedHarnessesTests(unittest.TestCase):
+    """AGT-08 takes a line of AGENTS.md that states the supported harnesses as the answer to the reach gap."""
+
+    def reach_findings(self, agents_md: str) -> list[str]:
+        with tempfile.TemporaryDirectory() as tmp:
+            support.write(Path(tmp), "AGENTS.md", agents_md)
+            report = support.run_audit(Path(tmp))
+            return sorted(f["id"] for f in report["findings"] if f["check"] == "AGT-08")
+
+    def test_without_a_statement_the_reach_gap_is_reported(self):
+        self.assertEqual(self.reach_findings(FILLER), ["AGT-08:harness-reach"])
+
+    def test_a_read_by_line_naming_harnesses_closes_the_gap(self):
+        text = FILLER + "This file is read by Claude Code, opencode, Codex, Gemini CLI and Cursor.\n"
+        self.assertEqual(self.reach_findings(text), [])
+
+    def test_a_supported_harnesses_line_closes_the_gap(self):
+        self.assertEqual(self.reach_findings(FILLER + "Supported harnesses: Cursor, Zed.\n"), [])
+
+    def test_a_line_naming_no_known_harness_does_not(self):
+        self.assertEqual(self.reach_findings(FILLER + "This file is read by humans.\n"), ["AGT-08:harness-reach"])
+
+    def test_a_harness_name_without_the_phrase_does_not(self):
+        self.assertEqual(self.reach_findings(FILLER + "We like Cursor.\n"), ["AGT-08:harness-reach"])
+
+
 class Agt07SectionTests(unittest.TestCase):
     """AGT-07 finds the section through the helper that CON-01 and CON-02 share, and still scans the whole file."""
 

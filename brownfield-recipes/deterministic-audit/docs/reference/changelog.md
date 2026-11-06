@@ -13,6 +13,7 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-11-06.1` | 2026-11-06 | 55 | MR06.4: `TST-04` accepts `python3 -m unittest <module> -k <name>` as a single-test form; `AGT-08` takes a line of the root `AGENTS.md` that says "read by" or "supported harnesses" and names a known harness as the answer to the reach gap (#26) |
 | `2026-11-05.4` | 2026-11-05 | 55 | MR06.3: `NAV-02` entry point is a guard line, `DOC-04` ignores the ADR template, `--out` without a suffix, `--no-user-config` and `provenance.user_config` |
 | `2026-11-05.3` | 2026-11-05 | 55 | MR06.2 ([ADR-0009](../architecture/adrs/0009-nested-ignore-files-and-negation.md)): `DOC-03`, `CON-03`, `SEC-01` and `SEC-03` read nested `.gitignore` files and `!` negation |
 | `2026-11-05.2` | 2026-11-05 | 55 | MR06.1 ([ADR-0008](../architecture/adrs/0008-what-counts-as-the-repository.md)): runner precedence by depth, carried-data directories (`templates/`, `examples/`, `fixtures/`, ...) set aside and listed in the report, hygiene presence bounded to the root, `.github/`, `.gitlab/` and `docs/` |
