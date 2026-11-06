@@ -7,6 +7,15 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- Implement recipe Stages 2 (plan a theme), 3 (apply), 4 (close the theme) and 5 (close-out) written in
+  `implement/SKILL.md` from the sixteen apply sessions (IR12), with a Tools table giving each call's expected result
+  and fallback, a Resuming section, a theme table with branch slugs, and two new Stage 0 steps: a tools check and a
+  version-skew warning (the report's catalogue version against the recipe's). The procedure the thirteen playbooks
+  repeated now lives in Stages 2 to 4 and each playbook links to it; `implement/prompts/kickoff.md` is finished.
+  `tools/build_skills.py` also builds the `agentic-readiness-implement` skill bundle: its own tools, links rewritten
+  to stay inside the bundle, and the engine taken from the `agentic-readiness-audit` skill installed beside it.
+  `make validate-skills` validates both bundles. The how-to pages for implementing and resuming are filled in.
+
 - The two T8 playbooks (IR11.1): `implement/playbooks/add-repo-hygiene.md` (HYG-01 to HYG-11) and
   `implement/playbooks/register-index.md` (IDX-01 to IDX-03). `add-repo-hygiene` writes the hygiene files from the
   repository's own facts in one reviewed batch and asks the owner only for the policy files (CODEOWNERS handle,
@@ -92,10 +101,9 @@ history (which verdicts moved and why), see
   it and no longer says the field has no write path (MR04).
 - v0.2 (the implementation MVP), skeleton in: `implement/SKILL.md` with its hard rules and the stage table,
   the playbook anatomy and the list of thirteen playbooks (`implement/playbooks/README.md`), and the
-  per-repository state contract (`implement/state.md`). The recipe is still partial: Stages 2 to 5 and five
-  of the thirteen playbooks are Planned (IR08.1, IR10.1, IR11.1, IR12).
+  per-repository state contract (`implement/state.md`).
 - Implement recipe Stages 0 (intake) and 1 (triage) written and live in `implement/SKILL.md`, from the two
-  onboarding runs, with a first `implement/prompts/kickoff.md`. Stages 2 to 5 are Planned (IR12).
+  onboarding runs, with a first `implement/prompts/kickoff.md`.
 - The two T1 playbooks: `implement/playbooks/define-command-surface.md` (CMD-01 to CMD-04, EXEC-03, TST-01) and
   `implement/playbooks/configure-quality-tools.md` (TOOL-01 to TOOL-04, with a tool-currency table checked
   2026-10-30). `catalogue.json` 0.2.3 (PATCH: playbook names only; fingerprint unchanged) adds

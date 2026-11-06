@@ -11,7 +11,7 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 |---|---|
 | Recipe | A Markdown instruction document (`SKILL.md`) that a coding agent executes. |
 | Audit recipe | The read-only recipe that produces the audit report. |
-| Implementation recipe | `implement/SKILL.md`: the recipe that closes confirmed findings one theme at a time, a branch per theme. Partial (v0.2): Stages 0 and 1 live, Stages 2 to 5 Planned (IR12). |
+| Implementation recipe | `implement/SKILL.md`: the recipe that closes confirmed findings one theme at a time, a branch per theme. v0.2, in progress: Stages 0 to 5 written. |
 | Engine | The deterministic, standard-library Python audit in `deterministic-audit/`. |
 | Tool | A deterministic script in `tools/` that follows the tool contract. |
 | Envelope | The one JSON object a tool prints on stdout: `tool`, `version`, `ok`, `data`, `warnings`, `truncated`. |

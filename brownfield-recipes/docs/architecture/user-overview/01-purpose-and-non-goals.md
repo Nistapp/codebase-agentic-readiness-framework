@@ -2,8 +2,8 @@
 
 > **Audience:** CTOs, engineering leads, adopters
 > **Goal:** Explain what the brownfield recipes do, why an agent runs them instead of a fixed script, and what they refuse to do.
-> **Status:** Live for the audit recipe (v0.1). The implementation recipe (v0.2) is partial: Stages 0 and 1
-> and eight of thirteen playbooks are live; Stages 2 to 5 are Planned (IR12).
+> **Status:** Live for the audit recipe (v0.1). The implementation recipe (v0.2, in progress): Stages 0 to 5,
+> the state contract and its tools, and all thirteen playbooks are written.
 
 ---
 
@@ -11,8 +11,8 @@
 
 Two Markdown recipes an agent runs against an existing repository, in order: [`audit`](../../../audit/SKILL.md),
 and [`implement`](../../../implement/SKILL.md) (v0.2, in progress), which acts on the audit's confirmed
-findings one theme at a time. Its Stages 0 and 1 (intake and triage), its state tools and eight of its
-thirteen playbooks exist and have been applied to two repositories; Stages 2 to 5 are Planned (IR12). The
+findings one theme at a time. Its six stages, its state tools and its thirteen playbooks are written, and every
+theme has been applied to two repositories. The
 audit report — [documented in `schema/SCHEMA.md`](../../../schema/SCHEMA.md) — is the only contract between
 them: `implement` reads a finalised report and nothing else, so it can be written, reviewed and run
 independently of whatever produced that report. Either recipe is plain `SKILL.md` plus
@@ -54,5 +54,5 @@ not judge on its own (`UNKNOWN`); and it may override an engine verdict, but onl
   ([ADR 0003](../adrs/0003-push-and-pr-policy.md)).
 - **No Phase 2–4 work.** These recipes cover Phase 1 (Agentic Bootstrap) only. The framework's later
   phases are out of scope for this project entirely, not merely deferred.
-- **No finished implementation recipe yet.** `implement/` (v0.2) runs Stages 0 and 1 today; Stages 2 to 5
-  are Planned (IR12), and two of its thirteen playbooks are Planned (IR11.1).
+- **No released implementation recipe yet.** `implement/` (v0.2) has all six stages and thirteen playbooks
+  written, but is not released; the closing re-audit of the two repositories it was applied to is still to run.

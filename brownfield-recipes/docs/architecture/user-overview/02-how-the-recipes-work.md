@@ -2,11 +2,7 @@
 
 > **Audience:** CTOs, engineering leads, adopters
 > **Goal:** Walk through the audit stages and the implementation loop at a level a reader can evaluate.
-> **Status:** Audit stages live (S3.5). Implementation Stages 0 and 1 live; Stages 2 to 5 Planned (IR12).
-
-> [!NOTE]
-> Planned: implementation Stages 2 to 5 (plan a theme, apply, close the theme, close-out). Their outline is in
-> [`implement/SKILL.md`](../../../implement/SKILL.md#stages); the stage text is written in IR12.
+> **Status:** Audit stages live (S3.5). Implementation Stages 0 to 5 live (IR12).
 
 ---
 
@@ -44,9 +40,17 @@ time. Everything a later session needs to resume lives in a state file inside th
 2. **Triage (live).** Walk the confirmed findings theme by theme. The owner keeps, skips or defers each, with
    a reason, and states preferences that bind the whole run (`progress.py skip`, `defer`, `pref`). A skipped
    finding is never proposed again.
-3. **Plan a theme, apply, close the theme, close-out.** Planned (IR12): one branch per theme from the
-   integration branch, a playbook per finding class, existing debt recorded instead of mass-fixed, and a
-   full re-audit at the end compared with the first report (`compare_reports.py`).
+3. **Plan a theme (live).** Record the themes merged since the last session, pick the next theme in
+   dependency order, and brief the owner: what, why, the options, the debt to expect. The owner approves the
+   change list.
+4. **Apply (live).** One branch per theme from the integration branch, in a separate worktree. Per finding:
+   re-verify, apply the playbook, verify, commit one logical change, record the end status; existing debt is
+   recorded and guarded instead of mass-fixed.
+5. **Close the theme (live).** Re-check the theme's checks with the engine and run the repository's gate. With
+   the owner's `ci.pr_by_agent=yes`, push and open one pull request; otherwise stop at the local branch. Never
+   merge.
+6. **Close-out (live).** After the last theme, a full re-audit with the audit recipe, compared with the first
+   report (`compare_reports.py`), and one list of what was skipped, deferred and left as debt.
 
 ## 3. What the user decides
 
@@ -54,7 +58,8 @@ In an audit: the intake answers (Stage 1), whether to run any of the target's ow
 (Stage 1), the plan before assessment starts (Stage 2), and the disposition of every finding (Stage 5) —
 blockers one at a time, with their evidence, everything else in batches. In an implementation: at
 intake, what to do about drifted findings; at triage, keep, skip or defer for every finding and the
-preferences for the run. Plan approval and each change are Planned (IR12).
+preferences for the run; per theme, the option for each choice and the change list; and the merge of every
+theme's branch, which only the owner or their review process does.
 
 ## 4. Reading the report
 

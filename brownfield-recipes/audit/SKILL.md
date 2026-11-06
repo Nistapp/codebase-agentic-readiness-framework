@@ -8,7 +8,7 @@ description: Audit a repository for agentic readiness against the framework's Ph
 This skill assesses whether a repository is safe for an AI coding agent to work in, against the framework's
 Phase-1 requirements (`spec/readiness-requirements.md`). It produces one JSON report and its Markdown
 rendering. It never changes the audited repository. The implementation recipe (a separate skill,
-`implement/SKILL.md`; Stages 0-1 are written, the rest is in progress) is what acts on the findings.
+`implement/SKILL.md`; all six stages are written) is what acts on the findings.
 
 ## When to use it
 

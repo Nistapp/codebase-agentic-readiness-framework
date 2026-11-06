@@ -2,8 +2,8 @@
 
 > **Status:** Live for v0.1 (the audit MVP): the schemas, the check catalogue, the engine, the tools, the
 > audit recipe, the eval harness and the fixture-sweep plus real-repo results are all built and published.
-> The implementation recipe (v0.2) is partial: Stages 0 and 1, the state contract and its tools, and eleven of
-> thirteen playbooks are live; Stages 2 to 5 and two playbooks are Planned. Each page below carries its own
+> The implementation recipe (v0.2, in progress): Stages 0 to 5, the state contract and its tools, the thirteen
+> playbooks and its skill bundle are written. Each page below carries its own
 > status, and a page marked Planned names the roadmap step that fills it. See
 > [`STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 1.3.
 
@@ -30,8 +30,8 @@ found.
 
 | File | Purpose | Status |
 |---|---|---|
-| [`implement/SKILL.md`](../../implement/SKILL.md) | The recipe: hard rules, stages 0-5, themes | Partial (Stages 2-5 Planned (IR12)); hard rules and Stages 0-1 live |
-| [`implement/playbooks/README.md`](../../implement/playbooks/README.md) | Playbook anatomy and the list of thirteen playbooks | Partial (two playbooks Planned (IR11.1)); anatomy and eleven playbooks live |
+| [`implement/SKILL.md`](../../implement/SKILL.md) | The recipe: hard rules, stages 0-5, themes | Live (IR12) |
+| [`implement/playbooks/README.md`](../../implement/playbooks/README.md) | Playbook anatomy and the list of thirteen playbooks | Live; all thirteen playbooks written |
 | [`implement/state.md`](../../implement/state.md) | The per-repository state contract: files, statuses, skip, preferences, continue on error | Live; the schema and every `progress.py` command |
 
 ## Tutorials
@@ -45,7 +45,7 @@ found.
 | Page | Purpose | Status |
 |---|---|---|
 | [Run an audit](../how-to/run-an-audit.md) | Produce a confirmed report for a repo | Live (S3.5) |
-| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Partial (Stages 0-1 runnable; Step 1 written, the rest Planned (IR12)) |
+| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Live (IR12) |
 | [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits and for implementations (`progress.py show`, `check_drift.py`) |
 | [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Live; three profiles plus `stacks/README.md` |
 | [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Live for the corpus, expected-results format, scorer and the Claude Code runner (S4.1); other harnesses' own runner scripts stay Planned, deferred per `D57` |
@@ -65,8 +65,8 @@ found.
 
 | Page | Purpose | Status |
 |---|---|---|
-| [1. Purpose & Non-Goals](user-overview/01-purpose-and-non-goals.md) | What the recipes are and refuse to be | Live; the implementation recipe it describes is partial (Stages 2-5 Planned (IR12)) |
-| [2. How the Recipes Work](user-overview/02-how-the-recipes-work.md) | Stages and decisions, for evaluators | Live for audits and implementation Stages 0-1; Stages 2-5 Planned (IR12) |
+| [1. Purpose & Non-Goals](user-overview/01-purpose-and-non-goals.md) | What the recipes are and refuse to be | Live |
+| [2. How the Recipes Work](user-overview/02-how-the-recipes-work.md) | Stages and decisions, for evaluators | Live for audits and implementations |
 | [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live; §5 is a table of what the implement recipe may and never does; the push/PR rule is [ADR 0003](adrs/0003-push-and-pr-policy.md); the risks are in the [risk register](../../../shared/Risks-and-Mitigations.md) (R9-R14) |
 
 ## Explanation — Contributor Deep Dive
