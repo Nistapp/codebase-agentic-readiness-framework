@@ -1,6 +1,6 @@
 # Playbook: `add-repo-hygiene`
 
-> Theme T8 (hygiene and index freshness). Follows the anatomy in [`README.md`](README.md). Written in IR11.1; to be
+> Theme T8 (hygiene and index freshness). Follows the anatomy in [`README.md`](README.md). Written in IR11.1;
 > applied and corrected on a Gradle repository (IR11.2) and a multi-component Node repository (IR11.3). Its sibling
 > [`register-index`](register-index.md) owns the index checks of the same theme.
 
@@ -43,15 +43,15 @@ observation.
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done ([`SKILL.md`](../SKILL.md#stage-1-triage)). Read it first;
-  respect every `skipped` and `deferred` item and every preference. Never re-propose one.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - **T6 done or `partial`.** The README and CONTRIBUTING link to the documentation home and the style guide that
   [`establish-docs-contract`](establish-docs-contract.md) set up. T7 done or `partial`: CONTRIBUTING and the
-  release-process page must agree with the `AGENTS.md` branch and release sentence ([`adapt-agents-md`](adapt-agents-md.md)).
-- **Run the drift check first** ([`check_drift.py`](../../docs/reference/tools-cli.md#check_driftpy)). Earlier themes
-  and the owner's own pull requests close hygiene items without the state knowing: a `CODEOWNERS` added with the
-  CI work, a `branch-protection` page written with the CI runbook. An item that is already true is marked `done` with
-  the file as evidence; it is not rewritten, and an existing file is never replaced by a template.
+  release-process page must agree with the `AGENTS.md` branch and release sentence
+  ([`adapt-agents-md`](adapt-agents-md.md)).
+- **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a `CODEOWNERS` added with the CI work, or a
+  `branch-protection` page written with the CI runbook, closes an item without the state knowing. An existing file is
+  never replaced by a template.
 - **Detect before writing.** For each file, list what exists at the four locations, then read it. An existing
   `CONTRIBUTING` that is generic, or names a flow this repository does not use, is a diff to propose, not a file to
   overwrite.
@@ -69,11 +69,11 @@ observation.
 
 ## Inputs to ask
 
-No tool is installed. Ask once, as one batch (owner decision for IR11, Q1): the playbook writes every file below
-from the repository's own facts, adapted from [`greenfield-bootstrap/templates/`](../../../greenfield-bootstrap/templates/)
-(`SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `RELEASE_PROCESS.md`, and `github/` for `CODEOWNERS`, the pull-request
-template and the issue templates), shows them together, and takes one review. The owner is asked only for the policy
-files, and for nothing else:
+No tool is installed. Ask once, as one batch (owner decision for IR11, Q1): the playbook writes every file below from
+the repository's own facts, adapted from [`greenfield-bootstrap/templates/`](../../../greenfield-bootstrap/templates/)
+(`SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `RELEASE_PROCESS.md`, and `github/` for `CODEOWNERS`, the
+pull-request template and the issue templates), shows them together, and takes one review. The owner is asked only for
+the policy files, and for nothing else:
 
 1. **Show the batch.** The list of files to create or change, each with the check it closes and whether it already
    exists. Offer item-by-item review only if the owner asks for it.
@@ -83,7 +83,8 @@ files, and for nothing else:
    would block every pull request. The playbook never enables it and never edits the GitHub setting.
 3. **SECURITY (HYG-06).** Ask for the mailbox and the response time. If the owner has not supplied them, write the
    document with the placeholder `TODO(owner)` where each value goes. The disclosure path by repository kind:
-   - **Public repository:** GitHub private vulnerability reporting, plus the placeholder for a mailbox and a response time.
+   - **Public repository:** GitHub private vulnerability reporting, plus the placeholder for a mailbox and a response
+     time.
    - **Private repository:** "report privately to the repository owner", no public-disclosure promises, no response-time
      promise unless the owner states one.
 
@@ -97,10 +98,11 @@ files, and for nothing else:
 
 ### Generic
 
-1. **Baseline.** Run the drift check and the audit launcher for HYG-01 to HYG-11. Build the table "check, location
-   found, verdict, action". Close every present item as `done` with the file as evidence. Name each new file by this
-   repository's own convention (decision D18): look at the neighbouring file names, the casing of existing root files,
-   and `AGENTS.md` and CONTRIBUTING first, and follow them (for example `docs/branch-protection.md` beside other
+1. **Baseline.** Run the audit launcher for HYG-01 to HYG-11. Build the table "check, location found, verdict, action".
+   Close every present item as `done` with the file as evidence. A check that passes and has no item gets no state
+   entry, only a line in the pull request body ([Stage 3](../SKILL.md#stage-3-apply), step 5). Name each new file by
+   this repository's own convention (decision D18): look at the neighbouring file names, the casing of existing root
+   files, and `AGENTS.md` and CONTRIBUTING first, and follow them (for example `docs/branch-protection.md` beside other
    kebab-case pages).
 2. **README (HYG-01).** Skip when a root README exists and passes. Otherwise write about 40 lines, from the
    repository's own files only (manifests, `AGENTS.md`, the docs index, the scripts, the CI files): what the repository
@@ -125,7 +127,8 @@ files, and for nothing else:
      file risks a malformed first entry. HYG-07 stays `partial` with the debt "no changelog until the first release
      is cut" and the revisit trigger "first release pull request merged". The check reads the file's last commit
      within 365 days of `HEAD`, so it recovers by itself once the tool commits.
-   - **No tool:** offer the keep-a-changelog skeleton from the template, one entry per release, and let the owner decide.
+   - **No tool:** offer the keep-a-changelog skeleton from the template, one entry per release, and let the owner
+     decide.
 
    The release-process page (HYG-08) is a short document, not the 358-line template. A workflow file named
    `release.yml` does not count; the check wants prose. It states: which tool opens release pull requests and tags,
@@ -141,16 +144,15 @@ files, and for nothing else:
    private runbook from another repository; describe the rules from the repository's own workflow files and the
    owner's answers. Never call the GitHub settings API.
 8. **Dependency updates and licence (HYG-09, HYG-10).** Verify only. If the dependency-update file exists, record
-   `done`. If a `LICENSE` is missing, do not pick one: raise it as an owner question; the item stays `queued`.
-9. **Verify and commit.** Re-run the launcher for HYG-01 to HYG-11, lint every changed Markdown file
-   (`markdownlint-cli2`), validate any Mermaid block, run the repository's gate. One commit per concern (policy files:
-   CODEOWNERS and SECURITY; contribution files: README, CONTRIBUTING and the templates; release and protection pages),
-   so each reverts alone.
+   `done` when the check has an item; when it has none (the audit passed it), name it in the pull request body and
+   record nothing. If a `LICENSE` is missing, do not pick one: raise it as an owner question; the item stays `queued`.
+9. **Commits:** one per concern: policy files (CODEOWNERS and SECURITY); contribution files (README, CONTRIBUTING
+   and the templates); release and protection pages.
 
 ### Gradle and Quarkus
 
-Profile: [`stacks/java.md`](../../stacks/java.md). The README and CONTRIBUTING name the wrapper commands (`./gradlew ...`)
-and the Java version the toolchain needs. CODEOWNERS paths follow the Gradle layout (`/src/main/`, `/src/test/`,
+Profile: [`stacks/java.md`](../../stacks/java.md). The README and CONTRIBUTING name the wrapper commands (`./gradlew
+...`) and the Java version the toolchain needs. CODEOWNERS paths follow the Gradle layout (`/src/main/`, `/src/test/`,
 `/scripts/ci/`). Release tools in this stack are usually release-please (`simple` type, root) or the Gradle release
 plugin; the release page says which tags the tool creates.
 
@@ -208,11 +210,10 @@ vulnerability reporting, branch protection, required reviews) are never touched,
 
 ## State updates
 
-Through [`progress.py`](../../docs/reference/tools-cli.md#progresspy), on the T8 theme branch shared with
-[`register-index`](register-index.md):
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) and [Stage 4](../SKILL.md#stage-4-close-the-theme), on
+the T8 branch shared with [`register-index`](register-index.md):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "ls .github/CODEOWNERS" --verification-result "present"
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
@@ -229,6 +230,5 @@ python3 brownfield-recipes/tools/progress.py pref set security.disclosure <githu
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```
 
-Record a preference only when the owner answers; absent means the default above. A finding the drift check shows
-already true is `done` with the file as evidence. The theme closes once, after both T8 playbooks, as
-[`adapt-agents-md`](adapt-agents-md.md#state-updates) says (ADR 0003 ending; never merge).
+Record a preference only when the owner answers; absent means the default above. The theme closes once, after
+both T8 playbooks ([Stage 4](../SKILL.md#stage-4-close-the-theme)).

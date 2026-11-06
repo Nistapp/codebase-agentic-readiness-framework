@@ -1,6 +1,6 @@
 # Playbook: `add-deny-rules`
 
-> Theme T7 (`AGENTS.md` and governance). Follows the anatomy in [`README.md`](README.md). Written in IR10.1; to be
+> Theme T7 (`AGENTS.md` and governance). Follows the anatomy in [`README.md`](README.md). Written in IR10.1;
 > applied and corrected on a Gradle repository (IR10.2) and a multi-component Node repository (IR10.3). It edits
 > **only the prohibitions section** of the instruction file
 > ([decision 0001](../../../spec/decisions/0001-constraint-artifact.md): that section is the deny list). Everything
@@ -34,15 +34,14 @@ a fix. The state files keep CON-04 in T7 so the theme reads it.
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done ([`SKILL.md`](../SKILL.md#stage-1-triage)). Read it first;
-  respect every `skipped` item and preference.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - **T3 and T6 done or `partial`.** T3 ([`env-inventory-and-secrets`](env-inventory-and-secrets.md)) decided which
   env and secret files exist and which are tracked on purpose; the secrets rule states that decision, it does not
   remake it. T6 ([`establish-docs-contract`](establish-docs-contract.md)) set up the scratch directory rule (DOC-03);
   CON-03 reuses it.
-- **Run the drift check first** ([`check_drift.py`](../../docs/reference/tools-cli.md#check_driftpy)). Re-list the
-  test directories on the current integration branch; a finding that names one directory may be short of the full
-  list.
+- **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): re-list the test directories on the current integration
+  branch; a finding that names one directory may be short of the full list.
 - **The CON-04 draft.** Run the audit launcher with `--emit-baseline`, output outside the target:
 
   ```bash
@@ -139,8 +138,8 @@ No tool is installed. Ask:
    prohibitions (tests, secrets, default branch) to a configuration file that already exists, in its own commit;
    it still never creates one. When no harness configuration is present, report "none present" and stop. A
    permission rule is hardening, not the deny list; the audit never scores it.
-7. **Verify and commit.** Re-run the launcher for AGT-07, CON-01, CON-02 and CON-03, lint the changed Markdown, run
-   the repository's gate. One commit for the section, one for any `.gitignore` change, so each reverts alone.
+7. **Commits:** one for the section, one for any `.gitignore` change. The engine re-check
+   ([Stage 4](../SKILL.md#stage-4-close-the-theme), step 1) covers AGT-07, CON-01, CON-02 and CON-03.
 
 ### Gradle and Quarkus
 
@@ -196,11 +195,10 @@ reverts alone.
 
 ## State updates
 
-Through [`progress.py`](../../docs/reference/tools-cli.md#progresspy), on the T7 theme branch shared with
-[`adapt-agents-md`](adapt-agents-md.md):
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) and [Stage 4](../SKILL.md#stage-4-close-the-theme), on
+the T7 branch shared with [`adapt-agents-md`](adapt-agents-md.md):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "<launcher run>; read CON-02" \
   --verification-result "every test directory named in the prohibitions section"
@@ -213,4 +211,4 @@ python3 brownfield-recipes/tools/progress.py pref set agents_md.harness_deny no 
 ```
 
 Record `agents_md.harness_deny` only when the owner answers; absent means report only. The theme closes once, after
-both T7 playbooks, as [`adapt-agents-md`](adapt-agents-md.md#state-updates) says (ADR 0003 ending; never merge).
+both T7 playbooks ([Stage 4](../SKILL.md#stage-4-close-the-theme)).

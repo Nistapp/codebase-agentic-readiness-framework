@@ -20,18 +20,16 @@ recorded, and a committed record shows which CI job the platform requires before
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done. Read it first; respect every `skipped` item and preference.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - **T1 done:** the verbs exist locally ([`define-command-surface`](define-command-surface.md)). **T2 done:** the
   toolchain CI uses is pinned ([`pin-execution-environment`](pin-execution-environment.md)). If a verb CI should
   call does not exist, stop and report; do not invent a CI-only command.
 - Preferences read, when present: `ci.edits_authorised` (a `no` or a scoped value limits which files may change;
   honour the exact scope), `ci.image_scan_debt`, `scanner.choice`, `format.mass_reformat`, `layout.command_runner`,
   `lint.mode`, `security.verb`.
-- **Run the drift check first.** A finding quoted from the report can be stale (a step already fixed, a wrapper
-  already calling the verb). Re-read the workflow on the current default branch and mark stale items `done` with
-  the drift as the reason.
-- **Public/private boundary.** Nothing from a private repository or workspace (job names, counts, values) goes
-  into an open-source repository's docs, or from any target into the framework.
+- **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a step already fixed or a wrapper already calling the verb
+  makes a finding stale; re-read the workflow on the current integration branch.
 
 ## Inputs to ask
 
@@ -85,7 +83,7 @@ recorded, and a committed record shows which CI job the platform requires before
    command that re-checks it. If the platform cannot enforce a required check (plan limitation), the page says
    so and lists the mitigations; the check is then recorded `partial`, never `done`.
 7. **Lint the workflow** with the repository's workflow linter before pushing. Edit workflows only in a PR.
-8. **Verify and commit** per logical change (wrapper, workflow, record), each revertible alone.
+8. **Commits:** wrapper, workflow, record.
 
 ### GitHub Actions and Gradle
 
@@ -119,8 +117,6 @@ Lessons from the multi-app Node application (IR07.3):
   Mark the clause stale in the item's note; do not rewrite the finding.
 - A README table row you add counts against any Markdown lint baseline. Keep new rows under the line limit and put
   longer notes in a wrapped paragraph.
-- `progress.py theme T4 --status pr_open` needs `--pr`, so open the pull request first, then record the state in a
-  second commit. Fix a stale theme row (a merged pull request still recorded `pr_open`) in the same state commit.
 
 ## Continue on error
 
@@ -163,8 +159,10 @@ but a reverted placeholder is a green no-op again: record that in the PR.
 
 ## State updates
 
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, the theme rows) and
+[Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
+
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "<wrapper or grep>" --verification-result "<result>"
 python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
@@ -173,8 +171,4 @@ python3 brownfield-recipes/tools/progress.py pref set ci.shape <wrappers-call-ve
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 brownfield-recipes/tools/progress.py pref set ci.edits_authorised <value> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py theme T4 --status branch_open \
-  --branch agentic-readiness/<phase>-ci-hooks --target <repo> --phase <phase> --render
 ```
-
-Only the owner skips an item.

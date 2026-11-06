@@ -1,6 +1,6 @@
 # Playbook: `adapt-agents-md`
 
-> Theme T7 (`AGENTS.md` and governance). Follows the anatomy in [`README.md`](README.md). Written in IR10.1; to be
+> Theme T7 (`AGENTS.md` and governance). Follows the anatomy in [`README.md`](README.md). Written in IR10.1;
 > applied and corrected on a Gradle repository (IR10.2) and a multi-component Node repository (IR10.3). Its sibling
 > [`add-deny-rules`](add-deny-rules.md) owns the prohibitions section; this playbook owns the rest of the file.
 
@@ -39,18 +39,18 @@ before the first diff.
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done ([`SKILL.md`](../SKILL.md#stage-1-triage)). Read it first;
-  respect every `skipped` item and preference. A finding the owner rejected at triage (for example an AGT-08 finding
-  on a `CLAUDE.md` import stub) is never re-proposed, not even as a side effect of another diff.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
+- A finding the owner rejected at triage (for example an AGT-08 finding on a `CLAUDE.md` import stub) is never
+  re-proposed, not even as a side effect of another diff.
 - **T1 to T6 done or `partial`.** This theme writes what the earlier themes made true: the verbs (T1), the pinned
   environment and the lock regeneration line (T2), the secrets rules (T3), the hooks and CI (T4), the baselines and
   the single-test line (T5), the docs home, style guide and decision log (T6). A fact an earlier theme has not made
   true is not written as if it were; it stays a finding for that theme.
-- **Run the drift check first** ([`check_drift.py`](../../docs/reference/tools-cli.md#check_driftpy)). Earlier themes
-  edit `AGENTS.md` (T1 the verbs, T5 the fenced test line, T6 the docs line), so a T7 finding is often stale: verbs a
-  finding calls "not named" may now be named; a line a finding calls stale may already be fixed. Re-measure every
-  claim in the finding statement (line numbers, counts such as "rule contradicted in five services", "not named:
-  ...") on the current integration branch. A finding resolved by drift is `done` with the drift as the reason.
+- **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2) matters most here: earlier themes edit `AGENTS.md` (T1 the
+  verbs, T5 the fenced test line, T6 the docs line), so a T7 finding is often stale. Verbs a finding calls "not named"
+  may now be named; a line it calls stale may already be fixed; a count such as "rule contradicted in five services" is
+  re-measured.
 - Preferences this playbook reads, when present:
 
 | Key | Effect |
@@ -61,13 +61,10 @@ before the first diff.
 | `agents_md.generic_text` | `move-to-docs` (default) or `delete`, per section if the owner chose per section (Inputs 5) |
 | `agents_md.contradicted_rules` | `target-state` (default) or `describe-code` (Inputs 5) |
 | `agents_md.release_tags` | What an agent may do with tags and releases; feeds the AGT-09 sentence (Inputs 6) |
-| `ci.pr_by_agent` | Whether the AGT-09 sentence allows pushing a branch and opening a pull request ([ADR 0003](../../docs/architecture/adrs/0003-push-and-pr-policy.md)); also the ending |
+| `ci.pr_by_agent` | Whether the AGT-09 sentence allows pushing a branch and opening a pull request ([ADR 0003](../../docs/architecture/adrs/0003-push-and-pr-policy.md)) |
 | `docs.agents_line` | T6 already wrote the docs line; AGT-03 then only verifies it |
 | `layout.command_runner` | `per-app`: verbs are listed per app, not at the root |
 | `format.mass_reformat` | `no` (usual): never reflow or reformat the file to make it shorter |
-
-- **Public/private boundary.** Everything written into an open-source repository's `AGENTS.md` comes from that
-  repository. Never copy content, paths, names or values from a private sibling repository or workspace into it.
 
 ## Inputs to ask
 
@@ -80,6 +77,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 2. **Boundary rules (AGT-06).** Propose two or three rules from the code index (which directory may import which,
    which layer owns persistence, which folder is generated or vendored). The owner picks; never invent a boundary
    the code does not show. If the code index shows no boundary, ask the owner for one or record the item `partial`.
+   With no code index, a `grep` over the import lines can stand in for it to check a layer rule (which directory
+   imports which); say which one you used.
 3. **Vendor pointer files (AGT-08, the "ask about stub files" rule).** Default `keep`:
    - A vendor file whose content is only an import or a pointer at `AGENTS.md` (`@AGENTS.md`, "See AGENTS.md")
      stays. It is what gives that harness its reach (Claude Code loads `CLAUDE.md`, not `AGENTS.md`). Add the reach
@@ -115,7 +114,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 
 ### Generic
 
-1. **Baseline.** Run the drift check. Record: the line count of `AGENTS.md` (and of each per-component file), the
+1. **Baseline.** Record: the line count of `AGENTS.md` (and of each per-component file), the
    instruction-shaped files present (the engine's variant table, or list them: `AGENTS.md`, `CLAUDE.md`,
    `GEMINI.md`, `CONVENTIONS.md`, `.cursorrules`, `.cursor/rules/`, `.github/copilot-instructions.md`,
    `.windsurfrules` and similar), the harness configuration files present (`.claude/`, `opencode.json`, `.codex/`,
@@ -193,9 +192,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     (component scoping is a v0.3 item in the spec).
 11. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
     record the overage as debt. Never shorten by reflowing or deleting the owner's rules.
-12. **Verify and commit.** Re-run the audit launcher on the branch for the touched checks (or the full engine run),
-    lint the changed Markdown with the repository's docs lint, and run the repository's gate. Commit per finding
-    (one logical change each) so the owner can revert any one alone.
+12. **Commits:** one per finding, so the owner can revert any one alone.
 
 ### Gradle and Quarkus
 
@@ -266,26 +263,20 @@ the owner agreed to trim, and the new `docs/` page is touched.
 
 ## State updates
 
-Through [`progress.py`](../../docs/reference/tools-cli.md#progresspy), on the theme branch, `--phase` the current step:
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, the theme rows) and
+[Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
 python3 brownfield-recipes/tools/progress.py pref set agents_md.stubs keep \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 brownfield-recipes/tools/progress.py pref set agents_md.generic_text move-to-docs \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "grep -n -i 'same change set' AGENTS.md" \
   --verification-result "one sentence, triggers named"
 python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --commit <sha> --debt "what=files that break the <rule> rule,count=<N>" --note "rule kept as target state"
-python3 brownfield-recipes/tools/progress.py theme T7 --status branch_open \
-  --branch agentic-readiness/<phase>-agents-md --target <repo> --phase <phase> --render
 ```
 
-A finding resolved by drift is `done` with the drift as the reason. `partial` is reached through `in_progress`. T7 is
-one theme with two playbooks: run this one and [`add-deny-rules`](add-deny-rules.md) on the same branch, and close
-the theme once. The theme ends per [ADR 0003](../../docs/architecture/adrs/0003-push-and-pr-policy.md): commit on
-the theme branch and stop, unless the owner recorded `ci.pr_by_agent=yes`; then push the branch and open one pull
-request into the integration branch (`theme T7 --status pr_open --branch B --pr N` after it exists). Never merge.
-Only the owner skips an item.
+T7 is one theme with two playbooks: run this one and [`add-deny-rules`](add-deny-rules.md) on the same branch, and
+close the theme once ([Stage 4](../SKILL.md#stage-4-close-the-theme)).

@@ -66,8 +66,9 @@ These apply through every stage, without exception:
 Every command names a tool by its path from the folder that holds this recipe: the root of a framework
 checkout, or this skill's own folder when it is installed as a skill. Run the commands from there, give
 `<repo>`, `<worktree>` and `<report>` as absolute paths, and do not use `python3 -I` (the tools import their
-sibling modules). Every tool prints one JSON envelope; read `ok`, `data` and `warnings`. The [Tools](#tools)
-table gives each call's expected result and what to do when it fails.
+sibling modules). From Stage 3 on, `<repo>` in a playbook's commands means the theme's worktree. Every tool
+prints one JSON envelope; read `ok`, `data` and `warnings`. The [Tools](#tools) table gives each call's expected
+result and what to do when it fails.
 
 ## Stages
 

@@ -19,7 +19,8 @@ the pins in CI, Dockerfiles and version files agree with each other.
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done ([`SKILL.md`](../SKILL.md#stage-1-triage)). Read it first.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `layout.command_runner` (per component or one root runner; a
   per-component preference forbids a root workspace manifest), `ci.edits_authorised` (whether workflow files may
   be changed), `format.mass_reformat`, `extra.*` entries that name a pin the owner already chose (for example a
@@ -70,18 +71,17 @@ the pins in CI, Dockerfiles and version files agree with each other.
    built into Gradle, read by Dependabot and by OSV-Scanner. Locking only `runtimeClasspath` and
    `compileClasspath` gives a smaller file but leaves test and plugin classpaths free to drift, so EXEC-02 reads
    only partly met. A version catalog alone is not a lock. Record the choice as a preference.
-6. **Monorepo or several components with no root manifest.** Per-component lockfiles are accepted when the owner
-   chose a per-component layout (`layout.command_runner`). The playbook then verifies each component and records
-   the item `partial` with the reason; it does not add a root workspace manifest unless the owner asks, because
-   that changes install paths and image builds. The engine reads only the root manifest, so a nested lockfile
-   reads `PARTIAL` by design ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
+6. **Monorepo or several components with no root manifest.** Per-component lockfiles are accepted when the owner chose a
+   per-component layout (`layout.command_runner`). The playbook then verifies each component and records the item
+   `partial` with the reason; it does not add a root workspace manifest unless the owner asks, because that changes
+   install paths and image builds. The engine reads only the root manifest, so a nested lockfile reads `PARTIAL` by
+   design ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
 
 ## Steps
 
-1. **Baseline.** Work in a worktree from the up-to-date integration branch on the theme branch
-   (`agentic-readiness/<phase>-determinism`). Set each T2 item `in_progress`. Record what resolves today: the
-   dependency report (`./gradlew dependencies --configuration <c>`, `npm ls --all`) per component, saved outside
-   the repository. Nothing below may change it.
+1. **Baseline.** On the theme branch `agentic-readiness/<phase>-determinism` ([Stage 3](../SKILL.md#stage-3-apply), step
+   1), record what resolves today: the dependency report (`./gradlew dependencies --configuration <c>`, `npm ls --all`)
+   per component, saved outside the repository. Nothing below may change it.
 2. **Pin the toolchain** with the mechanism chosen in Inputs, once per ecosystem and per component. Use the
    exact version the owner chose, not a range, in the version file.
 3. **Pin the package manager** where the ecosystem has a field for it (`packageManager` in `package.json`;
@@ -108,7 +108,7 @@ the pins in CI, Dockerfiles and version files agree with each other.
    component. If [`define-command-surface`](define-command-surface.md) has not added it, add it there; this
    playbook adds no setup script. Record the engine's limit when the documented command is a project script it
    does not recognise.
-10. Commit per logical change (toolchain pin, lockfile, version alignment, doc claim), each revertible alone.
+10. Commits: toolchain pin, lockfile, version alignment, doc claim.
 
 ### Gradle
 
@@ -195,11 +195,10 @@ runtime change needs undoing.
 
 ## State updates
 
-Through [`progress.py`](../../docs/reference/tools-cli.md#progresspy), on the theme branch, `--phase` the
-current step:
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, the theme rows) and
+[Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "./gradlew dependencies (before and after)" \
   --verification-result "<resolved versions identical; gradle.lockfile tracked>"
@@ -207,13 +206,7 @@ python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <
   --debt "what=version mismatch in CI,count=2" --note "<places, why not edited>"
 python3 brownfield-recipes/tools/progress.py pref set tools.node_major <value> --reason "<owner's words>" \
   --by owner --target <repo> --phase <phase>
-python3 brownfield-recipes/tools/progress.py theme T2 --status branch_open \
-  --branch agentic-readiness/<phase>-determinism --target <repo> --phase <phase> --render
 ```
 
-`set-status ... partial` requires `--debt`, and `theme --status pr_open` requires `--pr`: open the pull request
-first, then set the theme row in a second state commit. Run `git add` on named paths when committing the code,
-so the state JSON that `progress.py` rewrites does not ride along in an unrelated commit.
-
-A `blocked` status is reached through `in_progress` and needs `--reason`. Record each owner choice as a
-preference: runtime major, pin mechanism, Gradle lock width, accepted per-component lockfiles.
+Owner choices to record as preferences: runtime major, pin mechanism, Gradle lock width, accepted
+per-component lockfiles.

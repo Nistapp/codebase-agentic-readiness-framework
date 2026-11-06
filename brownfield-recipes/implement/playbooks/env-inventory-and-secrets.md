@@ -20,9 +20,9 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done ([`SKILL.md`](../SKILL.md#stage-1-triage)). Read it first and
-  respect every `skipped` item and preference. A tracked secret-bearing file the owner decided to keep is a
-  recorded exception, not a finding to re-raise.
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
+- A tracked secret-bearing file the owner decided to keep is a recorded exception, not a finding to re-raise.
 - Preferences this playbook reads, when present: `extra.t3` (what the owner already chose for a tracked key
   file), `layout.command_runner` (per-app layout means one example file per app), `ci.edits_authorised`,
   `scanner.choice` (a dependency scanner is not a secret scanner), `format.mass_reformat`.
@@ -133,7 +133,7 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    documents variables by hand: one pointer, not a second copy. If the instruction file says env files are
    ignored and a tracked one exists, record the contradiction; the AGENTS.md theme fixes it. A deploy doc that
    names variables by hand gets one pointer line to the example file, not a copy.
-10. Commit per logical change (example file, ignore rules, untracking), each revertible alone.
+10. Commits: example file, ignore rules, untracking.
 
 ### Gradle and Quarkus
 
@@ -202,11 +202,10 @@ undoing.
 
 ## State updates
 
-Through [`progress.py`](../../docs/reference/tools-cli.md#progresspy), on the theme branch, `--phase` the
-current step:
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, the theme rows) and
+[Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "git ls-files -ci --exclude-standard" \
   --verification-result "<empty, or only the recorded exceptions>"
@@ -214,12 +213,7 @@ python3 brownfield-recipes/tools/progress.py skip F-nnn --target <repo> --phase 
   --reason "<the owner's words>" --by owner
 python3 brownfield-recipes/tools/progress.py pref set layout.env_example <path> --target <repo> --phase <phase> \
   --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py theme T3 --status branch_open \
-  --branch agentic-readiness/<phase>-secrets-env --target <repo> --phase <phase> --render
 ```
 
-`theme T3 --status pr_open` requires `--pr <number>`, so open the PR first and commit the final state files
-after it (a theme with a skipped item still closes when every other item is `done`).
-
-Only the owner skips an item. A keystore decision is already a preference (`extra.t3`) when the owner made
+A keystore decision is already a preference (`extra.t3`) when the owner made
 it; do not ask again, confirm it in one line.

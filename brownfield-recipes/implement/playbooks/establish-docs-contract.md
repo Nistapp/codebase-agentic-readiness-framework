@@ -29,22 +29,18 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done ([`SKILL.md`](../SKILL.md#stage-1-triage)). Read it first and
-  respect every `skipped` item and preference. Never re-propose a rejected or skipped finding (for example a
-  rejected NAV-02).
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `format.mass_reformat` (a `no` means every docs check is a
   baseline or ratchet, never a reformat), `layout.command_runner`, `ci.edits_authorised` (needed to add the docs
   CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `extra.*`.
-- **Run the drift check first** ([`check_drift.py`](../../docs/reference/tools-cli.md)). A finding that says
-  "no `docs/` directory" can be stale: an earlier theme or an audit-report commit may have created `docs/`. The
-  engine passes DOC-01 on any Markdown file under `docs/`, so the report folders alone make it pass. Mark such a
-  finding `done` with the drift as the reason, and add the index to the folder that exists. Never create a
-  second `docs/`. The same goes for any number a phase text or finding statement quotes (sizes, counts, "340 MB
-  in the tree"): re-measure on the current default branch before acting.
+- **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a finding that says "no `docs/` directory" can be stale: an
+  earlier theme or an audit-report commit may have created `docs/`. The engine passes DOC-01 on any Markdown file under
+  `docs/`, so the report folders alone make it pass. Add the index to the folder that exists; never create a second
+  `docs/`. Re-measure every size or count a finding quotes ("340 MB in the tree").
 - No earlier theme is needed. If the command-surface theme named a docs verb, reuse it in the lint step.
-- **Public/private boundary.** If the target is open source, everything written here comes from that repository's
-  own code and files. Never copy content, paths, names or values from a private sibling repository or a private
-  workspace into it. A private model may be mentioned by description only (no path, no hostname).
+- **Private sources** (the hard rule in `SKILL.md`): a private model may be mentioned by description only, with
+  no path and no hostname.
 
 ## Inputs to ask
 
@@ -87,7 +83,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 
 ### Generic
 
-1. **Baseline.** Run the drift check. List the Markdown files under `docs/`, in the root and in sub-folders. Count
+1. **Baseline.** List the Markdown files under `docs/`, in the root and in sub-folders. Count
    Markdown lint violations with the pinned linter on every tracked Markdown file (report only, nothing is
    fixed). Record the count, but it is a draft: `progress.py render` adds a generated state view that is itself
    Markdown with a few violations, and so do the new pages, so **measure the final baseline after the last render**
@@ -156,8 +152,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       Check the repository's merge-gate job: a
       new job that must be green needs adding to it, which is the owner's call.
    4. If `lychee` was chosen: relative links only, report-only at first.
-9. **Verify and commit.** Lint every new and changed Markdown file, validate every Mermaid block, run the
-   repository's gate. Commit per logical change (docs, then lint config, then CI), each revertible alone.
+9. **Commits:** docs, then lint config, then CI.
 
 ### Gradle and Quarkus
 
@@ -175,14 +170,6 @@ compose file. In a per-app layout (`layout.command_runner`), put the lint config
 run the docs job once from there. For infrastructure folders, read the routing from the files that are actually
 active (a gateway may enable its upstream rules per environment); say in the page what you could not verify.
 The repository already has Node, so the job can reuse its pinned Node version.
-
-## Re-recording preferences
-
-An earlier owner-answers commit on a side branch (the docs preferences from the brief pass) conflicts with the state
-JSON as soon as the default branch has moved. Do not cherry-pick it; re-record the preferences with `progress.py
-pref set --by owner` quoting the owner's words. Close earlier themes the state still shows `pr_open` although their
-PRs are merged (`progress.py theme Tn --status merged --pr <n> --merged-sha <sha>`). `theme T6 --status pr_open`
-needs `--pr`, so open the PR before the final state commit. `git add` named paths, never `commit -a`.
 
 ## Continue on error
 
@@ -232,11 +219,10 @@ index).
 
 ## State updates
 
-Through [`progress.py`](../../docs/reference/tools-cli.md#progresspy), on the theme branch, `--phase` the
-current step:
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, the theme rows) and
+[Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "test -f docs/STYLE_GUIDE.md" \
   --verification-result "present; named in the instruction file"
@@ -244,8 +230,4 @@ python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <
   --debt "what=markdown lint violations,count=<n>,baseline=<file>" --note "<mechanism>"
 python3 brownfield-recipes/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py theme T6 --status branch_open \
-  --branch agentic-readiness/<phase>-docs --target <repo> --phase <phase> --render
 ```
-
-Only the owner skips an item. A stale finding resolved by drift is `done` with the reason, not `skipped`.

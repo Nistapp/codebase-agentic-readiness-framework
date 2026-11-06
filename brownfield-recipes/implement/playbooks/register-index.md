@@ -1,6 +1,6 @@
 # Playbook: `register-index`
 
-> Theme T8 (hygiene and index freshness). Follows the anatomy in [`README.md`](README.md). Written in IR11.1; to be
+> Theme T8 (hygiene and index freshness). Follows the anatomy in [`README.md`](README.md). Written in IR11.1;
 > applied and corrected on a Gradle repository (IR11.2) and a multi-component Node repository (IR11.3). Its sibling
 > [`add-repo-hygiene`](add-repo-hygiene.md) owns the hygiene files of the same theme.
 
@@ -35,19 +35,22 @@ server is reachable, and freshness means nothing before an index exists.
 - IDX-02 reads a machine-local store. The store is not part of the repository, so the result depends on the machine.
 - IDX-03 compares the store's recorded revision with `HEAD`. The store schema records the project root and index time
   but no revision, so the engine's own verdict is `UNKNOWN` by construction. A tool freshness query is the stronger
-  evidence. Do not describe that `UNKNOWN` as a soft failure, and do not claim the playbook makes the engine verdict `PASS`.
+  evidence. Do not describe that `UNKNOWN` as a soft failure, and do not claim the playbook makes the engine verdict
+  `PASS`.
 - `--no-user-config` makes an audit independent of the machine: the engine reads no user-level file, and IDX-01 then
   says "no project-level config" when none is committed. A committed project-level file is the only way an
   `--no-user-config` audit finds the registration.
 
 ## Preconditions
 
-- The state file exists and Stage 1 triage is done ([`SKILL.md`](../SKILL.md#stage-1-triage)). Read it first;
-  respect every `skipped` item and preference. A skipped IDX-03 (moment in time, remedy is re-indexing) is not re-proposed.
-- **Run the drift check first** ([`check_drift.py`](../../docs/reference/tools-cli.md#check_driftpy)). A finding that
-  says "the index predates `HEAD`" is true only for the moment it was measured; re-measure instead of repeating it.
-- **T7 done or `partial`.** The freshness rule is a line in the instruction file ([`adapt-agents-md`](adapt-agents-md.md)
-  owns that file; this playbook adds one line, in the section the T7 work chose).
+- The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
+  worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
+- A skipped IDX-03 (moment in time, remedy is re-indexing) is not re-proposed.
+- **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a finding that says "the index predates `HEAD`" is true only
+  for the moment it was measured; re-measure instead of repeating it.
+- **T7 done or `partial`.** The freshness rule is a line in the instruction file
+  ([`adapt-agents-md`](adapt-agents-md.md) owns that file; this playbook adds one line, in the section the T7 work
+  chose).
 - The index tool is installed on the machine that runs the playbook. If it is not, stop and tell the owner; this
   playbook installs nothing.
 - Preferences this playbook reads, when present:
@@ -63,9 +66,9 @@ server is reachable, and freshness means nothing before an index exists.
 
 No dependency is installed. Ask:
 
-1. **Which harness, and what is already registered.** Detect from `AGENTS.md`, the vendor pointer files, and the
-   project directories (`.vscode/`, `.cursor/`, `.claude/`, `.gemini/`, `.codex/`). List every config file found,
-   project-level first, then user-level (read-only: report the path and whether it names the server, never print the file).
+1. **Which harness, and what is already registered.** Detect from `AGENTS.md`, the vendor pointer files, and the project
+   directories (`.vscode/`, `.cursor/`, `.claude/`, `.gemini/`, `.codex/`). List every config file found, project-level
+   first, then user-level (read-only: report the path and whether it names the server, never print the file).
 2. **Registration form (decision for IR11, Q5).** The playbook offers both forms; the owner picks one per repository,
    and the answer is recorded as `index.registration`:
 
@@ -75,12 +78,15 @@ No dependency is installed. Ask:
    | `document-only`: a section in `AGENTS.md` or a docs page saying how to register the server at user level | Text only | No committed config, no consent question | IDX-01 (a blocker) stays `FAIL` under `--no-user-config`; the item is `partial` |
 
    If the server command differs between machines, the project file uses the bare command name so each machine's `PATH`
-   resolves it, and the page says which one to install. Offer one file per harness the team uses, not one for every harness.
-3. **Freshness (decision for IR11, Q6).** Default `agents-md-rule`: one line in the instruction file. Alternatives, offered
-   only if the owner asks: a git hook that calls the refresh (machine-specific command, skipped by `--no-verify`), or a
-   statement that the tool refreshes itself (an unverifiable claim; document it only with the freshness query beside it).
-4. **User-level edit.** Ask only if the owner wants the playbook to edit a file under `$HOME`. Show the exact file and the
-   exact change first. Without a recorded `index.user_config_consent=yes`, do not touch it; give the owner the text to add.
+   resolves it, and the page says which one to install. Offer one file per harness the team uses, not one for every
+   harness.
+3. **Freshness (decision for IR11, Q6).** Default `agents-md-rule`: one line in the instruction file. Alternatives,
+   offered only if the owner asks: a git hook that calls the refresh (machine-specific command, skipped by
+   `--no-verify`), or a statement that the tool refreshes itself (an unverifiable claim; document it only with the
+   freshness query beside it).
+4. **User-level edit.** Ask only if the owner wants the playbook to edit a file under `$HOME`. Show the exact file and
+   the exact change first. Without a recorded `index.user_config_consent=yes`, do not touch it; give the owner the text
+   to add.
 
 ## Steps
 
@@ -89,29 +95,29 @@ No dependency is installed. Ask:
 1. **Baseline.** Run the audit launcher with `--no-user-config` for IDX-01 to IDX-03, and once without it. Record both
    verdicts: the difference shows how much depends on the developer's home directory.
 2. **Register (IDX-01).** Per Inputs 2:
-   - `project-file`: create the harness's project config with one server entry named `codebase-memory-mcp`. Use the
-     file name and key the harness's current documentation names (formats change; check the vendor's page and cite
-     the date). Keep the entry minimal (a command, no secrets, no machine-specific absolute path). Do not edit an existing
-     project config's other entries.
+   - `project-file`: create the harness's project config with one server entry named `codebase-memory-mcp`. Use the file
+     name and key the harness's current documentation names (formats change; check the vendor's page and cite the date).
+     Keep the entry minimal (a command, no secrets, no machine-specific absolute path). Do not edit an existing project
+     config's other entries.
    - `document-only`: add a short section to the docs page or `AGENTS.md` that says how to register the server for each
      harness the team uses. Mark IDX-01 `partial` with the reason.
-3. **Build the index (IDX-02).** Run `index_repository` for this checkout (root path), then confirm it answers: `list_projects`
-   shows the project and root, and `get_architecture` returns a summary whose file counts match the repository
-   (`git ls-files | wc -l` within the engine's own filtering). An index of another checkout, or of a path under
-   a different name, is not this checkout's. Do this on the integration branch's latest commit, or on the branch the
-   playbook is working in, and say which.
-4. **Freshness (IDX-03).** Add one line to the instruction file: the agent re-indexes at the start of a task and after the
-   last commit, and checks freshness with `detect_changes`. Write the sentence in the file's own voice, in the section where
-   the file already keeps tool guidance, and keep it within the 400-line budget. Run `detect_changes` and record the
-   result as the evidence; if it names changed files, re-index and run it again.
-5. **Verify and commit.** Re-run the launcher with and without `--no-user-config`, lint the changed Markdown, run the repository's
-   gate. One commit for the project config (if any), one for the instruction-file line, so each reverts alone.
+3. **Build the index (IDX-02).** Run `index_repository` for this checkout (root path), then confirm it answers:
+   `list_projects` shows the project and root, and `get_architecture` returns a summary whose file counts match the
+   repository (`git ls-files | wc -l` within the engine's own filtering). An index of another checkout, or of a path
+   under a different name, is not this checkout's. Do this on the integration branch's latest commit, or on the branch
+   the playbook is working in, and say which.
+4. **Freshness (IDX-03).** Add one line to the instruction file: the agent re-indexes at the start of a task and after
+   the last commit, and checks freshness with `detect_changes`. Write the sentence in the file's own voice, in the
+   section where the file already keeps tool guidance, and keep it within the 400-line budget. Run `detect_changes` and
+   record the result as the evidence; if it names changed files, re-index and run it again.
+5. **Commits:** one for the project config (if any), one for the instruction-file line. The engine re-check
+   ([Stage 4](../SKILL.md#stage-4-close-the-theme), step 1) runs with and without `--no-user-config`.
 
 ### Gradle and Quarkus
 
-Profile: [`stacks/java.md`](../../stacks/java.md). Generated sources under `build/` and `.gradle/` are not part of the index;
-confirm `get_architecture` does not list them. If the repository's tool-state directory (`.codebase-memory/`) exists,
-check it is ignored and untracked (CON-03, owned by [`add-deny-rules`](add-deny-rules.md)).
+Profile: [`stacks/java.md`](../../stacks/java.md). Generated sources under `build/` and `.gradle/` are not part of the
+index; confirm `get_architecture` does not list them. If the repository's tool-state directory (`.codebase-memory/`)
+exists, check it is ignored and untracked (CON-03, owned by [`add-deny-rules`](add-deny-rules.md)).
 
 ### Node (npm, NestJS, React)
 
@@ -123,8 +129,8 @@ indexed. In a repository with several apps, one index covers the root; the fresh
 - **IDX-01 under `--no-user-config` with the `document-only` form:** `partial`, `--debt "what=no project-level
   registration,count=1"`. This is the owner's choice, not an error; the note says so.
 - **IDX-03 engine verdict `UNKNOWN`:** the store records no revision. The item is `partial` when the freshness rule is
-  written and `detect_changes` is clean; the note quotes the tool result and the engine limitation. It is never `done` on
-  the engine's word alone. This is not a bug of the repository.
+  written and `detect_changes` is clean; the note quotes the tool result and the engine limitation. It is never `done`
+  on the engine's word alone. This is not a bug of the repository.
 - **An index that cannot be built** (tool error, out of memory): `blocked` with the error quoted; do not work around it.
 - None of this is a count of violations, so no ratchet or baseline file applies: report-only is the wiring.
 
@@ -140,7 +146,8 @@ indexed. In a repository with several apps, one index covers the root; the fresh
 
 `git revert` the commits (project config, instruction-file line). The index itself is machine-local and harmless to
 leave; delete the project with `delete_project` only if the owner asks. No user-level file is edited without recorded
-consent, so there is nothing to put back there; when consent was given, the state records the exact edit so it can be undone.
+consent, so there is nothing to put back there; when consent was given, the state records the exact edit so it can be
+undone.
 
 ## Do-not-do
 
@@ -154,11 +161,10 @@ consent, so there is nothing to put back there; when consent was given, the stat
 
 ## State updates
 
-Through [`progress.py`](../../docs/reference/tools-cli.md#progresspy), on the T8 theme branch shared with
-[`add-repo-hygiene`](add-repo-hygiene.md):
+Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) and [Stage 4](../SKILL.md#stage-4-close-the-theme), on
+the T8 branch shared with [`add-repo-hygiene`](add-repo-hygiene.md):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn in_progress --target <repo> --phase <phase>
 python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "engine.py <repo> --no-user-config; read IDX-01" \
   --verification-result "project config names the server"
@@ -174,5 +180,5 @@ python3 brownfield-recipes/tools/progress.py pref set index.freshness agents-md-
 ```
 
 Record a preference only when the owner answers; absent means the default above, and `index.user_config_consent` absent
-means no user-level edit. The theme closes once, after both T8 playbooks, as
-[`adapt-agents-md`](adapt-agents-md.md#state-updates) says (ADR 0003 ending; never merge).
+means no user-level edit. The theme closes once, after both T8 playbooks
+([Stage 4](../SKILL.md#stage-4-close-the-theme)).

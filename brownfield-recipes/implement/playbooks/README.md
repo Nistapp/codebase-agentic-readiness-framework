@@ -5,10 +5,10 @@ for a theme; each playbook is an agent directive and follows the anatomy below, 
 agent can read any of them the same way.
 
 > [!NOTE]
-> All thirteen playbooks are drafted: the two T1 playbooks (IR04.1), the two T2 playbooks (IR05.1), the T3 playbook
-> (IR06.1), the two T4 playbooks (IR07.1), the T5 playbook (IR08.1), the T6 playbook (IR09.1), the two T7 playbooks
-> (IR10.1) and the two T8 playbooks (IR11.1). They are applied and corrected in IR04.2, IR04.3, IR05.2, IR05.3, IR06.2,
-> IR06.3, IR07.2, IR07.3, IR08.2, IR08.3, IR09.2, IR09.3, IR10.2, IR10.3, IR11.2 and IR11.3. The anatomy below is fixed.
+> All thirteen playbooks are written (IR04.1 to IR11.1) and were applied and corrected on two repositories (IR04.2 to
+> IR11.3). The procedure they share (worktree and branch, drift first, per-item status, commits, the engine re-check,
+> the ending) is in [`SKILL.md`](../SKILL.md#stage-3-apply), Stages 3 and 4, and is not repeated here (IR12). The
+> anatomy below is fixed.
 
 ## Anatomy
 
@@ -20,31 +20,27 @@ Every playbook file, `<name>.md` in this folder, has these sections in this orde
 | Checks resolved | The catalogue check IDs this playbook closes |
 | Preconditions | The state preferences it reads, the earlier themes it needs, and what must already be true in the repository |
 | Inputs to ask | The tool-choice step: detect what the repository already has (manifests, build plugins, configs, the code index) and use it; if nothing is there, offer two to four current options with pros and cons and a recommendation, in a table. Every other question for the owner |
-| Steps | Generic steps first, then one subsection per stack that points at the stack profile in [`stacks/`](../../stacks/README.md) instead of restating it |
+| Steps | Generic steps first, then one subsection per stack that points at the stack profile in [`stacks/`](../../stacks/README.md) instead of restating it. Only what is specific to the playbook: the shared procedure is `SKILL.md` Stage 3 |
 | Continue on error | What counts as existing debt for this playbook, how it is counted and recorded, and how the check is wired so the debt cannot grow (ratchet, baseline file, or a report-only step) |
 | Verification | One observable done-criterion per check resolved: the command to run or the file to read, and the expected result |
 | Rollback | How to undo the change: which commits to revert, which files to delete |
 | Do-not-do | What this playbook never does (for example, no mass reformat, no rule turned off) |
-| State updates | The status, debt, preference and log entries the playbook records in the state file (see the [state contract](../state.md)) |
+| State updates | The `done` and `partial` lines, debt texts and preference keys specific to the playbook (see the [state contract](../state.md)); the shared lines are in `SKILL.md` Stages 3 and 4 |
 
 How to write the State updates section so each line runs as written:
 
 - Debt goes on `set-status` as `--debt what=TEXT,count=N[,baseline=FILE]`, repeatable (the same `what` replaces
   its entry): `set-status F-001 partial --debt "what=unformatted files,count=212,baseline=.ruff-baseline"`.
-  A `partial` item needs debt; a `done` item has none.
-- Mind the allowed transitions ([state contract](../state.md#item-statuses)): `blocked` goes back to `queued`, and
-  `partial` or `failed` back to `in_progress`, before they can end again. A note on an item that stays where it is:
-  `set-status F-001 in_progress --note "..."`.
-- Theme order: `theme T1 --status branch_open --branch B`, then open the pull request, then
-  `theme T1 --status pr_open --branch B --pr N` (`pr_open` and `merged` need `--pr`, so the state records a real
-  pull request and the state commit comes after the PR exists), then `--status merged --merged-sha SHA`.
-- Preference keys are lower case. "The owner has no preference" is recorded as the value `none`.
+- List only the lines specific to the playbook. The `in_progress` line, the transition rules and the theme rows
+  are in [Stage 3](../SKILL.md#stage-3-apply); the ending (`pr_open` after the pull request exists, never merge)
+  is in [Stage 4](../SKILL.md#stage-4-close-the-theme).
 
 Rules for every playbook:
 
 - A playbook never restates a check's rubric or a requirement; it links to the check file in
   [`audit/checks/`](../../audit/checks/README.md) and to `spec/`.
 - Templates come from `greenfield-bootstrap/templates/` by reference, never copied verbatim into the playbook.
+- A playbook does not restate the shared procedure of `SKILL.md` Stages 2 to 4; it links to the stage step.
 - A new playbook name is added to the `playbooks` list of each check it resolves in `catalogue.json`, in the
   same change that writes the file; the recipe linter rejects a playbook name the catalogue does not know.
 
