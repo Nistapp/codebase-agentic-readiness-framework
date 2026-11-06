@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+#
+# Publishes a GitHub release when the maintainer pushes a tag `v*`: the single-file engine (audit.pyz), the
+# agentic-readiness-audit skill bundle as a zip, and their SHA-256 sums. Runs the same gates as CI first. No secret
+# beyond GITHUB_TOKEN; `contents: write` is the only permission. Actions are pinned by commit SHA. A session of an AI
+# agent never triggers this workflow. How to cut a release: RELEASE_PROCESS.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: release ${{ github.ref_name }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          version: "0.12.10"
+      - name: Gates
+        run: |
+          make check
+          make security
+      - name: Build the engine
+        run: python3 brownfield-recipes/deterministic-audit/tools/build.py
+      - name: Build and validate the skill bundle
+        run: make validate-skills
+      - name: Collect the release files
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          out="$RUNNER_TEMP/release"
+          mkdir -p "$out"
+          cp brownfield-recipes/deterministic-audit/dist/audit.pyz "$out/audit.pyz"
+          (cd brownfield-recipes/dist/skills && zip -qr "$out/agentic-readiness-audit-$TAG.zip" agentic-readiness-audit)
+          (cd "$out" && sha256sum audit.pyz "agentic-readiness-audit-$TAG.zip" > SHA256SUMS)
+          cat "$out/SHA256SUMS"
+          echo "RELEASE_DIR=$out" >> "$GITHUB_ENV"
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" "$RELEASE_DIR"/* \
+            --repo "$GITHUB_REPOSITORY" --title "$TAG" \
+            --notes "See CHANGELOG.md. Verify a download with: sha256sum -c SHA256SUMS"
