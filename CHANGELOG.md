@@ -13,8 +13,9 @@ histories:
 ## [0.2.0] - 2026-11-06
 
 Release notes: the implement recipe (`brownfield-recipes/implement/`) is live with Stages 0-5, thirteen playbooks and
-its own skill bundle, and the release workflow attaches both bundles. A real run is published as a draft
-[worked example](brownfield-recipes/schema/examples/server-worked-example/README.md) (IR15). The engine defects found
+its own skill bundle, and the release workflow attaches both bundles. A real run is published as a
+[worked example](brownfield-recipes/schema/examples/server-worked-example/README.md) with an owner-confirmed second
+audit (IR15). The engine defects found
 on the way are open `audit-engine` issues on GitHub (for example #45 and #49-#52); they are known, not fixed in 0.2.0.
 
 ### Framework pages (since v0.1)
