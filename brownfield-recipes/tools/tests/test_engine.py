@@ -223,6 +223,13 @@ class ScanTests(unittest.TestCase):
         self.assertEqual(envelope["data"]["baseline_draft"], str(draft))
         self.assertTrue(draft.is_file())
 
+    def test_no_user_config_is_forwarded_only_when_given(self) -> None:
+        for extra, expected in (([], False), (["--no-user-config"], True)):
+            with self.subTest(extra=extra), mock.patch.object(engine, "run_engine", wraps=engine.run_engine) as spy:
+                code, _, _ = call([str(FIXTURE), "--out-dir", str(self.out / str(expected)), *extra])
+            self.assertEqual(code, 0)
+            self.assertEqual("--no-user-config" in spy.call_args.args[0], expected)
+
     def test_the_engine_claims_success_but_wrote_no_draft_is_an_internal_error(self) -> None:
         def fake(argv: list[str]) -> tuple[int, str, str]:
             Path(argv[argv.index("--out") + 1]).write_text("{}", encoding="utf-8")

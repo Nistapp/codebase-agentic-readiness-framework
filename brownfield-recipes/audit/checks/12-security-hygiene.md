@@ -25,21 +25,25 @@ Severity         BLOCKER
 Engine           `SEC-01`. Two independent halves: whether `.env`/`.env.*` (excluding committed templates
                  such as `.env.example`, `.env.sample`, `.env.template`, `.env.dist`, `.env.defaults`,
                  `env.example`) is git-tracked, read from `tracked_files`; and whether the ignore rules
-                 cover the `.env` shape, read from the ignore files directly — so a tracked `.env` that
+                 cover the `.env` shape, read from the ignore files directly (every nested `.gitignore` scoped to
+                 its directory, `!` negation applied in git's order, [ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)) — so a tracked `.env` that
                  is *also* git-ignored is still caught, because tracked state and ignore coverage are
                  checked independently, not inferred from one another. A tracked `.env`/`.env.*` is the
                  blocker (`FAIL`) regardless of ignore coverage. No tracked `.env`, but the ignore rules
-                 miss the shape, is `PARTIAL`. Git unable to report tracked files makes the blocker half
+                 miss the shape, is `PARTIAL`. A rule anchored to the root (`/.env`, `/.env.*`) covers the
+                 root and not a nested `a/.env`: the summary says "root-anchored only", not "missing", and the
+                 verdict is the same `PARTIAL`, with that reason. Git unable to report tracked files makes the blocker half
                  `UNKNOWN` — never inferred as a pass — whatever the ignore coverage reads as. Distrust a
                  `PARTIAL`/`FAIL` on ignore coverage when the repository uses an ignore mechanism beyond
                  `.gitignore` that the engine's loader does not yet read — verify by checking
-                 `audit.ignore.load_ignore_rules`'s own source list before treating the gap as real.
+                 `audit.ignore.IGNORE_FILE_NAMES` before treating the gap as real.
 Method           automated
 Look for         `tracked_files` for any path named `.env` or `.env.*` (excluding the committed-template
                  basenames); the loaded ignore rules for coverage of the `.env` and `.env.*` shapes. Cite
                  only the path of any tracked `.env`-like file found — never open or quote it.
 Rubric           PASS: no `.env`/`.env.*` file is tracked, and ignore rules cover both shapes.
-                 PARTIAL: no `.env`/`.env.*` file is tracked, but ignore rules miss one or both shapes.
+                 PARTIAL: no `.env`/`.env.*` file is tracked, but ignore rules miss one or both shapes, or
+                 cover them only from the root (`/.env`).
                  FAIL: a `.env`/`.env.*` file (not a committed template) is tracked, regardless of
                  ignore coverage.
                  NOT_APPLICABLE: never.
@@ -48,7 +52,8 @@ Rubric           PASS: no `.env`/`.env.*` file is tracked, and ignore rules cove
 Evidence to cite A `file` evidence item citing the tracked path only (never its contents) for FAIL; for
                  PARTIAL, the ignore rule(s) read (source file and pattern) as the coverage evidence; for
                  PASS, the same ignore rule(s) that do cover the shape.
-Absence proof    A PARTIAL names exactly which shape (`.env` or `.env.*`, or both) no ignore rule covers;
+Absence proof    A PARTIAL names exactly which shape (`.env` or `.env.*`, or both) no ignore rule covers,
+                 and which one only a root-anchored rule covers;
                  a FAIL cites the tracked path directly as the proof, since the path's own existence in
                  `tracked_files` is the finding.
 Remediation      `env-inventory-and-secrets`
@@ -61,7 +66,9 @@ Pitfalls         A tracked `.env.example`-style committed template is not a find
 Why it matters   A hardcoded credential is the same exposure as a tracked `.env` file, just inside source
                   or configuration instead of a dedicated file
                   ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
-Severity         BLOCKER
+Severity         BLOCKER. The severity stays BLOCKER when a repository has a secret scanner and a baseline;
+                 the way to remove false positives is the allowlist the check honours (below), not a lower
+                 severity.
 Engine           `SEC-02`. Scans tracked text files (falling back to the whole inventory, stated in
                  `detail`, when git cannot report tracked state) against `audit.probes.REDACTION_PATTERNS`:
                  unambiguous shape patterns (`sk-...`, `ghp_...`, `AKIA...`, a `Bearer` token, and the PEM
@@ -74,7 +81,15 @@ Engine           `SEC-02`. Scans tracked text files (falling back to the whole i
                  characters long with a mixed charset; in source code an unquoted value is a name or an
                  expression, never counted. Committed templates (`*.example`/`*.sample`/`*.template`) and
                  lines matching an obvious placeholder pattern (`<...>`, `your-`, `changeme`, `xxx`, and
-                 similar) are skipped deterministically. **No verdict ever names the matched value** — a
+                 similar) are skipped deterministically. Hits the repository's own scanner allowlist accepts
+                 are subtracted: `.secrets.baseline` (`results[<path>]` entries matched on path **and** line
+                 number, so a stale entry never hides a new hit on another line), `.gitleaksignore`
+                 (`<file>:<rule>:<line>` or `<commit>:<file>:<rule>:<line>`) and `.gitleaks.toml`
+                 (`[allowlist]`/`[[allowlists]]` `paths` searched in the path, `regexes` searched in the line,
+                 which is wider than the secret gitleaks matches). The summary then reads "N credential-shaped
+                 line(s) ..., M allowlisted by `<file>`" and the suppressed lines are listed in the payload
+                 (`suppressed`) and the report's credential table. `hashed_secret` is not re-checked: the
+                 engine never holds the value. **No verdict ever names the matched value** — a
                  `Finding`'s evidence carries path, line number and the fixed note `"credential-shaped
                  string"` only. Distrust a `FAIL` on the keyword pattern specifically (never the
                  unambiguous shape patterns, which are unconditional) when the line is a CI permission
@@ -92,9 +107,9 @@ Method           automated
 Look for         Every tracked text file (or the whole inventory, when tracked state is unavailable) for
                  a line matching `REDACTION_PATTERNS`; the matched line's path and line number only.
 Rubric           PASS: no tracked text file (or, with tracked state unavailable, no file in the whole
-                 inventory) contains a credential-shaped line.
+                 inventory) contains a credential-shaped line outside the repository's own allowlist.
                  PARTIAL: not used by this check — any credential-shaped line fails the whole check.
-                 FAIL: at least one tracked text file contains a credential-shaped line.
+                 FAIL: at least one tracked text file contains a credential-shaped line the allowlist does not accept.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never — the scan runs against tracked files when available and the whole
                  inventory otherwise, so there is always a defined scope to report against.
@@ -105,7 +120,10 @@ Absence proof    A FAIL states the total hit count and the file count, and names
                  with its line numbers, so "contains a credential-shaped line" is a checkable location
                  list, not a claim about content nobody can re-verify without reopening the secret.
 Remediation      `env-inventory-and-secrets`
-Pitfalls         **Never add the matched value to a finding, an evidence note, or any other part of the
+Pitfalls         An allowlist entry is the repository's own acceptance, not proof the line is harmless:
+                 report the suppressed count, and do not re-raise a suppressed line unless you can show the
+                 value is live. Sentinel tokens and badge URLs that no allowlist covers are still reported
+                 (issue #10 stays open for them). **Never add the matched value to a finding, an evidence note, or any other part of the
                  report, even to argue a false positive** — if a flagged line needs discussion, describe
                  its shape or context ("a 32-character hex string assigned to API_KEY"), not its literal
                  content; this applies whether the agent is confirming the engine's `FAIL` or arguing it
@@ -120,13 +138,17 @@ Severity         DEGRADER
 Engine           `SEC-03`. Checks ignore-rule coverage of eleven documented secret/certificate/credential
                  shapes (dotenv and its variants, SSH private keys, PEM, generic `.key`, PKCS#12, PFX,
                  keystore, `.crt`/`.cer` certificates, AWS credentials), each probed by a representative
-                 sample path (`_SECRET_SHAPES`) against the loaded ignore rules. No ignore file at all is
+                 sample path (`_SECRET_SHAPES`) against the loaded ignore rules. The rules are read as git reads them
+                 ([ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
+                 a `!` line re-includes, so `*.crt` with `!server.crt` leaves the certificate shape
+                 uncovered while `!public.crt` does not, and a nested `.gitignore` covers its own directory,
+                 not the root. No ignore file at all is
                  `FAIL` outright — there is no coverage to measure. Every shape covered is `PASS`; some
-                 covered is `PARTIAL`; an ignore file exists but covers none of the eleven is `FAIL`.
+                 covered, or covered from the root only (`/.env`, reported as "root-anchored only"), is `PARTIAL`; an ignore file exists but covers none of the eleven is `FAIL`.
                  There is no `UNKNOWN` path — the presence and coverage of ignore rules is always
                  determinable. Distrust a `PARTIAL`/`FAIL` for a shape covered by a broader rule the
-                 engine's documented ignore-matching subset does not recognise (full gitignore semantics
-                 beyond simple glob anchoring and `**`) — verify by reading the ignore file's own rule
+                 engine's documented ignore-matching subset does not recognise (`.git/info/exclude`, a global
+                 excludes file, escapes beyond `\#` and `\!`) — verify by reading the ignore file's own rule
                  directly before treating the gap as real.
 Method           automated
 Look for         The loaded ignore rules (`.gitignore` or equivalent) for coverage of each of the eleven

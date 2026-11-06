@@ -125,6 +125,15 @@ class ProbeSession:
     timeout: int = 300
     enabled: bool = False
     results: list[ProbeResult] = field(default_factory=list)
+    #: ``--no-user-config`` clears this: the IDX checks then read nothing from ``$HOME``.
+    user_config: bool = True
+    #: Every path outside the target a check read, for the report's provenance.
+    user_reads: list[str] = field(default_factory=list)
+
+    def note_user_read(self, path: object) -> None:
+        text = str(path)
+        if text not in self.user_reads:
+            self.user_reads.append(text)
 
     def run(self, plan: ProbePlan) -> ProbeResult:
         if not self.enabled:

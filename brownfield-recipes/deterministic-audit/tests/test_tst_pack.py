@@ -97,6 +97,29 @@ class TstInlineTests(unittest.TestCase):
         report = self._scan({"README.md": "# x\n\n```bash\nnpm test -- foo\n```\n"})
         self.assertEqual(support.verdicts(report)["TST-04"], "UNKNOWN")
 
+    def test_unittest_single_test_form_is_a_fast_path(self):
+        for command in (
+            "python3 -m unittest tests.test_cmd_pack -k verbs",
+            "python -m unittest tests.test_cmd_pack -k verbs",
+        ):
+            with self.subTest(command=command):
+                report = self._scan(
+                    {
+                        "tests/test_cmd_pack.py": "import unittest\n",
+                        "AGENTS.md": f"# x\n\n```bash\n{command}   # one test\n```\n",
+                    }
+                )
+                self.assertEqual(support.verdicts(report)["TST-04"], "PASS")
+
+    def test_unittest_discover_alone_is_not_a_fast_path(self):
+        report = self._scan(
+            {
+                "tests/test_cmd_pack.py": "import unittest\n",
+                "AGENTS.md": "# x\n\n```bash\npython3 -m unittest discover -s tests\n```\n",
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TST-04"], "FAIL")
+
     def test_probe_is_refused_and_recorded_by_default(self):
         report = self._scan({"package.json": json.dumps({"scripts": {"test": "vitest run"}})})
         self.assertEqual(support.verdicts(report)["TST-02"], "UNKNOWN")

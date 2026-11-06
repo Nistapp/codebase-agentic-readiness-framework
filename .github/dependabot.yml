@@ -1,0 +1,11 @@
+# Keeps the pinned workflow actions current. Actions are pinned by commit SHA (see ci.yml and release.yml); Dependabot
+# opens a pull request that moves the SHA and the version comment together. The repository has no runtime
+# dependencies to update: the dev tools are pinned in the Makefile.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"

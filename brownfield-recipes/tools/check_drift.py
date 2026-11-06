@@ -10,6 +10,12 @@ paths changed between the two commits, and the findings whose cited ``file`` evi
 intersect them (a changed path equals a cited path, or sits below a cited directory). It judges nothing: a finding
 listed here is one the agent should re-check before it acts on the report's text.
 
+Two more facts come with it, neither of which changes the exit code. ``data.dirty`` is true when the target's working
+tree has uncommitted changes (``git status --porcelain`` is not empty; null when git could not say), so an agent need
+not run ``git status`` by hand. ``data.report_changed`` compares the report file's SHA-256 with the digest
+``progress.py init`` recorded in the target's state: true when they differ, false when they match, null when the
+target has no state, the state has no digest for this report (a ``0.1`` state) or the report is not one the state lists.
+
 ``data.status`` is one of ``current`` (``HEAD`` is the audited commit), ``drifted`` (it is not), ``sha_missing`` (the
 audited commit is not in the target's history, so nothing can be compared and every finding is unverified) and
 ``no_sha`` (the report recorded none). The tool exits 0 in every case; the status carries the answer. ``--json`` is
@@ -18,11 +24,13 @@ accepted for symmetry with the other tools; the output is always the JSON envelo
 
 from __future__ import annotations
 
+import hashlib
 import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import _common
+import progress
 import validate_report
 
 INFO = _common.ToolInfo(
@@ -82,6 +90,38 @@ def affected_findings(report: Mapping[str, Any], changed: Sequence[str]) -> list
     return out
 
 
+def is_dirty(target: Path) -> bool | None:
+    """Whether the working tree has uncommitted changes (`git status --porcelain` prints anything). None if git fails."""
+    done = validate_report.git_output(target, ["status", "--porcelain"])
+    if done is None or done.returncode != 0:
+        return None
+    return bool(done.stdout.strip())
+
+
+def recorded_digest(target: Path, report_file: Path, label: str) -> str | None:
+    """The SHA-256 the target's state recorded for `report_file`, or None: no state, no digest, or another report."""
+    try:
+        _, state_path = progress.find_state(target, label)
+        state = progress.read_state(state_path)
+    except _common.ToolError:
+        return None
+    resolved = report_file.resolve()
+    relative = resolved.relative_to(target).as_posix() if _common.is_within(target, resolved) else None
+    for entry in state["source_reports"]:
+        if entry["path"] == relative or (relative is None and Path(entry["path"]).name == resolved.name):
+            digest = entry.get("sha256")
+            return digest if isinstance(digest, str) else None
+    return None
+
+
+def report_changed(target: Path, report_file: Path, label: str) -> bool | None:
+    """True when the report file no longer matches the digest `progress.py init` recorded; None when none was recorded."""
+    recorded = recorded_digest(target, report_file, label)
+    if recorded is None:
+        return None
+    return hashlib.sha256(report_file.read_bytes()).hexdigest() != recorded
+
+
 def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(prog="check_drift.py", description=INFO.summary)
     parser.add_argument("report", help="the audit report (JSON)")
@@ -107,6 +147,17 @@ def handler(argv: Sequence[str]) -> _common.Result:
         raise _common.UsageError(f"cannot read HEAD of {target}: not a git repository, or it has no commits")
     data: dict[str, Any] = {"audited_sha": audited, "head_sha": head, "drifted": False}
     warnings: list[str] = []
+    data["dirty"] = is_dirty(target)
+    data["report_changed"] = report_changed(
+        target, Path(args.report).expanduser(), document["provenance"]["target"]["label"]
+    )
+    if data["report_changed"]:
+        warnings.append(
+            "the report file differs from the digest recorded when the state was created; it was edited, "
+            "so do not trust its text until the owner has confirmed the change"
+        )
+    if data["dirty"]:
+        warnings.append("the target's working tree has uncommitted changes")
     truncated = False
     if audited is None:
         data.update(status="no_sha", changed_paths=[], findings=[])
@@ -139,6 +190,10 @@ def handler(argv: Sequence[str]) -> _common.Result:
     summary = f"check_drift: {data['status']}"
     if data["status"] == "drifted":
         summary += f", {data['changed_count']} paths changed, {len(data['findings'])} findings affected"
+    if data["report_changed"]:
+        summary += "; the report file was edited since the state was created"
+    if data["dirty"]:
+        summary += "; the working tree is dirty"
     return _common.Result(data=data, summary=summary, warnings=warnings, truncated=truncated)
 
 

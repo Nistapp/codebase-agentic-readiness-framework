@@ -1,5 +1,5 @@
 {
-  "catalogue_version": "0.2.6",
+  "catalogue_version": "0.2.7",
   "fingerprint": "e33c95eda9f58b9d",
   "checks": [
     {
@@ -559,7 +559,9 @@
         "REQ-BF-001"
       ],
       "engine_id": "BASE-01",
-      "playbooks": []
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
     },
     {
       "id": "BASE-02",
@@ -574,7 +576,9 @@
         "REQ-BF-002"
       ],
       "engine_id": "BASE-02",
-      "playbooks": []
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
     },
     {
       "id": "BASE-03",
@@ -589,7 +593,9 @@
         "REQ-BF-003"
       ],
       "engine_id": "BASE-03",
-      "playbooks": []
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
     },
     {
       "id": "BASE-04",
@@ -604,7 +610,9 @@
         "REQ-SH-036"
       ],
       "engine_id": "BASE-04",
-      "playbooks": []
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
     },
     {
       "id": "CON-01",
@@ -819,7 +827,9 @@
         "REQ-SH-046"
       ],
       "engine_id": "TST-02",
-      "playbooks": []
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
     },
     {
       "id": "TST-03",
@@ -834,7 +844,9 @@
         "REQ-SH-047"
       ],
       "engine_id": "TST-03",
-      "playbooks": []
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
     },
     {
       "id": "TST-04",
@@ -850,7 +862,8 @@
       ],
       "engine_id": "TST-04",
       "playbooks": [
-        "adapt-agents-md"
+        "adapt-agents-md",
+        "add-baselines-and-ratchet"
       ]
     },
     {
@@ -866,7 +879,9 @@
         "REQ-SH-049"
       ],
       "engine_id": "TST-05",
-      "playbooks": []
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
     },
     {
       "id": "NAV-01",

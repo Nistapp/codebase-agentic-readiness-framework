@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
-from audit.rules.checks.nav import _jvm_entry  # noqa: E402
+from audit.rules.checks.nav import _jvm_entry, _python_entry  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict)
@@ -218,6 +218,58 @@ class Nav02JvmEntryTests(unittest.TestCase):
             }
         )
         self.assertFalse(_jvm_entry(inventory))
+
+
+class Nav02PythonEntryTests(unittest.TestCase):
+    """`_python_entry` counts a line that starts with the guard, not a file that merely holds the text."""
+
+    GUARD = 'if __name__ == "__main__":\n    main()\n'
+
+    def _entry(self, files: dict[str, str]) -> list[str]:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        for rel, text in files.items():
+            support.write(Path(tmp.name), rel, text)
+        return _python_entry(build_inventory(Path(tmp.name)))
+
+    def test_a_guard_line_is_an_entry_point(self):
+        self.assertEqual(self._entry({"tool.py": "def main():\n    pass\n\n" + self.GUARD}), ["tool.py"])
+
+    def test_a_regex_or_docstring_that_holds_the_guard_text_is_not(self):
+        text = (
+            'PATTERN = r"if\\s+__name__\\s*==\\s*[\'\\"]__main__[\'\\"]"\n'
+            "HINT = \"if __name__ == '__main__'\"\n"
+            "# if __name__ == '__main__': in a comment\n"
+        )
+        self.assertEqual(self._entry({"checks.py": text}), [])
+
+
+class Doc04TemplateEntryTests(unittest.TestCase):
+    """`0000-template.md` is the blank an ADR is copied from, so it is not a numbered decision."""
+
+    def _doc04(self, files: dict[str, str]) -> dict:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        for rel, text in files.items():
+            support.write(Path(tmp.name), rel, text)
+        report = support.run_audit(Path(tmp.name))
+        return next(c for c in report["checks"] if c["id"] == "DOC-04")
+
+    def test_a_template_beside_the_adrs_is_not_counted_or_required_in_the_index(self):
+        check = self._doc04(
+            {
+                "docs/architecture/adrs/0000-template.md": "# NNNN title\n",
+                "docs/architecture/adrs/0001-first.md": "# 0001 first\n",
+                "docs/architecture/adrs/README.md": "- [0001](0001-first.md)\n",
+            }
+        )
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertIn("1 ADR(s) indexed", check["summary"])
+
+    def test_a_directory_holding_only_a_template_has_no_numbered_adr(self):
+        check = self._doc04({"docs/architecture/adrs/0000-template.md": "# NNNN title\n"})
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertIn("holds no numbered ADR", check["summary"])
 
 
 if __name__ == "__main__":

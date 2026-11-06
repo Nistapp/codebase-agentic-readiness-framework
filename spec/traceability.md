@@ -1,6 +1,6 @@
 # Traceability
 
-Maps the checks of the audit engine to the [requirements](readiness-requirements.md) they verify, and the requirements back to the checks. The `Checks` field of a requirement is authoritative. This page is its inverse, built from those fields on 2026-10-09; no test keeps the two in step yet.
+Maps the checks of the audit engine to the [requirements](readiness-requirements.md) they verify, and the requirements back to the checks. The `Checks` field of a requirement is authoritative. This page is its inverse, built from those fields on 2026-10-09; a test keeps the two in step.
 
 Check IDs and severities are those of the [check catalogue](../brownfield-recipes/catalogue.json). A test checks this page against it.
 
@@ -17,7 +17,7 @@ Check IDs and severities are those of the [check catalogue](../brownfield-recipe
 | `AGT-02` | Component coverage by instruction files | DEGRADER | yes | [REQ-SH-006](readiness-requirements.md#req-sh-006--component-instruction-files) |
 | `AGT-03` | Documentation contract named | DEGRADER | yes | [REQ-SH-007](readiness-requirements.md#req-sh-007--documentation-contract-named) |
 | `AGT-04` | Definition of done stated | DEGRADER | yes | [REQ-SH-008](readiness-requirements.md#req-sh-008--definition-of-done-stated) |
-| `AGT-05` | Six verbs named | DEGRADER | yes | [REQ-SH-009](readiness-requirements.md#req-sh-009--verbs-named) |
+| `AGT-05` | Seven verbs named | DEGRADER | yes | [REQ-SH-009](readiness-requirements.md#req-sh-009--verbs-named) |
 | `AGT-06` | Architectural boundaries declared | DEGRADER | yes | [REQ-SH-010](readiness-requirements.md#req-sh-010--architectural-boundaries-declared) |
 | `AGT-07` | Do-not-do / deny rules present | DEGRADER | yes | [REQ-SH-011](readiness-requirements.md#req-sh-011--prohibitions-declared) |
 | `AGT-08` | No competing instruction files, and the reach matrix is stated | DEGRADER | yes | [REQ-SH-012](readiness-requirements.md#req-sh-012--no-competing-instruction-files) |
@@ -28,7 +28,7 @@ Check IDs and severities are those of the [check catalogue](../brownfield-recipe
 | `DOC-02` | docs/STYLE_GUIDE.md exists | DEGRADER | yes | [REQ-SH-017](readiness-requirements.md#req-sh-017--style-guide) |
 | `DOC-03` | artefacts/ exists and is ignored | DEGRADER | yes | [REQ-SH-018](readiness-requirements.md#req-sh-018--scratch-and-tool-state-directories-ignored) |
 | `DOC-04` | ADR directory and index | COSMETIC | yes | [REQ-SH-019](readiness-requirements.md#req-sh-019--adr-directory-and-index) |
-| `CMD-01` | Six verbs resolvable on one runner | BLOCKER | yes | [REQ-SH-021](readiness-requirements.md#req-sh-021--verbs-defined-on-one-runner) |
+| `CMD-01` | Seven verbs resolvable on one runner | BLOCKER | yes | [REQ-SH-021](readiness-requirements.md#req-sh-021--verbs-defined-on-one-runner) |
 | `CMD-02` | check composes the read-only verbs | BLOCKER | yes | [REQ-SH-022](readiness-requirements.md#req-sh-022--check-composes-the-read-only-verbs) |
 | `CMD-03` | No divergent second definition | DEGRADER | yes | [REQ-SH-023](readiness-requirements.md#req-sh-023--no-second-definition-of-the-gate) |
 | `CMD-04` | Write verbs separated from read-only verbs | DEGRADER | yes | [REQ-SH-024](readiness-requirements.md#req-sh-024--read-only-verbs-do-not-write) |
@@ -81,15 +81,6 @@ Check IDs and severities are those of the [check catalogue](../brownfield-recipe
 | `HYG-09` | Dependency update automation configured | COSMETIC | no (informational) | none: informational, reported and never scored |
 | `HYG-10` | License present | COSMETIC | no (informational) | none: informational, reported and never scored |
 | `HYG-11` | Branch protection declared as code | COSMETIC | no (informational) | none: informational, reported and never scored |
-
-## Checks that do not yet verify their requirement
-
-Two agent-only checks have no rubric yet. Until they do, these checks do not verify the requirement they are listed against.
-
-| Check | Requirement | What the engine does today |
-|---|---|---|
-| `AGT-11` | [REQ-SH-015](readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) | Catalogued only. The engine has no such check, and the rubric an agent follows is not written. |
-| `CI-04` | [REQ-SH-035](readiness-requirements.md#req-sh-035--ci-enforces-the-gate) | Catalogued only, as above. |
 
 ## Requirements without a check
 

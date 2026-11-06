@@ -7,6 +7,9 @@ Unbounded traversal is how a scanning tool becomes unusable on the repositories 
 most. This module walks the target once, produces metadata only (never holding file contents in
 memory), and record's every path it chose not to inspect.
 
+Carried data (templates, examples, fixtures: ADR-0008) is walked and then set aside: it leaves
+``Inventory.files`` and is recorded in ``Inventory.set_aside``, so no check can read it as the project.
+
 Known limitation, deliberately recorded rather than hidden: ignore-pattern matching implements a
 documented subset of gitignore semantics (anchored patterns, negation and `**` are approximated).
 Checks that depend on ignore certainty must therefore report ``UNKNOWN`` rather than ``PASS`` when
@@ -124,6 +127,24 @@ _GENERATED_HINTS = (
 )
 
 
+#: Directory names that mark the files under them as *carried data*: files the repository ships or tests
+#: with rather than files that are the repository (ADR-0008). Compared whole and case-insensitively. The
+#: single place the list lives.
+CARRIED_DATA_DIRS: tuple[str, ...] = (
+    "templates",
+    "template",
+    "examples",
+    "example",
+    "fixtures",
+    "samples",
+    "testdata",
+    "scaffold",
+)
+
+#: The manifests whose presence outside carried data means the repository has its own project.
+_PROJECT_MANIFESTS = frozenset(name for name, kind in _NAME_KINDS.items() if kind in (Kind.MANIFEST, Kind.BUILD))
+
+
 @dataclass(frozen=True)
 class FileEntry:
     rel: str
@@ -132,9 +153,17 @@ class FileEntry:
     has_text: bool
 
 
+@dataclass(frozen=True)
+class SetAside:
+    """One outermost carried-data directory and the number of files under it."""
+
+    path: str
+    files: int
+
+
 @dataclass
 class Inventory:
-    """Metadata for every inspected file, plus a record of what was skipped."""
+    """Metadata for every inspected file, plus a record of what was skipped and what was set aside."""
 
     root: Path
     files: list[FileEntry] = field(default_factory=list)
@@ -142,10 +171,20 @@ class Inventory:
     truncated: bool = False
     #: Path globs the operator took out of the audit with ``--exclude``.
     excludes: tuple[str, ...] = ()
+    #: Carried-data directories (``CARRIED_DATA_DIRS``) whose files are not in ``files``. Sorted by path.
+    set_aside: list[SetAside] = field(default_factory=list)
 
     # -- lookups ---------------------------------------------------------
     def is_excluded(self, rel: str) -> bool:
         return any(fnmatch.fnmatch(rel, pattern) for pattern in self.excludes)
+
+    def is_set_aside(self, rel: str) -> bool:
+        """Whether ``rel`` lies under a directory this inventory set aside as carried data."""
+        return any(rel == entry.path or rel.startswith(entry.path + "/") for entry in self.set_aside)
+
+    @property
+    def files_set_aside(self) -> int:
+        return sum(entry.files for entry in self.set_aside)
 
     def paths(self, kind: Kind | None = None) -> list[str]:
         return [f.rel for f in self.files if kind is None or f.kind is kind]
@@ -281,4 +320,39 @@ def build_inventory(
         if inv.truncated:
             break
 
+    _set_carried_data_aside(inv)
     return inv
+
+
+def _carried_directory(rel: str) -> str | None:
+    """The outermost directory of ``rel`` named in ``CARRIED_DATA_DIRS``, or ``None``."""
+    parts = rel.split("/")[:-1]
+    for index, part in enumerate(parts):
+        if part.lower() in CARRIED_DATA_DIRS:
+            return "/".join(parts[: index + 1])
+    return None
+
+
+def _set_carried_data_aside(inv: Inventory) -> None:
+    """Move the files under a carried-data directory out of ``inv.files`` and record them (ADR-0008).
+
+    Nothing is set aside when the repository's only manifests are inside carried directories: that
+    directory is then the project, and removing it would leave the audit nothing to read.
+    """
+    carried: dict[str, int] = {}
+    kept: list[FileEntry] = []
+    carried_manifest = False
+    project_manifest = False
+    for entry in inv.files:
+        directory = _carried_directory(entry.rel)
+        is_manifest = os.path.basename(entry.rel) in _PROJECT_MANIFESTS
+        if directory is None:
+            kept.append(entry)
+            project_manifest = project_manifest or is_manifest
+        else:
+            carried[directory] = carried.get(directory, 0) + 1
+            carried_manifest = carried_manifest or is_manifest
+    if not carried or (carried_manifest and not project_manifest):
+        return
+    inv.files = kept
+    inv.set_aside = [SetAside(path, carried[path]) for path in sorted(carried)]

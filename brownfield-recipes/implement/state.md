@@ -37,6 +37,11 @@ python3 brownfield-recipes/tools/progress.py show --target <target> [--json]
 python3 brownfield-recipes/tools/progress.py render --target <target>
 ```
 
+The report is committed on the integration branch at
+`docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.{json,md}`. `init` records the report file's SHA-256 in
+`source_reports[].sha256`; `check_drift.py` recomputes it and reports `report_changed` when the file was edited
+since. A state made before schema `0.2` has no digest, and `report_changed` is then `null`, not `false`.
+
 `init` refuses a report that is not final or that `validate_report.py` rejects, a report outside the target, and an
 existing state. It queues confirmed and edited findings (an edited finding's note goes into `notes`), imports a
 finding the owner deferred during the audit as `deferred` with the owner's note as its reason, and lists rejected
@@ -76,6 +81,20 @@ stateDiagram-v2
     skipped --> queued: owner unskips
 ```
 
+Allowed next states, from each status (`progress.py set-status` refuses anything else and its message names them):
+
+| From | May go to | Notes |
+|---|---|---|
+| `queued` | `in_progress`; `skipped`, `deferred` (owner) | |
+| `in_progress` | `done`, `partial`, `failed`, `blocked` | |
+| `partial`, `failed` | `in_progress` | never straight to `done`: go back to `in_progress`, then end it again |
+| `blocked` | `queued` | never straight to `in_progress`: unblock to `queued` first |
+| `deferred`, `skipped` | `queued` (owner) | `undefer`, `unskip` |
+| `done` | nothing | final |
+
+`set-status` to the status an item already has is not a transition: with `--note` (and any `--commit`) it appends
+the note and logs "note added"; without `--note` it is refused.
+
 - A transition not in the diagram MUST NOT be recorded.
 - Every transition MUST record who made it (`owner` or `agent`), the date and, for `skipped`, `deferred`,
   `failed` and `blocked`, a reason.
@@ -90,7 +109,10 @@ stateDiagram-v2
 - **Preferences.** Every owner choice (a tool, a style, a scope limit such as "no mass reformat") MUST be
   recorded as a preference with a key, a value, a reason, who decided, the date and the step. A session MUST
   read every preference before it plans a theme. A playbook step that conflicts with a preference MUST stop
-  and ask; it MUST NOT override the preference.
+  and ask; it MUST NOT override the preference. Keys are lower case (`node.version-file`: letters, digits, dot,
+  underscore, hyphen). When the owner was asked and has no preference, record the value `none` with the owner's
+  words as the reason (`pref set tool.formatter none --reason "..." --by owner`), so the question is not asked
+  again.
 
 ## Continue on error
 
@@ -107,10 +129,11 @@ record `done` for an item that is `partial`.
 ## JSON shape
 
 The schema is [`schema/readiness-state.schema.json`](../schema/readiness-state.schema.json), `schema_version`
-`0.1`; field notes are in [the schema reference](../schema/SCHEMA.md#readiness-state). Two examples are under
-`schema/examples/`: `readiness-state.example-service.json`, which `init` writes for the framework's example
-report, and `readiness-state.example-service.in-progress.json`, a state some themes later. Each has its rendered
-Markdown beside it.
+`0.2` (a `0.1` state is still read); field notes are in
+[the schema reference](../schema/SCHEMA.md#readiness-state). Two examples are under `schema/examples/`:
+`readiness-state.example-service.json`, which `init` writes for the framework's example report, and
+`readiness-state.example-service.in-progress.json`, a state some themes later. Each has its rendered Markdown
+beside it.
 
 The schema subset cannot express these rules, so `progress.py` checks them on every read and write:
 

@@ -82,5 +82,4 @@ A report records `catalogue_version`, which is `MAJOR.MINOR.PATCH`. The rules fo
 - **Invariant: the engine is the authority on its own checks.** The catalogue cannot hold an engine check the engine lacks, cannot omit one it has, and cannot disagree with it on title, phase, severity, scored flag or status. The engine's order is kept.
 - **Invariant: agreement is checked in both directions.** A requirement names a check only if the check names the requirement, and the other way round.
 - **Invariant: every scored BLOCKER names a playbook.** The implementation recipe covers every blocker class of the audit.
-- **Failure mode: a catalogued check with no rubric.** `AGT-11` and `CI-04` are in the catalogue and cannot be judged until the rubrics exist, so a report cannot contain a verdict for them yet.
 - **Failure mode: a change the fingerprint misses.** A rewritten rubric changes what a verdict means and leaves the fingerprint alone. The rule is that such a change bumps the version, and nothing enforces it.

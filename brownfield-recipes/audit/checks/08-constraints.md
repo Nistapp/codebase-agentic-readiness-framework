@@ -109,8 +109,14 @@ Severity         DEGRADER
 Engine           `CON-03`. Checks the scratch spellings (`artefacts/`, `artifacts/`) and the agent/tool
                  state directories (`.codebase-memory/`, `.opencode/`, `.agentic-tdd/`): any of these
                  that exist must be matched by an ignore rule, and nothing under any of them may be
-                 tracked by git. A tracked file under any of these roots is `FAIL` outright, regardless
-                 of ignore coverage — the rule did not keep it out, however it reads now. With nothing
+                 tracked by git. Ignore rules are read by the scoped matcher
+                 ([ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
+                 every nested `.gitignore` scoped to its directory, `!` negation, anchoring and `**`; a
+                 root is covered when it is ignored itself or a new file in it would be
+                 (`artefacts/.gitignore` holding `*`), and the summary names the file. A tracked file
+                 under any of these roots is `FAIL` outright, regardless of ignore coverage — the rule
+                 did not keep it out, however it reads now — except the root's own `.gitignore` and a
+                 file it re-includes with `!` (`artefacts/README.md` beside `*`). With nothing
                  tracked, full ignore coverage of every present root is `PASS`; partial coverage, or a
                  present root covered by no rule at all, is `FAIL`; no candidate root present at all is
                  `PASS` by construction. When coverage is confirmed but git cannot report the tracked
@@ -119,8 +125,8 @@ Engine           `CON-03`. Checks the scratch spellings (`artefacts/`, `artifact
                  when a broader ignore rule covers the scratch path incidentally (`*.tmp/` happening to
                  match `artefacts/`) — the engine credits this as a real `PASS`, so do not second-guess
                  it as "too lucky to count"; conversely, verify the ignore rule's own anchoring if a
-                 `PASS` looks surprising, since the engine's ignore matching is a documented subset, not
-                 full gitignore semantics.
+                 `PASS` looks surprising, since the engine's ignore matching is a documented subset (no
+                 `.git/info/exclude`, no global excludes file), not full gitignore semantics.
 Method           automated
 Look for         `.gitignore` (and any other ignore file the engine's loader reads) for a rule covering
                  each present candidate root; `git ls-files` (or the equivalent) for whether anything
@@ -186,15 +192,11 @@ Absence proof    Not applicable — this check never records a FAIL, so no absen
 Remediation      none — `CON-04` is itself a remediation input, not a defect with a fix. Its draft is
                  `add-deny-rules`'s deterministic starting point, not something `add-deny-rules` fixes
                  on this check's behalf.
-Pitfalls         **Open point, carried from S2.6 (settled here as D51, not implemented in this leaf):**
-                 the recipe's own launcher, `tools/engine.py`, does not pass `--emit-baseline` through to
-                 the engine today, so `CON-04` reports `UNKNOWN` ("draft not emitted") on every recipe
-                 run and no `do-not-do.draft.md` exists for `add-deny-rules` (S5.3.3) to read. The chosen
-                 fix is a launcher option: `tools/engine.py` gains a passthrough flag that forwards to
-                 the engine's own `--emit-baseline`, requested by the audit recipe's Stage 2 the first
-                 time it runs the engine (S3.5.3.1). Rejected: the facts tool (`facts.py` never runs the
-                 engine, and the draft needs the engine's own category scan, not a second one) and
+Pitfalls         **Settled as D51.** The recipe's own launcher, `tools/engine.py`, accepts
+                 `--emit-baseline` and forwards it to the engine, so a run that asks for it writes
+                 `do-not-do.draft.md` for `add-deny-rules` (Planned: IR10.1) to read; without the flag
+                 `CON-04` reports `UNKNOWN` ("draft not emitted"). Rejected: the facts tool (`facts.py`
+                 never runs the engine, and the draft needs the engine's own category scan, not a second one) and
                  having the model write the candidate list itself (decision 0001's own "Alternatives
                  Considered" already rejects this — the scan is deterministic and tested, so a model
-                 should not rediscover the same paths). This is a tool change and is not made in this
-                 leaf; it is deferred to `S3.5.3.1`.
+                 should not rediscover the same paths).

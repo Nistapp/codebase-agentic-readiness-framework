@@ -43,7 +43,7 @@ compare_reports.py BEFORE AFTER [--state STATE] [--json]
 Run the deterministic audit engine from any directory; the report is named for the repository.
 
 ```text
-engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N] [--exclude GLOB]... [--max-files N] [--run-gates --allow-probe VERB... [--timeout SECONDS]] [--emit-baseline]
+engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N] [--exclude GLOB]... [--max-files N] [--run-gates --allow-probe VERB... [--timeout SECONDS]] [--emit-baseline] [--no-user-config]
 engine.py --list-checks
 ```
 
@@ -103,7 +103,7 @@ render_report.py <report> --out <md>
 ## report.py
 
 **Version:** 0.1.0  
-**Writes:** init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the target; a name that is taken is never replaced. import-engine, add-check, add-finding and set-disposition: that draft, in place and atomically, and no other file. status: nothing. finalise: a new final report, <label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, which it leaves as it was.
+**Writes:** init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the target; a name that is taken is never replaced. import-engine, add-check, add-finding, set-disposition and set-stack-profile: that draft, in place and atomically, and no other file. status: nothing. finalise: a new final report, <label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, which it leaves as it was.
 
 Build the audit report: the only writer of the draft, and every write is validated.
 
@@ -113,6 +113,7 @@ report.py import-engine <draft> <engine report>
 report.py add-check <draft> --from FILE|-
 report.py add-finding <draft> --from FILE|-
 report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
+report.py set-stack-profile <draft> <id> [--derived] [--confirmed]
 report.py status <draft>
 report.py finalise <draft>
 ```

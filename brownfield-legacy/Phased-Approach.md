@@ -50,7 +50,7 @@ flowchart TB
 
 > **Objective**: Make the repository executable, discoverable, and safe for agent interaction.
 >
-> **Tools**: `codebase-memory-mcp` ✅
+> **Tools**: `codebase-memory-mcp` ✅, [`deterministic-audit`](../brownfield-recipes/deterministic-audit/README.md) and [`brownfield-recipes`](../brownfield-recipes/README.md) (see [Tool Ecosystem](../shared/Tool-Ecosystem.md))
 
 ### Activities
 
@@ -79,7 +79,7 @@ task security      # npm run security      — dependency-CVE gate
 - Establish initial Constraint Engineering allow/deny lists.
 
 > [!NOTE]
-> CI/CD integration patterns (PR workflows, branch protection, pipeline gates) will be detailed in the upcoming `agentic-docstrings` architecture documentation. A good example is detailed [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md#11-git-commit-conventions--release-lifecycle-strict)
+> CI/CD integration patterns (PR workflows, branch protection, pipeline gates) are specified in [`spec/`](../spec/readiness-requirements.md) (`REQ-SH-033` to `REQ-SH-035`) and applied by the [`add-ci-parity`](../brownfield-recipes/implement/playbooks/add-ci-parity.md) playbook. A good example is detailed [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md#11-git-commit-conventions--release-lifecycle-strict)
 
 ### Key Deliverables
 
@@ -376,7 +376,7 @@ graph TD
 
 This cycle ensures that **every tool operation starts from indexed knowledge and ends by updating it** — preventing drift between the codebase and its documentation.
 
-> [!TODO]
+> [!NOTE]
 > We missed a stage for generating unit-tests for the existing codebase. Generating unit-tests for existing code may 'bake in' certain behaviors that we may want to change later. So we have to be careful about this. Unit-tests are closely related to formal specs and we will address this later. 
 
 ---

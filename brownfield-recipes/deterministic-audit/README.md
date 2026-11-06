@@ -40,7 +40,10 @@ Two axes are always reported separately: **phase** (which framework requirement 
 
 ```bash
 # from brownfield-recipes/deterministic-audit/ — no install step, no dependencies
-python3 -m audit <target> --format both --out ./audit-out/<name>
+python3 -m audit <target> --format both --out ./audit-out/<name>   # writes <name>.json and <name>.md
+
+# verdicts that do not depend on this machine: read nothing under $HOME (the IDX checks)
+python3 -m audit <target> --no-user-config --out ./audit-out/<name>
 
 # add executed probes, explicitly and with a time budget
 python3 -m audit <target> --run-gates --allow-probe check --allow-probe test --timeout 600
@@ -56,6 +59,15 @@ python3 tools/build.py && ./dist/audit.pyz <target>
 ```
 
 Full walkthrough: [How to run an audit](docs/how-to/run-an-audit.md).
+
+The engine decides what counts as the repository ([ADR-0008](docs/architecture/adrs/0008-what-counts-as-the-repository.md)):
+a root manifest outranks a nested one, and files under a directory named `templates`, `examples`, `fixtures`,
+`samples`, `testdata` or `scaffold` (singular forms too) are carried data that no check reads. The report lists them
+in `inventory.set_aside`. `--exclude` is therefore no longer needed for template, example or fixture directories; it
+stays for anything else you want left out (`artefacts/**`, a vendored tree).
+
+The checks that ask whether a path is ignored (`DOC-03`, `CON-03`, `SEC-01`, `SEC-03`) read every nested `.gitignore`,
+scoped to its directory, and honour `!` negation ([ADR-0009](docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)).
 
 ---
 
@@ -135,7 +147,7 @@ All documentation follows the shared [style guide](../docs/STYLE_GUIDE.md), whic
 
 | Version | Scope |
 |---|---|
-| v1 | Python, deterministic, Phase-1 scoring, tiers A–C, JSON + Markdown reports, baseline ratchet, self-verification fixtures. **Current state:** all packs live — `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set (55 of 55 scoreable checks, plus 13 informational reported and never scored) |
+| v1 | Python, deterministic, Phase-1 scoring, tiers A–C, JSON + Markdown reports, baseline ratchet, self-verification fixtures. **Current state:** all packs live — `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set (55 of 55 scoreable checks, plus 14 informational or emitter-only reported and never scored, as `--list-checks` prints) |
 | v2 | TypeScript npm package with the same contract, matching the scaffolder's distribution path |
 | v3 | `--narrate` (prose only, never verdicts), Phase 2–4 rule packs with real depth, non-JS/TS ecosystem packs |
 

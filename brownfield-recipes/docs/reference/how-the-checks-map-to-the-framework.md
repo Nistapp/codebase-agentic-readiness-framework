@@ -35,8 +35,7 @@ All 71 catalogue checks, each with its requirement(s) and the framework heading(
 `Source` field links. Generated 2026-10-19 from `catalogue.json`'s `req_ids` and
 `readiness-requirements.md`'s `Source` fields — the same two steps as the worked example above, run once
 per check rather than by hand. 14 checks are informational or an emitter and trace to no requirement
-(`none`); `AGT-11` and `CI-04` carry a requirement but have no rubric yet (`spec/traceability.md#checks-that-do-not-yet-verify-their-requirement`
-has the detail).
+(`none`).
 
 | Check | Title | Severity | Scored | Requirement(s) | Framework anchor(s) |
 |---|---|---|---|---|---|

@@ -46,7 +46,7 @@ Runs the [deterministic engine](../../deterministic-audit/README.md) from any di
 python3 brownfield-recipes/tools/engine.py <target> [--out-dir DIR] [--repo-label LABEL] [--phase N]
                                            [--exclude GLOB]... [--max-files N]
                                            [--run-gates --allow-probe VERB... [--timeout SECONDS]]
-                                           [--emit-baseline]
+                                           [--emit-baseline] [--no-user-config]
 python3 brownfield-recipes/tools/engine.py --list-checks
 python3 brownfield-recipes/tools/engine.py --describe
 ```
@@ -63,6 +63,7 @@ python3 brownfield-recipes/tools/engine.py --describe
 | `--max-files N` | A hard cap on the files the engine inspects. |
 | `--run-gates`, `--allow-probe VERB`, `--timeout SECONDS` | Let the engine run the target's own commands. Nothing runs unless `--run-gates` is given and every verb is named in an `--allow-probe`. `--timeout` is the limit per command. |
 | `--emit-baseline` | Forwarded to the engine's own `--emit-baseline` (D51): also writes `do-not-do.draft.md` beside the report, the CON-04 remediation draft. |
+| `--no-user-config` | Forwarded to the engine: read no user-level configuration (`$HOME`, XDG), so the `IDX` verdicts do not depend on the machine. The report's `provenance.user_config` says what was read. |
 | `--list-checks` | Print the engine's checks and exit. It takes no other argument. |
 
 The engine's `--force`, `--out`, `--format`, `--fail-on` and `--baseline` are not offered, and abbreviations of the options above are refused.
@@ -86,7 +87,7 @@ A scan writes one file, `<label>.engine-report.<stamp>.json`, in the output dire
 | Code | When |
 |---|---|
 | `0` | The report was written, or the checks were listed. |
-| `1` | A bad argument, a move the state diagram or the owner-only rules refuse, an unknown or rejected finding, a missing target, an output directory inside the target, a bad label, or a refusal by the engine, whose reason is in `data.error`. |
+| `1` | A bad argument, a missing target, an output directory inside the target, a bad label, or a refusal by the engine, whose reason is in `data.error`. |
 | `3` | The engine exited with any other code, raised, or reported success without writing the report or (with `--emit-baseline`) the draft. |
 
 **Errors**
@@ -146,7 +147,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 | Message | Fix |
 |---|---|
 | `rule 1: ...` to `rule 12: ...` | The rule is in [Rules beyond the schema](../../schema/SCHEMA.md#rules-beyond-the-schema). The message says which item to change. |
-| `rule 10: /summary/...: the report says X and its checks and findings give Y` | The summary is stale. It is never edited by hand: the report builder (S2.3) writes it, and until it exists the number Y is the one to use. |
+| `rule 10: /summary/...: the report says X and its checks and findings give Y` | The summary is stale. It is never edited by hand: the report builder, [`report.py`](#reportpy), recomputes it on every change, so the report was changed outside the builder. Y is the correct number. |
 | `rule 11: ... it looks like a credential` | Shorten the quote or the output tail, or leave it out. The patterns are the engine's, so a line such as `token: abc` is flagged even when it is not a secret. |
 | `schema: /path: ...` | The pointer names the field. The schema is [`audit-report.schema.json`](../../schema/audit-report.schema.json). |
 | `the file is not a report: ...` | The file is not one JSON document that this tool accepts. |
@@ -157,7 +158,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. The draft's path may be a link: the draft it points to is changed, and the link stays a link. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../tools/report.py).
 
-The subcommands are `init`, `import-engine`, `add-check`, `add-finding`, `set-disposition`, `status` and `finalise`.
+The subcommands are `init`, `import-engine`, `add-check`, `add-finding`, `set-disposition`, `set-stack-profile`, `status` and `finalise`.
 
 Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
 
@@ -170,6 +171,7 @@ python3 brownfield-recipes/tools/report.py add-check <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py add-finding <draft> --from FILE|-
 python3 brownfield-recipes/tools/report.py set-disposition <draft> --via VIA
         (--finding ID --disposition DISPOSITION [--note TEXT] | --from FILE|-)
+python3 brownfield-recipes/tools/report.py set-stack-profile <draft> <id> [--derived] [--confirmed]
 python3 brownfield-recipes/tools/report.py status <draft>
 python3 brownfield-recipes/tools/report.py finalise <draft>
 python3 brownfield-recipes/tools/report.py --describe
@@ -463,6 +465,26 @@ The tool refuses a decision that would claim something false about who made it:
 | `<F-id> is not a finding in this draft` | Use an id from `status`. |
 | `fragment: /N/...` | Fix the item the pointer names. |
 
+### set-stack-profile
+
+Records `run_context.stack_profile` in a draft: which stack profile the audit used, whether it shipped or was
+derived, and whether the user confirmed the choice ([`stacks/README.md`](../../stacks/README.md#4-shipped-versus-derived)).
+Audit Stage 1 calls it once the user has agreed the stack. A second call replaces the first. The eval scorer
+(`tools/eval/score.py`) does not read the field; an eval-mode run records it the same way.
+
+| Argument | Meaning |
+|---|---|
+| `<id>` | A shipped profile id, one of `java`, `python`, `typescript-node` (the files in `stacks/`; a test holds the list and the folder together). With `--derived`, any id of lower-case letters, digits and hyphens, up to 41 characters. |
+| `--derived` | No profile ships for this stack, so guidance was derived from the check files. Refused for a shipped id. |
+| `--confirmed` | The user confirmed the choice. Without it `confirmed_by_user` is `false`. |
+
+**Outputs.** `data` holds the recorded `id`, `source` (`shipped` or `derived`) and `confirmed_by_user`, and the draft's path.
+
+| Error | What to do |
+|---|---|
+| `no shipped stack profile 'X'; the shipped ones are ...` | Use a shipped id, or pass `--derived` to name a stack with no profile. |
+| `X is a shipped profile; drop --derived` | A shipped profile is never "derived". |
+
 ### status
 
 Says where an audit stands: which families of checks are done, which are not, and which findings still wait for a decision. It is what to run first when a session resumes after a crash or after the agent's context ran out, because the draft holds everything and the tool reads it. It reads the draft and writes nothing, and it does not wait for the lock.
@@ -651,7 +673,7 @@ A run writes one file, the one `--out` names, in `facts.schema.json`'s format: `
 
 ## recipe_lint.py
 
-Checks the Markdown under `brownfield-recipes/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10), every `brownfield-recipes/tools/<name>.py` the Markdown names exists and answers `--describe`, every check, requirement and playbook ID named is one `catalogue.json` or `spec/readiness-requirements.md` actually has, and the generated [`tools/CATALOGUE.md`](../../tools/CATALOGUE.md) matches what every tool's own `--describe` would produce today. It reads only, apart from running each tool's own `--describe`, which the contract guarantees does no work; nothing is written, unless `--write-catalogue` is given. The source is [`recipe_lint.py`](../../tools/recipe_lint.py).
+Checks the Markdown under `brownfield-recipes/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10), every `brownfield-recipes/tools/<name>.py` the Markdown names exists and answers `--describe`, every check, requirement and playbook ID named is one `catalogue.json` or `spec/readiness-requirements.md` actually has, and the generated [`tools/CATALOGUE.md`](../../tools/CATALOGUE.md) matches what every tool's own `--describe` would produce today. The link rule also covers the framework pages outside that folder (the root `README.md`, `shared/`, `spec/`, `greenfield-bootstrap/` and `brownfield-legacy/`) and no other rule reads them; the `greenfield-bootstrap/templates/` links are examples relative to the destination and are skipped. It reads only, apart from running each tool's own `--describe`, which the contract guarantees does no work; nothing is written, unless `--write-catalogue` is given. The source is [`recipe_lint.py`](../../tools/recipe_lint.py).
 
 **Synopsis**
 
@@ -750,7 +772,11 @@ python3 brownfield-recipes/tools/build_skills.py [--out-dir DIR]
 
 ## progress.py
 
-Creates the implement recipe's state for a target from a final audit report, summarises it, renders its
+`progress.py` and `check_drift.py` import their sibling modules (`_common`, `validate_report`, `_jsonschema_subset`),
+so run them as `python3 brownfield-recipes/tools/<tool>.py`, **without** `python3 -I` (isolated mode drops the script's
+folder from the import path and the import of `_common` fails).
+
+Creates the implement recipe's state for a target from a final audit report (recording the SHA-256 of the report file in `source_reports[].sha256`), summarises it, renders its
 Markdown view, and applies the validated changes to it: status transitions, skip and defer, preferences and
 theme progress. It is the one tool that writes inside a target, and only the two state files, by
 [ADR 0002](../architecture/adrs/0002-progress-writes-state-in-target.md). The source is
@@ -789,7 +815,8 @@ python3 brownfield-recipes/tools/progress.py --describe
 | `--verification-command`, `--verification-result` | `set-status`: the verification and what it gave; given together. `done` needs one. |
 | `--debt`, `--clear-debt` | `set-status`: record debt (repeatable; same `what` replaces) or drop it. `partial` needs debt; `done` needs none. |
 | `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer` and `pref`. |
-| `--note` | `set-status`: text appended to the item's notes. |
+| `KEY VALUE` | `pref set`: a lower-case key (letters, digits, dot, underscore, hyphen; at most 64) and its value. The value `none` records that the owner was asked and has no preference. |
+| `--note` | `set-status`: text appended to the item's notes. When the item already has the given status, this is the only effect (the note and any `--commit` are added and the log says "note added"); without `--note` that case is refused. |
 | `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer` and `pref` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
 | `--phase` | Every write: the step recorded in the log entry and on the item or preference. |
 | `--render` | Every write: also replace the Markdown view. Without it the tool warns that the view is out of date. |
@@ -803,7 +830,7 @@ the `not_queued` count in `data`. `show` puts the summary in `data`: counts per 
 `open`, which is neither `done` nor `skipped`), the skipped finding ids, and the number of preferences, debt
 entries and log entries. `show --json` puts the state under `data.state`. `render` writes the Markdown and puts
 its path and size in `data`. Every other command checks the changed state whole, appends one log entry, replaces
-the JSON and puts the path and the count per status in `data`. A refused command changes nothing. Each write is atomic; a temporary file a killed write left behind is removed, with a
+the JSON and puts the path and the count per status in `data`. A refused command changes nothing, and a refused move says which states the item may go to. The Markdown view keeps prose lines (item details, the full text of a cut preference cell) under 110 columns so it passes MD013; a preference's value or reason longer than 100 characters is cut in its table row and given in full in a list below the table. Each write is atomic; a temporary file a killed write left behind is removed, with a
 warning.
 
 **Exit codes**
@@ -864,7 +891,18 @@ python3 brownfield-recipes/tools/check_drift.py --describe
 | `sha_missing` | The audited commit is not in the target's history (rewritten or not fetched). Nothing is compared; a warning says to re-check every finding. |
 | `no_sha` | The report recorded no `git_sha`. A warning says to re-check every finding. |
 
-`audited_sha` and `head_sha` are always present. When the audited commit is not an ancestor of `HEAD`, the diff is
+`audited_sha` and `head_sha` are always present. Two more fields never change the status or the exit code:
+
+- `dirty` is `true` when the target's working tree has uncommitted or untracked changes (`git status --porcelain` is
+  not empty), `false` when it is clean, `null` when git could not say. A warning and a line in the text output say so
+  when it is `true`, so the recipe does not ask the agent to run `git status` by hand.
+- `report_changed` compares the report file's SHA-256 with `source_reports[].sha256` in the target's state
+  (`progress.py init` records it). `true` means the report was edited since the state was created: a warning says not
+  to trust its text until the owner confirms the change. `false` means it matches. `null` means there is nothing to
+  compare: the target has no state, the state predates the digest (schema `0.1`), or the state does not list this
+  report.
+
+When the audited commit is not an ancestor of `HEAD`, the diff is
 between the two trees and a warning says so. Long lists are bounded: `changed_paths_omitted` and
 `findings_omitted` count what was left out, and `truncated` is `true`.
 

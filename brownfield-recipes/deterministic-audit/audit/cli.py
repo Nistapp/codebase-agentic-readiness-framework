@@ -89,6 +89,12 @@ def build_parser() -> argparse.ArgumentParser:
         "(vendor-samples/* covers every file under it); it also applies to the checks that read git's tracked "
         "files; repeatable",
     )
+    parser.add_argument(
+        "--no-user-config",
+        action="store_true",
+        help="read no user-level configuration ($HOME, XDG): the IDX checks look at the repository only, so the verdict "
+        "does not depend on the machine; without it the paths that were read are listed in the report's provenance",
+    )
     parser.add_argument("--max-files", type=int, default=250_000, help="hard cap on inspected files")
     parser.add_argument(
         "--list-checks",

@@ -9,6 +9,14 @@
 > how a *team* operates, not what an agent reads before deciding what to edit. They are reported because
 > a client engagement needs the whole picture, and left numberless on purpose.
 >
+> **Where a hygiene file counts.** `HYG-02`, `HYG-03`, `HYG-05`, `HYG-06`, `HYG-07`, `HYG-08` and `HYG-09` read
+> a file at the repository root or under `.github/`, `.gitlab/` or `docs/`, never in a component's directory,
+> and never under a carried-data directory (`templates/`, `examples/`, `fixtures/`), which is not in the
+> inventory at all
+> ([ADR-0008](../../deterministic-audit/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). A
+> `CONTRIBUTING.md` that only exists under `greenfield-bootstrap/templates/` is a template the repository
+> ships, not the repository's own, and reads `FAIL`.
+>
 > **Verdict contract, shared by every check in this file (from the engine's own `hyg.py` docstring):
 > an absent artifact is `FAIL`.** Because every check here is unscored, a `FAIL` is a reported fact that
 > never moves the readiness number — write it up like any other finding, just without a score
@@ -62,19 +70,19 @@ Pitfalls         A `FAIL` here never lowers the score — this check is informat
 
 Why it matters   Review routing should be machine-readable, not tribal knowledge about who owns what.
 Severity         COSMETIC
-Engine           `HYG-02`. A `CODEOWNERS` file at the root, under `.github/`, or under `docs/` is `PASS`;
-                 none at any of those three locations is `FAIL`. This check reads presence only — see the
+Engine           `HYG-02`. A `CODEOWNERS` file at the root, under `.github/`, `.gitlab/` or `docs/` is
+                 `PASS`; none at any of those locations is `FAIL`. This check reads presence only — see the
                  header note above on the cross-check this pack does not implement.
 Method           automated
-Look for         A file named exactly `CODEOWNERS` at the root, under `.github/`, or under `docs/`.
-Rubric           PASS: a `CODEOWNERS` file exists at one of the three recognised locations.
+Look for         A file named exactly `CODEOWNERS` at the root, under `.github/`, `.gitlab/` or `docs/`.
+Rubric           PASS: a `CODEOWNERS` file exists at one of the recognised locations.
                  PARTIAL: not used by this check.
                  FAIL: no `CODEOWNERS` file exists at any recognised location.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never — presence at a fixed location is always determinable.
 Evidence to cite A `file` evidence item citing the `CODEOWNERS` path found, for PASS.
-Absence proof    A FAIL states that none of the three recognised locations (root, `.github/`, `docs/`)
-                 holds a `CODEOWNERS` file.
+Absence proof    A FAIL states that none of the recognised locations (root, `.github/`, `.gitlab/`,
+                 `docs/`) holds a `CODEOWNERS` file.
 Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-02`).
 Pitfalls         Do not read `CODEOWNERS`'s own content to judge whether it is well-formed or complete —
                  this check only establishes that the file exists; a model that wants to compare its
@@ -88,14 +96,15 @@ Severity         COSMETIC
 Engine           `HYG-03`. Any file whose basename starts with `pull_request_template`
                  (case-insensitive), normally under `.github/`, is `PASS`. None found is `FAIL`.
 Method           automated
-Look for         Any file whose basename starts with `pull_request_template`, at any depth.
+Look for         Any file whose basename starts with `pull_request_template`, at the repository root or
+                 under `.github/`, `.gitlab/` or `docs/`.
 Rubric           PASS: at least one `pull_request_template*` file exists.
                  PARTIAL: not used by this check.
-                 FAIL: no `pull_request_template*` file exists anywhere in the tree.
+                 FAIL: no `pull_request_template*` file exists at a repository-level location.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never.
 Evidence to cite A `file` evidence item citing the template path found, for PASS.
-Absence proof    A FAIL states that no file anywhere in the tree has a basename starting with
+Absence proof    A FAIL states that no file at a repository-level location has a basename starting with
                  `pull_request_template`.
 Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-03`).
 Pitfalls         A template referenced only in a GitHub organisation-level `.github` repository is
@@ -129,19 +138,19 @@ Pitfalls         A GitHub "issue forms" YAML (`.github/ISSUE_TEMPLATE/bug_report
 Why it matters   A contributor should not have to reverse-engineer the setup, the gate and the review
                   flow from reading commit history.
 Severity         COSMETIC
-Engine           `HYG-05`. Any file anywhere in the tree whose basename starts with `contributing` and is
+Engine           `HYG-05`. Any repository-level file whose basename starts with `contributing` and is
                  either a bare name or carries a document suffix (`.md`, `.rst`, `.txt`, `.markdown`,
                  `.adoc`) is `PASS`. None found is `FAIL`.
 Method           automated
-Look for         Any file, at any depth, whose basename starts with `contributing` and is a bare name or
+Look for         Any repository-level file whose basename starts with `contributing` and is a bare name or
                  a document-suffixed file.
-Rubric           PASS: at least one `CONTRIBUTING`-prefixed document exists anywhere in the tree.
+Rubric           PASS: at least one `CONTRIBUTING`-prefixed document exists at a repository-level location.
                  PARTIAL: not used by this check.
                  FAIL: no `CONTRIBUTING`-prefixed document exists.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never.
 Evidence to cite A `file` evidence item citing the document path found, for PASS.
-Absence proof    A FAIL states that no file anywhere in the tree has a basename starting with
+Absence proof    A FAIL states that no repository-level file has a basename starting with
                  `contributing` and a recognised document form.
 Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-05`).
 Pitfalls         A `CONTRIBUTING` section embedded inside `README.md` rather than its own file does not
@@ -157,15 +166,15 @@ Engine           `HYG-06`. Any file at the root, under `.github/`, or under `doc
                  with `security` and is either a bare name or carries a document suffix is `PASS`. None
                  found is `FAIL`.
 Method           automated
-Look for         Any file, at any depth, whose basename starts with `security` and is a bare name or a
+Look for         Any repository-level file whose basename starts with `security` and is a bare name or a
                  document-suffixed file.
-Rubric           PASS: at least one `SECURITY`-prefixed document exists anywhere in the tree.
+Rubric           PASS: at least one `SECURITY`-prefixed document exists at a repository-level location.
                  PARTIAL: not used by this check.
                  FAIL: no `SECURITY`-prefixed document exists.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never.
 Evidence to cite A `file` evidence item citing the document path found, for PASS.
-Absence proof    A FAIL states that no file anywhere in the tree has a basename starting with `security`
+Absence proof    A FAIL states that no repository-level file has a basename starting with `security`
                  and a recognised document form.
 Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-06`).
 Pitfalls         Do not confuse this with `SEC-01`–`SEC-03` (the scored `SECURITY HYGIENE` family in
@@ -178,7 +187,7 @@ Pitfalls         Do not confuse this with `SEC-01`–`SEC-03` (the scored `SECUR
 Why it matters   A reader needs to see what changed between two versions without diffing the whole
                   history themselves.
 Severity         COSMETIC
-Engine           `HYG-07`. Any file anywhere in the tree whose basename starts with `changelog`,
+Engine           `HYG-07`. Any repository-level file whose basename starts with `changelog`,
                  `changes` or `history` and is a bare name or document-suffixed file is the candidate
                  (the first match, by sort order, is read). None found is `FAIL` outright. Found: the
                  engine compares, via read-only git queries, the candidate's own last-commit date against
@@ -199,7 +208,7 @@ Rubric           PASS: a changelog document exists and its last commit is within
                  `HEAD`, against which to compare it.
 Evidence to cite A `file` evidence item citing the changelog path and its age in days against `HEAD`, for
                  both PASS and a staleness FAIL.
-Absence proof    A FAIL for "no changelog" states that no file anywhere matches the three recognised name
+Absence proof    A FAIL for "no changelog" states that no repository-level file matches the three recognised name
                  prefixes; a staleness FAIL states the exact day count since the changelog's last commit
                  and the 365-day window it exceeds.
 Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-07`).
@@ -217,8 +226,8 @@ Engine           `HYG-08`. A text or Markdown document whose basename contains `
                  workflow file named `release.yml` is **not** a document and does not count — the engine
                  distinguishes a described process from an automated one. None found is `FAIL`.
 Method           automated
-Look for         Any document-suffixed file whose basename contains `release`, excluding CI workflow
-                 files.
+Look for         Any repository-level document-suffixed file whose basename contains `release`, excluding
+                 CI workflow files.
 Rubric           PASS: at least one text/Markdown document whose name contains `release` exists.
                  PARTIAL: not used by this check.
                  FAIL: no such document exists (a `release.yml` CI workflow alone does not satisfy it).
@@ -226,7 +235,7 @@ Rubric           PASS: at least one text/Markdown document whose name contains `
                  UNKNOWN when: never.
 Evidence to cite A `file` evidence item citing the release document path found, for PASS.
 Absence proof    A FAIL states that no document (as opposed to a CI workflow file) whose name contains
-                 `release` exists anywhere in the tree.
+                 `release` exists at a repository-level location.
 Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `HYG-08`).
 Pitfalls         A repository automating its release entirely through `.github/workflows/release.yml`,
                  with no page describing the process in prose, is a correct `FAIL` — automation is not

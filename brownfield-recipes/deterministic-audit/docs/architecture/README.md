@@ -15,6 +15,8 @@
 | [0005](adrs/0005-module-layout-and-zipapp-distribution.md) | Module Layout and Zipapp Distribution | Accepted | 2026-09-28 |
 | [0006](adrs/0006-private-check-helpers-and-ignore-engine.md) | Private Check Helpers and the Ignore Engine | Accepted | 2026-09-28 |
 | [0007](adrs/0007-json-report-render-contract.md) | The JSON Report Is the Render Contract; the Markdown Is a Template Over It | Accepted | 2026-09-30 |
+| [0008](adrs/0008-what-counts-as-the-repository.md) | What Counts as the Repository | Accepted | 2026-11-05 |
+| [0009](adrs/0009-nested-ignore-files-and-negation.md) | Nested Ignore Files and Negation | Accepted | 2026-11-05 |
 
 ## Key Documents
 

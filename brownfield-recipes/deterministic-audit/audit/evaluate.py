@@ -72,6 +72,8 @@ class AuditResult:
     not_applicable: list[str] = field(default_factory=list)
     unattested: list[str] = field(default_factory=lambda: list(UNATTESTED_ITEMS))
     probes: list = field(default_factory=list)
+    user_config: bool = True
+    user_reads: list[str] = field(default_factory=list)
 
     # -- derived views ---------------------------------------------------
     @property
@@ -151,7 +153,11 @@ def evaluate(*, target: Target, inventory: Inventory, stack: Stack, args: argpar
     from audit.rules.registry import applicable_checks
 
     session = ProbeSession(
-        cwd=target.path, allow=tuple(args.allow_probe), timeout=args.timeout, enabled=bool(args.run_gates)
+        cwd=target.path,
+        allow=tuple(args.allow_probe),
+        timeout=args.timeout,
+        enabled=bool(args.run_gates),
+        user_config=not getattr(args, "no_user_config", False),
     )
     components = detect_components(inventory)
 
@@ -174,6 +180,8 @@ def evaluate(*, target: Target, inventory: Inventory, stack: Stack, args: argpar
         outcomes=outcomes,
         not_applicable=not_applicable,
         probes=session.results,
+        user_config=session.user_config,
+        user_reads=sorted(session.user_reads),
     )
 
 

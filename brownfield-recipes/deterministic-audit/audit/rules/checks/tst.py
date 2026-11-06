@@ -93,6 +93,7 @@ _FASTPATH_PATTERNS: tuple[str, ...] = (
     r"\bpytest\b[^\n&|;]*\s-k\b",
     r"\bpytest\b[^\n&|;]*::[A-Za-z_]\w*",
     r"\bpython3?\s+-m\s+pytest\b[^\n&|;]*\s-k\b",
+    r"\bpython3?\s+-m\s+unittest\b[^\n&|;]*\s-k\b",
     r"\bnpm\s+(?:run\s+)?(?:test|t)\s+--\s+\S+",
     r"\b(?:pnpm|yarn|bun)\s+(?:run\s+)?(?:test|t)\s+(?:--\s+)?\S+",
     r"\b(?:npx\s+)?vitest\s+run\s+\S*(?:test|spec)\S*",

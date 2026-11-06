@@ -64,6 +64,8 @@ def build_report(result: AuditResult, args: argparse.Namespace) -> dict[str, Any
     prov = provenance(result.target, args)
     prov["framework_revision"] = _framework_revision(args)
     prov["ruleset_hash"] = ruleset_hash()
+    # Host-dependence, stated: what outside the target the checks read, or that nothing was allowed to be.
+    prov["user_config"] = {"read_allowed": result.user_config, "paths_read": result.user_reads}
 
     counts = {v.value.lower(): result.counts(v) for v in Verdict}
 
@@ -117,6 +119,8 @@ def build_report(result: AuditResult, args: argparse.Namespace) -> dict[str, Any
             "files_inspected": len(result.inventory.files),
             "files_skipped": len(result.inventory.skipped),
             "truncated": result.inventory.truncated,
+            "files_set_aside": result.inventory.files_set_aside,
+            "set_aside": [{"path": entry.path, "files": entry.files} for entry in result.inventory.set_aside],
         },
         "components": [
             {

@@ -113,5 +113,51 @@ class IdxRegistrationTests(unittest.TestCase):
         self.assertEqual(support.verdicts(report)["IDX-01"], "PARTIAL")
 
 
+class NoUserConfigTests(unittest.TestCase):
+    """`--no-user-config`: nothing under ``$HOME`` is read, and the report says so."""
+
+    def _scan(self, home: Path, *extra: str) -> dict:
+        support.write(home, ".config/opencode/opencode.jsonc", '{"mcp": {"codebase-memory-mcp": {}}}')
+        root = home / "repo"
+        support.write(root, "README.md", "# repo\n")
+        return support.run_audit(root, env={"HOME": str(home)}, extra_args=extra)
+
+    def test_by_default_the_user_config_is_read_and_its_path_is_in_the_provenance(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = self._scan(Path(tmp))
+            expected = str(Path(tmp) / ".config" / "opencode" / "opencode.jsonc")
+        self.assertEqual(support.verdicts(report)["IDX-01"], "PASS")
+        self.assertEqual(report["provenance"]["user_config"], {"read_allowed": True, "paths_read": [expected]})
+
+    def test_with_the_flag_nothing_under_home_is_read(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            report = self._scan(Path(tmp), "--no-user-config")
+        self.assertEqual(support.verdicts(report)["IDX-01"], "FAIL")
+        self.assertEqual(report["provenance"]["user_config"], {"read_allowed": False, "paths_read": []})
+        summary = next(c for c in report["checks"] if c["id"] == "IDX-01")["summary"]
+        self.assertIn("--no-user-config", summary)
+
+    def test_with_the_flag_the_default_store_locations_are_not_searched(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            write_store(home / ".codebase-memory", [str((home / "repo").resolve())])
+            report = self._scan(home, "--no-user-config")
+        self.assertEqual(support.verdicts(report)["IDX-02"], "UNKNOWN")
+        self.assertEqual(report["provenance"]["user_config"]["paths_read"], [])
+
+    def test_an_explicit_store_override_still_applies_and_is_recorded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            home = Path(tmp)
+            store = write_store(home / "store", [str((home / "repo").resolve())])
+            support.write(home, "repo/README.md", "# repo\n")
+            report = support.run_audit(
+                home / "repo",
+                env={"HOME": str(home), "AUDIT_INDEX_STORE": str(store)},
+                extra_args=("--no-user-config",),
+            )
+        self.assertEqual(support.verdicts(report)["IDX-02"], "PASS")
+        self.assertEqual(report["provenance"]["user_config"]["paths_read"], [str(store)])
+
+
 if __name__ == "__main__":
     unittest.main()

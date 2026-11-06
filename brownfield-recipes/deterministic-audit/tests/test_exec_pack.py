@@ -25,6 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
+from audit.rules.checks._common import extract_fenced_commands, strip_shell_comment  # noqa: E402
 from audit.rules.checks.execution import _lock_consistency, _lockfile_paths  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 
@@ -84,6 +85,67 @@ class ExecFixtureTests(unittest.TestCase):
             any("does-not-exist" in (e.get("note") or "") for f in findings for e in f["evidence"]),
             "the unresolvable command is not named in the evidence",
         )
+
+
+class Exec06CommentTests(unittest.TestCase):
+    """A fenced command annotated with a trailing shell comment is read as the command alone (issue #8)."""
+
+    MAKEFILE = ".PHONY: test format-check\ntest:\n\t@echo t\nformat-check:\n\t@echo f\n"
+
+    def audit(self, agents: str, makefile: str | None = None) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "Makefile", self.MAKEFILE if makefile is None else makefile)
+            support.write(root, "AGENTS.md", agents)
+            report = support.run_audit(root)
+        return {c["id"]: c for c in report["checks"]}
+
+    def test_trailing_comments_are_cut_before_the_command_is_resolved(self):
+        agents = "```bash\nmake test   # run the suite, then the rest\nmake format-check  # read-only\n```\n"
+        self.assertEqual(self.audit(agents)["EXEC-06"]["verdict"], "PASS")
+
+    def test_the_greenfield_template_commands_resolve(self):
+        template = (Path(__file__).resolve().parents[3] / "greenfield-bootstrap" / "templates" / "AGENTS.md").read_text(
+            encoding="utf-8"
+        )
+        lines = [ln for ln in template.splitlines() if ln.startswith("npm ")]
+        self.assertTrue(any("#" in ln for ln in lines), "the template no longer annotates its verbs inline")
+        names = {ln.split()[2] if ln.startswith("npm run ") else ln.split()[1] for ln in lines}
+        manifest = json.dumps({"name": "x", "scripts": {name: "true" for name in sorted(names)}})
+        block = "```bash\n" + "\n".join(lines) + "\n```\n"
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "package.json", manifest)
+            support.write(root, "AGENTS.md", block)
+            report = support.run_audit(root)
+        exec06 = next(c for c in report["checks"] if c["id"] == "EXEC-06")
+        self.assertEqual(
+            (exec06["verdict"], exec06["summary"]), ("PASS", f"{len(lines)} documented command(s) resolve")
+        )
+
+    def test_a_hash_inside_quotes_is_kept(self):
+        self.assertEqual(strip_shell_comment('echo "a # b" # tail'), 'echo "a # b"')
+        self.assertEqual(strip_shell_comment("echo 'a # b'"), "echo 'a # b'")
+        self.assertEqual(strip_shell_comment("make a#b"), "make a#b")
+        self.assertEqual(strip_shell_comment("make test \\# kept"), "make test \\# kept")
+        agents = '```bash\nmake "no#such"\n```\n'
+        self.assertEqual(self.audit(agents)["EXEC-06"]["verdict"], "FAIL")
+
+    def test_every_caller_sees_the_same_stripped_command(self):
+        text = "```bash\nmake test # run\n# whole-line comment\n```\n"
+        self.assertEqual(extract_fenced_commands(text), [("bash", 2, "make test")])
+
+    def test_exec06_and_agt05_agree_on_the_spelling_of_a_verb(self):
+        # `format:check` is bound by `format-check` in the Makefile; the verb resolver knows, EXEC-06 asks it.
+        agents = "```bash\nmake format:check\nmake test\n```\n"
+        checks = self.audit(agents)
+        self.assertEqual(checks["EXEC-06"]["verdict"], "PASS")
+        bound = {v["verb"] for v in checks["AGT-05"]["data"]["verbs"] if v["resolved"]}
+        self.assertIn("format:check", bound)
+
+    def test_a_target_the_makefile_does_not_define_still_fails(self):
+        agents = "```bash\nmake test\nmake nothing-here   # not a target\n```\n"
+        self.assertEqual(self.audit(agents)["EXEC-06"]["verdict"], "FAIL")
 
 
 class Exec01MessageTests(unittest.TestCase):

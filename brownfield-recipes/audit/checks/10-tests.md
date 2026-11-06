@@ -88,8 +88,8 @@ Evidence to cite A `command` evidence item citing the run command, exit code and
                  than restating it.
 Absence proof    Not applicable in the Tier-C-off case — the refusal reason recorded in `probes[]` is
                  itself the record of why no run happened, so no separate search is performed.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `TST-02`); a `FAIL`
-                 points at whichever test is failing, which is specific to the run, not a generic fix.
+Remediation      `add-baselines-and-ratchet` (records the suite status from a real run); a `FAIL` points at
+                 whichever test is failing, which is specific to the run, not a generic fix.
 Pitfalls         A green CI run is not evidence for this check — `TST-02` is this run's own Tier-C
                  execution, not a historical signal, and the two can disagree (a flaky suite, an
                  environment difference). Do not upgrade an `UNKNOWN` to `PASS` on CI's say-so.
@@ -127,7 +127,7 @@ Evidence to cite An `index_query` or `file` evidence item citing the engine's `C
                  (the total and the per-family breakdown) as the override's counter-evidence.
 Absence proof    Not applicable to a FAIL here — the census total itself, read from the payload, is the
                  evidence; an UNKNOWN cites the test-file absence `TST-01` already recorded.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `TST-03`); each
+Remediation      `add-baselines-and-ratchet` (the census step); each
                  marker needs its own judgment (fix the test, or document why the skip is deliberate), so
                  note the specific markers found rather than pointing at a generic playbook.
 Pitfalls         A marker pattern matched inside a string literal or a comment is still counted — this is
@@ -145,7 +145,7 @@ Engine           `TST-04`. With no test-source file at all, this is `UNKNOWN` �
                  fast path to act on, and the absence is `TST-01`'s own finding, not doubled here. With at
                  least one test file, reads the four entry documents (README.md, AGENTS.md, CLAUDE.md,
                  CONTRIBUTING.md) for a fenced shell command matching a per-runner single-test/subset
-                 pattern (`pytest -k`, `pytest ... ::Name`, `npm test -- <name>`, `go test -run`,
+                 pattern (`pytest -k`, `pytest ... ::Name`, `python3 -m unittest <module> -k <name>`, `npm test -- <name>`, `go test -run`,
                  `cargo test <name>`, `gradlew ... --tests`, `mvn -Dtest=`, and more), deliberately
                  excluding a plain full-suite invocation (`npm test`, `pytest` alone), which is `TST-01`'s
                  concern, not this one's. Distrust a `FAIL` when the fast path is documented in a doc file
@@ -165,7 +165,8 @@ Evidence to cite A `file` evidence item citing the doc, line and matched command
                  scope searched (which of the four entry documents were present) as the evidence read.
 Absence proof    A FAIL states the search scope explicitly (which entry documents were present and
                  read), so "none shows a fast path" is a checked claim, not an assumption.
-Remediation      `adapt-agents-md`
+Remediation      `adapt-agents-md`; `add-baselines-and-ratchet` writes the fenced line when the item sits in
+                 theme T5
 Pitfalls         A documented full-suite command (`npm test`, `pytest`) is not evidence for this check
                  even when it is the only command shown — the pattern set deliberately excludes it, so a
                  `FAIL` next to an otherwise well-documented test section is not a contradiction.
@@ -199,9 +200,7 @@ Evidence to cite A `file`/`command` evidence item per route that matched, for PA
 Absence proof    A FAIL states that none of the routes (dedicated file, runner config key, package
                  script/verb, language-section) found coverage configured, which stands as the search
                  record since each route was checked.
-Remediation      none in the current catalogue (`catalogue.json` lists no playbook for `TST-05`); note the
-                 route appropriate to the detected runner inline rather than pointing at a generic
-                 playbook.
+Remediation      `add-baselines-and-ratchet` (coverage configuration and a coverage verb, per stack).
 Pitfalls         Coverage *configured* is not coverage *enforced* — this check and `BASE-04` (a coverage
                  floor in the test runner's own configuration) read overlapping but distinct evidence; a
                  `PASS` here does not imply `BASE-04` also passes, and the two should be read together,

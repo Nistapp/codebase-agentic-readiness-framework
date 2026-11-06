@@ -7,14 +7,14 @@ description: Audit a repository for agentic readiness against the framework's Ph
 
 This skill assesses whether a repository is safe for an AI coding agent to work in, against the framework's
 Phase-1 requirements (`spec/readiness-requirements.md`). It produces one JSON report and its Markdown
-rendering. It never changes the audited repository. The implementation recipe (a separate skill, not yet
-written) is what acts on the findings.
+rendering. It never changes the audited repository. The implementation recipe (a separate skill,
+`implement/SKILL.md`; Stages 0-1 are written, the rest is in progress) is what acts on the findings.
 
 ## When to use it
 
 Use this skill when asked to audit, assess, score or evaluate a repository's readiness for AI coding agents,
 or when asked to run the `agentic-readiness-audit`. Do not use it to fix anything it finds — that is the
-implementation recipe's job once it exists.
+implementation recipe's job (`implement/SKILL.md`).
 
 ## Hard rules
 
@@ -114,10 +114,9 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    profile, `../stacks/<id>.md` (listed in [`stacks/README.md`](../stacks/README.md)); otherwise follow
    that same file's [§2, Anatomy](../stacks/README.md#2-anatomy) to derive guidance from the check files'
    own stack-neutral rubrics, and tell the user the stack is derived, not shipped (§4,
-   [Shipped versus derived](../stacks/README.md#4-shipped-versus-derived)). Carry the choice (`id`,
-   `shipped` or `derived`) into Stage 2 as a working note: the report schema has a place for it,
-   `run_context.stack_profile`, but no `report.py` subcommand writes it in v0.1 (found during S3.5.2, not
-   fixed — flag it, do not invent a write path).
+   [Shipped versus derived](../stacks/README.md#4-shipped-versus-derived)). Once the user has
+   agreed the choice, record it: `report.py set-stack-profile <draft> <id> [--confirmed]` for a shipped
+   profile, or `report.py set-stack-profile <draft> <id> --derived [--confirmed]` for a stack with no profile.
 3. If `run_context.index.kind` is `mcp` or `cli`, query it (for example `get_architecture`,
    `list_projects`) to corroborate the facts — index first, grep second — and never let an unverified
    grep outrank `facts.json`'s own counts, which a tool produced.
@@ -129,12 +128,14 @@ Everything else depends on the answers here; stop and ask rather than guess at a
 
 ## Stage 2 — Assess
 
-1. Run `engine.py <target> --out-dir <dir> [--run-gates --allow-probe VERB]... [--emit-baseline]`, forwarding
+1. Run `engine.py <target> --out-dir <dir> --no-user-config [--run-gates --allow-probe VERB]... [--emit-baseline]`, forwarding
    the intake's `probes.allowed` verbs as `--allow-probe` (with `--run-gates` only when at least one was
    named), passing the same `--exclude` paths the intake recorded (as Stage 1 step 1 already did for
    `facts.py`, so the engine scans the same inventory the facts describe), and passing `--emit-baseline`
    — this engine run is the only one for this draft, so it is also the one chance to have the engine
-   write `do-not-do.draft.md` for CON-04 (D51). Read `data.report` and `data.baseline_draft`, and tell the
+   write `do-not-do.draft.md` for CON-04 (D51). `--no-user-config` is always passed: it keeps the engine from
+   reading the machine's own `$HOME` configuration, so the verdicts describe the repository and not this host
+   (the report's `provenance.user_config` records it). Read `data.report` and `data.baseline_draft`, and tell the
    user both paths and any warning before moving on.
 2. Call `report.py import-engine <draft> <engine report>` straight after, using the `report` path from
    step 1. This runs once per draft — see the tool table's `import-engine` row for what it fills in and
@@ -219,7 +220,9 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    it rather than calling `finalise` to find out.
 3. Run `report.py finalise <draft>`. Read `data.report` and `data.markdown` (the two new files, beside the
    draft) and `data.summary` (the score and its qualifiers), and give the person both paths and the score.
-   The draft itself is untouched and still there; `finalise` never edits or removes it.
+   The draft itself is untouched and still there; `finalise` never edits or removes it. The report is written
+   outside the target; to implement it, the owner copies the pair into the target and runs `progress.py init`
+   ([hand-over steps](../docs/how-to/implement-an-audit-report.md#step-1-hand-the-report-over-to-the-target-and-create-the-state)).
 4. Exit `2` here lists every remaining problem in `data.errors`, in the same words as `status`'s
    `blocking` — fix each one, confirm with `status`, then retry `finalise`. This should not happen if step
    2 was followed; treat it as a sign something changed the draft between the two calls.
@@ -245,6 +248,7 @@ what to do when it does not.
 | [`engine.py`](../docs/reference/tools-cli.md#enginepy) | `engine.py <target> --out-dir DIR [--run-gates --allow-probe VERB]... --emit-baseline` | Exit `0`; the engine's own JSON report written under `DIR`, named with the repository's label, and `data.baseline_draft`'s path (`do-not-do.draft.md`, for `CON-04`). | Exit `1` with `data.error` naming why (bad target, bad label, name already taken this second — rerun). Exit `3` means the engine itself failed; record that as `UNKNOWN` for every automated check and tell the user, never fabricate engine verdicts. |
 | [`report.py init`](../docs/reference/tools-cli.md#init) | `report.py init <intake>` | Exit `0`; a new draft report, provenance filled in from the intake and git. | Exit `2` means the intake fails its schema: `data.errors` names each field; fix the intake and retry. Exit `1` means a bad path; fix and retry. |
 | [`report.py import-engine`](../docs/reference/tools-cli.md#import-engine) | `report.py import-engine <draft> <engine report>` | Exit `0`; the engine's checks, findings, stack and components are now in the draft. Runs once per draft, straight after `engine.py` (Stage 2, step 2). | Exit `2` with `data.error` naming the mismatch (wrong target, wrong schema version, already imported). Do not retry blindly — read the message; a draft that already holds an import needs a new draft via `init`, not a second `import-engine`. |
+| [`report.py set-stack-profile`](../docs/reference/tools-cli.md#set-stack-profile) | `report.py set-stack-profile <draft> <id> [--derived] [--confirmed]` | Exit `0`; `run_context.stack_profile` holds the profile `id`, `shipped` or `derived`, and whether the user confirmed it. Stage 1, step 2. | Exit `1` with `data.error` naming the shipped ids: use one, or add `--derived` for a stack with no profile. |
 | [`report.py add-check`](../docs/reference/tools-cli.md#add-check) | `report.py add-check <draft> --from -` | Exit `0`; the check is recorded or its agent-side dispute is recorded beside the engine's own verdict. | Exit `2` means the fragment is malformed or the override is missing its `override_reason` or evidence (rule 6): fix the fragment from `data.errors` and resend. An automated check that is not yet in the draft (exit `2`, "comes from the engine") means `import-engine` has not run yet. |
 | [`report.py add-finding`](../docs/reference/tools-cli.md#add-finding) | `report.py add-finding <draft> --from -` | Exit `0`; the finding is recorded against a check already in the draft. | Exit `2` if the check is not yet recorded (record it first) or the finding would outrank its check's severity (rule 7; lower the severity or fix the check). |
 | [`report.py set-disposition`](../docs/reference/tools-cli.md#set-disposition) | `report.py set-disposition <draft> --via <via> --finding <id> --disposition <d>` | Exit `0`; the person's decision is recorded, never the tool's own. | Exit `2` on a disallowed combination (e.g. `--via batch` on a `BLOCKER`, or `--via policy` outside `accept-all`): read `data.errors` and ask the person the way the rule actually requires. |

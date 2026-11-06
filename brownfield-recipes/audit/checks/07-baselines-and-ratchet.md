@@ -4,9 +4,9 @@
 > [Why These Checks §8](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#8-baselines-and-the-ratchet-base)
 > for the consequence behind this family: a brownfield repository arrives with debt, and the
 > framework's answer is not "fix it" but "freeze it and do not add to it" — instrumentation
-> (`BASE-01`/`BASE-02`) must land before enforcement (`BASE-03`/`BASE-04`) can exist. No MVP playbook
-> covers this family yet (backlog: `add-baseline-and-ratchet`); each check's **Remediation** says what
-> to commit directly in the meantime. [REQ-BF-004](../../../spec/readiness-requirements.md#req-bf-004--baseline-is-adequate)
+> (`BASE-01`/`BASE-02`) must land before enforcement (`BASE-03`/`BASE-04`) can exist. The
+> [`add-baselines-and-ratchet`](../../implement/playbooks/add-baselines-and-ratchet.md) playbook covers
+> all four checks; each check's **Remediation** also says what to commit directly. [REQ-BF-004](../../../spec/readiness-requirements.md#req-bf-004--baseline-is-adequate)
 > (the owner attests the baseline is adequate) has no check in this family or any other — it is
 > verified `attested`, never `automated`, so no `BASE-*` check judges whether an existing baseline's
 > content is itself acceptable, only whether one exists, is measured, and is guarded.
@@ -19,7 +19,9 @@ Why it matters   Gates cannot be turned on over existing debt without mass failu
                   that separates old debt from new debt must land first
                   ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
 Severity         DEGRADER
-Engine           `BASE-01`. Matches a fixed set of baseline/suppression artifact names at any depth
+Engine           `BASE-01`. Matches a fixed set of baseline/suppression artifact names at any depth outside
+                 carried-data directories (`templates/`, `fixtures/`, `examples/`: a baseline a test fixture
+                 ships is not the repository's)
                  (`.eslint-baseline*`, `.ruff-baseline*`, `.mypy-baseline*`, `baseline.json`,
                  `*baseline*.json`, `*baseline*.xml`, `coverage-baseline.*`, `*.baseline`,
                  `.secrets.baseline`, `.snyk`, `.gitleaksignore`), or a documented equivalent mechanism
@@ -30,7 +32,8 @@ Engine           `BASE-01`. Matches a fixed set of baseline/suppression artifact
                  project names its baseline artifact something this fixed list does not carry — verify
                  by reading the project's own documentation for how it tracks existing debt.
 Method           automated
-Look for         Any filename matching the fixed baseline-artifact glob list, at any depth; failing
+Look for         Any filename matching the fixed baseline-artifact glob list, at any depth outside carried
+                 data; failing
                  that, `AGENTS.md`/`CLAUDE.md` for a documented equivalent mechanism.
 Rubric           PASS: a baseline/suppression artifact is committed, or an equivalent mechanism is
                  documented in `AGENTS.md` or `CLAUDE.md`.
@@ -47,7 +50,7 @@ Evidence to cite A `file` evidence item citing the baseline artifact's path, or 
 Absence proof    A FAIL cites `<repository>` as the evidence that no artifact of any name in the fixed
                  list, and no documented mechanism, was found — the glob list itself is the absence
                  search, since every pattern in it was checked.
-Remediation      No MVP playbook yet (backlog: `add-baseline-and-ratchet`). Commit a baseline or
+Remediation      `add-baselines-and-ratchet`. Commit a baseline or
                  suppression artifact (for example `baseline.json`, an eslint/ruff baseline, or
                  `.gitleaksignore`), or document the equivalent mechanism in `AGENTS.md`.
 Pitfalls         A filename match is not a content check — `baseline.json` existing is evidence the
@@ -94,7 +97,7 @@ Evidence to cite A `file` or `command` evidence item citing the manifest or conf
 Absence proof    A PARTIAL cites `<repository>` (when no counting surface exists at all) or every
                  counting-tool config and baseline artifact found (when a surface exists but no number
                  does) as the evidence that no numeric budget pattern matched any of them.
-Remediation      No MVP playbook yet (backlog: `add-baseline-and-ratchet`). Commit the count or configure
+Remediation      `add-baselines-and-ratchet`. Commit the count or configure
                  a budget (`--max-warnings N`, `max-issues`, or a `violation budget`) so a regression has
                  a baseline number to compare against.
 Pitfalls         `FAIL` never appears for this check by design — reading a `PARTIAL` as a weaker version
@@ -142,7 +145,7 @@ Evidence to cite A `file` or `command` evidence item citing the budget's source,
 Absence proof    A FAIL cites every committed baseline artifact as the evidence that a mechanism exists
                  to guard, paired with the absence of a budget, a CI reference to that artifact's name,
                  or a documented comparison step — all three were checked and none matched.
-Remediation      No MVP playbook yet (backlog: `add-baseline-and-ratchet`). Once a baseline exists, wire
+Remediation      `add-baselines-and-ratchet`. Once a baseline exists, wire
                  a comparison step — the audit's own `--baseline REPORT.JSON` is the reference pattern,
                  or a CI job that diffs today's count against the committed one — so new findings fail
                  the build.
@@ -186,7 +189,7 @@ Evidence to cite A `file` evidence item citing the config file and the matched k
                  the matched line of prose.
 Absence proof    A FAIL cites `<repository>` as the evidence that no threshold-bearing config key, and no
                  prose statement in any of the four entry documents, was found.
-Remediation      No MVP playbook yet (backlog: `add-baseline-and-ratchet`). Configure a coverage floor
+Remediation      `add-baselines-and-ratchet`. Configure a coverage floor
                  for the test runner (`coverage.fail_under`, `--cov-fail-under`, `coverageThreshold`, or
                  a vitest/jest `thresholds` block) so a drop fails the gate.
 Pitfalls         A coverage percentage mentioned in prose as a historical fact ("we're at 80% today") is

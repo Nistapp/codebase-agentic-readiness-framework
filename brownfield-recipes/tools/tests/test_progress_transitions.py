@@ -288,6 +288,72 @@ class PreferenceTests(TransitionCase):
         self.refused("pref", "set", "Bad Key", "v", "--reason", "r", by="owner", text="state invalid", code=2)
 
 
+class PapercutTests(TransitionCase):
+    """The small refusals and gaps the implement sessions kept tripping over (MR04)."""
+
+    def refusal_text(self, *argv: str, by: str | None = None) -> str:
+        code, envelope, err = self.run_cmd(*argv, by=by)
+        self.assertEqual(code, 1, envelope)
+        return err
+
+    def test_a_refusal_names_the_states_the_item_may_go_to(self) -> None:
+        finding = self.to_in_progress()
+        self.ok("set-status", finding, "blocked", "--reason", "waits for the owner")
+        self.assertIn("from blocked it may go to: queued", self.refusal_text("set-status", finding, "in_progress"))
+        self.ok("set-status", finding, "queued")
+        self.to_in_progress(finding)
+        self.ok("set-status", finding, "partial", "--debt", "what=old files,count=3")
+        self.assertIn("from partial it may go to: in_progress", self.refusal_text("set-status", finding, "done"))
+        self.assertIn(
+            "from queued it may go to: in_progress", self.refusal_text("set-status", self.first("queued"), "done")
+        )
+
+    def test_done_is_final_and_says_it_has_no_next_state(self) -> None:
+        finding = self.to_in_progress()
+        self.ok("set-status", finding, "done", "--verification-command", "make check", "--verification-result", "green")
+        self.assertIn("done has no next state", self.refusal_text("set-status", finding, "queued"))
+
+    def test_the_same_status_with_a_note_adds_the_note(self) -> None:
+        finding = self.to_in_progress()
+        self.ok("set-status", finding, "in_progress", "--note", "first look done", "--commit", SHA)
+        self.ok("set-status", finding, "in_progress", "--note", "second look")
+        item = self.item(finding)
+        self.assertEqual(item["status"], "in_progress")
+        self.assertTrue(item["notes"].endswith("first look done second look"))
+        self.assertEqual(item["commits"], [SHA])
+        self.assertIn("note added", self.state()["log"][-1]["event"])
+
+    def test_the_same_status_without_a_note_is_still_refused(self) -> None:
+        finding = self.to_in_progress()
+        before = self.json_path.read_bytes()
+        self.assertIn("already in_progress", self.refusal_text("set-status", finding, "in_progress"))
+        self.assertEqual(self.json_path.read_bytes(), before)
+
+    def test_a_preference_key_in_upper_case_is_refused_and_the_hint_says_lower_case(self) -> None:
+        code, _, err = self.run_cmd("pref", "set", "Node.Version", "22", "--reason", "r", by="owner")
+        self.assertEqual(code, 2)
+        self.assertIn("lower case", err)
+
+    def test_no_preference_is_recorded_as_the_value_none(self) -> None:
+        self.ok("pref", "set", "tool.formatter", "none", "--reason", "the owner has no preference", by="owner")
+        self.assertEqual(self.state()["preferences"][0]["value"], "none")
+
+    def test_render_wraps_long_prose_and_cuts_long_preference_cells(self) -> None:
+        finding = self.to_in_progress()
+        long_note = " ".join(["a long note that keeps going"] * 8)
+        self.ok("set-status", finding, "in_progress", "--note", long_note)
+        long_reason = "the owner explained this at length " * 6
+        self.ok("pref", "set", "tool.formatter", "palantir", "--reason", long_reason, by="owner")
+        text = progress.render(self.state())
+        prose = [line for line in text.splitlines() if not line.startswith("|")]
+        self.assertEqual([line for line in prose if len(line) > progress.WRAP_COLUMNS], [])
+        row = next(line for line in text.splitlines() if line.startswith("| `tool.formatter`"))
+        self.assertIn("...", row)
+        self.assertNotIn(long_reason.strip(), row)
+        self.assertIn("the owner explained this at length", " ".join(prose))
+        self.assertEqual(progress.render(self.state()), text)
+
+
 class ThemeTests(TransitionCase):
     def theme(self, theme_id: str = "T1") -> dict[str, Any]:
         return next(t for t in self.state()["themes"] if t["id"] == theme_id)

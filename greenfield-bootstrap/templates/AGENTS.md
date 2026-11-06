@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Template Version:** 1.1.0
+> **Template Version:** 1.1.1
 > **Purpose:** This file governs how AI coding agents (Antigravity, Claude Code, Gemini CLI, etc.) work inside this repository.
 > **Action:** Read it in full before making any change to the codebase.
 
@@ -174,5 +174,5 @@ section only states the layout and the triggers; the style guide states the rule
 8. ❌ **Do not** bypass Biome formatting or linting checks.
 9. ❌ **Do not** document aspirational features as existing facts.
 10. ❌ **Do not** edit files under `docs/` without following `docs/STYLE_GUIDE.md`.
-11. ❌ **Do not** verify work with an ad-hoc command. Use the six standardized verbs in §3.1.
+11. ❌ **Do not** verify work with an ad-hoc command. Use the seven standardized verbs in §3.1.
 12. ❌ **Do not** read, grep, or glob `artefacts/` unless the human passes an explicit file path (§4).

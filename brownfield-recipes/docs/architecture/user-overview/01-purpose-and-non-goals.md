@@ -2,18 +2,20 @@
 
 > **Audience:** CTOs, engineering leads, adopters
 > **Goal:** Explain what the brownfield recipes do, why an agent runs them instead of a fixed script, and what they refuse to do.
-> **Status:** Live for the audit recipe (v0.1). The implementation recipe (v0.2, milestone M5) does not
-> exist yet; §1 and §4 below name where it will fit once it does.
+> **Status:** Live for the audit recipe (v0.1). The implementation recipe (v0.2) is partial: Stages 0 and 1
+> and eight of thirteen playbooks are live; Stages 2 to 5 are Planned (IR12).
 
 ---
 
 ## 1. What the recipes are
 
 Two Markdown recipes an agent runs against an existing repository, in order: [`audit`](../../../audit/SKILL.md),
-which exists today, and `implement` (v0.2, not written yet), which will act on the audit's confirmed
-findings. The audit report — [documented in `schema/SCHEMA.md`](../../../schema/SCHEMA.md) — is the only
-contract between them: `implement` will read a finalised report and nothing else, so it can be written,
-reviewed and run independently of whatever produced that report. Either recipe is plain `SKILL.md` plus
+and [`implement`](../../../implement/SKILL.md) (v0.2, in progress), which acts on the audit's confirmed
+findings one theme at a time. Its Stages 0 and 1 (intake and triage), its state tools and eight of its
+thirteen playbooks exist and have been applied to two repositories; Stages 2 to 5 are Planned (IR12). The
+audit report — [documented in `schema/SCHEMA.md`](../../../schema/SCHEMA.md) — is the only contract between
+them: `implement` reads a finalised report and nothing else, so it can be written, reviewed and run
+independently of whatever produced that report. Either recipe is plain `SKILL.md` plus
 command-line tools, so any coding agent with shell access can run it — see
 [How the Recipes Work](02-how-the-recipes-work.md) for the audit's six stages.
 
@@ -46,9 +48,11 @@ not judge on its own (`UNKNOWN`); and it may override an engine verdict, but onl
   readiness at one point in time; it is not a badge, a ranking or a vendor comparison.
 - **No CI gate.** The audit is read-only and advisory. Nothing here fails a pull request or blocks a merge
   — that decision, if a team wants one, is theirs to build on top of a report.
-- **No auto-push, no auto-merge.** Even once the implementation recipe exists (v0.2), it will branch,
-  change, and stop for the operator to review and push; it will never push, open a PR or merge on its own.
+- **No auto-merge, and no push unless the owner opted in.** The implementation recipe branches, changes
+  and stops for the operator to review and push. It pushes the branch and opens a pull request only when the
+  owner recorded `ci.pr_by_agent=yes` at triage. It never merges, tags or force-pushes
+  ([ADR 0003](../adrs/0003-push-and-pr-policy.md)).
 - **No Phase 2–4 work.** These recipes cover Phase 1 (Agentic Bootstrap) only. The framework's later
   phases are out of scope for this project entirely, not merely deferred.
-- **No implementation recipe yet.** `implement/` (v0.2, milestone M5) is planned, not built; everything
-  above that describes it states what it will do, not what exists today.
+- **No finished implementation recipe yet.** `implement/` (v0.2) runs Stages 0 and 1 today; Stages 2 to 5
+  are Planned (IR12), and five of its thirteen playbooks are Planned (IR08.1, IR10.1, IR11.1).

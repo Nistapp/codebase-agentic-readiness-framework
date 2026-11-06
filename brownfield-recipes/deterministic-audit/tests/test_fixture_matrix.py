@@ -64,6 +64,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "doc-01-empty": {"DOC-01": "PARTIAL"},
     "doc-02-no-style-guide": {"DOC-02": "FAIL"},
     "doc-03-tracked-artefacts": {"DOC-03": "FAIL"},
+    "ignore-ok-nested-gitignore": {"DOC-03": "PASS", "CON-03": "PASS"},
     "doc-04-adr-unindexed": {"DOC-04": "PARTIAL"},
     "doc-nav-ok": {
         "DOC-01": "PASS",
@@ -83,6 +84,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "cmd-03-divergent": {"CMD-03": "FAIL"},
     "cmd-04-write-in-check": {"CMD-04": "FAIL"},
     "cmd-ok-npm": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
+    "cmd-ok-root-make-nested-template": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-ok-make": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-ok-make-prereqs": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-ok-make-alias": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
@@ -157,6 +159,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "sec-01-excluded-env": {"SEC-01": "FAIL"},
     "sec-02-key-shaped": {"SEC-02": "FAIL"},
     "sec-03-thin-ignore": {"SEC-03": "FAIL"},
+    "sec-03-ok-negated-exception": {"SEC-03": "PASS"},
     "sec-01-ok": {"SEC-01": "PASS", "SEC-02": "PASS", "SEC-03": "PASS"},
     "sec-02-expression-assignment": {"SEC-02": "PASS"},
     "sec-02-env-reference": {"SEC-02": "PASS"},
@@ -184,6 +187,7 @@ MATRIX: dict[str, dict[str, str]] = {
 NEEDS_GIT = frozenset(
     {
         "doc-03-tracked-artefacts",
+        "ignore-ok-nested-gitignore",
         "exec-02-no-lockfile",
         "exec-02-nested-lockfile",
         "exec-05-generated",

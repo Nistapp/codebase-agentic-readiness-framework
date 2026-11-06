@@ -1,0 +1,13 @@
+{
+  "name": "generated-project",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "check": "jest && eslint .",
+    "security": "npm audit"
+  }
+}

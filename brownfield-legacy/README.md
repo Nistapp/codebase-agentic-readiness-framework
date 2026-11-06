@@ -29,7 +29,7 @@ While `agentic-tdd` has been fairly performant in well-structured projects, it n
 
 ---
 
-## The 4-Phase Migration Structure
+## The 7-Phase Migration Structure
 
 The Brownfield track is organized into two distinct parts:
 1. **Part I: Agentic-Readiness Foundation (Phases 1–4)** — The mandatory, sequential roadmap to make an existing repo safe, discoverable, and deterministic.

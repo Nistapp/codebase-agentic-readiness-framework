@@ -4,11 +4,11 @@
 > **Goal:** Explain how stack profiles adapt stack-neutral checks and playbooks to a toolchain. The
 > anatomy and contribution steps are in [`stacks/README.md`](../../../stacks/README.md), and this page
 > does not repeat them.
-> **Status:** Live. `S3.4` is closed: all four files exist —
-> [`stacks/README.md`](../../../stacks/README.md),
+> **Status:** Live. Three profiles exist —
 > [`stacks/typescript-node.md`](../../../stacks/typescript-node.md) (with a NestJS section),
 > [`stacks/java.md`](../../../stacks/java.md) (Gradle and Quarkus, with Maven marked untested) and
-> [`stacks/python.md`](../../../stacks/python.md).
+> [`stacks/python.md`](../../../stacks/python.md) — plus [`stacks/README.md`](../../../stacks/README.md),
+> which holds the anatomy.
 
 ---
 

@@ -48,7 +48,14 @@ Follow our phased, incremental methodology to make any existing codebase agentic
 - 🗺️ **[7-Phase Migration Guide](brownfield-legacy/Phased-Approach.md)**:
   - **Part I: Readiness Foundation (Phases 1–4)** — Bootstrap, Source Docs, Agent Docs, and Behavioral Baselines. *(Mandatory)*
   - **Part II: Post-Readiness Roadmap (Phases 5–7)** — Agent-driven refactoring, human-facing docs, and Spec-Driven Development (SDD/BDD + TDD).
-- 🤖 **[Brownfield Recipes](brownfield-recipes/README.md)** (v0.1.0) — An agent-run audit that scores a Phase 1 readiness report for an existing repository, with a deterministic engine doing the counting and the agent's judgment backed by cited evidence. Install it as a skill bundle or run it from a clone; no installation beyond Python 3.11+.
+- 🤖 **[Brownfield Recipes](brownfield-recipes/README.md)** (v0.2 in progress) — An agent-run audit that scores a Phase 1 readiness report for an existing repository, with a deterministic engine doing the counting and the agent's judgment backed by cited evidence. Install it as a skill bundle or run it from a clone; no installation beyond Python 3.11+. The implement recipe, which closes the confirmed findings of a report on a branch per theme, is partly built: see its [status](brownfield-recipes/README.md).
+  This repository audits itself: Phase 1 score **0.84**, ratcheted in CI ([Self-Audit](brownfield-recipes/docs/reference/self-audit.md)).
+
+The normative requirements a repository must meet live in [`spec/`](spec/README.md); the guides above and the tools both trace to them. To contribute, start at [`CONTRIBUTING.md`](CONTRIBUTING.md); changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
+
+**Audit a repository in five minutes:** open [`brownfield-recipes/README.md`](brownfield-recipes/README.md#quick-start), paste the kickoff prompt into a coding agent with shell access (Python 3.11+), and name the repository's path.
+Answer Stage 0's questions and approve Stage 1's plan.
+The result is an evidence-cited Phase 1 readiness report.
 
 ---
 

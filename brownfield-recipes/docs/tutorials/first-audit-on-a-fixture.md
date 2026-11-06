@@ -60,7 +60,7 @@ Validate the report mechanically, too, to see the tool side of the contract:
 python3 brownfield-recipes/tools/validate_report.py <path to the .json report>
 ```
 
-Exit `0` means the report matches the schema the `implement` recipe (once it exists) will read.
+Exit `0` means the report matches the schema the [`implement` recipe](../../implement/SKILL.md) reads.
 
 ---
 

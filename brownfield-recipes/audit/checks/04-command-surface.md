@@ -17,7 +17,11 @@ Why it matters   The verbs are the contract; without them resolving an agent has
 Severity         BLOCKER
 Engine           `CMD-01`. Reads every runner manifest `_common` understands in full
                  (`resolve_all_verbs`), so a verb split across, or duplicated on, more than one runner is
-                 visible. All seven verbs resolving on exactly one runner is `PASS`. Any verb missing from
+                 visible. Runners are ranked by depth first (a root manifest of any kind beats a nested one,
+                 then the shallowest, then `RUNNER_PRECEDENCE`), and a manifest under a carried-data
+                 directory (`templates/`, `fixtures/`, `examples/`) is not a runner at all, so a template's
+                 `package.json` cannot take the verbs from the root `Makefile`
+                 ([ADR-0008](../../deterministic-audit/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). All seven verbs resolving on exactly one runner is `PASS`. Any verb missing from
                  every runner is `FAIL`. Verbs resolving but spread across more than one runner is
                  `PARTIAL` (the stray second definition itself is `CMD-03`'s territory, not this check's).
                  A `Makefile` GNU Make refuses to parse (an unescaped `format:check:` target, a static
@@ -105,7 +109,8 @@ Why it matters   A runner other than the authoritative one must delegate, not co
                   ([greenfield-bootstrap/README.md § 1.4 The standardized command surface](../../../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)).
 Severity         DEGRADER
 Engine           `CMD-03`. When more than one runner defines a `check` target, the primary is the
-                 highest-precedence runner present (`RUNNER_PRECEDENCE`); every other runner's `check` is
+                 first runner by `runner_rank` (the shallowest manifest, then `RUNNER_PRECEDENCE`); every
+                 other runner's `check` is
                  checked for a delegation to the primary (a known delegation pattern per runner —
                  `npm run check`, `make check`/`$(MAKE) check`, `task check`, `./gradlew check`, and the
                  rest — or, more generally, any segment that invokes `check` on a runner other than the
@@ -132,10 +137,12 @@ Evidence to cite A `file` evidence item per divergent runner, citing its manifes
 Absence proof    A FAIL names the divergent runner(s) explicitly and cites each one's actual `check`
                  command as the evidence that no delegation pattern matched.
 Remediation      `define-command-surface`
-Pitfalls         The primary runner is decided by `RUNNER_PRECEDENCE`, not by which one was added first or
-                 is used more often — if the project's own convention disagrees with the engine's
-                 precedence order, say so explicitly in the finding rather than silently treating the
-                 engine's choice of primary as the project's intent.
+Pitfalls         The primary runner is decided by depth, then `RUNNER_PRECEDENCE`, not by which one was
+                 added first or is used more often — if the project's own convention disagrees with the
+                 engine's order, say so explicitly in the finding rather than silently treating the
+                 engine's choice of primary as the project's intent. A nested component's own `check`
+                 (`apps/web/package.json`) still counts as a second runner; scoping checks to declared
+                 components is issue #20, not done.
 
 ## CMD-04 — Write verbs separated from read-only verbs
 

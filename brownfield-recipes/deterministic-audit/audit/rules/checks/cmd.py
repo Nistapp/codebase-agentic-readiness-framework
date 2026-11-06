@@ -49,13 +49,13 @@ from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
 from audit.probes import MUTATING_VERBS
 from audit.rules.checks._common import (
-    RUNNER_PRECEDENCE,
     VerbBinding,
     makefile_errors,
     resolve_all_verbs,
     resolve_verbs,
     runner_commands,
     runner_kind,
+    runner_rank,
 )
 from audit.stack import VERBS, canonical_verb
 from audit.rules.payloads import Payload, VerbEntry, VerbSurface
@@ -199,13 +199,6 @@ def _no_runner(spec, inventory, cannot: str) -> CheckOutcome:
     return _unknown(spec, f"no recognised verb runner, so {cannot}")
 
 
-def _rank(runner: str) -> int:
-    try:
-        return RUNNER_PRECEDENCE.index(runner_kind(runner))
-    except ValueError:
-        return len(RUNNER_PRECEDENCE)
-
-
 def _segments(command: str) -> list[str]:
     return [s for s in _SEGMENT_SPLIT.split(command) if s.strip()]
 
@@ -220,7 +213,7 @@ def _runner_target(segment: str) -> str | None:
 
 
 def _ordered_runners(runners: set[str]) -> list[str]:
-    return sorted(runners, key=_rank)
+    return sorted(runners, key=runner_rank)
 
 
 # ===========================================================================

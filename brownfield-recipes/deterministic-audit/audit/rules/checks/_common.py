@@ -26,7 +26,7 @@ import re
 import shlex
 from dataclasses import dataclass
 
-from audit.ignore import tracked_files
+from audit.ignore import IgnoreDecision, IgnoreRule, decide, load_scoped_rules, tracked_files
 from audit.rules import variants as V
 from audit.scan import Inventory
 from audit.stack import (
@@ -54,8 +54,9 @@ class VerbBinding:
     argv: tuple[str, ...]
 
 
-#: Runner precedence when more than one manifest defines the same verb. Fixed and documented so a
-#: target with both a Makefile and package.json resolves deterministically.
+#: Runner precedence among manifests at the same depth when more than one defines the same verb. A shallower
+#: manifest outranks a deeper one first (:func:`runner_rank`, ADR-0008). Fixed and documented so a target
+#: with both a Makefile and package.json resolves deterministically.
 RUNNER_PRECEDENCE: tuple[str, ...] = (
     "package.json",
     "Makefile",
@@ -71,15 +72,58 @@ RUNNER_PRECEDENCE: tuple[str, ...] = (
 
 
 def tracked_in_scope(target, inventory: Inventory) -> set[str] | None:
-    """The paths git tracks under the target, less the ones ``--exclude`` took out of the audit.
+    """The paths git tracks under the target, less the ones ``--exclude`` took out of the audit and the ones
+    set aside as carried data (ADR-0008).
 
     ``None`` still means that git could not answer. A check that reads the tracked set asks here, so that an
-    excluded path is out of the audit for it as it is for the walk.
+    excluded or set-aside path is out of the audit for it as it is for the walk.
     """
     tracked = tracked_files(target.path)
     if tracked is None:
         return None
-    return {rel for rel in tracked if not inventory.is_excluded(rel)}
+    return {rel for rel in tracked if not inventory.is_excluded(rel) and not inventory.is_set_aside(rel)}
+
+
+#: A file name no ignore file is likely to name, used to ask "would a new file dropped here be ignored?".
+_PROBE_NAME = "untracked-scratch-file"
+
+
+def scoped_rules(target, inventory: Inventory) -> list[IgnoreRule]:
+    """Every ignore rule the scan can see, scoped to its directory and in git's order (ADR-0009).
+
+    The root ignore files plus each nested ``.gitignore`` the inventory holds, plus the ones git tracks. The
+    tracked ones matter because ``--exclude`` takes a directory's *files* out of the audit and must not also
+    take out the rule that decides whether the directory is ignored (``artefacts/.gitignore`` with ``*``
+    while ``artefacts/**`` is excluded). A nested file inside a set-aside directory scopes nothing outside it
+    and is left out.
+    """
+    nested = {entry.rel for entry in inventory.files if "/" in entry.rel and entry.rel.endswith(".gitignore")}
+    for rel in tracked_files(target.path) or ():
+        if "/" in rel and rel.endswith(".gitignore") and not inventory.is_set_aside(rel):
+            nested.add(rel)
+    return load_scoped_rules(target.path, nested)
+
+
+def directory_decision(root: str, rules: list[IgnoreRule]) -> IgnoreDecision:
+    """Whether the directory ``root`` is kept out: it is ignored itself, or a new file in it would be.
+
+    The second form is what ``artefacts/.gitignore`` containing ``*`` does: the directory is not named by a
+    rule, its contents are.
+    """
+    whole = decide(root, rules, is_dir=True)
+    if whole.ignored:
+        return whole
+    probe = decide(f"{root}/{_PROBE_NAME}", rules)
+    return probe if probe.ignored else whole
+
+
+def is_sanctioned_member(rel: str, root: str, rules: list[IgnoreRule]) -> bool:
+    """Whether a tracked file under a scratch directory is one the directory's own ignore file lets through.
+
+    That is the directory's own ``.gitignore`` and any path a ``!`` rule re-includes beside an ignoring rule
+    (``artefacts/README.md`` next to ``*``). Any other tracked member is scratch committed by mistake.
+    """
+    return rel == f"{root}/.gitignore" or decide(rel, rules).reincluded
 
 
 def resolve_all_verbs(inventory: Inventory, stack: Stack) -> dict[str, tuple[VerbBinding, ...]]:
@@ -99,9 +143,7 @@ def resolve_all_verbs(inventory: Inventory, stack: Stack) -> dict[str, tuple[Ver
                 candidates.setdefault(verb, []).append(
                     VerbBinding(verb=verb, runner=runner, command=command, argv=_split_argv(command))
                 )
-    return {
-        verb: tuple(sorted(bindings, key=lambda b: _runner_rank(b.runner))) for verb, bindings in candidates.items()
-    }
+    return {verb: tuple(sorted(bindings, key=lambda b: runner_rank(b.runner))) for verb, bindings in candidates.items()}
 
 
 def resolve_verbs(inventory: Inventory, stack: Stack) -> dict[str, VerbBinding]:
@@ -115,7 +157,8 @@ def resolve_verbs(inventory: Inventory, stack: Stack) -> dict[str, VerbBinding]:
 
 
 def runner_commands(inventory: Inventory) -> tuple[tuple[str, dict[str, str]], ...]:
-    """Every present verb runner and its declared ``{verb: command}`` map, in precedence order.
+    """Every present verb runner and its declared ``{verb: command}`` map, in precedence order
+    (:func:`runner_rank`: shallowest first, then by kind).
 
     A runner is present when its manifest is present, whether or not it declares any framework verb;
     callers that care about verb coverage read the map, callers that care about runners read the name.
@@ -140,11 +183,35 @@ _FENCE_RE = re.compile(r"^\s*(?:```|~~~)\s*([A-Za-z0-9_+-]*)\s*$")
 _PROMPT_RE = re.compile(r"^\s*(?:\$|>|%|❯|PS>)\s+")
 
 
+def strip_shell_comment(line: str) -> str:
+    """``line`` without a trailing shell comment.
+
+    A ``#`` starts a comment only at the start of a word and outside single or double quotes (and not
+    after a backslash), the way a shell reads it; ``a#b``, ``"# x"`` and ``'#'`` keep their ``#``.
+    """
+    quote = ""
+    escaped = False
+    for i, ch in enumerate(line):
+        if escaped:
+            escaped = False
+        elif ch == "\\" and quote != "'":
+            escaped = True
+        elif quote:
+            if ch == quote:
+                quote = ""
+        elif ch in "'\"":
+            quote = ch
+        elif ch == "#" and (i == 0 or line[i - 1].isspace()):
+            return line[:i].rstrip()
+    return line
+
+
 def extract_fenced_commands(text: str) -> list[tuple[str, int, str]]:
     """Extract shell commands from fenced ``bash``/``sh``/``shell``/``console`` blocks.
 
     Returns ``(language, line_no, command)`` with ``line_no`` 1-based within ``text``. A leading
-    shell prompt is stripped; comment lines are skipped. In a ``console`` block a line without a
+    shell prompt is stripped; comment lines are skipped and a trailing comment is cut off
+    (:func:`strip_shell_comment`), so every caller sees the same tokens. In a ``console`` block a line without a
     prompt is treated as program output and skipped, since a transcript interleaves both.
     """
     commands: list[tuple[str, int, str]] = []
@@ -157,8 +224,8 @@ def extract_fenced_commands(text: str) -> list[tuple[str, int, str]]:
         if language is None or language not in SHELL_FENCE_LANGS:
             continue
         prompt = _PROMPT_RE.match(raw)
-        command = _PROMPT_RE.sub("", raw).strip()
-        if not command or command.startswith("#"):
+        command = strip_shell_comment(_PROMPT_RE.sub("", raw).strip())
+        if not command:
             continue
         if language == "console" and prompt is None:
             continue
@@ -318,39 +385,41 @@ def _manifest_path(inventory: Inventory, name: str) -> str:
 
 
 def _runner_commands(inventory: Inventory):
-    """Yield ``(runner, {verb: command})`` for every manifest present, in precedence order.
+    """Yield ``(runner, {verb: command})`` for every manifest present, in :func:`runner_rank` order.
 
     ``runner`` is the manifest's real, actually-matched relative path (:func:`_manifest_path`), not a
     hardcoded literal basename — on a target whose only manifest of a kind is nested, the literal name
     is a path that does not exist anywhere in the repository.
     """
+    found: list[tuple[str, dict[str, str]]] = []
     if inventory.has("package.json"):
         path = _manifest_path(inventory, "package.json")
-        yield path, extract_npm_scripts(inventory, manifest=path)
+        found.append((path, extract_npm_scripts(inventory, manifest=path)))
     if inventory.has("Makefile") and not makefile_errors(inventory):
-        yield _manifest_path(inventory, "Makefile"), parse_makefile_targets(inventory)
+        found.append((_manifest_path(inventory, "Makefile"), parse_makefile_targets(inventory)))
     for name in ("Taskfile.yml", "Taskfile.yaml"):
         if inventory.has(name):
             path = _manifest_path(inventory, name)
             text = inventory.read(path)
             if text:
-                yield path, _parse_taskfile(text)
+                found.append((path, _parse_taskfile(text)))
     if inventory.has("pyproject.toml"):
         path = _manifest_path(inventory, "pyproject.toml")
         text = inventory.read(path)
         if text:
-            yield path, _parse_pyproject_tasks(text)
+            found.append((path, _parse_pyproject_tasks(text)))
     for name in ("build.gradle", "build.gradle.kts"):
         if inventory.has(name):
             path = _manifest_path(inventory, name)
             text = inventory.read(path)
             if text:
-                yield path, _parse_gradle_tasks(text, inventory)
+                found.append((path, _parse_gradle_tasks(text, inventory)))
     if inventory.has("pom.xml"):
         path = _manifest_path(inventory, "pom.xml")
         text = inventory.read(path)
         if text:
-            yield path, _parse_maven_plugins(text, inventory)
+            found.append((path, _parse_maven_plugins(text, inventory)))
+    yield from sorted(found, key=lambda item: runner_rank(item[0]))
 
 
 def _with_spellings(runner: str, commands: dict[str, str]) -> dict[str, str]:
@@ -390,11 +459,17 @@ def runner_kind(runner: str) -> str:
     return runner.rsplit("/", 1)[-1]
 
 
-def _runner_rank(runner: str) -> int:
+def runner_rank(runner: str) -> tuple[int, int, str]:
+    """The sort key that orders runners: shallowest manifest first, then :data:`RUNNER_PRECEDENCE`, then path.
+
+    A root manifest of any kind outranks a nested one (ADR-0008), so a nested ``package.json`` cannot take
+    the verbs from the root ``Makefile``. Every reader that asks "which runner first" uses this key.
+    """
     try:
-        return RUNNER_PRECEDENCE.index(runner_kind(runner))
+        kind = RUNNER_PRECEDENCE.index(runner_kind(runner))
     except ValueError:
-        return len(RUNNER_PRECEDENCE)
+        kind = len(RUNNER_PRECEDENCE)
+    return (runner.count("/"), kind, runner)
 
 
 def _split_argv(command: str) -> tuple[str, ...]:

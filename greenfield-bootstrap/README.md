@@ -3,7 +3,7 @@
 > [!NOTE]
 > This recipe captures every standard, pattern, and convention required to scaffold a new project to world-class enterprise standards before writing a single line of application code.
 > 
-> By executing this Day-0 recipe, your project is **agentic-ready from commit #1** — satisfying all criteria of [Phases 1–4 of the Readiness Foundation](../brownfield-legacy/Phased-Approach.md) out of the box.
+> By executing this Day-0 recipe, your project is **agentic-ready from commit #1** — satisfying [Phase 1 of the Readiness Foundation](../brownfield-legacy/Phased-Approach.md) and failing no implemented check of the [deterministic audit](../brownfield-recipes/deterministic-audit/README.md). Phases 2–4 (docstrings, agent docs and context packs, contracts and characterization tests) are content a scaffold cannot produce; you write them as the project grows.
 
 ---
 
@@ -136,6 +136,11 @@ git checkout -b dev          # dev is the working branch from day one
 > The CLI `bin` entry is added **only** with `--cli` (it points at `./dist/cli/index.js`), and
 > `license` is intentionally absent until you choose one — see "Before you publish" in the
 > generated `README.md`.
+
+### 1.2–1.3 (not used)
+
+Sections 1.2 and 1.3 do not exist. The numbering stays as it is because the requirements in `spec/` cite
+§1.4 by its slug.
 
 ### 1.4 The standardized command surface — seven verbs
 
@@ -346,7 +351,7 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 |---|---|---|
 | Tutorials | `docs/tutorials/` | Step-by-step learning |
 | How-To Guides | `docs/how-to/` | Task-oriented recipes |
-| Reference | `docs/api/` | Auto-generated (TypeDoc) |
+| Reference | `docs/api/` | API reference. This recipe installs no generator, so the folder starts empty; add one (for example TypeDoc) when the project has a public API |
 | Architecture | `docs/architecture/` | Design rationale, ADRs |
 
 ### 5.2 Templates & Guides
@@ -418,7 +423,7 @@ git commit -m "chore: scaffold project with world-class standards"
 
 ## Quick Reference — What Tooling Enforces What
 
-Every gate below is reachable through one of the six standardized verbs, under the same
+Every gate below is reachable through one of the seven standardized verbs, under the same
 name locally and in CI.
 
 | Standard | Enforced By | When |

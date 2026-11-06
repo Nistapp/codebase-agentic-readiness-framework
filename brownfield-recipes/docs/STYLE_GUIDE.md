@@ -11,7 +11,7 @@
 
 1. **Single Source of Truth:** `docs/` is the sole canonical home for permanent knowledge about the recipes and their tools. `artefacts/` is transient scratch and is off-limits to automatic agent reading or indexing.
 2. **Zero Specification Drift:** Code, recipes, schemas and docs MUST stay synchronized. Every behavioural change requires a matching doc update **in the same change set**.
-3. **Empirical Grounding:** Never document planned features as existing facts. Every page that describes behaviour that does not exist yet MUST carry a `> [!NOTE] Planned.` line naming what is missing and the roadmap step that delivers it.
+3. **Empirical Grounding:** Never document planned features as existing facts. Every page that describes behaviour that is still planned MUST carry a `> [!NOTE] Planned.` line naming what is missing and the roadmap step that delivers it.
 4. **Symbol Anchoring:** Reference code with explicit file paths. Once a file exists, link to its line anchors, for example `[report.py#L1-L40](../tools/report.py#L1-L40)`. While a file is planned, name it as a code span instead of linking to it.
 5. **Living ADRs (Current-State Only):** An ADR MUST describe only the shipped, current design. When a decision changes, revise the ADR in place; when it becomes irrelevant, delete it. Git is the archive.
 

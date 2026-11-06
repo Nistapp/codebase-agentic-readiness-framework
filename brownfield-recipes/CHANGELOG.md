@@ -7,12 +7,67 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- The T5 playbook (IR08.1): `implement/playbooks/add-baselines-and-ratchet.md` (BASE-01 to BASE-04, TST-02, TST-03,
+  TST-04, TST-05). It inventories the ratchets a repository already has, keeps tool-native baselines, puts every
+  other count in one committed counts file compared inside `format:check`, sets a coverage floor at today's number
+  rounded down (`tests.coverage_gate` chooses `check` or CI), and records an owner-approved raise as a
+  `baseline.exception.*` preference plus a `Baseline-Exception:` commit line. Currency checked 2026-11-05; `betterer`
+  dropped. `catalogue.json` 0.2.7 (PATCH: playbook names only; fingerprint unchanged) adds the playbook to those eight
+  checks (TST-04 keeps `adapt-agents-md` as well); the check files `07-baselines-and-ratchet.md` and `10-tests.md`
+  name it, and the Java and TypeScript stack profiles gain a coverage note.
+- Framework-level documentation and release (MR08): `recipe_lint.py` checks the relative links of the root framework
+  pages; the trust page's implementation section is a table; the root `CHANGELOG.md`, `CONTRIBUTING.md`,
+  `RELEASE_PROCESS.md` and a release workflow (not yet run) are added. See the
+  [root changelog](../CHANGELOG.md).
+- Self-audit published (MR07.2): `make self-audit` runs the engine on this repository against the committed
+  `.audit-baseline.json` (exit 2 on a regression) and CI runs it as the `self-audit` job that `CI Gate` needs;
+  `make update-audit-baseline` accepts a smaller baseline on purpose. The report is the worked example
+  `schema/examples/self-audit/2026-11-06.json` and [Self-Audit](docs/reference/self-audit.md) states the score
+  (0.8402, ruleset `2026-11-06.1`), the open findings and the owner exception `IDX-01`.
+- Engine ruleset `2026-11-06.1` (MR06.4): `TST-04` recognises `python3 -m unittest <module> -k <name>` (and `python`) as
+  a single-test invocation; `AGT-08` no longer reports the reach gap when the root `AGENTS.md` has a line saying "read
+  by" or "supported harnesses" that names a known harness, and its summary cites that line. Refs #26 (the engine
+  takes the statement as given; it does not check that each named harness loads the file).
+- Engine ruleset `2026-11-05.4` (MR06.3): `NAV-02` counts a line that starts with the `if __name__` guard, not a
+  file that only holds the text; `DOC-04` no longer counts `0000-template.md` as a numbered ADR; `--out FILE` with no
+  suffix writes `FILE.json` (and `FILE.md`); new `--no-user-config` (also on `tools/engine.py`) reads nothing under
+  `$HOME`, and every report's `provenance.user_config` lists the paths outside the target that were read. Refs #16 (not
+  resolved: Claude Code's own MCP registration is still not read).
+- Engine ruleset `2026-11-05.3` (MR06.2, ADR-0009): `DOC-03`, `CON-03`, `SEC-01` and `SEC-03` read every nested
+  `.gitignore` (scoped to its directory, including the tracked ones under `--exclude`) and interpret `!` negation,
+  anchoring, directory-only rules and `**`. A scratch directory with its own `.gitignore` holding `*` passes, and a
+  tracked file it re-includes (`artefacts/README.md`) is not scratch. New fixtures `ignore-ok-nested-gitignore` and
+  `sec-03-ok-negated-exception`. Refs #12, #22 (partly; they stay open).
+- Engine ruleset `2026-11-05.2` (MR06.1, ADR-0008): the engine decides what counts as the repository. Runner
+  precedence is depth first (a root `Makefile` beats a nested `package.json`); files under a directory named
+  `templates`, `template`, `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` are carried data,
+  read by no check and listed in the report (`inventory.set_aside`); `HYG-02/03/05/06/07/08/09` count a file only at
+  the root or under `.github/`, `.gitlab/` or `docs/`. `--exclude` is no longer needed for template or fixture
+  directories. New fixture `cmd-ok-root-make-nested-template`. Component scoping (#20) is unchanged.
+- Engine ruleset `2026-11-05.1` (MR05): `EXEC-06` cuts a trailing shell comment from a fenced command
+  (`make test   # run`) in the shared extractor and resolves `make`/`npm run` through the verb resolver (#8);
+  `SEC-02` subtracts what `.secrets.baseline`, `.gitleaksignore` and `.gitleaks.toml` allowlist and lists the
+  suppressed lines (#10 still needs sentinel tokens and badge URLs); `SEC-01` and `SEC-03` say "root-anchored only"
+  for `/.env` instead of "missing", with verdict `PARTIAL`.
+- The handoff from the audit to the implement recipe is written: how-to Step 1, `implement/SKILL.md` Stage 0 step 4
+  and one sentence in audit Stage 5 say who copies the report into `docs/agentic-readiness-report/`, commits it,
+  and runs `progress.py init`; Stage 0 reads `dirty` and `report_changed` from `check_drift.py` (MR04).
+- `progress.py` papercuts (MR04): a refused move names the states the item may go to; `set-status` to the same
+  status with `--note` adds the note; a bad preference key says "lower case"; `none` is the documented value for
+  "no preference"; `render` wraps item details at 110 columns and cuts long preference cells (full text below the
+  table) so the generated STATE.md lints clean. The state contract documents the transitions, the debt syntax, the
+  theme order (open the PR first: `pr_open` still needs `--pr`) and that the tools run without `python3 -I`.
+- `progress.py init` records the SHA-256 of the report file in `source_reports[].sha256` (readiness state
+  `schema_version` `0.2`; a `0.1` state stays valid). `check_drift.py` recomputes it and reports `report_changed`, and
+  reports a dirty working tree as `dirty` (MR04).
+- `report.py set-stack-profile <draft> <id> [--derived] [--confirmed]` writes `run_context.stack_profile`; audit Stage 1 calls
+  it and no longer says the field has no write path (MR04).
 - v0.2 (the implementation MVP), skeleton in: `implement/SKILL.md` with its hard rules and the stage table,
   the playbook anatomy and the list of thirteen playbooks (`implement/playbooks/README.md`), and the
-  per-repository state contract (`implement/state.md`). Stages, playbooks, the state schema and its tools
-  are still Planned.
+  per-repository state contract (`implement/state.md`). The recipe is still partial: Stages 2 to 5 and five
+  of the thirteen playbooks are Planned (IR08.1, IR10.1, IR11.1, IR12).
 - Implement recipe Stages 0 (intake) and 1 (triage) written and live in `implement/SKILL.md`, from the two
-  onboarding runs, with a first `implement/prompts/kickoff.md`. Stages 2 to 5 are still Planned.
+  onboarding runs, with a first `implement/prompts/kickoff.md`. Stages 2 to 5 are Planned (IR12).
 - The two T1 playbooks: `implement/playbooks/define-command-surface.md` (CMD-01 to CMD-04, EXEC-03, TST-01) and
   `implement/playbooks/configure-quality-tools.md` (TOOL-01 to TOOL-04, with a tool-currency table checked
   2026-10-30). `catalogue.json` 0.2.3 (PATCH: playbook names only; fingerprint unchanged) adds
@@ -42,7 +97,12 @@ history (which verdicts moved and why), see
 - The readiness state: `schema/readiness-state.schema.json` (`schema_version` `0.1`) with two examples and their
   rendered Markdown, and `tools/progress.py` `init`, `show` and `render`. `progress.py` is the one tool that
   writes inside a target, and only its two state files (ADR 0002); `ToolInfo` gains `writes_inside_target`,
-  default `False`. Transitions, skip, defer and preferences are still Planned (IR02.2).
+  default `False`.
+- `progress.py` transitions, skip, defer and preferences (IR02.2), so the state moves through its whole life.
+- `tools/check_drift.py` (IR02.3): compares the audited commit in a report with `HEAD` of the target and lists
+  the findings whose cited paths changed in between. It writes nothing.
+- `tools/compare_reports.py` (IR14.1): compares two audit reports of one repository and says which checks and
+  findings moved, and which moves the readiness state explains. It writes nothing.
 - Docs tooling for this repository: `.markdownlint-cli2.jsonc`, `make docs-lint` (gating, on a path list that
   only grows) and `make docs-lint-all` (report-only), and a CI `docs` job that lints and renders every
   Mermaid block in changed Markdown (`brownfield-recipes/dev/mermaid_check.py`).

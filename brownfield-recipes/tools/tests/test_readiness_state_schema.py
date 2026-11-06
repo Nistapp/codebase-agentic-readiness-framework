@@ -53,8 +53,15 @@ class ReadinessStateSchemaCase(unittest.TestCase):
 
     def test_the_schema_is_in_the_subset_and_names_its_version(self) -> None:
         self.assertEqual(subset.lint_schema(self.schema), [])
-        self.assertEqual(self.schema["$id"], "urn:codebase-agentic-readiness-framework:readiness-state:0.1")
-        self.assertEqual(self.schema["properties"]["schema_version"]["const"], progress.SCHEMA_VERSION)
+        self.assertEqual(self.schema["$id"], "urn:codebase-agentic-readiness-framework:readiness-state:0.2")
+        self.assertEqual(self.schema["properties"]["schema_version"]["enum"], list(progress.SUPPORTED_SCHEMA_VERSIONS))
+        self.assertEqual(progress.SCHEMA_VERSION, "0.2")
+
+    def test_a_0_1_state_without_a_digest_is_still_valid(self) -> None:
+        older = copy.deepcopy(self.example)
+        older["schema_version"] = "0.1"
+        del older["source_reports"][0]["sha256"]
+        self.assertEqual(progress.state_errors(older), [])
 
     def test_every_example_is_valid(self) -> None:
         for path in EXAMPLES:
@@ -84,7 +91,9 @@ class ReadinessStateSchemaCase(unittest.TestCase):
                 "/items/0: missing the required property 'reason'",
             ),
             ("bad date", lambda d: d["log"][0].update(date="29/10/2026"), "/log/0/date: does not match the pattern"),
-            ("wrong version", lambda d: d.update(schema_version="0.2"), '/schema_version: expected "0.1"'),
+            ("wrong version", lambda d: d.update(schema_version="0.3"), "/schema_version: expected one of"),
+            ("short digest", lambda d: d["source_reports"][0].update(sha256="ab"), "/source_reports/0/sha256"),
+            ("upper-case digest", lambda d: d["source_reports"][0].update(sha256="A" * 64), "/source_reports/0/sha256"),
             ("negative debt", lambda d: item(d, "F-001")["debt"][0].update(count=-1), "/items/0/debt/0/count"),
             (
                 "agent preference",

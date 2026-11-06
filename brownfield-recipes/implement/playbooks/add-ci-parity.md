@@ -104,6 +104,24 @@ Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#boundarie
 `security` verb; while findings exist it is report-only by the rule above. A test suite gated by an environment
 flag runs in CI by default (set the flag in the wrapper), and any text saying it stays skipped is corrected.
 
+Lessons from the multi-app Node application (IR07.3):
+
+- The wrapper runs the same three steps as the app's `check` (`format:check`, `typecheck`, tests), each in its own
+  `echo "==> ..."` block, so a failure names the step. The changed-files ratchets need the merge-base, so every job
+  that runs them checks out with `fetch-depth: 0` (the default shallow clone makes them fail or pass vacuously).
+- Point `setup-node` at each app's own `.nvmrc` (`node-version-file`), one source of truth per app.
+- A report-only audit step keeps the script's non-zero exit (the step shows its real outcome) and
+  `continue-on-error` keeps it out of the gate. The script writes the counts per severity to
+  `GITHUB_STEP_SUMMARY` when it is set; test that locally with `GITHUB_STEP_SUMMARY=/tmp/x.md`. An image scan
+  needs Docker and the built image, so its first count comes from the pull request's own CI run, not from the
+  session.
+- A finding's second clause can be stale while the first stands (here: the test flag already defaulted to on).
+  Mark the clause stale in the item's note; do not rewrite the finding.
+- A README table row you add counts against any Markdown lint baseline. Keep new rows under the line limit and put
+  longer notes in a wrapped paragraph.
+- `progress.py theme T4 --status pr_open` needs `--pr`, so open the pull request first, then record the state in a
+  second commit. Fix a stale theme row (a merged pull request still recorded `pr_open`) in the same state commit.
+
 ## Continue on error
 
 - Existing scan findings: counted once with the real scan, recorded as debt on the item (`partial`) with count,

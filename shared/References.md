@@ -9,8 +9,8 @@
 |----------|------|
 | Context Engineering (deep dive) | [contributor-deep-dive/03-context-engineering.md](https://github.com/Nistapp/agentic-tdd/blob/main/docs/architecture/contributor-deep-dive/03-context-engineering.md) |
 | Impact Analysis (discussion) | [agentic-tdd discussions #11](https://github.com/Nistapp/agentic-tdd/discussions/11) |
-| `agentic-tdd` repository | 🔗 *Link pending* |
-| `codebase-memory-mcp` repository | 🔗 *Link pending* |
+| [`agentic-tdd` repository](https://github.com/Nistapp/agentic-tdd) | The live worked example of Phases 1–4. |
+| [`codebase-memory-mcp` repository](https://github.com/DeusData/codebase-memory-mcp) | The shared knowledge backbone for all phases. |
 | `agentic-docstrings` architecture | 🔗 *Link pending — will detail CI/CD integration patterns* |
 
 ## Frameworks & Standards

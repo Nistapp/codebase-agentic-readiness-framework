@@ -13,11 +13,96 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-11-06.1` | 2026-11-06 | 55 | MR06.4: `TST-04` accepts `python3 -m unittest <module> -k <name>` as a single-test form; `AGT-08` takes a line of the root `AGENTS.md` that says "read by" or "supported harnesses" and names a known harness as the answer to the reach gap (#26) |
+| `2026-11-05.4` | 2026-11-05 | 55 | MR06.3: `NAV-02` entry point is a guard line, `DOC-04` ignores the ADR template, `--out` without a suffix, `--no-user-config` and `provenance.user_config` |
+| `2026-11-05.3` | 2026-11-05 | 55 | MR06.2 ([ADR-0009](../architecture/adrs/0009-nested-ignore-files-and-negation.md)): `DOC-03`, `CON-03`, `SEC-01` and `SEC-03` read nested `.gitignore` files and `!` negation |
+| `2026-11-05.2` | 2026-11-05 | 55 | MR06.1 ([ADR-0008](../architecture/adrs/0008-what-counts-as-the-repository.md)): runner precedence by depth, carried-data directories (`templates/`, `examples/`, `fixtures/`, ...) set aside and listed in the report, hygiene presence bounded to the root, `.github/`, `.gitlab/` and `docs/` |
+| `2026-11-05.1` | 2026-11-05 | 55 | MR05: `EXEC-06` trailing shell comments and the shared verb resolver, `SEC-02` reads the repository's own scanner allowlist, `SEC-01`/`SEC-03` say "root-anchored only" for `/.env` |
 | `2026-10-19.2` | 2026-10-19 | 55 | S4.4.2.3/.4/.6/.8: `EXEC-04`'s shell-variable/env-var ambiguity, `NAV-02`'s Quarkus entry-point gap, `TOOL-05`'s self-referential hook-wiring false positive, and `TOOL-01`–`06`/`CMD-01`'s evidence citing a hardcoded manifest basename instead of its real nested path |
 | `2026-10-19.1` | 2026-10-19 | 55 | S4.4.2.1: `AGT-07`'s heading-word detector gap, found on Digital-Assistant-Server (S4.3.3, `D62`) — a prohibitions heading with no trigger word now also qualifies when its own body already reads as a do-not list |
 | `2026-10-15.3` | 2026-10-15 | 55 | S3.6.4: real-defect fixes found by the Digital-Assistant-SDK dry run (S3.6.3) — `TOOL-03`'s comment-intolerant JSON parse, `EXEC-04`'s truncated identifier capture, and `EXEC-02`'s undersized content-read cap — plus `CI-03`'s npm staged-publish fix (`3fb090d`, S3.6.1), which moved a verdict without a revision bump at the time |
 | `2026-10-11.1` | 2026-10-11 | 55 | S2.6: the Makefile reader, the false positives the self-audit found, and the constraint pack |
 | `2026-09-28.13` | 2026-09-28 | 54 | The engine as it was imported into this repository |
+
+---
+
+## `2026-11-05.4`
+
+Small defects and user-level isolation (MR06.3; issue #16 stays open).
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `NAV-02` | `PASS` from a Python file that held `if __name__ == "__main__"` inside a regex, a string or a comment | `FAIL` when nothing else is an entry point | Only a line that starts with the guard counts. |
+| `DOC-04` | `0000-template.md` counted as a numbered ADR, so an index that omitted it read `PARTIAL`, and a directory holding only the template read as having a decision | The template is not counted | It is the blank a new ADR is copied from. |
+
+### Behaviour that is not a verdict
+
+- `--out FILE` with no suffix writes `FILE.json`, and `FILE.md` beside it for `--format both`. A name with a suffix is used as given; a directory still gets `audit-report.json`.
+- `--no-user-config` reads nothing under `$HOME`: `IDX-01` looks at the repository's own configuration, and `IDX-02`/`IDX-03` skip the default store locations. An `AUDIT_INDEX_STORE` override is an explicit choice and still applies.
+- `provenance.user_config` is `{"read_allowed": bool, "paths_read": [...]}` in every report, so a reader sees whether a verdict can depend on the machine.
+
+## `2026-11-05.3`
+
+Nested ignore files and negation (MR06.2, [ADR-0009](../architecture/adrs/0009-nested-ignore-files-and-negation.md);
+issues #12 and #22 stay open). A scratch directory that carries its own `.gitignore` is now seen.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `DOC-03`, `CON-03` | `FAIL` ("matched by no ignore rule") for `artefacts/` ignored by `artefacts/.gitignore`; `FAIL` ("tracked") for the `README.md` and `.gitignore` that file re-includes | `PASS` | The scoped matcher reads the nested file, including when `--exclude` took the directory's files out of the audit. A tracked file the directory's own `.gitignore` re-includes with `!`, and that `.gitignore` itself, are not scratch. Any other tracked member still fails. |
+| `SEC-03`, `SEC-01` | A `!` line was dropped; a shape ignored by a rule that a later `!` re-includes was credited | Not credited | `decide` applies `!` in git's order. A `!` for another name changes nothing. |
+| `SEC-01`, `SEC-03` | A shape covered only by a rule in a nested `.gitignore` could not be credited | Credited at that directory only | The nested rule is scoped to its directory, so it does not cover the root probe. |
+
+## `2026-11-05.2`
+
+What counts as the repository (MR06.1, [ADR-0008](../architecture/adrs/0008-what-counts-as-the-repository.md);
+issue #20 stays open). A nested `templates/package.json` no longer outranks the root `Makefile`, and a hygiene file
+a template ships no longer counts as the repository's.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `CMD-01`, `CMD-02`, `CMD-04`, `TOOL-*`, `TST-*`, `AGT-05`, `CI-02` | Resolved the verbs against the first manifest by kind (`package.json` before `Makefile`), at any depth | Resolve them against the shallowest manifest first, then by kind | `runner_rank` (`audit/rules/checks/_common.py`) orders by `(depth, kind, path)`, so a root `Makefile` beats a nested `package.json`. Applied per verb. |
+| `CMD-03` | `FAIL` when a template's manifest defined its own `check` beside the root runner | `PASS` | The template is carried data and no runner; the primary runner is the first by `runner_rank`. |
+| Every check that reads a file | Read files under `templates/`, `template/`, `examples/`, `example/`, `fixtures/`, `samples/`, `testdata/` and `scaffold/` | Do not read them | `build_inventory` moves them out of `Inventory.files` into `Inventory.set_aside` (`CARRIED_DATA_DIRS` in `audit/scan.py`). Nothing is set aside when the only manifests in the repository are inside such a directory. The git-backed checks drop the same paths from the tracked set. |
+| `HYG-02`, `HYG-03`, `HYG-05`, `HYG-06`, `HYG-07`, `HYG-08`, `HYG-09` | `PASS` for a file at any depth, such as `packages/web/CONTRIBUTING.md` or `templates/github/CODEOWNERS` | `PASS` only at the root or under `.github/`, `.gitlab/` or `docs/` | The text of `HYG-02` already said so. These checks are informational and never score. |
+| `NAV-03`, `BASE-01`, `BASE-02`, `EXEC-02`, `EXEC-03`, `TST-05`, `TOOL-05`, `TOOL-06`, `AGT-01` | Credited or counted fixture and template files | Do not | The same set-aside. A repository whose only evidence was a template now reports the real verdict. |
+
+### Report
+
+`inventory.set_aside` lists each outermost carried-data directory with its file count, and `inventory.files_set_aside`
+totals them; the Markdown report shows both under "Scan coverage". `files_inspected` no longer counts those files.
+
+### Not changed
+
+`--exclude` (still the way to leave anything else out), component discovery (ADR-0003, issue #20), and the ignore
+matcher (`MR06.2`).
+
+---
+
+## `2026-11-05.1`
+
+Two false blockers the self-audit and the real-repository evaluations raised on every target (MR05; issues #8
+and #10), and one misleading label.
+
+### Verdicts that can move
+
+| Check | Before | Now | Why |
+|---|---|---|---|
+| `EXEC-06` | `FAIL` for `make test   # run the suite`: the comment's words were read as make targets | `PASS` when the command alone resolves | `extract_fenced_commands` (`audit/rules/checks/_common.py`) cuts an unquoted trailing `#` comment once, so `EXEC-03`, `TST-04` and `EXEC-06` see the same tokens. A `#` inside quotes or inside a word is kept. |
+| `EXEC-06` | `FAIL` for `make format:check` when the Makefile spells the target `format-check` | `PASS` | `make <t>` and `npm run <s>` also resolve when the shared verb resolver binds `<t>`/`<s>` on that runner, the answer `AGT-05` already used (#8). |
+| `SEC-02` | `FAIL` for a line the repository's own `.secrets.baseline`, `.gitleaksignore` or `.gitleaks.toml` allowlists | `PASS` for allowlisted lines; `FAIL` only for hits outside the allowlist | `audit/rules/checks/_secret_allowlist.py` reads the three files from the root. A baseline entry matches on path and line, so a stale entry never hides a new hit. The summary says "N allowlisted by `<file>`" and the payload lists the suppressed lines. Severity is unchanged (`BLOCKER`). Sentinel tokens and badge URLs (#10) are still reported. |
+| `SEC-01` | `PARTIAL` "ignore rules miss dotenv" for a root-anchored `/.env` | `PARTIAL` "root-anchored only: dotenv ..." | The rule covers the root, not a nested `a/.env`; the label says so. |
+| `SEC-03` | `FAIL` "missing: dotenv, ..." when `/.env` is the only rule | `PARTIAL` with "root-anchored only: dotenv" | A root-anchored shape counts as partial coverage, not as none. |
+
+### Not changed
+
+The `SEC-02` patterns and placeholder rules, the severity of every check, and the ignore matcher itself (anchored
+and nested ignore files are `MR06.2`).
 
 ---
 

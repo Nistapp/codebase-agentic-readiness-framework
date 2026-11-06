@@ -65,8 +65,14 @@ from pathlib import Path
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.ignore import load_ignore_rules
-from audit.rules.checks._common import entry_instruction_file, prohibitions_section, tracked_in_scope
+from audit.rules.checks._common import (
+    directory_decision,
+    entry_instruction_file,
+    is_sanctioned_member,
+    prohibitions_section,
+    scoped_rules,
+    tracked_in_scope,
+)
 from audit.scan import Inventory, Kind
 from audit.target import Target
 from audit.rules.payloads import PathList, Payload
@@ -151,33 +157,6 @@ def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[E
         evidence=evidence,
         remediation=remediation,
     )
-
-
-def _pattern_covers(rel: str, pattern: str) -> bool:
-    """Whether one ignore/constraint pattern covers a directory path ``rel``.
-
-    Mirrors the documented subset: a rule may name the directory itself (``artefacts``), its glob
-    (``artefacts/*``) or its descendants. Anchoring and ``**`` are not interpreted.
-    """
-    p = pattern.strip().rstrip("/")
-    if not p:
-        return False
-    core = p
-    for suffix in ("/*", "/**"):
-        if core.endswith(suffix):
-            core = core[: -len(suffix)]
-    core = core.rstrip("/")
-    return (
-        rel == core
-        or fnmatch.fnmatch(rel, p)
-        or fnmatch.fnmatch(rel, core)
-        or fnmatch.fnmatch(rel, core + "/*")
-        or fnmatch.fnmatch(rel, core + "/**")
-    )
-
-
-def _covered(rel: str, patterns: list[str]) -> bool:
-    return any(_pattern_covers(rel, pattern) for pattern in patterns)
 
 
 def _describe(roots: list[str], limit: int = 8) -> str:
@@ -425,7 +404,12 @@ def check_con02(*, spec, target, inventory, stack, components, session) -> Check
 
 def check_con03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     tracked = tracked_in_scope(target, inventory)
-    tracked_members = sorted(rel for rel in (tracked or set()) if rel.split("/", 1)[0] in _CON_ROOTS)
+    rules = scoped_rules(target, inventory)
+    tracked_members = sorted(
+        rel
+        for rel in (tracked or set())
+        if rel.split("/", 1)[0] in _CON_ROOTS and not is_sanctioned_member(rel, rel.split("/", 1)[0], rules)
+    )
 
     if tracked_members:
         roots = sorted({rel.split("/", 1)[0] for rel in tracked_members})
@@ -449,10 +433,9 @@ def check_con03(*, spec, target, inventory, stack, components, session) -> Check
     if not present:
         return _outcome(spec, Verdict.PASS, "no scratch or agent-state directory in use")
 
-    rules = load_ignore_rules(target.path)
-    patterns = [rule.pattern for rule in rules]
-    covered = [root for root in present if _covered(root, patterns)]
-    uncovered = [root for root in present if not _covered(root, patterns)]
+    decisions = {root: directory_decision(root, rules) for root in present}
+    covered = [root for root in present if decisions[root].ignored]
+    uncovered = [root for root in present if not decisions[root].ignored]
 
     if uncovered and not covered:
         return _outcome(
@@ -494,7 +477,11 @@ def check_con03(*, spec, target, inventory, stack, components, session) -> Check
         covered_list = ", ".join(root + "/" for root in covered)
         return _unknown(spec, f"ignore rules cover {covered_list}, but git could not report the tracked set")
 
-    return _outcome(spec, Verdict.PASS, f"{', '.join(root + '/' for root in covered)} present, ignored, and untracked")
+    by = sorted({d.rule.source for d in decisions.values() if d.ignored and d.rule is not None})
+    via = f" by {', '.join(by)}" if by else ""
+    return _outcome(
+        spec, Verdict.PASS, f"{', '.join(root + '/' for root in covered)} present, ignored{via}, and untracked"
+    )
 
 
 # ===========================================================================

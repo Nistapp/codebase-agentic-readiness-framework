@@ -2,9 +2,10 @@
 
 > **Goal:** Contribute a tested profile for a toolchain the recipes do not yet cover.
 > **Audience:** Operators / Engineers
-> **Status:** Live. Four profiles exist: [`README.md`](../../stacks/README.md),
-> [`typescript-node.md`](../../stacks/typescript-node.md), [`java.md`](../../stacks/java.md) and
-> [`python.md`](../../stacks/python.md) — read one of them alongside this page as a worked example.
+> **Status:** Live. Three profiles exist, [`typescript-node.md`](../../stacks/typescript-node.md),
+> [`java.md`](../../stacks/java.md) and [`python.md`](../../stacks/python.md), plus
+> [`README.md`](../../stacks/README.md) with the anatomy — read a profile alongside this page as a worked
+> example.
 
 ---
 

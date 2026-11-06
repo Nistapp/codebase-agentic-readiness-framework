@@ -62,7 +62,20 @@ not a copy. The recipe linter's size rule (500 lines, shared with `SKILL.md`, D4
 a family that outgrows the budget splits by check number into two files (S3.3.5 does this for `HYG`), each
 still following this anatomy.
 
-## 6. How a verdict is recorded
+## 6. What counts as the repository
+
+Every check reads the repository the engine's inventory describes, and the inventory leaves out *carried
+data*: a path with a directory named `templates`, `template`, `examples`, `example`, `fixtures`, `samples`,
+`testdata` or `scaffold`. A `package.json` under `templates/` is not the runner, a `CODEOWNERS` under
+`templates/github/` is not the repository's, and a fixture's lockfile is not its lockfile. The report lists
+what it set aside (`inventory.set_aside`), so a verdict that surprises a reader can be explained. When two
+runners compete, the shallowest manifest wins before the kind does. The rule is
+[ADR-0008](../../deterministic-audit/docs/architecture/adrs/0008-what-counts-as-the-repository.md); a check file
+below states only where it applies. `--exclude` is still the tool for anything else (`artefacts/**`, a vendored
+tree), but a template, example or fixture directory no longer needs it. Distrust a verdict when a real
+directory has one of these names (a Java package `samples`): `inventory.set_aside` names it.
+
+## 7. How a verdict is recorded
 
 The anatomy's `Evidence to cite` and `Absence proof` fields describe what goes into the report, not how:
 `report.py add-check` records an engine check's agreement or override (with `override_reason` when the

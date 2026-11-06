@@ -1,0 +1,24 @@
+# Local hooks (lefthook). They run the same verbs CI runs, on what is staged, before a commit lands.
+# Install once per clone: `lefthook install` (binary: https://lefthook.dev). Nothing is installed into the project;
+# the dev tools below run through uvx and npx at the versions the Makefile pins. Hooks are a convenience: CI
+# (`make check`, `make security`, `make docs-lint`) is the gate, and `git commit --no-verify` is not a way around it.
+pre-commit:
+  parallel: false
+  commands:
+    format-check:
+      glob: "*.py"
+      run: make format-check
+    docs-lint:
+      # The ratchet path list lives in the Makefile (DOCS_LINT_PATHS); the globs here are its broadest match.
+      glob: "{brownfield-recipes/implement/**/*.md,docs/**/*.md,CONTRIBUTING.md,CHANGELOG.md,RELEASE_PROCESS.md,brownfield-recipes/docs/architecture/user-overview/03-trust-and-safety.md}"
+      run: make docs-lint
+    secrets:
+      run: uvx --from detect-secrets==1.5.0 detect-secrets-hook --baseline .secrets.baseline {staged_files}  # pragma: allowlist secret
+
+# Conventional Commits: `type(scope): subject`. The trailer `Roadmap-Step:` is checked in review, not here.
+commit-msg:
+  commands:
+    conventional-commits:
+      run: >-
+        grep -Eq '^(feat|fix|docs|test|chore|ci|refactor|perf|build|style|revert)(\([a-z0-9._-]+\))?!?: .+' {1}
+        || { echo 'commit message must follow Conventional Commits: type(scope): subject' >&2; exit 1; }

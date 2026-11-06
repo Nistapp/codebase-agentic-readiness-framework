@@ -18,6 +18,7 @@ import _git
 import _paths  # noqa: F401  (puts the tools folder on sys.path)
 import _common
 import check_drift
+import progress
 
 REPORT = _paths.TOOLS.parent / "schema" / "examples" / "example-service.audit-report.20261010T094207Z.json"
 FILES = ("package.json", ".nvmrc", "AGENTS.md", "src/config/constants.ts", "src/other/unrelated.txt")
@@ -150,6 +151,101 @@ class CheckDriftTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(manifest["name"], "check_drift")
         self.assertFalse(manifest["writes_inside_target"])
+
+    def test_dirty_is_false_on_a_clean_tree_and_true_after_an_edit(self) -> None:
+        self.write_report(self.audited)
+        _, clean, err = self.run_tool()
+        self.assertIs(clean["data"]["dirty"], False)
+        self.assertNotIn("dirty", err)
+        (self.repo / "package.json").write_text("edited, not committed\n", encoding="utf-8")
+        _, dirty, err = self.run_tool()
+        self.assertIs(dirty["data"]["dirty"], True)
+        self.assertIn("working tree is dirty", err)
+        self.assertTrue(any("uncommitted" in warning for warning in dirty["warnings"]))
+
+    def test_dirty_counts_an_untracked_file(self) -> None:
+        self.write_report(self.audited)
+        (self.repo / "stray.txt").write_text("new\n", encoding="utf-8")
+        self.assertIs(self.run_tool()[1]["data"]["dirty"], True)
+
+
+class ReportDigestTests(unittest.TestCase):
+    """`report_changed`: the report file against the SHA-256 `progress.py init` recorded in the target's state."""
+
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.repo = Path(self._tmp.name) / "repo"
+        _git.make_repo(self.repo, FILES)
+        self.report = self.repo / "docs" / "agentic-readiness-report" / REPORT.name
+        self.report.parent.mkdir(parents=True)
+        document = json.loads(REPORT.read_text(encoding="utf-8"))
+        document["provenance"]["target"]["git_sha"] = _git.run_git(self.repo, "rev-parse", "HEAD")
+        self.report.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+        self.commit_all("add the report")
+
+    def commit_all(self, message: str) -> None:
+        _git.run_git(self.repo, "add", "-A")
+        _git.run_git(self.repo, "commit", "-q", "-m", message)
+
+    def init_state(self) -> None:
+        out = io.StringIO()
+        code = _common.run_tool(
+            progress.INFO,
+            progress.handler,
+            ["init", "--report", str(self.report), "--target", str(self.repo), "--date", "2026-11-05"],
+            stdout=out,
+            stderr=io.StringIO(),
+        )
+        self.assertEqual(code, 0, out.getvalue())
+        self.commit_all("add the state")
+
+    def drift(self) -> dict[str, Any]:
+        code, envelope, _ = call([str(self.report), str(self.repo)])
+        self.assertEqual(code, 0, envelope)
+        data: dict[str, Any] = envelope["data"]
+        return data
+
+    def test_unchanged_report_is_not_changed(self) -> None:
+        self.init_state()
+        data = self.drift()
+        self.assertIs(data["report_changed"], False)
+        self.assertIs(data["dirty"], False)
+
+    def test_edited_report_is_changed_and_says_so(self) -> None:
+        self.init_state()
+        self.report.write_text(self.report.read_text(encoding="utf-8").replace("package.json", "package.JSON", 1))
+        self.commit_all("edit the report")
+        out, err = io.StringIO(), io.StringIO()
+        code = _common.run_tool(
+            check_drift.INFO, check_drift.handler, [str(self.report), str(self.repo)], stdout=out, stderr=err
+        )
+        envelope = json.loads(out.getvalue())
+        self.assertEqual(code, 0)
+        self.assertIs(envelope["data"]["report_changed"], True)
+        self.assertTrue(any("edited" in warning for warning in envelope["warnings"]))
+        self.assertIn("report file was edited", err.getvalue())
+
+    def test_no_state_means_unknown(self) -> None:
+        self.assertIsNone(self.drift()["report_changed"])
+
+    def test_a_state_from_before_the_digest_means_unknown(self) -> None:
+        self.init_state()
+        state_path = next((self.repo / "docs" / "agentic-readiness").glob("*-state.json"))
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state["schema_version"] = "0.1"
+        del state["source_reports"][0]["sha256"]
+        state_path.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+        self.commit_all("downgrade the state")
+        self.assertIsNone(self.drift()["report_changed"])
+
+    def test_a_report_the_state_does_not_list_means_unknown(self) -> None:
+        self.init_state()
+        other = self.report.with_name("other.audit-report.20261010T094207Z.json")
+        other.write_text(self.report.read_text(encoding="utf-8"), encoding="utf-8")
+        code, envelope, _ = call([str(other), str(self.repo)])
+        self.assertEqual(code, 0)
+        self.assertIsNone(envelope["data"]["report_changed"])
 
 
 if __name__ == "__main__":

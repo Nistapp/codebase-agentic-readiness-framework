@@ -34,6 +34,8 @@ def _resolve_out(args: argparse.Namespace, target_path: Path) -> Path:
         out = Path(args.out).expanduser()
         if out.is_dir():
             return out / "audit-report.json"
+        if not out.suffix:
+            return out.with_name(out.name + ".json")
         return out
 
     cwd = Path.cwd().resolve()

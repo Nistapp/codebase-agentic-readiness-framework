@@ -35,7 +35,9 @@ same manifest by two slightly different rules will one day disagree in the same 
    repository or git fails, so callers degrade to `UNKNOWN` rather than infer. Ignore matching keeps
    the historical behaviour exactly, so `audit/scan.py` continues to walk precisely what it walked
    before; the semantics are a **documented subset** (anchored patterns, negation and `**` are
-   approximated; `UNKNOWN`, never `PASS`, when certainty is unavailable).
+   approximated; `UNKNOWN`, never `PASS`, when certainty is unavailable). That matcher is the walk's. `DOC-03`,
+   `CON-03`, `SEC-01` and `SEC-03` use a scoped matcher that reads nested `.gitignore` files and `!` lines
+   ([ADR-0009](0009-nested-ignore-files-and-negation.md)).
 2. **`audit/rules/checks/_common.py`** is a **private** module holding the shared verb resolver
    (`resolve_verbs`) and fenced-command extractor (`extract_fenced_commands`). It is deliberately
    **absent from `MODULE_NAMES`** in `audit/rules/checks/__init__.py`: the registry must not load it,

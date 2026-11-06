@@ -12,6 +12,7 @@ old file whole. Standard library only.
 from __future__ import annotations
 
 import copy
+import hashlib
 import io
 import json
 import os
@@ -126,6 +127,12 @@ class InitTests(TargetCase):
         self.assertEqual(data["statuses"]["queued"], 7)
         self.assertEqual(data["statuses"]["deferred"], 1)
         self.assertEqual(self.temporaries(), [])
+
+    def test_init_records_the_sha256_of_the_report_file(self) -> None:
+        self.init_ok()
+        state = json.loads(self.json_path.read_text(encoding="utf-8"))
+        self.assertEqual(state["schema_version"], "0.2")
+        self.assertEqual(state["source_reports"][0]["sha256"], hashlib.sha256(self.report.read_bytes()).hexdigest())
 
     def test_init_maps_each_disposition(self) -> None:
         self.init_ok()

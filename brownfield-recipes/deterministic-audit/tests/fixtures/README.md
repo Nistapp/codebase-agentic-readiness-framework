@@ -41,7 +41,7 @@ fixtures/
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
   agt-05-ok/                 all verbs named and resolved on a runner -> AGT-05 PASS
-  cmd-01-missing-verb/       six verbs on npm, security missing    -> CMD-01 FAIL
+  cmd-01-missing-verb/       six of seven verbs, security missing -> CMD-01 FAIL
   cmd-02-weak-check/         check runs only lint, not the gate   -> CMD-02 FAIL
   cmd-03-divergent/          Makefile composes its own check      -> CMD-03 FAIL
   cmd-04-write-in-check/     check invokes the writing format verb -> CMD-04 FAIL
@@ -49,6 +49,7 @@ fixtures/
   cmd-ok-make/               all seven verbs as Makefile targets, `format\:check` escaped -> CMD-01…04 PASS
   cmd-ok-make-prereqs/       `check` composes the verbs through its prerequisites -> CMD-01…04 PASS
   cmd-ok-make-alias/         `format-check`, the alias, in place of `format\:check` -> CMD-01…04 PASS
+  cmd-ok-root-make-nested-template/ root Makefile with all seven verbs, `templates/package.json` beside it -> CMD-01…04 PASS; the templates are set aside (ADR-0008)
   cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
   cmd-ok-pyproject-poe/      `format-check`, the pyproject task runners' spelling -> CMD-01…04 PASS
   cmd-ok-gradle/             `formatCheck` registered, `test` and `check` built in -> CMD-01 PASS, CMD-02 UNKNOWN
@@ -58,6 +59,7 @@ fixtures/
   sec-01-excluded-env/       tracked `vendor-samples/.env`, ignored by rule (needs git) -> SEC-01 FAIL; `--exclude 'vendor-samples/*'` -> PASS
   sec-02-key-shaped/         synthetic sk- value in a source file (needs git) -> SEC-02 FAIL
   sec-03-thin-ignore/        ignore rules cover no secret shapes   -> SEC-03 FAIL
+  sec-03-ok-negated-exception/ every shape ignored, `!public.crt` re-includes one certificate -> SEC-03 PASS (ADR-0009)
   sec-02-expression-assignment/ names and lookups assigned to token, password and the like, in source -> SEC-02 PASS
   sec-02-env-reference/      api_key, password and token that name an environment variable or a secret store -> SEC-02 PASS
   sec-01-ok/                 .env present but untracked + ignored (needs git) -> SEC-01…03 PASS
@@ -74,6 +76,7 @@ fixtures/
   doc-01-empty/              docs/ present, no markdown page      -> DOC-01 PARTIAL
   doc-02-no-style-guide/     docs/ present, no STYLE_GUIDE.md     -> DOC-02 FAIL
   doc-03-tracked-artefacts/  artefacts/ ignored but force-added (needs git) -> DOC-03 FAIL
+  ignore-ok-nested-gitignore/ `artefacts/.gitignore` holds `*` and re-includes itself and its README (needs git) -> DOC-03, CON-03 PASS (ADR-0009)
   doc-04-adr-unindexed/      an ADR with no index                 -> DOC-04 PARTIAL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL

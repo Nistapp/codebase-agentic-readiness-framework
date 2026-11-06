@@ -334,6 +334,37 @@ _AGT08_COMPETITORS = "vendor-files"
 _AGT08_REACH = "harness-reach"
 
 
+#: The accepted statement of supported harnesses: a line of the root `AGENTS.md` that says "read by" or "supported
+#: harnesses" and names at least one harness of the variant table. A statement is the owner's, so the engine takes it
+#: as the answer to the reach gap and says so; it does not verify that each named harness really loads the file.
+_AGT08_STATEMENT_RE = re.compile(r"(?i)\b(?:read\s+by|supported\s+harnesses?)\b")
+
+
+def _harness_aliases(tool: str) -> tuple[str, ...]:
+    """Short lower-case names for one table entry: ``Anthropic Claude Code`` -> ``claude code``."""
+    out = []
+    for part in re.split(r"\s*[/(]\s*", tool.replace(")", "")):
+        name = re.sub(r"^(?:openai|anthropic|google|github)\s+", "", part.strip().lower())
+        name = re.sub(r"\s+cli$", "", name)
+        if name:
+            out.append(name)
+    return tuple(out)
+
+
+def stated_harnesses(text: str) -> tuple[int, list[str]]:
+    """The first statement line of supported harnesses in ``text``: its 1-based line number and the names it holds."""
+    aliases = {a: h.tool for h in V.HARNESSES for a in _harness_aliases(h.tool)}
+    aliases["opencode"] = "opencode"
+    for number, line in enumerate(text.splitlines(), 1):
+        if not _AGT08_STATEMENT_RE.search(line):
+            continue
+        low = line.lower()
+        named = sorted({tool for alias, tool in aliases.items() if re.search(rf"\b{re.escape(alias)}\b", low)})
+        if named:
+            return number, named
+    return 0, []
+
+
 def check_agt08(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     present = instruction_paths(inventory)
     classified = V.classify_present(present)
@@ -379,7 +410,8 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
                 path=f"{winner}>{loser}",
             )
         )
-    if missed and ("AGENTS.md" in present or competitors):
+    stated_at, stated = stated_harnesses(inventory.read("AGENTS.md") or "") if "AGENTS.md" in present else (0, [])
+    if missed and ("AGENTS.md" in present or competitors) and not stated:
         findings.append(
             Finding(
                 check=spec.id,
@@ -411,7 +443,8 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
         spec.phase,
         verdict,
         spec.status,
-        summary=f"{len(reached)}/{len(reached) + len(missed)} harnesses reached",
+        summary=f"{len(reached)}/{len(reached) + len(missed)} harnesses reached"
+        + (f"; AGENTS.md:{stated_at} states the supported harnesses ({', '.join(stated)})" if stated else ""),
         data=HarnessMatrix(
             reached=len(reached),
             total=len(reached) + len(missed),

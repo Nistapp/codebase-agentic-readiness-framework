@@ -68,6 +68,7 @@ bounded by construction:
 | Ignore semantics | `.gitignore` respected; `.cbmignore` respected when present; both lifted from the target, not invented. Matching is a **documented subset** owned by [`audit/ignore.py`](../../../audit/ignore.py) — see § 3.1 |
 | Hard excludes | `.git`, `node_modules`, `vendor`, `dist`, `build`, `target`, `.venv`, `venv`, `__pycache__`, `.next`, `coverage`, `.gradle` |
 | Operator excludes | `--exclude GLOB`, repeatable, matched against the whole path from the target's root, where `*` crosses directories. It leaves a file out of the walk and out of the set of tracked files that `SEC-01`, `DOC-03`, `CON-03` and `EXEC-02` read (`tracked_in_scope` in `audit/rules/checks/_common.py`) |
+| Carried data | A file under a directory named `templates`, `template`, `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` (`CARRIED_DATA_DIRS` in `audit/scan.py`, compared whole and case-insensitively) is walked and then set aside: it leaves `Inventory.files`, so no check reads it, and `Inventory.set_aside` records each outermost directory with its file count. Nothing is set aside when the repository's only manifests are inside such directories. [ADR-0008](../adrs/0008-what-counts-as-the-repository.md) |
 | File-count cap | Configurable; on breach the scan reports `UNKNOWN` for the affected check rather than silently shrinking scope |
 | File-size cap | Files over the cap are inventoried but not read for content checks |
 | Encoding | Decode as UTF-8 with replacement; binary files are classified, never parsed |
@@ -218,7 +219,8 @@ Schema v2. The JSON is the **render contract**: the Markdown report is a pure fu
   "candidate_components": [],
   "stack": { "ecosystems": [], "package_managers": [], "ci_providers": [],
              "test_frameworks": [], "hook_managers": [], "notes": [] },
-  "inventory": { "files_inspected": 0, "files_skipped": 0, "truncated": false },
+  "inventory": { "files_inspected": 0, "files_skipped": 0, "truncated": false,
+                 "files_set_aside": 0, "set_aside": [ { "path": "templates", "files": 0 } ] },
   "findings": [ { "id": "EXEC-02:packages/api", "check": "EXEC-02", "phase": 1,
                   "severity": "BLOCKER", "verdict": "FAIL",
                   "evidence": [ { "path": "packages/api/package.json", "line": 1, "note": null } ],

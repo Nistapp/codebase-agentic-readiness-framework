@@ -19,7 +19,7 @@ flowchart LR
     Builder --> Report["audit-report.json"]
     Report --> Validator["validate_report.py"]
     Report --> Renderer["render_report.py"] --> Markdown["audit-report.md"]
-    Report --> Implement["Implementation recipe (planned)"]
+    Report --> Implement["Implementation recipe"]
 ```
 
 Three decisions give the report its shape.
@@ -55,7 +55,7 @@ Quotes are limited to 300 characters and command output to 2,000, and the valida
 
 A finding has two identifiers. `id` (`F-001`) is for display, and the builder numbers findings one past the highest in use. `key` is the check ID plus an optional scope, as in `SEC-02:src/config/constants.ts`, and it does not change between runs. A re-audit, a before-and-after comparison and the implementation recipe's re-verification all match findings by `key`. The engine already derives its finding ID this way ([`findings.py`](../../../deterministic-audit/audit/findings.py#L71-L74)), so an imported engine ID becomes the key unchanged.
 
-The schema is at `0.1`, and a `0.x` schema may break between releases. The freeze at `1.0` waits until both recipes have run end to end on two repositories, so that the first breaking change is not the one that follows a release. The report also records `catalogue_version`, because the schema, the check catalogue, the rubrics and the tools form one shared layer. The implementation recipe is meant to warn when a report was built against a different catalogue. The catalogue is planned (S1.5), so the field has no format yet beyond a non-empty string.
+The schema is at `0.1`, and a `0.x` schema may break between releases. The freeze at `1.0` waits until both recipes have run end to end on two repositories, so that the first breaking change is not the one that follows a release. The report also records `catalogue_version`, because the schema, the check catalogue, the rubrics and the tools form one shared layer. The implementation recipe is meant to warn when a report was built against a different catalogue. The catalogue's version is `MAJOR.MINOR.PATCH` (`catalogue_version` in `catalogue.json`), with the bump rules in [Check Catalogue & Rubrics § 4](03-check-catalogue-and-rubrics.md#4-traceability-and-versions).
 
 ---
 

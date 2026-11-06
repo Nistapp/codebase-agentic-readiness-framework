@@ -63,7 +63,7 @@ gap (the harness runs fixtures under the real, unmodified `$HOME`), not a rubric
 review requested** on whether to isolate `$HOME` for future sweeps or accept this as a known limitation of
 running on a dogfooding machine. Full detail in `phase-M4-evaluate-release.md`'s `S4.2.4` log entry.
 
-### Evidence-validity shortfall, found but not fixed
+### Evidence-validity shortfall, found here and fixed later
 
 27 of 1,768 `file` evidence citations (1.5%) did not check out against the target. Investigated rather than
 left unexplained; two distinct, unrelated causes, neither a model defect:
@@ -86,6 +86,10 @@ left unexplained; two distinct, unrelated causes, neither a model defect:
 
 Neither was fixed here — `S4.2.5`'s own scope is the results table, not engine or scorer changes. Carried
 forward as candidates for `S4.4` (the rubric-tightening loop) or a standalone fix.
+
+**Fixed in** (2026-10-19): `f1810ac` `fix(eval): evidence_validity accepts a directory as a valid
+absence-proof citation`, and `71d7441` `fix(engine): runner_commands cites a manifest's real nested path, not
+a hardcoded basename`.
 
 ### Anomalies during the run
 
@@ -171,11 +175,12 @@ than correct it. The agent independently re-derived the same finding and, unlike
 `AGT-07`'s override was a new, separate finding: the engine's heading-word match requires a trigger word in
 the prohibitions section's own heading, but AGENTS.md's section is headed "Security & Safety Guardrails"
 with no such word, despite being a real prohibitions section in substance — a candidate `AGT-07` detector
-gap, carried to `S4.4`. `CON-01`/`CON-02`'s overrides build on that same corrected reading. Put to KC during
+gap, carried to `S4.4` and fixed in `0d53862` `fix(engine): AGT-07 recognises a prohibitions heading by its
+body, not only its words` (2026-10-19). `CON-01`/`CON-02`'s overrides build on that same corrected reading. Put to KC during
 `S4.3.6`'s triage, who accepted all four overrides as correct (`D62`, 2026-10-19) and had the sheet revised
 to match, reversing `S4.3.2.2`'s original `EXEC-04` call — the table above reflects the corrected sheet.
 
-### Found, not fixed: a real `SKILL.md` forwarding defect
+### A real `SKILL.md` forwarding defect, found here and fixed later
 
 The engine repo needed two runs. Run 1 (no `excluded` field in its intake, $0.66, 171s) reproduced a fixture-
 bleed bug already found and excluded when building its sheet (`S4.3.2.3`): `tests/fixtures/**` holds the
@@ -192,6 +197,8 @@ audit that relies on `intake.excluded` to keep the scan off some path gets it ho
 KC chose to record it rather than spend a third run (2026-10-19); carried to `S4.4` or a dedicated leaf to
 fix `SKILL.md`'s Stage 2 so it forwards `excluded` to `engine.py` the same way it already does for
 `facts.py`.
+
+**Fixed in** (2026-10-19): `73cb4c8` `fix(recipes): forward intake excluded paths to engine.py in Stage 2`.
 
 ### KC's triage and the licence check (S4.3.6)
 

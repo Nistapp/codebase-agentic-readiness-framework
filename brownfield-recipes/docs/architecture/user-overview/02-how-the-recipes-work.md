@@ -2,11 +2,11 @@
 
 > **Audience:** CTOs, engineering leads, adopters
 > **Goal:** Walk through the audit stages and the implementation loop at a level a reader can evaluate.
-> **Status:** Audit stages live (S3.5); the implementation loop (§2) is Planned.
+> **Status:** Audit stages live (S3.5). Implementation Stages 0 and 1 live; Stages 2 to 5 Planned (IR12).
 
 > [!NOTE]
-> Planned: §2, the implementation loop. Stage design for it is in the design plan only. Filled in by
-> roadmap step S5.4.
+> Planned: implementation Stages 2 to 5 (plan a theme, apply, close the theme, close-out). Their outline is in
+> [`implement/SKILL.md`](../../../implement/SKILL.md#stages); the stage text is written in IR12.
 
 ---
 
@@ -32,14 +32,29 @@ one repository at a time, writing nothing inside it:
 
 ## 2. Implementation loop
 
-- TBD: verify, explain, propose, approve, apply, verify, commit, per finding. Planned (S5.4).
+The implementation recipe ([`implement/SKILL.md`](../../../implement/SKILL.md)) takes a final,
+owner-confirmed audit report and closes its confirmed findings in the audited repository, one theme at a
+time. Everything a later session needs to resume lives in a state file inside the target, described in the
+[state contract](../../../implement/state.md).
+
+1. **Intake (live).** Validate the report and refuse one that is not `final` (`validate_report.py`); check
+   how far the repository has moved since the audit (`check_drift.py`) and re-verify every finding whose
+   evidence changed; create the state file from the report, or read the existing one to resume
+   (`progress.py init` or `show`).
+2. **Triage (live).** Walk the confirmed findings theme by theme. The owner keeps, skips or defers each, with
+   a reason, and states preferences that bind the whole run (`progress.py skip`, `defer`, `pref`). A skipped
+   finding is never proposed again.
+3. **Plan a theme, apply, close the theme, close-out.** Planned (IR12): one branch per theme from the
+   integration branch, a playbook per finding class, existing debt recorded instead of mass-fixed, and a
+   full re-audit at the end compared with the first report (`compare_reports.py`).
 
 ## 3. What the user decides
 
 In an audit: the intake answers (Stage 1), whether to run any of the target's own commands and which
 (Stage 1), the plan before assessment starts (Stage 2), and the disposition of every finding (Stage 5) —
-blockers one at a time, with their evidence, everything else in batches. Planned for the implementation
-loop: plan approval and each change, once S5.4 exists.
+blockers one at a time, with their evidence, everything else in batches. In an implementation: at
+intake, what to do about drifted findings; at triage, keep, skip or defer for every finding and the
+preferences for the run. Plan approval and each change are Planned (IR12).
 
 ## 4. Reading the report
 

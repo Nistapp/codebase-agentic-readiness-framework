@@ -345,6 +345,128 @@ class KeywordScanTests(unittest.TestCase):
         )
 
 
+class Sec02AllowlistTests(unittest.TestCase):
+    """SEC-02 subtracts what the repository's own scanner allowlist accepts, and says so."""
+
+    LINE = f"{PASS}={LITERAL}\n"
+
+    def audit(self, files: dict[str, str]) -> tuple[dict, dict]:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            report = support.run_audit(root)
+        check = next(c for c in report["checks"] if c["id"] == "SEC-02")
+        return check, report
+
+    @staticmethod
+    def baseline(path: str, line: int) -> str:
+        return json.dumps({"version": "1.5.0", "results": {path: [{"type": "Secret Keyword", "line_number": line}]}})
+
+    def test_a_hit_inside_the_baseline_passes_and_is_listed_as_suppressed(self):
+        check, report = self.audit({"a.properties": self.LINE, ".secrets.baseline": self.baseline("a.properties", 1)})
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertIn("1 allowlisted by `.secrets.baseline`", check["summary"])
+        self.assertEqual(check["data"]["suppressed"], [{"path": "a.properties", "lines": [1]}])
+        self.assertEqual(check["data"]["allowlisted_by"], [".secrets.baseline"])
+        self.assertEqual([f for f in report["findings"] if f["check"] == "SEC-02"], [])
+
+    def test_a_hit_outside_the_baseline_fails(self):
+        check, report = self.audit(
+            {
+                "a.properties": self.LINE,
+                "b.properties": self.LINE,
+                ".secrets.baseline": self.baseline("a.properties", 1),
+            }
+        )
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertIn("1 credential-shaped line(s) across 1 file(s)", check["summary"])
+        self.assertIn("1 allowlisted by `.secrets.baseline`", check["summary"])
+        self.assertEqual(
+            [e["path"] for f in report["findings"] if f["check"] == "SEC-02" for e in f["evidence"]], ["b.properties"]
+        )
+
+    def test_a_baseline_entry_for_another_line_of_the_same_file_does_not_hide_a_new_hit(self):
+        check, _ = self.audit(
+            {"a.properties": "# header\n" + self.LINE, ".secrets.baseline": self.baseline("a.properties", 1)}
+        )
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertEqual(check["data"]["files"], [{"path": "a.properties", "lines": [2]}])
+        self.assertEqual(check["data"]["allowlisted"], 0)
+
+    def test_an_unreadable_baseline_allowlists_nothing(self):
+        check, _ = self.audit({"a.properties": self.LINE, ".secrets.baseline": "{not json"})
+        self.assertEqual(check["verdict"], "FAIL")
+
+    def test_gitleaksignore_matches_on_path_and_line_in_both_fingerprint_forms(self):
+        lines = "# accepted\na.properties:generic-api-key:1\nabc123:b.properties:generic-api-key:1\n"
+        check, _ = self.audit(
+            {"a.properties": self.LINE, "b.properties": self.LINE, "c.properties": self.LINE, ".gitleaksignore": lines}
+        )
+        self.assertEqual(check["data"]["files"], [{"path": "c.properties", "lines": [1]}])
+        self.assertEqual(check["data"]["allowlisted"], 2)
+        self.assertEqual(check["data"]["allowlisted_by"], [".gitleaksignore"])
+
+    def test_gitleaks_toml_allowlists_a_path_pattern(self):
+        toml = '[allowlist]\npaths = ["^docs/"]\n'
+        check, _ = self.audit({"docs/a.properties": self.LINE, "src/b.properties": self.LINE, ".gitleaks.toml": toml})
+        self.assertEqual(check["data"]["files"], [{"path": "src/b.properties", "lines": [1]}])
+        self.assertEqual(check["data"]["allowlisted_by"], [".gitleaks.toml"])
+
+    def test_without_an_allowlist_the_summary_is_unchanged(self):
+        check, _ = self.audit({"a.properties": self.LINE})
+        self.assertEqual(
+            check["summary"],
+            "1 credential-shaped line(s) across 1 file(s) in whole inventory (tracked state unavailable)",
+        )
+        self.assertEqual(check["data"]["allowlisted"], 0)
+
+
+class RootAnchoredIgnoreTests(unittest.TestCase):
+    """A root-anchored `/.env` covers the root, not a nested `.env`; the report says that, not "missing"."""
+
+    def audit(self, gitignore: str) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, ".gitignore", gitignore)
+            report = support.run_audit(root)
+        return {c["id"]: c for c in report["checks"]}
+
+    def test_sec01_reports_root_anchored_only_not_missing(self):
+        # No git repository here, so SEC-01 is UNKNOWN; the note in its summary still carries the wording.
+        sec01 = self.audit("/.env\n/.env.*\n")["SEC-01"]
+        self.assertIn("root-anchored only: dotenv, dotenv variant", sec01["summary"])
+        self.assertNotIn("miss", sec01["summary"])
+
+    def test_sec01_is_partial_with_a_reason_when_git_reports_no_tracked_env(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, ".gitignore", "/.env\n/.env.*\n")
+            support.write(root, "README.md", "x\n")
+            self.assertEqual(_git(root, "init").returncode, 0)
+            self.assertEqual(_git(root, "add", "-A").returncode, 0)
+            report = support.run_audit(root)
+        sec01 = next(c for c in report["checks"] if c["id"] == "SEC-01")
+        self.assertEqual(sec01["verdict"], "PARTIAL")
+        self.assertIn("root-anchored only: dotenv, dotenv variant", sec01["summary"])
+        self.assertNotIn("missing", sec01["summary"])
+        self.assertTrue(sec01["data"]["shapes"][0]["root_only"])
+        self.assertEqual(sec01["data"]["missing"], [])
+
+    def test_an_unanchored_rule_still_covers_every_depth(self):
+        checks = self.audit(".env\n.env.*\n")
+        self.assertNotIn("root-anchored", checks["SEC-01"]["summary"])
+        self.assertEqual(checks["SEC-03"]["data"]["root_only"], [])
+        self.assertNotIn("dotenv", checks["SEC-03"]["data"]["missing"])
+
+    def test_sec03_counts_root_anchored_dotenv_as_partial_coverage(self):
+        sec03 = self.audit("/.env\n")["SEC-03"]
+        self.assertEqual(sec03["verdict"], "PARTIAL")
+        self.assertIn("root-anchored only: dotenv", sec03["summary"])
+        self.assertNotIn("dotenv", sec03["data"]["missing"])
+        self.assertEqual(sec03["data"]["root_only"], ["dotenv"])
+
+
 class Sec02FalsePositiveFixtureTests(unittest.TestCase):
     def test_names_and_lookups_assigned_in_source_pass(self):
         report = support.run_audit(support.fixture("sec-02-expression-assignment"))

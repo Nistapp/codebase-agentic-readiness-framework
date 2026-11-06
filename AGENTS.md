@@ -9,19 +9,38 @@ deterministic engine under them. Read this file first; the engine has its own, s
 The framework's seven verbs run through the root `Makefile`. CI runs the same commands.
 
 ```bash
+make setup          # check the prerequisites (Python 3.11+, uv, git); nothing is installed
 make format         # rewrite formatting in place
 make format:check   # read-only: formatting and lint rules (alias: make format-check)
 make lint           # read-only lint
 make typecheck      # mypy, strict, on brownfield-recipes/tools and dev, and the engine's tools/build.py
-make test           # the engine's unittest suite, then the recipe tools' (the catalogue checks)
-make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema cross-check
+make test           # the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
+make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema cross-check, recipe-lint
 make security       # secrets scan against .secrets.baseline
 ```
+
+One test, without the whole suite (the first from `brownfield-recipes/deterministic-audit/`, the second from the
+repository root):
+
+```bash
+python3 -m unittest tests.test_cmd_pack -k verbs
+python3 -m unittest discover -s brownfield-recipes/tools/tests -k catalogue
+```
+
+This file is read by Claude Code, opencode, Codex, Gemini CLI, Cursor and any other harness that reads `AGENTS.md`;
+no vendor-specific instruction file exists beside it.
 
 - Run `make check` and `make security` before you propose a change. Do not run an ad-hoc substitute.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
   `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`).
-- Python 3.11 or newer, and `uv` for the pinned dev tools (ruff, mypy, detect-secrets). Nothing is installed into the project.
+- Python 3.11 or newer (pinned in `.python-version`), and `uv` for the pinned dev tools (ruff, mypy, detect-secrets).
+  Nothing is installed into the project.
+- Local hooks are `lefthook.yml` (format check on staged Python, `make docs-lint` on staged ratchet Markdown, a secrets
+  scan, a Conventional Commits check). The developer runs `lefthook install` once per clone; an agent never does.
+  Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
+- `make coverage` runs the engine's and the tools' suites under coverage.py and fails below the floor in `.coveragerc`
+  (`fail_under`). CI runs it as the `coverage` job. The floor is debt that only goes up: raise it when coverage rises,
+  never lower it to get green.
 - After a deliberate change to a fixture or test that holds a key-shaped string, run `make update-secrets-baseline`
   and review the diff.
 - Never weaken a gate to get green: no `.skip`, no rule turned off, no assertion relaxed. If you cannot pass a gate, say so.
@@ -39,7 +58,7 @@ make security       # secrets scan against .secrets.baseline
 | `brownfield-recipes/tools/`, `schema/` | Deterministic tools the recipes call, and the JSON Schemas for their files. | Standard library only. No network. Never write inside a target repository, except `progress.py` writing the target's two state files (ADR 0002 in `brownfield-recipes/docs/architecture/adrs/`). |
 | `brownfield-recipes/dev/` | Checks that run in CI and are not shipped. Today: the cross-check of the tools' schema validator against the reference `jsonschema` package, and the Mermaid render check. | May import dev packages, which `uv run --with` installs for one run. Nothing in `tools/` or the engine may import them. |
 | `brownfield-recipes/docs/` | Documentation for all of the above. | Follow `brownfield-recipes/docs/STYLE_GUIDE.md`; start at `docs/architecture/README.md`. |
-| `artefacts/` | Scratch notes and plans, git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
+| `artefacts/` | Scratch notes and plans. The folder is tracked, its contents are git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
 
 A folder with no files yet is not written yet; the docs page that describes it says `Planned`.
 
@@ -61,16 +80,21 @@ A change is done when all of this holds:
 - `make check` and `make security` pass.
 - `make docs-lint` passes when Markdown changed, and a new Markdown file under a ratchet path is clean.
 - New code has tests, and a new engine check has a fixture that fails exactly that check.
-- The documentation a change affects is updated in the same set of commits. When you fill in a page marked `Planned`,
+- When a change alters a public interface, observable behaviour, the architecture or a decision, update the
+  affected documentation and the decision records in the same change set. When you fill in a page marked `Planned`,
   remove that note and update the doc router.
 - Python files carry the SPDX header `AGPL-3.0-or-later` and the copyright line. Documentation, schemas and published
   outputs are `GFDL-1.3-only`. The zones are in `brownfield-recipes/docs/reference/licensing.md`.
 - Commits follow Conventional Commits, one logical change each, so any one can be reverted alone.
-  Work that follows the build roadmap also carries a `Roadmap-Step: S<m>.<n>` trailer.
+  Work that follows a build roadmap or track also carries a `Roadmap-Step: <step id>` trailer
+  (for example `S4.6`, `IR07.3` or `MR02`).
 
 ## Where to look
 
-- Requirements: `spec/README.md`, and `spec/readiness-requirements.md` once it exists.
+- Setting up and contributing, for a person: `CONTRIBUTING.md`. Cutting a release (the maintainer only): `RELEASE_PROCESS.md`.
+- Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
+  `docs/architecture/adrs/README.md`.
+- Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.
 - Terms: `brownfield-recipes/docs/architecture/glossary.md` and `shared/Glossary.md`.
 - The engine's design, checks and ADRs: `brownfield-recipes/deterministic-audit/docs/architecture/README.md`.
 - Tool ecosystem and index tooling: `shared/Tool-Ecosystem.md`. If `codebase-memory-mcp` is available, query it

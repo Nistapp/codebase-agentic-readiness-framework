@@ -31,7 +31,7 @@ A14 — the review's R-16 — governs every one of those rubrics:
   that check's own severity and verdict — a file can `PASS` its specific rubric and still carry a
   length-budget finding.
 - **The remediation playbook drafts minimal content and asks for a human edit.** `adapt-agents-md`
-  (S5.2.3) never fills a section with generic prose; it proposes the shortest sentence that states the
+  (Planned: IR08.1) never fills a section with generic prose; it proposes the shortest sentence that states the
   project's own fact, and nothing in this family's rubrics rewards a playbook-generated file that a human
   has not reviewed.
 
@@ -221,7 +221,7 @@ Evidence to cite A `file` evidence item citing the instruction file's command-su
 Absence proof    A FAIL or PARTIAL names each missing or unresolved verb explicitly in the finding
                  statement; a verb named but unresolved records the runner command that was tried and its
                  exit code as a `command` evidence item.
-Remediation      `adapt-agents-md` (for naming); `define-command-surface` (for resolution, S5.2.1) when the
+Remediation      `adapt-agents-md` (for naming); `define-command-surface` (for resolution; live, IR04.1) when the
                  gap is in the runner, not the instruction file.
 Pitfalls         A verb named with a different spelling than the catalogue's (`typecheck` written as
                  `type-check`) is a real miss, not a false negative to excuse — the spec fixes the spelling
@@ -307,7 +307,11 @@ Engine           `AGT-08`. Classifies every instruction-shaped path the variant 
                  shadows another for the same harness (only one is ever loaded) is a shadowed pair
                  (`PARTIAL` per pair); and, when a canonical file or a competitor exists but some known
                  harness's own instruction path is never reached by anything present, that is a reach gap
-                 (`COSMETIC`, `PARTIAL`). No findings at all is `PASS`. Distrust a competitor finding when
+                 (`COSMETIC`, `PARTIAL`) unless the root `AGENTS.md` states the supported harnesses: a line
+                 holding "read by" or "supported harnesses" and the name of at least one known harness
+                 (`This file is read by Claude Code, Codex and Cursor.`). The engine takes that line as given
+                 and cites it in the summary; it does not check that each named harness loads the file. No
+                 findings at all is `PASS`. Distrust a competitor finding when
                  the vendor file is a deliberate, documented one-line pointer at the canonical file (A14
                  accepts a pointer; it is only a true competitor when it carries independent rules) —
                  verify by reading the vendor file's content, not just its presence.

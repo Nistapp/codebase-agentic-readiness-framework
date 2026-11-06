@@ -34,6 +34,10 @@ Full walkthrough: [`docs/how-to/run-an-audit.md`](docs/how-to/run-an-audit.md).
 
 Tool reference: [`docs/reference/tools-cli.md`](docs/reference/tools-cli.md#build_skillspy).
 
+A tagged release carries the built `audit.pyz`, the skill bundle as a zip and their SHA-256 sums, so a one-off user
+need not clone and build; the workflow is described in [`RELEASE_PROCESS.md`](../RELEASE_PROCESS.md) and has not
+run yet.
+
 ## How this differs from prior art
 
 Readiness checkers exist already — Factory's Agent Readiness (nine pillars, five levels, an 80% rule to
@@ -49,7 +53,7 @@ is plain `SKILL.md` plus command-line tools, runnable by any agent with shell ac
 | Folder | Contents | Status |
 |---|---|---|
 | [`audit/`](audit/SKILL.md) | The audit recipe and its check files | Live |
-| [`implement/`](implement/SKILL.md) | The implementation recipe, its playbooks and the state contract | Skeleton (v0.2 in progress): hard rules, playbook anatomy and state contract written; stages and playbooks Planned |
+| [`implement/`](implement/SKILL.md) | The implementation recipe, its playbooks and the state contract | Partial (v0.2 in progress): Stages 0-1, the state contract and eight of thirteen playbooks are live; Stages 2-5 and five playbooks Planned (IR08-IR12) |
 | [`schema/`](schema/SCHEMA.md) | The report, intake, facts, catalogue and eval-expected schemas, with examples | Live |
 | [`stacks/`](stacks/README.md) | Stack profiles (`typescript-node`, `java`, `python`) | Live |
 | [`tools/`](tools/README.md) | The tool contract, shared helpers and the tools themselves — engine launcher, facts, report builder, renderer, validator, recipe linter, skill bundler | Live |
