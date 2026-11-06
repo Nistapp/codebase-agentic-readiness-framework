@@ -59,6 +59,7 @@ found.
 | [Checks to framework map](../reference/how-the-checks-map-to-the-framework.md) | Check to requirement to framework section | Live; the generated table covers all 71 checks |
 | [Licensing](../reference/licensing.md) | Which licence covers what | Live |
 | [Evaluation Results](../reference/eval-results.md) | Fixture-sweep and real-repo results, cost/time, misses | Live for the fixture sweep (S4.2) and the real-repo runs (S4.3, one run per repo under `D61`); a second harness/model's scored comparison (`S4.3.4`) stays Planned, deferred per `D57` |
+| [Self-Audit](../reference/self-audit.md) | This repository's own Phase 1 score, what is still open and why, and the CI ratchet | Live; ruleset `2026-11-06.1`, score 0.8402 |
 
 ## Explanation — User Overview
 

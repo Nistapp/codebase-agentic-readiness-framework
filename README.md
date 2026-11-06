@@ -49,6 +49,7 @@ Follow our phased, incremental methodology to make any existing codebase agentic
   - **Part I: Readiness Foundation (Phases 1–4)** — Bootstrap, Source Docs, Agent Docs, and Behavioral Baselines. *(Mandatory)*
   - **Part II: Post-Readiness Roadmap (Phases 5–7)** — Agent-driven refactoring, human-facing docs, and Spec-Driven Development (SDD/BDD + TDD).
 - 🤖 **[Brownfield Recipes](brownfield-recipes/README.md)** (v0.1.0) — An agent-run audit that scores a Phase 1 readiness report for an existing repository, with a deterministic engine doing the counting and the agent's judgment backed by cited evidence. Install it as a skill bundle or run it from a clone; no installation beyond Python 3.11+.
+  This repository audits itself: Phase 1 score **0.84**, ratcheted in CI ([Self-Audit](brownfield-recipes/docs/reference/self-audit.md)).
 
 The normative requirements a repository must meet live in [`spec/`](spec/README.md); the guides above and the tools both trace to them.
 
