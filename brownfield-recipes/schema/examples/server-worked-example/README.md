@@ -1,7 +1,7 @@
 # Worked example: the Digital Assistant Server, audited twice
 
 > **Audience:** Everyone
-> **Status:** Live. A real run, published as a draft: **not owner-confirmed**.
+> **Status:** Live. A real run. The second audit is final: the owner decided every finding.
 
 These files are the output of running the recipes on a real open-source repository, the
 Digital Assistant Server (Quarkus/Java), before and after
@@ -12,24 +12,26 @@ benchmark: the numbers belong to one repository on one day.
 ## Draft status
 
 - The **first audit** is a final report (every finding has an owner disposition).
-- The **second audit** is `"status": "draft"`. Stage 4 (the owner's confirmation of every finding) has not been
-  done, so every finding in it is unconfirmed, and the comparison says so. Both reports pass `validate_report.py`.
+- The **second audit** is `"status": "final"`. The owner did Stage 4 on 2026-11-06: 10 findings rejected, 4 deferred,
+  1 edited. The decisions do not change a check's verdict, so the score stays 0.7262. Both reports pass
+  `validate_report.py`.
 - The **state** is the implement recipe's record at close-out; it is as the Server repository holds it.
-- The second audit's score (0.7262) is the engine's figure, not a confirmed result. Several verdicts moved
-  because the engine changed between the two runs (user-level configuration is no longer read), not because the
-  repository changed; the comparison annotates each such move.
+- The second audit's score (0.7262) is the engine's figure; the owner's decisions record which findings stand.
+  Several verdicts moved because the engine changed between the two runs (user-level configuration is no longer
+  read), not because the repository changed; the comparison annotates each such move.
 
 ## Files
 
 | File | What it is |
 | --- | --- |
 | `digital-assistant-server-first-audit-20261028T131409Z.json` / `.md` | The first audit: report and rendered view (final) |
-| `digital-assistant-server-second-audit-20261106T091756Z.json` / `.md` | The second audit after the implement run (draft) |
+| `digital-assistant-server.audit-report.20261106T123400Z.json` / `.md` | The second audit after the implement run (final) |
 | `digital-assistant-server-second-audit-comparison-20261106T091756Z.md` | `compare_reports.py` output with hand annotations on the unexplained moves |
 | `digital-assistant-server-agentic-readiness-state.json` / `-STATE.md` | The implement recipe's state and its rendered view |
 
 The file names are those of the Server repository (`docs/agentic-readiness-report/` and `docs/agentic-readiness/`
-at its `dev` commit `cb12266`). The Server's other files there are not copied.
+at its `dev` commit `cb12266`; the final second audit is in Server pull request 127 until that is merged). The
+Server's other files there are not copied.
 
 ## What was edited in these copies
 
@@ -53,5 +55,3 @@ A report digest recorded anywhere refers to the Server repository's original fil
 - [Implement an audit report](../../../docs/how-to/implement-an-audit-report.md): the walk-through points here.
 - [Evaluation results](../../../docs/reference/eval-results.md): the implement runs and the before/after numbers.
 - [`compare_reports.py`](../../../docs/reference/tools-cli.md): the comparison file is its output.
-
-When the owner completes Stage 4 on the second audit, replace the draft files here with the final ones.

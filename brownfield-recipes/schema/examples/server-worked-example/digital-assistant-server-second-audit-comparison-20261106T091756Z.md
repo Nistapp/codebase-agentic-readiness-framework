@@ -1,9 +1,9 @@
 # Second audit comparison: digital-assistant-server
 
 Second audit of `dev` at `ffce29f9c23a756d98466ff1f5cc41b7a24ebda0`, run 2026-11-06 by the implement recipe's
-close-out (phase IR14.2). Status of the second report: **draft, awaiting the owner's Stage 4 confirmation**. The
-engine's verdicts are accepted as they stand and no finding has a person's disposition yet, so the report cannot
-be finalised in an unattended run. Every finding in it is **unconfirmed by owner**. The first report is unchanged.
+close-out (phase IR14.2). Status of the second report: **final**. The engine's verdicts were accepted as they stand and the owner decided
+every finding in Stage 4 on 2026-11-06 (10 rejected, 4 deferred, 1 edited), so the report was finalised. The first
+report is unchanged.
 
 - Framework revision: local branch `feat/implement-recipe` at `c132d97` (not yet pushed), ruleset `2026-11-06.1`,
   catalogue 0.2.2, `--no-user-config`. The first audit used ruleset `2026-10-19.2`.
@@ -39,12 +39,13 @@ Each blocker in the second report was read again against the pinned tree, by han
 | EXEC-02 | PARTIAL | `gradle.lockfile` is committed (528 lines) and `dependencyLocking { lockAllConfigurations() }` is set in `build.gradle:32-33`. Consistency needs a gate run, which probes-off does not allow. No finding raised. |
 | CMD-02 | UNKNOWN | Not decided by the engine; see above. |
 
-## Findings unconfirmed by owner
+## Findings decided by the owner
 
-All 15 findings in the second report are `pending`. The four blockers are F-001 (EXEC-03), F-002 (EXEC-04),
-F-003 (IDX-01) and F-004 (SEC-02). The owner confirms, rejects or defers them with `report.py set-disposition`
-and then finalises. Where the independent reading disagrees with the engine (EXEC-03, EXEC-04, SEC-02, HYG-01), the
-owner may reject the finding in Stage 4. F-015 (CI-04) was added by the agent check.
+All 15 findings in the second report have a disposition. The four blockers are F-001 (EXEC-03, edited: the README
+now names the setup command), F-002 (EXEC-04, rejected), F-003 (IDX-01, deferred) and F-004 (SEC-02, rejected).
+The decisions are recorded with `report.py set-disposition`; they do not change a check's verdict, so the score
+stays 0.7262. Where the independent reading disagreed with the engine (EXEC-03, EXEC-04, SEC-02, HYG-01), the
+owner edited EXEC-03 and rejected the other three. F-015 (CI-04) was added by the agent check.
 
 ## Issues the owner may close
 
@@ -68,7 +69,7 @@ Output of `compare_reports.py` (title line dropped, headings demoted).
 - Before: `digital-assistant-server-first-audit-20261028T131409Z.json`
   at `4a48e1976e424f3f424d2510049413c1c3f38dd6`,
   score 0.5437 (6 blockers)
-- After: `digital-assistant-server-second-audit-20261106T091756Z.json`
+- After: `digital-assistant-server.audit-report.20261106T123400Z.json`
   at `ffce29f9c23a756d98466ff1f5cc41b7a24ebda0`,
   score 0.7262 (7 blockers)
 - State: used

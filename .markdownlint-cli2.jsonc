@@ -15,5 +15,5 @@
   },
   // Fixtures and testdata are data; artefacts/ is scratch; dist/ is build output. The worked example's reports,
   // comparison and state are another repository's published output, kept as written (its README is linted).
-  "ignores": ["**/fixtures/**", "**/testdata/**", "artefacts/**", "**/server-worked-example/digital-assistant-server-*.md", "brownfield-recipes/dist/**", "**/node_modules/**"]
+  "ignores": ["**/fixtures/**", "**/testdata/**", "artefacts/**", "**/server-worked-example/digital-assistant-server[-.]*.md", "brownfield-recipes/dist/**", "**/node_modules/**"]
 }
