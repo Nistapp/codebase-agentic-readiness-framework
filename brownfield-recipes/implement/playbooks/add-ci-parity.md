@@ -38,7 +38,7 @@ recorded, and a committed record shows which CI job the platform requires before
 
    | Option | Pros | Cons |
    |---|---|---|
-   | Keep wrappers, make them call the verbs (recommended where wrappers exist) | Keeps the repository's CI convention, the required job names and the docs-only skip; the same command runs locally | The engine reads `run:` text only, so it cannot follow a wrapper (engine defects A9 and A11); CI-02 may still read UNKNOWN or FAIL after a correct fix |
+   | Keep wrappers, make them call the verbs (recommended where wrappers exist) | Keeps the repository's CI convention, the required job names and the docs-only skip; the same command runs locally | The engine reads `run:` text only, so it cannot follow a wrapper (known engine defects); CI-02 may still read UNKNOWN or FAIL after a correct fix |
    | Call the verbs directly in `run:` | Visible to the engine | Reverses the wrapper convention and moves logic back into YAML |
 
    Say the engine blind spot to the owner before choosing. Record the answer as a preference.
@@ -137,8 +137,8 @@ Lessons from the multi-app Node application (IR07.3):
 | CI-04 | The same grep; the job summary of a CI run; the branch-protection record | No swallowed gating command; every non-blocking step says report-only and has recorded debt; the record names the required check, or says protection cannot be enforced |
 
 The engine reads `run:` text only. After a correct wrapper-based fix a re-audit can still read CI-02 or CI-03
-wrongly (defects A9 and A11), and CI-04 needs the platform confirmation: say so in the status and let the
-re-audit annotation (IR14) point at the open issues.
+wrongly (known engine defects), and CI-04 needs the platform confirmation: say so in the pull request body; the
+close-out comparison (`SKILL.md` Stage 5) labels the move.
 
 ## Rollback
 

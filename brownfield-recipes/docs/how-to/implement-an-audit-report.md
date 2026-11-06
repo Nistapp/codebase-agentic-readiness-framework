@@ -32,19 +32,19 @@ moves it across. Nothing else copies it.
 2. Commit the pair on the integration branch, and let it reach the branch the work will start from. The report is
    evidence; do not edit it afterwards. An edit is detected: `progress.py init` records the SHA-256 of the
    `.json`, and `check_drift.py` reports `report_changed` if the file differs.
-3. From the framework checkout, create the state (it refuses a draft or an invalid report, a report outside the
+3. Start the agent with [`implement/prompts/kickoff.md`](../../implement/prompts/kickoff.md). Its Stage 0
+   validates the report, runs the drift check and creates the state in a worktree on a triage branch, so nothing
+   is committed on the integration branch itself (`init` refuses a draft or an invalid report, a report outside the
    target, and an existing state):
 
    ```bash
    python3 brownfield-recipes/tools/progress.py init \
-     --report <target>/docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.json \
-     --target <target> --default-branch <integration branch> --phase <session or step>
+     --report <triage worktree>/docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.json \
+     --target <triage worktree> --default-branch <integration branch> --phase <session id>
    ```
 
-4. Commit the two state files `init` wrote (`docs/agentic-readiness/<label>-agentic-readiness-state.json` and
-   `-STATE.md`) on the integration branch, then start the agent with
-   [`implement/prompts/kickoff.md`](../../implement/prompts/kickoff.md). Its Stage 0 does the drift check and
-   resumes from the state.
+4. Stage 1 commits the two state files (`docs/agentic-readiness/<label>-agentic-readiness-state.json` and
+   `-STATE.md`) on that branch. Merge the triage branch before the first theme starts.
 
 ### Step 2: Triage once
 

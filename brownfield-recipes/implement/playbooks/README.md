@@ -12,7 +12,9 @@ agent can read any of them the same way.
 
 ## Anatomy
 
-Every playbook file, `<name>.md` in this folder, has these sections in this order:
+Every playbook file, `<name>.md` in this folder, has these sections in this order. A step id in a header line
+(`IR04.1` and the like) names the framework roadmap step that wrote or corrected the playbook; an agent needs
+nothing from it.
 
 | Section | What it holds |
 |---|---|
@@ -41,8 +43,9 @@ Rules for every playbook:
   [`audit/checks/`](../../audit/checks/README.md) and to `spec/`.
 - Templates come from `greenfield-bootstrap/templates/` by reference, never copied verbatim into the playbook.
 - A playbook does not restate the shared procedure of `SKILL.md` Stages 2 to 4; it links to the stage step.
-- A new playbook name is added to the `playbooks` list of each check it resolves in `catalogue.json`, in the
-  same change that writes the file; the recipe linter rejects a playbook name the catalogue does not know.
+- A new playbook name is added to the `playbooks` list of each check it resolves in `catalogue.json`, in the same change
+  that writes the file; the framework's recipe linter (`recipe_lint.py`) rejects a playbook name the catalogue does not
+  know.
 
 ## Playbook list
 
@@ -67,7 +70,6 @@ in IR04.1, `untrack-generated` in IR05.1, `establish-docs-contract` in IR09.1,
 | [`add-repo-hygiene`](add-repo-hygiene.md) | T8 Hygiene and index | HYG-01 to HYG-11 | yes | Drafted (IR11.1); applied in IR11.2, IR11.3 |
 | [`register-index`](register-index.md) | T8 Hygiene and index | IDX-01, IDX-02, IDX-03 | yes | Drafted (IR11.1); applied in IR11.2, IR11.3 |
 
-The checks of the new playbooks are the plan, not yet the catalogue: the step that writes a playbook confirms
-its list against the check files and records it in `catalogue.json`. CON-04 (the draft allow and deny list)
-is emitted by the audit engine and has no playbook: [`add-deny-rules`](add-deny-rules.md) reads its draft as an input,
-and the state keeps CON-04 in T7 for that reason.
+Each playbook's check list matches `catalogue.json`, which the framework's recipe linter checks. CON-04 (the draft allow
+and deny list) is emitted by the audit engine and has no playbook: [`add-deny-rules`](add-deny-rules.md) reads its draft
+as an input, and the state keeps CON-04 in T7 for that reason.

@@ -69,7 +69,7 @@ observation.
 
 ## Inputs to ask
 
-No tool is installed. Ask once, as one batch (owner decision for IR11, Q1): the playbook writes every file below from
+No tool is installed. Ask once, as one batch: the playbook writes every file below from
 the repository's own facts, adapted from [`greenfield-bootstrap/templates/`](../../../greenfield-bootstrap/templates/)
 (`SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `RELEASE_PROCESS.md`, and `github/` for `CODEOWNERS`, the
 pull-request template and the issue templates), shows them together, and takes one review. The owner is asked only for
@@ -88,8 +88,9 @@ the policy files, and for nothing else:
    - **Private repository:** "report privately to the repository owner", no public-disclosure promises, no response-time
      promise unless the owner states one.
 
-   Either way record an owner action in the state: "enable private vulnerability reporting in the repository
-   settings" (an agent can neither read nor set it), and "fill the `TODO(owner)` values". The placeholder marker does
+   Either way record two owner actions as a note on the item (`--note "owner action: ..."`) and list them in the
+   pull request body: "enable private vulnerability reporting in the repository settings" (an agent can neither
+   read nor set it), and "fill the `TODO(owner)` values". The placeholder marker does
    not affect HYG-06, which reads only that a `SECURITY` document exists.
 4. **Everything else** is derived, not asked: the README from the repository's files, CONTRIBUTING from the gate and
    the PR rules in `AGENTS.md`, the templates from the PR and commit rules in the state.
@@ -101,7 +102,7 @@ the policy files, and for nothing else:
 1. **Baseline.** Run the audit launcher for HYG-01 to HYG-11. Build the table "check, location found, verdict, action".
    Close every present item as `done` with the file as evidence. A check that passes and has no item gets no state
    entry, only a line in the pull request body ([Stage 3](../SKILL.md#stage-3-apply), step 5). Name each new file by
-   this repository's own convention (decision D18): look at the neighbouring file names, the casing of existing root
+   this repository's own convention: look at the neighbouring file names, the casing of existing root
    files, and `AGENTS.md` and CONTRIBUTING first, and follow them (for example `docs/branch-protection.md` beside other
    kebab-case pages).
 2. **README (HYG-01).** Skip when a root README exists and passes. Otherwise write about 40 lines, from the
@@ -145,7 +146,8 @@ the policy files, and for nothing else:
    owner's answers. Never call the GitHub settings API.
 8. **Dependency updates and licence (HYG-09, HYG-10).** Verify only. If the dependency-update file exists, record
    `done` when the check has an item; when it has none (the audit passed it), name it in the pull request body and
-   record nothing. If a `LICENSE` is missing, do not pick one: raise it as an owner question; the item stays `queued`.
+   record nothing. If a `LICENSE` is missing, do not pick one: raise it as an owner question and set the item
+   `blocked` (reason: the owner chooses a licence).
 9. **Commits:** one per concern: policy files (CODEOWNERS and SECURITY); contribution files (README, CONTRIBUTING
    and the templates); release and protection pages.
 
@@ -173,7 +175,7 @@ and CONTRIBUTING are the root scripts, or per-app commands with the directory na
   revisit trigger in the note.
 - **HYG-11 on a plan that cannot enforce protection:** `done` for the check (the page exists) with the note
   "recorded, not enforced"; the unenforced setting is an owner action, not debt.
-- **A missing licence:** the item stays `queued` as an owner question; it is not debt the playbook can fix.
+- **A missing licence:** the item is `blocked` until the owner chooses one; it is not debt the playbook can fix.
 - None of this is a count of violations, so no ratchet or baseline file applies: report-only is the wiring.
 
 ## Verification

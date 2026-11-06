@@ -69,7 +69,7 @@ No dependency is installed. Ask:
 1. **Which harness, and what is already registered.** Detect from `AGENTS.md`, the vendor pointer files, and the project
    directories (`.vscode/`, `.cursor/`, `.claude/`, `.gemini/`, `.codex/`). List every config file found, project-level
    first, then user-level (read-only: report the path and whether it names the server, never print the file).
-2. **Registration form (decision for IR11, Q5).** The playbook offers both forms; the owner picks one per repository,
+2. **Registration form.** The playbook offers both forms; the owner picks one per repository,
    and the answer is recorded as `index.registration`:
 
    | Form | What the repository gets | Pros | Cons |
@@ -80,7 +80,7 @@ No dependency is installed. Ask:
    If the server command differs between machines, the project file uses the bare command name so each machine's `PATH`
    resolves it, and the page says which one to install. Offer one file per harness the team uses, not one for every
    harness.
-3. **Freshness (decision for IR11, Q6).** Default `agents-md-rule`: one line in the instruction file. Alternatives,
+3. **Freshness.** Default `agents-md-rule`: one line in the instruction file. Alternatives,
    offered only if the owner asks: a git hook that calls the refresh (machine-specific command, skipped by
    `--no-verify`), or a statement that the tool refreshes itself (an unverifiable claim; document it only with the
    freshness query beside it).

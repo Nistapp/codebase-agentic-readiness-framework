@@ -20,7 +20,7 @@ wholesale.
 | Check | Rubric | What this playbook does for it |
 |---|---|---|
 | AGT-01 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-01--instruction-file-present-canonical-and-non-trivial) | Verification: a canonical root `AGENTS.md`, correctly cased, no stub markers, no override file |
-| AGT-02 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-02--component-coverage-by-instruction-files) | Verification; a component `AGENTS.md` only when the owner asks (component scoping is a v0.3 item) |
+| AGT-02 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-02--component-coverage-by-instruction-files) | Verification; a component `AGENTS.md` only when the owner asks (component scoping is planned for a later framework version) |
 | AGT-03 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-03--documentation-contract-named) | One line each for `docs/`, `docs/STYLE_GUIDE.md` and the scratch directory |
 | AGT-04 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-04--definition-of-done-stated) | One definition-of-done sentence tying documentation triggers to the same change set |
 | AGT-05 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-05--seven-verbs-named) | The seven verbs named as whole tokens, in the runner's own spelling, annotated with inline comments |
@@ -108,7 +108,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 6. **Release boundary (AGT-09).** Default: one sentence built from facts (Steps 6). The owner reviews the sentence;
    never ask the owner to write it from scratch.
 7. **Owner-only values.** None is needed for this playbook. If a step seems to need one (a reviewer name, a
-   contact), it belongs to T8; follow the supply / generate-and-review / skip order there.
+   contact), ask in the order `SKILL.md` Stage 2, step 6 gives (supply it, draft one for review, or skip).
 
 ## Steps
 
@@ -140,11 +140,13 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    `npx jest -t '<test name>'` (Jest needs `-t` or `--testNamePattern`; a path alone is not read as a single test),
    `python3 -m unittest tests.test_module -k name`. The framework's own [`AGENTS.md`](../../../AGENTS.md#commands)
    is the worked example.
-4. **Documentation contract (AGT-03).** Three facts, each on its own line: `docs/` is the documentation home,
-   `docs/STYLE_GUIDE.md` holds the writing rules, the scratch directory (`artefacts/`) is scratch and off-limits as
-   a source of truth. T6 usually wrote the first two beside the readiness pointer (`docs.agents_line`); keep them
-   there and add only what is missing. If the repository has no scratch directory, the third line says where
-   scratch goes, so the rule exists before the folder does.
+4. **Documentation contract and boundaries (AGT-03, AGT-06).** Three facts, each on its own line: `docs/` is the
+   documentation home, `docs/STYLE_GUIDE.md` holds the writing rules, the scratch directory (`artefacts/`) is scratch
+   and off-limits as a source of truth. T6 usually wrote the first two beside the readiness pointer
+   (`docs.agents_line`); keep them there and add only what is missing. If the repository has no scratch directory, the
+   third line says where scratch goes, so the rule exists before the folder does. Then add the boundary rules the owner
+   picked (Inputs 2), one line each, each naming a path that exists (`test -e <path>`), in the section where the file
+   describes its structure.
 5. **Definition of done (AGT-04).** One sentence, in the definition-of-done section (create the section only if none
    exists), naming the triggers and the same change set. The framework's own wording is the example:
    "When a change alters a public interface, observable behaviour, the architecture or a decision, update the
@@ -189,7 +191,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 10. **Instruction file and components (AGT-01, AGT-02).** Verify: root `AGENTS.md`, exact case, no stub marker, no
     override file beside it. For a multi-component repository, a component `AGENTS.md` is written only when the owner
     asks and the component has rules the root file cannot state; otherwise record AGT-02 as the owner's choice
-    (component scoping is a v0.3 item in the spec).
+    (component scoping is planned for a later framework version).
 11. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
     record the overage as debt. Never shorten by reflowing or deleting the owner's rules.
 12. **Commits:** one per finding, so the owner can revert any one alone.
@@ -229,7 +231,7 @@ themselves (one app never imports another), `src/` versus `test/`, generated cli
 | Check | Command or file | Expected |
 |---|---|---|
 | AGT-01 | `ls AGENTS.md` and the engine's AGT-01 | Present, exact case; `PASS` |
-| AGT-02 | The engine's AGT-02 | `PASS`, or the owner's recorded choice for v0.3 |
+| AGT-02 | The engine's AGT-02 | `PASS`, or the owner's recorded choice |
 | AGT-03 | `grep -n 'docs/\|STYLE_GUIDE.md\|artefacts/' AGENTS.md` | Three lines, one fact each; `PASS` |
 | AGT-04 | `grep -n -i 'same change set' AGENTS.md` | One sentence naming the triggers; `PASS` |
 | AGT-05 | The fenced command block; the engine's AGT-05 and CMD-01 | All seven named and resolved; `PASS` |

@@ -188,13 +188,13 @@ Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#baseline-
   multi-component repository. Create React App passes `coverageThreshold` through its `jest` key in
   `package.json`; check the supported keys for the repository's `react-scripts` version. Vitest:
   `test.coverage.thresholds`.
-- **Engine visibility.** BASE-04 reads the root `package.json` and `jest.config.*`/`vitest.config.*` files at any
-  depth, not a `jest` key in a nested component's `package.json`. In a multi-component repository either keep the
-  key where it is and add the floor sentence to `AGENTS.md`, or (owner choice) move that component's Jest config to a
-  `jest.config.*` file. Verify from the real config either way. BASE-02 reads only a budget flag, so a counts file
-  alone reads `PARTIAL`, and TST-04 accepts a Jest line only with `-t` or `--testNamePattern`; a path-only
-  `npx jest <file>` reads `FAIL` (issues #45 and #50). Write the fast-path block in the form the engine reads and
-  keep the path-only form out of the verification.
+- **Engine visibility.** BASE-04 reads the root `package.json` and `jest.config.*`/`vitest.config.*` files at any depth,
+  not a `jest` key in a nested component's `package.json`. In a multi-component repository either keep the key where it
+  is and add the floor sentence to `AGENTS.md`, or (owner choice) move that component's Jest config to a `jest.config.*`
+  file. Verify from the real config either way. BASE-02 reads only a budget flag, so a counts file alone reads
+  `PARTIAL`, and TST-04 accepts a Jest line only with `-t` or `--testNamePattern`; a path-only `npx jest <file>` reads
+  `FAIL` (framework issues #45 and #50). Write the fast-path block in the form the engine reads and keep the path-only
+  form out of the verification.
 - **Whole-tree counts in `format:check`.** ESLint older than 9.24 has no baseline file, so the compare script runs
   the linter over the whole tree with JSON output and counts errors and files with errors. That adds the linter's
   full run (15-20 s on a mid-sized app) to `format:check`; say so in the paragraph in `AGENTS.md`. The script resolves

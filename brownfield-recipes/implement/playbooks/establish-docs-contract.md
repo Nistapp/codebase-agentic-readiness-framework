@@ -45,7 +45,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 ## Inputs to ask
 
 1. **Docs tooling.** Detect first: an existing Markdown linter config (`.markdownlint*`, `.remarkrc*`), a docs
-   job in CI, a link checker. Use what exists. If none, offer this set (the framework's default, STATE D6) and
+   job in CI, a link checker. Use what exists. If none, offer this set (the framework's default) and
    the owner decides. Currency checked 2026-10-30 (npm registry, GitHub releases API); re-check when applied.
 
    | Tool | Version, date | Weekly downloads | Pros | Cons |
@@ -138,10 +138,10 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       Template folders that must start with a non-heading line (rule MD041) are the usual case.
    2. Add the lint as a **ratchet**: the gating command lints a path list that only grows (the new docs plus any
       file that is already clean); a second command reports on every Markdown file and never fails. Record the
-      baseline count from step 1 (final value after the last render, see step 1). `progress.py` has no field for
-      lint debt on the docs items, so it lives in three places: the script's `BASELINE` constant, a `docs.lint_ratchet`
-      preference, and the status file. Put the `partial` note on the nearest finding (NAV-03) or say so in the PR;
-      a note can only be added when the item moves to a status, so set it in the same call that sets `partial`.
+      baseline count from step 1 (final value after the last render, see step 1) on the docs item it belongs to
+      (`set-status F-nnn partial --debt "what=markdown lint violations,count=N,baseline=<lint script>"`), and keep
+      the script's `BASELINE` constant and a `docs.lint_ratchet` preference equal to it. When no docs item is open,
+      record the count in the `docs.lint_ratchet` preference and the pull request body.
    3. Add a separate CI job, path-filtered to changed Markdown, that runs the linter and renders every Mermaid
       block with `mmdc` (`--no-sandbox` in CI, cache the npm and Puppeteer directories keyed by the pinned
       versions). Pin both versions exactly; never use an unpinned `npx`. If the repository already has Node,
@@ -180,8 +180,8 @@ The repository already has Node, so the job can reuse its pinned Node version.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
   because the engine counts, it does not judge. Mark the item `partial` with that reason, or `skipped` if the
   owner calls it by design.
-- A proposed ADR the owner has not accepted: stays `proposed`, listed in the status file as waiting for the
-  owner.
+- A proposed ADR the owner has not accepted: stays `proposed`, listed in the pull request body as waiting for
+  the owner.
 - A docs job the merge gate cannot yet require: left advisory, noted for the CI theme.
 
 ## Verification

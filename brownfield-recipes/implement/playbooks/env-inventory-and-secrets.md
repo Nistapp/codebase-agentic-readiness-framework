@@ -88,7 +88,7 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
      `set -u` marks a required one.
    - **Shell builtins and script-internal names are not variables.** `SECONDS`, `RANDOM`, `PWD`, `HOME`,
      `BASH_SOURCE`, loop counters and any name the script assigns before it reads it are not inputs. The
-     engine reports some of them as missing (audit-engine defect A8). Do not add them to the example file;
+     engine reports some of them as missing (a known engine defect). Do not add them to the example file;
      record each as a false positive with the reason, and say in the example file's header that the
      engine's list is not the inventory.
    - A name assigned in a script and read by a later script is an input of the second one only if no caller sets
@@ -128,7 +128,7 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    never the line. A hit is a candidate for the owner, not an edit. Test fixtures with obviously fake tokens
    are listed as such and recorded in the scanner's allowlist only if the owner agrees.
 8. **Realm and identity exports** (Inputs step 4): write the path list and counts into the state note and
-   "Found on the way". No change to the files.
+   the pull request body, for the owner. No change to the files.
 9. **Docs.** Add the example file(s) to the instruction file's variables paragraph and to the CI README, if either
    documents variables by hand: one pointer, not a second copy. If the instruction file says env files are
    ignored and a tracked one exists, record the contradiction; the AGENTS.md theme fixes it. A deploy doc that
@@ -194,7 +194,7 @@ undoing.
   do not open a `.env`-like file.
 - Do not rotate a credential, remove one from history or run a history-rewriting command: report and stop.
 - Do not touch a tracked env file the owner keeps; do not add an ignore rule or `git rm --cached` for it.
-- Do not re-raise a finding the owner rejected or skipped; new observations go to "Found on the way".
+- Do not re-raise a finding the owner rejected or skipped; new observations go to the pull request body.
 - Do not template, edit or "clean" realm or identity-provider exports.
 - Do not install a scanner the owner has not approved.
 - Do not put shell builtins or script-internal names in the example file.

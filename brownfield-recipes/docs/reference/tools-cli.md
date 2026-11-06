@@ -32,7 +32,7 @@ Every tool follows the [tool contract](../../tools/README.md#the-contract): one 
 | `2` | The input was read and failed validation |
 | `3` | Internal error |
 
-Run a tool as `python3 brownfield-recipes/tools/<tool>.py`, from any directory. Below Python 3.11 a tool prints how to run itself with `uv run --python 3.12`.
+Run a tool as `python3 brownfield-recipes/tools/<tool>.py`: the path depends on where you run it, the tool does not. Below Python 3.11 a tool prints how to run itself with `uv run --python 3.12`.
 
 ---
 

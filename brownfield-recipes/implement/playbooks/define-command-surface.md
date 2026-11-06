@@ -32,7 +32,7 @@ this one owns the verb names and their wiring, that one owns which tool each ver
   `format.mass_reformat` (forbids a whole-tree rewrite), `tests.stack_dependent` (whether `test` needs a live
   local stack), `ci.edits_authorised` (whether build files and CI may be changed). A step that conflicts with
   one stops and asks.
-- No earlier theme is needed. T1 runs first because later themes (CI, hooks, baselines, `AGENTS.md`) name
+- No earlier theme is needed. T1 runs before T4, T5 and T7 because those themes (CI, hooks, baselines, `AGENTS.md`) name
   these verbs.
 - A tool choice made by `configure-quality-tools` for each verb, or a recorded decision that the verb is
   `blocked` (see the `security` lockfile rule there).

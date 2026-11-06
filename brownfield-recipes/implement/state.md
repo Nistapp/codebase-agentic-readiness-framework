@@ -135,7 +135,8 @@ record `done` for an item that is `partial`.
 
 The schema is [`schema/readiness-state.schema.json`](../schema/readiness-state.schema.json), `schema_version`
 `0.2` (a `0.1` state is still read); field notes are in
-[the schema reference](../schema/SCHEMA.md#readiness-state). Two examples are under `schema/examples/`:
+[the schema reference](../schema/SCHEMA.md#readiness-state). Two examples are in the framework repository, under
+`brownfield-recipes/schema/examples/`:
 `readiness-state.example-service.json`, which `init` writes for the framework's example report, and
 `readiness-state.example-service.in-progress.json`, a state some themes later. Each has its rendered Markdown
 beside it.
