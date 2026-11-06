@@ -7,6 +7,16 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+- The two T8 playbooks (IR11.1): `implement/playbooks/add-repo-hygiene.md` (HYG-01 to HYG-11) and
+  `implement/playbooks/register-index.md` (IDX-01 to IDX-03). `add-repo-hygiene` writes the hygiene files from the
+  repository's own facts in one reviewed batch and asks the owner only for the policy files (CODEOWNERS handle,
+  SECURITY contact values); it never hand-writes a changelog a release tool owns, never enables required code-owner
+  review, and writes the branch-protection page as "recorded, not enforced" where the plan cannot enforce it.
+  `register-index` offers a committed project-level registration and a document-only section (the owner picks per
+  repository), never edits a user-level file without a recorded consent preference, and states that the engine's
+  IDX-03 verdict stays `UNKNOWN` because the store records no revision. `catalogue.json` 0.2.8 (PATCH: playbook names
+  only; fingerprint unchanged) adds `add-repo-hygiene` to HYG-01 to HYG-11; the HYG check files name it.
+
 - The two T7 playbooks (IR10.1): `implement/playbooks/adapt-agents-md.md` (AGT-01 to AGT-06, AGT-08 to AGT-11,
   EXEC-06, TST-04) and `implement/playbooks/add-deny-rules.md` (AGT-07, CON-01 to CON-03). `adapt-agents-md` drafts
   one small diff per finding for the owner to edit: verbs with inline comments, the definition-of-done sentence, a
