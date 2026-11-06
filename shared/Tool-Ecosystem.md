@@ -64,8 +64,8 @@ A well-prepared codebase should give exceptional results with **any** coding age
 | `codebase-memory-mcp` | ✅ Available | 1–7 | Core intelligence layer. Indexes symbols, relationships, dependencies, tests, contracts. Queried by all phases. |
 | `agentic-tdd` | ✅ Available | 5 | Supports controlled, test-driven feature development and refactoring with AI agents. |
 | [`deterministic-audit`](../brownfield-recipes/deterministic-audit/README.md) | ✅ Available | 1 | A read-only, standard-library Python scanner. It checks an existing repository against the Phase 1 readiness checks, with no LLM and no network, and writes a JSON and Markdown report. Run it from a clone of this repository; it is not yet released as a package. |
-| [`brownfield-recipes`](../brownfield-recipes/README.md) | ✅ Available | 1 | LLM-driven recipes for existing repositories, v0.1.0: the audit recipe runs today, end to end, as a `SKILL.md` bundle any coding agent with shell access can install. Builds on `deterministic-audit` and adds model judgment backed by cited evidence. The second recipe, which implements confirmed findings on a branch, is in progress (see the next row). |
-| [`brownfield-recipes` implement recipe](../brownfield-recipes/implement/SKILL.md) | 🚧 In development | 1 | v0.2, in progress: all six stages (intake to close-out), the state tools (`progress.py`, `check_drift.py`, `compare_reports.py`) and the thirteen playbooks are written, and `tools/build_skills.py` bundles it as the `agentic-readiness-implement` skill. Not released yet. |
+| [`brownfield-recipes`](../brownfield-recipes/README.md) | ✅ Available | 1 | LLM-driven recipes for existing repositories, v0.2.0: the audit recipe runs today, end to end, as a `SKILL.md` bundle any coding agent with shell access can install. Builds on `deterministic-audit` and adds model judgment backed by cited evidence. The second recipe, which implements confirmed findings on a branch, is the next row. |
+| [`brownfield-recipes` implement recipe](../brownfield-recipes/implement/SKILL.md) | ✅ Available | 1 | v0.2.0: all six stages (intake to close-out), the state tools (`progress.py`, `check_drift.py`, `compare_reports.py`) and the thirteen playbooks, bundled by `tools/build_skills.py` as the `agentic-readiness-implement` skill. Applied to two real repositories; see the [worked example](../brownfield-recipes/schema/examples/server-worked-example/README.md). |
 | `agentic-docstrings` | 📋 Planned | 2 | Will generate and maintain source-level documentation (docstrings, parameter descriptions, side effects). |
 | `agentic-agentDocs` | 📋 Planned | 3 | Will create structured, agent-oriented documentation and task-specific context packs. |
 | `agentic-contracts` | 💡 Aspirational | 4 | Will generate and validate API contracts, event schemas, and consumer-provider relationships. |
@@ -89,10 +89,7 @@ graph TB
         T1["codebase-memory-mcp\n(Phase 1–7)"]
         T2["agentic-tdd\n(Phase 5)"]
         T8["deterministic-audit\n(Phase 1)"]
-        T9["brownfield-recipes\n(Phase 1, v0.1.0)"]
-    end
-    subgraph "🚧 In development"
-        T10["brownfield-recipes implement recipe\n(Phase 1, v0.2)"]
+        T9["brownfield-recipes\n(Phase 1, v0.2.0)"]
     end
     subgraph "📋 Planned"
         T3["agentic-docstrings\n(Phase 2)"]
@@ -108,7 +105,6 @@ graph TB
     style T2 fill:#2d6a4f,stroke:#1b4332,color:#fff
     style T8 fill:#2d6a4f,stroke:#1b4332,color:#fff
     style T9 fill:#2d6a4f,stroke:#1b4332,color:#fff
-    style T10 fill:#f4a261,stroke:#e76f51,color:#000
     style T3 fill:#e9c46a,stroke:#f4a261,color:#000
     style T4 fill:#e9c46a,stroke:#f4a261,color:#000
     style T5 fill:#264653,stroke:#2a9d8f,color:#fff

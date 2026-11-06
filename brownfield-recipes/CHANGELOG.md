@@ -7,6 +7,13 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-06
+
+The implement recipe is released: see the root `CHANGELOG.md` for the framework-level notes. The worked example (a real
+Server run, before and after, published as drafts) is in
+[`schema/examples/server-worked-example/`](schema/examples/server-worked-example/README.md). Open `audit-engine`
+issues are known defects of the engine, listed on GitHub.
+
 - Implement-recipe evals (IR13). Seven synthetic scenarios in `tools/eval/implement-fixtures/` on one toy
   standard-library repository with two canned final reports built by the real tools; `tools/eval/implement_eval.py`
   materialises a scenario (a local bare `origin`, a logging `gh` shim, a copy of the recipe without the eval files),

@@ -1,7 +1,7 @@
 # Brownfield Recipes
 
 Recipes that a coding agent runs against an existing repository: first to audit it for agentic readiness,
-then (v0.2) to implement the confirmed findings. A deterministic engine does the counting — it reads the
+then (v0.2.0) to implement the confirmed findings. A deterministic engine does the counting — it reads the
 repository, never writes to it, and never calls an LLM — while the agent does the judgment: verifying
 every blocker independently, citing evidence, and stopping to ask rather than guessing. See
 [`README.md`](../README.md) at the repository root for the framework these recipes check against.
@@ -55,11 +55,11 @@ is plain `SKILL.md` plus command-line tools, runnable by any agent with shell ac
 | Folder | Contents | Status |
 |---|---|---|
 | [`audit/`](audit/SKILL.md) | The audit recipe and its check files | Live |
-| [`implement/`](implement/SKILL.md) | The implementation recipe, its playbooks and the state contract | v0.2 in progress: Stages 0-5, the state contract, the thirteen playbooks and the skill bundle are written |
+| [`implement/`](implement/SKILL.md) | The implementation recipe, its playbooks and the state contract | Live (v0.2.0): Stages 0-5, the state contract, the thirteen playbooks and the skill bundle |
 | [`schema/`](schema/SCHEMA.md) | The report, intake, facts, catalogue and eval-expected schemas, with examples | Live |
 | [`stacks/`](stacks/README.md) | Stack profiles (`typescript-node`, `java`, `python`) | Live |
 | [`tools/`](tools/README.md) | The tool contract, shared helpers and the tools themselves — engine launcher, facts, report builder, renderer, validator, recipe linter, skill bundler | Live |
 | [`deterministic-audit/`](deterministic-audit/README.md) | The deterministic engine, migrated with its history | Live |
-| [`docs/`](docs/architecture/README.md) | Documentation, Diátaxis layout | Partial — see the doc router for what each page still marks `Planned` |
+| [`docs/`](docs/architecture/README.md) | Documentation, Diátaxis layout | Live — see the doc router; the only pages marked `Planned` are the deferred second-harness items |
 
 Licensing: [docs/reference/licensing.md](docs/reference/licensing.md).

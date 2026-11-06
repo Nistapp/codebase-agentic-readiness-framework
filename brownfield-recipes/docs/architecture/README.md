@@ -2,8 +2,8 @@
 
 > **Status:** Live for v0.1 (the audit MVP): the schemas, the check catalogue, the engine, the tools, the
 > audit recipe, the eval harness and the fixture-sweep plus real-repo results are all built and published.
-> The implementation recipe (v0.2, in progress): Stages 0 to 5, the state contract and its tools, the thirteen
-> playbooks and its skill bundle are written. Each page below carries its own
+> The implementation recipe (v0.2.0): Stages 0 to 5, the state contract and its tools, the thirteen
+> playbooks and its skill bundle are live. Each page below carries its own
 > status, and a page marked Planned names the roadmap step that fills it. See
 > [`STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 1.3.
 
@@ -45,7 +45,7 @@ found.
 | Page | Purpose | Status |
 |---|---|---|
 | [Run an audit](../how-to/run-an-audit.md) | Produce a confirmed report for a repo | Live (S3.5) |
-| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Live (IR12) |
+| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Live (IR12); links the [worked example](../../schema/examples/server-worked-example/README.md) |
 | [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits and for implementations (`progress.py show`, `check_drift.py`) |
 | [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Live; three profiles plus `stacks/README.md` |
 | [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Live for the corpus, expected-results format, scorer and the Claude Code runner (S4.1); other harnesses' own runner scripts stay Planned, deferred per `D57` |

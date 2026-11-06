@@ -954,6 +954,8 @@ python3 brownfield-recipes/tools/compare_reports.py --describe
   `explained:done` or `explained:partial` when an item reached that status. Everything else is `unexplained`
   (a closed finding adds the item's status, for example `unexplained:in_progress`, or none when no item exists).
   A regression and a new finding are always `unexplained`. Without `--state` the label is `-`.
+- A real run to read: the [worked example](../../schema/examples/server-worked-example/README.md) holds a
+  comparison this tool wrote for the Server (draft, annotated by hand).
 - It does not know which audit-engine defects distorted a verdict. The caller annotates a result that an open
   `audit-engine` issue explains.
 

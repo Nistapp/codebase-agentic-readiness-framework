@@ -97,6 +97,12 @@ every debt entry with its count and baseline.
 
 ---
 
+## A real run
+
+The [worked example](../../schema/examples/server-worked-example/README.md) holds the before and after reports,
+the comparison and the state of one real repository (published as drafts, not owner-confirmed). Read the comparison
+first: it shows how `compare_reports.py` labels each move and where a person annotated one.
+
 ## Verification
 
 - `python3 brownfield-recipes/tools/progress.py show --target <target>` lists no item as `queued` or `in_progress`;

@@ -7,8 +7,8 @@
 > metrics mean.
 > **Status:** Live for the fixture sweep (S4.2), the real-repo runs (S4.3, one run per repo under
 > `D61`), the implement-recipe scenarios (IR13) and the first implement-run numbers. A second harness/model
-> (`S4.3.4`) stays Planned, deferred per `D57`; the before/after audit scores of the implement runs come with the
-> re-audit (IR14.2).
+> (`S4.3.4`) stays Planned, deferred per `D57`; the before/after audit scores of the implement runs are in
+> [Before and after](#before-and-after-the-second-audits) (drafts, not owner-confirmed).
 
 ---
 
@@ -284,7 +284,7 @@ second model are MR09's.
 The implement recipe's two real runs, through IR03 (Stages 0-1) and IR04-IR11 (one theme per session, a brief pass
 then an execute pass, each a headless Claude Code session): Digital-Assistant-Server and a private two-app Node
 repository. Counts are read from each repository's state file on its integration branch; cost and time from the
-sessions' own result lines. Before/after audit scores come with the re-audit (IR14.2) and are added here then.
+sessions' own result lines. The before/after audit scores are in [Before and after](#before-and-after-the-second-audits).
 
 ### Items by status per theme
 
@@ -325,3 +325,26 @@ executes on the Server, and two of the three T3 execute attempts on the Node rep
 trustworthy. ² T8 ran on Haiku; every other session on Sonnet. Failed attempts (usage limits, a stop on the wrong lane
 lock) are included in the counts and the totals. The framework lane that wrote the playbooks between the themes (28
 sessions, $31.55, of which the IR12 execute alone was $15.63) is not in the table.
+
+### Before and after: the second audits
+
+Each repository was audited again after the implement run (IR14.2). Both second reports are **drafts**: Stage 4, the
+owner's confirmation of every finding, has not been done, so the figures below are the engine's, not confirmed
+results. The Server pair, its comparison and its state are published as a
+[worked example](../../schema/examples/server-worked-example/README.md); nothing of the private two-app Node
+repository is published.
+
+| Repository | Phase 1 score before | Phase 1 score after | Blockers before / after | Report status after |
+| --- | --- | --- | --- | --- |
+| Digital-Assistant-Server | 0.5437 | 0.7262 | 6 / 7 | draft |
+| A private two-app Node repository | not published | not published | not published | draft |
+
+Read the figures with care:
+
+- The blocker count rose on the Server although the score did: the engine no longer reads the machine's own
+  configuration (`--no-user-config`), so several index and registration verdicts moved to FAIL or UNKNOWN, and
+  two engine defects (issues #51 and #52) distort other verdicts. The comparison annotates every such move.
+- The two repositories' "after" scores are equal to four decimals. That is unexplained (a coincidence or a cap); the
+  owner has been asked to check it before either report is finalised.
+- One run per repository, one engine revision per run: evidence of the recipe working, not a measurement of how much
+  it improves a repository.
