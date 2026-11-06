@@ -53,14 +53,17 @@ Every check that is not `PASS`, with the reason it is open.
 | `IDX-01` | FAIL | BLOCKER | **Owner exception** (D21): no project `.mcp.json`. The index is optional here, and a project file would make every contributor's harness offer to run a binary. Review in v0.3 |
 | `SEC-01` | PARTIAL | BLOCKER | `/.env` is root-anchored on purpose: the engine's fixtures hold `.env` files as data and must stay committable (comment in `.gitignore`). The check reads a root-only rule as incomplete |
 | `SEC-03` | PARTIAL | DEGRADER | Same cause as `SEC-01` for the dotenv shapes; the key, certificate and keystore shapes are covered |
-| `BASE-02` | PARTIAL | DEGRADER | The counting surface exists, but no committed violation count or budget. Open, no owner decision |
-| `TOOL-04` | PARTIAL | DEGRADER | `make security` is a secrets scan; there is no dependency to audit, so no dependency audit exists. Open |
+| `BASE-02` | PARTIAL | DEGRADER | The counting surface exists, but no committed violation count or budget. Open: the T5 playbook is applied to this repository in MR08.3 (D32) |
+| `TOOL-04` | PARTIAL | DEGRADER | **Owner exception** (D33): the repository has no third-party dependencies, so there is nothing for a dependency audit to scan; `make security` is a secrets scan |
 | `HYG-02`, `HYG-06` | FAIL | COSMETIC | Need values only the owner has: `CODEOWNERS` names and a private disclosure contact for `SECURITY.md`. Stay open until supplied (D22) |
-| `NAV-05` | PARTIAL | COSMETIC | 44% of public symbols documented (638 of 1438) |
+| `NAV-05` | PARTIAL | COSMETIC | Informational, no work (D34): 44% of public symbols documented (638 of 1438) |
 | `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, user-level configuration, or `--emit-baseline`; not run here |
 | `EXEC-02`, `NAV-01` | UNKNOWN | mixed | The repository declares no dependencies and no components, so there is nothing for the check to read |
 
-The only owner exception is `IDX-01`. Everything else is either a deliberate design choice stated in the
+Recorded decisions that keep a finding open or exempt: `IDX-01` and `TOOL-04` are owner exceptions (D21, D33);
+`AGT-08` stays as it is for v0.2, because a stated harness list closes the gap even when a named harness does not read
+`AGENTS.md` natively, and is revisited in v0.3 (D31); `NAV-05` is informational and unscored (D34). The engine has no
+way to record an owner exception, so this page is the record. Everything else is either a deliberate design choice stated in the
 repository, a value waiting for the owner, planned work or open debt; none is hidden in the score.
 
 ## The ratchet
@@ -83,7 +86,7 @@ cat dist/self-audit/audit-report.md
 ```
 
 Nothing is written inside the tracked tree: `dist/` is git-ignored. The report differs from the published one only in
-`provenance.scanned_at`, the target path and the commit.
+`provenance.scanned_at`, the target and the commit (see [Neutralised path](#neutralised-path)).
 
 ## Keep it true
 
@@ -97,3 +100,19 @@ Never run it to get a failing `make self-audit` green: a new finding is fixed or
 first. After updating it, copy the report to `schema/examples/self-audit/<date>.json`, update the tables above,
 and run `make update-secrets-baseline` (the report holds a ruleset hash and a git SHA that read as high-entropy
 strings), reviewing the diff.
+
+## Neutralised path
+
+The framework repository is public, so the committed baseline and the published example are the engine's output with
+two hand edits: `provenance.target` is `.` (the engine writes the absolute local path), and the `IDX-01` summary
+quotes `<repository>/.codebase-memory/graph.db.zst` instead of the absolute index path. Nothing else is changed.
+`make update-audit-baseline` copies the raw report, so follow it with the same two edits before committing:
+
+```bash
+sed -i 's#"target": "[^"]*"#"target": "."#; s#[^ ,"]*/\.codebase-memory#<repository>/.codebase-memory#' .audit-baseline.json
+grep -c '/home/' .audit-baseline.json   # must print 0 (a report from `make self-audit` also has a `baseline` path: use the update target's)
+```
+
+The ratchet compares by finding id, so the edit does not affect it. The engine should write a neutral value itself;
+that request is [issue #49](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/49), and the edit
+goes when it is fixed.
