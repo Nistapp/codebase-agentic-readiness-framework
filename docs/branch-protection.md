@@ -1,22 +1,33 @@
 # Branch protection
 
-The protected branch is `main`. This page is the declaration of the rules, so they are reviewed like any other change.
-GitHub does not read this file: the maintainer applies the rules in the repository settings (Settings, Branches), and
-updates this page in the same step when a rule changes.
+**Status: recommended, not enabled.** On 2026-11-06 the settings of `Nistapp/codebase-agentic-readiness-framework`
+were read from GitHub: `main` is not protected (the API answers 404 "Branch not protected") and the repository has no
+rulesets. The rules below are what the maintainer recommends; nothing on GitHub enforces them yet. Until the maintainer
+turns them on, `CI Gate` runs on every pull request and every push but nothing blocks a merge when it fails.
 
-## Rules
+This page is the declaration of the recommended rules, so they are reviewed like any other change. GitHub does not read
+this file: the maintainer applies the rules in the repository settings, and updates this page in the same step.
 
-Rules marked "proposed, not confirmed" are not yet checked against the real settings; the maintainer compares this
-table with Settings, Branches and removes the mark or corrects the row.
+## Recommended rules
 
-| Rule | Setting |
+The protected branch would be `main`.
+
+| Rule | Recommended setting |
 | --- | --- |
-| Changes arrive through a pull request | Required; no direct pushes to `main` (proposed, not confirmed) |
+| Changes arrive through a pull request | Required; no direct pushes to `main` |
 | Required status check | `CI Gate`, and no other: it stands for the whole matrix |
-| Branch up to date before merge | Required (proposed, not confirmed) |
-| Force pushes and branch deletion | Blocked (proposed, not confirmed) |
-| Conversations | Resolved before merge (proposed, not confirmed) |
+| Branch up to date before merge | Required |
+| Force pushes and branch deletion | Blocked |
+| Conversations | Resolved before merge |
+| Merge method | Merge commit, so each Conventional Commit can be reverted alone |
 | Who applies and changes these rules | The maintainer |
+
+## How the maintainer turns it on
+
+In the repository on GitHub: Settings, Branches (or Rules, Rulesets), add a rule for `main`, and set each row of the
+table above. `CI Gate` appears in the list of required checks only after it has run once on the repository. To re-check
+the result without the web page, read the branch (`gh api repos/Nistapp/codebase-agentic-readiness-framework/branches/main/protection`):
+a 404 means protection is off. When the settings change, edit the status line above with the new date and result.
 
 ## The required check
 
