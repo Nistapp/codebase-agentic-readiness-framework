@@ -17,7 +17,7 @@ updates this page in the same step when a rule changes.
 
 ## The required check
 
-`CI Gate` is the last job in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). It needs four jobs and fails
+`CI Gate` is the last job in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). It needs five jobs and fails
 unless each one succeeded:
 
 | Job | What it runs |
@@ -25,6 +25,7 @@ unless each one succeeded:
 | `check` | `make check` on Ubuntu and macOS, Python 3.11 and 3.14 |
 | `security` | `make security` |
 | `coverage` | `make coverage`, which fails below the floor in `.coveragerc` |
+| `self-audit` | `make self-audit`: the engine on this repository; exit 2 when a finding appears that `.audit-baseline.json` did not have |
 | `docs` | `make docs-lint` and the Mermaid render check, when Markdown changed |
 
 Requiring `CI Gate` alone means a new matrix leg or a renamed job never needs a settings change. Add a new job to

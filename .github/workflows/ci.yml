@@ -74,6 +74,20 @@ jobs:
         env:
           CI: "true"
 
+  # The engine on this repository against the committed ratchet (.audit-baseline.json): exit 2 when a finding appears
+  # that the baseline did not have. Read-only; the report stays under dist/self-audit/. Linux only.
+  self-audit:
+    name: self-audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version-file: .python-version
+      - run: make self-audit
+
   # Markdown lint (the DOCS_LINT_PATHS ratchet) and a real-parser render of every Mermaid block in the changed
   # Markdown. The job always runs and is a no-op when no Markdown changed, so CI Gate never sees it skipped.
   docs:
@@ -120,19 +134,21 @@ jobs:
   # version, an OS) never also requires a branch-protection edit.
   ci-gate:
     name: CI Gate
-    needs: [check, security, coverage, docs]
+    needs: [check, security, coverage, self-audit, docs]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Require check, security, coverage and docs to have succeeded
+      - name: Require check, security, coverage, self-audit and docs to have succeeded
         run: |
           check="${{ needs.check.result }}"
           security="${{ needs.security.result }}"
           coverage="${{ needs.coverage.result }}"
+          self_audit="${{ needs.self-audit.result }}"
           docs="${{ needs.docs.result }}"
           echo "check: $check"
           echo "security: $security"
           echo "coverage: $coverage"
+          echo "self-audit: $self_audit"
           echo "docs: $docs"
           if [[ "$check" != "success" ]]; then
             echo "::error::check did not pass"
@@ -144,6 +160,10 @@ jobs:
           fi
           if [[ "$coverage" != "success" ]]; then
             echo "::error::coverage did not pass"
+            exit 1
+          fi
+          if [[ "$self_audit" != "success" ]]; then
+            echo "::error::self-audit did not pass"
             exit 1
           fi
           if [[ "$docs" != "success" ]]; then
