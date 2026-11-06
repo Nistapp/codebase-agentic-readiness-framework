@@ -6,7 +6,8 @@
 # through uvx, so nothing is installed into the project. Needs make, git, python3 (3.11+) and uv.
 #
 #   make format         rewrite formatting in place
-#   make format:check   read-only: formatting and lint rules (alias: make format-check)
+#   make format:check   read-only: formatting and lint rules, and the ruff count against .quality-baseline.json
+#                       (alias: make format-check)
 #   make lint           read-only lint
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
@@ -32,6 +33,8 @@ CROSSCHECK := PYTHONPATH=brownfield-recipes/tools uv run --no-project --with jso
 SKILLS_REF := uvx --from skills-ref==0.1.1 agentskills
 # Markdown lint (rules in .markdownlint-cli2.jsonc) and the Mermaid check need Node; neither is part of `check`.
 MARKDOWNLINT := npx --yes markdownlint-cli2@0.24.0
+# The compare step of the quality baseline (.quality-baseline.json): fails when a tool's full-tree count goes up.
+QUALITY_BASELINE := $(PYTHON) brownfield-recipes/dev/quality_baseline.py check
 COVERAGE := uvx coverage@7.17.2
 # The coverage data stays under the git-ignored build output; settings (the floor) are in .coveragerc.
 COVERAGE_DATA := $(CURDIR)/brownfield-recipes/dist/coverage/.coverage
@@ -72,6 +75,7 @@ format:
 format-check:
 	$(RUFF) format --check brownfield-recipes
 	$(RUFF) check brownfield-recipes
+	$(QUALITY_BASELINE) ruff -- $(RUFF) check brownfield-recipes --output-format json
 
 format\:check: format-check
 
@@ -80,6 +84,7 @@ lint:
 
 typecheck:
 	$(MYPY) --config-file mypy.ini $(TYPED_SOURCES)
+	$(QUALITY_BASELINE) mypy -- $(MYPY) --config-file mypy.ini $(TYPED_SOURCES)
 
 test:
 	cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests
@@ -148,6 +153,7 @@ validate-skills:
 # pinned CLI. CI runs it in the `docs` job when a Markdown file changed.
 docs-lint:
 	$(MARKDOWNLINT) $(DOCS_LINT_PATHS)
+	$(QUALITY_BASELINE) markdownlint -- sh -c "git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)"
 
 # Reports violations in every tracked Markdown file (fixtures excluded by the config). Never fails: the debt
 # outside DOCS_LINT_PATHS is recorded, not gated.

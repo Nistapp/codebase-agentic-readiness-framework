@@ -1,0 +1,24 @@
+{
+  "_comment": "Quality baseline: one full-tree violation count per tool. A baseline only goes down; raising a count needs the owner. Compared by brownfield-recipes/dev/quality_baseline.py from make format-check, typecheck and docs-lint. The coverage floor lives in .coveragerc (fail_under).",
+  "measured": "2026-11-06",
+  "counts": {
+    "ruff": {
+      "count": 0,
+      "what": "ruff check diagnostics over brownfield-recipes (rules in ruff.toml)",
+      "command": "uvx ruff@0.16.10 check brownfield-recipes --output-format json",
+      "verb": "make format-check"
+    },
+    "mypy": {
+      "count": 0,
+      "what": "mypy --strict errors over the typed scope in the Makefile (TYPED_SOURCES)",
+      "command": "uvx mypy@2.4.0 --config-file mypy.ini $(TYPED_SOURCES)",
+      "verb": "make typecheck"
+    },
+    "markdownlint": {
+      "count": 735,
+      "what": "markdownlint-cli2 issues over every tracked Markdown file (the DOCS_LINT_PATHS ratchet is a subset and clean)",
+      "command": "git ls-files -z '*.md' | xargs -0 npx markdownlint-cli2@0.24.0",
+      "verb": "make docs-lint"
+    }
+  }
+}
