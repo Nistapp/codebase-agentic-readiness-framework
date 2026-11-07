@@ -302,9 +302,9 @@ sessions' own result lines. The before/after audit scores are in [Before and aft
 | **Total** | done 22, partial 13, skipped 3, deferred 2, failed 0 | done 29, partial 11, skipped 2, failed 0 |
 | Not queued (rejected at the audit) | 2 | 8 |
 
-Every `partial` item carries counted debt and a mechanism that keeps it from growing; no item ended `failed`. The
-state on each integration branch lags by one theme (Stage 2 records a merge in the next theme's branch), so the
-last themes there still read `pr_open` though merged.
+Every `partial` item carries counted debt and a mechanism that keeps it from growing; no item ended `failed`. Every
+theme in both state files reads `merged`: Stage 2 records a theme's merge in the next theme's branch, and the
+second-audit branches (IR14.2) recorded the last ones.
 
 ### Cost and time per session
 
@@ -345,7 +345,7 @@ Read the figures with care:
 - The blocker count rose on the Server although the score did: the engine no longer reads the machine's own
   configuration (`--no-user-config`), so several index and registration verdicts moved to FAIL or UNKNOWN, and
   two engine defects (issues #51 and #52) distort other verdicts. The comparison annotates every such move.
-- The two repositories' "after" scores are equal to four decimals. That is unexplained (a coincidence or a cap); the
-  owner has been asked to check it before either report is finalised.
+- The two repositories' "after" scores are equal to four decimals. The owner checked it when finalising both
+  reports: it is a coincidence, not a cap, and the Stage 4 decisions do not change a check verdict.
 - One run per repository, one engine revision per run: evidence of the recipe working, not a measurement of how much
   it improves a repository.
