@@ -9,6 +9,13 @@ the implement recipe closed its confirmed findings. They show what the audit rec
 recipe keeps in the state, and what the comparison between two audits looks like. They are an example, not a
 benchmark: the numbers belong to one repository on one day.
 
+## The repository before and after
+
+- **Before:** the first audit below is the report on the repository as it was on 2026-10-28.
+- **After:** the public repository with the implement recipe's changes merged:
+  [Digital-Assistant-Server at `aae557f76144`](https://github.com/Digital-Assistant/Digital-Assistant-Server/tree/aae557f76144)
+  (branch `dev`, newest commit on 2026-11-07). Its state file is in `docs/agentic-readiness/`.
+
 ## Draft status
 
 - The **first audit** is a final report (every finding has an owner disposition).
