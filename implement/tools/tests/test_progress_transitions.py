@@ -16,6 +16,7 @@ import unittest
 from typing import Any
 from unittest import mock
 
+import _implement_paths  # noqa: F401  (puts the tools folders on sys.path)
 import _common
 import progress
 from test_progress import MD_NAME, TargetCase, call

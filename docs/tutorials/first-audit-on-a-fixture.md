@@ -23,7 +23,7 @@ into a scratch directory outside this repository and turn it into its own git re
 clean git checkout to run):
 
 ```bash
-cp -r brownfield-recipes/deterministic-audit/tests/fixtures/cmd-02-weak-check /tmp/my-first-audit
+cp -r audit/engine/tests/fixtures/cmd-02-weak-check /tmp/my-first-audit
 cd /tmp/my-first-audit
 git init -q && git add -A && git commit -q -m "fixture snapshot"
 ```
@@ -36,7 +36,7 @@ exists to catch.
 ## 2. Run the audit
 
 Paste [`audit/prompts/kickoff.md`](../../audit/prompts/kickoff.md) into your agent, naming
-`/tmp/my-first-audit` as the target and this repository's checkout as where `brownfield-recipes/` lives.
+`/tmp/my-first-audit` as the target and this repository's checkout as where `audit/` lives.
 Since you have no intake file, Stage 0 asks its questions one at a time — including the provider-exposure
 statement, which the run will not start without acknowledging. Answer honestly for a first try: you are
 the operator, no verb needs to run against the target (`CMD-02` is caught by reading `package.json`, not
@@ -57,7 +57,7 @@ traces back to a specific file and a specific piece of evidence, never an unstat
 Validate the report mechanically, too, to see the tool side of the contract:
 
 ```bash
-python3 brownfield-recipes/tools/validate_report.py <path to the .json report>
+python3 audit/tools/validate_report.py <path to the .json report>
 ```
 
 Exit `0` means the report matches the schema the [`implement` recipe](../../implement/SKILL.md) reads.

@@ -39,7 +39,7 @@ Two axes are always reported separately: **phase** (which framework requirement 
 ## Quick Start
 
 ```bash
-# from brownfield-recipes/deterministic-audit/ — no install step, no dependencies
+# from audit/engine/ — no install step, no dependencies
 python3 -m audit <target> --format both --out ./audit-out/<name>   # writes <name>.json and <name>.md
 
 # verdicts that do not depend on this machine: read nothing under $HOME (the IDX checks)
@@ -127,9 +127,9 @@ Start at the **[architecture index and doc router](docs/architecture/README.md)*
 | Scan engine & tiering | [Contributor Deep Dive 1](docs/architecture/contributor-deep-dive/01-scan-engine-and-tiering.md) | Engineers |
 | Check catalogue | [Contributor Deep Dive 2](docs/architecture/contributor-deep-dive/02-check-catalogue.md) | Engineers |
 | Decisions of record | [ADR index](docs/architecture/README.md#adr-index) | Everyone |
-| Authoring rules | [STYLE_GUIDE.md](../docs/STYLE_GUIDE.md) | Writers, documentation agents |
+| Authoring rules | [STYLE_GUIDE.md](../../docs/STYLE_GUIDE.md) | Writers, documentation agents |
 
-All documentation follows the shared [style guide](../docs/STYLE_GUIDE.md), which is canonical.
+All documentation follows the shared [style guide](../../docs/STYLE_GUIDE.md), which is canonical.
 
 ---
 
@@ -155,9 +155,10 @@ All documentation follows the shared [style guide](../docs/STYLE_GUIDE.md), whic
 
 ## License
 
-The code in this directory is licensed under the [GNU Affero General Public License, version 3 or later](LICENSE) (`AGPL-3.0-or-later`).
+The code in this directory is licensed under the
+[GNU Affero General Public License, version 3 or later](../../LICENSE-CODE) (`AGPL-3.0-or-later`).
 The documentation (this README, `AGENTS.md` and everything under [`docs/`](docs/LICENSING.md)) and the example
 reports under [`examples/`](examples/LICENSING.md) are licensed under the GNU Free Documentation License,
 version 1.3 (`GFDL-1.3-only`), whose text is the [`LICENSE`](../../LICENSE) at the root of this repository.
 Neither licence covers the repositories the tool audits or the reports you produce with it. See
-[Licensing](../docs/reference/licensing.md).
+[Licensing](../../docs/reference/licensing.md).

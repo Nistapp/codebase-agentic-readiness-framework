@@ -350,7 +350,7 @@ def atomic_write_text(path: str | Path, text: str) -> None:
 
 # --- Output files: names that carry the repository, and files that are never replaced -------------------
 #
-# The contract is "Output files" in brownfield-recipes/schema/SCHEMA.md. A name is
+# The contract is "Output files" in audit/schema/SCHEMA.md. A name is
 # `<label>.<kind>.<stamp>.<ext>`; when it is taken, `-2`, `-3` and so on follow the stamp.
 
 STAMP_FORMAT = "%Y%m%dT%H%M%SZ"

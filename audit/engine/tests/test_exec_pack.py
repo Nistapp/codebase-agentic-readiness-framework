@@ -105,7 +105,7 @@ class Exec06CommentTests(unittest.TestCase):
         self.assertEqual(self.audit(agents)["EXEC-06"]["verdict"], "PASS")
 
     def test_the_greenfield_template_commands_resolve(self):
-        template = (Path(__file__).resolve().parents[3] / "greenfield-bootstrap" / "templates" / "AGENTS.md").read_text(
+        template = (Path(__file__).resolve().parents[3] / "greenfield" / "templates" / "AGENTS.md").read_text(
             encoding="utf-8"
         )
         lines = [ln for ln in template.splitlines() if ln.startswith("npm ")]

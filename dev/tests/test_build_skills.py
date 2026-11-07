@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""The skill bundler: each bundle has its three parts (`SKILL.md`, `references/`, `scripts/`), the frontmatter
-name is rewritten for the bundle, and two builds from the same source tree agree file for file. The implement
-bundle also keeps no framework tool path and no link that leaves it, and its tools run against the audit bundle
-installed beside it.
+"""The skill bundler: each bundle has its three parts (`SKILL.md`, `references/`, `scripts/`) and a `LICENSE`,
+the frontmatter name is rewritten for the bundle, and two builds from the same source tree agree file for file.
+The implement bundle also keeps no framework tool path and no link that leaves it, and its tools run against the
+audit bundle installed beside it.
 
 Builds for real, into a temporary directory — there is no fixture to fake this against, since the whole
 point is copying this repository's own files; a build that can run only against a double would not prove the
@@ -25,13 +25,14 @@ import unittest
 from pathlib import Path
 from typing import Any, Sequence
 
-import _paths
+import _dev_paths  # noqa: F401
 import _common
 import build_skills as bs
 import recipe_lint
 
-TOOLS = _paths.TOOLS
-EXAMPLE_REPORT = TOOLS.parent / "schema" / "examples" / "example-service.audit-report.20261010T094207Z.json"
+EXAMPLE_REPORT = bs.AUDIT_SCHEMA / "examples" / "example-service.audit-report.20261010T094207Z.json"
+#: Where a tool command in a source page starts; none of them may be left in a bundle.
+SOURCE_TOOL_PREFIXES = ("python3 audit/tools/", "python3 implement/tools/", "python3 audit/tools/")
 LINK = re.compile(r"(?<!!)\[[^\]\n]*\]\(([^)\s]+)\)")
 FENCE = re.compile(r"^\s*(```+|~~~+)")
 
@@ -69,8 +70,20 @@ class BuildSkillsTests(unittest.TestCase):
             script_schema = {p.name for p in (bundle_dir / "scripts" / "schema").iterdir()}
             self.assertEqual(script_schema, set(bs.SCHEMA_FILES))
             self.assertTrue((bundle_dir / "scripts" / "catalogue.json").is_file())
-            self.assertTrue((bundle_dir / "scripts" / "deterministic-audit" / "audit" / "__main__.py").is_file())
+            self.assertTrue((bundle_dir / "scripts" / "engine" / "audit" / "__main__.py").is_file())
+            self.assertFalse((bundle_dir / "scripts" / "deterministic-audit").exists())
             self.assertTrue((bundle_dir / "scripts" / "audit.pyz").is_file())
+
+    def test_bundle_carries_the_code_licence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_dir = bs.build_bundle(Path(tmp))
+            self.assertEqual((bundle_dir / "LICENSE").read_bytes(), bs.LICENSE_CODE.read_bytes())
+
+    def test_bundled_engine_launcher_runs(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_dir = bs.build_bundle(Path(tmp))
+            done = run_bundle_tool(bundle_dir / "scripts" / "tools" / "engine.py", "--describe")
+            self.assertEqual(done.returncode, 0, done.stderr)
 
     def test_skill_md_frontmatter_is_rewritten_for_the_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -162,17 +175,23 @@ class ImplementBundleTests(unittest.TestCase):
             "references/tools-cli.md",
             "scripts/catalogue.json",
             "scripts/tools/engine.py",
+            "scripts/tools/_audit_tools_path.py",
+            "LICENSE",
         ):
             self.assertTrue((self.bundle / relative).is_file(), relative)
         for name in bs.IMPLEMENT_TOOL_FILES:
             self.assertTrue((self.bundle / "scripts" / "tools" / name).is_file(), name)
         script_schema = {p.name for p in (self.bundle / "scripts" / "schema").iterdir()}
         self.assertEqual(script_schema, set(bs.IMPLEMENT_SCHEMA_FILES))
-        source_playbooks = {p.name for p in (TOOLS.parent / "implement" / "playbooks").glob("*.md")}
+        source_playbooks = {p.name for p in (bs.IMPLEMENT / "playbooks").glob("*.md")}
         bundle_playbooks = {p.name for p in (self.bundle / "references" / "playbooks").glob("*.md")}
         self.assertEqual(bundle_playbooks, source_playbooks)
 
+    def test_bundle_carries_the_code_licence(self) -> None:
+        self.assertEqual((self.bundle / "LICENSE").read_bytes(), bs.LICENSE_CODE.read_bytes())
+
     def test_no_engine_copy_in_the_bundle(self) -> None:
+        self.assertFalse((self.bundle / "scripts" / "engine").exists())
         self.assertFalse((self.bundle / "scripts" / "deterministic-audit").exists())
         self.assertFalse((self.bundle / "scripts" / "audit.pyz").exists())
         self.assertEqual((self.bundle / "scripts" / "tools" / "engine.py").read_text(encoding="utf-8"), bs.ENGINE_SHIM)
@@ -185,7 +204,8 @@ class ImplementBundleTests(unittest.TestCase):
     def test_no_framework_tool_command_is_left(self) -> None:
         for file in self.markdown_files():
             text = file.read_text(encoding="utf-8")
-            self.assertNotIn("python3 brownfield-recipes/tools/", text, file.relative_to(self.bundle))
+            for prefix in SOURCE_TOOL_PREFIXES:
+                self.assertNotIn(prefix, text, file.relative_to(self.bundle))
         skill = (self.bundle / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("python3 scripts/tools/progress.py", skill)
         self.assertIn(f"python3 ../{bs.BUNDLE_NAME}/scripts/tools/engine.py", skill)

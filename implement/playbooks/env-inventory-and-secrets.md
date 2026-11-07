@@ -137,7 +137,7 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 
 ### Gradle and Quarkus
 
-Profile: [`stacks/java.md`](../../stacks/java.md#execution-determinism). Reads to search, names only:
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#execution-determinism). Reads to search, names only:
 `System.getenv("NAME")`, `@ConfigProperty(name = "x.y")` and `${NAME}` or `${NAME:default}` in
 `application.properties`/`application.yaml`; a Quarkus property `a.b.c` is overridable by the variable
 `A_B_C` and the framework's `QUARKUS_*` set (optional by definition). `gradle.properties` keys read with
@@ -146,7 +146,7 @@ usual force-added file: SEC-03's `*.jks` rule can already exist while one is tra
 
 ### Node (npm, CRA, NestJS)
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#execution-determinism). Reads to search,
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#execution-determinism). Reads to search,
 names only: `process.env.NAME` and `process.env['NAME']`, `ConfigService.get('NAME')` and
 `configService.getOrThrow`, schema files (`Joi.object`, `class-validator` environment classes), `REACT_APP_*`
 and `VITE_*` (build-time, bundled into the public output, which makes them inventory entries and a
@@ -206,12 +206,12 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "git ls-files -ci --exclude-standard" \
   --verification-result "<empty, or only the recorded exceptions>"
-python3 brownfield-recipes/tools/progress.py skip F-nnn --target <repo> --phase <phase> \
+python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> \
   --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py pref set layout.env_example <path> --target <repo> --phase <phase> \
+python3 implement/tools/progress.py pref set layout.env_example <path> --target <repo> --phase <phase> \
   --reason "<the owner's words>" --by owner
 ```
 

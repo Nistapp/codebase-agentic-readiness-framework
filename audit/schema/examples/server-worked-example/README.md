@@ -52,6 +52,6 @@ A report digest recorded anywhere refers to the Server repository's original fil
 
 ## Where it is used
 
-- [Implement an audit report](../../../docs/how-to/implement-an-audit-report.md): the walk-through points here.
-- [Evaluation results](../../../docs/reference/eval-results.md): the implement runs and the before/after numbers.
-- [`compare_reports.py`](../../../docs/reference/tools-cli.md): the comparison file is its output.
+- [Implement an audit report](../../../../docs/how-to/implement-an-audit-report.md): the walk-through points here.
+- [Evaluation results](../../../../docs/reference/eval-results.md): the implement runs and the before/after numbers.
+- [`compare_reports.py`](../../../../docs/reference/tools-cli.md): the comparison file is its output.

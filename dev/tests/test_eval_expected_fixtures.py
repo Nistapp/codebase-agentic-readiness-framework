@@ -19,20 +19,19 @@ import sys
 import unittest
 from types import ModuleType
 
-import _paths
+import _dev_paths
 
-TOOLS = _paths.TOOLS
+DEV = _dev_paths.DEV
 
 import _jsonschema_subset as subset  # noqa: E402
 
-RECIPES = TOOLS.parent
-FIXTURES_DIR = RECIPES / "schema" / "examples" / "eval-expected" / "fixtures"
-SCHEMA = json.loads((RECIPES / "schema" / "eval-expected.schema.json").read_text(encoding="utf-8"))
+FIXTURES_DIR = DEV / "eval" / "expected" / "fixtures"
+SCHEMA = json.loads((_dev_paths.REPO / "audit" / "schema" / "eval-expected.schema.json").read_text(encoding="utf-8"))
 
 
 def engine_matrix() -> ModuleType:
     """The engine's own `test_fixture_matrix` module, which holds `MATRIX`."""
-    eval_dir = str(TOOLS / "eval")
+    eval_dir = str(DEV / "eval")
     if eval_dir not in sys.path:
         sys.path.insert(0, eval_dir)
     import engine as launcher

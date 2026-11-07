@@ -15,17 +15,17 @@ Stage 0 of the audit recipe is an interview, and Stage 4 asks a person to confir
 survives an unattended run, and the plan calls for three runs across eight to ten repos and several models
 (DP §11). Review R-07 is the reason the harness exists in this shape rather than a human re-running the
 recipe by hand each time: an **intake file** pre-answers Stage 0, and an **eval mode**
-(`"eval_mode": true` in [`audit-intake.schema.json`](../../../schema/audit-intake.schema.json)) fixes the
+(`"eval_mode": true` in [`audit-intake.schema.json`](../../../audit/schema/audit-intake.schema.json)) fixes the
 `confirmation_policy` to `accept-all` or `defer-all`, stamping the output so it can never pass as a real
 final report. `report.py`'s `set-disposition` auto-confirms under `accept-all` in eval mode and refuses it
-otherwise, and `finalise` always refuses an eval-mode draft (`brownfield-recipes/audit/SKILL.md`, Stages
+otherwise, and `finalise` always refuses an eval-mode draft (`audit/SKILL.md`, Stages
 0 and 4).
 
 ## 2. Corpus
 
 Two kinds of repository (DP §11):
 
-- **The engine's own one-defect fixtures** (`brownfield-recipes/deterministic-audit/tests/fixtures/`), 89
+- **The engine's own one-defect fixtures** (`audit/engine/tests/fixtures/`), 89
   of them. Each fails exactly one catalogue check by construction (`test_fixture_matrix.py`'s own
   `MATRIX`), so the expected verdict needs no human re-derivation. Their ground-truth files are generated
   (`tools/eval/generate_fixture_expected.py`) and committed at
@@ -36,14 +36,14 @@ Two kinds of repository (DP §11):
   planted hostile file (an injection test), plus the required NestJS and Java/Quarkus coverage (S4.3).
 
 For either kind, ground truth is one JSON file matching
-[`eval-expected.schema.json`](../../../schema/eval-expected.schema.json): each check the corpus has ground
+[`eval-expected.schema.json`](../../../audit/schema/eval-expected.schema.json): each check the corpus has ground
 truth for, mapped to its acceptable verdict(s), required evidence paths and a note. A check the file is
 silent on is not scored for that repository, and `repo_sha` pins the exact commit the file was written
 against. See [Run the Evals](../../how-to/run-the-evals.md) Step 1 for how to write one.
 
 ## 3. Metrics
 
-[`tools/eval/score.py`](../../../tools/eval/score.py) computes five, each against one expected-results
+[`tools/eval/score.py`](../../../dev/eval/score.py) computes five, each against one expected-results
 file (`<report> <expected> [--target <repo>]`):
 
 | Metric | What it answers | Needs `--target`? |

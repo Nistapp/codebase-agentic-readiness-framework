@@ -3,7 +3,7 @@
 
 """`DOC` pack — documentation contract.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Key Deliverables.
+Anchor: `docs/framework/phased-approach.md` § Key Deliverables.
 
 Implemented here: `DOC-01` … `DOC-04`. What each check reads, what makes a `PASS`, and the one place
 ``UNKNOWN`` is correct:

@@ -3,7 +3,7 @@
 
 """`CMD` pack — command surface.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Activities.
+Anchor: `docs/framework/phased-approach.md` § Activities.
 
 Implemented here: `CMD-01` … `CMD-04`.
 

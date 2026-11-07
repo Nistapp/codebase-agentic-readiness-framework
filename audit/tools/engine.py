@@ -3,7 +3,7 @@
 
 """Run the deterministic audit engine from any directory, and write its report under the repository's name.
 
-The engine lives in ``../deterministic-audit/`` and is a package named ``audit``. This launcher puts that folder on
+The engine lives in ``../engine/`` and is a package named ``audit``. This launcher puts that folder on
 ``sys.path`` and calls the engine's ``main(argv)`` in this process, so a recipe can run it from any working directory
 with one command and no install (ADR 0001 in the recipes' docs).
 
@@ -52,7 +52,7 @@ INFO = _common.ToolInfo(
     ),
 )
 
-ENGINE_DIR = Path(__file__).resolve().parent.parent / "deterministic-audit"
+ENGINE_DIR = Path(__file__).resolve().parent.parent / "engine"
 REPORT_KIND = "engine-report"
 WARNING_CHARS = 500
 

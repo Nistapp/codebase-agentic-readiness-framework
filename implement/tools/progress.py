@@ -42,6 +42,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
+import _audit_tools_path  # noqa: F401  (puts audit/tools on sys.path in a checkout)
 import _common
 import _jsonschema_subset as subset
 import validate_report
@@ -53,7 +54,12 @@ SUPPORTED_SCHEMA_VERSIONS = ("0.1", "0.2")
 
 RECIPES = Path(__file__).resolve().parent.parent
 FRAMEWORK_ROOT = RECIPES.parent
-STATE_SCHEMA = RECIPES / "schema" / "readiness-state.schema.json"
+# The schemas sit beside the tools in the implement skill bundle (`scripts/schema/`) and in `audit/schema/` in a
+# framework checkout.
+_SCHEMA_DIR = next(
+    (d for d in (RECIPES / "schema", FRAMEWORK_ROOT / "audit" / "schema") if d.is_dir()), RECIPES / "schema"
+)
+STATE_SCHEMA = _SCHEMA_DIR / "readiness-state.schema.json"
 STATE_DIR = Path("docs") / "agentic-readiness"
 STATE_JSON_SUFFIX = "-agentic-readiness-state.json"
 STATE_MD_SUFFIX = "-agentic-readiness-STATE.md"

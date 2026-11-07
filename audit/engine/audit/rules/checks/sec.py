@@ -3,7 +3,7 @@
 
 """`SEC` pack — security hygiene.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Key Deliverables.
+Anchor: `docs/framework/phased-approach.md` § Key Deliverables.
 
 Implemented here: `SEC-01` … `SEC-03`.
 

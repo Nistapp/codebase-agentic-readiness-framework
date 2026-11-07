@@ -29,6 +29,7 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+import _audit_tools_path  # noqa: F401  (puts audit/tools on sys.path in a checkout)
 import _common
 import progress
 import validate_report

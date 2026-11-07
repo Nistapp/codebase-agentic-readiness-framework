@@ -22,7 +22,7 @@ nothing from it.
 | Checks resolved | The catalogue check IDs this playbook closes |
 | Preconditions | The state preferences it reads, the earlier themes it needs, and what must already be true in the repository |
 | Inputs to ask | The tool-choice step: detect what the repository already has (manifests, build plugins, configs, the code index) and use it; if nothing is there, offer two to four current options with pros and cons and a recommendation, in a table. Every other question for the owner |
-| Steps | Generic steps first, then one subsection per stack that points at the stack profile in [`stacks/`](../../stacks/README.md) instead of restating it. Only what is specific to the playbook: the shared procedure is `SKILL.md` Stage 3 |
+| Steps | Generic steps first, then one subsection per stack that points at the stack profile in [`stacks/`](../../audit/stacks/README.md) instead of restating it. Only what is specific to the playbook: the shared procedure is `SKILL.md` Stage 3 |
 | Continue on error | What counts as existing debt for this playbook, how it is counted and recorded, and how the check is wired so the debt cannot grow (ratchet, baseline file, or a report-only step) |
 | Verification | One observable done-criterion per check resolved: the command to run or the file to read, and the expected result |
 | Rollback | How to undo the change: which commits to revert, which files to delete |
@@ -41,7 +41,7 @@ Rules for every playbook:
 
 - A playbook never restates a check's rubric or a requirement; it links to the check file in
   [`audit/checks/`](../../audit/checks/README.md) and to `spec/`.
-- Templates come from `greenfield-bootstrap/templates/` by reference, never copied verbatim into the playbook.
+- Templates come from `greenfield/templates/` by reference, never copied verbatim into the playbook.
 - A playbook does not restate the shared procedure of `SKILL.md` Stages 2 to 4; it links to the stage step.
 - A new playbook name is added to the `playbooks` list of each check it resolves in `catalogue.json`, in the same change
   that writes the file; the framework's recipe linter (`recipe_lint.py`) rejects a playbook name the catalogue does not

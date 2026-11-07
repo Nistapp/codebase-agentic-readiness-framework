@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Adapted from:** the greenfield-bootstrap `AGENTS.md` template v1.1.0, retargeted from npm/TypeScript
+> **Adapted from:** the greenfield (`greenfield/`) `AGENTS.md` template v1.1.0, retargeted from npm/TypeScript
 > to this stdlib-only Python project.
 > **Purpose:** This file governs how AI coding agents (Antigravity, Claude Code, Gemini CLI, opencode, etc.)
 > work inside this repository.
@@ -14,8 +14,8 @@
 `python-agentic-audit` is a **read-only agentic-readiness scanner for existing repositories**. It is the
 brownfield half of the agentic-readiness toolchain: `python-agentic-bootstrap` proves a new project *starts*
 ready; this audit measures how far an existing repository is from the same bar and reports an ordered backlog.
-It is also the deterministic engine of the brownfield recipes in `brownfield-recipes/` ([README](../README.md),
-in development). The "no LLM" rules below bind this engine, not the recipes around it.
+It is also the deterministic engine of the brownfield recipes in `audit/` and `implement/` ([README](../README.md)).
+The "no LLM" rules below bind this engine, not the recipes around it.
 
 It is written in **Python 3.11+ using the standard library only**, with **no install step** — a fresh clone
 runs `python3 -m audit <target>` immediately. That constraint is not stylistic: the audit must run before the
@@ -31,7 +31,7 @@ target's toolchain exists and on a machine where nothing is installed.
   differing only in the provenance timestamp (ADR-0004).
 - **`UNKNOWN` and `ATTEST` earn no credit** and are never rendered as passes. Absence of evidence is not a
   pass.
-- **Standard library only.** No third-party import may ever be added to `audit/` or `tools/`.
+- **Standard library only.** No third-party import may ever be added to `audit/` or `build.py`.
 - **Zero specification drift.** Code and the architecture specs stay synchronized in the same change set.
 - **Empirical grounding.** Never document an aspirational feature as an existing fact; `UNKNOWN` is stated as
   `UNKNOWN`.
@@ -63,7 +63,7 @@ Agents MUST respect the following structural rules.
 | `audit/report/presentation.py` | The Markdown template (sections, columns, editorial wording), in code. |
 | `audit/report/md_render.py` | Generic section/table renderer over the report dict. |
 | `audit/report/md_writer.py` | Thin file-facing Markdown writer over the model. |
-| `tools/build.py` | Zipapp builder producing `dist/audit.pyz`. |
+| `build.py` | Zipapp builder producing `dist/audit.pyz`. |
 | `tests/` | Stdlib `unittest` suite and fixtures. |
 
 ### 2.2 Hard boundary rules
@@ -72,7 +72,7 @@ Agents MUST respect the following structural rules.
    target. The writer refuses to drop a report inside the repository it audits.
 2. **Tier-C probes are opt-in by construction.** A probe runs only when `--run-gates` is set **and** the
    verb is named in `--allow-probe`. There is no default probe.
-3. **No third-party dependency.** `audit/` and `tools/` import from the standard library only. A data file
+3. **No third-party dependency.** `audit/` and `build.py` import from the standard library only. A data file
    cannot ship inside a `.pyz` via `Path(__file__)` — that is why `variants.py` is code, and it stays code.
 4. **The framework is normative.** Where this tool's docs and
    the framework (the root of this repository, [README](../../README.md)) disagree, **the framework wins and this tool has a defect**.
@@ -89,10 +89,10 @@ Agents MUST respect the following structural rules.
 | Language | Python 3.11+ | Standard library only; `from __future__ import annotations`. |
 | Runtime | `python3` | No install step: `python3 -m audit <target>` from a fresh clone. |
 | Tests | stdlib `unittest` | `python3 -m unittest discover -s tests`. No pytest dependency. |
-| Dev tools | ruff, mypy, detect-secrets via `uvx` | Pinned in the root `Makefile` (§3.1). Never imported by `audit/` or `tools/`. |
-| Build | `zipapp` | `python3 tools/build.py` → `dist/audit.pyz`; source tree is the artifact of record. |
+| Dev tools | ruff, mypy, detect-secrets via `uvx` | Pinned in the root `Makefile` (§3.1). Never imported by `audit/` or `build.py`. |
+| Build | `zipapp` | `python3 build.py` → `dist/audit.pyz`; source tree is the artifact of record. |
 | Index | `codebase-memory-mcp` | Mandatory for structural queries (see §4). |
-| Docs | Diátaxis + [`../docs/STYLE_GUIDE.md`](../docs/STYLE_GUIDE.md) | The shared style guide is canonical (see §8). |
+| Docs | Diátaxis + [`../docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) | The shared style guide is canonical (see §8). |
 
 ### 3.1 Standardized command surface
 
@@ -101,16 +101,16 @@ The framework's verbs are the contract. The runner is the **root `Makefile`** of
 
 | Verb | Command | What it covers here |
 |---|---|---|
-| `format` | `make format` | ruff format over `brownfield-recipes/`. |
-| `format:check` | `make format:check` (alias `make format-check`) | ruff format check plus ruff lint rules. |
-| `lint` | `make lint` | ruff lint rules, read-only. |
-| `typecheck` | `make typecheck` | mypy strict, on `brownfield-recipes/tools`, `brownfield-recipes/dev` and this directory's `tools/build.py`. The rest of the engine joins later through a ratchet. |
-| `test` | `make test` | `python3 -m unittest discover -s tests` in this directory, then the recipe tools' suite in `brownfield-recipes/tools/tests`, then the dev checks' in `brownfield-recipes/dev/tests`. |
+| `format` | `make format` | ruff format over `audit`, `implement` and `dev`. |
+| `format:check` | `make format:check` (alias `make format-check`) | ruff format check plus ruff lint rules, over `audit`, `implement` and `dev`, counted against `.quality-baseline.json`. |
+| `lint` | `make lint` | ruff lint rules over `audit`, `implement` and `dev`, read-only. |
+| `typecheck` | `make typecheck` | mypy strict, on `audit/tools`, `implement/tools`, `dev` and this directory's `build.py`. The rest of the engine joins later through a ratchet. |
+| `test` | `make test` | `python3 -m unittest discover -s tests` in this directory, then the audit tools' suite in `audit/tools/tests`, the implement tools' in `implement/tools/tests`, then the dev checks' in `dev/tests`. |
 | `check` | `make check` | `format:check`, `typecheck`, `test`, `--verify-rules`, the schema cross-check (`crosscheck`) and `recipe-lint`. |
 | `security` | `make security` | Secrets scan against the committed baseline. No dependency audit: there are no dependencies. |
 
 The dev tools (ruff, mypy, detect-secrets) are pinned in the Makefile and run through `uvx`. They are never imported
-by `audit/` or `tools/`, so the standard-library-only rule stands.
+by the engine's `audit/` package or by `build.py`, so the standard-library-only rule stands.
 
 Commands that run the engine itself, from this directory:
 
@@ -119,7 +119,7 @@ python3 -m unittest discover -s tests                                   # the te
 python3 -m audit --list-checks                                          # catalogue: implemented vs planned
 python3 -m audit --list-checks --format json                            # the same, as JSON
 python3 -m audit --verify-rules                                         # every anchor must resolve
-python3 tools/build.py && ./dist/audit.pyz --list-checks                # the single-file distributable
+python3 build.py && ./dist/audit.pyz --list-checks                      # the single-file distributable
 ```
 
 > [!IMPORTANT]
@@ -154,7 +154,7 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 
 - **Types:** annotate public functions and return types (PEP 484 / PEP 604). Use `from __future__ import
   annotations`. No untyped pass-through.
-- **No third-party imports** anywhere in `audit/` or `tools/`. If a capability needs a library, it does not
+- **No third-party imports** anywhere in `audit/` or `build.py`. If a capability needs a library, it does not
   ship in v1.
 - **Determinism is a requirement, not a nicety:** sort traversal and check evaluation; never use wall-clock
   time inside a verdict; derive finding ids from `check id + path`, never from a counter.
@@ -189,7 +189,7 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 ## 7. Git Conventions
 
 > [!NOTE]
-> This tool now lives inside the framework repository, under `brownfield-recipes/deterministic-audit/`, and
+> This tool now lives inside the framework repository, under `audit/engine/`, and
 > its original history is preserved there. Branches and commits follow the repository's own conventions; the
 > bullets below describe this tool's own conventions.
 
@@ -207,13 +207,13 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 
 - **Single source of truth:** `docs/` is the sole canonical home for permanent knowledge. `artefacts/` is
   transient scratch (see §4).
-- **Canonical rules:** the shared style guide, [`../docs/STYLE_GUIDE.md`](../docs/STYLE_GUIDE.md), holds the
+- **Canonical rules:** the shared style guide, [`../docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md), holds the
   authoring rules. Link to it; do **not** restate its rules elsewhere, because restated rules drift.
 - **Doc router:** `docs/architecture/README.md` is the entry point and the ADR index.
 - **Categories (Diátaxis):** tutorial, how-to, reference, explanation; architecture material lives under
   `docs/architecture/`.
 - **ADRs:** `docs/architecture/adrs/NNNN-short-title.md`, created from
-  [`../docs/templates/adr-template.md`](../docs/templates/adr-template.md), indexed in `docs/architecture/README.md`. Revise in place — there is no
+  [`../docs/templates/adr-template.md`](../../docs/templates/adr-template.md), indexed in `docs/architecture/README.md`. Revise in place — there is no
   `Superseded` or `Deprecated` status, no tombstones, and a retired sequence number is never reused.
 - **Definition of done:** when a change alters a public interface, observable behaviour, architecture, a
   check's semantics, or an ADR, update the affected documentation pages, their source line anchors, and the
@@ -242,7 +242,7 @@ python3 tools/build.py && ./dist/audit.pyz --list-checks                # the si
 
 1. ❌ **Do not** write, or cause a write, anywhere inside the scanned target. Output goes to `--out`.
 2. ❌ **Do not** run a Tier-C probe without `--run-gates` **and** an explicit `--allow-probe` verb.
-3. ❌ **Do not** add a third-party import to `audit/` or `tools/`. Standard library only.
+3. ❌ **Do not** add a third-party import to `audit/` or `build.py`. Standard library only.
 4. ❌ **Do not** treat `UNKNOWN` or `ATTEST` as a pass, in code or in prose.
 5. ❌ **Do not** call an LLM or make a network request by default. Determinism depends on this.
 6. ❌ **Do not** move secret redaction out of capture time.

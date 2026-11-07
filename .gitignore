@@ -5,7 +5,8 @@ __pycache__/
 .ruff_cache/
 
 # build output (root-scoped so fixture directories that deliberately use these names are still committed)
-/brownfield-recipes/dist/
+/dev/dist/
+/audit/engine/dist/
 # `make self-audit` output
 /dist/
 *.pyz

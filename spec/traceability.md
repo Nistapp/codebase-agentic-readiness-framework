@@ -2,7 +2,7 @@
 
 Maps the checks of the audit engine to the [requirements](readiness-requirements.md) they verify, and the requirements back to the checks. The `Checks` field of a requirement is authoritative. This page is its inverse, built from those fields on 2026-10-09; a test keeps the two in step.
 
-Check IDs and severities are those of the [check catalogue](../brownfield-recipes/catalogue.json). A test checks this page against it.
+Check IDs and severities are those of the [check catalogue](../audit/catalogue.json). A test checks this page against it.
 
 ## Checks to requirements
 

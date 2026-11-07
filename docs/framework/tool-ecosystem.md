@@ -3,7 +3,7 @@
 ## Methodology vs. Tooling
 
 > [!IMPORTANT]
-> The methodology described in this framework stands on its own. A team can follow the [legacy phased approach](../brownfield-legacy/Phased-Approach.md) or the [greenfield initialization recipe](../greenfield-bootstrap/README.md) manually without any of the tools listed below. The tools **accelerate adoption** but are not prerequisites.
+> The methodology described in this framework stands on its own. A team can follow the [legacy phased approach](phased-approach.md) or the [greenfield initialization recipe](../../greenfield/README.md) manually without any of the tools listed below. The tools **accelerate adoption** but are not prerequisites.
 
 The agentic-ready approach has two distinct layers:
 
@@ -31,8 +31,8 @@ graph TB
         T5["agentic-contracts"]
         T6["agentic-characterize"]
         T7["agentic-repoDocs"]
-        T8["deterministic-audit"]
-        T9["brownfield-recipes"]
+        T8["audit engine"]
+        T9["audit and implement recipes"]
     end
 
     T8 -.-> M1
@@ -63,9 +63,9 @@ A well-prepared codebase should give exceptional results with **any** coding age
 |------|--------|-------|-------------|
 | `codebase-memory-mcp` | ✅ Available | 1–7 | Core intelligence layer. Indexes symbols, relationships, dependencies, tests, contracts. Queried by all phases. |
 | `agentic-tdd` | ✅ Available | 5 | Supports controlled, test-driven feature development and refactoring with AI agents. |
-| [`deterministic-audit`](../brownfield-recipes/deterministic-audit/README.md) | ✅ Available | 1 | A read-only, standard-library Python scanner. It checks an existing repository against the Phase 1 readiness checks, with no LLM and no network, and writes a JSON and Markdown report. Run it from a clone of this repository; it is not yet released as a package. |
-| [`brownfield-recipes`](../brownfield-recipes/README.md) | ✅ Available | 1 | LLM-driven recipes for existing repositories, v0.2.0: the audit recipe runs today, end to end, as a `SKILL.md` bundle any coding agent with shell access can install. Builds on `deterministic-audit` and adds model judgment backed by cited evidence. The second recipe, which implements confirmed findings on a branch, is the next row. |
-| [`brownfield-recipes` implement recipe](../brownfield-recipes/implement/SKILL.md) | ✅ Available | 1 | v0.2.0: all six stages (intake to close-out), the state tools (`progress.py`, `check_drift.py`, `compare_reports.py`) and the thirteen playbooks, bundled by `tools/build_skills.py` as the `agentic-readiness-implement` skill. Applied to two real repositories; see the [worked example](../brownfield-recipes/schema/examples/server-worked-example/README.md). |
+| [audit engine (`audit/engine/`)](../../audit/engine/README.md) | ✅ Available | 1 | A read-only, standard-library Python scanner. It checks an existing repository against the Phase 1 readiness checks, with no LLM and no network, and writes a JSON and Markdown report. Run it from a clone of this repository; it is not yet released as a package. |
+| [audit recipe (`audit/`)](../../audit/README.md) | ✅ Available | 1 | LLM-driven recipes for existing repositories, v0.2.0: the audit recipe runs today, end to end, as a `SKILL.md` bundle any coding agent with shell access can install. Builds on the audit engine and adds model judgment backed by cited evidence. The second recipe, which implements confirmed findings on a branch, is the next row. |
+| [implement recipe (`implement/`)](../../implement/SKILL.md) | ✅ Available | 1 | v0.2.0: all six stages (intake to close-out), the state tools (`progress.py`, `check_drift.py`, `compare_reports.py`) and the thirteen playbooks, bundled by `dev/build_skills.py` as the `agentic-readiness-implement` skill. Applied to two real repositories; see the [worked example](../../audit/schema/examples/server-worked-example/README.md). |
 | `agentic-docstrings` | 📋 Planned | 2 | Will generate and maintain source-level documentation (docstrings, parameter descriptions, side effects). |
 | `agentic-agentDocs` | 📋 Planned | 3 | Will create structured, agent-oriented documentation and task-specific context packs. |
 | `agentic-contracts` | 💡 Aspirational | 4 | Will generate and validate API contracts, event schemas, and consumer-provider relationships. |
@@ -88,8 +88,8 @@ graph TB
     subgraph "✅ Available"
         T1["codebase-memory-mcp\n(Phase 1–7)"]
         T2["agentic-tdd\n(Phase 5)"]
-        T8["deterministic-audit\n(Phase 1)"]
-        T9["brownfield-recipes\n(Phase 1, v0.2.0)"]
+        T8["audit engine\n(Phase 1)"]
+        T9["audit and implement recipes\n(Phase 1, v0.2.0)"]
     end
     subgraph "📋 Planned"
         T3["agentic-docstrings\n(Phase 2)"]
@@ -136,13 +136,13 @@ copying, and treat this repository as the source of truth over any restatement h
 
 ## Shared Conventions
 
-All tools will be published as independent open-source packages, each focused on a single responsibility. Node and TypeScript tools will be npm packages. Python tools, such as `deterministic-audit`, use only the standard library and run from a checkout or from a single-file `.pyz`, so they need no install step. The audit recipe already ships this way: `tools/build_skills.py` builds a self-contained agent skill (`SKILL.md` bundle) together with the Python tools it calls, installable with no checkout of the source repository. The implementation recipe follows the same pattern as a second bundle, installed beside the audit one. All of them share, or will share, common conventions for:
+All tools will be published as independent open-source packages, each focused on a single responsibility. Node and TypeScript tools will be npm packages. Python tools, such as the audit engine, use only the standard library and run from a checkout or from a single-file `.pyz`, so they need no install step. The audit recipe already ships this way: `dev/build_skills.py` builds a self-contained agent skill (`SKILL.md` bundle) together with the Python tools it calls, installable with no checkout of the source repository. The implementation recipe follows the same pattern as a second bundle, installed beside the audit one. All of them share, or will share, common conventions for:
 
 - **Configuration** — consistent config file formats and defaults.
 - **Reporting** — structured output with provenance metadata.
 - **Verification** — each tool validates its own output before committing.
-- **Integration** — the tools that read code query and update `codebase-memory-mcp`. `deterministic-audit` reads the repository itself and only checks that an index exists.
+- **Integration** — the tools that read code query and update `codebase-memory-mcp`. The audit engine reads the repository itself and only checks that an index exists.
 
 ---
 
-← [Home](../README.md) · [Legacy Phased Approach](../brownfield-legacy/Phased-Approach.md) · [Risks and Mitigations](Risks-and-Mitigations.md)
+← [Home](../../README.md) · [Legacy Phased Approach](phased-approach.md) · [Risks and Mitigations](risks-and-mitigations.md)

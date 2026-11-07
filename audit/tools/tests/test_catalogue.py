@@ -3,7 +3,7 @@
 
 """The check catalogue agrees with the engine, the spec and the traceability page.
 
-`brownfield-recipes/catalogue.json` is the one machine-readable source of check metadata. These tests
+`audit/catalogue.json` is the one machine-readable source of check metadata. These tests
 keep it honest. Every engine check must appear in it exactly as the engine reports it. Every
 requirement's `Checks` field must say what the catalogue says, and the other way round. Anything that
 decides a verdict is covered by the fingerprint, so a change to it cannot pass without the version
@@ -24,9 +24,9 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-RECIPES = REPO_ROOT / "brownfield-recipes"
-ENGINE = RECIPES / "deterministic-audit"
-CATALOGUE = RECIPES / "catalogue.json"
+AUDIT = REPO_ROOT / "audit"
+ENGINE = AUDIT / "engine"
+CATALOGUE = AUDIT / "catalogue.json"
 REQUIREMENTS = REPO_ROOT / "spec" / "readiness-requirements.md"
 TRACEABILITY = REPO_ROOT / "spec" / "traceability.md"
 

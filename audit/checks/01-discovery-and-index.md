@@ -1,7 +1,7 @@
 # Discovery and Index (`IDX`)
 
 > Follows the anatomy in [`README.md`](README.md). Three checks, all `method: automated`. See
-> [Why These Checks §2](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#2-discovery-and-index-idx)
+> [Why These Checks §2](../engine/docs/architecture/user-overview/03-why-these-checks.md#2-discovery-and-index-idx)
 > for the consequence behind this family: an agent that cannot query structure falls back to `grep` and
 > whole-file reads, so every downstream phase of the framework depends on `codebase-memory-mcp`.
 
@@ -11,7 +11,7 @@
 
 Why it matters   Every later check and playbook assumes an agent can reach the index; without
                   registration an agent has no way to discover that one should exist
-                  ([`brownfield-legacy/Phased-Approach.md` § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([`docs/framework/phased-approach.md` § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `IDX-01`. Reads project-level MCP configs inside the target (`opencode.json`/`.jsonc`,
                  `.mcp.json`, `.cursor/mcp.json`, `.vscode/mcp.json`, `.gemini/settings.json`,
@@ -49,7 +49,7 @@ Pitfalls         A user-level config registers every checkout on the machine, in
 
 Why it matters   An index of a different checkout is worse than none: it answers confidently with
                   structure that no longer exists
-                  ([`brownfield-legacy/Phased-Approach.md` § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([`docs/framework/phased-approach.md` § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         BLOCKER
 Engine           `IDX-02`. Resolves the index store by a fixed order (the `AUDIT_INDEX_STORE` override,
                  then `~/.codebase-memory/`, `~/.cache/codebase-memory/`, `~/.cache/codebase-memory-mcp/`,
@@ -85,7 +85,7 @@ Pitfalls         The store is machine-local; a developer who keeps it at a non-d
 
 Why it matters   A stale graph is stale context: an agent edits based on symbols that have already moved
                   or been deleted
-                  ([`brownfield-legacy/Phased-Approach.md` § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([`docs/framework/phased-approach.md` § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `IDX-03`, Tier C only (`--run-gates`); without probes the engine reports `UNKNOWN` by
                  construction. Compares the store's recorded git revision against `target.git_sha` when the

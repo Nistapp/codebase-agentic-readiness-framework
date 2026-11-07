@@ -5,8 +5,9 @@
 playbook references and the tool catalogue) has a fixture that passes it and one that breaks it, and the tool
 honours the contract (envelope, exit codes, nothing written unless `--write-catalogue` is given).
 
-A fixture is a small repository tree built in a temporary folder, with its own `brownfield-recipes/` so the tool
-sees a real target. The project's own documentation is linted too, as the standing proof that the rule set the
+A fixture is a small repository tree built in a temporary folder, with its own `audit/` (the folder that marks a
+framework repository) so the tool sees a real target; recipe Markdown goes under `audit/`, `implement/` or
+`docs/`, tools under `audit/tools/` or `implement/tools/`. The project's own documentation is linted too, as the standing proof that the rule set the
 tool enforces is the rule set the docs already meet. Standard library only.
 """
 
@@ -20,12 +21,11 @@ import unittest
 from pathlib import Path
 from typing import Any, Sequence
 
-import _paths
+import _dev_paths  # noqa: F401
 import _common
 import recipe_lint as rl
 
-TOOLS = _paths.TOOLS
-REPO_ROOT = TOOLS.parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def call(argv: Sequence[str]) -> tuple[int, dict[str, Any], str]:
@@ -35,11 +35,11 @@ def call(argv: Sequence[str]) -> tuple[int, dict[str, Any], str]:
 
 
 class FixtureRepo:
-    """A temporary directory with a `brownfield-recipes/` subfolder, built up file by file."""
+    """A temporary directory with an `audit/` subfolder, built up file by file."""
 
     def __init__(self, root: Path) -> None:
         self.root = root
-        (self.root / "brownfield-recipes").mkdir()
+        (self.root / "audit").mkdir()
 
     def write(self, relative: str, content: str) -> Path:
         path = self.root / relative
@@ -49,7 +49,7 @@ class FixtureRepo:
 
     def write_catalogue(self, checks: list[dict[str, Any]]) -> Path:
         return self.write(
-            "brownfield-recipes/catalogue.json",
+            "audit/catalogue.json",
             json.dumps({"catalogue_version": "0.1.0", "fingerprint": "0" * 16, "checks": checks}),
         )
 
@@ -68,8 +68,8 @@ class FixtureTests(unittest.TestCase):
         files = rl.find_markdown(self.repo.root)
         return rl.lint(self.repo.root, files, describe_timeout=describe_timeout)
 
-    def write_tool(self, name: str, source: str) -> Path:
-        return self.repo.write(f"brownfield-recipes/tools/{name}.py", source)
+    def write_tool(self, name: str, source: str, folder: str = "audit/tools") -> Path:
+        return self.repo.write(f"{folder}/{name}.py", source)
 
 
 # --- The markdown sweep ----------------------------------------------------------------------------------
@@ -77,19 +77,19 @@ class FixtureTests(unittest.TestCase):
 
 class FindMarkdownTests(FixtureTests):
     def test_a_file_under_dist_is_never_swept(self) -> None:
-        self.repo.write("brownfield-recipes/docs/reference/kept.md", "# Kept\n")
+        self.repo.write("docs/reference/kept.md", "# Kept\n")
         self.repo.write(
-            "brownfield-recipes/dist/skills/agentic-readiness-audit/SKILL.md",
+            "audit/dist/skills/agentic-readiness-audit/SKILL.md",
             "---\nname: audit\ndescription: x\n---\n\n[broken](../does-not-exist.md)\n",
         )
         files = rl.find_markdown(self.repo.root)
         relative = {path.relative_to(self.repo.root).as_posix() for path in files}
-        self.assertIn("brownfield-recipes/docs/reference/kept.md", relative)
-        self.assertFalse(any(path.startswith("brownfield-recipes/dist/") for path in relative))
+        self.assertIn("docs/reference/kept.md", relative)
+        self.assertFalse(any(path.startswith("audit/dist/") for path in relative))
 
     def test_a_broken_link_under_dist_does_not_fail_the_lint(self) -> None:
         self.repo.write(
-            "brownfield-recipes/dist/skills/agentic-readiness-audit/SKILL.md",
+            "audit/dist/skills/agentic-readiness-audit/SKILL.md",
             "---\nname: audit\ndescription: x\n---\n\n[broken](../does-not-exist.md)\n",
         )
         outcome = self.lint()
@@ -102,24 +102,32 @@ class RootPageLinkTests(FixtureTests):
         return rl.lint(self.repo.root, files, root_pages=rl.find_root_pages(self.repo.root))
 
     def test_the_root_pages_are_found(self) -> None:
-        for relative in ("README.md", "shared/A.md", "spec/B.md", "brownfield-legacy/C.md", "other/D.md"):
+        for relative in ("README.md", "spec/B.md", "greenfield/C.md", "other/D.md", "docs/framework/E.md"):
             self.repo.write(relative, "# T\n")
         found = {path.relative_to(self.repo.root).as_posix() for path in rl.find_root_pages(self.repo.root)}
-        self.assertEqual(found, {"README.md", "shared/A.md", "spec/B.md", "brownfield-legacy/C.md"})
+        self.assertEqual(found, {"README.md", "spec/B.md", "greenfield/C.md"})
 
-    def test_a_broken_link_in_a_root_page_is_reported(self) -> None:
-        self.repo.write("shared/Glossary.md", "# G\n\n[gone](Missing.md)\n")
+    def test_the_framework_pages_under_docs_framework_are_recipe_markdown(self) -> None:
+        self.repo.write("docs/framework/glossary.md", "# G\n\n[gone](missing.md)\n")
+        files = {path.relative_to(self.repo.root).as_posix() for path in rl.find_markdown(self.repo.root)}
+        self.assertIn("docs/framework/glossary.md", files)
         errors = self.lint_root_pages().errors
         self.assertEqual(len(errors), 1)
-        self.assertIn("shared/Glossary.md:3", errors[0])
+        self.assertIn("docs/framework/glossary.md:3", errors[0])
+
+    def test_a_broken_link_in_a_root_page_is_reported(self) -> None:
+        self.repo.write("greenfield/Glossary.md", "# G\n\n[gone](Missing.md)\n")
+        errors = self.lint_root_pages().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("greenfield/Glossary.md:3", errors[0])
 
     def test_a_good_link_and_anchor_in_a_root_page_pass(self) -> None:
-        self.repo.write("README.md", "# R\n\n[g](shared/Glossary.md#terms)\n")
-        self.repo.write("shared/Glossary.md", "# G\n\n## Terms\n")
+        self.repo.write("README.md", "# R\n\n[g](spec/Glossary.md#terms)\n")
+        self.repo.write("spec/Glossary.md", "# G\n\n## Terms\n")
         self.assertEqual(self.lint_root_pages().errors, [])
 
     def test_the_template_placeholders_are_skipped(self) -> None:
-        self.repo.write("greenfield-bootstrap/templates/docs/STYLE_GUIDE.md", "# S\n\n[x](../src/core/a.ts#L1)\n")
+        self.repo.write("greenfield/templates/docs/STYLE_GUIDE.md", "# S\n\n[x](../src/core/a.ts#L1)\n")
         self.assertEqual(self.lint_root_pages().errors, [])
 
     def test_root_pages_get_no_other_check(self) -> None:
@@ -132,49 +140,47 @@ class RootPageLinkTests(FixtureTests):
 
 class LinkTests(FixtureTests):
     def test_a_relative_link_to_an_existing_file_resolves(self) -> None:
-        self.repo.write("brownfield-recipes/docs/target.md", "# Target\n")
-        self.repo.write("brownfield-recipes/docs/source.md", "See [target](target.md).\n")
+        self.repo.write("docs/target.md", "# Target\n")
+        self.repo.write("docs/source.md", "See [target](target.md).\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_a_relative_link_to_a_missing_file_is_reported(self) -> None:
-        source = self.repo.write("brownfield-recipes/docs/source.md", "See [gone](nowhere.md).\n")
+        source = self.repo.write("docs/source.md", "See [gone](nowhere.md).\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn(str(source), errors[0])
         self.assertIn("no such file", errors[0])
 
     def test_a_link_that_climbs_out_of_the_root_is_reported(self) -> None:
-        self.repo.write("brownfield-recipes/docs/source.md", "See [out](../../../../etc/passwd).\n")
+        self.repo.write("docs/source.md", "See [out](../../../../etc/passwd).\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("leaves", errors[0])
 
-    def test_a_link_can_climb_out_of_brownfield_recipes_but_stay_in_the_root(self) -> None:
-        self.repo.write("brownfield-legacy/Phased-Approach.md", "# Phase 1\n")
-        self.repo.write(
-            "brownfield-recipes/docs/source.md", "See [legacy](../../brownfield-legacy/Phased-Approach.md).\n"
-        )
+    def test_a_link_can_climb_out_of_the_recipe_folders_but_stay_in_the_root(self) -> None:
+        self.repo.write("greenfield/README.md", "# Greenfield\n")
+        self.repo.write("audit/checks/source.md", "See [greenfield](../../greenfield/README.md).\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_an_external_link_is_never_checked(self) -> None:
-        self.repo.write("brownfield-recipes/docs/source.md", "See [spec](https://example.invalid/nowhere).\n")
+        self.repo.write("docs/source.md", "See [spec](https://example.invalid/nowhere).\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_a_heading_anchor_resolves(self) -> None:
-        self.repo.write("brownfield-recipes/docs/target.md", "# Output files\n")
-        self.repo.write("brownfield-recipes/docs/source.md", "See [files](target.md#output-files).\n")
+        self.repo.write("docs/target.md", "# Output files\n")
+        self.repo.write("docs/source.md", "See [files](target.md#output-files).\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_a_heading_anchor_with_no_matching_heading_is_reported(self) -> None:
-        self.repo.write("brownfield-recipes/docs/target.md", "# Output files\n")
-        self.repo.write("brownfield-recipes/docs/source.md", "See [files](target.md#input-files).\n")
+        self.repo.write("docs/target.md", "# Output files\n")
+        self.repo.write("docs/source.md", "See [files](target.md#input-files).\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("matches no heading", errors[0])
 
     def test_a_same_file_anchor_resolves(self) -> None:
         self.repo.write(
-            "brownfield-recipes/docs/source.md",
+            "docs/source.md",
             "# Top\n\nSee [top](#top) again.\n",
         )
         self.assertEqual(self.lint().errors, [])
@@ -183,42 +189,42 @@ class LinkTests(FixtureTests):
         # "REQ-SH-022 -- `check` composes" style heading: the backticked word survives, the double space
         # either side of the dropped em dash gives a double hyphen (confirmed against this repository's own
         # anchors in test_the_projects_own_docs_are_clean).
-        self.repo.write("brownfield-recipes/docs/target.md", "### REQ-SH-022 — `check` composes the verbs\n")
+        self.repo.write("docs/target.md", "### REQ-SH-022 — `check` composes the verbs\n")
         self.repo.write(
-            "brownfield-recipes/docs/source.md",
+            "docs/source.md",
             "See [req](target.md#req-sh-022--check-composes-the-verbs).\n",
         )
         self.assertEqual(self.lint().errors, [])
 
     def test_a_line_range_anchor_in_range_resolves(self) -> None:
-        self.repo.write("brownfield-recipes/tools/thing.py", "\n".join(f"line {n}" for n in range(1, 11)) + "\n")
-        self.repo.write("brownfield-recipes/docs/source.md", "See [thing](../tools/thing.py#L2-L5).\n")
+        self.repo.write("audit/tools/thing.py", "\n".join(f"line {n}" for n in range(1, 11)) + "\n")
+        self.repo.write("docs/source.md", "See [thing](../audit/tools/thing.py#L2-L5).\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_a_line_range_anchor_out_of_range_is_reported(self) -> None:
-        self.repo.write("brownfield-recipes/tools/thing.py", "one line\n")
-        self.repo.write("brownfield-recipes/docs/source.md", "See [thing](../tools/thing.py#L1-L99).\n")
+        self.repo.write("audit/tools/thing.py", "one line\n")
+        self.repo.write("docs/source.md", "See [thing](../audit/tools/thing.py#L1-L99).\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("out of range", errors[0])
 
     def test_a_malformed_line_anchor_is_reported(self) -> None:
-        self.repo.write("brownfield-recipes/tools/thing.py", "one line\n")
-        self.repo.write("brownfield-recipes/docs/source.md", "See [thing](../tools/thing.py#notaline).\n")
+        self.repo.write("audit/tools/thing.py", "one line\n")
+        self.repo.write("docs/source.md", "See [thing](../audit/tools/thing.py#notaline).\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("not L<n>", errors[0])
 
     def test_a_placeholder_link_under_docs_templates_is_skipped(self) -> None:
         self.repo.write(
-            "brownfield-recipes/docs/templates/architecture-doc-template.md",
+            "docs/templates/architecture-doc-template.md",
             "> **Related ADRs:** [ADR-NNNN](../architecture/adrs/NNNN-title.md)\n",
         )
         self.assertEqual(self.lint().errors, [])
 
     def test_a_link_inside_a_fenced_code_block_is_not_checked(self) -> None:
         self.repo.write(
-            "brownfield-recipes/docs/source.md",
+            "docs/source.md",
             "```text\nSee [gone](nowhere.md).\n```\n",
         )
         self.assertEqual(self.lint().errors, [])
@@ -230,20 +236,20 @@ class LinkTests(FixtureTests):
 class FrontmatterTests(FixtureTests):
     def test_valid_frontmatter_passes(self) -> None:
         self.repo.write(
-            "brownfield-recipes/audit/SKILL.md",
+            "audit/SKILL.md",
             "---\nname: audit\ndescription: Audit a repository for agentic readiness.\n---\n\n# Audit\n",
         )
         self.assertEqual(self.lint().errors, [])
 
     def test_missing_frontmatter_is_reported(self) -> None:
-        self.repo.write("brownfield-recipes/audit/SKILL.md", "# Audit\n\nNo frontmatter here.\n")
+        self.repo.write("audit/SKILL.md", "# Audit\n\nNo frontmatter here.\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("frontmatter", errors[0])
 
     def test_an_uppercase_name_is_reported(self) -> None:
         self.repo.write(
-            "brownfield-recipes/audit/SKILL.md",
+            "audit/SKILL.md",
             "---\nname: Audit\ndescription: Audit a repository.\n---\n\n# Audit\n",
         )
         errors = self.lint().errors
@@ -253,7 +259,7 @@ class FrontmatterTests(FixtureTests):
     def test_a_name_over_64_characters_is_reported(self) -> None:
         long_name = "a" * 65
         self.repo.write(
-            f"brownfield-recipes/{long_name}/SKILL.md",
+            f"audit/{long_name}/SKILL.md",
             f"---\nname: {long_name}\ndescription: Audit a repository.\n---\n\n# Audit\n",
         )
         errors = self.lint().errors
@@ -262,7 +268,7 @@ class FrontmatterTests(FixtureTests):
 
     def test_a_name_that_does_not_match_its_folder_is_reported(self) -> None:
         self.repo.write(
-            "brownfield-recipes/audit/SKILL.md",
+            "audit/SKILL.md",
             "---\nname: implement\ndescription: Audit a repository.\n---\n\n# Audit\n",
         )
         errors = self.lint().errors
@@ -270,14 +276,14 @@ class FrontmatterTests(FixtureTests):
         self.assertIn("must match its folder", errors[0])
 
     def test_a_missing_description_is_reported(self) -> None:
-        self.repo.write("brownfield-recipes/audit/SKILL.md", "---\nname: audit\n---\n\n# Audit\n")
+        self.repo.write("audit/SKILL.md", "---\nname: audit\n---\n\n# Audit\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("no 'description'", errors[0])
 
     def test_a_description_over_1024_characters_is_reported(self) -> None:
         self.repo.write(
-            "brownfield-recipes/audit/SKILL.md",
+            "audit/SKILL.md",
             "---\nname: audit\ndescription: " + "x" * 1025 + "\n---\n\n# Audit\n",
         )
         errors = self.lint().errors
@@ -293,28 +299,28 @@ class SizeTests(FixtureTests):
         body = "---\nname: audit\ndescription: Audit a repository.\n---\n\n" + "\n".join(
             f"line {n}" for n in range(rl.LINE_BUDGET - 5)
         )
-        self.repo.write("brownfield-recipes/audit/SKILL.md", body + "\n")
+        self.repo.write("audit/SKILL.md", body + "\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_a_skill_md_over_the_budget_is_reported(self) -> None:
         body = "---\nname: audit\ndescription: Audit a repository.\n---\n\n" + "\n".join(
             f"line {n}" for n in range(rl.LINE_BUDGET + 5)
         )
-        self.repo.write("brownfield-recipes/audit/SKILL.md", body + "\n")
+        self.repo.write("audit/SKILL.md", body + "\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("the budget is", errors[0])
 
     def test_a_check_family_file_over_the_budget_is_reported(self) -> None:
         body = "\n".join(f"line {n}" for n in range(rl.LINE_BUDGET + 5))
-        self.repo.write("brownfield-recipes/audit/checks/01-discovery-and-index.md", body + "\n")
+        self.repo.write("audit/checks/01-discovery-and-index.md", body + "\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("01-discovery-and-index.md", errors[0])
 
     def test_a_long_file_outside_audit_checks_is_not_budgeted(self) -> None:
         body = "\n".join(f"line {n}" for n in range(rl.LINE_BUDGET + 5))
-        self.repo.write("brownfield-recipes/docs/01-not-a-check-family-file.md", body + "\n")
+        self.repo.write("docs/01-not-a-check-family-file.md", body + "\n")
         self.assertEqual(self.lint().errors, [])
 
 
@@ -346,47 +352,47 @@ COUNTING_TOOL = (
 class ToolReferenceTests(FixtureTests):
     def test_a_tool_that_exists_and_describes_itself_passes(self) -> None:
         self.write_tool("thing", GOOD_TOOL)
-        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        self.repo.write("docs/source.md", "Run `audit/tools/thing.py`.\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_a_missing_tool_is_reported(self) -> None:
-        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/gone.py`.\n")
+        self.repo.write("docs/source.md", "Run `audit/tools/gone.py`.\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("does not exist", errors[0])
 
     def test_a_tool_that_exits_nonzero_on_describe_is_reported(self) -> None:
         self.write_tool("thing", BROKEN_EXIT_TOOL)
-        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        self.repo.write("docs/source.md", "Run `audit/tools/thing.py`.\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("exited 3: boom", errors[0])
 
     def test_a_tool_that_prints_invalid_json_is_reported(self) -> None:
         self.write_tool("thing", INVALID_JSON_TOOL)
-        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        self.repo.write("docs/source.md", "Run `audit/tools/thing.py`.\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("no valid JSON envelope", errors[0])
 
     def test_a_tool_that_says_ok_false_on_describe_is_reported(self) -> None:
         self.write_tool("thing", NOT_OK_TOOL)
-        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        self.repo.write("docs/source.md", "Run `audit/tools/thing.py`.\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("printed ok: False", errors[0])
 
     def test_a_tool_that_does_not_finish_in_time_is_reported(self) -> None:
         self.write_tool("thing", SLOW_TOOL)
-        self.repo.write("brownfield-recipes/docs/source.md", "Run `brownfield-recipes/tools/thing.py`.\n")
+        self.repo.write("docs/source.md", "Run `audit/tools/thing.py`.\n")
         errors = self.lint(describe_timeout=0.2).errors
         self.assertEqual(len(errors), 1)
         self.assertIn("did not finish within 0.2s", errors[0])
 
     def test_a_reference_inside_a_fenced_synopsis_is_still_checked(self) -> None:
         self.repo.write(
-            "brownfield-recipes/docs/source.md",
-            "```text\npython3 brownfield-recipes/tools/gone.py <target>\n```\n",
+            "docs/source.md",
+            "```text\npython3 audit/tools/gone.py <target>\n```\n",
         )
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
@@ -394,24 +400,45 @@ class ToolReferenceTests(FixtureTests):
 
     def test_a_tbd_line_is_skipped(self) -> None:
         self.repo.write(
-            "brownfield-recipes/docs/source.md",
-            "- TBD: `python3 brownfield-recipes/tools/gone.py show` does the thing.\n",
+            "docs/source.md",
+            "- TBD: `python3 audit/tools/gone.py show` does the thing.\n",
         )
         self.assertEqual(self.lint().errors, [])
 
     def test_a_bare_tools_reference_with_no_prefix_is_never_checked(self) -> None:
-        self.repo.write("brownfield-recipes/docs/source.md", "Run `tools/gone.py`, someone else's tool.\n")
+        self.repo.write("docs/source.md", "Run `tools/gone.py`, someone else's tool.\n")
+        self.assertEqual(self.lint().errors, [])
+
+    def test_an_implement_tool_resolves_in_implement_tools(self) -> None:
+        self.write_tool("thing", GOOD_TOOL, folder="implement/tools")
+        self.repo.write(
+            "implement/SKILL.md", "---\nname: implement\ndescription: x\n---\n\n`implement/tools/thing.py`\n"
+        )
+        self.assertEqual(self.lint().errors, [])
+
+    def test_a_tool_cited_under_the_wrong_folder_is_reported(self) -> None:
+        self.write_tool("thing", GOOD_TOOL, folder="implement/tools")
+        self.repo.write("docs/source.md", "Run `audit/tools/thing.py`.\n")
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("the tool audit/tools/thing.py does not exist", errors[0])
+
+    def test_another_folders_tools_ending_in_audit_are_never_checked(self) -> None:
+        self.repo.write(
+            "docs/source.md",
+            "Run `audit/engine/tools/build.py` or `deterministic-audit/tools/build.py`, the engine's own.\n",
+        )
         self.assertEqual(self.lint().errors, [])
 
     def test_a_tool_cited_twice_is_described_only_once(self) -> None:
         tool = self.write_tool("thing", COUNTING_TOOL)
         self.repo.write(
-            "brownfield-recipes/docs/a.md",
-            "Run `brownfield-recipes/tools/thing.py`.\n",
+            "docs/a.md",
+            "Run `audit/tools/thing.py`.\n",
         )
         self.repo.write(
-            "brownfield-recipes/docs/b.md",
-            "Run `brownfield-recipes/tools/thing.py`.\n",
+            "docs/b.md",
+            "Run `audit/tools/thing.py`.\n",
         )
         self.assertEqual(self.lint().errors, [])
         self.assertEqual((tool.parent / "calls.txt").read_text(encoding="utf-8"), "1")
@@ -427,19 +454,19 @@ def a_check(check_id: str, playbooks: Sequence[str] = ()) -> dict[str, Any]:
 class CatalogueReferenceTests(FixtureTests):
     def test_a_known_check_id_passes(self) -> None:
         self.repo.write_catalogue([a_check("CMD-01")])
-        self.repo.write("brownfield-recipes/docs/source.md", "See `CMD-01`.\n")
+        self.repo.write("docs/source.md", "See `CMD-01`.\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_an_unknown_check_id_is_reported(self) -> None:
         self.repo.write_catalogue([a_check("CMD-01")])
-        self.repo.write("brownfield-recipes/docs/source.md", "See `CMD-99`.\n")
+        self.repo.write("docs/source.md", "See `CMD-99`.\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("the check 'CMD-99' is not in catalogue.json", errors[0])
 
     def test_a_check_id_inside_a_fenced_json_example_is_still_checked(self) -> None:
         self.repo.write_catalogue([a_check("SEC-02")])
-        self.repo.write("brownfield-recipes/docs/source.md", '```json\n{"check": "SEC-99"}\n```\n')
+        self.repo.write("docs/source.md", '```json\n{"check": "SEC-99"}\n```\n')
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("'SEC-99'", errors[0])
@@ -448,37 +475,37 @@ class CatalogueReferenceTests(FixtureTests):
         # REQ-SH-022 must not look like a check in family "SH".
         self.repo.write_catalogue([a_check("CMD-01")])
         self.repo.write_requirements(["REQ-SH-022"])
-        self.repo.write("brownfield-recipes/docs/source.md", "See `REQ-SH-022`.\n")
+        self.repo.write("docs/source.md", "See `REQ-SH-022`.\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_a_known_requirement_id_passes(self) -> None:
         self.repo.write_requirements(["REQ-SH-022"])
-        self.repo.write("brownfield-recipes/docs/source.md", "See `REQ-SH-022`.\n")
+        self.repo.write("docs/source.md", "See `REQ-SH-022`.\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_an_unknown_requirement_id_is_reported(self) -> None:
         self.repo.write_requirements(["REQ-SH-022"])
-        self.repo.write("brownfield-recipes/docs/source.md", "See `REQ-SH-999`.\n")
+        self.repo.write("docs/source.md", "See `REQ-SH-999`.\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("the requirement 'REQ-SH-999' is not in spec/readiness-requirements.md", errors[0])
 
     def test_a_known_playbook_cited_in_prose_passes(self) -> None:
         self.repo.write_catalogue([a_check("CON-04", playbooks=["add-deny-rules"])])
-        self.repo.write("brownfield-recipes/docs/source.md", "Playbook `add-deny-rules` fixes it.\n")
+        self.repo.write("docs/source.md", "Playbook `add-deny-rules` fixes it.\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_a_known_playbook_cited_in_json_passes(self) -> None:
         self.repo.write_catalogue([a_check("CON-04", playbooks=["add-deny-rules"])])
         self.repo.write(
-            "brownfield-recipes/docs/source.md",
+            "docs/source.md",
             '```json\n{"remediation": {"playbook": "add-deny-rules"}}\n```\n',
         )
         self.assertEqual(self.lint().errors, [])
 
     def test_an_unknown_playbook_is_reported(self) -> None:
         self.repo.write_catalogue([a_check("CON-04", playbooks=["add-deny-rules"])])
-        self.repo.write("brownfield-recipes/docs/source.md", "Playbook `bogus-playbook` fixes it.\n")
+        self.repo.write("docs/source.md", "Playbook `bogus-playbook` fixes it.\n")
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("the catalogue names no playbook 'bogus-playbook'", errors[0])
@@ -486,17 +513,17 @@ class CatalogueReferenceTests(FixtureTests):
     def test_a_playbook_with_no_file_yet_still_passes(self) -> None:
         # schema/SCHEMA.md rule 2: the catalogue, not the implement/playbooks/ folder, is what "exists" means.
         self.repo.write_catalogue([a_check("CON-04", playbooks=["add-deny-rules"])])
-        self.assertFalse((self.repo.root / "brownfield-recipes" / "implement").exists())
-        self.repo.write("brownfield-recipes/docs/source.md", "Playbook `add-deny-rules` fixes it.\n")
+        self.assertFalse((self.repo.root / "implement" / "playbooks").exists())
+        self.repo.write("docs/source.md", "Playbook `add-deny-rules` fixes it.\n")
         self.assertEqual(self.lint().errors, [])
 
     def test_no_catalogue_or_requirements_file_skips_these_checks_without_crashing(self) -> None:
-        self.repo.write("brownfield-recipes/docs/source.md", "See `CMD-99` and `REQ-SH-999`.\n")
+        self.repo.write("docs/source.md", "See `CMD-99` and `REQ-SH-999`.\n")
         self.assertEqual(self.lint().errors, [])
 
-    def test_deterministic_audit_is_never_checked_against_the_catalogue(self) -> None:
+    def test_the_engine_is_never_checked_against_the_catalogue(self) -> None:
         self.repo.write_catalogue([a_check("CMD-01")])
-        self.repo.write("brownfield-recipes/deterministic-audit/docs/source.md", "See `CMD-99`, the engine's own.\n")
+        self.repo.write("audit/engine/docs/source.md", "See `CMD-99`, the engine's own.\n")
         self.assertEqual(self.lint().errors, [])
 
 
@@ -515,15 +542,17 @@ class ToolContractTests(unittest.TestCase):
         self.assertEqual(envelope["data"]["name"], "recipe_lint")
         self.assertIn("CATALOGUE.md", envelope["data"]["writes"])
 
-    def test_a_root_without_brownfield_recipes_is_a_usage_error(self) -> None:
+    def test_a_root_without_audit_is_a_usage_error(self) -> None:
+        (self.root / "docs").mkdir()
+        (self.root / "docs" / "a.md").write_text("# A\n", encoding="utf-8")
         code, envelope, _ = call([str(self.root)])
         self.assertEqual(code, 1)
         self.assertIs(envelope["ok"], False)
-        self.assertIn("brownfield-recipes", envelope["data"]["error"])
+        self.assertIn("has no audit/ directory", envelope["data"]["error"])
 
     def test_a_clean_repo_exits_0_and_writes_nothing(self) -> None:
-        (self.root / "brownfield-recipes").mkdir()
-        (self.root / "brownfield-recipes" / "a.md").write_text("# A\n", encoding="utf-8")
+        (self.root / "audit").mkdir()
+        (self.root / "audit" / "a.md").write_text("# A\n", encoding="utf-8")
         before = sorted(p.relative_to(self.root) for p in self.root.rglob("*"))
         code, envelope, err = call([str(self.root)])
         after = sorted(p.relative_to(self.root) for p in self.root.rglob("*"))
@@ -534,9 +563,10 @@ class ToolContractTests(unittest.TestCase):
         self.assertEqual(before, after)
 
     def test_broken_links_exit_2_with_every_error_listed(self) -> None:
-        (self.root / "brownfield-recipes").mkdir()
-        (self.root / "brownfield-recipes" / "a.md").write_text("[gone](nowhere.md)\n", encoding="utf-8")
-        (self.root / "brownfield-recipes" / "b.md").write_text("[gone](elsewhere.md)\n", encoding="utf-8")
+        (self.root / "audit").mkdir()
+        (self.root / "implement").mkdir()
+        (self.root / "audit" / "a.md").write_text("[gone](nowhere.md)\n", encoding="utf-8")
+        (self.root / "implement" / "b.md").write_text("[gone](elsewhere.md)\n", encoding="utf-8")
         code, envelope, err = call([str(self.root)])
         self.assertEqual(code, 2)
         self.assertIs(envelope["ok"], False)
@@ -568,15 +598,16 @@ class CatalogueGenerationTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
-        (self.root / "brownfield-recipes" / "tools").mkdir(parents=True)
+        (self.root / "audit" / "tools").mkdir(parents=True)
 
-    def write_tool(self, name: str, source: str) -> Path:
-        path = self.root / "brownfield-recipes" / "tools" / f"{name}.py"
+    def write_tool(self, name: str, source: str, folder: str = "audit/tools") -> Path:
+        path = self.root / folder / f"{name}.py"
+        path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(source, encoding="utf-8")
         return path
 
     def catalogue_path(self) -> Path:
-        return self.root / "brownfield-recipes" / "tools" / "CATALOGUE.md"
+        return self.root / "audit" / "tools" / "CATALOGUE.md"
 
     def test_write_catalogue_generates_one_section_per_tool_sorted_by_name(self) -> None:
         self.write_tool("zeta", tool_script("zeta"))
@@ -587,6 +618,27 @@ class CatalogueGenerationTests(unittest.TestCase):
         self.assertEqual(envelope["data"]["tools"], 2)
         text = self.catalogue_path().read_text(encoding="utf-8")
         self.assertLess(text.index("## alpha.py"), text.index("## zeta.py"))
+
+    def test_write_catalogue_lists_the_audit_tools_then_the_implement_tools(self) -> None:
+        self.write_tool("zeta", tool_script("zeta"))
+        self.write_tool("alpha", tool_script("alpha"), folder="implement/tools")
+        self.write_tool("beta", tool_script("beta"), folder="implement/tools")
+        self.write_tool("_helper", "raise SystemExit(1)\n", folder="implement/tools")
+        code, envelope, _ = call([str(self.root), "--write-catalogue"])
+        self.assertEqual(code, 0)
+        self.assertEqual(envelope["data"]["tools"], 3)
+        text = self.catalogue_path().read_text(encoding="utf-8")
+        self.assertLess(text.index("## zeta.py"), text.index("## alpha.py"))
+        self.assertLess(text.index("## alpha.py"), text.index("## beta.py"))
+        self.assertFalse((self.root / "implement" / "tools" / "CATALOGUE.md").exists())
+
+    def test_a_new_implement_tool_makes_the_catalogue_stale(self) -> None:
+        self.write_tool("thing", tool_script("thing"))
+        call([str(self.root), "--write-catalogue"])
+        self.write_tool("other", tool_script("other"), folder="implement/tools")
+        code, envelope, _ = call([str(self.root)])
+        self.assertEqual(code, 2)
+        self.assertIn("CATALOGUE.md is stale", envelope["data"]["errors"][0])
 
     def test_write_catalogue_is_byte_stable_across_runs(self) -> None:
         self.write_tool("thing", tool_script("thing"))
@@ -633,7 +685,7 @@ class CatalogueGenerationTests(unittest.TestCase):
         self.assertIs(envelope["ok"], True)
 
     def test_no_tools_directory_at_all_skips_the_catalogue_check(self) -> None:
-        shutil.rmtree(self.root / "brownfield-recipes" / "tools")
+        shutil.rmtree(self.root / "audit" / "tools")
         code, envelope, _ = call([str(self.root)])
         self.assertEqual(code, 0)
         self.assertIs(envelope["ok"], True)

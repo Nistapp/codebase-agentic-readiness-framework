@@ -18,7 +18,7 @@ it. A tool that hands over an ordered list of blockers teaches them what to fix 
 the remaining items stop mattering.
 
 The audit is anchored to **Phase 1 (Bootstrap)** of the [agentic-readiness
-framework](../../../../../brownfield-legacy/Phased-Approach.md)
+framework](../../../../../docs/framework/phased-approach.md)
 — the phase the framework itself calls a dramatic improvement on its own. Later phases are reported as
 presence-level signals and never scored.
 

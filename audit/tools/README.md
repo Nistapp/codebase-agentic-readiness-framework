@@ -2,15 +2,15 @@
 
 > **Audience:** Engineers who write or call a tool, and agents that run one.
 > **Source of truth:** [`_common.py`](_common.py) and each tool's `--describe` output.
-> **Status:** The contract below is binding for every tool in this folder. The tools themselves arrive step by step; the [Tools CLI reference](../docs/reference/tools-cli.md) says which exist.
+> **Status:** The contract below is binding for every tool in this folder. The tools themselves arrive step by step; the [Tools CLI reference](../../docs/reference/tools-cli.md) says which exist.
 
 Deterministic tools do the counting, validation and rendering for the brownfield recipes. The agent decides what a result means; a tool never judges, and its output overrides the agent's own arithmetic or formatting. Every tool is standard-library Python that runs from a fresh clone with no install step:
 
 ```bash
-python3 brownfield-recipes/tools/<tool>.py <arguments>
+python3 audit/tools/<tool>.py <arguments>
 ```
 
-Why the contract exists: an agent that calls a dozen tools needs one way to read them all. The design is in the [Tool Contract](../docs/architecture/contributor-deep-dive/01-tool-contract.md) page.
+Why the contract exists: an agent that calls a dozen tools needs one way to read them all. The design is in the [Tool Contract](../../docs/explanation/contributor-deep-dive/01-tool-contract.md) page.
 
 ---
 
@@ -38,7 +38,7 @@ Stdout holds exactly one JSON object and nothing else, except for `--help`, whic
 | `tool` | The tool's name, which is its file name without `.py`. |
 | `version` | The tool's version. |
 | `ok` | `true` when the tool did what was asked. |
-| `data` | The result. Its shape is the tool's own and is documented in the [Tools CLI reference](../docs/reference/tools-cli.md). When `ok` is `false` it holds a short `error` string, and a list `errors` when there are several. |
+| `data` | The result. Its shape is the tool's own and is documented in the [Tools CLI reference](../../docs/reference/tools-cli.md). When `ok` is `false` it holds a short `error` string, and a list `errors` when there are several. |
 | `warnings` | Strings the caller should read, in a stable order. |
 | `truncated` | `true` when the tool left items out to stay within the output budget. `data` then says how many. |
 
@@ -71,7 +71,7 @@ No tool opens a socket, calls a package index or fetches a URL. The one thing th
 
 A tool reads the repository it is pointed at and never writes there: no report, no cache, no lock file, no temporary file. Output goes to an output directory outside the target, and a tool refuses an output directory that is inside the target, including through a symlink. A tool also refuses to read a path that resolves outside the target, so a symlink cannot lead it out.
 
-One exception, decided in [ADR 0002](../docs/architecture/adrs/0002-progress-writes-state-in-target.md): `progress.py` writes the implement recipe's two state files, `docs/agentic-readiness/<label>-agentic-readiness-state.json` and `<label>-agentic-readiness-STATE.md`, and nothing else in the target. It validates the whole state before every write, refuses a folder that resolves outside the target and a state file that is a symlink, and replaces each file atomically. Its manifest says `writes_inside_target: true`. No other tool may claim the exception without its own ADR.
+One exception, decided in [ADR 0002](../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md): `progress.py` writes the implement recipe's two state files, `docs/agentic-readiness/<label>-agentic-readiness-state.json` and `<label>-agentic-readiness-STATE.md`, and nothing else in the target. It validates the whole state before every write, refuses a folder that resolves outside the target and a state file that is a symlink, and replaces each file atomically. Its manifest says `writes_inside_target: true`. No other tool may claim the exception without its own ADR.
 
 ### 7. Never replace a file
 
@@ -83,7 +83,7 @@ The minimum is Python 3.11. Before it does anything else a tool checks the inter
 
 ```text
 engine: needs Python 3.11 or newer, found 3.9.6
-  run it with:  uv run --python 3.12 python3 brownfield-recipes/tools/engine.py ...
+  run it with:  uv run --python 3.12 python3 audit/tools/engine.py ...
 ```
 
 For this to work, the file that holds the check and every file it imports first must parse as Python 3.9 syntax.
@@ -130,4 +130,4 @@ Tests are in [`tests/`](tests/) and run with `make test`. A test starts with `im
 
 ## Licence
 
-The tools are licensed under the GNU Affero General Public License, version 3 or later (`AGPL-3.0-or-later`), and each Python file says so in its header. The licence covers the tools. It does not extend to the repository a tool reads or to a report a tool helps produce: those belong to you. This `README.md` and the other documentation are GFDL 1.3. The full table is in [Licensing](../docs/reference/licensing.md).
+The tools are licensed under the GNU Affero General Public License, version 3 or later (`AGPL-3.0-or-later`), and each Python file says so in its header. The licence covers the tools. It does not extend to the repository a tool reads or to a report a tool helps produce: those belong to you. This `README.md` and the other documentation are GFDL 1.3. The full table is in [Licensing](../../docs/reference/licensing.md).

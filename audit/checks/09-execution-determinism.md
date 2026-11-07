@@ -1,10 +1,10 @@
 # Execution determinism (`EXEC`)
 
 > Follows the anatomy in [`README.md`](README.md). Seven checks, all `method: automated`. See
-> [Why These Checks §10](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#10-execution-determinism-exec)
+> [Why These Checks §10](../engine/docs/architecture/user-overview/03-why-these-checks.md#10-execution-determinism-exec)
 > for the consequence behind this family: this is where brownfield repositories fail hardest, and where
 > the framework's Phase 1 is thinnest. Every check reads the engine's `EXEC` pack
-> (`deterministic-audit/audit/rules/checks/execution.py`), whose module docstring names each check's own
+> (`audit/engine/audit/rules/checks/execution.py`), whose module docstring names each check's own
 > `UNKNOWN` conditions and its one documented limitation (manifest↔lockfile parsing beyond
 > node/python/rust/go is not attempted, so those ecosystems report the tracked fact and `PARTIAL`
 > consistency rather than a false `PASS`).
@@ -15,7 +15,7 @@
 
 Why it matters   An agent's runtime must be the repository's, not whatever happens to be on the host —
                   otherwise the gate passes locally and fails in CI, or an agent reproduces nothing
-                  ([greenfield-bootstrap/README.md § File Tree — What Gets Created](../../../greenfield-bootstrap/README.md#file-tree--what-gets-created)).
+                  ([greenfield/README.md § File Tree — What Gets Created](../../greenfield/README.md#file-tree--what-gets-created)).
 Severity         BLOCKER
 Engine           `EXEC-01`. For every detected ecosystem among node, python, jvm, dotnet, rust and ruby
                  (go is pinnable too but has no dedicated pin file of its own), looks for that
@@ -55,7 +55,7 @@ Pitfalls         A monorepo where only one of several ecosystems is pinned still
 
 Why it matters   Every run must resolve identical dependencies; a lockfile that is missing, untracked, or
                   stale turns "works on my machine" into a problem the agent inherits too
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-02`. For each detected ecosystem with a package manager the engine recognises
                  (node, python, jvm, rust, go, ruby, php), finds that manager's lockfile at any depth,
@@ -102,7 +102,7 @@ Pitfalls         A lockfile that exists and is tracked but lives in a subdirecto
 
 Why it matters   An agent cannot answer an interactive prompt or provision a database by guessing; with no
                   non-interactive path it is blocked before it can run anything
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-03`. First looks for a documented, non-interactive install command (one whose
                  head tool and subcommand the engine recognises, such as `npm install` or `make setup`)
@@ -140,7 +140,7 @@ Pitfalls         A setup script that exists but is named only by its filename in
 
 Why it matters   A variable the code needs but nobody wrote down fails at runtime, mid-task, and the agent
                   debugs an environment problem it has no way to see coming
-                  ([greenfield-bootstrap/README.md § File Tree — What Gets Created](../../../greenfield-bootstrap/README.md#file-tree--what-gets-created)).
+                  ([greenfield/README.md § File Tree — What Gets Created](../../greenfield/README.md#file-tree--what-gets-created)).
 Severity         BLOCKER
 Engine           `EXEC-04`. Collects every `${VAR}` reference in shell-family files (`.sh`, `.bash`,
                  `.zsh`, `.fish`, `.ksh`, `.ps1`, `Dockerfile`) and every `os.environ`/`os.getenv`/
@@ -180,7 +180,7 @@ Pitfalls         A `${PIPELINE_VERSION}`-style template literal inside a `.ts`/`
 
 Why it matters   An agent that edits a file the build regenerates loses its work silently, often not until
                   the next CI run or review
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
 Engine           `EXEC-05`. Looks at every path the scan already classifies `GENERATED` (including
                  vendored paths) and, of those that are git-tracked, whether its first 20 lines carry a
@@ -216,7 +216,7 @@ Pitfalls         The scan's own `GENERATED` classification, not this check, deci
 Why it matters   An agent runs the documented command literally; a command that does not resolve is the
                   most expensive brownfield trap there is, discovered only after the agent has already
                   acted on it
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
 Engine           `EXEC-06`. Extracts every fenced shell command from README.md, AGENTS.md and CLAUDE.md
                  (deliberately not `docs/**`, whose fences routinely mix languages), cuts a trailing shell
@@ -263,7 +263,7 @@ Pitfalls         A command that mixes a Python snippet inside a fenced ```bash``
 Why it matters   One concern, one authoritative answer; with two configs for the same concern an agent
                   (or a human) picks whichever result turns up first, which is not the same thing as
                   picking correctly
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
 Engine           `EXEC-07`. For each of five concerns (lint, format, test, types, security), matches a
                  fixed set of root-level config file globs, plus (for a root `pyproject.toml`) specific

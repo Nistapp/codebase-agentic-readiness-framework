@@ -1,10 +1,10 @@
 # Command Surface (`CMD`)
 
 > Follows the anatomy in [`README.md`](README.md). Four checks, all `method: automated`. See
-> [Why These Checks §5](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#5-command-surface-cmd)
+> [Why These Checks §5](../engine/docs/architecture/user-overview/03-why-these-checks.md#5-command-surface-cmd)
 > for the consequence behind this family: one command surface, three consumers (human, agent, CI); this
 > is the core of Phase 1 and the most common brownfield failure. Every verb and spelling cited below is
-> fixed in [`spec/command-surface.md`](../../../spec/command-surface.md); this file never restates that
+> fixed in [`spec/command-surface.md`](../../spec/command-surface.md); this file never restates that
 > table, only how each check reads against it.
 
 ---
@@ -13,7 +13,7 @@
 
 Why it matters   The verbs are the contract; without them resolving an agent has no shared vocabulary
                   for "how do I verify this" and invents its own command
-                  ([greenfield-bootstrap/README.md § 1.4 The standardized command surface](../../../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)).
+                  ([greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
 Severity         BLOCKER
 Engine           `CMD-01`. Reads every runner manifest `_common` understands in full
                  (`resolve_all_verbs`), so a verb split across, or duplicated on, more than one runner is
@@ -21,7 +21,7 @@ Engine           `CMD-01`. Reads every runner manifest `_common` understands in 
                  then the shallowest, then `RUNNER_PRECEDENCE`), and a manifest under a carried-data
                  directory (`templates/`, `fixtures/`, `examples/`) is not a runner at all, so a template's
                  `package.json` cannot take the verbs from the root `Makefile`
-                 ([ADR-0008](../../deterministic-audit/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). All seven verbs resolving on exactly one runner is `PASS`. Any verb missing from
+                 ([ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). All seven verbs resolving on exactly one runner is `PASS`. Any verb missing from
                  every runner is `FAIL`. Verbs resolving but spread across more than one runner is
                  `PARTIAL` (the stray second definition itself is `CMD-03`'s territory, not this check's).
                  A `Makefile` GNU Make refuses to parse (an unescaped `format:check:` target, a static
@@ -64,7 +64,7 @@ Pitfalls         A Gradle or Maven build that resolves `check` as a lifecycle ta
 
 Why it matters   A single pre-merge gate must exist and be the same one everywhere, or different people
                   gate on different subsets of the verbs
-                  ([greenfield-bootstrap/README.md § 1.4 The standardized command surface](../../../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)).
+                  ([greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
 Severity         BLOCKER
 Engine           `CMD-02`. Resolves `check` on its one runner (the same resolver `CMD-01` uses) and reads
                  its body for three concerns — a format-check, a typecheck, a test run — satisfied either
@@ -106,7 +106,7 @@ Pitfalls         A `check` that composes `lint` instead of `format:check` is not
 
 Why it matters   A runner other than the authoritative one must delegate, not compose its own gate, or
                   nobody can tell which definition is the real one when they disagree
-                  ([greenfield-bootstrap/README.md § 1.4 The standardized command surface](../../../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)).
+                  ([greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
 Severity         DEGRADER
 Engine           `CMD-03`. When more than one runner defines a `check` target, the primary is the
                  first runner by `runner_rank` (the shallowest manifest, then `RUNNER_PRECEDENCE`); every
@@ -148,7 +148,7 @@ Pitfalls         The primary runner is decided by depth, then `RUNNER_PRECEDENCE
 
 Why it matters   A gate that mutates the working tree while "verifying" it cannot be trusted to report on
                   the code that was actually committed
-                  ([greenfield-bootstrap/README.md § 1.4 The standardized command surface](../../../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)).
+                  ([greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
 Severity         DEGRADER
 Engine           `CMD-04`. For every read-only verb (every framework verb except the write verbs `format`,
                  `install`, `build`, `clean`), reads its resolved command for an invocation of a write verb

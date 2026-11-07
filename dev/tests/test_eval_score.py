@@ -22,14 +22,14 @@ import unittest
 from pathlib import Path
 from typing import Any, Mapping
 
-import _paths
+import _dev_paths
 
-TOOLS = _paths.TOOLS
-sys.path.insert(0, str(TOOLS / "eval"))
+DEV = _dev_paths.DEV
+sys.path.insert(0, str(DEV / "eval"))
 
 import score  # noqa: E402
 
-EXAMPLES = TOOLS.parent / "schema" / "examples"
+EXAMPLES = _dev_paths.REPO / "audit" / "schema" / "examples"
 WORKED = next(EXAMPLES.glob("example-service.audit-report.*.json"))
 REPO_SHA = "deadbeef" * 5
 REPO_LABEL = "example-service"

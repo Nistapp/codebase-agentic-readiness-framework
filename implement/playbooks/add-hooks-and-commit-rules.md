@@ -135,10 +135,10 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py pref set hooks.manager <lefthook|pre-commit|...> \
+python3 implement/tools/progress.py pref set hooks.manager <lefthook|pre-commit|...> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py skip F-nnn --target <repo> --phase <phase> --by owner \
+python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> --by owner \
   --reason "<the owner's words: why the title check is enough>"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "test -f lefthook.yml" --verification-result "present; install documented"
 ```

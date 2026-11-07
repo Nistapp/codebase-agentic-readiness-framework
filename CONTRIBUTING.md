@@ -30,17 +30,17 @@ Run these before you propose a change. CI runs the same commands.
 | `make docs-lint` | Markdown lint over the ratchet path list in the `Makefile`. Run it when Markdown changed |
 | `make docs-mermaid FILES=<file.md>` | Renders every Mermaid block in the files. Run it when you added or changed one |
 | `make coverage` | The engine's and the tools' suites under coverage.py; fails below the floor in `.coveragerc`. The floor only goes up |
-| `make self-audit` | The engine on this repository against `.audit-baseline.json`; exit 2 on a regression. See [Self-Audit](brownfield-recipes/docs/reference/self-audit.md) |
+| `make self-audit` | The engine on this repository against `.audit-baseline.json`; exit 2 on a regression. See [Self-Audit](docs/reference/self-audit.md) |
 
 The seven verbs the framework asks of any repository (`format`, `format:check`, `lint`, `typecheck`, `test`,
 `check`, `security`) are defined in [`spec/command-surface.md`](spec/command-surface.md).
 
-One test, without the whole suite (the first from `brownfield-recipes/deterministic-audit/`, the second from the
+One test, without the whole suite (the first from `audit/engine/`, the second from the
 repository root):
 
 ```bash
 python3 -m unittest tests.test_cmd_pack -k verbs
-python3 -m unittest discover -s brownfield-recipes/tools/tests -k catalogue
+python3 -m unittest discover -s audit/tools/tests -k catalogue
 ```
 
 A change to a fixture or a test that holds a key-shaped string needs `make update-secrets-baseline`; review the
@@ -69,12 +69,12 @@ secrets scan and a Conventional Commits check before a commit lands. Install it 
 
 Python files carry the SPDX header `AGPL-3.0-or-later` and the copyright line. Documentation, schemas and
 published outputs are `GFDL-1.3-only`. The zones are in
-[`brownfield-recipes/docs/reference/licensing.md`](brownfield-recipes/docs/reference/licensing.md).
+[`docs/reference/licensing.md`](docs/reference/licensing.md).
 
 ## Documentation
 
-Follow [`brownfield-recipes/docs/STYLE_GUIDE.md`](brownfield-recipes/docs/STYLE_GUIDE.md) and start at the doc
-router, [`brownfield-recipes/docs/architecture/README.md`](brownfield-recipes/docs/architecture/README.md). A page
+Follow [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md) and start at the doc
+router, [`docs/explanation/README.md`](docs/explanation/README.md). A page
 describes what exists; a feature that is only planned is marked `Planned`. Decisions go in an ADR
 ([index](docs/architecture/adrs/README.md)).
 
@@ -83,7 +83,7 @@ describes what exists; a feature that is only planned is marked `Planned`. Decis
 File an issue on the repository with the `audit-engine` label. Say which check gave the wrong verdict, the
 repository or fixture where you saw it, and what the verdict should have been. A fix lands with a fixture that
 reproduces it and a new ruleset revision in the engine's
-[changelog](brownfield-recipes/deterministic-audit/docs/reference/changelog.md).
+[changelog](audit/engine/docs/reference/changelog.md).
 
 ## Releases
 

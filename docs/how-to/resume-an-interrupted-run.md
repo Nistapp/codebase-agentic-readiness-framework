@@ -21,7 +21,7 @@
 An audit keeps everything it has recorded in its draft, and the draft is written atomically after every change, so a crash leaves the last complete state and never half of one. Find the newest draft for the repository (the stamp in its name is the start time), then ask the builder where the audit stands:
 
 ```bash
-python3 brownfield-recipes/tools/report.py status <output-dir>/<label>.audit-draft.<stamp>.json
+python3 audit/tools/report.py status <output-dir>/<label>.audit-draft.<stamp>.json
 ```
 
 Read these fields of `data`:
@@ -37,7 +37,7 @@ Read these fields of `data`:
 For an implementation, the state file inside the target plays this part. Summarise it with:
 
 ```bash
-python3 brownfield-recipes/tools/progress.py show --target <repo> [--label <label>]
+python3 implement/tools/progress.py show --target <repo> [--label <label>]
 ```
 
 Pass `--label` only when the target holds more than one state; add `--json` to print the state itself. Read
@@ -77,7 +77,7 @@ For an audit, the target may have changed since the interruption. `status` does 
 `validate_report.py <draft> --target <repo>` to see which cited files are no longer in the target at the
 commit the draft recorded.
 
-- For implementations, run `python3 brownfield-recipes/tools/check_drift.py <report> <repo>` before continuing: it lists the findings whose cited files changed since the audited commit. It exits 0 whatever it finds, so read `data.status` (`current`, `drifted`, `sha_missing` or `no_sha`). If `data.report_changed` is true, the report was edited after the state was created: stop and ask the owner; the text is no longer the audit's.
+- For implementations, run `python3 implement/tools/check_drift.py <report> <repo>` before continuing: it lists the findings whose cited files changed since the audited commit. It exits 0 whatever it finds, so read `data.status` (`current`, `drifted`, `sha_missing` or `no_sha`). If `data.report_changed` is true, the report was edited after the state was created: stop and ask the owner; the text is no longer the audit's.
 
 ### Step 4: Finish an item the interruption left open
 

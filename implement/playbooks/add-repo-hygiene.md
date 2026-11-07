@@ -70,7 +70,7 @@ observation.
 ## Inputs to ask
 
 No tool is installed. Ask once, as one batch: the playbook writes every file below from
-the repository's own facts, adapted from [`greenfield-bootstrap/templates/`](../../../greenfield-bootstrap/templates/)
+the repository's own facts, adapted from [`greenfield/templates/`](../../greenfield/templates/)
 (`SECURITY.md`, `CONTRIBUTING.md`, `CHANGELOG.md`, `RELEASE_PROCESS.md`, and `github/` for `CODEOWNERS`, the
 pull-request template and the issue templates), shows them together, and takes one review. The owner is asked only for
 the policy files, and for nothing else:
@@ -153,14 +153,14 @@ the policy files, and for nothing else:
 
 ### Gradle and Quarkus
 
-Profile: [`stacks/java.md`](../../stacks/java.md). The README and CONTRIBUTING name the wrapper commands (`./gradlew
+Profile: [`stacks/java.md`](../../audit/stacks/java.md). The README and CONTRIBUTING name the wrapper commands (`./gradlew
 ...`) and the Java version the toolchain needs. CODEOWNERS paths follow the Gradle layout (`/src/main/`, `/src/test/`,
 `/scripts/ci/`). Release tools in this stack are usually release-please (`simple` type, root) or the Gradle release
 plugin; the release page says which tags the tool creates.
 
 ### Node (npm, NestJS, React) with several components
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md). In a repository with several apps, one root
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md). In a repository with several apps, one root
 README links to the apps' own READMEs; it does not replace them and they do not replace it. CODEOWNERS uses one path
 rule per app only if the owner supplies different owners; otherwise the default `*` line is enough. A release tool that
 tags per package (component in the tag) is described in the release page with the tag format. Commands in the README
@@ -216,19 +216,19 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) and [Stage 4](..
 the T8 branch shared with [`register-index`](register-index.md):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "ls .github/CODEOWNERS" --verification-result "present"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "ls SECURITY.md" --verification-result "present" \
   --note "owner action: enable private vulnerability reporting; fill TODO(owner) mailbox and response time"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --debt "what=changelog absent until first release,count=1" \
   --note "release tool writes it; revisit when the first release pull request is merged"
-python3 brownfield-recipes/tools/progress.py pref set github.owner_handle <@handle> \
+python3 implement/tools/progress.py pref set github.owner_handle <@handle> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py pref set codeowners.default owner-owns-all \
+python3 implement/tools/progress.py pref set codeowners.default owner-owns-all \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py pref set security.disclosure <github-private-reporting|private-contact> \
+python3 implement/tools/progress.py pref set security.disclosure <github-private-reporting|private-contact> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```
 

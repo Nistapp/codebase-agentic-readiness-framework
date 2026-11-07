@@ -61,7 +61,7 @@ before the first diff.
 | `agents_md.generic_text` | `move-to-docs` (default) or `delete`, per section if the owner chose per section (Inputs 5) |
 | `agents_md.contradicted_rules` | `target-state` (default) or `describe-code` (Inputs 5) |
 | `agents_md.release_tags` | What an agent may do with tags and releases; feeds the AGT-09 sentence (Inputs 6) |
-| `ci.pr_by_agent` | Whether the AGT-09 sentence allows pushing a branch and opening a pull request ([ADR 0003](../../docs/architecture/adrs/0003-push-and-pr-policy.md)) |
+| `ci.pr_by_agent` | Whether the AGT-09 sentence allows pushing a branch and opening a pull request ([ADR 0003](../docs/architecture/adrs/0003-push-and-pr-policy.md)) |
 | `docs.agents_line` | T6 already wrote the docs line; AGT-03 then only verifies it |
 | `layout.command_runner` | `per-app`: verbs are listed per app, not at the root |
 | `format.mass_reformat` | `no` (usual): never reflow or reformat the file to make it shorter |
@@ -138,7 +138,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 3. **Single test (TST-04).** If T5 wrote the fenced single-test line, verify it is still fenced and still matches the
    runner. If the item sits in T7, add one: `./gradlew test --tests 'org.example.FooTest'`,
    `npx jest -t '<test name>'` (Jest needs `-t` or `--testNamePattern`; a path alone is not read as a single test),
-   `python3 -m unittest tests.test_module -k name`. The framework's own [`AGENTS.md`](../../../AGENTS.md#commands)
+   `python3 -m unittest tests.test_module -k name`. The framework's own [`AGENTS.md`](../../AGENTS.md#commands)
    is the worked example.
 4. **Documentation contract and boundaries (AGT-03, AGT-06).** Three facts, each on its own line: `docs/` is the
    documentation home, `docs/STYLE_GUIDE.md` holds the writing rules, the scratch directory (`artefacts/`) is scratch
@@ -158,7 +158,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
      the branch that receives releases comes from the release workflow's trigger (`on.push.branches`), not from the
      default branch: the two can differ, and the old line "default remote branch is `main`" may be the stale one;
    - whether an agent may push a branch and open a pull request: only when the state records `ci.pr_by_agent=yes`
-     ([ADR 0003](../../docs/architecture/adrs/0003-push-and-pr-policy.md)); otherwise it stops at a local branch;
+     ([ADR 0003](../docs/architecture/adrs/0003-push-and-pr-policy.md)); otherwise it stops at a local branch;
    - that an agent never merges, tags, publishes a release or pushes to the default branch;
    - when a release tool is tracked (`release-please-config.json`, `.releaserc*`, a release workflow), that the
      tool cuts releases.
@@ -198,16 +198,16 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 
 ### Gradle and Quarkus
 
-Profile: [`stacks/java.md`](../../stacks/java.md#command-surface-map). Verbs are Gradle task names (`formatCheck` for
-`format:check`), always through the wrapper (`./gradlew`); annotate each with the framework verb. The single-test
-form is `./gradlew test --tests '<fully.qualified.Class>'` (add `.<method>` for one method). Boundary candidates
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#command-surface-map). Verbs are Gradle task names
+(`formatCheck` for `format:check`), always through the wrapper (`./gradlew`); annotate each with the framework verb.
+The single-test form is `./gradlew test --tests '<fully.qualified.Class>'` (add `.<method>` for one method). Boundary candidates
 come from the package layout: REST resources, services, repositories or entities, and the migration folder
 (`src/main/resources/db/migration/`); a "never inject X in Y" rule is the usual contradicted rule, counted with a
 code-index query on the injection points. JDK and wrapper preconditions sit next to the commands.
 
 ### Node (npm, NestJS, React)
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#command-surface-map). In a per-app layout
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#command-surface-map). In a per-app layout
 (`layout.command_runner=per-app`) list the verbs under each app's heading with `npm --prefix <app> run <verb>` or a
 `cd <app>` line, annotated. A verb an app does not have (no `typecheck` in a plain JavaScript app) is stated as such,
 not invented. Jest single test: `npx jest -t '<name>'` from the app folder. Boundary candidates: the app folders
@@ -269,14 +269,14 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py pref set agents_md.stubs keep \
+python3 implement/tools/progress.py pref set agents_md.stubs keep \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py pref set agents_md.generic_text move-to-docs \
+python3 implement/tools/progress.py pref set agents_md.generic_text move-to-docs \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "grep -n -i 'same change set' AGENTS.md" \
   --verification-result "one sentence, triggers named"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --commit <sha> --debt "what=files that break the <rule> rule,count=<N>" --note "rule kept as target state"
 ```
 

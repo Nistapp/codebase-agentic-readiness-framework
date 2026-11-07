@@ -71,7 +71,7 @@ OUT_DIR=$(cd "${POSITIONAL[1]}" && pwd -P)
 REPO_LABEL="${POSITIONAL[2]:-$(basename "$TARGET")}"
 
 HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-FRAMEWORK=$(cd "$HERE/../../.." && pwd)
+FRAMEWORK=$(cd "$HERE/../.." && pwd)
 
 EXTRA=()
 [ -n "$MODEL" ] && EXTRA+=(--model "$MODEL")
@@ -84,7 +84,7 @@ fail() {
 
 if [ "$RECIPE" = audit ]; then
   [ -z "$ANSWERS" ] || fail "--answers is for --recipe implement"
-  KICKOFF="$FRAMEWORK/brownfield-recipes/audit/prompts/kickoff.md"
+  KICKOFF="$FRAMEWORK/audit/prompts/kickoff.md"
   [ -f "$KICKOFF" ] || fail "cannot find the kickoff prompt at $KICKOFF"
   INTAKE="$OUT_DIR/audit-intake.$REPO_LABEL.json"
   [ -f "$INTAKE" ] || fail "no intake file at $INTAKE; write one with eval_mode: true before running headless"
@@ -104,7 +104,7 @@ else
   ORIGIN_URL=$(cd "$(git -C "$ROOT/repo" remote get-url origin)" 2>/dev/null && pwd -P || true)
   [ "$ORIGIN_URL" = "$ROOT/origin.git" ] || fail "origin of $ROOT/repo is not $ROOT/origin.git"
   if [ ! -x "$ROOT/bin/gh" ] || ! grep -q "gh-calls.log" "$ROOT/bin/gh"; then fail "$ROOT/bin/gh is not the logging shim"; fi
-  KICKOFF="$ROOT/framework/brownfield-recipes/implement/prompts/kickoff.md"
+  KICKOFF="$ROOT/framework/implement/prompts/kickoff.md"
   [ -f "$KICKOFF" ] || fail "cannot find the implement kickoff at $KICKOFF"
   PROMPT=$(python3 - "$KICKOFF" "$ROOT" "$ANSWERS" <<'PY'
 import json

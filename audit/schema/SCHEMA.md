@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone who reads, writes or validates an audit report
 > **Source of truth:** [`audit-report.schema.json`](audit-report.schema.json) and [`audit-intake.schema.json`](audit-intake.schema.json). Where this page and a schema disagree, the schema wins and this page has a defect.
-> **Status:** Live for the schemas, the examples, the validator, the report builder, with its `import-engine` subcommand (the engine adapter), the renderer, [`facts.py`](../tools/facts.py), and the readiness state with [`progress.py`](../tools/progress.py) `init`, `show` and `render`.
+> **Status:** Live for the schemas, the examples, the validator, the report builder, with its `import-engine` subcommand (the engine adapter), the renderer, [`facts.py`](../tools/facts.py), and the readiness state with [`progress.py`](../../implement/tools/progress.py) `init`, `show` and `render`.
 
 ---
 
@@ -23,7 +23,7 @@
 | [`examples/readiness-state.example-service.json`](examples/readiness-state.example-service.json) and [`examples/readiness-state.example-service.in-progress.json`](examples/readiness-state.example-service.in-progress.json) | The state `progress.py init` writes for the worked example report, and the same state some themes later (preferences, a merged theme, `done`, `partial` with debt, `skipped`). Each has its rendered Markdown beside it, the golden file for `progress.py render`. |
 | [`examples/minimal.md`](examples/minimal.md) and [`examples/example-service.audit-report.20261010T094207Z.md`](examples/example-service.audit-report.20261010T094207Z.md) | What `render_report.py` writes for `minimal.json` and for the worked example, each beside its JSON under the same name. They are the golden files that the renderer's tests compare its output with, and the way to see what a finished report looks like. |
 
-The Markdown report, which [`tools/render_report.py`](../tools/render_report.py) writes, is a pure function of the JSON report: nothing the Markdown shows is absent from the JSON. Editorial wording, such as what a verdict means, lives in the renderer and never in the JSON, as in the engine's [ADR-0007](../deterministic-audit/docs/architecture/adrs/0007-json-report-render-contract.md).
+The Markdown report, which [`tools/render_report.py`](../tools/render_report.py) writes, is a pure function of the JSON report: nothing the Markdown shows is absent from the JSON. Editorial wording, such as what a verdict means, lives in the renderer and never in the JSON, as in the engine's [ADR-0007](../engine/docs/architecture/adrs/0007-json-report-render-contract.md).
 
 ---
 
@@ -131,7 +131,7 @@ The intake answers, as the run used them. [`report.py init`](#intake-file) copie
 | `confidence` | `high`, `medium` or `low`. Meant for `agent` checks. |
 | `summary` | One short sentence. |
 | `evidence`, `searches` | See Evidence. |
-| `data` | An engine payload (`verb_surface`, `path_list`, `credential_matrix` and the others in the engine's [payloads.py](../deterministic-audit/audit/rules/payloads.py#L25-L176)), carried unchanged. It is the only open object in the schema; its `kind` says what it holds. |
+| `data` | An engine payload (`verb_surface`, `path_list`, `credential_matrix` and the others in the engine's [payloads.py](../engine/audit/rules/payloads.py#L25-L176)), carried unchanged. It is the only open object in the schema; its `kind` says what it holds. |
 
 ### Evidence
 
@@ -245,10 +245,10 @@ The size class is by the engine's file count: `small` below 1,000 files, `medium
 ## Readiness state
 
 [`readiness-state.schema.json`](readiness-state.schema.json) describes `<label>-agentic-readiness-state.json`, the
-state the implement recipe keeps in a target's `docs/agentic-readiness/` folder. [`tools/progress.py`](../tools/progress.py)
+state the implement recipe keeps in a target's `docs/agentic-readiness/` folder. [`tools/progress.py`](../../implement/tools/progress.py)
 is its only writer, the one tool allowed to write inside a target
-([ADR 0002](../docs/architecture/adrs/0002-progress-writes-state-in-target.md)). The statuses, the transitions and
-the skip, defer and preference rules are in the [state contract](../implement/state.md).
+([ADR 0002](../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md)). The statuses, the transitions and
+the skip, defer and preference rules are in the [state contract](../../implement/state.md).
 
 | Section | Holds |
 |---|---|
@@ -346,7 +346,7 @@ The intake file has its own rules, which `report.py init` enforces: `accept-all`
 
 ## Verdicts: engine to report
 
-The engine's verdicts are in [findings.py](../deterministic-audit/audit/findings.py#L36-L47).
+The engine's verdicts are in [findings.py](../engine/audit/findings.py#L36-L47).
 
 | Engine | Report |
 |---|---|
@@ -370,7 +370,7 @@ The engine's five fixed unattested items become `unattested[]` entries:
 ## Engine schema v2 mapping
 
 > [!NOTE]
-> Live: `report.py import-engine` applies this mapping once to a draft ([`apply_import`](../tools/report.py#L585-L645)), and the conversion is [`convert`](../tools/_engine_adapter.py#L726-L739), a pure function of the engine's report. [`model.py`](../deterministic-audit/audit/report/model.py#L60-L158) builds the engine report.
+> Live: `report.py import-engine` applies this mapping once to a draft ([`apply_import`](../tools/report.py#L585-L645)), and the conversion is [`convert`](../tools/_engine_adapter.py#L726-L739), a pure function of the engine's report. [`model.py`](../engine/audit/report/model.py#L60-L158) builds the engine report.
 
 Every field of the engine's schema v2 is either carried or named as not carried.
 
@@ -414,7 +414,7 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 
 ## Validating
 
-The tools validate with their own standard-library code, [`_jsonschema_subset.py`](../tools/_jsonschema_subset.py). `make crosscheck`, which is part of `make check` and so of CI, holds it against the reference `jsonschema` package: both must accept every schema, every example, the catalogue, the intake example, the facts example and the readiness-state examples, and both must report the same errors (the same place and keyword) on the raw engine reports and on thousands of one-defect mutants of the examples, including values one below, at and one above every bound. The script is [`dev/crosscheck_jsonschema.py`](../dev/crosscheck_jsonschema.py); the reference package is installed for that run alone, in a throwaway environment, so nothing is installed in the project.
+The tools validate with their own standard-library code, [`_jsonschema_subset.py`](../tools/_jsonschema_subset.py). `make crosscheck`, which is part of `make check` and so of CI, holds it against the reference `jsonschema` package: both must accept every schema, every example, the catalogue, the intake example, the facts example and the readiness-state examples, and both must report the same errors (the same place and keyword) on the raw engine reports and on thousands of one-defect mutants of the examples, including values one below, at and one above every bound. The script is [`dev/crosscheck_jsonschema.py`](../../dev/crosscheck_jsonschema.py); the reference package is installed for that run alone, in a throwaway environment, so nothing is installed in the project.
 
 The same reference package gives a quick manual check of the schemas, the examples and the catalogue:
 
@@ -424,8 +424,8 @@ import json
 from pathlib import Path
 from jsonschema import Draft202012Validator
 
-root = Path("brownfield-recipes/schema")
-catalogue = Path("brownfield-recipes/catalogue.json")
+root = Path("audit/schema")
+catalogue = Path("audit/catalogue.json")
 examples = root / "examples"
 report_examples = [examples / "minimal.json", *sorted(examples.rglob("*.audit-*.json"))]
 intake_examples = sorted(examples.glob("audit-intake.*.json"))

@@ -3,7 +3,7 @@
 
 """`BASE` pack — quality baselines and the no-new-violations ratchet.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Activities ("Establish quality baselines for
+Anchor: `docs/framework/phased-approach.md` § Activities ("Establish quality baselines for
 existing technical debt", "Enforce a **no new violations** policy") and § Key Deliverables
 ("Quality baselines | Config files | CI").
 

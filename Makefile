@@ -27,29 +27,30 @@ MYPY := uvx mypy@2.4.0
 DETECT_SECRETS := uvx --from detect-secrets==1.5.0 detect-secrets
 DETECT_SECRETS_HOOK := uvx --from detect-secrets==1.5.0 detect-secrets-hook
 # The reference JSON Schema package is installed for one run, in a throwaway environment. The tools never import it.
-CROSSCHECK := PYTHONPATH=brownfield-recipes/tools uv run --no-project --with jsonschema==4.23.0 python
+CROSSCHECK := PYTHONPATH=audit/tools uv run --no-project --with jsonschema==4.23.0 python
 # The Agent Skills spec's own reference validator (agentskills.io); its CLI entry point is `agentskills`,
 # installed for one run, in a throwaway environment. Not the tools' or the engine's dependency.
 SKILLS_REF := uvx --from skills-ref==0.1.1 agentskills
 # Markdown lint (rules in .markdownlint-cli2.jsonc) and the Mermaid check need Node; neither is part of `check`.
 MARKDOWNLINT := npx --yes markdownlint-cli2@0.24.0
 # The compare step of the quality baseline (.quality-baseline.json): fails when a tool's full-tree count goes up.
-QUALITY_BASELINE := $(PYTHON) brownfield-recipes/dev/quality_baseline.py check
+QUALITY_BASELINE := $(PYTHON) dev/quality_baseline.py check
 COVERAGE := uvx coverage@7.17.2
 # The coverage data stays under the git-ignored build output; settings (the floor) are in .coveragerc.
-COVERAGE_DATA := $(CURDIR)/brownfield-recipes/dist/coverage/.coverage
+COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
-DOCS_LINT_PATHS := 'brownfield-recipes/implement/**/*.md' 'docs/**/*.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
-	'brownfield-recipes/docs/architecture/user-overview/03-trust-and-safety.md'
+DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
+	'docs/README.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
+	'docs/explanation/user-overview/03-trust-and-safety.md'
 
-ENGINE := brownfield-recipes/deterministic-audit
+ENGINE := audit/engine
 
 # Mypy covers the recipe tools, the dev-only checks and the engine's build script. The engine's own code joins
-# later, through a ratchet. The find picks up every Python file under brownfield-recipes/tools and
-# brownfield-recipes/dev, tests included, except the toy repositories under testdata/ (eval data).
-TYPED_SOURCES := $(shell find brownfield-recipes/tools brownfield-recipes/dev -name '*.py' -not -path '*/testdata/*' 2>/dev/null | sort) $(ENGINE)/tools/build.py
+# later, through a ratchet. The find picks up every Python file under audit/tools, implement/tools and
+# dev, tests included, except the toy repositories under testdata/ (eval data).
+TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
@@ -70,17 +71,17 @@ setup:
 	@echo "setup: prerequisites present (python, uv, git); nothing to install"
 
 format:
-	$(RUFF) format brownfield-recipes
+	$(RUFF) format audit implement dev
 
 format-check:
-	$(RUFF) format --check brownfield-recipes
-	$(RUFF) check brownfield-recipes
-	$(QUALITY_BASELINE) ruff -- $(RUFF) check brownfield-recipes --output-format json
+	$(RUFF) format --check audit implement dev
+	$(RUFF) check audit implement dev
+	$(QUALITY_BASELINE) ruff -- $(RUFF) check audit implement dev --output-format json
 
 format\:check: format-check
 
 lint:
-	$(RUFF) check brownfield-recipes
+	$(RUFF) check audit implement dev
 
 typecheck:
 	$(MYPY) --config-file mypy.ini $(TYPED_SOURCES)
@@ -88,8 +89,9 @@ typecheck:
 
 test:
 	cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests
-	$(PYTHON) -m unittest discover -s brownfield-recipes/tools/tests
-	$(PYTHON) -m unittest discover -s brownfield-recipes/dev/tests
+	$(PYTHON) -m unittest discover -s audit/tools/tests
+	$(PYTHON) -m unittest discover -s implement/tools/tests
+	$(PYTHON) -m unittest discover -s dev/tests
 
 # Runs the engine's suite and the recipe tools' suite under coverage.py and fails when the total drops below the
 # floor in .coveragerc (`fail_under`). Not part of `check`; CI runs it as its own job. Needs uv.
@@ -97,13 +99,14 @@ coverage:
 	mkdir -p $(dir $(COVERAGE_DATA))
 	rm -f $(COVERAGE_DATA)
 	cd $(ENGINE) && COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc -m unittest discover -s tests
-	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s brownfield-recipes/tools/tests
+	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s audit/tools/tests
+	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s implement/tools/tests
 	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) report --rcfile=.coveragerc
 
 # The engine on this repository, read-only. Reports go under dist/self-audit/ (git-ignored); only artefacts/ and dist/
 # are left out. --baseline is the ratchet (ADR-0001): exit 2 when a finding appears that .audit-baseline.json did not
 # have, exit 0 otherwise. --no-user-config keeps the verdict the same on every machine. Publication:
-# brownfield-recipes/docs/reference/self-audit.md.
+# docs/reference/self-audit.md.
 SELF_AUDIT_OUT := $(CURDIR)/dist/self-audit
 SELF_AUDIT_FLAGS := --out $(SELF_AUDIT_OUT)/ --force --format both --no-user-config --exclude 'artefacts/*' --exclude 'dist/*'
 
@@ -125,11 +128,11 @@ verify-rules:
 # The subset validator that the tools use must agree with the reference JSON Schema package on every example
 # and on thousands of one-defect mutants of them. About half a minute; needs uv and, the first time, the network.
 crosscheck:
-	$(CROSSCHECK) brownfield-recipes/dev/crosscheck_jsonschema.py
+	$(CROSSCHECK) dev/crosscheck_jsonschema.py
 
-# Lints the recipe Markdown and checks that tools/CATALOGUE.md matches every tool's own --describe output.
+# Lints the recipe Markdown and checks that audit/tools/CATALOGUE.md matches every tool's own --describe output.
 recipe-lint:
-	$(PYTHON) brownfield-recipes/tools/recipe_lint.py .
+	$(PYTHON) dev/recipe_lint.py .
 
 check: format-check typecheck test verify-rules crosscheck recipe-lint
 
@@ -146,9 +149,9 @@ update-secrets-baseline:
 # against the Agent Skills specification (S4.5.2). Not part of `check`: it is not one of the framework's seven verbs, and the
 # validator needs the network the first time, same as `crosscheck`'s reference package.
 validate-skills:
-	$(PYTHON) brownfield-recipes/tools/build_skills.py
-	$(SKILLS_REF) validate brownfield-recipes/dist/skills/agentic-readiness-audit
-	$(SKILLS_REF) validate brownfield-recipes/dist/skills/agentic-readiness-implement
+	$(PYTHON) dev/build_skills.py
+	$(SKILLS_REF) validate dev/dist/skills/agentic-readiness-audit
+	$(SKILLS_REF) validate dev/dist/skills/agentic-readiness-implement
 
 # Lints the Markdown in DOCS_LINT_PATHS and fails on any violation. Needs Node (npx); the first run fetches the
 # pinned CLI. CI runs it in the `docs` job when a Markdown file changed.
@@ -163,4 +166,4 @@ docs-lint-all:
 
 # Renders every Mermaid block in FILES with the pinned mermaid-cli; fails on a block that does not render.
 docs-mermaid:
-	$(PYTHON) brownfield-recipes/dev/mermaid_check.py $(MERMAID_FLAGS) $(FILES)
+	$(PYTHON) dev/mermaid_check.py $(MERMAID_FLAGS) $(FILES)

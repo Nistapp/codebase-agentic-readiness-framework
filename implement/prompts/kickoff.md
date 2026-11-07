@@ -5,7 +5,7 @@ inside it, and the integration branch (for example `dev`). Use the same text to 
 tells the agent where it stopped.
 
 ```text
-Run the implement recipe (the agentic-readiness-implement skill, or brownfield-recipes/implement/SKILL.md in a
+Run the implement recipe (the agentic-readiness-implement skill, or implement/SKILL.md in a
 framework checkout) on <path to the repository>, for the final audit report <path to the report JSON inside it>,
 with <integration branch> as the integration branch. Follow it stage by stage.
 If docs/agentic-readiness/ in the repository already holds a state file, run progress.py show on it first and

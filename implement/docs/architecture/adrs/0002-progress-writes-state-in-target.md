@@ -10,13 +10,13 @@
 ## Context
 
 The implement recipe keeps one state per target repository: which findings are queued, done, partial, skipped or
-deferred, the owner's preferences, and each theme's branch and PR. The [state contract](../../../implement/state.md)
+deferred, the owner's preferences, and each theme's branch and PR. The [state contract](../../../state.md)
 puts it in the target, in `docs/agentic-readiness/`, so it travels with the repository and every later session
 reads it. It is a JSON file, the source of truth, and a Markdown view rendered from it.
 
 The state is the only record of the owner's decisions across sessions and days. A session that edits it by hand can
 corrupt it, drop a skip, or let a skipped finding be proposed again. A tool that validates every write prevents that,
-but the [tool contract](../../../tools/README.md#6-never-write-inside-the-target) says a tool never writes inside
+but the [tool contract](../../../../audit/tools/README.md#6-never-write-inside-the-target) says a tool never writes inside
 the target.
 
 ## Decision
@@ -29,7 +29,7 @@ only these two files:
 
 `<label>` is the audit report's `provenance.target.label`. The limits:
 
-* Every write validates the whole state against [`readiness-state.schema.json`](../../../schema/readiness-state.schema.json)
+* Every write validates the whole state against [`readiness-state.schema.json`](../../../../audit/schema/readiness-state.schema.json)
   and the rules the schema cannot express, before anything is written.
 * The folder must resolve inside the target, after symlinks are followed. A state file that is a symlink is refused,
   so a write never goes through a link.
@@ -38,7 +38,7 @@ only these two files:
   half-written state; `init` and `render` remove such files for the two names and nothing else.
 * `init` never replaces a state. Changes to an existing state come through validated transitions.
 * `ToolInfo.writes_inside_target` is `False` by default and `True` for this tool alone, so `--describe` and the
-  generated [tool catalogue](../../../tools/CATALOGUE.md) say so.
+  generated [tool catalogue](../../../../audit/tools/CATALOGUE.md) say so.
 
 ## Alternatives Considered
 

@@ -1,8 +1,8 @@
 # Architecture Documentation
 
-> **Status:** v1 complete — the `audit/` package runs, and every pack (`IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set) is live. All 55 scoreable checks are implemented, and Tier-C probe checks report `UNKNOWN` unless probes are permitted. Pages below describe the design of record and the current implementation state. See the [style guide](../../../docs/STYLE_GUIDE.md) § 1.3 (Empirical Grounding).
+> **Status:** v1 complete — the `audit/` package runs, and every pack (`IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set) is live. All 55 scoreable checks are implemented, and Tier-C probe checks report `UNKNOWN` unless probes are permitted. Pages below describe the design of record and the current implementation state. See the [style guide](../../../../docs/STYLE_GUIDE.md) § 1.3 (Empirical Grounding).
 
-> **Related:** the brownfield recipes (in development) build on this engine; their documentation is at [`brownfield-recipes/docs/`](../../../docs/architecture/README.md).
+> **Related:** the brownfield recipes (in development) build on this engine; their documentation is at [`docs/`](../../../../docs/explanation/README.md).
 
 ## ADR Index
 
@@ -60,7 +60,7 @@
 ## Framework Dependencies
 
 This tool implements Phase 1 of an external methodology. Its normative source is
-the codebase agentic-readiness framework at the root of this repository (see the [Phased Approach](../../../../brownfield-legacy/Phased-Approach.md)).
+the codebase agentic-readiness framework at the root of this repository (see the [Phased Approach](../../../../docs/framework/phased-approach.md)).
 Where the two disagree, the framework wins and this tool has a defect.
 
 The framework is the root of this repository, and the tool finds it from its own location: `--verify-rules`

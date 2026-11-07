@@ -3,7 +3,7 @@
 
 """`EXEC` pack — execution determinism.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Activities.
+Anchor: `docs/framework/phased-approach.md` § Activities.
 
 Implemented here: `EXEC-01` … `EXEC-07`.
 

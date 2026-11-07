@@ -3,7 +3,7 @@
 
 """Output file names carry the repository's name, and no tool replaces a file.
 
-The contract is "Output files" in `brownfield-recipes/schema/SCHEMA.md`. These tests pin the label rule, the
+The contract is "Output files" in `audit/schema/SCHEMA.md`. These tests pin the label rule, the
 stamp, the name, and the exclusive create with its `-2`, `-3` suffixes.
 """
 

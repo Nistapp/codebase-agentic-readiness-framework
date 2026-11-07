@@ -87,7 +87,7 @@ recorded, and a committed record shows which CI job the platform requires before
 
 ### GitHub Actions and Gradle
 
-Profile: [`stacks/java.md`](../../stacks/java.md#boundaries). CI usually runs the build and the tests as separate
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#boundaries). CI usually runs the build and the tests as separate
 wrappers. Make the test wrapper (or a new `check` wrapper) run `./gradlew check`, so formatter, static analysis
 and tests run as locally. Lockfile-based dependency scan: the scanner reads the committed lockfile; no Gradle
 plugin is needed. Keep the image scan (if any) separate from the dependency scan and name it report-only while
@@ -95,7 +95,7 @@ its accepted count is recorded.
 
 ### GitHub Actions and multi-app Node
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#boundaries). With a per-app layout
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#boundaries). With a per-app layout
 (`layout.command_runner`) there is no root `check`: each app's job runs that app's `format:check`, `typecheck`,
 `lint` and `test` verbs through the wrapper, with the same flags as local. A verb that is a ratchet locally
 (changed files, strict-clean list) is the same ratchet in CI. `npm audit` with the high threshold is the
@@ -163,12 +163,12 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "<wrapper or grep>" --verification-result "<result>"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --debt "what=dependency findings,count=<n>,baseline=<file>" --note "<report-only step, review date>"
-python3 brownfield-recipes/tools/progress.py pref set ci.shape <wrappers-call-verbs|direct> \
+python3 implement/tools/progress.py pref set ci.shape <wrappers-call-verbs|direct> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py pref set ci.edits_authorised <value> \
+python3 implement/tools/progress.py pref set ci.edits_authorised <value> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```

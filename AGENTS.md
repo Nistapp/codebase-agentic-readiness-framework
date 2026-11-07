@@ -19,12 +19,12 @@ make check          # THE gate: format:check, typecheck, test, the engine's --ve
 make security       # secrets scan against .secrets.baseline
 ```
 
-One test, without the whole suite (the first from `brownfield-recipes/deterministic-audit/`, the second from the
+One test, without the whole suite (the first from `audit/engine/`, the second from the
 repository root):
 
 ```bash
 python3 -m unittest tests.test_cmd_pack -k verbs
-python3 -m unittest discover -s brownfield-recipes/tools/tests -k catalogue
+python3 -m unittest discover -s audit/tools/tests -k catalogue
 ```
 
 This file is read by Claude Code, opencode, Codex, Gemini CLI, Cursor and any other harness that reads `AGENTS.md`;
@@ -56,13 +56,13 @@ no vendor-specific instruction file exists beside it.
 
 | Path | What it is | Rules |
 |---|---|---|
-| `README.md`, `shared/`, `brownfield-legacy/`, `greenfield-bootstrap/` | The framework documents. Normative. | If a tool disagrees with them, the tool is wrong. |
+| `README.md`, `shared/`, `brownfield-legacy/`, `greenfield/` | The framework documents. Normative. | If a tool disagrees with them, the tool is wrong. |
 | `spec/` | Numbered requirements (`REQ-...`) for what a repository must have. See `spec/README.md`. | Recipes link to requirement IDs; they do not restate rules. |
-| `brownfield-recipes/deterministic-audit/` | The Python audit engine: reads a repository, never writes to it, no LLM, no network. | Standard library only. Read its `AGENTS.md` before changing it. |
-| `brownfield-recipes/audit/`, `implement/` | The LLM-driven recipes (`SKILL.md` files, checks, playbooks). | The model's judgment is backed by cited evidence; tools do the counting. |
-| `brownfield-recipes/tools/`, `schema/` | Deterministic tools the recipes call, and the JSON Schemas for their files. | Standard library only. No network. Never write inside a target repository, except `progress.py` writing the target's two state files (ADR 0002 in `brownfield-recipes/docs/architecture/adrs/`). |
-| `brownfield-recipes/dev/` | Checks that run in CI and are not shipped. Today: the cross-check of the tools' schema validator against the reference `jsonschema` package, and the Mermaid render check. | May import dev packages, which `uv run --with` installs for one run. Nothing in `tools/` or the engine may import them. |
-| `brownfield-recipes/docs/` | Documentation for all of the above. | Follow `brownfield-recipes/docs/STYLE_GUIDE.md`; start at `docs/architecture/README.md`. |
+| `audit/engine/` | The Python audit engine: reads a repository, never writes to it, no LLM, no network. | Standard library only. Read its `AGENTS.md` before changing it. |
+| `audit/`, `implement/` | The LLM-driven recipes (`SKILL.md` files, checks, playbooks). | The model's judgment is backed by cited evidence; tools do the counting. |
+| `audit/tools/`, `schema/` | Deterministic tools the recipes call, and the JSON Schemas for their files. | Standard library only. No network. Never write inside a target repository, except `progress.py` writing the target's two state files (ADR 0002 in `docs/architecture/adrs/`). |
+| `dev/` | Checks that run in CI and are not shipped. Today: the cross-check of the tools' schema validator against the reference `jsonschema` package, and the Mermaid render check. | May import dev packages, which `uv run --with` installs for one run. Nothing in `tools/` or the engine may import them. |
+| `docs/` | Documentation for all of the above. | Follow `docs/STYLE_GUIDE.md`; start at `docs/architecture/README.md`. |
 | `artefacts/` | Scratch notes and plans. The folder is tracked, its contents are git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
 
 A folder with no files yet is not written yet; the docs page that describes it says `Planned`.
@@ -71,12 +71,12 @@ A folder with no files yet is not written yet; the docs page that describes it s
 
 - Never open, print or quote a `.env` file or any other secret store. Fixtures contain `.env` files on purpose; treat them as data you may not read.
 - Never push, push tags, open a pull request, or delete anything remote. The maintainer does those.
-- Never add a third-party import to the engine or to `brownfield-recipes/tools/`. Dev tools run through `uvx` only; the one place for dev-only imports is `brownfield-recipes/dev/`.
+- Never add a third-party import to the engine or to `audit/tools/`. Dev tools run through `uvx` only; the one place for dev-only imports is `dev/`.
 - Never run another repository's own commands directly while auditing it. Use the engine's probe runner, which is opt-in
   (`--run-gates` plus `--allow-probe <verb>`).
 - Never describe a feature as working when it is only planned.
-- Never edit, skip or delete a test to make a failing test pass, in `brownfield-recipes/deterministic-audit/tests/` or
-  `brownfield-recipes/tools/tests/`. A fixture is data: change one only with the test that needs the change.
+- Never edit, skip or delete a test to make a failing test pass, in `audit/engine/tests/` or
+  `audit/tools/tests/`. A fixture is data: change one only with the test that needs the change.
 
 ## Definition of done
 
@@ -89,7 +89,7 @@ A change is done when all of this holds:
   affected documentation and the decision records in the same change set. When you fill in a page marked `Planned`,
   remove that note and update the doc router.
 - Python files carry the SPDX header `AGPL-3.0-or-later` and the copyright line. Documentation, schemas and published
-  outputs are `GFDL-1.3-only`. The zones are in `brownfield-recipes/docs/reference/licensing.md`.
+  outputs are `GFDL-1.3-only`. The zones are in `docs/reference/licensing.md`.
 - Commits follow Conventional Commits, one logical change each, so any one can be reverted alone.
   Work that follows a build roadmap or track also carries a `Roadmap-Step: <step id>` trailer
   (for example `S4.6`, `IR07.3` or `MR02`).
@@ -100,7 +100,7 @@ A change is done when all of this holds:
 - Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
   `docs/architecture/adrs/README.md`.
 - Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.
-- Terms: `brownfield-recipes/docs/architecture/glossary.md` and `shared/Glossary.md`.
-- The engine's design, checks and ADRs: `brownfield-recipes/deterministic-audit/docs/architecture/README.md`.
-- Tool ecosystem and index tooling: `shared/Tool-Ecosystem.md`. If `codebase-memory-mcp` is available, query it
+- Terms: `docs/glossary.md` and `docs/framework/glossary.md`.
+- The engine's design, checks and ADRs: `audit/engine/docs/architecture/README.md`.
+- Tool ecosystem and index tooling: `docs/framework/tool-ecosystem.md`. If `codebase-memory-mcp` is available, query it
   before reading whole files.

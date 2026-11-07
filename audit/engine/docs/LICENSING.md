@@ -7,5 +7,5 @@ Sections, no Front-Cover Texts and no Back-Cover Texts. The licence text is the 
 the root of this repository.
 
 The engine's code, in the parent directory, is licensed separately under AGPL-3.0-or-later
-([`LICENSE`](../LICENSE)). Neither licence extends to the repositories the engine audits or to the reports you
-produce with it. The full picture is in [Licensing](../../docs/reference/licensing.md).
+([`LICENSE`](../../../LICENSE-CODE)). Neither licence extends to the repositories the engine audits or to the reports you
+produce with it. The full picture is in [Licensing](../../../docs/reference/licensing.md).

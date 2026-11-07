@@ -3,7 +3,7 @@
 
 """`CI` pack — continuous integration.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Key Deliverables. The normative sentence is the
+Anchor: `docs/framework/phased-approach.md` § Key Deliverables. The normative sentence is the
 one-command-surface note in the Phase 1 activities block.
 
 Implemented here: `CI-01` … `CI-03`.

@@ -1,8 +1,8 @@
 # Documentation Style Guide
 
-> **Scope:** Governs all documentation under `brownfield-recipes/docs/`, and the engine docs under `brownfield-recipes/deterministic-audit/docs/`. Applies to human writers and AI documentation agents.
+> **Scope:** Governs all documentation under `docs/`, and the engine docs under `audit/engine/docs/`. Applies to human writers and AI documentation agents.
 > **Standard:** [Diátaxis](https://diataxis.fr/) plus constraint-driven agent invariants.
-> **Origin:** Adapted from the engine's style guide, which follows the greenfield template [`STYLE_GUIDE.md`](../../greenfield-bootstrap/templates/docs/STYLE_GUIDE.md). This file adds a Reference quadrant.
+> **Origin:** Adapted from the engine's style guide, which follows the greenfield template [`STYLE_GUIDE.md`](../greenfield/templates/docs/STYLE_GUIDE.md). This file adds a Reference quadrant.
 > **Enforcement:** The repository-root `AGENTS.md` (planned) MUST require compliance with this file. Link to these rules; never restate them elsewhere, because restated rules drift.
 
 ---
@@ -12,7 +12,7 @@
 1. **Single Source of Truth:** `docs/` is the sole canonical home for permanent knowledge about the recipes and their tools. `artefacts/` is transient scratch and is off-limits to automatic agent reading or indexing.
 2. **Zero Specification Drift:** Code, recipes, schemas and docs MUST stay synchronized. Every behavioural change requires a matching doc update **in the same change set**.
 3. **Empirical Grounding:** Never document planned features as existing facts. Every page that describes behaviour that is still planned MUST carry a `> [!NOTE] Planned.` line naming what is missing and the roadmap step that delivers it.
-4. **Symbol Anchoring:** Reference code with explicit file paths. Once a file exists, link to its line anchors, for example `[report.py#L1-L40](../tools/report.py#L1-L40)`. While a file is planned, name it as a code span instead of linking to it.
+4. **Symbol Anchoring:** Reference code with explicit file paths. Once a file exists, link to its line anchors, for example `[report.py#L1-L40](../audit/tools/report.py#L1-L40)`. While a file is planned, name it as a code span instead of linking to it.
 5. **Living ADRs (Current-State Only):** An ADR MUST describe only the shipped, current design. When a decision changes, revise the ADR in place; when it becomes irrelevant, delete it. Git is the archive.
 
 ---
@@ -50,7 +50,7 @@ Rules:
 
 ## 4. Document Types & Locations
 
-Paths are relative to `brownfield-recipes/docs/`.
+Paths are relative to `docs/`.
 
 | Content type | Diátaxis quadrant | Location | Naming |
 |---|---|---|---|
@@ -120,4 +120,4 @@ ADRs live in `architecture/adrs/` and start from `templates/adr-template.md`.
 | Copied excerpts of framework pages | A relative link to the framework page and section |
 
 > [!IMPORTANT]
-> The framework (`brownfield-legacy/`, `shared/`, `spec/`) is the source of truth for *what* readiness means. These docs MUST link to it and MUST NOT restate it.
+> The framework (`docs/framework/`, `greenfield/`, `spec/`) is the source of truth for *what* readiness means. These docs MUST link to it and MUST NOT restate it.

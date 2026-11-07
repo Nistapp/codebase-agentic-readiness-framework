@@ -13,7 +13,7 @@ Two Markdown recipes an agent runs against an existing repository, in order: [`a
 and [`implement`](../../../implement/SKILL.md) (v0.2.0), which acts on the audit's confirmed
 findings one theme at a time. Its six stages, its state tools and its thirteen playbooks are written, and every
 theme has been applied to two repositories. The
-audit report — [documented in `schema/SCHEMA.md`](../../../schema/SCHEMA.md) — is the only contract between
+audit report — [documented in `schema/SCHEMA.md`](../../../audit/schema/SCHEMA.md) — is the only contract between
 them: `implement` reads a finalised report and nothing else, so it can be written, reviewed and run
 independently of whatever produced that report. Either recipe is plain `SKILL.md` plus
 command-line tools, so any coding agent with shell access can run it — see
@@ -33,7 +33,7 @@ catalogue are the parts that never guess.
 
 ## 3. Relationship to the deterministic engine
 
-[`deterministic-audit/`](../../../deterministic-audit/README.md) is a separate, standard-library-only
+The engine, [`audit/engine/`](../../../audit/engine/README.md), is a separate, standard-library-only
 Python engine with no LLM and no network, migrated into this repository with its own history. It never
 writes to the repository it scans. The audit recipe runs it first, imports its verdicts as a starting
 draft, then works through the check families on top of that draft: it verifies every `BLOCKER` the engine
@@ -51,9 +51,9 @@ not judge on its own (`UNKNOWN`); and it may override an engine verdict, but onl
 - **No auto-merge, and no push unless the owner opted in.** The implementation recipe branches, changes
   and stops for the operator to review and push. It pushes the branch and opens a pull request only when the
   owner recorded `ci.pr_by_agent=yes` at triage. It never merges, tags or force-pushes
-  ([ADR 0003](../adrs/0003-push-and-pr-policy.md)).
+  ([ADR 0003](../../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md)).
 - **No Phase 2–4 work.** These recipes cover Phase 1 (Agentic Bootstrap) only. The framework's later
   phases are out of scope for this project entirely, not merely deferred.
 - **Proven on two repositories only.** `implement/` (v0.2.0) was applied to a Java service and a private two-app
   Node repository. The second audit of each is a draft the owner has not confirmed; the Java one is published as a
-  [worked example](../../../schema/examples/server-worked-example/README.md).
+  [worked example](../../../audit/schema/examples/server-worked-example/README.md).

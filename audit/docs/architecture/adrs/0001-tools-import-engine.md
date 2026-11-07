@@ -18,7 +18,7 @@ Four constraints bind the choice:
 - The engine's behaviour and tests do not change for the sake of the tools.
 - Standard library only, in both.
 
-The engine is a package named `audit` in [`deterministic-audit/`](../../../deterministic-audit/audit/__init__.py). Its entry point, [`main(argv)`](../../../deterministic-audit/audit/__main__.py), takes the arguments explicitly and returns the exit code, which [ADR-0005 of the engine](../../../deterministic-audit/docs/architecture/adrs/0005-module-layout-and-zipapp-distribution.md) keeps stable.
+The engine is a package named `audit` in [`deterministic-audit/`](../../../engine/audit/__init__.py). Its entry point, [`main(argv)`](../../../engine/audit/__main__.py), takes the arguments explicitly and returns the exit code, which [ADR-0005 of the engine](../../../engine/docs/architecture/adrs/0005-module-layout-and-zipapp-distribution.md) keeps stable.
 
 ## Decision
 

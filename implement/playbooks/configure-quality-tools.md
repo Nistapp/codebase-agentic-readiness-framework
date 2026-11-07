@@ -102,7 +102,7 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
 
 ### Java (Gradle)
 
-Profile: [`stacks/java.md`](../../stacks/java.md#tooling-defaults).
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#tooling-defaults).
 
 | Concern | Options | Recommend |
 |---|---|---|
@@ -128,7 +128,7 @@ Profile: [`stacks/java.md`](../../stacks/java.md#tooling-defaults).
 
 ### TypeScript and Node
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#tooling-defaults).
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#tooling-defaults).
 
 | Concern | Options | Recommend |
 |---|---|---|
@@ -143,7 +143,7 @@ Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#tooling-d
   `eslint-suppressions.json` (`--suppress-all`, without `--fix`) as the baseline; on older ESLint, lint changed
   files with `--max-warnings=0` in `check`, and run the full lint report-only in CI.
 - `typecheck` = `tsc --noEmit -p <config>`. A NestJS scaffold has `strict` off (see the
-  [NestJS section](../../stacks/typescript-node.md#nestjs)); count the errors `strict: true` gives before
+  [NestJS section](../../audit/stacks/typescript-node.md#nestjs)); count the errors `strict: true` gives before
   proposing the flip, and ratchet if there are any.
 - Strict ratchet (TypeScript): `strict: true` does not override an option the base config sets explicitly to
   `false`, so a second config (`tsconfig.strict.json`, extends the base) must set each of those flags to
@@ -163,8 +163,8 @@ Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#tooling-d
   recorded as counts per severity and a review date), never `done`, and the verb stays out of `check`.
 - A Create React App component may already be TypeScript and strict: read its `tsconfig.json` before treating
   TOOL-03 as open for it.
-- The greenfield [`biome.json`](../../../greenfield-bootstrap/templates/biome.json) and
-  [`tsconfig.json`](../../../greenfield-bootstrap/templates/tsconfig.json) templates are references, never
+- The greenfield [`biome.json`](../../greenfield/templates/biome.json) and
+  [`tsconfig.json`](../../greenfield/templates/tsconfig.json) templates are references, never
   copied.
 
 ## Continue on error
@@ -211,11 +211,11 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py pref set lint.java pmd --reason "<owner's words>" --by owner \
+python3 implement/tools/progress.py pref set lint.java pmd --reason "<owner's words>" --by owner \
   --target <repo> --phase <phase>
-python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --commit <sha> --debt "what=PMD violations,count=<N>,baseline=config/pmd/ruleset.xml" \
   --verification-command "./gradlew lint" --verification-result "exit 0 under the exclude list"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn blocked --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn blocked --target <repo> --phase <phase> \
   --reason "needs T2 lockfile"
 ```

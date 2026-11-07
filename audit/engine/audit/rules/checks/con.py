@@ -3,7 +3,7 @@
 
 """`CON` pack — constraints.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Key Deliverables ("Allow/deny lists").
+Anchor: `docs/framework/phased-approach.md` § Key Deliverables ("Allow/deny lists").
 
 Implemented here: `CON-01`, `CON-02`, `CON-03`, and the `CON-04` emitter.
 

@@ -13,7 +13,7 @@
 - [ ] A clean working tree in the target, on the integration branch (for example `dev`)
 - [ ] Python 3.11+ on `PATH`
 - [ ] The recipe: a framework checkout, or the `agentic-readiness-implement` skill installed beside the
-      `agentic-readiness-audit` skill, from the same build ([installing the skills](../../README.md#as-an-installed-skill))
+      `agentic-readiness-audit` skill, from the same build ([installing the skills](../../audit/README.md#as-an-installed-skill))
 
 ---
 
@@ -27,7 +27,7 @@ moves it across. Nothing else copies it.
 1. Copy the final report's two files into the target, named
    `docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.json` and `.md` (`<kind>` is a short name for the
    repository, such as `server`; `<ts>` is the stamp from the audit's file name). Use the target's own naming if it
-   has one ([ADR 0003](../architecture/adrs/0003-push-and-pr-policy.md) records the
+   has one ([ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) records the
    push and PR policy that follows).
 2. Commit the pair on the integration branch, and let it reach the branch the work will start from. The report is
    evidence; do not edit it afterwards. An edit is detected: `progress.py init` records the SHA-256 of the
@@ -38,7 +38,7 @@ moves it across. Nothing else copies it.
    target, and an existing state):
 
    ```bash
-   python3 brownfield-recipes/tools/progress.py init \
+   python3 implement/tools/progress.py init \
      --report <triage worktree>/docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.json \
      --target <triage worktree> --default-branch <integration branch> --phase <session id>
    ```
@@ -55,7 +55,7 @@ changed, so it re-reads each check file before acting.
 Then it walks the queued findings theme by theme (Stage 1). For each one you choose keep, skip or defer, with a
 reason; a skip is final for every later session. You also state the preferences that bind the run: tools you
 prefer, scope limits such as "no mass reformat", and whether the agent may push a branch and open a pull request
-(`ci.pr_by_agent`; without `yes` it stops at a local branch, [ADR 0003](../architecture/adrs/0003-push-and-pr-policy.md)).
+(`ci.pr_by_agent`; without `yes` it stops at a local branch, [ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md)).
 The agent records each answer with `progress.py` as you give it, commits the state on a triage branch, and stops.
 
 ### Step 3: Approve each theme's plan
@@ -87,7 +87,7 @@ audit recipe on a pinned commit and hand that report over as in Step 1, beside t
 The agent compares the two:
 
 ```bash
-python3 brownfield-recipes/tools/compare_reports.py <first report> <second report> \
+python3 implement/tools/compare_reports.py <first report> <second report> \
   --state <target>/docs/agentic-readiness/<label>-agentic-readiness-state.json
 ```
 
@@ -99,14 +99,14 @@ every debt entry with its count and baseline.
 
 ## A real run
 
-The [worked example](../../schema/examples/server-worked-example/README.md) holds the before and after reports,
+The [worked example](../../audit/schema/examples/server-worked-example/README.md) holds the before and after reports,
 the comparison and the state of one real repository (the second audit is final: the owner decided every
 finding). Read the comparison first: it shows how `compare_reports.py` labels each move and where a person
 annotated one.
 
 ## Verification
 
-- `python3 brownfield-recipes/tools/progress.py show --target <target>` lists no item as `queued` or `in_progress`;
+- `python3 implement/tools/progress.py show --target <target>` lists no item as `queued` or `in_progress`;
   every item is `done`, `partial` (with debt), `failed` or `blocked` (with a reason), `deferred` or `skipped`.
 - Every theme with items is `merged` in the state, with its pull request and merge commit.
 - `compare_reports.py` on the two reports labels every moved check, and the target's own gate passes on the

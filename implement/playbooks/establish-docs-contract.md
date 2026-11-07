@@ -65,7 +65,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    > (`node-vs-java-docs-lint`, not part of the recipe). An owner who asks "why not Java" gets this answer; the
    > docs job stays separate from the build, so the build toolchain is unchanged.
 2. **Style guide source.** Default: adapt the framework's
-   [`brownfield-recipes/docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) (Diátaxis) to one page. The alternative
+   [`docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) (Diátaxis) to one page. The alternative
    (the owner's own house rules) is allowed only when those rules are not private to a different repository.
 3. **First ADRs.** Ask which two or three existing decisions to record. If the owner has no preference, pick them
    from the code and the existing docs (a schema-migration tool, a search or storage engine, an authentication
@@ -103,7 +103,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    instruction-file line (Inputs 5). The check reads the literal string `STYLE_GUIDE.md`.
 4. **ADRs (DOC-04).** Create `docs/adr/` with `README.md` (the index: a table of number, title, status, one
    line each, linking every file by its path), `0000-template.md` (adapted from the greenfield
-   [`adr-template.md`](../../../greenfield-bootstrap/templates/docs/templates/adr-template.md): Status, Date,
+   [`adr-template.md`](../../greenfield/templates/docs/templates/adr-template.md): Status, Date,
    Context, Decision, Alternatives considered, Consequences) and the first records as `0001-short-title.md`.
    Rules:
    - Status is `proposed` until the owner accepts; the owner changes it. This differs from the greenfield
@@ -156,7 +156,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 
 ### Gradle and Quarkus
 
-Profile: [`stacks/java.md`](../../stacks/java.md#boundaries). Components: `settings.gradle` includes and the
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#boundaries). Components: `settings.gradle` includes and the
 module list for NAV-01; entry points: the `@QuarkusMain`, REST resource classes (`@Path`), the application
 properties and the migration folder. Candidates for first ADRs: the schema-migration tool and where migrations
 live, the search integration and its index, the tenant or authentication selection. The docs job is a separate
@@ -164,7 +164,7 @@ Node job; the Gradle build, wrapper and dependency set do not change.
 
 ### Node (npm, NestJS, React)
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#boundaries). Components: workspace or
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#boundaries). Components: workspace or
 per-app `package.json` files and compose service names; entry points: `main.ts`, the `start` script, the
 compose file. In a per-app layout (`layout.command_runner`), put the lint config and the script at the root and
 run the docs job once from there. For infrastructure folders, read the routing from the files that are actually
@@ -223,11 +223,11 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "test -f docs/STYLE_GUIDE.md" \
   --verification-result "present; named in the instruction file"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --debt "what=markdown lint violations,count=<n>,baseline=<file>" --note "<mechanism>"
-python3 brownfield-recipes/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
+python3 implement/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```

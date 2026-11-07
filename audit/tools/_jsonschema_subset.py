@@ -9,7 +9,7 @@ subset" in schema/SCHEMA.md. :func:`lint_schema` rejects any other keyword, so t
 and silently ignored. :class:`SubsetValidator` applies a linted schema to a document.
 
 Behaviour follows the reference ``jsonschema`` package, which a dev-only check in CI compares against on every
-example and on mutations of each (brownfield-recipes/dev/crosscheck_jsonschema.py). Two deliberate points:
+example and on mutations of each (dev/crosscheck_jsonschema.py). Two deliberate points:
 
 * ``integer`` accepts ``2.0`` and refuses ``True``; JSON booleans are never numbers. ``enum`` and ``const`` compare by
   JSON equality, so ``1`` is not ``True``.

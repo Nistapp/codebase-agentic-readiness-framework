@@ -1,14 +1,14 @@
 # Constraints (`CON`)
 
 > Follows the anatomy in [`README.md`](README.md). Four checks, all `method: automated`. See
-> [Why These Checks §9](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#9-constraints-con)
+> [Why These Checks §9](../engine/docs/architecture/user-overview/03-why-these-checks.md#9-constraints-con)
 > for the consequence behind this family: Constraint Engineering is what bounds an agent's blast radius,
 > and Phase 1 establishes the initial lists. Every check here reads against
-> [decision 0001](../../../spec/decisions/0001-constraint-artifact.md): **the deny list is the
+> [decision 0001](../../spec/decisions/0001-constraint-artifact.md): **the deny list is the
 > prohibitions section of the instruction file** — the section whose heading says what an agent must
 > not do ("Do Not Do" is the template's own heading; "Never", "Prohibited", "Forbidden" and "Deny" are
 > accepted too). There is no separate allow list; what an agent *may* change is the architectural
-> boundaries ([REQ-SH-010](../../../spec/readiness-requirements.md#req-sh-010--architectural-boundaries-declared)),
+> boundaries ([REQ-SH-010](../../spec/readiness-requirements.md#req-sh-010--architectural-boundaries-declared)),
 > and the deny list only narrows that. Harness-native enforcement (Claude Code permission rules,
 > `.cursorignore`, and the like) is optional hardening the audit never scores.
 >
@@ -23,7 +23,7 @@
 
 Why it matters   An agent cannot respect a boundary that exists only in someone's head; the deny list
                   must be a concrete, written artifact, not an unstated expectation
-                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         BLOCKER
 Engine           `CON-01`. Reads the prohibitions section decision 0001 names and collects every code
                  span in it. A span is a path or pattern when it has no command syntax (no shell
@@ -64,7 +64,7 @@ Pitfalls         A path written in prose without backticks ("do not touch the mi
 
 Why it matters   Tests are the safety net; an agent that may freely edit them is not actually gated by
                   them, and can make a failure disappear instead of fixing it
-                  ([shared/Overview.md § Principles](../../../shared/Overview.md#principles)).
+                  ([docs/framework/overview.md § Principles](../../docs/framework/overview.md#principles)).
 Severity         BLOCKER
 Engine           `CON-02`. Locates every test directory (a path segment named `test`, `tests` or
                  `__tests__`; `spec`/`specs` are feature-specification folders, not tests, and are never
@@ -104,13 +104,13 @@ Pitfalls         A Ruby repository with tests only under `spec/` reads as `UNKNO
 
 Why it matters   Scratch notes must not become context an agent treats as source of truth; a tracked or
                   unignored scratch directory pollutes every session that follows
-                  ([greenfield-bootstrap/README.md § 6.2 Agent Scratchpad](../../../greenfield-bootstrap/README.md#62-agent-scratchpad--artefacts)).
+                  ([greenfield/README.md § 6.2 Agent Scratchpad](../../greenfield/README.md#62-agent-scratchpad--artefacts)).
 Severity         DEGRADER
 Engine           `CON-03`. Checks the scratch spellings (`artefacts/`, `artifacts/`) and the agent/tool
                  state directories (`.codebase-memory/`, `.opencode/`, `.agentic-tdd/`): any of these
                  that exist must be matched by an ignore rule, and nothing under any of them may be
                  tracked by git. Ignore rules are read by the scoped matcher
-                 ([ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
+                 ([ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
                  every nested `.gitignore` scoped to its directory, `!` negation, anchoring and `**`; a
                  root is covered when it is ignored itself or a new file in it would be
                  (`artefacts/.gitignore` holding `*`), and the summary names the file. A tracked file
@@ -147,7 +147,7 @@ Absence proof    A FAIL for "no ignore rule covers it" records the ignore-rule s
                  `grep`, the root's name as pattern, every ignore file as scope, `0` hits); a FAIL for a
                  tracked path cites the path directly.
 Remediation      `add-deny-rules`. [`DOC-03`](03-documentation-contract.md) judges the same
-                 [REQ-SH-018](../../../spec/readiness-requirements.md#req-sh-018--scratch-and-tool-state-directories-ignored)
+                 [REQ-SH-018](../../spec/readiness-requirements.md#req-sh-018--scratch-and-tool-state-directories-ignored)
                  from the documentation-contract side; add `artefacts/` (or the project's own scratch
                  directory name) to `.gitignore`, and `git rm --cached` anything already tracked under
                  it, to resolve both at once.
@@ -161,7 +161,7 @@ Pitfalls         `CON-03` and `DOC-03` share one requirement but read different 
 Why it matters   The scan knows what is dangerous in *this* repository; without it, every adoption starts
                   from a generic template that fits nobody and an agent (or a human) has to rediscover
                   the same paths by exploring
-                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         COSMETIC
 Engine           `CON-04`. Not a scored check (`catalogue.json`: `scored: false`) — a drafting aid that
                  still returns a `CheckOutcome` like every other check. It scans the repository for six

@@ -13,10 +13,10 @@ files a one-off user needs without cloning or building anything.
 
 1. `main` is green: the `CI Gate` check has passed on the commit you will tag.
 2. [`CHANGELOG.md`](CHANGELOG.md) has a heading for the version, moved down from `[Unreleased]`, and
-   [`brownfield-recipes/CHANGELOG.md`](brownfield-recipes/CHANGELOG.md) and the engine's
-   [changelog](brownfield-recipes/deterministic-audit/docs/reference/changelog.md) agree with it.
+   [`audit/CHANGELOG.md`](audit/CHANGELOG.md) and the engine's
+   [changelog](audit/engine/docs/reference/changelog.md) agree with it.
 3. The numbers that appear in more than one place (the self-audit score in
-   [Self-Audit](brownfield-recipes/docs/reference/self-audit.md), the check count) are current.
+   [Self-Audit](docs/reference/self-audit.md), the check count) are current.
 4. Locally, `make check`, `make security` and `make validate-skills` pass.
 
 ## Tagging
@@ -35,7 +35,7 @@ On a pushed tag matching `v*` it runs, on Ubuntu with `contents: write` as the o
 `GITHUB_TOKEN`:
 
 1. `make check` and `make security`, so a tag on a red commit publishes nothing.
-2. `python3 brownfield-recipes/deterministic-audit/tools/build.py`, which builds the reproducible single-file
+2. `python3 audit/engine/build.py`, which builds the reproducible single-file
    engine, `audit.pyz`.
 3. `make validate-skills`, which builds the `agentic-readiness-audit` and `agentic-readiness-implement` skill
    bundles and validates both against the Agent Skills specification.
@@ -53,4 +53,4 @@ tag locally and on the remote, and tag again. Do not edit a published release's 
 ## After the release
 
 Update the `[Unreleased]` heading in the changelogs, and the version named in [`README.md`](README.md) and
-[`brownfield-recipes/README.md`](brownfield-recipes/README.md).
+[`audit/README.md`](audit/README.md).

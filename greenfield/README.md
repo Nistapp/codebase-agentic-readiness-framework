@@ -3,7 +3,7 @@
 > [!NOTE]
 > This recipe captures every standard, pattern, and convention required to scaffold a new project to world-class enterprise standards before writing a single line of application code.
 > 
-> By executing this Day-0 recipe, your project is **agentic-ready from commit #1** — satisfying [Phase 1 of the Readiness Foundation](../brownfield-legacy/Phased-Approach.md) and failing no implemented check of the [deterministic audit](../brownfield-recipes/deterministic-audit/README.md). Phases 2–4 (docstrings, agent docs and context packs, contracts and characterization tests) are content a scaffold cannot produce; you write them as the project grows.
+> By executing this Day-0 recipe, your project is **agentic-ready from commit #1** — satisfying [Phase 1 of the Readiness Foundation](../docs/framework/phased-approach.md) and failing no implemented check of the [deterministic audit](../audit/engine/README.md). Phases 2–4 (docstrings, agent docs and context packs, contracts and characterization tests) are content a scaffold cannot produce; you write them as the project grows.
 
 ---
 
@@ -444,4 +444,4 @@ name locally and in CI.
 
 ---
 
-← [Home (Dual-Track Router)](../README.md) · [Browse Templates](templates/) · [Brownfield Legacy Track →](../brownfield-legacy/Phased-Approach.md)
+← [Home (Dual-Track Router)](../README.md) · [Browse Templates](templates/) · [Brownfield Legacy Track →](../docs/framework/phased-approach.md)

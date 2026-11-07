@@ -8,7 +8,7 @@ The package tree is the source of truth; this produces the one artifact you hand
 It needs nothing but the standard library, which is the entire reason the tool ships this way — it
 must run on a machine where nothing is installed and the target's toolchain does not exist yet.
 
-    python3 tools/build.py            # build, print size and the archive entry point
+    python3 build.py                  # build, print size and the archive entry point
     ./dist/audit.pyz <target>         # run it
 
 Two constraints come from zipapp and are easy to get wrong:
@@ -19,7 +19,7 @@ Two constraints come from zipapp and are easy to get wrong:
    ``audit.__main__.main`` accepts ``argv=None`` and the entry point is ``entry``, which exits with
    ``main()``'s code
 
-Excluded from the archive: tests, docs, dist and bytecode. Nothing inside a .pyz can be read with
+Excluded from the archive: tests, docs, dist, this build script and bytecode. Nothing inside a .pyz can be read with
 ``Path(__file__)`` — the archive is not a directory — so shipped data must go through
 ``importlib.resources``. This project keeps its tables in code, so it has no such data file.
 """
@@ -32,12 +32,12 @@ import zipapp
 import zipfile
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parent
 DIST = REPO_ROOT / "dist"
 ARCHIVE = DIST / "audit.pyz"
 ENTRY_POINT = "audit.__main__:entry"
 
-EXCLUDED_PREFIXES = ("tests/", "docs/", "dist/", "tools/", ".git/")
+EXCLUDED_PREFIXES = ("tests/", "docs/", "dist/", "build.py", ".git/")
 
 #: Every other archive entry's timestamp comes from its source file's own mtime on disk, which is
 #: stable build to build; this is the one zipapp synthesizes at build time (`zipapp.create_archive`'s

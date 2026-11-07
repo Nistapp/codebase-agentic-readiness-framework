@@ -3,7 +3,7 @@
 > Follows the anatomy in [`README.md`](README.md). Eleven checks, all `method: automated`, all
 > `catalogue.json`: `scored: false` with no `req_ids` — reported like every other check, but earning no
 > credit. See
-> [Why These Checks §14](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#14-hygiene-informational-never-scored)
+> [Why These Checks §14](../engine/docs/architecture/user-overview/03-why-these-checks.md#14-hygiene-informational-never-scored)
 > for the consequence behind this family: README, CODEOWNERS, PR/issue templates, CONTRIBUTING,
 > SECURITY, CHANGELOG, release process, dependency-update automation, license and branch protection are
 > how a *team* operates, not what an agent reads before deciding what to edit. They are reported because
@@ -13,8 +13,8 @@
 > a file at the repository root or under `.github/`, `.gitlab/` or `docs/`, never in a component's directory,
 > and never under a carried-data directory (`templates/`, `examples/`, `fixtures/`), which is not in the
 > inventory at all
-> ([ADR-0008](../../deterministic-audit/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). A
-> `CONTRIBUTING.md` that only exists under `greenfield-bootstrap/templates/` is a template the repository
+> ([ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). A
+> `CONTRIBUTING.md` that only exists under `greenfield/templates/` is a template the repository
 > ships, not the repository's own, and reads `FAIL`.
 >
 > **Verdict contract, shared by every check in this file (from the engine's own `hyg.py` docstring):
@@ -24,7 +24,7 @@
 > unreadable README, an undatable changelog, an unrecognised CI provider for branch protection) — it is
 > never used merely because an artifact is absent. None of these checks writes to the target or runs a
 > command in the target's own toolchain; `HYG-07` reads git history read-only for a commit date, never
-> wall-clock time (`deterministic-audit/AGENTS.md` §5).
+> wall-clock time (`audit/engine/AGENTS.md` §5).
 >
 > **A described cross-check this pack does not implement.** The framework overview names one exception
 > that "bridges" hygiene and scored checks: where `CODEOWNERS` names paths the audit would also place on
@@ -192,7 +192,7 @@ Engine           `HYG-07`. Any repository-level file whose basename starts with 
                  (the first match, by sort order, is read). None found is `FAIL` outright. Found: the
                  engine compares, via read-only git queries, the candidate's own last-commit date against
                  `HEAD`'s commit date — **recency is always relative to the repository's own history,
-                 never wall-clock time** (`deterministic-audit/AGENTS.md` §5: no `date.today()`). Within
+                 never wall-clock time** (`audit/engine/AGENTS.md` §5: no `date.today()`). Within
                  365 days (`RECENT_WINDOW`) of `HEAD` is `PASS`; older is `FAIL`, with the age stated.
                  Git unable to supply either date (no repository, git absent, or the file untracked) is
                  `UNKNOWN` — never `FAIL`, and never today's date substituted for the missing one.

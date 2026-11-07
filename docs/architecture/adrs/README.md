@@ -20,14 +20,14 @@ one goes is [ADR 0001](0001-decisions-live-beside-the-component.md).
 
 | ADR | Decision |
 | --- | --- |
-| [0001](../../../brownfield-recipes/docs/architecture/adrs/0001-tools-import-engine.md) | Tools import the engine in process |
-| [0002](../../../brownfield-recipes/docs/architecture/adrs/0002-progress-writes-state-in-target.md) | `progress.py` writes the state files inside the target |
-| [0003](../../../brownfield-recipes/docs/architecture/adrs/0003-push-and-pr-policy.md) | Push and pull request policy of the implement recipe |
+| [0001](../../../audit/docs/architecture/adrs/0001-tools-import-engine.md) | Tools import the engine in process |
+| [0002](../../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md) | `progress.py` writes the state files inside the target |
+| [0003](../../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) | Push and pull request policy of the implement recipe |
 
 ## Audit engine: `brownfield-recipes/deterministic-audit/docs/architecture/adrs/`
 
 The engine's decisions are indexed in the table in its
-[`architecture/README.md`](../../../brownfield-recipes/deterministic-audit/docs/architecture/README.md); the ADRs
-themselves are in [`adrs/`](../../../brownfield-recipes/deterministic-audit/docs/architecture/adrs/). ADR 0001 to 0009
+[`architecture/README.md`](../../../audit/engine/docs/architecture/README.md); the ADRs
+themselves are in [`adrs/`](../../../audit/engine/docs/architecture/adrs/). ADR 0001 to 0009
 cover the report-not-a-gate rule, read-only operation, component depth, no LLM calls, the module layout, the ignore
 engine, the report contract, what counts as the repository, and nested ignore files.

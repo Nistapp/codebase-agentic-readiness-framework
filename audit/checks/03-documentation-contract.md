@@ -1,7 +1,7 @@
 # Documentation Contract (`DOC`)
 
 > Follows the anatomy in [`README.md`](README.md). Four checks, all `method: automated`. See
-> [Why These Checks §4](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#4-documentation-contract-doc)
+> [Why These Checks §4](../engine/docs/architecture/user-overview/03-why-these-checks.md#4-documentation-contract-doc)
 > for the consequence behind this family: without a declared, canonical home for permanent knowledge,
 > documentation scatters and nothing is canonical — an agent cannot tell a settled architecture decision
 > from a stale scratch note.
@@ -15,7 +15,7 @@ resolves all four checks. Each check's **Remediation** below says what to create
 
 Why it matters   `docs/` is the declared home for permanent documentation; without it on day one,
                   documentation has nowhere canonical to start
-                  ([greenfield-bootstrap/README.md § 5.1 Diátaxis Framework](../../../greenfield-bootstrap/README.md#51-diátaxis-framework)).
+                  ([greenfield/README.md § 5.1 Diátaxis Framework](../../greenfield/README.md#51-diátaxis-framework)).
 Severity         DEGRADER
 Engine           `DOC-01`. Any Markdown file (`.md` or `.markdown`, case-insensitive) anywhere under
                  `docs/` is `PASS`. No such file but the directory exists on disk is `PARTIAL` — the
@@ -46,7 +46,7 @@ Pitfalls         A repository whose only documentation is a root `README.md` is 
 
 Why it matters   Agents need authoring rules they can cite instead of restating per page, or rules get
                   restated and drift
-                  ([greenfield-bootstrap/README.md § 5.2 Templates & Guides](../../../greenfield-bootstrap/README.md#52-templates--guides)).
+                  ([greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides)).
 Severity         DEGRADER
 Engine           `DOC-02`. Exact presence of `docs/STYLE_GUIDE.md` is the primary evidence; the entry
                  instruction file (canonical, else `CLAUDE.md` — the same reader `AGT-03` uses) naming
@@ -81,7 +81,7 @@ Pitfalls         A project that names a *different* canonical style document (no
 
 Why it matters   Transient scratch must be separable and off-limits, or an agent reads work-in-progress
                   notes as the current, settled requirement
-                  ([greenfield-bootstrap/README.md § 6.2 Agent Scratchpad](../../../greenfield-bootstrap/README.md#62-agent-scratchpad--artefacts)).
+                  ([greenfield/README.md § 6.2 Agent Scratchpad](../../greenfield/README.md#62-agent-scratchpad--artefacts)).
 Severity         DEGRADER
 Engine           `DOC-03`. No scratch directory (`artefacts/` or `artifacts/`) present anywhere, on disk or
                  in the inventory, is `PASS` ("no scratch directory in use" — there is nothing to get
@@ -90,7 +90,7 @@ Engine           `DOC-03`. No scratch directory (`artefacts/` or `artifacts/`) p
                  except the directory's own `.gitignore` and a file that `.gitignore` re-includes with
                  `!` (`artefacts/README.md` beside `*`).
                  Otherwise: the directory must be kept out by an ignore rule, read by the engine's scoped
-                 matcher (`audit.ignore.decide`, [ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
+                 matcher (`audit.ignore.decide`, [ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
                  every nested `.gitignore` scoped to its directory, `!` negation, anchoring, directory-only
                  rules and `**`. A directory is kept out when it is ignored itself or a new file in it
                  would be (`artefacts/.gitignore` holding `*`); the summary names the file that decided.
@@ -134,7 +134,7 @@ Pitfalls         A directory ignored by a broad rule that also happens to ignore
 
 Why it matters   Architectural decisions need a location and a registry, or the rationale lives only in
                   chat and pull requests, and agents re-litigate settled decisions
-                  ([greenfield-bootstrap/README.md § 5.2 Templates & Guides](../../../greenfield-bootstrap/README.md#52-templates--guides)).
+                  ([greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides)).
 Severity         COSMETIC
 Engine           `DOC-04`. Looks for `docs/architecture/adrs/` or `docs/adr/` holding at least one file
                  matching the numbered-ADR filename pattern (3–4 digits, a hyphen, a slug, `.md`); a `0000-template.md`

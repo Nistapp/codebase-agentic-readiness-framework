@@ -3,7 +3,7 @@
 > **Audience:** Everyone
 > **Source of truth:** `artefacts/audit-runs/fixture-sweep/batch{1,2,3}.results.jsonl` (git-ignored run
 > artifacts; this page is the durable, published summary). See [Run the Evals](../how-to/run-the-evals.md)
-> for the method and [5. Evaluation](../architecture/contributor-deep-dive/05-evaluation.md) for what the
+> for the method and [5. Evaluation](../explanation/contributor-deep-dive/05-evaluation.md) for what the
 > metrics mean.
 > **Status:** Live for the fixture sweep (S4.2), the real-repo runs (S4.3, one run per repo under
 > `D61`), the implement-recipe scenarios (IR13) and the first implement-run numbers. A second harness/model
@@ -220,7 +220,7 @@ Full detail in `phase-M4-evaluate-release.md`'s `S4.3.2.1`–`S4.3.6` log entrie
 
 ## Implement-recipe scenarios — Claude Code on Sonnet 5.5, 2026-11-06 (IR13)
 
-Seven synthetic scenarios ([`tools/eval/implement-fixtures/`](../../tools/eval/implement-fixtures/README.md)), each
+Seven synthetic scenarios ([`tools/eval/implement-fixtures/`](../../dev/eval/implement-fixtures/README.md)), each
 run once headless with `implement_eval.py run` (`run-claude.sh --recipe implement`, `--max-budget-usd 2.5` per
 scenario) and asserted on what it left behind. Method and containment:
 [Run the Evals](../how-to/run-the-evals.md#implement-recipe-scenarios).
@@ -332,7 +332,7 @@ sessions, $31.55, of which the IR12 execute alone was $15.63) is not in the tabl
 Each repository was audited again after the implement run (IR14.2). Both second reports are **final**: the owner
 decided every finding in Stage 4 (Server: 10 rejected, 4 deferred, 1 edited; private repository: 12 rejected,
 6 deferred), and the decisions do not change a score. The Server pair, its comparison and its state are published as a
-[worked example](../../schema/examples/server-worked-example/README.md); nothing of the private two-app Node
+[worked example](../../audit/schema/examples/server-worked-example/README.md); nothing of the private two-app Node
 repository is published.
 
 | Repository | Phase 1 score before | Phase 1 score after | Blockers before / after | Report status after |

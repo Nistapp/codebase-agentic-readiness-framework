@@ -2,7 +2,7 @@
 
 > Follows the anatomy in [`README.md`](README.md). Eleven checks, split across two halves of this file:
 > `AGT-01` to `AGT-06` here, `AGT-07` to `AGT-11` in the second half. See
-> [Why These Checks §3](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#3-agent-governance-agt)
+> [Why These Checks §3](../engine/docs/architecture/user-overview/03-why-these-checks.md#3-agent-governance-agt)
 > for the consequence behind this family: `AGENTS.md` is the only artifact an agent is guaranteed to
 > read, so everything the team knows and has not written there is invisible to it.
 
@@ -45,7 +45,7 @@ family shares its vocabulary and its length-budget number instead of re-deriving
 
 Why it matters   `AGENTS.md` is the entry point every harness is guaranteed to read; without it an agent
                   infers conventions from whatever code it happens to open first
-                  ([greenfield-bootstrap/README.md § 6.1 AGENTS.md](../../../greenfield-bootstrap/README.md#61-agentsmd)).
+                  ([greenfield/README.md § 6.1 AGENTS.md](../../greenfield/README.md#61-agentsmd)).
 Severity         BLOCKER
 Engine           `AGT-01`. Collects every path that plausibly is an instruction file (the variant table's
                  canonical paths, aliases, overrides and harness patterns), then: no file at all is `FAIL`;
@@ -89,7 +89,7 @@ Pitfalls         A file that is long enough and free of stub markers can still f
 
 Why it matters   Monorepos have different rules per component; a single root file forces one component's
                   conventions onto another
-                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `AGT-02`. A single-root repository (no declared components beyond the root) is `PASS` by
                  construction — there is nothing to cover. For a multi-component repository, each declared
@@ -123,7 +123,7 @@ Pitfalls         A component directory that has its own `CLAUDE.md` or another a
 
 Why it matters   Agents must know where permanent truth lives and what is off-limits, or they treat
                   scratch notes as architecture
-                  ([greenfield-bootstrap/README.md § 5.2 Templates & Guides](../../../greenfield-bootstrap/README.md#52-templates--guides)).
+                  ([greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides)).
 Severity         DEGRADER
 Engine           `AGT-03`. Reads the entry instruction file (canonical, else `CLAUDE.md`) for three
                  mentions: `docs/` (or the bare word "docs"), `STYLE_GUIDE.md`, and the scratch-workspace
@@ -157,7 +157,7 @@ Pitfalls         A file that links to `docs/STYLE_GUIDE.md` only from a table of
 
 Why it matters   Docs must change in the same change set as the code they describe, or specs drift within
                   days
-                  ([greenfield-bootstrap/README.md § 5.2 Templates & Guides](../../../greenfield-bootstrap/README.md#52-templates--guides)).
+                  ([greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides)).
 Severity         DEGRADER
 Engine           `AGT-04`. Looks for a line containing "same changeset" or "same change set" with, within
                  three lines either side, one of the documentation triggers (public interface, observable
@@ -192,7 +192,7 @@ Pitfalls         The engine's pattern is textual and narrow by design (DP's own 
 
 Why it matters   The agent needs the sanctioned verification path stated, or it invents one (`npx vitest`
                   where the project uses something else), diverging from what CI actually runs
-                  ([greenfield-bootstrap/README.md § 1.4 The standardized command surface](../../../greenfield-bootstrap/README.md#14-the-standardized-command-surface--seven-verbs)).
+                  ([greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
 Severity         DEGRADER
 Engine           `AGT-05`. Shares its verb resolver with `CMD-01`, so the two checks never disagree:
                  `PASS` only when the instruction file names every framework verb as a whole token (not
@@ -225,14 +225,14 @@ Remediation      `adapt-agents-md` (for naming); `define-command-surface` (for r
                  gap is in the runner, not the instruction file.
 Pitfalls         A verb named with a different spelling than the catalogue's (`typecheck` written as
                  `type-check`) is a real miss, not a false negative to excuse — the spec fixes the spelling
-                 per runner ([`spec/command-surface.md`](../../../spec/command-surface.md)), and the
+                 per runner ([`spec/command-surface.md`](../../spec/command-surface.md)), and the
                  instruction file must use it.
 
 ## AGT-06 — Architectural boundaries declared
 
 Why it matters   Boundary rules must be stated, not inferred, or edits cross module lines nothing ever
                   wrote down
-                  ([greenfield-bootstrap/README.md § 6.1 AGENTS.md](../../../greenfield-bootstrap/README.md#61-agentsmd)).
+                  ([greenfield/README.md § 6.1 AGENTS.md](../../greenfield/README.md#61-agentsmd)).
 Severity         DEGRADER
 Engine           `AGT-06`. Scans the instruction file for lines carrying a boundary-context word (`must`,
                  `never`, `only`, `boundary`, `module`, `owns`, `import`, `depend`, `layer`, `allow`, `deny`,
@@ -264,7 +264,7 @@ Pitfalls         A path token that is real but incidental (mentioned in a senten
 
 Why it matters   Explicit prohibitions work; implicit ones do not — an agent that is never told "never
                   weaken a test" will weaken one
-                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `AGT-07`. Finds the prohibitions section by its heading (one of `never`/`do not`/`don't`/
                  `must not`/`prohibit`/`forbidden`/`off-limits`, or `❌`; the same heading-detection logic
@@ -300,7 +300,7 @@ Pitfalls         A prohibition stated outside a dedicated heading (scattered thr
 
 Why it matters   `AGENTS.md`, `CLAUDE.md` and `.cursorrules` disagreeing is obeyed as ambiguity, not
                   flagged as a defect — inconsistent behaviour across harnesses, with no way to trace why
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
 Engine           `AGT-08`. Classifies every instruction-shaped path the variant table knows: vendor-only
                  files with no canonical counterpart are competitors (`FAIL`); a pair where one file
@@ -341,7 +341,7 @@ Pitfalls         A vendor file that merely restates the canonical file's rules (
 
 Why it matters   Agents must know whether they may tag, release or push, or one triggers a release it had
                   no authority to cut
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
 Engine           `AGT-09`. Looks for one line naming the branch model (`branch`/`branches`/`branching`/
                  `main`/`dev`/`trunk`) and one naming the release boundary (`tag`/`release`/`publish`/
@@ -375,7 +375,7 @@ Pitfalls         "We only have `main`" is a complete branch-model statement for 
 Why it matters   A rule the agent is told to "read elsewhere first" is only as reliable as the harness's
                   own willingness to follow that pointer — an unconfigured deferral is a rule that may
                   never load
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
 Engine           `AGT-10`. Reads harness configuration this project can parse without a third-party parser
                  (`.aider.conf.yml`'s `read:`, `.codex/config.toml`'s instruction-file keys,
@@ -417,7 +417,7 @@ Pitfalls         The deferral pattern is deliberately narrow (calibrated against
 
 Why it matters   This is where A14 (above) is judged directly: a file full of generic, inferable advice
                   costs inference time for no benefit, which is R-16's own finding
-                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           none — no deterministic rule can tell a derivable instruction from a specific one; this is
                  the one check in the family with `method: agent` and no `engine_id`. Status in the

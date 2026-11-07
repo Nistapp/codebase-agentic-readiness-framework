@@ -3,7 +3,7 @@
 > Theme T7 (`AGENTS.md` and governance). Follows the anatomy in [`README.md`](README.md). Written in IR10.1;
 > applied and corrected on a Gradle repository (IR10.2) and a multi-component Node repository (IR10.3). It edits
 > **only the prohibitions section** of the instruction file
-> ([decision 0001](../../../spec/decisions/0001-constraint-artifact.md): that section is the deny list). Everything
+> ([decision 0001](../../spec/decisions/0001-constraint-artifact.md): that section is the deny list). Everything
 > else in `AGENTS.md` is [`adapt-agents-md`](adapt-agents-md.md)'s.
 
 ## Goal
@@ -45,7 +45,7 @@ a fix. The state files keep CON-04 in T7 so the theme reads it.
 - **The CON-04 draft.** Run the audit launcher with `--emit-baseline`, output outside the target:
 
   ```bash
-  python3 brownfield-recipes/tools/engine.py <target> --out-dir <dir outside the target> --emit-baseline
+  python3 audit/tools/engine.py <target> --out-dir <dir outside the target> --emit-baseline
   ```
 
   Read `do-not-do.draft.md` beside the report. Propose only entries that match this repository (a path the scan
@@ -57,7 +57,7 @@ a fix. The state files keep CON-04 in T7 so the theme reads it.
 |---|---|
 | `agents_md.harness_deny` | `yes`: the owner opted in to mirroring the prohibitions into harness configuration that already exists (Steps 6). Absent or `no`: report only |
 | `agents_md.release_tags` | The default-branch and release rule must agree with it |
-| `ci.pr_by_agent` | The default-branch rule must agree with it ([ADR 0003](../../docs/architecture/adrs/0003-push-and-pr-policy.md)) |
+| `ci.pr_by_agent` | The default-branch rule must agree with it ([ADR 0003](../docs/architecture/adrs/0003-push-and-pr-policy.md)) |
 | `extra.*` | Owner decisions about tracked env files or scratch folders that the rules must state, not change |
 
 ## Inputs to ask
@@ -96,7 +96,7 @@ No tool is installed. Ask:
 3. **One rule per concern**, each a single line in the section, naming paths in code spans:
    - **Tests (CON-02, AGT-07):** "Never edit, skip or delete a test in `src/test/` to make a failing test pass;
      change a test only together with the code change that needs it." Name every directory from Steps 2. The
-     framework's own [`AGENTS.md`](../../../AGENTS.md#never) has this form.
+     framework's own [`AGENTS.md`](../../AGENTS.md#never) has this form.
    - **Generated files and scratch:** "Never edit generated output by hand (`build/`, `dist/`); regenerate it with
      the command that makes it. `artefacts/` is scratch: never commit it and never treat it as a source of truth."
    - **Default branch:** "Never push to, merge into or force-push `main` or `dev`; never tag or publish a release."
@@ -143,14 +143,14 @@ No tool is installed. Ask:
 
 ### Gradle and Quarkus
 
-Profile: [`stacks/java.md`](../../stacks/java.md#boundaries). The test directory is usually `src/test/` per module;
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#boundaries). The test directory is usually `src/test/` per module;
 generated output is `build/` and `.gradle/`; the Flyway or Liquibase migration folder
 (`src/main/resources/db/migration/`) is a frequent CON-04 entry, usually ruled as "never edit an applied migration;
 add a new one". The wrapper (`gradlew`, `gradle/wrapper/`) is regenerated, not hand-edited.
 
 ### Node (npm, NestJS, React)
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#boundaries). Test folders are `test/` (NestJS
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#boundaries). Test folders are `test/` (NestJS
 end-to-end) and `__tests__/`; Create React App and Jest may keep `*.test.ts` beside the sources, which no directory
 rule covers: say so in the test rule ("and any `*.test.ts` or `*.spec.ts` file"), knowing CON-02 counts only
 directories. Generated output is `dist/`, `build/` and `coverage/`; `node_modules/` is never edited. In a per-app
@@ -199,14 +199,14 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) and [Stage 4](..
 the T7 branch shared with [`adapt-agents-md`](adapt-agents-md.md):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "<launcher run>; read CON-02" \
   --verification-result "every test directory named in the prohibitions section"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "read the prohibitions section" \
   --verification-result "four concerns covered" \
   --note "harness review: <none present | gaps listed in the PR>"
-python3 brownfield-recipes/tools/progress.py pref set agents_md.harness_deny no \
+python3 implement/tools/progress.py pref set agents_md.harness_deny no \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```
 

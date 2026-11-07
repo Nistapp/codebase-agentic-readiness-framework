@@ -29,7 +29,7 @@ of the string. Python's ``re``, which the reference package uses, also lets ``$`
 the subset validator refuses a value such as ``"abc\\n"`` where the reference accepts it. ``test_jsonschema_subset.py``
 holds that behaviour.
 
-Run by hand: ``PYTHONPATH=brownfield-recipes/tools uv run --no-project --with jsonschema==4.23.0 python <this file>``.
+Run by hand: ``PYTHONPATH=audit/tools uv run --no-project --with jsonschema==4.23.0 python <this file>``.
 """
 
 from __future__ import annotations
@@ -43,8 +43,8 @@ from typing import Any, Callable, Iterable, Iterator
 
 import _jsonschema_subset as subset
 
-RECIPES = Path(__file__).resolve().parent.parent
-SCHEMAS = RECIPES / "schema"
+AUDIT = Path(__file__).resolve().parent.parent / "audit"
+SCHEMAS = AUDIT / "schema"
 EXAMPLES = SCHEMAS / "examples"
 REFERENCE_PACKAGE = "jsonschema"
 MAX_REPORTED = 25
@@ -268,7 +268,7 @@ def main() -> int:
         *(("report", "report", path) for path in sorted(EXAMPLES.glob("example-service.audit-report.*.json"))),
         *(("report", "report", path) for path in sorted(EXAMPLES.rglob("*.audit-draft.*.json"))),
         *(("intake", "intake", path) for path in sorted(EXAMPLES.glob("audit-intake.*.json"))),
-        ("catalogue", "catalogue", RECIPES / "catalogue.json"),
+        ("catalogue", "catalogue", AUDIT / "catalogue.json"),
         ("facts", "facts", EXAMPLES / "facts.minimal.json"),
         *(("eval_expected", "eval_expected", path) for path in sorted(EXAMPLES.glob("eval-expected.*.json"))),
         *(("eval_expected", "eval_expected", path) for path in sorted(EXAMPLES.glob("eval-expected/fixtures/*.json"))),

@@ -50,12 +50,12 @@ flowchart TB
 
 > **Objective**: Make the repository executable, discoverable, and safe for agent interaction.
 >
-> **Tools**: `codebase-memory-mcp` ✅, [`deterministic-audit`](../brownfield-recipes/deterministic-audit/README.md) and [`brownfield-recipes`](../brownfield-recipes/README.md) (see [Tool Ecosystem](../shared/Tool-Ecosystem.md))
+> **Tools**: `codebase-memory-mcp` ✅, the [audit engine](../../audit/engine/README.md) and the [audit recipe](../../audit/README.md) (see [Tool Ecosystem](tool-ecosystem.md))
 
 ### Activities
 
 - Configure and run `codebase-memory-mcp` to index source files, symbols, relationships, dependencies, and tests.
-- Create root and component-level `AGENTS.md` files. A good example is [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md) (See also our [Greenfield AGENTS.md Template](../greenfield-bootstrap/templates/AGENTS.md)).
+- Create root and component-level `AGENTS.md` files. A good example is [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md) (See also our [Greenfield AGENTS.md Template](../../greenfield/templates/AGENTS.md)).
 - Make every `AGENTS.md` name the **documentation contract**: `docs/` is the single source of truth for permanent documentation, `docs/STYLE_GUIDE.md` is the canonical authoring rule set, and `artefacts/` is transient scratch that agents MUST NOT read unless a human passes an explicit path. State the **definition of done** — a change that alters a public interface, observable behaviour, architecture, or an ADR updates the affected doc pages, their source anchors, and the ADR index **in the same change set** — and link to the style guide rather than restating its rules, because restated rules drift.
 - Standardize commands using package scripts, a `Taskfile`, or a `Makefile`. The seven verbs are the contract; the runner is a local choice. The reference implementation (`agentic-tdd`) uses npm scripts:
 
@@ -79,7 +79,7 @@ task security      # npm run security      — dependency-CVE gate
 - Establish initial Constraint Engineering allow/deny lists.
 
 > [!NOTE]
-> CI/CD integration patterns (PR workflows, branch protection, pipeline gates) are specified in [`spec/`](../spec/readiness-requirements.md) (`REQ-SH-033` to `REQ-SH-035`) and applied by the [`add-ci-parity`](../brownfield-recipes/implement/playbooks/add-ci-parity.md) playbook. A good example is detailed [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md#11-git-commit-conventions--release-lifecycle-strict)
+> CI/CD integration patterns (PR workflows, branch protection, pipeline gates) are specified in [`spec/`](../../spec/readiness-requirements.md) (`REQ-SH-033` to `REQ-SH-035`) and applied by the [`add-ci-parity`](../../implement/playbooks/add-ci-parity.md) playbook. A good example is detailed [`here`.](https://github.com/Nistapp/agentic-tdd/blob/main/AGENTS.md#11-git-commit-conventions--release-lifecycle-strict)
 
 ### Key Deliverables
 
@@ -160,7 +160,7 @@ The tool must be **conservative**:
 - **Per-component Constraint Engineering definitions** — explicit allow/deny rules for files, methods, interfaces, directories, and commands.
 
 > [!NOTE]
-> This is where [Constraint Engineering](../shared/Overview.md#constraint-engineering) becomes enforceable at the component level. The `agentic-agentDocs` tool generates the constraint definitions that agents must respect.
+> This is where [Constraint Engineering](overview.md#constraint-engineering) becomes enforceable at the component level. The `agentic-agentDocs` tool generates the constraint definitions that agents must respect.
 
 The context pack contains only the information relevant to a task: related symbols, callers, callees, tests, contracts, and architecture decisions.
 
@@ -381,4 +381,4 @@ This cycle ensures that **every tool operation starts from indexed knowledge and
 
 ---
 
-← [Brownfield Track Overview](README.md) · [Core Overview](../shared/Overview.md) · [Tool Ecosystem →](../shared/Tool-Ecosystem.md)
+← [Brownfield Track Overview](brownfield-track.md) · [Core Overview](overview.md) · [Tool Ecosystem →](tool-ecosystem.md)

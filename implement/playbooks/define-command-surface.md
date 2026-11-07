@@ -5,7 +5,7 @@
 
 ## Goal
 
-The repository exposes the seven verbs of [`spec/command-surface.md`](../../../spec/command-surface.md) on one
+The repository exposes the seven verbs of [`spec/command-surface.md`](../../spec/command-surface.md) on one
 authoritative runner per component, `check` composes `format:check`, `typecheck` and `test` in that order, any
 second runner only delegates, and no read-only verb writes to the working tree.
 
@@ -70,7 +70,7 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 
 1. Theme branch `agentic-readiness/<phase>-command-surface` ([Stage 3](../SKILL.md#stage-3-apply), step 1).
 2. **Name every verb** on the authoritative runner, spelled as the runner row in
-   [`spec/command-surface.md`](../../../spec/command-surface.md#spelling-per-runner) says. The command each verb
+   [`spec/command-surface.md`](../../spec/command-surface.md#spelling-per-runner) says. The command each verb
    runs comes from `configure-quality-tools`.
 3. **Compose `check`**: `format:check`, then `typecheck`, then `test`, by calling the verbs by name (indirection)
    rather than repeating their commands. `lint` and `security` stay standalone verbs, not part of `check`.
@@ -95,7 +95,7 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 
 ### Gradle
 
-Profile: [`stacks/java.md`](../../stacks/java.md#command-surface-map).
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#command-surface-map).
 
 - Register `format`, `formatCheck`, `lint`, `typecheck` and `security` as aggregate tasks in `build.gradle`
   (`tasks.register('lint') { dependsOn ... }`), each depending on the tool's own task. `formatCheck` is the
@@ -112,14 +112,14 @@ Profile: [`stacks/java.md`](../../stacks/java.md#command-surface-map).
 
 ### Node (npm, pnpm, yarn)
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#command-surface-map).
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#command-surface-map).
 
 - Verbs are `package.json` scripts with their own names, `format:check` included.
 - `check` = `npm run format:check && npm run typecheck && npm test`. The greenfield
-  [`package.json` template](../../../greenfield-bootstrap/templates/package.json) shows the full set; use it as a
+  [`package.json` template](../../greenfield/templates/package.json) shows the full set; use it as a
   reference, never copy it.
 - A NestJS scaffold's `lint` carries `--fix`: make `lint` read-only and add `lint:fix` for the writer
-  ([NestJS section](../../stacks/typescript-node.md#nestjs)).
+  ([NestJS section](../../audit/stacks/typescript-node.md#nestjs)).
 - Multi-component repository, per-app layout: no root dispatcher unless the owner asks; each component keeps its
   own verbs and the instruction file lists them per component. The "needs a lockfile" block on `security` applies
   only where the lockfile is missing; a component that has one gets the verb now.
@@ -177,9 +177,9 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "./gradlew check --dry-run" --verification-result "<what it showed>"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --debt "what=security verb waits for T2 lockfile,count=1" --note "<which verb, why>"
 ```
 

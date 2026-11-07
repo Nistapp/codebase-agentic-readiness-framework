@@ -3,7 +3,7 @@
 
 """`TOOL` pack — tooling.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Key Deliverables.
+Anchor: `docs/framework/phased-approach.md` § Key Deliverables.
 
 Implemented here: `TOOL-01` … `TOOL-06`.
 

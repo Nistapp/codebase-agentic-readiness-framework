@@ -100,14 +100,14 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 
 ### Gradle
 
-Profile: [`stacks/java.md`](../../stacks/java.md#execution-determinism). Typical output: `build/`, `out/`,
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#execution-determinism). Typical output: `build/`, `out/`,
 `bin/`, `.gradle/`, generated `src/**/generated`. Check `settings.gradle` and `build.gradle` for a task that
 copies from the tracked path. The wrapper (`gradle/wrapper/*`, `gradlew`) is not generated output: it is the
 Gradle pin and must stay tracked, even though a broad ignore rule can match it.
 
 ### Node (npm, pnpm, yarn)
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#execution-determinism). Typical output:
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#execution-determinism). Typical output:
 `dist/`, `build/`, `coverage/`, `.next/`, minified bundles and `.map` files. A static front-end built into a
 folder that a proxy container serves is the case that needs the owner's yes: read the compose file and the
 proxy config for the bind mount, and read the stack script for the build that fills the folder before the proxy
@@ -157,9 +157,9 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "git ls-files -ci --exclude-standard" \
   --verification-result "<no build output listed; regenerating command recreates it>"
-python3 brownfield-recipes/tools/progress.py skip F-nnn --target <repo> --phase <phase> \
+python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> \
   --reason "<the owner's words>" --by owner
 ```

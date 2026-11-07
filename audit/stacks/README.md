@@ -43,7 +43,7 @@ Verified               date, tool versions the profile was last checked against,
 ```
 
 A profile is documentation (`GFDL-1.3-only`, see
-[`docs/reference/licensing.md`](../docs/reference/licensing.md)), capped at 150 lines so an agent can hold
+[`docs/reference/licensing.md`](../../docs/reference/licensing.md)), capped at 150 lines so an agent can hold
 the whole thing in mind at once. A profile that would outgrow the budget splits a crowded section (for
 example, a framework) into its own `###`-level block rather than a new file, following §1 above.
 
@@ -88,7 +88,7 @@ tested" is never confused with "the agent's best guess this run."
    showed.
 5. Record the test under Verified: the date, the tool versions in play, and the repository used. A section
    checked against no repository says so, plainly, rather than omitting the caveat.
-6. Keep the file at 150 lines or fewer, and confirm `python3 brownfield-recipes/tools/recipe_lint.py` is
+6. Keep the file at 150 lines or fewer, and confirm `python3 dev/recipe_lint.py` is
    clean before proposing the profile (it checks links, not the line budget, for this folder — the budget
    here is this file's own rule).
 

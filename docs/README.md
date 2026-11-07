@@ -8,10 +8,10 @@ describe, in three sets.
 
 | Set | Where | What it holds |
 | --- | --- | --- |
-| The framework | [`README.md`](../README.md), [`shared/`](../shared/), [`brownfield-legacy/`](../brownfield-legacy/), [`greenfield-bootstrap/`](../greenfield-bootstrap/) | The normative documents. If a tool disagrees with them, the tool is wrong |
+| The framework | [`README.md`](../README.md), [`shared/`](framework/), [`brownfield-legacy/`](framework/), [`greenfield/`](../greenfield/) | The normative documents. If a tool disagrees with them, the tool is wrong |
 | The requirements | [`spec/`](../spec/README.md) | Numbered requirements (`REQ-...`) for what a repository must have |
-| The recipes and their tools | [`brownfield-recipes/docs/`](../brownfield-recipes/docs/architecture/README.md) | The audit and implement recipes, the tools they call, the schemas |
-| The audit engine | [`brownfield-recipes/deterministic-audit/docs/`](../brownfield-recipes/deterministic-audit/docs/architecture/README.md) | The deterministic engine: design, checks, decisions |
+| The recipes and their tools | [`docs/`](explanation/README.md) | The audit and implement recipes, the tools they call, the schemas |
+| The audit engine | [`audit/engine/docs/`](../audit/engine/docs/architecture/README.md) | The deterministic engine: design, checks, decisions |
 
 ## Where to start
 

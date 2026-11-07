@@ -3,10 +3,10 @@
 > Follows the anatomy in [`README.md`](README.md). Five checks: `NAV-01`–`NAV-03` are scored,
 > `method: automated`; `NAV-04` and `NAV-05` are informational (`catalogue.json`: `scored: false`,
 > no `req_ids`) — reported like every other check but earning no credit. See
-> [Why These Checks §12](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#12-navigation-nav)
+> [Why These Checks §12](../engine/docs/architecture/user-overview/03-why-these-checks.md#12-navigation-nav)
 > for the consequence behind this family: an agent that cannot see component boundaries, entry points or
 > structural traps either guesses at blast radius or is drawn to the worst places in the codebase. Every
-> check reads the engine's `NAV` pack (`deterministic-audit/audit/rules/checks/nav.py`), whose module
+> check reads the engine's `NAV` pack (`audit/engine/audit/rules/checks/nav.py`), whose module
 > docstring names each check's deliberate limits (`NAV-02` reads a fixed, documented entry-point signal
 > set per ecosystem rather than resolving one semantically; `NAV-05`'s "public" is a best-effort static
 > approximation — module-level names not starting with `_` for Python, exported declarations for
@@ -18,7 +18,7 @@
 
 Why it matters   Constraint Engineering needs a bounded component to scope work to; without one, blast
                   radius cannot be scoped or reviewed
-                  ([shared/Overview.md § Applicability](../../../shared/Overview.md#applicability)).
+                  ([docs/framework/overview.md § Applicability](../../docs/framework/overview.md#applicability)).
 Severity         DEGRADER
 Engine           `NAV-01`. Reads `components.declared` (built by the engine's own component detector,
                  depth 1) for any member besides the root. At least one non-root component declared by a
@@ -59,7 +59,7 @@ Pitfalls         A single-package repository with a root manifest is a legitimat
 
 Why it matters   Agents must find where execution begins before they can reason about what is live versus
                   dead code
-                  ([greenfield-bootstrap/README.md § 1.9 Core DI interface file + public entry point](../../../greenfield-bootstrap/README.md#19-core-di-interface-file--public-entry-point)).
+                  ([greenfield/README.md § 1.9 Core DI interface file + public entry point](../../greenfield/README.md#19-core-di-interface-file--public-entry-point)).
 Severity         DEGRADER
 Engine           `NAV-02`. For each detected ecosystem, checks a fixed, documented set of entry-point
                  signals: npm `main`/`bin`/`exports` plus a conventional index/server/main/app file for
@@ -97,7 +97,7 @@ Pitfalls         A library package with genuinely no runnable entry point (no `m
 Why it matters   Oversized files, catch-all directories, checked-in binaries and minified assets are
                   exactly where agents are drawn when they explore, and exactly where they should not be
                   working
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         COSMETIC
 Engine           `NAV-03`. A census, never a verdict on a heuristic: counts files over 512 KB
                  (`LARGE_FILE_BYTES`), directories with more than 50 immediate files (`CATCH_ALL_FILES`),
@@ -140,7 +140,7 @@ Pitfalls         A `PARTIAL` here is never escalated to a blocking read — the 
 
 Why it matters   A short map lets an agent orient before it explores instead of discovering structure by
                   trial and error
-                  ([Phased-Approach.md § Key Deliverables](../../../brownfield-legacy/Phased-Approach.md#key-deliverables)).
+                  ([Phased-Approach.md § Key Deliverables](../../docs/framework/phased-approach.md#key-deliverables)).
 Severity         COSMETIC
 Engine           `NAV-04`. Not a scored check (`catalogue.json`: `scored: false`, no `req_ids` — this
                  check has no framework requirement behind it, unlike `NAV-01`–`NAV-03`). Unlike
@@ -173,7 +173,7 @@ Pitfalls         Being unscored does not mean the finding is optional to report 
 
 Why it matters   Phase 2 territory, reported here only as a signal: without any documentation coverage
                   signal an agent must read whole function bodies just to learn their signatures
-                  ([Phased-Approach.md § Key Deliverables](../../../brownfield-legacy/Phased-Approach.md#key-deliverables)).
+                  ([Phased-Approach.md § Key Deliverables](../../docs/framework/phased-approach.md#key-deliverables)).
 Severity         COSMETIC
 Engine           `NAV-05`. Not a scored check (`catalogue.json`: `scored: false`, no `req_ids`). Picks one
                  language to census — python if the stack recognises python and python files exist, else

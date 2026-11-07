@@ -1,12 +1,12 @@
 # Baselines and the Ratchet (`BASE`)
 
 > Follows the anatomy in [`README.md`](README.md). Four checks, all `method: automated`. See
-> [Why These Checks §8](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#8-baselines-and-the-ratchet-base)
+> [Why These Checks §8](../engine/docs/architecture/user-overview/03-why-these-checks.md#8-baselines-and-the-ratchet-base)
 > for the consequence behind this family: a brownfield repository arrives with debt, and the
 > framework's answer is not "fix it" but "freeze it and do not add to it" — instrumentation
 > (`BASE-01`/`BASE-02`) must land before enforcement (`BASE-03`/`BASE-04`) can exist. The
 > [`add-baselines-and-ratchet`](../../implement/playbooks/add-baselines-and-ratchet.md) playbook covers
-> all four checks; each check's **Remediation** also says what to commit directly. [REQ-BF-004](../../../spec/readiness-requirements.md#req-bf-004--baseline-is-adequate)
+> all four checks; each check's **Remediation** also says what to commit directly. [REQ-BF-004](../../spec/readiness-requirements.md#req-bf-004--baseline-is-adequate)
 > (the owner attests the baseline is adequate) has no check in this family or any other — it is
 > verified `attested`, never `automated`, so no `BASE-*` check judges whether an existing baseline's
 > content is itself acceptable, only whether one exists, is measured, and is guarded.
@@ -17,7 +17,7 @@
 
 Why it matters   Gates cannot be turned on over existing debt without mass failure; instrumentation
                   that separates old debt from new debt must land first
-                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `BASE-01`. Matches a fixed set of baseline/suppression artifact names at any depth outside
                  carried-data directories (`templates/`, `fixtures/`, `examples/`: a baseline a test fixture
@@ -55,7 +55,7 @@ Remediation      `add-baselines-and-ratchet`. Commit a baseline or
                  `.gitleaksignore`), or document the equivalent mechanism in `AGENTS.md`.
 Pitfalls         A filename match is not a content check — `baseline.json` existing is evidence the
                  mechanism exists, not that its content is current or adequate (that is
-                 [REQ-BF-004](../../../spec/readiness-requirements.md#req-bf-004--baseline-is-adequate)'s
+                 [REQ-BF-004](../../spec/readiness-requirements.md#req-bf-004--baseline-is-adequate)'s
                  territory, and it has no automated check at all). Do not read a stale or empty baseline
                  file as grounds to downgrade this check's `PASS` — currency is out of scope here.
 
@@ -63,7 +63,7 @@ Pitfalls         A filename match is not a content check — `baseline.json` exi
 
 Why it matters   The baseline must be a number, not an impression, or there is no way to tell whether
                   debt is growing or shrinking
-                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `BASE-02`. The audit never runs the target's own tools (that would be Tier C), so the
                  only count it can point at exactly is an explicit numeric budget already committed to
@@ -110,7 +110,7 @@ Pitfalls         `FAIL` never appears for this check by design — reading a `PA
 
 Why it matters   The policy must be executable, not aspirational, or every change quietly adds a little
                   more debt on top of what was already frozen
-                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `BASE-03`. A ratchet exists when a numeric violation budget is committed (`BASE-02`'s
                  own evidence), or a baseline artifact (`BASE-01`'s own evidence) is referenced by name
@@ -158,7 +158,7 @@ Pitfalls         A `PARTIAL` here (no measurement surface at all) and a `FAIL` (
 
 Why it matters   Coverage is the most common form of the ratchet, and without a configured floor it
                   decays invisibly, one untested branch at a time
-                  ([greenfield-bootstrap/README.md § 4.1 Workflows](../../../greenfield-bootstrap/README.md#41-workflows)).
+                  ([greenfield/README.md § 4.1 Workflows](../../greenfield/README.md#41-workflows)).
 Severity         DEGRADER
 Engine           `BASE-04`. Reads test-runner configuration directly for a coverage threshold:
                  `.coveragerc`/`setup.cfg`/`tox.ini`/`pytest.ini`/`pyproject.toml`'s `fail_under` or

@@ -33,8 +33,8 @@ flowchart TD
 
 Follow our step-by-step recipe to initialize a TypeScript / Node.js repository with world-class instrumentation before writing a single line of application logic.  While our example is for TS/Node, the principles are the same for any tech/framework. You can point your coding agent to this structure and ask it to regenerate the same structure for your tech/framework. You should have something to review withing minutes.
 
-- 📖 **[Project Initialization Recipe](greenfield-bootstrap/README.md)** — Step-by-step guide across 8 phases.
-- 📦 **[Reusable Scaffolding Templates](greenfield-bootstrap/templates/)** — Copy-ready `AGENTS.md`, `biome.json`, GitHub Actions CI/CD workflows, `vitest.config.ts`, DI port interfaces, Diátaxis documentation templates (`docs/STYLE_GUIDE.md`, ADR templates), and the standardized seven-verb command surface (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`).
+- 📖 **[Project Initialization Recipe](greenfield/README.md)** — Step-by-step guide across 8 phases.
+- 📦 **[Reusable Scaffolding Templates](greenfield/templates/)** — Copy-ready `AGENTS.md`, `biome.json`, GitHub Actions CI/CD workflows, `vitest.config.ts`, DI port interfaces, Diátaxis documentation templates (`docs/STYLE_GUIDE.md`, ADR templates), and the standardized seven-verb command surface (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`).
 
 ---
 
@@ -44,16 +44,16 @@ Follow our step-by-step recipe to initialize a TypeScript / Node.js repository w
 
 Follow our phased, incremental methodology to make any existing codebase agentic-ready without requiring a full rewrite.
 
-- 📖 **[Legacy Modernization Overview](brownfield-legacy/README.md)** — The business case, defect reduction, and readiness roadmap.
-- 🗺️ **[7-Phase Migration Guide](brownfield-legacy/Phased-Approach.md)**:
+- 📖 **[Legacy Modernization Overview](docs/framework/brownfield-track.md)** — The business case, defect reduction, and readiness roadmap.
+- 🗺️ **[7-Phase Migration Guide](docs/framework/phased-approach.md)**:
   - **Part I: Readiness Foundation (Phases 1–4)** — Bootstrap, Source Docs, Agent Docs, and Behavioral Baselines. *(Mandatory)*
   - **Part II: Post-Readiness Roadmap (Phases 5–7)** — Agent-driven refactoring, human-facing docs, and Spec-Driven Development (SDD/BDD + TDD).
-- 🤖 **[Brownfield Recipes](brownfield-recipes/README.md)** (v0.2.0) — An agent-run audit that scores a Phase 1 readiness report for an existing repository, with a deterministic engine doing the counting and the agent's judgment backed by cited evidence. Install it as a skill bundle or run it from a clone; no installation beyond Python 3.11+. The implement recipe, which closes the confirmed findings of a report on a branch per theme, has all six stages, thirteen playbooks and a skill bundle: see the [Brownfield Recipes README](brownfield-recipes/README.md).
-  This repository audits itself: Phase 1 score **0.84**, ratcheted in CI ([Self-Audit](brownfield-recipes/docs/reference/self-audit.md)).
+- 🤖 **[Brownfield Recipes](audit/README.md)** (v0.2.0) — An agent-run audit that scores a Phase 1 readiness report for an existing repository, with a deterministic engine doing the counting and the agent's judgment backed by cited evidence. Install it as a skill bundle or run it from a clone; no installation beyond Python 3.11+. The implement recipe, which closes the confirmed findings of a report on a branch per theme, has all six stages, thirteen playbooks and a skill bundle: see the [Brownfield Recipes README](audit/README.md).
+  This repository audits itself: Phase 1 score **0.84**, ratcheted in CI ([Self-Audit](docs/reference/self-audit.md)).
 
 The normative requirements a repository must meet live in [`spec/`](spec/README.md); the guides above and the tools both trace to them. To contribute, start at [`CONTRIBUTING.md`](CONTRIBUTING.md); changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
 
-**Audit a repository in five minutes:** open [`brownfield-recipes/README.md`](brownfield-recipes/README.md#quick-start), paste the kickoff prompt into a coding agent with shell access (Python 3.11+), and name the repository's path.
+**Audit a repository in five minutes:** open [`audit/README.md`](audit/README.md#quick-start), paste the kickoff prompt into a coding agent with shell access (Python 3.11+), and name the repository's path.
 Answer Stage 0's questions and approve Stage 1's plan.
 The result is an evidence-cited Phase 1 readiness report.
 
@@ -65,11 +65,11 @@ Both tracks share the same core intelligence layer and architectural invariants:
 
 | Document | Description |
 |---|---|
-| **[Overview](shared/Overview.md)** | Core concepts, **Constraint Engineering**, assumptions, and applicability |
-| **[Tool Ecosystem](shared/Tool-Ecosystem.md)** | Accelerators (`codebase-memory-mcp`, `agentic-tdd`, etc.), maturity status, and conventions |
-| **[Risks and Mitigations](shared/Risks-and-Mitigations.md)** | Risk matrix and safety principles when working with AI coding agents |
-| **[Glossary](shared/Glossary.md)** | Canonical definitions of domain terms |
-| **[References](shared/References.md)** | External standards, frameworks, and related reading |
+| **[Overview](docs/framework/overview.md)** | Core concepts, **Constraint Engineering**, assumptions, and applicability |
+| **[Tool Ecosystem](docs/framework/tool-ecosystem.md)** | Accelerators (`codebase-memory-mcp`, `agentic-tdd`, etc.), maturity status, and conventions |
+| **[Risks and Mitigations](docs/framework/risks-and-mitigations.md)** | Risk matrix and safety principles when working with AI coding agents |
+| **[Glossary](docs/framework/glossary.md)** | Canonical definitions of domain terms |
+| **[References](docs/framework/references.md)** | External standards, frameworks, and related reading |
 
 ---
 
@@ -81,4 +81,4 @@ Both tracks share the same core intelligence layer and architectural invariants:
 
 ## 📄 License
 
-Documentation is licensed under the [GNU Free Documentation License, Version 1.3](LICENSE) (`GFDL-1.3-only`). `brownfield-recipes/tools/` and the migrated audit engine are code, licensed separately under the [GNU Affero General Public License, Version 3 or later](brownfield-recipes/deterministic-audit/LICENSE) (`AGPL-3.0-or-later`); that licence covers the tools themselves, never the repositories they analyse or the reports they produce. Full detail in [Licensing](brownfield-recipes/docs/reference/licensing.md).
+Documentation is licensed under the [GNU Free Documentation License, Version 1.3](LICENSE) (`GFDL-1.3-only`). `audit/tools/` and the migrated audit engine are code, licensed separately under the [GNU Affero General Public License, Version 3 or later](LICENSE-CODE) (`AGPL-3.0-or-later`); that licence covers the tools themselves, never the repositories they analyse or the reports they produce. Full detail in [Licensing](docs/reference/licensing.md).

@@ -14,13 +14,13 @@ import unittest
 from pathlib import Path
 from typing import Any, Sequence
 
+import _implement_paths  # noqa: F401  (puts the tools folders on sys.path)
 import _git
-import _paths  # noqa: F401  (puts the tools folder on sys.path)
 import _common
 import check_drift
 import progress
 
-REPORT = _paths.TOOLS.parent / "schema" / "examples" / "example-service.audit-report.20261010T094207Z.json"
+REPORT = _implement_paths.AUDIT / "schema" / "examples" / "example-service.audit-report.20261010T094207Z.json"
 FILES = ("package.json", ".nvmrc", "AGENTS.md", "src/config/constants.ts", "src/other/unrelated.txt")
 
 

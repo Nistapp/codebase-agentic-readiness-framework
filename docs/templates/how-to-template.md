@@ -21,7 +21,7 @@
 
 ```bash
 # Example command
-python3 brownfield-recipes/tools/<tool>.py <args>
+python3 audit/tools/<tool>.py <args>
 ```
 
 ### Step 2: [Action Name]
@@ -35,5 +35,5 @@ python3 brownfield-recipes/tools/<tool>.py <args>
 How to confirm the task was completed successfully:
 
 ```bash
-python3 brownfield-recipes/tools/<tool>.py --describe
+python3 audit/tools/<tool>.py --describe
 ```

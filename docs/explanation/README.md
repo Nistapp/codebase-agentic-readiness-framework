@@ -11,17 +11,17 @@
 
 | # | Title | Status | Date |
 |---|---|---|---|
-| [0001](adrs/0001-tools-import-engine.md) | Tools Import the Engine in Process | Accepted | 2026-10-10 |
-| [0002](adrs/0002-progress-writes-state-in-target.md) | `progress.py` Writes the State Files Inside the Target | Accepted | 2026-10-29 |
-| [0003](adrs/0003-push-and-pr-policy.md) | The Implement Recipe Pushes and Opens a Pull Request Only When the Owner Opted In | Accepted | 2026-11-05 |
+| [0001](../../audit/docs/architecture/adrs/0001-tools-import-engine.md) | Tools Import the Engine in Process | Accepted | 2026-10-10 |
+| [0002](../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md) | `progress.py` Writes the State Files Inside the Target | Accepted | 2026-10-29 |
+| [0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) | The Implement Recipe Pushes and Opens a Pull Request Only When the Owner Opted In | Accepted | 2026-11-05 |
 
 ## Key Documents
 
 | Document | Quadrant | Purpose |
 |---|---|---|
 | [Style guide](../STYLE_GUIDE.md) | — | Canonical authoring rules |
-| [Glossary](glossary.md) | Reference | Canonical terms |
-| [Deterministic engine docs](../../deterministic-audit/docs/architecture/README.md) | Explanation | The engine's own doc router and ADR index |
+| [Glossary](../glossary.md) | Reference | Canonical terms |
+| [Deterministic engine docs](../../audit/engine/docs/architecture/README.md) | Explanation | The engine's own doc router and ADR index |
 
 ## Implementation Recipe
 
@@ -45,7 +45,7 @@ found.
 | Page | Purpose | Status |
 |---|---|---|
 | [Run an audit](../how-to/run-an-audit.md) | Produce a confirmed report for a repo | Live (S3.5) |
-| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Live (IR12); links the [worked example](../../schema/examples/server-worked-example/README.md) |
+| [Implement an audit report](../how-to/implement-an-audit-report.md) | Apply confirmed findings on a branch | Live (IR12); links the [worked example](../../audit/schema/examples/server-worked-example/README.md) |
 | [Resume an interrupted run](../how-to/resume-an-interrupted-run.md) | Continue an audit or implementation after a crash | Live for audits and for implementations (`progress.py show`, `check_drift.py`) |
 | [Add a stack profile](../how-to/add-a-stack-profile.md) | Contribute support for a new toolchain | Live; three profiles plus `stacks/README.md` |
 | [Run the evals](../how-to/run-the-evals.md) | Evaluate the recipes headlessly | Live for the corpus, expected-results format, scorer and the Claude Code runner (S4.1); other harnesses' own runner scripts stay Planned, deferred per `D57` |
@@ -67,7 +67,7 @@ found.
 |---|---|---|
 | [1. Purpose & Non-Goals](user-overview/01-purpose-and-non-goals.md) | What the recipes are and refuse to be | Live |
 | [2. How the Recipes Work](user-overview/02-how-the-recipes-work.md) | Stages and decisions, for evaluators | Live for audits and implementations |
-| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live; §5 is a table of what the implement recipe may and never does; the push/PR rule is [ADR 0003](adrs/0003-push-and-pr-policy.md); the risks are in the [risk register](../../../shared/Risks-and-Mitigations.md) (R9-R14) |
+| [3. Trust & Safety](user-overview/03-trust-and-safety.md) | What the recipes may do to a repo and machine | Live; §5 is a table of what the implement recipe may and never does; the push/PR rule is [ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md); the risks are in the [risk register](../framework/risks-and-mitigations.md) (R9-R14) |
 
 ## Explanation — Contributor Deep Dive
 
@@ -81,6 +81,6 @@ found.
 
 ## Framework Dependencies
 
-The recipes implement Phase 1 of this repository's framework: [Phased Approach](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-) and [`spec/`](../../../spec/README.md), the numbered requirements. Where they disagree, the framework wins and the recipes have a defect.
+The recipes implement Phase 1 of this repository's framework: [Phased Approach](../framework/phased-approach.md#phase-1-agentic-bootstrap-) and [`spec/`](../../spec/README.md), the numbered requirements. Where they disagree, the framework wins and the recipes have a defect.
 
-The deterministic engine keeps its own documentation under `brownfield-recipes/deterministic-audit/docs/`.
+The deterministic engine keeps its own documentation under `audit/engine/docs/`.

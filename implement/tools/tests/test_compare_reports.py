@@ -17,12 +17,12 @@ from pathlib import Path
 from typing import Any, Sequence
 from unittest import mock
 
-import _paths  # noqa: F401  (puts the tools folder on sys.path)
+import _implement_paths  # noqa: F401  (puts the tools folders on sys.path)
 import _common
 import compare_reports
 import validate_report
 
-EXAMPLES = _paths.TOOLS.parent / "schema" / "examples"
+EXAMPLES = _implement_paths.AUDIT / "schema" / "examples"
 REPORT = EXAMPLES / "example-service.audit-report.20261010T094207Z.json"
 STATE = EXAMPLES / "readiness-state.example-service.in-progress.json"
 

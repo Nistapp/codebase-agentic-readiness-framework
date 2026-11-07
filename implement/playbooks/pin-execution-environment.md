@@ -112,7 +112,7 @@ the pins in CI, Dockerfiles and version files agree with each other.
 
 ### Gradle
 
-Profile: [`stacks/java.md`](../../stacks/java.md#execution-determinism).
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#execution-determinism).
 
 - Add the toolchain block to `build.gradle` first, then the locking block, then generate the lock. The order
   matters: a lock written under the wrong JDK records the wrong resolution.
@@ -130,7 +130,7 @@ Profile: [`stacks/java.md`](../../stacks/java.md#execution-determinism).
 
 ### Node (npm, pnpm, yarn)
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#execution-determinism).
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#execution-determinism).
 
 - Per component: the version file (`.nvmrc` holding the exact version), `engines.node` with the matching major
   range, and `packageManager` (`npm@x.y.z`). `.nvmrc` is the stronger pin; `engines` is what the engine and
@@ -199,12 +199,12 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "./gradlew dependencies (before and after)" \
   --verification-result "<resolved versions identical; gradle.lockfile tracked>"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --debt "what=version mismatch in CI,count=2" --note "<places, why not edited>"
-python3 brownfield-recipes/tools/progress.py pref set tools.node_major <value> --reason "<owner's words>" \
+python3 implement/tools/progress.py pref set tools.node_major <value> --reason "<owner's words>" \
   --by owner --target <repo> --phase <phase>
 ```
 

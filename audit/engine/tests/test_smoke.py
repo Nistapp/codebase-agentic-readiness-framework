@@ -184,7 +184,7 @@ class DeterminismTests(unittest.TestCase):
 class ZipappContractTests(unittest.TestCase):
     def test_archive_builds_and_runs(self):
         build = subprocess.run(
-            [sys.executable, str(REPO_ROOT / "tools" / "build.py")], cwd=str(REPO_ROOT), text=True, capture_output=True
+            [sys.executable, str(REPO_ROOT / "build.py")], cwd=str(REPO_ROOT), text=True, capture_output=True
         )
         self.assertEqual(build.returncode, 0, build.stderr)
 

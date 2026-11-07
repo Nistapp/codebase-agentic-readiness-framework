@@ -1,7 +1,7 @@
 # Tooling (`TOOL`)
 
 > Follows the anatomy in [`README.md`](README.md). Six checks, all `method: automated`. See
-> [Why These Checks §6](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#6-tooling-tool)
+> [Why These Checks §6](../engine/docs/architecture/user-overview/03-why-these-checks.md#6-tooling-tool)
 > for the consequence behind this family: a tool that is installed but not reachable through the command
 > surface, or configured but not strict, gives an agent false confidence. TOOL-01 to TOOL-04 are remediated
 > by `configure-quality-tools`; TOOL-05 and TOOL-06 are remediated by `add-hooks-and-commit-rules`.
@@ -12,7 +12,7 @@
 
 Why it matters   Formatting must be free and non-negotiable, or every diff mixes style with substance and
                   review spends attention on noise
-                  ([`brownfield-legacy/Phased-Approach.md` § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([`docs/framework/phased-approach.md` § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `TOOL-01`. Reads a fixed set of formatter config filenames (prettier, black, ruff,
                  dprint, biome, rustfmt, clang-format, and others the engine's own list names, including
@@ -46,7 +46,7 @@ Pitfalls         A formatter config with no way to invoke it is not a formatter 
 
 Why it matters   A linter catches classes of defect before tests exist to catch them, including
                   regressions an agent introduces that no test yet covers
-                  ([`brownfield-legacy/Phased-Approach.md` § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([`docs/framework/phased-approach.md` § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `TOOL-02`. Reads a fixed set of linter config filenames (eslint, biome, ruff, flake8,
                  pylint, golangci-lint, clippy, rubocop, checkstyle, stylelint, phpcs, and others the
@@ -79,7 +79,7 @@ Pitfalls         A `lint` verb that runs the formatter in check mode (`prettier 
 Why it matters   A strict type checker is the cheapest correctness gate available; without it, interface
                   drift between an agent's change and its callers is discovered at runtime instead of at
                   review time
-                  ([`brownfield-legacy/Phased-Approach.md` § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([`docs/framework/phased-approach.md` § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `TOOL-03`. For `node`, `python` and `dotnet`, reads the language's strict-mode setting
                  directly: `tsconfig.json`/`jsconfig.json` (`strict`/`checkJs`), `mypy.ini`/`.mypy.ini`/
@@ -121,7 +121,7 @@ Pitfalls         `UNKNOWN` for go, rust, jvm, ruby or php is not a lesser result
 
 Why it matters   Third-party risk is real and agents add dependencies; without a scan, a vulnerability can
                   enter through the very change an agent just made
-                  ([`brownfield-legacy/Phased-Approach.md` § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([`docs/framework/phased-approach.md` § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           `TOOL-04`. Resolves every verb on every runner and tests each resolved command against a
                  fixed list of dependency-audit invocations (`npm`/`pnpm`/`yarn`/`bun audit`, `pip-audit`,
@@ -156,7 +156,7 @@ Pitfalls         The audit tool does not have to live on the `security` verb by 
 
 Why it matters   Enforcement must exist where an agent actually works, not only downstream in CI; a rule
                   that lives only in CI is a rule an agent cannot honour before it commits
-                  ([greenfield-bootstrap/README.md § 2.3 Git Hooks](../../../greenfield-bootstrap/README.md#23-git-hooks--husky--lint-staged--commitlint)).
+                  ([greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).
 Severity         DEGRADER
 Engine           `TOOL-05`. The presence of `.pre-commit-config.yaml`, `lefthook.yml`/`.yaml`, or a
                  declared `core.hooksPath` counts as wired directly. `.githooks/*` or `.husky/*` present
@@ -192,7 +192,7 @@ Pitfalls         A `.husky/` directory with files in it is not itself evidence o
 
 Why it matters   Release automation reads commit messages; without an enforced convention, version bumps
                   and changelog generation silently stop working
-                  ([greenfield-bootstrap/README.md § 2.3 Git Hooks](../../../greenfield-bootstrap/README.md#23-git-hooks--husky--lint-staged--commitlint)).
+                  ([greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).
 Severity         COSMETIC
 Engine           `TOOL-06`. Reads for a commitlint config file (`commitlint.config.*`, `.commitlintrc*`, or
                  `package.json`'s `"commitlint"` key), a `commit-msg` hook file under `.husky/` or

@@ -35,7 +35,7 @@ The Brownfield track is organized into two distinct parts:
 1. **Part I: Agentic-Readiness Foundation (Phases 1–4)** — The mandatory, sequential roadmap to make an existing repo safe, discoverable, and deterministic.
 2. **Part II: Post-Readiness Roadmap & Execution (Phases 5–7)** — High-value workflows (refactoring, human-facing docs, spec-driven feature development) accelerated *by* agents once readiness is achieved.
 
-👉 **[Read the Full Phased Approach Guide](Phased-Approach.md)**
+👉 **[Read the Full Phased Approach Guide](phased-approach.md)**
 
 ---
 
@@ -43,12 +43,12 @@ The Brownfield track is organized into two distinct parts:
 
 | Page | Description |
 |------|-------------|
-| **[Phased Approach](Phased-Approach.md)** | Detailed breakdown of all 7 phases with deliverables and maturity badges |
-| **[Core Overview](../shared/Overview.md)** | Constraint Engineering, assumptions, and foundational principles |
-| **[Tool Ecosystem](../shared/Tool-Ecosystem.md)** | Accelerators, tooling maturity status, and conventions |
-| **[Risks & Mitigations](../shared/Risks-and-Mitigations.md)** | Known risks when introducing agents into legacy systems |
-| **[Glossary](../shared/Glossary.md)** | Definitions of key terms |
+| **[Phased Approach](phased-approach.md)** | Detailed breakdown of all 7 phases with deliverables and maturity badges |
+| **[Core Overview](overview.md)** | Constraint Engineering, assumptions, and foundational principles |
+| **[Tool Ecosystem](tool-ecosystem.md)** | Accelerators, tooling maturity status, and conventions |
+| **[Risks & Mitigations](risks-and-mitigations.md)** | Known risks when introducing agents into legacy systems |
+| **[Glossary](glossary.md)** | Definitions of key terms |
 
 ---
 
-← [Home (Dual-Track Router)](../README.md) · [New Project Initialization Recipe →](../greenfield-bootstrap/README.md)
+← [Home (Dual-Track Router)](../../README.md) · [New Project Initialization Recipe →](../../greenfield/README.md)

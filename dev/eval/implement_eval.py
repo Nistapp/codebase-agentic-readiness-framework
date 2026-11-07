@@ -18,7 +18,7 @@ once by the real tools (``build-reports``: ``engine.py``, then ``report.py`` ``i
 ``materialise`` lays a scenario out in ``<root>``, which must not exist yet: the owner's checkout ``repo/`` (the
 toy repository committed with a fixed identity and date, so its commit is the one the report audited, plus the
 handover commit and whatever the scenario's starting point needs), a local bare repository ``origin.git/`` as its only
-remote (nothing reaches a real host), a copy of the recipe in ``framework/brownfield-recipes/`` without the eval
+remote (nothing reaches a real host), a copy of the recipes in ``framework/`` (``audit/``, ``implement/``, ``docs/``) without the eval
 files and tests (so the agent cannot read what is asserted), a ``bin/gh`` shim that logs every call to
 ``gh-calls.log`` and exits 1, the answers with ``{root}`` filled in, and ``eval-baseline.json`` (the refs and state
 the assertions compare against).
@@ -44,13 +44,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "audit" / "tools"))
 
 import _common
 
 HERE = Path(__file__).resolve().parent
-TOOLS = HERE.parent
-RECIPES = TOOLS.parent
+REPO = HERE.parent.parent
+AUDIT_TOOLS = REPO / "audit" / "tools"
+IMPLEMENT_TOOLS = REPO / "implement" / "tools"
+#: The folders the agent gets, at the same paths as in the framework, so the recipes' commands work unchanged.
+COPIED = ("audit", "implement", "docs")
 FIXTURES = HERE / "implement-fixtures"
 TESTDATA = FIXTURES / "testdata"
 SOURCE = TESTDATA / "stockroom"
@@ -225,10 +228,16 @@ def commit_all(repo: Path, message: str, date: str, paths: Sequence[str] = (".",
     return git(repo, "rev-parse", "HEAD")
 
 
+def tool_path(name: str) -> Path:
+    """Where a framework tool lives: the implement tools in `implement/tools/`, every other one in `audit/tools/`."""
+    implement = IMPLEMENT_TOOLS / name
+    return implement if implement.is_file() else AUDIT_TOOLS / name
+
+
 def tool(name: str, *args: str) -> dict[str, Any]:
     """Run one framework tool (`progress.py` and the like) and return its envelope; a non-zero exit is an error."""
     done = subprocess.run(
-        [sys.executable, str(TOOLS / name), *args], capture_output=True, text=True, check=False, env=git_env()
+        [sys.executable, str(tool_path(name)), *args], capture_output=True, text=True, check=False, env=git_env()
     )
     if done.returncode != 0:
         raise _common.ToolError(f"{name} {' '.join(args[:2])} failed ({done.returncode}): {done.stdout}{done.stderr}")
@@ -320,13 +329,12 @@ def copy_framework(dest: Path) -> None:
     def ignore(folder: str, names: list[str]) -> set[str]:
         skipped = {"__pycache__", ".mypy_cache", ".ruff_cache", "dist"}
         here = Path(folder)
-        if here == TOOLS:
-            skipped |= {"eval", "tests"}
-        if here == RECIPES / "deterministic-audit":
+        if here in (AUDIT_TOOLS, IMPLEMENT_TOOLS, REPO / "audit" / "engine"):
             skipped |= {"tests"}
         return {name for name in names if name in skipped}
 
-    shutil.copytree(RECIPES, dest / "brownfield-recipes", ignore=ignore)
+    for folder in COPIED:
+        shutil.copytree(REPO / folder, dest / folder, ignore=ignore)
 
 
 GH_SHIM = """#!/bin/sh

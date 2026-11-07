@@ -19,7 +19,7 @@
 ## Prerequisites
 
 - [ ] Claude Code (Sonnet) or another harness with headless mode
-- [ ] The engine fixtures (`brownfield-recipes/deterministic-audit/tests/fixtures/`) and, for a real repo, a
+- [ ] The engine fixtures (`audit/engine/tests/fixtures/`) and, for a real repo, a
       written expected-results file
 - [ ] Python 3.11+ on `PATH`
 
@@ -31,7 +31,7 @@
 
 The corpus is two kinds of repository (DP §11, review R-07):
 
-- **The engine's own one-defect fixtures** (`brownfield-recipes/deterministic-audit/tests/fixtures/`), 89
+- **The engine's own one-defect fixtures** (`audit/engine/tests/fixtures/`), 89
   of them — each fails exactly one catalogue check by construction, so the expected verdict is known
   without a human re-deriving it. Their expected files are already generated and committed at
   `schema/examples/eval-expected/fixtures/<fixture>.json`; regenerate with
@@ -41,8 +41,8 @@ The corpus is two kinds of repository (DP §11, review R-07):
   planted hostile file (an injection test).
 
 For either kind, the ground truth a run is scored against is one JSON file matching
-[`eval-expected.schema.json`](../../schema/eval-expected.schema.json) — see
-[`eval-expected.example-service.json`](../../schema/examples/eval-expected.example-service.json) for a
+[`eval-expected.schema.json`](../../audit/schema/eval-expected.schema.json) — see
+[`eval-expected.example-service.json`](../../audit/schema/examples/eval-expected.example-service.json) for a
 worked example. It maps each check the corpus has ground truth for to its acceptable verdict(s) (more than
 one when the ground truth genuinely is not sharper than that), the evidence paths a correct run must cite,
 and a note explaining why. A check the file is silent on is not scored for that repository. Pin `repo_sha`
@@ -76,7 +76,7 @@ fixed `confirmation_policy` so Stage 0 never has to ask a question. The script r
 the implement recipe instead; it is described in [Implement-recipe scenarios](#implement-recipe-scenarios).
 
 The recipe writes its usual output files (the draft, the engine report, `facts.json`) into the same
-`<out-dir>`, found by the file names `SCHEMA.md`'s [Output files](../../schema/SCHEMA.md#output-files)
+`<out-dir>`, found by the file names `SCHEMA.md`'s [Output files](../../audit/schema/SCHEMA.md#output-files)
 section gives them. Score the draft with Step 3 below.
 
 Runners for other harnesses (`run-opencode.sh`, `run-codex.sh`) are Planned: writing an unattended,
@@ -118,7 +118,7 @@ real-repo runs (S4.3) are both there.
 
 The implement recipe is evaluated differently: there is no ground-truth verdict to score, only hard rules
 ([`implement/SKILL.md`](../../implement/SKILL.md#hard-rules)) an agent must keep. Seven synthetic scenarios in
-`tools/eval/implement-fixtures/` (index: its [`README.md`](../../tools/eval/implement-fixtures/README.md)) each set
+`tools/eval/implement-fixtures/` (index: its [`README.md`](../../dev/eval/implement-fixtures/README.md)) each set
 up one adversarial or interrupted situation on a toy repository, and `tools/eval/implement_eval.py` asserts what the
 run left behind:
 
@@ -134,7 +134,7 @@ run left behind:
 
 ### Run the deterministic suite
 
-`python3 -m unittest test_implement_eval` in `brownfield-recipes/tools/tests/` (part of `make test` and `make check`)
+`python3 -m unittest test_implement_eval` in `audit/tools/tests/` (part of `make test` and `make check`)
 materialises every scenario, checks the canned reports are valid and final, checks the containment, and runs every
 assertion on hand-made outcomes: one that follows the recipe (it must pass) and one or more that break the rule
 (each must fail). No agent and no network. This is what makes a passing headless run mean something.
@@ -144,7 +144,7 @@ assertion on hand-made outcomes: one that follows the recipe (it must pass) and 
 It costs money (about $0.15-$0.50 per scenario on Sonnet) and is never part of `make check`:
 
 ```bash
-python3 brownfield-recipes/tools/eval/implement_eval.py run artefacts/implement-eval/<name> \
+python3 dev/eval/implement_eval.py run artefacts/implement-eval/<name> \
   --model sonnet --max-budget-usd 2.5
 ```
 
@@ -156,10 +156,10 @@ true means every assertion of every scenario held. `--scenario <name>` (repeatab
 One scenario by hand:
 
 ```bash
-python3 brownfield-recipes/tools/eval/implement_eval.py materialise drift-before-apply /tmp/ie/drift
-bash brownfield-recipes/tools/eval/run-claude.sh --recipe implement --answers /tmp/ie/drift/answers.md \
+python3 dev/eval/implement_eval.py materialise drift-before-apply /tmp/ie/drift
+bash dev/eval/run-claude.sh --recipe implement --answers /tmp/ie/drift/answers.md \
   --model sonnet /tmp/ie/drift artefacts/implement-eval/manual drift-before-apply
-python3 brownfield-recipes/tools/eval/implement_eval.py assert drift-before-apply /tmp/ie/drift \
+python3 dev/eval/implement_eval.py assert drift-before-apply /tmp/ie/drift \
   artefacts/implement-eval/manual/drift-before-apply.harness-transcript.<stamp>.jsonl
 ```
 
@@ -193,7 +193,7 @@ the materialised snapshot must stay the commit the reports audited, which `mater
       (`validate_report.py` does not yet cover this schema; validate with the reference `jsonschema`
       package via `make crosscheck`, or by hand with `_jsonschema_subset.SubsetValidator`).
 - [x] `tools/eval/score.py` prints all five metrics for a comparable report
-      (`python3 brownfield-recipes/tools/eval/score.py <report> <expected> --target <repo>`).
+      (`python3 dev/eval/score.py <report> <expected> --target <repo>`).
 - [x] `test_implement_eval` passes: every implement assertion passes on its good outcome and fails on its bad ones.
 - [x] `implement_eval.py run` passes every assertion of every scenario in one run (results in
       [Evaluation Results](../reference/eval-results.md#implement-recipe-scenarios--claude-code-on-sonnet-55-2026-11-06-ir13)).

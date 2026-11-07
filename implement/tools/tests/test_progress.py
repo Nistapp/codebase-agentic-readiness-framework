@@ -23,11 +23,11 @@ from pathlib import Path
 from typing import Any, Sequence
 from unittest import mock
 
-import _paths
+import _implement_paths
 import _common
 import progress
 
-RECIPES = _paths.TOOLS.parent
+RECIPES = _implement_paths.AUDIT
 EXAMPLES = RECIPES / "schema" / "examples"
 REPORT = EXAMPLES / "example-service.audit-report.20261010T094207Z.json"
 DRAFT = EXAMPLES / "realistic" / "digital-assistant-server.audit-draft.20261010T065739Z.json"

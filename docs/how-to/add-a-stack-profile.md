@@ -2,9 +2,9 @@
 
 > **Goal:** Contribute a tested profile for a toolchain the recipes do not yet cover.
 > **Audience:** Operators / Engineers
-> **Status:** Live. Three profiles exist, [`typescript-node.md`](../../stacks/typescript-node.md),
-> [`java.md`](../../stacks/java.md) and [`python.md`](../../stacks/python.md), plus
-> [`README.md`](../../stacks/README.md) with the anatomy — read a profile alongside this page as a worked
+> **Status:** Live. Three profiles exist, [`typescript-node.md`](../../audit/stacks/typescript-node.md),
+> [`java.md`](../../audit/stacks/java.md) and [`python.md`](../../audit/stacks/python.md), plus
+> [`README.md`](../../audit/stacks/README.md) with the anatomy — read a profile alongside this page as a worked
 > example.
 
 ---
@@ -12,7 +12,7 @@
 ## Prerequisites
 
 - [ ] An open-source repository in the target stack, to test the profile against
-- [ ] A read of [`stacks/README.md`](../../stacks/README.md) in full — it is short, and this page does
+- [ ] A read of [`stacks/README.md`](../../audit/stacks/README.md) in full — it is short, and this page does
       not repeat its anatomy or its contribution rules, only walks through applying them
 
 ---
@@ -21,7 +21,7 @@
 
 ### Step 1: Copy the profile anatomy
 
-Start a new `stacks/<id>.md` from [`stacks/README.md`](../../stacks/README.md) §2's ten section
+Start a new `stacks/<id>.md` from [`stacks/README.md`](../../audit/stacks/README.md) §2's ten section
 headings, in that order: Detection signals, Command-surface map, Tooling defaults, Execution
 determinism, CI idiom, Baseline / ratchet, Boundaries, Engine coverage, Pitfalls, Verified. A framework
 that shares a toolchain with an existing profile (Spring Boot on Maven, Django on pip) gets a `###`
@@ -36,7 +36,7 @@ plainly where the facts tool's own signal is empty or misleading for this stack 
 note on a multi-component repository with no root lockfile is the model for that). Write **Engine
 coverage** last, once the rest is settled: read the engine's own source for the checks that back this
 stack (`audit/rules/checks/_common.py` and the family files under
-[`deterministic-audit/audit/rules/checks/`](../../deterministic-audit/audit/rules/checks/)), and say
+[`audit/engine/audit/rules/checks/`](../../audit/engine/audit/rules/checks/)), and say
 which verdicts are reliable as the engine reads them and which need an agent's own read of the build
 file — `java.md`'s Gradle/Maven engine-coverage sections and `python.md`'s `source_only` discussion are
 worked examples of a real gap found this way, not invented.
@@ -58,7 +58,7 @@ checkout can drift. A section checked against no repository says so there too, n
 
 ## Verification
 
-- [ ] `python3 brownfield-recipes/tools/recipe_lint.py .` is clean.
+- [ ] `python3 dev/recipe_lint.py .` is clean.
 - [ ] The file is 150 lines or fewer (the recipe linter does not check this for `stacks/`; it is the
-      folder's own rule, per [`stacks/README.md`](../../stacks/README.md) §2).
+      folder's own rule, per [`stacks/README.md`](../../audit/stacks/README.md) §2).
 - [ ] `make check` still passes.

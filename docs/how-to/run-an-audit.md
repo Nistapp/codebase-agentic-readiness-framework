@@ -2,7 +2,7 @@
 
 > **Goal:** Produce a validated, user-confirmed readiness report for an existing repository without modifying it.
 > **Audience:** Operators / Engineers
-> **Status:** Live. The recipe is [`brownfield-recipes/audit/SKILL.md`](../../audit/SKILL.md) (S3.5).
+> **Status:** Live. The recipe is [`audit/SKILL.md`](../../audit/SKILL.md) (S3.5).
 
 ---
 
@@ -20,7 +20,7 @@
 ### Step 1: Optional: write an intake file
 
 Pre-answer Stage 0's questions in `audit-intake.<label>.json`, matching
-[`audit-intake.schema.json`](../../schema/audit-intake.schema.json), so a re-audit or a headless run needs
+[`audit-intake.schema.json`](../../audit/schema/audit-intake.schema.json), so a re-audit or a headless run needs
 no interview. Whoever is present when the agent starts still hears the provider-exposure statement; writing
 the file in advance does not skip that.
 
@@ -53,6 +53,6 @@ refuses one.
 
 ## Verification
 
-- `python3 brownfield-recipes/tools/validate_report.py <report>` exits `0`.
+- `python3 audit/tools/validate_report.py <report>` exits `0`.
 - The report's `status` is `final`, and its `summary.phase1_score` and `blockers_remaining` read as
   expected for the repository.

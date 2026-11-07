@@ -17,11 +17,11 @@ import unittest
 from pathlib import Path
 from typing import Any, Callable
 
-import _paths
+import _implement_paths
 import _jsonschema_subset as subset
 import progress
 
-SCHEMA_DIR = _paths.TOOLS.parent / "schema"
+SCHEMA_DIR = _implement_paths.AUDIT / "schema"
 SCHEMA_PATH = SCHEMA_DIR / "readiness-state.schema.json"
 EXAMPLES = (
     SCHEMA_DIR / "examples" / "readiness-state.example-service.json",

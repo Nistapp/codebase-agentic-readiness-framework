@@ -31,7 +31,7 @@ from audit import cli  # noqa: E402
 from audit.rules.registry import find_framework_root  # noqa: E402
 
 FRAMEWORK_ROOT = ENGINE_DIR.parents[1]
-MARKER = ("brownfield-legacy", "Phased-Approach.md")
+MARKER = ("docs", "framework", "phased-approach.md")
 
 
 def _git_head(path: Path) -> str | None:
@@ -129,7 +129,7 @@ class ZipappTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         build = subprocess.run(
-            [sys.executable, str(ENGINE_DIR / "tools" / "build.py")],
+            [sys.executable, str(ENGINE_DIR / "build.py")],
             cwd=str(ENGINE_DIR),
             text=True,
             capture_output=True,

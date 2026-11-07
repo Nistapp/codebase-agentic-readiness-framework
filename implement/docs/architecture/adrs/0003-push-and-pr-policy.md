@@ -9,9 +9,11 @@
 
 ## Context
 
-Three pages said three things about the end of a theme. [`implement/SKILL.md`](../../../implement/SKILL.md) said the
-recipe pushes the theme branch and opens a pull request. The [purpose and non-goals page](../user-overview/01-purpose-and-non-goals.md)
-said it never pushes and never opens one. The [trust and safety page](../user-overview/03-trust-and-safety.md) said
+Three pages said three things about the end of a theme. [`implement/SKILL.md`](../../../SKILL.md) said the
+recipe pushes the theme branch and opens a pull request. The
+[purpose and non-goals page](../../../../docs/explanation/user-overview/01-purpose-and-non-goals.md)
+said it never pushes and never opens one. The
+[trust and safety page](../../../../docs/explanation/user-overview/03-trust-and-safety.md) said
 the question was open.
 
 Both repositories the recipe has run on today let a session push the phase branch and open the pull request; the

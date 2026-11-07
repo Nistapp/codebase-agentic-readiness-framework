@@ -36,7 +36,7 @@ These apply through every stage, without exception:
   (an absent key means no; never infer it). With that preference, push the theme branch and open a pull
   request into the integration branch, then stop. No merge command, no merge API call, no workaround. The
   repository's owner or its review process merges. See
-  [ADR 0003](../docs/architecture/adrs/0003-push-and-pr-policy.md).
+  [ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md).
 - **One branch per theme, from the integration branch.** Work in a separate worktree created from the
   up-to-date integration branch (for example `dev`), on a branch named `agentic-readiness/<phase>-<slug>`.
   Never commit to the default branch, never force-push, never push tags, never publish a release.
@@ -96,8 +96,8 @@ session is the normal pace: Stage 2 of the next theme needs the previous theme's
 Goal: know that the tools run, that the report is usable, how far the repository has moved since the audit,
 and that a state file exists. Change nothing in the target except the state folder, on the triage branch.
 
-1. **Tools.** Run `python3 brownfield-recipes/tools/progress.py --describe` and
-   `python3 brownfield-recipes/tools/engine.py --describe`. Expect exit 0 from both. From an installed skill,
+1. **Tools.** Run `python3 implement/tools/progress.py --describe` and
+   `python3 audit/tools/engine.py --describe`. Expect exit 0 from both. From an installed skill,
    `engine.py` comes from the `agentic-readiness-audit` skill, which must be installed in the same skills folder
    as this one, from the same framework release (Stage 4 and Stage 5 run it, and `validate_report.py` reads its
    credential patterns). If either call fails, stop and ask the owner to install it; do not work around it.
@@ -108,12 +108,12 @@ and that a state file exists. Change nothing in the target except the state fold
 3. **Resume check.** Look for `<repo>/docs/agentic-readiness/*-agentic-readiness-state.json` on the integration
    branch and on any `agentic-readiness/*` branch (see [Resuming](#resuming)). If one exists, this is a resume: run
    steps 4 and 5 against the report it names, then step 6 without `init`.
-4. **Validate.** Run `python3 brownfield-recipes/tools/validate_report.py <report> --target <repo>`.
+4. **Validate.** Run `python3 audit/tools/validate_report.py <report> --target <repo>`.
    Expect exit 0 and `data.valid` true; read `data.status` and `warnings`. If `data.status` is not `final`, or the
    exit code is 2, stop: tell the owner the report goes back to the [audit recipe](../audit/SKILL.md)
    (`report.py finalise`). Do not repair a report here. A warning about a cited path that no longer exists is
    normal; keep it for step 5.
-5. **Drift.** Run `python3 brownfield-recipes/tools/check_drift.py <report> <repo>`, on a new run and on every
+5. **Drift.** Run `python3 implement/tools/check_drift.py <report> <repo>`, on a new run and on every
    resume. It exits 0 whatever it finds, so read `data.status`:
    - `current`: nothing moved; go on.
    - `drifted`: for each finding in `data.findings`, re-verify it against the current tree with the check's
@@ -126,7 +126,7 @@ and that a state file exists. Change nothing in the target except the state fold
 6. **State.** On a new run, create the triage worktree first, so nothing is committed on the integration branch
    itself: `git -C <repo> fetch origin`, then `git -C <repo> worktree add <worktree> -b
    agentic-readiness/<phase>-triage origin/<integration branch>`. Then create the state there:
-   `python3 brownfield-recipes/tools/progress.py init --report <worktree>/<report path inside the repo>
+   `python3 implement/tools/progress.py init --report <worktree>/<report path inside the repo>
    --target <worktree> --default-branch <integration branch> --phase <phase>` (always pass `--default-branch`; it
    defaults to `main`). Expect exit 0 and `data.items` and `data.not_queued` counts; Stage 1 commits the two state
    files on the triage branch. To resume instead, run `progress.py show --target <repo>` and read `data.skipped`,
@@ -167,7 +167,7 @@ main checkout.
    takes one value. When the owner chooses no extras, record the key `extra.none` with value `none`, so the next session
    knows the question was asked. Keep reasons short: they become table rows in the generated file. Also ask whether the
    agent may push the theme branch and open a pull request, and record the answer as `ci.pr_by_agent` (`yes` or `no`);
-   without `yes` the recipe stops at a local branch ([ADR 0003](../docs/architecture/adrs/0003-push-and-pr-policy.md)).
+   without `yes` the recipe stops at a local branch ([ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md)).
    Ask here, too, for the keys most playbooks read: `ci.edits_authorised` (may build files and CI workflows change, and
    which), `format.mass_reformat` (`no` forbids reformatting the tree), `layout.command_runner` (one root runner, or one
    per component) and `tests.stack_dependent` (does `test` need a live local stack). Every other key is listed, with its
@@ -283,7 +283,7 @@ only what is specific to it.
    exists already, this is a resume: see [Resuming](#resuming). All edits and every `progress.py` write happen in
    the worktree (`--target <worktree>`). Record the merges from Stage 2, step 1, then
    `progress.py theme Tn --status branch_open --branch <branch> --target <worktree> --phase <phase> --render`.
-2. **Drift first.** Run `python3 brownfield-recipes/tools/check_drift.py <report> <worktree>` (the report path
+2. **Drift first.** Run `python3 implement/tools/check_drift.py <report> <worktree>` (the report path
    inside the worktree). Earlier themes and the owner's own pull requests close findings without the state knowing,
    and move lines. Re-measure every claim a finding quotes (line numbers, counts, sizes, "not named: ...") on the
    current tree. A finding already true is set `in_progress`, then `done` with the drift as the evidence; it is not
@@ -326,7 +326,7 @@ only what is specific to it.
 Goal: the theme's checks are re-checked, the gate is green or its failures are recorded, and the branch (and,
 when allowed, the pull request) is ready for the owner.
 
-1. **Engine re-check.** Run `python3 brownfield-recipes/tools/engine.py <worktree> --out-dir <dir outside the
+1. **Engine re-check.** Run `python3 audit/tools/engine.py <worktree> --out-dir <dir outside the
    target>` (add `--no-user-config` when the playbook asks). Compare each of the theme's checks with the audit
    report and explain every remaining non-`PASS`: a known engine limit (the playbook's Verification names them),
    recorded debt, or a real gap, which means the item is not `done`.
@@ -338,7 +338,7 @@ when allowed, the pull request) is ready for the owner.
    `skipped`; none is `queued` or `in_progress`. A verification that needs a CI run (a green run on the branch, a
    job summary, a first scan count) is recorded when that run exists: by this session if it opened the pull request
    and CI finished, otherwise as a note in the next Stage 2. Render and commit the state.
-4. **Ending** ([ADR 0003](../docs/architecture/adrs/0003-push-and-pr-policy.md)):
+4. **Ending** ([ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md)):
    - Without `ci.pr_by_agent=yes`: stop at the local branch. Give the owner the branch name, the commits and the
      summary below; the owner pushes it and opens the pull request. The theme stays `branch_open` until the next
      Stage 2 records it.
@@ -364,7 +364,7 @@ Goal: a second audit shows what the run changed, and the owner sees every skip, 
    audit. Note the commit.
 3. **Hand it over** as in Stage 0, step 2: the owner commits the second pair in `docs/agentic-readiness-report/`
    beside the first, under its own name. Never edit or replace the first report.
-4. **Compare.** Run `python3 brownfield-recipes/tools/compare_reports.py <first report> <second report> --state
+4. **Compare.** Run `python3 implement/tools/compare_reports.py <first report> <second report> --state
    <state JSON>`. Label each move: explained by the state (an item `done` or `partial`), explained by an engine
    change between the two audits (a different ruleset; name it), or unexplained (cite an open engine issue if one
    matches, else say so). A skipped finding is owner-accepted, not a new gap.

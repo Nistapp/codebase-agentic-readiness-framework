@@ -21,10 +21,10 @@ import unittest
 from pathlib import Path
 from typing import Any, Sequence
 
-import _paths
+import _dev_paths
 
-TOOLS = _paths.TOOLS
-sys.path.insert(0, str(TOOLS / "eval"))
+DEV = _dev_paths.DEV
+sys.path.insert(0, str(DEV / "eval"))
 
 import _common  # noqa: E402
 import implement_eval as ie  # noqa: E402
@@ -64,7 +64,7 @@ class ScenarioCase(unittest.TestCase):
         return ie.git(cwd, *args, date=date)
 
     def progress(self, target: Path, *args: str) -> dict[str, Any]:
-        self.events.append(tool_use(f"python3 brownfield-recipes/tools/progress.py {' '.join(args)} --target {target}"))
+        self.events.append(tool_use(f"python3 implement/tools/progress.py {' '.join(args)} --target {target}"))
         return ie.progress(target, *args, phase=self.scenario.phase)
 
     def worktree(self, slug: str) -> Path:
@@ -158,11 +158,14 @@ class MaterialiseTests(unittest.TestCase):
         self.assertEqual(ie.git(repo, "remote"), "origin")
         self.assertEqual(Path(ie.git(repo, "remote", "get-url", "origin")), root / "origin.git")
         self.assertEqual(ie.git(root / "origin.git", "rev-parse", "--is-bare-repository"), "true")
-        recipe = root / "framework" / "brownfield-recipes"
-        self.assertTrue((recipe / "implement" / "SKILL.md").is_file())
-        self.assertTrue((recipe / "tools" / "progress.py").is_file())
-        self.assertFalse((recipe / "tools" / "eval").exists(), "the agent could read the assertions")
-        self.assertFalse((recipe / "tools" / "tests").exists())
+        framework = root / "framework"
+        self.assertTrue((framework / "implement" / "SKILL.md").is_file())
+        self.assertTrue((framework / "implement" / "tools" / "progress.py").is_file())
+        self.assertTrue((framework / "audit" / "tools" / "validate_report.py").is_file())
+        self.assertFalse((framework / "dev").exists(), "the agent could read the assertions")
+        self.assertFalse((framework / "implement" / "tools" / "tests").exists())
+        self.assertFalse((framework / "audit" / "tools" / "tests").exists())
+        self.assertFalse((framework / "audit" / "engine" / "tests").exists())
         answers = (root / "answers.md").read_text(encoding="utf-8")
         self.assertNotIn("{root}", answers)
         self.assertNotIn("{id:", answers)
@@ -268,7 +271,7 @@ class TriageAssertionTests(ScenarioCase):
     def test_a1_fails_on_a_progress_call_naming_a_rejected_finding(self) -> None:
         self.triage()
         rejected = ie.rejected_ids()[0]
-        self.events.append(tool_use(f"python3 brownfield-recipes/tools/progress.py skip {rejected} --by owner"))
+        self.events.append(tool_use(f"python3 implement/tools/progress.py skip {rejected} --by owner"))
         self.assertFails("A1", "names a rejected finding")
 
     def test_a1_passes_when_a_rejected_finding_is_only_read(self) -> None:
@@ -277,7 +280,7 @@ class TriageAssertionTests(ScenarioCase):
         read = (
             f"python3 $T show --json | python3 -c \"print([n for n in s['not_queued'] if n['finding']=='{rejected}'])\""
         )
-        self.events.append(tool_use(f"T=brownfield-recipes/tools/progress.py; {read}"))
+        self.events.append(tool_use(f"T=implement/tools/progress.py; {read}"))
         self.assertPasses("A1")
 
     def test_a1_fails_on_a_hand_edit_of_the_state(self) -> None:
@@ -572,7 +575,7 @@ class DriftTests(ScenarioCase):
     scenario_name = "drift-before-apply"
 
     def run_t6(self, *, drift_first: bool = True, redo: bool = False, result: str = "already true: drift") -> None:
-        drift = tool_use("python3 brownfield-recipes/tools/check_drift.py report repo")
+        drift = tool_use("python3 implement/tools/check_drift.py report repo")
         if drift_first:
             self.events.append(drift)
         worktree = self.worktree("docs")

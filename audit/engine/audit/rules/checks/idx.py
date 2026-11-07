@@ -3,7 +3,7 @@
 
 """`IDX` pack — discovery and the codebase index.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Phase 1: Agentic Bootstrap ("Configure and run
+Anchor: `docs/framework/phased-approach.md` § Phase 1: Agentic Bootstrap ("Configure and run
 `codebase-memory-mcp` to index source files, symbols, relationships, dependencies, and tests").
 
 Implemented here: `IDX-01` … `IDX-03`.

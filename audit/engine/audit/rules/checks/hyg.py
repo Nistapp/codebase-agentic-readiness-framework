@@ -3,7 +3,7 @@
 
 """`HYG` pack — repository hygiene (informational, never scored).
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Phase 1: Agentic Bootstrap.
+Anchor: `docs/framework/phased-approach.md` § Phase 1: Agentic Bootstrap.
 
 Implemented here: `HYG-01` … `HYG-11`. Every check reads its artifact through
 :class:`audit.scan.Inventory`; none writes to the target and none runs a command in the target's

@@ -1,6 +1,6 @@
 # Glossary
 
-Canonical definitions of terms used by the brownfield recipes. Terms from the readiness framework are cited, not redefined; see [`shared/Glossary.md`](../../../shared/Glossary.md).
+Canonical definitions of terms used by the brownfield recipes. Terms from the readiness framework are cited, not redefined; see [`docs/framework/glossary.md`](framework/glossary.md).
 
 > **Status:** Live. Every term below names a thing that exists today. The implementation recipe and its
 > playbooks (v0.2.0) are live.
@@ -12,7 +12,7 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Recipe | A Markdown instruction document (`SKILL.md`) that a coding agent executes. |
 | Audit recipe | The read-only recipe that produces the audit report. |
 | Implementation recipe | `implement/SKILL.md`: the recipe that closes confirmed findings one theme at a time, a branch per theme. v0.2.0: Stages 0 to 5. |
-| Engine | The deterministic, standard-library Python audit in `deterministic-audit/`. |
+| Engine | The deterministic, standard-library Python audit in `audit/engine/`. |
 | Tool | A deterministic script in `tools/` that follows the tool contract. |
 | Envelope | The one JSON object a tool prints on stdout: `tool`, `version`, `ok`, `data`, `warnings`, `truncated`. |
 | Check | A catalogue entry with an ID such as `CMD-01`, judged by a rubric. |

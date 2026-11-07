@@ -1,58 +1,64 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""Lint the recipe Markdown under ``brownfield-recipes/`` for broken links, bad ``SKILL.md`` frontmatter and
-oversize files.
+"""Lint the recipe Markdown under ``audit/``, ``implement/`` and ``docs/`` for broken links, bad ``SKILL.md``
+frontmatter and oversize files.
 
     recipe_lint.py <root>
     recipe_lint.py <root> --write-catalogue
 
-``<root>`` is the repository that holds ``brownfield-recipes/``; a link may climb out of that folder (a check
-file citing ``brownfield-legacy/Phased-Approach.md`` does), but never out of ``<root>``. Eight checks, each
-independent of the others. The link rule also covers the framework pages outside that folder (the root
-``README.md``, ``shared/``, ``spec/``, ``greenfield-bootstrap/`` and ``brownfield-legacy/``); no other check reads them:
+``<root>`` is the framework repository, the one that holds ``audit/`` (and, beside it, ``implement/`` and
+``docs/``); a link may climb out of those folders (a check file citing ``docs/framework/phased-approach.md`` or
+``spec/`` does), but never out of ``<root>``. Eight checks, each independent of the others. The link rule also
+covers the framework pages outside those folders (the root ``README.md``, ``spec/`` and ``greenfield/``; the
+framework pages under ``docs/framework/`` are already recipe Markdown); no other check reads them:
 
 - **Links.** Every inline Markdown link (``[text](target)``, never an image or a reference-style link, neither
   of which this project's recipes use today) whose target is not an external URL must resolve inside ``<root>``.
   A target ending in ``.md`` with a ``#fragment`` needs a heading in that file whose GitHub-style slug is the
   fragment; any other target with a fragment needs the fragment to be an ``L<n>`` or ``L<n>-L<n>`` line range
-  inside the file. The placeholder links in ``docs/templates/`` are examples (``NNNN-title.md``) and are
-  skipped on purpose.
+  inside the file. The placeholder links in ``docs/templates/`` and ``greenfield/templates/`` are examples
+  (``NNNN-title.md``) and are skipped on purpose.
 - **Frontmatter.** A ``SKILL.md`` must open with ``---``-delimited frontmatter holding a ``name`` (at most 64
   lowercase letters, digits and hyphens, matching its own folder's name) and a ``description`` (at most 1,024
   characters), one ``key: value`` pair per line (R-10's grammar; this is not a YAML parser).
 - **Size.** A ``SKILL.md``, and a check-family file under ``audit/checks/`` (``NN-*.md``), must be 500 lines or
   fewer (R-10's ``SKILL.md`` budget, shared by the family files for the same reason: an agent loads the whole
   file at once, D46).
-- **Tool references.** Every ``brownfield-recipes/tools/<name>.py`` named in a command or a code span,
-  wherever it appears in a line, must exist and answer ``--describe`` with the contract's envelope, inside a
-  time limit. A line that admits the tool is not built yet (starts with ``TBD:``, after any list or quote
-  markers) is skipped, which is how this project already marks a tool that is Planned. A bare ``tools/...``
-  with no ``brownfield-recipes/`` prefix is some other project's own tools folder (the engine's
-  ``deterministic-audit/tools/build.py`` does not even follow this contract) and is never checked.
+- **Tool references.** Every ``audit/tools/<name>.py`` or ``implement/tools/<name>.py`` named in a command or a
+  code span, wherever it appears in a line, must exist in that folder and answer ``--describe`` with the
+  contract's envelope, inside a time limit. A line that admits the tool is not built yet (starts with ``TBD:``,
+  after any list or quote markers) is skipped, which is how this project already marks a tool that is Planned.
+  A bare ``tools/...`` with no ``audit/`` or ``implement/`` in front of it is some other project's own tools
+  folder (the engine's ``audit/engine/tools/build.py`` does not even follow this contract) and is never checked;
+  neither is ``<word>-audit/tools/...``, which is another folder's name, nor a relative link's
+  ``../audit/tools/...``, which the link rule checks instead.
 - **Check references.** A catalogue check ID (``CMD-01``, ``AGT-11``, ...), wherever a line names one, must be
-  in ``catalogue.json``.
+  in ``audit/catalogue.json``.
 - **Requirement references.** A requirement ID (``REQ-SH-022``, ``REQ-BF-004``, ...) must be a heading in
   ``spec/readiness-requirements.md``.
 - **Playbook references.** A playbook named as ``Playbook `<name>` `` or ``"playbook": "<name>"`` must be one
-  ``catalogue.json`` names. A playbook may be named before its file exists under ``implement/playbooks/``
-  (``schema/SCHEMA.md``, "Rules beyond the schema", rule 2: the catalogue, not the folder, is what "exists"
-  means, until S5.2 writes the files), so this never checks the folder.
-- **Tool catalogue.** ``brownfield-recipes/tools/CATALOGUE.md`` must be byte-identical to what every
-  ``<name>.py --describe`` in ``brownfield-recipes/tools/`` (every file there not starting with ``_``) would
-  generate, sorted by tool name. ``--write-catalogue`` regenerates it in place instead of linting; nothing
-  else runs in that mode.
+  ``audit/catalogue.json`` names. A playbook may be named before its file exists under ``implement/playbooks/``
+  (``audit/schema/SCHEMA.md``, "Rules beyond the schema", rule 2: the catalogue, not the folder, is what
+  "exists" means), so this never checks the folder.
+- **Tool catalogue.** ``audit/tools/CATALOGUE.md`` must be byte-identical to what every ``<name>.py
+  --describe`` directly in ``audit/tools/`` and in ``implement/tools/`` (every file there not starting with
+  ``_``) would generate: the audit tools first, sorted by tool name, then the implement tools, sorted by tool
+  name, so each recipe's tools stay together. ``--write-catalogue`` regenerates it in place instead of linting;
+  nothing else runs in that mode. A tree with no ``audit/tools/`` (the catalogue's home) has no catalogue to
+  keep fresh and is skipped.
 
-These last three read ``catalogue.json`` and ``spec/readiness-requirements.md`` under ``<root>``; when either is
-missing or unreadable, the check it feeds is silently skipped rather than failing the whole run, so the rule
-still works on a minimal tree that has no catalogue or spec of its own. They skip ``deterministic-audit/``
+These last three read ``audit/catalogue.json`` and ``spec/readiness-requirements.md`` under ``<root>``; when
+either is missing or unreadable, the check it feeds is silently skipped rather than failing the whole run, so the
+rule still works on a minimal tree that has no catalogue or spec of its own. They skip ``audit/engine/``
 entirely: the engine has its own check registry and its own fixtures, which are data, not recipe prose, and
 neither is governed by ``catalogue.json``.
 
 Nothing is written, apart from a tool's own ``--describe`` (which the contract guarantees does no work and
 writes nothing either) and, with ``--write-catalogue``, an atomic in-place replace of
-``brownfield-recipes/tools/CATALOGUE.md`` itself: a second, documented exception to "a tool never replaces a
-file" (tools/README.md rule 7), alongside the draft report. Standard library only.
+``audit/tools/CATALOGUE.md`` itself: a second, documented exception to "a tool never replaces a file"
+(``audit/tools/README.md`` rule 7), alongside the draft report. Standard library only; ``_common`` is imported
+from ``audit/tools/``, which this module puts on ``sys.path`` because ``dev/`` is not a package.
 """
 
 from __future__ import annotations
@@ -65,17 +71,28 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Sequence
 
-import _common
+_AUDIT_TOOLS = str(Path(__file__).resolve().parent.parent / "audit" / "tools")
+if _AUDIT_TOOLS not in sys.path:
+    sys.path.insert(0, _AUDIT_TOOLS)
+
+import _common  # noqa: E402
 
 INFO = _common.ToolInfo(
     name="recipe_lint",
-    summary="Check the recipe Markdown under brownfield-recipes/ for broken links, bad SKILL.md frontmatter and "
-    "oversize files.",
+    summary="Check the recipe Markdown under audit/, implement/ and docs/ for broken links, bad SKILL.md "
+    "frontmatter and oversize files.",
     synopsis=("recipe_lint.py <root>", "recipe_lint.py <root> --write-catalogue"),
-    writes="nothing, unless --write-catalogue is given, which replaces brownfield-recipes/tools/CATALOGUE.md in place",
+    writes="nothing, unless --write-catalogue is given, which replaces audit/tools/CATALOGUE.md in place",
 )
 
-RECIPES_DIRNAME = "brownfield-recipes"
+# The folders that hold recipe Markdown, relative to <root>. The first is required: it marks <root> as the
+# framework repository, and it holds catalogue.json and the tool catalogue.
+RECIPE_DIRS = ("audit", "implement", "docs")
+REQUIRED_DIR = RECIPE_DIRS[0]
+# The folders whose `<name>.py` tools are cited, described and catalogued, in catalogue order.
+TOOL_DIRS = ("audit/tools", "implement/tools")
+CATALOGUE_FILE = "audit/tools/CATALOGUE.md"
+CATALOGUE_JSON = "audit/catalogue.json"
 LINE_BUDGET = 500  # SKILL.md's own budget (R-10); check-family files share it (D46).
 MAX_NAME_CHARS = 64
 MAX_DESCRIPTION_CHARS = 1024
@@ -84,7 +101,12 @@ DESCRIBE_TIMEOUT_S = 15.0
 NAME_PATTERN = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*\Z")
 CHECK_FAMILY_FILE = re.compile(r"^[0-9]{2}-[a-z0-9-]+\.md\Z")
 LINE_ANCHOR = re.compile(r"^L([0-9]+)(?:-L([0-9]+))?\Z")
-TOOL_REFERENCE = re.compile(rf"{re.escape(RECIPES_DIRNAME)}/tools/([A-Za-z_][A-Za-z0-9_]*)\.py")
+# `audit/tools/<name>.py` or `implement/tools/<name>.py` as a path from <root>, the way a command names it: not
+# preceded by a word character, a hyphen, a dot or a slash, so neither `audit/engine/tools/build.py`, nor some
+# `<word>-audit/tools/...` folder, nor a relative link's `../audit/tools/...` (the link rule's to check) is one.
+TOOL_REFERENCE = re.compile(
+    rf"(?<![\w./-])({'|'.join(re.escape(folder) for folder in TOOL_DIRS)})/([A-Za-z_][A-Za-z0-9_]*)\.py"
+)
 TBD_LINE = re.compile(r"^\s*(?:[-*>]\s*)*TBD:")
 ENVELOPE_KEYS = ("tool", "version", "ok", "data", "warnings", "truncated")
 REQUIREMENT_ID = re.compile(r"\bREQ-[A-Z]+-[0-9]+\b")
@@ -92,18 +114,19 @@ REQUIREMENT_HEADING = re.compile(r"^### (REQ-[A-Z]+-[0-9]+)\b", re.MULTILINE)
 PLAYBOOK_REFERENCE = re.compile(r'Playbook `([a-z][a-z0-9-]*)`|"playbook":\s*"([a-z][a-z0-9-]*)"')
 
 # Whole files whose links are examples and are never meant to resolve, as a path prefix relative to <root>.
-EXCLUDED_FROM_LINKS = (f"{RECIPES_DIRNAME}/docs/templates/", "greenfield-bootstrap/templates/")
-# The framework pages outside brownfield-recipes/ whose links are checked, and nothing else about them: the root
-# README.md and the folders below. Templates under greenfield-bootstrap/ are copied into new projects, so their
-# links are examples relative to the destination and are skipped by EXCLUDED_FROM_LINKS above.
+EXCLUDED_FROM_LINKS = ("docs/templates/", "greenfield/templates/")
+# The framework pages outside the recipe folders whose links are checked, and nothing else about them: the root
+# README.md and the folders below (the framework pages under docs/framework/ are recipe Markdown already).
+# Templates under greenfield/ are copied into new projects, so their links are examples relative to the
+# destination and are skipped by EXCLUDED_FROM_LINKS above.
 ROOT_PAGE_FILES = ("README.md",)
-ROOT_PAGE_DIRS = ("shared", "spec", "greenfield-bootstrap", "brownfield-legacy")
+ROOT_PAGE_DIRS = ("spec", "greenfield")
 # Files the catalogue, requirement and playbook checks never read: the engine's own registry and fixtures.
-EXCLUDED_FROM_CATALOGUE = (f"{RECIPES_DIRNAME}/deterministic-audit/",)
+EXCLUDED_FROM_CATALOGUE = ("audit/engine/",)
 # Never swept at all: gitignored build output (build_skills.py's bundle, the engine's audit.pyz), not
-# authored content. A bundle's own copy of a check file has links relative to the bundle, not to <root>,
-# so it is never this tool's to lint; `skills-ref validate` (S4.5.2) is.
-EXCLUDED_DIRNAMES = (f"{RECIPES_DIRNAME}/dist/",)
+# authored content, wherever a recipe folder holds a dist/. A bundle's own copy of a check file has links
+# relative to the bundle, not to <root>, so it is never this tool's to lint; `skills-ref validate` (S4.5.2) is.
+EXCLUDED_DIRNAMES = tuple(f"{folder}/dist/" for folder in RECIPE_DIRS) + ("audit/engine/dist/",)
 
 _FENCE = re.compile(r"^(```+|~~~+)")
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*\Z")
@@ -299,7 +322,9 @@ def check_size(path: Path, lines: Sequence[str], out: Outcome) -> None:
 
 
 def tool_name_occurrences(lines: Sequence[str]) -> list[tuple[int, str]]:
-    """`(line number, tool name)` for each `brownfield-recipes/tools/<name>.py` the raw lines name.
+    """`(line number, reference)` for each `audit/tools/<name>.py` or `implement/tools/<name>.py` the raw lines name.
+
+    The reference is the folder and file as cited, relative to `<root>`.
 
     Fenced code blocks are read too (unlike `scan_lines`): a Synopsis is exactly where the primary citation
     lives. A line admitting the tool is not built yet (`TBD:`, after any list or quote markers) is skipped.
@@ -309,7 +334,7 @@ def tool_name_occurrences(lines: Sequence[str]) -> list[tuple[int, str]]:
         if TBD_LINE.match(line):
             continue
         for match in TOOL_REFERENCE.finditer(line):
-            found.append((number, match.group(1)))
+            found.append((number, f"{match.group(1)}/{match.group(2)}.py"))
     return found
 
 
@@ -345,15 +370,14 @@ def describe_tool(path: Path, timeout: float) -> str | None:
 def check_tool_references(
     root: Path, file: Path, lines: Sequence[str], cache: dict[str, str | None], out: Outcome, *, timeout: float
 ) -> None:
-    for line_number, name in tool_name_occurrences(lines):
-        reference = f"{RECIPES_DIRNAME}/tools/{name}.py"
-        resolved = root / RECIPES_DIRNAME / "tools" / f"{name}.py"
+    for line_number, reference in tool_name_occurrences(lines):
+        resolved = root / reference
         if not resolved.is_file():
             out.error(file, line_number, f"the tool {reference} does not exist")
             continue
-        if name not in cache:
-            cache[name] = describe_tool(resolved, timeout)
-        problem = cache[name]
+        if reference not in cache:
+            cache[reference] = describe_tool(resolved, timeout)
+        problem = cache[reference]
         if problem is not None:
             out.error(file, line_number, f"{reference} --describe {problem}")
 
@@ -377,7 +401,7 @@ class Catalogue:
 
 def load_catalogue(root: Path) -> Catalogue | None:
     """The catalogue under `<root>`, or `None` when it cannot be read: the check it feeds is then skipped."""
-    path = root / RECIPES_DIRNAME / "catalogue.json"
+    path = root / CATALOGUE_JSON
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
@@ -433,25 +457,31 @@ def check_playbook_references(file: Path, lines: Sequence[str], catalogue: Catal
 CATALOGUE_HEADER = (
     "# Tool Catalogue\n"
     "\n"
-    "Generated by `recipe_lint.py <root> --write-catalogue` from every tool's own `--describe` output, sorted "
-    "by name. Do not edit by hand: a stale file fails `make check`.\n"
+    "Generated by `recipe_lint.py <root> --write-catalogue` from every tool's own `--describe` output: the tools "
+    "in `audit/tools/` sorted by name, then the tools in `implement/tools/` sorted by name. Do not edit by hand: "
+    "a stale file fails `make check`.\n"
 )
 
 
 def catalogue_path(root: Path) -> Path:
-    return root / RECIPES_DIRNAME / "tools" / "CATALOGUE.md"
+    return root / CATALOGUE_FILE
 
 
 def discover_tools(root: Path) -> list[Path]:
-    """Every `<name>.py` directly under `brownfield-recipes/tools/`, apart from the private `_*.py` helpers."""
-    tools_dir = root / RECIPES_DIRNAME / "tools"
-    if not tools_dir.is_dir():
-        return []
-    return sorted(path for path in tools_dir.glob("*.py") if not path.name.startswith("_"))
+    """Every `<name>.py` directly in each of `TOOL_DIRS`, apart from the private `_*.py` helpers.
+
+    Folder by folder in `TOOL_DIRS` order, each folder's tools sorted by file name; a missing folder adds none.
+    """
+    found: list[Path] = []
+    for folder in TOOL_DIRS:
+        tools_dir = root / folder
+        if tools_dir.is_dir():
+            found.extend(sorted(path for path in tools_dir.glob("*.py") if not path.name.startswith("_")))
+    return found
 
 
 def render_catalogue(manifests: Sequence[dict[str, Any]]) -> str:
-    """Byte-stable Markdown for `manifests`, which callers must already have sorted by name."""
+    """Byte-stable Markdown for `manifests`, which callers must already have put in catalogue order."""
     parts = [CATALOGUE_HEADER]
     for manifest in manifests:
         parts.append(f"\n## {manifest['name']}.py\n\n")
@@ -465,24 +495,29 @@ def render_catalogue(manifests: Sequence[dict[str, Any]]) -> str:
 
 
 def build_catalogue(root: Path, *, timeout: float) -> tuple[str | None, list[str]]:
-    """The catalogue text for `root`'s tools, or `(None, errors)` when one of them fails `--describe`."""
+    """The catalogue text for `root`'s tools in catalogue order (`TOOL_DIRS` order, then by tool name within each
+    folder), or `(None, errors)` when one of them fails `--describe`."""
     errors: list[str] = []
     manifests: list[dict[str, Any]] = []
-    for path in discover_tools(root):
-        manifest, problem = describe_manifest(path, timeout)
-        if problem is not None or manifest is None:
-            errors.append(f"{RECIPES_DIRNAME}/tools/{path.name} --describe {problem}")
-            continue
-        manifests.append(manifest)
+    tools = discover_tools(root)
+    for folder in TOOL_DIRS:
+        folder_manifests: list[dict[str, Any]] = []
+        for path in (tool for tool in tools if tool.parent == root / folder):
+            manifest, problem = describe_manifest(path, timeout)
+            if problem is not None or manifest is None:
+                errors.append(f"{folder}/{path.name} --describe {problem}")
+                continue
+            folder_manifests.append(manifest)
+        folder_manifests.sort(key=lambda manifest: manifest["name"])
+        manifests.extend(folder_manifests)
     if errors:
         return None, errors
-    manifests.sort(key=lambda manifest: manifest["name"])
     return render_catalogue(manifests), []
 
 
 def check_catalogue_fresh(root: Path, out: Outcome, *, timeout: float) -> None:
-    if not (root / RECIPES_DIRNAME / "tools").is_dir():
-        return  # a minimal tree with no tools/ of its own has no catalogue to keep fresh.
+    if not catalogue_path(root).parent.is_dir():
+        return  # a minimal tree with no audit/tools/ of its own has no catalogue to keep fresh.
     path = catalogue_path(root)
     expected, errors = build_catalogue(root, timeout=timeout)
     if errors:
@@ -492,10 +527,10 @@ def check_catalogue_fresh(root: Path, out: Outcome, *, timeout: float) -> None:
     assert expected is not None
     how = "regenerate it with 'recipe_lint.py <root> --write-catalogue'"
     if not path.is_file():
-        out.error(path, 1, f"{RECIPES_DIRNAME}/tools/CATALOGUE.md is missing; {how}")
+        out.error(path, 1, f"{CATALOGUE_FILE} is missing; {how}")
         return
     if path.read_text(encoding="utf-8") != expected:
-        out.error(path, 1, f"{RECIPES_DIRNAME}/tools/CATALOGUE.md is stale; {how}")
+        out.error(path, 1, f"{CATALOGUE_FILE} is stale; {how}")
 
 
 def write_catalogue(root: Path, *, timeout: float) -> _common.Result:
@@ -522,14 +557,19 @@ def excluded_dirname(file: Path, root: Path) -> bool:
 
 
 def find_markdown(root: Path) -> list[Path]:
-    recipes = root / RECIPES_DIRNAME
-    if not recipes.is_dir():
-        raise _common.UsageError(f"{root} has no {RECIPES_DIRNAME}/ directory")
-    return sorted(path for path in recipes.rglob("*.md") if not excluded_dirname(path, root))
+    """Every `*.md` under the recipe folders that exist; `<root>` must at least hold `audit/`."""
+    if not (root / REQUIRED_DIR).is_dir():
+        raise _common.UsageError(f"{root} has no {REQUIRED_DIR}/ directory")
+    found: list[Path] = []
+    for folder in RECIPE_DIRS:
+        recipes = root / folder
+        if recipes.is_dir():
+            found.extend(path for path in recipes.rglob("*.md") if not excluded_dirname(path, root))
+    return sorted(found)
 
 
 def find_root_pages(root: Path) -> list[Path]:
-    """The framework pages outside `brownfield-recipes/` whose relative links are checked (MR08, I20)."""
+    """The framework pages outside the recipe folders whose relative links are checked (MR08, I20)."""
     found = [root / name for name in ROOT_PAGE_FILES if (root / name).is_file()]
     for dirname in ROOT_PAGE_DIRS:
         folder = root / dirname
@@ -572,13 +612,16 @@ def lint(
     return out
 
 
+SWEPT = ", ".join(f"{folder}/" for folder in RECIPE_DIRS)
+
+
 def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(prog="recipe_lint.py", description=INFO.summary)
-    parser.add_argument("root", help=f"the repository that holds {RECIPES_DIRNAME}/")
+    parser.add_argument("root", help=f"the framework repository, which holds {REQUIRED_DIR}/")
     parser.add_argument(
         "--write-catalogue",
         action="store_true",
-        help="regenerate tools/CATALOGUE.md from every tool's --describe output and exit; lints nothing else",
+        help=f"regenerate {CATALOGUE_FILE} from every tool's --describe output and exit; lints nothing else",
     )
     return parser
 
@@ -596,12 +639,12 @@ def handler(argv: Sequence[str]) -> _common.Result:
         outcome.errors.sort()
         count = len(outcome.errors)
         raise _common.ValidationFailed(
-            f"{count} problem{'' if count == 1 else 's'} in {len(files)} files under {RECIPES_DIRNAME}/",
+            f"{count} problem{'' if count == 1 else 's'} in {len(files)} files under {SWEPT}",
             errors=outcome.errors,
         )
     return _common.Result(
         data={"root": str(root), "files": len(files)},
-        summary=f"recipe_lint: clean ({len(files)} files under {RECIPES_DIRNAME}/)",
+        summary=f"recipe_lint: clean ({len(files)} files under {SWEPT})",
     )
 
 

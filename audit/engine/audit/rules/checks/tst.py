@@ -3,7 +3,7 @@
 
 """`TST` pack — tests.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Activities.
+Anchor: `docs/framework/phased-approach.md` § Activities.
 
 Implemented here: `TST-01` … `TST-05`.
 

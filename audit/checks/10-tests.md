@@ -1,10 +1,10 @@
 # Tests (`TST`)
 
 > Follows the anatomy in [`README.md`](README.md). Five checks, all `method: automated`. See
-> [Why These Checks §11](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#11-tests-tst)
+> [Why These Checks §11](../engine/docs/architecture/user-overview/03-why-these-checks.md#11-tests-tst)
 > for the consequence behind this family: verification is the single biggest lever on agent output, so a
 > suite that is absent, unknown, weakened or slow to subset undoes most of what the rest of Phase 1 buys.
-> Every check reads the engine's `TST` pack (`deterministic-audit/audit/rules/checks/tst.py`), whose
+> Every check reads the engine's `TST` pack (`audit/engine/audit/rules/checks/tst.py`), whose
 > module docstring names each check's own `UNKNOWN` conditions and its deliberate limits (test-file
 > discovery is the scan's own classification; marker and fast-path/coverage detection are textual pattern
 > matches, not a parse). The `test` verb is read the same way `CMD`/`CI`/`TOOL` read it, through the
@@ -16,7 +16,7 @@
 
 Why it matters   An agent cannot verify a change it cannot run; a resolvable `test` verb and a real suite
                   are the floor every other test check stands on
-                  ([greenfield-bootstrap/README.md § 3.2 Testing Policies](../../../greenfield-bootstrap/README.md#32-testing-policies-enforced-via-agentsmd)).
+                  ([greenfield/README.md § 3.2 Testing Policies](../../greenfield/README.md#32-testing-policies-enforced-via-agentsmd)).
 Severity         BLOCKER
 Engine           `TST-01`. Resolves the `test` verb through the same `resolve_verbs` table `CMD`/`CI`/
                  `TOOL` use, and counts test-source files: a source file the scan classifies `Kind.TEST`
@@ -58,14 +58,14 @@ Pitfalls         A PARTIAL with a verb but no files, and a PARTIAL with files bu
 
 Why it matters   Whether the suite is green *today* determines what an agent can safely attempt; without
                   this an agent inherits a red baseline and cannot tell its own regressions from yours
-                  ([greenfield-bootstrap/README.md § 3.2 Testing Policies](../../../greenfield-bootstrap/README.md#32-testing-policies-enforced-via-agentsmd)).
+                  ([greenfield/README.md § 3.2 Testing Policies](../../greenfield/README.md#32-testing-policies-enforced-via-agentsmd)).
 Severity         DEGRADER
 Engine           `TST-02`, the pack's only Tier-C probe. No `test` verb resolves ⇒ `UNKNOWN` outright —
                  there is nothing to run (this is `TST-01`'s own finding, not doubled here). When a verb
                  resolves, the engine runs it as a read-only `ProbePlan`; the probe is refused unless
                  `--run-gates` **and** `--allow-probe test` were both given, and a refusal is recorded in
                  the report's `probes` array with the verdict `UNKNOWN`, never an error or a `FAIL`
-                 (`deterministic-audit/AGENTS.md` §2.2, ADR-0002). A timed-out probe is also `UNKNOWN`.
+                 (`audit/engine/AGENTS.md` §2.2, ADR-0002). A timed-out probe is also `UNKNOWN`.
                  Exit 0 is `PASS`; any other exit is `FAIL`. **When probes are off** (the default for the
                  audit recipe, which never requests `--run-gates`), this check is `UNKNOWN` on every run,
                  and the agent does not attempt its own run of the suite as a substitute — running the
@@ -98,7 +98,7 @@ Pitfalls         A green CI run is not evidence for this check — `TST-02` is t
 
 Why it matters   A suite weakened with skip and expected-failure markers to reach green is the fingerprint
                   of a gate that no longer catches the regressions it was meant to
-                  ([greenfield-bootstrap/README.md § 3.2 Testing Policies](../../../greenfield-bootstrap/README.md#32-testing-policies-enforced-via-agentsmd)).
+                  ([greenfield/README.md § 3.2 Testing Policies](../../greenfield/README.md#32-testing-policies-enforced-via-agentsmd)).
 Severity         DEGRADER
 Engine           `TST-03`. Counts skip/ignore/expected-failure markers (`@pytest.mark.skip`, `it.skip`,
                  `#[ignore]`, `@Disabled`, and their per-language-family equivalents) across every
@@ -139,7 +139,7 @@ Pitfalls         A marker pattern matched inside a string literal or a comment i
 
 Why it matters   Agent iteration speed is the workflow; without a documented single-test invocation an
                   agent waits out the whole suite per attempt, or stops running tests altogether
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
 Engine           `TST-04`. With no test-source file at all, this is `UNKNOWN` — there is no suite for a
                  fast path to act on, and the absence is `TST-01`'s own finding, not doubled here. With at
@@ -175,7 +175,7 @@ Pitfalls         A documented full-suite command (`npm test`, `pytest`) is not e
 
 Why it matters   A ratchet (`BASE-03`) needs a number to hold the line on, and coverage is the number for
                   the test surface; with none configured there is no floor to hold
-                  ([greenfield-bootstrap/README.md § 3.1 vitest.config.ts](../../../greenfield-bootstrap/README.md#31-vitestconfigts--with-coverage)).
+                  ([greenfield/README.md § 3.1 vitest.config.ts](../../greenfield/README.md#31-vitestconfigts--with-coverage)).
 Severity         COSMETIC
 Engine           `TST-05`. Looks for coverage configuration by several independent routes: a dedicated
                  config file (`.coveragerc`, `.nycrc`, `.c8rc`, `codecov.yml`, and others), a `coverage`

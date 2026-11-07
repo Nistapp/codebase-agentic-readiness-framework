@@ -6,7 +6,7 @@
 `report.py import-engine` reads the engine's JSON report and calls `convert`; this module reads nothing but the report
 schema, so the same report always converts to the same parts. The rules are the tables "Verdicts: engine to report"
 and "Engine schema v2 mapping" in schema/SCHEMA.md, and the engine's own report model is
-deterministic-audit/audit/report/model.py.
+audit/engine/audit/report/model.py.
 
 The adapter reads the fields it needs and no others, and checks only what it indexes: an engine report that breaks
 that shape is refused, with every problem listed, and never fails with a `KeyError`. What the report schema limits

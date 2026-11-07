@@ -36,19 +36,19 @@ class Anchor:
 
 #: Where in the framework each pack comes from. Paths are relative to the framework repo root.
 PACK_ANCHORS: dict[str, Anchor] = {
-    "IDX": Anchor("brownfield-legacy/Phased-Approach.md", "Phase 1: Agentic Bootstrap"),
-    "AGT": Anchor("brownfield-legacy/Phased-Approach.md", "Phase 1: Agentic Bootstrap"),
-    "DOC": Anchor("brownfield-legacy/Phased-Approach.md", "Key Deliverables"),
-    "CMD": Anchor("brownfield-legacy/Phased-Approach.md", "Activities"),
-    "TOOL": Anchor("brownfield-legacy/Phased-Approach.md", "Key Deliverables"),
-    "CI": Anchor("brownfield-legacy/Phased-Approach.md", "Key Deliverables"),
-    "BASE": Anchor("brownfield-legacy/Phased-Approach.md", "Activities"),
-    "CON": Anchor("brownfield-legacy/Phased-Approach.md", "Key Deliverables"),
-    "EXEC": Anchor("brownfield-legacy/Phased-Approach.md", "Activities"),
-    "TST": Anchor("brownfield-legacy/Phased-Approach.md", "Activities"),
-    "NAV": Anchor("brownfield-legacy/Phased-Approach.md", "Key Deliverables"),
-    "SEC": Anchor("brownfield-legacy/Phased-Approach.md", "Key Deliverables"),
-    "HYG": Anchor("brownfield-legacy/Phased-Approach.md", "Phase 1: Agentic Bootstrap"),
+    "IDX": Anchor("docs/framework/phased-approach.md", "Phase 1: Agentic Bootstrap"),
+    "AGT": Anchor("docs/framework/phased-approach.md", "Phase 1: Agentic Bootstrap"),
+    "DOC": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
+    "CMD": Anchor("docs/framework/phased-approach.md", "Activities"),
+    "TOOL": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
+    "CI": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
+    "BASE": Anchor("docs/framework/phased-approach.md", "Activities"),
+    "CON": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
+    "EXEC": Anchor("docs/framework/phased-approach.md", "Activities"),
+    "TST": Anchor("docs/framework/phased-approach.md", "Activities"),
+    "NAV": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
+    "SEC": Anchor("docs/framework/phased-approach.md", "Key Deliverables"),
+    "HYG": Anchor("docs/framework/phased-approach.md", "Phase 1: Agentic Bootstrap"),
 }
 
 
@@ -312,7 +312,7 @@ def resolve_anchors(specs, framework_root: Path) -> list[tuple[str, Anchor]]:
 
 
 #: A directory is the framework checkout when it holds the file every rule pack anchors to.
-_FRAMEWORK_MARKER = "brownfield-legacy/Phased-Approach.md"
+_FRAMEWORK_MARKER = "docs/framework/phased-approach.md"
 
 
 def find_framework_root(start: Path | None = None) -> Path | None:

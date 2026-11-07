@@ -26,23 +26,23 @@ probe), [`11-navigation.md`](../../../audit/checks/11-navigation.md) (`NAV`, inc
 no finding may quote a secret value) and
 [`13-hygiene-informational.md`](../../../audit/checks/13-hygiene-informational.md) (`HYG`, eleven
 checks, all informational and unscored). The catalogue itself,
-[`catalogue.json`](../../../catalogue.json), exists and is tested.
+[`catalogue.json`](../../../audit/catalogue.json), exists and is tested.
 
 ---
 
 ## 1. One ID namespace
 
-[`catalogue.json`](../../../catalogue.json) lists every check the audit can report, engine checks and agent-only checks together. A check has one ID, in the form of a family prefix and a number, and that ID is the only name the report, the spec's `Checks` fields, the playbooks and the rubrics use. Nothing translates between an "engine ID" and a "recipe ID". The schema is [`catalogue.schema.json`](../../../schema/catalogue.schema.json), and the field list is there; this page does not repeat it.
+[`catalogue.json`](../../../audit/catalogue.json) lists every check the audit can report, engine checks and agent-only checks together. A check has one ID, in the form of a family prefix and a number, and that ID is the only name the report, the spec's `Checks` fields, the playbooks and the rubrics use. Nothing translates between an "engine ID" and a "recipe ID". The schema is [`catalogue.schema.json`](../../../audit/schema/catalogue.schema.json), and the field list is there; this page does not repeat it.
 
 Where the entries come from:
 
-- **Engine checks** are seeded from the engine's own list, `python3 -m audit --list-checks --format json` ([`cli.py`](../../../deterministic-audit/audit/cli.py)). After seeding the file is edited by hand. The engine's ID is the check's ID, and `engine_id` repeats it.
-- **Agent-only checks** are the ones no deterministic rule can settle. Today there are two: `AGT-11` (instructions are specific and not inferable, for [REQ-SH-015](../../../../spec/readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable)) and `CI-04` (CI enforces the same gate as the local check, for [REQ-SH-035](../../../../spec/readiness-requirements.md#req-sh-035--ci-enforces-the-gate)). They are numbered after the engine's highest number in their family, so an engine check added later cannot collide with one: the engine takes the next free number and the test fails if it takes an agent check's.
+- **Engine checks** are seeded from the engine's own list, `python3 -m audit --list-checks --format json` ([`cli.py`](../../../audit/engine/audit/cli.py)). After seeding the file is edited by hand. The engine's ID is the check's ID, and `engine_id` repeats it.
+- **Agent-only checks** are the ones no deterministic rule can settle. Today there are two: `AGT-11` (instructions are specific and not inferable, for [REQ-SH-015](../../../spec/readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable)) and `CI-04` (CI enforces the same gate as the local check, for [REQ-SH-035](../../../spec/readiness-requirements.md#req-sh-035--ci-enforces-the-gate)). They are numbered after the engine's highest number in their family, so an engine check added later cannot collide with one: the engine takes the next free number and the test fails if it takes an agent check's.
 - **`status`** is the engine's own status for an engine check. An agent-only check is `planned` until its rubric exists. A check that is planned or blocked is reported `UNKNOWN`. `scored` is also the engine's: `CON-01` was `blocked` and unscored until catalogue 0.2.0, when the engine began to read the prohibitions section.
 
 ## 2. Methods
 
-A check's `method` is one of the two that produce a verdict. The words are the spec's ([verification methods](../../../../spec/README.md#verification-methods)).
+A check's `method` is one of the two that produce a verdict. The words are the spec's ([verification methods](../../../spec/README.md#verification-methods)).
 
 | Method | Decided by | In the catalogue | In a report |
 |---|---|---|---|
@@ -68,10 +68,10 @@ a `FAIL` that claims an absence must record the `searches[]` entries that looked
 A check reaches the framework in three hops, and three files say it:
 
 1. The catalogue's `req_ids` name the requirements the check verifies.
-2. Each requirement's `Checks` field in [`readiness-requirements.md`](../../../../spec/readiness-requirements.md) names the checks back.
+2. Each requirement's `Checks` field in [`readiness-requirements.md`](../../../spec/readiness-requirements.md) names the checks back.
 3. Each requirement's `Source` links the framework heading it comes from.
 
-[`traceability.md`](../../../../spec/traceability.md) lists the same relation for people to read. A test, [`test_catalogue.py`](../../../tools/tests/test_catalogue.py), holds all of them to one another: the catalogue against the engine's JSON list, the requirements in both directions, the method against the requirement's, and the traceability table. [How the Checks Map to the Framework](../../reference/how-the-checks-map-to-the-framework.md) shows how to follow one check.
+[`traceability.md`](../../../spec/traceability.md) lists the same relation for people to read. A test, [`test_catalogue.py`](../../../audit/tools/tests/test_catalogue.py), holds all of them to one another: the catalogue against the engine's JSON list, the requirements in both directions, the method against the requirement's, and the traceability table. [How the Checks Map to the Framework](../../reference/how-the-checks-map-to-the-framework.md) shows how to follow one check.
 
 A report records `catalogue_version`, which is `MAJOR.MINOR.PATCH`. The rules for a bump are in the schema's description of the field. A `fingerprint` in the catalogue covers the fields that decide a verdict: ID, phase, severity, scored flag, method, requirement IDs and engine ID. The test fails when the fingerprint is stale, and its message names the steps. The fingerprint does not cover titles, playbooks or rubric wording, so a change to one of those, which is a PATCH at most, depends on the person making it.
 

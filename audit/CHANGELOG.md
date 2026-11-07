@@ -3,7 +3,7 @@
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); dates are UTC. This page covers
 releases of the brownfield recipes as a whole. For the deterministic engine's own ruleset-revision
 history (which verdicts moved and why), see
-[its changelog reference](deterministic-audit/docs/reference/changelog.md).
+[its changelog reference](engine/docs/reference/changelog.md).
 
 ## [Unreleased]
 
@@ -86,7 +86,7 @@ issues are known defects of the engine, listed on GitHub.
 - Self-audit published (MR07.2): `make self-audit` runs the engine on this repository against the committed
   `.audit-baseline.json` (exit 2 on a regression) and CI runs it as the `self-audit` job that `CI Gate` needs;
   `make update-audit-baseline` accepts a smaller baseline on purpose. The report is the worked example
-  `schema/examples/self-audit/2026-11-06.json` and [Self-Audit](docs/reference/self-audit.md) states the score
+  `schema/examples/self-audit/2026-11-06.json` and [Self-Audit](../docs/reference/self-audit.md) states the score
   (0.8402, ruleset `2026-11-06.1`), the open findings and the owner exception `IDX-01`.
 - Engine ruleset `2026-11-06.1` (MR06.4): `TST-04` recognises `python3 -m unittest <module> -k <name>` (and `python`) as
   a single-test invocation; `AGT-08` no longer reports the reach gap when the root `AGENTS.md` has a line saying "read
@@ -196,9 +196,9 @@ with shell access, with no installation beyond Python 3.11+.
 - An eval harness (`tools/eval/`): the corpus format, `score.py`'s five metrics, and `run-claude.sh`.
 - Published evaluation results: a 89-fixture sweep (98.9% expected-verdict rate) and real-repo runs
   against three pinned repositories, one Node/TypeScript, one Java/Quarkus, one Python — see
-  [Evaluation Results](docs/reference/eval-results.md).
+  [Evaluation Results](../docs/reference/eval-results.md).
 - A second harness (`opencode`, on DeepSeek flash) smoke-run against the installed skill bundle,
-  confirming the recipe is harness-neutral — see [Harness Notes](docs/reference/harness-notes.md).
+  confirming the recipe is harness-neutral — see [Harness Notes](../docs/reference/harness-notes.md).
 - Documentation: the full Diátaxis set under `docs/`, a tutorial, how-to guides, reference pages and
   explanation pages for both operators and contributors.
 
@@ -206,4 +206,4 @@ with shell access, with no installation beyond Python 3.11+.
 
 - `tools/`, the dev-only checks in `dev/`, the migrated engine code, and their tests: AGPL-3.0-or-later.
 - Recipes, check files, playbooks, stack profiles, the catalogue, schemas and published examples:
-  GFDL-1.3-only. Full zones in [Licensing](docs/reference/licensing.md).
+  GFDL-1.3-only. Full zones in [Licensing](../docs/reference/licensing.md).

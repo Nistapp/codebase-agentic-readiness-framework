@@ -28,7 +28,7 @@ floor needs the owner, and is recorded as described in [Continue on error](#cont
 TST-04 has two playbooks: this one writes the fenced line when the repository's state files the item under T5;
 [`adapt-agents-md`](README.md#playbook-list) (T7) then only verifies it. TST-01 (test verb, suite non-empty) is
 [`define-command-surface`](define-command-surface.md)'s. Where ratchet commands go follows
-[spec decision 0002](../../../spec/decisions/0002-lint-in-the-gate.md): inside `format:check`, never a new member of
+[spec decision 0002](../../spec/decisions/0002-lint-in-the-gate.md): inside `format:check`, never a new member of
 `check`.
 
 ## Preconditions
@@ -149,7 +149,7 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
 
 ### Java (Gradle)
 
-Profile: [`stacks/java.md`](../../stacks/java.md#baseline--ratchet).
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#baseline--ratchet).
 
 - **Native baselines.** Spotless `ratchetFrom` is the formatter baseline (its count is the files the full run
   lists). A PMD ruleset `<exclude-pattern>` list is the lint baseline; it only shrinks. Neither needs a counts-file
@@ -176,7 +176,7 @@ Profile: [`stacks/java.md`](../../stacks/java.md#baseline--ratchet).
 
 ### TypeScript and Node
 
-Profile: [`stacks/typescript-node.md`](../../stacks/typescript-node.md#baseline--ratchet).
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#baseline--ratchet).
 
 - **Native baselines.** ESLint 9.24 or newer: `eslint-suppressions.json` (`eslint --suppress-all`, without `--fix`),
   committed; ESLint prunes entries that no longer apply with `--prune-suppressions`. Older ESLint: keep the
@@ -289,16 +289,16 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 brownfield-recipes/tools/progress.py pref set tests.coverage_gate check \
+python3 implement/tools/progress.py pref set tests.coverage_gate check \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --commit <sha> --debt "what=PMD violations,count=<N>,baseline=config/pmd/ruleset.xml" \
   --debt "what=dependency advisories,count=<N>,baseline=docs/agentic-readiness/<label>-quality-baseline.json" \
   --verification-command "<format:check verb>" --verification-result "exit 0; exit 1 with one count raised"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --commit <sha> --debt "what=coverage floor (line %),count=<NN>,baseline=<runner config file>"
-python3 brownfield-recipes/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "grep -n -A2 'single test' AGENTS.md" --verification-result "fenced block"
-python3 brownfield-recipes/tools/progress.py pref set baseline.exception.<what> "<old>-><new> <YYYY-MM-DD> <reason>" \
+python3 implement/tools/progress.py pref set baseline.exception.<what> "<old>-><new> <YYYY-MM-DD> <reason>" \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```

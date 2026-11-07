@@ -75,7 +75,7 @@ Everything else depends on the answers here; stop and ask rather than guess at a
 1. **An intake file was given.** If `audit-intake.<label>.json` exists, skip to step 5 and call
    `report.py init <intake>` on it directly.
 2. **No intake file.** Ask the person, matching
-   [`audit-intake.schema.json`](../schema/audit-intake.schema.json) field for field:
+   [`audit-intake.schema.json`](schema/audit-intake.schema.json) field for field:
    - the target repository's path;
    - the harness and model in use (self-reported, for `provenance.agent`);
    - whether they have a code index (`index.kind`: `mcp`, `cli` or `none`) and its name. With `none`,
@@ -83,7 +83,7 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      stays on their machine, but this skill still sends whatever it reads from the target to the model
      provider regardless of whether an index exists, and that an install writes outside the target and
      is recorded in `run_context.index`, never assumed;
-   - which of the [seven verbs](../../spec/command-surface.md#the-verbs) (`format`, `format:check`,
+   - which of the [seven verbs](../spec/command-surface.md#the-verbs) (`format`, `format:check`,
      `lint`, `typecheck`, `test`, `check`, `security`), if any, the engine's Tier-C runner may execute
      read-only against the target (`probes.allowed`), and the per-command timeout. Before asking, glance
      at the target's manifest and build files (`package.json` scripts, a `Makefile`'s targets,
@@ -111,10 +111,10 @@ Everything else depends on the answers here; stop and ask rather than guess at a
 1. Run `facts.py <target> --out FILE`, passing the same `--exclude` paths the intake recorded, so the
    facts describe the inventory Stage 2's engine run will also see.
 2. Read `facts.json`'s `stack` section. If it names an ecosystem a shipped profile covers, load that
-   profile, `../stacks/<id>.md` (listed in [`stacks/README.md`](../stacks/README.md)); otherwise follow
-   that same file's [§2, Anatomy](../stacks/README.md#2-anatomy) to derive guidance from the check files'
+   profile, `../stacks/<id>.md` (listed in [`stacks/README.md`](stacks/README.md)); otherwise follow
+   that same file's [§2, Anatomy](stacks/README.md#2-anatomy) to derive guidance from the check files'
    own stack-neutral rubrics, and tell the user the stack is derived, not shipped (§4,
-   [Shipped versus derived](../stacks/README.md#4-shipped-versus-derived)). Once the user has
+   [Shipped versus derived](stacks/README.md#4-shipped-versus-derived)). Once the user has
    agreed the choice, record it: `report.py set-stack-profile <draft> <id> [--confirmed]` for a shipped
    profile, or `report.py set-stack-profile <draft> <id> --derived [--confirmed]` for a stack with no profile.
 3. If `run_context.index.kind` is `mcp` or `cli`, query it (for example `get_architecture`,
@@ -261,5 +261,5 @@ If the harness offers no shell, none of the tools above can run, so none of the 
 can produce a schema-valid report (there is no draft to write to, let alone finalise). Say so to the user
 plainly, and do not hand-write JSON that imitates one; a report this skill did not build through
 `report.py` is not a guarantee this skill can make. Fall back to a manual, documented self-check against
-`validate_report.py`'s own rules, listed in [`SCHEMA.md`](../schema/SCHEMA.md#rules-beyond-the-schema), and
+`validate_report.py`'s own rules, listed in [`SCHEMA.md`](schema/SCHEMA.md#rules-beyond-the-schema), and
 say explicitly that the result is not a validated report.

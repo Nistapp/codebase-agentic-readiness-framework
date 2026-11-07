@@ -27,14 +27,14 @@ edited; the state points at it.
 - The target's root `AGENTS.md` MUST carry one line that points at the STATE.md file and says: read it before
   changing tooling, CI, docs or `AGENTS.md`; skipped findings in it are final.
 
-[`progress.py`](../tools/progress.py) is the only writer of the JSON and the renderer of the Markdown view.
+[`progress.py`](tools/progress.py) is the only writer of the JSON and the renderer of the Markdown view.
 Writing inside a target repository is an exception to the tools rule, limited to these two files and decided in
-[ADR 0002](../docs/architecture/adrs/0002-progress-writes-state-in-target.md).
+[ADR 0002](docs/architecture/adrs/0002-progress-writes-state-in-target.md).
 
 ```bash
-python3 brownfield-recipes/tools/progress.py init --report <target>/<report folder>/<final report>.json --target <target>
-python3 brownfield-recipes/tools/progress.py show --target <target> [--json]
-python3 brownfield-recipes/tools/progress.py render --target <target>
+python3 implement/tools/progress.py init --report <target>/<report folder>/<final report>.json --target <target>
+python3 implement/tools/progress.py show --target <target> [--json]
+python3 implement/tools/progress.py render --target <target>
 ```
 
 The report is committed on the integration branch at
@@ -133,10 +133,10 @@ record `done` for an item that is `partial`.
 
 ## JSON shape
 
-The schema is [`schema/readiness-state.schema.json`](../schema/readiness-state.schema.json), `schema_version`
+The schema is [`schema/readiness-state.schema.json`](../audit/schema/readiness-state.schema.json), `schema_version`
 `0.2` (a `0.1` state is still read); field notes are in
-[the schema reference](../schema/SCHEMA.md#readiness-state). Two examples are in the framework repository, under
-`brownfield-recipes/schema/examples/`:
+[the schema reference](../audit/schema/SCHEMA.md#readiness-state). Two examples are in the framework repository, under
+`audit/schema/examples/`:
 `readiness-state.example-service.json`, which `init` writes for the framework's example report, and
 `readiness-state.example-service.in-progress.json`, a state some themes later. Each has its rendered Markdown
 beside it.

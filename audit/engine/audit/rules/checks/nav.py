@@ -3,7 +3,7 @@
 
 """`NAV` pack — navigation.
 
-Anchor: `brownfield-legacy/Phased-Approach.md` § Key Deliverables.
+Anchor: `docs/framework/phased-approach.md` § Key Deliverables.
 
 Implemented here: `NAV-01` … `NAV-05`. The first three are scored; `NAV-04` and `NAV-05` are
 informational (`scored=False` in the registry) and are reported but earn no credit.

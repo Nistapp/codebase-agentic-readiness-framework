@@ -46,6 +46,10 @@ KNOWN_SCAFFOLDER = (
 #: content: a freshly generated scaffold in a temporary directory carries no project-level MCP
 #: config and no persistent index. They are exercised against constructed stores in
 #: ``test_idx_pack.py``, so the content fixture does not assert them.
+#: This checkout's greenfield templates. Passed explicitly, so the scaffolder's own default (a sibling checkout
+#: at a fixed path) cannot point at an older layout.
+TEMPLATES = Path(__file__).resolve().parents[3] / "greenfield" / "templates"
+
 ENVIRONMENT_SCOPED = frozenset({"IDX-01", "IDX-02", "IDX-03"})
 
 
@@ -69,7 +73,7 @@ class PositiveFixtureTests(unittest.TestCase):
             target = Path(tmp) / "scaffold"
             target.mkdir()
             proc = subprocess.run(
-                [sys.executable, str(scaffolder), str(target), "--no-git"],
+                [sys.executable, str(scaffolder), str(target), "--no-git", "--templates", str(TEMPLATES)],
                 text=True,
                 capture_output=True,
             )

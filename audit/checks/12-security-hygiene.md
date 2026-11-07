@@ -1,11 +1,11 @@
 # Security hygiene (`SEC`)
 
 > Follows the anatomy in [`README.md`](README.md). Three checks, all `method: automated`. See
-> [Why These Checks §13](../../deterministic-audit/docs/architecture/user-overview/03-why-these-checks.md#13-security-hygiene-sec)
+> [Why These Checks §13](../engine/docs/architecture/user-overview/03-why-these-checks.md#13-security-hygiene-sec)
 > for the consequence behind this family: an agent's context is transmitted and logged by the tooling
 > around it, so a secret an agent reads is a secret exposed through the very tool added for safety.
-> Every check reads the engine's `SEC` pack (`deterministic-audit/audit/rules/checks/sec.py`), whose
-> redaction happens at capture time, never at render time (`deterministic-audit/AGENTS.md` §9).
+> Every check reads the engine's `SEC` pack (`audit/engine/audit/rules/checks/sec.py`), whose
+> redaction happens at capture time, never at render time (`audit/engine/AGENTS.md` §9).
 >
 > **Never quote a secret value, in a finding, a summary, or anywhere else in the report.** `SEC-02`'s
 > own evidence records a path and a line number only, with the note `"credential-shaped string"` — never
@@ -20,13 +20,13 @@
 
 Why it matters   An agent's context is transmitted and logged; a tracked `.env` file is a credential
                   exposed through the tool added for safety, not despite it
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `SEC-01`. Two independent halves: whether `.env`/`.env.*` (excluding committed templates
                  such as `.env.example`, `.env.sample`, `.env.template`, `.env.dist`, `.env.defaults`,
                  `env.example`) is git-tracked, read from `tracked_files`; and whether the ignore rules
                  cover the `.env` shape, read from the ignore files directly (every nested `.gitignore` scoped to
-                 its directory, `!` negation applied in git's order, [ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)) — so a tracked `.env` that
+                 its directory, `!` negation applied in git's order, [ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)) — so a tracked `.env` that
                  is *also* git-ignored is still caught, because tracked state and ignore coverage are
                  checked independently, not inferred from one another. A tracked `.env`/`.env.*` is the
                  blocker (`FAIL`) regardless of ignore coverage. No tracked `.env`, but the ignore rules
@@ -65,7 +65,7 @@ Pitfalls         A tracked `.env.example`-style committed template is not a find
 
 Why it matters   A hardcoded credential is the same exposure as a tracked `.env` file, just inside source
                   or configuration instead of a dedicated file
-                  ([Phased-Approach.md § Activities](../../../brownfield-legacy/Phased-Approach.md#activities)).
+                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         BLOCKER. The severity stays BLOCKER when a repository has a secret scanner and a baseline;
                  the way to remove false positives is the allowlist the check honours (below), not a lower
                  severity.
@@ -133,13 +133,13 @@ Pitfalls         An allowlist entry is the repository's own acceptance, not proo
 
 Why it matters   The guard must exist before the accident — ignore rules that do not cover a secret shape
                   let a single careless commit become permanent history
-                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../../brownfield-legacy/Phased-Approach.md#phase-1-agentic-bootstrap-)).
+                  ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
 Engine           `SEC-03`. Checks ignore-rule coverage of eleven documented secret/certificate/credential
                  shapes (dotenv and its variants, SSH private keys, PEM, generic `.key`, PKCS#12, PFX,
                  keystore, `.crt`/`.cer` certificates, AWS credentials), each probed by a representative
                  sample path (`_SECRET_SHAPES`) against the loaded ignore rules. The rules are read as git reads them
-                 ([ADR-0009](../../deterministic-audit/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
+                 ([ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)):
                  a `!` line re-includes, so `*.crt` with `!server.crt` leaves the certificate shape
                  uncovered while `!public.crt` does not, and a nested `.gitignore` covers its own directory,
                  not the root. No ignore file at all is

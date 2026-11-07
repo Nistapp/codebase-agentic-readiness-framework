@@ -19,10 +19,10 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-import _paths
+import _dev_paths
 
-TOOLS = _paths.TOOLS
-sys.path.insert(0, str(TOOLS / "eval"))
+DEV = _dev_paths.DEV
+sys.path.insert(0, str(DEV / "eval"))
 
 import _common  # noqa: E402
 import implement_eval as ie  # noqa: E402
