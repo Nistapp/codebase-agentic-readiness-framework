@@ -1,8 +1,13 @@
 # Architecture Documentation
 
-> **Status:** v1 complete — the `audit/` package runs, and every pack (`IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set) is live. All 55 scoreable checks are implemented, and Tier-C probe checks report `UNKNOWN` unless probes are permitted. Pages below describe the design of record and the current implementation state. See the [style guide](../../../../docs/STYLE_GUIDE.md) § 1.3 (Empirical Grounding).
-
-> **Related:** the brownfield recipes (in development) build on this engine; their documentation is at [`docs/`](../../../../docs/explanation/README.md).
+> **Status:** v1 complete — the `audit/` package runs, and every pack (`IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`,
+> `TOOL`, `CI`, `TST`, `BASE`, `CON` and the informational `HYG` set) is live. All 55 scoreable checks are implemented,
+> and Tier-C probe checks report `UNKNOWN` unless probes are permitted. Pages below describe the design of record and
+> the current implementation state. See the [style guide](../../../../docs/STYLE_GUIDE.md) § 1.3 (Empirical Grounding).
+>
+> **Related:** this is the router for the engine at `audit/engine/`. The audit recipe builds on it; see
+> [`audit/README.md`](../../../README.md). The repository's root router is
+> [`docs/README.md`](../../../../docs/README.md).
 
 ## ADR Index
 

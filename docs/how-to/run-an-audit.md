@@ -3,6 +3,8 @@
 > **Goal:** Produce a validated, user-confirmed readiness report for an existing repository without modifying it.
 > **Audience:** Operators / Engineers
 > **Status:** Live. The recipe is [`audit/SKILL.md`](../../audit/SKILL.md) (S3.5).
+> **See also:** this page audits through the agent. To run the engine directly, without the agent:
+> [Run an audit with the engine](../../audit/engine/docs/how-to/run-an-audit.md).
 
 ---
 
@@ -26,7 +28,8 @@ the file in advance does not skip that.
 
 ### Step 2: Start the agent with the kickoff prompt
 
-Paste [`audit/prompts/kickoff.md`](../../audit/prompts/kickoff.md), or invoke the installed skill
+In Claude Code at the root of this repository, say "Audit `<repo-path>` and write the output to `<output-path>`".
+In another agent, paste [`audit/prompts/kickoff.md`](../../audit/prompts/kickoff.md), or invoke the installed skill
 (`agentic-readiness-audit`), naming the target repository's path.
 
 ### Step 3: Answer Stage 0, and approve Stage 1's plan

@@ -2,8 +2,12 @@
 
 * **Status:** Accepted
 * **Date:** 2026-10-10
-* **Last reviewed:** 2026-10-10
+* **Last reviewed:** 2026-11-07
 * **Deciders:** [@nistapp]
+
+> **Paths updated (v0.3, 2026-11-07):** the decision stands. The text keeps the paths of its date:
+> `brownfield-recipes/tools/` is now `audit/tools/`, and `deterministic-audit/` is now `audit/engine/`.
+> The "Moved" table in the root [`CHANGELOG.md`](../../../../CHANGELOG.md) maps every old path.
 
 ---
 

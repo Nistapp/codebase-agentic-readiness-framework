@@ -1,15 +1,19 @@
 # python-agentic-audit
 
-> **Status:** v1 complete — the `audit/` package runs end to end, and the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs are live. All 55 scoreable checks are implemented, and the informational `HYG` set is reported with no credit. The fixture matrix covers every check, and a freshly generated `python-agentic-bootstrap` scaffold fails no implemented check. The documentation in [`docs/`](docs/) remains the design of record.
+> **Status:** v1 complete — the `audit/` package runs end to end, and the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`,
+> `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs are live. All 55 scoreable checks are implemented, and the
+> informational `HYG` set is reported with no credit. The fixture matrix covers every check, and a freshly generated
+> `python-agentic-bootstrap` scaffold fails no implemented check. The documentation in [`docs/`](docs/) remains the
+> design of record.
 
 `python-agentic-audit` scans an existing repository and reports what to improve so that **AI coding agents can
 work in it effectively**. It is the brownfield half of the agentic-readiness toolchain: `python-agentic-bootstrap`
 proves a new project *starts* ready; this audit measures how far an existing one is from the same bar.
 
 > [!NOTE]
-> This is the deterministic engine of the [brownfield recipes](../README.md), which are in development. The
-> recipes are meant to run it first and then add an LLM-assisted assessment of what a program cannot decide.
-> This engine never calls a model.
+> This is the deterministic engine of the [audit recipe](../README.md), at `audit/engine/` in this repository. The
+> recipe runs it first, then adds an LLM-assisted assessment of what a program cannot decide. This engine never
+> calls a model. The repository's docs start at [`docs/README.md`](../../docs/README.md).
 
 **It reports; it does not gate.** A completed scan exits `0` whatever it finds. Regression detection is a ratchet
 against an accepted baseline, so it is safe to introduce into a legacy repository on day one.
@@ -31,7 +35,8 @@ Two axes are always reported separately: **phase** (which framework requirement 
 
 - Not a gate, a linter, a security scanner, or a coverage tool.
 - Not a code-quality score. Readiness and quality are different axes.
-- Not an LLM: this engine calls no model, so the same repository and flags produce the same report. Model-assisted audits are the job of the [recipes](../README.md).
+- Not an LLM: this engine calls no model, so the same repository and flags produce the same report. Model-assisted
+  audits are the job of the [audit recipe](../README.md).
 - Not a rewriter. It never modifies the target.
 
 ---
@@ -87,7 +92,7 @@ How to read it: [Read the report](docs/how-to/read-the-report.md).
 
 ## Layout
 
-```
+```text
 audit/                     the tool: standard library only, no install step
   __main__.py              main(argv=None) -> int   ·  python3 -m audit <target>
   cli.py                   argument surface and exit codes
@@ -117,7 +122,8 @@ produces an archive that runs anywhere Python does — see
 
 ## Documentation
 
-Start at the **[architecture index and doc router](docs/architecture/README.md)**.
+Start at the **[architecture index and doc router](docs/architecture/README.md)**. The repository's root router is
+[`docs/README.md`](../../docs/README.md).
 
 | Track | Entry point | Audience |
 |---|---|---|
