@@ -80,6 +80,12 @@ No dependency is installed. Ask:
    If the server command differs between machines, the project file uses the bare command name so each machine's `PATH`
    resolves it, and the page says which one to install. Offer one file per harness the team uses, not one for every
    harness.
+
+   **Recommended project file: `.mcp.json` at the repository root** (owner decision, 2026-11-07). It is the most
+   widely known name and uses the common `mcpServers` format. No single file is read by every harness: Cursor reads
+   `.cursor/mcp.json`, VS Code `.vscode/mcp.json`, opencode `opencode.json`, Gemini CLI `.gemini/settings.json`. So
+   make `.mcp.json` the one source of truth, and have the instruction file say: "Tools that read another file copy
+   the `codebase-memory-mcp` entry from `.mcp.json`." Add a second file only when the team asks for it.
 3. **Freshness.** Default `agents-md-rule`: one line in the instruction file. Alternatives,
    offered only if the owner asks: a git hook that calls the refresh (machine-specific command, skipped by
    `--no-verify`), or a statement that the tool refreshes itself (an unverifiable claim; document it only with the
