@@ -13,6 +13,8 @@ one.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-07
+
 The first public release for developers. One layout, one way to start, and a protected `main`.
 
 ### Start in one minute

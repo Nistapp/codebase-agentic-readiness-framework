@@ -7,6 +7,11 @@ history (which verdicts moved and why), see
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-07
+
+The recipes moved: see the "Moved" table in the root [`CHANGELOG.md`](../CHANGELOG.md). Paths in the entries
+below this one use the old layout.
+
 - Reports record commit ids (`provenance.framework_revision`, `provenance.target.git_sha`) as their first 12 hex digits
   instead of 40. A full id has the shape of an access token, and a report committed to a repository with a secret scan
   (gitleaks' default rules) failed it. The schema still accepts a full id, so earlier reports stay valid; `import-engine`
