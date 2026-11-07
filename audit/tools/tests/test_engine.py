@@ -275,10 +275,10 @@ class ScanTests(unittest.TestCase):
         self.assertEqual(self.reports(), [])
 
     def test_the_label_is_derived_from_the_directory_name(self) -> None:
-        target = self.copy_fixture_as("Digital_Assistant_microServices")
+        target = self.copy_fixture_as("Example_Private_BackendServices")
         code, envelope, _ = call([str(target), "--out-dir", str(self.out)])
         self.assertEqual(code, 0)
-        self.assertTrue(Path(envelope["data"]["report"]).name.startswith("digital-assistant-micros.engine-report."))
+        self.assertTrue(Path(envelope["data"]["report"]).name.startswith("example-private-backends.engine-report."))
 
     def test_an_output_directory_inside_the_target_is_refused(self) -> None:
         target = self.copy_fixture_as("inside")

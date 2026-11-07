@@ -33,7 +33,7 @@ class ImportTests(unittest.TestCase):
 
 class DeriveLabelTests(unittest.TestCase):
     def test_the_roadmap_example_is_cut_to_24_characters(self) -> None:
-        self.assertEqual(_common.derive_label("Digital_Assistant_microServices"), "digital-assistant-micros")
+        self.assertEqual(_common.derive_label("Example_Private_BackendServices"), "example-private-backends")
 
     def test_the_schema_example(self) -> None:
         self.assertEqual(_common.derive_label("Digital-Assistant-SDK"), "digital-assistant-sdk")
@@ -67,7 +67,7 @@ class DeriveLabelTests(unittest.TestCase):
 
     def test_every_derived_label_is_a_valid_explicit_label(self) -> None:
         for name in (
-            "Digital_Assistant_microServices",
+            "Example_Private_BackendServices",
             "x",
             "9",
             "a.b_c-d",
@@ -79,7 +79,7 @@ class DeriveLabelTests(unittest.TestCase):
 
 class RepoLabelTests(unittest.TestCase):
     def test_an_explicit_label_wins(self) -> None:
-        self.assertEqual(_common.repo_label("/some/Digital_Assistant_microServices", "da-micro"), "da-micro")
+        self.assertEqual(_common.repo_label("/some/Example_Private_BackendServices", "ex-private"), "ex-private")
 
     def test_an_explicit_label_may_hold_dot_underscore_and_hyphen(self) -> None:
         self.assertEqual(_common.repo_label("/x", "my_repo.v2-a"), "my_repo.v2-a")
@@ -235,7 +235,7 @@ class CreateNewTests(unittest.TestCase):
 
     def test_every_created_name_matches_the_documented_shape(self) -> None:
         for _ in range(3):
-            path = _common.create_new(self.dir, "digital-assistant-micros", "audit-report", STAMP, "json", "x")
+            path = _common.create_new(self.dir, "example-private-backends", "audit-report", STAMP, "json", "x")
             self.assertRegex(path.name, NAME)
 
     def test_running_out_of_names_is_a_usage_error(self) -> None:

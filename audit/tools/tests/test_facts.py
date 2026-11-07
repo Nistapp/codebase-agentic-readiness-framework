@@ -486,10 +486,10 @@ class FileTests(RepoCase):
         self.assertNotIn(str(self.root), self.out.read_text(encoding="utf-8"))
 
     def test_the_label_follows_the_rule_that_names_output_files(self) -> None:
-        long_name = self.root / "Digital_Assistant_microServices"
+        long_name = self.root / "Example_Private_BackendServices"
         _git.make_repo(long_name)
         self.run_ok(target=long_name)
-        self.assertEqual(self.written()["label"], "digital-assistant-micros")
+        self.assertEqual(self.written()["label"], "example-private-backends")
 
     def test_an_explicit_label_wins(self) -> None:
         self.run_ok("--repo-label", "chosen.name_1")

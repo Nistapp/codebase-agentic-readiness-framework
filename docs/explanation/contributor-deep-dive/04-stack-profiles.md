@@ -38,7 +38,7 @@ exposes it, rather than argued afresh on every audit.
 
 | Profile | Toolchain | Checked against | Real gaps found |
 |---|---|---|---|
-| [`typescript-node.md`](../../../audit/stacks/typescript-node.md) | npm, pnpm, Yarn, with a NestJS section | `agentic-tdd`, the Digital-Assistant-SDK, and the microservices repo's two Node components | A gitignored lockfile (`EXEC-02` `FAIL`); a Nest-schematic `lint` script running `eslint --fix` under a read-only verb name (`CMD-04` `FAIL`); a scaffolded `tsconfig.json` with no strict flag (`TOOL-03` `FAIL`) |
+| [`typescript-node.md`](../../../audit/stacks/typescript-node.md) | npm, pnpm, Yarn, with a NestJS section | `agentic-tdd`, the Digital-Assistant-SDK, and a private repository with two Node packages composed through Docker | A gitignored lockfile (`EXEC-02` `FAIL`); a Nest-schematic `lint` script running `eslint --fix` under a read-only verb name (`CMD-04` `FAIL`); a scaffolded `tsconfig.json` with no strict flag (`TOOL-03` `FAIL`) |
 | [`java.md`](../../../audit/stacks/java.md) | Gradle, with Quarkus; Maven marked untested | The Digital-Assistant-Server | No formatter/linter/dependency-scanner task registered by name; CI workflows that never run a Gradle verb; an `AGENTS.md` describing a Maven layout the repository does not have |
 | [`python.md`](../../../audit/stacks/python.md) | pip, uv, poetry | The engine repo's own pre-migration tree (`source_only`, no manifest at all) | `EXEC-02`'s Python lockfile table omits `pip` entirely, so a plain `requirements.txt` project is told it is missing a `poetry`/`uv`/`pipenv` lockfile |
 

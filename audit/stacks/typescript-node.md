@@ -79,8 +79,8 @@ have a native baseline, `eslint-suppressions.json`. The implement playbook
 
 ## Boundaries
 
-None of the three repositories uses npm/pnpm/yarn workspaces (each is a single package, or — the
-microservices repository — two unrelated packages composed only through Docker, not an npm workspace),
+None of the three repositories uses npm/pnpm/yarn workspaces (each is a single package, or — in one
+case — two unrelated packages composed only through Docker, not an npm workspace),
 so workspace-boundary enforcement is untested here. Where workspaces are used, `eslint-plugin-import`'s
 `no-restricted-paths`, or `eslint-plugin-boundaries`, encodes which workspace may import which; `tsconfig.json`'s `paths` aliases express the same boundary for the type checker, but alone enforce
 nothing — an alias without a matching lint rule is not a boundary, only a convenience import path.
@@ -135,10 +135,10 @@ real, root-only scope, not a defect to argue around; tell the user where the rea
 2026-10-13, against: `agentic-tdd` (npm, Prettier, `tsc --noEmit` under `lint`, no ESLint, Vitest,
 GitHub Actions matrix across three OSes, `engines.node >=22.19.0`, no `.nvmrc`); the
 Digital-Assistant-SDK (npm, Prettier, ESLint, Jest, `tsconfig.json` strict, GitHub Actions with
-dependabot and a cross-OS workflow, `engines.node >=22`); the microservices repository's two Node
-components, `udan-self-signup` (Create-React-App, no command surface beyond `start`/`build`/`test`,
-gitignored lockfile) and `nestjs-keycloak-admin` (NestJS — see its own section, ESLint, Jest, gitignored
-lockfile, no CI config in the repository at all). Read via `tools/facts.py` and direct inspection of
+dependabot and a cross-OS workflow, `engines.node >=22`); and a private repository with two unrelated
+Node packages composed only through Docker: a Create-React-App front end (no command surface beyond
+`start`/`build`/`test`, gitignored lockfile) and a NestJS service (see its own section, ESLint, Jest,
+gitignored lockfile), with no CI config in the repository at all. Read via `tools/facts.py` and direct inspection of
 each repository's `package.json`, lockfile, `tsconfig.json` and `.github/workflows/`; no target command
 was run. Tooling defaults checked against current docs the same day: flat config (`eslint.config.*`) is
 the default since [ESLint 9](https://eslint.org/blog/2023/12/eslint-v9.0.0-alpha.0-released/), with

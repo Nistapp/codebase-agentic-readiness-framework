@@ -56,7 +56,7 @@ Every file a run writes carries the repository's name, and no tool replaces a fi
 - **A program that writes the file itself** asks [`free_name`](../../../audit/tools/_common.py#L409-L419) for a name. It creates nothing, so another run can take the name first. That program must therefore refuse to replace a file too, which the engine does without `--force`.
 - **The one exception** is a run updating its own draft report. It uses `atomic_write_text` on a file it owns, and a second run starts a new draft.
 
-The tests are in `test_output_files.py`: the label rule (including `Digital_Assistant_microServices` to `digital-assistant-micros`), the stamp, the name, two creations of one name, a dangling symlink holding its name, a failed write, and eight threads racing for one name.
+The tests are in `test_output_files.py`: the label rule (including `Example_Private_BackendServices` to `example-private-backends`), the stamp, the name, two creations of one name, a dangling symlink holding its name, a failed write, and eight threads racing for one name.
 
 ## 5. Engine launcher
 
