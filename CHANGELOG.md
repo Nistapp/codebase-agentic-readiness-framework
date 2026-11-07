@@ -10,6 +10,9 @@ histories:
 
 ## [Unreleased]
 
+- `SECURITY.md`: report a vulnerability privately through GitHub, or by email to `udan-security@nistapp.com`;
+  acknowledgement within 5 working days (V03.D2).
+
 ## [0.2.0] - 2026-11-06
 
 Release notes: the implement recipe (`brownfield-recipes/implement/`) is live with Stages 0-5, thirteen playbooks and
