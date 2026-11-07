@@ -21,7 +21,8 @@ You need [Claude Code](https://claude.com/claude-code), `git` and Python 3.11 or
 
 2. Say: **"Audit /path/to/your/repo and write the output to /path/to/output"**.
 3. When the report is final, say: **"Start implementing the fixes on /path/to/your/repo based on
-   /path/to/output/\<report\>.json"**.
+   /path/to/output/\<report\>.json"**. First, the skill asks you to copy the report (`.json` and `.md`) into your
+   repository under `docs/agentic-readiness-report/` and commit it. It does not copy the report itself.
 
 What happens: the skill asks a few questions, shows you a plan, and asks before each step that changes something.
 The audit never writes inside your repository. The implement skill commits on local branches. It never merges, and
