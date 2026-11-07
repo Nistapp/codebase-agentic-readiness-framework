@@ -2,7 +2,25 @@
 
 This repository is the Codebase Agentic Readiness Framework: documents that say what makes a codebase safe for AI
 coding agents, and tools that check it. This page gets a new contributor to a green `make check` without reading
-the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they are the same rules.
+the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they are the same rules. The folders
+`audit/`, `implement/` and `audit/engine/` each have their own `AGENTS.md` with the rules for that folder.
+
+## Repository map
+
+"Shipped" means the folder reaches users: in a skill bundle, or as the documents a user reads.
+
+| Folder | What it is | Shipped |
+| --- | --- | --- |
+| `docs/` | The framework pages (`docs/framework/`), the Diátaxis docs and the root decision records | Yes, as documents |
+| `spec/` | The numbered requirements (`REQ-...`) and the decisions about them | Yes, as documents |
+| `greenfield/` | Templates for a new repository that starts ready | Yes, as documents |
+| `audit/` | The audit recipe, its checks, prompts, catalogue, stack profiles, schemas and tools | Yes, in the audit skill bundle |
+| `audit/engine/` | The deterministic audit engine, with its own docs and decision records | Yes, in the audit skill bundle |
+| `implement/` | The implement recipe, its playbooks, prompts, state contract and tools | Yes, in the implement skill bundle |
+| `dev/` | The recipe linter, the schema cross-check, the Mermaid check, the quality baseline, the skill bundle build and the evals | No: this repository and CI only |
+| `artefacts/` | Scratch notes and plans; the contents are git-ignored | No, and off-limits to agents |
+
+`make validate-skills` builds the two skill bundles into `dev/dist/skills/` and validates them.
 
 ## Prerequisites
 
