@@ -2,8 +2,9 @@
 # The paths are wildcards because the engine's suite runs with its own directory as the working directory.
 [run]
 include =
-    */brownfield-recipes/deterministic-audit/audit/*
-    */brownfield-recipes/tools/*
+    */audit/engine/audit/*
+    */audit/tools/*
+    */implement/tools/*
 omit =
     */tests/*
 

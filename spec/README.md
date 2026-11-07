@@ -2,7 +2,7 @@
 
 Normative requirements for the Codebase Agentic Readiness Framework: what a repository MUST, SHOULD, or MAY have to count as agentic-ready.
 
-The recipes in `greenfield-bootstrap/`, `brownfield-legacy/` and `brownfield-recipes/` explain *how*. The last also holds the audit engine and tools that check requirements. This folder states *what* and is the source of truth for conformance. Recipes and checks should link to requirement IDs instead of restating rules.
+The recipes in `greenfield/`, `docs/framework/`, `audit/` and `implement/` explain *how*. `audit/` also holds the audit engine and tools that check requirements. This folder states *what* and is the source of truth for conformance. Recipes and checks should link to requirement IDs instead of restating rules.
 
 ## Conventions
 
@@ -20,7 +20,7 @@ The repository MUST expose one command that runs every gate that CI runs.
 
 - **Phase:** 1
 - **Verification:** automated
-- **Source:** [Phased-Approach.md § Activities](../brownfield-legacy/Phased-Approach.md#activities)
+- **Source:** [phased-approach.md § Activities](../docs/framework/phased-approach.md#activities)
 - **Checks:** CMD-02
 ```
 
@@ -36,10 +36,10 @@ Every requirement carries these four fields under its statement.
 
 | Field | Meaning |
 |---|---|
-| `Phase` | The framework phase, 1 to 7 as numbered in [Phased-Approach.md](../brownfield-legacy/Phased-Approach.md), at which the requirement first applies. The greenfield recipe numbers its own build phases 1 to 8; those are not framework phases. |
+| `Phase` | The framework phase, 1 to 7 as numbered in [Phased-Approach.md](../docs/framework/phased-approach.md), at which the requirement first applies. The greenfield recipe numbers its own build phases 1 to 8; those are not framework phases. |
 | `Verification` | One of the four methods below. |
 | `Source` | The framework document and heading the requirement comes from, as a link. The heading must exist in that document. |
-| `Checks` | The IDs of the checks that verify it, taken from the [check catalogue](../brownfield-recipes/catalogue.json). `none yet` means a check is wanted but not written. A `human` or `attested` requirement may have no check and then says `none (human)` or `none (attested)`. |
+| `Checks` | The IDs of the checks that verify it, taken from the [check catalogue](../audit/catalogue.json). `none yet` means a check is wanted but not written. A `human` or `attested` requirement may have no check and then says `none (human)` or `none (attested)`. |
 
 ### Verification methods
 
@@ -58,11 +58,11 @@ Rules that apply to every method:
 - Prefer the more objective method. Use `automated` where a deterministic check is feasible, `agent` where the verdict needs judgment about content, `human` where it needs an accountable review, and `attested` only for facts the repository cannot show, such as a setting held in a hosting service. Do not mark a requirement `agent` merely because no tool exists yet; mark it `automated` with `Checks: none yet`.
 - A person's confirmation of a finding does not change a requirement's method. It is a step of the audit process, not a way to verify a requirement.
 
-The report format itself is defined later by the report schema in `brownfield-recipes/schema/`; this table fixes the meaning, and the schema will fix the field names.
+The report format itself is defined later by the report schema in `audit/schema/`; this table fixes the meaning, and the schema will fix the field names.
 
 ### Decision records
 
-Where the framework documents leave a question open, the answer is recorded in `decisions/NNNN-short-title.md`, written from the [greenfield ADR template](../greenfield-bootstrap/templates/docs/templates/adr-template.md). A record is a living, current-state document: when the decision changes, its body is overwritten and the reversal is folded into its *Alternatives Considered* table. Numbers are never reused. The requirements the decision affects state its outcome, so the record does not need reading to apply them.
+Where the framework documents leave a question open, the answer is recorded in `decisions/NNNN-short-title.md`, written from the [greenfield ADR template](../greenfield/templates/docs/templates/adr-template.md). A record is a living, current-state document: when the decision changes, its body is overwritten and the reversal is folded into its *Alternatives Considered* table. Numbers are never reused. The requirements the decision affects state its outcome, so the record does not need reading to apply them.
 
 ### Supporting formats
 
@@ -71,7 +71,7 @@ Where the framework documents leave a question open, the answer is recorded in `
 | Config or manifest shape | JSON Schema, under `schemas/` |
 | Behavioural acceptance criteria | Gherkin |
 | Diagrams | Mermaid |
-| Terminology | `shared/Glossary.md` |
+| Terminology | `docs/framework/glossary.md` |
 
 ## Contents
 

@@ -10,7 +10,7 @@ pre-commit:
       run: make format-check
     docs-lint:
       # The ratchet path list lives in the Makefile (DOCS_LINT_PATHS); the globs here are its broadest match.
-      glob: "{brownfield-recipes/implement/**/*.md,docs/**/*.md,CONTRIBUTING.md,CHANGELOG.md,RELEASE_PROCESS.md,brownfield-recipes/docs/architecture/user-overview/03-trust-and-safety.md}"
+      glob: "{implement/**/*.md,docs/**/*.md,CONTRIBUTING.md,CHANGELOG.md,RELEASE_PROCESS.md,SECURITY.md}"
       run: make docs-lint
     secrets:
       run: uvx --from detect-secrets==1.5.0 detect-secrets-hook --baseline .secrets.baseline {staged_files}  # pragma: allowlist secret

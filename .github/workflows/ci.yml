@@ -128,7 +128,7 @@ jobs:
         run: make docs-lint
       - if: steps.changed.outputs.any == 'true'
         name: Validate Mermaid blocks in changed Markdown
-        run: xargs -d '\n' -a "$RUNNER_TEMP/changed-md.txt" python3 brownfield-recipes/dev/mermaid_check.py --no-sandbox
+        run: xargs -d '\n' -a "$RUNNER_TEMP/changed-md.txt" python3 dev/mermaid_check.py --no-sandbox
 
   # One required check that stands for the whole matrix, so adding or renaming a `check` leg (a Python
   # version, an OS) never also requires a branch-protection edit.

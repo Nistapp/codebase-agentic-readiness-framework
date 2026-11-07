@@ -5,10 +5,15 @@ __pycache__/
 .ruff_cache/
 
 # build output (root-scoped so fixture directories that deliberately use these names are still committed)
-/brownfield-recipes/dist/
+/dev/dist/
+/audit/engine/dist/
 # `make self-audit` output
 /dist/
 *.pyz
+
+# probe-run caches in fixtures (the engine's opt-in probe runner can leave them behind)
+**/.gradle/
+**/.pytest_cache/
 
 # environment files (secrets never committed; templates are)
 # `.env` is root-anchored on purpose: the engine's fixtures contain `.env` files as data (tests/fixtures/*/.env) and

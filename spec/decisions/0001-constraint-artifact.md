@@ -9,7 +9,7 @@
 
 ## Context
 
-Phase 1 of the framework asks a repository to "establish initial Constraint Engineering allow/deny lists" ([Phased-Approach.md](../../brownfield-legacy/Phased-Approach.md#activities)). Its Key Deliverables table gives the form as "Config files" and the consumer as agents. It names no file and no schema. Constraint Engineering itself is described in [Overview.md](../../shared/Overview.md#constraint-engineering).
+Phase 1 of the framework asks a repository to "establish initial Constraint Engineering allow/deny lists" ([Phased-Approach.md](../../docs/framework/phased-approach.md#activities)). Its Key Deliverables table gives the form as "Config files" and the consumer as agents. It names no file and no schema. Constraint Engineering itself is described in [Overview.md](../../docs/framework/overview.md#constraint-engineering).
 
 The audit engine could not check what no document defined. Before it adopted this decision:
 
@@ -17,7 +17,7 @@ The audit engine could not check what no document defined. Before it adopted thi
 * `CON-02` ("Test directories protected") accepted one of about twenty root-level file names, such as `.cursorignore`, `constraints.yaml` and `denylist.txt`. Without one it fell back to ignore rules and to CI text, and never passed.
 * Two equally well-governed repositories got different verdicts depending on the file name they happened to choose.
 
-An agent reads the instruction file at the start of every session. It reads no other file unless its harness is configured to. The framework's own template already has a "Do Not Do" section in that file ([greenfield `AGENTS.md`](../../greenfield-bootstrap/templates/AGENTS.md), section 10).
+An agent reads the instruction file at the start of every session. It reads no other file unless its harness is configured to. The framework's own template already has a "Do Not Do" section in that file ([greenfield `AGENTS.md`](../../greenfield/templates/AGENTS.md), section 10).
 
 ---
 
@@ -81,7 +81,7 @@ A prohibitions entry *names a path* when the path, or a pattern that covers it, 
 * The section is prose, so the checks are heuristics: headings and code spans. A path written without backticks is not seen.
 * The list is a statement, not a mechanism. An agent can ignore it, and optional native configuration is how a team enforces it.
 * A repository governed through ignore files loses the credit it had under the old `CON-02`.
-* The Key Deliverables table in [Phased-Approach.md](../../brownfield-legacy/Phased-Approach.md#key-deliverables) says "Config files". The spec reads that as the instruction file, and the table's wording is left to the framework's maintainer.
+* The Key Deliverables table in [Phased-Approach.md](../../docs/framework/phased-approach.md#key-deliverables) says "Config files". The spec reads that as the instruction file, and the table's wording is left to the framework's maintainer.
 
 ---
 

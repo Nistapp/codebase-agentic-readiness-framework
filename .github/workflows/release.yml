@@ -37,7 +37,7 @@ jobs:
           make check
           make security
       - name: Build the engine
-        run: python3 brownfield-recipes/deterministic-audit/tools/build.py
+        run: python3 audit/engine/build.py
       - name: Build and validate the skill bundle
         run: make validate-skills
       - name: Collect the release files
@@ -47,9 +47,9 @@ jobs:
           set -euo pipefail
           out="$RUNNER_TEMP/release"
           mkdir -p "$out"
-          cp brownfield-recipes/deterministic-audit/dist/audit.pyz "$out/audit.pyz"
-          (cd brownfield-recipes/dist/skills && zip -qr "$out/agentic-readiness-audit-$TAG.zip" agentic-readiness-audit)
-          (cd brownfield-recipes/dist/skills && zip -qr "$out/agentic-readiness-implement-$TAG.zip" agentic-readiness-implement)
+          cp audit/engine/dist/audit.pyz "$out/audit.pyz"
+          (cd dev/dist/skills && zip -qr "$out/agentic-readiness-audit-$TAG.zip" agentic-readiness-audit)
+          (cd dev/dist/skills && zip -qr "$out/agentic-readiness-implement-$TAG.zip" agentic-readiness-implement)
           (cd "$out" && sha256sum audit.pyz "agentic-readiness-audit-$TAG.zip" "agentic-readiness-implement-$TAG.zip" > SHA256SUMS)
           cat "$out/SHA256SUMS"
           echo "RELEASE_DIR=$out" >> "$GITHUB_ENV"

@@ -2,7 +2,25 @@
 
 This repository is the Codebase Agentic Readiness Framework: documents that say what makes a codebase safe for AI
 coding agents, and tools that check it. This page gets a new contributor to a green `make check` without reading
-the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they are the same rules.
+the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they are the same rules. The folders
+`audit/`, `implement/` and `audit/engine/` each have their own `AGENTS.md` with the rules for that folder.
+
+## Repository map
+
+"Shipped" means the folder reaches users: in a skill bundle, or as the documents a user reads.
+
+| Folder | What it is | Shipped |
+| --- | --- | --- |
+| `docs/` | The framework pages (`docs/framework/`), the Diátaxis docs and the root decision records | Yes, as documents |
+| `spec/` | The numbered requirements (`REQ-...`) and the decisions about them | Yes, as documents |
+| `greenfield/` | Templates for a new repository that starts ready | Yes, as documents |
+| `audit/` | The audit recipe, its checks, prompts, catalogue, stack profiles, schemas and tools | Yes, in the audit skill bundle |
+| `audit/engine/` | The deterministic audit engine, with its own docs and decision records | Yes, in the audit skill bundle |
+| `implement/` | The implement recipe, its playbooks, prompts, state contract and tools | Yes, in the implement skill bundle |
+| `dev/` | The recipe linter, the schema cross-check, the Mermaid check, the quality baseline, the skill bundle build and the evals | No: this repository and CI only |
+| `artefacts/` | Scratch notes and plans; the contents are git-ignored | No, and off-limits to agents |
+
+`make validate-skills` builds the two skill bundles into `dev/dist/skills/` and validates them.
 
 ## Prerequisites
 
@@ -30,17 +48,17 @@ Run these before you propose a change. CI runs the same commands.
 | `make docs-lint` | Markdown lint over the ratchet path list in the `Makefile`. Run it when Markdown changed |
 | `make docs-mermaid FILES=<file.md>` | Renders every Mermaid block in the files. Run it when you added or changed one |
 | `make coverage` | The engine's and the tools' suites under coverage.py; fails below the floor in `.coveragerc`. The floor only goes up |
-| `make self-audit` | The engine on this repository against `.audit-baseline.json`; exit 2 on a regression. See [Self-Audit](brownfield-recipes/docs/reference/self-audit.md) |
+| `make self-audit` | The engine on this repository against `.audit-baseline.json`; exit 2 on a regression. See [Self-Audit](docs/reference/self-audit.md) |
 
 The seven verbs the framework asks of any repository (`format`, `format:check`, `lint`, `typecheck`, `test`,
 `check`, `security`) are defined in [`spec/command-surface.md`](spec/command-surface.md).
 
-One test, without the whole suite (the first from `brownfield-recipes/deterministic-audit/`, the second from the
+One test, without the whole suite (the first from `audit/engine/`, the second from the
 repository root):
 
 ```bash
 python3 -m unittest tests.test_cmd_pack -k verbs
-python3 -m unittest discover -s brownfield-recipes/tools/tests -k catalogue
+python3 -m unittest discover -s audit/tools/tests -k catalogue
 ```
 
 A change to a fixture or a test that holds a key-shaped string needs `make update-secrets-baseline`; review the
@@ -69,12 +87,12 @@ secrets scan and a Conventional Commits check before a commit lands. Install it 
 
 Python files carry the SPDX header `AGPL-3.0-or-later` and the copyright line. Documentation, schemas and
 published outputs are `GFDL-1.3-only`. The zones are in
-[`brownfield-recipes/docs/reference/licensing.md`](brownfield-recipes/docs/reference/licensing.md).
+[`docs/reference/licensing.md`](docs/reference/licensing.md).
 
 ## Documentation
 
-Follow [`brownfield-recipes/docs/STYLE_GUIDE.md`](brownfield-recipes/docs/STYLE_GUIDE.md) and start at the doc
-router, [`brownfield-recipes/docs/architecture/README.md`](brownfield-recipes/docs/architecture/README.md). A page
+Follow [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md) and start at the doc
+router, [`docs/explanation/README.md`](docs/explanation/README.md). A page
 describes what exists; a feature that is only planned is marked `Planned`. Decisions go in an ADR
 ([index](docs/architecture/adrs/README.md)).
 
@@ -83,7 +101,7 @@ describes what exists; a feature that is only planned is marked `Planned`. Decis
 File an issue on the repository with the `audit-engine` label. Say which check gave the wrong verdict, the
 repository or fixture where you saw it, and what the verdict should have been. A fix lands with a fixture that
 reproduces it and a new ruleset revision in the engine's
-[changelog](brownfield-recipes/deterministic-audit/docs/reference/changelog.md).
+[changelog](audit/engine/docs/reference/changelog.md).
 
 ## Releases
 

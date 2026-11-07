@@ -123,7 +123,7 @@
             "verb": "typecheck"
           },
           {
-            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s brownfield-recipes/tools/tests && $(PYTHON) -m unittest discover -s brownfield-recipes/dev/tests",
+            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s dev/tests",
             "resolved": true,
             "runner": "Makefile",
             "verb": "test"
@@ -337,7 +337,7 @@
             "verb": "typecheck"
           },
           {
-            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s brownfield-recipes/tools/tests && $(PYTHON) -m unittest discover -s brownfield-recipes/dev/tests",
+            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s dev/tests",
             "resolved": true,
             "runner": "Makefile",
             "verb": "test"
@@ -580,7 +580,7 @@
         "kind": "path_list",
         "paths": [
           "Makefile",
-          "brownfield-recipes/deterministic-audit/",
+          "audit/engine/",
           "AGENTS.md",
           ".python-version",
           "lefthook.yml",
@@ -589,26 +589,26 @@
           "README.md",
           "shared/",
           "brownfield-legacy/",
-          "greenfield-bootstrap/",
+          "greenfield/",
           "spec/",
           "REQ-...",
           "spec/README.md",
-          "brownfield-recipes/audit/",
+          "audit/",
           "implement/",
           "SKILL.md",
-          "brownfield-recipes/tools/",
+          "audit/tools/",
           "schema/",
           "progress.py",
-          "brownfield-recipes/docs/architecture/adrs/",
-          "brownfield-recipes/dev/",
+          "docs/architecture/adrs/",
+          "dev/",
           "tools/",
-          "brownfield-recipes/docs/",
-          "brownfield-recipes/docs/STYLE_GUIDE.md",
+          "docs/",
+          "docs/STYLE_GUIDE.md",
           "docs/architecture/README.md",
           "artefacts/",
           ".env",
-          "brownfield-recipes/deterministic-audit/tests/",
-          "brownfield-recipes/tools/tests/"
+          "audit/engine/tests/",
+          "audit/tools/tests/"
         ],
         "truncated": false
       },
@@ -618,7 +618,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, brownfield-recipes/deterministic-audit/, AGENTS.md, .python-version, lefthook.yml, .coveragerc, README.md, shared/ (+20 more)",
+      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, .python-version, lefthook.yml, .coveragerc, README.md, shared/ (+20 more)",
       "tier": "B",
       "title": "Allow/deny artifact present",
       "verdict": "PASS"
@@ -627,9 +627,9 @@
       "data": {
         "kind": "path_list",
         "paths": [
-          "brownfield-recipes/deterministic-audit/tests",
-          "brownfield-recipes/dev/tests",
-          "brownfield-recipes/tools/tests"
+          "audit/engine/tests",
+          "dev/tests",
+          "audit/tools/tests"
         ],
         "truncated": false
       },
@@ -639,7 +639,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names the test directories (brownfield-recipes/deterministic-audit/tests/, brownfield-recipes/dev/tests/, brownfield-recipes/tools/tests/)",
+      "summary": "the prohibitions section of AGENTS.md names the test directories (audit/engine/tests/, dev/tests/, audit/tools/tests/)",
       "tier": "B",
       "title": "Test directories protected",
       "verdict": "PASS"
@@ -774,7 +774,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s brownfield-recipes/tools/tests && $(PYTHON) -m unittest discover -s brownfield-recipes/dev/tests); 74 test file(s)",
+      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 74 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -859,7 +859,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "entry point(s): .claude/skills/agentic-readiness-audit/scripts/deterministic-audit/audit/__main__.py, brownfield-recipes/deterministic-audit/audit/__main__.py, .claude/skills/agentic-readiness-audit/scripts/tools/engine.py, .claude/skills/agentic-readiness-audit/scripts/tools/facts.py, .claude/skills/agentic-readiness-audit/scripts/tools/render_report.py, .claude/skills/agentic-readiness-audit/scripts/tools/report.py",
+      "summary": "entry point(s): .claude/skills/agentic-readiness-audit/scripts/deterministic-audit/audit/__main__.py, audit/engine/audit/__main__.py, .claude/skills/agentic-readiness-audit/scripts/tools/engine.py, .claude/skills/agentic-readiness-audit/scripts/tools/facts.py, .claude/skills/agentic-readiness-audit/scripts/tools/render_report.py, .claude/skills/agentic-readiness-audit/scripts/tools/report.py",
       "tier": "B",
       "title": "Obvious entry points",
       "verdict": "PASS"
@@ -960,13 +960,13 @@
             "lines": [
               38
             ],
-            "path": "brownfield-recipes/deterministic-audit/tests/test_report_render.py"
+            "path": "audit/engine/tests/test_report_render.py"
           },
           {
             "lines": [
               41
             ],
-            "path": "brownfield-recipes/deterministic-audit/tests/test_sec_pack.py"
+            "path": "audit/engine/tests/test_sec_pack.py"
           }
         ],
         "total": 0
@@ -1230,7 +1230,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "branch protection declared as code at docs/branch-protection.md",
+      "summary": "branch protection declared as code at docs/reference/branch-protection.md",
       "tier": "B",
       "title": "Branch protection declared as code",
       "verdict": "PASS"
@@ -1450,23 +1450,23 @@
     "set_aside": [
       {
         "files": 3,
-        "path": "brownfield-recipes/deterministic-audit/examples"
+        "path": "audit/engine/examples"
       },
       {
         "files": 276,
-        "path": "brownfield-recipes/deterministic-audit/tests/fixtures"
+        "path": "audit/engine/tests/fixtures"
       },
       {
         "files": 5,
-        "path": "brownfield-recipes/docs/templates"
+        "path": "docs/templates"
       },
       {
         "files": 116,
-        "path": "brownfield-recipes/schema/examples"
+        "path": "audit/schema/examples"
       },
       {
         "files": 39,
-        "path": "greenfield-bootstrap/templates"
+        "path": "greenfield/templates"
       }
     ],
     "truncated": false
@@ -1490,14 +1490,14 @@
         "unittest",
         "discover",
         "-s",
-        "brownfield-recipes/tools/tests",
+        "audit/tools/tests",
         "&&",
         "$(PYTHON)",
         "-m",
         "unittest",
         "discover",
         "-s",
-        "brownfield-recipes/dev/tests"
+        "dev/tests"
       ],
       "duration_s": 0.0,
       "exit_code": null,

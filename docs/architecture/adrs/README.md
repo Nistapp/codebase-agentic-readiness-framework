@@ -1,33 +1,49 @@
 # Decisions of record
 
-Decisions are recorded next to the component they govern. This page indexes the three sets; the rule for where a new
-one goes is [ADR 0001](0001-decisions-live-beside-the-component.md).
+Decisions are recorded next to the component they govern. This page indexes all five groups. The rule for where a new
+one goes is [ADR 0001](0001-decisions-live-beside-the-component.md). Add a row here in the same change as the ADR.
+The root router is [`docs/README.md`](../../README.md).
 
-## Repository level
+## Repository level: `docs/architecture/adrs/`
 
-| ADR | Decision |
-| --- | --- |
-| [0001](0001-decisions-live-beside-the-component.md) | Decisions live beside the component they govern; this folder indexes them |
+| ADR | Title | Status | Date |
+| --- | --- | --- | --- |
+| [0001](0001-decisions-live-beside-the-component.md) | Decisions Live Beside the Component They Govern | Accepted | 2026-11-05 |
 
 ## Requirements: `spec/decisions/`
 
-| ADR | Decision |
-| --- | --- |
-| [0001](../../../spec/decisions/0001-constraint-artifact.md) | Use the prohibitions section as the deny list |
-| [0002](../../../spec/decisions/0002-lint-in-the-gate.md) | Lint is gated through `format:check` |
+| ADR | Title | Status | Date |
+| --- | --- | --- | --- |
+| [0001](../../../spec/decisions/0001-constraint-artifact.md) | Use the prohibitions section as the deny list | Accepted | 2026-10-10 |
+| [0002](../../../spec/decisions/0002-lint-in-the-gate.md) | Lint is gated through `format:check` | Accepted | 2026-11-05 |
 
-## Recipes and tools: `brownfield-recipes/docs/architecture/adrs/`
+## Audit recipe and tools: `audit/docs/architecture/adrs/`
 
-| ADR | Decision |
-| --- | --- |
-| [0001](../../../brownfield-recipes/docs/architecture/adrs/0001-tools-import-engine.md) | Tools import the engine in process |
-| [0002](../../../brownfield-recipes/docs/architecture/adrs/0002-progress-writes-state-in-target.md) | `progress.py` writes the state files inside the target |
-| [0003](../../../brownfield-recipes/docs/architecture/adrs/0003-push-and-pr-policy.md) | Push and pull request policy of the implement recipe |
+| ADR | Title | Status | Date |
+| --- | --- | --- | --- |
+| [0001](../../../audit/docs/architecture/adrs/0001-tools-import-engine.md) | Tools Import the Engine in Process | Accepted | 2026-10-10 |
 
-## Audit engine: `brownfield-recipes/deterministic-audit/docs/architecture/adrs/`
+## Implement recipe and tools: `implement/docs/architecture/adrs/`
 
-The engine's decisions are indexed in the table in its
-[`architecture/README.md`](../../../brownfield-recipes/deterministic-audit/docs/architecture/README.md); the ADRs
-themselves are in [`adrs/`](../../../brownfield-recipes/deterministic-audit/docs/architecture/adrs/). ADR 0001 to 0009
-cover the report-not-a-gate rule, read-only operation, component depth, no LLM calls, the module layout, the ignore
-engine, the report contract, what counts as the repository, and nested ignore files.
+The numbers continue from the audit group; both groups were one set before v0.3.
+
+| ADR | Title | Status | Date |
+| --- | --- | --- | --- |
+| [0002](../../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md) | `progress.py` Writes the State Files Inside the Target | Accepted | 2026-10-29 |
+| [0003](../../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) | The Implement Recipe Pushes and Opens a Pull Request Only When the Owner Opted In | Accepted | 2026-11-05 |
+
+## Audit engine: `audit/engine/docs/architecture/adrs/`
+
+The engine's own index is in its [`architecture/README.md`](../../../audit/engine/docs/architecture/README.md#adr-index).
+
+| ADR | Title | Status | Date |
+| --- | --- | --- | --- |
+| [0001](../../../audit/engine/docs/architecture/adrs/0001-report-not-a-gate.md) | The Audit Reports; It Does Not Gate | Accepted | 2026-09-28 |
+| [0002](../../../audit/engine/docs/architecture/adrs/0002-read-only-and-tier-c-opt-in.md) | Read-Only by Default; Tier-C Probes Are Opt-In | Accepted | 2026-09-28 |
+| [0003](../../../audit/engine/docs/architecture/adrs/0003-component-depth-declared-depth-1.md) | Component Depth: Declared Components, Depth 1 | Accepted | 2026-09-28 |
+| [0004](../../../audit/engine/docs/architecture/adrs/0004-no-llm-in-v1.md) | No LLM Calls in v1 | Accepted | 2026-09-28 |
+| [0005](../../../audit/engine/docs/architecture/adrs/0005-module-layout-and-zipapp-distribution.md) | Module Layout and Zipapp Distribution | Accepted | 2026-09-28 |
+| [0006](../../../audit/engine/docs/architecture/adrs/0006-private-check-helpers-and-ignore-engine.md) | Private Check Helpers and the Ignore Engine | Accepted | 2026-09-28 |
+| [0007](../../../audit/engine/docs/architecture/adrs/0007-json-report-render-contract.md) | The JSON Report Is the Render Contract; the Markdown Is a Template Over It | Accepted | 2026-09-30 |
+| [0008](../../../audit/engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md) | What Counts as the Repository | Accepted | 2026-11-05 |
+| [0009](../../../audit/engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md) | Nested Ignore Files and Negation | Accepted | 2026-11-05 |
