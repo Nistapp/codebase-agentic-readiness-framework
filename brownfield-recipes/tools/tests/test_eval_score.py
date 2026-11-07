@@ -100,6 +100,12 @@ class MatchTargetTests(unittest.TestCase):
         match = score.match_target(base_report(), expected(entry("CMD-02", "FAIL")))
         self.assertTrue(match.comparable)
 
+    def test_a_short_report_sha_matches_the_full_expected_one(self) -> None:
+        report = base_report()
+        report["provenance"]["target"]["git_sha"] = REPO_SHA[:12]
+        match = score.match_target(report, expected(entry("CMD-02", "FAIL")))
+        self.assertTrue(match.comparable)
+
     def test_sha_mismatch_is_not_comparable(self) -> None:
         match = score.match_target(base_report(), expected(entry("CMD-02", "FAIL"), repo_sha="ab" * 20))
         self.assertFalse(match.comparable)

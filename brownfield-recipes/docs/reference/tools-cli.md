@@ -192,9 +192,9 @@ Starts a draft from an intake file. It reads the intake (the answers to the audi
 | Field | Source |
 |---|---|
 | `provenance.target.path` | The intake's `target_path`, resolved to an absolute path. |
-| `provenance.target.git_sha`, `branch`, `dirty` | Read from git with read-only commands. Each is `null` when it cannot be known: the target is not a repository, the repository has no commit, `HEAD` is detached (no branch), or git is missing. A target that is a subfolder of a repository records nothing and gives a warning, because a commit id says nothing about a subfolder. |
+| `provenance.target.git_sha`, `branch`, `dirty` | Read from git with read-only commands. The commit id is recorded as its first 12 hex digits, because a full id is what secret scanners read as an access token. Each is `null` when it cannot be known: the target is not a repository, the repository has no commit, `HEAD` is detached (no branch), or git is missing. A target that is a subfolder of a repository records nothing and gives a warning, because a commit id says nothing about a subfolder. |
 | `provenance.target.label` | The intake's `repo_label`, or a label derived from the target directory's name. |
-| `provenance.framework_revision` | The commit of the framework checkout the tools run from, or `null` when they are not in one. |
+| `provenance.framework_revision` | The framework checkout's commit (12 hex digits), or `null` outside one. |
 | `provenance.catalogue_version` | The version of [`catalogue.json`](../../catalogue.json). |
 | `provenance.agent` | The intake's `harness` and `model`. |
 | `provenance.started_at` | The UTC start time. Its `YYYYMMDDTHHMMSSZ` form is the stamp in the file name. |
@@ -905,7 +905,9 @@ python3 brownfield-recipes/tools/check_drift.py --describe
 | `sha_missing` | The audited commit is not in the target's history (rewritten or not fetched). Nothing is compared; a warning says to re-check every finding. |
 | `no_sha` | The report recorded no `git_sha`. A warning says to re-check every finding. |
 
-`audited_sha` and `head_sha` are always present. Two more fields never change the status or the exit code:
+`audited_sha` and `head_sha` are always present. `audited_sha` is the id as the report records it, usually 12
+digits; `head_sha` is the full id. The status compares the full id the short one resolves to. Two more fields never
+change the status or the exit code:
 
 - `dirty` is `true` when the target's working tree has uncommitted or untracked changes (`git status --porcelain` is
   not empty), `false` when it is clean, `null` when git could not say. A warning and a line in the text output say so

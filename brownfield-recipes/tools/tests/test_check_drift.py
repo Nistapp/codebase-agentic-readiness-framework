@@ -63,6 +63,21 @@ class CheckDriftTests(unittest.TestCase):
         self.assertFalse(envelope["data"]["drifted"])
         self.assertEqual(envelope["data"]["findings"], [])
 
+    def test_a_short_id_at_head_is_current(self) -> None:
+        self.write_report(self.audited[:12])
+        code, envelope, _ = self.run_tool()
+        self.assertEqual(code, 0)
+        self.assertEqual(envelope["data"]["status"], "current")
+        self.assertFalse(envelope["data"]["drifted"])
+
+    def test_a_short_id_behind_head_drifts(self) -> None:
+        self.write_report(self.audited[:12])
+        self.commit("notes.txt", "new\n")
+        code, envelope, _ = self.run_tool()
+        self.assertEqual(code, 0)
+        self.assertEqual(envelope["data"]["status"], "drifted")
+        self.assertEqual(envelope["data"]["changed_paths"], ["notes.txt"])
+
     def test_drift_on_a_cited_file(self) -> None:
         self.write_report(self.audited)
         self.commit("package.json", "changed\n")

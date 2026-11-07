@@ -42,9 +42,9 @@
           }
         },
         "framework_revision": {
-          "description": "Git SHA of the framework repository the recipe ran from; null when it was not a git checkout.",
+          "description": "Short Git SHA (12 hex digits) of the framework repository the recipe ran from; null when it was not a git checkout. A full 40-digit id is also accepted so earlier reports stay valid; the tools write the short form because a full id is what secret scanners read as an access token.",
           "type": ["string", "null"],
-          "pattern": "^[0-9a-f]{40}$"
+          "pattern": "^([0-9a-f]{12}|[0-9a-f]{40})$"
         },
         "catalogue_version": {
           "description": "Version of the check catalogue the report was built against: MAJOR.MINOR.PATCH, as in catalogue.json.",
@@ -263,8 +263,9 @@
       "pattern": "^[a-z0-9][a-z0-9._-]{0,31}$"
     },
     "gitShaOrNull": {
+      "description": "A commit id: 12 hex digits as the tools write it, or the full 40 in earlier reports.",
       "type": ["string", "null"],
-      "pattern": "^[0-9a-f]{40}$"
+      "pattern": "^([0-9a-f]{12}|[0-9a-f]{40})$"
     },
     "checkId": {
       "type": "string",
