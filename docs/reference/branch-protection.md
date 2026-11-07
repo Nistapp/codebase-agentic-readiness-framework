@@ -1,18 +1,19 @@
 # Branch protection
 
-**Status: recommended, not enabled.** On 2026-11-06 the settings of `Nistapp/codebase-agentic-readiness-framework`
-were read from GitHub: `main` is not protected (the API answers 404 "Branch not protected") and the repository has no
-rulesets. The rules below are what the maintainer recommends; nothing on GitHub enforces them yet. Until the maintainer
-turns them on, `CI Gate` runs on every pull request and every push but nothing blocks a merge when it fails.
+**Status: enabled on 2026-11-07.** The ruleset `main protection` (id 26750008) applies to the default branch, `main`.
+It enforces every row of the table below and has no bypass actors. To check it without the web page, run
+`gh api repos/Nistapp/codebase-agentic-readiness-framework/rules/branches/main`. The same day, these were turned on:
+private vulnerability reporting, secret scanning, push protection and Dependabot security updates (see
+[`SECURITY.md`](../../SECURITY.md)).
 
-This page is the declaration of the recommended rules, so they are reviewed like any other change. GitHub does not read
-this file: the maintainer applies the rules in the repository settings, and updates this page in the same step.
+This page is the declaration of the rules, so they are reviewed like any other change. GitHub does not read this file:
+the maintainer applies the rules in the repository settings, and updates this page in the same step.
 
-## Recommended rules
+## Rules
 
-The protected branch would be `main`.
+The protected branch is `main`.
 
-| Rule | Recommended setting |
+| Rule | Setting |
 | --- | --- |
 | Changes arrive through a pull request | Required; no direct pushes to `main` |
 | Required status check | `CI Gate`, and no other: it stands for the whole matrix |
@@ -22,7 +23,7 @@ The protected branch would be `main`.
 | Merge method | Merge commit, so each Conventional Commit can be reverted alone |
 | Who applies and changes these rules | The maintainer |
 
-## How the maintainer turns it on
+## How the maintainer changes it
 
 In the repository on GitHub: Settings, Branches (or Rules, Rulesets), add a rule for `main`, and set each row of the
 table above. `CI Gate` appears in the list of required checks only after it has run once on the repository. To re-check
@@ -31,7 +32,7 @@ a 404 means protection is off. When the settings change, edit the status line ab
 
 ## The required check
 
-`CI Gate` is the last job in [`.github/workflows/ci.yml`](../.github/workflows/ci.yml). It needs five jobs and fails
+`CI Gate` is the last job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). It needs five jobs and fails
 unless each one succeeded:
 
 | Job | What it runs |
@@ -48,5 +49,5 @@ Requiring `CI Gate` alone means a new matrix leg or a renamed job never needs a 
 ## Who merges
 
 A session of an AI agent never pushes, tags or merges in this repository
-([ADR 0003](../brownfield-recipes/docs/architecture/adrs/0003-push-and-pr-policy.md) covers the target repositories;
-the rule for this one is in [`AGENTS.md`](../AGENTS.md)). The maintainer pushes and merges.
+([ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) covers the target repositories;
+the rule for this one is in [`AGENTS.md`](../../AGENTS.md)). The maintainer pushes and merges.
