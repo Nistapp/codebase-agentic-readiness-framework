@@ -1,84 +1,56 @@
 # Codebase Agentic Readiness Framework
 
-> *"The more you sweat in peace, the less you bleed in war."*
-> In our context, **sweating in peace** is preparing the codebase for agentic participation. **The war** is when agents are implementing features from user prompts — and an unprepared codebase bleeds rework, hallucinations, and broken builds.
+> *"The more you sweat in peace, the less you bleed in war."* Preparing a codebase for AI coding agents is the sweat;
+> agents changing it from user prompts is the war.
 
----
+This framework says what makes a codebase safe for AI coding agents, and gives you two skills that act on it.
+The **audit** skill measures an existing repository and writes an evidence-cited readiness report. The **implement**
+skill then fixes the confirmed findings, one theme at a time, on a branch per theme.
 
-## 🎯 Choose Your Track
+## Quick start
 
-Whether you are starting a fresh project or modernizing an established monolith, this framework provides the blueprint to make your codebase safe, bounded, and deterministic for AI coding agents.
+You need [Claude Code](https://claude.com/claude-code), `git` and Python 3.11 or newer.
 
-```mermaid
-flowchart TD
-    Start["What is your starting point?"] -->|Starting from scratch| TrackA["🚀 Greenfield Track\n(Day-0 Bootstrap)"]
-    Start -->|Existing legacy codebase| TrackB["🏗️ Brownfield Track\n(Legacy Agentic Readiness)"]
+1. Clone this repository and start Claude Code in it:
 
-    TrackA --> OutA["World-Class Harness\nfrom Commit #1"]
-    TrackB --> OutB["Foundation\n(Phases 1–4)"]
-    OutB --> OutC["Onwards to agentic-TDD/SDD \n(Phases 5–7)"]
+   ```bash
+   git clone https://github.com/Nistapp/codebase-agentic-readiness-framework.git
+   cd codebase-agentic-readiness-framework
+   claude
+   ```
 
-    style TrackA fill:#2d6a4f,stroke:#1b4332,color:#fff
-    style TrackB fill:#264653,stroke:#2a9d8f,color:#fff
-    style OutA fill:#52b788,stroke:#40916c,color:#fff
-    style OutB fill:#e9c46a,stroke:#f4a261,color:#000
-    style OutC fill:#f4a261,stroke:#e76f51,color:#000
-```
+2. Say: **"Audit /path/to/your/repo and write the output to /path/to/output"**.
+3. When the report is final, say: **"Start implementing the fixes on /path/to/your/repo based on
+   /path/to/output/\<report\>.json"**.
 
----
+What happens: the skill asks a few questions, shows you a plan, and asks before each step that changes something.
+The audit never writes inside your repository. The implement skill commits on local branches. It never merges, and
+it pushes a branch only if you opt in.
 
-### Track 1: Greenfield / Day-0 Project Setup 🚀
+## Other ways to use it
 
-> **For new repositories and services.**
+| You want to | Read |
+| --- | --- |
+| Install the skills from the release zips, with no clone | [Install the skills](docs/how-to/install-the-skills.md) |
+| See a real run: one repository audited, fixed and audited again | [Worked example](audit/schema/examples/server-worked-example/README.md) |
+| Start a new repository that is agent-ready from the first commit | [Greenfield](greenfield/README.md) |
+| Read the method: the seven phases and the requirements | [Phased approach](docs/framework/phased-approach.md), [`spec/`](spec/README.md) |
+| Find any other page | [Documentation index](docs/README.md) |
 
-Follow our step-by-step recipe to initialize a TypeScript / Node.js repository with world-class instrumentation before writing a single line of application logic.  While our example is for TS/Node, the principles are the same for any tech/framework. You can point your coding agent to this structure and ask it to regenerate the same structure for your tech/framework. You should have something to review withing minutes.
+## Platforms
 
-- 📖 **[Project Initialization Recipe](greenfield/README.md)** — Step-by-step guide across 8 phases.
-- 📦 **[Reusable Scaffolding Templates](greenfield/templates/)** — Copy-ready `AGENTS.md`, `biome.json`, GitHub Actions CI/CD workflows, `vitest.config.ts`, DI port interfaces, Diátaxis documentation templates (`docs/STYLE_GUIDE.md`, ADR templates), and the standardized seven-verb command surface (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`).
+- **Linux:** tested.
+- **macOS:** the tools are tested in CI. The Claude Code path above is not yet checked by hand. macOS ships an older
+  Python; install Python 3.11 or newer, for example with Homebrew.
+- **Windows:** not tested. WSL may work.
 
----
+## Contributing
 
-### Track 2: Brownfield / Legacy Codebase Modernization 🏗️
+Start at [`CONTRIBUTING.md`](CONTRIBUTING.md): the repository map, the gates (`make check`, `make security`) and the
+commit rules. Agents read [`AGENTS.md`](AGENTS.md). Report a security problem privately: see
+[`SECURITY.md`](SECURITY.md). Changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
 
-> **For existing codebases, monoliths, and legacy services.**
+## Licence
 
-Follow our phased, incremental methodology to make any existing codebase agentic-ready without requiring a full rewrite.
-
-- 📖 **[Legacy Modernization Overview](docs/framework/brownfield-track.md)** — The business case, defect reduction, and readiness roadmap.
-- 🗺️ **[7-Phase Migration Guide](docs/framework/phased-approach.md)**:
-  - **Part I: Readiness Foundation (Phases 1–4)** — Bootstrap, Source Docs, Agent Docs, and Behavioral Baselines. *(Mandatory)*
-  - **Part II: Post-Readiness Roadmap (Phases 5–7)** — Agent-driven refactoring, human-facing docs, and Spec-Driven Development (SDD/BDD + TDD).
-- 🤖 **[Brownfield Recipes](audit/README.md)** (v0.2.0) — An agent-run audit that scores a Phase 1 readiness report for an existing repository, with a deterministic engine doing the counting and the agent's judgment backed by cited evidence. Install it as a skill bundle or run it from a clone; no installation beyond Python 3.11+. The implement recipe, which closes the confirmed findings of a report on a branch per theme, has all six stages, thirteen playbooks and a skill bundle: see the [Brownfield Recipes README](audit/README.md).
-  This repository audits itself: Phase 1 score **0.84**, ratcheted in CI ([Self-Audit](docs/reference/self-audit.md)).
-
-The normative requirements a repository must meet live in [`spec/`](spec/README.md); the guides above and the tools both trace to them. To contribute, start at [`CONTRIBUTING.md`](CONTRIBUTING.md); changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
-
-**Audit a repository in five minutes:** open [`audit/README.md`](audit/README.md#quick-start), paste the kickoff prompt into a coding agent with shell access (Python 3.11+), and name the repository's path.
-Answer Stage 0's questions and approve Stage 1's plan.
-The result is an evidence-cited Phase 1 readiness report.
-
----
-
-## 🏛️ Shared Framework Concepts
-
-Both tracks share the same core intelligence layer and architectural invariants:
-
-| Document | Description |
-|---|---|
-| **[Overview](docs/framework/overview.md)** | Core concepts, **Constraint Engineering**, assumptions, and applicability |
-| **[Tool Ecosystem](docs/framework/tool-ecosystem.md)** | Accelerators (`codebase-memory-mcp`, `agentic-tdd`, etc.), maturity status, and conventions |
-| **[Risks and Mitigations](docs/framework/risks-and-mitigations.md)** | Risk matrix and safety principles when working with AI coding agents |
-| **[Glossary](docs/framework/glossary.md)** | Canonical definitions of domain terms |
-| **[References](docs/framework/references.md)** | External standards, frameworks, and related reading |
-
----
-
-## 🧠 Core Intelligence Layer
-
-[`codebase-memory-mcp`](https://github.com/DeusData/codebase-memory-mcp) serves as the shared knowledge backbone across all workflows. Both human developers and AI agents query this graph to identify symbols, callers, callees, dependencies, contracts, and relevant documentation before making changes.
-
----
-
-## 📄 License
-
-Documentation is licensed under the [GNU Free Documentation License, Version 1.3](LICENSE) (`GFDL-1.3-only`). `audit/tools/` and the migrated audit engine are code, licensed separately under the [GNU Affero General Public License, Version 3 or later](LICENSE-CODE) (`AGPL-3.0-or-later`); that licence covers the tools themselves, never the repositories they analyse or the reports they produce. Full detail in [Licensing](docs/reference/licensing.md).
+Documentation, schemas and published outputs: GFDL-1.3 ([`LICENSE`](LICENSE)). Code: AGPL-3.0-or-later
+([`LICENSE-CODE`](LICENSE-CODE)). Details: [licensing](docs/reference/licensing.md).
