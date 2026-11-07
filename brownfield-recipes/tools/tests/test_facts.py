@@ -193,7 +193,7 @@ class ContractTests(RepoCase):
         self.assertTrue(self.out.is_file())
 
     def test_help_names_every_section_the_file_holds(self) -> None:
-        with mock.patch.dict(os.environ, {"COLUMNS": "200"}):
+        with mock.patch.dict(os.environ, {"COLUMNS": "200", "NO_COLOR": "1"}):
             text = facts.build_parser().format_help()
         self.assertTrue(text.startswith("usage: facts.py "), text)
         self.assertIn(facts.INFO.summary, text)

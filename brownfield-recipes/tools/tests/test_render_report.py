@@ -2160,7 +2160,7 @@ class CliTests(CliCase):
             capture_output=True,
             text=True,
             check=False,
-            env={**os.environ, "COLUMNS": "200"},
+            env={**os.environ, "COLUMNS": "200", "NO_COLOR": "1"},
         )
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn("usage: render_report.py [-h] --out OUT report", done.stdout)
