@@ -10,7 +10,9 @@ history (which verdicts moved and why), see
 - Reports record commit ids (`provenance.framework_revision`, `provenance.target.git_sha`) as their first 12 hex digits
   instead of 40. A full id has the shape of an access token, and a report committed to a repository with a secret scan
   (gitleaks' default rules) failed it. The schema still accepts a full id, so earlier reports stay valid; `import-engine`
-  compares the short id with the engine's full one by prefix. See `schema/SCHEMA.md`, "Commit ids".
+  compares the short id with the engine's full one by prefix. `check_drift.py` resolves the short id before it
+  compares it with `HEAD`, and the two eval harnesses match a short id against a full one by prefix. See
+  `schema/SCHEMA.md`, "Commit ids".
 
 ## [0.2.0] - 2026-11-06
 

@@ -91,7 +91,7 @@ def match_target(report: Mapping[str, Any], expected: Mapping[str, Any]) -> Matc
     target = report["provenance"]["target"]
     report_sha = target["git_sha"]
     expected_sha = expected["repo_sha"]
-    if report_sha != expected_sha:
+    if report_sha is None or not expected_sha.startswith(report_sha):  # a report keeps 12 digits, an expected file 40
         got = report_sha[:12] if report_sha else "none"
         return Match(False, f"the report's commit ({got}) does not match the expected file's ({expected_sha[:12]})")
     if target["label"] != expected["repo_label"]:

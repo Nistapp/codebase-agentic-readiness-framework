@@ -905,7 +905,9 @@ python3 brownfield-recipes/tools/check_drift.py --describe
 | `sha_missing` | The audited commit is not in the target's history (rewritten or not fetched). Nothing is compared; a warning says to re-check every finding. |
 | `no_sha` | The report recorded no `git_sha`. A warning says to re-check every finding. |
 
-`audited_sha` and `head_sha` are always present. Two more fields never change the status or the exit code:
+`audited_sha` and `head_sha` are always present. `audited_sha` is the id as the report records it, usually 12
+digits; `head_sha` is the full id. The status compares the full id the short one resolves to. Two more fields never
+change the status or the exit code:
 
 - `dirty` is `true` when the target's working tree has uncommitted or untracked changes (`git status --porcelain` is
   not empty), `false` when it is clean, `null` when git could not say. A warning and a line in the text output say so

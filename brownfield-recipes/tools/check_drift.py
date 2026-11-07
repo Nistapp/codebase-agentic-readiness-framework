@@ -162,12 +162,12 @@ def handler(argv: Sequence[str]) -> _common.Result:
     if audited is None:
         data.update(status="no_sha", changed_paths=[], findings=[])
         warnings.append("the report records no git_sha, so drift cannot be measured; re-check every finding")
-    elif revision(target, audited) is None:
+    elif (resolved := revision(target, audited)) is None:
         data.update(status="sha_missing", changed_paths=[], findings=[])
         warnings.append(
             "the audited commit is not in the target's history (rewritten or not fetched); re-check every finding"
         )
-    elif audited == head:
+    elif resolved == head:  # the report may keep a short id; compare the full ones
         data.update(status="current", changed_paths=[], findings=[])
     else:
         changed = changed_paths(target, audited)

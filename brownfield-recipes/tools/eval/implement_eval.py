@@ -416,7 +416,7 @@ def materialise(name: str, root: Path) -> dict[str, Any]:
     report_json, report_md = report_files(scenario.report)
     snapshot_sha = snapshot(repo)
     audited = json.loads(report_json.read_text(encoding="utf-8"))["provenance"]["target"]["git_sha"]
-    if snapshot_sha != audited:
+    if audited is None or not snapshot_sha.startswith(audited):  # a report keeps a short id
         raise _common.ToolError(f"the snapshot commit {snapshot_sha} is not the audited {audited}; rebuild the reports")
     git(repo, "branch", INTEGRATION)
     git(repo, "checkout", "--quiet", INTEGRATION)
