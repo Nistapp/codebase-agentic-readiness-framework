@@ -8,7 +8,7 @@
 > **Status:** Live for the fixture sweep (S4.2), the real-repo runs (S4.3, one run per repo under
 > `D61`), the implement-recipe scenarios (IR13) and the first implement-run numbers. A second harness/model
 > (`S4.3.4`) stays Planned, deferred per `D57`; the before/after audit scores of the implement runs are in
-> [Before and after](#before-and-after-the-second-audits) (both second audits are final: the owner decided
+> [Before and after](#before-and-after-the-second-audit) (both second audits are final: the owner decided
 > every finding).
 
 ---
@@ -282,70 +282,66 @@ second model are MR09's.
 
 ## Implement-run numbers, 2026-10-29 to 2026-11-06
 
-The implement recipe's two real runs, through IR03 (Stages 0-1) and IR04-IR11 (one theme per session, a brief pass
-then an execute pass, each a headless Claude Code session): Digital-Assistant-Server and a private two-app Node
-repository. Counts are read from each repository's state file on its integration branch; cost and time from the
-sessions' own result lines. The before/after audit scores are in [Before and after](#before-and-after-the-second-audits).
+The implement recipe ran on two real repositories, through IR03 (Stages 0-1) and IR04-IR11 (one theme per session,
+a brief pass then an execute pass, each a headless Claude Code session). One is the public Digital-Assistant-Server.
+The other is private, and none of its figures are published. The counts below are read from the Server's state file
+on its integration branch; cost and time from the sessions' own result lines. The before/after audit scores are in
+[Before and after](#before-and-after-the-second-audit).
 
 ### Items by status per theme
 
-| Theme | Digital-Assistant-Server (40 items) | Private two-app Node repository (42 items) |
-|---|---|---|
-| T1 Command surface and quality tools | done 2, partial 3 | done 3, partial 2 |
-| T2 Execution determinism | done 2 | done 2, partial 1 |
-| T3 Secrets and env | done 2 | done 2, skipped 1 |
-| T4 CI parity, hooks, commits | partial 2, skipped 1 | done 1, partial 1, skipped 1 |
-| T5 Tests and baselines | partial 5 | done 2, partial 4 |
-| T6 Docs and navigation | done 4 | done 3, partial 1 |
-| T7 AGENTS.md and governance | done 7, partial 3, skipped 1 | done 8 |
-| T8 Hygiene and index | done 5, deferred 2, skipped 1 | done 8, partial 2 |
-| **Total** | done 22, partial 13, skipped 3, deferred 2, failed 0 | done 29, partial 11, skipped 2, failed 0 |
-| Not queued (rejected at the audit) | 2 | 8 |
+| Theme | Digital-Assistant-Server (40 items) |
+|---|---|
+| T1 Command surface and quality tools | done 2, partial 3 |
+| T2 Execution determinism | done 2 |
+| T3 Secrets and env | done 2 |
+| T4 CI parity, hooks, commits | partial 2, skipped 1 |
+| T5 Tests and baselines | partial 5 |
+| T6 Docs and navigation | done 4 |
+| T7 AGENTS.md and governance | done 7, partial 3, skipped 1 |
+| T8 Hygiene and index | done 5, deferred 2, skipped 1 |
+| **Total** | done 22, partial 13, skipped 3, deferred 2, failed 0 |
+| Not queued (rejected at the audit) | 2 |
 
 Every `partial` item carries counted debt and a mechanism that keeps it from growing; no item ended `failed`. Every
-theme in both state files reads `merged`: Stage 2 records a theme's merge in the next theme's branch, and the
-second-audit branches (IR14.2) recorded the last ones.
+theme in the state file reads `merged`: Stage 2 records a theme's merge in the next theme's branch, and the
+second-audit branch (IR14.2) recorded the last ones.
 
 ### Cost and time per session
 
-| Phase | Server: brief | Server: execute | Node repository: brief | Node repository: execute |
-|---|---|---|---|---|
-| Stages 0-1 (onboard) | $0.38, 1.2 min | $0.59, 1.9 min | $0.44, 1.3 min | $0.37, 1.5 min |
-| T1 | $0.53, 1.6 min | $1.08, 0.1 min ¹ | $0.72, 3.6 min | $1.01, 11.2 min |
-| T2 | $0.59, 2.1 min (2 runs) | $0.56, 0.0 min ¹ | $0.57, 2.5 min | $0.63, 8.7 min |
-| T3 | $0.49, 1.9 min | $0.78, 0.1 min ¹ | $0.71, 2.4 min | $1.57, 5.2 min (3 runs ¹) |
-| T4 | $0.47, 1.4 min | $1.41, 8.8 min (2 runs) | $0.88, 3.1 min (2 runs) | $1.68, 13.0 min |
-| T5 | $0.50, 1.7 min | $1.50, 15.8 min | $0.70, 4.0 min | $1.78, 17.4 min |
-| T6 | $0.38, 1.6 min | $0.85, 5.6 min | $0.55, 2.0 min | $1.16, 16.2 min |
-| T7 | $0.60, 2.3 min | $0.78, 3.2 min | $0.50, 1.8 min | $0.72, 7.2 min |
-| T8 ² | $0.09, 1.7 min | $0.42, 5.6 min (2 runs) | $0.10, 1.6 min | $0.48, 8.9 min |
-| **Lane total** | | **$11.98, ~57 min, 21 runs** | | **$14.57, ~112 min, 21 runs** |
+| Phase | Server: brief | Server: execute |
+|---|---|---|
+| Stages 0-1 (onboard) | $0.38, 1.2 min | $0.59, 1.9 min |
+| T1 | $0.53, 1.6 min | $1.08, 0.1 min ¹ |
+| T2 | $0.59, 2.1 min (2 runs) | $0.56, 0.0 min ¹ |
+| T3 | $0.49, 1.9 min | $0.78, 0.1 min ¹ |
+| T4 | $0.47, 1.4 min | $1.41, 8.8 min (2 runs) |
+| T5 | $0.50, 1.7 min | $1.50, 15.8 min |
+| T6 | $0.38, 1.6 min | $0.85, 5.6 min |
+| T7 | $0.60, 2.3 min | $0.78, 3.2 min |
+| T8 ² | $0.09, 1.7 min | $0.42, 5.6 min (2 runs) |
+| **Lane total** | | **$11.98, ~57 min, 21 runs** |
 
-¹ The session reported a `duration_ms` of 0.2 min or less against $0.18-$1.08 of cost (five runs: the T1, T2 and T3
-executes on the Server, and two of the three T3 execute attempts on the Node repository), so those wall times are not
-trustworthy. ² T8 ran on Haiku; every other session on Sonnet. Failed attempts (usage limits, a stop on the wrong lane
-lock) are included in the counts and the totals. The framework lane that wrote the playbooks between the themes (28
-sessions, $31.55, of which the IR12 execute alone was $15.63) is not in the table.
+¹ The session reported a `duration_ms` of 0.2 min or less against $0.56-$1.08 of cost (the T1, T2 and T3 executes),
+so those wall times are not trustworthy. ² T8 ran on Haiku; every other session on Sonnet. Failed attempts (usage
+limits, a stop on the wrong lane lock) are included in the counts and the totals. The framework lane that wrote the
+playbooks between the themes is not in the table.
 
-### Before and after: the second audits
+### Before and after: the second audit
 
-Each repository was audited again after the implement run (IR14.2). Both second reports are **final**: the owner
-decided every finding in Stage 4 (Server: 10 rejected, 4 deferred, 1 edited; private repository: 12 rejected,
-6 deferred), and the decisions do not change a score. The Server pair, its comparison and its state are published as a
-[worked example](../../audit/schema/examples/server-worked-example/README.md); nothing of the private two-app Node
-repository is published.
+The Server was audited again after the implement run (IR14.2). The second report is **final**: the owner decided every
+finding in Stage 4 (10 rejected, 4 deferred, 1 edited), and the decisions do not change a score. The pair, its
+comparison and its state are published as a
+[worked example](../../audit/schema/examples/server-worked-example/README.md).
 
 | Repository | Phase 1 score before | Phase 1 score after | Blockers before / after | Report status after |
 | --- | --- | --- | --- | --- |
 | Digital-Assistant-Server | 0.5437 | 0.7262 | 6 / 7 | final |
-| A private two-app Node repository | not published | not published | not published | final |
 
 Read the figures with care:
 
-- The blocker count rose on the Server although the score did: the engine no longer reads the machine's own
-  configuration (`--no-user-config`), so several index and registration verdicts moved to FAIL or UNKNOWN, and
-  two engine defects (issues #51 and #52) distort other verdicts. The comparison annotates every such move.
-- The two repositories' "after" scores are equal to four decimals. The owner checked it when finalising both
-  reports: it is a coincidence, not a cap, and the Stage 4 decisions do not change a check verdict.
+- The blocker count rose although the score did: the engine no longer reads the machine's own configuration
+  (`--no-user-config`), so several index and registration verdicts moved to FAIL or UNKNOWN, and two engine defects
+  (issues #51 and #52) distort other verdicts. The comparison annotates every such move.
 - One run per repository, one engine revision per run: evidence of the recipe working, not a measurement of how much
   it improves a repository.

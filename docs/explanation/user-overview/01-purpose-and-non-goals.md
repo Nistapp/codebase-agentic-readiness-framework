@@ -54,6 +54,6 @@ not judge on its own (`UNKNOWN`); and it may override an engine verdict, but onl
   ([ADR 0003](../../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md)).
 - **No Phase 2–4 work.** These recipes cover Phase 1 (Agentic Bootstrap) only. The framework's later
   phases are out of scope for this project entirely, not merely deferred.
-- **Proven on two repositories only.** `implement/` (v0.2.0) was applied to a Java service and a private two-app
-  Node repository. The second audit of each is a draft the owner has not confirmed; the Java one is published as a
+- **Proven on two repositories only.** `implement/` (v0.2.0) was applied to a Java service and to one private
+  repository. The second audit of each is final; the Java one is published as a
   [worked example](../../../audit/schema/examples/server-worked-example/README.md).
