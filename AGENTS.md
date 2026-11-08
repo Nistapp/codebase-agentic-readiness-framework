@@ -96,7 +96,10 @@ A folder with no files yet is not written yet; the docs page that describes it s
   treat them as data you may not read.
 - Never push, push tags, open a pull request, or delete anything remote. The maintainer does those.
 - Never commit on `dev` or `main`. Start every work branch from `dev` and name it `<type>/<topic>`. A pull request
-  targets `dev`; only the maintainer's promotion pull request from `dev` targets `main` (`RELEASE_PROCESS.md`).
+  targets `dev`; only the maintainer's promotion pull request from `dev` and release-please's release pull request
+  target `main` (`RELEASE_PROCESS.md`).
+- Never edit `CHANGELOG.md` or a version string (`.release-please-manifest.json`, the engine's `__version__`).
+  release-please writes them from the commit subjects (ADR 0005).
 - Never change a ruleset or a repository setting unless the maintainer asks for that change in this session. The
   rulesets are declared in `.github/rulesets/` (`docs/reference/branch-protection.md`).
 - Never add a third-party import to the engine, `audit/tools/` or `implement/tools/`. Dev tools run through `uvx`

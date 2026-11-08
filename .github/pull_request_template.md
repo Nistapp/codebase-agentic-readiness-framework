@@ -1,5 +1,7 @@
-<!-- The base branch is `dev`. Only the maintainer's promotion pull request from `dev` targets `main`.
-     A pull request into `main` from any other branch fails `Check source branch`. See RELEASE_PROCESS.md. -->
+<!-- The base branch is `dev`. Only the maintainer's promotion pull request from `dev` and release-please's release
+     pull request target `main`. Any other pull request into `main` fails `Check source branch`.
+     Do not edit CHANGELOG.md or a version: release-please writes them from the commit subjects.
+     See RELEASE_PROCESS.md. -->
 
 ## Summary
 

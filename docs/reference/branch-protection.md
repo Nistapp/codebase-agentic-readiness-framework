@@ -2,22 +2,26 @@
 
 **Status:** see [Current state](#current-state). Two repository rulesets protect the two long-lived branches, `dev`
 and `main`. The decision and its reasons are in
-[ADR 0002](../architecture/adrs/0002-dev-integrates-main-releases.md). The procedures that use these rules are in
+[ADR 0002](../architecture/adrs/0002-dev-integrates-main-releases.md) and, for the release pull request,
+[ADR 0005](../architecture/adrs/0005-release-please-cuts-releases.md). The procedures that use these rules are in
 [`RELEASE_PROCESS.md`](../../RELEASE_PROCESS.md) and [Contribute a change](../how-to/contribute-a-change.md).
 
 ## The branch model
 
 | Branch | Purpose | Accepts | Direct commits |
 | --- | --- | --- | --- |
-| `dev` | The integration branch and the default branch. Every change goes here first | Pull requests from any branch, `main` included | Blocked |
-| `main` | The release branch. It holds released work only | Pull requests from `dev` only | Blocked |
+| `dev` | The integration branch and the default branch. Every change goes here first | Pull requests from any branch, including the back-merge branch `chore/back-merge-vX.Y.Z` | Blocked |
+| `main` | The release branch. It holds released work only | Pull requests from `dev`, and the release pull request from `release-please--branches--main` | Blocked |
+| `release-please--branches--main` | release-please's release branch. The bot writes it | The bot's commits | Allowed (bot only by convention) |
 | `<type>/<topic>` | A work branch, for example `fix/report-score`. Start it from `dev` | Your commits | Allowed |
 
 ```mermaid
 flowchart LR
     W["work branch<br/>type/topic"] -->|"pull request"| D["dev<br/>integration"]
-    D -->|"promotion pull request<br/>(dev only)"| M["main<br/>release"]
-    M -->|"signed tag vX.Y.Z"| R["GitHub release<br/>release.yml"]
+    D -->|"promotion pull request"| M["main<br/>release"]
+    M -->|"release-please"| RP["release pull request"]
+    RP -->|"merge: tag vX.Y.Z"| M
+    M -->|"back-merge pull request"| D
 
     classDef protected fill:#fde68a,stroke:#b45309,color:#000
     class D,M protected
@@ -41,16 +45,18 @@ This table is a summary of them.
 | Force pushes | Blocked | Blocked |
 | Branch deletion | Blocked | Blocked |
 | Bypass actors | None | None |
-| Source branch of a pull request | Any branch | `dev` in this repository only |
+| Source branch of a pull request | Any branch | `dev` in this repository, or `release-please--branches--main` opened by a bot |
 
 Notes:
 
 - **Merge commit only.** A squash joins several Conventional Commits into one. A rebase rewrites them. A merge commit
   keeps each commit, so each one can be reverted alone.
 - **0 approvals.** A pull request is required, but an approval is not. The maintainer is the only person who merges.
-- **`main` does not require an up-to-date branch.** Only promotion pull requests from `dev` merge into `main`, and
-  nothing else writes to `main`. So `dev` always has every file change that `main` has. A strict rule would force a
-  pull request from `main` into `dev` after each release, with no file change.
+- **`main` does not require an up-to-date branch.** Promotions from `dev` and the release pull request both merge into
+  `main`. A strict rule would make each wait for, or update with, the other.
+- **The back-merge comes from its own branch.** `dev` requires an up-to-date branch. A pull request whose head is
+  `main` could only be updated by a push to `main`, which the `main` ruleset refuses. So the back-merge pull request
+  comes from `chore/back-merge-vX.Y.Z`, a branch at the release commit.
 - **The source branch.** A ruleset cannot restrict the source branch of a pull request. The required check
   `Check source branch` does it (see [The required checks](#the-required-checks)).
 
@@ -78,11 +84,17 @@ job to `needs:` in the workflow, not to the rulesets.
 ### `Check source branch`
 
 [`.github/workflows/pr-source-branch.yml`](../../.github/workflows/pr-source-branch.yml) runs on every pull request
-into `main`: when it is opened, reopened, updated or edited. It passes only when the head branch is `dev` and the
-head repository is this repository. Otherwise it fails with this message:
+into `main`: when it is opened, reopened, updated or edited. The head repository must be this repository. Then it
+passes in two cases:
+
+- The head branch is `dev`: a promotion pull request.
+- The head branch is `release-please--branches--main` and the pull request was opened by a bot (user type `Bot`):
+  the release pull request. A person who names a branch that way still fails the check.
+
+Otherwise it fails with this message:
 
 ```text
-A pull request into main must come from the dev branch of Nistapp/codebase-agentic-readiness-framework.
+A pull request into main must come from the dev branch of Nistapp/codebase-agentic-readiness-framework, or be the release pull request that release-please opens. Open your pull request against dev. See RELEASE_PROCESS.md.
 ```
 
 Pull requests into `dev` do not run this workflow. The `dev` ruleset does not require it.
@@ -145,4 +157,5 @@ before that.
 
 A session of an AI agent never pushes, tags or merges in this repository (the rule is in
 [`AGENTS.md`](../../AGENTS.md); [ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) covers
-the target repositories). The maintainer pushes, opens the promotion pull request, merges and tags.
+the target repositories). The maintainer pushes, opens the promotion pull request and merges. release-please opens the
+release and back-merge pull requests and tags ([`RELEASE_PROCESS.md`](../../RELEASE_PROCESS.md)).

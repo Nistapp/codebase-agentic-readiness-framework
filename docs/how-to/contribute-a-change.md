@@ -11,7 +11,7 @@ This page uses these terms:
 | Term | Meaning |
 | --- | --- |
 | `dev` | The integration branch and the default branch. Every change goes here first. It is protected: you cannot commit or push to it directly |
-| `main` | The release branch. It accepts pull requests from `dev` only. You never open a pull request into `main` |
+| `main` | The release branch. It accepts pull requests from `dev` and the release pull request that release-please opens. You never open a pull request into `main` |
 | Work branch | Your own branch for one change. You start it from `dev` |
 | Pull request | A request to merge your work branch into `dev`. GitHub runs the checks on it |
 | `CI Gate` | The one required check. It passes only when all CI jobs pass |
@@ -136,6 +136,9 @@ git branch --show-current
    ```
 
    The subject says what the commit does, in the imperative: "add", "fix", "remove". The scope is optional.
+   At release time, release-please copies the subject into `CHANGELOG.md` and uses the type to pick the next version
+   (`feat` for a feature, `fix` for a bug fix, `!` after the type for a breaking change). So write it for a user. Do
+   not edit `CHANGELOG.md` yourself.
 4. Make one commit for each logical change. Then the maintainer can revert one commit alone.
 
 If the work follows a roadmap step, add a trailer to the commit message: `Roadmap-Step: <step id>`.
