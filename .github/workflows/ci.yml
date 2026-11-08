@@ -5,12 +5,14 @@
 # Python 3.11 is the supported minimum and 3.14 the newest release (Q8); Windows is supported through WSL only.
 # The `docs` job runs `make docs-lint` and the Mermaid check when a Markdown file changed; it needs Node, so it
 # stays out of `make check` and the matrix.
+# It runs on every pull request and on every push to the two protected branches, `dev` and `main`
+# (docs/reference/branch-protection.md).
 name: CI
 
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 permissions:
   contents: read
