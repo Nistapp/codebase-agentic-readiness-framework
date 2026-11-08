@@ -21,11 +21,12 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | detect-secrets | Key-shaped strings not in `.secrets.baseline` | `make security` | `security` | `dev/tools/pyproject.toml` |
-| markdownlint-cli2 | Markdown rule violations (`.markdownlint-cli2.jsonc`) | `make docs-lint` | `docs` | `dev/tools/package.json` |
+| markdownlint-cli2 | Markdown rule violations (`.markdownlint-cli2.jsonc`) | `make docs-lint`; `make changelog-fix` rewrites `CHANGELOG.md` with the fixes | `docs`; `format-changelog` in `release-please.yml` | `dev/tools/package.json` |
 | mermaid-cli | A Mermaid block that does not render | `make docs-mermaid FILES=<file.md>` | `docs` | `dev/tools/package.json` |
 | skills-ref | A skill bundle that breaks the Agent Skills specification | `make validate-skills` | Release only | `dev/tools/pyproject.toml` |
 | `dev/commit_lint.py` | A commit subject that is not Conventional Commits | `make commit-lint` | `commits` | This repository |
 | The audit engine | A readiness finding that `.audit-baseline.json` does not have | `make self-audit` | `self-audit` | This repository |
+| release-please | Computes the next version from the commit subjects, writes `CHANGELOG.md`, tags and creates the GitHub release (`release-please-config.json`) | — | `release-please.yml`, on each push to `main` | `.github/workflows/release-please.yml` (action pinned by SHA) |
 | uv | Runs the Python tools through `uvx` and `uv run` | — | All jobs | `dev/tools/pyproject.toml` |
 | Node | Runs the Node tools through `npx` | — | `docs` | `.nvmrc` |
 

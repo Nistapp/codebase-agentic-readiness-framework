@@ -1,19 +1,31 @@
 # Changelog
 
-Format loosely follows [Keep a Changelog](https://keepachangelog.com/); dates are UTC. This page covers the
-framework as a whole: the documents, the requirements and the repository's own gates. The components keep their own
-histories:
+This page covers the whole repository: the framework documents, the requirements, the audit and implement recipes,
+the engine and the repository's own gates. Dates are UTC.
 
-- The recipes (audit and implement): [`audit/CHANGELOG.md`](audit/CHANGELOG.md).
+From v0.3.1 on, release-please writes each entry from the Conventional Commit subjects of the release. Do not edit
+this file by hand on `dev`: write a clear commit subject instead. How it works:
+[`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). Two older histories stay:
+
+- The recipes up to v0.3.0: [`audit/CHANGELOG.md`](audit/CHANGELOG.md).
 - The deterministic engine's ruleset revisions (which verdicts moved and why):
   [`audit/engine/docs/reference/changelog.md`](audit/engine/docs/reference/changelog.md).
 
 Paths in entries before v0.3.0 use the old layout. The v0.3.0 entry has a "Moved" table from each old path to its new
 one.
 
-## [Unreleased]
+## [Notes written by hand since 0.3.0]
+
+These notes were written by hand before release-please took over this file. They ship in the first release that
+release-please makes: the entry above this one.
 
 ### Repository
+
+- Releases are automated with release-please
+  ([ADR 0005](docs/architecture/adrs/0005-release-please-cuts-releases.md)). A push to `main` opens or updates a
+  release pull request that bumps the version and writes this file. Merging it tags `vX.Y.Z`, publishes the GitHub
+  release with its files and opens a back-merge pull request from `main` into `dev`. `release.yml` no longer runs on
+  a pushed tag; `release-please.yml` calls it. The engine's `__version__` (it said `0.1.0`) now follows the release.
 
 - Two protected branches ([ADR 0002](docs/architecture/adrs/0002-dev-integrates-main-releases.md)). `dev` is the
   integration branch and the default branch: it accepts pull requests from any branch and no direct commits. `main` is
