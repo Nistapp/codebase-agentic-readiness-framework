@@ -5,12 +5,14 @@
 # Python 3.11 is the supported minimum and 3.14 the newest release (Q8); Windows is supported through WSL only.
 # The `docs` job runs `make docs-lint` and the Mermaid check when a Markdown file changed; it needs Node, so it
 # stays out of `make check` and the matrix.
+# It runs on every pull request and on every push to the two protected branches, `dev` and `main`
+# (docs/reference/branch-protection.md).
 name: CI
 
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, dev]
 
 permissions:
   contents: read
@@ -37,7 +39,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.12.10"
+          version-file: dev/tools/pyproject.toml
       - run: make check
 
   security:
@@ -53,7 +55,7 @@ jobs:
           python-version-file: .python-version
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.12.10"
+          version-file: dev/tools/pyproject.toml
       - run: make security
 
   # The engine's and the recipe tools' suites under coverage.py; fails below the floor in .coveragerc.
@@ -69,7 +71,7 @@ jobs:
           python-version-file: .python-version
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.12.10"
+          version-file: dev/tools/pyproject.toml
       - run: make coverage
         env:
           CI: "true"
@@ -116,40 +118,63 @@ jobs:
       - if: steps.changed.outputs.any == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
       - if: steps.changed.outputs.any == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/puppeteer
             ~/.npm
-          key: docs-${{ runner.os }}-markdownlint-cli2-0.24.0-mermaid-cli-12.0.0
+          key: docs-${{ runner.os }}-${{ hashFiles('dev/tools/package.json') }}
       - if: steps.changed.outputs.any == 'true'
         run: make docs-lint
       - if: steps.changed.outputs.any == 'true'
         name: Validate Mermaid blocks in changed Markdown
         run: xargs -d '\n' -a "$RUNNER_TEMP/changed-md.txt" python3 dev/mermaid_check.py --no-sandbox
 
+  # Every commit subject that the pull request (or the push) adds must follow Conventional Commits. The rule is in
+  # dev/commit_lint.py, which the lefthook commit-msg hook also runs. Merge commits are skipped.
+  commits:
+    name: commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Check the commit subjects
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [[ -z "$BASE" || "$BASE" =~ ^0+$ ]] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "No base commit to compare with (a new branch); nothing to check."
+            exit 0
+          fi
+          python3 dev/commit_lint.py --range "$BASE..$HEAD_SHA"
+
   # One required check that stands for the whole matrix, so adding or renaming a `check` leg (a Python
   # version, an OS) never also requires a branch-protection edit.
   ci-gate:
     name: CI Gate
-    needs: [check, security, coverage, self-audit, docs]
+    needs: [check, security, coverage, self-audit, docs, commits]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Require check, security, coverage, self-audit and docs to have succeeded
+      - name: Require check, security, coverage, self-audit, docs and commits to have succeeded
         run: |
           check="${{ needs.check.result }}"
           security="${{ needs.security.result }}"
           coverage="${{ needs.coverage.result }}"
           self_audit="${{ needs.self-audit.result }}"
           docs="${{ needs.docs.result }}"
+          commits="${{ needs.commits.result }}"
           echo "check: $check"
           echo "security: $security"
           echo "coverage: $coverage"
           echo "self-audit: $self_audit"
           echo "docs: $docs"
+          echo "commits: $commits"
           if [[ "$check" != "success" ]]; then
             echo "::error::check did not pass"
             exit 1
@@ -168,6 +193,10 @@ jobs:
           fi
           if [[ "$docs" != "success" ]]; then
             echo "::error::docs did not pass"
+            exit 1
+          fi
+          if [[ "$commits" != "success" ]]; then
+            echo "::error::commits did not pass"
             exit 1
           fi
           echo "CI Gate passed."

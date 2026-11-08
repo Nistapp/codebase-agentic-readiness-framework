@@ -28,7 +28,7 @@ the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they a
 | --- | --- | --- |
 | Python 3.11 or newer | Everything | Pinned in `.python-version`; CI runs 3.11 and 3.14 |
 | `git` | Everything | |
-| [`uv`](https://docs.astral.sh/uv/) | `make check`, `make security`, `make coverage` | The dev tools (ruff, mypy, detect-secrets, coverage.py) run through `uvx` at pinned versions; nothing is installed into the project |
+| [`uv`](https://docs.astral.sh/uv/) | `make check`, `make security`, `make coverage` | The dev tools (ruff, mypy, detect-secrets, coverage.py) run through `uvx` at the versions pinned in `dev/tools/`; nothing is installed into the project |
 | `make` | Every command below | Linux and macOS. On Windows use WSL |
 | Node 22 | `make docs-lint` | The pinned `markdownlint-cli2` runs through `npx`; not needed for `make check` |
 | Chrome, through Puppeteer | `make docs-mermaid` | Only when you add or change a Mermaid block; the pinned mermaid-cli fetches it on first use |
@@ -43,7 +43,9 @@ Run these before you propose a change. CI runs the same commands.
 | Command | What it does |
 | --- | --- |
 | `make format` | Rewrites formatting in place. Run it before the first `make check` |
-| `make check` | The gate: formatting and lint, `mypy` strict, the engine's, the tools' and the dev checks' tests, the engine's rule check, the schema cross-check and the recipe linter. It takes a couple of minutes |
+| `make check` | The gate: formatting and lint, `mypy` strict, the engine's, the tools' and the dev checks' tests, the engine's rule check, the schema cross-check, the recipe linter and the workflow lint. It takes a couple of minutes |
+| `make workflow-lint` | Part of `make check`. actionlint, zizmor and check-jsonschema on `.github/`: workflow mistakes, workflow security, and `dependabot.yml` against its schema. Offline |
+| `make commit-lint` | Checks that each commit subject on your branch follows Conventional Commits (`RANGE=origin/dev..HEAD` by default). CI runs the same check on every pull request |
 | `make security` | A secrets scan against `.secrets.baseline` |
 | `make docs-lint` | Markdown lint over the ratchet path list in the `Makefile`. Run it when Markdown changed |
 | `make docs-mermaid FILES=<file.md>` | Renders every Mermaid block in the files. Run it when you added or changed one |
@@ -67,11 +69,34 @@ diff. Use low-entropy fakes (`aaaabbbbcccc`) in examples so the baseline does no
 Never weaken a gate to get green: no skipped test, no rule turned off, no assertion relaxed, no lowered baseline or
 floor. If you cannot pass a gate, say so in the pull request.
 
+## Tool versions
+
+Every tool, what it catches and where it runs: [Development tooling](docs/reference/dev-tooling.md).
+
+Each dev tool version is written once: Python tools in `dev/tools/pyproject.toml`, Node tools in
+`dev/tools/package.json`, each with a lockfile. The `Makefile`, the hooks and CI read the versions from there, and
+Dependabot watches them for security fixes. To change a version, follow
+[Change a tool version](RELEASE_PROCESS.md#change-a-tool-version).
+
 ## Local hooks
 
-[`lefthook.yml`](lefthook.yml) runs the format check on staged Python, `make docs-lint` on staged Markdown, a
-secrets scan and a Conventional Commits check before a commit lands. Install it once per clone with
-`lefthook install` ([lefthook.dev](https://lefthook.dev)). Hooks do not replace the gate.
+[`lefthook.yml`](lefthook.yml) stops a commit on `dev` or `main`. It also runs the format check on staged Python,
+`make docs-lint` on staged Markdown, `make workflow-lint` on staged `.github/` files, a secrets scan and the
+Conventional Commits check (`dev/commit_lint.py`) before a commit lands. Install it
+once per clone with `lefthook install` ([lefthook.dev](https://lefthook.dev)). Hooks do not replace the gate.
+
+## Branches
+
+Two branches are protected: `dev` and `main`. You cannot commit or push to them directly.
+
+- Start each change on a work branch from `dev`. Name it `<type>/<topic>`, for example `fix/report-score`.
+- Open the pull request into `dev`. The required check is `CI Gate`.
+- Do not open a pull request into `main`. Only the maintainer does that, and only from `dev`, to make a release.
+- Merges use a merge commit. Do not squash or rebase.
+
+The step-by-step guide is [Contribute a change](docs/how-to/contribute-a-change.md). The rules and the release steps
+are in [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). The ruleset settings are in
+[Branch protection](docs/reference/branch-protection.md).
 
 ## Commits and pull requests
 
@@ -105,4 +130,4 @@ reproduces it and a new ruleset revision in the engine's
 
 ## Releases
 
-Only the maintainer tags a release. See [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md).
+Only the maintainer promotes `dev` to `main` and tags a release. See [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md).

@@ -22,7 +22,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "index store could not be located; searched: user-level locations (not read: --no-user-config), <repository>/.codebase-memory/graph.db.zst",
+      "summary": "index store could not be located; searched: user-level locations (not read: --no-user-config), /home/kc/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework/.codebase-memory/graph.db.zst",
       "tier": "A",
       "title": "An index exists for this checkout",
       "verdict": "UNKNOWN"
@@ -48,7 +48,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "1 nested instruction file(s)",
+      "summary": "3 nested instruction file(s)",
       "tier": "A",
       "title": "Instruction file present, canonical, and non-trivial",
       "verdict": "PASS"
@@ -99,7 +99,7 @@
         "resolved_count": 7,
         "verbs": [
           {
-            "command": "$(RUFF) format brownfield-recipes",
+            "command": "$(RUFF) format audit implement dev",
             "resolved": true,
             "runner": "Makefile",
             "verb": "format"
@@ -111,25 +111,25 @@
             "verb": "format:check"
           },
           {
-            "command": "$(RUFF) check brownfield-recipes",
+            "command": "$(RUFF) check audit implement dev",
             "resolved": true,
             "runner": "Makefile",
             "verb": "lint"
           },
           {
-            "command": "$(MYPY) --config-file mypy.ini $(TYPED_SOURCES)",
+            "command": "$(MYPY) --config-file mypy.ini $(TYPED_SOURCES) && $(QUALITY_BASELINE) mypy -- $(MYPY) --config-file mypy.ini $(TYPED_SOURCES)",
             "resolved": true,
             "runner": "Makefile",
             "verb": "typecheck"
           },
           {
-            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s dev/tests",
+            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests",
             "resolved": true,
             "runner": "Makefile",
             "verb": "test"
           },
           {
-            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint",
+            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint",
             "resolved": true,
             "runner": "Makefile",
             "verb": "check"
@@ -161,7 +161,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "9 boundary rules reference real paths",
+      "summary": "20 boundary rules reference real paths",
       "tier": "B",
       "title": "Architectural boundaries declared",
       "verdict": "PASS"
@@ -223,7 +223,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "20/28 harnesses reached; AGENTS.md:30 states the supported harnesses (Anthropic Claude Code, Cursor, Google Gemini CLI, OpenAI Codex CLI, opencode)",
+      "summary": "20/28 harnesses reached; AGENTS.md:46 states the supported harnesses (Anthropic Claude Code, Cursor, Google Gemini CLI, OpenAI Codex CLI, opencode)",
       "tier": "B",
       "title": "No competing instruction files, and the reach matrix is stated",
       "verdict": "PASS"
@@ -262,7 +262,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "6 markdown file(s) under docs/",
+      "summary": "39 markdown file(s) under docs/",
       "tier": "A",
       "title": "docs/ exists",
       "verdict": "PASS"
@@ -301,7 +301,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "1 ADR(s) indexed in docs/architecture/adrs/README.md",
+      "summary": "3 ADR(s) indexed in docs/architecture/adrs/README.md",
       "tier": "A",
       "title": "ADR directory and index",
       "verdict": "PASS"
@@ -313,7 +313,7 @@
         "resolved_count": 7,
         "verbs": [
           {
-            "command": "$(RUFF) format brownfield-recipes",
+            "command": "$(RUFF) format audit implement dev",
             "resolved": true,
             "runner": "Makefile",
             "verb": "format"
@@ -325,25 +325,25 @@
             "verb": "format:check"
           },
           {
-            "command": "$(RUFF) check brownfield-recipes",
+            "command": "$(RUFF) check audit implement dev",
             "resolved": true,
             "runner": "Makefile",
             "verb": "lint"
           },
           {
-            "command": "$(MYPY) --config-file mypy.ini $(TYPED_SOURCES)",
+            "command": "$(MYPY) --config-file mypy.ini $(TYPED_SOURCES) && $(QUALITY_BASELINE) mypy -- $(MYPY) --config-file mypy.ini $(TYPED_SOURCES)",
             "resolved": true,
             "runner": "Makefile",
             "verb": "typecheck"
           },
           {
-            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s dev/tests",
+            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests",
             "resolved": true,
             "runner": "Makefile",
             "verb": "test"
           },
           {
-            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint",
+            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint",
             "resolved": true,
             "runner": "Makefile",
             "verb": "check"
@@ -492,7 +492,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "PR-triggered: .github/workflows/ci.yml (github)",
+      "summary": "PR-triggered: .github/workflows/ci.yml (github); .github/workflows/pr-source-branch.yml (github)",
       "tier": "B",
       "title": "Pipeline present, triggered on PRs",
       "verdict": "PASS"
@@ -531,7 +531,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "baseline/suppression mechanism present: .audit-baseline.json, .secrets.baseline",
+      "summary": "baseline/suppression mechanism present: .audit-baseline.json, .quality-baseline.json, .secrets.baseline",
       "tier": "A",
       "title": "Baseline artifact exists",
       "verdict": "PASS"
@@ -544,7 +544,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "counting surface present but no committed count/budget: .audit-baseline.json, .secrets.baseline, Makefile:lint, Makefile:security, Makefile:typecheck, mypy.ini; method: static configuration scan; the target's own tools are never run",
+      "summary": "counting surface present but no committed count/budget: .audit-baseline.json, .quality-baseline.json, .secrets.baseline, Makefile:lint, Makefile:security, Makefile:typecheck; method: static configuration scan; the target's own tools are never run",
       "tier": "B",
       "title": "Current violation counts measured",
       "verdict": "PARTIAL"
@@ -583,32 +583,56 @@
           "audit/engine/",
           "AGENTS.md",
           ".python-version",
+          "dev/tools/pyproject.toml",
+          "dev/tools/package.json",
           "lefthook.yml",
+          "dev",
+          ".github/",
+          "dev/commit_lint.py",
           ".coveragerc",
+          ".quality-baseline.json",
+          ".secrets.baseline",
           ".skip",
           "README.md",
-          "shared/",
-          "brownfield-legacy/",
+          "docs/",
           "greenfield/",
+          "docs/framework/",
+          "docs/STYLE_GUIDE.md",
+          "docs/README.md",
           "spec/",
           "REQ-...",
           "spec/README.md",
           "audit/",
-          "implement/",
           "SKILL.md",
-          "audit/tools/",
+          "checks/",
+          "prompts/",
+          "catalogue.json",
+          "stacks/",
           "schema/",
-          "progress.py",
-          "docs/architecture/adrs/",
-          "dev/",
           "tools/",
-          "docs/",
-          "docs/STYLE_GUIDE.md",
-          "docs/architecture/README.md",
+          "audit/AGENTS.md",
+          "audit/engine/AGENTS.md",
+          "implement/",
+          "playbooks/",
+          "state.md",
+          "progress.py",
+          "implement/docs/architecture/adrs/",
+          "implement/AGENTS.md",
+          "dev/",
+          "dev/dist/skills/",
+          "dev/eval/",
           "artefacts/",
+          "docs/architecture/adrs/README.md",
           ".env",
+          "RELEASE_PROCESS.md",
+          ".github/rulesets/",
+          "docs/reference/branch-protection.md",
+          "audit/tools/",
+          "implement/tools/",
           "audit/engine/tests/",
-          "audit/tools/tests/"
+          "audit/tools/tests/",
+          "implement/tools/tests/",
+          "dev/tests/"
         ],
         "truncated": false
       },
@@ -618,7 +642,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, .python-version, lefthook.yml, .coveragerc, README.md, shared/ (+20 more)",
+      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, lefthook.yml, dev (+44 more)",
       "tier": "B",
       "title": "Allow/deny artifact present",
       "verdict": "PASS"
@@ -628,8 +652,9 @@
         "kind": "path_list",
         "paths": [
           "audit/engine/tests",
+          "audit/tools/tests",
           "dev/tests",
-          "audit/tools/tests"
+          "implement/tools/tests"
         ],
         "truncated": false
       },
@@ -639,7 +664,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names the test directories (audit/engine/tests/, dev/tests/, audit/tools/tests/)",
+      "summary": "the prohibitions section of AGENTS.md names the test directories (audit/engine/tests/, audit/tools/tests/, dev/tests/, implement/tools/tests/)",
       "tier": "B",
       "title": "Test directories protected",
       "verdict": "PASS"
@@ -678,7 +703,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "pinned: python (.python-version)",
+      "summary": "pinned: node (.nvmrc); python (.python-version)",
       "tier": "A",
       "title": "Toolchain pinned / wrapper committed",
       "verdict": "PASS"
@@ -691,10 +716,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "python was recognised from its source files and no manifest declares dependencies, so no lockfile is expected",
+      "summary": "consistency unverified: dev/tools/package-lock.json, dev/tools/uv.lock",
       "tier": "B",
       "title": "Lockfile committed and consistent",
-      "verdict": "UNKNOWN"
+      "verdict": "PARTIAL"
     },
     {
       "data": {},
@@ -713,7 +738,9 @@
       "data": {
         "kind": "env_keys",
         "missing": [],
-        "referenced": [],
+        "referenced": [
+          "TMPDIR"
+        ],
         "templates": []
       },
       "id": "EXEC-04",
@@ -722,7 +749,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "no environment keys referenced",
+      "summary": "1 referenced key(s) declared",
       "tier": "B",
       "title": "Env-var inventory complete",
       "verdict": "PASS"
@@ -748,7 +775,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "10 documented command(s) resolve",
+      "summary": "15 documented command(s) resolve",
       "tier": "B",
       "title": "Documented commands resolve",
       "verdict": "PASS"
@@ -774,7 +801,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 74 test file(s)",
+      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 82 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -807,7 +834,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 74 test file(s): python 1; total 1",
+      "summary": "skip/xfail census across 82 test file(s): python 1; total 1",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -820,7 +847,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "fast path documented: AGENTS.md:26 `python3 -m unittest tests.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md, CONTRIBUTING.md)",
+      "summary": "fast path documented: AGENTS.md:36 `python3 -m unittest tests.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md, CONTRIBUTING.md)",
       "tier": "B",
       "title": "Fast path documented",
       "verdict": "PASS"
@@ -846,10 +873,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "no build manifest declares a component; stack not recognised",
+      "summary": "single-root repository declares package.json",
       "tier": "A",
       "title": "Declared component boundaries",
-      "verdict": "UNKNOWN"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -859,7 +886,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "entry point(s): .claude/skills/agentic-readiness-audit/scripts/deterministic-audit/audit/__main__.py, audit/engine/audit/__main__.py, .claude/skills/agentic-readiness-audit/scripts/tools/engine.py, .claude/skills/agentic-readiness-audit/scripts/tools/facts.py, .claude/skills/agentic-readiness-audit/scripts/tools/render_report.py, .claude/skills/agentic-readiness-audit/scripts/tools/report.py",
+      "summary": "entry point(s): audit/engine/audit/__main__.py, audit/engine/build.py, audit/tools/engine.py, audit/tools/facts.py, audit/tools/render_report.py, audit/tools/report.py",
       "tier": "B",
       "title": "Obvious entry points",
       "verdict": "PASS"
@@ -892,10 +919,10 @@
     },
     {
       "data": {
-        "denominator": 1438,
+        "denominator": 1138,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 638,
+        "numerator": 453,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -904,7 +931,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "638/1438 public symbols documented (44%); method: python: module-level def/class not starting with '_'",
+      "summary": "453/1138 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1113,10 +1140,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no CODEOWNERS file",
+      "summary": "CODEOWNERS present at .github/CODEOWNERS",
       "tier": "A",
       "title": "CODEOWNERS present",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1165,10 +1192,10 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "no SECURITY document",
+      "summary": "SECURITY present at SECURITY.md",
       "tier": "A",
       "title": "SECURITY present",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1241,7 +1268,7 @@
       "agents_md": "present",
       "declared": true,
       "declared_by": "implicit",
-      "manifest": null,
+      "manifest": "package.json",
       "name": "(root)",
       "path": "."
     }
@@ -1288,7 +1315,12 @@
         },
         {
           "line": null,
-          "note": "/brownfield-recipes/dist",
+          "note": "/dev/dist",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": "/audit/engine/dist",
           "path": ".gitignore"
         },
         {
@@ -1299,11 +1331,6 @@
         {
           "line": null,
           "note": "*.pyz",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/.env",
           "path": ".gitignore"
         }
       ],
@@ -1325,6 +1352,11 @@
         {
           "line": null,
           "note": null,
+          "path": ".quality-baseline.json"
+        },
+        {
+          "line": null,
+          "note": null,
           "path": ".secrets.baseline"
         },
         {
@@ -1341,11 +1373,6 @@
           "line": null,
           "note": null,
           "path": "Makefile:typecheck"
-        },
-        {
-          "line": null,
-          "note": null,
-          "path": "mypy.ini"
         }
       ],
       "id": "BASE-02",
@@ -1380,7 +1407,12 @@
         },
         {
           "line": null,
-          "note": "/brownfield-recipes/dist",
+          "note": "/dev/dist",
+          "path": ".gitignore"
+        },
+        {
+          "line": null,
+          "note": "/audit/engine/dist",
           "path": ".gitignore"
         },
         {
@@ -1391,11 +1423,6 @@
         {
           "line": null,
           "note": "*.pyz",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/.env",
           "path": ".gitignore"
         }
       ],
@@ -1421,32 +1448,12 @@
       "severity": "DEGRADER",
       "statement": "An agent cannot know whether a dependency carries a known vulnerability because a security verb exists but it does not run a dependency-audit check.",
       "verdict": "PARTIAL"
-    },
-    {
-      "check": "HYG-02",
-      "evidence": [],
-      "id": "HYG-02",
-      "phase": 1,
-      "remediation": "Add .github/CODEOWNERS mapping paths to owners so review routing is machine-readable.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot know who owns a path before changing it because no CODEOWNERS file exists at the root, under .github/, .gitlab/ or docs/.",
-      "verdict": "FAIL"
-    },
-    {
-      "check": "HYG-06",
-      "evidence": [],
-      "id": "HYG-06",
-      "phase": 1,
-      "remediation": "Add SECURITY.md with a private disclosure channel and a response expectation.",
-      "severity": "COSMETIC",
-      "statement": "An agent cannot report a vulnerability responsibly because no SECURITY document exists at the root, under .github/, .gitlab/ or docs/.",
-      "verdict": "FAIL"
     }
   ],
   "inventory": {
-    "files_inspected": 352,
-    "files_set_aside": 439,
-    "files_skipped": 2000,
+    "files_inspected": 325,
+    "files_set_aside": 460,
+    "files_skipped": 2250,
     "set_aside": [
       {
         "files": 3,
@@ -1457,12 +1464,20 @@
         "path": "audit/engine/tests/fixtures"
       },
       {
-        "files": 5,
-        "path": "docs/templates"
+        "files": 32,
+        "path": "audit/schema/examples"
       },
       {
-        "files": 116,
-        "path": "audit/schema/examples"
+        "files": 92,
+        "path": "dev/eval/expected/fixtures"
+      },
+      {
+        "files": 13,
+        "path": "dev/eval/implement-fixtures/testdata"
+      },
+      {
+        "files": 5,
+        "path": "docs/templates"
       },
       {
         "files": 39,
@@ -1497,6 +1512,13 @@
         "unittest",
         "discover",
         "-s",
+        "implement/tools/tests",
+        "&&",
+        "$(PYTHON)",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
         "dev/tests"
       ],
       "duration_s": 0.0,
@@ -1509,16 +1531,16 @@
     }
   ],
   "provenance": {
-    "framework_revision": "f012b766d7df07940f1e212aaa21e6092a8dde03",
-    "git_branch": "feat/implement-recipe",
-    "git_dirty": false,
-    "git_sha": "f012b766d7df07940f1e212aaa21e6092a8dde03",
+    "framework_revision": "bdcbe3d516552fb17e1606cd8c77ae86635f688d",
+    "git_branch": "chore/review-for-release",
+    "git_dirty": true,
+    "git_sha": "bdcbe3d516552fb17e1606cd8c77ae86635f688d",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "970e6792f98eeeb5",
     "ruleset_revision": "2026-11-06.1",
-    "scanned_at": "2026-11-06T02:46:01+00:00",
-    "target": ".",
+    "scanned_at": "2026-11-08T07:19:00+00:00",
+    "target": "/home/kc/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework",
     "tool": "python-agentic-audit",
     "user_config": {
       "paths_read": [],
@@ -1532,33 +1554,35 @@
       "github"
     ],
     "ecosystems": [
+      "node",
       "python"
     ],
     "hook_managers": [
       "lefthook"
     ],
-    "notes": [
-      "python recognised from its source files: no manifest names it"
+    "notes": [],
+    "package_managers": [
+      "npm",
+      "uv"
     ],
-    "package_managers": [],
     "test_frameworks": []
   },
   "summary": {
     "blockers": 2,
     "checks": {
       "attest": 0,
-      "fail": 3,
-      "partial": 5,
-      "pass": 55,
-      "unknown": 6
+      "fail": 1,
+      "partial": 6,
+      "pass": 58,
+      "unknown": 4
     },
     "checks_applicable": 69,
     "checks_implemented": 69,
     "checks_scoreable": 55,
-    "cosmetic": 2,
+    "cosmetic": 0,
     "coverage_note": "55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
     "degraders": 3,
-    "phase1_score": 0.8402
+    "phase1_score": 0.8689
   },
   "unattested": [
     "index-in-use",

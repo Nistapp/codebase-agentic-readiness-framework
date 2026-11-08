@@ -1,0 +1,4 @@
+# Code owners: GitHub asks these people to review a pull request that changes the matching paths.
+# The rulesets require no approval (docs/reference/branch-protection.md), so this file routes review requests;
+# it does not block a merge. The last matching line wins.
+*                     @kcramakrishna
