@@ -12,7 +12,7 @@
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
-#                       cross-check and the recipe linter
+#                       cross-check, the recipe linter and the workflow lint
 #   make security       secrets scan against the committed baseline
 #   make coverage       (extra) both unittest suites under coverage.py; fails below the floor in .coveragerc
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
@@ -45,6 +45,11 @@ MARKDOWNLINT := npx --yes markdownlint-cli2@$(call npm_pin,markdownlint-cli2)
 # The compare step of the quality baseline (.quality-baseline.json): fails when a tool's full-tree count goes up.
 QUALITY_BASELINE := $(PYTHON) dev/quality_baseline.py check
 COVERAGE := uvx coverage@$(call pin,coverage)
+# Workflow and GitHub-config checks: actionlint (syntax, expressions, shellcheck on run: blocks), zizmor (workflow
+# and Dependabot security, offline) and check-jsonschema (the SchemaStore schemas it bundles, offline).
+ACTIONLINT := uvx --from actionlint-py==$(call pin,actionlint-py) actionlint
+ZIZMOR := uvx zizmor@$(call pin,zizmor)
+CHECK_JSONSCHEMA := uvx --from check-jsonschema==$(call pin,check-jsonschema) check-jsonschema
 # The coverage data stays under the git-ignored build output; settings (the floor) are in .coveragerc.
 COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 
@@ -63,11 +68,11 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not 
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-mermaid
+.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-mermaid workflow-lint commit-lint
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  workflow-lint  commit-lint  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-mermaid FILES=..."
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -143,7 +148,20 @@ crosscheck:
 recipe-lint:
 	$(PYTHON) dev/recipe_lint.py .
 
-check: format-check typecheck test verify-rules crosscheck recipe-lint
+# Lints the GitHub Actions workflows and checks .github/dependabot.yml. All three tools run offline.
+workflow-lint:
+	$(ACTIONLINT)
+	$(ZIZMOR) --offline .github
+	$(CHECK_JSONSCHEMA) --builtin-schema vendor.github-workflows .github/workflows/*.yml
+	$(CHECK_JSONSCHEMA) --builtin-schema vendor.dependabot .github/dependabot.yml
+
+# Checks that each commit subject in RANGE follows Conventional Commits; merge commits are skipped. CI runs it on
+# the commits of a pull request. Locally: `make commit-lint` checks what this branch adds on top of origin/dev.
+RANGE ?= origin/dev..HEAD
+commit-lint:
+	$(PYTHON) dev/commit_lint.py --range $(RANGE)
+
+check: format-check typecheck test verify-rules crosscheck recipe-lint workflow-lint
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.

@@ -7,6 +7,8 @@
 #   version opens no pull request; its alert stays in the Security tab, and the maintainer upgrades by hand.
 # - No `target-branch`: with one, these options stop applying to security updates. Security updates always go to
 #   the default branch, `dev`.
+# - `cooldown: default-days: 7` applies to version updates only, which are off. It is there so that zizmor
+#   (`make workflow-lint`) passes, and so that a version update, if one is ever turned on, waits a week.
 # - The template and the engine's test fixtures are data. Their alerts stay visible; Dependabot never edits them.
 version: 2
 updates:
@@ -15,6 +17,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -26,12 +30,15 @@ updates:
     commit-message:
       prefix: "ci"
 
-  # The Python dev tools (ruff, mypy, detect-secrets, coverage, jsonschema, skills-ref, uv), locked in uv.lock. The
+  # The Python dev tools (ruff, mypy, detect-secrets, coverage, jsonschema, skills-ref, uv, actionlint-py, zizmor,
+  # check-jsonschema), locked in uv.lock. The
   # Makefile, lefthook.yml and the workflows read each version from dev/tools/pyproject.toml.
   - package-ecosystem: uv
     directory: /dev/tools
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -49,6 +56,8 @@ updates:
     directory: /dev/tools
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -65,6 +74,8 @@ updates:
     directories: ["/greenfield/templates", "/audit/engine/tests/fixtures/**"]
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -72,6 +83,8 @@ updates:
     directories: ["/audit/engine/tests/fixtures/**"]
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -79,6 +92,8 @@ updates:
     directories: ["/audit/engine/tests/fixtures/**"]
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"
@@ -86,6 +101,8 @@ updates:
     directories: ["/audit/engine/tests/fixtures/**"]
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 0
     ignore:
       - dependency-name: "*"

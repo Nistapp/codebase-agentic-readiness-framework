@@ -20,14 +20,16 @@ pre-commit:
       # The ratchet path list lives in the Makefile (DOCS_LINT_PATHS); the globs here are its broadest match.
       glob: "{implement/**/*.md,docs/**/*.md,CONTRIBUTING.md,CHANGELOG.md,RELEASE_PROCESS.md,SECURITY.md}"
       run: make docs-lint
+    workflow-lint:
+      glob: ".github/**"
+      run: make workflow-lint
     secrets:
       # The version is the one pinned in dev/tools/pyproject.toml, where Dependabot sees it.
       run: uvx --from "$(grep -o 'detect-secrets==[^"]*' dev/tools/pyproject.toml)" detect-secrets-hook --baseline .secrets.baseline {staged_files}  # pragma: allowlist secret
 
-# Conventional Commits: `type(scope): subject`. The trailer `Roadmap-Step:` is checked in review, not here.
+# Conventional Commits: `type(scope): subject`. The rule lives in dev/commit_lint.py, which CI also runs on every
+# pull request. The trailer `Roadmap-Step:` is checked in review, not here.
 commit-msg:
   commands:
     conventional-commits:
-      run: >-
-        grep -Eq '^(feat|fix|docs|test|chore|ci|refactor|perf|build|style|revert)(\([a-z0-9._-]+\))?!?: .+' {1}
-        || { echo 'commit message must follow Conventional Commits: type(scope): subject' >&2; exit 1; }
+      run: python3 dev/commit_lint.py --message-file {1}
