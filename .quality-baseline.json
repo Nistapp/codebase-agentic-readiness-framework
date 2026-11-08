@@ -1,5 +1,5 @@
 {
-  "_comment": "Quality baseline: one full-tree violation count per tool. A baseline only goes down; raising a count needs the owner. Compared by dev/quality_baseline.py from make format-check, typecheck and docs-lint. The coverage floor lives in .coveragerc (fail_under). The prose entry counts dev/prose_check.py issues (COMMUNICATION_RULES.md rules). <pin> is the version in dev/tools/pyproject.toml or dev/tools/package.json.",
+  "_comment": "Quality baseline: one full-tree violation count per tool. A baseline only goes down; raising a count needs the owner. Compared by dev/quality_baseline.py from make format-check, typecheck and docs-lint. The coverage floor lives in .coveragerc (fail_under). The prose entry counts dev/prose_check.py issues (docs/COMMUNICATION_RULES.md rules). <pin> is the version in dev/tools/pyproject.toml or dev/tools/package.json.",
   "measured": "2026-11-08",
   "counts": {
     "ruff": {

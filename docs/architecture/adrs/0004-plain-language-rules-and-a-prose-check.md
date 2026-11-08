@@ -31,7 +31,7 @@ Three questions needed an answer:
 
 ## Decision
 
-**Rules.** [`COMMUNICATION_RULES.md`](../../../COMMUNICATION_RULES.md) at the root holds all the rules for writing for people:
+**Rules.** [`docs/COMMUNICATION_RULES.md`](../../COMMUNICATION_RULES.md) holds all the rules for writing for people:
 
 * the reader persona: a new engineer who knows Git, Python and Markdown, but not this repository or its terms;
 * nine plain-language rules taken from the STE100 writing rules, without its approved word list;

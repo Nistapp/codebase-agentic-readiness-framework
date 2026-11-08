@@ -22,7 +22,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | detect-secrets | Key-shaped strings not in `.secrets.baseline` | `make security` | `security` | `dev/tools/pyproject.toml` |
 | markdownlint-cli2 | Markdown rule violations (`.markdownlint-cli2.jsonc`) | `make docs-lint` | `docs` | `dev/tools/package.json` |
-| `dev/prose_check.py` | Long sentences, vague words, explanation pages without a diagram ([`COMMUNICATION_RULES.md`](../../COMMUNICATION_RULES.md)) | `make docs-lint` | `docs` | This repository |
+| `dev/prose_check.py` | Long sentences, vague words, explanation pages without a diagram ([`COMMUNICATION_RULES.md`](../COMMUNICATION_RULES.md)) | `make docs-lint` | `docs` | This repository |
 | mermaid-cli | A Mermaid block that does not render | `make docs-mermaid FILES=<file.md>` | `docs` | `dev/tools/package.json` |
 | skills-ref | A skill bundle that breaks the Agent Skills specification | `make validate-skills` | Release only | `dev/tools/pyproject.toml` |
 | `dev/commit_lint.py` | A commit subject that is not Conventional Commits | `make commit-lint` | `commits` | This repository |

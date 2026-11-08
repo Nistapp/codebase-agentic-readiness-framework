@@ -44,7 +44,7 @@ one.
 
 ### Communication and docs
 
-- New root page [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md): how people and agents write for people. It holds:
+- New page [`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md): how people and agents write for people. It holds:
   - the reader: a new engineer who knows Git, Python and Markdown, but not this repository;
   - nine plain-language rules taken from STE100, and the diagram rules;
   - layouts for status reports, done reports and decision requests.
@@ -54,7 +54,7 @@ one.
   step), vague words, and explanation pages or tutorials without a Mermaid diagram. Pages in `PROSE_PATHS` must be
   clean. The full-tree count is a ratchet in `.quality-baseline.json` (1628).
 - [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md) is rewritten in plain language. It links to the rules in
-  `COMMUNICATION_RULES.md`, covers all doc folders, and no longer has stale paths.
+  `docs/COMMUNICATION_RULES.md`, covers all doc folders, and no longer has stale paths.
 - Five dense pages are rewritten in plain language, with diagrams:
   - the stack-profile and evaluation explanation pages;
   - the stack-profile how-to;

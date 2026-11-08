@@ -2,7 +2,7 @@
 
 This page says how to write for people in this repository. It applies to people and AI agents. It covers chat
 replies, plans, reports, commit messages, pull request descriptions and documentation.
-[`AGENTS.md`](AGENTS.md) holds the short version. [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md) adds the rules that
+[`AGENTS.md`](../AGENTS.md) holds the short version. [`docs/STYLE_GUIDE.md`](STYLE_GUIDE.md) adds the rules that
 apply only to documentation pages.
 
 ## 1. Who you write for
@@ -26,8 +26,8 @@ that help us. We do not use its fixed word list: technical names are fine.
 3. **One instruction per sentence.** Write steps in the imperative: "Run `make check`", not "You should run it".
 4. **Active voice.** Say who does what: "The engine reads the file", not "The file is read".
 5. **One word, one meaning.** Use the term from the glossary every time. Do not change words for variety.
-   The glossaries are [`docs/glossary.md`](docs/glossary.md) and
-   [`docs/framework/glossary.md`](docs/framework/glossary.md).
+   The glossaries are [`docs/glossary.md`](glossary.md) and
+   [`docs/framework/glossary.md`](framework/glossary.md).
 6. **No vague or padded words** (*checked*). Do not write `simply`, `just`, `obviously`, `clearly`,
    `basically`, `easily`, `utilize`, `leverage`, `in order to`, `and/or` or `etc.`. Name the real items instead
    of `etc.`.
@@ -130,6 +130,6 @@ When you ask several questions, number them and letter the options. Then the rea
 | Text | Rules |
 |---|---|
 | Chat replies, plans, reports | Sections 1 to 5 |
-| Commit messages and pull request descriptions | Sections 1 and 2; Conventional Commits from [`AGENTS.md`](AGENTS.md) |
-| Documentation pages | Sections 1 to 3, plus [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md) |
+| Commit messages and pull request descriptions | Sections 1 and 2; Conventional Commits from [`AGENTS.md`](../AGENTS.md) |
+| Documentation pages | Sections 1 to 3, plus [`docs/STYLE_GUIDE.md`](STYLE_GUIDE.md) |
 | Recipe files (`SKILL.md`, playbooks, checks) | Section 2. Their messages to users are a planned change |
