@@ -42,6 +42,25 @@ one.
 - New how-to: [contribute a change](docs/how-to/contribute-a-change.md). `RELEASE_PROCESS.md` and
   [branch protection](docs/reference/branch-protection.md) describe the promotion from `dev` to `main`.
 
+### Communication and docs
+
+- New root page [`COMMUNICATIONS.md`](COMMUNICATIONS.md): how people and agents write for people. It holds:
+  - the reader: a new engineer who knows Git, Python and Markdown, but not this repository;
+  - nine plain-language rules taken from STE100, and the diagram rules;
+  - layouts for status reports, done reports and decision requests.
+
+  `AGENTS.md` has a short summary ([ADR 0004](docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md)).
+- New dev check `dev/prose_check.py`, run by `make docs-lint`. It reports long sentences (over 25 words, or 20 in a
+  step), vague words, and explanation pages or tutorials without a Mermaid diagram. Pages in `PROSE_PATHS` must be
+  clean. The full-tree count is a ratchet in `.quality-baseline.json` (1628).
+- [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md) is rewritten in plain language. It links to the rules in
+  `COMMUNICATIONS.md`, covers all doc folders, and no longer has stale paths.
+- Five dense pages are rewritten in plain language, with diagrams:
+  - the stack-profile and evaluation explanation pages;
+  - the stack-profile how-to;
+  - the harness notes;
+  - the engine's read-the-report guide.
+
 ## [0.3.0] - 2026-11-07
 
 The first public release for developers. One layout, one way to start, and a protected `main`.
