@@ -91,7 +91,7 @@ Pull requests into `dev` do not run this workflow. The `dev` ruleset does not re
 | Ruleset | Target | State on GitHub |
 | --- | --- | --- |
 | `main protection` (id 26750008) | `refs/heads/main` | Active since 2026-11-07. Updated to [`main-protection.json`](../../.github/rulesets/main-protection.json) on 2026-11-08 |
-| `dev protection` | `refs/heads/dev` | Planned: applied when `dev` exists on GitHub |
+| `dev protection` (id 26787626) | `refs/heads/dev` | Active since 2026-11-08, from [`dev-protection.json`](../../.github/rulesets/dev-protection.json) |
 
 On 2026-11-07 these settings were also turned on: private vulnerability reporting, secret scanning, push protection
 and Dependabot security updates (see [`SECURITY.md`](../../SECURITY.md)).
