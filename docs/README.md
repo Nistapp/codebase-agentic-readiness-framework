@@ -36,6 +36,7 @@ output to `<output-path>`". To fix the findings, say "Start implementing the fix
 | [Checks to framework map](reference/how-the-checks-map-to-the-framework.md) | Each check, its requirement and its framework section |
 | [Evaluation results](reference/eval-results.md) | Fixture-sweep and real-repository results |
 | [Self-audit](reference/self-audit.md) | This repository's own Phase 1 score and the CI ratchet |
+| [Development tooling](reference/dev-tooling.md) | Each tool that checks this repository, its command, its CI job and its pin |
 | [Branch protection](reference/branch-protection.md) | The branch model, and the rulesets on `dev` and `main` |
 | [Licensing](reference/licensing.md) | Which licence covers which files |
 | [Glossary](glossary.md) | The terms of the recipes and tools |

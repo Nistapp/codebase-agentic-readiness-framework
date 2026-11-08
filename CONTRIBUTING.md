@@ -71,6 +71,8 @@ floor. If you cannot pass a gate, say so in the pull request.
 
 ## Tool versions
 
+Every tool, what it catches and where it runs: [Development tooling](docs/reference/dev-tooling.md).
+
 Each dev tool version is written once: Python tools in `dev/tools/pyproject.toml`, Node tools in
 `dev/tools/package.json`, each with a lockfile. The `Makefile`, the hooks and CI read the versions from there, and
 Dependabot watches them for security fixes. To change a version, follow

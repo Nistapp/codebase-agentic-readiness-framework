@@ -35,6 +35,8 @@ one.
 - New CI job `commits`, required through `CI Gate`: `dev/commit_lint.py` checks that each commit subject a pull
   request adds follows Conventional Commits. The lefthook `commit-msg` hook runs the same script.
 - `.github/CODEOWNERS` routes review requests to the maintainer.
+- New reference page: [development tooling](docs/reference/dev-tooling.md), every tool, its command, its CI job and
+  where its version is pinned.
 - `dev/recipe_lint.py` also checks the links in `AGENTS.md`, `CONTRIBUTING.md`, `RELEASE_PROCESS.md` and
   `SECURITY.md`.
 - New how-to: [contribute a change](docs/how-to/contribute-a-change.md). `RELEASE_PROCESS.md` and

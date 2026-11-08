@@ -56,7 +56,7 @@ COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
 DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
-	'docs/README.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/how-to/contribute-a-change.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
+	'docs/README.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
 	'docs/explanation/user-overview/03-trust-and-safety.md'
 
 ENGINE := audit/engine
