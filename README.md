@@ -63,7 +63,12 @@ it pushes a branch only if you opt in.
 ## Contributing
 
 Start at [`CONTRIBUTING.md`](CONTRIBUTING.md): the repository map, the gates (`make check`, `make security`) and the
-commit rules. Agents read [`AGENTS.md`](AGENTS.md). Report a security problem privately: see
+commit rules. Agents read [`AGENTS.md`](AGENTS.md).
+
+`dev` is the default branch and holds the work in progress; `main` holds the latest release. Start your branch from
+`dev` and open your pull request into `dev`. Nobody commits to `dev` or `main` directly, and only `dev` is promoted
+to `main`. Step by step: [Contribute a change](docs/how-to/contribute-a-change.md). How a release is made:
+[`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). Report a security problem privately: see
 [`SECURITY.md`](SECURITY.md). Changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Licence
