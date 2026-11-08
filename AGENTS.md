@@ -73,6 +73,18 @@ no vendor-specific instruction file exists beside it.
 - `make test` skips the positive-fixture test when `CI=true` and its scaffolder (a sibling repository) is absent.
   Locally the test fails loudly without it; set `AUDIT_BOOTSTRAP=<path to bootstrap.py>` to point at the scaffolder.
 
+## How to write for people
+
+Full rules: [`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md). They apply to chat replies, plans,
+reports, commit messages, pull request descriptions and docs.
+
+- Write for a new engineer who knows Git, Python and Markdown, but not this repository or its terms.
+- Put the bottom line first: the answer, the result or the decision you need.
+- Use short sentences (at most 25 words; 20 in a step), active voice and one term per meaning.
+- For a decision, give the context, two to four options with pros and cons, your recommendation and the default.
+- Use a Mermaid diagram when a flow, a sequence or a state is easier to see than to read.
+- Mark each claim as checked, inferred or assumed. Report failures and skipped steps plainly.
+
 ## Boundaries
 
 | Path | What it is | Rules |
@@ -131,6 +143,7 @@ A change is done when all of this holds:
 - Setting up and contributing, for a person: `CONTRIBUTING.md`. It also holds the repository map.
   Branches, promotion and cutting a release (the maintainer only): `RELEASE_PROCESS.md`. One change, step by step:
   `docs/how-to/contribute-a-change.md`.
+- How to write for people: `docs/COMMUNICATION_RULES.md`.
 - Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
   `docs/architecture/adrs/README.md`.
 - Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.

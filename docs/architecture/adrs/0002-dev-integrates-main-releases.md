@@ -28,17 +28,20 @@ A GitHub ruleset can require a pull request and status checks. It cannot restric
 ## Decision
 
 1. **Two long-lived branches.** `dev` is the integration branch and the default branch: every change goes to `dev`
-   first. `main` is the release branch: it holds only work that was promoted from `dev`. Because `dev` is the default,
-   a new pull request, a Dependabot pull request and a plain `git clone` all start on `dev`. The quick start in
+   first. `main` is the release branch: it holds only work that was promoted from `dev`. `dev` is the default. So new
+   pull requests, Dependabot pull requests and a plain `git clone` start on `dev`. The quick start in
    [`README.md`](../../../README.md) clones `main` by name, so a user gets released work.
 2. **Rulesets.** Two repository rulesets, declared in
    [`.github/rulesets/`](../../../.github/rulesets/), protect the branches. Both block direct pushes, force pushes and
    deletion, and both have no bypass actors. Both allow merge commits only. The exact rules are in
    [Branch protection](../../reference/branch-protection.md).
 3. **Source branch check.** [`pr-source-branch.yml`](../../../.github/workflows/pr-source-branch.yml) emits the
-   status `Check source branch` on every pull request into `main`. It passes in two cases: the head branch is `dev`
-   in this repository, or the head branch is `release-please--branches--main` in this repository and a bot opened the
-   pull request. The `main` ruleset requires it.
+   status `Check source branch` on every pull request into `main`. It passes in two cases:
+
+   * the head branch is `dev` in this repository;
+   * the head branch is `release-please--branches--main` in this repository, and a bot opened the pull request.
+
+   The `main` ruleset requires it.
 4. **Release.** A release is a tag `vX.Y.Z` that release-please makes on `main` when its release pull request is
    merged ([ADR 0005](0005-release-please-cuts-releases.md)).
    [`release.yml`](../../../.github/workflows/release.yml) refuses a tag whose commit is not on `main`.

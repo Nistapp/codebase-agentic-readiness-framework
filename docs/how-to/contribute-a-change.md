@@ -70,8 +70,8 @@ Do these steps once, on each new machine.
    git switch dev
    ```
 
-4. Optional: install the local hooks. They stop a commit on `dev` or `main`, and they run the format check, the
-   Markdown lint, the secrets scan and the commit message check:
+4. Optional: install the local hooks. They stop a commit on `dev` or `main`. They also run four checks: the
+   format check, the Markdown lint, the secrets scan and the commit message check:
 
    ```bash
    lefthook install
@@ -136,8 +136,8 @@ git branch --show-current
    ```
 
    The subject says what the commit does, in the imperative: "add", "fix", "remove". The scope is optional.
-   At release time, release-please copies the subject into `CHANGELOG.md` and uses the type to pick the next version
-   (`feat` for a feature, `fix` for a bug fix, `!` after the type for a breaking change). So write it for a user. Do
+   At release time, release-please copies the subject into `CHANGELOG.md`. The type picks the next version: `feat` for a
+   feature, `fix` for a bug fix, `!` after the type for a breaking change. So write it for a user. Do
    not edit `CHANGELOG.md` yourself.
 4. Make one commit for each logical change. Then the maintainer can revert one commit alone.
 

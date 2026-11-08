@@ -5,7 +5,7 @@
 > The implementation recipe (v0.2.0): Stages 0 to 5, the state contract and its tools, the thirteen
 > playbooks and its skill bundle are live. Each page below carries its own
 > status, and a page marked Planned names the roadmap step that fills it. See
-> [`STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 1.3.
+> [`STYLE_GUIDE.md`](../STYLE_GUIDE.md) § 1, rule 3.
 
 These pages explain why the audit and implement recipes work the way they do. For tutorials, how-to guides, reference
 pages and decisions, use the root router: [`docs/README.md`](../README.md).

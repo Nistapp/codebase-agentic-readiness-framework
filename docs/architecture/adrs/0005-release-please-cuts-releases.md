@@ -9,9 +9,14 @@
 
 ## Context
 
-Up to v0.3.0, a release was manual. The maintainer opened a release preparation branch, moved the `[Unreleased]`
-changelog entries under a dated heading, changed the version strings by hand, promoted `dev` to `main`, and pushed a
-signed tag. The tag push started [`release.yml`](../../../.github/workflows/release.yml).
+Up to v0.3.0, a release was manual. The maintainer did five things:
+
+1. opened a release preparation branch;
+2. moved the `[Unreleased]` changelog entries under a dated heading;
+3. changed the version strings by hand;
+4. promoted `dev` to `main`;
+5. pushed a signed tag.
+ The tag push started [`release.yml`](../../../.github/workflows/release.yml).
 
 That hand work drifted. The engine's `__version__` said `0.1.0` through the v0.2.0 and v0.3.0 releases, so
 `audit --version` and every report's provenance named the wrong version.
@@ -46,10 +51,10 @@ uses the same pattern.
    `release-please.yml` dispatches it with the tag. A dispatch is the one event that `GITHUB_TOKEN` may start a
    workflow with. The maintainer can also dispatch it by hand.
 6. **Back-merge.** After a release, `release-please.yml` opens a pull request into `dev` from a new branch,
-   `chore/back-merge-vX.Y.Z`, at the release commit. The head is not `main` itself: the `dev` ruleset requires an
+   `chore/back-merge-vX.Y.Z`, at the release commit. The head is not `main` itself. The `dev` ruleset requires an
    up-to-date branch, and "Update branch" would have to push to `main`.
-7. **Token.** A GitHub App installation token when the variable `RELEASE_APP_CLIENT_ID` and the secret
-   `RELEASE_APP_PRIVATE_KEY` are set; each job asks it for the permissions that job needs. Without them,
+7. **Token.** A GitHub App installation token, when the variable `RELEASE_APP_CLIENT_ID` and the secret
+   `RELEASE_APP_PRIVATE_KEY` are set. Each job asks it for the permissions that job needs. Without them,
    `GITHUB_TOKEN`, and the maintainer closes and reopens each bot pull request to start CI.
 
 ---
