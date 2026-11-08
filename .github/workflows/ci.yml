@@ -39,7 +39,7 @@ jobs:
           python-version: ${{ matrix.python }}
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.12.10"
+          version-file: dev/tools/pyproject.toml
       - run: make check
 
   security:
@@ -55,7 +55,7 @@ jobs:
           python-version-file: .python-version
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.12.10"
+          version-file: dev/tools/pyproject.toml
       - run: make security
 
   # The engine's and the recipe tools' suites under coverage.py; fails below the floor in .coveragerc.
@@ -71,7 +71,7 @@ jobs:
           python-version-file: .python-version
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
-          version: "0.12.10"
+          version-file: dev/tools/pyproject.toml
       - run: make coverage
         env:
           CI: "true"
@@ -118,14 +118,14 @@ jobs:
       - if: steps.changed.outputs.any == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: "22"
+          node-version-file: .nvmrc
       - if: steps.changed.outputs.any == 'true'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cache/puppeteer
             ~/.npm
-          key: docs-${{ runner.os }}-markdownlint-cli2-0.24.0-mermaid-cli-12.0.0
+          key: docs-${{ runner.os }}-${{ hashFiles('dev/tools/package.json') }}
       - if: steps.changed.outputs.any == 'true'
         run: make docs-lint
       - if: steps.changed.outputs.any == 'true'

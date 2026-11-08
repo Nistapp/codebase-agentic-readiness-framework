@@ -29,7 +29,7 @@ of the string. Python's ``re``, which the reference package uses, also lets ``$`
 the subset validator refuses a value such as ``"abc\\n"`` where the reference accepts it. ``test_jsonschema_subset.py``
 holds that behaviour.
 
-Run by hand: ``PYTHONPATH=audit/tools uv run --no-project --with jsonschema==4.23.0 python <this file>``.
+Run by hand: ``make crosscheck``. It installs the ``jsonschema`` version pinned in ``dev/tools/pyproject.toml``.
 """
 
 from __future__ import annotations

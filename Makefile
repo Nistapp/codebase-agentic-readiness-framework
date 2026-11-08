@@ -2,7 +2,7 @@
 # Copyright (C) 2026 K. C. Ramakrishna
 #
 # The framework's command surface for this repository: seven verbs, the same names a human, an agent
-# and CI run. The runtime code is standard-library Python; the dev tools below are pinned and run
+# and CI run. The runtime code is standard-library Python; the dev tools below are pinned in dev/tools/ and run
 # through uvx, so nothing is installed into the project. Needs make, git, python3 (3.11+) and uv.
 #
 #   make format         rewrite formatting in place
@@ -22,20 +22,29 @@
 
 PYTHON ?= python3
 
-RUFF := uvx ruff@0.16.10
-MYPY := uvx mypy@2.4.0
-DETECT_SECRETS := uvx --from detect-secrets==1.5.0 detect-secrets
-DETECT_SECRETS_HOOK := uvx --from detect-secrets==1.5.0 detect-secrets-hook
+# Every dev tool version lives in one of two manifests, so that Dependabot sees it (.github/dependabot.yml):
+# dev/tools/pyproject.toml (Python tools, one `"name==version",` line each, locked in uv.lock) and
+# dev/tools/package.json (Node tools, locked in package-lock.json). `pin` and `npm_pin` read a version from them;
+# make stops with an error when a pin is missing.
+TOOL_PINS := dev/tools/pyproject.toml
+NODE_PINS := dev/tools/package.json
+pin = $(or $(shell sed -n 's/^ *"$(1)==\([^"]*\)".*/\1/p' $(TOOL_PINS)),$(error no pin for $(1) in $(TOOL_PINS)))
+npm_pin = $(or $(shell sed -n 's|^ *"$(1)": *"\([^"]*\)".*|\1|p' $(NODE_PINS)),$(error no pin for $(1) in $(NODE_PINS)))
+
+RUFF := uvx ruff@$(call pin,ruff)
+MYPY := uvx mypy@$(call pin,mypy)
+DETECT_SECRETS := uvx --from detect-secrets==$(call pin,detect-secrets) detect-secrets
+DETECT_SECRETS_HOOK := uvx --from detect-secrets==$(call pin,detect-secrets) detect-secrets-hook
 # The reference JSON Schema package is installed for one run, in a throwaway environment. The tools never import it.
-CROSSCHECK := PYTHONPATH=audit/tools uv run --no-project --with jsonschema==4.23.0 python
+CROSSCHECK := PYTHONPATH=audit/tools uv run --no-project --with jsonschema==$(call pin,jsonschema) python
 # The Agent Skills spec's own reference validator (agentskills.io); its CLI entry point is `agentskills`,
 # installed for one run, in a throwaway environment. Not the tools' or the engine's dependency.
-SKILLS_REF := uvx --from skills-ref==0.1.1 agentskills
+SKILLS_REF := uvx --from skills-ref==$(call pin,skills-ref) agentskills
 # Markdown lint (rules in .markdownlint-cli2.jsonc) and the Mermaid check need Node; neither is part of `check`.
-MARKDOWNLINT := npx --yes markdownlint-cli2@0.24.0
+MARKDOWNLINT := npx --yes markdownlint-cli2@$(call npm_pin,markdownlint-cli2)
 # The compare step of the quality baseline (.quality-baseline.json): fails when a tool's full-tree count goes up.
 QUALITY_BASELINE := $(PYTHON) dev/quality_baseline.py check
-COVERAGE := uvx coverage@7.17.2
+COVERAGE := uvx coverage@$(call pin,coverage)
 # The coverage data stays under the git-ignored build output; settings (the floor) are in .coveragerc.
 COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 
