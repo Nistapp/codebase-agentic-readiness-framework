@@ -110,7 +110,7 @@ class RootPageLinkTests(FixtureTests):
     def test_the_root_process_documents_are_root_pages(self) -> None:
         for relative in (
             "AGENTS.md",
-            "COMMUNICATIONS.md",
+            "COMMUNICATION_RULES.md",
             "CONTRIBUTING.md",
             "RELEASE_PROCESS.md",
             "SECURITY.md",
@@ -119,7 +119,7 @@ class RootPageLinkTests(FixtureTests):
             self.repo.write(relative, "# T\n")
         found = {path.relative_to(self.repo.root).as_posix() for path in rl.find_root_pages(self.repo.root)}
         self.assertEqual(
-            found, {"AGENTS.md", "COMMUNICATIONS.md", "CONTRIBUTING.md", "RELEASE_PROCESS.md", "SECURITY.md"}
+            found, {"AGENTS.md", "COMMUNICATION_RULES.md", "CONTRIBUTING.md", "RELEASE_PROCESS.md", "SECURITY.md"}
         )
 
     def test_a_broken_link_in_a_root_process_document_is_reported(self) -> None:

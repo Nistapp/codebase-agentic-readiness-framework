@@ -10,7 +10,7 @@ frontmatter and oversize files.
 ``<root>`` is the framework repository, the one that holds ``audit/`` (and, beside it, ``implement/`` and
 ``docs/``); a link may climb out of those folders (a check file citing ``docs/framework/phased-approach.md`` or
 ``spec/`` does), but never out of ``<root>``. Eight checks, each independent of the others. The link rule also
-covers the framework pages outside those folders (the root ``README.md``, ``AGENTS.md``, ``COMMUNICATIONS.md``,
+covers the framework pages outside those folders (the root ``README.md``, ``AGENTS.md``, ``COMMUNICATION_RULES.md``,
 ``CONTRIBUTING.md``, ``RELEASE_PROCESS.md`` and ``SECURITY.md``, ``spec/`` and ``greenfield/``; the
 framework pages under ``docs/framework/`` are already recipe Markdown); no other check reads them:
 
@@ -125,7 +125,7 @@ EXCLUDED_FROM_LINKS = ("docs/templates/", "greenfield/templates/")
 ROOT_PAGE_FILES = (
     "README.md",
     "AGENTS.md",
-    "COMMUNICATIONS.md",
+    "COMMUNICATION_RULES.md",
     "CONTRIBUTING.md",
     "RELEASE_PROCESS.md",
     "SECURITY.md",

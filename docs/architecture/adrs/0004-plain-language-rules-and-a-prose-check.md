@@ -31,7 +31,7 @@ Three questions needed an answer:
 
 ## Decision
 
-**Rules.** [`COMMUNICATIONS.md`](../../../COMMUNICATIONS.md) at the root holds all the rules for writing for people:
+**Rules.** [`COMMUNICATION_RULES.md`](../../../COMMUNICATION_RULES.md) at the root holds all the rules for writing for people:
 
 * the reader persona: a new engineer who knows Git, Python and Markdown, but not this repository or its terms;
 * nine plain-language rules taken from the STE100 writing rules, without its approved word list;
@@ -65,7 +65,7 @@ their users, and whether target repositories get a matching requirement, is list
 |---|---|
 | The full STE100 standard, with its approved word list | Made for maintenance manuals. The word list blocks the technical terms this repository needs. |
 | Rules only in `AGENTS.md` | Every line costs context in every session, and `AGENTS.md` is already long. |
-| Rules only in `COMMUNICATIONS.md` | Agents often skip a linked file. The short summary in `AGENTS.md` keeps the core in view. |
+| Rules only in `COMMUNICATION_RULES.md` | Agents often skip a linked file. The short summary in `AGENTS.md` keeps the core in view. |
 | Vale with a custom STE style (the v0.3.3 A4 pilot) | A Go binary: not on PyPI or npm, so it cannot be pinned the ADR 0003 way. Our three rules need about 200 lines of Python. |
 | Rules without a check | Rules without a check drift. Chat cannot be checked, but docs can. |
 

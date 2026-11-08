@@ -6,7 +6,7 @@ This page tells you how to write a documentation page in this repository. It app
   `audit/docs/` and `implement/docs/`, and the root pages (`README.md`, `CONTRIBUTING.md`, `RELEASE_PROCESS.md`).
 - **What it does not cover:** recipe files (`SKILL.md`, checks, playbooks, prompts). They are agent directives;
   see section 2.
-- **Wording rules:** [`COMMUNICATIONS.md`](../COMMUNICATIONS.md) sections 1 to 3 hold the reader persona, the
+- **Wording rules:** [`COMMUNICATION_RULES.md`](../COMMUNICATION_RULES.md) sections 1 to 3 hold the reader persona, the
   plain-language rules and the diagram rules. This page adds only the rules for documentation pages. It links to
   those rules and does not repeat them, because a copied rule drifts.
 - **Structure:** [Diátaxis](https://diataxis.fr/). Each page is one of four kinds: tutorial, how-to guide,
@@ -45,7 +45,7 @@ Rules:
 
 ## 3. Plain language and diagrams on a page
 
-The rules are in [`COMMUNICATIONS.md`](../COMMUNICATIONS.md) sections 2 and 3. On a documentation page, also:
+The rules are in [`COMMUNICATION_RULES.md`](../COMMUNICATION_RULES.md) sections 2 and 3. On a documentation page, also:
 
 - **Start with what the page is for.** The first paragraph says what the reader gets and who it is for.
 - **A diagram on every explanation page and tutorial.** `dev/prose_check.py` checks this (rule `PL003`).

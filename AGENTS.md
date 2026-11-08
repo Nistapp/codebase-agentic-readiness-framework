@@ -75,7 +75,7 @@ no vendor-specific instruction file exists beside it.
 
 ## How to write for people
 
-Full rules: [`COMMUNICATIONS.md`](COMMUNICATIONS.md). They apply to chat replies, plans, reports, commit messages,
+Full rules: [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md). They apply to chat replies, plans, reports, commit messages,
 pull request descriptions and docs.
 
 - Write for a new engineer who knows Git, Python and Markdown, but not this repository or its terms.
@@ -140,7 +140,7 @@ A change is done when all of this holds:
 - Setting up and contributing, for a person: `CONTRIBUTING.md`. It also holds the repository map.
   Branches, promotion and cutting a release (the maintainer only): `RELEASE_PROCESS.md`. One change, step by step:
   `docs/how-to/contribute-a-change.md`.
-- How to write for people: `COMMUNICATIONS.md`.
+- How to write for people: `COMMUNICATION_RULES.md`.
 - Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
   `docs/architecture/adrs/README.md`.
 - Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.

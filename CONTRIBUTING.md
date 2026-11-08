@@ -116,7 +116,7 @@ published outputs are `GFDL-1.3-only`. The zones are in
 
 ## Documentation
 
-Write in plain language ([`COMMUNICATIONS.md`](COMMUNICATIONS.md)). Follow
+Write in plain language ([`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md)). Follow
 [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md). Start at the documentation index,
 [`docs/README.md`](docs/README.md). A page describes what exists; a feature that is only planned is marked
 `Planned`. Decisions go in an ADR ([index](docs/architecture/adrs/README.md)).

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""Check Markdown prose against the plain-language rules in ``COMMUNICATIONS.md``.
+"""Check Markdown prose against the plain-language rules in ``COMMUNICATION_RULES.md``.
 
     prose_check.py FILE...
 
