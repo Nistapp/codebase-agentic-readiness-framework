@@ -1,10 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 #
-# Emits the `Check source branch` status on every pull request into `main`. It passes only when the head branch is
-# `dev` in this repository. The `main protection` ruleset requires it, because a ruleset cannot restrict the source
-# branch of a pull request. Pull requests into `dev` have no source restriction and do not run this workflow.
-# The model and the reasons: docs/architecture/adrs/0002-dev-integrates-main-releases.md.
+# Emits the `Check source branch` status on every pull request into `main`. It passes in two cases only:
+#
+# - the head branch is `dev` in this repository (a promotion pull request); or
+# - the head branch is release-please's `release-please--branches--main` in this repository and a bot opened the pull
+#   request (the release pull request that release-please.yml opens).
+#
+# The `main protection` ruleset requires it, because a ruleset cannot restrict the source branch of a pull request.
+# Pull requests into `dev` have no source restriction and do not run this workflow.
+# The model and the reasons: docs/architecture/adrs/0002-dev-integrates-main-releases.md and
+# docs/architecture/adrs/0005-release-please-cuts-releases.md.
 name: PR source branch
 
 on:
@@ -20,17 +26,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Require the head branch to be dev in this repository
+      - name: Require the head branch to be dev, or the release pull request
         env:
-          BASE_REF: ${{ github.base_ref }}
           HEAD_REF: ${{ github.head_ref }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           THIS_REPO: ${{ github.repository }}
+          AUTHOR: ${{ github.event.pull_request.user.login }}
+          AUTHOR_TYPE: ${{ github.event.pull_request.user.type }}
         run: |
-          echo "Base branch: $BASE_REF"
           echo "Head branch: $HEAD_REPO:$HEAD_REF"
-          if [[ "$HEAD_REF" != "dev" || "$HEAD_REPO" != "$THIS_REPO" ]]; then
-            echo "::error::A pull request into main must come from the dev branch of $THIS_REPO. Open your pull request against dev. See RELEASE_PROCESS.md."
+          echo "Opened by: $AUTHOR ($AUTHOR_TYPE)"
+          if [[ "$HEAD_REPO" != "$THIS_REPO" ]]; then
+            echo "::error::A pull request into main must come from a branch of $THIS_REPO. Open your pull request against dev. See RELEASE_PROCESS.md."
             exit 1
           fi
-          echo "Source branch is dev. Check passed."
+          if [[ "$HEAD_REF" == "dev" ]]; then
+            echo "Source branch is dev. Check passed."
+            exit 0
+          fi
+          if [[ ( "$HEAD_REF" == "release-please--branches--main" || "$HEAD_REF" == release-please--branches--main--components--* ) && "$AUTHOR_TYPE" == "Bot" ]]; then
+            echo "Release pull request from release-please. Check passed."
+            exit 0
+          fi
+          echo "::error::A pull request into main must come from the dev branch of $THIS_REPO, or be the release pull request that release-please opens. Open your pull request against dev. See RELEASE_PROCESS.md."
+          exit 1

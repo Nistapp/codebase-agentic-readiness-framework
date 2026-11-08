@@ -1,0 +1,163 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+#
+# Release automation (ADR 0005, RELEASE_PROCESS.md). On each push to `main`:
+#
+# 1. release-please reads the Conventional Commits since the last release. It opens or updates the release pull
+#    request (head `release-please--branches--main`, base `main`). That pull request bumps the version in
+#    .release-please-manifest.json and audit/engine/audit/__init__.py and adds the CHANGELOG.md entry.
+# 2. When release-please opened or updated that pull request, `format-changelog` runs `markdownlint-cli2 --fix` on
+#    CHANGELOG.md and pushes the fix, so the release pull request passes the docs-lint ratchet.
+# 3. When the push to `main` is the merge of the release pull request, release-please tags `vX.Y.Z` and creates the
+#    GitHub release. Then `publish` starts release.yml (workflow_dispatch), which builds and attaches the files. A
+#    dispatch is the one event that GITHUB_TOKEN may start a workflow with; a tag pushed by it starts nothing. And
+#    `back-merge` opens a pull request into `dev`
+#    from a new branch `chore/back-merge-vX.Y.Z` at the release commit, so `dev` gets the new version and changelog.
+#    The head is a branch of its own, not `main`: the `dev` ruleset requires an up-to-date branch, and "Update branch"
+#    must be able to merge `dev` into the head, which the `main` ruleset would refuse.
+#
+# Token: a GitHub App installation token when the repository variable RELEASE_APP_CLIENT_ID and the secret
+# RELEASE_APP_PRIVATE_KEY are set; otherwise GITHUB_TOKEN. A pull request or a push made with GITHUB_TOKEN starts no
+# workflow, so CI does not run on it until the maintainer closes and reopens the pull request. Actions are pinned by
+# commit SHA. A session of an AI agent never triggers this workflow.
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: release-please
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      prs_created: ${{ steps.release.outputs.prs_created }}
+      pr_branch: ${{ steps.release.outputs.pr && fromJSON(steps.release.outputs.pr).headBranchName || '' }}
+    steps:
+      - name: Make a GitHub App token
+        id: app-token
+        if: vars.RELEASE_APP_CLIENT_ID != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
+          target-branch: main
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  format-changelog:
+    name: format the release pull request's changelog
+    needs: release-please
+    if: needs.release-please.outputs.prs_created == 'true' && needs.release-please.outputs.pr_branch != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Make a GitHub App token
+        id: app-token
+        if: vars.RELEASE_APP_CLIENT_ID != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.release-please.outputs.pr_branch }}
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+      # Fixes what markdownlint can fix (release-please writes `*` bullets and a double blank line after each heading).
+      # A violation it cannot fix stays, and the docs job of CI Gate reports it on the pull request.
+      - name: Fix CHANGELOG.md
+        run: make changelog-fix || echo "::warning::markdownlint left a violation in CHANGELOG.md; CI will report it."
+      - name: Push the fix to the release pull request
+        env:
+          TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ needs.release-please.outputs.pr_branch }}
+        run: |
+          if git diff --quiet -- CHANGELOG.md; then
+            echo "CHANGELOG.md is already clean."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "style(changelog): apply the markdownlint fixes to the release notes" -- CHANGELOG.md
+          git push "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "HEAD:refs/heads/${BRANCH}"
+
+  publish:
+    name: publish
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Start release.yml for the new tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main -f "tag=$TAG"
+          echo "Started release.yml for $TAG. Watch it: gh run list --workflow Release --limit 1"
+
+  back-merge:
+    name: back-merge main into dev
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Make a GitHub App token
+        id: app-token
+        if: vars.RELEASE_APP_CLIENT_ID != ''
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+      - name: Open the back-merge pull request
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+          RELEASE_SHA: ${{ github.sha }}
+        run: |
+          branch="chore/back-merge-$TAG"
+          open="$(gh pr list --repo "$GITHUB_REPOSITORY" --base dev --head "$branch" --state open --json number --jq '.[0].number')"
+          if [[ -n "$open" ]]; then
+            echo "Back-merge pull request #$open is already open."
+            exit 0
+          fi
+          if ! gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$branch" > /dev/null 2>&1; then
+            gh api "repos/$GITHUB_REPOSITORY/git/refs" -f "ref=refs/heads/$branch" -f "sha=$RELEASE_SHA" > /dev/null
+          fi
+          gh pr create --repo "$GITHUB_REPOSITORY" --base dev --head "$branch" \
+            --title "chore(release): merge $TAG back into dev" \
+            --body "Brings the version bump and the CHANGELOG.md entry of $TAG from \`main\` into \`dev\`. The head branch starts at the release commit on \`main\`. Merge it with a merge commit (use \"Update branch\" first if \`dev\` moved), then delete the branch. See RELEASE_PROCESS.md, \"After the release\"."

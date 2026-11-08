@@ -32,6 +32,7 @@ CONSUMERS = [
     "lefthook.yml",
     ".github/workflows/ci.yml",
     ".github/workflows/release.yml",
+    ".github/workflows/release-please.yml",
     ".quality-baseline.json",
     "dev/mermaid_check.py",
     "dev/crosscheck_jsonschema.py",

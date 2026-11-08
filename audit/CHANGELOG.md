@@ -1,11 +1,12 @@
 # Changelog
 
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/); dates are UTC. This page covers
-releases of the brownfield recipes as a whole. For the deterministic engine's own ruleset-revision
+releases of the brownfield recipes as a whole, up to v0.3.0. For the deterministic engine's own ruleset-revision
 history (which verdicts moved and why), see
 [its changelog reference](engine/docs/reference/changelog.md).
 
-## [Unreleased]
+From v0.3.1 on, the recipes' changes are in the root [`CHANGELOG.md`](../CHANGELOG.md), which release-please writes
+from the commit subjects (scopes `audit` and `implement`). This page gets no new entries.
 
 ## [0.3.0] - 2026-11-07
 

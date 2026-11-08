@@ -1,43 +1,72 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 #
-# Publishes a GitHub release when the maintainer pushes a tag `v*`: the single-file engine (audit.pyz), the
-# agentic-readiness-audit and agentic-readiness-implement skill bundles as zips, and their SHA-256 sums. Runs the
-# same gates as CI first. No secret beyond GITHUB_TOKEN; `contents: write` is the only permission. Actions are pinned by commit SHA. A session of an AI
-# agent never triggers this workflow. The tagged commit must be on `main`. How to cut a release: RELEASE_PROCESS.md.
+# Builds the release files for a tag `vX.Y.Z` on `main` and attaches them to its GitHub release: the single-file
+# engine (audit.pyz), the agentic-readiness-audit and agentic-readiness-implement skill bundles as zips, and their
+# SHA-256 sums. Runs the same gates as CI first.
+#
+# release-please.yml starts this workflow (workflow_dispatch) after release-please has made the tag and the release. A
+# tag pushed by the default GITHUB_TOKEN starts no workflow, so this workflow has no `push: tags` trigger. The
+# maintainer can also start it by hand for an existing tag; then it creates the release when there is none. No secret
+# beyond GITHUB_TOKEN; `contents: write` is the only permission. Actions are pinned by commit SHA. A session of an AI
+# agent never triggers this workflow. How releases work: RELEASE_PROCESS.md.
 name: Release
 
 on:
-  push:
-    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: The release tag, vX.Y.Z (it must exist and be on main)
+        required: true
+        type: string
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.ref }}
+  group: release-${{ inputs.tag }}
   cancel-in-progress: false
 
 jobs:
   release:
-    name: release ${{ github.ref_name }}
+    name: release ${{ inputs.tag }}
     runs-on: ubuntu-latest
     steps:
+      - name: Require a tag of the form vX.Y.Z
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$TAG' is not a release tag of the form vX.Y.Z."
+            exit 1
+          fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
           fetch-depth: 0
-      # A release is a tag on `main`, and `main` holds only what was promoted from `dev` (RELEASE_PROCESS.md).
-      # A tag on any other commit publishes nothing.
+          ref: refs/tags/${{ inputs.tag }}
+      # A release is a tag on `main`, and `main` holds only what was promoted from `dev` or merged from the release
+      # pull request (RELEASE_PROCESS.md). A tag on any other commit publishes nothing.
       - name: Require the tagged commit to be on main
         env:
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag }}
         run: |
-          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
-            echo "::error::Tag $TAG points at $GITHUB_SHA, which is not on main. Tag the merge commit of the promotion pull request."
+          sha="$(git rev-parse HEAD)"
+          if ! git merge-base --is-ancestor "$sha" origin/main; then
+            echo "::error::Tag $TAG points at $sha, which is not on main."
             exit 1
           fi
-          echo "Tag $TAG is on main."
+          echo "Tag $TAG ($sha) is on main."
+      - name: Require the engine version to match the tag
+        env:
+          TAG: ${{ inputs.tag }}
+        run: |
+          version="$(python3 -c 'import re,sys; print(re.search(r"^__version__ = \"([^\"]+)\"", open("audit/engine/audit/__init__.py").read(), re.M).group(1))')"
+          if [[ "v$version" != "$TAG" ]]; then
+            echo "::error::The engine says $version, but the tag is $TAG. release-please bumps both together; see RELEASE_PROCESS.md."
+            exit 1
+          fi
+          echo "Engine version $version matches $TAG."
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version-file: .python-version
@@ -54,7 +83,7 @@ jobs:
         run: make validate-skills
       - name: Collect the release files
         env:
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag }}
         run: |
           set -euo pipefail
           out="$RUNNER_TEMP/release"
@@ -65,11 +94,17 @@ jobs:
           (cd "$out" && sha256sum audit.pyz "agentic-readiness-audit-$TAG.zip" "agentic-readiness-implement-$TAG.zip" > SHA256SUMS)
           cat "$out/SHA256SUMS"
           echo "RELEASE_DIR=$out" >> "$GITHUB_ENV"
-      - name: Create the release
+      # release-please has normally made the release already, with the changelog entry as its notes. Then only the
+      # files are attached (--clobber makes a re-run safe). For a hand-started run on a tag with no release, the
+      # release is created here.
+      - name: Attach the files to the release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ github.ref_name }}
+          TAG: ${{ inputs.tag }}
         run: |
-          gh release create "$TAG" "$RELEASE_DIR"/* \
-            --repo "$GITHUB_REPOSITORY" --title "$TAG" \
-            --notes "See CHANGELOG.md. Verify a download with: sha256sum -c SHA256SUMS"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" "$RELEASE_DIR"/* --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$TAG" "$RELEASE_DIR"/* --repo "$GITHUB_REPOSITORY" --title "$TAG" --verify-tag \
+              --notes "See CHANGELOG.md. Verify a download with: sha256sum -c SHA256SUMS"
+          fi
