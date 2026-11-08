@@ -33,11 +33,11 @@ bug-reports, suggestions and improvements in
 3. You will find a folder `/path/to/output/` with the readiness report `<repo-name>.audit-report.<timestamp>.json`
    and a markdown summary `<repo-name>.audit-report.<timestamp>.md`. Review them but do not edit them.
 4. You have full control on what/how to implement during the 'implementation' phase. You can prescribe, customise,
-   skip or accept the defaults provided by the tool. When you are ready to implement, open claude in the same
-   directory as this skill and say: **"Start implementing the fixes on /path/to/your/repo based on
-   /path/to/output/\<repo-name\>.audit-report.\<timestamp\>.json"**. First, the skill asks you to copy the report
-   (`.json` and `.md`) into your repository under `docs/agentic-readiness-report/` and commit it. It does not copy the
-   report itself.
+   skip or accept the defaults provided by the tool. When you are ready to implement, open claude (fresh session is
+   recommended for clean context) in the same directory as this skill and say: **"Start implementing the fixes on
+   /path/to/your/repo based on /path/to/output/\<repo-name\>.audit-report.\<timestamp\>.json"**. First, the skill
+   asks you to copy the report (`.json` and `.md`) into your repository under `docs/agentic-readiness-report/` and
+   commit it. It does not copy the report itself.
 
 What happens: the skill asks a few questions, shows you a plan, and asks before each step that changes something.
 The audit never writes inside your repository. The implement skill commits on local branches. It never merges, and
