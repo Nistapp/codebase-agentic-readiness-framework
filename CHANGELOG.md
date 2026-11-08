@@ -13,6 +13,19 @@ one.
 
 ## [Unreleased]
 
+### Repository
+
+- Two protected branches ([ADR 0002](docs/architecture/adrs/0002-dev-integrates-main-releases.md)). `dev` is the
+  integration branch: it accepts pull requests from any branch and no direct commits. `main` is the release branch: it
+  accepts pull requests from `dev` only. The rulesets are declared in `.github/rulesets/`.
+- New required check on pull requests into `main`: `Check source branch`
+  (`.github/workflows/pr-source-branch.yml`).
+- CI runs on pushes to `dev` as well as `main`. Dependabot version updates target `dev`.
+- `release.yml` refuses a tag whose commit is not on `main`.
+- `lefthook.yml` stops a local commit on `dev` or `main`.
+- New how-to: [contribute a change](docs/how-to/contribute-a-change.md). `RELEASE_PROCESS.md` and
+  [branch protection](docs/reference/branch-protection.md) describe the promotion from `dev` to `main`.
+
 ## [0.3.0] - 2026-11-07
 
 The first public release for developers. One layout, one way to start, and a protected `main`.

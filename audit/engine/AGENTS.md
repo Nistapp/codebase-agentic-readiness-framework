@@ -193,8 +193,9 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 > its original history is preserved there. Branches and commits follow the repository's own conventions; the
 > bullets below describe this tool's own conventions.
 
-- **Branching (intended):** `main` = production, `dev` = active development, feature branches
-  `feat/<slug>`, `fix/<slug>`, `refactor/<slug>`. PRs to `main` originate from `dev`.
+- **Branching:** the repository's model applies (`RELEASE_PROCESS.md`, ADR 0002 in `docs/architecture/adrs/`).
+  `dev` is the integration branch; `main` takes pull requests from `dev` only. Work branches start from `dev` and are
+  named `<type>/<topic>`, for example `feat/<slug>`, `fix/<slug>` or `refactor/<slug>`.
 - **Commits (Conventional Commits):** `<type>(<scope>): <description>` with types `feat`, `fix`, `refactor`,
   `test`, `docs`, `chore`, `ci`, `perf`, `revert`.
 - **Agent commits:** `chore(ai): pass-[N] - <description>`.

@@ -9,6 +9,7 @@ The root router is [`docs/README.md`](../../README.md).
 | ADR | Title | Status | Date |
 | --- | --- | --- | --- |
 | [0001](0001-decisions-live-beside-the-component.md) | Decisions Live Beside the Component They Govern | Accepted | 2026-11-05 |
+| [0002](0002-dev-integrates-main-releases.md) | `dev` Integrates Every Change; `main` Takes Only Promotions From `dev` | Accepted | 2026-11-08 |
 
 ## Requirements: `spec/decisions/`
 
