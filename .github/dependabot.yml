@@ -1,14 +1,91 @@
-# Keeps the pinned workflow actions current. Actions are pinned by commit SHA (see ci.yml and release.yml); Dependabot
-# opens a pull request that moves the SHA and the version comment together. The repository has no runtime
-# dependencies to update: the dev tools are pinned in the Makefile. Its pull requests target `dev`, like every other
-# change; `main` accepts pull requests from `dev` only (RELEASE_PROCESS.md). `dev` is also the default branch, so
-# security updates go there too; `target-branch` keeps version updates on `dev` if the default ever changes.
+# Dependabot opens security pull requests only, and never for a major version
+# (docs/architecture/adrs/0003-dependabot-security-pull-requests-only.md; RELEASE_PROCESS.md, "Dependency updates").
+#
+# - `open-pull-requests-limit: 0` turns off version updates. Security updates are on in the repository settings and
+#   do not use this limit.
+# - The `ignore` rule for `version-update:semver-major` also applies to security updates. A fix that needs a major
+#   version opens no pull request; its alert stays in the Security tab, and the maintainer upgrades by hand.
+# - No `target-branch`: with one, these options stop applying to security updates. Security updates always go to
+#   the default branch, `dev`.
+# - The template and the engine's test fixtures are data. Their alerts stay visible; Dependabot never edits them.
 version: 2
 updates:
+  # The actions in .github/workflows, pinned by commit SHA with the version in a comment.
   - package-ecosystem: github-actions
     directory: /
-    target-branch: dev
     schedule:
       interval: weekly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      security-fixes:
+        applies-to: security-updates
+        patterns: ["*"]
     commit-message:
       prefix: "ci"
+
+  # The Python dev tools (ruff, mypy, detect-secrets, coverage, jsonschema, skills-ref, uv), locked in uv.lock. The
+  # Makefile, lefthook.yml and the workflows read each version from dev/tools/pyproject.toml.
+  - package-ecosystem: uv
+    directory: /dev/tools
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      security-fixes:
+        applies-to: security-updates
+        patterns: ["*"]
+    commit-message:
+      prefix: "build"
+
+  # The Node dev tools (markdownlint-cli2, mermaid-cli), locked in package-lock.json. The Makefile and
+  # dev/mermaid_check.py read each version from dev/tools/package.json.
+  - package-ecosystem: npm
+    directory: /dev/tools
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      security-fixes:
+        applies-to: security-updates
+        patterns: ["*"]
+    commit-message:
+      prefix: "build"
+
+  # Data, not dependencies: the greenfield template and the engine's test fixtures. No pull request, ever.
+  - package-ecosystem: npm
+    directories: ["/greenfield/templates", "/audit/engine/tests/fixtures/**"]
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+  - package-ecosystem: pip
+    directories: ["/audit/engine/tests/fixtures/**"]
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+  - package-ecosystem: maven
+    directories: ["/audit/engine/tests/fixtures/**"]
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+  - package-ecosystem: gradle
+    directories: ["/audit/engine/tests/fixtures/**"]
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
