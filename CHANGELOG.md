@@ -1,19 +1,69 @@
 # Changelog
 
-Format loosely follows [Keep a Changelog](https://keepachangelog.com/); dates are UTC. This page covers the
-framework as a whole: the documents, the requirements and the repository's own gates. The components keep their own
-histories:
+This page covers the whole repository: the framework documents, the requirements, the audit and implement recipes,
+the engine and the repository's own gates. Dates are UTC.
 
-- The recipes (audit and implement): [`audit/CHANGELOG.md`](audit/CHANGELOG.md).
+From v0.3.1 on, release-please writes each entry from the Conventional Commit subjects of the release. Do not edit
+this file by hand on `dev`: write a clear commit subject instead. How it works:
+[`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). Two older histories stay:
+
+- The recipes up to v0.3.0: [`audit/CHANGELOG.md`](audit/CHANGELOG.md).
 - The deterministic engine's ruleset revisions (which verdicts moved and why):
   [`audit/engine/docs/reference/changelog.md`](audit/engine/docs/reference/changelog.md).
 
 Paths in entries before v0.3.0 use the old layout. The v0.3.0 entry has a "Moved" table from each old path to its new
 one.
 
-## [Unreleased]
+## [0.3.1](https://github.com/Nistapp/codebase-agentic-readiness-framework/compare/v0.3.0...v0.3.1) (2026-11-08)
+
+### Bug fixes
+
+- **engine:** report the released version 0.3.0 instead of 0.1.0 ([1214f59](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/1214f5936befeb3a086d6828e691f00b500deea4))
+
+### Documentation
+
+- add a development tooling reference page ([7e19468](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/7e194686fe0f2a7848a1a2c75905198fdc0dcda0))
+- add a step-by-step guide to contribute a change through dev ([5806e9e](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/5806e9e6936e540128a96fed73d9c7946438fb11))
+- add the harness disclaimer and the report steps to the README quick start ([7a8f4eb](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/7a8f4eba2a66a70e86cb9a13a79ba47b10171286))
+- clone main in the README quick start ([f1d41a2](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/f1d41a22446ff135e1f7ba1e020ba49066fecde4))
+- describe the dev and main branches in the README ([bdcbe3d](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/bdcbe3d516552fb17e1606cd8c77ae86635f688d))
+- describe workflow-lint, commit-lint and CODEOWNERS ([2aa6632](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/2aa66327cab3f602e1e1dd80bd0e74e494a787e6))
+- fix the overview link and the skill list in the README ([00d4ffc](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/00d4ffc604a04924a99b9ba27a73a0cfd57cb8a3))
+- make dev the default branch in ADR 0002 and the process docs ([1a557dd](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/1a557dde90cb1fd7351aea972ce336b7dc7f96e2))
+- recommend a fresh session before the implement step in the README ([0efe17c](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0efe17c35fe5c515f5e66e4d04fe6271f663c837))
+- record the Dependabot policy and the dev tool pins (ADR 0003) ([df049b5](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/df049b59b6f3b9024274edef73776f2aec0454e2))
+- record the dev and main branch model and the promotion release ([268ed75](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/268ed750943bd8489c89f84470733c4adb1ea45c))
+- record the dev ruleset as active ([e417e1a](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/e417e1ac16870d0866be3cc3c8c3671fc02a2798))
+- **release:** describe the release-please process ([ae0f2ed](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/ae0f2ed89099011c79c4673383607e3ec7411fb7))
+- reword the README introduction ([0fdcd4a](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0fdcd4aa6413eccd40911790c1e7be07a435f31c))
+
+### Build and dev tools
+
+- **dev:** move the dev tool pins into manifests that Dependabot reads ([6002b89](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/6002b894984a56847ef79f73d1908b5d41e6fcf0))
+
+### CI and release
+
+- **dependabot:** open security pull requests only, never for a major version ([0cfcc6c](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0cfcc6c34cd46f2f870141e2f580e3c857751d29))
+- lint the workflows and the commit subjects in the gate ([e83a10f](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/e83a10f0a3914ab776a7df63b511040bc29fd59d))
+- **release:** automate versions and releases with release-please ([83f7d0c](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/83f7d0ccbe85bce2d75ba59692df64f78c6b56bc))
+- **release:** automate versions and releases with release-please ([be5d86f](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/be5d86fd25e16d2e3f70fb796e51cc99d65178fc))
+- **release:** CI checks, gates and automation - first phase. ([0c90c2d](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0c90c2d4eddc45f104d8b9e2ecbcb702713fb989))
+- **release:** publish only a tag whose commit is on main ([195d76b](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/195d76b9fd4c4b680f1fa9d6d9d4ed3bc5315535))
+- require pull requests into main to come from dev ([8c3c05a](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/8c3c05ad67fbc7333c7eeecc1d4659c13590cabe))
+- run CI on pushes to dev and target Dependabot at dev ([58d65c1](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/58d65c17f5838bb1097a4e2ce7b0b3752b816b14))
+
+## [Notes written by hand since 0.3.0]
+
+These notes were written by hand before release-please took over this file. They ship in the first release that
+release-please makes: the entry above this one.
 
 ### Repository
+
+- Releases are automated with release-please
+  ([ADR 0005](docs/architecture/adrs/0005-release-please-cuts-releases.md)). A push to `main` opens or updates a
+  release pull request that bumps the version and writes this file. Merging it tags `vX.Y.Z`, publishes the GitHub
+  release with its files and opens a back-merge pull request from `main` into `dev`. `release.yml` no longer runs on
+  a pushed tag; `release-please.yml` calls it. The engine's `__version__` (it said `0.1.0`) now follows the release.
 
 - Two protected branches ([ADR 0002](docs/architecture/adrs/0002-dev-integrates-main-releases.md)). `dev` is the
   integration branch and the default branch: it accepts pull requests from any branch and no direct commits. `main` is
@@ -41,25 +91,6 @@ one.
   `SECURITY.md`.
 - New how-to: [contribute a change](docs/how-to/contribute-a-change.md). `RELEASE_PROCESS.md` and
   [branch protection](docs/reference/branch-protection.md) describe the promotion from `dev` to `main`.
-
-### Communication and docs
-
-- New page [`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md): how people and agents write for people. It holds:
-  - the reader: a new engineer who knows Git, Python and Markdown, but not this repository;
-  - nine plain-language rules taken from STE100, and the diagram rules;
-  - layouts for status reports, done reports and decision requests.
-
-  `AGENTS.md` has a short summary ([ADR 0004](docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md)).
-- New dev check `dev/prose_check.py`, run by `make docs-lint`. It reports long sentences (over 25 words, or 20 in a
-  step), vague words, and explanation pages or tutorials without a Mermaid diagram. Pages in `PROSE_PATHS` must be
-  clean. The full-tree count is a ratchet in `.quality-baseline.json` (1628).
-- [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md) is rewritten in plain language. It links to the rules in
-  `docs/COMMUNICATION_RULES.md`, covers all doc folders, and no longer has stale paths.
-- Five dense pages are rewritten in plain language, with diagrams:
-  - the stack-profile and evaluation explanation pages;
-  - the stack-profile how-to;
-  - the harness notes;
-  - the engine's read-the-report guide.
 
 ## [0.3.0] - 2026-11-07
 

@@ -3,32 +3,36 @@
 This page tells the maintainer how to release this repository. It also tells every contributor how a change moves
 from a work branch to a release.
 
-Only the maintainer promotes `dev` to `main`, tags and releases. A session of an AI agent never pushes, tags, opens a
-pull request or starts the release workflow ([`AGENTS.md`](AGENTS.md)).
+Releases are automated with release-please. The maintainer promotes `dev` to `main` and merges two pull requests that
+a bot opens. Nobody edits a version or the changelog by hand, and nobody pushes a tag. A session of an AI agent never
+pushes, opens a pull request, merges or starts a workflow ([`AGENTS.md`](AGENTS.md)).
 
 ## The rules
 
 1. Two branches live for ever: `dev` and `main`. Both are protected.
-2. `dev` is the integration branch and the default branch. It accepts pull requests from any branch, `main` included.
-   It accepts no direct commits.
-3. `main` is the release branch. It accepts pull requests from `dev` only. It accepts no direct commits.
+2. `dev` is the integration branch and the default branch. It accepts pull requests from any branch. It accepts no
+   direct commits.
+3. `main` is the release branch. It accepts two kinds of pull request only: a promotion from `dev`, and the release
+   pull request that release-please opens. It accepts no direct commits.
 4. Start every work branch from `dev`. Name it `<type>/<topic>`, where `<type>` is a Conventional Commits type, for
    example `fix/report-score` or `docs/release-process`.
 5. Every pull request must pass the required check `CI Gate`. A pull request into `main` must also pass
    `Check source branch`.
 6. Merge with a merge commit. Do not squash. Do not rebase.
-7. A release is a signed tag `vX.Y.Z` on the merge commit of a promotion pull request. The release workflow refuses a
-   tag that is not on `main`.
+7. Commit subjects follow Conventional Commits. They decide the next version, and they become the changelog.
+8. A release is a tag `vX.Y.Z` that release-please makes on `main` when the release pull request is merged.
 
 The exact ruleset settings are in [Branch protection](docs/reference/branch-protection.md). The reasons are in
-[ADR 0002](docs/architecture/adrs/0002-dev-integrates-main-releases.md).
+[ADR 0002](docs/architecture/adrs/0002-dev-integrates-main-releases.md) and
+[ADR 0005](docs/architecture/adrs/0005-release-please-cuts-releases.md).
 
 ```mermaid
 flowchart LR
     W["work branch<br/>type/topic"] -->|"pull request<br/>CI Gate"| D["dev"]
-    P["release preparation branch<br/>chore/release-vX.Y.Z"] -->|"pull request<br/>CI Gate"| D
     D -->|"promotion pull request<br/>CI Gate + Check source branch"| M["main"]
-    M -->|"signed tag vX.Y.Z"| R["release.yml<br/>GitHub release"]
+    M -->|"push starts release-please"| RP["release pull request<br/>release-please--branches--main"]
+    RP -->|"merge: tag vX.Y.Z,<br/>GitHub release, files"| M
+    M -->|"back-merge pull request<br/>chore/back-merge-vX.Y.Z"| D
 
     classDef protected fill:#fde68a,stroke:#b45309,color:#000
     class D,M protected
@@ -38,45 +42,87 @@ flowchart LR
 
 | Person | Does | Does not |
 | --- | --- | --- |
-| Contributor (a person) | Starts a work branch from `dev`, commits, pushes the work branch, opens a pull request into `dev` | Commit on `dev` or `main`; open a pull request into `main` |
+| Contributor (a person) | Starts a work branch from `dev`, commits with Conventional Commits subjects, pushes the work branch, opens a pull request into `dev` | Commit on `dev` or `main`; open a pull request into `main`; edit `CHANGELOG.md` or a version |
 | AI agent session | Starts a work branch from `dev` and commits on it, when asked | Push, tag, open a pull request, merge, or change a ruleset unless the maintainer asks in that session |
-| Maintainer | Reviews and merges pull requests into `dev`; prepares the release; promotes `dev` to `main`; tags | Push to `dev` or `main` directly (the rulesets refuse it) |
+| Maintainer | Merges pull requests into `dev`; promotes `dev` to `main`; merges the release pull request and the back-merge pull request | Push to `dev` or `main` directly (the rulesets refuse it); push a release tag |
+| release-please (a bot) | Opens and updates the release pull request; tags; creates the GitHub release; opens the back-merge pull request | Merge anything |
 
 To make one change, follow [Contribute a change](docs/how-to/contribute-a-change.md). The rest of this page is for the
 maintainer.
 
 ## What a release is
 
-A release is a tag `vX.Y.Z` on `main`. The tag starts
-[`.github/workflows/release.yml`](.github/workflows/release.yml). The workflow publishes a GitHub release with the
-files that a one-off user needs. That user does not clone or build anything.
+A release is a tag `vX.Y.Z` on `main` and a GitHub release with the files that a one-off user needs:
+`audit.pyz`, the two skill bundles as zips, and `SHA256SUMS`. That user does not clone or build anything.
 
-The version follows [Semantic Versioning](https://semver.org/). Before 1.0.0, a change that breaks users increments
-MINOR. Any other change increments PATCH.
+The version follows [Semantic Versioning](https://semver.org/). release-please computes it from the commit subjects
+since the last release:
+
+| Commit subjects since the last release | Before 1.0.0 | From 1.0.0 |
+| --- | --- | --- |
+| A breaking change (`feat!:`, `fix!:` or a `BREAKING CHANGE:` footer) | MINOR | MAJOR |
+| A `feat:` | PATCH | MINOR |
+| Only `fix:`, `docs:`, `ci:` and other types | PATCH | PATCH |
+
+The version is written in three places, and release-please changes all three in the release pull request:
+
+- [`.release-please-manifest.json`](.release-please-manifest.json): the last released version.
+- `__version__` in [`audit/engine/audit/__init__.py`](audit/engine/audit/__init__.py): what `audit --version` and
+  each report's provenance print.
+- The new entry in [`CHANGELOG.md`](CHANGELOG.md).
+
+[`dev/tests/test_release_config.py`](dev/tests/test_release_config.py) fails when the manifest and `__version__`
+disagree. The configuration is [`release-please-config.json`](release-please-config.json).
+
+## One-time setup
+
+Do this once. Without it the release workflow still works, but CI does not start on the bot's pull requests by itself.
+
+A pull request or a push made with the default `GITHUB_TOKEN` starts no workflow. So `CI Gate` and
+`Check source branch` never report on the release pull request, and the ruleset blocks its merge. Two ways out:
+
+| Option | Pros | Cons |
+| --- | --- | --- |
+| A GitHub App token (recommended) | CI starts on the bot's pull requests by itself | One App, one variable and one secret to look after |
+| `GITHUB_TOKEN` only (the default when no App is set) | Nothing to set up | You close and reopen each bot pull request to start CI |
+
+To set up the App:
+
+1. Create a GitHub App owned by the organisation. Turn off its webhook. Give it these repository permissions:
+   Contents read and write, Pull requests read and write, Issues read and write.
+2. Install the App on this repository only.
+3. Store its client ID as the repository variable `RELEASE_APP_CLIENT_ID`.
+4. Generate a private key. Store it as the repository secret `RELEASE_APP_PRIVATE_KEY`.
+
+[`release-please.yml`](.github/workflows/release-please.yml) uses the App token when the variable is set. Each job
+asks the token for the permissions it needs, no more.
+
+Without the App, also allow the default token to open pull requests: Settings, Actions, General, "Allow GitHub
+Actions to create and approve pull requests".
 
 ## Release steps
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor C as Contributor
     actor Mn as Maintainer
     participant GH as GitHub (pull requests and CI)
+    participant RP as release-please.yml
     participant RW as release.yml
 
-    C->>GH: Pull request from a work branch into dev
-    GH-->>C: CI Gate passes
-    Mn->>GH: Merge into dev (merge commit)
-    Mn->>GH: Pull request chore/release-vX.Y.Z into dev
-    GH-->>Mn: CI Gate passes
-    Mn->>GH: Merge into dev
     Mn->>GH: Promotion pull request dev into main
     GH-->>Mn: CI Gate and Check source branch pass
     Mn->>GH: Merge into main (merge commit)
-    Mn->>GH: Push signed tag vX.Y.Z on the merge commit
-    GH->>RW: Tag push starts the release workflow
-    RW->>GH: Gates pass, files built, GitHub release created
-    Mn->>GH: Replace the release notes
+    GH->>RP: Push to main
+    RP->>GH: Open or update the release pull request, fix CHANGELOG.md lint
+    GH-->>Mn: CI Gate and Check source branch pass
+    Mn->>GH: Merge the release pull request (merge commit)
+    GH->>RP: Push to main
+    RP->>GH: Tag vX.Y.Z, create the GitHub release
+    RP->>RW: Dispatch with the tag
+    RW->>GH: Gates pass, files built and attached
+    RP->>GH: Open the back-merge pull request into dev
+    Mn->>GH: Merge the back-merge pull request
 ```
 
 ### Step 1: Make sure that `dev` is ready
@@ -95,54 +141,19 @@ sequenceDiagram
    gh run list --branch dev --workflow CI --limit 1
    ```
 
-### Step 2: Prepare the release on a branch from `dev`
+4. Do the [dependency review](#review-before-each-release).
+5. Make sure that the numbers that appear in more than one place are current: the self-audit score in
+   [Self-Audit](docs/reference/self-audit.md), and the check count. Fix them on a work branch into `dev` if not.
 
-The changelogs and version strings change on `dev`, before the promotion. Do not change them on `main`.
+There is no release preparation branch. Do not edit `CHANGELOG.md` or a version.
 
-1. Make the release preparation branch:
-
-   ```bash
-   git switch -c chore/release-vX.Y.Z
-   ```
-
-2. In [`CHANGELOG.md`](CHANGELOG.md), move the entries from `[Unreleased]` to a new heading
-   `[X.Y.Z] - YYYY-MM-DD`. Keep an empty `[Unreleased]` heading above it.
-3. Do the same in [`audit/CHANGELOG.md`](audit/CHANGELOG.md). Make sure that the engine's
-   [changelog](audit/engine/docs/reference/changelog.md) agrees with it.
-4. Change the version named in [`README.md`](README.md) and [`audit/README.md`](audit/README.md) to `vX.Y.Z`.
-5. Do the [dependency review](#review-before-each-release).
-6. Make sure that the numbers that appear in more than one place are current: the self-audit score in
-   [Self-Audit](docs/reference/self-audit.md), and the check count.
-7. Run the gates. All of them must pass:
-
-   ```bash
-   make check
-   make security
-   make docs-lint
-   make validate-skills
-   ```
-
-8. Commit, push the branch and open a pull request into `dev`:
-
-   ```bash
-   git commit -am "chore(release): prepare vX.Y.Z"
-   git push -u origin chore/release-vX.Y.Z
-   gh pr create --base dev --title "chore(release): prepare vX.Y.Z" --body "Changelogs and versions for vX.Y.Z."
-   ```
-
-9. When `CI Gate` passes, merge the pull request with a merge commit:
-
-   ```bash
-   gh pr merge --merge --delete-branch
-   ```
-
-### Step 3: Promote `dev` to `main`
+### Step 2: Promote `dev` to `main`
 
 1. Open the promotion pull request. The head is `dev`. The base is `main`:
 
    ```bash
-   gh pr create --base main --head dev --title "chore(release): vX.Y.Z" \
-     --body "Promotes dev to main for vX.Y.Z. See CHANGELOG.md."
+   gh pr create --base main --head dev --title "chore(release): promote dev to main" \
+     --body "Promotes dev to main. release-please opens the release pull request after the merge."
    ```
 
 2. Wait for the two required checks, `CI Gate` and `Check source branch`:
@@ -162,99 +173,134 @@ The changelogs and version strings change on `dev`, before the promotion. Do not
 > Do not add `--delete-branch` to the merge of a promotion pull request. The head branch is `dev`. The `dev` ruleset
 > blocks its deletion, but the command can still delete your local `dev`.
 
-### Step 4: Tag the merge commit
+### Step 3: Read and merge the release pull request
 
-1. Get the latest `main`:
+The push to `main` starts `release-please.yml`. A minute later the release pull request is open, titled
+`chore(release): vX.Y.Z`. If one was already open, release-please updates it instead.
 
-   ```bash
-   git switch main
-   git pull --ff-only
-   ```
-
-2. Make sure that `HEAD` is the merge commit of the promotion pull request:
+1. Find it:
 
    ```bash
-   git log --oneline -1
+   gh pr list --base main --head release-please--branches--main
    ```
 
-   The subject must be `Merge pull request #<n> from Nistapp/dev`.
-3. Make a signed tag and push it:
+2. Read its diff. It changes `.release-please-manifest.json`, `__version__` in the engine and `CHANGELOG.md`. A second
+   commit, `style(changelog): ...`, holds the markdownlint fixes.
+3. Check the version. To force a different one, see [Choose the version](#choose-the-version).
+4. Without the App token, close and reopen the pull request to start CI:
 
    ```bash
-   git tag -s vX.Y.Z -m "vX.Y.Z"
-   git push origin vX.Y.Z
+   gh pr close <n> && gh pr reopen <n>
    ```
 
-   Use `git tag -a` if you do not sign tags.
-4. Go back to `dev` for the next work:
+5. Wait for `CI Gate` and `Check source branch`, then merge with a merge commit:
 
    ```bash
-   git switch dev
+   gh pr checks <n> --watch
+   gh pr merge <n> --merge --delete-branch
    ```
 
-### Step 5: Watch the release workflow
+A release pull request may stay open while more promotions land. release-please updates it after each one. Merge it
+when you want to release.
+
+### Step 4: Watch the release
+
+The merge pushes to `main` again. This time `release-please.yml` tags `vX.Y.Z`, creates the GitHub release with the
+changelog entry as its notes, and starts `release.yml`:
 
 ```bash
 gh run watch "$(gh run list --workflow Release --limit 1 --json databaseId --jq '.[0].databaseId')"
 ```
 
-## What the workflow does
+### Step 5: Merge the back-merge pull request
 
-On a pushed tag that matches `v*`, the workflow runs on Ubuntu. Its only permission is `contents: write`. It uses no
-secret other than `GITHUB_TOKEN`. It does these steps in sequence:
+`release-please.yml` also opens a pull request into `dev` from `chore/back-merge-vX.Y.Z`. That branch starts at the
+release commit on `main`. It brings the new version and the changelog entry into `dev`.
 
-1. It makes sure that the tagged commit is on `main`. A tag on any other commit stops the workflow.
-2. It runs `make check` and `make security`. A tag on a red commit publishes nothing.
-3. It runs `python3 audit/engine/build.py`. This builds the reproducible single-file engine, `audit.pyz`.
-4. It runs `make validate-skills`. This builds the `agentic-readiness-audit` and `agentic-readiness-implement` skill
-   bundles and validates both against the Agent Skills specification.
-5. It zips the two bundles from `dev/dist/skills/`: `agentic-readiness-audit-<tag>.zip` and
-   `agentic-readiness-implement-<tag>.zip`.
-6. It writes `SHA256SUMS` for `audit.pyz` and the two zips.
-7. It creates the GitHub release for the tag and attaches `audit.pyz`, the two zips and `SHA256SUMS`. The release body
-   says "See CHANGELOG.md". Replace it after the release (see [After the release](#after-the-release)).
-
-Every action in the workflow is pinned by commit SHA. To check a download, run `sha256sum -c SHA256SUMS` in the folder
-that holds all four files.
-
-## After the release
-
-1. Replace the release body with short notes. Say what a user can do with this release, and link the changelog entry:
+1. Find it:
 
    ```bash
-   gh release edit vX.Y.Z --notes-file <file>
+   gh pr list --base dev --head chore/back-merge-vX.Y.Z
    ```
 
-2. Do not change `main`. The next change goes to `dev` through a pull request.
+2. Without the App token, close and reopen it to start CI.
+3. If `dev` moved since the release, click "Update branch" (the `dev` ruleset requires an up-to-date branch).
+4. When `CI Gate` passes, merge it with a merge commit and delete the branch:
 
-No back-merge from `main` into `dev` is necessary. The only commits on `main` that `dev` does not have are the merge
-commits of promotion pull requests. They hold no file change. GitHub shows `main` as "ahead of `dev`" by those
-commits. This is expected.
+   ```bash
+   gh pr merge <n> --merge --delete-branch
+   ```
+
+Merge it before the next promotion. If you forget, nothing breaks: the files do not conflict. But `dev` shows the old
+version until you merge it.
+
+### Choose the version
+
+release-please picks the version from the commit subjects. To force one, for example `0.4.0` for a release with no
+breaking change, put a `Release-As:` footer in a commit on a work branch into `dev`:
+
+```bash
+git commit --allow-empty -m "chore: release 0.4.0" -m "Release-As: 0.4.0"
+```
+
+After the next promotion, the release pull request uses that version.
+
+## What the workflows do
+
+[`release-please.yml`](.github/workflows/release-please.yml) runs on each push to `main`. Its jobs:
+
+| Job | When | What it does |
+| --- | --- | --- |
+| `release-please` | Every push to `main` | Opens or updates the release pull request; after its merge, tags `vX.Y.Z` and creates the GitHub release |
+| `format-changelog` | The release pull request was opened or updated | Runs `make changelog-fix` (markdownlint `--fix`) on `CHANGELOG.md` and pushes the fix to the release pull request. release-please writes `*` bullets and double blank lines, which the `docs-lint` ratchet refuses |
+| `publish` | A release was created | Starts `release.yml` with the tag (a dispatch is the one event that `GITHUB_TOKEN` may start a workflow with) |
+| `back-merge` | A release was created | Creates `chore/back-merge-vX.Y.Z` at the release commit and opens its pull request into `dev` |
+
+[`release.yml`](.github/workflows/release.yml) runs on a dispatch with a tag. It does these steps in sequence:
+
+1. It makes sure that the tag has the form `vX.Y.Z` and that its commit is on `main`.
+2. It makes sure that the engine's `__version__` equals the tag.
+3. It runs `make check` and `make security`. A tag on a red commit publishes nothing.
+4. It runs `python3 audit/engine/build.py`. This builds the reproducible single-file engine, `audit.pyz`.
+5. It runs `make validate-skills`. This builds the `agentic-readiness-audit` and `agentic-readiness-implement` skill
+   bundles and validates both against the Agent Skills specification.
+6. It zips the two bundles from `dev/dist/skills/` and writes `SHA256SUMS` for `audit.pyz` and the two zips.
+7. It attaches the four files to the GitHub release. If the tag has no release (a run started by hand), it creates
+   one.
+
+Every action in both workflows is pinned by commit SHA. To check a download, run `sha256sum -c SHA256SUMS` in the
+folder that holds all four files.
 
 ## If the release fails
 
-The workflow creates the release in its last step. Thus a failure in an earlier step leaves no release.
+release-please creates the tag and the release before `release.yml` runs. So a failed `release.yml` leaves a release
+with no files.
 
 1. Read the log of the failed step in the Actions tab.
-2. Delete the tag on GitHub and on your machine:
+2. If the cause was outside the code (for example a network failure), run the workflow again for the same tag:
 
    ```bash
-   git push origin :refs/tags/vX.Y.Z
-   git tag -d vX.Y.Z
+   gh workflow run release.yml --ref main -f tag=vX.Y.Z
    ```
 
-3. Fix the cause on a work branch from `dev`. Merge it into `dev`.
-4. Do [Step 3](#step-3-promote-dev-to-main) and [Step 4](#step-4-tag-the-merge-commit) again.
+3. If the code must change, fix it on a work branch from `dev` and merge it. Then promote `dev` again. release-please
+   opens a new release pull request with the next PATCH version. Mark the broken release as a pre-release, or delete
+   it and its tag, so users do not download it:
 
-Do not change the files of a published release.
+   ```bash
+   gh release edit vX.Y.Z --prerelease
+   ```
+
+Do not change the files of a published release by hand.
 
 ## Hotfix
 
-A hotfix follows the same path as every other change. `main` accepts nothing except a promotion from `dev`.
+A hotfix follows the same path as every other change. `main` accepts nothing except a promotion from `dev` and the
+release pull request.
 
 1. Make a work branch from `dev`, for example `fix/<topic>`.
 2. Merge the fix into `dev` through a pull request.
-3. Do the [release steps](#release-steps) with a PATCH version.
+3. Do the [release steps](#release-steps). A `fix:` commit gives a PATCH version.
 
 If `dev` holds work that is not ready for a release, you have two choices:
 
@@ -316,8 +362,8 @@ does not watch these. Change them by hand.
 
 ### Review before each release
 
-Dependabot does not tell you about a new version that has no security fix. Thus do this review in the release
-preparation (Step 2):
+Dependabot does not tell you about a new version that has no security fix. Thus do this review before each
+promotion ([Step 1](#step-1-make-sure-that-dev-is-ready)):
 
 1. Read the open Dependabot alerts in the Security tab. Close each one, or write down why it stays open.
 2. Look for new versions of the GitHub Actions and the dev tools. Update those that you accept, on their own
@@ -327,9 +373,7 @@ preparation (Step 2):
 
 - [ ] Each pull request for the release is merged into `dev`, and `CI Gate` is green on `dev`.
 - [ ] The [dependency review](#review-before-each-release) is done: no open Dependabot alert without a reason.
-- [ ] The release preparation pull request is merged into `dev`: changelogs have `[X.Y.Z] - YYYY-MM-DD` under an
-      empty `[Unreleased]`, and the versions in `README.md` and `audit/README.md` are `vX.Y.Z`.
-- [ ] Locally, `make check`, `make security`, `make docs-lint` and `make validate-skills` pass.
+- [ ] The self-audit score and the check count are current on `dev`.
 - [ ] Both rulesets are active, and [Branch protection](docs/reference/branch-protection.md) says so with the date.
 - [ ] `SECURITY.md` is present. Private vulnerability reporting, secret scanning and push protection are on.
 - [ ] The root `README.md` quick start works from a fresh clone in a clean directory (Linux checked; macOS by the
@@ -337,7 +381,8 @@ preparation (Step 2):
 - [ ] The docs state platform support truthfully: no native Windows claim.
 - [ ] The promotion pull request from `dev` into `main` passed `CI Gate` and `Check source branch`, and is merged with
       a merge commit.
-- [ ] The tag is on the merge commit of the promotion pull request.
-- [ ] After the tag: `release.yml` passes; the release lists `audit.pyz`, both skill zips and `SHA256SUMS`; and
+- [ ] The release pull request shows the version you expect, its `CHANGELOG.md` entry reads well, and it is merged
+      with a merge commit.
+- [ ] `release.yml` passed; the release lists `audit.pyz`, both skill zips and `SHA256SUMS`; and
       `sha256sum -c SHA256SUMS` passes on the downloads.
-- [ ] The release notes replace the default body.
+- [ ] The back-merge pull request into `dev` is merged, and its branch is deleted.

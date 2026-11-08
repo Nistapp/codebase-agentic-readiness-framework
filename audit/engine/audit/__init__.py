@@ -19,7 +19,7 @@ Design of record lives in ``docs/``; start at ``docs/architecture/README.md``.
 
 from __future__ import annotations
 
-__version__ = "0.1.0"
+__version__ = "0.3.1"  # x-release-please-version
 
 #: Bumped whenever a rule pack, a check, or the instruction-variant table changes.
 #: Recorded in every report's provenance block so a report can be attributed to an

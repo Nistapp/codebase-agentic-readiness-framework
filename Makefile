@@ -84,12 +84,12 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not 
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-mermaid workflow-lint commit-lint
+.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-mermaid changelog-fix workflow-lint commit-lint
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  workflow-lint  commit-lint  update-secrets-baseline  validate-skills"
-	@echo "docs:  docs-lint  docs-lint-all  docs-mermaid FILES=..."
+	@echo "docs:  docs-lint  docs-lint-all  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
 # through uvx and npx at pinned versions. This target checks the prerequisites without a prompt, exits 1 naming the
@@ -210,6 +210,12 @@ docs-lint:
 docs-lint-all:
 	-git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)
 	-$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK)
+
+# Rewrites CHANGELOG.md in place with the markdownlint fixes (release-please writes `*` bullets and double blank
+# lines). release-please.yml runs it on the release pull request; it fails when a violation is left that --fix
+# cannot fix.
+changelog-fix:
+	$(MARKDOWNLINT) --fix CHANGELOG.md
 
 # Renders every Mermaid block in FILES with the pinned mermaid-cli; fails on a block that does not render.
 docs-mermaid:
