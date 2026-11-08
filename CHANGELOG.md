@@ -16,8 +16,9 @@ one.
 ### Repository
 
 - Two protected branches ([ADR 0002](docs/architecture/adrs/0002-dev-integrates-main-releases.md)). `dev` is the
-  integration branch: it accepts pull requests from any branch and no direct commits. `main` is the release branch: it
-  accepts pull requests from `dev` only. The rulesets are declared in `.github/rulesets/`.
+  integration branch and the default branch: it accepts pull requests from any branch and no direct commits. `main` is
+  the release branch: it accepts pull requests from `dev` only. The rulesets are declared in `.github/rulesets/`.
+- The quick start in `README.md` clones `--branch main`, so a user gets the latest release, not `dev`.
 - New required check on pull requests into `main`: `Check source branch`
   (`.github/workflows/pr-source-branch.yml`).
 - CI runs on pushes to `dev` as well as `main`. Dependabot version updates target `dev`.

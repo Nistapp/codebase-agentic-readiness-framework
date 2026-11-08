@@ -26,9 +26,10 @@ A GitHub ruleset can require a pull request and status checks. It cannot restric
 
 ## Decision
 
-1. **Two long-lived branches.** `dev` is the integration branch: every change goes to `dev` first. `main` is the
-   release branch: it holds only work that was promoted from `dev`. `main` stays the default branch, so a new visitor
-   and a fresh clone see released work.
+1. **Two long-lived branches.** `dev` is the integration branch and the default branch: every change goes to `dev`
+   first. `main` is the release branch: it holds only work that was promoted from `dev`. Because `dev` is the default,
+   a new pull request, a Dependabot pull request and a plain `git clone` all start on `dev`. The quick start in
+   [`README.md`](../../../README.md) clones `main` by name, so a user gets released work.
 2. **Rulesets.** Two repository rulesets, declared in
    [`.github/rulesets/`](../../../.github/rulesets/), protect the branches. Both block direct pushes, force pushes and
    deletion, and both have no bypass actors. Both allow merge commits only. The exact rules are in
@@ -58,7 +59,7 @@ The procedures are in [`RELEASE_PROCESS.md`](../../../RELEASE_PROCESS.md) and in
 |---|---|
 | Keep one protected branch, `main` (the design before this ADR) | Unreleased work and released work share one branch. The owner wants a release branch that holds released work only. |
 | Release Please, a GitHub App and an automated back-merge, as in the SDK repository | The changelogs here are written by hand, per component. Release Please would write to `main`, and that needs the back-merge. The extra App and secrets add risk for no gain. |
-| Make `dev` the default branch | Visitors and one-off users would see unreleased work first. The quick start in `README.md` must work for released work. |
+| Keep `main` as the default branch (the first version of this ADR, 2026-11-08) | New pull requests and Dependabot security updates open against the default branch. With `main` as the default, they fail `Check source branch` and need a manual change of base. The owner made `dev` the default the same day. |
 | Restrict the source branch with the ruleset only | Rulesets cannot express a source branch. A required status check is the only way. |
 | Require an up-to-date branch on `main` | It forces a back-merge pull request from `main` into `dev` after each release, with no content change. |
 | Squash or rebase merges | One Conventional Commit per logical change must stay revertable alone. A squash joins them; a rebase rewrites them. |
@@ -82,8 +83,8 @@ The procedures are in [`RELEASE_PROCESS.md`](../../../RELEASE_PROCESS.md) and in
   or revert it on `dev` first.
 * `main` shows merge commits that `dev` does not have. GitHub shows `main` as "ahead of `dev`" by that count. This
   is expected and needs no action.
-* Dependabot security updates open pull requests against the default branch, `main`. They fail
-  `Check source branch`. The maintainer changes their base to `dev`.
+* A visitor to the repository page sees `dev`, which can hold unreleased work. A plain `git clone` also gets `dev`.
+  The quick start clones `--branch main`, and the GitHub releases hold the released files.
 
 ---
 

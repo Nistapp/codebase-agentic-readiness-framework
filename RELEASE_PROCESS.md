@@ -9,10 +9,9 @@ pull request or starts the release workflow ([`AGENTS.md`](AGENTS.md)).
 ## The rules
 
 1. Two branches live for ever: `dev` and `main`. Both are protected.
-2. `dev` is the integration branch. It accepts pull requests from any branch, `main` included. It accepts no direct
-   commits.
-3. `main` is the release branch and the default branch. It accepts pull requests from `dev` only. It accepts no direct
-   commits.
+2. `dev` is the integration branch and the default branch. It accepts pull requests from any branch, `main` included.
+   It accepts no direct commits.
+3. `main` is the release branch. It accepts pull requests from `dev` only. It accepts no direct commits.
 4. Start every work branch from `dev`. Name it `<type>/<topic>`, where `<type>` is a Conventional Commits type, for
    example `fix/report-score` or `docs/release-process`.
 5. Every pull request must pass the required check `CI Gate`. A pull request into `main` must also pass
@@ -264,14 +263,9 @@ If `dev` holds work that is not ready for a release, you have two choices:
 
 ## Pull requests from bots
 
-- **Dependabot version updates** open pull requests into `dev` ([`.github/dependabot.yml`](.github/dependabot.yml)).
-  Merge them like any other pull request.
-- **Dependabot security updates** open pull requests into the default branch, `main`. They fail
-  `Check source branch`. Change the base to `dev`, then merge:
-
-  ```bash
-  gh pr edit <number> --base dev
-  ```
+Dependabot version updates and Dependabot security updates open pull requests into `dev`. Version updates use
+`target-branch: dev` in [`.github/dependabot.yml`](.github/dependabot.yml). Security updates use the default branch,
+which is `dev`. Merge them like any other pull request.
 
 ## Release-day checklist
 

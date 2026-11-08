@@ -1,7 +1,8 @@
 # Keeps the pinned workflow actions current. Actions are pinned by commit SHA (see ci.yml and release.yml); Dependabot
 # opens a pull request that moves the SHA and the version comment together. The repository has no runtime
 # dependencies to update: the dev tools are pinned in the Makefile. Its pull requests target `dev`, like every other
-# change; `main` accepts pull requests from `dev` only (RELEASE_PROCESS.md).
+# change; `main` accepts pull requests from `dev` only (RELEASE_PROCESS.md). `dev` is also the default branch, so
+# security updates go there too; `target-branch` keeps version updates on `dev` if the default ever changes.
 version: 2
 updates:
   - package-ecosystem: github-actions

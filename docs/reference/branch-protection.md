@@ -9,8 +9,8 @@ and `main`. The decision and its reasons are in
 
 | Branch | Purpose | Accepts | Direct commits |
 | --- | --- | --- | --- |
-| `dev` | The integration branch. Every change goes here first | Pull requests from any branch, `main` included | Blocked |
-| `main` | The release branch and the default branch. It holds released work only | Pull requests from `dev` only | Blocked |
+| `dev` | The integration branch and the default branch. Every change goes here first | Pull requests from any branch, `main` included | Blocked |
+| `main` | The release branch. It holds released work only | Pull requests from `dev` only | Blocked |
 | `<type>/<topic>` | A work branch, for example `fix/report-score`. Start it from `dev` | Your commits | Allowed |
 
 ```mermaid
@@ -92,6 +92,8 @@ Pull requests into `dev` do not run this workflow. The `dev` ruleset does not re
 | --- | --- | --- |
 | `main protection` (id 26750008) | `refs/heads/main` | Active since 2026-11-07. Updated to [`main-protection.json`](../../.github/rulesets/main-protection.json) on 2026-11-08 |
 | `dev protection` (id 26787626) | `refs/heads/dev` | Active since 2026-11-08, from [`dev-protection.json`](../../.github/rulesets/dev-protection.json) |
+
+On 2026-11-08 the default branch changed from `main` to `dev`.
 
 On 2026-11-07 these settings were also turned on: private vulnerability reporting, secret scanning, push protection
 and Dependabot security updates (see [`SECURITY.md`](../../SECURITY.md)).

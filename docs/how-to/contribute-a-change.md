@@ -10,7 +10,7 @@ This page uses these terms:
 
 | Term | Meaning |
 | --- | --- |
-| `dev` | The integration branch. Every change goes here first. It is protected: you cannot commit or push to it directly |
+| `dev` | The integration branch and the default branch. Every change goes here first. It is protected: you cannot commit or push to it directly |
 | `main` | The release branch. It accepts pull requests from `dev` only. You never open a pull request into `main` |
 | Work branch | Your own branch for one change. You start it from `dev` |
 | Pull request | A request to merge your work branch into `dev`. GitHub runs the checks on it |
@@ -64,7 +64,7 @@ Do these steps once, on each new machine.
    git config fetch.prune true
    ```
 
-3. Get a local `dev` branch that follows `origin/dev`:
+3. Make sure that you are on `dev`. `dev` is the default branch, so the clone starts on it:
 
    ```bash
    git switch dev
@@ -180,7 +180,8 @@ After the first push, use `git push`.
 gh pr create --base dev --fill
 ```
 
-- `--base dev` is necessary. The default branch on GitHub is `main`, and a pull request into `main` fails.
+- `--base dev` names the target branch. `dev` is also the default branch, but write `--base dev` each time. Then a
+  pull request never goes to `main` by mistake.
 - `--fill` uses your commit messages for the title and the body. Then edit the body on GitHub and complete the
   checklist from the [pull request template](../../.github/pull_request_template.md).
 - Use a Conventional Commits title for the pull request too.
