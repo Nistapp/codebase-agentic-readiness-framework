@@ -109,8 +109,8 @@ The framework's verbs are the contract. The runner is the **root `Makefile`** of
 | `check` | `make check` | `format:check`, `typecheck`, `test`, `--verify-rules`, the schema cross-check (`crosscheck`) and `recipe-lint`. |
 | `security` | `make security` | Secrets scan against the committed baseline. No dependency audit: there are no dependencies. |
 
-The dev tools (ruff, mypy, detect-secrets) are pinned in the Makefile and run through `uvx`. They are never imported
-by the engine's `audit/` package or by `build.py`, so the standard-library-only rule stands.
+The dev tools (ruff, mypy, detect-secrets) are pinned in `dev/tools/pyproject.toml` and run through `uvx`. They
+are never imported by the engine's `audit/` package or by `build.py`, so the standard-library-only rule stands.
 
 Commands that run the engine itself, from this directory:
 
@@ -193,8 +193,9 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 > its original history is preserved there. Branches and commits follow the repository's own conventions; the
 > bullets below describe this tool's own conventions.
 
-- **Branching (intended):** `main` = production, `dev` = active development, feature branches
-  `feat/<slug>`, `fix/<slug>`, `refactor/<slug>`. PRs to `main` originate from `dev`.
+- **Branching:** the repository's model applies (`RELEASE_PROCESS.md`, ADR 0002 in `docs/architecture/adrs/`).
+  `dev` is the integration branch; `main` takes pull requests from `dev` only. Work branches start from `dev` and are
+  named `<type>/<topic>`, for example `feat/<slug>`, `fix/<slug>` or `refactor/<slug>`.
 - **Commits (Conventional Commits):** `<type>(<scope>): <description>` with types `feat`, `fix`, `refactor`,
   `test`, `docs`, `chore`, `ci`, `perf`, `revert`.
 - **Agent commits:** `chore(ai): pass-[N] - <description>`.

@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+#
+# Emits the `Check source branch` status on every pull request into `main`. It passes only when the head branch is
+# `dev` in this repository. The `main protection` ruleset requires it, because a ruleset cannot restrict the source
+# branch of a pull request. Pull requests into `dev` have no source restriction and do not run this workflow.
+# The model and the reasons: docs/architecture/adrs/0002-dev-integrates-main-releases.md.
+name: PR source branch
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize, edited]
+
+permissions: {}
+
+jobs:
+  check-source-branch:
+    name: Check source branch
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the head branch to be dev in this repository
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          THIS_REPO: ${{ github.repository }}
+        run: |
+          echo "Base branch: $BASE_REF"
+          echo "Head branch: $HEAD_REPO:$HEAD_REF"
+          if [[ "$HEAD_REF" != "dev" || "$HEAD_REPO" != "$THIS_REPO" ]]; then
+            echo "::error::A pull request into main must come from the dev branch of $THIS_REPO. Open your pull request against dev. See RELEASE_PROCESS.md."
+            exit 1
+          fi
+          echo "Source branch is dev. Check passed."

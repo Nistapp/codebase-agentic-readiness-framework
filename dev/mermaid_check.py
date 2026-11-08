@@ -27,7 +27,17 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
-MERMAID_CLI = "@mermaid-js/mermaid-cli@12.0.0"
+MERMAID_CLI = "@mermaid-js/mermaid-cli"
+# The exact version is in the Node dev tools manifest, where Dependabot sees it (.github/dependabot.yml).
+NODE_PINS = Path(__file__).resolve().parent / "tools" / "package.json"
+
+
+def mermaid_cli_spec(pins: Path = NODE_PINS) -> str:
+    """Return ``@mermaid-js/mermaid-cli@<version>`` with the exact version pinned in ``pins``."""
+    version = json.loads(pins.read_text(encoding="utf-8"))["devDependencies"][MERMAID_CLI]
+    return f"{MERMAID_CLI}@{version}"
+
+
 ERROR_LINES = 8
 OPEN_FENCE = re.compile(r"^(?P<indent> {0,3})(?P<fence>`{3,}|~{3,})\s*mermaid\s*$")
 
@@ -71,7 +81,16 @@ def render(block: Block, workdir: Path, index: int, puppeteer_config: Path | Non
     """Render one block with ``mmdc``; return ``None`` on success, else the CLI's error output."""
     source = workdir / f"block-{index}.mmd"
     source.write_text(block.source, encoding="utf-8")
-    command = ["npx", "--yes", MERMAID_CLI, "--quiet", "-i", str(source), "-o", str(workdir / f"block-{index}.svg")]
+    command = [
+        "npx",
+        "--yes",
+        mermaid_cli_spec(),
+        "--quiet",
+        "-i",
+        str(source),
+        "-o",
+        str(workdir / f"block-{index}.svg"),
+    ]
     if puppeteer_config is not None:
         command += ["-p", str(puppeteer_config)]
     result = subprocess.run(command, capture_output=True, text=True, check=False)

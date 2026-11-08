@@ -1,9 +1,13 @@
+<!-- The base branch is `dev`. Only the maintainer's promotion pull request from `dev` targets `main`.
+     A pull request into `main` from any other branch fails `Check source branch`. See RELEASE_PROCESS.md. -->
+
 ## Summary
 
 <!-- What the change does and why. Link the issue, if there is one. -->
 
 ## Checklist
 
+- [ ] The base branch is `dev`, and the head is a work branch named `<type>/<topic>` that started from `dev`
 - [ ] `make check` and `make security` pass
 - [ ] `make docs-lint` passes when Markdown changed; Mermaid blocks validated (`make docs-mermaid FILES=<file.md>`)
 - [ ] New code has tests; a new engine check has a fixture that fails exactly that check

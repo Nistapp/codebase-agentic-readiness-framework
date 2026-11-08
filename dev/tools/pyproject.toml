@@ -1,0 +1,27 @@
+# The Python dev tools of this repository, one exact pin per line in the `tools` group. Nothing installs this
+# project: the Makefile, lefthook.yml and the workflows read each version from here and run the tool through uvx or
+# uv. It exists so that Dependabot (the uv entry in .github/dependabot.yml) sees the tools and their dependencies in
+# uv.lock, and raises security alerts and security pull requests for them. dev/tests/test_tool_pins.py checks that
+# every pin is exact, that uv.lock agrees, and that no other file repeats a version.
+#
+# To change a pin: edit its line, run `uv lock --directory dev/tools`, then `make check`.
+[project]
+name = "codebase-agentic-readiness-framework-dev-tools"
+version = "0"
+description = "Pins for the dev tools; never installed."
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+tools = [
+    "actionlint-py==1.7.12.25",
+    "check-jsonschema==0.39.0",
+    "coverage==7.17.2",
+    "detect-secrets==1.5.0",
+    "jsonschema==4.23.0",
+    "mypy==2.4.0",
+    "ruff==0.16.10",
+    "skills-ref==0.1.1",
+    "uv==0.12.10",
+    "zizmor==1.32.0",
+]

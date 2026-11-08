@@ -3,26 +3,41 @@
 > *"The more you sweat in peace, the less you bleed in war."* Preparing a codebase for AI coding agents is the sweat;
 > agents changing it from user prompts is the war.
 
-This framework says what makes a codebase safe for AI coding agents, and gives you two skills that act on it.
-The **audit** skill measures an existing repository and writes an evidence-cited readiness report. The **implement**
-skill then fixes the confirmed findings, one theme at a time, on a branch per theme.
+This framework 'prepares' a codebase or repo to enable higher quality of work from AI coding agents and to prevent
+spaghettification of code. [What is an agentic-ready codebase?](docs/framework/overview.md)
+
+This gives you two skills that act on it:
+
+- The **audit** skill measures an existing repository and writes an evidence-cited readiness report.
+- The **implement** skill then fixes the confirmed findings, one theme at a time, on a branch per theme.
 
 ## Quick start
 
 You need [Claude Code](https://claude.com/claude-code), `git` and Python 3.11 or newer.
 
-1. Clone this repository and start Claude Code in it:
+(Disclaimer: This has been built as a generic skill to be used in any agentic harness -
+[opencode](https://github.com/anomalyco/opencode), [hermes-agent](https://github.com/nousresearch/hermes-agent) etc
+but we have not yet tested in other harnesses. Please exercise caution when using in other harnesses and provide
+bug-reports, suggestions and improvements in
+[github discussions](https://github.com/Nistapp/codebase-agentic-readiness-framework/discussions).)
+
+1. Clone the latest release (the `main` branch) and start Claude Code in it:
 
    ```bash
-   git clone https://github.com/Nistapp/codebase-agentic-readiness-framework.git
+   git clone --branch main https://github.com/Nistapp/codebase-agentic-readiness-framework.git
    cd codebase-agentic-readiness-framework
    claude
    ```
 
 2. Say: **"Audit /path/to/your/repo and write the output to /path/to/output"**.
-3. When the report is final, say: **"Start implementing the fixes on /path/to/your/repo based on
-   /path/to/output/\<report\>.json"**. First, the skill asks you to copy the report (`.json` and `.md`) into your
-   repository under `docs/agentic-readiness-report/` and commit it. It does not copy the report itself.
+3. You will find a folder `/path/to/output/` with the readiness report `<repo-name>.audit-report.<timestamp>.json`
+   and a markdown summary `<repo-name>.audit-report.<timestamp>.md`. Review them but do not edit them.
+4. You have full control on what/how to implement during the 'implementation' phase. You can prescribe, customise,
+   skip or accept the defaults provided by the tool. When you are ready to implement, open claude (fresh session is
+   recommended for clean context) in the same directory as this skill and say: **"Start implementing the fixes on
+   /path/to/your/repo based on /path/to/output/\<repo-name\>.audit-report.\<timestamp\>.json"**. First, the skill
+   asks you to copy the report (`.json` and `.md`) into your repository under `docs/agentic-readiness-report/` and
+   commit it. It does not copy the report itself.
 
 What happens: the skill asks a few questions, shows you a plan, and asks before each step that changes something.
 The audit never writes inside your repository. The implement skill commits on local branches. It never merges, and
@@ -48,7 +63,12 @@ it pushes a branch only if you opt in.
 ## Contributing
 
 Start at [`CONTRIBUTING.md`](CONTRIBUTING.md): the repository map, the gates (`make check`, `make security`) and the
-commit rules. Agents read [`AGENTS.md`](AGENTS.md). Report a security problem privately: see
+commit rules. Agents read [`AGENTS.md`](AGENTS.md).
+
+`dev` is the default branch and holds the work in progress; `main` holds the latest release. Start your branch from
+`dev` and open your pull request into `dev`. Nobody commits to `dev` or `main` directly, and only `dev` is promoted
+to `main`. Step by step: [Contribute a change](docs/how-to/contribute-a-change.md). How a release is made:
+[`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). Report a security problem privately: see
 [`SECURITY.md`](SECURITY.md). Changes are listed in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Licence

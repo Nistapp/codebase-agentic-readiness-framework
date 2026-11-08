@@ -6,7 +6,9 @@ tested here; CI's docs job runs it for real."""
 
 from __future__ import annotations
 
+import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -47,6 +49,17 @@ class ExtractBlocks(unittest.TestCase):
 
     def test_main_skips_missing_and_non_markdown_files(self) -> None:
         self.assertEqual(mermaid_check.main(["does-not-exist.md", "Makefile"]), 0)
+
+
+class MermaidCliSpec(unittest.TestCase):
+    def test_reads_the_exact_version_from_the_manifest(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            pins = Path(tmp) / "package.json"
+            pins.write_text(json.dumps({"devDependencies": {"@mermaid-js/mermaid-cli": "9.8.7"}}), encoding="utf-8")
+            self.assertEqual(mermaid_check.mermaid_cli_spec(pins), "@mermaid-js/mermaid-cli@9.8.7")
+
+    def test_the_repository_manifest_names_the_cli(self) -> None:
+        self.assertTrue(mermaid_check.mermaid_cli_spec().startswith("@mermaid-js/mermaid-cli@"))
 
 
 if __name__ == "__main__":

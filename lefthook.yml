@@ -1,10 +1,18 @@
 # Local hooks (lefthook). They run the same verbs CI runs, on what is staged, before a commit lands.
 # Install once per clone: `lefthook install` (binary: https://lefthook.dev). Nothing is installed into the project;
-# the dev tools below run through uvx and npx at the versions the Makefile pins. Hooks are a convenience: CI
+# the dev tools below run through uvx and npx at the versions pinned in dev/tools/. Hooks are a convenience: CI
 # (`make check`, `make security`, `make docs-lint`) is the gate, and `git commit --no-verify` is not a way around it.
 pre-commit:
   parallel: false
   commands:
+    # `dev` and `main` change only through pull requests (RELEASE_PROCESS.md). Stop a commit on either one locally,
+    # before the push is refused. The fix: `git switch -c <type>/<topic>` carries the staged change to a new branch.
+    protected-branch:
+      run: >-
+        branch="$(git symbolic-ref --quiet --short HEAD || true)";
+        case "$branch" in main|dev)
+        echo "Do not commit on '$branch'. Run: git switch -c <type>/<topic>, then commit again." >&2; exit 1;;
+        esac
     format-check:
       glob: "*.py"
       run: make format-check
@@ -12,13 +20,16 @@ pre-commit:
       # The ratchet path list lives in the Makefile (DOCS_LINT_PATHS); the globs here are its broadest match.
       glob: "{implement/**/*.md,docs/**/*.md,CONTRIBUTING.md,CHANGELOG.md,RELEASE_PROCESS.md,SECURITY.md}"
       run: make docs-lint
+    workflow-lint:
+      glob: ".github/**"
+      run: make workflow-lint
     secrets:
-      run: uvx --from detect-secrets==1.5.0 detect-secrets-hook --baseline .secrets.baseline {staged_files}  # pragma: allowlist secret
+      # The version is the one pinned in dev/tools/pyproject.toml, where Dependabot sees it.
+      run: uvx --from "$(grep -o 'detect-secrets==[^"]*' dev/tools/pyproject.toml)" detect-secrets-hook --baseline .secrets.baseline {staged_files}  # pragma: allowlist secret
 
-# Conventional Commits: `type(scope): subject`. The trailer `Roadmap-Step:` is checked in review, not here.
+# Conventional Commits: `type(scope): subject`. The rule lives in dev/commit_lint.py, which CI also runs on every
+# pull request. The trailer `Roadmap-Step:` is checked in review, not here.
 commit-msg:
   commands:
     conventional-commits:
-      run: >-
-        grep -Eq '^(feat|fix|docs|test|chore|ci|refactor|perf|build|style|revert)(\([a-z0-9._-]+\))?!?: .+' {1}
-        || { echo 'commit message must follow Conventional Commits: type(scope): subject' >&2; exit 1; }
+      run: python3 dev/commit_lint.py --message-file {1}

@@ -2,7 +2,7 @@
 # Copyright (C) 2026 K. C. Ramakrishna
 #
 # The framework's command surface for this repository: seven verbs, the same names a human, an agent
-# and CI run. The runtime code is standard-library Python; the dev tools below are pinned and run
+# and CI run. The runtime code is standard-library Python; the dev tools below are pinned in dev/tools/ and run
 # through uvx, so nothing is installed into the project. Needs make, git, python3 (3.11+) and uv.
 #
 #   make format         rewrite formatting in place
@@ -12,7 +12,7 @@
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
-#                       cross-check and the recipe linter
+#                       cross-check, the recipe linter and the workflow lint
 #   make security       secrets scan against the committed baseline
 #   make coverage       (extra) both unittest suites under coverage.py; fails below the floor in .coveragerc
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
@@ -22,27 +22,41 @@
 
 PYTHON ?= python3
 
-RUFF := uvx ruff@0.16.10
-MYPY := uvx mypy@2.4.0
-DETECT_SECRETS := uvx --from detect-secrets==1.5.0 detect-secrets
-DETECT_SECRETS_HOOK := uvx --from detect-secrets==1.5.0 detect-secrets-hook
+# Every dev tool version lives in one of two manifests, so that Dependabot sees it (.github/dependabot.yml):
+# dev/tools/pyproject.toml (Python tools, one `"name==version",` line each, locked in uv.lock) and
+# dev/tools/package.json (Node tools, locked in package-lock.json). `pin` and `npm_pin` read a version from them;
+# make stops with an error when a pin is missing.
+TOOL_PINS := dev/tools/pyproject.toml
+NODE_PINS := dev/tools/package.json
+pin = $(or $(shell sed -n 's/^ *"$(1)==\([^"]*\)".*/\1/p' $(TOOL_PINS)),$(error no pin for $(1) in $(TOOL_PINS)))
+npm_pin = $(or $(shell sed -n 's|^ *"$(1)": *"\([^"]*\)".*|\1|p' $(NODE_PINS)),$(error no pin for $(1) in $(NODE_PINS)))
+
+RUFF := uvx ruff@$(call pin,ruff)
+MYPY := uvx mypy@$(call pin,mypy)
+DETECT_SECRETS := uvx --from detect-secrets==$(call pin,detect-secrets) detect-secrets
+DETECT_SECRETS_HOOK := uvx --from detect-secrets==$(call pin,detect-secrets) detect-secrets-hook
 # The reference JSON Schema package is installed for one run, in a throwaway environment. The tools never import it.
-CROSSCHECK := PYTHONPATH=audit/tools uv run --no-project --with jsonschema==4.23.0 python
+CROSSCHECK := PYTHONPATH=audit/tools uv run --no-project --with jsonschema==$(call pin,jsonschema) python
 # The Agent Skills spec's own reference validator (agentskills.io); its CLI entry point is `agentskills`,
 # installed for one run, in a throwaway environment. Not the tools' or the engine's dependency.
-SKILLS_REF := uvx --from skills-ref==0.1.1 agentskills
+SKILLS_REF := uvx --from skills-ref==$(call pin,skills-ref) agentskills
 # Markdown lint (rules in .markdownlint-cli2.jsonc) and the Mermaid check need Node; neither is part of `check`.
-MARKDOWNLINT := npx --yes markdownlint-cli2@0.24.0
+MARKDOWNLINT := npx --yes markdownlint-cli2@$(call npm_pin,markdownlint-cli2)
 # The compare step of the quality baseline (.quality-baseline.json): fails when a tool's full-tree count goes up.
 QUALITY_BASELINE := $(PYTHON) dev/quality_baseline.py check
-COVERAGE := uvx coverage@7.17.2
+COVERAGE := uvx coverage@$(call pin,coverage)
+# Workflow and GitHub-config checks: actionlint (syntax, expressions, shellcheck on run: blocks), zizmor (workflow
+# and Dependabot security, offline) and check-jsonschema (the SchemaStore schemas it bundles, offline).
+ACTIONLINT := uvx --from actionlint-py==$(call pin,actionlint-py) actionlint
+ZIZMOR := uvx zizmor@$(call pin,zizmor)
+CHECK_JSONSCHEMA := uvx --from check-jsonschema==$(call pin,check-jsonschema) check-jsonschema
 # The coverage data stays under the git-ignored build output; settings (the floor) are in .coveragerc.
 COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
 DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
-	'docs/README.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
+	'docs/README.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
 	'docs/explanation/user-overview/03-trust-and-safety.md'
 
 ENGINE := audit/engine
@@ -54,11 +68,11 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not 
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-mermaid
+.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-mermaid workflow-lint commit-lint
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  workflow-lint  commit-lint  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-mermaid FILES=..."
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -134,7 +148,20 @@ crosscheck:
 recipe-lint:
 	$(PYTHON) dev/recipe_lint.py .
 
-check: format-check typecheck test verify-rules crosscheck recipe-lint
+# Lints the GitHub Actions workflows and checks .github/dependabot.yml. All three tools run offline.
+workflow-lint:
+	$(ACTIONLINT)
+	$(ZIZMOR) --offline .github
+	$(CHECK_JSONSCHEMA) --builtin-schema vendor.github-workflows .github/workflows/*.yml
+	$(CHECK_JSONSCHEMA) --builtin-schema vendor.dependabot .github/dependabot.yml
+
+# Checks that each commit subject in RANGE follows Conventional Commits; merge commits are skipped. CI runs it on
+# the commits of a pull request. Locally: `make commit-lint` checks what this branch adds on top of origin/dev.
+RANGE ?= origin/dev..HEAD
+commit-lint:
+	$(PYTHON) dev/commit_lint.py --range $(RANGE)
+
+check: format-check typecheck test verify-rules crosscheck recipe-lint workflow-lint
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.
