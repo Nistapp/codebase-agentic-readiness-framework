@@ -171,7 +171,11 @@ There is no release preparation branch. Do not edit `CHANGELOG.md` or a version.
 
 > [!CAUTION]
 > Do not add `--delete-branch` to the merge of a promotion pull request. The head branch is `dev`. The `dev` ruleset
-> blocks its deletion, but the command can still delete your local `dev`.
+> blocks its deletion on GitHub, but the command can still delete your local `dev`.
+
+GitHub deletes the head branch of every merged pull request ("Automatically delete head branches", see
+[`docs/reference/branch-protection.md`](docs/reference/branch-protection.md)). So the merges below need no
+`--delete-branch` flag.
 
 ### Step 3: Read and merge the release pull request
 
@@ -197,7 +201,7 @@ The push to `main` starts `release-please.yml`. A minute later the release pull 
 
    ```bash
    gh pr checks <n> --watch
-   gh pr merge <n> --merge --delete-branch
+   gh pr merge <n> --merge
    ```
 
 A release pull request may stay open while more promotions land. release-please updates it after each one. Merge it
@@ -225,10 +229,10 @@ release commit on `main`. It brings the new version and the changelog entry into
 
 2. Without the App token, close and reopen it to start CI.
 3. If `dev` moved since the release, click "Update branch" (the `dev` ruleset requires an up-to-date branch).
-4. When `CI Gate` passes, merge it with a merge commit and delete the branch:
+4. When `CI Gate` passes, merge it with a merge commit. GitHub deletes the branch:
 
    ```bash
-   gh pr merge <n> --merge --delete-branch
+   gh pr merge <n> --merge
    ```
 
 Merge it before the next promotion. If you forget, nothing breaks: the files do not conflict. But `dev` shows the old

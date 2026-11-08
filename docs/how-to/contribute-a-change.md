@@ -233,7 +233,7 @@ The maintainer merges your pull request with a merge commit. You do not merge it
 
 ### Step 10: Clean up
 
-After the merge, click **Delete branch** on the pull request page, if GitHub shows it. Then delete your local copy:
+After the merge, GitHub deletes your branch on GitHub. Delete your local copy:
 
 ```bash
 git switch dev
