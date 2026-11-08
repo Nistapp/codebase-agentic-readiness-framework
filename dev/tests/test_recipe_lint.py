@@ -107,6 +107,18 @@ class RootPageLinkTests(FixtureTests):
         found = {path.relative_to(self.repo.root).as_posix() for path in rl.find_root_pages(self.repo.root)}
         self.assertEqual(found, {"README.md", "spec/B.md", "greenfield/C.md"})
 
+    def test_the_root_process_documents_are_root_pages(self) -> None:
+        for relative in ("AGENTS.md", "CONTRIBUTING.md", "RELEASE_PROCESS.md", "SECURITY.md", "CHANGELOG.md"):
+            self.repo.write(relative, "# T\n")
+        found = {path.relative_to(self.repo.root).as_posix() for path in rl.find_root_pages(self.repo.root)}
+        self.assertEqual(found, {"AGENTS.md", "CONTRIBUTING.md", "RELEASE_PROCESS.md", "SECURITY.md"})
+
+    def test_a_broken_link_in_a_root_process_document_is_reported(self) -> None:
+        self.repo.write("RELEASE_PROCESS.md", "# R\n\n[gone](docs/missing.md)\n")
+        errors = self.lint_root_pages().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("RELEASE_PROCESS.md:3", errors[0])
+
     def test_the_framework_pages_under_docs_framework_are_recipe_markdown(self) -> None:
         self.repo.write("docs/framework/glossary.md", "# G\n\n[gone](missing.md)\n")
         files = {path.relative_to(self.repo.root).as_posix() for path in rl.find_markdown(self.repo.root)}
