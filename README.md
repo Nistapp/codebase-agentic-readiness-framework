@@ -3,12 +3,13 @@
 > *"The more you sweat in peace, the less you bleed in war."* Preparing a codebase for AI coding agents is the sweat;
 > agents changing it from user prompts is the war.
 
-This framework 'prepares' a codebase or repo to enable higher quality of work from AI coding agents and to prevent spaghettification of code. [What is an agentic-ready codebase?](framework/overview.md) 
+This framework 'prepares' a codebase or repo to enable higher quality of work from AI coding agents and to prevent
+spaghettification of code. [What is an agentic-ready codebase?](docs/framework/overview.md)
 
-This gives you two skills that act on it - 
-- The **audit** skill measures an existing repository and writes an evidence-cited readiness report. 
-- The **implement**
-skill then fixes the confirmed findings, one theme at a time, on a branch per theme.
+This gives you two skills that act on it:
+
+- The **audit** skill measures an existing repository and writes an evidence-cited readiness report.
+- The **implement** skill then fixes the confirmed findings, one theme at a time, on a branch per theme.
 
 ## Quick start
 
