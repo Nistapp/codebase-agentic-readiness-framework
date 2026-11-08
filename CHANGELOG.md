@@ -45,9 +45,7 @@ one.
 
 - **dependabot:** open security pull requests only, never for a major version ([0cfcc6c](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0cfcc6c34cd46f2f870141e2f580e3c857751d29))
 - lint the workflows and the commit subjects in the gate ([e83a10f](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/e83a10f0a3914ab776a7df63b511040bc29fd59d))
-- **release:** automate versions and releases with release-please ([83f7d0c](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/83f7d0ccbe85bce2d75ba59692df64f78c6b56bc))
 - **release:** automate versions and releases with release-please ([be5d86f](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/be5d86fd25e16d2e3f70fb796e51cc99d65178fc))
-- **release:** CI checks, gates and automation - first phase. ([0c90c2d](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0c90c2d4eddc45f104d8b9e2ecbcb702713fb989))
 - **release:** publish only a tag whose commit is on main ([195d76b](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/195d76b9fd4c4b680f1fa9d6d9d4ed3bc5315535))
 - require pull requests into main to come from dev ([8c3c05a](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/8c3c05ad67fbc7333c7eeecc1d4659c13590cabe))
 - run CI on pushes to dev and target Dependabot at dev ([58d65c1](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/58d65c17f5838bb1097a4e2ce7b0b3752b816b14))
