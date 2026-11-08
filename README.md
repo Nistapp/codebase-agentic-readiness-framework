@@ -15,6 +15,12 @@ This gives you two skills that act on it:
 
 You need [Claude Code](https://claude.com/claude-code), `git` and Python 3.11 or newer.
 
+(Disclaimer: This has been built as a generic skill to be used in any agentic harness -
+[opencode](https://github.com/anomalyco/opencode), [hermes-agent](https://github.com/nousresearch/hermes-agent) etc
+but we have not yet tested in other harnesses. Please exercise caution when using in other harnesses and provide
+bug-reports, suggestions and improvements in
+[github discussions](https://github.com/Nistapp/codebase-agentic-readiness-framework/discussions).)
+
 1. Clone the latest release (the `main` branch) and start Claude Code in it:
 
    ```bash
@@ -24,9 +30,14 @@ You need [Claude Code](https://claude.com/claude-code), `git` and Python 3.11 or
    ```
 
 2. Say: **"Audit /path/to/your/repo and write the output to /path/to/output"**.
-3. When the report is final, say: **"Start implementing the fixes on /path/to/your/repo based on
-   /path/to/output/\<report\>.json"**. First, the skill asks you to copy the report (`.json` and `.md`) into your
-   repository under `docs/agentic-readiness-report/` and commit it. It does not copy the report itself.
+3. You will find a folder `/path/to/output/` with the readiness report `<repo-name>.audit-report.<timestamp>.json`
+   and a markdown summary `<repo-name>.audit-report.<timestamp>.md`. Review them but do not edit them.
+4. You have full control on what/how to implement during the 'implementation' phase. You can prescribe, customise,
+   skip or accept the defaults provided by the tool. When you are ready to implement, open claude in the same
+   directory as this skill and say: **"Start implementing the fixes on /path/to/your/repo based on
+   /path/to/output/\<repo-name\>.audit-report.\<timestamp\>.json"**. First, the skill asks you to copy the report
+   (`.json` and `.md`) into your repository under `docs/agentic-readiness-report/` and commit it. It does not copy the
+   report itself.
 
 What happens: the skill asks a few questions, shows you a plan, and asks before each step that changes something.
 The audit never writes inside your repository. The implement skill commits on local branches. It never merges, and
