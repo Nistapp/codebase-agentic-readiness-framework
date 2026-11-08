@@ -61,15 +61,16 @@ Both checks come from GitHub Actions (integration id `15368`).
 ### `CI Gate`
 
 `CI Gate` is the last job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). CI runs on every pull
-request and on every push to `dev` and `main`. `CI Gate` needs five jobs and fails unless each one succeeded:
+request and on every push to `dev` and `main`. `CI Gate` needs six jobs and fails unless each one succeeded:
 
 | Job | What it runs |
 | --- | --- |
-| `check` | `make check` on Ubuntu and macOS, Python 3.11 and 3.14 |
+| `check` | `make check` on Ubuntu and macOS, Python 3.11 and 3.14. It includes `make workflow-lint` |
 | `security` | `make security` |
 | `coverage` | `make coverage`, which fails below the floor in `.coveragerc` |
 | `self-audit` | `make self-audit`: the engine on this repository; exit 2 when a finding appears that `.audit-baseline.json` did not have |
 | `docs` | `make docs-lint` and the Mermaid render check, when Markdown changed |
+| `commits` | `dev/commit_lint.py` on each commit that the pull request or push adds: Conventional Commits subjects; merge commits are skipped |
 
 The rulesets require `CI Gate` alone. Thus a new matrix leg or a renamed job never needs a ruleset change. Add a new
 job to `needs:` in the workflow, not to the rulesets.

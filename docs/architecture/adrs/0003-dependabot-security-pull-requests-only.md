@@ -46,7 +46,7 @@ GitHub's documentation (the Dependabot options reference and "Configuring Depend
 
    | Manifest | Lockfile | Tools | Dependabot ecosystem |
    |---|---|---|---|
-   | [`pyproject.toml`](../../../dev/tools/pyproject.toml) (group `tools`) | `uv.lock` | coverage, detect-secrets, jsonschema, mypy, ruff, skills-ref, uv | `uv` |
+   | [`pyproject.toml`](../../../dev/tools/pyproject.toml) (group `tools`) | `uv.lock` | actionlint-py, check-jsonschema, coverage, detect-secrets, jsonschema, mypy, ruff, skills-ref, uv, zizmor | `uv` |
    | [`package.json`](../../../dev/tools/package.json) | `package-lock.json` | markdownlint-cli2, mermaid-cli | `npm` |
 
    Nothing installs these projects. The [`Makefile`](../../../Makefile), [`lefthook.yml`](../../../lefthook.yml),

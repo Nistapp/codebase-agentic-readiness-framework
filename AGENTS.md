@@ -25,8 +25,9 @@ make lint           # read-only lint
 make typecheck      # mypy, strict, on audit/tools, implement/tools and dev, and the engine's build.py
 make test           # the engine's suite, then the audit tools', the implement tools' and the dev checks'
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
-                    # cross-check, recipe-lint
+                    # cross-check, recipe-lint, workflow-lint (actionlint, zizmor, check-jsonschema)
 make security       # secrets scan against .secrets.baseline
+make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin/dev..HEAD); CI runs it on each PR
 ```
 
 One test, without the whole suite. Run the engine's tests from `audit/engine/`:
@@ -53,7 +54,8 @@ no vendor-specific instruction file exists beside it.
   write a version in the `Makefile`, a hook or a workflow.
   Nothing is installed into the project.
 - Local hooks are `lefthook.yml` (a stop on commits to `dev` and `main`, format check on staged Python,
-  `make docs-lint` on staged ratchet Markdown, a secrets scan, a Conventional Commits check).
+  `make docs-lint` on staged ratchet Markdown, `make workflow-lint` on staged `.github/` files, a secrets scan,
+  and `dev/commit_lint.py` on the commit message).
   The developer runs `lefthook install` once per clone; an agent never does.
   Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
 - `make coverage` runs the engine's, the audit tools' and the implement tools' suites under coverage.py. It fails

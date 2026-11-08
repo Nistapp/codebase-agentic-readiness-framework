@@ -30,6 +30,13 @@ one.
 - The dev tool versions move from the `Makefile` and the workflows to `dev/tools/pyproject.toml` (with `uv.lock`)
   and `dev/tools/package.json` (with `package-lock.json`), so Dependabot sees them. The root `.nvmrc` pins Node for
   CI. `dev/tests/test_tool_pins.py` keeps each version in one place.
+- New gate `make workflow-lint`, part of `make check`: actionlint, zizmor and check-jsonschema on `.github/`, all
+  offline. Each Dependabot entry has a 7-day cooldown, which zizmor asks for.
+- New CI job `commits`, required through `CI Gate`: `dev/commit_lint.py` checks that each commit subject a pull
+  request adds follows Conventional Commits. The lefthook `commit-msg` hook runs the same script.
+- `.github/CODEOWNERS` routes review requests to the maintainer.
+- `dev/recipe_lint.py` also checks the links in `AGENTS.md`, `CONTRIBUTING.md`, `RELEASE_PROCESS.md` and
+  `SECURITY.md`.
 - New how-to: [contribute a change](docs/how-to/contribute-a-change.md). `RELEASE_PROCESS.md` and
   [branch protection](docs/reference/branch-protection.md) describe the promotion from `dev` to `main`.
 
