@@ -1,6 +1,6 @@
 {
-  "_comment": "Quality baseline: one full-tree violation count per tool. A baseline only goes down; raising a count needs the owner. Compared by dev/quality_baseline.py from make format-check, typecheck and docs-lint. The coverage floor lives in .coveragerc (fail_under). <pin> is the version in dev/tools/pyproject.toml or dev/tools/package.json.",
-  "measured": "2026-11-06",
+  "_comment": "Quality baseline: one full-tree violation count per tool. A baseline only goes down; raising a count needs the owner. Compared by dev/quality_baseline.py from make format-check, typecheck and docs-lint. The coverage floor lives in .coveragerc (fail_under). The prose entry counts dev/prose_check.py issues (COMMUNICATIONS.md rules). <pin> is the version in dev/tools/pyproject.toml or dev/tools/package.json.",
+  "measured": "2026-11-08",
   "counts": {
     "ruff": {
       "count": 0,
@@ -18,6 +18,12 @@
       "count": 711,
       "what": "markdownlint-cli2 issues over every tracked Markdown file (the DOCS_LINT_PATHS ratchet is a subset and clean)",
       "command": "git ls-files -z '*.md' | xargs -0 npx markdownlint-cli2@<pin>",
+      "verb": "make docs-lint"
+    },
+    "prose": {
+      "count": 1680,
+      "what": "dev/prose_check.py issues (long sentences, vague words, explanation pages without a diagram) over the tracked Markdown in PROSE_SCOPE (the PROSE_PATHS ratchet is a subset and clean)",
+      "command": "$(PROSE_SCOPE) | xargs -0 python3 dev/prose_check.py --quiet",
       "verb": "make docs-lint"
     }
   }

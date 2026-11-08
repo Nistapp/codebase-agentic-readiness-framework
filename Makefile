@@ -59,6 +59,16 @@ DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbook
 	'docs/README.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'COMMUNICATIONS.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
 	'docs/explanation/user-overview/03-trust-and-safety.md'
 
+# The Markdown that the prose check (dev/prose_check.py, the plain-language rules of COMMUNICATIONS.md) holds to zero
+# issues. A ratchet like DOCS_LINT_PATHS: a page joins once it is clean, and the list only grows. Outside it, the
+# full-tree count may not rise above the `prose` entry of .quality-baseline.json.
+PROSE_PATHS := COMMUNICATIONS.md docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md
+PROSE_CHECK := $(PYTHON) dev/prose_check.py
+# The tracked Markdown the prose count covers: the markdownlint scope, without fixtures, test data and the worked
+# example's copied reports.
+PROSE_SCOPE := git ls-files -z -- '*.md' ':(exclude,glob)**/fixtures/**' ':(exclude,glob)**/testdata/**' \
+	':(exclude,glob)**/server-worked-example/digital-assistant-server[-.]*.md'
+
 ENGINE := audit/engine
 
 # Mypy covers the recipe tools, the dev-only checks and the engine's build script. The engine's own code joins
@@ -180,16 +190,20 @@ validate-skills:
 	$(SKILLS_REF) validate dev/dist/skills/agentic-readiness-audit
 	$(SKILLS_REF) validate dev/dist/skills/agentic-readiness-implement
 
-# Lints the Markdown in DOCS_LINT_PATHS and fails on any violation. Needs Node (npx); the first run fetches the
-# pinned CLI. CI runs it in the `docs` job when a Markdown file changed.
+# Lints the Markdown in DOCS_LINT_PATHS and checks the prose in PROSE_PATHS; fails on any violation. Then compares
+# both full-tree counts with .quality-baseline.json. Needs Node (npx); the first run fetches the pinned CLI. CI runs
+# it in the `docs` job when a Markdown file changed.
 docs-lint:
 	$(MARKDOWNLINT) $(DOCS_LINT_PATHS)
+	$(PROSE_CHECK) $(PROSE_PATHS)
 	$(QUALITY_BASELINE) markdownlint -- sh -c "git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)"
+	$(QUALITY_BASELINE) prose -- sh -c "$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK) --quiet"
 
 # Reports violations in every tracked Markdown file (fixtures excluded by the config). Never fails: the debt
 # outside DOCS_LINT_PATHS is recorded, not gated.
 docs-lint-all:
 	-git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)
+	-$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK)
 
 # Renders every Mermaid block in FILES with the pinned mermaid-cli; fails on a block that does not render.
 docs-mermaid:
