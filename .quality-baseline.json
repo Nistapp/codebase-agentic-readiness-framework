@@ -15,13 +15,13 @@
       "verb": "make typecheck"
     },
     "markdownlint": {
-      "count": 699,
+      "count": 698,
       "what": "markdownlint-cli2 issues over every tracked Markdown file (the DOCS_LINT_PATHS ratchet is a subset and clean)",
       "command": "git ls-files -z '*.md' | xargs -0 npx markdownlint-cli2@<pin>",
       "verb": "make docs-lint"
     },
     "prose": {
-      "count": 1679,
+      "count": 1628,
       "what": "dev/prose_check.py issues (long sentences, vague words, explanation pages without a diagram) over the tracked Markdown in PROSE_SCOPE (the PROSE_PATHS ratchet is a subset and clean)",
       "command": "$(PROSE_SCOPE) | xargs -0 python3 dev/prose_check.py --quiet",
       "verb": "make docs-lint"
