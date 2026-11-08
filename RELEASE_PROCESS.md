@@ -52,8 +52,8 @@ maintainer.
 
 ## What a release is
 
-A release is a tag `vX.Y.Z` on `main` and a GitHub release with the files that a one-off user needs:
-`audit.pyz`, the two skill bundles as zips, and `SHA256SUMS`. That user does not clone or build anything.
+A release is a tag `vX.Y.Z` on `main`, plus a GitHub release. The release holds the files that a one-off user
+needs: `audit.pyz`, the two skill bundles as zips, and `SHA256SUMS`. That user does not clone or build anything.
 
 The version follows [Semantic Versioning](https://semver.org/). release-please computes it from the commit subjects
 since the last release:
@@ -142,8 +142,8 @@ sequenceDiagram
    ```
 
 4. Do the [dependency review](#review-before-each-release).
-5. Make sure that the numbers that appear in more than one place are current: the self-audit score in
-   [Self-Audit](docs/reference/self-audit.md), and the check count. Fix them on a work branch into `dev` if not.
+5. Check that the numbers that appear in more than one place are current. They are the self-audit score in
+   [Self-Audit](docs/reference/self-audit.md) and the check count. Fix them on a work branch into `dev` if not.
 
 There is no release preparation branch. Do not edit `CHANGELOG.md` or a version.
 
@@ -236,8 +236,8 @@ version until you merge it.
 
 ### Choose the version
 
-release-please picks the version from the commit subjects. To force one, for example `0.4.0` for a release with no
-breaking change, put a `Release-As:` footer in a commit on a work branch into `dev`:
+release-please picks the version from the commit subjects. You can force a version, for example `0.4.0` for a
+release with no breaking change. Put a `Release-As:` footer in a commit on a work branch into `dev`:
 
 ```bash
 git commit --allow-empty -m "chore: release 0.4.0" -m "Release-As: 0.4.0"
@@ -334,8 +334,8 @@ Do not turn on auto-merge for Dependabot.
 The fix needs a major version, or the alert is on the template or a fixture.
 
 1. Open the alert in the Security tab. Read the advisory and the first patched version.
-2. If the alert is on the greenfield template or a test fixture, dismiss it with the reason "Vulnerable code is not
-   actually used". These files are data.
+2. Is the alert on the greenfield template or a test fixture? Then dismiss it. These files are data. Give the
+   reason "Vulnerable code is not actually used".
 3. If the alert is on a real dependency, make a work branch from `dev`, for example `chore/update-ruff`.
 4. Read the release notes of the major version. Make the upgrade (see
    [Change a tool version](#change-a-tool-version)).

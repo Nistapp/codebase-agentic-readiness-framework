@@ -21,7 +21,7 @@
       "verb": "make docs-lint"
     },
     "prose": {
-      "count": 1628,
+      "count": 1624,
       "what": "dev/prose_check.py issues (long sentences, vague words, explanation pages without a diagram) over the tracked Markdown in PROSE_SCOPE (the PROSE_PATHS ratchet is a subset and clean)",
       "command": "$(PROSE_SCOPE) | xargs -0 python3 dev/prose_check.py --quiet",
       "verb": "make docs-lint"
