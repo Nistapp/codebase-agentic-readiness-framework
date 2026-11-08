@@ -110,9 +110,10 @@ The changelogs and version strings change on `dev`, before the promotion. Do not
 3. Do the same in [`audit/CHANGELOG.md`](audit/CHANGELOG.md). Make sure that the engine's
    [changelog](audit/engine/docs/reference/changelog.md) agrees with it.
 4. Change the version named in [`README.md`](README.md) and [`audit/README.md`](audit/README.md) to `vX.Y.Z`.
-5. Make sure that the numbers that appear in more than one place are current: the self-audit score in
+5. Do the [dependency review](#review-before-each-release).
+6. Make sure that the numbers that appear in more than one place are current: the self-audit score in
    [Self-Audit](docs/reference/self-audit.md), and the check count.
-6. Run the gates. All of them must pass:
+7. Run the gates. All of them must pass:
 
    ```bash
    make check
@@ -121,7 +122,7 @@ The changelogs and version strings change on `dev`, before the promotion. Do not
    make validate-skills
    ```
 
-7. Commit, push the branch and open a pull request into `dev`:
+8. Commit, push the branch and open a pull request into `dev`:
 
    ```bash
    git commit -am "chore(release): prepare vX.Y.Z"
@@ -129,7 +130,7 @@ The changelogs and version strings change on `dev`, before the promotion. Do not
    gh pr create --base dev --title "chore(release): prepare vX.Y.Z" --body "Changelogs and versions for vX.Y.Z."
    ```
 
-8. When `CI Gate` passes, merge the pull request with a merge commit:
+9. When `CI Gate` passes, merge the pull request with a merge commit:
 
    ```bash
    gh pr merge --merge --delete-branch
@@ -261,15 +262,71 @@ If `dev` holds work that is not ready for a release, you have two choices:
 - Revert it on `dev` first, through a pull request with `git revert -m 1 <merge commit>`. After the hotfix release,
   revert the revert on `dev` to get the work back.
 
-## Pull requests from bots
+## Dependency updates
 
-Dependabot version updates and Dependabot security updates open pull requests into `dev`. Version updates use
-`target-branch: dev` in [`.github/dependabot.yml`](.github/dependabot.yml). Security updates use the default branch,
-which is `dev`. Merge them like any other pull request.
+Dependabot opens a pull request only for a security fix, and never for a major version
+([ADR 0003](docs/architecture/adrs/0003-dependabot-security-pull-requests-only.md)). The configuration is
+[`.github/dependabot.yml`](.github/dependabot.yml).
+
+| What Dependabot watches | Where the versions are | Security fix, minor or patch | Security fix that needs a major version | New version, no security fix |
+| --- | --- | --- | --- | --- |
+| GitHub Actions | `.github/workflows/*.yml`, pinned by commit SHA | One grouped pull request into `dev` | Alert only | Nothing |
+| Python dev tools | `dev/tools/pyproject.toml` and `dev/tools/uv.lock` | One grouped pull request into `dev` | Alert only | Nothing |
+| Node dev tools | `dev/tools/package.json` and `dev/tools/package-lock.json` | One grouped pull request into `dev` | Alert only | Nothing |
+| Greenfield template and test fixtures | `greenfield/templates/`, `audit/engine/tests/fixtures/` | Alert only | Alert only | Nothing |
+
+### A Dependabot pull request
+
+1. Make sure that its base is `dev`. Dependabot uses the default branch, which is `dev`.
+2. Read the list of updates and the release notes that Dependabot links.
+3. Wait for `CI Gate`. Then merge with a merge commit, like any other pull request.
+
+Do not turn on auto-merge for Dependabot.
+
+### An alert with no pull request
+
+The fix needs a major version, or the alert is on the template or a fixture.
+
+1. Open the alert in the Security tab. Read the advisory and the first patched version.
+2. If the alert is on the greenfield template or a test fixture, dismiss it with the reason "Vulnerable code is not
+   actually used". These files are data.
+3. If the alert is on a real dependency, make a work branch from `dev`, for example `chore/update-ruff`.
+4. Read the release notes of the major version. Make the upgrade (see
+   [Change a tool version](#change-a-tool-version)).
+5. Run `make check`, `make security` and `make docs-lint`. Open a pull request into `dev`.
+
+### Change a tool version
+
+Each dev tool version is written once, in `dev/tools/`. The `Makefile`, `lefthook.yml`, `dev/mermaid_check.py` and
+the workflows read it from there. `dev/tests/test_tool_pins.py` fails when a version is written anywhere else.
+
+1. Change the version in `dev/tools/pyproject.toml` (Python tools) or `dev/tools/package.json` (Node tools).
+2. Make the lockfile again:
+
+   ```bash
+   uv lock --directory dev/tools
+   (cd dev/tools && npm install --package-lock-only --ignore-scripts)
+   ```
+
+3. Run `make check`. If ruff or markdownlint changed a rule, fix the new findings in the same branch.
+4. Commit the manifest and its lockfile together, for example `build(dev): update ruff to 0.17.0`.
+
+The Node version for CI is in `.nvmrc`. The Python versions are in `.python-version` and the CI matrix. Dependabot
+does not watch these. Change them by hand.
+
+### Review before each release
+
+Dependabot does not tell you about a new version that has no security fix. Thus do this review in the release
+preparation (Step 2):
+
+1. Read the open Dependabot alerts in the Security tab. Close each one, or write down why it stays open.
+2. Look for new versions of the GitHub Actions and the dev tools. Update those that you accept, on their own
+   `chore/` branch.
 
 ## Release-day checklist
 
 - [ ] Each pull request for the release is merged into `dev`, and `CI Gate` is green on `dev`.
+- [ ] The [dependency review](#review-before-each-release) is done: no open Dependabot alert without a reason.
 - [ ] The release preparation pull request is merged into `dev`: changelogs have `[X.Y.Z] - YYYY-MM-DD` under an
       empty `[Unreleased]`, and the versions in `README.md` and `audit/README.md` are `vX.Y.Z`.
 - [ ] Locally, `make check`, `make security`, `make docs-lint` and `make validate-skills` pass.

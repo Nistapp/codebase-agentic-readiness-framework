@@ -24,6 +24,12 @@ one.
 - CI runs on pushes to `dev` as well as `main`. Dependabot version updates target `dev`.
 - `release.yml` refuses a tag whose commit is not on `main`.
 - `lefthook.yml` stops a local commit on `dev` or `main`.
+- Dependabot opens security pull requests only, and never for a major version
+  ([ADR 0003](docs/architecture/adrs/0003-dependabot-security-pull-requests-only.md)). A fix that needs a major
+  version stays an alert. The greenfield template and the test fixtures never get a pull request.
+- The dev tool versions move from the `Makefile` and the workflows to `dev/tools/pyproject.toml` (with `uv.lock`)
+  and `dev/tools/package.json` (with `package-lock.json`), so Dependabot sees them. The root `.nvmrc` pins Node for
+  CI. `dev/tests/test_tool_pins.py` keeps each version in one place.
 - New how-to: [contribute a change](docs/how-to/contribute-a-change.md). `RELEASE_PROCESS.md` and
   [branch protection](docs/reference/branch-protection.md) describe the promotion from `dev` to `main`.
 

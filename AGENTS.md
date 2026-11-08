@@ -49,6 +49,8 @@ no vendor-specific instruction file exists beside it.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
   `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`).
 - Python 3.11 or newer (pinned in `.python-version`), and `uv` for the pinned dev tools (ruff, mypy, detect-secrets).
+  Each tool version is written once, in `dev/tools/pyproject.toml` or `dev/tools/package.json` (ADR 0003); never
+  write a version in the `Makefile`, a hook or a workflow.
   Nothing is installed into the project.
 - Local hooks are `lefthook.yml` (a stop on commits to `dev` and `main`, format check on staged Python,
   `make docs-lint` on staged ratchet Markdown, a secrets scan, a Conventional Commits check).

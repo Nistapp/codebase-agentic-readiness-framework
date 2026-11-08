@@ -28,7 +28,7 @@ the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they a
 | --- | --- | --- |
 | Python 3.11 or newer | Everything | Pinned in `.python-version`; CI runs 3.11 and 3.14 |
 | `git` | Everything | |
-| [`uv`](https://docs.astral.sh/uv/) | `make check`, `make security`, `make coverage` | The dev tools (ruff, mypy, detect-secrets, coverage.py) run through `uvx` at pinned versions; nothing is installed into the project |
+| [`uv`](https://docs.astral.sh/uv/) | `make check`, `make security`, `make coverage` | The dev tools (ruff, mypy, detect-secrets, coverage.py) run through `uvx` at the versions pinned in `dev/tools/`; nothing is installed into the project |
 | `make` | Every command below | Linux and macOS. On Windows use WSL |
 | Node 22 | `make docs-lint` | The pinned `markdownlint-cli2` runs through `npx`; not needed for `make check` |
 | Chrome, through Puppeteer | `make docs-mermaid` | Only when you add or change a Mermaid block; the pinned mermaid-cli fetches it on first use |
@@ -66,6 +66,13 @@ diff. Use low-entropy fakes (`aaaabbbbcccc`) in examples so the baseline does no
 
 Never weaken a gate to get green: no skipped test, no rule turned off, no assertion relaxed, no lowered baseline or
 floor. If you cannot pass a gate, say so in the pull request.
+
+## Tool versions
+
+Each dev tool version is written once: Python tools in `dev/tools/pyproject.toml`, Node tools in
+`dev/tools/package.json`, each with a lockfile. The `Makefile`, the hooks and CI read the versions from there, and
+Dependabot watches them for security fixes. To change a version, follow
+[Change a tool version](RELEASE_PROCESS.md#change-a-tool-version).
 
 ## Local hooks
 
