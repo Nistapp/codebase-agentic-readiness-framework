@@ -69,9 +69,22 @@ floor. If you cannot pass a gate, say so in the pull request.
 
 ## Local hooks
 
-[`lefthook.yml`](lefthook.yml) runs the format check on staged Python, `make docs-lint` on staged Markdown, a
-secrets scan and a Conventional Commits check before a commit lands. Install it once per clone with
-`lefthook install` ([lefthook.dev](https://lefthook.dev)). Hooks do not replace the gate.
+[`lefthook.yml`](lefthook.yml) stops a commit on `dev` or `main`. It also runs the format check on staged Python,
+`make docs-lint` on staged Markdown, a secrets scan and a Conventional Commits check before a commit lands. Install it
+once per clone with `lefthook install` ([lefthook.dev](https://lefthook.dev)). Hooks do not replace the gate.
+
+## Branches
+
+Two branches are protected: `dev` and `main`. You cannot commit or push to them directly.
+
+- Start each change on a work branch from `dev`. Name it `<type>/<topic>`, for example `fix/report-score`.
+- Open the pull request into `dev`. The required check is `CI Gate`.
+- Do not open a pull request into `main`. Only the maintainer does that, and only from `dev`, to make a release.
+- Merges use a merge commit. Do not squash or rebase.
+
+The step-by-step guide is [Contribute a change](docs/how-to/contribute-a-change.md). The rules and the release steps
+are in [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). The ruleset settings are in
+[Branch protection](docs/reference/branch-protection.md).
 
 ## Commits and pull requests
 
@@ -105,4 +118,4 @@ reproduces it and a new ruleset revision in the engine's
 
 ## Releases
 
-Only the maintainer tags a release. See [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md).
+Only the maintainer promotes `dev` to `main` and tags a release. See [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md).
