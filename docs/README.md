@@ -92,6 +92,7 @@ repository, before and after the implement recipe.
 
 | Page | Use |
 | --- | --- |
+| [Communications](../COMMUNICATIONS.md) | Plain-language rules, diagrams, and how to report and ask for decisions |
 | [Style guide](STYLE_GUIDE.md) | The authoring rules for every page |
 | [Tutorial template](templates/tutorial-template.md) | Start a tutorial |
 | [How-to template](templates/how-to-template.md) | Start a how-to guide |

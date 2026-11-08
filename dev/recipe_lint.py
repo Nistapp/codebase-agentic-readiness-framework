@@ -10,8 +10,8 @@ frontmatter and oversize files.
 ``<root>`` is the framework repository, the one that holds ``audit/`` (and, beside it, ``implement/`` and
 ``docs/``); a link may climb out of those folders (a check file citing ``docs/framework/phased-approach.md`` or
 ``spec/`` does), but never out of ``<root>``. Eight checks, each independent of the others. The link rule also
-covers the framework pages outside those folders (the root ``README.md``, ``AGENTS.md``, ``CONTRIBUTING.md``,
-``RELEASE_PROCESS.md`` and ``SECURITY.md``, ``spec/`` and ``greenfield/``; the
+covers the framework pages outside those folders (the root ``README.md``, ``AGENTS.md``, ``COMMUNICATIONS.md``,
+``CONTRIBUTING.md``, ``RELEASE_PROCESS.md`` and ``SECURITY.md``, ``spec/`` and ``greenfield/``; the
 framework pages under ``docs/framework/`` are already recipe Markdown); no other check reads them:
 
 - **Links.** Every inline Markdown link (``[text](target)``, never an image or a reference-style link, neither
@@ -122,7 +122,14 @@ EXCLUDED_FROM_LINKS = ("docs/templates/", "greenfield/templates/")
 # destination and are skipped by EXCLUDED_FROM_LINKS above.
 # The root process documents join them: a broken link there misleads a contributor as much as one in the README.
 # CHANGELOG.md is left out on purpose: its entries before v0.3.0 name the old layout's paths, as written then.
-ROOT_PAGE_FILES = ("README.md", "AGENTS.md", "CONTRIBUTING.md", "RELEASE_PROCESS.md", "SECURITY.md")
+ROOT_PAGE_FILES = (
+    "README.md",
+    "AGENTS.md",
+    "COMMUNICATIONS.md",
+    "CONTRIBUTING.md",
+    "RELEASE_PROCESS.md",
+    "SECURITY.md",
+)
 ROOT_PAGE_DIRS = ("spec", "greenfield")
 # Files the catalogue, requirement and playbook checks never read: the engine's own registry and fixtures.
 EXCLUDED_FROM_CATALOGUE = ("audit/engine/",)
