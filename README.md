@@ -15,10 +15,10 @@ This gives you two skills that act on it:
 
 You need [Claude Code](https://claude.com/claude-code), `git` and Python 3.11 or newer.
 
-1. Clone this repository and start Claude Code in it:
+1. Clone the latest release (the `main` branch) and start Claude Code in it:
 
    ```bash
-   git clone https://github.com/Nistapp/codebase-agentic-readiness-framework.git
+   git clone --branch main https://github.com/Nistapp/codebase-agentic-readiness-framework.git
    cd codebase-agentic-readiness-framework
    claude
    ```
