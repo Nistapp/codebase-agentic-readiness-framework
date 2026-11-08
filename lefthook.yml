@@ -5,6 +5,14 @@
 pre-commit:
   parallel: false
   commands:
+    # `dev` and `main` change only through pull requests (RELEASE_PROCESS.md). Stop a commit on either one locally,
+    # before the push is refused. The fix: `git switch -c <type>/<topic>` carries the staged change to a new branch.
+    protected-branch:
+      run: >-
+        branch="$(git symbolic-ref --quiet --short HEAD || true)";
+        case "$branch" in main|dev)
+        echo "Do not commit on '$branch'. Run: git switch -c <type>/<topic>, then commit again." >&2; exit 1;;
+        esac
     format-check:
       glob: "*.py"
       run: make format-check
