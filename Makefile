@@ -56,13 +56,13 @@ COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
 DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
-	'docs/README.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'COMMUNICATIONS.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
+	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'COMMUNICATIONS.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
 	'docs/explanation/user-overview/03-trust-and-safety.md'
 
 # The Markdown that the prose check (dev/prose_check.py, the plain-language rules of COMMUNICATIONS.md) holds to zero
 # issues. A ratchet like DOCS_LINT_PATHS: a page joins once it is clean, and the list only grows. Outside it, the
 # full-tree count may not rise above the `prose` entry of .quality-baseline.json.
-PROSE_PATHS := COMMUNICATIONS.md docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md
+PROSE_PATHS := COMMUNICATIONS.md docs/STYLE_GUIDE.md docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md
 PROSE_CHECK := $(PYTHON) dev/prose_check.py
 # The tracked Markdown the prose count covers: the markdownlint scope, without fixtures, test data and the worked
 # example's copied reports.
