@@ -46,7 +46,7 @@ GitHub's documentation (the Dependabot options reference and "Configuring Depend
 
    | Manifest | Lockfile | Tools | Dependabot ecosystem |
    |---|---|---|---|
-   | [`pyproject.toml`](../../../dev/tools/pyproject.toml) (group `tools`) | `uv.lock` | actionlint-py, check-jsonschema, coverage, detect-secrets, jsonschema, mypy, ruff, skills-ref, uv, zizmor | `uv` |
+   | [`pyproject.toml`](../../../dev/tools/pyproject.toml) (group `tools`) | `uv.lock` | actionlint-py, check-jsonschema, coverage, detect-secrets, jsonschema, mypy, ruff, skills-ref, typos, uv, zizmor | `uv` |
    | [`package.json`](../../../dev/tools/package.json) | `package-lock.json` | markdownlint-cli2, mermaid-cli | `npm` |
    | [`osv/go.mod`](../../../dev/tools/osv/go.mod) (a `tool` directive) | `osv/go.sum` | osv-scanner ([ADR 0006](0006-security-verb-audits-dependencies-with-osv-scanner.md)) | `gomod` |
 

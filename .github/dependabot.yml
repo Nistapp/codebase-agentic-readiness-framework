@@ -30,7 +30,7 @@ updates:
     commit-message:
       prefix: "ci"
 
-  # The Python dev tools (ruff, mypy, detect-secrets, coverage, jsonschema, skills-ref, uv, actionlint-py, zizmor,
+  # The Python dev tools (ruff, mypy, detect-secrets, coverage, jsonschema, skills-ref, typos, uv, actionlint-py, zizmor,
   # check-jsonschema), locked in uv.lock. The
   # Makefile, lefthook.yml and the workflows read each version from dev/tools/pyproject.toml.
   - package-ecosystem: uv

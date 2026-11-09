@@ -72,7 +72,7 @@ def node_pins() -> dict[str, str]:
 class ManifestsHoldExactPins(unittest.TestCase):
     def test_every_python_pin_is_exact(self) -> None:
         pins = python_pins()
-        for tool in ("ruff", "mypy", "detect-secrets", "coverage", "jsonschema", "skills-ref", "uv"):
+        for tool in ("ruff", "mypy", "detect-secrets", "coverage", "jsonschema", "skills-ref", "typos", "uv"):
             self.assertIn(tool, pins)
 
     def test_every_node_pin_is_exact(self) -> None:
@@ -194,12 +194,16 @@ class MakefileReadsTheManifests(unittest.TestCase):
     def test_tool_commands_carry_the_manifest_versions(self) -> None:
         python = python_pins()
         node = node_pins()
-        output = self.dry_run("lint", "typecheck", "security", "docs-lint", "coverage")
+        output = self.dry_run("lint", "typecheck", "security", "docs-lint", "coverage", "spell")
         self.assertIn(f"ruff@{python['ruff']}", output)
         self.assertIn(f"mypy@{python['mypy']}", output)
         self.assertIn(f"detect-secrets=={python['detect-secrets']}", output)
         self.assertIn(f"coverage@{python['coverage']}", output)
+        self.assertIn(f"typos@{python['typos']}", output)
         self.assertIn(f"markdownlint-cli2@{node['markdownlint-cli2']}", output)
+
+    def test_check_runs_the_spell_check(self) -> None:
+        self.assertIn(f"typos@{python_pins()['typos']}", self.dry_run("check"))
 
     def test_security_audits_every_dev_tool_lockfile(self) -> None:
         output = self.dry_run("security")

@@ -25,7 +25,7 @@ make lint           # read-only lint
 make typecheck      # mypy, strict, on audit/tools, implement/tools and dev, and the engine's build.py
 make test           # the engine's suite, then the audit tools', the implement tools' and the dev checks'
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
-                    # cross-check, recipe-lint, workflow-lint (actionlint, zizmor, check-jsonschema)
+                    # cross-check, recipe-lint, workflow-lint (actionlint, zizmor, check-jsonschema), spell (typos)
 make security       # secrets scan, then the dependency audit (osv-scanner; needs Go and the network)
 make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin/dev..HEAD); CI runs it on each PR
 ```
@@ -47,6 +47,8 @@ This file is read by Claude Code, opencode, Codex, Gemini CLI, Cursor and any ot
 no vendor-specific instruction file exists beside it.
 
 - Run `make check` and `make security` before you propose a change. Do not run an ad-hoc substitute.
+- A misspelling fails `make spell` (in `make check`). Fix it, or run `make spell-fix` and review the diff. Add a word
+  to `_typos.toml` only for a project term or a code token.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
   `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`).
 - Python 3.11 or newer (pinned in `.python-version`), `uv` for the pinned dev tools (ruff, mypy, detect-secrets),
@@ -56,8 +58,8 @@ no vendor-specific instruction file exists beside it.
   write a version in the `Makefile`, a hook or a workflow.
   Nothing is installed into the project.
 - Local hooks are `lefthook.yml` (a stop on commits to `dev` and `main`, format check on staged Python,
-  `make docs-lint` on staged ratchet Markdown, `make workflow-lint` on staged `.github/` files, a secrets scan,
-  and `dev/commit_lint.py` on the commit message).
+  `make docs-lint` on staged ratchet Markdown, `make workflow-lint` on staged `.github/` files, typos on staged
+  files, a secrets scan, and `dev/commit_lint.py` on the commit message).
   The developer runs `lefthook install` once per clone; an agent never does.
   Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
 - `make coverage` runs the engine's, the audit tools' and the implement tools' suites under coverage.py. It fails

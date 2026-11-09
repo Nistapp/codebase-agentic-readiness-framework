@@ -45,6 +45,7 @@ Run these before you propose a change. CI runs the same commands.
 | --- | --- |
 | `make format` | Rewrites formatting in place. Run it before the first `make check` |
 | `make check` | The gate: formatting and lint, `mypy` strict, the engine's, the tools' and the dev checks' tests, the engine's rule check, the schema cross-check, the recipe linter and the workflow lint. It takes a couple of minutes |
+| `make spell` | Part of `make check`. typos on the tracked text; the word list is `_typos.toml`. `make spell-fix` writes the suggested fixes |
 | `make workflow-lint` | Part of `make check`. actionlint, zizmor and check-jsonschema on `.github/`: workflow mistakes, workflow security, and `dependabot.yml` against its schema. Offline |
 | `make commit-lint` | Checks that each commit subject on your branch follows Conventional Commits (`RANGE=origin/dev..HEAD` by default). CI runs the same check on every pull request |
 | `make security` | A secrets scan against `.secrets.baseline`, then a dependency audit of the dev tools (osv-scanner) |
@@ -83,8 +84,8 @@ Dependabot watches them for security fixes. To change a version, follow
 ## Local hooks
 
 [`lefthook.yml`](lefthook.yml) stops a commit on `dev` or `main`. It also runs the format check on staged Python,
-`make docs-lint` on staged Markdown, `make workflow-lint` on staged `.github/` files, a secrets scan and the
-Conventional Commits check (`dev/commit_lint.py`) before a commit lands. Install it
+`make docs-lint` on staged Markdown, `make workflow-lint` on staged `.github/` files, the spell check on staged
+files, a secrets scan and the Conventional Commits check (`dev/commit_lint.py`) before a commit lands. Install it
 once per clone with `lefthook install` ([lefthook.dev](https://lefthook.dev)). Hooks do not replace the gate.
 
 ## Branches

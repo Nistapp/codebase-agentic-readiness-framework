@@ -19,6 +19,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `check` | This repository |
 | actionlint | Workflow mistakes: syntax, expressions, action inputs, shellcheck on `run:` blocks | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` (`actionlint-py`) |
 | zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
+| typos | Misspelled words in the tracked text, code identifiers included (word list: [`_typos.toml`](../../_typos.toml)) ([Spell check](#spell-check)) | `make spell`; `make spell-fix` writes the fixes | `check` | `dev/tools/pyproject.toml` |
 | check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | detect-secrets | Key-shaped strings not in `.secrets.baseline` | `make security` | `security` | `dev/tools/pyproject.toml` |
 | osv-scanner | A known vulnerability in a dev tool or its dependencies (Python, Node, Go lockfiles), unless [`osv-scanner.toml`](../../dev/tools/osv-scanner.toml) accepts it ([Dependency audit](#dependency-audit)) | `make security` | `security` | `dev/tools/osv/go.mod` |
@@ -34,9 +35,22 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | Node | Runs the Node tools through `npx` | — | `docs` | `.nvmrc` |
 | Go | Builds and runs osv-scanner through `go tool` | — | `security` | `dev/tools/osv/go.mod` (`go` line) |
 
-`make check` runs `format:check`, `typecheck`, `test`, the engine's rule check, `crosscheck`, `recipe-lint` and
-`workflow-lint`, in sequence. CI's `CI Gate` passes only when the `check`, `security`, `coverage`, `self-audit`,
+`make check` runs `format:check`, `typecheck`, `test`, the engine's rule check, `crosscheck`, `recipe-lint`,
+`workflow-lint` and `spell`, in sequence. CI's `CI Gate` passes only when the `check`, `security`, `coverage`, `self-audit`,
 `docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
+
+## Spell check
+
+`make spell` runs typos on every tracked file that `.gitignore` does not hide. It skips the data paths that
+[`_typos.toml`](../../_typos.toml) excludes: the fixtures, the worked examples, `CHANGELOG.md` and the lockfiles.
+typos splits code identifiers into words, so a typo inside a variable name fails too. Each finding shows the file,
+the line and the suggested word.
+
+To fix a finding, do one of these:
+
+1. Correct the word. `make spell-fix` writes every suggested fix; review the diff before you commit.
+2. If the word is correct here (a project term, a regex stem or a code token), add it to `[default.extend-words]` in
+   `_typos.toml`. Add a comment that says why.
 
 ## Dependency audit
 
@@ -78,6 +92,7 @@ fails its gate. When a count goes down, lower the baseline in the same change.
 | `format-check` | `make format-check` | Staged Python files |
 | `docs-lint` | `make docs-lint` | Staged Markdown in the ratchet paths |
 | `workflow-lint` | `make workflow-lint` | Staged files under `.github/` |
+| `spell` | typos, at the pinned version | Staged files, except the paths `_typos.toml` excludes |
 | `secrets` | detect-secrets on the staged files | Every commit |
 | `conventional-commits` | `dev/commit_lint.py --message-file` | The commit message |
 

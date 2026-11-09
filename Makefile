@@ -13,7 +13,7 @@
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
-#                       cross-check, the recipe linter and the workflow lint
+#                       cross-check, the recipe linter, the workflow lint and the spell check
 #   make security       secrets scan against the committed baseline, then the dependency audit (osv-scanner) of
 #                       the dev tools' lockfiles; needs Go and the network
 #   make coverage       (extra) both unittest suites under coverage.py; fails below the floor in .coveragerc
@@ -53,6 +53,9 @@ COVERAGE := uvx coverage@$(call pin,coverage)
 # and Dependabot security, offline) and check-jsonschema (the SchemaStore schemas it bundles, offline).
 ACTIONLINT := uvx --from actionlint-py==$(call pin,actionlint-py) actionlint
 ZIZMOR := uvx zizmor@$(call pin,zizmor)
+# The spell check: typos reads _typos.toml (the word list and the excluded data paths) from the repository root,
+# and walks the tracked files that .gitignore does not hide.
+TYPOS := uvx typos@$(call pin,typos)
 CHECK_JSONSCHEMA := uvx --from check-jsonschema==$(call pin,check-jsonschema) check-jsonschema
 # The coverage data stays under the git-ignored build output; settings (the floor) are in .coveragerc.
 COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
@@ -81,11 +84,11 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not 
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint
+.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  workflow-lint  commit-lint  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -163,6 +166,13 @@ recipe-lint:
 	$(PYTHON) dev/recipe_lint.py .
 
 # Lints the GitHub Actions workflows and checks .github/dependabot.yml. All three tools run offline.
+# Read-only: report each misspelling with its file and line. `make spell-fix` writes the suggested fixes; review them.
+spell:
+	$(TYPOS)
+
+spell-fix:
+	$(TYPOS) --write-changes
+
 workflow-lint:
 	$(ACTIONLINT)
 	$(ZIZMOR) --offline .github
@@ -175,7 +185,7 @@ RANGE ?= origin/dev..HEAD
 commit-lint:
 	$(PYTHON) dev/commit_lint.py --range $(RANGE)
 
-check: format-check typecheck test verify-rules crosscheck recipe-lint workflow-lint
+check: format-check typecheck test verify-rules crosscheck recipe-lint workflow-lint spell
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.
