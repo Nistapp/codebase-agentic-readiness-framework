@@ -128,7 +128,11 @@ Engine           `TOOL-04`. Resolves every verb on every runner and tests each r
                  `safety check`, `osv-scanner`, `cargo audit`, `govulncheck`, `snyk`, `trivy`, `grype`,
                  `bundler-audit`, `composer audit`, `audit-ci`, `dotnet list package --vulnerable`, and
                  others the pattern list names). The verb is evidence; the engine never runs it (that is
-                 Tier C, opt-in only). Any resolved verb matching is `PASS`; a `security` verb that resolves
+                 Tier C, opt-in only). On the root `Makefile` a verb is followed the way Make runs it:
+                 simple variables are expanded (`$(OSV)`, `${OSV}`), and each prerequisite target and each
+                 `make <target>` or `$(MAKE) <target>` line is read in turn; a cycle ends the walk, and a
+                 `make -C`/`-f` call into another Makefile is not followed. Any resolved verb matching is
+                 `PASS`; a `security` verb that resolves
                  to something else is `PARTIAL`; no match at all, with a recognised ecosystem or runner, is
                  `FAIL`. Distrust a `FAIL` or `PARTIAL` when the audit tool used is one the pattern list
                  does not yet name — verify by reading the resolved command directly.
@@ -150,7 +154,10 @@ Absence proof    A FAIL cites every runner manifest read as the evidence that no
 Remediation      `configure-quality-tools`
 Pitfalls         The audit tool does not have to live on the `security` verb by name — a `test` or `check`
                  verb that happens to run `npm audit` as one of its steps still earns `PASS`; read every
-                 resolved command before concluding the repository has no dependency scan at all.
+                 resolved command before concluding the repository has no dependency scan at all. The
+                 Makefile walk does not read a variable set by a function (`$(shell ...)`, `$(call ...)`),
+                 an included file, the environment, or a script the recipe calls; read those by hand
+                 before you accept a `PARTIAL`.
 
 ## TOOL-05 — Local hook chain active
 

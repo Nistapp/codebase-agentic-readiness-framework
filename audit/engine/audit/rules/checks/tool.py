@@ -24,7 +24,10 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   `UNKNOWN`. It never invents a type checker for an ecosystem that has none.
 * **TOOL-04** — a resolved verb whose command runs a known dependency-audit tool (`npm audit`,
   `pip-audit`, `osv-scanner`, `cargo audit`, `govulncheck`, `snyk`, …). The verb is the evidence;
-  it is **not** run (that would be Tier C). A `security` verb that runs something else ⇒ `PARTIAL`.
+  it is **not** run (that would be Tier C). A `security` verb that runs something else ⇒ `PARTIAL`. On the root
+  `Makefile` the verb is followed the way Make runs it: simple variables are expanded (`$(OSV)`, `${OSV}`), and each
+  prerequisite target and each `make <target>` or `$(MAKE) <target>` line is read in turn (cycles and
+  `make -C`/`-f` calls into another Makefile are not followed).
 * **TOOL-05** — a wired hook chain: `.pre-commit-config.yaml`, `lefthook.yml`, a declared
   `core.hooksPath`, or `.husky/` referenced by a `prepare`/install script. Present but unwired ⇒
   `PARTIAL`.
@@ -59,7 +62,7 @@ from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.rules.checks._common import declared_branch_rules, resolve_verbs, runner_commands, runner_target
 from audit.scan import Kind
-from audit.stack import CI_PROVIDERS, extract_npm_scripts
+from audit.stack import CI_PROVIDERS, _logical_lines, extract_npm_scripts, parse_makefile
 from audit.rules.payloads import Payload
 
 #: Formatter configuration filenames, across the ecosystems the catalogue names.
@@ -666,6 +669,72 @@ def _is_audit_command(command: str) -> bool:
     return any(pattern.search(command) for pattern in _AUDIT_PATTERNS)
 
 
+#: A simple Make assignment: ``NAME = value``, ``:=``, ``::=``, ``?=`` or ``+=``, optionally ``export``/``override``.
+_MAKE_ASSIGN_RE = re.compile(r"^(?:(?:export|override)\s+)*([A-Za-z_][A-Za-z0-9_.-]*)\s*(:{1,3}=|\?=|\+=|=)\s*(.*)$")
+#: A reference to a simple variable: ``$(NAME)`` or ``${NAME}``. ``$(call ...)`` and other functions are not.
+_MAKE_REF_RE = re.compile(r"\$[({]([A-Za-z_][A-Za-z0-9_.-]*)[)}]")
+#: A recipe line that runs another target of the same Makefile: ``make x`` or ``$(MAKE) x``, flags first.
+_MAKE_CALL_RE = re.compile(r"(?:^|[\s;&|(])(?:make|\$[({]MAKE[)}])((?:\s+-\S+)*)\s+([A-Za-z0-9_.\\:-]+)")
+_MAKE_EXPANSION_PASSES = 8
+
+
+def _makefile_variables(text: str) -> dict[str, str]:
+    """The simple variables a Makefile assigns outside a recipe, in file order (``?=`` keeps a first value)."""
+    variables: dict[str, str] = {}
+    for _number, line in _logical_lines(text):
+        if line.startswith("\t"):
+            continue
+        match = _MAKE_ASSIGN_RE.match(line.strip())
+        if not match:
+            continue
+        name, operator, value = match.groups()
+        if operator == "?=" and name in variables:
+            continue
+        variables[name] = f"{variables.get(name, '')} {value}".strip() if operator == "+=" else value.strip()
+    return variables
+
+
+def _expand_make(text: str, variables: dict[str, str]) -> str:
+    """``text`` with each known simple variable replaced, a bounded number of times; unknown ones are kept."""
+    for _ in range(_MAKE_EXPANSION_PASSES):
+        expanded = _MAKE_REF_RE.sub(lambda m: variables.get(m.group(1), m.group(0)), text)
+        if expanded == text:
+            break
+        text = expanded
+    return text
+
+
+def _makefile_audit(inventory, command: str) -> tuple[str, str] | None:
+    """Follow a root-Makefile verb's ``command`` through variables, prerequisites and ``make`` calls; return
+    ``(target, expanded line)`` for the first line that runs a dependency audit, else ``None``."""
+    parsed = parse_makefile(inventory)
+    if parsed.errors or not parsed.rules:
+        return None
+    variables = _makefile_variables(inventory.read("Makefile") or "")
+    pending: list[tuple[str, str]] = [("", step) for step in command.split(" && ")]
+    seen: set[str] = set()
+    while pending:
+        where, line = pending.pop(0)
+        expanded = _expand_make(line, variables)
+        if _is_audit_command(expanded):
+            return where, expanded
+        for flags, name in _MAKE_CALL_RE.findall(expanded):
+            name = name.replace("\\:", ":")
+            if any(
+                flag in ("-C", "-f", "--file", "--directory")
+                or flag.startswith(("-C", "-f", "--directory=", "--file="))
+                for flag in flags.split()
+            ):
+                continue
+            rule = parsed.rules.get(name)
+            if rule is None or name in seen:
+                continue
+            seen.add(name)
+            pending.extend((name, f"make {p}") for p in rule.prerequisites if p in parsed.rules)
+            pending.extend((name, step) for step in rule.recipe)
+    return None
+
+
 def check_tool04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     bindings = resolve_verbs(inventory, stack)
     audits = [(verb, b) for verb, b in bindings.items() if _is_audit_command(b.command)]
@@ -673,6 +742,18 @@ def check_tool04(*, spec, target, inventory, stack, components, session) -> Chec
     if audits:
         detail = "; ".join(f"{verb} -> {b.command}" for verb, b in sorted(audits))
         return _outcome(spec, Verdict.PASS, detail)
+
+    followed = []
+    for verb, binding in sorted(bindings.items()):
+        if binding.runner != "Makefile":
+            continue
+        hit = _makefile_audit(inventory, binding.command)
+        if hit:
+            where, line = hit
+            through = f" (target {where})" if where else ""
+            followed.append(f"{verb} -> {binding.command}; runs `{line}`{through}")
+    if followed:
+        return _outcome(spec, Verdict.PASS, "; ".join(followed))
 
     security = bindings.get("security")
     if security is not None:
