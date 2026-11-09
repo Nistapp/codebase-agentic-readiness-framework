@@ -31,7 +31,7 @@ To go the other way, start from a framework heading, find the requirements whose
 
 ## Every check, generated
 
-All 75 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
+All 76 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
 `Source` field links. Generated 2026-10-19 from `catalogue.json`'s `req_ids` and
 `readiness-requirements.md`'s `Source` fields — the same two steps as the worked example above, run once
 per check rather than by hand. 14 checks are informational or an emitter and trace to no requirement
@@ -72,6 +72,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `DOC-02` | docs/STYLE_GUIDE.md exists | DEGRADER | yes | [REQ-SH-017](../../spec/readiness-requirements.md#req-sh-017--style-guide) | [greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides) |
 | `DOC-03` | artefacts/ exists and is ignored | DEGRADER | yes | [REQ-SH-018](../../spec/readiness-requirements.md#req-sh-018--scratch-and-tool-state-directories-ignored) | [greenfield/README.md § 6.2 Agent Scratchpad](../../greenfield/README.md#62-agent-scratchpad--artefacts) |
 | `DOC-04` | ADR directory and index | COSMETIC | yes | [REQ-SH-019](../../spec/readiness-requirements.md#req-sh-019--adr-directory-and-index) | [greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides) |
+| `DOC-05` | Docs are readable | COSMETIC | yes | [REQ-SH-061](../../spec/readiness-requirements.md#req-sh-061--documentation-is-readable) | [greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides) |
 | `EXEC-01` | Toolchain pinned / wrapper committed | BLOCKER | yes | [REQ-SH-039](../../spec/readiness-requirements.md#req-sh-039--toolchain-pinned) | [greenfield/README.md § File Tree — What Gets Created](../../greenfield/README.md#file-tree--what-gets-created) |
 | `EXEC-02` | Lockfile committed and consistent | BLOCKER | yes | [REQ-SH-040](../../spec/readiness-requirements.md#req-sh-040--lockfile-tracked-and-consistent) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `EXEC-03` | Non-interactive setup path | BLOCKER | yes | [REQ-SH-041](../../spec/readiness-requirements.md#req-sh-041--non-interactive-setup) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
@@ -115,7 +116,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `TST-04` | Fast path documented | DEGRADER | yes | [REQ-SH-048](../../spec/readiness-requirements.md#req-sh-048--fast-path-documented) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `TST-05` | Coverage configuration present | COSMETIC | yes | [REQ-SH-049](../../spec/readiness-requirements.md#req-sh-049--coverage-reporting) | [greenfield/README.md § 3.1 vitest.config.ts](../../greenfield/README.md#31-vitestconfigts--with-coverage) |
 
-75 checks total.
+76 checks total.
 
 ## Where the relation is held
 

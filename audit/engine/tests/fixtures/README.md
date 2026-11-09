@@ -10,7 +10,7 @@ every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, 
 (`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`08`) are
 exercised by `../test_exec_pack.py` (and `EXEC-08` by `../test_exec08_inline_versions.py`); the `CMD` checks (`CMD-01`…`04`) by `../test_cmd_pack.py`; and
 the `SEC` checks (`SEC-01`…`03`) by `../test_sec_pack.py`, against the fixtures below. The `DOC` and
-`NAV` checks (`DOC-01`…`04`, `NAV-01`…`05`) are exercised by `../test_doc_nav_pack.py`. The `TOOL`
+`NAV` checks (`DOC-01`…`05`, `NAV-01`…`05`) are exercised by `../test_doc_nav_pack.py`. The `TOOL`
 checks (`TOOL-01`…`06`) are exercised by `../test_tool_pack.py`; the `CI` checks (`CI-01`…`03`) by
 `../test_ci_pack.py`; the `TST` checks (`TST-01`…`05`) by `../test_tst_pack.py`; the `BASE` checks
 (`BASE-01`…`04`) by `../test_base_pack.py`, with the ratchet exercised end to end by
@@ -83,6 +83,7 @@ fixtures/
   doc-03-tracked-artefacts/  artefacts/ ignored but force-added (needs git) -> DOC-03 FAIL
   ignore-ok-nested-gitignore/ `artefacts/.gitignore` holds `*` and re-includes itself and its README (needs git) -> DOC-03, CON-03 PASS (ADR-0009)
   doc-04-adr-unindexed/      an ADR with no index                 -> DOC-04 PARTIAL
+  doc-05-long-sentences/     two thirds of the docs' sentences over 25 words -> DOC-05 FAIL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL

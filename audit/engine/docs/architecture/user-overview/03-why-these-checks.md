@@ -69,6 +69,7 @@ down is invisible.
 | `DOC-02` `STYLE_GUIDE.md` exists | Agents need authoring rules they can cite instead of restating | Rules get restated per page and drift |
 | `DOC-03` `artefacts/` exists and is ignored | Transient scratch must be separable and off-limits | Agent reads WIP notes as current requirements |
 | `DOC-04` ADR directory and index | Architectural decisions need a location and a registry | Rationale lives in chat and pull requests; agents re-litigate settled decisions |
+| `DOC-05` Docs are readable | Agents and people learn the repository from the docs | Long, vague pages are misread; the next agent copies their style |
 
 ---
 

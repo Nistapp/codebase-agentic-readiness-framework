@@ -181,6 +181,16 @@ The repository SHOULD have an ADR directory with numbered entries and an index t
 - **Source:** [greenfield/README.md § 5.2 Templates & Guides](../greenfield/README.md#52-templates--guides)
 - **Checks:** DOC-04
 
+### REQ-SH-061 — Documentation is readable
+
+The prose in `docs/` SHOULD follow plain-language rules: few sentences over 25 words (20 in a numbered step), no
+vague or padded words, and a diagram on each explanation or tutorial page.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [greenfield/README.md § 5.2 Templates & Guides](../greenfield/README.md#52-templates--guides)
+- **Checks:** DOC-05
+
 ### REQ-SH-020 — Documentation is accurate
 The repository's owner MUST declare that the permanent documentation describes what the code does today.
 

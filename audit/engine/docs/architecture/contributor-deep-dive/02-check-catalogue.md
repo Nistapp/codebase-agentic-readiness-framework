@@ -22,7 +22,7 @@
 |---|---|---|---|---|
 | `IDX` Discovery & index | 3 | 2 | — | 1 |
 | `AGT` Agent governance | 11 | 2 | 9 | — |
-| `DOC` Documentation contract | 4 | 3 | 1 | — |
+| `DOC` Documentation contract | 5 | 3 | 2 | — |
 | `CMD` Command surface | 4 | — | 4 | — |
 | `TOOL` Tooling | 7 | 3 | 4 | — |
 | `CI` CI | 4 | — | 4 | — |
@@ -32,17 +32,17 @@
 | `TST` Tests | 5 | 2 | 2 | 1 |
 | `NAV` Navigation | 3 | 1 | 2 | — |
 | `SEC` Security hygiene | 3 | — | 3 | — |
-| **Total catalogued** | **60** | **17** | **40** | **2** |
+| **Total catalogued** | **61** | **17** | **41** | **2** |
 
 Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
 
-Of the 60, `CON-04` is an emitter rather than a check, leaving **59 scoreable checks** in v1. (`CON-01` carried weight 0
+Of the 61, `CON-04` is an emitter rather than a check, leaving **60 scoreable checks** in v1. (`CON-01` carried weight 0
 until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
 prohibitions section now.)
 
 > [!NOTE]
-> The tier columns sum to 59, not 60: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
-> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`; v0.3.4 added `AGT-12`.
+> The tier columns sum to 60, not 61: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
+> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`; v0.3.4 added `AGT-12` and `DOC-05`.
 > Earlier revisions of this table carried per-group tier splits that disagreed with their own rows — `--list-checks`
 > is the executable truth, and a mismatch between it and this page is a defect in this page.
 
@@ -95,6 +95,7 @@ suspicious verdict.
 | `DOC-02` | `docs/STYLE_GUIDE.md` exists | A | DEGRADER | File present; `AGT-03` must reference it | Implemented |
 | `DOC-03` | `artefacts/` exists and is ignored | B | DEGRADER | Directory present and matched by an ignore rule; contents not tracked | Implemented |
 | `DOC-04` | ADR directory and index | A | COSMETIC | An ADR directory exists with an index listing its files | Implemented |
+| `DOC-05` | Docs are readable | B | COSMETIC | The prose under `docs/`: at most 10% of sentences over 25 words (20 in a numbered step), at most 1 vague word per 1,000 words, and a Mermaid block on each explanation or tutorial page ⇒ `PASS`; over 25% long ⇒ `FAIL`; else `PARTIAL`; under 10 sentences, or under 20% common English function words ⇒ `UNKNOWN` | Implemented |
 
 ---
 

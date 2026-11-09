@@ -68,11 +68,13 @@ MATRIX: dict[str, dict[str, str]] = {
     "doc-03-tracked-artefacts": {"DOC-03": "FAIL"},
     "ignore-ok-nested-gitignore": {"DOC-03": "PASS", "CON-03": "PASS"},
     "doc-04-adr-unindexed": {"DOC-04": "PARTIAL"},
+    "doc-05-long-sentences": {"DOC-01": "PASS", "DOC-02": "PASS", "DOC-04": "PASS", "DOC-05": "FAIL"},
     "doc-nav-ok": {
         "DOC-01": "PASS",
         "DOC-02": "PASS",
         "DOC-03": "PASS",
         "DOC-04": "PASS",
+        "DOC-05": "PASS",
         "NAV-01": "PASS",
         "NAV-02": "PASS",
         "NAV-03": "PASS",

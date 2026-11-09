@@ -9,8 +9,8 @@
 
 ---
 
-The audit runs **75 checks** in 13 families (catalogue 0.6.0). 61 are scored; the rest are reported for the whole
-picture and earn no credit. The engine decides 73 checks from the files alone; the agent judges 2. Each check below says
+The audit runs **76 checks** in 13 families (catalogue 0.7.0). 62 are scored; the rest are reported for the whole
+picture and earn no credit. The engine decides 74 checks from the files alone; the agent judges 2. Each check below says
 what passes and why it matters. To fix a finding, follow the playbook it names in the [implement master
 list](implement-master.md).
 
@@ -24,7 +24,7 @@ list](implement-master.md).
 
 | Area | The question it answers | Families | Checks |
 |---|---|---|---|
-| [Agent context](#agent-context) | Can an agent find the code, the rules and the documents it needs before it edits anything? | [`IDX`](#discovery-and-index-idx), [`AGT`](#agent-governance-agt), [`DOC`](#documentation-contract-doc), [`NAV`](#navigation-nav) | 24 (3 BLOCKER, 16 DEGRADER, 5 COSMETIC) |
+| [Agent context](#agent-context) | Can an agent find the code, the rules and the documents it needs before it edits anything? | [`IDX`](#discovery-and-index-idx), [`AGT`](#agent-governance-agt), [`DOC`](#documentation-contract-doc), [`NAV`](#navigation-nav) | 25 (3 BLOCKER, 16 DEGRADER, 6 COSMETIC) |
 | [Command surface and quality gates](#command-surface-and-quality-gates) | Can an agent run one command that formats, lints, type-checks and tests, and trust its answer? | [`CMD`](#command-surface-cmd), [`TOOL`](#tooling-tool), [`TST`](#tests-tst), [`BASE`](#baselines-and-the-ratchet-base) | 20 (3 BLOCKER, 14 DEGRADER, 3 COSMETIC) |
 | [Enforcement in CI](#enforcement-in-ci) | Does the pipeline run the same gate the agent runs locally, and does it block the merge? | [`CI`](#continuous-integration-ci) | 5 (2 BLOCKER, 3 DEGRADER) |
 | [Reproducible execution](#reproducible-execution) | Does the same command give the same result on a fresh machine, without a human in the loop? | [`EXEC`](#execution-determinism-exec) | 8 (4 BLOCKER, 4 DEGRADER) |
@@ -185,7 +185,7 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 ### Documentation Contract (DOC)
 
-4 checks: 3 DEGRADER, 1 COSMETIC.
+5 checks: 3 DEGRADER, 2 COSMETIC.
 
 #### `DOC-01` docs/ exists
 
@@ -221,6 +221,15 @@ Can an agent find the code, the rules and the documents it needs before it edits
 - **Passes when:** a numbered-ADR directory exists, holds at least one entry, and an index lists every entry.
 - **Why it matters:** Architectural decisions need a location and a registry, or the rationale lives only in chat and
   pull requests, and agents re-litigate settled decisions ([greenfield/README.md § 5.2 Templates &
+  Guides](../../greenfield/README.md#52-templates--guides)).
+
+#### `DOC-05` Docs are readable
+
+`COSMETIC` · scored · engine check · fixed by [`establish-docs-contract`](implement-master.md#establish-docs-contract)
+
+- **Passes when:** every pass level holds.
+- **Why it matters:** An agent reads the docs to learn the repository and writes more of them; long sentences and vague
+  words cost the next reader time, and a flow with no diagram is slow to follow ([greenfield/README.md § 5.2 Templates &
   Guides](../../greenfield/README.md#52-templates--guides)).
 
 ### Navigation (NAV)

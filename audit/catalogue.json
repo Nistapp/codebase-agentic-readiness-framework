@@ -1,6 +1,6 @@
 {
-  "catalogue_version": "0.6.0",
-  "fingerprint": "0c0cf34c89ee50f6",
+  "catalogue_version": "0.7.0",
+  "fingerprint": "c150d929fed634cb",
   "checks": [
     {
       "id": "IDX-01",
@@ -322,6 +322,24 @@
         "REQ-SH-019"
       ],
       "engine_id": "DOC-04",
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    {
+      "id": "DOC-05",
+      "family": "DOC",
+      "title": "Docs are readable",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-061"
+      ],
+      "engine_id": "DOC-05",
+      "since_ruleset": "2026-11-10.1",
       "playbooks": [
         "establish-docs-contract"
       ]

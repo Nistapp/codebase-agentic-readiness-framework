@@ -1,13 +1,14 @@
 # Documentation Contract (`DOC`)
 
-> Follows the anatomy in [`README.md`](README.md). Four checks, all `method: automated`. See
+> Follows the anatomy in [`README.md`](README.md). Five checks, all `method: automated`. See
 > [Why These Checks §4](../engine/docs/architecture/user-overview/03-why-these-checks.md#4-documentation-contract-doc)
 > for the consequence behind this family: without a declared, canonical home for permanent knowledge,
 > documentation scatters and nothing is canonical — an agent cannot tell a settled architecture decision
 > from a stale scratch note.
 
 The implement recipe's playbook [`establish-docs-contract`](../../implement/playbooks/establish-docs-contract.md)
-resolves all four checks. Each check's **Remediation** below says what to create; the playbook says how, in order.
+resolves the first four checks; its steps for `DOC-05` are planned. Each check's **Remediation** below says
+what to create; the playbook says how, in order.
 
 ---
 
@@ -168,3 +169,37 @@ Pitfalls         `COSMETIC` severity means this check never blocks a Phase-1 sco
                  missing ADR index is still worth recording precisely — cosmetic is a severity, not a
                  licence to skip the evidence and absence-search rules this family shares with every
                  other.
+
+## DOC-05 — Docs are readable
+
+Why it matters   An agent reads the docs to learn the repository and writes more of them; long sentences
+                  and vague words cost the next reader time, and a flow with no diagram is slow to follow
+                  ([greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides)).
+Severity         COSMETIC
+Engine           `DOC-05`. Measures the prose of every Markdown page under `docs/` with the three rules of
+                 the framework's own prose check: a sentence over 25 words (20 in a numbered step) is long;
+                 `simply`, `just`, `obviously`, `clearly`, `basically`, `easily`, `utilize`, `leverage`,
+                 `in order to`, `and/or` and `etc` are vague; an explanation or tutorial page
+                 (`docs/explanation/`, `docs/tutorials/`, not an index) needs a Mermaid block. Code,
+                 tables, headings, HTML comments and a `<!-- prose-check off -->` region are skipped. Pass
+                 levels: at most 10% long sentences, at most 1 vague word per 1,000 words, no page without
+                 its diagram. Distrust a verdict on a small corpus: a few long sentences move the share.
+Method           automated
+Look for         The engine's counts in the check's `counter` payload, then the cited lines; a page that
+                 the engine skipped because it is too large to read is not in the counts.
+Rubric           PASS: every pass level holds.
+                 PARTIAL: one or more pass levels fail, and at most 25% of sentences are long.
+                 FAIL: more than 25% of sentences are long.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: `docs/` holds no Markdown page (`DOC-01`'s finding), fewer than 10
+                 sentences of prose, or prose that is not English (under 20% common English function
+                 words): the rules are for English.
+Evidence to cite A `file` item per cited long sentence, vague word or page without a diagram (at most eight
+                 of each), with `note` naming which.
+Absence proof    A FAIL cites the counts (sentences, long sentences) as a `grep`-style tally scoped to
+                 `docs/`, so the share is traceable to numbers.
+Remediation      `establish-docs-contract`
+Pitfalls         The sentence splitter is a heuristic; an abbreviation can split a sentence or join two.
+                 The check measures, it does not judge clarity: short, vague text can pass. Generated
+                 reference pages under `docs/` count too; exclude them from the scan if they are not
+                 written by people.

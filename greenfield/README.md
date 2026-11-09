@@ -365,6 +365,9 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 - **`AGENTS.md` SHOULD state how agents write for people:** who the reader is, the bottom line first, the layout
   of a status or done report, and how to ask for a decision (the options, a recommendation and a default). The
   template's §8.1 is a short example.
+- **The docs SHOULD read plainly:** few sentences over 25 words (20 in a numbered step), no vague or padded words
+  (`simply`, `just`, `in order to` and the like), and a Mermaid diagram on each explanation or tutorial page.
+  `docs/STYLE_GUIDE.md` is the place to state these rules.
 - [**`docs/architecture/README.md`**](templates/docs/architecture/README.md) — ADR index & doc router.
 - [**`docs/architecture/glossary.md`**](templates/docs/architecture/glossary.md) — Domain glossary.
 - [**`docs/templates/adr-template.md`**](templates/docs/templates/adr-template.md) — Architectural Decision Record (living, current-state only — revised in place, never tombstoned).
