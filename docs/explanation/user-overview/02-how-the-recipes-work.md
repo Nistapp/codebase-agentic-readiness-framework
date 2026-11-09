@@ -65,7 +65,8 @@ Both recipes ask and report in the same way. They follow one shared prompt,
 [`audit/prompts/talking-to-the-user.md`](../../../audit/prompts/talking-to-the-user.md), which both skill
 bundles carry. Each message puts the bottom line first. Each question gives the options, a recommendation and the
 default. Each claim that matters is marked *checked*, *inferred* or *assumed*, and the labels match the evidence
-the report records.
+the report records. The prompt fixes the layout of the audit intake, the finding confirmation, the triage, each
+status report and each pull request description.
 
 ## 4. Reading the report
 

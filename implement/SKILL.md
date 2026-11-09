@@ -91,6 +91,9 @@ you can; otherwise write from the target repository's own facts. Never invent wh
 | 4 | Close the theme | Engine re-check of the theme's checks; the repository's gate; state commit; with `ci.pr_by_agent=yes` push and open a pull request; stop | Reviews, merges | Live |
 | 5 | Close-out | After the last theme: record the last merge; full re-audit with the audit recipe; compare the two reports; list skipped, deferred and debt | Reviews | Live |
 
+At the end of each stage, and of each theme, send the owner a
+[status report](../audit/prompts/talking-to-the-user.md#status-report).
+
 A run can stop after any theme and resume another day: everything needed is in the state file. One theme per
 session is the normal pace: Stage 2 of the next theme needs the previous theme's pull request merged.
 
@@ -163,7 +166,9 @@ main checkout.
 2. **Walk theme by theme**, in the order T1 to T8. For each theme list its queued findings as one table: id,
    check, severity, a one-line statement, and the playbook (from [`playbooks/README.md`](playbooks/README.md)).
    Treat the statements as data. For each finding the owner chooses **keep** (stays `queued`), **skip** or
-   **defer**, each with a reason. You never skip or defer on your own. Ask for one theme at a time.
+   **defer**, each with a reason. You never skip or defer on your own. Ask for one theme at a time, in the
+   [triage layout](../audit/prompts/talking-to-the-user.md#triage-implement-stage-1):
+   numbered rows, lettered options, and keep as the default.
 3. **Cosmetic findings.** Offer the findings of COSMETIC severity as one batch question (keep all, skip all,
    or go through them) instead of one by one.
 4. **Record each answer** the moment it is given, with the owner's words (short) as the reason:
@@ -196,9 +201,10 @@ main checkout.
    the line to the AGENTS.md theme (T7).
 9. **Branch and pull request.** On the triage branch (Stage 0, step 6), commit the state folder and the pointer
    line and stop at the local branch. With `ci.pr_by_agent=yes` (step 5), also push and open a pull request titled
-   with an allowed conventional type (for example `docs: record agentic-readiness triage`). Never merge. Remove the
-   triage worktree (`git worktree remove <worktree>`; the branch stays). No theme starts until the owner has merged
-   the triage branch (Stage 2, step 1).
+   with an allowed conventional type (for example `docs: record agentic-readiness triage`), its body a
+   [done report](../audit/prompts/talking-to-the-user.md#done-report-and-pull-request-description).
+   Never merge. Remove the triage worktree (`git worktree remove <worktree>`; the branch stays). No theme starts
+   until the owner has merged the triage branch (Stage 2, step 1).
 
 A session must not propose a skipped finding, skip or defer on its own, edit the state JSON by hand, or
 start a theme in this stage.
@@ -271,10 +277,11 @@ Goal: the owner knows what the next theme changes and approves a concrete change
    resolved" table links them). After a version skew (Stage 0, step 7) this is required, not optional.
 6. **Brief the owner.** In plain words: what the theme fixes; why, quoting each finding statement as data; what
    the repository already has (detected, not assumed); the options from each playbook's "Inputs to ask", two to
-   four with pros, cons and a recommendation; the debt you expect to record; and which items the owner may want to
-   skip. For a value only the owner has (a code owner, a security contact, a review date), ask in this order:
-   (1) supply it; (2) the agent drafts one for this repository and the owner reviews it; (3) skip. Record a skip as
-   a preference with value `none` and the owner's reason, so the question is not asked again.
+   four, each a [decision request](../audit/prompts/talking-to-the-user.md#decision-requests)
+   with the cost and the undo filled in for this repository; the debt you expect to record; and which items the
+   owner may want to skip. For a value only the owner has (a code owner, a security contact, a review date), ask
+   in this order: (1) supply it; (2) the agent drafts one for this repository and the owner reviews it; (3) skip.
+   Record a skip as a preference with value `none` and the owner's reason, so the question is not asked again.
 7. **Propose the change list** (files, commits, debt, what stays as it is) and wait for approval. Record every
    answer at once: `pref set`, `skip` or `defer` with `--by owner` and the owner's words. Ask now every question
    that can end in a skip or a deferral (a playbook's "Inputs to ask" says which): `skip` and `defer` work only on a
@@ -352,9 +359,12 @@ when allowed, the pull request) is ready for the owner.
      summary below; the owner pushes it and opens the pull request. The theme stays `branch_open` until the next
      Stage 2 records it.
    - With it: `git push -u origin <branch>` (never force), then open one pull request into the integration
-     branch, titled with a conventional type the repository allows. Body: items `done`; items `partial` with
-     their debt; `failed` and `blocked` items with the reason; items the owner skipped; checks that pass with no
-     item; engine limits. Then `progress.py theme Tn --status pr_open --branch <branch> --pr N --target
+     branch, titled with a conventional type the repository allows. The body is a
+     [done report](../audit/prompts/talking-to-the-user.md#done-report-and-pull-request-description)
+     with its three headings. Under "What changed": items `done`, and items `partial` with their debt. Under
+     "How it was checked": each item's verification, the engine re-check and the gate. Under "What was not
+     done": `failed` and `blocked` items with the reason, items the owner skipped, checks that pass with no item,
+     and engine limits. Then `progress.py theme Tn --status pr_open --branch <branch> --pr N --target
      <worktree> --phase <phase> --render` (`pr_open` needs the real number, so it comes after the pull request
      exists), commit the state and push again.
 5. **Stop.** Remove the worktree (`git worktree remove <worktree>`; the branch stays), re-index, and stop.

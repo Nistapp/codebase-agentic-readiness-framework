@@ -37,10 +37,11 @@ exists to catch.
 
 Paste [`audit/prompts/kickoff.md`](../../audit/prompts/kickoff.md) into your agent, naming
 `/tmp/my-first-audit` as the target and this repository's checkout as where `audit/` lives.
-Since you have no intake file, Stage 0 asks its questions one at a time — including the provider-exposure
-statement, which the run will not start without acknowledging. Answer honestly for a first try: you are
-the operator, no verb needs to run against the target (`CMD-02` is caught by reading `package.json`, not
-by running anything), and `eval_mode` can stay `false` since you are here to confirm the finding yourself.
+Since you have no intake file, Stage 0 first asks you to acknowledge the provider-exposure statement; the run
+will not start without it. Then it asks its other questions in one numbered block, each with a default.
+Answer honestly for a first try: you are the operator, no verb needs to run against the target (`CMD-02` is
+caught by reading `package.json`, not by running anything), and `eval_mode` can stay `false` since you are here
+to confirm the finding yourself.
 Approve Stage 1's plan when it is shown to you.
 
 Real runs of this exact fixture, logged in this project's own roadmap, took 41–131 seconds end to end,

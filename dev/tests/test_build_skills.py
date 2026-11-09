@@ -95,7 +95,8 @@ class BuildSkillsTests(unittest.TestCase):
             bundle_dir = bs.build_bundle(Path(tmp))
             text = (bundle_dir / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn("](references/prompts/talking-to-the-user.md)", text)
-            self.assertNotIn("](prompts/talking-to-the-user.md)", text)
+            self.assertIn("](references/prompts/talking-to-the-user.md#status-report)", text)
+            self.assertNotIn("](prompts/talking-to-the-user.md", text)
             self.assertEqual(
                 (bundle_dir / "references" / "prompts" / "talking-to-the-user.md").read_bytes(),
                 (bs.AUDIT / "prompts" / "talking-to-the-user.md").read_bytes(),

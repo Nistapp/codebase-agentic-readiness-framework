@@ -143,10 +143,9 @@ SCHEMA_FILES = (
 #: a person pastes it into a harness; the skill does not read it.
 AUDIT_PROMPT_FILES = ("talking-to-the-user.md",)
 
-#: `audit/SKILL.md` links each carried prompt relative to itself; in the bundle the prompt sits under `references/`.
-AUDIT_SKILL_LINK_REWRITES = tuple(
-    (f"](prompts/{name})", f"](references/prompts/{name})") for name in AUDIT_PROMPT_FILES
-)
+#: `audit/SKILL.md` links each carried prompt relative to itself, with or without a heading anchor; in the bundle
+#: the prompt sits under `references/`.
+AUDIT_SKILL_LINK_REWRITES = tuple((f"](prompts/{name}", f"](references/prompts/{name}") for name in AUDIT_PROMPT_FILES)
 
 SKILL_MD_SOURCE_NAME = "name: audit\n"
 SKILL_MD_BUNDLE_NAME = f"name: {BUNDLE_NAME}\n"
