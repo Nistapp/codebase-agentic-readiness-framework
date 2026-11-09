@@ -4,8 +4,9 @@
 # OpenSSF Scorecard: scores this repository's security practices (branch protection, pinned actions, token
 # permissions, signed releases, ...) and uploads the result to the Security tab as code-scanning alerts. Advisory:
 # no ruleset requires it (docs/reference/branch-protection.md, "Code scanning").
-# `publish_results: false`: nothing is sent to the public OpenSSF API, so there is no public score page or badge.
-# Turning it on is the maintainer's decision; it also needs `id-token: write` on the job.
+# `publish_results: true` (the maintainer's decision, 2026-11-09): the action signs the result and sends it to the
+# public OpenSSF API, which backs the score page on scorecard.dev and the badge in README.md. The signing needs
+# `id-token: write`, on this job only; the job runs nothing but checkout, Scorecard and the SARIF upload.
 # Scorecard runs on the default branch only (`dev`).
 name: Scorecard
 
@@ -28,6 +29,7 @@ jobs:
     permissions:
       contents: read # check out the code and read the repository's settings through the API
       security-events: write # upload the result to the Security tab
+      id-token: write # sign the published result (publish_results), through GitHub's OIDC token
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -36,7 +38,7 @@ jobs:
         with:
           results_file: results.sarif
           results_format: sarif
-          publish_results: false
+          publish_results: true
       - uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: results.sarif
