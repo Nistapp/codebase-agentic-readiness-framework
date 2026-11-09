@@ -156,6 +156,17 @@ the policy files, and for nothing else:
    merges the release pull request, and that agents never tag or release (when `agents_md.release_tags` says so).
    Name it with `release` in the file name, at the root or `docs/`. It needs no CI edit; if the page would need a
    workflow change to become true, say so as a finding instead of editing CI.
+
+   Optional: one line on provenance. It says whether release artifacts carry signed provenance, and how a user
+   verifies it. Use the route the stack already publishes through:
+   - npm: `npm publish --provenance`.
+   - PyPI: Trusted Publishing, with attestations on.
+   - GitHub release files: `actions/attest` (or `attest-build-provenance`); users run `gh attestation verify`.
+   - Container images: `cosign`, or buildx provenance.
+   - Go modules: nothing more; the checksum database covers them.
+
+   A repository that publishes nothing says so. These routes are not verified here: confirm each one on the
+   vendor's current page before you write it. The line is never a verdict; HYG-08 still reads the page only.
 7. **Branch protection (HYG-11).** Protection is a platform setting. Declare it as code, summarise it on a page, and
    leave the setting to the owner: never call the settings API, never apply a file yourself.
    - **Read what exists first:** `.github/rulesets/`, `.github/settings.yml`, Terraform protection resources, a
