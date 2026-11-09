@@ -47,7 +47,8 @@ needed). Commit rule: a `commit-msg` script or lefthook stage, with
 the same script run over the pull request's commits in CI (`TOOL-06`). Branch guard (`TOOL-07`): a
 `git branch --show-current` check in `.githooks/pre-commit` or a lefthook `pre-commit` command. Dependency updates:
 Dependabot
-`package-ecosystem: gradle` or `maven`; Renovate's `gradle` and `maven` managers.
+`package-ecosystem: gradle` or `maven`; Renovate's `gradle` and `maven` managers. Language-server inputs
+(`register-index`, advisory): the Gradle or Maven build with its wrapper; nothing more.
 
 ## Execution determinism
 
@@ -73,6 +74,8 @@ build gate. The idiomatic job is `actions/checkout`, `actions/setup-java` with `
 `gradle/actions/setup-gradle`), then `./gradlew check` (never a bare `gradle check`, which bypasses the
 pinned wrapper version). Workflow lint (`CI-05`): actionlint from a Gradle task, `.githooks/` or lefthook.
 Dependency audit (`TOOL-04`): a `security` job that runs `./gradlew security`, beside the `check` job.
+Release provenance (optional, `add-repo-hygiene` step 6): `actions/attest` on the published jars, beside the
+signatures Maven Central asks for.
 
 ## Baseline / ratchet
 
