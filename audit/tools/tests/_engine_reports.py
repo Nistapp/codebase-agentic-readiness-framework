@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import io
 import json
+import re
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -21,6 +22,14 @@ import engine as launcher
 import validate_report as vr
 
 CATALOGUE: dict[str, Mapping[str, Any]] = {entry["id"]: entry for entry in vr.load_catalogue()["checks"]}
+
+#: The engine's current ruleset revision, read from its source. A hand-built report claims it, so it stands for a
+#: report of today's engine: no catalogue check is newer than it (`since_ruleset`), and none is filled in as UNKNOWN.
+RULESET_REVISION: str = re.search(
+    r'^__ruleset_revision__ = "([^"]+)"',
+    (Path(launcher.__file__).resolve().parents[1] / "engine" / "audit" / "__init__.py").read_text(encoding="utf-8"),
+    re.MULTILINE,
+).group(1)  # type: ignore[union-attr]
 
 
 def scan(target: Path | str, out_dir: Path | str, *extra: str) -> Path:
@@ -39,7 +48,7 @@ def provenance(target: Path | str, **changes: Any) -> dict[str, Any]:
     document: dict[str, Any] = {
         "tool": "python-agentic-audit",
         "version": "0.1.0",
-        "ruleset_revision": "2026-09-28.13",
+        "ruleset_revision": RULESET_REVISION,
         "ruleset_hash": "0123456789abcdef",
         "scanned_at": "2026-10-10T06:57:38+00:00",
         "target": str(target),

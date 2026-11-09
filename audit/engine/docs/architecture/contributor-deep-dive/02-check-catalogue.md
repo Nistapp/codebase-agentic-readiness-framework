@@ -25,23 +25,24 @@
 | `DOC` Documentation contract | 4 | 3 | 1 | — |
 | `CMD` Command surface | 4 | — | 4 | — |
 | `TOOL` Tooling | 6 | 3 | 3 | — |
-| `CI` CI | 3 | — | 3 | — |
+| `CI` CI | 4 | — | 4 | — |
 | `BASE` Baselines & ratchet | 4 | 2 | 2 | — |
 | `CON` Constraints | 4 | — | 3 | — |
 | `EXEC` Execution determinism | 7 | 2 | 5 | — |
 | `TST` Tests | 5 | 2 | 2 | 1 |
 | `NAV` Navigation | 3 | 1 | 2 | — |
 | `SEC` Security hygiene | 3 | — | 3 | — |
-| **Total catalogued** | **56** | **17** | **36** | **2** |
+| **Total catalogued** | **57** | **17** | **37** | **2** |
 
 Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
 
-Of the 56, `CON-04` is an emitter rather than a check, leaving **55 scoreable checks** in v1. (`CON-01` carried weight 0
+Of the 57, `CON-04` is an emitter rather than a check, leaving **56 scoreable checks** in v1. (`CON-01` carried weight 0
 until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
 prohibitions section now.)
 
 > [!NOTE]
-> The tier columns sum to 55, not 56: `CON-04` is an emitter with no tier. The variant research added `AGT-10`.
+> The tier columns sum to 56, not 57: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
+> v0.3.3 added `CI-05`.
 > Earlier revisions of this table carried per-group tier splits that disagreed with their own rows — `--list-checks`
 > is the executable truth, and a mismatch between it and this page is a defect in this page.
 
@@ -127,6 +128,7 @@ suspicious verdict.
 | `CI-01` | Pipeline present, triggered on PRs | B | BLOCKER | A workflow file exists and declares a pull-request trigger | Implemented |
 | `CI-02` | Local↔CI parity | B | BLOCKER | Set comparison of CI-invoked commands against the resolved verb set from `CMD-01` | Implemented |
 | `CI-03` | CI-only steps flagged | B | DEGRADER | CI steps with no local equivalent are listed as findings | Implemented |
+| `CI-05` | Workflow files are linted | B | DEGRADER | A linter that knows the CI provider is named on the local surface (`PASS`) or only in CI (`PARTIAL`) | Implemented |
 
 ---
 

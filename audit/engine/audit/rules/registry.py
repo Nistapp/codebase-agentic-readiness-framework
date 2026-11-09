@@ -174,6 +174,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("CI-01", "Pipeline present, triggered on PRs", "B", _S.BLOCKER),
     _c("CI-02", "Local↔CI parity", "B", _S.BLOCKER),
     _c("CI-03", "CI-only steps flagged", "B", _S.DEGRADER),
+    _c("CI-05", "Workflow files are linted", "B", _S.DEGRADER),
     # -- BASE -----------------------------------------------------------
     _c("BASE-01", "Baseline artifact exists", "A", _S.DEGRADER),
     _c("BASE-02", "Current violation counts measured", "B", _S.DEGRADER),

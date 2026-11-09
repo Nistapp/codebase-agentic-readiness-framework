@@ -41,7 +41,9 @@ plugin-dependent rules keeps a minimal ESLint config alongside it rather than sw
 checker: `tsc` reading `tsconfig.json`'s `compilerOptions.strict`. Test runner: Vitest or Jest, both
 seen across the corpus (§Verified) — a third option, Node's own built-in test runner, is untested here.
 Dependency scanner: the package manager's own `audit` command; `audit-ci` or Snyk are alternatives that
-pin a fixed severity threshold in config rather than a CLI flag.
+pin a fixed severity threshold in config rather than a CLI flag. Hook manager: Husky + lint-staged
+(`prepare: husky`), or simple-git-hooks; lefthook when there is no root `package.json`. Commit rule:
+commitlint in `.husky/commit-msg`.
 
 ## Execution determinism
 
@@ -58,7 +60,8 @@ GitHub Actions is the provider seen in all three repositories: `actions/checkout
 `actions/setup-node` with `node-version` pinned to the same major as `engines.node` and `cache: npm`
 (or the matching `pnpm`/`yarn` cache key), then `npm ci`, then `npm run check` (or the repository's own
 `check` script) as the one gate job calls. A matrix across `ubuntu-latest`/`macos-latest`/
-`windows-latest` was seen in one repository (§Verified) and is a strong signal, not a requirement.
+`windows-latest` was seen in one repository (§Verified) and is a strong signal, not a requirement. Workflow
+lint (`CI-05`): a `lint:workflows` script running actionlint, called from the Husky pre-commit hook and in CI.
 
 ## Baseline / ratchet
 

@@ -31,7 +31,9 @@ Formatter: Ruff's own formatter, or Black. Linter: Ruff (replacing Flake8/Pylint
 Flake8/Pylint on an older one; config in `pyproject.toml`'s `[tool.ruff]`/`[tool.black]` or standalone
 `ruff.toml`/`.flake8`/`.pylintrc`. Type checker: mypy or Pyright, `[tool.mypy]`/`[tool.pyright]` or
 `mypy.ini`'s `strict = true`. Test runner: pytest. Dependency scanner: `pip-audit` (works against any of
-pip/uv/poetry's resolved environment) or `safety check`.
+pip/uv/poetry's resolved environment) or `safety check`. Hook manager: pre-commit
+(`.pre-commit-config.yaml`); lefthook in a mixed repository. Commit rule: a pre-commit `commit-msg` hook
+(conventional-pre-commit, commitizen or gitlint).
 
 ## Execution determinism
 
@@ -46,6 +48,7 @@ actually acts on, not just which file exists. The matching lockfile (`poetry.loc
 GitHub Actions is the common provider: `actions/checkout`, `actions/setup-python` with `python-version`
 pinned to `requires-python`/`.python-version`, the matching manager's own cache (`setup-python`'s
 `cache: pip`, or `astral-sh/setup-uv`/`cache: poetry` for the others), then the project's `check` target.
+Workflow lint (`CI-05`): actionlint or zizmor as pre-commit hooks (or `uvx zizmor` in a target), run in CI too.
 
 ## Baseline / ratchet
 

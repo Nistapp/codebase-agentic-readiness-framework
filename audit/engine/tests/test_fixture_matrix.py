@@ -112,7 +112,9 @@ MATRIX: dict[str, dict[str, str]] = {
     "ci-01-no-pr-trigger": {"CI-01": "PARTIAL"},
     "ci-02-parity-break": {"CI-02": "FAIL"},
     "ci-03-ci-only-step": {"CI-03": "FAIL"},
-    "ci-ok-gh": {"CI-01": "PASS", "CI-02": "PASS", "CI-03": "PASS"},
+    "ci-05-no-workflow-lint": {"CI-05": "FAIL"},
+    "ci-05-ci-only-lint": {"CI-05": "PARTIAL"},
+    "ci-ok-gh": {"CI-01": "PASS", "CI-02": "PASS", "CI-03": "PASS", "CI-05": "PASS"},
     # -- BASE ---------------------------------------------------------------------------------
     "base-01-no-baseline": {"BASE-01": "FAIL"},
     "base-02-no-count": {"BASE-02": "PARTIAL"},

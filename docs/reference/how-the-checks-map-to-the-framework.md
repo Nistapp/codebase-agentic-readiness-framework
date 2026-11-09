@@ -31,7 +31,7 @@ To go the other way, start from a framework heading, find the requirements whose
 
 ## Every check, generated
 
-All 71 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
+All 72 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
 `Source` field links. Generated 2026-10-19 from `catalogue.json`'s `req_ids` and
 `readiness-requirements.md`'s `Source` fields — the same two steps as the worked example above, run once
 per check rather than by hand. 14 checks are informational or an emitter and trace to no requirement
@@ -58,6 +58,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `CI-02` | Local↔CI parity | BLOCKER | yes | [REQ-SH-034](../../spec/readiness-requirements.md#req-sh-034--ci-runs-the-verbs) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
 | `CI-03` | CI-only steps flagged | DEGRADER | yes | [REQ-SH-034](../../spec/readiness-requirements.md#req-sh-034--ci-runs-the-verbs) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
 | `CI-04` | CI enforces the same gate as the local check | DEGRADER | yes | [REQ-SH-035](../../spec/readiness-requirements.md#req-sh-035--ci-enforces-the-gate) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
+| `CI-05` | Workflow files are linted | DEGRADER | yes | [REQ-SH-057](../../spec/readiness-requirements.md#req-sh-057--workflow-files-linted) | [greenfield/README.md § 4.1 Workflows](../../greenfield/README.md#41-workflows) |
 | `CMD-01` | Seven verbs resolvable on one runner | BLOCKER | yes | [REQ-SH-021](../../spec/readiness-requirements.md#req-sh-021--verbs-defined-on-one-runner) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
 | `CMD-02` | check composes the read-only verbs | BLOCKER | yes | [REQ-SH-022](../../spec/readiness-requirements.md#req-sh-022--check-composes-the-read-only-verbs) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
 | `CMD-03` | No divergent second definition | DEGRADER | yes | [REQ-SH-023](../../spec/readiness-requirements.md#req-sh-023--no-second-definition-of-the-gate) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
@@ -111,7 +112,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `TST-04` | Fast path documented | DEGRADER | yes | [REQ-SH-048](../../spec/readiness-requirements.md#req-sh-048--fast-path-documented) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `TST-05` | Coverage configuration present | COSMETIC | yes | [REQ-SH-049](../../spec/readiness-requirements.md#req-sh-049--coverage-reporting) | [greenfield/README.md § 3.1 vitest.config.ts](../../greenfield/README.md#31-vitestconfigts--with-coverage) |
 
-71 checks total.
+72 checks total.
 
 ## Where the relation is held
 

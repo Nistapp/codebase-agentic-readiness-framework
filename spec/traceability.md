@@ -6,7 +6,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 
 ## Checks to requirements
 
-71 checks: 69 of the audit engine and 2 that only an agent runs. 57 scored checks trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
+72 checks: 70 of the audit engine and 2 that only an agent runs. 58 scored checks trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
 
 | Check | Title | Severity | Scored | Requirements |
 |---|---|---|---|---|
@@ -42,6 +42,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 | `CI-02` | Local↔CI parity | BLOCKER | yes | [REQ-SH-034](readiness-requirements.md#req-sh-034--ci-runs-the-verbs) |
 | `CI-03` | CI-only steps flagged | DEGRADER | yes | [REQ-SH-034](readiness-requirements.md#req-sh-034--ci-runs-the-verbs) |
 | `CI-04` | CI enforces the same gate as the local check | DEGRADER | yes (agent) | [REQ-SH-035](readiness-requirements.md#req-sh-035--ci-enforces-the-gate) |
+| `CI-05` | Workflow files are linted | DEGRADER | yes | [REQ-SH-057](readiness-requirements.md#req-sh-057--workflow-files-linted) |
 | `BASE-01` | Baseline artifact exists | DEGRADER | yes | [REQ-BF-001](readiness-requirements.md#req-bf-001--quality-baseline) |
 | `BASE-02` | Current violation counts measured | DEGRADER | yes | [REQ-BF-002](readiness-requirements.md#req-bf-002--violation-count-recorded) |
 | `BASE-03` | No-new-violations mechanism | DEGRADER | yes | [REQ-BF-003](readiness-requirements.md#req-bf-003--no-new-violations) |
@@ -84,7 +85,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 
 ## Requirements without a check
 
-5 of the 60 requirements have no check. All five are attested, and they are the engine's unattested list: the report shows them as unattested and they earn no credit.
+5 of the 61 requirements have no check. All five are attested, and they are the engine's unattested list: the report shows them as unattested and they earn no credit.
 
 | Requirement | Title | Verification | Why |
 |---|---|---|---|
@@ -96,7 +97,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 
 ## Derived requirements
 
-20 of the 60 requirements go beyond what the framework documents say. They follow from the Phase 1 objective, "Make the repository executable, discoverable, and safe for agent interaction", or they come from the audit engine's rule packs. Each is still tied to the nearest framework heading. These are the requirements to review first.
+20 of the 61 requirements go beyond what the framework documents say. They follow from the Phase 1 objective, "Make the repository executable, discoverable, and safe for agent interaction", or they come from the audit engine's rule packs. Each is still tied to the nearest framework heading. These are the requirements to review first.
 
 | Requirement | Title | What the framework does not say |
 |---|---|---|

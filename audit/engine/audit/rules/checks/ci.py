@@ -6,7 +6,7 @@
 Anchor: `docs/framework/phased-approach.md` § Key Deliverables. The normative sentence is the
 one-command-surface note in the Phase 1 activities block.
 
-Implemented here: `CI-01` … `CI-03`.
+Implemented here: `CI-01` … `CI-03` and `CI-05` (`CI-04` is an agent-run check with no engine id).
 
 The pack verifies that a repository's CI is *the same command surface* an agent runs locally, not a
 second, secret one. Workflow files are read through `audit.scan`; the local verbs they are compared
@@ -28,6 +28,15 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   Framework-verb invocations are `CI-02`'s subject and are not repeated here; package-manager
   plumbing (`npm ci`, `npm publish`) and shell automation (`gh`, `echo`) are not project tools and
   are ignored. No findings ⇒ `PASS`.
+* **CI-05** — the workflow files are linted, per CI provider, by a tool that knows that provider:
+  actionlint, zizmor or `check-jsonschema --builtin-schema vendor.github-workflows` for GitHub;
+  `check-jsonschema` with the provider's built-in schema (or the matching pre-commit hook id) for
+  GitLab, Azure, CircleCI and Buildkite; `glab ci lint` and `circleci config validate` count too.
+  A linter named in a local surface (a runner manifest, a build file, a hook config, a script) ⇒
+  local; named only in a workflow file (a `run:` step or a `uses:` action) ⇒ CI only. Every
+  lintable provider linted locally ⇒ `PASS`; at least one linted only in CI, or one linted and
+  another not ⇒ `PARTIAL`; workflows exist and nothing lints them ⇒ `FAIL`. No workflow file
+  (`CI-01`'s subject), or only providers with no known offline linter (Jenkins) ⇒ `UNKNOWN`.
 
 Deliberate limits, recorded rather than hidden. **YAML is not parsed.** This module is a minimal,
 documented text scan: it recognises `run:` / `script:` / `command:` scalar and block-scalar steps,
@@ -35,7 +44,10 @@ splits them on shell operators, and matches triggers by pattern. Anchors, expres
 steps, matrix expansion and full YAML semantics are out of scope, so a command hidden inside an
 expression is not seen. **Verb mapping is textual**, reusing the runner-indirection idea from
 `CMD-01`; an ecosystem outside that set is not mapped. Neither limit produces a `PASS` by guessing:
-an unmapped command is simply not counted as evidence.
+an unmapped command is simply not counted as evidence. **CI-05 matches tool names in text**: a
+local file that names `actionlint` in a comment counts, and a linter started through an indirection
+the scan cannot see (a script it does not read) is missed. Documentation files, lockfiles and
+dependency-update configs (Dependabot, Renovate) never count: they name a tool without running it.
 """
 
 from __future__ import annotations
@@ -48,6 +60,7 @@ from audit.probes import MUTATING_VERBS
 from audit.rules.checks._common import resolve_verbs, runner_commands
 from audit.stack import CI_PROVIDERS, VERBS
 from audit.rules.payloads import Payload
+from audit.scan import Kind
 
 #: The read-only verbs a CI pipeline may be expected to exercise (everything but a write verb).
 READ_ONLY_VERBS: tuple[str, ...] = tuple(v for v in VERBS if v not in MUTATING_VERBS)
@@ -196,6 +209,67 @@ _PM_BUILTINS: frozenset[str] = frozenset(
 )
 
 
+#: CI-05: the linters that understand each provider's workflow files. A pattern is matched against
+#: one line of text; pre-commit hook ids from check-jsonschema are listed so a hook config counts.
+_WORKFLOW_LINTERS: dict[str, tuple[tuple[str, re.Pattern[str]], ...]] = {
+    provider: tuple((name, re.compile(pattern)) for name, pattern in linters)
+    for provider, linters in (
+        (
+            "github",
+            (
+                ("actionlint", r"\bactionlint\b"),
+                ("zizmor", r"\bzizmor\b"),
+                ("check-jsonschema", r"vendor\.github-workflows|\bcheck-github-workflows\b"),
+            ),
+        ),
+        (
+            "gitlab",
+            (
+                ("check-jsonschema", r"vendor\.gitlab-ci|\bcheck-gitlab-ci\b"),
+                ("glab ci lint", r"\bglab\s+ci\s+lint\b"),
+            ),
+        ),
+        ("azure", (("check-jsonschema", r"vendor\.azure-pipelines|\bcheck-azure-pipelines\b"),)),
+        (
+            "circleci",
+            (
+                ("check-jsonschema", r"vendor\.circle-ci|\bcheck-circle-ci\b"),
+                ("circleci config validate", r"\bcircleci\s+config\s+validate\b"),
+            ),
+        ),
+        ("buildkite", (("check-jsonschema", r"vendor\.buildkite|\bcheck-buildkite"),)),
+    )
+}
+
+#: CI-05: file kinds that make up the local surface (runner manifests, build files, hook configs,
+#: scripts, extension-less files such as `.husky/pre-commit` and `justfile`). Docs and sources never count.
+_LOCAL_SURFACE_KINDS: tuple[Kind, ...] = (Kind.MANIFEST, Kind.BUILD, Kind.CONFIG, Kind.SCRIPT, Kind.OTHER)
+
+#: CI-05: files that name a tool without running it — lockfiles and dependency-update configs. Never local evidence.
+_NOT_A_SURFACE: frozenset[str] = frozenset(
+    {
+        "package-lock.json",
+        "npm-shrinkwrap.json",
+        "yarn.lock",
+        "pnpm-lock.yaml",
+        "bun.lock",
+        "uv.lock",
+        "poetry.lock",
+        "Pipfile.lock",
+        "pdm.lock",
+        "Cargo.lock",
+        "go.sum",
+        "Gemfile.lock",
+        "composer.lock",
+        "dependabot.yml",
+        "dependabot.yaml",
+        "renovate.json",
+        ".renovaterc",
+        ".renovaterc.json",
+    }
+)
+
+
 def _outcome(
     spec, verdict: Verdict, summary: str = "", findings: list[Finding] | None = None, data: Payload | None = None
 ) -> CheckOutcome:
@@ -217,7 +291,15 @@ def _unknown(spec, reason: str) -> CheckOutcome:
     return _outcome(spec, Verdict.UNKNOWN, reason)
 
 
-def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[Evidence], remediation: str) -> Finding:
+def _finding(
+    spec,
+    cannot: str,
+    because: str,
+    verdict: Verdict,
+    evidence: list[Evidence],
+    remediation: str,
+    path: str | None = None,
+) -> Finding:
     return Finding(
         check=spec.id,
         severity=spec.severity,
@@ -226,6 +308,7 @@ def _finding(spec, cannot: str, because: str, verdict: Verdict, evidence: list[E
         statement=statement(cannot, because),
         evidence=evidence,
         remediation=remediation,
+        path=path,
     )
 
 
@@ -453,8 +536,111 @@ def check_ci03(*, spec, target, inventory, stack, components, session) -> CheckO
     return _outcome(spec, Verdict.FAIL, f"{len(findings)} CI-only step(s)", findings)
 
 
+# ===========================================================================
+# CI-05 — workflow files are linted
+# ===========================================================================
+
+
+def _local_linter_hits(inventory, provider: str, workflow_rels: set[str]) -> list[tuple[str, int, str]]:
+    """``(rel, line, linter)`` for each local-surface line that names one of the provider's linters."""
+    hits: set[tuple[str, int, str]] = set()
+    for name, pattern in _WORKFLOW_LINTERS[provider]:
+        for rel, line, _text in inventory.grep(pattern, kinds=_LOCAL_SURFACE_KINDS):
+            if rel not in workflow_rels and rel.rsplit("/", 1)[-1] not in _NOT_A_SURFACE:
+                hits.add((rel, line, name))
+    return sorted(hits)
+
+
+def _ci_linter_hits(inventory, provider: str, workflow_rels: set[str]) -> list[tuple[str, int, str]]:
+    """``(rel, line, linter)`` for each workflow line (a `run:` step or a `uses:` action) naming a linter."""
+    hits: set[tuple[str, int, str]] = set()
+    for rel in sorted(workflow_rels):
+        for number, text in enumerate((inventory.read(rel) or "").splitlines(), start=1):
+            for name, pattern in _WORKFLOW_LINTERS[provider]:
+                if pattern.search(text):
+                    hits.add((rel, number, name))
+    return sorted(hits)
+
+
+def check_ci05(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+    workflows = _workflows(inventory)
+    if not workflows:
+        return _unknown(spec, "no workflow file, so there is nothing to lint (CI-01 reports the absence)")
+
+    workflow_rels = {rel for _provider, rel in workflows}
+    by_provider: dict[str, list[str]] = {}
+    for provider, rel in workflows:
+        by_provider.setdefault(provider, []).append(rel)
+    lintable = [provider for provider in by_provider if provider in _WORKFLOW_LINTERS]
+    if not lintable:
+        names = ", ".join(sorted(by_provider))
+        return _unknown(spec, f"no offline workflow linter is known for {names}")
+
+    local: dict[str, list[tuple[str, int, str]]] = {}
+    ci_only: dict[str, list[tuple[str, int, str]]] = {}
+    for provider in lintable:
+        local[provider] = _local_linter_hits(inventory, provider, workflow_rels)
+        ci_only[provider] = _ci_linter_hits(inventory, provider, workflow_rels)
+
+    def seen(hits: list[tuple[str, int, str]]) -> str:
+        return ", ".join(sorted({f"{name} ({rel})" for rel, _line, name in hits}))
+
+    detail = "; ".join(
+        f"{provider}: local {seen(local[provider]) or 'none'}, CI {seen(ci_only[provider]) or 'none'}"
+        for provider in lintable
+    )
+    unlinted = [provider for provider in lintable if not local[provider] and not ci_only[provider]]
+    if len(unlinted) == len(lintable):
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            detail,
+            [
+                _finding(
+                    spec,
+                    "check a workflow change before it is pushed",
+                    f"no linter for the {provider} workflow files runs locally or in CI",
+                    Verdict.FAIL,
+                    [Evidence(rel) for rel in by_provider[provider]],
+                    "Add a workflow linter to the local command surface or a hook and run it in CI "
+                    "(GitHub: actionlint and zizmor; other providers: check-jsonschema with the "
+                    "provider's built-in schema).",
+                    path=by_provider[provider][0],
+                )
+                for provider in unlinted
+            ],
+        )
+
+    not_local = [provider for provider in lintable if not local[provider]]
+    if not not_local:
+        return _outcome(spec, Verdict.PASS, detail)
+
+    findings = []
+    for provider in not_local:
+        in_ci = bool(ci_only[provider])
+        findings.append(
+            _finding(
+                spec,
+                "check a workflow change before it is pushed",
+                (
+                    f"the {provider} workflow linter runs only in CI"
+                    if in_ci
+                    else f"no linter for the {provider} workflow files runs locally or in CI"
+                ),
+                Verdict.PARTIAL,
+                [Evidence(rel, line=line, note=name) for rel, line, name in ci_only[provider]]
+                or [Evidence(rel) for rel in by_provider[provider]],
+                "Expose the workflow linter on the local command surface or in a hook, so an agent "
+                "can run the same check before it pushes.",
+                path=by_provider[provider][0],
+            )
+        )
+    return _outcome(spec, Verdict.PARTIAL, detail, findings)
+
+
 IMPLEMENTATIONS = {
     "CI-01": check_ci01,
     "CI-02": check_ci02,
     "CI-03": check_ci03,
+    "CI-05": check_ci05,
 }

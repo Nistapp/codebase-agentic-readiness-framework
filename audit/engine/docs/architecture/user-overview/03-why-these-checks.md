@@ -93,6 +93,7 @@ One command surface, three consumers. This family is the core of Phase 1 and the
 | `CI-01` Pipeline present, triggered on PRs | Verification must be automatic and independent of the author | "I ran the tests" is unverifiable |
 | `CI-02` Local↔CI parity | The gate an agent *can* run must be the gate that *decides* | Agent optimises against a weaker local gate; rework at review |
 | `CI-03` CI-only steps flagged | A step with no local equivalent is unreachable by an agent | Agent cannot reproduce the failure it is being failed on |
+| `CI-05` Workflow files are linted | An agent cannot run a workflow locally, so a linter is its only check before a push | A broken expression or an injection risk is found only after the push, by CI or by an attacker |
 
 ---
 

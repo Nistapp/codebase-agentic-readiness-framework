@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "check": "npm run format:check && npm run typecheck && npm test",
-    "security": "npm audit --audit-level=high"
+    "security": "npm audit --audit-level=high",
+    "lint:workflows": "actionlint"
   }
 }

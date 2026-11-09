@@ -35,6 +35,7 @@
     "test:coverage": "vitest run --coverage",
     "check": "npm run format:check && npm run typecheck && npm test",
     "security": "npm audit --audit-level=high",
+    "lint:workflows": "actionlint",
     "check:fix": "biome check --fix .",
     "build": "tsc",
     "build:full": "npm run clean && npm run build",

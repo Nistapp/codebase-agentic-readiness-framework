@@ -1155,6 +1155,70 @@ class InventoryTests(unittest.TestCase):
         )
 
 
+class NewerCheckTests(unittest.TestCase):
+    """A catalogue check added after the report's ruleset (`since_ruleset`) is recorded as UNKNOWN; others stay missing."""
+
+    def catalogue(self, since: str | None) -> dict[str, Any]:
+        catalogue: dict[str, Any] = copy.deepcopy(dict(CATALOGUE))
+        for entry in catalogue["checks"]:
+            entry.pop("since_ruleset", None)
+            if entry["id"] == "TOOL-02" and since is not None:
+                entry["since_ruleset"] = since
+        return catalogue
+
+    def converted(self, since: str | None, **provenance: Any) -> adapter.Conversion:
+        engine = er.report(TARGET, [er.check("TOOL-01", "PASS")])
+        engine["provenance"].update(provenance)
+        engine["provenance"] = {k: v for k, v in engine["provenance"].items() if v is not None}
+        return adapter.convert(engine, catalogue=self.catalogue(since))
+
+    def test_a_check_newer_than_the_reports_ruleset_is_recorded_as_unknown_with_no_engine_verdict(self) -> None:
+        conversion = self.converted("2026-11-09.1", ruleset_revision="2026-09-28.13")
+        self.assertEqual([c["id"] for c in conversion.checks], ["TOOL-01", "TOOL-02"])
+        added = conversion.checks[1]
+        self.assertEqual(
+            (added["verdict"], added["method"], added["summary"]),
+            ("UNKNOWN", "automated", adapter.NOT_IN_RULESET_SUMMARY),
+        )
+        self.assertNotIn("engine_verdict", added)
+        self.assertEqual(added["evidence"], [])
+        self.assertEqual(
+            conversion.warnings,
+            [
+                "TOOL-02: the engine's ruleset 2026-09-28.13 is older than the check (2026-11-09.1), so it is "
+                "recorded as UNKNOWN; scan again with a newer engine"
+            ],
+        )
+
+    def test_a_check_the_reports_ruleset_already_has_stays_missing(self) -> None:
+        for revision in ("2026-11-09.1", "2026-11-09.2", "2026-12-01.1"):
+            with self.subTest(revision=revision):
+                conversion = self.converted("2026-11-09.1", ruleset_revision=revision)
+                self.assertEqual(([c["id"] for c in conversion.checks], conversion.warnings), (["TOOL-01"], []))
+
+    def test_a_check_with_no_since_ruleset_stays_missing(self) -> None:
+        conversion = self.converted(None, ruleset_revision="2026-09-28.13")
+        self.assertEqual([c["id"] for c in conversion.checks], ["TOOL-01"])
+
+    def test_a_report_without_a_ruleset_revision_adds_nothing(self) -> None:
+        conversion = self.converted("2026-11-09.1", ruleset_revision=None)
+        self.assertEqual(([c["id"] for c in conversion.checks], conversion.warnings), (["TOOL-01"], []))
+
+    def test_a_check_the_report_lists_as_not_applicable_is_not_added_again(self) -> None:
+        engine = er.report(TARGET, [er.check("TOOL-01", "PASS")], not_applicable=["TOOL-02"])
+        conversion = adapter.convert(engine, catalogue=self.catalogue("2026-11-09.1"))
+        self.assertEqual([c["verdict"] for c in conversion.checks], ["PASS", "NOT_APPLICABLE"])
+
+    def test_revisions_sort_by_date_then_by_number(self) -> None:
+        for earlier, later in (("2026-11-09.9", "2026-11-09.10"), ("2026-10-31.4", "2026-11-01.1")):
+            first, second = adapter.ruleset_order(earlier), adapter.ruleset_order(later)
+            assert first is not None and second is not None
+            self.assertLess(first, second)
+        for text in (None, "", "2026-11-09", "v1", 7):
+            with self.subTest(text=text):
+                self.assertIsNone(adapter.ruleset_order(text))
+
+
 class EngineScoreTests(unittest.TestCase):
     def test_the_engines_score_is_read_from_its_summary(self) -> None:
         engine = er.report(TARGET, summary={"phase1_score": 0.7311, "blockers": 4})

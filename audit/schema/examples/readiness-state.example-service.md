@@ -10,7 +10,7 @@ A skipped finding is final until the owner unskips it, and every preference bind
 |---|---|
 | Default branch | `main` |
 | Recipe | brownfield-implement 0.2.0-dev, framework `cafecafecafecafecafecafecafecafecafecafe` |
-| Source report | `docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json` at `deadbeefdeadbeefdeadbeefdeadbeefdeadbeef`, catalogue 0.2.0 |
+| Source report | `docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json` at `deadbeefdeadbeefdeadbeefdeadbeefdeadbeef`, catalogue 0.3.0 |
 
 ## Summary
 

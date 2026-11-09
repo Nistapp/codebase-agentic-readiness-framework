@@ -13,6 +13,7 @@ the record of how; git has the rest.
 
 | Revision | Date | Scoreable checks | What it is |
 |---|---|---|---|
+| `2026-11-09.1` | 2026-11-09 | 56 | v0.3.3 C1: new check `CI-05` (workflow files are linted, DEGRADER). It reads the linters each CI provider supports (actionlint, zizmor, check-jsonschema schemas, `glab ci lint`, `circleci config validate`): local ⇒ `PASS`, CI only ⇒ `PARTIAL`, none ⇒ `FAIL`, no workflow or Jenkins only ⇒ `UNKNOWN`. Every repository with workflow files and no linter gains a `CI-05` finding |
 | `2026-11-06.1` | 2026-11-06 | 55 | MR06.4: `TST-04` accepts `python3 -m unittest <module> -k <name>` as a single-test form; `AGT-08` takes a line of the root `AGENTS.md` that says "read by" or "supported harnesses" and names a known harness as the answer to the reach gap (#26) |
 | `2026-11-05.4` | 2026-11-05 | 55 | MR06.3: `NAV-02` entry point is a guard line, `DOC-04` ignores the ADR template, `--out` without a suffix, `--no-user-config` and `provenance.user_config` |
 | `2026-11-05.3` | 2026-11-05 | 55 | MR06.2 ([ADR-0009](../architecture/adrs/0009-nested-ignore-files-and-negation.md)): `DOC-03`, `CON-03`, `SEC-01` and `SEC-03` read nested `.gitignore` files and `!` negation |

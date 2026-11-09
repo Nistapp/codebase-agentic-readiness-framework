@@ -17,6 +17,7 @@ recorded, and a committed record shows which CI job the platform requires before
 | CI-02 | [06-ci.md](../../audit/checks/06-ci.md#ci-02--localci-parity) | CI runs the local verbs, directly or through a wrapper script that calls them |
 | CI-03 | [06-ci.md](../../audit/checks/06-ci.md#ci-03--ci-only-steps-flagged) | Every CI step is a local command; a step that exists only in CI is flagged in its name and in the CI doc |
 | CI-04 | [06-ci.md](../../audit/checks/06-ci.md#ci-04--ci-enforces-the-same-gate-as-the-local-check) | No gating step swallows its exit code; non-gating steps are visibly report-only; the required-check wiring is recorded with evidence |
+| CI-05 | [06-ci.md](../../audit/checks/06-ci.md#ci-05--workflow-files-are-linted) | A workflow linter that knows the CI provider runs from the local surface and in CI |
 
 ## Preconditions
 
@@ -27,7 +28,7 @@ recorded, and a committed record shows which CI job the platform requires before
   call does not exist, stop and report; do not invent a CI-only command.
 - Preferences read, when present: `ci.edits_authorised` (a `no` or a scoped value limits which files may change;
   honour the exact scope), `ci.image_scan_debt`, `scanner.choice`, `format.mass_reformat`, `layout.command_runner`,
-  `lint.mode`, `security.verb`.
+  `lint.mode`, `security.verb`, `ci.workflow_linter`, `hooks.manager`.
 - **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a step already fixed or a wrapper already calling the verb
   makes a finding stale; re-read the workflow on the current integration branch.
 
@@ -53,6 +54,25 @@ recorded, and a committed record shows which CI job the platform requires before
    mechanism (classic rule or ruleset), required checks, the up-to-date setting, bypass actors, and whether the
    plan allows protection at all. **A session never guesses these.** If they are not supplied, stop for that part.
 5. **Names to preserve:** the merge-gate job name and the docs-only skip (path filter or change-detection job).
+6. **Workflow linter (CI-05).** Detect first and keep a linter that already runs. Look in Makefile targets,
+   `package.json` scripts, hooks (`.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`) and CI steps. If there is
+   none, choose the linter by CI provider and the route by stack (the stack profile's Tooling defaults).
+   Currency checked 2026-11-09 (GitHub releases API, PyPI); re-check when applied.
+
+   | Provider | Recommend | Version, date | Notes |
+   |---|---|---|---|
+   | GitHub Actions | actionlint, plus zizmor for security | actionlint v1.7.12, 2026-03-30; zizmor 1.32.0, 2026-11-02 | actionlint checks syntax, expressions and action inputs; zizmor finds script injection and over-broad permissions. One is enough for CI-05; offer both |
+   | GitLab, Azure, Bitbucket, CircleCI, Buildkite | check-jsonschema with the provider's built-in schema | 0.39.0, 2026-10-26 | Offline. `glab ci lint` and `circleci config validate` also count but need the platform CLI |
+   | Jenkins | none offline | — | CI-05 reads `UNKNOWN`; say so, add nothing |
+
+   | Stack | Local route |
+   |---|---|
+   | Node with Husky | a `lint:workflows` script, called from `.husky/pre-commit` when workflow files are staged |
+   | Python with pre-commit | the `actionlint` hook (`rhysd/actionlint`), `zizmorcore/zizmor-pre-commit`, or check-jsonschema's `check-github-workflows` / `check-gitlab-ci` hooks |
+   | Make, Gradle, lefthook or mixed | a `workflow-lint` target or lefthook command that runs the linter on the workflow folder |
+
+   Each developer installs the linter once. Pin its version where the repository pins its other dev tools, never
+   in the workflow alone. Record the choice as the preference `ci.workflow_linter`.
 
 ## Steps
 
@@ -82,7 +102,11 @@ recorded, and a committed record shows which CI job the platform requires before
    required check name, up-to-date setting, bypass actors, the date the owner confirmed, and the exact read-only
    command that re-checks it. If the platform cannot enforce a required check (plan limitation), the page says
    so and lists the mitigations; the check is then recorded `partial`, never `done`.
-7. **Lint the workflow** with the repository's workflow linter before pushing. Edit workflows only in a PR.
+7. **Workflow lint (CI-05).** Add the chosen linter to the local surface (the route from Inputs 6). Run the same
+   command in CI as a blocking step, beside the gate. Prefer calling the local command over a third-party
+   `uses:` action; an action needs the owner's approval. Fix what the linter reports in the workflows you edit.
+   Record older findings as debt, as for scans. Lint every workflow you changed before pushing. Edit workflows
+   only in a PR.
 8. **Commits:** wrapper, workflow, record.
 
 ### GitHub Actions and Gradle
@@ -135,6 +159,7 @@ Lessons from the multi-app Node application (IR07.3):
 | CI-02 | Read each CI step and wrapper; run the wrapper locally | Every verb CI runs is the local verb with the same arguments; local run is green |
 | CI-03 | `grep -n "continue-on-error\|\|\| true" .github/workflows/*.yml scripts/ci/*.sh` plus the step list | Every CI-only step is named so and listed in the CI doc |
 | CI-04 | The same grep; the job summary of a CI run; the branch-protection record | No swallowed gating command; every non-blocking step says report-only and has recorded debt; the record names the required check, or says protection cannot be enforced |
+| CI-05 | Run the local workflow-lint command; read the CI step | The linter runs locally and in CI and is clean on the edited workflows; the engine reads CI-05 `PASS` |
 
 The engine reads `run:` text only. After a correct wrapper-based fix a re-audit can still read CI-02 or CI-03
 wrongly (known engine defects), and CI-04 needs the platform confirmation: say so in the pull request body; the
@@ -170,5 +195,7 @@ python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --p
 python3 implement/tools/progress.py pref set ci.shape <wrappers-call-verbs|direct> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set ci.edits_authorised <value> \
+  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py pref set ci.workflow_linter <actionlint|zizmor|check-jsonschema|...> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```
