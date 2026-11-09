@@ -129,7 +129,7 @@
             "verb": "test"
           },
           {
-            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint",
+            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint && make spell",
             "resolved": true,
             "runner": "Makefile",
             "verb": "check"
@@ -343,7 +343,7 @@
             "verb": "test"
           },
           {
-            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint",
+            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint && make spell",
             "resolved": true,
             "runner": "Makefile",
             "verb": "check"
@@ -582,6 +582,7 @@
           "Makefile",
           "audit/engine/",
           "AGENTS.md",
+          "_typos.toml",
           ".python-version",
           "dev/tools/pyproject.toml",
           "dev/tools/package.json",
@@ -645,7 +646,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod, lefthook.yml (+45 more)",
+      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, _typos.toml, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod (+46 more)",
       "tier": "B",
       "title": "Allow/deny artifact present",
       "verdict": "PASS"
@@ -804,7 +805,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 84 test file(s)",
+      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 85 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -837,7 +838,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 84 test file(s): python 1; total 1",
+      "summary": "skip/xfail census across 85 test file(s): python 1; total 1",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -922,10 +923,10 @@
     },
     {
       "data": {
-        "denominator": 1152,
+        "denominator": 1155,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 459,
+        "numerator": 460,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -934,33 +935,33 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "459/1152 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
+      "summary": "460/1155 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
     },
     {
       "data": {
-        "covered": [],
-        "kind": "secret_shapes",
-        "missing": [],
-        "root_only": [
+        "covered": [
           "dotenv",
           "dotenv variant"
         ],
+        "kind": "secret_shapes",
+        "missing": [],
+        "root_only": [],
         "shapes": [
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv",
             "probe": ".env",
-            "root_only": true,
+            "root_only": false,
             "suggested": ".env"
           },
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv variant",
             "probe": ".env.local",
-            "root_only": true,
+            "root_only": false,
             "suggested": ".env.*"
           }
         ]
@@ -971,10 +972,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "no tracked .env, but ignore rules are incomplete: root-anchored only: dotenv, dotenv variant (the rule covers the root, not nested files such as `a/.env`)",
+      "summary": "no tracked .env and ignore rules cover the shape",
       "tier": "B",
       "title": ".env untracked and ignored",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {
@@ -1015,6 +1016,8 @@
     {
       "data": {
         "covered": [
+          "dotenv",
+          "dotenv variant",
           "ssh private key",
           "PEM",
           "key",
@@ -1027,23 +1030,20 @@
         ],
         "kind": "secret_shapes",
         "missing": [],
-        "root_only": [
-          "dotenv",
-          "dotenv variant"
-        ],
+        "root_only": [],
         "shapes": [
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv",
             "probe": ".env",
-            "root_only": true,
+            "root_only": false,
             "suggested": ".env"
           },
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv variant",
             "probe": ".env.local",
-            "root_only": true,
+            "root_only": false,
             "suggested": ".env.*"
           },
           {
@@ -1117,10 +1117,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "covered: ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials; root-anchored only: dotenv, dotenv variant (the rule covers the root, not nested files such as `a/.env`)",
+      "summary": "covered: dotenv, dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials",
       "tier": "B",
       "title": "Ignore patterns cover secret shapes",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1304,57 +1304,6 @@
       "verdict": "FAIL"
     },
     {
-      "check": "SEC-01",
-      "evidence": [
-        {
-          "line": null,
-          "note": "__pycache__",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "*.py[cod]",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".mypy_cache",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".ruff_cache",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/dev/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/audit/engine/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "*.pyz",
-          "path": ".gitignore"
-        }
-      ],
-      "id": "SEC-01",
-      "phase": 1,
-      "remediation": "Add the .env shape without a leading slash (for example `.env` and `.env.*`) to .gitignore so an environment file cannot be committed by accident, at any depth.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot trust that a future .env stays out of history because ignore rules are incomplete (root-anchored only: dotenv, dotenv variant (the rule covers the root, not nested files such as `a/.env`)).",
-      "verdict": "PARTIAL"
-    },
-    {
       "check": "BASE-02",
       "evidence": [
         {
@@ -1394,70 +1343,19 @@
       "severity": "DEGRADER",
       "statement": "An agent cannot state how many violations exist today because a counting surface exists but no numeric violation budget or count is committed.",
       "verdict": "PARTIAL"
-    },
-    {
-      "check": "SEC-03",
-      "evidence": [
-        {
-          "line": null,
-          "note": "__pycache__",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "*.py[cod]",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".mypy_cache",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".ruff_cache",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/dev/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/audit/engine/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "*.pyz",
-          "path": ".gitignore"
-        }
-      ],
-      "id": "SEC-03",
-      "phase": 1,
-      "remediation": "Add the missing shapes to .gitignore \u2014 for example `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `id_rsa*`, `*.crt`, `*.cer`, `.aws/*`.",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot trust that secret shapes cannot be committed because ignore rules are incomplete (root-anchored only: dotenv, dotenv variant (the rule covers the root, not nested files such as `a/.env`)).",
-      "verdict": "PARTIAL"
     }
   ],
   "inventory": {
-    "files_inspected": 339,
-    "files_set_aside": 460,
-    "files_skipped": 3,
+    "files_inspected": 341,
+    "files_set_aside": 456,
+    "files_skipped": 7,
     "set_aside": [
       {
         "files": 3,
         "path": "audit/engine/examples"
       },
       {
-        "files": 276,
+        "files": 273,
         "path": "audit/engine/tests/fixtures"
       },
       {
@@ -1477,7 +1375,7 @@
         "path": "docs/templates"
       },
       {
-        "files": 39,
+        "files": 38,
         "path": "greenfield/templates"
       }
     ],
@@ -1528,15 +1426,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "b678cd339ce6114fd1ed6df18a68d6b5596a8557",
+    "framework_revision": "3ac756b9ad29656d1f56e2a5406257033faf668c",
     "git_branch": "chore/v0.3.3-track-a-tooling",
     "git_dirty": true,
-    "git_sha": "b678cd339ce6114fd1ed6df18a68d6b5596a8557",
+    "git_sha": "3ac756b9ad29656d1f56e2a5406257033faf668c",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "970e6792f98eeeb5",
     "ruleset_revision": "2026-11-06.1",
-    "scanned_at": "2026-11-09T05:17:36+00:00",
+    "scanned_at": "2026-11-09T06:37:40+00:00",
     "target": "/home/kc/Projects/Nistapp-agentic-frameworks/car-framework-track-a",
     "tool": "python-agentic-audit",
     "user_config": {
@@ -1567,12 +1465,12 @@
     "test_frameworks": []
   },
   "summary": {
-    "blockers": 3,
+    "blockers": 2,
     "checks": {
       "attest": 0,
       "fail": 2,
-      "partial": 5,
-      "pass": 58,
+      "partial": 3,
+      "pass": 60,
       "unknown": 4
     },
     "checks_applicable": 69,
@@ -1580,8 +1478,8 @@
     "checks_scoreable": 55,
     "cosmetic": 0,
     "coverage_note": "55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
-    "degraders": 2,
-    "phase1_score": 0.8525
+    "degraders": 1,
+    "phase1_score": 0.873
   },
   "unattested": [
     "index-in-use",
