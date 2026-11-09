@@ -59,6 +59,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "agt-07-missing-deny": {"AGT-07": "PARTIAL"},
     "agt-08-competitor": {"AGT-08": "FAIL"},
     "agt-09-no-release": {"AGT-09": "PARTIAL"},
+    "agt-09-ruleset-branch-unnamed": {"AGT-09": "PARTIAL"},
     "agt-10-deferred": {"AGT-10": "FAIL"},
     # -- DOC / NAV ----------------------------------------------------------------------------
     "doc-01-empty": {"DOC-01": "PARTIAL"},

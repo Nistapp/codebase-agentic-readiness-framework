@@ -1,0 +1,12 @@
+{
+  "name": "protected-branches",
+  "target": "branch",
+  "enforcement": "active",
+  "conditions": {
+    "ref_name": {
+      "include": ["~DEFAULT_BRANCH", "refs/heads/main", "refs/heads/staging", "refs/heads/hotfix/*"],
+      "exclude": []
+    }
+  },
+  "rules": [{ "type": "deletion" }, { "type": "pull_request" }]
+}

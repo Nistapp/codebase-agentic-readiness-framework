@@ -8,6 +8,11 @@ Implemented here: `AGT-01` (canonical instruction file), `AGT-02` (component cov
 `AGT-06` (architectural boundaries), `AGT-07` (prohibitions), `AGT-08` (competing files + reach
 matrix), `AGT-09` (branch and release boundary) and `AGT-10` (indirection).
 
+`AGT-09` also compares the instruction file with the branch rules declared as code
+(`_common.declared_branch_rules`, the list `HYG-11` and `TOOL-07` read): a branch a rule protects by its literal
+name and that the file does not name is `PARTIAL`. `~DEFAULT_BRANCH`, `~ALL` and glob patterns name no branch, so
+they are skipped.
+
 `AGT-05` resolves its verbs through `CMD-01`'s resolver (`_common.resolve_verbs`) so the two checks
 can never disagree: it is a `PASS` only when the entry instruction file names every framework verb
 **and** those verbs resolve on a runner. Names without resolution is `PARTIAL`; neither is `FAIL`.
@@ -31,6 +36,7 @@ from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
 from audit.rules.checks._common import (
     PROHIBITION_LINE_RE,
+    declared_branch_rules,
     entry_instruction_file,
     prohibitions_section,
     resolve_verbs,
@@ -1075,6 +1081,11 @@ _BRANCH_RE = re.compile(r"(?i)\b(branch(?:es|ing)?|main|dev|trunk)\b")
 _RELEASE_RE = re.compile(r"(?i)\b(tag|release|publish|deploy|push)\b")
 
 
+def _names_branch(text: str, branch: str) -> bool:
+    """True when ``text`` names ``branch`` as a whole name: ``dev`` is not named by ``devops`` or ``dev/x``."""
+    return re.search(rf"(?<![\w./-]){re.escape(branch)}(?![\w/-])", text) is not None
+
+
 def check_agt09(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     name, text = entry_instruction_file(inventory)
     if not text:
@@ -1082,8 +1093,16 @@ def check_agt09(*, spec, target, inventory, stack, components, session) -> Check
 
     branch_line = _first_line(text, _BRANCH_RE)
     release_line = _first_line(text, _RELEASE_RE)
+    rules = declared_branch_rules(inventory)
+    unnamed = [branch for branch in rules.literal_branches if not _names_branch(text, branch)]
+    unnamed_why = (
+        f"{', '.join(unnamed)} {'is' if len(unnamed) == 1 else 'are'} protected by the declared rules "
+        f"({', '.join(rules.sources)}) but not named"
+        if unnamed
+        else ""
+    )
 
-    if branch_line and release_line:
+    if branch_line and release_line and not unnamed:
         return CheckOutcome(
             spec.id,
             spec.title,
@@ -1094,7 +1113,10 @@ def check_agt09(*, spec, target, inventory, stack, components, session) -> Check
             spec.status,
             summary="the branch model and the release boundary are stated",
         )
-    if branch_line:
+    if branch_line and release_line:
+        verdict = Verdict.PARTIAL
+        why = unnamed_why
+    elif branch_line:
         verdict = Verdict.PARTIAL
         why = "the branch model is stated but nothing says whether an agent may tag or release"
     elif release_line:
@@ -1103,8 +1125,17 @@ def check_agt09(*, spec, target, inventory, stack, components, session) -> Check
     else:
         verdict = Verdict.FAIL
         why = "neither the branch model nor the release boundary is stated"
+    if unnamed and why != unnamed_why:
+        why = f"{why}; {unnamed_why}"
 
     evidence = [Evidence(name, line=line) for line in (branch_line, release_line) if line]
+    if unnamed:
+        evidence.extend(Evidence(source, note="declares a protected branch") for source in rules.sources)
+    remediation = (
+        "State the branches that exist (for example main and dev) and whether an agent may tag or publish a release."
+    )
+    if unnamed:
+        remediation += f" Name {', '.join(unnamed)}, which the declared branch rules protect."
     return CheckOutcome(
         spec.id,
         spec.title,
@@ -1122,8 +1153,7 @@ def check_agt09(*, spec, target, inventory, stack, components, session) -> Check
                 verdict=verdict,
                 statement=statement("know which branch to work on and whether it may cut a release", why),
                 evidence=evidence,
-                remediation="State the branches that exist (for example main and dev) and whether an "
-                "agent may tag or publish a release.",
+                remediation=remediation,
             ),
         ],
     )
