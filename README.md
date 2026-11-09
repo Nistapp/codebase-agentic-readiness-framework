@@ -52,6 +52,7 @@ it pushes a branch only if you opt in.
 | Install the skills from the release zips, with no clone | [Install the skills](docs/how-to/install-the-skills.md) |
 | See a real run: one repository audited, fixed and audited again | [Worked example](audit/schema/examples/server-worked-example/README.md) |
 | Start a new repository that is agent-ready from the first commit | [Greenfield](greenfield/README.md) |
+| See every check an audit runs, and what an implement run changes | [Audit master list](docs/reference/audit-master.md), [Implement master list](docs/reference/implement-master.md) |
 | Read the method: the seven phases and the requirements | [Phased approach](docs/framework/phased-approach.md), [`spec/`](spec/README.md) |
 | Find any other page | [Documentation index](docs/README.md) |
 
