@@ -476,15 +476,14 @@ def bottom_line_section(report: Mapping[str, Any], summary: Mapping[str, Any]) -
         f" and {len(unknown) - UNKNOWN_LISTED} more" if len(unknown) > UNKNOWN_LISTED else ""
     )
     unattested = len(report["unattested"])
-    could_not = (
+    could_not = [
         f"{count(len(unknown), 'check')} {'is' if len(unknown) == 1 else 'are'} UNKNOWN: {listed}."
         if unknown
-        else "No check is UNKNOWN."
-    ) + (
-        f" {count(unattested, 'requirement')} {'is' if unattested == 1 else 'are'} unattested: no check settles them."
+        else "No check is UNKNOWN.",
+        f"{count(unattested, 'requirement')} {'is' if unattested == 1 else 'are'} unattested: no check settles them."
         if unattested
-        else " No requirement is unattested."
-    )
+        else "No requirement is unattested.",
+    ]
     if actions:
         intro = f"**First actions** ({len(actions)} of {count(left_open, 'open finding')}):"
         listing = table(
@@ -496,7 +495,11 @@ def bottom_line_section(report: Mapping[str, Any], summary: Mapping[str, Any]) -
         intro, listing = "**First actions:** none. No finding is open.", []
     return blocks(
         ["## Bottom line"],
-        [f"- **{blockers_phrase(summary['blockers_remaining'])}.**", f"- **Not settled by this scan:** {could_not}"],
+        [
+            f"- **{blockers_phrase(summary['blockers_remaining'])}.**",
+            "- **Not settled by this scan:**",
+            *(f"  - {line}" for line in could_not),
+        ],
         [intro],
         listing,
     )

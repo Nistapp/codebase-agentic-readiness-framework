@@ -9,7 +9,9 @@
 ## Bottom line
 
 - **0 blockers remaining.**
-- **Not settled by this scan:** No check is UNKNOWN. No requirement is unattested.
+- **Not settled by this scan:**
+  - No check is UNKNOWN.
+  - No requirement is unattested.
 
 **First actions:** none. No finding is open.
 

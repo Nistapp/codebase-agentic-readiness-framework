@@ -6,7 +6,9 @@
 ## Bottom line
 
 - **7 blockers remaining: 4 FAIL, 1 PARTIAL, 2 UNKNOWN.**
-- **Not settled by this scan:** 6 checks are UNKNOWN: `IDX-02`, `IDX-03`, `CMD-02`, `TOOL-03`, `TST-02` and 1 more. 5 requirements are unattested: no check settles them.
+- **Not settled by this scan:**
+  - 6 checks are UNKNOWN: `IDX-02`, `IDX-03`, `CMD-02`, `TOOL-03`, `TST-02` and 1 more.
+  - 5 requirements are unattested: no check settles them.
 
 **First actions** (1 of 1 open finding):
 

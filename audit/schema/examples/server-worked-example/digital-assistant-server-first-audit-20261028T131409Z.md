@@ -6,7 +6,9 @@
 ## Bottom line
 
 - **6 blockers remaining: 5 FAIL, 1 PARTIAL.**
-- **Not settled by this scan:** 3 checks are UNKNOWN: `TOOL-03`, `TST-02`, `NAV-05`. 5 requirements are unattested: no check settles them.
+- **Not settled by this scan:**
+  - 3 checks are UNKNOWN: `TOOL-03`, `TST-02`, `NAV-05`.
+  - 5 requirements are unattested: no check settles them.
 
 **First actions** (3 of 40 open findings):
 

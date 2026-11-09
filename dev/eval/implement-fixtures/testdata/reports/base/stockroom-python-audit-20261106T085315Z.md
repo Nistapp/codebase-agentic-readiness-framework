@@ -6,7 +6,9 @@
 ## Bottom line
 
 - **12 blockers remaining: 6 FAIL, 2 PARTIAL, 4 UNKNOWN.**
-- **Not settled by this scan:** 16 checks are UNKNOWN: `IDX-02`, `IDX-03`, `AGT-03`, `AGT-04`, `AGT-06` and 11 more. 5 requirements are unattested: no check settles them.
+- **Not settled by this scan:**
+  - 16 checks are UNKNOWN: `IDX-02`, `IDX-03`, `AGT-03`, `AGT-04`, `AGT-06` and 11 more.
+  - 5 requirements are unattested: no check settles them.
 
 **First actions** (3 of 4 open findings):
 

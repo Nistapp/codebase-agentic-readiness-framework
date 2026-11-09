@@ -6,7 +6,9 @@
 ## Bottom line
 
 - **4 blockers remaining: 4 FAIL.**
-- **Not settled by this scan:** 1 check is UNKNOWN: `TST-02`. 5 requirements are unattested: no check settles them.
+- **Not settled by this scan:**
+  - 1 check is UNKNOWN: `TST-02`.
+  - 5 requirements are unattested: no check settles them.
 
 **First actions** (3 of 7 open findings):
 
