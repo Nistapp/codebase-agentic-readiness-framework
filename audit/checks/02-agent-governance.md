@@ -345,7 +345,11 @@ Why it matters   Agents must know whether they may tag, release or push, or one 
 Severity         DEGRADER
 Engine           `AGT-09`. Looks for one line naming the branch model (`branch`/`branches`/`branching`/
                  `main`/`dev`/`trunk`) and one naming the release boundary (`tag`/`release`/`publish`/
-                 `deploy`/`push`); both present is `PASS`, one is `PARTIAL`, neither is `FAIL`. Distrust a
+                 `deploy`/`push`); both present is `PASS`, one is `PARTIAL`, neither is `FAIL`. It also reads
+                 the branch rules declared as code (the list `HYG-11` reads: `.github/rulesets/*.json`, the
+                 Settings app's `branches:`, Terraform protection resources). A branch a rule protects by its
+                 literal name that the file does not name as a whole word is `PARTIAL`, even with both halves
+                 stated. `~DEFAULT_BRANCH`, `~ALL` and glob patterns are skipped. Distrust a
                  `PARTIAL` or `FAIL` when the project states the rule as a flat prohibition elsewhere
                  (`AGT-07`'s own default-branch concern, "never push to main") that this check's narrower
                  word list does not independently recognise as the release half — verify by reading
@@ -356,8 +360,9 @@ Look for         The instruction file's git-conventions section; cross-reference
                  for the default-branch prohibition, since the two checks can both be satisfied by the
                  same sentence read two ways.
 Rubric           PASS: the file states which branches exist and whether an agent may tag, release, publish,
-                 deploy or push.
-                 PARTIAL: only one of the two halves is stated.
+                 deploy or push, and names every branch the declared branch rules protect by name.
+                 PARTIAL: only one of the two halves is stated, or a branch a declared rule protects by name
+                 is not named.
                  FAIL: neither half is stated.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no instruction file exists to read.
@@ -366,7 +371,11 @@ Evidence to cite A `file` evidence item for each half found, citing the instruct
 Absence proof    A FAIL or PARTIAL records a `grep` search for the missing half's pattern, scoped to the
                  instruction file, with its hit count.
 Remediation      `adapt-agents-md`
-Pitfalls         "We only have `main`" is a complete branch-model statement for a trunk-based project —
+Pitfalls         A branch named like a common word (`release`, `next`) counts as named wherever that word
+                 appears, so the engine can pass a file that never names the branch; read the sentence.
+                 Rules held only in the provider's settings are not read (no network); the optional live
+                 read with `gh` (`HYG-11`) is a note, never a verdict change here.
+                 "We only have `main`" is a complete branch-model statement for a trunk-based project —
                  do not demand a multi-branch model where the project deliberately has none; the rubric
                  asks only that the fact be stated, not that it be elaborate.
 

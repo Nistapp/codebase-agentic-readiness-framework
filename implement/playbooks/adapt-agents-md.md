@@ -157,6 +157,13 @@ engine. The questions are about text. Ask them per finding, before the diff for 
      the default branch (`git symbolic-ref refs/remotes/origin/HEAD`);
      the branch that receives releases comes from the release workflow's trigger (`on.push.branches`), not from the
      default branch: the two can differ, and the old line "default remote branch is `main`" may be the stale one;
+   - every branch the declared branch rules protect by name. Read them where the repository keeps them. GitHub
+     ruleset files: `.github/rulesets/*.json`, each `conditions.ref_name.include` entry, `refs/heads/` removed. The
+     Settings app: the `branches:` list in `.github/settings.yml`. Terraform: a `github_repository_ruleset`,
+     `github_branch_protection` or `gitlab_branch_protection` resource. Skip `~DEFAULT_BRANCH`, `~ALL` and glob
+     patterns such as `release/*`; the default branch is already named above. Name each other branch as written
+     (`staging`, not "the staging branch" alone), or AGT-09 stays `PARTIAL`. When the rules live only in the
+     provider's settings, nothing is read; do not guess the list;
    - whether an agent may push a branch and open a pull request: only when the state records `ci.pr_by_agent=yes`
      ([ADR 0003](../docs/architecture/adrs/0003-push-and-pr-policy.md)); otherwise it stops at a local branch;
    - that an agent never merges, tags, publishes a release or pushes to the default branch;
@@ -237,7 +244,7 @@ themselves (one app never imports another), `src/` versus `test/`, generated cli
 | AGT-05 | The fenced command block; the engine's AGT-05 and CMD-01 | All seven named and resolved; `PASS` |
 | AGT-06 | Each boundary rule's path: `test -e <path>` | Two or more rules, every path exists; `PASS` |
 | AGT-08 | `grep -n 'read by' AGENTS.md`; each vendor file's content | The reach line is true; every vendor file is a pointer or reconciled; `PASS` |
-| AGT-09 | The release-boundary sentence | Branches named; push and PR only as the state allows; never merge, tag or release; `PASS` |
+| AGT-09 | The release-boundary sentence | Branches named, each protected branch the declared rules name included; push and PR only as the state allows; never merge, tag or release; `PASS` |
 | AGT-10 | `grep -n -i 'read .* first' AGENTS.md` | No unconfigured deferral; `PASS` |
 | AGT-11 | The rule-line tally in the state note | At least 80% specific, every specific line verified; else `partial` with the count |
 | EXEC-06 | The engine's EXEC-06 | Every fenced command resolves; `PASS` |

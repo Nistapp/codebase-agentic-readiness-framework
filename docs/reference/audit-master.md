@@ -147,7 +147,8 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 `DEGRADER` · scored · engine check · fixed by [`adapt-agents-md`](implement-master.md#adapt-agents-md)
 
-- **Passes when:** the file states which branches exist and whether an agent may tag, release, publish, deploy or push.
+- **Passes when:** the file states which branches exist and whether an agent may tag, release, publish, deploy or push,
+  and names every branch the declared branch rules protect by name.
 - **Why it matters:** Agents must know whether they may tag, release or push, or one triggers a release it had no
   authority to cut ([Phased-Approach.md § Phase 1: Agentic
   Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-)).

@@ -28,6 +28,7 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "agt-06-thin": ("AGT-06", "PARTIAL"),
     "agt-07-missing-deny": ("AGT-07", "PARTIAL"),
     "agt-09-no-release": ("AGT-09", "PARTIAL"),
+    "agt-09-ruleset-branch-unnamed": ("AGT-09", "PARTIAL"),
 }
 
 CONTENT_CHECKS = ("AGT-03", "AGT-04", "AGT-06", "AGT-07", "AGT-09")
