@@ -27,6 +27,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | skills-ref | A skill bundle that breaks the Agent Skills specification | `make validate-skills` | Release only | `dev/tools/pyproject.toml` |
 | `dev/commit_lint.py` | A commit subject that is not Conventional Commits | `make commit-lint` | `commits` | This repository |
 | The audit engine | A readiness finding that `.audit-baseline.json` does not have | `make self-audit` | `self-audit` | This repository |
+| CodeQL | Security flaws in the Python code and the workflows. Advisory: alerts go to the Security tab ([Code scanning](branch-protection.md#code-scanning)) | — | `codeql.yml`, outside `CI Gate` | `.github/workflows/codeql.yml` (action pinned by SHA) |
 | release-please | Computes the next version from the commit subjects, writes `CHANGELOG.md`, tags and creates the GitHub release (`release-please-config.json`) | — | `release-please.yml`, on each push to `main` | `.github/workflows/release-please.yml` (action pinned by SHA) |
 | uv | Runs the Python tools through `uvx` and `uv run` | — | All jobs | `dev/tools/pyproject.toml` |
 | Node | Runs the Node tools through `npx` | — | `docs` | `.nvmrc` |

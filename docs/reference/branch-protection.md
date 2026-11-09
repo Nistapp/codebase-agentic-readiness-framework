@@ -99,6 +99,22 @@ A pull request into main must come from the dev branch of Nistapp/codebase-agent
 
 Pull requests into `dev` do not run this workflow. The `dev` ruleset does not require it.
 
+## Code scanning
+
+[`.github/workflows/codeql.yml`](../../.github/workflows/codeql.yml) runs CodeQL on the Python code and on the
+workflows. It runs on each pull request into `dev` or `main`, on each push to `dev`, and every Monday. It does not
+scan the engine's test fixtures (`audit/engine/tests/fixtures/`), because they hold flawed code on purpose. It does
+not scan JavaScript or TypeScript, because the only such files are those fixtures.
+
+Code scanning is advisory. No ruleset requires the CodeQL workflow, and an alert does not block a merge. The
+maintainer handles an alert in the Security tab:
+
+1. Fix the code in a pull request into `dev`. The alert closes when the fix reaches `dev`.
+2. Or dismiss the alert as "false positive" or "used in tests", with a one-line reason.
+
+A later change may add the ruleset rule "Require code scanning results" to `dev-protection.json`. That change needs
+the maintainer.
+
 ## Current state
 
 | Ruleset | Target | State on GitHub |
@@ -110,6 +126,9 @@ On 2026-11-08 the default branch changed from `main` to `dev`.
 
 On 2026-11-07 these settings were also turned on: private vulnerability reporting, secret scanning, push protection
 and Dependabot security updates (see [`SECURITY.md`](../../SECURITY.md)).
+
+On 2026-11-09 the CodeQL workflow was added. Code scanning default setup stays off: the workflow replaces it (see
+[Code scanning](#code-scanning)).
 
 On 2026-11-08 "Automatically delete head branches" was turned on. GitHub deletes the head branch of a pull request
 when the pull request is merged. It does not delete `dev` after a promotion pull request, because the `dev` ruleset
