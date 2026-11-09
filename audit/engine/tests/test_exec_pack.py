@@ -32,6 +32,7 @@ from audit.scan import build_inventory  # noqa: E402
 #: fixture directory -> (check id under test, expected verdict, needs a git repository)
 FIXTURES: dict[str, tuple[str, str, bool]] = {
     "exec-01-unpinned": ("EXEC-01", "FAIL", False),
+    "exec-01-nested-go-unpinned": ("EXEC-01", "FAIL", False),
     "exec-02-no-lockfile": ("EXEC-02", "FAIL", True),
     "exec-03-no-setup": ("EXEC-03", "FAIL", False),
     "exec-04-missing-env": ("EXEC-04", "FAIL", False),

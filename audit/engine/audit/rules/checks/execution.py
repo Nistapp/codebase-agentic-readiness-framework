@@ -11,8 +11,10 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
 
 * **EXEC-01** — a toolchain pin appropriate to each **detected** ecosystem (``.nvmrc``, ``engines``,
   ``.python-version``/``requires-python``, ``gradlew``/``mvnw``, ``global.json``,
-  ``rust-toolchain.toml``, the ``go`` directive). No recognised ecosystem ⇒ ``UNKNOWN``; an
-  ecosystem with no pin in the table (php) is not asserted against.
+  ``rust-toolchain.toml``, the ``go`` directive). Pin files and manifests count at any depth, so a nested
+  ``go.mod``'s ``go`` directive, a nested ``requires-python`` or a nested ``engines.node`` pins the ecosystem; one
+  pin is enough. No recognised ecosystem ⇒ ``UNKNOWN``; an ecosystem with no pin in the table (php) is not
+  asserted against.
 * **EXEC-02** — the ecosystem's lockfile is **tracked** (``audit.ignore.tracked_files``) and its
   declared dependencies agree with the manifest. ``tracked_files`` returning ``None`` (not a git
   repository, git absent) makes the tracked half ``UNKNOWN`` — never a ``PASS``. Agreement is a
@@ -121,6 +123,14 @@ _TOOL_VERSIONS = {
 }
 
 
+def _manifests(inv: Inventory, name: str) -> list[str]:
+    """Every file called ``name``, shallowest first: a nested module (``tools/osv/go.mod``) pins its toolchain the
+    same way a root one does, as the pin files above count at any depth. The first that pins is the evidence."""
+    return sorted(
+        (f.rel for f in inv.files if f.rel == name or f.rel.endswith("/" + name)), key=lambda r: (r.count("/"), r)
+    )
+
+
 def _pin_evidence(inv: Inventory, ecosystem: str) -> list[str]:
     evidence = [name for name in _PIN_FILES.get(ecosystem, ()) if inv.has(name)]
 
@@ -129,21 +139,27 @@ def _pin_evidence(inv: Inventory, ecosystem: str) -> list[str]:
         if pattern and pattern.search(inv.read(".tool-versions") or ""):
             evidence.append(".tool-versions")
 
-    if ecosystem == "node" and inv.has("package.json"):
-        try:
-            engines = json.loads(inv.read("package.json") or "{}").get("engines")
-        except (json.JSONDecodeError, AttributeError):
-            engines = None
-        if isinstance(engines, dict) and engines.get("node"):
-            evidence.append("package.json (engines.node)")
+    if ecosystem == "node":
+        for rel in _manifests(inv, "package.json"):
+            try:
+                engines = json.loads(inv.read(rel) or "{}").get("engines")
+            except (json.JSONDecodeError, AttributeError):
+                engines = None
+            if isinstance(engines, dict) and engines.get("node"):
+                evidence.append(f"{rel} (engines.node)")
+                break
 
-    if ecosystem == "python" and inv.has("pyproject.toml"):
-        if re.search(r"(?m)^\s*requires-python\s*=", inv.read("pyproject.toml") or ""):
-            evidence.append("pyproject.toml (requires-python)")
+    if ecosystem == "python":
+        for rel in _manifests(inv, "pyproject.toml"):
+            if re.search(r"(?m)^\s*requires-python\s*=", inv.read(rel) or ""):
+                evidence.append(f"{rel} (requires-python)")
+                break
 
-    if ecosystem == "go" and inv.has("go.mod"):
-        if re.search(r"(?m)^\s*go\s+\d", inv.read("go.mod") or ""):
-            evidence.append("go.mod (go directive)")
+    if ecosystem == "go":
+        for rel in _manifests(inv, "go.mod"):
+            if re.search(r"(?m)^\s*go\s+\d", inv.read(rel) or ""):
+                evidence.append(f"{rel} (go directive)")
+                break
 
     return sorted(dict.fromkeys(evidence))
 

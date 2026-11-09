@@ -22,7 +22,9 @@ Engine           `EXEC-01`. For every detected ecosystem among node, python, jvm
                  ecosystem's pin: a version file (`.nvmrc`, `.python-version`, `.ruby-version`,
                  `rust-toolchain.toml`/`rust-toolchain`), a wrapper (`gradlew`, `mvnw`), `global.json`
                  for dotnet, a matching line in a shared `.tool-versions`, `package.json`'s
-                 `engines.node`, `pyproject.toml`'s `requires-python`, or `go.mod`'s `go` directive. No
+                 `engines.node`, `pyproject.toml`'s `requires-python`, or `go.mod`'s `go` directive. Pin
+                 files and these manifests count at any depth: a nested module (`tools/osv/go.mod`) pins
+                 its ecosystem, and one pinning manifest is enough (the shallowest is cited). No
                  ecosystem from this pinnable set is detected at all ⇒ `UNKNOWN` — there is no toolchain
                  to choose a pin for. php is a recognised ecosystem the table does not assert a pin for,
                  so a php-only repository is also `UNKNOWN` on this check. Distrust a `FAIL` when the
@@ -49,7 +51,9 @@ Remediation      `pin-execution-environment`
 Pitfalls         A monorepo where only one of several ecosystems is pinned still reads `FAIL` overall —
                  the engine fails the whole check on the first unpinned ecosystem, so a `FAIL` summary
                  naming one ecosystem does not mean the others are also unpinned; read which ecosystem
-                 the finding actually names before writing remediation.
+                 the finding actually names before writing remediation. The reverse holds within one
+                 ecosystem: one pinned nested module passes it even when a sibling module has no pin, so
+                 read each module's manifest before you accept a `PASS` in a monorepo.
 
 ## EXEC-02 — Lockfile committed and consistent
 
