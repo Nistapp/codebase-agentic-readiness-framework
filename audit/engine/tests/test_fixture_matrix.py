@@ -60,6 +60,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "agt-08-competitor": {"AGT-08": "FAIL"},
     "agt-09-no-release": {"AGT-09": "PARTIAL"},
     "agt-09-ruleset-branch-unnamed": {"AGT-09": "PARTIAL"},
+    "agt-12-no-rules": {"AGT-09": "PASS", "AGT-12": "FAIL"},
     "agt-10-deferred": {"AGT-10": "FAIL"},
     # -- DOC / NAV ----------------------------------------------------------------------------
     "doc-01-empty": {"DOC-01": "PARTIAL"},
@@ -193,6 +194,7 @@ MATRIX: dict[str, dict[str, str]] = {
         "AGT-07": "PASS",
         "AGT-09": "PASS",
         "AGT-10": "PASS",
+        "AGT-12": "PASS",
     },
 }
 

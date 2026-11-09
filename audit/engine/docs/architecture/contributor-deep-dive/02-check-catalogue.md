@@ -21,7 +21,7 @@
 | Group | Checks | Tier A | Tier B | Tier C |
 |---|---|---|---|---|
 | `IDX` Discovery & index | 3 | 2 | — | 1 |
-| `AGT` Agent governance | 10 | 2 | 8 | — |
+| `AGT` Agent governance | 11 | 2 | 9 | — |
 | `DOC` Documentation contract | 4 | 3 | 1 | — |
 | `CMD` Command surface | 4 | — | 4 | — |
 | `TOOL` Tooling | 7 | 3 | 4 | — |
@@ -32,17 +32,17 @@
 | `TST` Tests | 5 | 2 | 2 | 1 |
 | `NAV` Navigation | 3 | 1 | 2 | — |
 | `SEC` Security hygiene | 3 | — | 3 | — |
-| **Total catalogued** | **59** | **17** | **39** | **2** |
+| **Total catalogued** | **60** | **17** | **40** | **2** |
 
 Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
 
-Of the 59, `CON-04` is an emitter rather than a check, leaving **58 scoreable checks** in v1. (`CON-01` carried weight 0
+Of the 60, `CON-04` is an emitter rather than a check, leaving **59 scoreable checks** in v1. (`CON-01` carried weight 0
 until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
 prohibitions section now.)
 
 > [!NOTE]
-> The tier columns sum to 58, not 59: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
-> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`.
+> The tier columns sum to 59, not 60: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
+> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`; v0.3.4 added `AGT-12`.
 > Earlier revisions of this table carried per-group tier splits that disagreed with their own rows — `--list-checks`
 > is the executable truth, and a mismatch between it and this page is a defect in this page.
 
@@ -83,6 +83,7 @@ suspicious verdict.
 | `AGT-08` | No competing instruction files; reach stated | B | DEGRADER | No variant file competes with the canonical one; shadow pairs reconciled; the harnesses that reach nothing are stated | Implemented |
 | `AGT-09` | Branch and release boundary declared | B | DEGRADER | States which branches exist and whether an agent may tag or release, and names every branch the declared branch rules protect by name | Implemented |
 | `AGT-10` | Instruction indirection resolved | B | DEGRADER | A file the entry file defers to ("first read …") is named in a harness config (`.aider.conf.yml` `read:`, `opencode.json` `instructions`, `.codex/config.toml` `model_instructions_file`, `.gemini/settings.json` `context.fileName`) or inlined | Implemented |
+| `AGT-12` | Communication rules stated | B | COSMETIC | A section of the instruction file headed for writing to people, or a linked file whose name says `communicat`, names the reader, how to report and how to ask for a decision; a named file that does not exist, or a missing element, is `PARTIAL` | Implemented |
 
 ---
 

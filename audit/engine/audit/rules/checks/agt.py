@@ -6,7 +6,8 @@
 Implemented here: `AGT-01` (canonical instruction file), `AGT-02` (component coverage),
 `AGT-03` (documentation contract), `AGT-04` (definition of done), `AGT-05` (seven verbs named),
 `AGT-06` (architectural boundaries), `AGT-07` (prohibitions), `AGT-08` (competing files + reach
-matrix), `AGT-09` (branch and release boundary) and `AGT-10` (indirection).
+matrix), `AGT-09` (branch and release boundary), `AGT-10` (indirection) and `AGT-12` (communication rules).
+`AGT-11` is judged by an agent and has no engine rule.
 
 `AGT-09` also compares the instruction file with the branch rules declared as code
 (`_common.declared_branch_rules`, the list `HYG-11` and `TOOL-07` read): a branch a rule protects by its literal
@@ -18,7 +19,7 @@ can never disagree: it is a `PASS` only when the entry instruction file names ev
 **and** those verbs resolve on a runner. Names without resolution is `PARTIAL`; neither is `FAIL`.
 With no runner and no named verbs it degrades to `UNKNOWN`, deferring to `AGT-01` and `CMD-01`.
 
-The content-contract checks (`03`, `04`, `06`, `07`, `09`) read the entry instruction file — the
+The content-contract checks (`03`, `04`, `06`, `07`, `09`, `12`) read the entry instruction file — the
 canonical `AGENTS.md`, falling back to `CLAUDE.md` when the canonical file is absent. When no
 instruction file exists they report `UNKNOWN`, not `FAIL`: the absence is already `AGT-01`'s finding
 and piling on adds noise without adding information.
@@ -1159,6 +1160,154 @@ def check_agt09(*, spec, target, inventory, stack, components, session) -> Check
     )
 
 
+# ---------------------------------------------------------------------------
+# AGT-12 — communication rules stated
+# ---------------------------------------------------------------------------
+
+#: A heading that opens the rules for writing to people: "How to write for people", "Communication",
+#: "Reporting", "Talking to the user". A heading inside a fenced block is not a heading.
+_COMMUNICATION_HEADING_RE = re.compile(
+    r"(?i)\b(communicat\w*|writ(?:e|ing) for (?:people|humans|readers|the reader)|how to write|reporting"
+    r"|talking to (?:people|humans|users?|the (?:user|owner|team))|messages to (?:people|users?|the user))\b"
+)
+#: A Markdown file the instruction file names, in a link target or a code span, whose name says "communication".
+_COMMUNICATION_FILE_RE = re.compile(r"(?i)(?:\]\(|`)\s*(?:\./)?([\w./-]*communicat[\w.-]*\.md)(?:#[^)`]*)?\s*[)`]")
+#: The three things the rules must cover, in order: who the reader is, how to report, how to ask for a decision.
+_COMMUNICATION_ELEMENTS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "the reader",
+        re.compile(
+            r"(?i)\b(readers?|audience|persona|write for|writing for|new (?:engineer|contributor)s?|newcomers?)\b"
+        ),
+    ),
+    ("how to report", re.compile(r"(?i)\b(reports?|reporting|status|summary|bottom line|what changed)\b")),
+    ("how to ask for a decision", re.compile(r"(?i)\b(decisions?|decide|recommend\w*|trade-?offs?)\b")),
+)
+_MD_HEADING_RE = re.compile(r"^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$")
+_MD_FENCE_RE = re.compile(r"^\s*(?:```|~~~)")
+
+
+def _communication_sections(text: str) -> list[tuple[int, str, str]]:
+    """Each communication section of ``text``: its heading line, its heading and its body (subsections included)."""
+    lines = text.splitlines()
+    headings: list[tuple[int, int, str]] = []
+    in_fence = False
+    for number, line in enumerate(lines, start=1):
+        if _MD_FENCE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        match = None if in_fence else _MD_HEADING_RE.match(line)
+        if match:
+            headings.append((number, len(match.group(1)), match.group(2)))
+    sections: list[tuple[int, str, str]] = []
+    for index, (number, level, title) in enumerate(headings):
+        if not _COMMUNICATION_HEADING_RE.search(title):
+            continue
+        end = next((n for n, lvl, _ in headings[index + 1 :] if lvl <= level), len(lines) + 1)
+        sections.append((number, title, "\n".join(lines[number : end - 1])))
+    return sections
+
+
+def _linked_rules_files(text: str, inventory: Inventory) -> tuple[list[tuple[str, int]], list[tuple[str, int]]]:
+    """The communication files the instruction file names: those in the inventory and those missing, with lines."""
+    present: list[tuple[str, int]] = []
+    missing: list[tuple[str, int]] = []
+    seen: set[str] = set()
+    for number, line in enumerate(text.splitlines(), start=1):
+        for match in _COMMUNICATION_FILE_RE.finditer(line):
+            rel = match.group(1).lstrip("/")
+            if rel in seen:
+                continue
+            seen.add(rel)
+            (present if inventory.read(rel) else missing).append((rel, number))
+    return present, missing
+
+
+def check_agt12(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+    name, text = entry_instruction_file(inventory)
+    if not text:
+        return _unknown(spec, "no instruction file to read; AGT-01 owns that finding")
+
+    sections = _communication_sections(text)
+    present, missing_files = _linked_rules_files(text, inventory)
+    evidence = [Evidence(name, line=number, note=f"section: {title}") for number, title, _ in sections]
+    evidence += [Evidence(rel, note=f"rules file named at {name}:{number}") for rel, number in present]
+
+    if not sections and not present and not missing_files:
+        why = f"{name} has no section on writing for people and names no communication rules file"
+        return CheckOutcome(
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.FAIL,
+            spec.status,
+            summary=why,
+            findings=[
+                Finding(
+                    check=spec.id,
+                    severity=spec.severity,
+                    phase=spec.phase,
+                    verdict=Verdict.FAIL,
+                    statement=statement("report to people or ask them for a decision in a form they expect", why),
+                    remediation="Add a short section to the instruction file, for example 'How to write for "
+                    "people': who the reader is, the bottom line first and the layout of a report, and how to "
+                    "ask for a decision (the options, a recommendation and a default). Link a longer rules file "
+                    "if the repository has one.",
+                ),
+            ],
+        )
+
+    rules = "\n".join([body for _, _, body in sections] + [inventory.read(rel) or "" for rel, _ in present])
+    uncovered = [label for label, pattern in _COMMUNICATION_ELEMENTS if not pattern.search(rules)]
+    where = [f"{name} § {title}" for _, title, _ in sections] + [rel for rel, _ in present]
+
+    if not uncovered and not missing_files:
+        return CheckOutcome(
+            spec.id,
+            spec.title,
+            spec.tier,
+            spec.severity,
+            spec.phase,
+            Verdict.PASS,
+            spec.status,
+            summary=f"communication rules ({'; '.join(where)}) name the reader, reports and decisions",
+        )
+
+    gaps: list[str] = []
+    if missing_files:
+        gaps.append(f"{name} names {', '.join(rel for rel, _ in missing_files)}, which does not exist")
+    if uncovered:
+        source = "; ".join(where) if where else "the named rules file"
+        gaps.append(f"the rules ({source}) do not say {', '.join(uncovered)}")
+    why = "; ".join(gaps)
+    evidence += [Evidence(name, line=number, note=f"names missing {rel}") for rel, number in missing_files]
+    return CheckOutcome(
+        spec.id,
+        spec.title,
+        spec.tier,
+        spec.severity,
+        spec.phase,
+        Verdict.PARTIAL,
+        spec.status,
+        summary=why,
+        findings=[
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.PARTIAL,
+                statement=statement("report to people or ask them for a decision in a form they expect", why),
+                evidence=evidence,
+                remediation="Complete the communication rules: name the reader (for example 'a new engineer who "
+                "knows the stack but not this repository'), the layout of a status or done report, and how "
+                "to ask for a decision (the options, a recommendation and a default).",
+            ),
+        ],
+    )
+
+
 IMPLEMENTATIONS = {
     "AGT-01": check_agt01,
     "AGT-02": check_agt02,
@@ -1170,4 +1319,5 @@ IMPLEMENTATIONS = {
     "AGT-08": check_agt08,
     "AGT-09": check_agt09,
     "AGT-10": check_agt10,
+    "AGT-12": check_agt12,
 }

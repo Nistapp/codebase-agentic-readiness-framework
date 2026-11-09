@@ -16,11 +16,11 @@ score from falling.
 
 | Field | Value |
 | --- | --- |
-| Phase-1 score | **0.9094** |
+| Phase-1 score | **0.9102** |
 | Date | 2026-11-09 |
 | Engine | `python-agentic-audit` 0.3.2 |
-| Ruleset | `2026-11-09.8` (hash `a8fd206cd924e86a`) |
-| Applicable checks | 72 (58 scoreable) |
+| Ruleset | `2026-11-09.10` (hash `9f05d385381d9bea`) |
+| Applicable checks | 73 (59 scoreable) |
 | Findings | 2: both DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; no user-level configuration read |
 
@@ -32,7 +32,7 @@ when `.mcp.json` began to register `codebase-memory-mcp`. `EXEC-01` and `EXEC-07
 `EXEC-01` closed with ruleset `2026-11-09.8`, which reads the `go` directive of a nested `go.mod`
 (`dev/tools/actionlint/go.mod`); `EXEC-07` stays an owner exception (below). The checks added since, `CI-05`
 (workflow files are linted), `EXEC-08` (tool versions visible to dependency automation) and `TOOL-07` (local branch
-guard), all pass.
+guard) and `AGT-12` (communication rules stated), all pass.
 
 The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 requirements it asks of others
 (see the [changelog](../../audit/CHANGELOG.md) and the engine's

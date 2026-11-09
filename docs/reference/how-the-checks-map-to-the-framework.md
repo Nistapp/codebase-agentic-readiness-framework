@@ -31,7 +31,7 @@ To go the other way, start from a framework heading, find the requirements whose
 
 ## Every check, generated
 
-All 74 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
+All 75 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
 `Source` field links. Generated 2026-10-19 from `catalogue.json`'s `req_ids` and
 `readiness-requirements.md`'s `Source` fields — the same two steps as the worked example above, run once
 per check rather than by hand. 14 checks are informational or an emitter and trace to no requirement
@@ -50,6 +50,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `AGT-09` | Branch and release boundary declared | DEGRADER | yes | [REQ-SH-013](../../spec/readiness-requirements.md#req-sh-013--branch-and-release-boundary-declared) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `AGT-10` | Instruction indirection resolved | DEGRADER | yes | [REQ-SH-014](../../spec/readiness-requirements.md#req-sh-014--instruction-indirection-resolved) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `AGT-11` | Instructions are specific and not inferable | DEGRADER | yes | [REQ-SH-015](../../spec/readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
+| `AGT-12` | Communication rules stated | COSMETIC | yes | [REQ-SH-060](../../spec/readiness-requirements.md#req-sh-060--communication-rules-stated) | [greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides) |
 | `BASE-01` | Baseline artifact exists | DEGRADER | yes | [REQ-BF-001](../../spec/readiness-requirements.md#req-bf-001--quality-baseline) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `BASE-02` | Current violation counts measured | DEGRADER | yes | [REQ-BF-002](../../spec/readiness-requirements.md#req-bf-002--violation-count-recorded) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `BASE-03` | No-new-violations mechanism | DEGRADER | yes | [REQ-BF-003](../../spec/readiness-requirements.md#req-bf-003--no-new-violations) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
@@ -114,7 +115,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `TST-04` | Fast path documented | DEGRADER | yes | [REQ-SH-048](../../spec/readiness-requirements.md#req-sh-048--fast-path-documented) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `TST-05` | Coverage configuration present | COSMETIC | yes | [REQ-SH-049](../../spec/readiness-requirements.md#req-sh-049--coverage-reporting) | [greenfield/README.md § 3.1 vitest.config.ts](../../greenfield/README.md#31-vitestconfigts--with-coverage) |
 
-74 checks total.
+75 checks total.
 
 ## Where the relation is held
 

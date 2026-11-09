@@ -153,6 +153,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("AGT-08", "No competing instruction files, and the reach matrix is stated", "B", _S.DEGRADER),
     _c("AGT-09", "Branch and release boundary declared", "B", _S.DEGRADER),
     _c("AGT-10", "Instruction indirection resolved", "B", _S.DEGRADER),
+    _c("AGT-12", "Communication rules stated", "B", _S.COSMETIC),
     # -- DOC ------------------------------------------------------------
     _c("DOC-01", "docs/ exists", "A", _S.DEGRADER),
     _c("DOC-02", "docs/STYLE_GUIDE.md exists", "A", _S.DEGRADER),

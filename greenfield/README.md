@@ -362,6 +362,9 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 - [**`docs/STYLE_GUIDE.md`**](templates/docs/STYLE_GUIDE.md) — the canonical rule set for every `.md` file under `docs/`: invariants, RFC 2119 tone, ATX headers, doc-maintenance trigger.
 - **`AGENTS.md` MUST name the documentation contract:** `docs/` is the single source of truth for permanent documentation, `docs/STYLE_GUIDE.md` is the canonical authoring rule set, `artefacts/` is transient scratch that agents MUST NOT read unless a human passes an explicit path.
 - **`AGENTS.md` MUST state the definition of done:** a change that alters a public interface, observable behaviour, architecture, or an ADR updates the affected doc pages, their anchors, and the ADR index **in the same change set**. Link to the style guide — never restate its rules in `AGENTS.md`, because restated rules drift.
+- **`AGENTS.md` SHOULD state how agents write for people:** who the reader is, the bottom line first, the layout
+  of a status or done report, and how to ask for a decision (the options, a recommendation and a default). The
+  template's §8.1 is a short example.
 - [**`docs/architecture/README.md`**](templates/docs/architecture/README.md) — ADR index & doc router.
 - [**`docs/architecture/glossary.md`**](templates/docs/architecture/glossary.md) — Domain glossary.
 - [**`docs/templates/adr-template.md`**](templates/docs/templates/adr-template.md) — Architectural Decision Record (living, current-state only — revised in place, never tombstoned).

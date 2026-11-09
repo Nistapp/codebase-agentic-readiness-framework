@@ -1,10 +1,10 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""AGT content-contract checks (AGT-03, 04, 06, 07, 09) against their one-defect fixtures.
+"""AGT content-contract checks (AGT-03, 04, 06, 07, 09, 12) against their one-defect fixtures.
 
 Each fixture is a minimal repository that fails exactly one check; `governed-minimal` passes all
-five. The audit is run as a subprocess through `tests/support.py`, so the fixtures exercise the real
+six. The audit is run as a subprocess through `tests/support.py`, so the fixtures exercise the real
 end-to-end path, not the check functions in isolation.
 """
 
@@ -29,10 +29,12 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "agt-07-missing-deny": ("AGT-07", "PARTIAL"),
     "agt-09-no-release": ("AGT-09", "PARTIAL"),
     "agt-09-ruleset-branch-unnamed": ("AGT-09", "PARTIAL"),
+    "agt-12-no-rules": ("AGT-12", "FAIL"),
 }
 
-CONTENT_CHECKS = ("AGT-03", "AGT-04", "AGT-06", "AGT-07", "AGT-09")
-AGT_CHECKS = tuple(f"AGT-{i:02d}" for i in range(1, 11))
+CONTENT_CHECKS = ("AGT-03", "AGT-04", "AGT-06", "AGT-07", "AGT-09", "AGT-12")
+#: Every engine AGT check; AGT-11 is judged by an agent and has no engine rule.
+AGT_CHECKS = tuple(f"AGT-{i:02d}" for i in range(1, 13) if i != 11)
 
 
 class AgtFixtureTests(unittest.TestCase):
@@ -49,7 +51,7 @@ class AgtFixtureTests(unittest.TestCase):
                     failing, expected_failing, f"{name}: unexpected AGT content FAILs {failing - expected_failing}"
                 )
 
-    def test_governed_minimal_passes_all_five(self):
+    def test_governed_minimal_passes_all_six(self):
         report = support.run_audit(support.fixture("governed-minimal"))
         verdicts = support.verdicts(report)
         for check in CONTENT_CHECKS:

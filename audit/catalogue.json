@@ -1,6 +1,6 @@
 {
-  "catalogue_version": "0.5.0",
-  "fingerprint": "a330c30c665d9800",
+  "catalogue_version": "0.6.0",
+  "fingerprint": "0c0cf34c89ee50f6",
   "checks": [
     {
       "id": "IDX-01",
@@ -236,6 +236,24 @@
         "REQ-SH-015"
       ],
       "engine_id": null,
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
+      "id": "AGT-12",
+      "family": "AGT",
+      "title": "Communication rules stated",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-060"
+      ],
+      "engine_id": "AGT-12",
+      "since_ruleset": "2026-11-09.10",
       "playbooks": [
         "adapt-agents-md"
       ]

@@ -5,7 +5,7 @@ The catalogue's § Adding a Check makes this a merge requirement: no fixture, no
 
 Current state: the fixture matrix is complete and consolidated by `../test_fixture_matrix.py`, which
 carries one explicit expected verdict per fixture and asserts the positive fixtures collectively pass
-every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`) and
+every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`, `12`) and
 `AGT-05` are exercised by `../test_agt_pack.py` and `../test_cmd_pack.py`; the earlier `AGT` checks
 (`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`08`) are
 exercised by `../test_exec_pack.py` (and `EXEC-08` by `../test_exec08_inline_versions.py`); the `CMD` checks (`CMD-01`…`04`) by `../test_cmd_pack.py`; and
@@ -39,6 +39,7 @@ fixtures/
   agt-08-competitor/         AGENTS.md + CLAUDE.md                -> AGT-08 FAIL
   agt-09-no-release/         branches stated, no release boundary -> AGT-09 PARTIAL
   agt-09-ruleset-branch-unnamed/ a ruleset protects staging, AGENTS.md does not name it -> AGT-09 PARTIAL
+  agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
   agt-05-ok/                 all verbs named and resolved on a runner -> AGT-05 PASS

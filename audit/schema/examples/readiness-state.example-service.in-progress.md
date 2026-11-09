@@ -11,7 +11,7 @@ A skipped finding is final until the owner unskips it, and every preference bind
 | Default branch | `main` |
 | Created by | `v0.3.2` at `cafecafecafe` (checkout) |
 | Last written by | `v0.3.2` at `cafecafecafe` |
-| Source report | `docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json` at `deadbeefdead`, catalogue 0.5.0, made by `v0.3.2` at `cafecafecafe` |
+| Source report | `docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json` at `deadbeefdead`, catalogue 0.6.0, made by `v0.3.2` at `cafecafecafe` |
 
 ## Summary
 

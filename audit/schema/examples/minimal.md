@@ -25,7 +25,7 @@
 | Status | draft |
 | Started | `2026-10-10T09:00:00+00:00` |
 | Finalised | — |
-| Catalogue | `0.5.0` |
+| Catalogue | `0.6.0` |
 | Engine | No engine report is part of this report. |
 | Agent (self-reported) | `claude-code` with `claude-sonnet-5-5` |
 | Probes | none: no command of the target was run |

@@ -30,3 +30,9 @@ affected documentation pages and the ADR index in the same change set.
 
 - `main` is the integration branch; features branch from `main`.
 - Never push a tag or publish a release; the maintainer does that.
+
+## How to write for people
+
+- Write for a new engineer who knows Python but not this repository.
+- Put the bottom line first. A done report says what changed, how it was checked and what was not done.
+- For a decision, give two to four options, your recommendation and the default.

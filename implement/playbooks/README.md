@@ -65,7 +65,7 @@ in IR04.1, `untrack-generated` in IR05.1, `establish-docs-contract` in IR09.1,
 | [`add-hooks-and-commit-rules`](add-hooks-and-commit-rules.md) | T4 CI parity, hooks, commits | TOOL-05, TOOL-06, TOOL-07 | yes | Drafted (IR07.1); applied and corrected in IR07.2, IR07.3 (T4 closed) |
 | [`add-baselines-and-ratchet`](add-baselines-and-ratchet.md) | T5 Tests and baselines | BASE-01, BASE-02, BASE-03, BASE-04, TST-02, TST-03, TST-04, TST-05 | yes | Drafted (IR08.1); applied in IR08.2, IR08.3 |
 | [`establish-docs-contract`](establish-docs-contract.md) | T6 Docs and navigation | DOC-01, DOC-02, DOC-03, DOC-04, NAV-01, NAV-02, NAV-03, NAV-04, NAV-05 | yes | Drafted (IR09.1); applied in IR09.2, IR09.3 |
-| [`adapt-agents-md`](adapt-agents-md.md) | T7 AGENTS.md and governance | AGT-01, AGT-02, AGT-03, AGT-04, AGT-05, AGT-06, AGT-08, AGT-09, AGT-10, AGT-11, EXEC-06, TST-04 | yes | Drafted (IR10.1); applied in IR10.2, IR10.3 |
+| [`adapt-agents-md`](adapt-agents-md.md) | T7 AGENTS.md and governance | AGT-01, AGT-02, AGT-03, AGT-04, AGT-05, AGT-06, AGT-08, AGT-09, AGT-10, AGT-11, AGT-12, EXEC-06, TST-04 | yes | Drafted (IR10.1); applied in IR10.2, IR10.3 |
 | [`add-deny-rules`](add-deny-rules.md) | T7 AGENTS.md and governance | AGT-07, CON-01, CON-02, CON-03 | yes | Drafted (IR10.1); applied in IR10.2, IR10.3 |
 | [`add-repo-hygiene`](add-repo-hygiene.md) | T8 Hygiene and index | HYG-01 to HYG-11 | yes | Drafted (IR11.1); applied in IR11.2, IR11.3 |
 | [`register-index`](register-index.md) | T8 Hygiene and index | IDX-01, IDX-02, IDX-03 | yes | Drafted (IR11.1); applied in IR11.2, IR11.3 |
