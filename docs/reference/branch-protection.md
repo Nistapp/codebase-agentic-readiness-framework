@@ -40,6 +40,7 @@ This table is a summary of them.
 | Required approvals | 0 | 0 |
 | Required status checks | `CI Gate` | `CI Gate` and `Check source branch` |
 | Branch up to date before merge | Required | Not required (see below) |
+| Merge queue | Required: up to 5 pull requests a group, each one green, merged with a merge commit | Not used |
 | Conversations resolved before merge | Required | Required |
 | Allowed merge method | Merge commit only | Merge commit only |
 | Force pushes | Blocked | Blocked |
@@ -52,6 +53,11 @@ Notes:
 - **Merge commit only.** A squash joins several Conventional Commits into one. A rebase rewrites them. A merge commit
   keeps each commit, so each one can be reverted alone.
 - **0 approvals.** A pull request is required, but an approval is not. The maintainer is the only person who merges.
+- **`dev` merges through a merge queue.** `gh pr merge <n>` adds a pull request to the queue. GitHub then merges it
+  onto the latest `dev`, together with the entries ahead of it, and runs CI on that result (the `merge_group`
+  event). It lands only when `CI Gate` passes there, so nobody updates each branch by hand after every merge. The
+  queue merges as soon as one entry is ready; it builds up to 5 groups at once and waits 30 minutes for `CI Gate`.
+  The up-to-date rule stays on as well.
 - **`main` does not require an up-to-date branch.** Promotions from `dev` and the release pull request both merge into
   `main`. A strict rule would make each wait for, or update with, the other.
 - **The back-merge comes from its own branch.** `dev` requires an up-to-date branch. A pull request whose head is
@@ -67,13 +73,20 @@ Both checks come from GitHub Actions (integration id `15368`).
 ### `CI Gate`
 
 `CI Gate` is the last job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). CI runs on every pull
-request and on every push to `dev` and `main`. `CI Gate` needs six jobs and fails unless each one succeeded:
+request, on every merge group of the `dev` merge queue and on every push to `dev` and `main`. `CI Gate` needs eleven
+jobs and fails unless each one succeeded. The jobs run on Ubuntu (issue #82 tracks macOS and Windows). The first six
+run the steps of `make check` at once; `dev/tests/test_ci_parity.py` fails when a step of `check` has no job:
 
 | Job | What it runs |
 | --- | --- |
-| `check` | `make check` on Ubuntu and macOS, Python 3.11 and 3.14. It includes `make workflow-lint` |
+| `static` | `make format-check typecheck verify-rules recipe-lint masters-check workflow-lint spell` |
+| `crosscheck` | `make crosscheck` on Python 3.11 and 3.14 |
+| `test-engine` | `make coverage-engine`: the engine's suite under coverage.py, on Python 3.11 |
+| `test-tools` | `make coverage-audit-tools coverage-implement-tools` on Python 3.11 |
+| `test-dev` | `make test-dev` on Python 3.11 |
+| `test-py314` | `make test verify-rules` on Python 3.14; on Linux `make test` runs its four suites at once |
+| `coverage` | `make coverage-combine`: merges the suites' data files and fails below the floor in `.coveragerc` |
 | `security` | `make security` |
-| `coverage` | `make coverage`, which fails below the floor in `.coveragerc` |
 | `self-audit` | `make self-audit`: the engine on this repository; exit 2 when a finding appears that `.audit-baseline.json` did not have |
 | `docs` | `make docs-lint` and the Mermaid render check, when Markdown changed |
 | `commits` | `dev/commit_lint.py` on each commit that the pull request or push adds: Conventional Commits subjects; merge commits are skipped |
@@ -211,5 +224,6 @@ before that.
 
 A session of an AI agent never pushes, tags or merges in this repository (the rule is in
 [`AGENTS.md`](../../AGENTS.md); [ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) covers
-the target repositories). The maintainer pushes, opens the promotion pull request and merges. release-please opens the
-release and back-merge pull requests and tags ([`RELEASE_PROCESS.md`](../../RELEASE_PROCESS.md)).
+the target repositories). The maintainer pushes, opens the promotion pull request and merges; into `dev`, through
+the merge queue. release-please opens the release and back-merge pull requests and tags
+([`RELEASE_PROCESS.md`](../../RELEASE_PROCESS.md)).

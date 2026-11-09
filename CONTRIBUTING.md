@@ -40,12 +40,13 @@ the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they a
 
 ## The gates
 
-Run these before you propose a change. CI runs the same commands.
+Run these before you propose a change. CI runs the same commands: the steps of `make check` as separate jobs
+that run at once ([The required checks](docs/reference/branch-protection.md#the-required-checks)).
 
 | Command | What it does |
 | --- | --- |
 | `make format` | Rewrites formatting in place. Run it before the first `make check` |
-| `make check` | The gate: formatting and lint, `mypy` strict, the engine's, the tools' and the dev checks' tests, the engine's rule check, the schema cross-check, the recipe linter and the workflow lint. It takes a couple of minutes |
+| `make check` | The gate: formatting and lint, `mypy` strict, the engine's, the tools' and the dev checks' tests, the engine's rule check, the schema cross-check, the recipe linter and the workflow lint. It takes a couple of minutes. The steps run one by one, in the order the spec fixes. On Linux, `make test` runs its four suites at once (`TEST_JOBS`; `make test TEST_JOBS=` runs them one by one) |
 | `make spell` | Part of `make check`. typos on the tracked text; the word list is `_typos.toml`. `make spell-fix` writes the suggested fixes |
 | `make workflow-lint` | Part of `make check`. actionlint, zizmor and check-jsonschema on `.github/`: workflow mistakes, workflow security, and `dependabot.yml` against its schema. Offline |
 | `make commit-lint` | Checks that each commit subject on your branch follows Conventional Commits (`RANGE=origin/dev..HEAD` by default). CI runs the same check on every pull request |
@@ -97,7 +98,8 @@ Two branches are protected: `dev` and `main`. You cannot commit or push to them 
 - Open the pull request into `dev`. The required check is `CI Gate`.
 - Do not open a pull request into `main`. Only the maintainer does that, and only from `dev`, to make a release.
 - Do not edit `CHANGELOG.md` or a version. release-please writes them from your commit subjects at release time.
-- Merges use a merge commit. Do not squash or rebase.
+- Merges use a merge commit. Do not squash or rebase. Into `dev`, the maintainer merges through the merge queue,
+  which tests your branch merged onto the latest `dev` before it lands.
 
 The step-by-step guide is [Contribute a change](docs/how-to/contribute-a-change.md). The rules and the release steps
 are in [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). The ruleset settings are in
