@@ -525,6 +525,19 @@
     },
     {
       "data": {},
+      "id": "CI-05",
+      "pack": "CI",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "github: local actionlint (Makefile), actionlint (dev/tools/pyproject.toml), check-jsonschema (Makefile), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI none",
+      "tier": "B",
+      "title": "Workflow files are linted",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
       "id": "BASE-01",
       "pack": "BASE",
       "phase": 1,
@@ -921,10 +934,10 @@
     },
     {
       "data": {
-        "denominator": 1178,
+        "denominator": 1182,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 470,
+        "numerator": 472,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -933,7 +946,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "470/1178 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
+      "summary": "472/1182 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1459,7 +1472,7 @@
   ],
   "inventory": {
     "files_inspected": 342,
-    "files_set_aside": 461,
+    "files_set_aside": 467,
     "files_skipped": 3,
     "set_aside": [
       {
@@ -1467,7 +1480,7 @@
         "path": "audit/engine/examples"
       },
       {
-        "files": 276,
+        "files": 280,
         "path": "audit/engine/tests/fixtures"
       },
       {
@@ -1475,7 +1488,7 @@
         "path": "audit/schema/examples"
       },
       {
-        "files": 92,
+        "files": 94,
         "path": "dev/eval/expected/fixtures"
       },
       {
@@ -1538,15 +1551,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "98a13e1b84271c38f8b41c79d67eefa5e0f1f45d",
+    "framework_revision": "e0693eb82c2b975e579e53ceff19849da09ceccc",
     "git_branch": "feat/v0.3.3-track-b-mcp",
-    "git_dirty": true,
-    "git_sha": "98a13e1b84271c38f8b41c79d67eefa5e0f1f45d",
+    "git_dirty": false,
+    "git_sha": "e0693eb82c2b975e579e53ceff19849da09ceccc",
     "phase": 1,
     "probes_enabled": false,
-    "ruleset_hash": "970e6792f98eeeb5",
-    "ruleset_revision": "2026-11-06.1",
-    "scanned_at": "2026-11-09T06:47:54+00:00",
+    "ruleset_hash": "04e5d0ff9063e012",
+    "ruleset_revision": "2026-11-09.1",
+    "scanned_at": "2026-11-09T06:52:56+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {
@@ -1580,16 +1593,16 @@
       "attest": 0,
       "fail": 1,
       "partial": 6,
-      "pass": 58,
+      "pass": 59,
       "unknown": 4
     },
-    "checks_applicable": 69,
-    "checks_implemented": 69,
-    "checks_scoreable": 55,
+    "checks_applicable": 70,
+    "checks_implemented": 70,
+    "checks_scoreable": 56,
     "cosmetic": 0,
-    "coverage_note": "55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
+    "coverage_note": "56 of 56 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
     "degraders": 4,
-    "phase1_score": 0.877
+    "phase1_score": 0.879
   },
   "unattested": [
     "index-in-use",

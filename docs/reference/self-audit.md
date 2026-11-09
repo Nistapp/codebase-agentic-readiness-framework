@@ -16,11 +16,11 @@ score from falling.
 
 | Field | Value |
 | --- | --- |
-| Phase-1 score | **0.8770** |
+| Phase-1 score | **0.8790** |
 | Date | 2026-11-09 |
 | Engine | `python-agentic-audit` 0.3.2 |
-| Ruleset | `2026-11-06.1` (hash `970e6792f98eeeb5`) |
-| Applicable checks | 69 (55 scoreable) |
+| Ruleset | `2026-11-09.1` (hash `04e5d0ff9063e012`) |
+| Applicable checks | 70 (56 scoreable) |
 | Findings | 5: 1 BLOCKER, 4 DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; no user-level configuration read |
 
@@ -33,12 +33,12 @@ The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 re
 
 | Verdict | Checks |
 | --- | --: |
-| PASS | 58 |
+| PASS | 59 |
 | PARTIAL | 6 |
 | FAIL | 1 |
 | UNKNOWN | 4 |
 | ATTEST | 0 |
-| **Total** | **69** |
+| **Total** | **70** |
 
 `UNKNOWN` and `ATTEST` earn no credit. Four checks are `UNKNOWN` because their evidence needs a Tier-C probe
 (`--run-gates`, not used here) or the user-level configuration that `--no-user-config` leaves unread, so this score
