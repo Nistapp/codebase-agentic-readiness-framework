@@ -93,8 +93,8 @@ class HygCatalogueTests(unittest.TestCase):
         reported = {c["id"] for c in report["checks"]}
         for check in HYG_IDS:
             self.assertIn(check, reported)
-        # 71 catalogued, 14 informational or emitter-only ⇒ 57 scoreable (CON-01 is scored since ruleset 2026-10-11.1).
-        self.assertEqual(report["summary"]["checks_scoreable"], 57)
+        # 72 catalogued, 14 informational or emitter-only ⇒ 58 scoreable (CON-01 is scored since ruleset 2026-10-11.1).
+        self.assertEqual(report["summary"]["checks_scoreable"], 58)
 
 
 class ScoreIsolationTests(unittest.TestCase):

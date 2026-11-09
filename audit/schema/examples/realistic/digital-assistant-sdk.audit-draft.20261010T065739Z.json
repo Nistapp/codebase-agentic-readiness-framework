@@ -7,7 +7,7 @@
       "revision": "7eedf23c99c3",
       "install": "checkout"
     },
-    "catalogue_version": "0.4.0",
+    "catalogue_version": "0.5.0",
     "engine": {
       "name": "python-agentic-audit",
       "version": "0.1.0",
@@ -1756,6 +1756,18 @@
       "searches": []
     },
     {
+      "id": "TOOL-07",
+      "title": "Local guard against commits to a protected branch",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",
+      "evidence": [],
+      "searches": []
+    },
+    {
       "id": "CI-05",
       "title": "Workflow files are linted",
       "phase": 1,
@@ -2710,15 +2722,15 @@
     }
   ],
   "summary": {
-    "phase1_score": 0.6151,
-    "scored_checks": 57,
+    "phase1_score": 0.6102,
+    "scored_checks": 58,
     "blockers_remaining": {
       "total": 6,
       "fail": 2,
       "partial": 2,
       "unknown": 2
     },
-    "unknown_scored_checks": 6,
+    "unknown_scored_checks": 7,
     "unconfirmed_agent_findings": 0
   },
   "unattested": [

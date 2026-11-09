@@ -63,9 +63,9 @@ class RegistryTests(unittest.TestCase):
     def test_every_catalogued_check_is_implemented_and_none_is_blocked(self):
         self.assertEqual({s.status for s in REGISTRY}, {"implemented"})
 
-    def test_there_are_fifty_seven_scoreable_checks_and_con_01_is_one_of_them(self):
-        self.assertEqual(len(scoreable()), 57)
-        self.assertEqual(len(REGISTRY), 71)
+    def test_there_are_fifty_eight_scoreable_checks_and_con_01_is_one_of_them(self):
+        self.assertEqual(len(scoreable()), 58)
+        self.assertEqual(len(REGISTRY), 72)
         con_01 = REGISTRY_BY_ID["CON-01"]
         self.assertEqual(
             (con_01.scored, con_01.status, con_01.severity, con_01.tier), (True, "implemented", Severity.BLOCKER, "B")

@@ -296,7 +296,8 @@ what consumers may rely on. Everything else stays internal.
 
 The hooks are provided as templates — copy them and let husky wire the hook path itself:
 
-- **`.husky/pre-commit`**: (See [template](templates/husky/pre-commit)) — `npx lint-staged`, mode `0755`
+- **`.husky/pre-commit`**: (See [template](templates/husky/pre-commit)) — refuses a commit on `main` or `dev`,
+  then `npx lint-staged`, mode `0755`
 - **`.husky/commit-msg`**: (See [template](templates/husky/commit-msg)) — `npx --no -- commitlint --edit "$1"`, mode `0755`
 - **`commitlint.config.js`**: (See [template](templates/commitlint.config.js))
 

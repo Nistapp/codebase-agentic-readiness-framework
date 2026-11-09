@@ -9,8 +9,8 @@
 
 ---
 
-The audit runs **73 checks** in 13 families (catalogue 0.4.0). 59 are scored; the rest are reported for the whole
-picture and earn no credit. The engine decides 71 checks from the files alone; the agent judges 2. Each check below says
+The audit runs **74 checks** in 13 families (catalogue 0.5.0). 60 are scored; the rest are reported for the whole
+picture and earn no credit. The engine decides 72 checks from the files alone; the agent judges 2. Each check below says
 what passes and why it matters. To fix a finding, follow the playbook it names in the [implement master
 list](implement-master.md).
 
@@ -25,7 +25,7 @@ list](implement-master.md).
 | Area | The question it answers | Families | Checks |
 |---|---|---|---|
 | [Agent context](#agent-context) | Can an agent find the code, the rules and the documents it needs before it edits anything? | [`IDX`](#discovery-and-index-idx), [`AGT`](#agent-governance-agt), [`DOC`](#documentation-contract-doc), [`NAV`](#navigation-nav) | 23 (3 BLOCKER, 16 DEGRADER, 4 COSMETIC) |
-| [Command surface and quality gates](#command-surface-and-quality-gates) | Can an agent run one command that formats, lints, type-checks and tests, and trust its answer? | [`CMD`](#command-surface-cmd), [`TOOL`](#tooling-tool), [`TST`](#tests-tst), [`BASE`](#baselines-and-the-ratchet-base) | 19 (3 BLOCKER, 14 DEGRADER, 2 COSMETIC) |
+| [Command surface and quality gates](#command-surface-and-quality-gates) | Can an agent run one command that formats, lints, type-checks and tests, and trust its answer? | [`CMD`](#command-surface-cmd), [`TOOL`](#tooling-tool), [`TST`](#tests-tst), [`BASE`](#baselines-and-the-ratchet-base) | 20 (3 BLOCKER, 14 DEGRADER, 3 COSMETIC) |
 | [Enforcement in CI](#enforcement-in-ci) | Does the pipeline run the same gate the agent runs locally, and does it block the merge? | [`CI`](#continuous-integration-ci) | 5 (2 BLOCKER, 3 DEGRADER) |
 | [Reproducible execution](#reproducible-execution) | Does the same command give the same result on a fresh machine, without a human in the loop? | [`EXEC`](#execution-determinism-exec) | 8 (4 BLOCKER, 4 DEGRADER) |
 | [Safety boundaries and secrets](#safety-boundaries-and-secrets) | Is it written down, and enforced, what an agent must never touch or reveal? | [`CON`](#constraints-con), [`SEC`](#security-hygiene-sec) | 7 (4 BLOCKER, 2 DEGRADER, 1 COSMETIC) |
@@ -311,7 +311,7 @@ Can an agent run one command that formats, lints, type-checks and tests, and tru
 
 ### Tooling (TOOL)
 
-6 checks: 5 DEGRADER, 1 COSMETIC.
+7 checks: 5 DEGRADER, 2 COSMETIC.
 
 #### `TOOL-01` Formatter configured
 
@@ -371,6 +371,17 @@ Can an agent run one command that formats, lints, type-checks and tests, and tru
 - **Why it matters:** Release automation reads commit messages; without an enforced convention, version bumps and
   changelog generation silently stop working ([greenfield/README.md § 2.3 Git
   Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).
+
+#### `TOOL-07` Local guard against commits to a protected branch
+
+`COSMETIC` · scored · engine check · fixed by
+[`add-hooks-and-commit-rules`](implement-master.md#add-hooks-and-commit-rules)
+
+- **Passes when:** a guard in a wired hook chain names every branch the declared rules protect, or any guard is wired
+  and no rules are declared.
+- **Why it matters:** An agent commits on whatever branch is checked out. Without a local guard it learns that the
+  branch is protected only when the push is refused, and then has to move its commits by hand ([greenfield/README.md §
+  2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).
 
 ### Tests (TST)
 
