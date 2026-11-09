@@ -7,17 +7,17 @@
 
 | Field | Value |
 |---|---|
+| Framework | `v0.3.2`, checkout `ee5da5b99005` |
 | Target | `stockroom` |
 | Commit | `091b85c59f6a` on `main` — clean working tree |
 | Status | final |
 | Started | `2026-11-06T08:53:15+00:00` |
 | Finalised | `2026-11-06T08:53:19+00:00` |
-| Recipe | `brownfield-audit` 0.1.0, catalogue `0.2.8` |
+| Catalogue | `0.2.8` |
 | Engine | `python-agentic-audit` 0.1.0, ruleset `2026-11-06.1`, ruleset hash `970e6792f98eeeb5`, scanned `2026-11-06T08:53:11+00:00` |
-| Framework revision | `ee5da5b99005` |
 | Agent (self-reported) | none: no agent took part |
 | Probes | none: no command of the target was run |
-| Report schema | `0.1` |
+| Report schema | `0.2` |
 
 ## Readiness summary
 

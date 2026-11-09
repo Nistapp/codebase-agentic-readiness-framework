@@ -69,6 +69,61 @@ class TransitionCase(TargetCase):
         return finding
 
 
+class FrameworkTrackingTests(TransitionCase):
+    NEWER = {"release": "0.3.3", "revision": "beefbeefbeef", "install": "checkout"}
+
+    def test_a_write_by_another_framework_sets_last_framework_and_logs_the_move_once(self) -> None:
+        with mock.patch.object(progress, "framework_facts", return_value=dict(self.NEWER)):
+            self.to_in_progress()
+            entries = len(self.state()["log"])
+            self.ok("set-status", self.queued, "in_progress", "--note", "second write by the same framework")
+        state = self.state()
+        self.assertEqual(state["last_framework"], {"release": "0.3.3", "revision": "beefbeefbeef"})
+        self.assertEqual(state["framework"]["release"], "0.3.2", "the creation stamp never changes")
+        moves = [entry for entry in state["log"] if entry["event"].startswith("Framework moved")]
+        self.assertEqual(
+            moves,
+            [
+                {
+                    "date": "2026-11-01",
+                    "phase": "IRtest",
+                    "event": "Framework moved from v0.3.2 at cafecafecafe to v0.3.3 at beefbeefbeef.",
+                }
+            ],
+        )
+        self.assertEqual(len(state["log"]), entries + 1, "the second write logs only its own change")
+
+    def test_a_write_by_the_same_framework_logs_no_move(self) -> None:
+        self.to_in_progress()
+        self.assertFalse(any(entry["event"].startswith("Framework moved") for entry in self.state()["log"]))
+
+    def test_a_move_to_a_bundle_names_the_release_only(self) -> None:
+        bundle = {"release": "0.3.3", "revision": None, "install": "bundle"}
+        with mock.patch.object(progress, "framework_facts", return_value=bundle):
+            self.to_in_progress()
+        self.assertEqual(self.state()["log"][-1]["event"], "Framework moved from v0.3.2 at cafecafecafe to v0.3.3.")
+
+    def test_show_gives_the_creating_the_last_and_these_tools_framework(self) -> None:
+        code, envelope, _ = call(["show", "--target", str(self.target)])
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            envelope["data"]["versions"],
+            {
+                "created": {"release": "0.3.2", "revision": "cafecafecafe", "install": "checkout"},
+                "last": {"release": "0.3.2", "revision": "cafecafecafe"},
+                "tools": {"release": "0.3.2", "revision": "cafecafecafe"},
+            },
+        )
+
+    def test_a_state_from_an_older_schema_is_refused_with_a_plain_message(self) -> None:
+        state = self.state()
+        state["schema_version"] = "0.2"
+        self.json_path.write_text(json.dumps(state), encoding="utf-8")
+        code, envelope, _ = call(["show", "--target", str(self.target)])
+        self.assertEqual(code, 2)
+        self.assertTrue(envelope["data"]["error"].startswith("the state has schema '0.2'"))
+
+
 class LegalMoveTests(TransitionCase):
     def test_every_legal_move_of_the_diagram_works(self) -> None:
         f = self.queued

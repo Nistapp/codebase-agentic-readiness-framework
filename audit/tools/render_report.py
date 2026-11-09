@@ -408,12 +408,24 @@ def agent_text(agent: Mapping[str, Any]) -> str:
     return f"{code(agent['harness'])} with {code(agent['model'])}"
 
 
+def framework_text(framework: Mapping[str, Any]) -> str:
+    """The release, then how it was installed: `v0.3.2, checkout `fcd5c7fcbff1``, `v0.3.2, installed as a bundle`."""
+    release = code(f"v{framework['release']}")
+    if framework["install"] == "checkout":
+        revision = framework["revision"]
+        return (
+            f"{release}, checkout {code(revision[:COMMIT_CHARS])}" if revision else f"{release}, checkout (no revision)"
+        )
+    if framework["install"] == "bundle":
+        return f"{release}, installed as a bundle"
+    return f"{release}, a copy with no git history"
+
+
 def provenance_section(report: Mapping[str, Any]) -> list[str]:
     """What was audited, with what, and when: the first thing a reader sees after the title."""
     provenance = report["provenance"]
     target = provenance["target"]
     engine = provenance.get("engine")
-    revision = provenance["framework_revision"]
     probes = report["run_context"]["probes"]
     if target["git_sha"]:
         commit = code(target["git_sha"][:COMMIT_CHARS])
@@ -423,18 +435,14 @@ def provenance_section(report: Mapping[str, Any]) -> list[str]:
     else:
         commit = "none recorded"
     rows = [
+        ["Framework", framework_text(provenance["framework"])],
         ["Target", code(target["path"])],
         ["Commit", commit],
         ["Status", report["status"] + (" (evaluation run)" if report["run_context"]["eval_mode"] else "")],
         ["Started", code(provenance["started_at"])],
         ["Finalised", code(provenance["finalised_at"]) if "finalised_at" in provenance else "—"],
-        [
-            "Recipe",
-            f"{code(provenance['recipe']['name'])} {text(provenance['recipe']['version'])}, "
-            f"catalogue {code(provenance['catalogue_version'])}",
-        ],
+        ["Catalogue", code(provenance["catalogue_version"])],
         ["Engine", engine_text(engine) if engine else "No engine report is part of this report."],
-        ["Framework revision", code(revision[:COMMIT_CHARS]) if revision else "—"],
         ["Agent (self-reported)", agent_text(provenance["agent"])],
         [
             "Probes",
@@ -1004,6 +1012,7 @@ def handler(argv: Sequence[str]) -> _common.Result:
     source = Path(args.report).expanduser()
     document = vr.read_report(source)
     outcome = vr.validate_document(document)
+    vr.refuse_unknown_schema(outcome)
     if outcome.errors:
         total = len(outcome.errors)
         raise _common.ValidationFailed(

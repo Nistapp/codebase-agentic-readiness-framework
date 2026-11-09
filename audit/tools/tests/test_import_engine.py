@@ -86,7 +86,7 @@ class EngineRecordTests(ImportCase):
         )
         self.assertEqual(
             list(provenance),
-            ["recipe", "framework_revision", "catalogue_version", "engine", "agent", "target", "started_at"],
+            ["framework", "catalogue_version", "engine", "agent", "target", "started_at"],
         )
 
     def test_the_draft_stays_valid_and_keeps_the_target_it_was_given(self) -> None:

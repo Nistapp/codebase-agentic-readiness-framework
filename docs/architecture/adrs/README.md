@@ -15,6 +15,7 @@ The root router is [`docs/README.md`](../../README.md).
 | [0005](0005-release-please-cuts-releases.md) | Release-Please Computes the Version, Writes the Changelog and Tags the Release | Accepted | 2026-11-08 |
 | [0006](0006-first-run-agent-tool-offer.md) | One Committed `.mcp.json`; Agents Offer Each Person a One-Time Setup for Their Harness | Accepted | 2026-11-09 |
 | [0007](0007-security-verb-audits-dependencies-with-osv-scanner.md) | The Security Verb Audits the Dev Tools' Dependencies with osv-scanner | Accepted | 2026-11-09 |
+| [0008](0008-one-release-version-and-current-schemas-only.md) | Stamp One Release Version in Every Report and State, and Read Only the Current Schemas | Accepted | 2026-11-09 |
 
 ## Requirements: `spec/decisions/`
 

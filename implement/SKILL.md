@@ -111,8 +111,10 @@ and that a state file exists. Change nothing in the target except the state fold
 4. **Validate.** Run `python3 audit/tools/validate_report.py <report> --target <repo>`.
    Expect exit 0 and `data.valid` true; read `data.status` and `warnings`. If `data.status` is not `final`, or the
    exit code is 2, stop: tell the owner the report goes back to the [audit recipe](../audit/SKILL.md)
-   (`report.py finalise`). Do not repair a report here. A warning about a cited path that no longer exists is
-   normal; keep it for step 5.
+   (`report.py finalise`). Do not repair a report here. If the error starts `the report has schema`, the report
+   comes from a framework release with another report schema: give the owner the message as it is. It says whether
+   to run a new audit or update the framework. A warning about a cited path that no longer exists is normal; keep it
+   for step 5.
 5. **Drift.** Run `python3 implement/tools/check_drift.py <report> <repo>`, on a new run and on every
    resume. It exits 0 whatever it finds, so read `data.status`:
    - `current`: nothing moved; go on.
@@ -123,6 +125,10 @@ and that a state file exists. Change nothing in the target except the state fold
    - Whatever the status, `data.report_changed` true means the report file was edited after `init` recorded its
      SHA-256 (`null` means no digest was recorded): stop and tell the owner; the text is no longer the audit's.
    - `sha_missing` or `no_sha`: re-verify every queued finding when its theme comes up, and say so now.
+   - `data.versions.relation` compares the framework release that made the report with these tools'. `older`:
+     give the owner the warning and go on; a new audit is the owner's call. `same` with a warning about two
+     framework commits: tell the owner and go on. Exit 2 with `Update the framework`: the report is newer than
+     these tools; stop and ask the owner to install that release of both skills.
 6. **State.** On a new run, create the triage worktree first, so nothing is committed on the integration branch
    itself: `git -C <repo> fetch origin`, then `git -C <repo> worktree add <worktree> -b
    agentic-readiness/<phase>-triage origin/<integration branch>`. Then create the state there:

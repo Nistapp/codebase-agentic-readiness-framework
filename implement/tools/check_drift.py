@@ -136,6 +136,7 @@ def handler(argv: Sequence[str]) -> _common.Result:
     target = _common.resolve_target(args.target)
     document = validate_report.read_report(Path(args.report).expanduser())
     outcome = validate_report.validate_document(document)
+    validate_report.refuse_unknown_schema(outcome)
     if outcome.errors:
         count = len(outcome.errors)
         raise _common.ValidationFailed(
@@ -146,8 +147,10 @@ def handler(argv: Sequence[str]) -> _common.Result:
     head = revision(target, "HEAD")
     if head is None:
         raise _common.UsageError(f"cannot read HEAD of {target}: not a git repository, or it has no commits")
-    data: dict[str, Any] = {"audited_sha": audited, "head_sha": head, "drifted": False}
-    warnings: list[str] = []
+    versions, warnings = validate_report.compare_versions(
+        document, progress.FRAMEWORK_RELEASE, progress.framework_facts()["revision"]
+    )
+    data: dict[str, Any] = {"audited_sha": audited, "head_sha": head, "drifted": False, "versions": versions}
     data["dirty"] = is_dirty(target)
     data["report_changed"] = report_changed(
         target, Path(args.report).expanduser(), document["provenance"]["target"]["label"]
@@ -189,6 +192,8 @@ def handler(argv: Sequence[str]) -> _common.Result:
             data["findings_omitted"] = omitted_findings
         truncated = bool(omitted_paths or omitted_findings)
     summary = f"check_drift: {data['status']}"
+    if versions["relation"] != "same":
+        summary += f"; the report is from an {versions['relation']} framework release"
     if data["status"] == "drifted":
         summary += f", {data['changed_count']} paths changed, {len(data['findings'])} findings affected"
     if data["report_changed"]:

@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 import _implement_paths
+import _common
 import _jsonschema_subset as subset
 import progress
 
@@ -53,15 +54,36 @@ class ReadinessStateSchemaCase(unittest.TestCase):
 
     def test_the_schema_is_in_the_subset_and_names_its_version(self) -> None:
         self.assertEqual(subset.lint_schema(self.schema), [])
-        self.assertEqual(self.schema["$id"], "urn:codebase-agentic-readiness-framework:readiness-state:0.2")
-        self.assertEqual(self.schema["properties"]["schema_version"]["enum"], list(progress.SUPPORTED_SCHEMA_VERSIONS))
-        self.assertEqual(progress.SCHEMA_VERSION, "0.2")
+        self.assertEqual(self.schema["$id"], "urn:codebase-agentic-readiness-framework:readiness-state:0.3")
+        self.assertEqual(self.schema["properties"]["schema_version"]["const"], progress.SCHEMA_VERSION)
+        self.assertEqual(progress.SCHEMA_VERSION, "0.3")
 
-    def test_a_0_1_state_without_a_digest_is_still_valid(self) -> None:
+    def test_a_state_without_a_digest_is_not_valid(self) -> None:
         older = copy.deepcopy(self.example)
-        older["schema_version"] = "0.1"
         del older["source_reports"][0]["sha256"]
-        self.assertEqual(progress.state_errors(older), [])
+        self.assertTrue(any("sha256" in error for error in progress.state_errors(older)))
+
+    def test_an_older_state_schema_is_refused_with_a_plain_message(self) -> None:
+        older = copy.deepcopy(self.example)
+        older["schema_version"] = "0.2"
+        with self.assertRaises(_common.ValidationFailed) as caught:
+            progress.refuse_unknown_state_schema(older)
+        self.assertEqual(
+            str(caught.exception),
+            "the state has schema '0.2' (made by framework v0.3.2); these tools read schema '0.3'. Move the old "
+            "state files aside and run init again from a final report (recommended), or use framework v0.3.2 to "
+            "resume it.",
+        )
+
+    def test_a_full_commit_id_is_refused_where_the_state_keeps_12_digits(self) -> None:
+        for where in ("framework", "last_framework"):
+            with self.subTest(where=where):
+                broken = copy.deepcopy(self.example)
+                broken[where]["revision"] = "ab" * 20
+                self.assertTrue(any(f"/{where}/revision" in error for error in progress.state_errors(broken)))
+        broken = copy.deepcopy(self.example)
+        broken["source_reports"][0]["git_sha"] = "ab" * 20
+        self.assertTrue(any("/source_reports/0/git_sha" in error for error in progress.state_errors(broken)))
 
     def test_every_example_is_valid(self) -> None:
         for path in EXAMPLES:
@@ -91,7 +113,7 @@ class ReadinessStateSchemaCase(unittest.TestCase):
                 "/items/0: missing the required property 'reason'",
             ),
             ("bad date", lambda d: d["log"][0].update(date="29/10/2026"), "/log/0/date: does not match the pattern"),
-            ("wrong version", lambda d: d.update(schema_version="0.3"), "/schema_version: expected one of"),
+            ("wrong version", lambda d: d.update(schema_version="0.2"), "/schema_version:"),
             ("short digest", lambda d: d["source_reports"][0].update(sha256="ab"), "/source_reports/0/sha256"),
             ("upper-case digest", lambda d: d["source_reports"][0].update(sha256="A" * 64), "/source_reports/0/sha256"),
             ("negative debt", lambda d: item(d, "F-001")["debt"][0].update(count=-1), "/items/0/debt/0/count"),
