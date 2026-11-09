@@ -99,8 +99,18 @@ How each harness treats a project MCP file (checked 2026-11-09 in each harness's
 | opencode | `opencode.json` (`mcp`) | Connects it with no prompt |
 | Codex CLI | `.codex/config.toml` (`[mcp_servers]`) | Loads it only for a trusted project |
 
-For a harness that does not read `.mcp.json`, copy the entry into its own file, outside the repository or
-uncommitted. If the server is not installed, it fails to start and the agent reads files instead.
+For a harness that does not read `.mcp.json`, `dev/mcp_config.py` translates the entry into that harness's format:
+
+| Command | What it does |
+| --- | --- |
+| `python3 dev/mcp_config.py show --harness <name> [--scope project\|user]` | Prints the target file and the entry. Writes nothing |
+| `python3 dev/mcp_config.py write --harness <name> [--scope project\|user]` | Adds the entry to the file. Stops if a different entry has the same name |
+| `python3 dev/mcp_config.py check` | Is each server's command on `PATH`? Prints its version, or the install routes |
+| `python3 dev/mcp_config.py status --harness <name>` | Has the person answered the setup offer for this harness? |
+| `python3 dev/mcp_config.py record --harness <name> --answer accepted\|declined` | Records the answer in `.agentic-readiness/setup.json` |
+
+The names are `claude-code`, `vscode`, `cursor`, `gemini`, `opencode` and `codex`. The tool installs nothing. If
+the server is not installed, it fails to start and the agent reads files instead.
 
 ## Settings on GitHub
 
