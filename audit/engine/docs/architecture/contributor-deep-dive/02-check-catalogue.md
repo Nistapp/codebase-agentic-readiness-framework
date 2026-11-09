@@ -115,7 +115,7 @@ suspicious verdict.
 | `TOOL-01` | Formatter configured | B | DEGRADER | A formatter config file and a resolvable write verb | Implemented |
 | `TOOL-02` | Linter configured | B | DEGRADER | A linter config file and a resolvable read-only verb | Implemented |
 | `TOOL-03` | Type checker configured | A | DEGRADER | Language-appropriate strict configuration (`tsconfig`, `mypy`/`pyright`, `global.json` nullable settings, etc.) | Implemented |
-| `TOOL-04` | Dependency / security scan verb | A | DEGRADER | A resolvable verb performing a dependency-audit check | Implemented |
+| `TOOL-04` | Dependency / security scan verb | A | DEGRADER | A resolvable verb performing a dependency-audit check, and a CI step that runs one | Implemented |
 | `TOOL-05` | Local hook chain active | B | DEGRADER | Hook manager configured and wired (`core.hooksPath`, `.pre-commit-config.yaml`, `lefthook.yml`) | Implemented |
 | `TOOL-06` | Commit convention enforced | A | COSMETIC | A commit-message rule runs in a local `commit-msg` stage and in CI | Implemented |
 | `TOOL-07` | Local guard against commits to a protected branch | B | COSMETIC | A wired `pre-commit` or `commit-msg` hook refuses a commit on each branch the declared rules protect | Implemented |

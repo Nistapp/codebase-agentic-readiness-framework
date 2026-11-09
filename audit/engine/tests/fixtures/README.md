@@ -90,6 +90,7 @@ fixtures/
   tool-02-no-linter/         node project, no linter config or verb  -> TOOL-02 FAIL
   tool-03-nonstrict-ts/      tsconfig.json strict: false             -> TOOL-03 PARTIAL
   tool-04-no-audit-verb/     node project, no dependency-audit verb -> TOOL-04 FAIL
+  tool-04-local-only-audit/  npm run security runs npm audit, no CI step runs it -> TOOL-04 PARTIAL
   tool-04-make-security-no-audit/ make security runs a prerequisite that expands to a secrets scan, no dependency audit -> TOOL-04 PARTIAL
   tool-05-unwired-hooks/     .husky/ present but never referenced   -> TOOL-05 PARTIAL
   tool-06-no-commit-rule/    wired hooks, no commit-message rule    -> TOOL-06 FAIL
