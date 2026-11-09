@@ -202,12 +202,13 @@ docs-lint-all:
 	-git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)
 
 # Reports the prose check's warnings and notices (docs/COMMUNICATION_RULES.md) in FILES, or in all tracked Markdown
-# when FILES is not set. Advisory: it never fails.
+# when FILES is not set. Advisory: the check exits 0 whatever it finds. Add PROSE_ARGS=--min-severity=warning to
+# hide the notices.
 docs-prose:
 ifdef FILES
-	-$(PROSE_CHECK) $(FILES)
+	$(PROSE_CHECK) $(PROSE_ARGS) $(FILES)
 else
-	-$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK)
+	$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK) $(PROSE_ARGS)
 endif
 
 # Rewrites CHANGELOG.md in place with the markdownlint fixes (release-please writes `*` bullets and double blank
