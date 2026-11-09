@@ -142,6 +142,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-05-generated": {"EXEC-05": "FAIL"},
     "exec-06-broken-command": {"EXEC-06": "FAIL"},
     "exec-07-dual-lint": {"EXEC-07": "FAIL"},
+    "exec-08-inline-version": {"EXEC-08": "FAIL"},
+    "exec-08-duplicate-pin": {"EXEC-08": "PARTIAL"},
     "exec-ok": {
         "EXEC-01": "PASS",
         "EXEC-02": "PASS",

@@ -31,7 +31,7 @@ To go the other way, start from a framework heading, find the requirements whose
 
 ## Every check, generated
 
-All 72 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
+All 73 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
 `Source` field links. Generated 2026-10-19 from `catalogue.json`'s `req_ids` and
 `readiness-requirements.md`'s `Source` fields — the same two steps as the worked example above, run once
 per check rather than by hand. 14 checks are informational or an emitter and trace to no requirement
@@ -78,6 +78,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `EXEC-05` | No generated artifacts committed in-tree | DEGRADER | yes | [REQ-SH-043](../../spec/readiness-requirements.md#req-sh-043--generated-files-marked-or-untracked) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `EXEC-06` | Documented commands resolve | DEGRADER | yes | [REQ-SH-025](../../spec/readiness-requirements.md#req-sh-025--documented-commands-resolve) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `EXEC-07` | No competing configs for one concern | DEGRADER | yes | [REQ-SH-044](../../spec/readiness-requirements.md#req-sh-044--one-configuration-per-concern) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
+| `EXEC-08` | Tool versions visible to dependency automation | DEGRADER | yes | [REQ-SH-058](../../spec/readiness-requirements.md#req-sh-058--tool-versions-visible-to-dependency-automation) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `HYG-01` | README present and non-placeholder | COSMETIC | no | none | none |
 | `HYG-02` | CODEOWNERS present | COSMETIC | no | none | none |
 | `HYG-03` | Pull-request template present | COSMETIC | no | none | none |
@@ -112,7 +113,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `TST-04` | Fast path documented | DEGRADER | yes | [REQ-SH-048](../../spec/readiness-requirements.md#req-sh-048--fast-path-documented) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `TST-05` | Coverage configuration present | COSMETIC | yes | [REQ-SH-049](../../spec/readiness-requirements.md#req-sh-049--coverage-reporting) | [greenfield/README.md § 3.1 vitest.config.ts](../../greenfield/README.md#31-vitestconfigts--with-coverage) |
 
-72 checks total.
+73 checks total.
 
 ## Where the relation is held
 
