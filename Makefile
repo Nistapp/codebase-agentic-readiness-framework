@@ -323,13 +323,10 @@ check: format-check typecheck test verify-rules crosscheck recipe-lint masters-c
 # --no-call-analysis=go: the module holds no Go code of its own, so govulncheck has nothing to analyse.
 #
 # CI runs the two parts as two jobs, so the secrets scan needs no Go: security-secrets and security-deps.
-# `security` runs the first as a prerequisite and the dependency audit in its own recipe, which repeats
-# security-deps' recipe word for word. The audit engine's TOOL-04 reads only a target's own recipe (it does not
-# follow prerequisites; issue #89), and it needs the tool name written out, not hidden in a variable.
-# dev/tests/test_ci_parity.py fails when the two recipes differ or when a part has no CI job.
+# `security` is the two parts, as prerequisites; the audit engine's TOOL-04 follows them (ruleset 2026-11-09.9,
+# issue #89). dev/tests/test_ci_parity.py fails when `security` runs anything else or a part has no CI job.
 OSV_SCAN_ARGS = scan source --no-call-analysis=go $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))
-security: security-secrets
-	go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)
+security: security-secrets security-deps
 
 security-secrets:
 	git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline
