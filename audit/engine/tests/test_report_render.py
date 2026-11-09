@@ -91,5 +91,74 @@ class RenderFromJsonTests(unittest.TestCase):
             self.assertNotIn("## Command surface", markdown)
 
 
+def _section(markdown: str, heading: str) -> list[str]:
+    """The lines of the `## heading` section, up to the next second-level heading."""
+    lines = markdown.split("\n")
+    start = lines.index(f"## {heading}")
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    return lines[start:end]
+
+
+def _action_rows(markdown: str) -> list[list[str]]:
+    rows = [line for line in _section(markdown, "Bottom line") if line.startswith("| ") and line[2].isdigit()]
+    return [[cell.strip() for cell in row.strip("|").split(" | ")] for row in rows]
+
+
+class BottomLineTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.report = support.run_audit(_target())
+
+    def test_it_is_the_first_section_and_terms_is_the_last(self):
+        headings = [line for line in render_markdown_from_report(self.report).split("\n") if line.startswith("## ")]
+        self.assertEqual(headings[:2], ["## Bottom line", "## Provenance"])
+        self.assertEqual(headings[-1], "## Terms")
+
+    def test_it_counts_the_blocker_findings(self):
+        blockers = sum(1 for f in self.report["findings"] if f["severity"] == "BLOCKER")
+        self.assertGreater(blockers, 0)
+        noun = "finding" if blockers == 1 else "findings"
+        section = "\n".join(_section(render_markdown_from_report(self.report), "Bottom line"))
+        self.assertIn(f"- **{blockers} blocker {noun}.**", section)
+
+    def test_the_first_actions_are_three_findings_in_severity_then_check_order(self):
+        order = ["BLOCKER", "DEGRADER", "COSMETIC"]
+        expected = sorted(self.report["findings"], key=lambda f: (order.index(f["severity"]), f["check"], f["id"]))[:3]
+        rows = _action_rows(render_markdown_from_report(self.report))
+        self.assertEqual([row[1] for row in rows], [f"`{f['check']}`" for f in expected])
+        self.assertEqual([row[0] for row in rows], ["1", "2", "3"])
+
+    def test_it_lists_five_unknown_checks_then_a_count(self):
+        report = json.loads(json.dumps(self.report))
+        for check in report["checks"]:
+            check["verdict"] = "UNKNOWN"
+        text = "\n".join(_section(render_markdown_from_report(report), "Bottom line"))
+        self.assertIn(f"{len(report['checks'])} checks are UNKNOWN: ", text)
+        self.assertIn(f" and {len(report['checks']) - 5} more.", text)
+
+    def test_no_finding_means_no_first_actions(self):
+        report = json.loads(json.dumps(self.report))
+        report["findings"] = []
+        report["summary"]["blockers"] = 0
+        section = _section(render_markdown_from_report(report), "Bottom line")
+        self.assertIn("**First actions:** none. The scan raised no finding.", section)
+        self.assertEqual(_action_rows("\n".join(section)), [])
+
+    def test_repository_text_in_an_action_is_escaped(self):
+        report = json.loads(json.dumps(self.report))
+        first = sorted(
+            report["findings"],
+            key=lambda f: (["BLOCKER", "DEGRADER", "COSMETIC"].index(f["severity"]), f["check"], f["id"]),
+        )[0]
+        first["statement"] = "An agent cannot X because src/__tests__/[a](b) <i>."
+        row = _action_rows(render_markdown_from_report(report))[0]
+        self.assertEqual(row[3], r"An agent cannot X because src/\_\_tests\_\_/\[a\](b) \<i\>.")
+
+    def test_the_terms_name_every_verdict_and_severity(self):
+        terms = _section(render_markdown_from_report(self.report), "Terms")
+        for word in ("PASS", "PARTIAL", "FAIL", "UNKNOWN", "ATTEST", "BLOCKER", "DEGRADER", "COSMETIC"):
+            self.assertTrue(any(line.startswith(f"| {word} |") for line in terms), word)
+
+
 if __name__ == "__main__":
     unittest.main()

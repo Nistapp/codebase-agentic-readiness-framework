@@ -42,6 +42,14 @@ UNATTESTED_MEANINGS: dict[str, str] = {
     "gate-honoured": "Whether the gate is actually run and honoured before merge.",
 }
 
+#: The bottom line: how many first actions it names, and how many UNKNOWN check IDs it lists before a count.
+FIRST_ACTIONS = 3
+UNKNOWN_LISTED = 5
+
+#: The first-actions table of the bottom line.
+ACTION_COLUMNS: tuple[str, ...] = ("#", "Check", "Severity", "What it blocks", "Fix")
+ACTION_ALIGN: tuple[str, ...] = ("right", "left", "left", "left", "left")
+
 #: Findings table columns.
 FINDINGS_COLUMNS: tuple[str, ...] = ("Check", "Title", "Verdict", "Specifics", "Evidence", "Fix")
 FINDINGS_ALIGN: tuple[str, ...] = ("left", "left", "center", "left", "left", "left")
@@ -69,6 +77,7 @@ class SectionSpec:
 #: The report's section order. ``<severity>`` expands to the findings table per severity; the rest
 #: map to builders in :mod:`audit.report.md_render`.
 SECTIONS: tuple[SectionSpec, ...] = (
+    SectionSpec("Bottom line", "bottom_line"),
     SectionSpec("Provenance", "provenance"),
     SectionSpec("Scorecard", "scorecard"),
     SectionSpec("Unattested", "unattested"),
@@ -81,4 +90,5 @@ SECTIONS: tuple[SectionSpec, ...] = (
     SectionSpec("Appendix — full check results", "appendix"),
     SectionSpec("Not applicable to this target", "not_applicable"),
     SectionSpec("Structural context", "structural"),
+    SectionSpec("Terms", "terms"),
 )

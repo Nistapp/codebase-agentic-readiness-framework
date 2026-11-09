@@ -11,6 +11,7 @@ and check-specific tables dispatch on a payload ``kind``. Adding a section or a 
 
 from __future__ import annotations
 
+import re
 from typing import Any, Callable
 
 from audit.report import presentation as P
@@ -18,6 +19,14 @@ from audit.report import presentation as P
 
 def _esc(text: Any) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ").strip()
+
+
+_MARKUP = re.compile(r"([\\`*_\[\]<>#])")
+
+
+def _plain(text: Any) -> str:
+    """Text from the scanned repository (a path inside a statement), with every Markdown special escaped."""
+    return _MARKUP.sub(r"\\\1", str(text))
 
 
 def _user_config_cell(info: object) -> str:
@@ -112,6 +121,60 @@ def _evidence_cell(evidence: list[dict]) -> str:
 # ---------------------------------------------------------------------------
 # section builders
 # ---------------------------------------------------------------------------
+
+
+def _bottom_line(report: dict) -> list[str]:
+    """The answer first: the blocker findings, what the scan could not settle, and the first actions.
+
+    The first actions are the findings in severity order, then by check ID: the engine records no effort and no
+    dependency between findings, so nothing finer can rank them.
+    """
+    findings = report["findings"]
+    blockers = report["summary"]["blockers"]
+    severity_order = [label for label, _ in P.SEVERITY_ROWS]
+    unknown = [c["id"] for c in report["checks"] if c["verdict"] == "UNKNOWN"]
+    attest = [c["id"] for c in report["checks"] if c["verdict"] == "ATTEST"]
+    listed = _codes(unknown[: P.UNKNOWN_LISTED]) + (
+        f" and {len(unknown) - P.UNKNOWN_LISTED} more" if len(unknown) > P.UNKNOWN_LISTED else ""
+    )
+    settled = [
+        f"{len(unknown)} check{' is' if len(unknown) == 1 else 's are'} UNKNOWN: {listed}."
+        if unknown
+        else "No check is UNKNOWN."
+    ]
+    if attest:
+        settled.append(f"{len(attest)} need{'s' if len(attest) == 1 else ''} a person's attestation: {_codes(attest)}.")
+    unattested = len(report["unattested"])
+    noun = "property is" if unattested == 1 else "properties are"
+    settled.append(
+        f"{unattested} {noun} unattested on every report (below)." if unattested else "No property is unattested."
+    )
+    out = [
+        f"- **{blockers} blocker finding{'' if blockers == 1 else 's'}.** Fix these before any agent work.",
+        "- **Not settled by this scan:**",
+        *(f"  - {line}" for line in settled),
+        "",
+    ]
+    ranked = sorted(findings, key=lambda f: (severity_order.index(f["severity"]), f["check"], f["id"]))
+    first = ranked[: P.FIRST_ACTIONS]
+    if not first:
+        out.append("**First actions:** none. The scan raised no finding.")
+        return out
+    out.append(f"**First actions** ({len(first)} of {len(findings)} findings):")
+    out.append("")
+    rows = [
+        [str(n), f"`{f['check']}`", f["severity"], _plain(f["statement"]), _plain(f.get("remediation") or "—")]
+        for n, f in enumerate(first, start=1)
+    ]
+    out += _table(P.ACTION_COLUMNS, rows, P.ACTION_ALIGN)
+    return out
+
+
+def _terms(report: dict) -> list[str]:
+    """What the report's words mean, from the same tables the scorecard uses."""
+    rows = [[label, "verdict", meaning] for label, _, _, meaning in P.VERDICT_ROWS]
+    rows += [[label, "severity", f"Fix window: {window}."] for label, window in P.SEVERITY_ROWS]
+    return _table(("Term", "Kind", "Meaning"), rows)
 
 
 def _provenance(report: dict) -> list[str]:
@@ -436,6 +499,7 @@ def _ratchet(report: dict) -> list[str]:
 
 
 _BUILDERS: dict[str, Callable[[dict], list[str] | None]] = {
+    "bottom_line": _bottom_line,
     "provenance": _provenance,
     "scorecard": _scorecard,
     "unattested": _unattested,
@@ -445,6 +509,7 @@ _BUILDERS: dict[str, Callable[[dict], list[str] | None]] = {
     "appendix": _appendix,
     "not_applicable": _not_applicable,
     "structural": _structural,
+    "terms": _terms,
 }
 
 
