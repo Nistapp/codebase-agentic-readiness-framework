@@ -41,7 +41,9 @@ plugin-dependent rules keeps a minimal ESLint config alongside it rather than sw
 checker: `tsc` reading `tsconfig.json`'s `compilerOptions.strict`. Test runner: Vitest or Jest, both
 seen across the corpus (§Verified) — a third option, Node's own built-in test runner, is untested here.
 Dependency scanner: the package manager's own `audit` command; `audit-ci` or Snyk are alternatives that
-pin a fixed severity threshold in config rather than a CLI flag.
+pin a fixed severity threshold in config rather than a CLI flag. Hook manager: Husky + lint-staged
+(`prepare: husky`), or simple-git-hooks; lefthook when there is no root `package.json`. Commit rule:
+commitlint in `.husky/commit-msg`.
 
 ## Execution determinism
 
