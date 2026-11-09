@@ -73,21 +73,20 @@ Both checks come from GitHub Actions (integration id `15368`).
 ### `CI Gate`
 
 `CI Gate` is the last job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). CI runs on every pull
-request, on every merge group of the `dev` merge queue and on every push to `dev` and `main`. `CI Gate` needs eleven
-jobs and fails unless each one succeeded. The jobs run on Ubuntu (issue #82 tracks macOS and Windows). The first six
+request, on every merge group of the `dev` merge queue and on every push to `dev` and `main`. `CI Gate` needs ten
+jobs and fails unless each one succeeded. The jobs run on Ubuntu (issue #82 tracks macOS and Windows). The first five
 run the steps of `make check` at once; `dev/tests/test_ci_parity.py` fails when a step of `check` has no job. The
-engine's suite runs in shards (`ENGINE_SHARDS` in the `Makefile`, split by `dev/test_shard.py`); the parity test also
-fails when a matrix misses a shard:
+engine's and the audit tools' suites run in shards (`TEST_SHARDS` and `SHARDED_SUITES` in the `Makefile`, split by
+`dev/test_shard.py`); the parity test also fails when a matrix misses a shard or a part misses a suite:
 
 | Job | What it runs |
 | --- | --- |
 | `static` | `make format-check typecheck verify-rules recipe-lint masters-check workflow-lint spell` |
 | `crosscheck` | `make crosscheck` on Python 3.11 and 3.14 |
-| `test-engine` | `make coverage-engine-shard`, one job per shard: the engine's suite under coverage.py, on Python 3.11 |
-| `test-tools` | `make coverage-audit-tools coverage-implement-tools` on Python 3.11 |
+| `test-coverage` | `make coverage-part`, one job per shard: a shard of the engine's and of the audit tools' suites, and the implement tools in part 1, under coverage.py on Python 3.11; each part runs its targets at once |
 | `test-dev` | `make test-dev` on Python 3.11 |
-| `test-py314` | `make test-part`, one job per engine shard: every suite of `make test` and `verify-rules` on Python 3.14; each part runs its targets at once |
-| `coverage` | `make coverage-combine SHARDED=1`: merges the data files (one per engine shard) and fails below the floor in `.coveragerc` |
+| `test-py314` | `make test-part`, one job per shard: every suite of `make test` and `verify-rules` on Python 3.14; each part runs its targets at once |
+| `coverage` | `make coverage-combine SHARDED=1`: merges the data files (one per shard of a sharded suite) and fails below the floor in `.coveragerc` |
 | `security` | `make security` |
 | `self-audit` | `make self-audit`: the engine on this repository; exit 2 when a finding appears that `.audit-baseline.json` did not have |
 | `docs` | `make docs-lint` and the Mermaid render check, when Markdown changed |
