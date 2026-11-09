@@ -117,6 +117,27 @@ class CheckRunsInCI(unittest.TestCase):
     def job_targets(self, job: str) -> set[str]:
         return self.expand(ci_targets(ci_jobs(CI.read_text(encoding="utf-8"))[job]))
 
+    def test_every_part_of_security_has_a_ci_job(self) -> None:
+        # CI runs `make security` as one job per part. `security` runs security-secrets as its prerequisite and
+        # repeats security-deps' recipe as its own (TOOL-04 reads only a target's own recipe), so it must run
+        # nothing else.
+        self.assertEqual(make_rule(self.makefile, "security"), ["security-secrets"])
+        self.assertEqual(
+            make_recipe(self.makefile, "security"),
+            make_recipe(self.makefile, "security-deps"),
+            "security's recipe must be security-deps' recipe, word for word",
+        )
+        parts = ["security-secrets", "security-deps"]
+        self.assertEqual([part for part in parts if part not in self.ci], [], "parts of security that CI never runs")
+
+    def test_the_secrets_scan_runs_without_go(self) -> None:
+        # The secrets scan needs Python and uv only; Go is set up in security-deps alone.
+        jobs = ci_jobs(CI.read_text(encoding="utf-8"))
+        self.assertEqual(ci_targets(jobs["security-secrets"]), {"security-secrets"})
+        self.assertNotIn("setup-go", jobs["security-secrets"])
+        self.assertEqual(ci_targets(jobs["security-deps"]), {"security-deps"})
+        self.assertIn("setup-go", jobs["security-deps"])
+
     def test_every_test_suite_has_a_ci_job(self) -> None:
         # A suite counts when CI runs it plainly (test-dev), under coverage (coverage-engine runs test-engine's
         # suite) or in shards (coverage-engine-shard, through coverage-part).

@@ -174,8 +174,10 @@ jobs:
           path: dev/dist/coverage
       - run: make coverage-combine SHARDED=1
 
-  security:
-    name: security
+  # `make security` in its two parts, as two jobs: the secrets scan needs Python and uv, the dependency audit needs
+  # Go. dev/tests/test_ci_parity.py fails when a part of `security` has no job here.
+  security-secrets:
+    name: security-secrets (detect-secrets)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -188,12 +190,21 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: dev/tools/pyproject.toml
+      - run: make security-secrets
+
+  security-deps:
+    name: security-deps (osv-scanner)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       # Go builds osv-scanner, the dependency audit in `make security`, from dev/tools/osv/go.mod.
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: dev/tools/osv/go.mod
           cache-dependency-path: dev/tools/osv/go.sum
-      - run: make security
+      - run: make security-deps
 
   # The engine on this repository against the committed ratchet (.audit-baseline.json): exit 2 when a finding appears
   # that the baseline did not have. Read-only; the report stays under dist/self-audit/. Linux only.
@@ -285,7 +296,7 @@ jobs:
   # there cannot be left unchecked.
   ci-gate:
     name: CI Gate
-    needs: [static, crosscheck, test-coverage, test-dev, test-py314, coverage, security, self-audit, docs, commits]
+    needs: [static, crosscheck, test-coverage, test-dev, test-py314, coverage, security-secrets, security-deps, self-audit, docs, commits]
     if: always()
     runs-on: ubuntu-latest
     steps:
