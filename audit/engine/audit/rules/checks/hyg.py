@@ -43,11 +43,15 @@ protection. It is never used merely because an artifact is absent.
   count on presence. Coverage is per ecosystem, not per directory.
 * **HYG-10** — a root license file: `LICENSE*`, `LICENCE*`, `COPYING*`, `COPYRIGHT*` or `UNLICENSE*`
   (case-insensitive, bare name or document suffix).
-* **HYG-11** — branch protection declared as code, where the provider allows it. A
-  `*branch-protection*`/`*branch_protection*` file, a `*branch_protection*` Terraform resource, or a
-  document describing the provider's config is `PASS`. None found is `FAIL` when the CI provider is
-  one that offers config-as-code (GitHub, GitLab); it is ``UNKNOWN`` when no such provider is
-  recognised, because whether protection *can* be declared as code is provider-dependent.
+* **HYG-11** — branch protection declared as code, where the provider allows it
+  (:func:`audit.rules.checks._common.declared_branch_rules`). A GitHub ruleset file (`.github/rulesets/*.json`), the
+  Settings app's `branches:` (`.github/settings.yml`), a Terraform protection resource, or a non-document file whose
+  path names branch protection is `PASS`; when the rules protect an integration branch (`dev`, `develop`, ...) and
+  another branch, a workflow must also read the pull request's source branch (GitHub `github.head_ref`, GitLab
+  `CI_MERGE_REQUEST_SOURCE_BRANCH_NAME`), or the verdict is `PARTIAL`. A document only (`docs/branch-protection.md`)
+  records the rules without declaring them: `PARTIAL`. A ruleset file that is not a ruleset is ``UNKNOWN``. None
+  found is `FAIL` when the CI provider offers config-as-code (GitHub, GitLab); otherwise ``UNKNOWN``, because
+  whether protection *can* be declared as code is provider-dependent. Live settings are never read (no network).
 
 Presence is repository-level (ADR-0008): a hygiene file counts at the root or under `.github/`, `.gitlab/` or
 `docs/` (:func:`_repository_level`), never in a component's or a template's directory. Carried data
@@ -68,9 +72,9 @@ from pathlib import Path
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.rules.checks._common import _indent
+from audit.rules.checks._common import BranchRules, _indent, declared_branch_rules
 from audit.scan import Inventory
-from audit.stack import Stack
+from audit.stack import CI_PROVIDERS, Stack
 from audit.rules.payloads import Payload
 
 #: A README below this many characters of trimmed text is present but not documentation.
@@ -737,20 +741,108 @@ def check_hyg10(*, spec, target, inventory, stack, components, session) -> Check
 # ===========================================================================
 
 
-def _branch_protection_config(inventory: Inventory) -> list[str]:
-    named = [
+#: An integration branch name: with another protected branch beside it, the repository runs a two-branch model
+#: (work branch -> integration -> release), and the release branch needs a source-branch check.
+_INTEGRATION_BRANCHES = frozenset({"dev", "develop", "development", "integration", "next"})
+
+#: Per CI provider, the variables that hold a pull request's source branch.
+_SOURCE_BRANCH_TOKENS: dict[str, tuple[str, ...]] = {
+    "github": ("github.head_ref", "GITHUB_HEAD_REF", "pull_request.head.ref"),
+    "gitlab": ("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME",),
+}
+
+#: Keys whose value uses the source branch for something else: a concurrency group, a checkout ref.
+_NOT_A_SOURCE_CHECK_RE = re.compile(r"^\s*-?\s*(?:group|ref)\s*:")
+
+
+def _protection_pages(inventory: Inventory) -> tuple[list[str], list[str]]:
+    """Files whose path names branch protection: ``(documents, other files)``. A document records the rules; any
+    other such file (``.github/branch-protection.yml``) is read as configuration."""
+    named = sorted(
         f.rel for f in inventory.files if "branch-protection" in f.rel.lower() or "branch_protection" in f.rel.lower()
-    ]
-    terraform = sorted(
-        rel for rel in inventory.with_suffix(".tf") if "branch_protection" in (inventory.read(rel) or "").lower()
     )
-    return sorted(set(named) | set(terraform))
+    documents = [rel for rel in named if _basename(rel).lower().endswith(_DOC_SUFFIXES)]
+    return documents, [rel for rel in named if rel not in documents]
+
+
+def _two_branch_model(rules: BranchRules) -> bool:
+    literal = set(rules.literal_branches)
+    integration = literal & _INTEGRATION_BRANCHES
+    return bool(integration) and len(set(rules.branches) - integration) >= 1
+
+
+def _source_branch_check(inventory: Inventory) -> tuple[str, int] | None:
+    """The first workflow line that reads a pull request's source branch, outside a concurrency group or a
+    checkout ref."""
+    for provider, globs in CI_PROVIDERS.items():
+        tokens = _SOURCE_BRANCH_TOKENS.get(provider)
+        if not tokens:
+            continue
+        for rel in sorted(inventory.match(*globs)):
+            for number, line in enumerate((inventory.read(rel) or "").splitlines(), start=1):
+                code = line.split(" #", 1)[0]
+                if code.lstrip().startswith("#") or _NOT_A_SOURCE_CHECK_RE.match(code):
+                    continue
+                if any(token in code for token in tokens):
+                    return rel, number
+    return None
 
 
 def check_hyg11(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    config = _branch_protection_config(inventory)
-    if config:
-        return _outcome(spec, Verdict.PASS, f"branch protection declared as code at {config[0]}")
+    rules = declared_branch_rules(inventory)
+    documents, configs = _protection_pages(inventory)
+    sources = sorted(set(rules.sources) | set(configs))
+    if sources:
+        declared = f"branch protection declared as code at {', '.join(sources)}"
+        if not _two_branch_model(rules):
+            return _outcome(spec, Verdict.PASS, declared)
+        source_check = _source_branch_check(inventory)
+        if source_check:
+            rel, line = source_check
+            return _outcome(spec, Verdict.PASS, f"{declared}; source-branch check at {rel}:{line}")
+        protected = ", ".join(rules.branches)
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"{declared}; {protected} are protected but no CI job checks a pull request's source branch",
+            [
+                _finding(
+                    spec,
+                    Verdict.PARTIAL,
+                    "rely on the release branch accepting changes from the integration branch only",
+                    f"the rules protect {protected}, and no workflow reads the pull request's source branch",
+                    evidence=[Evidence(rel, note="declares branch rules") for rel in sources],
+                    remediation="Add a CI job on pull requests into the release branch that fails unless the source "
+                    "branch is the integration branch, and make it a required status check (rulesets cannot "
+                    "restrict the source branch).",
+                ),
+            ],
+        )
+
+    if rules.unreadable:
+        return _outcome(
+            spec,
+            Verdict.UNKNOWN,
+            f"{', '.join(rules.unreadable)} cannot be read as a ruleset (invalid JSON, or no rules list)",
+        )
+
+    if documents:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"branch protection recorded at {documents[0]}, not declared as code",
+            [
+                _finding(
+                    spec,
+                    Verdict.PARTIAL,
+                    "review a change to the protected-branch rules like any other change",
+                    f"{documents[0]} describes the rules, but no ruleset file or Terraform resource declares them",
+                    evidence=[Evidence(rel, note="describes the rules") for rel in documents],
+                    remediation="Export the rules as code: a JSON file per ruleset under .github/rulesets/ on "
+                    "GitHub, or a Terraform protection resource. Keep the page as the summary.",
+                ),
+            ],
+        )
 
     recognised = sorted(_PROTECTION_PROVIDERS & set(stack.ci_providers))
     if recognised:
@@ -764,9 +856,8 @@ def check_hyg11(*, spec, target, inventory, stack, components, session) -> Check
                     Verdict.FAIL,
                     "reproduce the protected-branch rules as code",
                     f"the {', '.join(recognised)} provider is detected but no branch-protection configuration exists",
-                    remediation="Declare branch protection in code (a Terraform resource or "
-                    ".github/branch-protection) so it is reviewed like any other "
-                    "change.",
+                    remediation="Declare branch protection in code (a JSON file per ruleset under .github/rulesets/ "
+                    "on GitHub, or a Terraform protection resource) so it is reviewed like any other change.",
                 ),
             ],
         )

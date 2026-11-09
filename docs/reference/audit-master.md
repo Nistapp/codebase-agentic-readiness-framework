@@ -788,9 +788,10 @@ Is the repository run like a team project? Reported for the whole picture; never
 
 `COSMETIC` · not scored · engine check · fixed by [`add-repo-hygiene`](implement-master.md#add-repo-hygiene)
 
-- **Passes when:** a branch-protection file or a matching Terraform resource exists.
+- **Passes when:** rules are declared as code, and a two-branch model has a source-branch check.
 - **Why it matters:** Protected-branch rules should be reviewed like any other change, not configured by hand in a
-  settings page nobody diffs.
+  settings page nobody diffs. In a two-branch model the release branch must also refuse pull requests from anything but
+  the integration branch, and a ruleset cannot say that.
 
 ## Read more
 

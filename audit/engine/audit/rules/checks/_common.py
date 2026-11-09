@@ -15,13 +15,16 @@ It exists only to answer questions more than one pack asks. The ones that motiva
 * **"which commands does the documentation actually show?"** — EXEC-06 and TST-04 both read fenced
   shell blocks (``extract_fenced_commands``);
 * **"where is the prohibitions section?"** — AGT-07, CON-01 and CON-02 all read it
-  (``prohibitions_section``), so heading detection cannot drift between them.
+  (``prohibitions_section``), so heading detection cannot drift between them;
+* **"which branches do the declared rules protect?"** — HYG-11 reads the branch rules declared as code, and the
+  local guard and the instruction file are compared with the same list (``declared_branch_rules``).
 
 Keep it small. If a helper is used by exactly one check it belongs in that pack, not here.
 """
 
 from __future__ import annotations
 
+import json
 import re
 import shlex
 from dataclasses import dataclass
@@ -672,3 +675,111 @@ def _parse_maven_plugins(text: str, inventory: Inventory) -> dict[str, str]:
 def _maven_lifecycle(inventory: Inventory) -> dict[str, str]:
     launcher = _launcher(inventory, "mvnw", "mvn")
     return {verb: f"{launcher} {phase}" for verb, phase in _MAVEN_LIFECYCLE_PHASES}
+
+
+# ---------------------------------------------------------------------------
+# branch rules declared as code
+# ---------------------------------------------------------------------------
+
+#: GitHub's repository-ruleset export format, one JSON file per ruleset (the form ``gh api .../rulesets`` takes).
+RULESET_GLOBS = (".github/rulesets/*.json",)
+
+#: The Probot Settings app's file; its ``branches:`` list declares classic branch protection.
+SETTINGS_FILE = ".github/settings.yml"
+
+_TERRAFORM_PROTECTION_RE = re.compile(
+    r'\bresource\s+"(github_repository_ruleset|github_branch_protection(?:_v3)?|gitlab_branch_protection)"'
+)
+_TERRAFORM_BRANCH_RE = re.compile(r'^\s*(?:pattern|branch)\s*=\s*"([^"]+)"', re.MULTILINE)
+_TERRAFORM_REF_RE = re.compile(r'"(refs/heads/[^"]+|~DEFAULT_BRANCH|~ALL)"')
+_SETTINGS_BRANCH_RE = re.compile(r"""^\s*-\s*name:\s*['"]?([^'"\s#]+)""")
+
+
+@dataclass(frozen=True)
+class BranchRules:
+    """The branch rules a repository declares as code, read without a network call.
+
+    ``sources`` are the files that declare a rule; ``branches`` are the protected branch patterns they name, with
+    ``refs/heads/`` stripped (``~DEFAULT_BRANCH`` and ``~ALL`` kept as written); ``unreadable`` are ruleset files
+    whose JSON cannot be read as a ruleset. A disabled ruleset and a tag or push ruleset declare no branch rule.
+    """
+
+    sources: tuple[str, ...] = ()
+    branches: tuple[str, ...] = ()
+    unreadable: tuple[str, ...] = ()
+
+    @property
+    def literal_branches(self) -> tuple[str, ...]:
+        """The branches named exactly: no ``~`` keyword and no glob."""
+        return tuple(b for b in self.branches if not b.startswith("~") and not any(c in b for c in "*?["))
+
+
+def _branch_name(ref: str) -> str:
+    return ref.removeprefix("refs/heads/")
+
+
+def _ruleset_branches(text: str | None) -> list[str] | None:
+    """The include patterns of one GitHub ruleset file; ``[]`` for a ruleset that protects no branch; ``None`` when
+    the file is not a ruleset."""
+    try:
+        data = json.loads(text or "")
+    except ValueError:
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("rules"), list):
+        return None
+    if data.get("target", "branch") != "branch" or data.get("enforcement") == "disabled":
+        return []
+    conditions = data.get("conditions")
+    ref_name = conditions.get("ref_name") if isinstance(conditions, dict) else None
+    include = ref_name.get("include") if isinstance(ref_name, dict) else None
+    if not isinstance(include, list):
+        return []
+    return [_branch_name(ref) for ref in include if isinstance(ref, str)]
+
+
+def _settings_branches(text: str) -> list[str] | None:
+    """The ``name:`` items of a top-level ``branches:`` list; ``None`` when the file has no such key."""
+    branches: list[str] | None = None
+    inside = False
+    for line in text.splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        if _indent(line) == 0:
+            inside = line.split("#", 1)[0].rstrip() == "branches:"
+            if inside and branches is None:
+                branches = []
+            continue
+        match = _SETTINGS_BRANCH_RE.match(line) if inside else None
+        if match and branches is not None:
+            branches.append(match.group(1))
+    return branches
+
+
+def declared_branch_rules(inventory: Inventory) -> BranchRules:
+    """Every branch rule the repository declares as code (HYG-11): GitHub ruleset files, the Settings app's
+    ``branches:``, and Terraform protection resources. Line- and JSON-based, standard library only."""
+    sources: set[str] = set()
+    branches: set[str] = set()
+    unreadable: set[str] = set()
+    for rel in inventory.match(*RULESET_GLOBS):
+        if not rel.startswith(".github/rulesets/"):
+            continue
+        found = _ruleset_branches(inventory.read(rel))
+        if found is None:
+            unreadable.add(rel)
+        elif found:
+            sources.add(rel)
+            branches.update(found)
+    settings = inventory.read(SETTINGS_FILE) if inventory.has(SETTINGS_FILE) else None
+    if settings:
+        found = _settings_branches(settings)
+        if found:
+            sources.add(SETTINGS_FILE)
+            branches.update(found)
+    for rel in inventory.with_suffix(".tf"):
+        text = inventory.read(rel) or ""
+        if _TERRAFORM_PROTECTION_RE.search(text) or "branch_protection" in text.lower():
+            sources.add(rel)
+            branches.update(_branch_name(name) for name in _TERRAFORM_BRANCH_RE.findall(text))
+            branches.update(_branch_name(ref) for ref in _TERRAFORM_REF_RE.findall(text))
+    return BranchRules(tuple(sorted(sources)), tuple(sorted(branches)), tuple(sorted(unreadable)))
