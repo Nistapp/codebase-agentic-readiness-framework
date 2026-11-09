@@ -389,7 +389,7 @@ promotion ([Step 1](#step-1-make-sure-that-dev-is-ready)):
 - [ ] Both rulesets are active, and [Branch protection](docs/reference/branch-protection.md) says so with the date.
 - [ ] `SECURITY.md` is present. Private vulnerability reporting, secret scanning and push protection are on.
 - [ ] The root `README.md` quick start works from a fresh clone in a clean directory (Linux checked; macOS by the
-      maintainer, or stated as CI-only).
+      maintainer, or stated as not tested while CI is Linux only, issue #82).
 - [ ] The docs state platform support truthfully: no native Windows claim.
 - [ ] The promotion pull request from `dev` into `main` passed `CI Gate` and `Check source branch`, and is merged with
       a merge commit.
