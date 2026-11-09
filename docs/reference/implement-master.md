@@ -379,7 +379,8 @@ Full playbook: [`add-deny-rules.md`](../../implement/playbooks/add-deny-rules.md
 The repository tells a newcomer, human or agent, who owns what (CODEOWNERS), how to contribute (README,
 CONTRIBUTING, pull-request and issue templates), how to report a vulnerability (SECURITY), how releases happen
 (a release-process page and, where the release tool writes one, the changelog), and where the rules for merging
-live (a branch-protection page). Each file is small, true against the repository, and sits where the audit reads it.
+live (the rules as code, and a branch-protection page that summarises them). Each file is small, true against the
+repository, and sits where the audit reads it.
 
 **The rule this playbook enforces: write only what is true, and only what the repository needs.** All eleven checks
 are cosmetic and unscored, so a long, generic template that nobody keeps true is worse than a short page that is.
@@ -398,13 +399,14 @@ action in the state, never an invented contact.
 | [`HYG-08` Release process documented](audit-master.md#hyg-08-release-process-documented) | A short document (name contains `release`) describing the release process in prose |
 | [`HYG-09` Dependency update automation configured](audit-master.md#hyg-09-dependency-update-automation-configured) | An update entry for each detected ecosystem, no `target-branch` beside `ignore` or `groups`, and the owner's update policy (Step 8) |
 | [`HYG-10` License present](audit-master.md#hyg-10-license-present) | Verification only; the playbook never chooses a licence |
-| [`HYG-11` Branch protection declared as code](audit-master.md#hyg-11-branch-protection-declared-as-code) | A page whose path contains `branch-protection` that records the rules in the repository's own words |
+| [`HYG-11` Branch protection declared as code](audit-master.md#hyg-11-branch-protection-declared-as-code) | The rules declared as code (GitHub ruleset files, or the repository's Terraform), a source-branch check for a two-branch model, and a page that summarises them (Step 7) |
 
 **What it never does:**
 
 - Do not overwrite an existing hygiene file with a template; propose a diff.
 - Do not hand-write or seed a changelog that a release tool owns, and do not tag or release.
 - Do not enable required code-owner review, and do not edit any GitHub or GitLab setting.
+- Do not apply a ruleset file (`gh api -X POST` or `PUT`); the owner does.
 - Do not invent a mailbox, a response time or a second reviewer.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
 - Do not copy a private runbook, another repository's page, or its values into a repository's file.
