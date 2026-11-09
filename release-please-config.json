@@ -20,7 +20,7 @@
     { "type": "style", "section": "Style", "hidden": true },
     { "type": "chore", "section": "Chores", "hidden": true }
   ],
-  "extra-files": ["audit/engine/audit/__init__.py"],
+  "extra-files": ["audit/engine/audit/__init__.py", "audit/tools/report.py", "implement/tools/progress.py"],
   "packages": {
     ".": {}
   }

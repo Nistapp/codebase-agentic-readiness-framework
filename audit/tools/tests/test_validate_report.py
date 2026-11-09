@@ -94,6 +94,118 @@ class ExamplesTests(unittest.TestCase):
         self.assertTrue(outcome.errors)
 
 
+class VersionStageTests(unittest.TestCase):
+    """The report's `schema_version` and framework release against these tools' (V3 of the v0.3.5 plan)."""
+
+    def old_report(self) -> dict[str, Any]:
+        report = base()
+        provenance = report["provenance"]
+        del provenance["framework"]
+        report["provenance"] = {"recipe": {"name": "brownfield-audit", "version": "0.1.0"}, **provenance}
+        report["schema_version"] = "0.1"
+        return report
+
+    def test_the_tools_read_the_schemas_one_version(self) -> None:
+        self.assertEqual(vr.known_schema_version(), "0.2")
+        self.assertEqual(base()["schema_version"], vr.known_schema_version())
+
+    def test_an_older_schema_says_run_a_new_audit_and_names_both_versions(self) -> None:
+        outcome = vr.validate_document(self.old_report())
+        self.assertEqual(outcome.stage, "version")
+        self.assertEqual(
+            outcome.errors,
+            [
+                "the report has schema '0.1' (made by framework v0.1.0); these tools read schema '0.2'. Run a new "
+                "audit with this framework (recommended), or use framework v0.1.0 to work with this report."
+            ],
+        )
+
+    def test_a_newer_schema_says_update_the_framework(self) -> None:
+        report = base()
+        report["schema_version"] = "0.3"
+        (message,) = vr.validate_document(report).errors
+        self.assertIn("the report has schema '0.3' (made by framework v0.3.2)", message)
+        self.assertIn("Update the framework to the release that made the report (recommended)", message)
+
+    def test_a_schema_version_with_no_release_says_so(self) -> None:
+        report = base()
+        report["schema_version"] = "9"
+        del report["provenance"]["framework"]
+        (message,) = vr.validate_document(report).errors
+        self.assertIn("made by an unknown framework release", message)
+
+    def test_the_cli_puts_the_plain_message_first(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "old.json"
+            path.write_text(json.dumps(self.old_report()), encoding="utf-8")
+            code, envelope, _ = call([str(path)])
+        self.assertEqual(code, 2)
+        self.assertTrue(envelope["data"]["error"].startswith("the report has schema '0.1'"))
+
+
+class CompareVersionsTests(unittest.TestCase):
+    def report(self, release: str = "0.3.2", revision: str | None = "cafecafecafe") -> dict[str, Any]:
+        report = base()
+        report["provenance"]["framework"].update(release=release, revision=revision)
+        return report
+
+    def test_the_relation_compares_numbers_not_text(self) -> None:
+        self.assertEqual(vr.relation("0.3.2", "0.3.2"), "same")
+        self.assertEqual(vr.relation("0.3.10", "0.3.9"), "newer")
+        self.assertEqual(vr.relation("0.2.9", "0.3.0"), "older")
+        self.assertEqual(vr.relation("0.3.2-dev", "0.3.2"), "older")
+        self.assertEqual(vr.relation("0.10", "0.9"), "newer")
+
+    def test_the_same_release_and_commit_is_quiet(self) -> None:
+        data, warnings = vr.compare_versions(self.report(), "0.3.2", "cafecafecafe" + "0" * 28)
+        self.assertEqual(warnings, [])
+        self.assertEqual(
+            data,
+            {
+                "report": {"release": "0.3.2", "revision": "cafecafecafe"},
+                "tools": {"release": "0.3.2", "revision": "cafecafecafe"},
+                "relation": "same",
+            },
+        )
+
+    def test_an_older_release_is_a_warning(self) -> None:
+        data, warnings = vr.compare_versions(self.report("0.3.1"), "0.3.2", None)
+        self.assertEqual(data["relation"], "older")
+        self.assertEqual(
+            warnings,
+            [
+                "the report was made by framework v0.3.1; these tools are v0.3.2. Verdicts can differ between "
+                "releases: run a new audit with v0.3.2 before you rely on them."
+            ],
+        )
+
+    def test_a_newer_release_stops(self) -> None:
+        with self.assertRaises(_common.ValidationFailed) as caught:
+            vr.compare_versions(self.report("0.4.0"), "0.3.2", None)
+        self.assertEqual(
+            str(caught.exception),
+            "the report was made by framework v0.4.0; these tools are v0.3.2. Update the framework to v0.4.0 or "
+            "later (recommended), or run a new audit with v0.3.2.",
+        )
+        self.assertEqual(
+            caught.exception.errors, ["/provenance/framework/release: 0.4.0 is newer than these tools' 0.3.2"]
+        )
+
+    def test_the_same_release_at_another_commit_is_a_warning(self) -> None:
+        _, warnings = vr.compare_versions(self.report(), "0.3.2", "beefbeefbeef" + "0" * 28)
+        self.assertEqual(
+            warnings,
+            [
+                "the report was made at framework commit cafecafecafe; these tools run at beefbeefbeef (both "
+                "v0.3.2). The checks may have changed in between: run a new audit if that matters."
+            ],
+        )
+
+    def test_an_unknown_commit_on_either_side_gives_no_commit_warning(self) -> None:
+        self.assertEqual(vr.compare_versions(self.report(revision=None), "0.3.2", "beef" * 10)[1], [])
+        self.assertEqual(vr.compare_versions(self.report(), "0.3.2", None)[1], [])
+
+
 class SchemaStageTests(unittest.TestCase):
     def test_a_schema_error_is_returned_alone_and_the_rules_do_not_run(self) -> None:
         report = base()
@@ -110,8 +222,10 @@ class SchemaStageTests(unittest.TestCase):
 
     def test_a_report_with_a_version_this_tool_does_not_know_is_refused(self) -> None:
         report = base()
-        report["schema_version"] = "0.2"
-        self.assertTrue(any("/schema_version" in error for error in vr.validate_document(report).errors))
+        report["schema_version"] = "0.1"
+        outcome = vr.validate_document(report)
+        self.assertEqual(outcome.stage, "version")
+        self.assertEqual(len(outcome.errors), 1)
 
     def test_the_schema_errors_are_capped(self) -> None:
         report = base()
@@ -802,7 +916,7 @@ class ToolContractTests(unittest.TestCase):
             {
                 "valid": True,
                 "report": str(WORKED),
-                "schema_version": "0.1",
+                "schema_version": "0.2",
                 "status": "final",
                 "checks": 12,
                 "findings": 10,

@@ -20,8 +20,8 @@
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "description": "Version of this schema. 0.x versions may break between releases; consumers refuse a version they do not know.",
-      "const": "0.1"
+      "description": "Version of this schema. 0.x versions may break between releases; consumers refuse a version they do not know. 0.2 replaced provenance.recipe and provenance.framework_revision with provenance.framework; a 0.1 report is not read (no backward compatibility before the first outside user or 1.0.0).",
+      "const": "0.2"
     },
     "status": {
       "description": "draft until every finding has a disposition and the report is validated; set to final only by `report.py finalise`.",
@@ -29,22 +29,30 @@
     },
     "provenance": {
       "type": "object",
-      "required": ["recipe", "framework_revision", "catalogue_version", "agent", "target", "started_at"],
+      "required": ["framework", "catalogue_version", "agent", "target", "started_at"],
       "additionalProperties": false,
       "properties": {
-        "recipe": {
+        "framework": {
+          "description": "The framework that made the report: which release, which commit, and how it was installed.",
           "type": "object",
-          "required": ["name", "version"],
+          "required": ["release", "revision", "install"],
           "additionalProperties": false,
           "properties": {
-            "name": { "type": "string", "minLength": 1, "maxLength": 100 },
-            "version": { "type": "string", "minLength": 1, "maxLength": 40 }
+            "release": {
+              "description": "The framework release version (.release-please-manifest.json) of the tools that wrote the report.",
+              "type": "string",
+              "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$"
+            },
+            "revision": {
+              "description": "Short Git SHA (12 hex digits) of the framework checkout the tools ran from; null when install is not checkout, or git could not read it. A full id is not written because secret scanners read it as an access token.",
+              "type": ["string", "null"],
+              "pattern": "^[0-9a-f]{12}$"
+            },
+            "install": {
+              "description": "checkout: a git checkout of the framework repository. bundle: an installed skill bundle (a SKILL.md beside the tools' scripts/ folder). copy: anything else, such as a source archive without .git.",
+              "enum": ["checkout", "bundle", "copy"]
+            }
           }
-        },
-        "framework_revision": {
-          "description": "Short Git SHA (12 hex digits) of the framework repository the recipe ran from; null when it was not a git checkout. A full 40-digit id is also accepted so earlier reports stay valid; the tools write the short form because a full id is what secret scanners read as an access token.",
-          "type": ["string", "null"],
-          "pattern": "^([0-9a-f]{12}|[0-9a-f]{40})$"
         },
         "catalogue_version": {
           "description": "Version of the check catalogue the report was built against: MAJOR.MINOR.PATCH, as in catalogue.json.",

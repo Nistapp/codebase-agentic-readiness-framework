@@ -471,14 +471,14 @@ class SummaryTests(RenderCase):
 
 class ProvenanceTests(RenderCase):
     FIELDS = [
+        "Framework",
         "Target",
         "Commit",
         "Status",
         "Started",
         "Finalised",
-        "Recipe",
+        "Catalogue",
         "Engine",
-        "Framework revision",
         "Agent (self-reported)",
         "Probes",
         "Report schema",
@@ -508,16 +508,16 @@ class ProvenanceTests(RenderCase):
         self.assertEqual(values["Status"], "final")
         self.assertEqual(values["Started"], "`2026-10-10T09:00:00+00:00`")
         self.assertEqual(values["Finalised"], "`2026-10-10T09:42:07+00:00`")
-        self.assertEqual(values["Recipe"], "`brownfield-audit` 0.1.0, catalogue `0.4.0`")
+        self.assertEqual(values["Framework"], "`v0.3.2`, checkout `cafecafecafe`")
+        self.assertEqual(values["Catalogue"], "`0.4.0`")
         self.assertEqual(
             values["Engine"],
             "`python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2`, "
             "scanned `2026-10-10T09:01:30+00:00`",
         )
-        self.assertEqual(values["Framework revision"], "`cafecafecafe`")
         self.assertEqual(values["Agent (self-reported)"], "`claude-code` with `claude-sonnet-5-5`")
         self.assertEqual(values["Probes"], "none: no command of the target was run")
-        self.assertEqual(values["Report schema"], "`0.1`")
+        self.assertEqual(values["Report schema"], "`0.2`")
 
     def test_a_dirty_working_tree_is_in_bold_and_an_unknown_one_says_nothing(self) -> None:
         report = service()
@@ -558,10 +558,18 @@ class ProvenanceTests(RenderCase):
         report["run_context"]["probes"] = {"allowed": ["test", "lint"], "timeout_s": 90}
         self.assertEqual(self.provenance(report)["Probes"], "`test`, `lint`, timeout 90 s")
 
-    def test_a_report_with_no_engine_or_framework_revision_says_so(self) -> None:
+    def test_a_report_with_no_engine_from_a_bundle_says_so(self) -> None:
         values = self.provenance(minimal())
         self.assertEqual(values["Engine"], "No engine report is part of this report.")
-        self.assertEqual(values["Framework revision"], "—")
+        self.assertEqual(values["Framework"], "`v0.3.2`, installed as a bundle")
+
+    def test_the_framework_row_says_how_the_framework_was_installed(self) -> None:
+        report = service()
+        framework = report["provenance"]["framework"]
+        framework.update(revision=None)
+        self.assertEqual(self.provenance(report)["Framework"], "`v0.3.2`, checkout (no revision)")
+        framework.update(install="copy")
+        self.assertEqual(self.provenance(report)["Framework"], "`v0.3.2`, a copy with no git history")
 
     def test_the_engine_row_names_only_what_the_report_records(self) -> None:
         report = service()

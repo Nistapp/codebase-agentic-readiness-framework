@@ -71,7 +71,8 @@ COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
 	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/reference/audit-master.md' 'docs/reference/implement-master.md' 'docs/how-to/contribute-a-change.md' 'docs/how-to/set-up-agent-tools.md' 'docs/COMMUNICATION_RULES.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
 	'docs/explanation/user-overview/03-trust-and-safety.md' 'docs/explanation/contributor-deep-dive/04-stack-profiles.md' 'docs/explanation/contributor-deep-dive/05-evaluation.md' 'docs/how-to/add-a-stack-profile.md' 'docs/reference/harness-notes.md' \
-	'audit/engine/docs/how-to/read-the-report.md'
+	'audit/engine/docs/how-to/read-the-report.md' 'docs/reference/versions.md' 'docs/how-to/implement-an-audit-report.md' \
+	'docs/how-to/resume-an-interrupted-run.md' 'docs/glossary.md'
 
 # The prose check (dev/prose_check.py, the plain-language rules of docs/COMMUNICATION_RULES.md) is advisory: it
 # reports warnings and notices and never fails a target. `make docs-prose` runs it; CI annotates changed Markdown.
@@ -105,12 +106,12 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check update-masters check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-combine"
-	@echo "ci:    test-engine-shard SHARD=<i>  test-part SHARD=<i>  coverage-engine-shard SHARD=<i>  coverage-combine SHARDED=1"
+	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
 	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  masters-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
@@ -156,25 +157,32 @@ test-implement-tools:
 test-dev:
 	$(PYTHON) -m unittest discover -s dev/tests
 
-# CI splits the engine's suite into ENGINE_SHARDS jobs that run at once; SHARD=<i> picks one (1 to ENGINE_SHARDS).
-# dev/test_shard.py finds the modules at run time and balances them by dev/test_shard_weights.json; every module is
-# in exactly one shard, and a shard that selects no test fails. `test` and `coverage` never shard.
-ENGINE_SHARDS := 2
-TEST_SHARD = $(CURDIR)/dev/test_shard.py --suite engine --shard $(SHARD)/$(ENGINE_SHARDS)
-require_shard = @test -n "$(SHARD)" || { echo "$@: set SHARD to a number from 1 to $(ENGINE_SHARDS)" >&2; exit 1; }
+# CI splits the slow suites (SHARDED_SUITES) into TEST_SHARDS parts that run in separate jobs; SHARD=<i> picks one
+# (1 to TEST_SHARDS). dev/test_shard.py finds the modules at run time and balances them by
+# dev/test_shard_weights.json; every module is in exactly one shard, and a shard that selects no test fails. `test`
+# and `coverage` never shard.
+TEST_SHARDS := 2
+SHARDED_SUITES := engine audit-tools
+test_shard = $(CURDIR)/dev/test_shard.py --suite $(1) --shard $(SHARD)/$(TEST_SHARDS)
+require_shard = @test -n "$(SHARD)" || { echo "$@: set SHARD to a number from 1 to $(TEST_SHARDS)" >&2; exit 1; }
 
 test-engine-shard:
 	$(require_shard)
-	cd $(ENGINE) && $(PYTHON) $(TEST_SHARD)
+	cd $(ENGINE) && $(PYTHON) $(call test_shard,engine)
 
-# Every suite of `test` in ENGINE_SHARDS parts, for CI's Python 3.14 jobs: part <i> is engine shard <i> plus the
-# targets in TEST_PART_<i>, run at once as `test` runs its suites. test-dev takes about as long as an engine shard, so
-# it has a part to itself. dev/tests/test_ci_parity.py fails when the parts leave out a suite of `test`.
-TEST_PART_1 := test-audit-tools test-implement-tools verify-rules
+test-audit-tools-shard:
+	$(require_shard)
+	$(PYTHON) $(call test_shard,audit-tools)
+
+# Every suite of `test` in TEST_SHARDS parts, for CI's Python 3.14 jobs: part <i> is shard <i> of each sharded suite
+# plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. test-dev takes about as long as an engine
+# shard, so it shares a part with no other whole suite. dev/tests/test_ci_parity.py fails when the parts leave out a
+# suite of `test`.
+TEST_PART_1 := test-implement-tools verify-rules
 TEST_PART_2 := test-dev
 test-part:
 	$(require_shard)
-	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) test-engine-shard $(TEST_PART_$(SHARD))
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(SHARDED_SUITES:%=test-%-shard) $(TEST_PART_$(SHARD))
 
 # Runs the engine's suite and the tools' suites under coverage.py and fails when the total drops below the floor in
 # .coveragerc (`fail_under`). Not part of `check`; needs uv. Each coverage-<suite> writes its own data file
@@ -210,17 +218,33 @@ coverage-implement-tools:
 	rm -rf $(COVERAGE_HOME)/implement-tools && mkdir -p $(COVERAGE_HOME)/implement-tools
 	$(call coverage_env,implement-tools) COVERAGE_FILE=$(COVERAGE_DATA).implement-tools $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s implement/tools/tests
 
-# One shard of the engine's suite under coverage.py, in the same environment as coverage-engine (CI's jobs).
+# One shard of a sharded suite under coverage.py, in the same environment as coverage-<suite>, with its own HOME and
+# data file (.coverage.<suite>-<i>).
 coverage-engine-shard:
 	$(require_shard)
 	mkdir -p $(dir $(COVERAGE_DATA))
 	rm -f $(COVERAGE_DATA).engine-$(SHARD)
 	rm -rf $(COVERAGE_HOME)/engine-$(SHARD) && mkdir -p $(COVERAGE_HOME)/engine-$(SHARD)
-	cd $(ENGINE) && $(call coverage_env,engine-$(SHARD)) COVERAGE_FILE=$(COVERAGE_DATA).engine-$(SHARD) $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc $(TEST_SHARD)
+	cd $(ENGINE) && $(call coverage_env,engine-$(SHARD)) COVERAGE_FILE=$(COVERAGE_DATA).engine-$(SHARD) $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc $(call test_shard,engine)
 
-# The data files coverage-combine needs: one per suite, or, with SHARDED=1 (CI), one per engine shard in place of the
-# engine's. `coverage combine` deletes the files it merges, so a later combine cannot reuse a stale suite's data.
-COMBINE_PARTS = $(if $(SHARDED),$(foreach i,$(shell seq 1 $(ENGINE_SHARDS)),engine-$(i)),engine) audit-tools implement-tools
+coverage-audit-tools-shard:
+	$(require_shard)
+	mkdir -p $(dir $(COVERAGE_DATA))
+	rm -f $(COVERAGE_DATA).audit-tools-$(SHARD)
+	rm -rf $(COVERAGE_HOME)/audit-tools-$(SHARD) && mkdir -p $(COVERAGE_HOME)/audit-tools-$(SHARD)
+	$(call coverage_env,audit-tools-$(SHARD)) COVERAGE_FILE=$(COVERAGE_DATA).audit-tools-$(SHARD) $(COVERAGE) run --rcfile=.coveragerc $(call test_shard,audit-tools)
+
+# The coverage suites in TEST_SHARDS parts, for CI's Python 3.11 jobs: part <i> is shard <i> of each sharded suite
+# plus the targets in COVERAGE_PART_<i>, run at once. Each writes its own data file for coverage-combine SHARDED=1.
+COVERAGE_PART_1 := coverage-implement-tools
+COVERAGE_PART_2 :=
+coverage-part:
+	$(require_shard)
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(SHARDED_SUITES:%=coverage-%-shard) $(COVERAGE_PART_$(SHARD))
+
+# The data files coverage-combine needs: one per suite, or, with SHARDED=1 (CI), one per shard of each sharded suite
+# in place of that suite's. `coverage combine` deletes the files it merges, so a later combine cannot reuse stale data.
+COMBINE_PARTS = $(if $(SHARDED),$(foreach s,$(SHARDED_SUITES),$(foreach i,$(shell seq 1 $(TEST_SHARDS)),$(s)-$(i))) implement-tools,engine audit-tools implement-tools)
 coverage-combine:
 	@for part in $(COMBINE_PARTS); do \
 		test -f $(COVERAGE_DATA).$$part || { echo "coverage-combine: no data file $(COVERAGE_DATA).$$part; run its coverage target first" >&2; exit 1; }; \
@@ -296,10 +320,21 @@ check: format-check typecheck test verify-rules crosscheck recipe-lint masters-c
 # reads the dev tools' lockfiles and fails on a known vulnerability that no osv-scanner.toml accepts. Without
 # --config, osv-scanner reads the osv-scanner.toml next to each lockfile, the same file OpenSSF Scorecard reads.
 # --no-call-analysis=go: the module holds no Go code of its own, so govulncheck has nothing to analyse.
-# The audit engine's TOOL-04 reads this recipe and needs the tool name written out, not hidden in a variable.
-security:
+#
+# CI runs the two parts as two jobs, so the secrets scan needs no Go: security-secrets and security-deps.
+# `security` runs the first as a prerequisite and the dependency audit in its own recipe, which repeats
+# security-deps' recipe word for word. The audit engine's TOOL-04 reads only a target's own recipe (it does not
+# follow prerequisites; issue #89), and it needs the tool name written out, not hidden in a variable.
+# dev/tests/test_ci_parity.py fails when the two recipes differ or when a part has no CI job.
+OSV_SCAN_ARGS = scan source --no-call-analysis=go $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))
+security: security-secrets
+	go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)
+
+security-secrets:
 	git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline
-	go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))
+
+security-deps:
+	go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)
 
 # Run this after a deliberate change to a fixture or test that holds a key-shaped string, then review the diff.
 update-secrets-baseline:

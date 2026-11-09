@@ -131,7 +131,7 @@ rule 6: /checks/6: TOOL-03 overrides the engine's PARTIAL with PASS and gives no
 schema: /checks/1/verdict: expected one of ["PASS", "PARTIAL", "FAIL", "UNKNOWN", "NOT_APPLICABLE"]
 ```
 
-The tool checks in two stages. The first applies the schema, and a report that fails it is returned with its schema errors alone, up to 500. The second applies the rules, only to a report that passed the first, because the rules read fields the schema guarantees. Errors come in rule order, then in the order of the document. An error names the place with a JSON Pointer and never repeats the value it found, so a credential in a quote does not travel into the list.
+The tool checks in three stages. The first reads `schema_version`. A report with another version than the schema's gets one plain error that names both versions and what to do: run a new audit (an older report), or update the framework (a newer one). Then it applies the schema, and a report that fails it is returned with its schema errors alone, up to 500. The second applies the rules, only to a report that passed the first, because the rules read fields the schema guarantees. Errors come in rule order, then in the order of the document. An error names the place with a JSON Pointer and never repeats the value it found, so a credential in a quote does not travel into the list.
 
 **Exit codes**
 
@@ -149,6 +149,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 | `rule 1: ...` to `rule 12: ...` | The rule is in [Rules beyond the schema](../../audit/schema/SCHEMA.md#rules-beyond-the-schema). The message says which item to change. |
 | `rule 10: /summary/...: the report says X and its checks and findings give Y` | The summary is stale. It is never edited by hand: the report builder, [`report.py`](#reportpy), recomputes it on every change, so the report was changed outside the builder. Y is the correct number. |
 | `rule 11: ... it looks like a credential` | Shorten the quote or the output tail, or leave it out. The patterns are the engine's, so a line such as `token: abc` is flagged even when it is not a secret. |
+| `the report has schema 'X' (made by framework vY); these tools read schema 'Z'. ...` | The report and these tools come from releases with different report schemas. The message says what to do; there is no conversion. |
 | `schema: /path: ...` | The pointer names the field. The schema is [`audit-report.schema.json`](../../audit/schema/audit-report.schema.json). |
 | `the file is not a report: ...` | The file is not one JSON document that this tool accepts. |
 
@@ -194,7 +195,7 @@ Starts a draft from an intake file. It reads the intake (the answers to the audi
 | `provenance.target.path` | The intake's `target_path`, resolved to an absolute path. |
 | `provenance.target.git_sha`, `branch`, `dirty` | Read from git with read-only commands. The commit id is recorded as its first 12 hex digits, because a full id is what secret scanners read as an access token. Each is `null` when it cannot be known: the target is not a repository, the repository has no commit, `HEAD` is detached (no branch), or git is missing. A target that is a subfolder of a repository records nothing and gives a warning, because a commit id says nothing about a subfolder. |
 | `provenance.target.label` | The intake's `repo_label`, or a label derived from the target directory's name. |
-| `provenance.framework_revision` | The framework checkout's commit (12 hex digits), or `null` outside one. |
+| `provenance.framework` | The release (`FRAMEWORK_RELEASE` in `report.py`), the framework checkout's commit (12 hex digits, or `null` outside a checkout) and the install: `checkout`, `bundle` or `copy`. |
 | `provenance.catalogue_version` | The version of [`catalogue.json`](../../audit/catalogue.json). |
 | `provenance.agent` | The intake's `harness` and `model`. |
 | `provenance.started_at` | The UTC start time. Its `YYYYMMDDTHHMMSSZ` form is the stamp in the file name. |
@@ -288,7 +289,7 @@ Nothing the engine said is dropped without a warning, except a placeholder and a
 | Message | Fix |
 |---|---|
 | `the engine report has schema_version X, and the adapter reads only '2'` | Scan again with [`engine.py`](#enginepy). |
-| `the engine report is for phase N, and a 0.1 report covers phase 1` | Scan again without `--phase`. |
+| `the engine report is for phase N, and an audit report covers phase 1` | Scan again without `--phase`. |
 | `the engine report has the wrong shape: N errors` | Each error starts `engine report: /pointer:` and names the field. The file is not an engine report, or was edited. |
 | `the engine report cannot be imported: N problems` | A check is not in [`catalogue.json`](../../audit/catalogue.json), or only an agent can judge it, or appears twice, or a finding names a check the report does not hold. The engine and the catalogue are from different revisions of the framework. |
 | `the engine report is not of this draft's target` | `data.errors` names both directories, or both commits. Scan the draft's own repository at its commit, or start a new draft with `init`. |
@@ -822,7 +823,7 @@ python3 implement/tools/progress.py --describe
 | `--default-branch` | `init`: the branch the theme PRs go into. Default: the report's `provenance.target.branch`, else `main`. |
 | `--phase` | `init`: the step recorded in the first log entry. Default: `init`. |
 | `--date` | `init`: the date recorded on the items and the log, `YYYY-MM-DD`. Default: today, UTC. |
-| `--framework-rev` | `init`: the framework commit to record. Default: `git rev-parse HEAD` of the framework checkout, or null. |
+| `--framework-rev` | `init`: the framework commit to record, cut to 12 digits. Default: the framework checkout's `HEAD`, or null outside one. |
 | `--label` | Every command but `init`: which state to use when the folder holds more than one. |
 | `FINDING STATUS` | `set-status`: the item and the status to move it to. The move must be in the state diagram of the [state contract](../../implement/state.md#item-statuses). `skipped`, `deferred` and the moves back out of them have their own commands. |
 | `--commit` | `set-status`: a commit SHA to add to the item (repeatable). |
@@ -839,13 +840,18 @@ python3 implement/tools/progress.py --describe
 
 **Outputs**
 
-`init` writes the JSON and the Markdown and puts their paths, the label, the item count, the count per status and
-the `not_queued` count in `data`. `show` puts the summary in `data`: counts per status and per theme (`items` and
-`open`, which is neither `done` nor `skipped`), the skipped finding ids, and the number of preferences, debt
-entries and log entries. `show --json` puts the state under `data.state`. `render` writes the Markdown and puts
-its path and size in `data`. Every other command checks the changed state whole, appends one log entry, replaces
-the JSON and puts the path and the count per status in `data`. A refused command changes nothing, and a refused move says which states the item may go to. The Markdown view keeps prose lines (item details, the full text of a cut preference cell) under 110 columns so it passes MD013; a preference's value or reason longer than 100 characters is cut in its table row and given in full in a list below the table. Each write is atomic; a temporary file a killed write left behind is removed, with a
-warning.
+`init` writes the JSON and the Markdown and puts their paths, the label, the item count, the count per status and the
+`not_queued` count in `data`, with `versions` as [`check_drift.py`](#check_driftpy) gives it. `show` puts the summary
+in `data`: counts per status and per theme (`items` and `open`, which is neither `done` nor `skipped`), the skipped
+finding ids, and the number of preferences, debt entries and log entries, with `versions`: the framework that created
+the state (`created`), the one that last wrote it (`last`) and these tools (`tools`). `show --json` puts the state
+under `data.state`, with the same `versions`. `render` writes the Markdown and puts its path and size in `data`. Every
+other command checks the changed state whole, appends one log entry (two when the framework changed since the last
+write: see `last_framework`), replaces the JSON and puts the path and the count per status in `data`. A refused
+command changes nothing, and a refused move says which states the item may go to. The Markdown view keeps prose lines
+(item details, the full text of a cut preference cell) under 110 columns so it passes MD013; a preference's value or
+reason longer than 100 characters is cut in its table row and given in full in a list below the table. Each write is
+atomic; a temporary file a killed write left behind is removed, with a warning.
 
 **Exit codes**
 
@@ -853,7 +859,7 @@ warning.
 |---|---|
 | `0` | Done. |
 | `1` | A bad argument, a missing report or target, a report outside the target, an existing state for `init`, no state for `show` or `render`, a state folder that leaves the target, or a state file that is a symlink. |
-| `2` | The report is invalid, not final, or has a finding on a check with no theme; or the state fails the schema or its rules. `data.errors` lists what to fix. |
+| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules. `data.errors` lists what to fix. |
 | `3` | Internal error, including a write the system refused. The old file is left whole. |
 
 **Errors**
@@ -861,6 +867,7 @@ warning.
 | Message | Fix |
 |---|---|
 | `the report is a draft, not final` | Finalise it with `report.py finalise` and pass the final report. |
+| `the report was made by framework vX; these tools are vY. Update the framework ...` | The report is newer than these tools. Install release vX or later of both skills, or run a new audit with vY. |
 | `the report must be inside the target, so the state can point at it` | Commit the report folder to the target and pass that path. |
 | `a state already exists: ...; init never replaces one` | Use `show`, `render` and the transition commands. |
 | `F-nnn is done and done is final` | A regression is a new finding in the next audit. |
@@ -915,8 +922,13 @@ change the status or the exit code:
 - `report_changed` compares the report file's SHA-256 with `source_reports[].sha256` in the target's state
   (`progress.py init` records it). `true` means the report was edited since the state was created: a warning says not
   to trust its text until the owner confirms the change. `false` means it matches. `null` means there is nothing to
-  compare: the target has no state, the state predates the digest (schema `0.1`), or the state does not list this
-  report.
+  compare: the target has no state, or the state does not list this report.
+
+- `versions` compares the framework release and commit that made the report with these tools'. It holds
+  `report` and `tools`, each with `release` and `revision` (12 digits, or `null` outside a checkout), and
+  `relation`: `same`, `older` or `newer`. `older` gives a warning that verdicts can differ between releases, and a
+  note in the text output. With the same release at two known commits, a warning names both. A `newer` report stops
+  the tool with exit 2: these tools may not know its checks.
 
 When the audited commit is not an ancestor of `HEAD`, the diff is
 between the two trees and a warning says so. Long lists are bounded: `changed_paths_omitted` and
@@ -928,7 +940,7 @@ between the two trees and a warning says so. Long lists are bounded: `changed_pa
 |---|---|
 | `0` | Done, whatever the status. Read `data.status`. |
 | `1` | A bad argument, a missing report or target, or a target that is not a git repository. |
-| `2` | The report is not valid; `data.errors` lists what to fix. |
+| `2` | The report is not valid, or it comes from a newer framework release than these tools; `data.error` says what to do. |
 | `3` | Internal error. |
 
 ## compare_reports.py
@@ -966,7 +978,11 @@ python3 implement/tools/compare_reports.py --describe
 By default `data` holds `summary` and `markdown` (the deterministic report: summary lines, checks that moved,
 findings that moved, findings still open). With `--json` it holds `summary`, `checks` and `findings` as rows
 instead. `summary` has the two reports' file names, commits and scores, the counts per move, `rejected_ignored`,
-and `unexplained`. A warning is raised when the reports name different repositories. Long lists are bounded:
+and `unexplained`. `before` and `after` also hold each report's `framework` (`release`, `revision`) and
+`catalogue_version`. A warning is raised when the reports name different repositories, and `version_warnings`
+holds one when they come from different releases, from the same release at two commits, or from different
+catalogues, because a verdict can move for that reason alone; each is also a warning and a line in the Markdown.
+Long lists are bounded:
 `truncated` is `true` and the markdown (or `data.omitted`) says how many rows were left out.
 
 **Exit codes**

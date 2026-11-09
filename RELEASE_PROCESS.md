@@ -65,14 +65,19 @@ since the last release:
 | A `feat:` | PATCH | MINOR |
 | Only `fix:`, `docs:`, `ci:` and other types | PATCH | PATCH |
 
-The version is written in three places, and release-please changes all three in the release pull request:
+The version is written in five places, and release-please changes all five in the release pull request:
 
 - [`.release-please-manifest.json`](.release-please-manifest.json): the last released version.
 - `__version__` in [`audit/engine/audit/__init__.py`](audit/engine/audit/__init__.py): what `audit --version` and
-  each report's provenance print.
+  the report's `provenance.engine.version` print.
+- `FRAMEWORK_RELEASE` in [`audit/tools/report.py`](audit/tools/report.py): the report's `provenance.framework.release`.
+- `FRAMEWORK_RELEASE` in [`implement/tools/progress.py`](implement/tools/progress.py): the state's
+  `framework.release`.
 - The new entry in [`CHANGELOG.md`](CHANGELOG.md).
 
-[`dev/tests/test_release_config.py`](dev/tests/test_release_config.py) fails when the manifest and `__version__`
+Each of the three code lines carries the `x-release-please-version` marker and is an `extra-files` entry.
+`dev/build_skills.py` copies the manifest's version into each skill bundle's `SKILL.md` as `metadata.version`.
+[`dev/tests/test_release_config.py`](dev/tests/test_release_config.py) fails when a stamp and the manifest
 disagree. The configuration is [`release-please-config.json`](release-please-config.json).
 
 ## One-time setup
@@ -189,8 +194,9 @@ The push to `main` starts `release-please.yml`. A minute later the release pull 
    gh pr list --base main --head release-please--branches--main
    ```
 
-2. Read its diff. It changes `.release-please-manifest.json`, `__version__` in the engine and `CHANGELOG.md`. A second
-   commit, `style(changelog): ...`, holds the markdownlint fixes.
+2. Read its diff. It changes `.release-please-manifest.json`, `__version__` in the engine, the two
+   `FRAMEWORK_RELEASE` lines (`report.py` and `progress.py`) and `CHANGELOG.md`. A second commit,
+   `style(changelog): ...`, holds the markdownlint fixes.
 3. Check the version. To force a different one, see [Choose the version](#choose-the-version).
 4. Without the App token, close and reopen the pull request to start CI:
 
