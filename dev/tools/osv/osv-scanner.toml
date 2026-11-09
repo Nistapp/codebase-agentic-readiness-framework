@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+#
+# Known vulnerabilities that `make security` (osv-scanner) accepts for now, for this folder's go.mod (osv-scanner's
+# own dependencies). The rules for an entry are in dev/tools/osv-scanner.toml; dev/tests/test_tool_pins.py checks them.
+
+[[IgnoredVulns]]
+id = "GO-2026-5932"
+ignoreUntil = 2027-02-09
+reason = "golang.org/x/crypto: the advisory covers the deprecated openpgp package in every version; no tagged release fixes it. The osv-scanner binary does not link golang.org/x/crypto/openpgp (checked with go list -deps on 2026-11-09)."

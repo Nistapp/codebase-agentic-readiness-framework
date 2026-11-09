@@ -109,8 +109,10 @@ not scan JavaScript or TypeScript, because the only such files are those fixture
 [`.github/workflows/scorecard.yml`](../../.github/workflows/scorecard.yml) runs OpenSSF Scorecard on each push to
 `dev` and every Monday. It scores the repository's security practices, such as pinned actions, token permissions and
 signed releases. Each low score shows as an alert in the Security tab, in the `scorecard` category. The results are
-not published: `publish_results` is `false`, so there is no public score page and no badge. Publishing is the
-maintainer's decision.
+also published (`publish_results: true`, the maintainer's decision on 2026-11-09). The workflow signs each result and
+sends it to the public OpenSSF API. The latest score is on
+[scorecard.dev](https://scorecard.dev/viewer/?uri=github.com/Nistapp/codebase-agentic-readiness-framework) and in the
+badge at the top of [`README.md`](../../README.md). How each alert is handled: [Scorecard alerts](#scorecard-alerts).
 
 Code scanning is advisory. No ruleset requires the CodeQL or the Scorecard workflow, and an alert does not block a
 merge. The
@@ -121,6 +123,24 @@ maintainer handles an alert in the Security tab:
 
 A later change may add the ruleset rule "Require code scanning results" to `dev-protection.json`. That change needs
 the maintainer.
+
+### Scorecard alerts
+
+The first Scorecard run on `dev` (2026-11-09) scored 7 checks below 10. Each one raised an alert. The table gives
+each check, what it measures, why the score is low, and how it is handled. Scorecard rates each check 0 to 10.
+
+| Check | Score | What it measures | Why the score is low | Handling |
+| --- | --: | --- | --- | --- |
+| Branch-Protection | 3 | The rules on `dev` and `main` | No approving review is required. "Dismiss stale reviews", "require review from code owners" and "require approval of the most recent push" are off; each only acts when a review is required. `main` does not require an up-to-date branch, on purpose (see [Rules](#rules)) | Open. A solo maintainer cannot approve their own pull request, so a required review would block every merge. Revisit when a second maintainer joins |
+| Code-Review | 0 | Whether recent changes had an approving review | 0 of the last 4 merged changes had one: the maintainer merges their own pull requests | Dismissed as "won't fix", for the same reason |
+| Maintained | 0 | Recent commits and issue activity | The repository is younger than 90 days. Scorecard scores every new repository 0 | Open. It clears by itself after 90 days |
+| SAST | 8 | Whether a code scanner runs on every commit | Only 13 of the last 30 commits were scanned, because CodeQL started on 2026-11-09 | Open. It rises as CodeQL scans new commits |
+| Vulnerabilities | 9 | Known vulnerabilities in the dependencies, from OSV | `GO-2026-5932` in osv-scanner's Go module. `make security` accepts it, but its ignore file was not next to that `go.mod` | Fixed: each `osv-scanner.toml` now sits next to its lockfiles ([Dependency audit](dev-tooling.md#dependency-audit)) |
+| Fuzzing | 0 | Whether a fuzzer runs on the code | No fuzzer | Dismissed as "won't fix". The engine and tools are standard-library Python that reads files; their tests and fixtures cover the inputs |
+| CII-Best-Practices | 0 | An OpenSSF Best Practices badge | None applied for | Open. The badge is a self-assessment on [bestpractices.dev](https://www.bestpractices.dev/); optional |
+
+The other checks score 10, or do not apply. The full, current list is on the
+[score page](https://scorecard.dev/viewer/?uri=github.com/Nistapp/codebase-agentic-readiness-framework).
 
 ## Current state
 

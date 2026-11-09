@@ -35,7 +35,8 @@ GO_TOOLS = {
     "osv-scanner": (TOOLS / "osv", "github.com/google/osv-scanner/v2", "cmd/osv-scanner"),
     "actionlint": (TOOLS / "actionlint", "github.com/rhysd/actionlint", "cmd/actionlint"),
 }
-OSV_CONFIG = TOOLS / "osv-scanner.toml"
+#: The ignore files: one next to the lockfiles it covers, as osv-scanner and OpenSSF Scorecard look for them.
+OSV_CONFIGS = (TOOLS / "osv-scanner.toml", TOOLS / "osv" / "osv-scanner.toml")
 OSV_MODULE = "github.com/google/osv-scanner/v2"
 EXACT_GO = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
 #: The longest an accepted vulnerability may stay accepted before someone looks again.
@@ -169,13 +170,19 @@ class EachGoToolIsAPinnedToolRequirement(unittest.TestCase):
 
 
 class AcceptedVulnerabilitiesAreReviewed(unittest.TestCase):
-    """Each entry of dev/tools/osv-scanner.toml says why, and expires within six months."""
+    """Each entry of each osv-scanner.toml says why, and expires within six months."""
 
     def entries(self) -> list[dict[str, object]]:
-        data = tomllib.loads(OSV_CONFIG.read_text(encoding="utf-8"))
-        self.assertEqual(set(data) - {"IgnoredVulns"}, set(), "only IgnoredVulns belongs in the config")
-        entries: list[dict[str, object]] = data.get("IgnoredVulns", [])
+        entries: list[dict[str, object]] = []
+        for config in OSV_CONFIGS:
+            data = tomllib.loads(config.read_text(encoding="utf-8"))
+            self.assertEqual(set(data) - {"IgnoredVulns"}, set(), f"{config}: only IgnoredVulns belongs here")
+            entries.extend(data.get("IgnoredVulns", []))
         return entries
+
+    def test_every_ignore_file_sits_next_to_an_audited_lockfile(self) -> None:
+        found = sorted(p.relative_to(REPO).as_posix() for p in TOOLS.rglob("osv-scanner.toml"))
+        self.assertEqual(found, sorted(c.relative_to(REPO).as_posix() for c in OSV_CONFIGS))
 
     def test_each_entry_has_an_id_a_reason_and_a_date(self) -> None:
         for entry in self.entries():
@@ -239,7 +246,8 @@ class MakefileReadsTheManifests(unittest.TestCase):
     def test_security_audits_every_dev_tool_lockfile(self) -> None:
         output = self.dry_run("security")
         self.assertIn("go -C dev/tools/osv tool osv-scanner scan source", output)
-        self.assertIn(f"--config={REPO}/dev/tools/osv-scanner.toml", output)
+        # No --config: osv-scanner reads the osv-scanner.toml next to each lockfile, as Scorecard does.
+        self.assertNotIn("--config", output)
         for lockfile in (TOOL_LOCK, NODE_LOCK, *(folder / "go.mod" for folder, _m, _c in GO_TOOLS.values())):
             with self.subTest(lockfile=lockfile.name):
                 self.assertIn(f"--lockfile={lockfile}", output)

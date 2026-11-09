@@ -193,12 +193,13 @@ check: format-check typecheck test verify-rules crosscheck recipe-lint workflow-
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.
 # The dependency audit: osv-scanner, pinned in dev/tools/osv/go.mod (a Go `tool` directive, so Dependabot sees it),
-# reads the dev tools' lockfiles and fails on a known vulnerability that dev/tools/osv-scanner.toml does not accept.
+# reads the dev tools' lockfiles and fails on a known vulnerability that no osv-scanner.toml accepts. Without
+# --config, osv-scanner reads the osv-scanner.toml next to each lockfile, the same file OpenSSF Scorecard reads.
 # --no-call-analysis=go: the module holds no Go code of its own, so govulncheck has nothing to analyse.
 # The audit engine's TOOL-04 reads this recipe and needs the tool name written out, not hidden in a variable.
 security:
 	git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline
-	go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))
+	go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))
 
 # Run this after a deliberate change to a fixture or test that holds a key-shaped string, then review the diff.
 update-secrets-baseline:
