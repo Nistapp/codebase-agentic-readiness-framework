@@ -15,6 +15,17 @@ mode must be concrete and attributable to the agent's ability to work.
 This is why the report is a *short* list compared to a general code-quality tool, and why the informational set
 is kept numberless: a scored item is a claim that its absence costs agent effectiveness.
 
+The diagram shows the rule as the two questions a candidate check must pass.
+
+```mermaid
+flowchart TD
+    Q["A candidate check"] --> D{"Does its absence change what an agent can do, verify or safely touch?"}
+    D -->|"no: only good practice"| X["Not a check"]
+    D -->|yes| E{"Is the failure mode concrete and attributable to the agent's work?"}
+    E -->|no| X
+    E -->|yes| K["A check, with its failure mode on this page"]
+```
+
 ---
 
 ## 2. Discovery and Index (`IDX`)

@@ -8,6 +8,21 @@
 
 ## 1. Audit stages
 
+The diagram shows both recipes. The audit runs once; the implementation loops over the themes, one branch each.
+
+```mermaid
+flowchart LR
+    subgraph Audit
+        A1[Intake] --> A2[Recon] --> A3[Assess] --> A4[Synthesize] --> A5[Confirm] --> A6[Finalise]
+    end
+    subgraph Implementation
+        I0[Intake] --> I1[Triage] --> I2[Plan a theme] --> I3[Apply] --> I4[Close the theme]
+        I4 -->|"next theme"| I2
+        I4 -->|"last theme"| I5[Close-out]
+    end
+    A6 -->|"final report"| I0
+```
+
 The audit recipe ([`audit/SKILL.md`](../../../audit/SKILL.md)) works through six stages, in order, against
 one repository at a time, writing nothing inside it:
 

@@ -9,6 +9,17 @@
 
 ## 1. Read-only audit
 
+The diagram shows where an audit may read, write and run, and what leaves the machine.
+
+```mermaid
+flowchart LR
+    T["Target repository"] -->|read| AG["Agent and tools"]
+    AG -->|"what the agent reads"| MP["Model provider"]
+    AG -->|"every write"| O["Output directory, outside the target"]
+    AG -->|"only an allowed verb, with a timeout"| R["Engine Tier-C runner"]
+    R -->|runs| T
+```
+
 The audit never writes inside the repository it assesses. Every tool it calls refuses an output path
 inside the target on its own, and the recipe says so to the operator as well as relying on the tool's
 refusal. All of its writes — the draft, the final report, the facts file, the engine's own report — go to

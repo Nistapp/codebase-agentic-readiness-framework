@@ -13,6 +13,17 @@
 - [ ] Python 3.11+ on `PATH`
 - [ ] A clone of this repository
 
+## The steps at a glance
+
+The diagram shows the three steps and what each one leaves you with.
+
+```mermaid
+flowchart LR
+    S1["1. Copy a fixture and commit it"] --> S2["2. Run the audit with the kickoff prompt"]
+    S2 --> S3["3. Read the report and validate it"]
+    S3 --> R["CMD-02: FAIL, with the evidence it cites"]
+```
+
 ---
 
 ## 1. Pick a fixture
@@ -50,10 +61,11 @@ depending on the harness.
 ## 3. Read the report
 
 Stage 5 writes `<label>.audit-report.<stamp>.json` and its Markdown rendering beside the draft, in the
-output directory you named at intake. Open the Markdown report and find `CMD-02` in the scorecard: its
-verdict is `FAIL`, severity `BLOCKER`, with evidence citing `package.json`'s `scripts.check` field and the
-verbs it fails to compose. That citation is the whole point of the exercise — every verdict in the report
-traces back to a specific file and a specific piece of evidence, never an unstated hunch.
+output directory you named at intake. Open the Markdown report. Its Bottom line lists `CMD-02` among the
+first actions, and its full row is under Checks that need attention. Its verdict is `FAIL`, severity
+`BLOCKER`, with evidence citing `package.json`'s `scripts.check` field and the verbs it fails to compose.
+That citation is the whole point of the exercise — every verdict in the report traces back to a specific file
+and a specific piece of evidence, never an unstated hunch.
 
 Validate the report mechanically, too, to see the tool side of the contract:
 
