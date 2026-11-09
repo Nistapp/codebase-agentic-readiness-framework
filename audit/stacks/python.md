@@ -44,6 +44,8 @@ poetry both honour `.python-version` directly, pip does not read it at all — s
 actually acts on, not just which file exists. The matching lockfile (`poetry.lock`/`uv.lock`/
 `Pipfile.lock`) must be git-tracked at the root; `uv sync --frozen`/`poetry install --no-update`/
 `pipenv sync` is the non-interactive install path, never a bare `install` that can resolve new versions.
+Tool versions (`EXEC-08`) go in a dependency group of a `pyproject.toml`, locked in `uv.lock`, never inline in
+`uvx ruff@0.5.0` or `pip install black==24.1.0`; the runner reads the pin or runs `uv run`.
 
 ## CI idiom
 

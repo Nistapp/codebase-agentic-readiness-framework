@@ -53,7 +53,9 @@ but a `.nvmrc`/`.tool-versions` exact version is stronger and preferred for a fr
 repository) — none of the three profile repos committed an `.nvmrc`, all three used `engines.node`
 alone. The lockfile matching the declared package manager (`package-lock.json` for npm, etc.) must be
 git-tracked at the repository root; `npm ci`/`pnpm install --frozen-lockfile`/`yarn install
---immutable` is the non-interactive setup path (EXEC-03), never a bare `install`.
+--immutable` is the non-interactive setup path (EXEC-03), never a bare `install`. Tool versions (`EXEC-08`) go
+in `devDependencies`, so `npx <tool>` resolves the locked one; `npx <tool>@1.2.3` in a script or workflow is
+invisible to Dependabot.
 
 ## CI idiom
 

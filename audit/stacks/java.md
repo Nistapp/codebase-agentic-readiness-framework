@@ -58,6 +58,8 @@ version read by the build itself; its absence leaves the JDK to whatever `JAVA_H
 (`dependencyLocking { lockAllConfigurations() }`, writing `gradle.lockfile` files). `EXEC-02` recognises
 `gradle.lockfile`, at any depth, as the one lockfile name for `jvm`, so a Gradle build without it reads
 `FAIL` for that check (see Pitfalls).
+Tool versions (`EXEC-08`) are usually Gradle or Maven plugins in the build file, which Dependabot reads, so the
+check fires here only on an `npx` or `uvx` call with a typed version in a runner file or workflow.
 
 ## CI idiom
 
