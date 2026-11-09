@@ -1,6 +1,7 @@
 # Glossary
 
-Canonical definitions of terms used by the brownfield recipes. Terms from the readiness framework are cited, not redefined; see [`docs/framework/glossary.md`](framework/glossary.md).
+Canonical definitions of terms used by the brownfield recipes. Terms from the readiness framework are cited, not
+redefined; see [`docs/framework/glossary.md`](framework/glossary.md).
 
 > **Status:** Live. Every term below names a thing that exists today. The implementation recipe and its
 > playbooks (v0.2.0) are live.
@@ -26,6 +27,7 @@ Canonical definitions of terms used by the brownfield recipes. Terms from the re
 | Finding key | A finding's stable identifier: the check ID, then an optional scope after a colon. A re-audit matches findings by it. |
 | Intake file | The JSON file that answers the audit's Stage 0 questions, so that a run needs no interview. |
 | Override | A report verdict that differs from the engine's, recorded with a reason and agent-captured counter-evidence. |
+| Framework release | The release version of the framework, such as `0.3.2`, from `.release-please-manifest.json`. Every report and state records the release that made it. See [Versions](reference/versions.md). |
 | Catalogue | `catalogue.json`: every check in one ID namespace, with its method, requirements and playbooks. |
 | Agent-only check | A check no deterministic rule can settle, judged by a model with cited evidence, such as `AGT-11`. It has no engine ID. |
 | Draft | `<label>.audit-draft.<stamp>.json`: the report while it is being built. Only `report.py` writes it, and it becomes a final report when nothing is pending. |

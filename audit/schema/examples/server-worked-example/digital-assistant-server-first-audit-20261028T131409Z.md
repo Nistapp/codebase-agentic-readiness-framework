@@ -7,17 +7,17 @@
 
 | Field | Value |
 |---|---|
+| Framework | `v0.3.2`, checkout `b4bf27df7915` |
 | Target | `<target>` |
 | Commit | `4a48e1976e42` on `dev` — clean working tree |
 | Status | final |
 | Started | `2026-10-28T12:49:11+00:00` |
 | Finalised | `2026-10-28T13:14:09+00:00` |
-| Recipe | `brownfield-audit` 0.1.0, catalogue `0.2.2` |
+| Catalogue | `0.2.2` |
 | Engine | `python-agentic-audit` 0.1.0, ruleset `2026-10-19.2`, ruleset hash `970e6792f98eeeb5`, scanned `2026-10-28T12:49:15+00:00` |
-| Framework revision | `b4bf27df7915` |
 | Agent (self-reported) | `Claude Code` with `claude-sonnet-5-5` |
 | Probes | none: no command of the target was run |
-| Report schema | `0.1` |
+| Report schema | `0.2` |
 
 ## Readiness summary
 
@@ -276,8 +276,8 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
-| `IDX-01` | codebase-memory-mcp registered for this repository | BLOCKER | automated | yes | PASS | PASS | codebase-memory-mcp registered in: <home>/.config/opencode/opencode.jsonc (user) |
-| `IDX-02` | An index exists for this checkout | BLOCKER | automated | yes | PASS | PASS | index store <home>/.cache/codebase-memory-mcp contains a project rooted at <target> |
+| `IDX-01` | codebase-memory-mcp registered for this repository | BLOCKER | automated | yes | PASS | PASS | codebase-memory-mcp registered in: \<home>/.config/opencode/opencode.jsonc (user) |
+| `IDX-02` | An index exists for this checkout | BLOCKER | automated | yes | PASS | PASS | index store \<home>/.cache/codebase-memory-mcp contains a project rooted at \<target> |
 | `IDX-03` | Index freshness | DEGRADER | automated | yes | PARTIAL | UNKNOWN | Index built 2026-10-28T09:43:48Z; HEAD 4a48e19 (committed 11:27Z) is the one later commit, touching only a workflow, a CI script and a CI README. |
 
 ### AGT

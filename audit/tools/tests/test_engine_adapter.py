@@ -1341,7 +1341,7 @@ class MessageTests(unittest.TestCase):
 
     def test_a_phase_other_than_1(self) -> None:
         error = refused(self, er.report(TARGET, provenance=er.provenance(TARGET, phase=2)))
-        self.assertEqual(str(error), "the engine report is for phase 2, and a 0.1 report covers phase 1")
+        self.assertEqual(str(error), "the engine report is for phase 2, and an audit report covers phase 1")
         self.assertEqual(error.errors, ["engine report: /provenance/phase: expected 1, found 2"])
 
     def test_the_wrong_shape_with_one_error_and_with_two(self) -> None:

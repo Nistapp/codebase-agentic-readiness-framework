@@ -71,7 +71,8 @@ COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
 	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/reference/audit-master.md' 'docs/reference/implement-master.md' 'docs/how-to/contribute-a-change.md' 'docs/how-to/set-up-agent-tools.md' 'docs/COMMUNICATION_RULES.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
 	'docs/explanation/user-overview/03-trust-and-safety.md' 'docs/explanation/contributor-deep-dive/04-stack-profiles.md' 'docs/explanation/contributor-deep-dive/05-evaluation.md' 'docs/how-to/add-a-stack-profile.md' 'docs/reference/harness-notes.md' \
-	'audit/engine/docs/how-to/read-the-report.md'
+	'audit/engine/docs/how-to/read-the-report.md' 'docs/reference/versions.md' 'docs/how-to/implement-an-audit-report.md' \
+	'docs/how-to/resume-an-interrupted-run.md' 'docs/glossary.md'
 
 # The prose check (dev/prose_check.py, the plain-language rules of docs/COMMUNICATION_RULES.md) is advisory: it
 # reports warnings and notices and never fails a target. `make docs-prose` runs it; CI annotates changed Markdown.
