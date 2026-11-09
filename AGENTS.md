@@ -56,7 +56,8 @@ No vendor-specific instruction file exists beside it.
 - A misspelling fails `make spell` (in `make check`). Fix it, or run `make spell-fix` and review the diff. Add a word
   to `_typos.toml` only for a project term or a code token.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
-  `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`).
+  `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`). Run
+  `make docs-prose FILES=<file.md>` too, and fix its warnings on the lines you changed; it never fails.
 - Prerequisites: Python 3.11 or newer (pinned in `.python-version`) and `uv` for the pinned dev tools (ruff, mypy,
   detect-secrets). Go 1.27 or newer runs actionlint (`make check`) and osv-scanner (`make security`).
   Each tool version is written once (ADR 0003): in `dev/tools/pyproject.toml`, in `dev/tools/package.json`, or in a
