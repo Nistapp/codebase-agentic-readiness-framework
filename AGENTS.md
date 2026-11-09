@@ -6,18 +6,17 @@ coding agents, plus tools that check it. `audit/` holds the audit recipe, its to
 rules: `audit/AGENTS.md`, `implement/AGENTS.md` and `audit/engine/AGENTS.md` (the strictest). Read the file for a
 folder before you change it.
 
+**Before you edit any file in this repository**, run `python3 dev/mcp_config.py status --harness <your harness>`.
+If it prints `not asked`, first make the one-time offer in `docs/how-to/set-up-agent-tools.md` ("For agents").
+`python3 dev/mcp_config.py detect` helps you name your harness. Skip this for an audit or implement run on another
+repository. Never install a server or write a harness config without the person's consent.
+
 ## Users: audit or implement a repository
 
 - When asked to audit a repository, follow `audit/SKILL.md` from this repository's root.
 - When asked to implement fixes from an audit report, follow `implement/SKILL.md`.
 
 The rest of this file is for changes to this repository.
-
-## First session: offer the agent tools
-
-Before your first change in a clone, run `python3 dev/mcp_config.py status --harness <your harness>`. If it prints
-`not asked`, make the one-time offer in `docs/how-to/set-up-agent-tools.md` ("For agents"). Ask once. Never install a
-server or write a harness config without the person's consent.
 
 ## Commands
 

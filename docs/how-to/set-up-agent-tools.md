@@ -18,7 +18,7 @@ This page uses these terms:
 
 | Term | Meaning |
 | --- | --- |
-| Harness | The program that runs the agent: Claude Code, VS Code with Copilot, Cursor, Gemini CLI, opencode or Codex CLI |
+| Harness | The program that runs the agent: Claude Code, VS Code with Copilot, Cursor, Gemini CLI, opencode, Codex CLI or Antigravity |
 | MCP server | A program that the harness starts to give the agent extra tools |
 | Project scope | The setting applies to this clone only |
 | User scope | The setting applies to every repository you open with that harness |
@@ -67,6 +67,14 @@ To skip the tool, go to step 5.
 
 Claude Code and VS Code read `.mcp.json` directly. For them, there is nothing to write.
 
+Antigravity keeps its servers at user level, for every repository. The tool prints the command to run:
+
+```bash
+python3 dev/mcp_config.py show --harness antigravity
+```
+
+For a harness not listed here, `--harness other` prints the plain entry to paste into its MCP config.
+
 For another harness, look at the entry first, then write it:
 
 ```bash
@@ -89,6 +97,7 @@ different entry with the same name, the tool stops and changes nothing.
 | Gemini CLI | Trust the folder when Gemini CLI asks |
 | opencode | Nothing. opencode connects the server with no prompt |
 | Codex CLI | Trust the project. Codex loads `.codex/config.toml` only for a trusted project |
+| Antigravity | Run the `agy mcp add` command from step 3. `agy mcp list` shows the server |
 
 ### Step 5: Record your answer
 
@@ -119,8 +128,9 @@ connected (for example in Claude Code's `/mcp` list).
 `AGENTS.md` sends you here when you start a change to this repository. Do not make the offer when the person only
 wants to audit or implement another repository.
 
-1. Name your harness. Use your own knowledge first. `CLAUDECODE=1` in the environment confirms Claude Code. If
-   you are not sure, ask the person.
+1. Name your harness. Use your own knowledge first, then run `python3 dev/mcp_config.py detect`. It reads the
+   variable each harness sets. A harness started inside another also has the outer one's variable, so
+   `ambiguous` or `unknown` means: ask the person. For a harness without a name in the tool, use `other`.
 2. Run `python3 dev/mcp_config.py status --harness <name>`. If it prints `asked: ...`, stop here.
 3. Run `python3 dev/mcp_config.py check`.
 4. Explain the server in two sentences: what it gives you and what it needs. Then ask one question: set it up now,
@@ -129,7 +139,7 @@ wants to audit or implement another repository.
 6. If the person says yes:
    - When the server is not installed, show the install routes from step 2. Never run an installer yourself.
    - Run `show`, then `write` for the person's harness and scope. For Claude Code and VS Code, explain the
-     approval instead (step 4).
+     approval instead (step 4). For Antigravity and `other`, give the person the printed command or entry.
    - Run `check` again, and tell the person to restart the harness.
    - Record `--answer accepted`.
 7. Ask once. Make the offer again only when the person asks for it.

@@ -82,7 +82,7 @@ class TranslatePerHarness(unittest.TestCase):
 
 class Targets(Workspace):
     def test_native_harnesses_have_nothing_to_write(self) -> None:
-        for harness in ("claude-code", "vscode"):
+        for harness in ("claude-code", "vscode", "antigravity", "other"):
             for scope in ("project", "user"):
                 with self.subTest(harness=harness, scope=scope):
                     self.assertIsNone(mcp_config.target(harness, scope, self.root, self.home).path)
@@ -214,6 +214,53 @@ class CheckCommands(Workspace):
             code, out, _ = self.run_tool("check")
         self.assertEqual(code, 0)
         self.assertIn("codebase-memory-mcp 9.9.9", out)
+
+
+class HarnessesThatKeepTheirOwnConfig(Workspace):
+    servers = {"codebase-memory-mcp": SERVER, "x": WITH_ARGS}
+
+    def test_antigravity_prints_agy_mcp_add_and_writes_nothing(self) -> None:
+        code, out, _ = self.run_tool("write", "--harness", "antigravity")
+        self.assertEqual(code, 0)
+        self.assertIn("agy mcp add codebase-memory-mcp -- codebase-memory-mcp\n", out)
+        self.assertIn("agy mcp add --env MODE=fast x -- tool --stdio\n", out)
+        self.assertEqual(sorted(p.name for p in self.root.iterdir()), [".mcp.json"])
+
+    def test_claude_code_user_scope_prints_claude_mcp_add(self) -> None:
+        out = self.run_tool("show", "--harness", "claude-code", "--scope", "user")[1]
+        self.assertIn("claude mcp add --scope user codebase-memory-mcp -- codebase-memory-mcp\n", out)
+
+    def test_other_prints_the_plain_entry(self) -> None:
+        out = self.run_tool("show", "--harness", "other")[1]
+        entry = json.loads(out[out.index("{") :])
+        self.assertEqual(entry, {"mcpServers": self.servers})
+
+    def test_other_can_be_recorded(self) -> None:
+        self.run_tool("record", "--harness", "other", "--answer", "declined")
+        self.assertTrue(self.run_tool("status", "--harness", "other")[1].startswith("asked: declined"))
+
+
+class Detect(Workspace):
+    def detect_with(self, environ: dict[str, str]) -> str:
+        with mock.patch.dict(os.environ, environ, clear=True):
+            return self.run_tool("detect")[1]
+
+    def test_one_marker_names_the_harness(self) -> None:
+        for variable, harness in (
+            ("CLAUDECODE", "claude-code"),
+            ("ANTIGRAVITY_AGENT", "antigravity"),
+            ("OPENCODE", "opencode"),
+        ):
+            with self.subTest(variable=variable):
+                self.assertTrue(self.detect_with({variable: "1"}).startswith(f"{harness} "))
+
+    def test_nested_harnesses_are_ambiguous(self) -> None:
+        out = self.detect_with({"CLAUDECODE": "1", "ANTIGRAVITY_AGENT": "1"})
+        self.assertTrue(out.startswith("ambiguous: claude-code, antigravity"))
+        self.assertIn("Ask the person", out)
+
+    def test_no_marker_is_unknown(self) -> None:
+        self.assertTrue(self.detect_with({"AI_AGENT": "something"}).startswith("unknown"))
 
 
 class SourceErrors(Workspace):

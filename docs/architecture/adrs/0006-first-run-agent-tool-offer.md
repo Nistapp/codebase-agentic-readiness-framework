@@ -21,6 +21,7 @@ Six harnesses are in use. Each reads a different project file, and they act diff
 * Cursor (`.cursor/mcp.json`), Gemini CLI (`.gemini/settings.json`), opencode (`opencode.json`) and Codex CLI
   (`.codex/config.toml`) do not read `.mcp.json`.
 * opencode connects a project server with no prompt.
+* Antigravity keeps its servers at user level only (`agy mcp add`, checked with `agy` 1.5.1).
 
 An MCP server is a program that runs on the person's machine. Many people clone this repository only to audit
 their own code; they do not need the server here. The owner decided on one committed file, not one per harness.
@@ -34,18 +35,20 @@ their own code; they do not need the server here. The owner decided on one commi
    one-place pin rule (ADR 0003, `dev/tests/test_tool_pins.py`) needs no exception.
 2. **Approval stays with each person.** The committed `.claude/settings.json` never sets
    `enableAllProjectMcpServers` or `enabledMcpjsonServers`. `dev/tests/test_mcp_config.py` checks this.
-3. **A one-time offer, from `AGENTS.md`.** Every harness reads `AGENTS.md`. Before the first change in a clone,
+3. **A one-time offer, from the top of `AGENTS.md`.** Every harness reads `AGENTS.md`. Before it edits a file,
    the agent runs `python3 dev/mcp_config.py status --harness <name>`. If it prints `not asked`, the agent makes
    the offer in [Set up the agent tools](../../how-to/set-up-agent-tools.md). It makes no offer for an audit or
    an implement run on another repository.
-4. **The agent names its harness.** It uses its own knowledge, confirmed by an environment variable where one is
-   known (`CLAUDECODE=1`). If it is not sure, it asks. The tool takes `--harness`; it does not guess.
+4. **The agent names its harness.** It uses its own knowledge, then `dev/mcp_config.py detect`. That reads the
+   variable each harness sets (`CLAUDECODE`, `ANTIGRAVITY_AGENT`, `OPENCODE`). A nested harness inherits the outer
+   one's variable, so more than one match means "ask the person". An unlisted harness uses `--harness other`.
 5. **The answer is recorded per harness, outside git.** `.agentic-readiness/setup.json` is git-ignored. A
    declined offer is recorded too, so the agent asks once per harness and clone.
 6. **Project scope by default.** [`dev/mcp_config.py`](../../../dev/mcp_config.py) translates `.mcp.json` into each
    harness's format and merges it into the project file, or the user file with `--scope user`. Git ignores the
    project files it writes. It never replaces a different entry with the same name. For Claude Code and VS Code it
-   writes nothing and explains the approval.
+   writes nothing and explains the approval. For Antigravity it prints the `agy mcp add` command; for `other`, the
+   plain entry.
 7. **Nothing is installed by the tool or the agent.** `check` runs `<command> --version` for a command on `PATH`.
    For a missing command it prints the upstream install routes. They carry `--skip-config`, so the installer
    writes no config into other harnesses. The person runs the installer.

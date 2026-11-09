@@ -3,6 +3,7 @@
 
 """Translate this repository's ``.mcp.json`` into each harness's own MCP config, and record the first-run answer.
 
+    mcp_config.py detect                                            which harness the environment names, if exactly one
     mcp_config.py show   --harness <name> [--scope project|user]   print where the entry goes and the entry itself
     mcp_config.py write  --harness <name> [--scope project|user]   merge the entry into that file (needs consent)
     mcp_config.py check                                             is each server's command on PATH; how to install it
@@ -10,7 +11,8 @@
     mcp_config.py record --harness <name> --answer accepted|declined [--scope project|user]
 
 ``.mcp.json`` is the one source (ADR 0006). Claude Code and VS Code read it as it is, so ``write`` has nothing to
-do for them. For the other harnesses, ``write`` merges the entry and never replaces an entry that differs: it
+do for them. Antigravity keeps servers only at user level, through ``agy mcp add``; the tool prints that command.
+``--harness other`` prints the plain entry for a harness this tool does not know. For the other harnesses, ``write`` merges the entry and never replaces an entry that differs: it
 stops and prints both. The answer goes into ``.agentic-readiness/setup.json``, which git ignores. Nothing here
 installs a server or runs one, except ``check``, which runs ``<command> --version`` for a command on ``PATH``.
 
@@ -24,22 +26,32 @@ import argparse
 import datetime
 import json
 import re
+import os
+import shlex
 import shutil
 import subprocess
 import sys
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 REPO = Path(__file__).resolve().parents[1]
 SOURCE = ".mcp.json"
 RECORD = Path(".agentic-readiness") / "setup.json"
 
-HARNESSES = ("claude-code", "vscode", "cursor", "gemini", "opencode", "codex")
+HARNESSES = ("claude-code", "vscode", "cursor", "gemini", "opencode", "codex", "antigravity", "other")
 SCOPES = ("project", "user")
 ANSWERS = ("accepted", "declined")
 BARE_KEY = re.compile(r"^[A-Za-z0-9_-]+$")
+
+#: The environment variable each harness sets for the commands its agent runs (checked 2026-11-09). A harness
+#: started from inside another one inherits the outer one's variable too, so more than one match means "ask".
+ENV_MARKERS: dict[str, str] = {
+    "claude-code": "CLAUDECODE",
+    "antigravity": "ANTIGRAVITY_AGENT",
+    "opencode": "OPENCODE",
+}
 
 #: Install routes from each server's own documentation. ``--skip-config`` stops the upstream installer from
 #: writing agent configs for every client it finds; this tool writes the one entry the person agreed to.
@@ -90,7 +102,11 @@ def target(harness: str, scope: str, root: Path, home: Path) -> Target:
     if harness == "claude-code":
         if scope == "project":
             return Target(None, "Claude Code reads .mcp.json. On the next start it asks you to approve each server.")
-        return Target(None, "Run: claude mcp add --scope user <name> -- <command> [args]. Claude Code keeps it.")
+        return Target(None, "Claude Code keeps user-level servers itself. Run:")
+    if harness == "antigravity":
+        return Target(None, "Antigravity keeps MCP servers at user level, for every repository. Run:")
+    if harness == "other":
+        return Target(None, "Add this entry to your harness's MCP config by hand. It is in the .mcp.json format:")
     if harness == "vscode":
         if scope == "project":
             return Target(None, "VS Code reads .mcp.json. It starts the servers once you trust the folder.")
@@ -127,6 +143,25 @@ def translate(harness: str, entry: dict[str, Any]) -> dict[str, Any]:
     if env:
         result["env"] = env
     return result
+
+
+def native_commands(harness: str, scope: str, servers: dict[str, dict[str, Any]]) -> list[str]:
+    """What the person runs or pastes for a harness that keeps its config itself; empty when there is nothing."""
+    if harness == "other":
+        return json.dumps({"mcpServers": servers}, indent=2).splitlines()
+    if harness == "antigravity" or (harness == "claude-code" and scope == "user"):
+        prefix = ["agy", "mcp", "add"] if harness == "antigravity" else ["claude", "mcp", "add", "--scope", "user"]
+        lines = []
+        for name, entry in servers.items():
+            env = [part for key, value in entry.get("env", {}).items() for part in ("--env", f"{key}={value}")]
+            lines.append(shlex.join([*prefix, *env, name, "--", entry["command"], *entry.get("args", [])]))
+        return lines
+    return []
+
+
+def detect(environ: Mapping[str, str]) -> list[str]:
+    """The harnesses whose marker variable is set, in :data:`ENV_MARKERS` order."""
+    return [harness for harness, variable in ENV_MARKERS.items() if environ.get(variable)]
 
 
 def _json_path(harness: str) -> tuple[str, ...]:
@@ -275,10 +310,13 @@ def main(argv: Sequence[str] | None = None, *, root: Path = REPO, home: Path | N
         if action == "record":
             command.add_argument("--answer", choices=ANSWERS, required=True)
     sub.add_parser("check")
+    sub.add_parser("detect")
     args = parser.parse_args(argv)
     home = home if home is not None else Path.home()
 
     try:
+        if args.action == "detect":
+            return _print_detect(detect(os.environ))
         if args.action == "status":
             entry = read_record(root).get(args.harness)
             print(f"asked: {entry['answer']} on {entry['date']}" if entry else "not asked")
@@ -293,6 +331,8 @@ def main(argv: Sequence[str] | None = None, *, root: Path = REPO, home: Path | N
         where = target(args.harness, args.scope, root, home)
         if where.path is None:
             print(where.native)
+            for line in native_commands(args.harness, args.scope, servers):
+                print(f"  {line}" if args.harness != "other" else line)
             return 0
         if args.action == "show":
             print(f"# {where.path}")
@@ -307,6 +347,16 @@ def main(argv: Sequence[str] | None = None, *, root: Path = REPO, home: Path | N
     except (ConfigError, OSError) as exc:
         print(f"mcp_config: {exc}", file=sys.stderr)
         return 2
+
+
+def _print_detect(found: list[str]) -> int:
+    if len(found) == 1:
+        print(f"{found[0]} (confirm it with what you know about yourself)")
+    elif found:
+        print(f"ambiguous: {', '.join(found)}; one harness may run inside another. Ask the person.")
+    else:
+        print("unknown: no harness variable set. Ask the person.")
+    return 0
 
 
 def _print_check(servers: dict[str, dict[str, Any]]) -> int:
