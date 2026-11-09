@@ -25,6 +25,12 @@ target's own command is arbitrary code it owns, not a sandboxed operation the re
 says so before asking for consent, and suggests a disposable worktree or container when any verb is
 allowed. Sandboxing beyond that is the operator's own responsibility.
 
+The audit makes one network read, and only with consent: the platform's live branch rules, for `HYG-11` and
+`CI-04`. The recipe asks once. On a yes, and with an authenticated `gh` or `glab`, it runs read-only API calls
+(`gh api repos/<owner>/<repo>/rulesets` and `.../rules/branches/<branch>`) and cites them as evidence. The result
+is a note on the check (the live rules agree with the files, drift, or not readable). It never changes the
+engine's verdict, and the engine itself never uses the network.
+
 ## 3. Data egress
 
 Whatever the agent reads from the target — file contents, a code index's query results, a git log — is

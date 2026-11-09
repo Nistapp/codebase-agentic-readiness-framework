@@ -122,6 +122,7 @@ fixtures/
   hyg-09-uncovered-ecosystem/ package.json, a Dependabot file with only a pip entry -> HYG-09 PARTIAL
   hyg-09-target-branch-trap/ the npm entry sets target-branch and ignore -> HYG-09 PARTIAL
   hyg-10-no-license/         real README, no LICENSE at the root         -> HYG-10 FAIL
+  hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 UNKNOWN
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test
 ```
