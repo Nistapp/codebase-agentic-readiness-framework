@@ -272,7 +272,8 @@ The repository MUST wire a local Git hook chain, through a hook manager or `core
 - **Checks:** TOOL-05
 
 ### REQ-SH-032 — Commit convention enforced
-The repository SHOULD enforce its commit-message convention with a `commit-msg` hook or an equivalent stage.
+The repository SHOULD enforce its commit-message convention with a `commit-msg` hook or an equivalent stage, and
+SHOULD check the same rule in CI.
 
 - **Phase:** 1
 - **Verification:** automated

@@ -194,30 +194,35 @@ Why it matters   Release automation reads commit messages; without an enforced c
                   and changelog generation silently stop working
                   ([greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).
 Severity         COSMETIC
-Engine           `TOOL-06`. Reads for a commitlint config file (`commitlint.config.*`, `.commitlintrc*`, or
-                 `package.json`'s `"commitlint"` key), a `commit-msg` hook file under `.husky/` or
-                 `.githooks/`, or a `commit-msg`/`commitlint`/`conventional` reference inside
-                 `.pre-commit-config.yaml`/`lefthook.yml`/`.yaml`. Any found is `PASS`; none found, with a
-                 detected ecosystem or any hook wiring already present, is `FAIL`. Distrust a `FAIL` when
-                 the convention is enforced through a server-side hook or a CI-only check this check does
-                 not read (CI enforcement is `TOOL-06`'s own blind spot, not a reason to call the finding
-                 wrong without checking CI first) — verify by reading the CI workflow.
+Engine           `TOOL-06`. Reads two places. Locally: a commitlint config file (`commitlint.config.*`,
+                 `.commitlintrc*`, or `package.json`'s `"commitlint"` key), a `commit-msg` hook file under
+                 `.husky/` or `.githooks/`, or a `commit-msg`/`commitlint`/`conventional` reference inside
+                 `.pre-commit-config.yaml`/`lefthook.yml`/`.yaml`. In CI (every workflow file of a detected
+                 provider): a line that runs commitlint (`npx commitlint`, `wagoid/commitlint-github-action`),
+                 `cz check`, `gitlint`, `pre-commit run --hook-stage commit-msg` or `lefthook run commit-msg`; a
+                 pull-request title check (`amannn/action-semantic-pull-request`); a repository script that the
+                 local `commit-msg` stage also runs; or a runner target (`make commit-lint`, `npm run …`) whose
+                 command does one of those. An install line (`@commitlint/cli`) and a comment do not count.
+                 Distrust a `PARTIAL` or `FAIL` when CI checks commits through a reusable workflow, a
+                 server-side hook or a script the local stage does not name — verify by reading the CI
+                 workflow. The engine does not read whether the job runs on pull requests.
 Method           automated
 Look for         The commitlint config file or `package.json` key; the hook files under `.husky/` and
-                 `.githooks/`; the hook-manager config's own text for a commit-message stage.
-Rubric           PASS: a commitlint config, a `commit-msg` hook file, or an equivalent pre-commit/lefthook
-                 stage is found.
-                 PARTIAL: not used by this check (the engine's outcome is binary: the rule exists locally
-                 or it does not).
-                 FAIL: none of the above is found and the repository has a detected ecosystem, or any hook
-                 chain (wired or merely configured) is already present.
+                 `.githooks/`; the hook-manager config's own text for a commit-message stage; the workflow line
+                 that runs the same rule.
+Rubric           PASS: a local rule (commitlint config, `commit-msg` hook file or equivalent pre-commit/lefthook
+                 stage) and a CI step that checks commit messages or the pull-request title are both found.
+                 PARTIAL: only one of the two is found. Local only: `--no-verify` or a missing hook install
+                 skips the rule. CI only: an agent learns of a bad subject only after it pushes.
+                 FAIL: neither is found and the repository has a detected ecosystem, or any hook chain (wired
+                 or merely configured) is already present.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no recognised ecosystem and no hook configuration exists at all, so a commit
                  convention cannot be judged either way.
 Evidence to cite A `file` evidence item citing the commitlint config, the `commit-msg` hook file, or the
-                 hook-manager config line that matched.
+                 hook-manager config line that matched; for CI only, the workflow line and what it runs.
 Absence proof    A FAIL cites every runner manifest or detected ecosystem signal as the evidence that no
-                 commitlint config, `commit-msg` hook, or equivalent stage was found.
+                 commitlint config, `commit-msg` hook, equivalent stage or CI step was found.
 Remediation      `add-hooks-and-commit-rules`
 Pitfalls         `COSMETIC` severity means this check never raises a repository's audit to BLOCKER on its
                  own — do not treat a `TOOL-06` `FAIL` as equivalent in urgency to a `DEGRADER` finding

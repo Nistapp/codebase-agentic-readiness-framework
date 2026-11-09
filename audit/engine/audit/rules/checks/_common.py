@@ -183,6 +183,24 @@ _FENCE_RE = re.compile(r"^\s*(?:```|~~~)\s*([A-Za-z0-9_+-]*)\s*$")
 _PROMPT_RE = re.compile(r"^\s*(?:\$|>|%|❯|PS>)\s+")
 
 
+#: Runner indirection: how a command names a verb/script through its runner.
+_NPM_RE = re.compile(r"\b(?:npm|pnpm|bun)\s+(?:run\s+)?([A-Za-z0-9:_.-]+)")
+_YARN_RE = re.compile(r"\byarn\s+(?:run\s+)?([A-Za-z0-9:_.-]+)")
+_TASK_RE = re.compile(r"\b(?:make|task|just|mise)\s+(?:-\S+\s+)*([A-Za-z0-9:_.-]+)")
+_GRADLE_RE = re.compile(r"\b(?:\./)?(?:gradlew|gradle)\s+([A-Za-z0-9:_.-]+)")
+_RUNNER_TARGET_RES = (_NPM_RE, _YARN_RE, _TASK_RE, _GRADLE_RE)
+
+
+def runner_target(command: str) -> str | None:
+    """The script or target a command runs through its runner (``npm run x``, ``make x``, ``./gradlew x``), else
+    ``None``."""
+    for pattern in _RUNNER_TARGET_RES:
+        match = pattern.search(command)
+        if match:
+            return match.group(1)
+    return None
+
+
 def strip_shell_comment(line: str) -> str:
     """``line`` without a trailing shell comment.
 

@@ -94,7 +94,7 @@ DETECTION_FIXTURES: dict[str, tuple[str, str]] = {
     "tool-04-no-audit-verb": ("hook_managers", "husky"),
     "tool-05-unwired-hooks": ("hook_managers", "husky"),
     "tool-06-no-commit-rule": ("hook_managers", "pre-commit"),
-    "tool-ok-node": ("hook_managers", "pre-commit"),
+    "tool-06-local-only-commit-rule": ("hook_managers", "pre-commit"),
 }
 
 # Files that look like configuration of a CI provider, a test framework or a hook manager, and are not what the
