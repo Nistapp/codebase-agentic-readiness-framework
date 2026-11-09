@@ -77,7 +77,7 @@ THEMES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("T1", "Command surface and quality tools", _span("CMD", 1, 4) + _span("TOOL", 1, 4)),
     ("T2", "Execution determinism", _span("EXEC", 1, 7, skip=(4,))),
     ("T3", "Secrets and env", _span("SEC", 1, 3) + ("EXEC-04",)),
-    ("T4", "CI parity, hooks, commits", _span("CI", 1, 4) + ("TOOL-05", "TOOL-06")),
+    ("T4", "CI parity, hooks, commits", _span("CI", 1, 5) + ("TOOL-05", "TOOL-06")),
     ("T5", "Tests and baselines", _span("TST", 1, 5) + _span("BASE", 1, 4)),
     ("T6", "Docs and navigation", _span("DOC", 1, 4) + _span("NAV", 1, 5)),
     ("T7", "AGENTS.md and governance", _span("AGT", 1, 11) + _span("CON", 1, 4)),

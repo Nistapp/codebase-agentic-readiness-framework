@@ -167,7 +167,10 @@ class CatalogueTests(unittest.TestCase):
             if c["engine_id"] is not None:
                 self.assertIn(c["engine_id"], engine_ids, f"{c['id']} names an engine check that does not exist")
 
-    def test_agent_only_checks_are_numbered_after_the_engines_in_their_family(self) -> None:
+    def test_agent_only_checks_never_share_an_id_with_an_engine_check(self) -> None:
+        """An agent-only check took the next free number when it was added; an engine check added later takes the
+        next free number after it. Neither may take the other's ID (docs/explanation/contributor-deep-dive/
+        03-check-catalogue-and-rubrics.md)."""
         engine_ids = {e["id"] for e in self.engine}
         agent = [c for c in self.checks if c["engine_id"] is None]
         self.assertTrue(agent, "expected at least one agent-only check")
@@ -176,7 +179,6 @@ class CatalogueTests(unittest.TestCase):
             self.assertNotIn(c["id"], engine_ids, f"{c['id']} reuses an engine ID")
             family_numbers = [int(e["id"].split("-")[1]) for e in self.engine if e["pack"] == c["family"]]
             self.assertTrue(family_numbers, f"{c['id']}: the family {c['family']} has no engine checks")
-            self.assertGreater(int(c["id"].split("-")[1]), max(family_numbers), f"{c['id']} is not after the engine's")
 
     def test_requirements_and_the_catalogue_agree_both_ways(self) -> None:
         requirements = requirement_fields()

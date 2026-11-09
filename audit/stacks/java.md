@@ -41,7 +41,9 @@ SpotBugs is a static-analysis alternative. Type checker: none separate from the 
 Gradle's built-in `test` task (`useJUnitPlatform()` in the build file). Dependency scanner: the OWASP
 Dependency-Check Gradle plugin (`org.owasp.dependencycheck`), registering `dependencyCheckAnalyze` — a
 task name that does not match `security` literally, so a repository applying the plugin still reads
-`CMD-01` `FAIL` for that verb unless a `security` task delegates to it (see Pitfalls).
+`CMD-01` `FAIL` for that verb unless a `security` task delegates to it (see Pitfalls). Hook manager: none
+is standard; a committed `.githooks/` with `core.hooksPath` set by a build task, or lefthook (no JVM plugin
+needed). Commit rule: a `commit-msg` script or lefthook stage.
 
 ## Execution determinism
 
@@ -63,7 +65,7 @@ can carry workflow files that never invoke a build verb (see Pitfalls), so prese
 build gate. The idiomatic job is `actions/checkout`, `actions/setup-java` with `distribution` and
 `java-version` pinned, Gradle's own dependency cache (`actions/setup-java`'s `cache: gradle` input, or
 `gradle/actions/setup-gradle`), then `./gradlew check` (never a bare `gradle check`, which bypasses the
-pinned wrapper version).
+pinned wrapper version). Workflow lint (`CI-05`): actionlint from a Gradle task, `.githooks/` or lefthook.
 
 ## Baseline / ratchet
 

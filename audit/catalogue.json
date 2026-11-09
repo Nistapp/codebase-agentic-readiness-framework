@@ -1,6 +1,6 @@
 {
-  "catalogue_version": "0.2.8",
-  "fingerprint": "e33c95eda9f58b9d",
+  "catalogue_version": "0.3.0",
+  "fingerprint": "214aa1d1a94addb2",
   "checks": [
     {
       "id": "IDX-01",
@@ -542,6 +542,24 @@
         "REQ-SH-035"
       ],
       "engine_id": null,
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    {
+      "id": "CI-05",
+      "family": "CI",
+      "title": "Workflow files are linted",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-057"
+      ],
+      "engine_id": "CI-05",
+      "since_ruleset": "2026-11-09.1",
       "playbooks": [
         "add-ci-parity"
       ]

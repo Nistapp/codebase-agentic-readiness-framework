@@ -66,6 +66,11 @@
           "type": ["string", "null"],
           "pattern": "^[A-Z]{2,5}-[0-9]{2,3}$"
         },
+        "since_ruleset": {
+          "description": "The engine ruleset revision that added this engine check; set for checks added after ruleset 2026-11-06.1. When an engine report from an older ruleset lacks the check, report.py import-engine records it as UNKNOWN, so the draft can still be finished. Absent for older checks and for agent-only checks.",
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}\\.[0-9]+$"
+        },
         "playbooks": {
           "description": "The playbooks that remediate this check's findings. A playbook may be named before it is written.",
           "type": "array",
