@@ -442,6 +442,8 @@ offered, never assumed: it makes every contributor's agent start a local tool.
 - Do not commit a config with an absolute path to one developer's machine, a token or any secret.
 - Do not create configuration for harnesses the team does not use.
 - Do not install the index tool, add a git hook or edit CI.
+- Do not write a harness copy of `.mcp.json` without the person's yes, and never commit one.
+- Do not copy `dev/mcp_config.py` into the target: it is this framework's dev tool, not a shipped one.
 - Do not print or quote a user-level config file; report the path and whether it names the server.
 - Do not claim the engine's IDX-03 verdict can pass today, and do not read its `UNKNOWN` as stale.
 - Do not index a different checkout and report it as this one's.

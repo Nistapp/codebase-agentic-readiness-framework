@@ -81,8 +81,17 @@ the policy files, and for nothing else:
    exists. Offer item-by-item review only if the owner asks for it.
 2. **CODEOWNERS (HYG-02).** Confirm the owner handle for this repository, even when the state holds one for another
    repository: a handle is per repository. Default shape: keep the existing path rules, add a default `*` line for the
-   owner, and add the second-reviewer line as a comment. **Required code-owner review stays off**: with one owner it
-   would block every pull request. The playbook never enables it and never edits the GitHub setting.
+   owner, and add the second-reviewer line as a comment. **Required code-owner review stays off** when the branch
+   rules require no approval. It stays off with one owner too: it would block every pull request. The file then only
+   routes review requests, and its first lines say so:
+
+   ```text
+   # Code owners: the host asks these people to review a change to the matching paths.
+   # No approval is required, so this file routes review requests; it does not block a merge.
+   ```
+
+   The playbook never enables required code-owner review. It never edits the host's setting: GitHub's "Require
+   review from Code Owners" or GitLab's "Code owner approval".
    **Dependency updates (HYG-09).** When HYG-09 has an item, ask for `deps.update_policy` in the same batch; the
    default is `security-only`. It is the owner's choice: the audit never marks a policy down.
 3. **SECURITY (HYG-06).** Ask for the mailbox and the response time. If the owner has not supplied them, write the
@@ -120,7 +129,9 @@ the policy files, and for nothing else:
    `fill this in` anywhere in it, more than a title. Do not copy another repository's description. A proprietary
    repository may describe itself in full; an open-source one describes only what is in it. The README is one more page
    to keep true, so link to the docs rather than restate them.
-3. **CODEOWNERS (HYG-02).** Create or extend `.github/CODEOWNERS` as Inputs 2 says. Keep every existing path rule.
+3. **CODEOWNERS (HYG-02).** Create or extend the file as Inputs 2 says. Put it where the host reads it:
+   `.github/CODEOWNERS` on GitHub, `.gitlab/CODEOWNERS` on GitLab. An existing file at the root or under `docs/`
+   stays where it is. Keep every existing path rule.
    Verify each path in a rule exists (`test -e`); an owner rule for a path that is gone is a note, not a deletion.
 4. **PR template and issue templates (HYG-03, HYG-04).** `.github/pull_request_template.md`: a short checklist drawn
    from the repository's gate and rules (the verification command, docs updated with code, the title rule, no secret
@@ -302,7 +313,7 @@ and CONTRIBUTING are the root scripts, or per-app commands with the directory na
 | Check | Command or file | Expected |
 |---|---|---|
 | HYG-01 | `wc -m README.md`; read the first lines; grep for the marker words | Root file, 200+ characters of body, no marker, not a bare title; `PASS` |
-| HYG-02 | `ls .github/CODEOWNERS`; `test -e` on each path in a rule | File present; `PASS` |
+| HYG-02 | `ls .github/CODEOWNERS` (or `.gitlab/`); `test -e` on each path in a rule | File present; routing-only header when no approval is required; `PASS` |
 | HYG-03 | `ls .github/pull_request_template*` | Present; `PASS` |
 | HYG-04 | `ls .github/ISSUE_TEMPLATE/` | At least one file; `PASS` |
 | HYG-05 | `ls CONTRIBUTING*` at the root or `docs/` | Present, and its commands resolve; `PASS` |
