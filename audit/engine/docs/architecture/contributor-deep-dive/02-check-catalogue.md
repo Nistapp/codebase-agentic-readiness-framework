@@ -28,15 +28,15 @@
 | `CI` CI | 4 | — | 4 | — |
 | `BASE` Baselines & ratchet | 4 | 2 | 2 | — |
 | `CON` Constraints | 4 | — | 3 | — |
-| `EXEC` Execution determinism | 7 | 2 | 5 | — |
+| `EXEC` Execution determinism | 8 | 2 | 6 | — |
 | `TST` Tests | 5 | 2 | 2 | 1 |
 | `NAV` Navigation | 3 | 1 | 2 | — |
 | `SEC` Security hygiene | 3 | — | 3 | — |
-| **Total catalogued** | **57** | **17** | **37** | **2** |
+| **Total catalogued** | **58** | **17** | **38** | **2** |
 
 Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
 
-Of the 57, `CON-04` is an emitter rather than a check, leaving **56 scoreable checks** in v1. (`CON-01` carried weight 0
+Of the 58, `CON-04` is an emitter rather than a check, leaving **57 scoreable checks** in v1. (`CON-01` carried weight 0
 until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
 prohibitions section now.)
 
@@ -171,6 +171,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `EXEC-05` | No generated artifacts committed in-tree | B | DEGRADER | Generated or vendored paths are either untracked or carry a generated-file header | Implemented |
 | `EXEC-06` | Documented commands resolve | B | DEGRADER | Every fenced command in README and `AGENTS.md` resolves to a real script, verb, or file | Implemented |
 | `EXEC-07` | No competing configs for one concern | B | DEGRADER | At most one authoritative config per concern (lint, format, test, types) | Implemented |
+| `EXEC-08` | Tool versions visible to dependency automation | B | DEGRADER | No literal tool version in a command, workflow or hook (`FAIL`), or only copies of a manifest pin (`PARTIAL`) | Implemented |
 
 ---
 
@@ -220,7 +221,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `HYG-06` | SECURITY | A | Present | Implemented |
 | `HYG-07` | CHANGELOG | A | Present and dated recently | Implemented |
 | `HYG-08` | Release process documented | A | A release document exists | Implemented |
-| `HYG-09` | Dependency update automation | A | Dependabot, Renovate, or equivalent configured | Implemented |
+| `HYG-09` | Dependency update automation | A | Dependabot or Renovate configured, an entry for each detected ecosystem, and no `target-branch` beside `ignore` or `groups` | Implemented |
 | `HYG-10` | License | A | A license file exists | Implemented |
 | `HYG-11` | Branch protection | B | Protection declared by configuration-as-code where the provider allows | Implemented |
 

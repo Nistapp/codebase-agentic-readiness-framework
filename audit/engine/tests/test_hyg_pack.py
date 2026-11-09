@@ -34,6 +34,8 @@ HYG_IDS = tuple(f"HYG-{n:02d}" for n in range(1, 12))
 #: fixture directory -> {check id: expected verdict}
 FIXTURES: dict[str, dict[str, str]] = {
     "hyg-01-placeholder-readme": {"HYG-01": "FAIL", "HYG-10": "FAIL"},
+    "hyg-09-uncovered-ecosystem": {"HYG-09": "PARTIAL"},
+    "hyg-09-target-branch-trap": {"HYG-09": "PARTIAL"},
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
     "hyg-minimal": {
         "HYG-01": "FAIL",
@@ -90,8 +92,8 @@ class HygCatalogueTests(unittest.TestCase):
         reported = {c["id"] for c in report["checks"]}
         for check in HYG_IDS:
             self.assertIn(check, reported)
-        # 70 catalogued, 14 informational or emitter-only ⇒ 56 scoreable (CON-01 is scored since ruleset 2026-10-11.1).
-        self.assertEqual(report["summary"]["checks_scoreable"], 56)
+        # 71 catalogued, 14 informational or emitter-only ⇒ 57 scoreable (CON-01 is scored since ruleset 2026-10-11.1).
+        self.assertEqual(report["summary"]["checks_scoreable"], 57)
 
 
 class ScoreIsolationTests(unittest.TestCase):

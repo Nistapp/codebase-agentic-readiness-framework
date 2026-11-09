@@ -1,0 +1,7 @@
+# A Node project whose Dependabot file has no npm entry: HYG-09 PARTIAL.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
