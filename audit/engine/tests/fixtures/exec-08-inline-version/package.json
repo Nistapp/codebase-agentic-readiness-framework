@@ -1,0 +1,8 @@
+{
+  "name": "exec-08-inline-version",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "lint": "npx --yes eslint@9.0.0 ."
+  }
+}

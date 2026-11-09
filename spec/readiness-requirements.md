@@ -425,6 +425,16 @@ Each of lint, format, test, types and security MUST have at most one authoritati
 - **Source:** [Phased-Approach.md § Phase 1: Agentic Bootstrap](../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)
 - **Checks:** EXEC-07
 
+### REQ-SH-058 — Tool versions visible to dependency automation
+
+A tool version that a command, a workflow or a hook runs MUST be held in a manifest that dependency automation
+reads, or in a file a configured custom manager reads. It MUST NOT be written only as a literal in the command.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [Phased-Approach.md § Phase 1: Agentic Bootstrap](../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)
+- **Checks:** EXEC-08
+
 ## Tests
 
 ### REQ-SH-045 — Test verb and suite

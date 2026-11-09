@@ -6,8 +6,9 @@
 ## Goal
 
 Every run of the repository gets the same toolchain and the same dependency versions: each ecosystem has a
-committed pin (JDK, Node, package manager), each component has a tracked lockfile that matches its manifest, and
-the pins in CI, Dockerfiles and version files agree with each other.
+committed pin (JDK, Node, package manager), each component has a tracked lockfile that matches its manifest, the
+pins in CI, Dockerfiles and version files agree with each other, and every tool version the gate runs sits in a
+manifest that dependency automation reads.
 
 ## Checks resolved
 
@@ -16,6 +17,7 @@ the pins in CI, Dockerfiles and version files agree with each other.
 | EXEC-01 | [09-execution-determinism.md](../../audit/checks/09-execution-determinism.md#exec-01--toolchain-pinned--wrapper-committed) | Commits a pin for every detected ecosystem and makes every other place that names a version agree with it |
 | EXEC-02 | [09-execution-determinism.md](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent) | Commits a lockfile that resolves exactly what the manifest resolves today |
 | EXEC-03 | [09-execution-determinism.md](../../audit/checks/09-execution-determinism.md#exec-03--non-interactive-setup-path) | Check only (step 9): [`define-command-surface`](define-command-surface.md) owns the fix |
+| EXEC-08 | [09-execution-determinism.md](../../audit/checks/09-execution-determinism.md#exec-08--tool-versions-visible-to-dependency-automation) | Moves each tool version written into a command into a manifest with a lockfile, and has the command read it (step 10) |
 
 ## Preconditions
 
@@ -76,6 +78,21 @@ the pins in CI, Dockerfiles and version files agree with each other.
    `partial` with the reason; it does not add a root workspace manifest unless the owner asks, because that changes
    install paths and image builds. The engine reads only the root manifest, so a nested lockfile reads `PARTIAL` by
    design ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
+7. **Where tool versions go (EXEC-08).** List each literal the audit cited (tool, version, file, line) and confirm
+   the versions stay as they are: this step moves a version, it never upgrades one. The place follows the stack
+   profile; offer the owner the matching option:
+
+   | Stack | Manifest for tool versions | How the command reads it |
+   |---|---|---|
+   | Node | `devDependencies` of the root (or a `tools/`) `package.json`, with its lockfile | `npx <tool>` with no version, or an npm script |
+   | Python | A dependency group (`[dependency-groups] tools`) in a `pyproject.toml`, locked in `uv.lock`; `requirements-dev.txt` with `pip-tools` on a pip project | `uv run <tool>`, or a runner variable that reads the pin from the manifest |
+   | Go | A `tool` directive in `go.mod` (Go 1.24 or newer), or a `tools/go.mod` | `go tool <name>` |
+   | Rust | No manifest holds a `cargo install` tool: ask the owner; a Renovate custom manager is the fallback | — |
+   | Any, with Renovate | A `customManagers` regex entry whose file pattern matches the runner file | The command keeps its version; Renovate updates it in place |
+
+   A tool-installer action's `version` input (`setup-uv`, `pnpm/action-setup`) moves to the file the action reads
+   (`version-file:` pointing at the manifest, or `packageManager` in `package.json`). Record the choice as the
+   preference `deps.tool_manifest`.
 
 ## Steps
 
@@ -108,7 +125,13 @@ the pins in CI, Dockerfiles and version files agree with each other.
    component. If [`define-command-surface`](define-command-surface.md) has not added it, add it there; this
    playbook adds no setup script. Record the engine's limit when the documented command is a project script it
    does not recognise.
-10. Commits: toolchain pin, lockfile, version alignment, doc claim.
+10. **Move tool versions (EXEC-08).** With the place chosen in Inputs 7: add each tool, at the same version, to the
+    manifest, lock it with the tool's own command (`npm install --save-dev --save-exact`, `uv lock`,
+    `go get -tool`), then change each command to read it. Run the gate: it must pass with the same tool versions.
+    Make sure `dependabot.yml` (or the Renovate config) has an entry for the manifest's ecosystem and directory
+    ([`add-repo-hygiene`](add-repo-hygiene.md), HYG-09). Edit a workflow only when `ci.edits_authorised` allows;
+    otherwise list its literals as debt. A repeated copy of a pin (EXEC-08 `PARTIAL`) is removed the same way.
+11. Commits: toolchain pin, lockfile, version alignment, doc claim, tool versions.
 
 ### Gradle
 
@@ -169,6 +192,7 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#exe
 | EXEC-01 | Read the pin file per ecosystem; `grep` the version in every workflow and `Dockerfile*` | One pin per ecosystem and component; every other place names the same version |
 | EXEC-02 | Gradle: `./gradlew dependencies` compared to the step 1 report, read `gradle.lockfile`. Node: `npm ci` per component, then `git status --porcelain` | Gradle: identical resolved versions, lockfile tracked. Node: `npm ci` succeeds and leaves the tree clean |
 | EXEC-03 | Read the instruction file | One non-interactive setup command per component (owned by `define-command-surface`) |
+| EXEC-08 | Launcher run; `grep` each cited line | No literal tool version in a command, workflow or hook; each tool is in a manifest with a lockfile; `PASS` |
 
 Also run the repository's own gate (`./gradlew build`, `npm run build` per component) once on the pinned
 toolchain, and read the CI run on the branch: it must be green. The engine's re-audit can still read EXEC-02 as
@@ -192,6 +216,7 @@ runtime change needs undoing.
 - Do not edit workflow files without `ci.edits_authorised`.
 - Do not build images or start containers by hand: use the repository's scripts.
 - Do not install a version manager the owner did not approve.
+- Do not upgrade a tool while moving its version into a manifest.
 
 ## State updates
 

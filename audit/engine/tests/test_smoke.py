@@ -39,8 +39,8 @@ class CatalogueContractTests(unittest.TestCase):
     def test_catalogue_size_matches_the_documented_counts(self):
         from audit.rules.registry import informational, scoreable
 
-        self.assertEqual(len(REGISTRY), 70, "catalogue drifted from the documented 70 rows")
-        self.assertEqual(len(scoreable()), 56, "scoreable count drifted from the documented 56")
+        self.assertEqual(len(REGISTRY), 71, "catalogue drifted from the documented 71 rows")
+        self.assertEqual(len(scoreable()), 57, "scoreable count drifted from the documented 57")
         self.assertEqual(len(informational()), 14, "informational count drifted from 14")
 
     def test_every_spec_has_a_tier(self):

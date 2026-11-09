@@ -7,8 +7,8 @@ Current state: the fixture matrix is complete and consolidated by `../test_fixtu
 carries one explicit expected verdict per fixture and asserts the positive fixtures collectively pass
 every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`) and
 `AGT-05` are exercised by `../test_agt_pack.py` and `../test_cmd_pack.py`; the earlier `AGT` checks
-(`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`07`) are
-exercised by `../test_exec_pack.py`; the `CMD` checks (`CMD-01`…`04`) by `../test_cmd_pack.py`; and
+(`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`08`) are
+exercised by `../test_exec_pack.py` (and `EXEC-08` by `../test_exec08_inline_versions.py`); the `CMD` checks (`CMD-01`…`04`) by `../test_cmd_pack.py`; and
 the `SEC` checks (`SEC-01`…`03`) by `../test_sec_pack.py`, against the fixtures below. The `DOC` and
 `NAV` checks (`DOC-01`…`04`, `NAV-01`…`05`) are exercised by `../test_doc_nav_pack.py`. The `TOOL`
 checks (`TOOL-01`…`06`) are exercised by `../test_tool_pack.py`; the `CI` checks (`CI-01`…`03`) by
@@ -72,6 +72,8 @@ fixtures/
   exec-05-generated/         tracked generated file, no header (needs git) -> EXEC-05 FAIL
   exec-06-broken-command/    README runs an npm script that is not declared -> EXEC-06 FAIL
   exec-07-dual-lint/         .eslintrc.json + biome.json compete  -> EXEC-07 FAIL
+  exec-08-inline-version/    an npm script runs `npx eslint@9.0.0`, no manifest holds it -> EXEC-08 FAIL
+  exec-08-duplicate-pin/     the same script, eslint 9.0.0 also in devDependencies -> EXEC-08 PARTIAL
   exec-ok/                   the smallest node repository passing every EXEC check (needs git)
   doc-01-empty/              docs/ present, no markdown page      -> DOC-01 PARTIAL
   doc-02-no-style-guide/     docs/ present, no STYLE_GUIDE.md     -> DOC-02 FAIL
@@ -115,6 +117,8 @@ fixtures/
   con-02-specs-are-not-tests/ `specs/` holds feature specifications, `tests/` is named -> CON-02 PASS
   con-03-artefacts-not-ignored/ artefacts/ present, no ignore rule      -> CON-03 FAIL
   hyg-01-placeholder-readme/ README is a TODO stub                      -> HYG-01 FAIL
+  hyg-09-uncovered-ecosystem/ package.json, a Dependabot file with only a pip entry -> HYG-09 PARTIAL
+  hyg-09-target-branch-trap/ the npm entry sets target-branch and ignore -> HYG-09 PARTIAL
   hyg-10-no-license/         real README, no LICENSE at the root         -> HYG-10 FAIL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 UNKNOWN
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test

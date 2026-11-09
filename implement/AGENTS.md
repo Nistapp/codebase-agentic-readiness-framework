@@ -27,6 +27,9 @@ folder.
   It never merges, force-pushes or pushes tags. See [ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md).
 - Read [`playbooks/README.md`](playbooks/README.md) before you add or change a playbook. Keep the anatomy it fixes,
   section for section.
+- A change to a playbook, or to the playbook list in `playbooks/README.md`, changes the generated
+  [implement master list](../docs/reference/implement-master.md). Run `make update-masters` from the repository
+  root and commit the result in the same change.
 - A playbook does not repeat the shared procedure in `SKILL.md` (Stages 3 and 4). It does not restate a stack
   profile; it links to [`audit/stacks/`](../audit/stacks/README.md).
 - The tools import the shared helpers (`_common.py` and others) from `audit/tools/`. Import

@@ -33,7 +33,9 @@ Flake8/Pylint on an older one; config in `pyproject.toml`'s `[tool.ruff]`/`[tool
 `mypy.ini`'s `strict = true`. Test runner: pytest. Dependency scanner: `pip-audit` (works against any of
 pip/uv/poetry's resolved environment) or `safety check`. Hook manager: pre-commit
 (`.pre-commit-config.yaml`); lefthook in a mixed repository. Commit rule: a pre-commit `commit-msg` hook
-(conventional-pre-commit, commitizen or gitlint).
+(conventional-pre-commit, commitizen or gitlint). Dependency updates: Dependabot `package-ecosystem: pip`
+(pip, pipenv, poetry, pip-compile) or `uv` (a `uv.lock`); Renovate's `pep621`, `pip_requirements`,
+`poetry` and `pipenv` managers.
 
 ## Execution determinism
 
@@ -42,6 +44,8 @@ poetry both honour `.python-version` directly, pip does not read it at all — s
 actually acts on, not just which file exists. The matching lockfile (`poetry.lock`/`uv.lock`/
 `Pipfile.lock`) must be git-tracked at the root; `uv sync --frozen`/`poetry install --no-update`/
 `pipenv sync` is the non-interactive install path, never a bare `install` that can resolve new versions.
+Tool versions (`EXEC-08`) go in a dependency group of a `pyproject.toml`, locked in `uv.lock`, never inline in
+`uvx ruff@0.5.0` or `pip install black==24.1.0`; the runner reads the pin or runs `uv run`.
 
 ## CI idiom
 

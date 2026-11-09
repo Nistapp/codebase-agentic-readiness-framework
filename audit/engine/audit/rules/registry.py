@@ -208,6 +208,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("EXEC-05", "No generated artifacts committed in-tree", "B", _S.DEGRADER),
     _c("EXEC-06", "Documented commands resolve", "B", _S.DEGRADER),
     _c("EXEC-07", "No competing configs for one concern", "B", _S.DEGRADER),
+    _c("EXEC-08", "Tool versions visible to dependency automation", "B", _S.DEGRADER),
     # -- TST ------------------------------------------------------------
     _c("TST-01", "Test verb exists, suite non-empty", "A", _S.BLOCKER),
     _c("TST-02", "Suite status known", "C", _S.DEGRADER),

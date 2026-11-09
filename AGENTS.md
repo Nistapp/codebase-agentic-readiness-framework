@@ -30,9 +30,10 @@ make lint           # read-only lint
 make typecheck      # mypy, strict, on audit/tools, implement/tools and dev, and the engine's build.py
 make test           # the engine's suite, then the audit tools', the implement tools' and the dev checks'
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
-                    # cross-check, recipe-lint, workflow-lint (actionlint, zizmor, check-jsonschema), spell (typos)
+                    # cross-check, recipe-lint, masters-check, workflow-lint (actionlint, zizmor, check-jsonschema), spell (typos)
 make security       # secrets scan, then the dependency audit (osv-scanner; needs Go and the network)
 make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin/dev..HEAD); CI runs it on each PR
+make update-masters # regenerate docs/reference/audit-master.md and implement-master.md (check runs masters-check)
 ```
 
 One test, without the whole suite. Run the engine's tests from `audit/engine/`:
@@ -75,6 +76,9 @@ no vendor-specific instruction file exists beside it.
   `make docs-lint` compare the live count with the baseline and fail when it went up (a ratchet). A baseline only goes
   down, a coverage floor only goes up; raising either needs the owner. When a count falls, lower the baseline in the
   same change.
+- The audit and implement master lists (`docs/reference/audit-master.md`, `docs/reference/implement-master.md`) are
+  generated from `audit/catalogue.json`, `audit/checks/` and `implement/playbooks/`. After you change one of those,
+  run `make update-masters` and commit the pages in the same change. Never edit the pages by hand.
 - After a deliberate change to a fixture or test that holds a key-shaped string, run `make update-secrets-baseline`
   and review the diff.
 - Never weaken a gate to get green: no `.skip`, no rule turned off, no assertion relaxed. If you cannot pass a gate,
@@ -156,6 +160,8 @@ A change is done when all of this holds:
 - Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
   `docs/architecture/adrs/README.md`.
 - Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.
+- What an audit checks and what an implement run changes, for a reader: `docs/reference/audit-master.md` and
+  `docs/reference/implement-master.md`.
 - Terms: `docs/glossary.md` and `docs/framework/glossary.md`.
 - The engine's design, checks and ADRs: `audit/engine/docs/architecture/README.md`.
 - The tool contract and the tool catalogue: `audit/tools/README.md`, `audit/tools/CATALOGUE.md`.

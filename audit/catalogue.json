@@ -1,6 +1,6 @@
 {
-  "catalogue_version": "0.3.0",
-  "fingerprint": "214aa1d1a94addb2",
+  "catalogue_version": "0.4.0",
+  "fingerprint": "c1e37dbeb5030428",
   "checks": [
     {
       "id": "IDX-01",
@@ -813,6 +813,24 @@
       "engine_id": "EXEC-07",
       "playbooks": [
         "untrack-generated"
+      ]
+    },
+    {
+      "id": "EXEC-08",
+      "family": "EXEC",
+      "title": "Tool versions visible to dependency automation",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-058"
+      ],
+      "engine_id": "EXEC-08",
+      "since_ruleset": "2026-11-09.3",
+      "playbooks": [
+        "pin-execution-environment"
       ]
     },
     {

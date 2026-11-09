@@ -137,6 +137,7 @@ Where brownfield repositories fail hardest, and where the framework's Phase 1 is
 | `EXEC-05` No generated artifacts committed in-tree | Agents edit files that are regenerated | Work silently discarded after review |
 | `EXEC-06` Documented commands resolve | Agents obey written instructions literally | The most expensive brownfield trap there is |
 | `EXEC-07` No competing configs for one concern | One question, one authority | Agent picks the config that happens to match the first result |
+| `EXEC-08` Tool versions visible to dependency automation | One place per tool version, where the update bot looks | A vulnerable tool stays in the gate with no alert, and an upgrade misses the copies |
 
 ---
 
