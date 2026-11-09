@@ -33,7 +33,9 @@ Flake8/Pylint on an older one; config in `pyproject.toml`'s `[tool.ruff]`/`[tool
 `mypy.ini`'s `strict = true`. Test runner: pytest. Dependency scanner: `pip-audit` (works against any of
 pip/uv/poetry's resolved environment) or `safety check`. Hook manager: pre-commit
 (`.pre-commit-config.yaml`); lefthook in a mixed repository. Commit rule: a pre-commit `commit-msg` hook
-(conventional-pre-commit, commitizen or gitlint).
+(conventional-pre-commit, commitizen or gitlint). Dependency updates: Dependabot `package-ecosystem: pip`
+(pip, pipenv, poetry, pip-compile) or `uv` (a `uv.lock`); Renovate's `pep621`, `pip_requirements`,
+`poetry` and `pipenv` managers.
 
 ## Execution determinism
 

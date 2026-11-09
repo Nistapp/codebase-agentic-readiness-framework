@@ -28,7 +28,7 @@ action in the state, never an invented contact.
 | HYG-06 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-06--security-present) | A `SECURITY` document: how to report privately, with owner-supplied contact values as a named placeholder |
 | HYG-07 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-07--changelog-present-and-recent) | Verification, and a decision: a changelog the release tool writes is not hand-written (Steps 6) |
 | HYG-08 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-08--release-process-documented) | A short document (name contains `release`) describing the release process in prose |
-| HYG-09 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-09--dependency-update-automation-configured) | Verification only: a Dependabot or Renovate file already exists in most repositories |
+| HYG-09 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-09--dependency-update-automation-configured) | An update entry for each detected ecosystem, no `target-branch` beside `ignore` or `groups`, and the owner's update policy (Step 8) |
 | HYG-10 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-10--license-present) | Verification only; the playbook never chooses a licence |
 | HYG-11 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-11--branch-protection-declared-as-code) | A page whose path contains `branch-protection` that records the rules in the repository's own words |
 
@@ -66,6 +66,7 @@ observation.
 | `ci.branch_protection`, `ci.branch_protection_runbook` | Whether the rules are enforced or only recorded; who may change the setting |
 | `agents_md.release_tags` | `never-tag-or-release` means the release page says agents never tag |
 | `format.mass_reformat` | `no`: new Markdown only, no reformatting of existing pages |
+| `deps.update_policy` | `security-only` (default), `security-and-minor` or `all`: which pull requests the dependency-update tool opens (Step 8) |
 
 ## Inputs to ask
 
@@ -81,6 +82,8 @@ the policy files, and for nothing else:
    repository: a handle is per repository. Default shape: keep the existing path rules, add a default `*` line for the
    owner, and add the second-reviewer line as a comment. **Required code-owner review stays off**: with one owner it
    would block every pull request. The playbook never enables it and never edits the GitHub setting.
+   **Dependency updates (HYG-09).** When HYG-09 has an item, ask for `deps.update_policy` in the same batch; the
+   default is `security-only`. It is the owner's choice: the audit never marks a policy down.
 3. **SECURITY (HYG-06).** Ask for the mailbox and the response time. If the owner has not supplied them, write the
    document with the placeholder `TODO(owner)` where each value goes. The disclosure path by repository kind:
    - **Public repository:** GitHub private vulnerability reporting, plus the placeholder for a mailbox and a response
@@ -144,12 +147,33 @@ the policy files, and for nothing else:
    rulesets), the page says **"recorded, not enforced"** at the top; it must not read as enforcement. Never copy a
    private runbook from another repository; describe the rules from the repository's own workflow files and the
    owner's answers. Never call the GitHub settings API.
-8. **Dependency updates and licence (HYG-09, HYG-10).** Verify only. If the dependency-update file exists, record
-   `done` when the check has an item; when it has none (the audit passed it), name it in the pull request body and
-   record nothing. If a `LICENSE` is missing, do not pick one: raise it as an owner question and set the item
-   `blocked` (reason: the owner chooses a licence).
+8. **Dependency updates (HYG-09).** Read what exists first; never replace one tool with the other.
+   - **Tool.** Keep the tool the repository already uses. With none: Dependabot on GitHub, Renovate on GitLab,
+     Azure DevOps or Bitbucket, where Dependabot does not run.
+   - **Coverage.** One entry per ecosystem the audit detected from a manifest, with the `package-ecosystem` the
+     stack profile names (Node `npm`, Python `pip` or `uv`, Java `maven` or `gradle`, Go `gomod`, Rust `cargo`,
+     .NET `nuget`, Ruby `bundler`, PHP `composer`), plus `github-actions` when the repository has GitHub
+     workflows. Set `directory` (or `directories`) to where each manifest lives. Renovate needs no entry per
+     ecosystem; remove a detected one from `enabledManagers` only when the owner asks.
+   - **The `target-branch` trap.** Dependabot drops an entry's `ignore` and `groups` for security updates when the
+     entry sets `target-branch`; security pull requests always go to the default branch. If `target-branch` names
+     the default branch, delete the line. If it names another branch, do not change it: ask the owner whether to
+     make that branch the default (a setting the playbook never edits) or to drop `ignore`/`groups` there.
+   - **Policy (`deps.update_policy`).** For Dependabot, `security-only` writes `open-pull-requests-limit: 0`
+     (version updates off; security updates are a repository setting and an owner action), an `ignore` for
+     `version-update:semver-major` (a major stays an advisory alert), a `security-fixes` group with
+     `applies-to: security-updates`, and `cooldown: default-days: 7`. `security-and-minor` drops the limit and
+     keeps the major `ignore`; `all` drops both. For Renovate, write the same policy with `vulnerabilityAlerts`,
+     a `packageRules` entry with `enabled: false` for other updates, and `minimumReleaseAge: "7 days"`; confirm
+     the exact form in Renovate's configuration documentation before writing it, and cite the page in the pull
+     request body. The cooldown matches zizmor's `dependabot-cooldown` rule (CI-05).
+   - **Owner action.** Record "turn on Dependabot security updates in the repository settings" as a note on the
+     item: an agent can neither read nor set it.
+   - When HYG-09 passed and has no item, name it in the pull request body and change nothing.
+   - **Licence (HYG-10).** Verify only. If a `LICENSE` is missing, do not pick one: raise it as an owner question
+     and set the item `blocked` (reason: the owner chooses a licence).
 9. **Commits:** one per concern: policy files (CODEOWNERS and SECURITY); contribution files (README, CONTRIBUTING
-   and the templates); release and protection pages.
+   and the templates); release and protection pages; the dependency-update file.
 
 ### Gradle and Quarkus
 
@@ -190,7 +214,8 @@ and CONTRIBUTING are the root scripts, or per-app commands with the directory na
 | HYG-06 | `ls SECURITY*` at the root, `.github/` or `docs/` | Present; `PASS` |
 | HYG-07 | Launcher run | `PASS` once the release tool has committed the file; until then `FAIL` and the item is `partial` |
 | HYG-08 | `ls` for a document with `release` in its name | Present as prose, not only `release.yml`; `PASS` |
-| HYG-09, HYG-10 | `ls .github/dependabot.yml`, `ls LICENSE*` | Present; `PASS` (verified, not added) |
+| HYG-09 | Launcher run; read each `updates:` entry | An entry per detected ecosystem, no `target-branch` beside `ignore` or `groups`; `PASS` |
+| HYG-10 | `ls LICENSE*` | Present; `PASS` (verified, not added) |
 | HYG-11 | `ls docs/*branch-protection*` | Present, says "recorded, not enforced" where that is true; `PASS` |
 
 ## Rollback
@@ -207,6 +232,7 @@ vulnerability reporting, branch protection, required reviews) are never touched,
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
 - Do not copy a private runbook, another repository's page, or its values into a repository's file.
 - Do not choose a licence.
+- Do not replace Renovate with Dependabot or the reverse, and do not turn on security updates in the settings.
 - Do not create a file in a component directory expecting it to count.
 - Do not reformat existing pages (`format.mass_reformat`).
 

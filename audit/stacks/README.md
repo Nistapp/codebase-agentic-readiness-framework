@@ -34,7 +34,8 @@ Detection signals      files and dependencies that identify the stack and its fr
 Command-surface map    how each verb is usually realised, and the runner (npm scripts / Makefile /
                        Taskfile / Gradle / Maven)
 Tooling defaults       recommended formatter, linter, type checker, test runner, coverage tool,
-                       dependency scanner, hook manager and commit-message rule, with "alternatives
+                       dependency scanner, hook manager, commit-message rule and dependency-update
+                       ecosystem (Dependabot and Renovate names), with "alternatives
                        you may find" so an existing choice is respected, never replaced without being
                        asked
 Execution determinism  version pinning and lockfile expectations for this stack
