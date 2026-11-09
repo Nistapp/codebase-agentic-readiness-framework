@@ -13,6 +13,12 @@ folder before you change it.
 
 The rest of this file is for changes to this repository.
 
+## First session: offer the agent tools
+
+Before your first change in a clone, run `python3 dev/mcp_config.py status --harness <your harness>`. If it prints
+`not asked`, make the one-time offer in `docs/how-to/set-up-agent-tools.md` ("For agents"). Ask once. Never install a
+server or write a harness config without the person's consent.
+
 ## Commands
 
 The framework's seven verbs run through the root `Makefile`. CI runs the same commands.

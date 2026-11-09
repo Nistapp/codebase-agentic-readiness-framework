@@ -13,6 +13,7 @@ The root router is [`docs/README.md`](../../README.md).
 | [0003](0003-dependabot-security-pull-requests-only.md) | Dependabot Opens Security Pull Requests Only; Major Versions Are Advisory | Accepted | 2026-11-08 |
 | [0004](0004-plain-language-rules-and-a-prose-check.md) | Plain-Language Rules in One File, Checked by a Standard-Library Prose Check | Accepted | 2026-11-08 |
 | [0005](0005-release-please-cuts-releases.md) | Release-Please Computes the Version, Writes the Changelog and Tags the Release | Accepted | 2026-11-08 |
+| [0006](0006-first-run-agent-tool-offer.md) | One Committed `.mcp.json`; Agents Offer Each Person a One-Time Setup for Their Harness | Accepted | 2026-11-09 |
 
 ## Requirements: `spec/decisions/`
 
