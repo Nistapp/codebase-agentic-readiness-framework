@@ -11,17 +11,17 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 
 | Tool | What it catches | Command | In CI | Version pinned in |
 | --- | --- | --- | --- | --- |
-| ruff | Python formatting and lint errors (rules in `ruff.toml`) | `make format`, `make format:check`, `make lint` | `check` | `dev/tools/pyproject.toml` |
-| mypy | Python type errors, strict mode (`mypy.ini`) | `make typecheck` | `check` | `dev/tools/pyproject.toml` |
-| unittest | Failing tests: the engine, the audit tools, the implement tools, the dev checks | `make test` | `check` | Python standard library |
-| coverage.py | Test coverage below the floor in `.coveragerc` | `make coverage` | `coverage` | `dev/tools/pyproject.toml` |
-| jsonschema | The tools' schema validator disagrees with the reference package | `make crosscheck` | `check` | `dev/tools/pyproject.toml` |
-| `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `check` | This repository |
-| `dev/build_masters.py` | An [audit master list](audit-master.md) or [implement master list](implement-master.md) that no longer matches the catalogue, the check files or the playbooks | `make masters-check`; `make update-masters` rewrites both pages | `check` | This repository |
-| actionlint | Workflow mistakes: syntax, expressions, action inputs, shellcheck on `run:` blocks | `make workflow-lint` | `check` | `dev/tools/actionlint/go.mod` |
-| zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown. Runs at the pedantic persona, so a permission without a comment or a missing concurrency limit fails too | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
-| typos | Misspelled words in the tracked text, code identifiers included (word list: [`_typos.toml`](../../_typos.toml)) ([Spell check](#spell-check)) | `make spell`; `make spell-fix` writes the fixes | `check` | `dev/tools/pyproject.toml` |
-| check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
+| ruff | Python formatting and lint errors (rules in `ruff.toml`) | `make format`, `make format:check`, `make lint` | `static` | `dev/tools/pyproject.toml` |
+| mypy | Python type errors, strict mode (`mypy.ini`) | `make typecheck` | `static` | `dev/tools/pyproject.toml` |
+| unittest | Failing tests: the engine, the audit tools, the implement tools, the dev checks | `make test` (on Linux, its four suites at once) | `test-engine`, `test-tools`, `test-dev`, `test-py314` | Python standard library |
+| coverage.py | Test coverage below the floor in `.coveragerc` | `make coverage` (in CI: `coverage-<suite>`, then `coverage-combine`) | `test-engine`, `test-tools`, `coverage` | `dev/tools/pyproject.toml` |
+| jsonschema | The tools' schema validator disagrees with the reference package | `make crosscheck` | `crosscheck` | `dev/tools/pyproject.toml` |
+| `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `static` | This repository |
+| `dev/build_masters.py` | An [audit master list](audit-master.md) or [implement master list](implement-master.md) that no longer matches the catalogue, the check files or the playbooks | `make masters-check`; `make update-masters` rewrites both pages | `static` | This repository |
+| actionlint | Workflow mistakes: syntax, expressions, action inputs, shellcheck on `run:` blocks | `make workflow-lint` | `static` | `dev/tools/actionlint/go.mod` |
+| zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown. Runs at the pedantic persona, so a permission without a comment or a missing concurrency limit fails too | `make workflow-lint` | `static` | `dev/tools/pyproject.toml` |
+| typos | Misspelled words in the tracked text, code identifiers included (word list: [`_typos.toml`](../../_typos.toml)) ([Spell check](#spell-check)) | `make spell`; `make spell-fix` writes the fixes | `static` | `dev/tools/pyproject.toml` |
+| check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `static` | `dev/tools/pyproject.toml` |
 | detect-secrets | Key-shaped strings not in `.secrets.baseline` | `make security` | `security` | `dev/tools/pyproject.toml` |
 | osv-scanner | A known vulnerability in a dev tool or its dependencies (Python, Node, Go lockfiles), unless [`osv-scanner.toml`](../../dev/tools/osv-scanner.toml) accepts it ([Dependency audit](#dependency-audit)) | `make security` | `security` | `dev/tools/osv/go.mod` |
 | markdownlint-cli2 | Markdown rule violations (`.markdownlint-cli2.jsonc`) | `make docs-lint`; `make changelog-fix` rewrites `CHANGELOG.md` with the fixes | `docs`; `format-changelog` in `release-please.yml` | `dev/tools/package.json` |

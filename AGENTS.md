@@ -28,7 +28,7 @@ make format         # rewrite formatting in place
 make format:check   # read-only: formatting and lint rules (alias: make format-check)
 make lint           # read-only lint
 make typecheck      # mypy, strict, on audit/tools, implement/tools and dev, and the engine's build.py
-make test           # the engine's suite, then the audit tools', the implement tools' and the dev checks'
+make test           # the engine's, the audit tools', the implement tools' and the dev checks' suites (at once on Linux)
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
                     # cross-check, recipe-lint, masters-check, workflow-lint (actionlint, zizmor, check-jsonschema), spell (typos)
 make security       # secrets scan, then the dependency audit (osv-scanner; needs Go and the network)
@@ -69,7 +69,8 @@ no vendor-specific instruction file exists beside it.
   The developer runs `lefthook install` once per clone; an agent never does.
   Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
 - `make coverage` runs the engine's, the audit tools' and the implement tools' suites under coverage.py. It fails
-  below the floor in `.coveragerc` (`fail_under`). CI runs it as the `coverage` job. The floor is debt that only goes
+  below the floor in `.coveragerc` (`fail_under`). CI runs it in parts (`coverage-<suite>` per job, then
+  `coverage-combine` in the `coverage` job). The floor is debt that only goes
   up: raise it when coverage rises, never lower it to get green.
 - Quality baseline: existing lint debt is counted in `.quality-baseline.json` (ruff, mypy, Markdown lint outside the
   ratchet) and the secrets in `.secrets.baseline`. No new violations: `make format-check`, `make typecheck` and

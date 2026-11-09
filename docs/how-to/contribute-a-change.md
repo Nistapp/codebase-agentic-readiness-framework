@@ -235,7 +235,8 @@ You can also click **Update branch** on the pull request page. Do not rebase a b
 
 ### Step 9: The maintainer merges
 
-The maintainer merges your pull request with a merge commit. You do not merge it yourself.
+The maintainer adds your pull request to the merge queue. GitHub merges it onto the latest `dev`, runs CI on the
+result, and lands it with a merge commit when `CI Gate` passes. You do not merge it yourself.
 
 ### Step 10: Clean up
 

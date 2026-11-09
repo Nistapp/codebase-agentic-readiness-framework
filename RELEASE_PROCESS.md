@@ -18,7 +18,8 @@ pushes, opens a pull request, merges or starts a workflow ([`AGENTS.md`](AGENTS.
    example `fix/report-score` or `docs/release-process`.
 5. Every pull request must pass the required check `CI Gate`. A pull request into `main` must also pass
    `Check source branch`.
-6. Merge with a merge commit. Do not squash. Do not rebase.
+6. Merge with a merge commit. Do not squash. Do not rebase. A pull request into `dev` goes through the merge queue:
+   `gh pr merge <n>` adds it, and GitHub merges it when `CI Gate` passes on it merged onto the latest `dev`.
 7. Commit subjects follow Conventional Commits. They decide the next version, and they become the changelog.
 8. A release is a tag `vX.Y.Z` that release-please makes on `main` when the release pull request is merged.
 
@@ -234,10 +235,10 @@ release commit on `main`. It brings the new version and the changelog entry into
 
 2. Without the App token, close and reopen it to start CI.
 3. If `dev` moved since the release, click "Update branch" (the `dev` ruleset requires an up-to-date branch).
-4. When `CI Gate` passes, merge it with a merge commit. GitHub deletes the branch:
+4. When `CI Gate` passes, add it to the merge queue. GitHub merges it with a merge commit and deletes the branch:
 
    ```bash
-   gh pr merge <n> --merge
+   gh pr merge <n>
    ```
 
 Merge it before the next promotion. If you forget, nothing breaks: the files do not conflict. But `dev` shows the old
@@ -338,7 +339,7 @@ Dependabot opens a pull request only for a security fix, and never for a major v
 
 1. Make sure that its base is `dev`. Dependabot uses the default branch, which is `dev`.
 2. Read the list of updates and the release notes that Dependabot links.
-3. Wait for `CI Gate`. Then merge with a merge commit, like any other pull request.
+3. Wait for `CI Gate`. Then add it to the merge queue (`gh pr merge <n>`), like any other pull request into `dev`.
 
 Do not turn on auto-merge for Dependabot.
 
@@ -394,7 +395,7 @@ promotion ([Step 1](#step-1-make-sure-that-dev-is-ready)):
 - [ ] Both rulesets are active, and [Branch protection](docs/reference/branch-protection.md) says so with the date.
 - [ ] `SECURITY.md` is present. Private vulnerability reporting, secret scanning and push protection are on.
 - [ ] The root `README.md` quick start works from a fresh clone in a clean directory (Linux checked; macOS by the
-      maintainer, or stated as CI-only).
+      maintainer, or stated as not tested while CI is Linux only, issue #82).
 - [ ] The docs state platform support truthfully: no native Windows claim.
 - [ ] The promotion pull request from `dev` into `main` passed `CI Gate` and `Check source branch`, and is merged with
       a merge commit.
