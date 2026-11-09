@@ -5,7 +5,7 @@
 
     quality_baseline.py check TOOL [--baseline FILE] -- COMMAND...
 
-``TOOL`` is ``ruff``, ``mypy`` or ``markdownlint``. The command after ``--`` is the tool's own read-only full-tree run;
+``TOOL`` is ``ruff``, ``mypy``, ``markdownlint`` or ``prose`` (``dev/prose_check.py``). The command after ``--`` is the tool's own read-only full-tree run;
 its output is parsed into one number and compared with the entry for ``TOOL`` in ``.quality-baseline.json``:
 
 * count above the baseline: exit 1, naming the tool and both numbers;
@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 
 DEFAULT_BASELINE = Path(".quality-baseline.json")
-TOOLS = ("ruff", "mypy", "markdownlint")
+TOOLS = ("ruff", "mypy", "markdownlint", "prose")
 
 _MARKDOWNLINT_SUMMARY = re.compile(r"^Summary:\s+(\d+)\s+issues?\b", re.MULTILINE)
 
@@ -56,7 +56,18 @@ def count_markdownlint(output: str) -> int:
     raise ValueError("no 'Summary: N issues' line in markdownlint output")
 
 
-PARSERS = {"ruff": count_ruff, "mypy": count_mypy, "markdownlint": count_markdownlint}
+_PROSE_SUMMARY = re.compile(r"^Summary: (\d+) issues? in \d+ files?$", re.MULTILINE)
+
+
+def count_prose(output: str) -> int:
+    """The ``Summary: N issues in M files`` line of ``dev/prose_check.py``."""
+    match = _PROSE_SUMMARY.search(output)
+    if not match:
+        raise ValueError("no 'Summary: N issues in M files' line in prose_check output")
+    return int(match.group(1))
+
+
+PARSERS = {"ruff": count_ruff, "mypy": count_mypy, "markdownlint": count_markdownlint, "prose": count_prose}
 
 
 def load_baseline(path: Path, tool: str) -> int:
@@ -106,8 +117,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"quality baseline: cannot run {command[0]}: {exc}", file=sys.stderr)
         return 2
     try:
-        # ruff's JSON is on stdout alone; mypy and markdownlint-cli2 split their report across both streams.
-        text = run.stdout if args.tool == "ruff" else run.stdout + "\n" + run.stderr
+        # ruff's JSON and prose_check's summary are on stdout alone; mypy and markdownlint-cli2 split their report
+        # across both streams.
+        text = run.stdout if args.tool in ("ruff", "prose") else run.stdout + "\n" + run.stderr
         current = PARSERS[args.tool](text)
     except ValueError as exc:
         print(f"quality baseline: cannot read the {args.tool} output: {exc}", file=sys.stderr)

@@ -111,6 +111,14 @@ On 2026-11-08 the default branch changed from `main` to `dev`.
 On 2026-11-07 these settings were also turned on: private vulnerability reporting, secret scanning, push protection
 and Dependabot security updates (see [`SECURITY.md`](../../SECURITY.md)).
 
+On 2026-11-08 "Automatically delete head branches" was turned on. GitHub deletes the head branch of a pull request
+when the pull request is merged. It does not delete `dev` after a promotion pull request, because the `dev` ruleset
+blocks deletion. To check the setting, run this command:
+
+```bash
+gh api repos/Nistapp/codebase-agentic-readiness-framework --jq .delete_branch_on_merge
+```
+
 To read the rules that apply to a branch, run these commands:
 
 ```bash

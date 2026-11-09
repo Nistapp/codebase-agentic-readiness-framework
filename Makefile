@@ -56,8 +56,24 @@ COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
 DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
-	'docs/README.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
-	'docs/explanation/user-overview/03-trust-and-safety.md'
+	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'docs/COMMUNICATION_RULES.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
+	'docs/explanation/user-overview/03-trust-and-safety.md' 'docs/explanation/contributor-deep-dive/04-stack-profiles.md' 'docs/explanation/contributor-deep-dive/05-evaluation.md' 'docs/how-to/add-a-stack-profile.md' 'docs/reference/harness-notes.md' \
+	'audit/engine/docs/how-to/read-the-report.md'
+
+# The Markdown that the prose check (dev/prose_check.py, the plain-language rules of docs/COMMUNICATION_RULES.md)
+# holds to zero issues. A ratchet like DOCS_LINT_PATHS: a page joins once it is clean, and the list only grows.
+# Outside it, the full-tree count may not rise above the `prose` entry of .quality-baseline.json.
+PROSE_PATHS := docs/COMMUNICATION_RULES.md docs/STYLE_GUIDE.md docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md \
+	docs/explanation/contributor-deep-dive/04-stack-profiles.md \
+	docs/explanation/contributor-deep-dive/05-evaluation.md \
+	docs/how-to/add-a-stack-profile.md \
+	docs/reference/harness-notes.md \
+	audit/engine/docs/how-to/read-the-report.md
+PROSE_CHECK := $(PYTHON) dev/prose_check.py
+# The tracked Markdown the prose count covers: the markdownlint scope, without fixtures, test data and the worked
+# example's copied reports.
+PROSE_SCOPE := git ls-files -z -- '*.md' ':(exclude,glob)**/fixtures/**' ':(exclude,glob)**/testdata/**' \
+	':(exclude,glob)**/server-worked-example/digital-assistant-server[-.]*.md'
 
 ENGINE := audit/engine
 
@@ -180,16 +196,20 @@ validate-skills:
 	$(SKILLS_REF) validate dev/dist/skills/agentic-readiness-audit
 	$(SKILLS_REF) validate dev/dist/skills/agentic-readiness-implement
 
-# Lints the Markdown in DOCS_LINT_PATHS and fails on any violation. Needs Node (npx); the first run fetches the
-# pinned CLI. CI runs it in the `docs` job when a Markdown file changed.
+# Lints the Markdown in DOCS_LINT_PATHS and checks the prose in PROSE_PATHS; fails on any violation. Then compares
+# both full-tree counts with .quality-baseline.json. Needs Node (npx); the first run fetches the pinned CLI. CI runs
+# it in the `docs` job when a Markdown file changed.
 docs-lint:
 	$(MARKDOWNLINT) $(DOCS_LINT_PATHS)
+	$(PROSE_CHECK) $(PROSE_PATHS)
 	$(QUALITY_BASELINE) markdownlint -- sh -c "git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)"
+	$(QUALITY_BASELINE) prose -- sh -c "$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK) --quiet"
 
 # Reports violations in every tracked Markdown file (fixtures excluded by the config). Never fails: the debt
 # outside DOCS_LINT_PATHS is recorded, not gated.
 docs-lint-all:
 	-git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)
+	-$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK)
 
 # Rewrites CHANGELOG.md in place with the markdownlint fixes (release-please writes `*` bullets and double blank
 # lines). release-please.yml runs it on the release pull request; it fails when a violation is left that --fix

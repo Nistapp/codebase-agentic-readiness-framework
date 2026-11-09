@@ -52,6 +52,15 @@ class Parsers(unittest.TestCase):
         with self.assertRaises(ValueError):
             quality_baseline.count_markdownlint("npm ERR! network\n")
 
+    def test_prose_summary(self) -> None:
+        self.assertEqual(quality_baseline.count_prose("a.md:3: PL001 x\nSummary: 1711 issues in 167 files\n"), 1711)
+        self.assertEqual(quality_baseline.count_prose("Summary: 1 issue in 1 file\n"), 1)
+        self.assertEqual(quality_baseline.count_prose("Summary: 0 issues in 2 files\n"), 0)
+
+    def test_prose_without_summary_is_an_error(self) -> None:
+        with self.assertRaises(ValueError):
+            quality_baseline.count_prose("Traceback (most recent call last):\n")
+
 
 class Compare(unittest.TestCase):
     def test_up_fails_naming_the_tool(self) -> None:

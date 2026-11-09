@@ -1,123 +1,145 @@
-# Documentation Style Guide
+# Documentation style guide
 
-> **Scope:** Governs all documentation under `docs/`, and the engine docs under `audit/engine/docs/`. Applies to human writers and AI documentation agents.
-> **Standard:** [Diátaxis](https://diataxis.fr/) plus constraint-driven agent invariants.
-> **Origin:** Adapted from the engine's style guide, which follows the greenfield template [`STYLE_GUIDE.md`](../greenfield/templates/docs/STYLE_GUIDE.md). This file adds a Reference quadrant.
-> **Enforcement:** The repository-root `AGENTS.md` (planned) MUST require compliance with this file. Link to these rules; never restate them elsewhere, because restated rules drift.
+This page tells you how to write a documentation page in this repository. It applies to people and AI agents.
 
----
+- **What it covers:** every page under `docs/`, the engine docs under `audit/engine/docs/`, the docs under
+  `audit/docs/` and `implement/docs/`, and the root pages (`README.md`, `CONTRIBUTING.md`, `RELEASE_PROCESS.md`).
+- **What it does not cover:** recipe files (`SKILL.md`, checks, playbooks, prompts). They are agent directives;
+  see section 2.
+- **Wording rules:** [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md) sections 1 to 3 hold the reader persona, the
+  plain-language rules and the diagram rules. This page adds only the rules for documentation pages. It links to
+  those rules and does not repeat them, because a copied rule drifts.
+- **Structure:** [Diátaxis](https://diataxis.fr/). Each page is one of four kinds: tutorial, how-to guide,
+  reference or explanation.
 
-## 1. The 5 Core Invariants
+## 1. Five rules for every page
 
-1. **Single Source of Truth:** `docs/` is the sole canonical home for permanent knowledge about the recipes and their tools. `artefacts/` is transient scratch and is off-limits to automatic agent reading or indexing.
-2. **Zero Specification Drift:** Code, recipes, schemas and docs MUST stay synchronized. Every behavioural change requires a matching doc update **in the same change set**.
-3. **Empirical Grounding:** Never document planned features as existing facts. Every page that describes behaviour that is still planned MUST carry a `> [!NOTE] Planned.` line naming what is missing and the roadmap step that delivers it.
-4. **Symbol Anchoring:** Reference code with explicit file paths. Once a file exists, link to its line anchors, for example `[report.py#L1-L40](../audit/tools/report.py#L1-L40)`. While a file is planned, name it as a code span instead of linking to it.
-5. **Living ADRs (Current-State Only):** An ADR MUST describe only the shipped, current design. When a decision changes, revise the ADR in place; when it becomes irrelevant, delete it. Git is the archive.
+1. **One home for each fact.** `docs/` holds permanent knowledge about the recipes and their tools. `artefacts/`
+   holds temporary notes. Agents do not read `artefacts/` unless a person gives them a path in it.
+2. **Docs change with the code.** When a change alters behaviour, update the docs in the same change set.
+3. **Describe only what exists.** Some pages describe a feature that is not built yet. Such a page carries the
+   line `> [!NOTE] Planned.`, followed by what is missing and the roadmap step that delivers it.
+4. **Point to the source.** Name the file. Once the file exists, link to it, with line anchors where they help.
+   Example: `[report.py#L1-L40](../audit/tools/report.py#L1-L40)`. While a file is planned, write its name as a
+   code span and do not link to it.
+5. **An ADR describes the current design only.** When a decision changes, edit the ADR in place. When it no longer
+   applies, delete it. Git keeps the history.
 
----
+## 2. Kinds of page and their readers
 
-## 2. Writing Tones & Audiences
-
-| Track | Audience | Focus | Tone |
+| Kind | Reader | What it gives | Tone |
 |---|---|---|---|
-| **Tutorials** | Newcomers | One guided, end-to-end success on a sample repo | Encouraging, step by step |
-| **How-To** | Operators, engineers | One task, executable steps, verification | Direct, imperative |
-| **Reference** | Everyone | Exact facts: tool CLIs, schemas, mappings, harness specifics | Dry, complete, scannable |
-| **User Overview** (explanation) | CTOs, leads, adopters | Value, method, guarantees, limits | Executive, clear, concise |
-| **Contributor Deep Dive** (explanation) | Engineers, maintainers | Mechanics, contracts, invariants, failure modes | Tactical, precise |
-| **Agent Directives** | AI coding agents | Constraints, rules, mandatory steps | RFC 2119 (MUST, MUST NOT) |
+| Tutorial | A newcomer | One guided success from start to end, on a sample repository | Encouraging, step by step |
+| How-to guide | An engineer with a task | The steps for one task, and how to check the result | Direct, imperative |
+| Reference | Everyone | Exact facts: tool options, schemas, mappings, harness details | Dry, complete, easy to scan |
+| User overview (explanation) | A lead or an adopter | Value, method, guarantees and limits | Short and clear |
+| Contributor deep dive (explanation) | A maintainer | How it works: contracts, rules, failure modes | Precise |
+| Agent directive | An AI coding agent | Rules and required steps | RFC 2119 words (MUST, MUST NOT) |
 
 Rules:
-- User-overview pages MUST NOT descend into implementation internals; link to the contributor page instead.
-- Contributor pages MUST ground every claim in a source file, schema field or check ID.
-- How-to pages and tutorials MUST state prerequisites and an explicit verification step.
-- Recipe files (`SKILL.md`, check files, playbooks) are Agent Directives. They live beside the recipes, not in `docs/`.
 
----
+- A user-overview page does not go into implementation detail. It links to the contributor page instead.
+- A contributor page backs each claim with a source file, a schema field or a check ID.
+- A how-to guide and a tutorial state the prerequisites and end with a step that checks the result.
+- Agent directives (`SKILL.md`, check files, playbooks) live beside the recipes, not in `docs/`.
 
-## 3. Formatting Standards
+## 3. Plain language and diagrams on a page
 
-- **Headers:** ATX style (`#`, `##`, `###`), at most 4 levels.
-- **Diagrams:** Mermaid. No external images when Mermaid can express it.
+The rules are in [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md) sections 2 and 3. On a documentation page, also:
+
+- **Start with what the page is for.** The first paragraph says what the reader gets and who it is for.
+- **A diagram on every explanation page and tutorial.** `dev/prose_check.py` checks this (rule `PL003`).
+- **A diagram in a how-to guide** when the task has more than about five steps, or a choice between paths.
+- **Define a term on first use,** or link it to [`docs/glossary.md`](glossary.md).
+- **Keep a page to one topic.** When a page grows past about 300 lines, split it.
+
+`make docs-lint` runs the prose check. Section 6 says which pages must be clean.
+
+## 4. Format
+
+- **Headings:** ATX style (`#`, `##`, `###`), at most four levels.
+- **Diagrams:** Mermaid, not images, when Mermaid can draw it. Validate each block with
+  `make docs-mermaid FILES=<file.md>`.
 - **Alerts:** GitHub alerts (`[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`).
-- **Tables:** GFM tables.
-- **Blank lines:** one before and after headers, code blocks, tables and alerts.
-- **Check references:** cite checks by catalogue ID (`EXEC-02`), never by prose description.
-- **Requirement references:** cite requirements by ID (`REQ-SH-022`), as defined in `spec/readiness-requirements.md`.
+- **Tables:** GitHub tables.
+- **Blank lines:** one before and one after each heading, code block, table and alert.
+- **Line length:** at most 120 characters in prose (`.markdownlint-cli2.jsonc`).
+- **Checks:** cite a check by its catalogue ID, for example `EXEC-02`, not by a description.
+- **Requirements:** cite a requirement by its ID, for example `REQ-SH-022`, from
+  [`spec/readiness-requirements.md`](../spec/readiness-requirements.md).
 
----
-
-## 4. Document Types & Locations
+## 5. Where each page goes
 
 Paths are relative to `docs/`.
 
-| Content type | Diátaxis quadrant | Location | Naming |
+| Content | Kind | Location | File name |
 |---|---|---|---|
-| This style guide | — | `STYLE_GUIDE.md` | `STYLE_GUIDE.md` |
-| Doc router and ADR index | — | `architecture/README.md` | `README.md` |
-| Glossary | Reference | `architecture/glossary.md` | `glossary.md` |
-| Evaluator-facing explanations | Explanation | `architecture/user-overview/` | `NN-topic.md` |
-| Engineer-facing explanations | Explanation | `architecture/contributor-deep-dive/` | `NN-topic.md` |
-| Architectural Decision Records | Explanation | `architecture/adrs/` | `NNNN-short-title.md` |
+| This style guide | — | `STYLE_GUIDE.md` | — |
+| Documentation index (the router) | — | `README.md` | — |
+| Architecture map and ADR index | — | `architecture/README.md`, `architecture/adrs/README.md` | `README.md` |
+| Repository decisions (ADRs) | Explanation | `architecture/adrs/` | `NNNN-short-title.md` |
+| Glossary | Reference | `glossary.md` | — |
+| Pages for leads and adopters | Explanation | `explanation/user-overview/` | `NN-topic.md` |
+| Pages for maintainers | Explanation | `explanation/contributor-deep-dive/` | `NN-topic.md` |
 | How-to guides | How-to | `how-to/` | `<task>.md` |
 | Tutorials | Tutorial | `tutorials/` | `<topic>.md` |
 | Reference pages | Reference | `reference/` | `<topic>.md` |
-| Document templates | — | `templates/` | `<type>-template.md` |
+| Page templates | — | `templates/` | `<kind>-template.md` |
 
-New documents MUST start from the matching template in `templates/`.
+- Start a new page from its template in `templates/`.
+- Decisions about one component live beside that component, for example `audit/engine/docs/architecture/adrs/`.
+  [ADR 0001](architecture/adrs/0001-decisions-live-beside-the-component.md) gives the rule.
 
----
+## 6. What the tools check
 
-## 5. Agent-Specific Writing Rules
+| Tool | What it checks | Where it must be clean |
+|---|---|---|
+| `markdownlint-cli2` | Markdown format | `DOCS_LINT_PATHS` in the `Makefile` |
+| `dev/prose_check.py` | Sentence length, vague words, diagrams on explanation pages | `PROSE_PATHS` in the `Makefile` |
+| `dev/mermaid_check.py` | Each Mermaid block renders | The files you pass to `make docs-mermaid` |
+| `dev/recipe_lint.py` | Links resolve inside the repository | Recipes, `docs/` and the root pages |
 
-### 5.1 Verification first
+Both path lists are ratchets: a page joins once it is clean, and the lists only grow. Outside the lists, the
+total count of issues may not go up (`.quality-baseline.json`). When you edit a page outside the lists, fix its
+issues and add it to the list.
 
-1. **Query-first:** where `codebase-memory-mcp` is available, use it to verify symbols and file locations before reading whole files.
-2. Check existing pages in `docs/`; update rather than duplicate.
-3. Check `architecture/adrs/` for the highest sequence number ever used before creating an ADR.
+## 7. Agents writing docs
 
-### 5.2 Doc Maintenance Trigger (definition of done)
+1. Where `codebase-memory-mcp` is available, use it to check symbols and file paths before you read whole files.
+2. Look for an existing page first. Update it; do not write a second page on the same topic.
+3. Before you add an ADR, find the highest number ever used in that folder. Use the next number.
 
-When a change alters a tool's interface, a schema, a recipe stage, a check's semantics or the architecture:
+Some changes alter a tool's interface, a schema, a recipe stage, what a check means or the architecture. For such a
+change, do all of this in the same change set:
 
-1. Update every affected page and its source anchors.
-2. Replace the `Planned` note on any page whose content now exists.
-3. Update the ADR index in `architecture/README.md` when an ADR is added, revised or deleted.
-4. Do all of the above **in the same change set** as the change.
+1. Update every page it affects, and the source links on those pages.
+2. Remove the `Planned` note from each page whose content now exists.
+3. Update the ADR index when you add, change or delete an ADR.
 
-### 5.3 Accuracy & status tagging
+## 8. ADR lifecycle
 
-- Never state planned capabilities as working.
-- Tag planned content: `> [!NOTE] Planned.` plus the roadmap step.
-- Never document a check as implemented while it exists only in the catalogue.
+ADRs start from `templates/adr-template.md`.
 
----
-
-## 6. ADR Lifecycle
-
-ADRs live in `architecture/adrs/` and start from `templates/adr-template.md`.
-
-1. **Create:** assign highest-ever sequence number + 1. Numbers of deleted ADRs are retired.
-2. **Index:** add a row to `architecture/README.md` in the same change set.
-3. **Revise in place:** overwrite the body, keep the number, and fold the reversal into *Alternatives Considered*.
-4. **Delete when irrelevant**, and update every inbound reference in the same change set.
+1. **Add:** use the highest number ever used plus one. Numbers of deleted ADRs are not used again.
+2. **Index:** add a row to [`architecture/adrs/README.md`](architecture/adrs/README.md) in the same change set.
+3. **Change in place:** rewrite the body and keep the number. Move the old choice into *Alternatives Considered*.
+4. **Delete** an ADR that no longer applies. Fix every link to it in the same change set.
 
 > [!IMPORTANT]
-> There is no `Deprecated`, `Superseded` or `Rejected` status. A merged ADR is `Accepted`. `Proposed` is allowed in flight but MUST NOT be merged.
+> An ADR has two states. `Proposed` is allowed while the change is open, but is never merged. A merged ADR is
+> `Accepted`. There is no `Deprecated`, `Superseded` or `Rejected` state.
 
----
+## 9. What does not go in `docs/`
 
-## 7. Content Boundaries
-
-| Forbidden in `docs/` | Proper location |
+| Not in `docs/` | Where it goes |
 |---|---|
 | Agent plans, research drafts, scratch notes | `artefacts/` |
-| Audit reports and run logs from real targets | The output directory chosen at run time |
-| Recipe instructions, check rubrics, playbooks | `audit/`, `implement/`, `stacks/` (agent directives) |
-| Executable rules and thresholds | Source code and `catalogue.json` |
-| Secrets, tokens, environment values | `.env` (never committed) |
-| Copied excerpts of framework pages | A relative link to the framework page and section |
+| Audit reports and run logs from real repositories | The output folder chosen when the audit runs |
+| Recipe steps, check rubrics, playbooks | `audit/`, `implement/` (agent directives) |
+| Rules and thresholds that code runs | Source code and `audit/catalogue.json` |
+| Secrets, tokens, environment values | `.env`, never committed |
+| Copies of framework text | A relative link to the framework page and section |
 
 > [!IMPORTANT]
-> The framework (`docs/framework/`, `greenfield/`, `spec/`) is the source of truth for *what* readiness means. These docs MUST link to it and MUST NOT restate it.
+> The framework (`docs/framework/`, `greenfield/`, `spec/`) says *what* readiness means. Other pages link to it.
+> They do not repeat it.
