@@ -33,7 +33,7 @@ Themes run in dependency order: the order and the dependencies are in
 | Theme | Playbooks | Checks closed |
 |---|---|---|
 | [T1 Command surface and quality tools](#t1-command-surface-and-quality-tools) | [`define-command-surface`](#define-command-surface), [`configure-quality-tools`](#configure-quality-tools) | 10 |
-| [T2 Execution determinism](#t2-execution-determinism) | [`pin-execution-environment`](#pin-execution-environment), [`untrack-generated`](#untrack-generated) | 5 |
+| [T2 Execution determinism](#t2-execution-determinism) | [`pin-execution-environment`](#pin-execution-environment), [`untrack-generated`](#untrack-generated) | 6 |
 | [T3 Secrets and env](#t3-secrets-and-env) | [`env-inventory-and-secrets`](#env-inventory-and-secrets) | 4 |
 | [T4 CI parity, hooks, commits](#t4-ci-parity-hooks-commits) | [`add-ci-parity`](#add-ci-parity), [`add-hooks-and-commit-rules`](#add-hooks-and-commit-rules) | 7 |
 | [T5 Tests and baselines](#t5-tests-and-baselines) | [`add-baselines-and-ratchet`](#add-baselines-and-ratchet) | 8 |
@@ -98,14 +98,16 @@ Full playbook: [`configure-quality-tools.md`](../../implement/playbooks/configur
 ### `pin-execution-environment`
 
 Every run of the repository gets the same toolchain and the same dependency versions: each ecosystem has a
-committed pin (JDK, Node, package manager), each component has a tracked lockfile that matches its manifest, and
-the pins in CI, Dockerfiles and version files agree with each other.
+committed pin (JDK, Node, package manager), each component has a tracked lockfile that matches its manifest, the
+pins in CI, Dockerfiles and version files agree with each other, and every tool version the gate runs sits in a
+manifest that dependency automation reads.
 
 | Check | What the playbook does |
 |---|---|
 | [`EXEC-01` Toolchain pinned / wrapper committed](audit-master.md#exec-01-toolchain-pinned--wrapper-committed) | Commits a pin for every detected ecosystem and makes every other place that names a version agree with it |
 | [`EXEC-02` Lockfile committed and consistent](audit-master.md#exec-02-lockfile-committed-and-consistent) | Commits a lockfile that resolves exactly what the manifest resolves today |
 | [`EXEC-03` Non-interactive setup path](audit-master.md#exec-03-non-interactive-setup-path) | Check only (step 9): [`define-command-surface`](../../implement/playbooks/define-command-surface.md) owns the fix |
+| [`EXEC-08` Tool versions visible to dependency automation](audit-master.md#exec-08-tool-versions-visible-to-dependency-automation) | Moves each tool version written into a command into a manifest with a lockfile, and has the command read it (step 10) |
 
 **What it never does:**
 
@@ -118,6 +120,7 @@ the pins in CI, Dockerfiles and version files agree with each other.
 - Do not edit workflow files without `ci.edits_authorised`.
 - Do not build images or start containers by hand: use the repository's scripts.
 - Do not install a version manager the owner did not approve.
+- Do not upgrade a tool while moving its version into a manifest.
 
 Full playbook: [`pin-execution-environment.md`](../../implement/playbooks/pin-execution-environment.md).
 
@@ -392,7 +395,7 @@ action in the state, never an invented contact.
 | [`HYG-06` SECURITY present](audit-master.md#hyg-06-security-present) | A `SECURITY` document: how to report privately, with owner-supplied contact values as a named placeholder |
 | [`HYG-07` CHANGELOG present and recent](audit-master.md#hyg-07-changelog-present-and-recent) | Verification, and a decision: a changelog the release tool writes is not hand-written (Steps 6) |
 | [`HYG-08` Release process documented](audit-master.md#hyg-08-release-process-documented) | A short document (name contains `release`) describing the release process in prose |
-| [`HYG-09` Dependency update automation configured](audit-master.md#hyg-09-dependency-update-automation-configured) | Verification only: a Dependabot or Renovate file already exists in most repositories |
+| [`HYG-09` Dependency update automation configured](audit-master.md#hyg-09-dependency-update-automation-configured) | An update entry for each detected ecosystem, no `target-branch` beside `ignore` or `groups`, and the owner's update policy (Step 8) |
 | [`HYG-10` License present](audit-master.md#hyg-10-license-present) | Verification only; the playbook never chooses a licence |
 | [`HYG-11` Branch protection declared as code](audit-master.md#hyg-11-branch-protection-declared-as-code) | A page whose path contains `branch-protection` that records the rules in the repository's own words |
 
@@ -405,6 +408,7 @@ action in the state, never an invented contact.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
 - Do not copy a private runbook, another repository's page, or its values into a repository's file.
 - Do not choose a licence.
+- Do not replace Renovate with Dependabot or the reverse, and do not turn on security updates in the settings.
 - Do not create a file in a component directory expecting it to count.
 - Do not reformat existing pages (`format.mass_reformat`).
 

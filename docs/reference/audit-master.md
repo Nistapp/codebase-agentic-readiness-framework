@@ -9,8 +9,8 @@
 
 ---
 
-The audit runs **72 checks** in 13 families (catalogue 0.3.0). 58 are scored; the rest are reported for the whole
-picture and earn no credit. The engine decides 70 checks from the files alone; the agent judges 2. Each check below says
+The audit runs **73 checks** in 13 families (catalogue 0.4.0). 59 are scored; the rest are reported for the whole
+picture and earn no credit. The engine decides 71 checks from the files alone; the agent judges 2. Each check below says
 what passes and why it matters. To fix a finding, follow the playbook it names in the [implement master
 list](implement-master.md).
 
@@ -27,7 +27,7 @@ list](implement-master.md).
 | [Agent context](#agent-context) | Can an agent find the code, the rules and the documents it needs before it edits anything? | [`IDX`](#discovery-and-index-idx), [`AGT`](#agent-governance-agt), [`DOC`](#documentation-contract-doc), [`NAV`](#navigation-nav) | 23 (3 BLOCKER, 16 DEGRADER, 4 COSMETIC) |
 | [Command surface and quality gates](#command-surface-and-quality-gates) | Can an agent run one command that formats, lints, type-checks and tests, and trust its answer? | [`CMD`](#command-surface-cmd), [`TOOL`](#tooling-tool), [`TST`](#tests-tst), [`BASE`](#baselines-and-the-ratchet-base) | 19 (3 BLOCKER, 14 DEGRADER, 2 COSMETIC) |
 | [Enforcement in CI](#enforcement-in-ci) | Does the pipeline run the same gate the agent runs locally, and does it block the merge? | [`CI`](#continuous-integration-ci) | 5 (2 BLOCKER, 3 DEGRADER) |
-| [Reproducible execution](#reproducible-execution) | Does the same command give the same result on a fresh machine, without a human in the loop? | [`EXEC`](#execution-determinism-exec) | 7 (4 BLOCKER, 3 DEGRADER) |
+| [Reproducible execution](#reproducible-execution) | Does the same command give the same result on a fresh machine, without a human in the loop? | [`EXEC`](#execution-determinism-exec) | 8 (4 BLOCKER, 4 DEGRADER) |
 | [Safety boundaries and secrets](#safety-boundaries-and-secrets) | Is it written down, and enforced, what an agent must never touch or reveal? | [`CON`](#constraints-con), [`SEC`](#security-hygiene-sec) | 7 (4 BLOCKER, 2 DEGRADER, 1 COSMETIC) |
 | [Team hygiene (informational)](#team-hygiene-informational) | Is the repository run like a team project? Reported for the whole picture; never scored. | [`HYG`](#hygiene-hyg) | 11 (11 COSMETIC) |
 
@@ -530,7 +530,7 @@ Does the same command give the same result on a fresh machine, without a human i
 
 ### Execution determinism (EXEC)
 
-7 checks: 4 BLOCKER, 3 DEGRADER.
+8 checks: 4 BLOCKER, 4 DEGRADER.
 
 #### `EXEC-01` Toolchain pinned / wrapper committed
 
@@ -602,6 +602,17 @@ Does the same command give the same result on a fresh machine, without a human i
 - **Why it matters:** One concern, one authoritative answer; with two configs for the same concern an agent (or a human)
   picks whichever result turns up first, which is not the same thing as picking correctly ([Phased-Approach.md § Phase
   1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-)).
+
+#### `EXEC-08` Tool versions visible to dependency automation
+
+`DEGRADER` · scored · engine check · fixed by
+[`pin-execution-environment`](implement-master.md#pin-execution-environment)
+
+- **Passes when:** no literal tool version in any file read, or the file is matched by a Renovate `customManagers` (or
+  `regexManagers`) file pattern.
+- **Why it matters:** Dependabot and Renovate read manifests, not commands. A tool version typed into a `Makefile`, a
+  workflow or a hook gets no security alert and no update, and an agent asked to upgrade the tool must find every copy
+  by hand.
 
 ## Safety boundaries and secrets
 
@@ -759,8 +770,10 @@ Is the repository run like a team project? Reported for the whole picture; never
 
 `COSMETIC` · not scored · engine check · fixed by [`add-repo-hygiene`](implement-master.md#add-repo-hygiene)
 
-- **Passes when:** a Dependabot or Renovate configuration file exists at a conventional location.
-- **Why it matters:** Dependencies should be patched on a schedule, not discovered stale during an incident.
+- **Passes when:** a configuration exists, every detected ecosystem has an entry, and no entry has the trap.
+- **Why it matters:** Dependencies should be patched on a schedule, not discovered stale during an incident. A
+  configuration that silently misses an ecosystem, or whose rules do not reach security updates, looks like a policy and
+  is not one.
 
 #### `HYG-10` License present
 
