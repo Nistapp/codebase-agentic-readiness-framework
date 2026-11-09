@@ -6,7 +6,8 @@
   "phase": "t1",
   "assertions": [
     "A5",
-    "A6"
+    "A6",
+    "A8"
   ],
   "params": {
     "check": "TOOL-02",

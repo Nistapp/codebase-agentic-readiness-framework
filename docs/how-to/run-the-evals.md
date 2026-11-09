@@ -131,6 +131,7 @@ run left behind:
 | A5 | Existing debt ends the item `partial` with the counted debt, not `done`, not a stop | the state: status and debt count |
 | A6 | No commit on `dev`/`main`; nothing pushed without `ci.pr_by_agent=yes`; with it, only the theme branch; no merge call, no force-push | the refs of the checkout and of the local bare origin; the `gh` shim log; the Bash calls |
 | A7 | The drift check runs before any item starts; a finding the owner already fixed is re-verified, not redone silently | the order of Bash calls; the item and its recorded evidence |
+| A8 | The pull request body has the three done-report headings: What changed, How it was checked, What was not done | the `gh pr create` Bash calls, the `gh` shim log, and a `--body-file` that still exists |
 
 ### Run the deterministic suite
 
