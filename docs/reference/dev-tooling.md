@@ -86,7 +86,7 @@ fails its gate. When a count goes down, lower the baseline in the same change.
 | --- | --- | --- |
 | ruff, mypy and Markdown lint counts | `.quality-baseline.json` | `make format:check`, `make typecheck`, `make docs-lint` |
 | Known key-shaped strings | `.secrets.baseline` | `make security` |
-| Coverage floor | `.coveragerc` (`fail_under`) | `make coverage` |
+| Coverage floor | `.coveragerc` (`fail_under`) | `make coverage` (runs as CI does: an empty `HOME` and `CI=true`) |
 | Readiness findings | `.audit-baseline.json` | `make self-audit` |
 
 ## Local hooks

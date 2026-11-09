@@ -68,8 +68,9 @@ no vendor-specific instruction file exists beside it.
   The developer runs `lefthook install` once per clone; an agent never does.
   Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
 - `make coverage` runs the engine's, the audit tools' and the implement tools' suites under coverage.py. It fails
-  below the floor in `.coveragerc` (`fail_under`). CI runs it as the `coverage` job. The floor is debt that only goes
-  up: raise it when coverage rises, never lower it to get green.
+  below the floor in `.coveragerc` (`fail_under`). CI runs it as the `coverage` job. It runs as CI does (an empty
+  `HOME` and `CI=true`), so a local pass means a CI pass. The floor is debt that only goes up: raise it when
+  coverage rises, never lower it to get green.
 - Quality baseline: existing lint debt is counted in `.quality-baseline.json` (ruff, mypy, Markdown lint outside the
   ratchet) and the secrets in `.secrets.baseline`. No new violations: `make format-check`, `make typecheck` and
   `make docs-lint` compare the live count with the baseline and fail when it went up (a ratchet). A baseline only goes

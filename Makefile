@@ -129,12 +129,20 @@ test:
 
 # Runs the engine's suite and the recipe tools' suite under coverage.py and fails when the total drops below the
 # floor in .coveragerc (`fail_under`). Not part of `check`; CI runs it as its own job. Needs uv.
+#
+# It runs as CI runs it, so its number is CI's number. HOME is an empty directory: the IDX checks read the user's
+# index store and MCP configs from $HOME, which a CI runner does not have. CI=true lets the positive-fixture test
+# skip as it does in CI (its scaffolder is found through $HOME). uv's own directories are resolved from the real
+# home first, so uvx still finds its cache and tools and nothing is downloaded again.
+COVERAGE_HOME := $(CURDIR)/dev/dist/coverage/home
+COVERAGE_ENV = env -u AUDIT_INDEX_STORE -u XDG_CONFIG_HOME -u XDG_CACHE_HOME HOME=$(COVERAGE_HOME) CI=true \
+	UV_CACHE_DIR="$$(uv cache dir)" UV_PYTHON_INSTALL_DIR="$$(uv python dir)" UV_TOOL_DIR="$$(uv tool dir)"
 coverage:
-	mkdir -p $(dir $(COVERAGE_DATA))
+	rm -rf $(COVERAGE_HOME) && mkdir -p $(COVERAGE_HOME)
 	rm -f $(COVERAGE_DATA)
-	cd $(ENGINE) && COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc -m unittest discover -s tests
-	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s audit/tools/tests
-	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s implement/tools/tests
+	cd $(ENGINE) && $(COVERAGE_ENV) COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc -m unittest discover -s tests
+	$(COVERAGE_ENV) COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s audit/tools/tests
+	$(COVERAGE_ENV) COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s implement/tools/tests
 	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) report --rcfile=.coveragerc
 
 # The engine on this repository, read-only. Reports go under dist/self-audit/ (git-ignored); only artefacts/ and dist/
