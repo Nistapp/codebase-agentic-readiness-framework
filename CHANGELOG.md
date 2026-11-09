@@ -14,6 +14,21 @@ this file by hand on `dev`: write a clear commit subject instead. How it works:
 Paths in entries before v0.3.0 use the old layout. The v0.3.0 entry has a "Moved" table from each old path to its new
 one.
 
+## [0.3.2](https://github.com/Nistapp/codebase-agentic-readiness-framework/compare/v0.3.1...v0.3.2) (2026-11-09)
+
+### Features
+
+- Improved communication guidelines for genAI ([aa03ab8](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/aa03ab8a773f5b203c3a64227222cef9acb40e22))
+
+### Documentation
+
+- add communication rules and a plain-language prose check ([91bc77b](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/91bc77bdb26d42a2053072f37b87760c439b77e6))
+- move COMMUNICATION_RULES.md into docs/ ([7acfcab](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/7acfcab58e73e9916f5bb1088544ab6f245c3c33))
+- record automatic deletion of merged branches ([9034eb4](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/9034eb4df3323e5c0929161419158312186412fb))
+- record automatic deletion of merged branches ([058c710](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/058c710f93a5f68119e72783c86fc8ccfaae465e))
+- rename COMMUNICATIONS.md to COMMUNICATION_RULES.md ([ccf8c5c](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/ccf8c5c71a6fc4df2de84b16c07e4e1befd4ccd7))
+- shorten the long sentences in the release process pages ([8195c59](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/8195c596e72df777e8e1bfb744bea13624b95ee9))
+
 ## [0.3.1](https://github.com/Nistapp/codebase-agentic-readiness-framework/compare/v0.3.0...v0.3.1) (2026-11-08)
 
 ### Bug fixes
