@@ -159,23 +159,35 @@ test-dev:
 # .coveragerc (`fail_under`). Not part of `check`; needs uv. Each coverage-<suite> writes its own data file
 # (.coverage.<suite>), so CI runs them in separate jobs; coverage-combine merges them and reports. It fails when a
 # suite's file is missing, so a partial run cannot pass on a partial total. coverage.py does not measure dev/.
+#
+# Each suite runs as CI runs it, so the local number is CI's number. HOME is an empty directory, one per suite so
+# that parallel jobs cannot clear each other's: the IDX checks read the user's index store and MCP configs from
+# $HOME, which a CI runner does not have. CI=true lets the positive-fixture test skip as it does in CI (its
+# scaffolder is found through $HOME). uv's own directories are resolved from the real home first, so uvx still
+# finds its cache and tools and nothing is downloaded again.
+COVERAGE_HOME := $(CURDIR)/dev/dist/coverage/home
+coverage_env = env -u AUDIT_INDEX_STORE -u XDG_CONFIG_HOME -u XDG_CACHE_HOME HOME=$(COVERAGE_HOME)/$(1) CI=true \
+	UV_CACHE_DIR="$$(uv cache dir)" UV_PYTHON_INSTALL_DIR="$$(uv python dir)" UV_TOOL_DIR="$$(uv tool dir)"
 COVERAGE_SUITES := coverage-engine coverage-audit-tools coverage-implement-tools
 coverage: coverage-engine coverage-audit-tools coverage-implement-tools coverage-combine
 
 coverage-engine:
 	mkdir -p $(dir $(COVERAGE_DATA))
 	rm -f $(COVERAGE_DATA).engine
-	cd $(ENGINE) && COVERAGE_FILE=$(COVERAGE_DATA).engine $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc -m unittest discover -s tests
+	rm -rf $(COVERAGE_HOME)/engine && mkdir -p $(COVERAGE_HOME)/engine
+	cd $(ENGINE) && $(call coverage_env,engine) COVERAGE_FILE=$(COVERAGE_DATA).engine $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc -m unittest discover -s tests
 
 coverage-audit-tools:
 	mkdir -p $(dir $(COVERAGE_DATA))
 	rm -f $(COVERAGE_DATA).audit-tools
-	COVERAGE_FILE=$(COVERAGE_DATA).audit-tools $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s audit/tools/tests
+	rm -rf $(COVERAGE_HOME)/audit-tools && mkdir -p $(COVERAGE_HOME)/audit-tools
+	$(call coverage_env,audit-tools) COVERAGE_FILE=$(COVERAGE_DATA).audit-tools $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s audit/tools/tests
 
 coverage-implement-tools:
 	mkdir -p $(dir $(COVERAGE_DATA))
 	rm -f $(COVERAGE_DATA).implement-tools
-	COVERAGE_FILE=$(COVERAGE_DATA).implement-tools $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s implement/tools/tests
+	rm -rf $(COVERAGE_HOME)/implement-tools && mkdir -p $(COVERAGE_HOME)/implement-tools
+	$(call coverage_env,implement-tools) COVERAGE_FILE=$(COVERAGE_DATA).implement-tools $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s implement/tools/tests
 
 # `coverage combine` deletes the files it merges, so a later combine cannot reuse a stale suite's data.
 coverage-combine:
