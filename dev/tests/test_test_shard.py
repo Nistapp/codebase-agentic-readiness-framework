@@ -48,6 +48,18 @@ class Assignment(unittest.TestCase):
                     assigned = [module for shard in shards for module in shard]
                     self.assertEqual(sorted(assigned), sorted(modules), "a module is missing or in two shards")
 
+    def test_modules_in_packages_are_found_and_fixture_folders_are_not(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "test_top.py").write_text("", encoding="utf-8")
+            (root / "packs" / "agt").mkdir(parents=True)
+            (root / "packs" / "__init__.py").write_text("", encoding="utf-8")
+            (root / "packs" / "agt" / "__init__.py").write_text("", encoding="utf-8")
+            (root / "packs" / "agt" / "test_agt.py").write_text("", encoding="utf-8")
+            (root / "fixtures" / "repo" / "tests").mkdir(parents=True)
+            (root / "fixtures" / "repo" / "tests" / "test_app.py").write_text("", encoding="utf-8")
+            self.assertEqual(test_shard.suite_modules(root), ["test_agt", "test_top"])
+
     def test_a_module_without_a_weight_is_still_assigned(self) -> None:
         for name, modules, weights in self.suites():
             with self.subTest(suite=name):

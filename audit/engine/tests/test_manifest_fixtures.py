@@ -3,7 +3,7 @@
 
 """Every runner manifest in a fixture parses with a real parser.
 
-``test_make_fixtures.py`` holds the Makefiles to GNU Make. The other runners cannot be run here (no JVM, no
+``packs/cmd/test_make_fixtures.py`` holds the Makefiles to GNU Make. The other runners cannot be run here (no JVM, no
 Gradle), but their manifests can be read by the standard library: ``pom.xml`` as XML, ``pyproject.toml`` as TOML and
 ``package.json`` as JSON. A fixture whose manifest does not parse is not a repository the runner would accept, so
 the verb it earns or loses would not mean what the fixture says.

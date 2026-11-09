@@ -64,7 +64,7 @@ One test, without the whole suite (the first from `audit/engine/`, the second fr
 repository root):
 
 ```bash
-python3 -m unittest tests.test_cmd_pack -k verbs
+python3 -m unittest tests.packs.cmd.test_cmd_pack -k verbs
 python3 -m unittest discover -s audit/tools/tests -k catalogue
 ```
 

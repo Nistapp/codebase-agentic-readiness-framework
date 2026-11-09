@@ -45,7 +45,7 @@ KNOWN_SCAFFOLDER = (
 #: The IDX checks assert properties of the operator's harness and index store, not repository
 #: content: a freshly generated scaffold in a temporary directory carries no project-level MCP
 #: config and no persistent index. They are exercised against constructed stores in
-#: ``test_idx_pack.py``, so the content fixture does not assert them.
+#: ``packs/idx/test_idx_pack.py``, so the content fixture does not assert them.
 #: This checkout's greenfield templates. Passed explicitly, so the scaffolder's own default (a sibling checkout
 #: at a fixed path) cannot point at an older layout.
 TEMPLATES = Path(__file__).resolve().parents[3] / "greenfield" / "templates"
