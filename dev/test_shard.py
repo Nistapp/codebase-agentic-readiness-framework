@@ -5,9 +5,13 @@
 
 ``python3 dev/test_shard.py --suite engine --shard 1/2`` finds the suite's test modules at run time, assigns them
 to shards by the weights in ``dev/test_shard_weights.json`` and runs the modules of one shard. Each module is loaded
-as ``python3 -m unittest discover -s tests`` loads it, from the same working directory and ``sys.path``. A module
-with no weight gets ``DEFAULT_WEIGHT``, so a new module is always in exactly one shard. A shard that selects no test
-exits 1, so a shard cannot pass by running nothing.
+as ``python3 -m unittest discover`` loads it, from the same working directory and ``sys.path``. A module with no
+weight gets ``DEFAULT_WEIGHT``, so a new module is always in exactly one shard. A shard that selects no test exits 1,
+so a shard cannot pass by running nothing.
+
+Every module of a shard is imported before any of its tests runs, as ``discover`` does. A test may put another
+folder first on ``sys.path`` (``audit/tools/tests/test_import_fixture_matrix.py`` adds the engine's tests, which hold
+modules with the same names), so a module imported after it could come from the wrong folder.
 
 ``--measure`` runs every module of the suite one by one and rewrites the suite's weights (seconds, one decimal).
 
@@ -29,8 +33,12 @@ from pathlib import Path
 DEV = Path(__file__).resolve().parent
 REPO = DEV.parent
 WEIGHTS = DEV / "test_shard_weights.json"
-#: Each suite: the folder its tests run from, and the start folder of its discovery (relative to the first).
-SUITES = {"engine": (REPO / "audit" / "engine", "tests")}
+#: Each suite: the folder its tests run from, and the start folder of its discovery (relative to the first), as the
+#: Makefile's test-<suite> target runs it.
+SUITES = {
+    "engine": (REPO / "audit" / "engine", "tests"),
+    "audit-tools": (REPO, "audit/tools/tests"),
+}
 #: The weight of a module that the weights file does not name yet (seconds).
 DEFAULT_WEIGHT = 1.0
 
@@ -89,12 +97,13 @@ def run(root: Path, start: str, modules: Sequence[str]) -> int:
 
 
 def measure(root: Path, start: str, modules: Sequence[str]) -> dict[str, float] | None:
-    """Seconds per module, each run alone; None when a module fails."""
+    """Seconds per module, each run alone; None when a module fails. Every module is imported first, as in a shard."""
     times: dict[str, float] = {}
-    for name in modules:
+    suites = {name: load(root, start, [name]) for name in modules}
+    for name, suite in suites.items():
         began = time.perf_counter()
         with open(os.devnull, "w", encoding="utf-8") as quiet:
-            result = unittest.TextTestRunner(stream=quiet).run(load(root, start, [name]))
+            result = unittest.TextTestRunner(stream=quiet).run(suite)
         times[name] = round(time.perf_counter() - began, 1)
         if not result.wasSuccessful():
             print(f"test_shard: {name} failed; the weights are not written", file=sys.stderr)
