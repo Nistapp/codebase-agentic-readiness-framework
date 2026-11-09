@@ -35,7 +35,8 @@ pip/uv/poetry's resolved environment) or `safety check`. Hook manager: pre-commi
 (`.pre-commit-config.yaml`); lefthook in a mixed repository. Commit rule: a pre-commit `commit-msg` hook
 (conventional-pre-commit, commitizen or gitlint), and the same rule in CI (`TOOL-06`):
 `cz check --rev-range` or `gitlint --commits` over the pull request's commits (conventional-pre-commit has no
-range form). Dependency updates: Dependabot `package-ecosystem: pip`
+range form). Branch guard (`TOOL-07`): pre-commit-hooks' `no-commit-to-branch` with a `--branch` per
+protected branch. Dependency updates: Dependabot `package-ecosystem: pip`
 (pip, pipenv, poetry, pip-compile) or `uv` (a `uv.lock`); Renovate's `pep621`, `pip_requirements`,
 `poetry` and `pipenv` managers.
 

@@ -44,7 +44,8 @@ Dependency scanner: the package manager's own `audit` command; `audit-ci` or Sny
 pin a fixed severity threshold in config rather than a CLI flag. Hook manager: Husky + lint-staged
 (`prepare: husky`), or simple-git-hooks; lefthook when there is no root `package.json`. Commit rule:
 commitlint in `.husky/commit-msg`, and `npx commitlint --from <base> --to <head>` in CI
-(`TOOL-06`). Dependency updates: Dependabot `package-ecosystem: npm` (npm, Yarn and
+(`TOOL-06`). Branch guard (`TOOL-07`): a `git branch --show-current` check at the top of
+`.husky/pre-commit`. Dependency updates: Dependabot `package-ecosystem: npm` (npm, Yarn and
 pnpm lockfiles) or `bun`; Renovate's `npm` manager.
 
 ## Execution determinism

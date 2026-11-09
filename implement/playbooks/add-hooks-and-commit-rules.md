@@ -8,7 +8,8 @@
 A commit runs a fast local hook chain before it is created, with one committed configuration and a documented
 one-time install. The commit-message convention runs in two places with one type list: a local `commit-msg` stage,
 so an agent learns of a bad subject before it pushes, and a CI step, which no `--no-verify` can skip. The owner may
-instead record the pull-request title check as enough.
+instead record the pull-request title check as enough. A guard in the same chain refuses a commit on a protected
+branch, so an agent learns it is on the wrong branch before it commits, not when the push is refused.
 
 ## Checks resolved
 
@@ -16,6 +17,7 @@ instead record the pull-request title check as enough.
 |---|---|---|
 | TOOL-05 | [05-tooling.md](../../audit/checks/05-tooling.md#tool-05--local-hook-chain-active) | Commits a hook-manager configuration the engine reads as wired, with fast changed-files hooks |
 | TOOL-06 | [05-tooling.md](../../audit/checks/05-tooling.md#tool-06--commit-convention-enforced) | Writes the commit rule as a local `commit-msg` stage and a CI step (`PASS`); the owner may skip when the title check is enough (see Commit rule) |
+| TOOL-07 | [05-tooling.md](../../audit/checks/05-tooling.md#tool-07--local-guard-against-commits-to-a-protected-branch) | Adds a `pre-commit` guard in the same manager that names every protected branch (see [Branch guard](#branch-guard)) |
 
 ## Preconditions
 
@@ -26,7 +28,8 @@ instead record the pull-request title check as enough.
   ([`define-command-surface`](define-command-surface.md), [`configure-quality-tools`](configure-quality-tools.md)). A
   hook calls those verbs; it never defines its own commands.
 - Preferences read, when present: `format.mass_reformat` (a `no` means hooks check changed files only, never the
-  full tree), `lint.mode`, `layout.command_runner`, `hooks.manager`, `commit.convention`, `commit.tool`.
+  full tree), `lint.mode`, `layout.command_runner`, `hooks.manager`, `commit.convention`, `commit.tool`,
+  `hooks.protected_branches`.
 - **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a finding saying "no hook manager" can be stale; look for
   `lefthook.yml`, `.pre-commit-config.yaml`, `.husky/`, `.githooks/` and `core.hooksPath` on the current default branch.
   A `TOOL-06` `PARTIAL` names which half is missing: "only in a local hook" needs the CI step, "only in CI" needs
@@ -75,6 +78,11 @@ instead record the pull-request title check as enough.
 
    Recommend B, or C where squash merges and a title check already exist. Only the owner skips; record the
    owner's words.
+4. **Protected branches** (`TOOL-07`). The guard names the branches the declared rules protect: the literal
+   names in `.github/rulesets/*.json`, `.github/settings.yml` or Terraform (`HYG-11`'s evidence). With no declared
+   rules, propose the default branch (`git symbolic-ref refs/remotes/origin/HEAD`) and the integration branch when
+   the state or `AGENTS.md` names one. Record the answer as `hooks.protected_branches`. Never guard a branch the
+   owner did not confirm.
 
 ## Steps
 
@@ -94,8 +102,9 @@ instead record the pull-request title check as enough.
    list it enforces. For B or C: add the config and the `commit-msg` stage, then the CI step for the provider
    (see [Commit rule in CI](#commit-rule-in-ci)), with the same type list as the title rule so they cannot
    disagree. Commit the local stage and the CI step separately, so either reverts alone.
-5. **Verify** with a deliberately bad staged file in a scratch worktree (see Verification). Commit config, docs
-   and rule separately.
+5. **Branch guard** in the same manager (see [Branch guard](#branch-guard)), naming the Inputs 4 branches.
+6. **Verify** with a deliberately bad staged file in a scratch worktree (see Verification). Commit config, docs,
+   rule and guard separately.
 
 ### Gradle and Quarkus
 
@@ -128,6 +137,57 @@ With lefthook (IR07.3):
   change. That is the ratchet working; say so in the install text rather than adding an exception.
 - Fetch the test binary into a scratch directory and compare its SHA-256 with the digest GitHub publishes for the
   release asset; do not put it on the owner's `PATH`.
+
+### Branch guard
+
+One guard, in the manager the repository already uses, in the `pre-commit` stage. Its message names the fix:
+`git switch -c <type>/<topic>` carries the staged change to a new branch. It is a convenience: the server's rules
+are the enforcement, and `--no-verify` skips it. Replace `main` and `dev` with the Inputs 4 branches.
+
+| Stack (manager) | Guard |
+|---|---|
+| Python (pre-commit) | The `no-commit-to-branch` hook of pre-commit-hooks (v6.0.0, 2025-08-09; checked 2026-11-09). Add it to an existing `pre-commit-hooks` entry, or add the entry. Without `--branch` it guards `main` and `master` only |
+| Node with a root manifest (Husky) | The shell lines below at the top of `.husky/pre-commit`, before `npx lint-staged` |
+| Mixed, Java, Node with no root manifest (lefthook) | A `pre-commit` command, as below. A `pre-push` command does not stop a commit |
+| A committed `.githooks/` folder | The shell lines below in `.githooks/pre-commit`, executable, with `core.hooksPath` already set |
+
+pre-commit:
+
+```yaml
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: no-commit-to-branch
+        args: [--branch, main, --branch, dev]
+```
+
+Husky or `.githooks/pre-commit` (POSIX shell):
+
+```sh
+branch="$(git branch --show-current)"
+case "$branch" in
+  main|dev)
+    echo "Do not commit on '$branch'. Run: git switch -c <type>/<topic>, then commit again." >&2
+    exit 1
+    ;;
+esac
+```
+
+lefthook:
+
+```yaml
+pre-commit:
+  commands:
+    protected-branch:
+      run: >-
+        branch="$(git branch --show-current)";
+        case "$branch" in main|dev)
+        echo "Do not commit on '$branch'. Run: git switch -c <type>/<topic>, then commit again." >&2; exit 1;;
+        esac
+```
+
+The engine reads the branch names in the guard itself: in the lefthook command's own block, or anywhere in a hook
+script. A guard in a script the hook calls is not seen, so keep the guard in the hook.
 
 ### Commit rule in CI
 
@@ -262,6 +322,7 @@ printf '%s\n' "$subject" | grep -Eq '^(feat|fix|docs|test|chore|ci|refactor|perf
 | TOOL-05 (behaviour) | In a scratch worktree, stage a file with a deliberate format violation and a fake secret, run the hook | The commit is refused with a clear message; a clean staged change passes in a few seconds |
 | TOOL-06 | Option A: the contributing doc names the title check and the state records `skipped` with the owner's reason. Option B or C: the config and the `commit-msg` stage exist; a bad message is refused locally | As stated |
 | TOOL-06 (CI) | Option B or C: push a scratch branch with one bad subject and open a draft pull request only with the owner's approval; or run the CI command locally over `<base>..HEAD` | The CI step fails on the bad subject and passes on a clean range; the engine reads `TOOL-06` `PASS` |
+| TOOL-07 | In a scratch clone, check out a protected branch (`git switch -c` a local copy named like it is enough), stage a change and run the hook (`pre-commit run no-commit-to-branch`, `lefthook run pre-commit`, or the hook script); then the same on a work branch | Refused on each protected branch with the fix in the message; passes on the work branch; the engine reads `TOOL-07` `PASS` |
 
 The engine reads `TOOL-06` from files only: option A gives `PARTIAL` (CI only) by design.
 
@@ -274,7 +335,7 @@ The engine reads `TOOL-06` from files only: option A gives `PARTIAL` (CI only) b
 
 - Do not install the hook manager on the owner's machine or add it as a repository dependency without approval.
 - Do not run tests, a full lint, a full-tree format or any network call in a hook.
-- Do not advise `--no-verify` or add a bypass variable.
+- Do not advise `--no-verify` or add a bypass variable, in the branch guard either.
 - Do not re-propose a `skipped` commit-convention finding.
 - Do not pick a manager by what looks familiar or by what this framework uses: detect, then recommend by stack.
 - Do not duplicate the secret-scanner version: reuse the CI pin.
@@ -289,6 +350,8 @@ python3 implement/tools/progress.py pref set hooks.manager <husky|pre-commit|lef
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set commit.tool <commitlint|commitizen|gitlint|script> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py pref set hooks.protected_branches "main,dev" \
+  --target <repo> --phase <phase> --reason "<the owner's words, or: from .github/rulesets/>" --by owner
 python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> --by owner \
   --reason "<the owner's words: why the title check is enough>"
 python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \

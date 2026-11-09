@@ -44,7 +44,9 @@ task name that does not match `security` literally, so a repository applying the
 `CMD-01` `FAIL` for that verb unless a `security` task delegates to it (see Pitfalls). Hook manager: none
 is standard; a committed `.githooks/` with `core.hooksPath` set by a build task, or lefthook (no JVM plugin
 needed). Commit rule: a `commit-msg` script or lefthook stage, with
-the same script run over the pull request's commits in CI (`TOOL-06`). Dependency updates: Dependabot
+the same script run over the pull request's commits in CI (`TOOL-06`). Branch guard (`TOOL-07`): a
+`git branch --show-current` check in `.githooks/pre-commit` or a lefthook `pre-commit` command. Dependency updates:
+Dependabot
 `package-ecosystem: gradle` or `maven`; Renovate's `gradle` and `maven` managers.
 
 ## Execution determinism
