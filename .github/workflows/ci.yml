@@ -74,11 +74,12 @@ jobs:
           version-file: dev/tools/pyproject.toml
       - run: make crosscheck
 
-  # The engine's suite under coverage.py, in shards that run at once (ENGINE_SHARDS in the Makefile; the matrix lists
-  # 1 to ENGINE_SHARDS, which dev/tests/test_ci_parity.py checks). Each shard's data file goes to the `coverage` job,
-  # which combines every suite's.
-  test-engine:
-    name: test-engine (shard ${{ matrix.shard }}, Python 3.11, coverage)
+  # The suites under coverage.py, in parts that run at once (`make coverage-part`; TEST_SHARDS, SHARDED_SUITES and
+  # COVERAGE_PART_<i> in the Makefile). Part <i> runs shard <i> of the engine's and the audit tools' suites, plus
+  # the implement tools in part 1. dev/tests/test_ci_parity.py checks that the matrix lists 1 to TEST_SHARDS. Each
+  # part's data files go to the `coverage` job, which combines them all.
+  test-coverage:
+    name: test (part ${{ matrix.shard }}, Python 3.11, coverage)
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -96,41 +97,15 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: dev/tools/pyproject.toml
-      - run: make coverage-engine-shard
+      - run: make coverage-part
         env:
           CI: "true"
-      # The data file's name starts with a dot, so it is a hidden file to upload-artifact.
+      # The data files' names start with a dot, so they are hidden files to upload-artifact. coverage-combine fails
+      # when one of them is missing.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: coverage-engine-${{ matrix.shard }}
-          path: dev/dist/coverage/.coverage.engine-${{ matrix.shard }}
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 1
-
-  # The audit tools' and the implement tools' suites under coverage.py; one job, because the second takes 2 s.
-  test-tools:
-    name: test-tools (Python 3.11, coverage)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version-file: .python-version
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-        with:
-          version-file: dev/tools/pyproject.toml
-      - run: make coverage-audit-tools coverage-implement-tools
-        env:
-          CI: "true"
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: coverage-tools
-          path: |
-            dev/dist/coverage/.coverage.audit-tools
-            dev/dist/coverage/.coverage.implement-tools
+          name: coverage-part-${{ matrix.shard }}
+          path: dev/dist/coverage/.coverage.*
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
@@ -151,8 +126,8 @@ jobs:
           version-file: dev/tools/pyproject.toml
       - run: make test-dev
 
-  # Every suite on the newest Python, in parts with one engine shard each (`make test-part`; TEST_PART_<i> in the
-  # Makefile). Each part runs its targets at once, as `make test` runs its suites, so this job also proves the
+  # Every suite on the newest Python, in parts with one shard of each sharded suite (`make test-part`;
+  # TEST_PART_<i> in the Makefile). Each part runs its targets at once, as `make test` runs its suites, so this job also proves the
   # parallel run on every pull request. The nightly workflow runs the unsharded `make test`.
   test-py314:
     name: test (part ${{ matrix.shard }}, Python 3.14)
@@ -180,7 +155,7 @@ jobs:
   # partial total.
   coverage:
     name: coverage
-    needs: [test-engine, test-tools]
+    needs: [test-coverage]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -310,7 +285,7 @@ jobs:
   # there cannot be left unchecked.
   ci-gate:
     name: CI Gate
-    needs: [static, crosscheck, test-engine, test-tools, test-dev, test-py314, coverage, security, self-audit, docs, commits]
+    needs: [static, crosscheck, test-coverage, test-dev, test-py314, coverage, security, self-audit, docs, commits]
     if: always()
     runs-on: ubuntu-latest
     steps:
