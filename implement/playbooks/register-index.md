@@ -159,7 +159,20 @@ No dependency is installed. Ask:
    the last commit, and checks freshness with `detect_changes`. Write the sentence in the file's own voice, in the
    section where the file already keeps tool guidance, and keep it within the 400-line budget. Run `detect_changes` and
    record the result as the evidence; if it names changed files, re-index and run it again.
-6. **First-run offer (Inputs 5).** Only with `index.first_run_offer=yes`. Add a short section to the target's docs,
+6. **Language server (advisory).** Optional, and never a gate: the target's `typecheck` verb stays the source of
+   truth. Never install a language server. How each harness reaches one is in
+   [Language Servers Beside the Code Index](../../docs/framework/tool-ecosystem.md#language-servers-beside-the-code-index);
+   link it, do not restate it. Check that the repository gives a server the inputs its stack needs:
+   - Node: a `tsconfig.json` per package, or project references from the root one.
+   - Python: a pyright or basedpyright config that mirrors the type-check gate's import paths.
+   - Go: a `go.work` when the repository has several modules.
+   - Rust: a root `[workspace]` when it has several crates.
+   - .NET: a `.sln` when it has several projects.
+   - Java: the Gradle or Maven build with its wrapper; nothing more.
+
+   Report a missing input as a note, not a finding. Add it only with the owner's yes, in its own commit. Read
+   EXEC-07's rubric first: a pyright config beside mypy may count as a second type-checker config.
+7. **First-run offer (Inputs 5).** Only with `index.first_run_offer=yes`. Add a short section to the target's docs,
    in the docs home T6 chose, that holds the offer's steps:
    1. Name your harness.
    2. If the record file says this harness was asked, stop.
@@ -172,7 +185,8 @@ No dependency is installed. Ask:
    target's ignore file. Then add one line at the top of the instruction file: "Before your first change, read
    `<docs page>#<section>` and make the setup offer once." Keep the line within the 400-line budget. The target has
    no helper script: the agent follows the section by hand.
-7. **Commits:** one for the project config (if any), one for the instruction-file lines, one for the offer section.
+8. **Commits:** one per concern. Commit the project config (if any), the instruction-file lines, the offer section,
+   and each language-server input the owner accepted.
    The engine re-check ([Stage 4](../SKILL.md#stage-4-close-the-theme), step 1) runs with and without `--no-user-config`.
 
 ### Gradle and Quarkus

@@ -38,7 +38,8 @@ pip/uv/poetry's resolved environment) or `safety check`. Hook manager: pre-commi
 range form). Branch guard (`TOOL-07`): pre-commit-hooks' `no-commit-to-branch` with a `--branch` per
 protected branch. Dependency updates: Dependabot `package-ecosystem: pip`
 (pip, pipenv, poetry, pip-compile) or `uv` (a `uv.lock`); Renovate's `pep621`, `pip_requirements`,
-`poetry` and `pipenv` managers.
+`poetry` and `pipenv` managers. Language-server inputs (`register-index`, advisory): a pyright or basedpyright config
+that mirrors the type-check gate's import paths.
 
 ## Execution determinism
 
@@ -56,6 +57,7 @@ GitHub Actions is the common provider: `actions/checkout`, `actions/setup-python
 pinned to `requires-python`/`.python-version`, the matching manager's own cache (`setup-python`'s
 `cache: pip`, or `astral-sh/setup-uv`/`cache: poetry` for the others), then the project's `check` target.
 Workflow lint (`CI-05`): actionlint or zizmor as pre-commit hooks (or `uvx zizmor` in a target), run in CI too.
+Release provenance (optional, `add-repo-hygiene` step 6): PyPI Trusted Publishing with attestations on.
 
 ## Baseline / ratchet
 
