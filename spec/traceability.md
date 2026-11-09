@@ -6,7 +6,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 
 ## Checks to requirements
 
-72 checks: 70 of the audit engine and 2 that only an agent runs. 58 scored checks trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
+74 checks: 72 of the audit engine and 2 that only an agent runs. 60 scored checks trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
 
 | Check | Title | Severity | Scored | Requirements |
 |---|---|---|---|---|
@@ -38,6 +38,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 | `TOOL-04` | Dependency / security scan verb | DEGRADER | yes | [REQ-SH-030](readiness-requirements.md#req-sh-030--dependency-vulnerability-scan) |
 | `TOOL-05` | Local hook chain active | DEGRADER | yes | [REQ-SH-031](readiness-requirements.md#req-sh-031--local-hook-chain) |
 | `TOOL-06` | Commit convention enforced | COSMETIC | yes | [REQ-SH-032](readiness-requirements.md#req-sh-032--commit-convention-enforced) |
+| `TOOL-07` | Local guard against commits to a protected branch | COSMETIC | yes | [REQ-SH-059](readiness-requirements.md#req-sh-059--local-guard-against-commits-to-a-protected-branch) |
 | `CI-01` | Pipeline present, triggered on PRs | BLOCKER | yes | [REQ-SH-033](readiness-requirements.md#req-sh-033--pipeline-on-pull-requests) |
 | `CI-02` | Local↔CI parity | BLOCKER | yes | [REQ-SH-034](readiness-requirements.md#req-sh-034--ci-runs-the-verbs) |
 | `CI-03` | CI-only steps flagged | DEGRADER | yes | [REQ-SH-034](readiness-requirements.md#req-sh-034--ci-runs-the-verbs) |

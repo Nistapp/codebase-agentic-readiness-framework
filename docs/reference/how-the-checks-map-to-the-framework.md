@@ -31,7 +31,7 @@ To go the other way, start from a framework heading, find the requirements whose
 
 ## Every check, generated
 
-All 73 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
+All 74 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
 `Source` field links. Generated 2026-10-19 from `catalogue.json`'s `req_ids` and
 `readiness-requirements.md`'s `Source` fields — the same two steps as the worked example above, run once
 per check rather than by hand. 14 checks are informational or an emitter and trace to no requirement
@@ -107,13 +107,14 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `TOOL-04` | Dependency / security scan verb | DEGRADER | yes | [REQ-SH-030](../../spec/readiness-requirements.md#req-sh-030--dependency-vulnerability-scan) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `TOOL-05` | Local hook chain active | DEGRADER | yes | [REQ-SH-031](../../spec/readiness-requirements.md#req-sh-031--local-hook-chain) | [greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint) |
 | `TOOL-06` | Commit convention enforced | COSMETIC | yes | [REQ-SH-032](../../spec/readiness-requirements.md#req-sh-032--commit-convention-enforced) | [greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint) |
+| `TOOL-07` | Local guard against commits to a protected branch | COSMETIC | yes | [REQ-SH-059](../../spec/readiness-requirements.md#req-sh-059--local-guard-against-commits-to-a-protected-branch) | [greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint) |
 | `TST-01` | Test verb exists, suite non-empty | BLOCKER | yes | [REQ-SH-045](../../spec/readiness-requirements.md#req-sh-045--test-verb-and-suite) | [greenfield/README.md § 3.2 Testing Policies](../../greenfield/README.md#32-testing-policies-enforced-via-agentsmd) |
 | `TST-02` | Suite status known | DEGRADER | yes | [REQ-SH-046](../../spec/readiness-requirements.md#req-sh-046--suite-passes) | [greenfield/README.md § 3.2 Testing Policies](../../greenfield/README.md#32-testing-policies-enforced-via-agentsmd) |
 | `TST-03` | Skip / xfail census | DEGRADER | yes | [REQ-SH-047](../../spec/readiness-requirements.md#req-sh-047--no-skipped-tests) | [greenfield/README.md § 3.2 Testing Policies](../../greenfield/README.md#32-testing-policies-enforced-via-agentsmd) |
 | `TST-04` | Fast path documented | DEGRADER | yes | [REQ-SH-048](../../spec/readiness-requirements.md#req-sh-048--fast-path-documented) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `TST-05` | Coverage configuration present | COSMETIC | yes | [REQ-SH-049](../../spec/readiness-requirements.md#req-sh-049--coverage-reporting) | [greenfield/README.md § 3.1 vitest.config.ts](../../greenfield/README.md#31-vitestconfigts--with-coverage) |
 
-73 checks total.
+74 checks total.
 
 ## Where the relation is held
 

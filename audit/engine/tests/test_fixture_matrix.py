@@ -102,6 +102,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "tool-06-no-commit-rule": {"TOOL-06": "FAIL"},
     "tool-06-local-only-commit-rule": {"TOOL-06": "PARTIAL"},
     "tool-06-ci-only-commit-rule": {"TOOL-06": "PARTIAL"},
+    "tool-07-no-branch-guard": {"TOOL-05": "PASS", "TOOL-07": "FAIL"},
     "tool-ok-node": {
         "TOOL-01": "PASS",
         "TOOL-02": "PASS",

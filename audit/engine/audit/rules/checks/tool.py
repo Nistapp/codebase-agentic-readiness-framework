@@ -5,7 +5,7 @@
 
 Anchor: `docs/framework/phased-approach.md` § Key Deliverables.
 
-Implemented here: `TOOL-01` … `TOOL-06`.
+Implemented here: `TOOL-01` … `TOOL-07`.
 
 The pack verifies that the tools an agent leans on are configured **and reachable through the command
 surface**, not merely installed. Verb evidence comes from `audit.rules.checks._common.resolve_verbs`;
@@ -34,6 +34,14 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   script the local `commit-msg` stage also runs, or a runner target whose command does one of those. Both ⇒
   `PASS`; one of the two ⇒ `PARTIAL`; neither ⇒ `FAIL` (`COSMETIC`). Whether the CI job runs on pull requests is
   not read.
+* **TOOL-07** — a local guard that refuses a commit on a protected branch: pre-commit's `no-commit-to-branch` hook
+  (its `--branch`/`--pattern` arguments; `main` and `master` without `--branch`), or a lefthook command, a Husky hook or a
+  `pre-commit`/`commit-msg` hook script that reads the current branch (`git symbolic-ref ... HEAD`,
+  `git branch --show-current`, `git rev-parse --abbrev-ref HEAD`). The branches it must name are the literal ones
+  the declared rules protect (:func:`audit.rules.checks._common.declared_branch_rules`); with none declared, any
+  guard counts. A guard in a wired chain that names them all ⇒ `PASS`; a guard in a chain that is not wired, or one
+  that misses a protected branch ⇒ `PARTIAL`; hooks but no guard ⇒ `FAIL`; no hook at all ⇒ `UNKNOWN`, which is
+  `TOOL-05`'s finding. Whether the guard exits non-zero, and a guard in a script the hook calls, are not read.
 
 Deliberate limits, recorded rather than hidden. **Config detection is filename-based** against the
 documented set below; a config that lives somewhere unexpected is not seen. **Verb resolution is
@@ -49,7 +57,7 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.rules.checks._common import resolve_verbs, runner_commands, runner_target
+from audit.rules.checks._common import declared_branch_rules, resolve_verbs, runner_commands, runner_target
 from audit.scan import Kind
 from audit.stack import CI_PROVIDERS, extract_npm_scripts
 from audit.rules.payloads import Payload
@@ -896,6 +904,176 @@ def check_tool06(*, spec, target, inventory, stack, components, session) -> Chec
     return _unknown(spec, "no recognised ecosystem and no hook configuration, so a commit convention cannot be judged")
 
 
+# ===========================================================================
+# TOOL-07 — local guard against commits to a protected branch
+# ===========================================================================
+
+#: A hook command that reads the branch being committed to.
+_BRANCH_READ_RE = re.compile(
+    r"git\s+(?:symbolic-ref\b[^\n]*\bHEAD\b|branch\s+--show-current\b|rev-parse\s+--abbrev-ref\s+HEAD\b)"
+)
+
+#: Hook scripts by name: ``.husky/``, ``.githooks/`` or any ``core.hooksPath`` directory. A commit-msg hook also
+#: stops the commit, so either stage counts; ``pre-push`` does not.
+_GUARD_HOOK_NAMES = frozenset({"pre-commit", "commit-msg"})
+
+#: pre-commit-hooks' ``no-commit-to-branch`` protects these when it is given no ``--branch`` argument, with or
+#: without ``--pattern`` (``args.branch or ('master', 'main')`` in its source, checked at v6.0.0).
+_NO_COMMIT_DEFAULTS = ("main", "master")
+
+_ARG_SEP = r"[\s,='\"\-]+"
+_BRANCH_ARG_RE = re.compile(r"(?:--branch|\B-b)" + _ARG_SEP + r"([A-Za-z0-9_][\w./-]*)")
+_PATTERN_ARG_RE = re.compile(r"(?:--pattern|\B-p)" + _ARG_SEP + r"([^\s,'\"\]]+)")
+
+
+class _Guard:
+    """One guard: where it is, whether its hook chain is wired, and which branches it names."""
+
+    def __init__(self, rel: str, line: int, wired: bool, text: str, patterns: tuple[str, ...] = ()) -> None:
+        self.rel = rel
+        self.line = line
+        self.wired = wired
+        self.text = text
+        self.patterns = patterns
+
+    def covers(self, branch: str) -> bool:
+        for pattern in self.patterns:
+            try:
+                if re.match(pattern, branch):
+                    return True
+            except re.error:
+                continue
+        return re.search(rf"(?<![\w/.-]){re.escape(branch)}(?![\w/.-])", self.text) is not None
+
+
+def _block(lines: list[str], start: int) -> str:
+    """Line ``start`` and the lines after it indented at least as deep: the command a branch read belongs to."""
+    depth = len(lines[start]) - len(lines[start].lstrip())
+    out = [lines[start]]
+    for line in lines[start + 1 :]:
+        if line.strip() and len(line) - len(line.lstrip()) < depth:
+            break
+        out.append(line)
+    return "\n".join(out)
+
+
+def _pre_commit_guards(text: str, rel: str) -> list[_Guard]:
+    guards: list[_Guard] = []
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if re.match(r"^\s*-?\s*id:\s*['\"]?no-commit-to-branch\b", line):
+            block = _block(lines, index)
+            branches = _BRANCH_ARG_RE.findall(block)
+            patterns = tuple(_PATTERN_ARG_RE.findall(block))
+            if not branches:
+                branches = list(_NO_COMMIT_DEFAULTS)
+            guards.append(_Guard(rel, index + 1, True, " ".join(branches), patterns))
+    return guards
+
+
+def _stage(lines: list[str], index: int) -> str:
+    """The top-level key above line ``index``: a lefthook stage name."""
+    for line in reversed(lines[: index + 1]):
+        if line.strip() and not line[0].isspace() and not line.startswith("#"):
+            return line.split(":", 1)[0].strip()
+    return ""
+
+
+def _branch_read_guards(text: str, rel: str, wired: bool, *, whole_file: bool, staged: bool = False) -> list[_Guard]:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.lstrip().startswith("#") or not _BRANCH_READ_RE.search(line):
+            continue
+        if staged and _stage(lines, index) not in _GUARD_HOOK_NAMES:
+            continue
+        return [_Guard(rel, index + 1, wired, text if whole_file else _block(lines, index))]
+    return []
+
+
+def _local_guards(inventory) -> list[_Guard]:
+    hooks_path = bool(
+        inventory.grep(r"core\.hooksPath", kinds=(Kind.MANIFEST, Kind.CONFIG, Kind.SCRIPT, Kind.CI, Kind.BUILD))
+    )
+    guards: list[_Guard] = []
+    for rel in _present(inventory, _WIRED_HOOK_FILES):
+        text = inventory.read(rel) or ""
+        if rel == ".pre-commit-config.yaml":
+            guards.extend(_pre_commit_guards(text, rel))
+        guards.extend(_branch_read_guards(text, rel, True, whole_file=False, staged=rel.startswith("lefthook")))
+    for entry in inventory.files:
+        name = entry.rel.rsplit("/", 1)[-1]
+        if name not in _GUARD_HOOK_NAMES or entry.rel.startswith(".git/"):
+            continue
+        wired = _husky_referenced(inventory) if entry.rel.startswith(".husky/") else hooks_path
+        guards.extend(_branch_read_guards(inventory.read(entry.rel) or "", entry.rel, wired, whole_file=True))
+    return sorted(guards, key=lambda guard: (guard.rel, guard.line))
+
+
+def check_tool07(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+    guards = _local_guards(inventory)
+    protected = declared_branch_rules(inventory).literal_branches
+    if not guards:
+        wired, configured = _hook_wiring(inventory)
+        if not wired and not configured:
+            return _unknown(spec, "no hook chain to hold a branch guard; TOOL-05 owns that finding")
+        hooks = ", ".join(sorted(set(wired + configured)))
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            f"hooks present ({hooks}) but none refuses a commit on a protected branch",
+            [
+                _finding(
+                    spec,
+                    "learn it is on a protected branch before it commits",
+                    "no local hook reads the current branch or runs no-commit-to-branch",
+                    Verdict.FAIL,
+                    [Evidence(rel.split(" ")[0]) for rel in sorted(set(wired + configured))],
+                    "Add a pre-commit guard that refuses a commit on the protected branches: pre-commit's "
+                    "no-commit-to-branch, or a hook command that reads `git branch --show-current` and exits 1.",
+                )
+            ],
+        )
+
+    wired_guards = [guard for guard in guards if guard.wired]
+    where = ", ".join(f"{guard.rel}:{guard.line}" for guard in (wired_guards or guards))
+    if not wired_guards:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"branch guard at {where}, but its hook chain is not wired",
+            [
+                _finding(
+                    spec,
+                    "rely on the branch guard to run before a commit",
+                    f"the guard at {where} is in a hook directory nothing installs",
+                    Verdict.PARTIAL,
+                    [Evidence(guard.rel, line=guard.line) for guard in guards],
+                    "Wire the hook chain (TOOL-05) so the guard runs.",
+                )
+            ],
+        )
+
+    missing = [branch for branch in protected if not any(guard.covers(branch) for guard in wired_guards)]
+    if missing:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"branch guard at {where} does not name {', '.join(missing)}, which the declared rules protect",
+            [
+                _finding(
+                    spec,
+                    f"learn before a commit that {', '.join(missing)} is protected",
+                    f"the guard at {where} does not name {', '.join(missing)}",
+                    Verdict.PARTIAL,
+                    [Evidence(guard.rel, line=guard.line) for guard in wired_guards],
+                    f"Add {', '.join(missing)} to the guard's branch list.",
+                )
+            ],
+        )
+    named = f"; names {', '.join(protected)}" if protected else ""
+    return _outcome(spec, Verdict.PASS, f"branch guard at {where}{named}")
+
+
 IMPLEMENTATIONS = {
     "TOOL-01": check_tool01,
     "TOOL-02": check_tool02,
@@ -903,4 +1081,5 @@ IMPLEMENTATIONS = {
     "TOOL-04": check_tool04,
     "TOOL-05": check_tool05,
     "TOOL-06": check_tool06,
+    "TOOL-07": check_tool07,
 }

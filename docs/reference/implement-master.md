@@ -35,7 +35,7 @@ Themes run in dependency order: the order and the dependencies are in
 | [T1 Command surface and quality tools](#t1-command-surface-and-quality-tools) | [`define-command-surface`](#define-command-surface), [`configure-quality-tools`](#configure-quality-tools) | 10 |
 | [T2 Execution determinism](#t2-execution-determinism) | [`pin-execution-environment`](#pin-execution-environment), [`untrack-generated`](#untrack-generated) | 6 |
 | [T3 Secrets and env](#t3-secrets-and-env) | [`env-inventory-and-secrets`](#env-inventory-and-secrets) | 4 |
-| [T4 CI parity, hooks, commits](#t4-ci-parity-hooks-commits) | [`add-ci-parity`](#add-ci-parity), [`add-hooks-and-commit-rules`](#add-hooks-and-commit-rules) | 7 |
+| [T4 CI parity, hooks, commits](#t4-ci-parity-hooks-commits) | [`add-ci-parity`](#add-ci-parity), [`add-hooks-and-commit-rules`](#add-hooks-and-commit-rules) | 8 |
 | [T5 Tests and baselines](#t5-tests-and-baselines) | [`add-baselines-and-ratchet`](#add-baselines-and-ratchet) | 8 |
 | [T6 Docs and navigation](#t6-docs-and-navigation) | [`establish-docs-contract`](#establish-docs-contract) | 9 |
 | [T7 AGENTS.md and governance](#t7-agentsmd-and-governance) | [`adapt-agents-md`](#adapt-agents-md), [`add-deny-rules`](#add-deny-rules) | 16 |
@@ -210,18 +210,20 @@ Full playbook: [`add-ci-parity.md`](../../implement/playbooks/add-ci-parity.md).
 A commit runs a fast local hook chain before it is created, with one committed configuration and a documented
 one-time install. The commit-message convention runs in two places with one type list: a local `commit-msg` stage,
 so an agent learns of a bad subject before it pushes, and a CI step, which no `--no-verify` can skip. The owner may
-instead record the pull-request title check as enough.
+instead record the pull-request title check as enough. A guard in the same chain refuses a commit on a protected
+branch, so an agent learns it is on the wrong branch before it commits, not when the push is refused.
 
 | Check | What the playbook does |
 |---|---|
 | [`TOOL-05` Local hook chain active](audit-master.md#tool-05-local-hook-chain-active) | Commits a hook-manager configuration the engine reads as wired, with fast changed-files hooks |
 | [`TOOL-06` Commit convention enforced](audit-master.md#tool-06-commit-convention-enforced) | Writes the commit rule as a local `commit-msg` stage and a CI step (`PASS`); the owner may skip when the title check is enough (see Commit rule) |
+| [`TOOL-07` Local guard against commits to a protected branch](audit-master.md#tool-07-local-guard-against-commits-to-a-protected-branch) | Adds a `pre-commit` guard in the same manager that names every protected branch (see [Branch guard](../../implement/playbooks/add-hooks-and-commit-rules.md#branch-guard)) |
 
 **What it never does:**
 
 - Do not install the hook manager on the owner's machine or add it as a repository dependency without approval.
 - Do not run tests, a full lint, a full-tree format or any network call in a hook.
-- Do not advise `--no-verify` or add a bypass variable.
+- Do not advise `--no-verify` or add a bypass variable, in the branch guard either.
 - Do not re-propose a `skipped` commit-convention finding.
 - Do not pick a manager by what looks familiar or by what this framework uses: detect, then recommend by stack.
 - Do not duplicate the secret-scanner version: reuse the CI pin.

@@ -1,1 +1,10 @@
+# dev and main change only through pull requests (RELEASE_PROCESS.md). Stop a commit on either one here,
+# before the push is refused. `git switch -c <type>/<topic>` carries the staged change to a new branch.
+branch="$(git branch --show-current)"
+case "$branch" in
+  main|dev)
+    echo "Do not commit on '$branch'. Run: git switch -c <type>/<topic>, then commit again." >&2
+    exit 1
+    ;;
+esac
 npx lint-staged

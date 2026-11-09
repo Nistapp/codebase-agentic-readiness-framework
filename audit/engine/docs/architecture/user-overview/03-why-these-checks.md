@@ -83,6 +83,7 @@ One command surface, three consumers. This family is the core of Phase 1 and the
 | `TOOL-04` Dependency/security scan | Third-party risk, and agents add dependencies | Vulnerability enters through the agent's own change |
 | `TOOL-05` Local hook chain active | Enforcement must exist where the agent works | Rules that live only in CI are rules agents cannot honour |
 | `TOOL-06` Commit convention enforced | Release automation reads commit messages | Version bumps and changelogs silently stop working |
+| `TOOL-07` Local guard against commits to a protected branch | An agent commits on whatever branch is checked out | It learns the branch is protected only when the push is refused, then moves its commits by hand |
 
 ---
 

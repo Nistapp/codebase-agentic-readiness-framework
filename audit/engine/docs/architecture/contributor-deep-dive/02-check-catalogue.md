@@ -24,7 +24,7 @@
 | `AGT` Agent governance | 10 | 2 | 8 | — |
 | `DOC` Documentation contract | 4 | 3 | 1 | — |
 | `CMD` Command surface | 4 | — | 4 | — |
-| `TOOL` Tooling | 6 | 3 | 3 | — |
+| `TOOL` Tooling | 7 | 3 | 4 | — |
 | `CI` CI | 4 | — | 4 | — |
 | `BASE` Baselines & ratchet | 4 | 2 | 2 | — |
 | `CON` Constraints | 4 | — | 3 | — |
@@ -32,17 +32,17 @@
 | `TST` Tests | 5 | 2 | 2 | 1 |
 | `NAV` Navigation | 3 | 1 | 2 | — |
 | `SEC` Security hygiene | 3 | — | 3 | — |
-| **Total catalogued** | **58** | **17** | **38** | **2** |
+| **Total catalogued** | **59** | **17** | **39** | **2** |
 
 Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
 
-Of the 58, `CON-04` is an emitter rather than a check, leaving **57 scoreable checks** in v1. (`CON-01` carried weight 0
+Of the 59, `CON-04` is an emitter rather than a check, leaving **58 scoreable checks** in v1. (`CON-01` carried weight 0
 until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
 prohibitions section now.)
 
 > [!NOTE]
-> The tier columns sum to 56, not 57: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
-> v0.3.3 added `CI-05`.
+> The tier columns sum to 58, not 59: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
+> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`.
 > Earlier revisions of this table carried per-group tier splits that disagreed with their own rows — `--list-checks`
 > is the executable truth, and a mismatch between it and this page is a defect in this page.
 
@@ -118,6 +118,7 @@ suspicious verdict.
 | `TOOL-04` | Dependency / security scan verb | A | DEGRADER | A resolvable verb performing a dependency-audit check | Implemented |
 | `TOOL-05` | Local hook chain active | B | DEGRADER | Hook manager configured and wired (`core.hooksPath`, `.pre-commit-config.yaml`, `lefthook.yml`) | Implemented |
 | `TOOL-06` | Commit convention enforced | A | COSMETIC | A commit-message rule runs in a local `commit-msg` stage and in CI | Implemented |
+| `TOOL-07` | Local guard against commits to a protected branch | B | COSMETIC | A wired `pre-commit` or `commit-msg` hook refuses a commit on each branch the declared rules protect | Implemented |
 
 ---
 

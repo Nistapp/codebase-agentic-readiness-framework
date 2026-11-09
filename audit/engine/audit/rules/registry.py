@@ -170,6 +170,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("TOOL-04", "Dependency / security scan verb", "A", _S.DEGRADER),
     _c("TOOL-05", "Local hook chain active", "B", _S.DEGRADER),
     _c("TOOL-06", "Commit convention enforced", "A", _S.COSMETIC),
+    _c("TOOL-07", "Local guard against commits to a protected branch", "B", _S.COSMETIC),
     # -- CI -------------------------------------------------------------
     _c("CI-01", "Pipeline present, triggered on PRs", "B", _S.BLOCKER),
     _c("CI-02", "Local↔CI parity", "B", _S.BLOCKER),

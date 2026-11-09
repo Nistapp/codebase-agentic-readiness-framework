@@ -1,0 +1,5 @@
+# The hook chain is wired (lefthook), but no command refuses a commit on a protected branch.
+pre-commit:
+  commands:
+    lint:
+      run: make lint
