@@ -123,6 +123,27 @@ connected (for example in Claude Code's `/mcp` list).
 - In Claude Code, run `claude mcp reset-project-choices` to be asked to approve again.
 - Delete `.agentic-readiness/setup.json` to get the offer again.
 
+## Optional: a language server
+
+A language server gives the agent compiler-accurate definitions, references and type errors right after an edit.
+It complements the code index; the comparison is in [Tool Ecosystem](../framework/tool-ecosystem.md#language-servers-beside-the-code-index).
+No gate needs it: `make typecheck` (mypy strict) stays the gate.
+
+This repository commits `pyrightconfig.json`, so pyright and basedpyright resolve the same imports as mypy.
+`dev/tests/test_pyright_config.py` keeps it in step with `mypy.ini`. Pyright is stricter than mypy in places, and
+the engine is not yet under the mypy gate. So treat a pyright error that `make typecheck` does not report as a
+hint, not a failure.
+
+| Harness | How to add it |
+| --- | --- |
+| Claude Code | `npm install -g pyright`, then `/plugin install pyright-lsp@claude-plugins-official` |
+| opencode | `npm install -g pyright`, then set `"lsp": true` in your own `opencode.json` |
+| Cursor, VS Code | Install the Python extension. Their docs do not say what the agent receives from it |
+| Gemini CLI, Codex CLI, Antigravity | Install Serena: `uv tool install -p 3.13 serena-agent`, then `serena init`. Add `serena start-mcp-server --context <client> --project-from-cwd` as an MCP server in your harness. The client names are in [Serena's client guide](https://oraios.github.io/serena/02-usage/030_clients.html) |
+
+Serena is not in `.mcp.json`. The harnesses that need it do not read that file, and its launch command differs
+for each harness.
+
 ## For agents: the first-run offer
 
 `AGENTS.md` sends you here when you start a change to this repository. Do not make the offer when the person only

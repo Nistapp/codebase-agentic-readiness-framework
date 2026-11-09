@@ -52,7 +52,9 @@ their own code; they do not need the server here. The owner decided on one commi
 7. **Nothing is installed by the tool or the agent.** `check` runs `<command> --version` for a command on `PATH`.
    For a missing command it prints the upstream install routes. They carry `--skip-config`, so the installer
    writes no config into other harnesses. The person runs the installer.
-8. **No gate depends on MCP.** Anything that must be right runs through `make`.
+8. **No gate depends on MCP or a language server.** Anything that must be right runs through `make`. A
+   language server is an optional aid: `pyrightconfig.json` mirrors the `mypy.ini` import paths, and the offer
+   does not cover it.
 
 ---
 
@@ -65,6 +67,7 @@ their own code; they do not need the server here. The owner decided on one commi
 | A dedicated skill for the offer | Not every harness reads skills. Every harness reads `AGENTS.md` |
 | Detect the harness from environment variables only | Only Claude Code's variable is confirmed. A wrong guess writes the wrong file |
 | Record the answer in a tracked file | One person's answer would apply to every clone |
+| Serena in `.mcp.json` | Only Claude Code and VS Code read the file, and both have their own language-server route. The harnesses that need Serena do not read it, and its launch command differs per harness (`--context`) |
 | Pre-approve the server in `.claude/settings.json` | It would start a program on every contributor's machine without asking |
 | No offer: document the setup only | The setup is easy to miss, and agents then read whole files where a graph query would do |
 

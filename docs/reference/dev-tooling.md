@@ -111,6 +111,10 @@ For a harness that does not read `.mcp.json`, `dev/mcp_config.py` translates the
 | `python3 dev/mcp_config.py status --harness <name>` | Has the person answered the setup offer for this harness? |
 | `python3 dev/mcp_config.py record --harness <name> --answer accepted\|declined` | Records the answer in `.agentic-readiness/setup.json` |
 
+A language server is an optional aid beside the index. `pyrightconfig.json` gives pyright and basedpyright the same
+import paths as `mypy.ini`, and `dev/tests/test_pyright_config.py` keeps the two in step. `make typecheck` stays the
+gate. Routes per harness: [Set up the agent tools](../how-to/set-up-agent-tools.md#optional-a-language-server).
+
 The names are `claude-code`, `vscode`, `cursor`, `gemini`, `opencode`, `codex`, `antigravity` and `other`. The tool
 installs nothing. If
 the server is not installed, it fails to start and the agent reads files instead.

@@ -16,12 +16,12 @@ score from falling.
 
 | Field | Value |
 | --- | --- |
-| Phase-1 score | **0.8934** |
+| Phase-1 score | **0.8770** |
 | Date | 2026-11-09 |
 | Engine | `python-agentic-audit` 0.3.2 |
 | Ruleset | `2026-11-06.1` (hash `970e6792f98eeeb5`) |
 | Applicable checks | 69 (55 scoreable) |
-| Findings | 4: 1 BLOCKER, 3 DEGRADER |
+| Findings | 5: 1 BLOCKER, 4 DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; no user-level configuration read |
 
 `HYG-05`, `HYG-07`, `HYG-08` and `HYG-09` closed with `CONTRIBUTING.md`, the root changelog, `RELEASE_PROCESS.md` and
@@ -33,9 +33,9 @@ The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 re
 
 | Verdict | Checks |
 | --- | --: |
-| PASS | 59 |
+| PASS | 58 |
 | PARTIAL | 6 |
-| FAIL | 0 |
+| FAIL | 1 |
 | UNKNOWN | 4 |
 | ATTEST | 0 |
 | **Total** | **69** |
@@ -53,12 +53,14 @@ Every check that is not `PASS`, with the reason it is open.
 | `SEC-01` | PARTIAL | BLOCKER | `/.env` is root-anchored on purpose: the engine's fixtures hold `.env` files as data and must stay committable (comment in `.gitignore`). The check reads a root-only rule as incomplete |
 | `SEC-03` | PARTIAL | DEGRADER | Same cause as `SEC-01` for the dotenv shapes; the key, certificate and keystore shapes are covered |
 | `BASE-02` | PARTIAL | DEGRADER | The T5 playbook was applied (D32): `.quality-baseline.json` holds the counts (ruff 0, mypy 0, Markdown lint outside the ratchet 735) and `make format-check`, `make typecheck` and `make docs-lint` fail when one goes up. The check still reads PARTIAL by design: it credits only a numeric budget flag (`--max-warnings N`), and none of these tools has one. Engine issue [#45](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/45) tracks it; the coverage floor (91) is unchanged and `BASE-04` passes |
+| `EXEC-07` | FAIL | DEGRADER | **Owner exception** (2026-11-09): `mypy.ini` and `pyrightconfig.json` both configure types. `make typecheck` (mypy strict) is the gate; `pyrightconfig.json` only gives a language server the same import paths, so an agent gets definitions and type errors without hundreds of unresolved imports. `dev/tests/test_pyright_config.py` keeps the paths in step. The check cannot read that delegation ([Set up the agent tools](../how-to/set-up-agent-tools.md#optional-a-language-server)) |
 | `TOOL-04` | PARTIAL | DEGRADER | **Owner exception** (D33): the repository has no third-party dependencies, so there is nothing for a dependency audit to scan; `make security` is a secrets scan |
 | `NAV-05` | PARTIAL | COSMETIC | Informational, no work (D34): 40% of public symbols documented (456 of 1152) |
 | `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, the user-level index store, or `--emit-baseline`; not run here |
 | `EXEC-02` | PARTIAL | BLOCKER | The two lockfiles of the pinned dev tools (`dev/tools/uv.lock`, `dev/tools/package-lock.json`) cannot be checked against their manifests without running the package managers. `dev/tests/test_tool_pins.py` checks that they agree; the engine does not read that test |
 
-Recorded decisions that keep a finding open or exempt: `TOOL-04` is an owner exception (D33). The `IDX-01` exception
+Recorded decisions that keep a finding open or exempt: `TOOL-04` (D33) and `EXEC-07` (2026-11-09) are owner
+exceptions. The `IDX-01` exception
 (D21) ended on 2026-11-09: `.mcp.json` now registers `codebase-memory-mcp`, and each person still approves it.
 `AGT-08` stays as it is for v0.2, because a stated harness list closes the gap even when a named harness does not read
 `AGENTS.md` natively, and is revisited in v0.3 (D31); `NAV-05` is informational and unscored (D34). The engine has no
