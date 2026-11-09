@@ -235,7 +235,8 @@ release commit on `main`. It brings the new version and the changelog entry into
    ```
 
 2. Without the App token, close and reopen it to start CI.
-3. If `dev` moved since the release, click "Update branch" (the `dev` ruleset requires an up-to-date branch).
+3. If GitHub reports a conflict with `dev`, merge `dev` into the back-merge branch and resolve it there. An
+   out-of-date branch is fine: the merge queue tests it on the latest `dev`.
 4. When `CI Gate` passes, add it to the merge queue. GitHub merges it with a merge commit and deletes the branch:
 
    ```bash
