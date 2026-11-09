@@ -13,7 +13,8 @@
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
-#                       cross-check, the recipe linter, the workflow lint and the spell check
+#                       cross-check, the recipe linter, the master-list freshness check,
+#                       the workflow lint and the spell check
 #   make security       secrets scan against the committed baseline, then the dependency audit (osv-scanner) of
 #                       the dev tools' lockfiles; needs Go and the network
 #   make coverage       (extra) both unittest suites under coverage.py; fails below the floor in .coveragerc
@@ -66,7 +67,7 @@ COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
 DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
-	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'docs/how-to/set-up-agent-tools.md' 'docs/COMMUNICATION_RULES.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
+	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/reference/audit-master.md' 'docs/reference/implement-master.md' 'docs/how-to/contribute-a-change.md' 'docs/how-to/set-up-agent-tools.md' 'docs/COMMUNICATION_RULES.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
 	'docs/explanation/user-overview/03-trust-and-safety.md' 'docs/explanation/contributor-deep-dive/04-stack-profiles.md' 'docs/explanation/contributor-deep-dive/05-evaluation.md' 'docs/how-to/add-a-stack-profile.md' 'docs/reference/harness-notes.md' \
 	'audit/engine/docs/how-to/read-the-report.md'
 
@@ -87,11 +88,11 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not 
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint masters-check update-masters check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  masters-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -176,6 +177,14 @@ crosscheck:
 recipe-lint:
 	$(PYTHON) dev/recipe_lint.py .
 
+# The audit and implement master lists (docs/reference/*-master.md) are generated from the catalogue, the check files
+# and the playbooks. masters-check fails when either page is stale; update-masters rewrites them.
+masters-check:
+	$(PYTHON) dev/build_masters.py --check
+
+update-masters:
+	$(PYTHON) dev/build_masters.py --write
+
 # Lints the GitHub Actions workflows and checks .github/dependabot.yml. All three tools run offline.
 # Read-only: report each misspelling with its file and line. `make spell-fix` writes the suggested fixes; review them.
 spell:
@@ -196,7 +205,7 @@ RANGE ?= origin/dev..HEAD
 commit-lint:
 	$(PYTHON) dev/commit_lint.py --range $(RANGE)
 
-check: format-check typecheck test verify-rules crosscheck recipe-lint workflow-lint spell
+check: format-check typecheck test verify-rules crosscheck recipe-lint masters-check workflow-lint spell
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.

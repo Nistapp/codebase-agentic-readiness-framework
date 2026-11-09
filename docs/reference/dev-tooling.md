@@ -17,6 +17,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | coverage.py | Test coverage below the floor in `.coveragerc` | `make coverage` | `coverage` | `dev/tools/pyproject.toml` |
 | jsonschema | The tools' schema validator disagrees with the reference package | `make crosscheck` | `check` | `dev/tools/pyproject.toml` |
 | `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `check` | This repository |
+| `dev/build_masters.py` | An [audit master list](audit-master.md) or [implement master list](implement-master.md) that no longer matches the catalogue, the check files or the playbooks | `make masters-check`; `make update-masters` rewrites both pages | `check` | This repository |
 | actionlint | Workflow mistakes: syntax, expressions, action inputs, shellcheck on `run:` blocks | `make workflow-lint` | `check` | `dev/tools/actionlint/go.mod` |
 | zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown. Runs at the pedantic persona, so a permission without a comment or a missing concurrency limit fails too | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | typos | Misspelled words in the tracked text, code identifiers included (word list: [`_typos.toml`](../../_typos.toml)) ([Spell check](#spell-check)) | `make spell`; `make spell-fix` writes the fixes | `check` | `dev/tools/pyproject.toml` |
@@ -38,8 +39,8 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | Go | Builds and runs actionlint and osv-scanner through `go tool` | — | `check`, `security` | the `go` line of each Go tool module |
 
 `make check` runs `format:check`, `typecheck`, `test`, the engine's rule check, `crosscheck`, `recipe-lint`,
-`workflow-lint` and `spell`, in sequence. CI's `CI Gate` passes only when the `check`, `security`, `coverage`, `self-audit`,
-`docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
+`masters-check`, `workflow-lint` and `spell`, in sequence. CI's `CI Gate` passes only when the `check`, `security`,
+`coverage`, `self-audit`, `docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
 
 ## Spell check
 
