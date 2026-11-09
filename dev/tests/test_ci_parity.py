@@ -92,6 +92,18 @@ class CheckRunsInCI(unittest.TestCase):
             sorted(job for job in jobs if job != "ci-gate"), sorted(n.strip() for n in needs["needs"].split(","))
         )
 
+    def test_the_merge_queue_runs_ci_with_its_own_base_and_head(self) -> None:
+        # The `dev` ruleset has a merge queue: CI Gate must report on merge_group. In a merge group the pull_request
+        # payload is empty, so a job that diffs BASE..HEAD from it alone checks nothing there.
+        text = CI.read_text(encoding="utf-8")
+        self.assertRegex(text, r"(?m)^  merge_group:\n    types: \[checks_requested\]$")
+        for line in text.splitlines():
+            with self.subTest(line=line.strip()):
+                if "github.event.pull_request.base.sha" in line:
+                    self.assertIn("github.event.merge_group.base_sha", line)
+                if "github.event.pull_request.head.sha" in line:
+                    self.assertIn("github.event.merge_group.head_sha", line)
+
     def test_the_parser_reads_a_step_list(self) -> None:
         sample = "      - run: make format-check typecheck\n        run: make -j4 --output-sync=target test X=1\n"
         self.assertEqual(ci_targets(sample), {"format-check", "typecheck", "test"})
