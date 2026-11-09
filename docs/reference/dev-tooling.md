@@ -78,6 +78,30 @@ another file repeats a version.
 
 To change a version, follow [Change a tool version](../../RELEASE_PROCESS.md#change-a-tool-version).
 
+## Agent tools (MCP)
+
+MCP servers make an agent faster. No gate, CI job or release step needs one. Anything that must be right runs
+through `make`.
+
+`.mcp.json` at the repository root registers one server, `codebase-memory-mcp` (the code index). It names the bare
+command, so each person installs the server and keeps its version. No version is written in the repository.
+`dev/tests/test_mcp_config.py` checks the file, and checks that `.claude/settings.json` approves no project server
+for you.
+
+How each harness treats a project MCP file (checked 2026-11-09 in each harness's own docs):
+
+| Harness | Reads | First start in this repository |
+| --- | --- | --- |
+| Claude Code | `.mcp.json` | Asks you to approve the server, once per person |
+| VS Code with Copilot | `.mcp.json` or `.vscode/mcp.json` | Starts it when the folder is trusted |
+| Cursor | `.cursor/mcp.json` | You turn each server on or off |
+| Gemini CLI | `.gemini/settings.json` (`mcpServers`) | Starts it after you trust the folder |
+| opencode | `opencode.json` (`mcp`) | Connects it with no prompt |
+| Codex CLI | `.codex/config.toml` (`[mcp_servers]`) | Loads it only for a trusted project |
+
+For a harness that does not read `.mcp.json`, copy the entry into its own file, outside the repository or
+uncommitted. If the server is not installed, it fails to start and the agent reads files instead.
+
 ## Settings on GitHub
 
 These checks run on GitHub, outside the repository files:

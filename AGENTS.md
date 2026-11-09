@@ -151,4 +151,5 @@ A change is done when all of this holds:
 - The engine's design, checks and ADRs: `audit/engine/docs/architecture/README.md`.
 - The tool contract and the tool catalogue: `audit/tools/README.md`, `audit/tools/CATALOGUE.md`.
 - Tool ecosystem and index tooling: `docs/framework/tool-ecosystem.md`. If `codebase-memory-mcp` is available, query it
-  before reading whole files.
+  before reading whole files. `.mcp.json` registers it; Claude Code and VS Code read that file. Another harness
+  copies the entry into its own config. No gate needs an MCP server (`docs/reference/dev-tooling.md`).

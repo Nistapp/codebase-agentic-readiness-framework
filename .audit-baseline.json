@@ -9,10 +9,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "no project-level MCP configuration found (user-level configuration not read: --no-user-config)",
+      "summary": "codebase-memory-mcp registered in: .mcp.json (project)",
       "tier": "A",
       "title": "codebase-memory-mcp registered for this repository",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -22,7 +22,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "index store could not be located; searched: user-level locations (not read: --no-user-config), /home/kc/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework/.codebase-memory/graph.db.zst",
+      "summary": "index store could not be located; searched: user-level locations (not read: --no-user-config), <repository>/.codebase-memory/graph.db.zst",
       "tier": "A",
       "title": "An index exists for this checkout",
       "verdict": "UNKNOWN"
@@ -161,7 +161,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "20 boundary rules reference real paths",
+      "summary": "21 boundary rules reference real paths",
       "tier": "B",
       "title": "Architectural boundaries declared",
       "verdict": "PASS"
@@ -262,7 +262,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "39 markdown file(s) under docs/",
+      "summary": "43 markdown file(s) under docs/",
       "tier": "A",
       "title": "docs/ exists",
       "verdict": "PASS"
@@ -301,7 +301,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "3 ADR(s) indexed in docs/architecture/adrs/README.md",
+      "summary": "5 ADR(s) indexed in docs/architecture/adrs/README.md",
       "tier": "A",
       "title": "ADR directory and index",
       "verdict": "PASS"
@@ -625,6 +625,8 @@
           "docs/architecture/adrs/README.md",
           ".env",
           "RELEASE_PROCESS.md",
+          "CHANGELOG.md",
+          ".release-please-manifest.json",
           ".github/rulesets/",
           "docs/reference/branch-protection.md",
           "audit/tools/",
@@ -801,7 +803,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 82 test file(s)",
+      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 85 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -834,7 +836,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 82 test file(s): python 1; total 1",
+      "summary": "skip/xfail census across 85 test file(s): python 1; total 1",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -919,10 +921,10 @@
     },
     {
       "data": {
-        "denominator": 1138,
+        "denominator": 1152,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 453,
+        "numerator": 456,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -931,7 +933,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "453/1138 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
+      "summary": "456/1152 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1275,22 +1277,6 @@
   ],
   "findings": [
     {
-      "check": "IDX-01",
-      "evidence": [
-        {
-          "line": null,
-          "note": null,
-          "path": "<repository>"
-        }
-      ],
-      "id": "IDX-01",
-      "phase": 1,
-      "remediation": "Register the server in a project config (for example `opencode.json`) or a user config (`~/.config/opencode/opencode.json`).",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot discover the codebase through an MCP index because no MCP configuration names codebase-memory-mcp for this repository.",
-      "verdict": "FAIL"
-    },
-    {
       "check": "SEC-01",
       "evidence": [
         {
@@ -1451,9 +1437,9 @@
     }
   ],
   "inventory": {
-    "files_inspected": 325,
+    "files_inspected": 336,
     "files_set_aside": 460,
-    "files_skipped": 2250,
+    "files_skipped": 3,
     "set_aside": [
       {
         "files": 3,
@@ -1531,22 +1517,22 @@
     }
   ],
   "provenance": {
-    "framework_revision": "bdcbe3d516552fb17e1606cd8c77ae86635f688d",
-    "git_branch": "chore/review-for-release",
+    "framework_revision": "320fad8969a38d09331ece11634cc36e124db725",
+    "git_branch": "feat/v0.3.3-track-b-mcp",
     "git_dirty": true,
-    "git_sha": "bdcbe3d516552fb17e1606cd8c77ae86635f688d",
+    "git_sha": "320fad8969a38d09331ece11634cc36e124db725",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "970e6792f98eeeb5",
     "ruleset_revision": "2026-11-06.1",
-    "scanned_at": "2026-11-08T07:19:00+00:00",
-    "target": "/home/kc/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework",
+    "scanned_at": "2026-11-09T05:04:17+00:00",
+    "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {
       "paths_read": [],
       "read_allowed": false
     },
-    "version": "0.1.0"
+    "version": "0.3.2"
   },
   "schema_version": "2",
   "stack": {
@@ -1568,12 +1554,12 @@
     "test_frameworks": []
   },
   "summary": {
-    "blockers": 2,
+    "blockers": 1,
     "checks": {
       "attest": 0,
-      "fail": 1,
+      "fail": 0,
       "partial": 6,
-      "pass": 58,
+      "pass": 59,
       "unknown": 4
     },
     "checks_applicable": 69,
@@ -1582,7 +1568,7 @@
     "cosmetic": 0,
     "coverage_note": "55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
     "degraders": 3,
-    "phase1_score": 0.8689
+    "phase1_score": 0.8934
   },
   "unattested": [
     "index-in-use",
