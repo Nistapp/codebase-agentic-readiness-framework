@@ -75,6 +75,16 @@ class ReleaseConfigTest(unittest.TestCase):
     def test_every_stamp_file_is_an_extra_file(self) -> None:
         self.assertEqual(sorted(self.config["extra-files"]), sorted(STAMPS))
 
+    def test_the_no_compatibility_policy_ends_before_1_0_0(self) -> None:
+        # ADR 0008: the tools read only the current report and state schemas until the first outside user or 1.0.0.
+        major = int(self.manifest["."].split(".")[0])
+        self.assertLess(
+            major,
+            1,
+            "release 1.0.0 ends the no-backward-compatibility policy of ADR 0008: decide which older report and state "
+            "schemas the tools read, update docs/reference/versions.md and the ADR, then replace this test",
+        )
+
     def test_one_root_package_with_plain_v_tags(self) -> None:
         self.assertEqual(list(self.config["packages"]), ["."])
         self.assertEqual(list(self.manifest), ["."])
