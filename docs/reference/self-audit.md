@@ -16,11 +16,11 @@ score from falling.
 
 | Field | Value |
 | --- | --- |
-| Phase-1 score | **0.9252** |
-| Date | 2026-11-09 |
+| Phase-1 score | **0.9264** |
+| Date | 2026-11-10 |
 | Engine | `python-agentic-audit` 0.3.2 |
-| Ruleset | `2026-11-09.11` (hash `a8fd206cd924e86a`) |
-| Applicable checks | 72 (58 scoreable) |
+| Ruleset | `2026-11-10.2` (hash `9b2a2e2562a10c7a`) |
+| Applicable checks | 74 (60 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; no user-level configuration read |
 
@@ -32,8 +32,8 @@ when `.mcp.json` began to register `codebase-memory-mcp`. `EXEC-01` and `EXEC-07
 `EXEC-01` closed with ruleset `2026-11-09.8`, which reads the `go` directive of a nested `go.mod`
 (`dev/tools/actionlint/go.mod`). `EXEC-07` closed with ruleset `2026-11-09.11`, which reads `pyrightconfig.json` as a
 language-server mirror of the mypy gate. The checks added since, `CI-05`
-(workflow files are linted), `EXEC-08` (tool versions visible to dependency automation) and `TOOL-07` (local branch
-guard), all pass.
+(workflow files are linted), `EXEC-08` (tool versions visible to dependency automation), `TOOL-07` (local branch
+guard), `AGT-12` (communication rules stated) and `DOC-05` (docs are readable), all pass.
 
 The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 requirements it asks of others
 (see the [changelog](../../audit/CHANGELOG.md) and the engine's
@@ -41,12 +41,12 @@ The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 re
 
 | Verdict | Checks |
 | --- | --: |
-| PASS | 65 |
+| PASS | 67 |
 | PARTIAL | 3 |
 | FAIL | 0 |
 | UNKNOWN | 4 |
 | ATTEST | 0 |
-| **Total** | **72** |
+| **Total** | **74** |
 
 `UNKNOWN` and `ATTEST` earn no credit. Four checks are `UNKNOWN` because their evidence needs a Tier-C probe
 (`--run-gates`, not used here) or the user-level configuration that `--no-user-config` leaves unread, so this score

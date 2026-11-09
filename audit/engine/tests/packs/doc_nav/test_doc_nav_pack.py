@@ -7,6 +7,9 @@ Each fixture is a minimal repository that fails exactly its DOC/NAV check. `doc-
 governed fixture: the smallest repository that passes every scored DOC/NAV check. The audit runs as
 a subprocess through `tests/support.py`, so the fixtures exercise the real end-to-end path.
 
+`DOC-05` is also run in-process on built repositories, and its prose reader (`_prose`) on its own cases, so
+coverage traces both.
+
 `DOC-03` reads git's tracked-file set, so its fixture is copied into a temporary git repository
 created inside the test's own temp directory — never the audit repo. Without git the check degrades
 to `UNKNOWN`, never `PASS`.
@@ -27,18 +30,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import support  # noqa: E402
 from audit.rules.checks.nav import _jvm_entry, _python_entry  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
+from audit.rules.checks import _prose  # noqa: E402
+from audit.rules.checks.doc import check_doc05 as CHECK_DOC05  # noqa: E402
+from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
+from audit.stack import detect_stack  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict)
 FIXTURES: dict[str, tuple[str, str]] = {
     "doc-01-empty": ("DOC-01", "PARTIAL"),
     "doc-02-no-style-guide": ("DOC-02", "FAIL"),
     "doc-04-adr-unindexed": ("DOC-04", "PARTIAL"),
+    "doc-05-long-sentences": ("DOC-05", "FAIL"),
     "nav-01-no-manifest": ("NAV-01", "UNKNOWN"),
     "nav-02-no-entry": ("NAV-02", "FAIL"),
     "nav-03-red-flags": ("NAV-03", "PARTIAL"),
 }
 
-DOC_CHECKS = ("DOC-01", "DOC-02", "DOC-03", "DOC-04")
+DOC_CHECKS = ("DOC-01", "DOC-02", "DOC-03", "DOC-04", "DOC-05")
 NAV_SCORED = ("NAV-01", "NAV-02", "NAV-03")
 SCORED_CHECKS = DOC_CHECKS + NAV_SCORED
 
@@ -270,6 +278,162 @@ class Doc04TemplateEntryTests(unittest.TestCase):
         check = self._doc04({"docs/architecture/adrs/0000-template.md": "# NNNN title\n"})
         self.assertEqual(check["verdict"], "PARTIAL")
         self.assertIn("holds no numbered ADR", check["summary"])
+
+
+# -- DOC-05: docs are readable, in-process ------------------------------------------------------------
+
+DOC05 = "DOC-05"
+
+SHORT = "The engine reads the file. It reports the result. "
+#: 30 words, one sentence.
+LONG = (
+    "The engine that this repository ships reads every file under the folder that it is given and then writes a "
+    "report that the person who asked for it can read later. "
+)
+
+
+def page(short: int, long: int = 0, extra: str = "") -> str:
+    return "# Page\n\n" + SHORT * short + "\n\n" + LONG * long + "\n\n" + extra
+
+
+class Doc05ReadableDocsTests(unittest.TestCase):
+    def check(self, files: dict[str, str]) -> dict:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            inventory = build_inventory(root)
+            outcome = CHECK_DOC05(
+                spec=REGISTRY_BY_ID[DOC05],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+        return {
+            "verdict": outcome.verdict.value,
+            "summary": outcome.summary,
+            "findings": [finding.to_dict() for finding in outcome.findings],
+            "data": outcome.data.to_dict() if outcome.data else None,
+        }
+
+    def test_registered_as_a_scored_cosmetic_check(self):
+        spec = REGISTRY_BY_ID[DOC05]
+        self.assertEqual((spec.severity.value, spec.scored, spec.status), ("COSMETIC", True, "implemented"))
+
+    def test_no_docs_is_unknown(self):
+        check = self.check({"README.md": page(10)})
+        self.assertEqual(check["verdict"], "UNKNOWN")
+        self.assertIn("DOC-01", check["summary"])
+
+    def test_too_little_prose_is_unknown(self):
+        check = self.check({"docs/README.md": page(2)})
+        self.assertEqual(check["verdict"], "UNKNOWN")
+        self.assertIn("4 sentence(s)", check["summary"])
+
+    def test_prose_that_is_not_english_is_unknown(self):
+        german = "Der Prüfer liest die Datei und meldet das Ergebnis. Die Seite bleibt kurz. " * 6
+        check = self.check({"docs/README.md": "# Seite\n\n" + german})
+        self.assertEqual(check["verdict"], "UNKNOWN")
+        self.assertIn("does not read as English", check["summary"])
+
+    def test_short_plain_prose_passes_with_its_counts(self):
+        check = self.check({"docs/README.md": page(10)})
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertEqual(check["findings"], [])
+        self.assertEqual(check["data"]["kind"], "counter")
+        self.assertEqual(check["data"]["breakdown"]["sentences"], 20)
+        self.assertEqual(check["data"]["breakdown"]["long_sentences"], 0)
+
+    def test_a_long_share_at_the_pass_level_passes(self):
+        check = self.check({"docs/README.md": page(9, 2)})
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertIn("2/20 sentences over the limit (10.0%)", check["summary"])
+
+    def test_a_long_share_over_the_pass_level_is_partial(self):
+        check = self.check({"docs/README.md": page(8, 4)})
+        self.assertEqual(check["verdict"], "PARTIAL")
+        finding = check["findings"][0]
+        self.assertIn("20.0% of sentences are over 25 words", finding["statement"])
+        self.assertEqual({e["note"] for e in finding["evidence"]}, {"long sentence"})
+
+    def test_a_long_share_over_the_fail_level_fails(self):
+        check = self.check({"docs/README.md": page(5, 6)})
+        self.assertEqual(check["verdict"], "FAIL")
+
+    def test_vague_words_over_the_pass_level_are_partial(self):
+        check = self.check({"docs/README.md": page(10, extra="Run it in order to build. It is just fine.\n")})
+        self.assertEqual(check["verdict"], "PARTIAL")
+        notes = [e["note"] for e in check["findings"][0]["evidence"]]
+        self.assertEqual(notes, ["vague: in order to", "vague: just"])
+
+    def test_an_explanation_page_without_a_diagram_is_partial(self):
+        files = {"docs/README.md": page(10), "docs/explanation/how-it-works.md": page(2)}
+        check = self.check(files)
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertIn("1 explanation or tutorial page(s) have no Mermaid diagram", check["findings"][0]["statement"])
+        self.assertEqual(check["findings"][0]["evidence"][0]["path"], "docs/explanation/how-it-works.md")
+
+    def test_a_tutorial_with_a_diagram_and_an_index_without_one_pass(self):
+        mermaid = "```mermaid\nflowchart LR\n  A --> B\n```\n"
+        files = {
+            "docs/README.md": page(10),
+            "docs/tutorials/first.md": page(2, extra=mermaid),
+            "docs/explanation/README.md": page(2),
+        }
+        self.assertEqual(self.check(files)["verdict"], "PASS")
+
+    def test_evidence_is_capped(self):
+        check = self.check({"docs/README.md": page(1, 20)})
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertEqual(len(check["findings"][0]["evidence"]), 8)
+
+
+class ProseReaderTests(unittest.TestCase):
+    def measure(self, text: str, path: str = "docs/x.md") -> _prose.ProseCounts:
+        return _prose.measure(path, text)[0]
+
+    def test_code_tables_headings_and_comments_are_not_prose(self):
+        text = (
+            "# A heading that is long enough to be a very long sentence of more than twenty five words in all of it\n"
+            "\n```\n" + LONG + "\n```\n\n| " + LONG + " |\n\n<!-- " + LONG + " -->\n\n"
+            "<!--\n" + LONG + "\n-->\n\nOne short sentence.\n"
+        )
+        counts = self.measure(text)
+        self.assertEqual((counts.sentences, counts.long_sentences), (1, 0))
+
+    def test_an_off_region_is_skipped(self):
+        text = "<!-- prose-check off -->\n\n" + LONG + "\n\n<!-- prose-check on -->\n\nShort.\n"
+        self.assertEqual(self.measure(text).long_sentences, 0)
+
+    def test_a_numbered_step_has_the_lower_limit(self):
+        step = "1. Run the command that builds the package and then copy the file it writes into the folder named out on the disk.\n"
+        bullet = step.replace("1. ", "- ")
+        self.assertEqual(self.measure(step).long_sentences, 1)
+        self.assertEqual(self.measure(bullet).long_sentences, 0)
+
+    def test_a_code_span_link_and_url_count_as_one_word_each(self):
+        counts = self.measure("Run `make check --all` from [the root page](a/b.md) or https://example.com/x.\n")
+        self.assertEqual(counts.words, 8)
+
+    def test_quotes_and_alerts_are_prose(self):
+        counts = self.measure("> [!NOTE]\n> " + LONG + "\n")
+        self.assertEqual(counts.long_sentences, 1)
+
+    def test_a_mermaid_block_is_seen(self):
+        self.assertTrue(_prose.measure("docs/x.md", "```mermaid\nflowchart LR\n```\n")[1])
+        self.assertFalse(_prose.measure("docs/x.md", "```text\nflowchart LR\n```\n")[1])
+
+    def test_which_pages_need_a_diagram(self):
+        self.assertTrue(_prose.needs_diagram("docs/explanation/a.md"))
+        self.assertTrue(_prose.needs_diagram("docs/tutorials/b.md"))
+        self.assertFalse(_prose.needs_diagram("docs/explanation/README.md"))
+        self.assertFalse(_prose.needs_diagram("docs/how-to/c.md"))
+
+    def test_english_share(self):
+        self.assertGreater(_prose.english_share(self.measure(SHORT * 3)), _prose.ENGLISH_MIN_SHARE)
+        self.assertEqual(_prose.english_share(_prose.ProseCounts()), 0.0)
 
 
 if __name__ == "__main__":

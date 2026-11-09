@@ -37,8 +37,8 @@ Themes run in dependency order: the order and the dependencies are in
 | [T3 Secrets and env](#t3-secrets-and-env) | [`env-inventory-and-secrets`](#env-inventory-and-secrets) | 4 |
 | [T4 CI parity, hooks, commits](#t4-ci-parity-hooks-commits) | [`add-ci-parity`](#add-ci-parity), [`add-hooks-and-commit-rules`](#add-hooks-and-commit-rules) | 8 |
 | [T5 Tests and baselines](#t5-tests-and-baselines) | [`add-baselines-and-ratchet`](#add-baselines-and-ratchet) | 8 |
-| [T6 Docs and navigation](#t6-docs-and-navigation) | [`establish-docs-contract`](#establish-docs-contract) | 9 |
-| [T7 AGENTS.md and governance](#t7-agentsmd-and-governance) | [`adapt-agents-md`](#adapt-agents-md), [`add-deny-rules`](#add-deny-rules) | 16 |
+| [T6 Docs and navigation](#t6-docs-and-navigation) | [`establish-docs-contract`](#establish-docs-contract) | 10 |
+| [T7 AGENTS.md and governance](#t7-agentsmd-and-governance) | [`adapt-agents-md`](#adapt-agents-md), [`add-deny-rules`](#add-deny-rules) | 17 |
 | [T8 Hygiene and index](#t8-hygiene-and-index) | [`add-repo-hygiene`](#add-repo-hygiene), [`register-index`](#register-index) | 14 |
 
 ## T1 Command surface and quality tools
@@ -279,6 +279,7 @@ not moved.
 | [`DOC-02` docs/STYLE_GUIDE.md exists](audit-master.md#doc-02-docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
 | [`DOC-03` artefacts/ exists and is ignored](audit-master.md#doc-03-artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | [`DOC-04` ADR directory and index](audit-master.md#doc-04-adr-directory-and-index) | Adds `docs/adr/` with a template, an index and two or three first records marked `proposed` |
+| [`DOC-05` Docs are readable](audit-master.md#doc-05-docs-are-readable) | Not written yet: the steps that add plain-language rules to the style guide and a prose check are planned. Until then, report the finding to the owner and leave it open |
 | [`NAV-01` Declared component boundaries](audit-master.md#nav-01-declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | [`NAV-02` Obvious entry points](audit-master.md#nav-02-obvious-entry-points) | Verification only: names the entry points in the architecture page |
 | [`NAV-03` Structural red flags](audit-master.md#nav-03-structural-red-flags) | Census of oversized files, catch-all directories, binaries and minified assets; document, never move |
@@ -324,6 +325,7 @@ wholesale.
 | [`AGT-09` Branch and release boundary declared](audit-master.md#agt-09-branch-and-release-boundary-declared) | One release-boundary sentence built from the state and the repository |
 | [`AGT-10` Instruction indirection resolved](audit-master.md#agt-10-instruction-indirection-resolved) | A "read X first" deferral becomes an ordinary link, with the must-always rules moved into `AGENTS.md` |
 | [`AGT-11` Instructions are specific and not inferable](audit-master.md#agt-11-instructions-are-specific-and-not-inferable) | Generic text moves to `docs/`; contradicted rules become target state with the exception count; stale lines corrected |
+| [`AGT-12` Communication rules stated](audit-master.md#agt-12-communication-rules-stated) | Not written yet: the step that adds a "How to write for people" section is planned. Until then, report the finding to the owner and leave it open |
 | [`EXEC-06` Documented commands resolve](audit-master.md#exec-06-documented-commands-resolve) | Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline |
 | [`TST-04` Fast path documented](audit-master.md#tst-04-fast-path-documented) | Verification only, when T5 wrote the fenced single-test line; written here when the item sits in T7 |
 

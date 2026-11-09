@@ -7,7 +7,7 @@
       "revision": null,
       "install": "bundle"
     },
-    "catalogue_version": "0.5.0",
+    "catalogue_version": "0.7.0",
     "agent": {
       "harness": "claude-code",
       "model": "claude-sonnet-5-5"

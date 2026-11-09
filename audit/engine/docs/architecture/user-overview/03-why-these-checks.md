@@ -57,6 +57,7 @@ down is invisible.
 | `AGT-07` Do-not-do / deny rules | Explicit prohibitions work; implicit ones do not | Agent weakens tests, edits generated files, commits to main |
 | `AGT-08` No competing instruction files | `AGENTS.md` + `CLAUDE.md` + `.cursorrules` disagreeing is obeyed as ambiguity | Inconsistent behaviour across harnesses, untraceable |
 | `AGT-09` Branch and release boundary | Agents must know whether they may tag, release, or push | Agent triggers a release it had no authority to cut |
+| `AGT-12` Communication rules stated | An agent reports to people and asks them for decisions | Each agent picks its own layout; the reader must dig for the bottom line and the decision asked of them |
 
 ---
 
@@ -68,6 +69,7 @@ down is invisible.
 | `DOC-02` `STYLE_GUIDE.md` exists | Agents need authoring rules they can cite instead of restating | Rules get restated per page and drift |
 | `DOC-03` `artefacts/` exists and is ignored | Transient scratch must be separable and off-limits | Agent reads WIP notes as current requirements |
 | `DOC-04` ADR directory and index | Architectural decisions need a location and a registry | Rationale lives in chat and pull requests; agents re-litigate settled decisions |
+| `DOC-05` Docs are readable | Agents and people learn the repository from the docs | Long, vague pages are misread; the next agent copies their style |
 
 ---
 

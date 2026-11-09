@@ -5,12 +5,12 @@ The catalogue's § Adding a Check makes this a merge requirement: no fixture, no
 
 Current state: the fixture matrix is complete and consolidated by `../test_fixture_matrix.py`, which
 carries one explicit expected verdict per fixture and asserts the positive fixtures collectively pass
-every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`) and
+every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`, `12`) and
 `AGT-05` are exercised by `../packs/agt/test_agt_pack.py` and `../packs/cmd/test_cmd_pack.py`; the earlier `AGT` checks
 (`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`08`) are
 exercised by `../packs/exec/test_exec_pack.py` (and `EXEC-08` by `../packs/exec/test_exec08_inline_versions.py`); the `CMD` checks (`CMD-01`…`04`) by `../packs/cmd/test_cmd_pack.py`; and
 the `SEC` checks (`SEC-01`…`03`) by `../packs/sec/test_sec_pack.py`, against the fixtures below. The `DOC` and
-`NAV` checks (`DOC-01`…`04`, `NAV-01`…`05`) are exercised by `../packs/doc_nav/test_doc_nav_pack.py`. The `TOOL`
+`NAV` checks (`DOC-01`…`05`, `NAV-01`…`05`) are exercised by `../packs/doc_nav/test_doc_nav_pack.py`. The `TOOL`
 checks (`TOOL-01`…`06`) are exercised by `../packs/tool/test_tool_pack.py`; the `CI` checks (`CI-01`…`03`) by
 `../packs/ci/test_ci_pack.py`; the `TST` checks (`TST-01`…`05`) by `../packs/tst/test_tst_pack.py`; the `BASE` checks
 (`BASE-01`…`04`) by `../packs/base/test_base_pack.py`, with the ratchet exercised end to end by
@@ -39,6 +39,7 @@ fixtures/
   agt-08-competitor/         AGENTS.md + CLAUDE.md                -> AGT-08 FAIL
   agt-09-no-release/         branches stated, no release boundary -> AGT-09 PARTIAL
   agt-09-ruleset-branch-unnamed/ a ruleset protects staging, AGENTS.md does not name it -> AGT-09 PARTIAL
+  agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
   agt-05-ok/                 all verbs named and resolved on a runner -> AGT-05 PASS
@@ -83,6 +84,7 @@ fixtures/
   doc-03-tracked-artefacts/  artefacts/ ignored but force-added (needs git) -> DOC-03 FAIL
   ignore-ok-nested-gitignore/ `artefacts/.gitignore` holds `*` and re-includes itself and its README (needs git) -> DOC-03, CON-03 PASS (ADR-0009)
   doc-04-adr-unindexed/      an ADR with no index                 -> DOC-04 PARTIAL
+  doc-05-long-sentences/     two thirds of the docs' sentences over 25 words -> DOC-05 FAIL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL

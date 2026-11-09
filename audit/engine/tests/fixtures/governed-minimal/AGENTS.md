@@ -30,3 +30,9 @@ affected documentation pages and the ADR index in the same change set.
 
 - `main` is production and `dev` is active development; features branch from `dev`.
 - Agents may open feature branches but must not tag or publish a release.
+
+## 6. How to write for people
+
+- Write for a new engineer who knows Python but not this repository.
+- Put the bottom line first. A done report says what changed, how it was checked and what was not done.
+- For a decision, give two to four options, your recommendation and the default.

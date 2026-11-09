@@ -9,8 +9,8 @@
 
 ---
 
-The audit runs **74 checks** in 13 families (catalogue 0.5.0). 60 are scored; the rest are reported for the whole
-picture and earn no credit. The engine decides 72 checks from the files alone; the agent judges 2. Each check below says
+The audit runs **76 checks** in 13 families (catalogue 0.7.0). 62 are scored; the rest are reported for the whole
+picture and earn no credit. The engine decides 74 checks from the files alone; the agent judges 2. Each check below says
 what passes and why it matters. To fix a finding, follow the playbook it names in the [implement master
 list](implement-master.md).
 
@@ -24,7 +24,7 @@ list](implement-master.md).
 
 | Area | The question it answers | Families | Checks |
 |---|---|---|---|
-| [Agent context](#agent-context) | Can an agent find the code, the rules and the documents it needs before it edits anything? | [`IDX`](#discovery-and-index-idx), [`AGT`](#agent-governance-agt), [`DOC`](#documentation-contract-doc), [`NAV`](#navigation-nav) | 23 (3 BLOCKER, 16 DEGRADER, 4 COSMETIC) |
+| [Agent context](#agent-context) | Can an agent find the code, the rules and the documents it needs before it edits anything? | [`IDX`](#discovery-and-index-idx), [`AGT`](#agent-governance-agt), [`DOC`](#documentation-contract-doc), [`NAV`](#navigation-nav) | 25 (3 BLOCKER, 16 DEGRADER, 6 COSMETIC) |
 | [Command surface and quality gates](#command-surface-and-quality-gates) | Can an agent run one command that formats, lints, type-checks and tests, and trust its answer? | [`CMD`](#command-surface-cmd), [`TOOL`](#tooling-tool), [`TST`](#tests-tst), [`BASE`](#baselines-and-the-ratchet-base) | 20 (3 BLOCKER, 14 DEGRADER, 3 COSMETIC) |
 | [Enforcement in CI](#enforcement-in-ci) | Does the pipeline run the same gate the agent runs locally, and does it block the merge? | [`CI`](#continuous-integration-ci) | 5 (2 BLOCKER, 3 DEGRADER) |
 | [Reproducible execution](#reproducible-execution) | Does the same command give the same result on a fresh machine, without a human in the loop? | [`EXEC`](#execution-determinism-exec) | 8 (4 BLOCKER, 4 DEGRADER) |
@@ -67,7 +67,7 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 ### Agent Governance (AGT)
 
-11 checks: 1 BLOCKER, 10 DEGRADER.
+12 checks: 1 BLOCKER, 10 DEGRADER, 1 COSMETIC.
 
 #### `AGT-01` Instruction file present, canonical, and non-trivial
 
@@ -174,9 +174,18 @@ Can an agent find the code, the rules and the documents it needs before it edits
   inference time for no benefit, which is R-16's own finding ([Phased-Approach.md §
   Activities](../framework/phased-approach.md#activities)).
 
+#### `AGT-12` Communication rules stated
+
+`COSMETIC` · scored · engine check · fixed by [`adapt-agents-md`](implement-master.md#adapt-agents-md)
+
+- **Passes when:** the rules exist and name the reader, how to report and how to ask for a decision.
+- **Why it matters:** Agents report to people and ask them for decisions; without written rules each agent picks its own
+  layout and the reader digs for the bottom line ([greenfield/README.md § 5.2 Templates &
+  Guides](../../greenfield/README.md#52-templates--guides)).
+
 ### Documentation Contract (DOC)
 
-4 checks: 3 DEGRADER, 1 COSMETIC.
+5 checks: 3 DEGRADER, 2 COSMETIC.
 
 #### `DOC-01` docs/ exists
 
@@ -213,6 +222,15 @@ Can an agent find the code, the rules and the documents it needs before it edits
 - **Why it matters:** Architectural decisions need a location and a registry, or the rationale lives only in chat and
   pull requests, and agents re-litigate settled decisions ([greenfield/README.md § 5.2 Templates &
   Guides](../../greenfield/README.md#52-templates--guides)).
+
+#### `DOC-05` Docs are readable
+
+`COSMETIC` · scored · engine check · fixed by [`establish-docs-contract`](implement-master.md#establish-docs-contract)
+
+- **Passes when:** every pass level holds.
+- **Why it matters:** An agent reads the docs to learn the repository, and it writes more of them. Long sentences and
+  vague words cost the next reader time. A flow with no diagram is slow to follow ([greenfield/README.md § 5.2 Templates
+  & Guides](../../greenfield/README.md#52-templates--guides)).
 
 ### Navigation (NAV)
 
