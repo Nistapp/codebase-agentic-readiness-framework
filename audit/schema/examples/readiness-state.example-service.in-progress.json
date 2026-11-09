@@ -13,8 +13,8 @@
     {
       "path": "docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json",
       "git_sha": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-      "catalogue_version": "0.2.0",
-      "sha256": "6deeb580fb116df5b17cb6fd148858b62426ba8cf1139be1a10684542a61d867"
+      "catalogue_version": "0.3.0",
+      "sha256": "443653e7d98e395b4b20e2f2a0f0020db50ce11ee7bdc1c63331ac61572ad1d9"
     }
   ],
   "preferences": [

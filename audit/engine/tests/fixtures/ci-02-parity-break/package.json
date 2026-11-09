@@ -8,6 +8,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "check": "npm run format:check && npm run typecheck && npm test"
+    "check": "npm run format:check && npm run typecheck && npm test",
+    "lint:workflows": "actionlint"
   }
 }

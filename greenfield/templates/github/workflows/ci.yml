@@ -61,6 +61,11 @@ jobs:
       - name: Check (format, lint, typecheck, tests)
         run: npm run check
 
+      # The same linter as `npm run lint:workflows`; the action installs the binary.
+      - name: Lint workflow files
+        if: ${{ runner.os == 'Linux' }}
+        uses: raven-actions/actionlint@v2
+
       # Coverage thresholds are enabled with the first real test (see vitest.config.ts).
       # - name: Verify Coverage Thresholds
       #   run: npm run test:coverage

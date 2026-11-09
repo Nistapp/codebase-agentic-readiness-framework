@@ -104,7 +104,8 @@ class BuilderCase(unittest.TestCase):
         return sorted(p.name for p in self.out.iterdir()) if self.out.is_dir() else []
 
     def engine_draft(self) -> Path:
-        """A copy of the engine's real report on agentic-tdd, converted: 69 engine checks, 24 pending findings.
+        """A copy of the engine's real report on agentic-tdd, converted: 70 engine checks (CI-05 newer, so UNKNOWN), 24
+        pending findings.
 
         The copy points at the temporary target, with no commit, so that nothing depends on this machine.
         """
@@ -565,7 +566,7 @@ class AddCheckTests(BuilderCase):
                 "action": "added",
                 "verdict": "PASS",
                 "checks_recorded": 1,
-                "checks_expected": 71,
+                "checks_expected": 72,
             },
         )
         self.assertEqual(stderr, "report: AGT-11 added as PASS\n")
@@ -917,7 +918,7 @@ class OverrideTests(BuilderCase):
     def test_an_agent_only_check_is_added_beside_the_engines(self) -> None:
         code, envelope, _ = self.add_check(self.draft, agent_check())
         self.assertEqual(code, 0)
-        self.assertEqual(envelope["data"]["checks_recorded"], 70)
+        self.assertEqual(envelope["data"]["checks_recorded"], 71)
         self.assertEqual(self.check("AGT-11")["method"], "agent")
 
 
@@ -1548,20 +1549,20 @@ class StatusTests(BuilderCase):
         self.assertEqual(
             (data["status"], data["eval_mode"], data["confirmation_policy"]), ("draft", False, "interactive")
         )
-        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (0, 71))
+        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (0, 72))
         self.assertEqual(data["families_done"], "")
         self.assertEqual(
             list(data["families_remaining"]),
             ["IDX", "AGT", "DOC", "CMD", "TOOL", "CI", "BASE", "CON", "EXEC", "TST", "NAV", "SEC", "HYG"],
         )
-        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03 CI-04")
+        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03 CI-04 CI-05")
         self.assertEqual((data["findings"], data["findings_pending"], data["blockers_pending"]), (0, 0, 0))
-        self.assertEqual((data["ready_to_finalise"], data["blocking"]), (False, "71 of 71 checks are not recorded"))
+        self.assertEqual((data["ready_to_finalise"], data["blocking"]), (False, "72 of 72 checks are not recorded"))
         self.assertEqual(data["pending"], [])
         self.assertNotIn("pending_omitted", data)
         self.assertFalse(envelope["truncated"])
         self.assertEqual(
-            stderr, "report: 0 of 71 checks recorded; not ready to finalise: 71 of 71 checks are not recorded\n"
+            stderr, "report: 0 of 72 checks recorded; not ready to finalise: 72 of 72 checks are not recorded\n"
         )
 
     def test_recording_a_check_takes_it_off_the_remaining_list(self) -> None:
@@ -1569,17 +1570,17 @@ class StatusTests(BuilderCase):
         self.add_check(draft, agent_check(id="CI-04", verdict="FAIL", evidence=[]))
         data = self.data(draft)
         self.assertEqual(data["checks_recorded"], 1)
-        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03")
+        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03 CI-05")
         self.assertNotIn("CI-04", " ".join(data["families_remaining"].values()))
 
     def test_an_engine_draft_lists_what_is_left_and_the_pending_findings_blockers_first(self) -> None:
         draft = self.engine_draft()
         data = self.data(draft)
-        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (69, 71))
+        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (70, 72))
         self.assertEqual(data["families_remaining"], {"AGT": "AGT-11", "CI": "CI-04"})
         self.assertEqual(data["families_done"], "IDX DOC CMD TOOL BASE CON EXEC TST NAV SEC HYG")
         self.assertEqual((data["findings"], data["findings_pending"], data["blockers_pending"]), (24, 24, 4))
-        self.assertEqual(data["blocking"], "2 of 71 checks are not recorded; 24 findings are pending")
+        self.assertEqual(data["blocking"], "2 of 72 checks are not recorded; 24 findings are pending")
         findings = read_json(draft)["findings"]
         blockers = [f for f in findings if f["severity"] == "BLOCKER"]
         self.assertEqual(data["pending"][: len(blockers)], [f"{f['id']} BLOCKER {f['key']}" for f in blockers])
@@ -1603,10 +1604,10 @@ class StatusTests(BuilderCase):
         self.assertEqual(code, 0)
         self.assertIs(envelope["truncated"], True)
 
-    def test_a_report_of_70_checks_prints_40_lines_or_fewer(self) -> None:
+    def test_a_report_of_71_checks_prints_40_lines_or_fewer(self) -> None:
         draft = self.engine_draft()
         self.add_check(draft, agent_check())
-        self.assertEqual(len(read_json(draft)["checks"]), 70)
+        self.assertEqual(len(read_json(draft)["checks"]), 71)
         self.assertLessEqual(self.stdout_lines("status", str(draft)), 40)
 
     def test_no_draft_can_make_it_print_more_than_40_lines(self) -> None:
@@ -1626,11 +1627,11 @@ class StatusTests(BuilderCase):
     def test_it_is_ready_when_every_check_is_recorded_and_every_finding_decided(self) -> None:
         draft = self.complete_engine_draft()
         data = self.data(draft)
-        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (71, 71))
+        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (72, 72))
         self.assertEqual((data["families_remaining"], data["findings_pending"], data["blockers_pending"]), ({}, 0, 0))
         self.assertEqual((data["ready_to_finalise"], data["blocking"]), (True, ""))
         self.assertEqual(data["pending"], [])
-        self.assertEqual(self.status(draft)[2], "report: 71 of 71 checks recorded; ready to finalise\n")
+        self.assertEqual(self.status(draft)[2], "report: 72 of 72 checks recorded; ready to finalise\n")
 
     def test_one_pending_finding_is_enough_to_hold_it_back(self) -> None:
         draft = self.complete_engine_draft()
@@ -1734,7 +1735,7 @@ class FinaliseTests(BuilderCase):
         self.assertEqual(envelope["data"]["draft"], str(self.draft))
         self.assertEqual(envelope["data"]["status"], "final")
         self.assertEqual(envelope["data"]["finalised_at"], "2026-10-10T11:45:30+00:00")
-        self.assertEqual((envelope["data"]["checks"], envelope["data"]["findings"]), (71, 24))
+        self.assertEqual((envelope["data"]["checks"], envelope["data"]["findings"]), (72, 24))
         self.assertEqual(envelope["data"]["summary"], read_json(final)["summary"])
         self.assertRegex(
             stderr,

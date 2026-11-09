@@ -305,6 +305,16 @@ On every pull request the CI pipeline MUST run the verbs that make up `check` an
 - **Source:** [greenfield/README.md § 1.4 The standardized command surface](../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)
 - **Checks:** CI-04
 
+### REQ-SH-057 — Workflow files linted
+
+The repository's CI workflow files MUST be checked by a linter that understands the CI provider. The linter MUST
+be runnable locally, through the command surface or a hook, as well as in CI.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [greenfield/README.md § 4.1 Workflows](../greenfield/README.md#41-workflows)
+- **Checks:** CI-05
+
 ## Baselines and the ratchet
 
 ### REQ-BF-001 — Quality baseline

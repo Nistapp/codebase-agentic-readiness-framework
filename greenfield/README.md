@@ -121,7 +121,7 @@ git checkout -b dev          # dev is the working branch from day one
   "files": ["dist"],                 // what npm publishes — nothing else leaves the repo
   "publishConfig": { "access": "public" },
   "scripts": {
-    // the seven verbs from §1.4, plus clean/build/build:full/dev
+    // the seven verbs from §1.4, plus clean/build/build:full/dev and lint:workflows (actionlint)
     "check": "npm run format:check && npm run typecheck && npm test",
     "prepublishOnly": "npm run check && npm run build:full",
     "prepare": "husky"
@@ -333,7 +333,10 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 ## Phase 4 — CI/CD & Release Management
 
 ### 4.1 Workflows
-- **`.github/workflows/ci.yml`**: `npm run check` → coverage thresholds → `npm run build:full` → `npm run security`. Every step is a script you can run locally. (See [template](templates/github/workflows/ci.yml))
+- **`.github/workflows/ci.yml`**: `npm run check` → workflow lint → coverage thresholds → `npm run build:full` → `npm run security`. Every step is a script you can run locally. (See [template](templates/github/workflows/ci.yml))
+- **Workflow lint**: the workflow files are linted locally and in CI by a linter that knows the CI provider.
+  For GitHub Actions that is actionlint (`npm run lint:workflows`; install the binary once per machine). An agent
+  that edits a workflow cannot run it locally, so the linter is its only check before a push.
 - **`.github/workflows/enforce-dev-base.yml`**: Enforce Dev branch PR source for Main. (See [template](templates/github/workflows/enforce-dev-base.yml))
 - **`.github/workflows/release-and-sync.yml`**: Release Please, npm publish via OIDC provenance, automated back-merge to dev. (See [template](templates/github/workflows/release-and-sync.yml))
 - **`.github/dependabot.yml`**: Weekly automated dependency updates. (See [template](templates/github/dependabot.yml))

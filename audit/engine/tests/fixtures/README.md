@@ -92,7 +92,9 @@ fixtures/
   ci-01-no-pr-trigger/       workflow without a pull-request trigger -> CI-01 PARTIAL
   ci-02-parity-break/        CI runs a framework verb with no local script -> CI-02 FAIL
   ci-03-ci-only-step/        CI runs `npm run deploy` with no local script -> CI-03 FAIL
-  ci-ok-gh/                  a PR-triggered GitHub workflow calling the local verbs
+  ci-05-no-workflow-lint/    workflows exist and no linter checks them -> CI-05 FAIL
+  ci-05-ci-only-lint/        actionlint runs only as a CI action -> CI-05 PARTIAL
+  ci-ok-gh/                  a PR-triggered GitHub workflow calling the local verbs, actionlint local
   tst-01-no-suite/           test files but no resolvable test verb -> TST-01 PARTIAL
   tst-03-skip-markers/       a suite with skip/todo markers -> TST-03 PASS (non-zero census)
   tst-04-no-fastpath/        docs show the full suite only -> TST-04 FAIL
