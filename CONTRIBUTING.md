@@ -98,7 +98,8 @@ Two branches are protected: `dev` and `main`. You cannot commit or push to them 
 - Open the pull request into `dev`. The required check is `CI Gate`.
 - Do not open a pull request into `main`. Only the maintainer does that, and only from `dev`, to make a release.
 - Do not edit `CHANGELOG.md` or a version. release-please writes them from your commit subjects at release time.
-- Merges use a merge commit. Do not squash or rebase.
+- Merges use a merge commit. Do not squash or rebase. Into `dev`, the maintainer merges through the merge queue,
+  which tests your branch merged onto the latest `dev` before it lands.
 
 The step-by-step guide is [Contribute a change](docs/how-to/contribute-a-change.md). The rules and the release steps
 are in [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md). The ruleset settings are in
