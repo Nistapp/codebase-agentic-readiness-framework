@@ -71,6 +71,17 @@ SEVERITY_MEANINGS = {
     "DEGRADER": "Agent work is possible but unreliable or wasteful.",
     "COSMETIC": "Hygiene. Fix when convenient.",
 }
+DISPOSITION_MEANINGS = {
+    "pending": "No decision yet.",
+    "confirmed": "The finding stands as written.",
+    "edited": "The finding stands, with its wording or evidence corrected.",
+    "rejected": "The finding is wrong (a false positive). It leaves the backlog.",
+    "deferred": "The finding is real, and the person chose to leave it open for now.",
+}
+# The bottom line: how many first actions it names, and how many UNKNOWN check IDs it lists before "and N more".
+FIRST_ACTIONS = 3
+UNKNOWN_LISTED = 5
+EFFORT_ORDER = {"S": 0, "M": 1, "L": 2}
 DECIDED_BY = {
     "interactive": "Decided by the person, on this finding alone.",
     "batch": "Decided by the person, as one of a group of findings that are not blockers.",
@@ -421,8 +432,89 @@ def framework_text(framework: Mapping[str, Any]) -> str:
     return f"{release}, a copy with no git history"
 
 
+def open_findings(report: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    """The findings still to act on: every one but those a person rejected or deferred."""
+    return [finding for finding in report["findings"] if finding["disposition"] not in ("rejected", "deferred")]
+
+
+def first_actions(report: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    """The open findings in the order to work them, first `FIRST_ACTIONS` only.
+
+    Severity first. Then a finding whose `depends_on` findings are all closed comes before one that waits on an open
+    finding. Then the smaller `effort` (S, M, L, then none), then the check ID and the finding ID, so the order is fixed.
+    """
+    findings = open_findings(report)
+    still_open = {finding["id"] for finding in findings}
+
+    def rank(finding: Mapping[str, Any]) -> tuple[int, int, int, str, str]:
+        remediation = finding["remediation"]
+        waits = any(dependency in still_open for dependency in remediation.get("depends_on") or [])
+        effort = EFFORT_ORDER.get(remediation.get("effort", ""), len(EFFORT_ORDER))
+        return (SEVERITIES.index(finding["severity"]), int(waits), effort, finding["check"], finding["id"])
+
+    return sorted(findings, key=rank)[:FIRST_ACTIONS]
+
+
+def action_row(number: int, finding: Mapping[str, Any]) -> list[str]:
+    waiting = " **Awaits a decision.**" if finding["disposition"] == "pending" else ""
+    return [
+        str(number),
+        f"{code(finding['check'])} ({finding['id']})",
+        finding["severity"],
+        finding["remediation"].get("effort", "—"),
+        text(finding["statement"]),
+        text(finding["remediation"]["summary"]) + waiting,
+    ]
+
+
+def bottom_line_section(report: Mapping[str, Any], summary: Mapping[str, Any]) -> list[str]:
+    """The answer first: the blockers left, the first actions, and what the scan could not settle."""
+    actions = first_actions(report)
+    left_open = len(open_findings(report))
+    unknown = [check["id"] for check in report["checks"] if check["verdict"] == "UNKNOWN"]
+    listed = joined(unknown[:UNKNOWN_LISTED]) + (
+        f" and {len(unknown) - UNKNOWN_LISTED} more" if len(unknown) > UNKNOWN_LISTED else ""
+    )
+    unattested = len(report["unattested"])
+    could_not = [
+        f"{count(len(unknown), 'check')} {'is' if len(unknown) == 1 else 'are'} UNKNOWN: {listed}."
+        if unknown
+        else "No check is UNKNOWN.",
+        f"{count(unattested, 'requirement')} {'is' if unattested == 1 else 'are'} unattested: no check settles them."
+        if unattested
+        else "No requirement is unattested.",
+    ]
+    if actions:
+        intro = f"**First actions** ({len(actions)} of {count(left_open, 'open finding')}):"
+        listing = table(
+            ["#", "Finding", "Severity", "Effort", "What it blocks", "Fix"],
+            [action_row(number, finding) for number, finding in enumerate(actions, start=1)],
+            ["right", "left", "left", "center", "left", "left"],
+        )
+    else:
+        intro, listing = "**First actions:** none. No finding is open.", []
+    return blocks(
+        ["## Bottom line"],
+        [
+            f"- **{blockers_phrase(summary['blockers_remaining'])}.**",
+            "- **Not settled by this scan:**",
+            *(f"  - {line}" for line in could_not),
+        ],
+        [intro],
+        listing,
+    )
+
+
+def terms_section() -> list[str]:
+    """The words the report uses, from the same tables the sections above use."""
+    rows = [[verdict, "verdict", VERDICT_MEANINGS[verdict]] for verdict in VERDICTS]
+    rows += [[severity, "severity", SEVERITY_MEANINGS[severity]] for severity in SEVERITIES]
+    rows += [[name, "decision on a finding", words] for name, words in DISPOSITION_MEANINGS.items()]
+    return blocks(["## Terms"], table(["Term", "Kind", "Meaning"], rows))
+
+
 def provenance_section(report: Mapping[str, Any]) -> list[str]:
-    """What was audited, with what, and when: the first thing a reader sees after the title."""
+    """What was audited, with what, and when: the first section after the bottom line."""
     provenance = report["provenance"]
     target = provenance["target"]
     engine = provenance.get("engine")
@@ -972,6 +1064,7 @@ def render(report: Mapping[str, Any]) -> str:
     summary = _summary.compute_summary(report)
     body = blocks(
         title_section(report),
+        bottom_line_section(report, summary),
         provenance_section(report),
         summary_section(report, summary),
         verdicts_section(report),
@@ -985,6 +1078,7 @@ def render(report: Mapping[str, Any]) -> str:
         stack_section(report),
         run_context_section(report),
         appendix_section(report),
+        terms_section(),
         ["---", "", "Rendered from the JSON report by `render_report.py`. The JSON report is the record."],
     )
     return "\n".join(body) + "\n"

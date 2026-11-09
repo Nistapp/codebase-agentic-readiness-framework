@@ -30,7 +30,7 @@ release carries `audit.pyz`, the skill bundles as a zip and their SHA-256 sums; 
 | Path | Contents |
 | --- | --- |
 | [`SKILL.md`](SKILL.md) | The recipe: hard rules and Stages 0 to 5 |
-| [`prompts/`](prompts/kickoff.md) | The kickoff prompt for any agent |
+| [`prompts/`](prompts/kickoff.md) | The kickoff prompt for any agent, and [how the agents talk to the user](prompts/talking-to-the-user.md), which both recipes share |
 | [`checks/`](checks/README.md) | The check files, thirteen families |
 | [`catalogue.json`](catalogue.json) | The check catalogue the tools read |
 | [`stacks/`](stacks/README.md) | Stack profiles: `typescript-node`, `java`, `python` |

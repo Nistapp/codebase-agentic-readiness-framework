@@ -10,6 +10,30 @@
 
 An agent that calls a dozen tools needs one way to read them all, so every tool prints the same JSON object on stdout and exits with the same four codes. The rules are in the [tools README](../../../audit/tools/README.md#the-contract); this page says where each one lives.
 
+The diagram shows one call. `run_tool` turns the handler's result, or its exception, into the envelope and
+the exit code.
+
+```mermaid
+sequenceDiagram
+    participant Agent
+    participant Tool as tool.py
+    participant Run as run_tool
+    participant Handler as handler
+    Agent->>Tool: arguments
+    Tool->>Run: parser and handler
+    Run->>Handler: parsed arguments
+    alt the work succeeds
+        Handler-->>Run: result
+        Run-->>Agent: envelope with ok true on stdout, exit 0
+    else UsageError or PathNotAllowed
+        Run-->>Agent: envelope with ok false, exit 1
+    else ValidationFailed
+        Run-->>Agent: envelope with data.errors, exit 2
+    else any other exception
+        Run-->>Agent: envelope with ok false, traceback on stderr, exit 3
+    end
+```
+
 - **The envelope** has six keys in a fixed order: `tool`, `version`, `ok`, `data`, `warnings`, `truncated`. [`make_envelope`](../../../audit/tools/_common.py#L152-L167) builds it and [`encode_envelope`](../../../audit/tools/_common.py#L170-L176) turns it into text. Stdout holds that and nothing else, so a caller can parse it without scanning. A short human summary and every diagnostic go to stderr.
 - **The exit codes** are constants in [`_common.py`](../../../audit/tools/_common.py#L42-L52), and each error class carries one:
 

@@ -42,6 +42,18 @@ not judge on its own (`UNKNOWN`); and it may override an engine verdict, but onl
 `override_reason`, never by assertion. The engine is the floor, not the ceiling — see
 [Trust & Safety](03-trust-and-safety.md) for exactly what it is and is not allowed to do while it runs.
 
+The diagram shows how the engine's verdicts become a final report.
+
+```mermaid
+flowchart LR
+    T["Target repository, read only"] --> E["Engine: no LLM, no network"]
+    E --> D["Draft with the engine's verdicts"]
+    D --> A["Agent: verifies every blocker, resolves UNKNOWN"]
+    A -->|"override only with a cited reason"| D
+    A --> P["Person confirms each finding"]
+    P --> F["Final report"]
+```
+
 ## 4. Non-goals
 
 - **No certification score.** A report's `phase1_score` measures how close one repository is to Phase 1

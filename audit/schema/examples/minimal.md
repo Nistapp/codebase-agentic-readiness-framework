@@ -6,6 +6,15 @@
 > [!NOTE]
 > This audit reports; it does not gate. A check that could not be settled is UNKNOWN: it earns no credit and is never shown as a pass.
 
+## Bottom line
+
+- **0 blockers remaining.**
+- **Not settled by this scan:**
+  - No check is UNKNOWN.
+  - No requirement is unattested.
+
+**First actions:** none. No finding is open.
+
 ## Provenance
 
 | Field | Value |
@@ -135,6 +144,24 @@ All 1 check, grouped by family. The engine's structured payloads (the command su
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
 | `AGT-11` | Instructions are specific and not inferable | DEGRADER | agent | yes | PASS | — | AGENTS.md states a release rule and a boundary that the code does not reveal. |
+
+## Terms
+
+| Term | Kind | Meaning |
+|---|---|---|
+| PASS | verdict | The requirement is met. |
+| PARTIAL | verdict | Part of the requirement is met. |
+| FAIL | verdict | The requirement is not met. |
+| UNKNOWN | verdict | The evidence could not be gathered. It is never read as a pass. |
+| NOT_APPLICABLE | verdict | The check does not apply to this repository. |
+| BLOCKER | severity | Agent work is impossible, unsafe or unverifiable. Fix before onboarding agents. |
+| DEGRADER | severity | Agent work is possible but unreliable or wasteful. |
+| COSMETIC | severity | Hygiene. Fix when convenient. |
+| pending | decision on a finding | No decision yet. |
+| confirmed | decision on a finding | The finding stands as written. |
+| edited | decision on a finding | The finding stands, with its wording or evidence corrected. |
+| rejected | decision on a finding | The finding is wrong (a false positive). It leaves the backlog. |
+| deferred | decision on a finding | The finding is real, and the person chose to leave it open for now. |
 
 ---
 
