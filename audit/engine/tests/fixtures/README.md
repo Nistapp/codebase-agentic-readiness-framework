@@ -115,6 +115,8 @@ fixtures/
   con-02-specs-are-not-tests/ `specs/` holds feature specifications, `tests/` is named -> CON-02 PASS
   con-03-artefacts-not-ignored/ artefacts/ present, no ignore rule      -> CON-03 FAIL
   hyg-01-placeholder-readme/ README is a TODO stub                      -> HYG-01 FAIL
+  hyg-09-uncovered-ecosystem/ package.json, a Dependabot file with only a pip entry -> HYG-09 PARTIAL
+  hyg-09-target-branch-trap/ the npm entry sets target-branch and ignore -> HYG-09 PARTIAL
   hyg-10-no-license/         real README, no LICENSE at the root         -> HYG-10 FAIL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 UNKNOWN
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test

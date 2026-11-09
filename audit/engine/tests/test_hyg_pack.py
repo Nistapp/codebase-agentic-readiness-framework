@@ -34,6 +34,8 @@ HYG_IDS = tuple(f"HYG-{n:02d}" for n in range(1, 12))
 #: fixture directory -> {check id: expected verdict}
 FIXTURES: dict[str, dict[str, str]] = {
     "hyg-01-placeholder-readme": {"HYG-01": "FAIL", "HYG-10": "FAIL"},
+    "hyg-09-uncovered-ecosystem": {"HYG-09": "PARTIAL"},
+    "hyg-09-target-branch-trap": {"HYG-09": "PARTIAL"},
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
     "hyg-minimal": {
         "HYG-01": "FAIL",

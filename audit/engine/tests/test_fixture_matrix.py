@@ -170,6 +170,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "idx-02-no-index": {"IDX-02": "UNKNOWN", "IDX-03": "UNKNOWN"},
     # -- HYG (informational, reported never scored) -------------------------------------------
     "hyg-01-placeholder-readme": {"HYG-01": "FAIL", "HYG-10": "FAIL"},
+    "hyg-09-uncovered-ecosystem": {"HYG-09": "PARTIAL"},
+    "hyg-09-target-branch-trap": {"HYG-09": "PARTIAL"},
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
     "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN"},
     # -- the AGT-content positive fixture -----------------------------------------------------

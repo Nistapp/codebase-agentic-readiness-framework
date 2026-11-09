@@ -244,27 +244,46 @@ Pitfalls         A repository automating its release entirely through `.github/w
 
 ## HYG-09 — Dependency update automation configured
 
-Why it matters   Dependencies should be patched on a schedule, not discovered stale during an incident.
+Why it matters   Dependencies should be patched on a schedule, not discovered stale during an incident. A
+                 configuration that silently misses an ecosystem, or whose rules do not reach security
+                 updates, looks like a policy and is not one.
 Severity         COSMETIC
 Engine           `HYG-09`. Dependabot (`.github/dependabot.yml`/`.yaml`, or the same names at the root)
                  or Renovate configuration (`renovate.json[5]`, `.renovaterc[.json]`,
-                 `.github/renovate.json`, `renovate.config.js`) at any of its conventional locations is
-                 `PASS`. None found is `FAIL`.
+                 `.github/renovate.json`, `renovate.config.js`) at any of its conventional locations.
+                 The engine reads it for two defects that hold whatever policy the owner chose:
+                 (1) coverage: each ecosystem a manifest names, plus `github-actions` when GitHub CI is
+                 detected, has an entry (Node `npm`/`bun`, Python `pip`/`uv`, JVM `maven`/`gradle`, Go
+                 `gomod`, Rust `cargo`, .NET `nuget`, Ruby `bundler`, PHP `composer`); Renovate covers
+                 every manager unless `enabledManagers` leaves one out; (2) the `target-branch` trap: a
+                 Dependabot entry that sets `target-branch` together with `ignore` or `groups`.
 Method           automated
-Look for         The fixed set of conventional Dependabot/Renovate configuration filenames, each at its
-                 documented location.
-Rubric           PASS: a Dependabot or Renovate configuration file exists at a conventional location.
-                 PARTIAL: not used by this check.
+Look for         The fixed set of conventional filenames; in a Dependabot file, each `updates:` item's
+                 `package-ecosystem`, `target-branch`, `ignore` and `groups`; in a Renovate JSON file,
+                 `enabledManagers`.
+Rubric           PASS: a configuration exists, every detected ecosystem has an entry, and no entry has
+                 the trap.
+                 PARTIAL: a configuration exists, but a detected ecosystem has no entry, or an entry sets
+                 `target-branch` together with `ignore` or `groups`.
                  FAIL: no file from the fixed configuration set exists at any conventional location.
                  NOT_APPLICABLE: never.
-                 UNKNOWN when: never.
-Evidence to cite A `file` evidence item citing the configuration path found, for PASS.
+                 UNKNOWN when: every configuration found is unreadable (a Dependabot file with no
+                 `updates:` list, invalid Renovate JSON), or an ecosystem is uncovered and one of the
+                 files could not be read. `renovate.json5` and `renovate.config.js` count on presence.
+Evidence to cite A `file` evidence item citing the configuration path, and for the trap the line of
+                 `target-branch`.
 Absence proof    A FAIL states that none of the fixed Dependabot/Renovate filenames were found at any of
-                 their conventional locations.
+                 their conventional locations. A coverage PARTIAL names each uncovered ecosystem and the
+                 `package-ecosystem` values that would cover it.
 Remediation      `add-repo-hygiene`
-Pitfalls         A third-party dependency-update bot configured entirely through an external SaaS
-                 dashboard, with no file committed to the repository, is invisible to this check and
-                 reads `FAIL` — the engine can only see what is committed.
+Pitfalls         The update policy (security pull requests only, majors advisory, a cooldown) is the
+                 owner's choice and never a verdict; do not mark a repository down for weekly version
+                 updates. `target-branch` matters because Dependabot drops an entry's options for
+                 security updates when it is set; security pull requests always go to the default
+                 branch. Coverage is per ecosystem, not per directory: a monorepo with one `npm` entry
+                 for `/` passes even if a nested `package.json` has no entry. A bot configured entirely
+                 through an external dashboard, with no committed file, reads `FAIL` — the engine can
+                 only see what is committed.
 
 ## HYG-10 — License present
 

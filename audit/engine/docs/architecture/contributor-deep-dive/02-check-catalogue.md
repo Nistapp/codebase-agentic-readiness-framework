@@ -220,7 +220,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `HYG-06` | SECURITY | A | Present | Implemented |
 | `HYG-07` | CHANGELOG | A | Present and dated recently | Implemented |
 | `HYG-08` | Release process documented | A | A release document exists | Implemented |
-| `HYG-09` | Dependency update automation | A | Dependabot, Renovate, or equivalent configured | Implemented |
+| `HYG-09` | Dependency update automation | A | Dependabot or Renovate configured, an entry for each detected ecosystem, and no `target-branch` beside `ignore` or `groups` | Implemented |
 | `HYG-10` | License | A | A license file exists | Implemented |
 | `HYG-11` | Branch protection | B | Protection declared by configuration-as-code where the provider allows | Implemented |
 
