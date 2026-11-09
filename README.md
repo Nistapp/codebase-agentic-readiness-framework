@@ -63,7 +63,8 @@ it pushes a branch only if you opt in.
 ## Contributing
 
 Start at [`CONTRIBUTING.md`](CONTRIBUTING.md): the repository map, the gates (`make check`, `make security`) and the
-commit rules. Agents read [`AGENTS.md`](AGENTS.md).
+commit rules. Agents read [`AGENTS.md`](AGENTS.md). To give your coding agent the code index here, see
+[Set up the agent tools](docs/how-to/set-up-agent-tools.md).
 
 `dev` is the default branch and holds the work in progress; `main` holds the latest release. Start your branch from
 `dev` and open your pull request into `dev`. Nobody commits to `dev` or `main` directly, and only `dev` is promoted

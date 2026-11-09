@@ -1,0 +1,16 @@
+{
+  "pythonVersion": "3.11",
+  "typeCheckingMode": "standard",
+  "include": ["audit", "implement", "dev"],
+  "exclude": ["artefacts", "dist", "**/fixtures", "**/testdata", "**/__pycache__", "dev/dist", "audit/engine/dist"],
+  "extraPaths": [
+    "audit/engine",
+    "audit/tools",
+    "audit/tools/tests",
+    "implement/tools",
+    "implement/tools/tests",
+    "dev",
+    "dev/eval",
+    "dev/tests"
+  ]
+}

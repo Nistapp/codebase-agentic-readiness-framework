@@ -32,6 +32,7 @@ the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they a
 | `make` | Every command below | Linux and macOS. On Windows use WSL |
 | Node 22 | `make docs-lint` | The pinned `markdownlint-cli2` runs through `npx`; not needed for `make check` |
 | Chrome, through Puppeteer | `make docs-mermaid` | Only when you add or change a Mermaid block; the pinned mermaid-cli fetches it on first use |
+| `codebase-memory-mcp` (optional) | Faster code search for your coding agent | Listed in `.mcp.json`. Your agent offers to set it up once; see [Set up the agent tools](docs/how-to/set-up-agent-tools.md). No gate needs it |
 | The sibling scaffolder | One engine test, the positive fixture | Set `AUDIT_BOOTSTRAP=<path to bootstrap.py>`. With `CI=true` and no scaffolder the test is skipped; locally it fails without it |
 
 `make setup` checks Python, `uv` and `git`, installs nothing, and names the first one that is missing.

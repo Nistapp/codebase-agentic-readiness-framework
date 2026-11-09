@@ -79,6 +79,9 @@ Do these steps once, on each new machine.
 
    Get `lefthook` from [lefthook.dev](https://lefthook.dev). The hooks do not replace the gates in CI.
 
+5. Optional: give your coding agent the code index. Your agent offers this once, before its first edit. To do it
+   yourself, follow [Set up the agent tools](set-up-agent-tools.md). No gate needs it.
+
 ---
 
 ## Step-by-step instructions
