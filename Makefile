@@ -105,11 +105,12 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) coverage coverage-engine coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check update-masters check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check update-masters check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-combine"
+	@echo "ci:    test-engine-shard SHARD=<i>  test-part SHARD=<i>  coverage-engine-shard SHARD=<i>  coverage-combine SHARDED=1"
 	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  masters-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
@@ -155,6 +156,26 @@ test-implement-tools:
 test-dev:
 	$(PYTHON) -m unittest discover -s dev/tests
 
+# CI splits the engine's suite into ENGINE_SHARDS jobs that run at once; SHARD=<i> picks one (1 to ENGINE_SHARDS).
+# dev/test_shard.py finds the modules at run time and balances them by dev/test_shard_weights.json; every module is
+# in exactly one shard, and a shard that selects no test fails. `test` and `coverage` never shard.
+ENGINE_SHARDS := 2
+TEST_SHARD = $(CURDIR)/dev/test_shard.py --suite engine --shard $(SHARD)/$(ENGINE_SHARDS)
+require_shard = @test -n "$(SHARD)" || { echo "$@: set SHARD to a number from 1 to $(ENGINE_SHARDS)" >&2; exit 1; }
+
+test-engine-shard:
+	$(require_shard)
+	cd $(ENGINE) && $(PYTHON) $(TEST_SHARD)
+
+# Every suite of `test` in ENGINE_SHARDS parts, for CI's Python 3.14 jobs: part <i> is engine shard <i> plus the
+# targets in TEST_PART_<i>, run at once as `test` runs its suites. test-dev takes about as long as an engine shard, so
+# it has a part to itself. dev/tests/test_ci_parity.py fails when the parts leave out a suite of `test`.
+TEST_PART_1 := test-audit-tools test-implement-tools verify-rules
+TEST_PART_2 := test-dev
+test-part:
+	$(require_shard)
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) test-engine-shard $(TEST_PART_$(SHARD))
+
 # Runs the engine's suite and the tools' suites under coverage.py and fails when the total drops below the floor in
 # .coveragerc (`fail_under`). Not part of `check`; needs uv. Each coverage-<suite> writes its own data file
 # (.coverage.<suite>), so CI runs them in separate jobs; coverage-combine merges them and reports. It fails when a
@@ -189,13 +210,23 @@ coverage-implement-tools:
 	rm -rf $(COVERAGE_HOME)/implement-tools && mkdir -p $(COVERAGE_HOME)/implement-tools
 	$(call coverage_env,implement-tools) COVERAGE_FILE=$(COVERAGE_DATA).implement-tools $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s implement/tools/tests
 
-# `coverage combine` deletes the files it merges, so a later combine cannot reuse a stale suite's data.
+# One shard of the engine's suite under coverage.py, in the same environment as coverage-engine (CI's jobs).
+coverage-engine-shard:
+	$(require_shard)
+	mkdir -p $(dir $(COVERAGE_DATA))
+	rm -f $(COVERAGE_DATA).engine-$(SHARD)
+	rm -rf $(COVERAGE_HOME)/engine-$(SHARD) && mkdir -p $(COVERAGE_HOME)/engine-$(SHARD)
+	cd $(ENGINE) && $(call coverage_env,engine-$(SHARD)) COVERAGE_FILE=$(COVERAGE_DATA).engine-$(SHARD) $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc $(TEST_SHARD)
+
+# The data files coverage-combine needs: one per suite, or, with SHARDED=1 (CI), one per engine shard in place of the
+# engine's. `coverage combine` deletes the files it merges, so a later combine cannot reuse a stale suite's data.
+COMBINE_PARTS = $(if $(SHARDED),$(foreach i,$(shell seq 1 $(ENGINE_SHARDS)),engine-$(i)),engine) audit-tools implement-tools
 coverage-combine:
-	@for suite in $(COVERAGE_SUITES:coverage-%=%); do \
-		test -f $(COVERAGE_DATA).$$suite || { echo "coverage-combine: no data for $$suite; run make coverage-$$suite first" >&2; exit 1; }; \
+	@for part in $(COMBINE_PARTS); do \
+		test -f $(COVERAGE_DATA).$$part || { echo "coverage-combine: no data file $(COVERAGE_DATA).$$part; run its coverage target first" >&2; exit 1; }; \
 	done
 	rm -f $(COVERAGE_DATA)
-	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) combine --rcfile=.coveragerc $(COVERAGE_SUITES:coverage-%=$(COVERAGE_DATA).%)
+	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) combine --rcfile=.coveragerc $(addprefix $(COVERAGE_DATA).,$(COMBINE_PARTS))
 	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) report --rcfile=.coveragerc
 
 # The engine on this repository, read-only. Reports go under dist/self-audit/ (git-ignored); only artefacts/ and dist/
