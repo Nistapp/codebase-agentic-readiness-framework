@@ -59,7 +59,9 @@ it pushes a branch only if you opt in.
 ## Platforms
 
 - **Linux:** tested.
-- **macOS:** the tools are tested in CI. The Claude Code path above is not yet checked by hand. macOS ships an older
+- **macOS:** the tools were tested in CI until November 2026. CI runs on Linux only for now; issue
+  [#82](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/82) tracks bringing macOS back.
+  The Claude Code path above is not yet checked by hand. macOS ships an older
   Python; install Python 3.11 or newer, for example with Homebrew.
 - **Windows:** not tested. WSL may work.
 

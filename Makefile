@@ -11,13 +11,15 @@
 #                       (alias: make format-check)
 #   make lint           read-only lint
 #   make typecheck      mypy, strict, on the typed scope below
-#   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
+#   make test           the four unittest suites: the engine's, the audit tools' (the catalogue checks), the
+#                       implement tools' and the dev checks'; at once on Linux (TEST_JOBS), else one by one
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
 #                       cross-check, the recipe linter, the master-list freshness check,
 #                       the workflow lint and the spell check
 #   make security       secrets scan against the committed baseline, then the dependency audit (osv-scanner) of
 #                       the dev tools' lockfiles; needs Go and the network
-#   make coverage       (extra) both unittest suites under coverage.py; fails below the floor in .coveragerc
+#   make coverage       (extra) the engine's and the tools' suites under coverage.py; fails below the floor in
+#                       .coveragerc. CI runs it in parts: coverage-<suite> per job, then coverage-combine
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
 #
 # `format:check` has a colon, which make reads as a rule separator. The target is spelled `format\:check`
@@ -87,11 +89,27 @@ ENGINE := audit/engine
 TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
 
 .DEFAULT_GOAL := help
+
+# The suites of `test`. On Linux with GNU make 4 or newer, `make test` runs them at once, in a sub-make with
+# TEST_JOBS: about 80 s on CI instead of 170 s, and about 200 MB of memory in all (measured 2026-11-09). Elsewhere
+# they run one by one: macOS ships GNU make 3.81, which has no --output-sync. `make test TEST_JOBS=` runs them one by
+# one on Linux too. --output-sync=target prints each suite's output in one piece, when that suite ends.
+TEST_SUITES := test-engine test-audit-tools test-implement-tools test-dev
+ifeq ($(shell uname -s 2>/dev/null)-$(filter 3.%,$(MAKE_VERSION)),Linux-)
+TEST_JOBS ?= -j4 --output-sync=target
+endif
+
+# Everything else runs one target at a time, even under `make -j`: spec/command-surface.md fixes the order of
+# `check` (format:check, then typecheck, then test). Only the sub-make that `test` starts for its suites is parallel.
+# GNU make 4.3 (Ubuntu 24.04) reads any .NOTPARALLEL as "the whole file", so the sub-make leaves it out.
+ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
-.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint masters-check update-masters check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+endif
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) coverage coverage-engine coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check update-masters check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
+	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-combine"
 	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  masters-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
@@ -123,19 +141,49 @@ typecheck:
 	$(QUALITY_BASELINE) mypy -- $(MYPY) --config-file mypy.ini $(TYPED_SOURCES)
 
 test:
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)
+
+test-engine:
 	cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests
+
+test-audit-tools:
 	$(PYTHON) -m unittest discover -s audit/tools/tests
+
+test-implement-tools:
 	$(PYTHON) -m unittest discover -s implement/tools/tests
+
+test-dev:
 	$(PYTHON) -m unittest discover -s dev/tests
 
-# Runs the engine's suite and the recipe tools' suite under coverage.py and fails when the total drops below the
-# floor in .coveragerc (`fail_under`). Not part of `check`; CI runs it as its own job. Needs uv.
-coverage:
+# Runs the engine's suite and the tools' suites under coverage.py and fails when the total drops below the floor in
+# .coveragerc (`fail_under`). Not part of `check`; needs uv. Each coverage-<suite> writes its own data file
+# (.coverage.<suite>), so CI runs them in separate jobs; coverage-combine merges them and reports. It fails when a
+# suite's file is missing, so a partial run cannot pass on a partial total. coverage.py does not measure dev/.
+COVERAGE_SUITES := coverage-engine coverage-audit-tools coverage-implement-tools
+coverage: coverage-engine coverage-audit-tools coverage-implement-tools coverage-combine
+
+coverage-engine:
 	mkdir -p $(dir $(COVERAGE_DATA))
+	rm -f $(COVERAGE_DATA).engine
+	cd $(ENGINE) && COVERAGE_FILE=$(COVERAGE_DATA).engine $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc -m unittest discover -s tests
+
+coverage-audit-tools:
+	mkdir -p $(dir $(COVERAGE_DATA))
+	rm -f $(COVERAGE_DATA).audit-tools
+	COVERAGE_FILE=$(COVERAGE_DATA).audit-tools $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s audit/tools/tests
+
+coverage-implement-tools:
+	mkdir -p $(dir $(COVERAGE_DATA))
+	rm -f $(COVERAGE_DATA).implement-tools
+	COVERAGE_FILE=$(COVERAGE_DATA).implement-tools $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s implement/tools/tests
+
+# `coverage combine` deletes the files it merges, so a later combine cannot reuse a stale suite's data.
+coverage-combine:
+	@for suite in $(COVERAGE_SUITES:coverage-%=%); do \
+		test -f $(COVERAGE_DATA).$$suite || { echo "coverage-combine: no data for $$suite; run make coverage-$$suite first" >&2; exit 1; }; \
+	done
 	rm -f $(COVERAGE_DATA)
-	cd $(ENGINE) && COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=$(CURDIR)/.coveragerc -m unittest discover -s tests
-	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s audit/tools/tests
-	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) run --rcfile=.coveragerc --append -m unittest discover -s implement/tools/tests
+	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) combine --rcfile=.coveragerc $(COVERAGE_SUITES:coverage-%=$(COVERAGE_DATA).%)
 	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) report --rcfile=.coveragerc
 
 # The engine on this repository, read-only. Reports go under dist/self-audit/ (git-ignored); only artefacts/ and dist/
