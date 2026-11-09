@@ -118,15 +118,10 @@ class CheckRunsInCI(unittest.TestCase):
         return self.expand(ci_targets(ci_jobs(CI.read_text(encoding="utf-8"))[job]))
 
     def test_every_part_of_security_has_a_ci_job(self) -> None:
-        # CI runs `make security` as one job per part. `security` runs security-secrets as its prerequisite and
-        # repeats security-deps' recipe as its own (TOOL-04 reads only a target's own recipe), so it must run
-        # nothing else.
-        self.assertEqual(make_rule(self.makefile, "security"), ["security-secrets"])
-        self.assertEqual(
-            make_recipe(self.makefile, "security"),
-            make_recipe(self.makefile, "security-deps"),
-            "security's recipe must be security-deps' recipe, word for word",
-        )
+        # CI runs `make security` as one job per part. `security` is its two parts, as prerequisites, and runs
+        # nothing of its own, so the CI jobs cover all of it (TOOL-04 follows the prerequisites, issue #89).
+        self.assertEqual(make_rule(self.makefile, "security"), ["security-secrets", "security-deps"])
+        self.assertEqual(make_recipe(self.makefile, "security"), "", "security must run nothing but its two parts")
         parts = ["security-secrets", "security-deps"]
         self.assertEqual([part for part in parts if part not in self.ci], [], "parts of security that CI never runs")
 
