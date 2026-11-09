@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all nine rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
 
 ---
 
@@ -23,7 +23,10 @@
 
 ## Every tool
 
-Every tool follows the [tool contract](../../audit/tools/README.md#the-contract): one JSON envelope on stdout, the exit codes below, `--describe`, bounded output, no network, no writes inside the target (`progress.py` writes the target's two state files, the one exception), and a Python 3.11 check first. The explanation is in [Tool Contract](../explanation/contributor-deep-dive/01-tool-contract.md).
+Every tool follows the [tool contract](../../audit/tools/README.md#the-contract). It prints one JSON envelope on
+stdout, uses the exit codes below and answers `--describe`. Its output is bounded, it uses no network, and it checks
+for Python 3.11 first. It writes nothing inside the target; `progress.py` and the target's two state files are the
+one exception. The explanation is in [Tool Contract](../explanation/contributor-deep-dive/01-tool-contract.md).
 
 | Exit code | Meaning |
 |---|---|
@@ -161,7 +164,12 @@ Builds the audit report. It is the only writer of the draft: the agent calls a s
 
 The subcommands are `init`, `import-engine`, `add-check`, `add-finding`, `set-disposition`, `set-stack-profile`, `status` and `finalise`.
 
-Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step: the draft is read and validated, the change is made, the summary is recomputed, the result is validated, and only then is it written, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change drafts in one folder take turns, through a lock on the folder that the system releases when the process ends; run them one at a time anyway, because a command that cannot get the lock in 30 seconds exits with 1. A final report is never changed.
+Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step. The tool
+reads and validates the draft, makes the change, recomputes the summary and validates the result. Only then does it
+write the draft, atomically, so a crash or a refusal leaves the previous draft as it was. Commands that change
+drafts in one folder take turns, through a lock on the folder that the system releases when the process ends. Run
+them one at a time anyway: a command that cannot get the lock in 30 seconds exits with 1. A final report is never
+changed.
 
 **Synopsis**
 
@@ -259,7 +267,17 @@ An engine evidence path is not always a path. A placeholder (`(no example file)`
 
 **Outputs**
 
-`data` holds `draft`, `engine_report` (the path read), `engine` (what was recorded in `provenance.engine`), `checks_imported`, `by_verdict` (a count for each verdict, including `NOT_APPLICABLE`), `findings_imported`, `unattested_listed`, `probes_carried`, `evidence_not_carried` (evidence items dropped with a warning), and the counts `checks_recorded`, `checks_expected`, `findings` and `findings_pending` of the draft as it now is. When the warnings are too many for the envelope, `warnings_omitted` says how many were left out and `truncated` is true.
+`data` holds these keys:
+
+- `draft`, and `engine_report` (the path read);
+- `engine`: what was recorded in `provenance.engine`;
+- `checks_imported`, and `by_verdict`: a count for each verdict, including `NOT_APPLICABLE`;
+- `findings_imported`, `unattested_listed` and `probes_carried`;
+- `evidence_not_carried`: the evidence items dropped with a warning;
+- `checks_recorded`, `checks_expected`, `findings` and `findings_pending`: the counts of the draft as it now is.
+
+When the warnings are too many for the envelope, `warnings_omitted` says how many were left out, and `truncated` is
+true.
 
 Nothing the engine said is dropped without a warning, except a placeholder and a probe the engine refused to run (the check's own summary says why).
 
@@ -568,7 +586,13 @@ A draft can be finalised only when all of this holds, and each problem that does
 
 ## render_report.py
 
-Renders an audit report to Markdown. The Markdown is a pure function of the JSON report: one report gives the same bytes every time, whatever order its keys come in, and nothing in the Markdown is absent from the JSON apart from the words that explain a verdict or a severity. The readiness summary is computed with [`_summary.py`](../../audit/tools/_summary.py), the code that the validator and the report builder use, and never taken from the file. The source is [`render_report.py`](../../audit/tools/render_report.py). [`report.py finalise`](#finalise) calls it to write the Markdown beside the final report, and it is a command of its own for a draft, or for a report written earlier.
+Renders an audit report to Markdown. The Markdown is a pure function of the JSON report: one report gives the same
+bytes every time, whatever order its keys come in. Nothing in the Markdown is absent from the JSON, apart from the
+words that explain a verdict, a severity or a decision, and the fixed order of the first actions. The readiness
+summary is computed with [`_summary.py`](../../audit/tools/_summary.py), the code that the validator and the report
+builder use, and never taken from the file. The source is [`render_report.py`](../../audit/tools/render_report.py).
+[`report.py finalise`](#finalise) calls it to write the Markdown beside the final report, and it is a command of its
+own for a draft, or for a report written earlier.
 
 **Synopsis**
 
@@ -589,7 +613,8 @@ python3 audit/tools/render_report.py --describe
 | Section | What it shows |
 |---|---|
 | Title and banners | The repository's name. A warning banner for an evaluation run, a note banner for a draft that counts the findings awaiting a decision, and a note that the audit reports and does not gate. |
-| Provenance | A field and value table, straight after the title: the target, the commit (a bold flag for a dirty working tree), the status, when the audit started and finished, the recipe and catalogue, the engine and ruleset, the framework revision, the agent (self-reported) and the probes. |
+| Bottom line | The answer first, after the title and banners. The blockers remaining, from the readiness summary. The checks that are `UNKNOWN` (up to five IDs, then a count) and the number of unattested requirements. Then the first three actions, in a table: open findings (not `rejected` or `deferred`) ranked by severity, then a finding that waits on an open `depends_on` finding after one that does not, then `effort` (`S`, `M`, `L`, none), then the check and finding IDs. Each action gives the check, the statement and the fix, and says when it awaits a decision. |
+| Provenance | A field and value table, straight after the bottom line: the target, the commit (a bold flag for a dirty working tree), the status, when the audit started and finished, the recipe and catalogue, the engine and ruleset, the framework revision, the agent (self-reported) and the probes. |
 | Readiness summary | The headline of [`spec/readiness-summary.md`](../../spec/readiness-summary.md) and no other number: the phase-1 score to two places, the blockers remaining by state, and the unattested requirements, then the two qualifiers. |
 | Checks by verdict and severity | How many checks have each verdict and what each earns, and for each severity its weight, its scored checks and how many are not met. |
 | Checks that need attention | A table for each severity, with the columns Check, Verdict, What we found, Evidence, Fix and Decision. A row is a finding, or a check that has none. A check is listed when it is not met, was overridden, was judged by the agent, or raised a finding. |
@@ -597,8 +622,16 @@ python3 audit/tools/render_report.py --describe
 | Evidence in full | Each quote and each command's output, in a fenced block, under the check that cites it. Left out when nothing is quoted. |
 | Coverage, Stack and components, Run context | What the audit examined and skipped, what was detected, and the intake answers the run used. |
 | Appendix — all checks | Every check, grouped by family: its severity, method, whether it is scored, its verdict, the engine's verdict and its summary. |
+| Terms | What each verdict, each severity and each decision on a finding means, in the words the sections above use. |
 
-In the tables of checks that need attention, evidence is grouped by who captured it, so each item says whether a tool or the agent recorded it, and a tool is named only when it is not the engine that the provenance names. A cell shows at most eight items for each group and counts the rest, which are in the JSON report. A quote or output is not in a cell: the cell says where it is. A check that is `FAIL` or `UNKNOWN` and shows no evidence and no search, on the check or on any of its findings, has "We did not find any evidence." in its Evidence cell. A later finding of a check whose fix is the same as an earlier one's says "Same as" and the finding, instead of printing it again. A passing check that a tool settled is in the appendix and nowhere else, and the engine's structured payloads are in the JSON report.
+In the tables of checks that need attention, evidence is grouped by who captured it, so each item says whether a
+tool or the agent recorded it. A tool is named only when it is not the engine that the provenance names. A cell
+shows at most eight items for each group and counts the rest, which are in the JSON report. A quote or output is not
+in a cell: the cell says where it is. A check that is `FAIL` or `UNKNOWN` and shows no evidence and no search, on
+the check or on any of its findings, has "We did not find any evidence." in its Evidence cell. A later finding of a
+check whose fix is the same as an earlier one's says "Same as" and the finding, instead of printing it again. A
+passing check that a tool settled is in the appendix and nowhere else, and the engine's structured payloads are in
+the JSON report.
 
 The words of a report come from the audited repository, through a model, so the tool treats them as untrusted. Free text has every Markdown special character escaped, so that it cannot become a link, an image, a tag or a heading. A path or a command is in a code span, and a quote or an output tail in a fenced block, each with a delimiter longer than any run of backticks inside it. A control character, and a character that reorders or hides text, is written out as `{U+XXXX}`. A `|` cannot add a column to a table.
 
@@ -629,7 +662,13 @@ The words of a report come from the audited repository, through a model, so the 
 
 ## facts.py
 
-Describes a repository with counts and names and no verdicts, in a file the audit recipe reads before its assessment stage: inventory, stack, instruction files, components and a size class, taken with the engine's own `scan`, `stack`, `components`, `target` and `rules/variants` modules by [ADR 0001](../../audit/docs/architecture/adrs/0001-tools-import-engine.md). It gives no verdict, and nothing in it says that a file is good, that a stack is right or that a repository is ready. The source is [`facts.py`](../../audit/tools/facts.py); the format is [`facts.schema.json`](../../audit/schema/facts.schema.json), described in [Facts file](../../audit/schema/SCHEMA.md#facts-file).
+Describes a repository with counts and names and no verdicts, in a file the audit recipe reads before its assessment
+stage. The file holds the inventory, the stack, the instruction files, the components and a size class. The tool
+takes them with the engine's own `scan`, `stack`, `components`, `target` and `rules/variants` modules ([ADR
+0001](../../audit/docs/architecture/adrs/0001-tools-import-engine.md)). It gives no verdict, and nothing in it says
+that a file is good, that a stack is right or that a repository is ready. The source is
+[`facts.py`](../../audit/tools/facts.py); the format is [`facts.schema.json`](../../audit/schema/facts.schema.json),
+described in [Facts file](../../audit/schema/SCHEMA.md#facts-file).
 
 **Synopsis**
 
@@ -675,7 +714,23 @@ A run writes one file, the one `--out` names, in `facts.schema.json`'s format: `
 
 ## recipe_lint.py
 
-Checks the Markdown under `audit/`, `implement/` and `docs/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10), every `audit/tools/<name>.py` or `implement/tools/<name>.py` the Markdown names exists and answers `--describe`, every check, requirement and playbook ID named is one `catalogue.json` or `spec/readiness-requirements.md` actually has, and the generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md) matches what every tool's own `--describe` would produce today. The link rule also covers the framework pages outside those folders (the root `README.md`, `spec/` and `greenfield/`; the framework pages under `docs/framework/` are already recipe Markdown) and no other rule reads them; the `greenfield/templates/` links are examples relative to the destination and are skipped. It reads only, apart from running each tool's own `--describe`, which the contract guarantees does no work; nothing is written, unless `--write-catalogue` is given. The source is [`recipe_lint.py`](../../dev/recipe_lint.py).
+Checks the Markdown under `audit/`, `implement/` and `docs/`, so that a recipe does not silently rot:
+
+- every relative link and anchor resolves;
+- a `SKILL.md`'s frontmatter is valid;
+- each recipe's `SKILL.md` links the shared prompt
+  [`audit/prompts/talking-to-the-user.md`](../../audit/prompts/talking-to-the-user.md);
+- a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10);
+- every `audit/tools/<name>.py` or `implement/tools/<name>.py` the Markdown names exists and answers `--describe`;
+- every check, requirement and playbook ID named is one that `catalogue.json` or `spec/readiness-requirements.md` has;
+- the generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md) matches what every tool's own `--describe`
+  would produce today.
+
+The link rule also covers the framework pages outside those folders: the root `README.md`, `spec/` and
+`greenfield/`. The framework pages under `docs/framework/` are already recipe Markdown. No other rule reads those
+pages. The `greenfield/templates/` links are examples relative to the destination, and are skipped. The tool only
+reads, apart from running each tool's own `--describe`, which the contract guarantees does no work. It writes
+nothing unless `--write-catalogue` is given. The source is [`recipe_lint.py`](../../dev/recipe_lint.py).
 
 **Synopsis**
 
@@ -735,31 +790,37 @@ Nothing is written by a plain `recipe_lint.py <root>`; a clean run's `data` hold
 
 Builds the two skill bundles under `dev/dist/skills/` (gitignored), self-contained copies that a harness installs and
 runs with no checkout of this repository. The source is [`build_skills.py`](../../dev/build_skills.py). Each
-bundle is replaced whole on every run, so a stale file from an earlier build can never survive, and each has three
-parts: `SKILL.md` (the recipe's own file, with its frontmatter `name` rewritten from the source folder's name to the
-bundle's own name), `references/` (read by the model) and `scripts/` (run by it).
+bundle is replaced whole on every run, so a stale file from an earlier build can never survive. Each has three parts:
 
-- **`agentic-readiness-audit`**: `references/` holds the check files, stack profiles and schema docs; `scripts/`
-  holds the tools the recipe calls, the schema files and `catalogue.json` they read at a fixed path next to
-  themselves, the engine's `audit` package mirroring the one folder level `engine.py` expects, and `audit.pyz`, the
-  engine's single-file build. Some of its `SKILL.md`'s links point outside what the bundle carries (found, not
-  fixed; `skills-ref` validates only the frontmatter and the directory-name match).
-- **`agentic-readiness-implement`**: `references/` holds the state contract, the playbooks, the kickoff prompt, the
-  check files, the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the state schema and
-  its docs, and the sections of this page for the tools it carries; `scripts/` holds `progress.py`,
-  `check_drift.py`, `compare_reports.py` and `validate_report.py` with their private modules, the schema files,
-  `catalogue.json`, and an `engine.py` shim. The engine is not copied: the shim loads `engine.py` from the
-  `agentic-readiness-audit` skill installed in the same skills folder, so both skills run one engine, and a tool
-  that needs the engine without it exits 1 naming the missing skill. Every carried Markdown file is rewritten: a
-  `python3 audit/tools/<tool>.py` command becomes the path from the skill's own folder
-  (`python3 scripts/tools/<tool>.py`, or the audit skill's path for `engine.py`), a link to a carried file points at
-  its place in the bundle, and any other relative link becomes plain text naming the framework path. No link leaves
-  the bundle.
+- `SKILL.md`: the recipe's own file, with its frontmatter `name` rewritten from the source folder's name to the
+  bundle's own name;
+- `references/`: read by the model;
+- `scripts/`: run by it.
+
+- **`agentic-readiness-audit`**: `references/` holds the check files, the stack profiles, the shared prompt on
+  how to talk to the user and the schema docs. `scripts/` holds the tools the recipe calls. Beside them are the
+  schema files and the `catalogue.json` they read at a fixed path, and the engine's `audit` package, one folder
+  level up as `engine.py` expects. `audit.pyz` is the engine's single-file build. The link to the shared prompt is
+  rewritten to its place in the bundle. Some other links in its `SKILL.md` point outside what the bundle carries
+  (found, not fixed; `skills-ref` validates only the frontmatter and the directory-name match).
+- **`agentic-readiness-implement`**: `references/` holds the state contract, the playbooks, the kickoff prompt and
+  the shared prompt on how to talk to the user. It also holds the check files, the stack profiles, ADR 0003,
+  `spec/command-surface.md` and the spec decisions, the state schema and its docs, and the sections of this page
+  for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`, `compare_reports.py` and
+  `validate_report.py` with their private modules, the schema files, `catalogue.json`, and an `engine.py` shim.
+  The engine is not copied. The shim loads `engine.py` from the `agentic-readiness-audit` skill installed in the
+  same skills folder, so both skills run one engine. A tool that needs the engine without it exits 1 and names the
+  missing skill. Every carried Markdown file is rewritten in three ways:
+  - a `python3 audit/tools/<tool>.py` command becomes the path from the skill's own folder
+    (`python3 scripts/tools/<tool>.py`, or the audit skill's path for `engine.py`);
+  - a link to a carried file points at its place in the bundle;
+  - any other relative link becomes plain text that names the framework path. No link leaves the bundle.
 
 `make validate-skills` builds both bundles and validates each with
 [`skills-ref`](https://agentskills.io/specification#validation), the Agent Skills specification's own reference
-validator (PyPI package `skills-ref`, CLI entry point `agentskills`; a dev-only tool, run through `uvx` and pinned in
-the Makefile, never imported by the tools or the engine). An install smoke-run (S4.5.3) acts on the audit bundle.
+validator. It is the PyPI package `skills-ref`, with the CLI entry point `agentskills`. It is a dev-only tool, run
+through `uvx` with a pinned version, and never imported by the tools or the engine. An install smoke-run (S4.5.3)
+acts on the audit bundle.
 
 **Synopsis**
 
@@ -791,13 +852,14 @@ python3 dev/build_skills.py [--out-dir DIR]
 so run them as `python3 audit/tools/<tool>.py`, **without** `python3 -I` (isolated mode drops the script's
 folder from the import path and the import of `_common` fails).
 
-Creates the implement recipe's state for a target from a final audit report (recording the SHA-256 of the report file in `source_reports[].sha256`), summarises it, renders its
-Markdown view, and applies the validated changes to it: status transitions, skip and defer, preferences and
-theme progress. It is the one tool that writes inside a target, and only the two state files, by
-[ADR 0002](../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md). The source is
+Creates the implement recipe's state for a target from a final audit report. It records the SHA-256 of the report
+file in `source_reports[].sha256`. It summarises the state, renders its Markdown view, and applies the validated
+changes to it: status transitions, skip and defer, preferences and theme progress. It is the one tool that writes
+inside a target, and only the two state files, by [ADR
+0002](../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md). The source is
 [`progress.py`](../../implement/tools/progress.py); the format is
-[`readiness-state.schema.json`](../../audit/schema/readiness-state.schema.json), described in
-[Readiness state](../../audit/schema/SCHEMA.md#readiness-state); the rules are the [state contract](../../implement/state.md).
+[`readiness-state.schema.json`](../../audit/schema/readiness-state.schema.json), described in [Readiness
+state](../../audit/schema/SCHEMA.md#readiness-state); the rules are the [state contract](../../implement/state.md).
 
 **Synopsis**
 
@@ -840,18 +902,23 @@ python3 implement/tools/progress.py --describe
 
 **Outputs**
 
-`init` writes the JSON and the Markdown and puts their paths, the label, the item count, the count per status and the
-`not_queued` count in `data`, with `versions` as [`check_drift.py`](#check_driftpy) gives it. `show` puts the summary
-in `data`: counts per status and per theme (`items` and `open`, which is neither `done` nor `skipped`), the skipped
-finding ids, and the number of preferences, debt entries and log entries, with `versions`: the framework that created
-the state (`created`), the one that last wrote it (`last`) and these tools (`tools`). `show --json` puts the state
-under `data.state`, with the same `versions`. `render` writes the Markdown and puts its path and size in `data`. Every
-other command checks the changed state whole, appends one log entry (two when the framework changed since the last
-write: see `last_framework`), replaces the JSON and puts the path and the count per status in `data`. A refused
-command changes nothing, and a refused move says which states the item may go to. The Markdown view keeps prose lines
-(item details, the full text of a cut preference cell) under 110 columns so it passes MD013; a preference's value or
-reason longer than 100 characters is cut in its table row and given in full in a list below the table. Each write is
-atomic; a temporary file a killed write left behind is removed, with a warning.
+`init` writes the JSON and the Markdown. Its `data` holds their paths, the label, the item count, the count per
+status and the `not_queued` count, with `versions` as [`check_drift.py`](#check_driftpy) gives it. `show` puts the
+summary in `data`:
+
+- the counts per status and per theme (`items`, and `open`: neither `done` nor `skipped`);
+- the skipped finding ids, and the number of preferences, debt entries and log entries;
+- `versions`: the framework that created the state (`created`), the one that last wrote it (`last`) and these
+  tools (`tools`).
+
+`show --json` puts the state under `data.state`, with the same `versions`. `render` writes the Markdown and puts its
+path and size in `data`. Every other command checks the changed state whole and appends one log entry. It appends
+two when the framework changed since the last write (see `last_framework`). Then it replaces the JSON and puts the
+path and the count per status in `data`. A refused command changes nothing, and a refused move says which states
+the item may go to. The Markdown view keeps prose lines under 110 columns, so it passes MD013: the item details, and
+the full text of a cut preference cell. A preference's value or reason longer than 100 characters is cut in its
+table row, and given in full in a list below the table. Each write is atomic. A temporary file that a killed write
+left behind is removed, with a warning.
 
 **Exit codes**
 
@@ -975,15 +1042,14 @@ python3 implement/tools/compare_reports.py --describe
 
 **Output**
 
-By default `data` holds `summary` and `markdown` (the deterministic report: summary lines, checks that moved,
-findings that moved, findings still open). With `--json` it holds `summary`, `checks` and `findings` as rows
-instead. `summary` has the two reports' file names, commits and scores, the counts per move, `rejected_ignored`,
+By default `data` holds `summary` and `markdown`. The Markdown is the deterministic report: summary lines, checks
+that moved, findings that moved, and findings still open. With `--json` it holds `summary`, `checks` and `findings`
+as rows instead. `summary` has the two reports' file names, commits and scores, the counts per move, `rejected_ignored`,
 and `unexplained`. `before` and `after` also hold each report's `framework` (`release`, `revision`) and
-`catalogue_version`. A warning is raised when the reports name different repositories, and `version_warnings`
-holds one when they come from different releases, from the same release at two commits, or from different
-catalogues, because a verdict can move for that reason alone; each is also a warning and a line in the Markdown.
-Long lists are bounded:
-`truncated` is `true` and the markdown (or `data.omitted`) says how many rows were left out.
+`catalogue_version`. A warning is raised when the reports name different repositories. `version_warnings` holds one
+when they come from different releases, from the same release at two commits, or from different catalogues: a
+verdict can move for that reason alone. Each is also a warning and a line in the Markdown. Long lists are bounded:
+`truncated` is `true`, and the Markdown (or `data.omitted`) says how many rows were left out.
 
 **Exit codes**
 

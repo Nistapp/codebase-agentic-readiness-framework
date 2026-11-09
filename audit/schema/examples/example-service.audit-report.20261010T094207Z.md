@@ -3,6 +3,21 @@
 > [!NOTE]
 > This audit reports; it does not gate. A check that could not be settled is UNKNOWN: it earns no credit and is never shown as a pass.
 
+## Bottom line
+
+- **4 blockers remaining: 4 FAIL.**
+- **Not settled by this scan:**
+  - 1 check is UNKNOWN: `TST-02`.
+  - 5 requirements are unattested: no check settles them.
+
+**First actions** (3 of 7 open findings):
+
+| # | Finding | Severity | Effort | What it blocks | Fix |
+|---:|---|---|:---:|---|---|
+| 1 | `CMD-01` (F-001) | BLOCKER | S | An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not defined on any runner (format:check, typecheck, check, security). | Define every verb as a script so an agent never has to invent a command. |
+| 2 | `EXEC-01` (F-003) | BLOCKER | S | An agent cannot reproduce the toolchain because node is not pinned by a version file, an engines constraint or a wrapper. | Pin Node 22 in .nvmrc. |
+| 3 | `SEC-02` (F-004) | BLOCKER | M | An agent cannot keep credentials out of the repository and its history because src/config/constants.ts contains 1 credential-shaped line(s). | Remove the value from the file and its history, load it from the environment, and rotate the credential. |
+
 ## Provenance
 
 | Field | Value |
@@ -242,6 +257,24 @@ All 12 checks, grouped by family. The command surface and the credential-shaped-
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
 | `TST-02` | Suite status known | DEGRADER | automated | yes | UNKNOWN | UNKNOWN | probe not run: probes disabled (pass --run-gates) |
+
+## Terms
+
+| Term | Kind | Meaning |
+|---|---|---|
+| PASS | verdict | The requirement is met. |
+| PARTIAL | verdict | Part of the requirement is met. |
+| FAIL | verdict | The requirement is not met. |
+| UNKNOWN | verdict | The evidence could not be gathered. It is never read as a pass. |
+| NOT_APPLICABLE | verdict | The check does not apply to this repository. |
+| BLOCKER | severity | Agent work is impossible, unsafe or unverifiable. Fix before onboarding agents. |
+| DEGRADER | severity | Agent work is possible but unreliable or wasteful. |
+| COSMETIC | severity | Hygiene. Fix when convenient. |
+| pending | decision on a finding | No decision yet. |
+| confirmed | decision on a finding | The finding stands as written. |
+| edited | decision on a finding | The finding stands, with its wording or evidence corrected. |
+| rejected | decision on a finding | The finding is wrong (a false positive). It leaves the backlog. |
+| deferred | decision on a finding | The finding is real, and the person chose to leave it open for now. |
 
 ---
 

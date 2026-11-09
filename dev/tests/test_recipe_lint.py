@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""The recipe linter: each of its eight rules (links, SKILL.md frontmatter, size, tool, check, requirement,
-playbook references and the tool catalogue) has a fixture that passes it and one that breaks it, and the tool
+"""The recipe linter: each of its nine rules (links, SKILL.md frontmatter, the user prompt, size, tool, check,
+requirement, playbook references and the tool catalogue) has a fixture that passes it and one that breaks it, and the tool
 honours the contract (envelope, exit codes, nothing written unless `--write-catalogue` is given).
 
 A fixture is a small repository tree built in a temporary folder, with its own `audit/` (the folder that marks a
@@ -301,6 +301,58 @@ class FrontmatterTests(FixtureTests):
         errors = self.lint().errors
         self.assertEqual(len(errors), 1)
         self.assertIn("1024", errors[0])
+
+
+# --- The user-prompt rule ---------------------------------------------------------------------------------
+
+FRONTMATTER = "---\nname: {name}\ndescription: A recipe.\n---\n\n"
+
+
+class UserPromptTests(FixtureTests):
+    def write_prompt(self) -> None:
+        self.repo.write(rl.USER_PROMPT, "# Talking to the User\n")
+
+    def test_both_recipes_linking_the_prompt_pass(self) -> None:
+        self.write_prompt()
+        self.repo.write(
+            "audit/SKILL.md", FRONTMATTER.format(name="audit") + "See [it](prompts/talking-to-the-user.md).\n"
+        )
+        self.repo.write(
+            "implement/SKILL.md",
+            FRONTMATTER.format(name="implement") + "See [it](../audit/prompts/talking-to-the-user.md#who).\n",
+        )
+        self.assertEqual([e for e in self.lint().errors if "shared prompt" in e], [])
+
+    def test_a_recipe_that_does_not_link_the_prompt_is_reported(self) -> None:
+        self.write_prompt()
+        self.repo.write(
+            "audit/SKILL.md", FRONTMATTER.format(name="audit") + "See [it](prompts/talking-to-the-user.md).\n"
+        )
+        self.repo.write("implement/SKILL.md", FRONTMATTER.format(name="implement") + "No link here.\n")
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("implement/SKILL.md:1:", errors[0])
+        self.assertIn(rl.USER_PROMPT, errors[0])
+
+    def test_a_link_inside_a_code_fence_does_not_count(self) -> None:
+        self.write_prompt()
+        self.repo.write(
+            "audit/SKILL.md",
+            FRONTMATTER.format(name="audit") + "```text\n[it](prompts/talking-to-the-user.md)\n```\n",
+        )
+        errors = self.lint().errors
+        self.assertEqual(len(errors), 1)
+        self.assertIn("audit/SKILL.md:1:", errors[0])
+
+    def test_a_link_to_another_file_does_not_count(self) -> None:
+        self.write_prompt()
+        self.repo.write("audit/prompts/kickoff.md", "Kick off.\n")
+        self.repo.write("audit/SKILL.md", FRONTMATTER.format(name="audit") + "See [it](prompts/kickoff.md).\n")
+        self.assertEqual(len(self.lint().errors), 1)
+
+    def test_a_tree_without_the_prompt_skips_the_rule(self) -> None:
+        self.repo.write("audit/SKILL.md", FRONTMATTER.format(name="audit") + "No link here.\n")
+        self.assertEqual(self.lint().errors, [])
 
 
 # --- The size rule ----------------------------------------------------------------------------------------

@@ -91,6 +91,18 @@ trusting.
 | `codebase-memory-mcp` | The index both the audit probes and the agents query. |
 
 Bootstrap and audit are two halves of one contract: **start ready**, or **measure the distance and close it**.
+The diagram shows the two paths to the same Phase-1 bar.
+
+```mermaid
+flowchart LR
+    F["Framework, Phase 1"] --> B["python-agentic-bootstrap"]
+    F --> A["python-agentic-audit"]
+    B --> G["Greenfield project: ready on commit #1"]
+    A --> R["Report: the distance to Phase 1"]
+    R --> C["The brownfield recipes close the distance"]
+    I["codebase-memory-mcp"] -.-> A
+    I -.-> C
+```
 
 ---
 

@@ -4,7 +4,7 @@
 """The implement eval without an agent: the fixtures, the containment, and every assertion on good and bad outcomes.
 
 `implement_eval.py` asserts on what a headless run of the implement recipe leaves behind (IR13). A passing headless
-run proves something only if the assertion code is right, so each assertion, A1 to A7, runs here on outcomes made by
+run proves something only if the assertion code is right, so each assertion, A1 to A8, runs here on outcomes made by
 hand on a materialised scenario: one that follows the recipe (it must pass) and one or more that break the rule the
 assertion stands for (each must fail). The hand-made outcomes use the real `progress.py` and real git, as an agent
 would, and a synthetic stream-json transcript. Standard library only; no network, no `claude`.
@@ -553,6 +553,47 @@ class ApplyWithDebtTests(ScenarioCase):
         self.apply_t1("partial", "--debt", "what=v,count=3")
         self.push()
         self.assertFails("A6", "force-push", [tool_use("git push --force origin agentic-readiness/t1-command-surface")])
+
+
+# --- A8 -----------------------------------------------------------------------------------------------------
+
+GOOD_BODY = (
+    "## What changed\n\n- F-002 TOOL-02: adopted the style check (abc1234). Partial.\n\n"
+    "## How it was checked\n\n- `make check`: 3 existing violations, counted.\n\n"
+    "## What was not done\n\n- Skipped by the owner: none.\n"
+)
+
+
+class PullRequestBodyTests(ScenarioCase):
+    scenario_name = "apply-with-debt"
+
+    def test_a8_passes_on_an_inline_body_with_the_three_headings(self) -> None:
+        command = f"gh pr create --base dev --title 'build: add check' --body \"$(cat <<'EOF'\n{GOOD_BODY}EOF\n)\""
+        self.assertPasses("A8", [tool_use(command)])
+
+    def test_a8_passes_on_the_body_the_gh_log_recorded(self) -> None:
+        (self.root / ie.GH_LOG).write_text(f"pr create --base dev --title x --body {GOOD_BODY}", encoding="utf-8")
+        self.assertPasses("A8", [])
+
+    def test_a8_reads_a_body_file_that_is_still_there(self) -> None:
+        body = self.tmp / "pr-body.md"
+        body.write_text(GOOD_BODY, encoding="utf-8")
+        self.assertPasses("A8", [tool_use(f"gh pr create --base dev --title x --body-file {body}")])
+
+    def test_a8_fails_when_a_heading_is_missing(self) -> None:
+        body = GOOD_BODY.replace("## What was not done", "## Notes")
+        verdict = self.verdict("A8", [tool_use(f"gh pr create --base dev --body '{body}'")])
+        self.assertFalse(verdict.passed)
+        self.assertEqual(verdict.details, ["the pull request body lacks the headings: What was not done"])
+
+    def test_a8_fails_when_a_heading_is_only_bold_text(self) -> None:
+        body = GOOD_BODY.replace("## How it was checked", "**How it was checked**")
+        self.assertFails("A8", "How it was checked", [tool_use(f"gh pr create --base dev --body '{body}'")])
+
+    def test_a8_fails_when_no_pull_request_is_attempted(self) -> None:
+        self.assertFails(
+            "A8", "no gh pr create call", [tool_use("git push origin agentic-readiness/t1-command-surface")]
+        )
 
 
 class NoPushTests(ScenarioCase):

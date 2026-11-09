@@ -4,6 +4,21 @@
 > This audit reports; it does not gate. A completed scan exits 0 unless a threshold or baseline
 > was requested (ADR-0001). `UNKNOWN` and `ATTEST` earn no credit and are never rendered as passes.
 
+## Bottom line
+
+- **6 blocker findings.** Fix these before any agent work.
+- **Not settled by this scan:**
+  - 5 checks are UNKNOWN: `IDX-03`, `CON-01`, `CON-02`, `CON-04`, `TST-02`.
+  - 5 properties are unattested on every report (below).
+
+**First actions** (3 of 30 findings):
+
+| # | Check | Severity | What it blocks | Fix |
+|--:|---|---|---|---|
+| 1 | `EXEC-04` | BLOCKER | An agent cannot know every variable the code needs before running it because 2 referenced key(s) are absent from any committed example file: UDA\_LOG\_LEVEL, UDA\_LOG\_LEVELNumber. | Add the missing keys to .env.example (values redacted) so the environment can be provisioned without reading the source. |
+| 2 | `SEC-01` | BLOCKER | An agent cannot trust that a future .env stays out of history because no ignore rule covers dotenv variant. | Add the .env shape (for example \`.env\` and \`.env.\*\`) to .gitignore so an environment file cannot be committed by accident. |
+| 3 | `SEC-02` | BLOCKER | An agent cannot keep credentials out of the repository and its history because src/services/\_\_tests\_\_/TranslateService.test.ts contains 1 credential-shaped line(s). | Remove the value from the file and its history, load it from the environment, and rotate the credential. The report never records the value itself. |
+
 ## Provenance
 
 | Field | Value |
@@ -16,6 +31,7 @@
 | Phase evaluated | 1 |
 | Scanned | `2026-10-15T10:00:36+00:00` |
 | Probes enabled | no |
+| User-level configuration | — |
 
 ## Scorecard
 
@@ -295,6 +311,7 @@ Single-root repository — no component declarations found.
 |---|---|
 | Files inspected | 275 |
 | Files skipped | 3 |
+| Files set aside as carried data | 0 |
 | Traversal truncated | no |
 | Ecosystems | node |
 | Package managers | npm |
@@ -307,6 +324,19 @@ Single-root repository — no component declarations found.
 | Verb | Command | State | Duration | Redactions | Timed out | Output |
 |---|---|---|--:|--:|:--:|---|
 | `test` | `jest` | refused: probes disabled (pass --run-gates) | 0.0s | 0 | no | — |
+
+## Terms
+
+| Term | Kind | Meaning |
+|---|---|---|
+| PASS | verdict | Evidence found; requirement met. |
+| PARTIAL | verdict | Some of the requirement is met; the ratio is the useful number. |
+| FAIL | verdict | Requirement not met; a finding is emitted. |
+| UNKNOWN | verdict | Evidence could not be gathered. An open question about tool coverage. |
+| ATTEST | verdict | Requires human attestation; not machine-verifiable. |
+| BLOCKER | severity | Fix window: Before any agent work. |
+| DEGRADER | severity | Fix window: Schedule. |
+| COSMETIC | severity | Fix window: Note and move on. |
 
 ---
 

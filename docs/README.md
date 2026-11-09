@@ -100,6 +100,7 @@ repository, before and after the implement recipe.
 | [Style guide](STYLE_GUIDE.md) | The authoring rules for every page |
 | [Tutorial template](templates/tutorial-template.md) | Start a tutorial |
 | [How-to template](templates/how-to-template.md) | Start a how-to guide |
+| [Explanation template](templates/explanation-template.md) | Start an explanation page |
 | [Reference template](templates/reference-template.md) | Start a reference page |
 | [Architecture doc template](templates/architecture-doc-template.md) | Start an architecture page |
 | [ADR template](templates/adr-template.md) | Start a decision record |

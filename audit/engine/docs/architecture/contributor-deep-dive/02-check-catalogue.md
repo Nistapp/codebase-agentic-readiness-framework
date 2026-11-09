@@ -230,6 +230,18 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 
 ## 15. Adding a Check
 
+The diagram shows the steps below in order. A check that misses one does not merge.
+
+```mermaid
+flowchart LR
+    A["Next id in its group"] --> B["Tier, anchor, severity, falsifiable evidence rule"]
+    B --> C["Failure mode in Why These Checks"]
+    C --> D["summary and a typed data payload"]
+    D --> E["A fixture that fails only this check"]
+    E --> F["Summary table row and framework anchor"]
+    F --> G["Merge"]
+```
+
 1. Assign the next id in the appropriate group.
 2. State tier, phase anchor, severity, and a **falsifiable** evidence rule — one that a reviewer can apply to a
    fixture and reach the same verdict.
