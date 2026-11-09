@@ -102,6 +102,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "tool-06-no-commit-rule": {"TOOL-06": "FAIL"},
     "tool-06-local-only-commit-rule": {"TOOL-06": "PARTIAL"},
     "tool-06-ci-only-commit-rule": {"TOOL-06": "PARTIAL"},
+    "tool-07-no-branch-guard": {"TOOL-05": "PASS", "TOOL-07": "FAIL"},
     "tool-ok-node": {
         "TOOL-01": "PASS",
         "TOOL-02": "PASS",
@@ -177,6 +178,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "hyg-09-uncovered-ecosystem": {"HYG-09": "PARTIAL"},
     "hyg-09-target-branch-trap": {"HYG-09": "PARTIAL"},
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
+    "hyg-11-no-source-branch-check": {"HYG-11": "PARTIAL"},
     "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN"},
     # -- the AGT-content positive fixture -----------------------------------------------------
     "governed-minimal": {

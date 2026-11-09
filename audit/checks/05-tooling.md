@@ -1,10 +1,10 @@
 # Tooling (`TOOL`)
 
-> Follows the anatomy in [`README.md`](README.md). Six checks, all `method: automated`. See
+> Follows the anatomy in [`README.md`](README.md). Seven checks, all `method: automated`. See
 > [Why These Checks §6](../engine/docs/architecture/user-overview/03-why-these-checks.md#6-tooling-tool)
 > for the consequence behind this family: a tool that is installed but not reachable through the command
 > surface, or configured but not strict, gives an agent false confidence. TOOL-01 to TOOL-04 are remediated
-> by `configure-quality-tools`; TOOL-05 and TOOL-06 are remediated by `add-hooks-and-commit-rules`.
+> by `configure-quality-tools`; TOOL-05 to TOOL-07 are remediated by `add-hooks-and-commit-rules`.
 
 ---
 
@@ -227,3 +227,43 @@ Remediation      `add-hooks-and-commit-rules`
 Pitfalls         `COSMETIC` severity means this check never raises a repository's audit to BLOCKER on its
                  own — do not treat a `TOOL-06` `FAIL` as equivalent in urgency to a `DEGRADER` finding
                  elsewhere in this family.
+
+## TOOL-07 — Local guard against commits to a protected branch
+
+Why it matters   An agent commits on whatever branch is checked out. Without a local guard it learns that the
+                  branch is protected only when the push is refused, and then has to move its commits by hand
+                  ([greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).
+Severity         COSMETIC
+Engine           `TOOL-07`. A guard is pre-commit's `no-commit-to-branch` hook (in `.pre-commit-config.yaml`;
+                 its `--branch` and `--pattern` arguments; `main` and `master` when it has no `--branch`), or a
+                 hook that reads the current branch (`git symbolic-ref … HEAD`, `git branch --show-current`,
+                 `git rev-parse --abbrev-ref HEAD`): a `pre-commit` or `commit-msg` command in
+                 `lefthook.yml`/`.yaml` (a `pre-push` command does not stop a commit), or a `pre-commit` or
+                 `commit-msg` hook script (`.husky/`, `.githooks/` or any other hook directory). A lefthook
+                 guard names the branches in its own command block; a hook script names them anywhere in the
+                 file. The branches it must name are the literal ones the declared rules protect (`HYG-11`
+                 reads them: `.github/rulesets/`, `.github/settings.yml`, Terraform); `~DEFAULT_BRANCH` and
+                 globs are not required. With no declared rules, any guard counts. A `.husky/` guard is
+                 wired when a `package.json` script runs `husky`; another hook directory is wired when
+                 `core.hooksPath` is set. Distrust a `FAIL` when the hook calls a script that holds the guard
+                 (`.husky/pre-commit` running `node scripts/check-branch.js`) — read the script. The engine
+                 does not read whether the guard exits non-zero.
+Method           automated
+Look for         `.pre-commit-config.yaml` for `no-commit-to-branch` and its `args`; the `pre-commit` and
+                 `commit-msg` stages of `lefthook.yml`; the hook scripts named `pre-commit` and `commit-msg`;
+                 the declared rules' branch list (`HYG-11`'s evidence).
+Rubric           PASS: a guard in a wired hook chain names every branch the declared rules protect, or any
+                 guard is wired and no rules are declared.
+                 PARTIAL: a guard exists but its hook chain is not wired (an unreferenced `.husky/`, a
+                 `.githooks/` with no `core.hooksPath`); or a wired guard does not name a protected branch.
+                 FAIL: a hook chain exists (wired or configured) and no hook in it is a guard.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: no hook chain exists at all; `TOOL-05` owns that finding.
+Evidence to cite A `file` evidence item with the line of each guard; for a PARTIAL on coverage, the branches
+                 the guard misses.
+Absence proof    A FAIL cites the hook files that exist and states that none runs `no-commit-to-branch` or
+                 reads the current branch in a `pre-commit` or `commit-msg` stage.
+Remediation      `add-hooks-and-commit-rules`
+Pitfalls         The guard is a convenience: the server's branch rules are the enforcement, and
+                 `git commit --no-verify` skips any hook. Do not read a `TOOL-07` PASS as protection, or a
+                 FAIL as an unprotected branch; `HYG-11` is where protection is judged.

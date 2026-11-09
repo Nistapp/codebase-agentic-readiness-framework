@@ -2,12 +2,12 @@
   "facts_version": "0.1",
   "label": "git-example",
   "git": {
-    "sha": "26704539c7b7c54205f98ad260a919494bcc6c03",
+    "sha": "a3bd08aa0945751852b4a8beb4f16cad9d6888d7",
     "dirty": true
   },
   "inventory": {
     "files": 8,
-    "bytes": 1006,
+    "bytes": 1122,
     "by_kind": {
       "manifest": 1,
       "build": 0,
@@ -52,7 +52,7 @@
   "size": {
     "class": "small",
     "files": 8,
-    "bytes": 1006,
+    "bytes": 1122,
     "truncated": false,
     "thresholds": {
       "small_below": 1000,

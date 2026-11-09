@@ -280,6 +280,16 @@ SHOULD check the same rule in CI.
 - **Source:** [greenfield/README.md § 2.3 Git Hooks](../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)
 - **Checks:** TOOL-06
 
+### REQ-SH-059 — Local guard against commits to a protected branch
+
+The repository SHOULD wire a local hook that refuses a commit on each branch its branch rules protect, so that an
+agent learns it is on a protected branch before it commits, not when the push is refused.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [greenfield/README.md § 2.3 Git Hooks](../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)
+- **Checks:** TOOL-07
+
 ## Continuous integration
 
 ### REQ-SH-033 — Pipeline on pull requests

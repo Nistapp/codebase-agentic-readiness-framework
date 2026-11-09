@@ -37,6 +37,7 @@ FIXTURES: dict[str, dict[str, str]] = {
     "hyg-09-uncovered-ecosystem": {"HYG-09": "PARTIAL"},
     "hyg-09-target-branch-trap": {"HYG-09": "PARTIAL"},
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
+    "hyg-11-no-source-branch-check": {"HYG-11": "PARTIAL"},
     "hyg-minimal": {
         "HYG-01": "FAIL",
         "HYG-02": "FAIL",
@@ -92,8 +93,8 @@ class HygCatalogueTests(unittest.TestCase):
         reported = {c["id"] for c in report["checks"]}
         for check in HYG_IDS:
             self.assertIn(check, reported)
-        # 71 catalogued, 14 informational or emitter-only ⇒ 57 scoreable (CON-01 is scored since ruleset 2026-10-11.1).
-        self.assertEqual(report["summary"]["checks_scoreable"], 57)
+        # 72 catalogued, 14 informational or emitter-only ⇒ 58 scoreable (CON-01 is scored since ruleset 2026-10-11.1).
+        self.assertEqual(report["summary"]["checks_scoreable"], 58)
 
 
 class ScoreIsolationTests(unittest.TestCase):

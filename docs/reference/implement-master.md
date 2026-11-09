@@ -35,7 +35,7 @@ Themes run in dependency order: the order and the dependencies are in
 | [T1 Command surface and quality tools](#t1-command-surface-and-quality-tools) | [`define-command-surface`](#define-command-surface), [`configure-quality-tools`](#configure-quality-tools) | 10 |
 | [T2 Execution determinism](#t2-execution-determinism) | [`pin-execution-environment`](#pin-execution-environment), [`untrack-generated`](#untrack-generated) | 6 |
 | [T3 Secrets and env](#t3-secrets-and-env) | [`env-inventory-and-secrets`](#env-inventory-and-secrets) | 4 |
-| [T4 CI parity, hooks, commits](#t4-ci-parity-hooks-commits) | [`add-ci-parity`](#add-ci-parity), [`add-hooks-and-commit-rules`](#add-hooks-and-commit-rules) | 7 |
+| [T4 CI parity, hooks, commits](#t4-ci-parity-hooks-commits) | [`add-ci-parity`](#add-ci-parity), [`add-hooks-and-commit-rules`](#add-hooks-and-commit-rules) | 8 |
 | [T5 Tests and baselines](#t5-tests-and-baselines) | [`add-baselines-and-ratchet`](#add-baselines-and-ratchet) | 8 |
 | [T6 Docs and navigation](#t6-docs-and-navigation) | [`establish-docs-contract`](#establish-docs-contract) | 9 |
 | [T7 AGENTS.md and governance](#t7-agentsmd-and-governance) | [`adapt-agents-md`](#adapt-agents-md), [`add-deny-rules`](#add-deny-rules) | 16 |
@@ -210,18 +210,20 @@ Full playbook: [`add-ci-parity.md`](../../implement/playbooks/add-ci-parity.md).
 A commit runs a fast local hook chain before it is created, with one committed configuration and a documented
 one-time install. The commit-message convention runs in two places with one type list: a local `commit-msg` stage,
 so an agent learns of a bad subject before it pushes, and a CI step, which no `--no-verify` can skip. The owner may
-instead record the pull-request title check as enough.
+instead record the pull-request title check as enough. A guard in the same chain refuses a commit on a protected
+branch, so an agent learns it is on the wrong branch before it commits, not when the push is refused.
 
 | Check | What the playbook does |
 |---|---|
 | [`TOOL-05` Local hook chain active](audit-master.md#tool-05-local-hook-chain-active) | Commits a hook-manager configuration the engine reads as wired, with fast changed-files hooks |
 | [`TOOL-06` Commit convention enforced](audit-master.md#tool-06-commit-convention-enforced) | Writes the commit rule as a local `commit-msg` stage and a CI step (`PASS`); the owner may skip when the title check is enough (see Commit rule) |
+| [`TOOL-07` Local guard against commits to a protected branch](audit-master.md#tool-07-local-guard-against-commits-to-a-protected-branch) | Adds a `pre-commit` guard in the same manager that names every protected branch (see [Branch guard](../../implement/playbooks/add-hooks-and-commit-rules.md#branch-guard)) |
 
 **What it never does:**
 
 - Do not install the hook manager on the owner's machine or add it as a repository dependency without approval.
 - Do not run tests, a full lint, a full-tree format or any network call in a hook.
-- Do not advise `--no-verify` or add a bypass variable.
+- Do not advise `--no-verify` or add a bypass variable, in the branch guard either.
 - Do not re-propose a `skipped` commit-convention finding.
 - Do not pick a manager by what looks familiar or by what this framework uses: detect, then recommend by stack.
 - Do not duplicate the secret-scanner version: reuse the CI pin.
@@ -379,7 +381,8 @@ Full playbook: [`add-deny-rules.md`](../../implement/playbooks/add-deny-rules.md
 The repository tells a newcomer, human or agent, who owns what (CODEOWNERS), how to contribute (README,
 CONTRIBUTING, pull-request and issue templates), how to report a vulnerability (SECURITY), how releases happen
 (a release-process page and, where the release tool writes one, the changelog), and where the rules for merging
-live (a branch-protection page). Each file is small, true against the repository, and sits where the audit reads it.
+live (the rules as code, and a branch-protection page that summarises them). Each file is small, true against the
+repository, and sits where the audit reads it.
 
 **The rule this playbook enforces: write only what is true, and only what the repository needs.** All eleven checks
 are cosmetic and unscored, so a long, generic template that nobody keeps true is worse than a short page that is.
@@ -398,13 +401,14 @@ action in the state, never an invented contact.
 | [`HYG-08` Release process documented](audit-master.md#hyg-08-release-process-documented) | A short document (name contains `release`) describing the release process in prose |
 | [`HYG-09` Dependency update automation configured](audit-master.md#hyg-09-dependency-update-automation-configured) | An update entry for each detected ecosystem, no `target-branch` beside `ignore` or `groups`, and the owner's update policy (Step 8) |
 | [`HYG-10` License present](audit-master.md#hyg-10-license-present) | Verification only; the playbook never chooses a licence |
-| [`HYG-11` Branch protection declared as code](audit-master.md#hyg-11-branch-protection-declared-as-code) | A page whose path contains `branch-protection` that records the rules in the repository's own words |
+| [`HYG-11` Branch protection declared as code](audit-master.md#hyg-11-branch-protection-declared-as-code) | The rules declared as code (GitHub ruleset files, or the repository's Terraform), a source-branch check for a two-branch model, and a page that summarises them (Step 7) |
 
 **What it never does:**
 
 - Do not overwrite an existing hygiene file with a template; propose a diff.
 - Do not hand-write or seed a changelog that a release tool owns, and do not tag or release.
 - Do not enable required code-owner review, and do not edit any GitHub or GitLab setting.
+- Do not apply a ruleset file (`gh api -X POST` or `PUT`); the owner does.
 - Do not invent a mailbox, a response time or a second reviewer.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
 - Do not copy a private runbook, another repository's page, or its values into a repository's file.

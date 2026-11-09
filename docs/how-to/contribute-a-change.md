@@ -223,7 +223,8 @@ If `CI Gate` fails:
 2. Make the change, commit and push. Or answer the comment with your reason.
 3. Resolve each conversation when it is done. The `dev` ruleset blocks the merge while a conversation is open.
 
-If GitHub says that your branch is out of date with `dev`, bring the new `dev` commits into your branch:
+Your branch does not need the newest `dev` commits: the merge queue tests it merged onto the latest `dev`. Bring
+`dev` into your branch only when GitHub reports a conflict, or when you want to run the gates on the combined result:
 
 ```bash
 git fetch origin

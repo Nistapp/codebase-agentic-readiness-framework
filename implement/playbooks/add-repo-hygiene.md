@@ -9,7 +9,8 @@
 The repository tells a newcomer, human or agent, who owns what (CODEOWNERS), how to contribute (README,
 CONTRIBUTING, pull-request and issue templates), how to report a vulnerability (SECURITY), how releases happen
 (a release-process page and, where the release tool writes one, the changelog), and where the rules for merging
-live (a branch-protection page). Each file is small, true against the repository, and sits where the audit reads it.
+live (the rules as code, and a branch-protection page that summarises them). Each file is small, true against the
+repository, and sits where the audit reads it.
 
 **The rule this playbook enforces: write only what is true, and only what the repository needs.** All eleven checks
 are cosmetic and unscored, so a long, generic template that nobody keeps true is worse than a short page that is.
@@ -30,7 +31,7 @@ action in the state, never an invented contact.
 | HYG-08 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-08--release-process-documented) | A short document (name contains `release`) describing the release process in prose |
 | HYG-09 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-09--dependency-update-automation-configured) | An update entry for each detected ecosystem, no `target-branch` beside `ignore` or `groups`, and the owner's update policy (Step 8) |
 | HYG-10 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-10--license-present) | Verification only; the playbook never chooses a licence |
-| HYG-11 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-11--branch-protection-declared-as-code) | A page whose path contains `branch-protection` that records the rules in the repository's own words |
+| HYG-11 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-11--branch-protection-declared-as-code) | The rules declared as code (GitHub ruleset files, or the repository's Terraform), a source-branch check for a two-branch model, and a page that summarises them (Step 7) |
 
 **Where a file counts.** The checks read the repository root, `.github/`, `.gitlab/` and `docs/` (HYG-10 and HYG-01:
 the root only). A file inside a component's directory does not count, so a component README does not close HYG-01,
@@ -63,7 +64,7 @@ observation.
 | `codeowners.default` | `owner-owns-all` (default rule `*` for the owner) or a path-by-path map the owner supplied |
 | `security.disclosure` | `github-private-reporting` (default), `mailbox`, or `private-contact` for a private repository |
 | `ci.commit_rule`, `commit.convention` | What CONTRIBUTING and the PR template say about titles and messages |
-| `ci.branch_protection`, `ci.branch_protection_runbook` | Whether the rules are enforced or only recorded; who may change the setting |
+| `ci.branch_protection`, `ci.branch_protection_runbook` | The protected branches, the required check and approvals (Inputs 4); whether the rules are enforced or only recorded; who may change the setting |
 | `agents_md.release_tags` | `never-tag-or-release` means the release page says agents never tag |
 | `format.mass_reformat` | `no`: new Markdown only, no reformatting of existing pages |
 | `deps.update_policy` | `security-only` (default), `security-and-minor` or `all`: which pull requests the dependency-update tool opens (Step 8) |
@@ -95,7 +96,11 @@ the policy files, and for nothing else:
    pull request body: "enable private vulnerability reporting in the repository settings" (an agent can neither
    read nor set it), and "fill the `TODO(owner)` values". The placeholder marker does
    not affect HYG-06, which reads only that a `SECURITY` document exists.
-4. **Everything else** is derived, not asked: the README from the repository's files, CONTRIBUTING from the gate and
+4. **Branch protection (HYG-11).** When HYG-11 has an item, confirm in the same batch: the protected branches
+   (default: the default branch, plus the integration branch when the state or `AGENTS.md` names one), the required
+   status check (default: the gate job's `name:` as the workflow writes it), and the approval count (default `0` with
+   one owner). Record the answer in `ci.branch_protection`.
+5. **Everything else** is derived, not asked: the README from the repository's files, CONTRIBUTING from the gate and
    the PR rules in `AGENTS.md`, the templates from the PR and commit rules in the state.
 
 ## Steps
@@ -140,13 +145,100 @@ the policy files, and for nothing else:
    merges the release pull request, and that agents never tag or release (when `agents_md.release_tags` says so).
    Name it with `release` in the file name, at the root or `docs/`. It needs no CI edit; if the page would need a
    workflow change to become true, say so as a finding instead of editing CI.
-7. **Branch protection (HYG-11).** Branch protection is a GitHub or GitLab setting, not a file. Write a page whose path
-   contains `branch-protection` (for example `docs/branch-protection.md`) in the repository's own words: the protected
-   branch, the required status check by name (the gate job), whether review is required, and how to change it. If the
-   state says the platform plan cannot enforce protection (a private repository on a free plan returns an error for
-   rulesets), the page says **"recorded, not enforced"** at the top; it must not read as enforcement. Never copy a
-   private runbook from another repository; describe the rules from the repository's own workflow files and the
-   owner's answers. Never call the GitHub settings API.
+7. **Branch protection (HYG-11).** Protection is a platform setting. Declare it as code, summarise it on a page, and
+   leave the setting to the owner: never call the settings API, never apply a file yourself.
+   - **Read what exists first:** `.github/rulesets/`, `.github/settings.yml`, Terraform protection resources, a
+     `branch-protection` page. Keep the form the repository already uses. Never replace Terraform with ruleset files,
+     or the reverse.
+   - **GitHub, no form yet.** Write one `.github/rulesets/<branch>-protection.json` per protected branch, in GitHub's
+     ruleset format: what `gh api repos/<owner>/<repo>/rulesets/<id>` returns, without `id`, `source`, `_links` and
+     the timestamps. Take the rules from the repository's facts and the Inputs 4 answers, never from another
+     repository. A minimal file:
+
+     ```json
+     {
+       "name": "main protection",
+       "target": "branch",
+       "enforcement": "active",
+       "conditions": { "ref_name": { "include": ["refs/heads/main"], "exclude": [] } },
+       "bypass_actors": [],
+       "rules": [
+         { "type": "deletion" },
+         { "type": "non_fast_forward" },
+         { "type": "pull_request", "parameters": { "required_approving_review_count": 0,
+           "dismiss_stale_reviews_on_push": false, "require_code_owner_review": false,
+           "require_last_push_approval": false, "required_review_thread_resolution": false } },
+         { "type": "required_status_checks", "parameters": { "strict_required_status_checks_policy": true,
+           "required_status_checks": [{ "context": "<the gate job's name>" }] } }
+       ]
+     }
+     ```
+
+     GitHub does not apply these files. Put the apply commands in the pull request body and record them as an owner
+     action:
+
+     ```bash
+     gh api repos/<owner>/<repo>/rulesets --jq '.[] | [.id, .name] | @tsv'          # existing rulesets
+     gh api -X POST repos/<owner>/<repo>/rulesets --input .github/rulesets/main-protection.json
+     gh api -X PUT repos/<owner>/<repo>/rulesets/<id> --input .github/rulesets/main-protection.json
+     ```
+
+     When classic branch protection is already set, say so in the body: the owner chooses between the two, the
+     playbook does not.
+   - **GitLab.** Protected branches have no repository file. When the repository keeps Terraform, add a
+     `gitlab_branch_protection` resource per branch beside the existing resources. Otherwise write the page only: the
+     item is `partial` (see Continue on error).
+   - **Source-branch check (two-branch model).** When the rules protect an integration branch (`dev`, `develop`) and a
+     release branch, a ruleset cannot say "the release branch accepts pull requests from the integration branch
+     only". Add a CI job that fails otherwise, and add its name to the release branch's required checks. When a
+     release tool opens pull requests from its own branch (release-please: `release-please--branches--<branch>`,
+     opened by a bot), allow that branch too. GitHub Actions:
+
+     ```yaml
+     name: PR source branch
+     on:
+       pull_request:
+         branches: [main]
+         types: [opened, reopened, synchronize, edited]
+     permissions: {}
+     jobs:
+       check-source-branch:
+         name: Check source branch
+         runs-on: ubuntu-latest
+         timeout-minutes: 5
+         steps:
+           - name: Require the head branch to be dev
+             env:
+               HEAD_REF: ${{ github.head_ref }}
+               HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+               THIS_REPO: ${{ github.repository }}
+             run: |
+               if [[ "$HEAD_REPO" != "$THIS_REPO" || "$HEAD_REF" != "dev" ]]; then
+                 echo "::error::A pull request into main must come from dev. Open it against dev."
+                 exit 1
+               fi
+     ```
+
+     GitLab CI (the owner also turns on "Pipelines must succeed"). The variable names are assumed from GitLab's
+     predefined variables; confirm them in GitLab's documentation before you write the job:
+
+     ```yaml
+     check-source-branch:
+       stage: .pre
+       rules:
+         - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
+       script:
+         - '[ "$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME" = "dev" ] || { echo "main accepts merge requests from dev only" >&2; exit 1; }'
+     ```
+
+     Pass the source branch through `env:`, never inline in `run:`: a branch name is input the pull request's author
+     controls. Run the repository's workflow linter on the new file (CI-05).
+   - **The page.** Write or keep a page whose path contains `branch-protection` (for example
+     `docs/branch-protection.md`) in the repository's own words: the protected branches, the required checks by name,
+     whether review is required, the source-branch rule, and how to apply and change the files. It names the files as
+     the source of truth. If the state says the platform plan cannot enforce protection (a private repository on a
+     free plan returns an error for rulesets), the page says **"recorded, not enforced"** at the top; it must not
+     read as enforcement.
 8. **Dependency updates (HYG-09).** Read what exists first; never replace one tool with the other.
    - **Tool.** Keep the tool the repository already uses. With none: Dependabot on GitHub, Renovate on GitLab,
      Azure DevOps or Bitbucket, where Dependabot does not run.
@@ -197,8 +289,11 @@ and CONTRIBUTING are the root scripts, or per-app commands with the directory na
   owner action. Nothing is invented.
 - **HYG-07 under a release tool:** `partial`, `--debt "what=changelog absent until first release,count=1"`, with the
   revisit trigger in the note.
-- **HYG-11 on a plan that cannot enforce protection:** `done` for the check (the page exists) with the note
-  "recorded, not enforced"; the unenforced setting is an owner action, not debt.
+- **HYG-11 on a plan that cannot enforce protection:** `done` for the check (the files and the page exist) with the
+  note "recorded, not enforced"; the unenforced setting is an owner action, not debt.
+- **HYG-11 on GitLab without Terraform:** `partial` (the engine reads the page only as recorded), with the note
+  "no repository file for GitLab protected branches; declare them in Terraform to close" and the setting as an owner
+  action. It is not debt.
 - **A missing licence:** the item is `blocked` until the owner chooses one; it is not debt the playbook can fix.
 - None of this is a count of violations, so no ratchet or baseline file applies: report-only is the wiring.
 
@@ -216,7 +311,7 @@ and CONTRIBUTING are the root scripts, or per-app commands with the directory na
 | HYG-08 | `ls` for a document with `release` in its name | Present as prose, not only `release.yml`; `PASS` |
 | HYG-09 | Launcher run; read each `updates:` entry | An entry per detected ecosystem, no `target-branch` beside `ignore` or `groups`; `PASS` |
 | HYG-10 | `ls LICENSE*` | Present; `PASS` (verified, not added) |
-| HYG-11 | `ls docs/*branch-protection*` | Present, says "recorded, not enforced" where that is true; `PASS` |
+| HYG-11 | `python3 -m json.tool` on each `.github/rulesets/*.json`; launcher run | Each file parses; the source-branch job exists for a two-branch model; the page says "recorded, not enforced" where that is true; `PASS` (`PARTIAL` on GitLab without Terraform) |
 
 ## Rollback
 
@@ -228,6 +323,7 @@ vulnerability reporting, branch protection, required reviews) are never touched,
 - Do not overwrite an existing hygiene file with a template; propose a diff.
 - Do not hand-write or seed a changelog that a release tool owns, and do not tag or release.
 - Do not enable required code-owner review, and do not edit any GitHub or GitLab setting.
+- Do not apply a ruleset file (`gh api -X POST` or `PUT`); the owner does.
 - Do not invent a mailbox, a response time or a second reviewer.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
 - Do not copy a private runbook, another repository's page, or its values into a repository's file.

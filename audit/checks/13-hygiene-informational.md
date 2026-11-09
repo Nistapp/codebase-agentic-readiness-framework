@@ -311,31 +311,49 @@ Pitfalls         A license mentioned only in `package.json`'s `license` field, o
 ## HYG-11 — Branch protection declared as code
 
 Why it matters   Protected-branch rules should be reviewed like any other change, not configured by hand
-                  in a settings page nobody diffs.
+                  in a settings page nobody diffs. In a two-branch model the release branch must also refuse
+                  pull requests from anything but the integration branch, and a ruleset cannot say that.
 Severity         COSMETIC
-Engine           `HYG-11`. A file whose path contains `branch-protection` or `branch_protection`, or a
-                 Terraform (`.tf`) file whose content mentions `branch_protection`, is `PASS`. None found,
-                 with a CI provider detected that actually offers branch protection as config-as-code
-                 (github, gitlab), is `FAIL`. None found, with no such provider recognised, is `UNKNOWN`
-                 — whether protection *can* be declared as code at all is provider-dependent, so absence
-                 is not evidence of a gap when the provider itself may not support it.
+Engine           `HYG-11`. Declared as code: a GitHub ruleset file (`.github/rulesets/*.json` with a `rules`
+                 list; a disabled or tag ruleset protects no branch), the Settings app's top-level `branches:`
+                 in `.github/settings.yml`, a Terraform (`.tf`) file with a `github_repository_ruleset`,
+                 `github_branch_protection`, `github_branch_protection_v3` or `gitlab_branch_protection`
+                 resource (or any `branch_protection` text), or a non-document file whose path contains
+                 `branch-protection`/`branch_protection`. When the declared rules protect an integration
+                 branch (`dev`, `develop`, `development`, `integration`, `next`) and another branch, a
+                 workflow line must read the pull request's source branch: GitHub `github.head_ref`,
+                 `GITHUB_HEAD_REF` or `pull_request.head.ref`, GitLab `CI_MERGE_REQUEST_SOURCE_BRANCH_NAME`.
+                 A `group:` (concurrency) or `ref:` (checkout) line and a comment do not count. A Markdown
+                 page whose name contains `branch-protection` records the rules but does not declare them.
+                 The engine never reads live settings (no network).
 Method           automated
-Look for         A file path containing `branch-protection`/`branch_protection`; a `.tf` file's content
-                 for `branch_protection`; `stack.ci_providers` for github or gitlab.
-Rubric           PASS: a branch-protection file or a matching Terraform resource exists.
-                 PARTIAL: not used by this check.
-                 FAIL: no branch-protection configuration exists, and the detected CI provider (github or
-                 gitlab) is one that offers it as config-as-code.
+Look for         `.github/rulesets/`, `.github/settings.yml`, `.tf` files; the workflows for a source-branch
+                 job; `stack.ci_providers` for github or gitlab. Optionally, the live rules, as evidence the
+                 agent captures; this never changes the engine's verdict. When `gh` is authenticated and the
+                 owner allows the read for this run, record the output of
+                 `gh api repos/<owner>/<repo>/rulesets` and, for each protected branch,
+                 `gh api repos/<owner>/<repo>/rules/branches/<branch>` (no admin scope needed); on GitLab,
+                 `glab api projects/<id>/protected_branches`. A rule present live but not in a file, or the
+                 reverse, is drift: note it on this check. A 403 or 404 (for example, rulesets on a private
+                 repository on a free plan) is "not readable", never a pass.
+Rubric           PASS: rules are declared as code, and a two-branch model has a source-branch check.
+                 PARTIAL: rules are declared, but a two-branch model has no source-branch check; or only a
+                 page describes the rules ("recorded, not declared").
+                 FAIL: nothing declares or records the rules, and the detected CI provider (github or gitlab)
+                 offers config-as-code.
                  NOT_APPLICABLE: never.
-                 UNKNOWN when: no branch-protection configuration exists and no CI provider offering
-                 config-as-code protection is recognised.
-Evidence to cite A `file` evidence item citing the branch-protection file or Terraform resource found,
-                 for PASS; for FAIL, the recognised provider name(s) as the evidence that config-as-code
-                 was available but unused.
-Absence proof    A FAIL names the CI provider(s) detected that offer config-as-code protection and states
-                 that no file or Terraform resource declaring it was found.
+                 UNKNOWN when: a `.github/rulesets/*.json` file is not a readable ruleset and nothing else
+                 declares rules; or nothing declares them and no provider offering config-as-code is
+                 recognised.
+Evidence to cite A `file` evidence item for each file that declares rules; for a two-branch PASS, the
+                 workflow line of the source-branch check; for a PARTIAL, the protected branches and the files.
+Absence proof    A FAIL names the CI provider(s) detected and states that no ruleset file, Settings file,
+                 Terraform resource or page was found. A source-branch PARTIAL names the protected branches
+                 and states that no workflow line reads the source branch.
 Remediation      `add-repo-hygiene`
 Pitfalls         A provider this check does not recognise as offering config-as-code (anything outside
                  github/gitlab) always reads `UNKNOWN`, even if that provider genuinely has no
                  equivalent mechanism — do not read the `UNKNOWN` as "probably fine", only as "not
-                 determinable by this check".
+                 determinable by this check". GitHub does not apply `.github/rulesets/` by itself: a file is
+                 the declared intent, and only the live read shows enforcement. A source-branch token used
+                 for another purpose (an `echo`, a cache key) passes the source-branch half; read the job.

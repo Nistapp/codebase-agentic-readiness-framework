@@ -80,7 +80,7 @@ class CompareReportsTests(unittest.TestCase):
     def test_another_release_and_catalogue_each_give_a_warning_and_a_markdown_line(self) -> None:
         after = self.after_report()
         after["provenance"]["framework"]["release"] = "0.3.3"
-        after["provenance"]["catalogue_version"] = "0.5.0"
+        after["provenance"]["catalogue_version"] = "0.6.0"
         code, envelope, _ = self.compare(after)
         self.assertEqual(code, 0)
         self.assertEqual(
@@ -88,13 +88,13 @@ class CompareReportsTests(unittest.TestCase):
             [
                 "the reports come from different framework releases (v0.3.2 and v0.3.3): a verdict can move because "
                 "the framework changed",
-                "the reports use different catalogues (0.4.0 and 0.5.0): checks may have been added, removed or "
+                "the reports use different catalogues (0.5.0 and 0.6.0): checks may have been added, removed or "
                 "changed in meaning",
             ],
         )
         markdown = envelope["data"]["markdown"]
         self.assertIn("- **Warning:** the reports come from different framework releases", markdown)
-        self.assertIn("framework `v0.3.3` at `cafecafecafe`, catalogue `0.5.0`", markdown)
+        self.assertIn("framework `v0.3.3` at `cafecafecafe`, catalogue `0.6.0`", markdown)
 
     def test_the_same_release_at_two_commits_gives_a_warning(self) -> None:
         after = self.after_report()

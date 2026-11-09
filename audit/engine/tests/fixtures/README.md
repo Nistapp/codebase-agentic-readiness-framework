@@ -92,6 +92,7 @@ fixtures/
   tool-06-no-commit-rule/    wired hooks, no commit-message rule    -> TOOL-06 FAIL
   tool-06-local-only-commit-rule/  commit-msg hook, no CI step     -> TOOL-06 PARTIAL
   tool-06-ci-only-commit-rule/     PR-title check in CI, no hook   -> TOOL-06 PARTIAL
+  tool-07-no-branch-guard/   wired lefthook, no protected-branch guard -> TOOL-07 FAIL
   tool-ok-node/              the smallest node repository passing every TOOL check (hook and CI step)
   ci-01-no-pr-trigger/       workflow without a pull-request trigger -> CI-01 PARTIAL
   ci-02-parity-break/        CI runs a framework verb with no local script -> CI-02 FAIL
@@ -122,6 +123,7 @@ fixtures/
   hyg-09-uncovered-ecosystem/ package.json, a Dependabot file with only a pip entry -> HYG-09 PARTIAL
   hyg-09-target-branch-trap/ the npm entry sets target-branch and ignore -> HYG-09 PARTIAL
   hyg-10-no-license/         real README, no LICENSE at the root         -> HYG-10 FAIL
+  hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 UNKNOWN
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test
 ```

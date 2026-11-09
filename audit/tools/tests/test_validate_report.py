@@ -341,7 +341,7 @@ class Rule2Tests(unittest.TestCase):
         self.assertEqual(vr.validate_document(report).errors, [])
 
     def test_a_catalogue_of_another_major_or_minor_version_is_a_warning_only(self) -> None:
-        for version, warned in (("0.4.0", False), ("0.4.7", False), ("0.3.0", True), ("0.5.0", True), ("1.4.0", True)):
+        for version, warned in (("0.5.0", False), ("0.5.7", False), ("0.4.0", True), ("0.6.0", True), ("1.5.0", True)):
             with self.subTest(version=version):
                 report = base()
                 report["provenance"]["catalogue_version"] = version
