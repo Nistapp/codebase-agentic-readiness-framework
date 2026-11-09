@@ -22,7 +22,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "index store could not be located; searched: user-level locations (not read: --no-user-config), /home/kc/Projects/Nistapp-agentic-frameworks/car-framework-track-a/.codebase-memory/graph.db.zst",
+      "summary": "index store could not be located; searched: user-level locations (not read: --no-user-config), <repository>/.codebase-memory/graph.db.zst",
       "tier": "A",
       "title": "An index exists for this checkout",
       "verdict": "UNKNOWN"
@@ -525,6 +525,19 @@
     },
     {
       "data": {},
+      "id": "CI-05",
+      "pack": "CI",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "github: local actionlint (Makefile), actionlint (dev/tools/pyproject.toml), check-jsonschema (Makefile), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI zizmor (.github/workflows/ci.yml)",
+      "tier": "B",
+      "title": "Workflow files are linted",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
       "id": "BASE-01",
       "pack": "BASE",
       "phase": 1,
@@ -923,10 +936,10 @@
     },
     {
       "data": {
-        "denominator": 1155,
+        "denominator": 1159,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 460,
+        "numerator": 462,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -935,7 +948,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "460/1155 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
+      "summary": "462/1159 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1346,8 +1359,8 @@
     }
   ],
   "inventory": {
-    "files_inspected": 341,
-    "files_set_aside": 456,
+    "files_inspected": 342,
+    "files_set_aside": 463,
     "files_skipped": 7,
     "set_aside": [
       {
@@ -1355,15 +1368,15 @@
         "path": "audit/engine/examples"
       },
       {
-        "files": 273,
+        "files": 277,
         "path": "audit/engine/tests/fixtures"
       },
       {
-        "files": 32,
+        "files": 33,
         "path": "audit/schema/examples"
       },
       {
-        "files": 92,
+        "files": 94,
         "path": "dev/eval/expected/fixtures"
       },
       {
@@ -1426,16 +1439,16 @@
     }
   ],
   "provenance": {
-    "framework_revision": "3ac756b9ad29656d1f56e2a5406257033faf668c",
+    "framework_revision": "801faf42cf1104512148020a8195f7138d5b55ac",
     "git_branch": "chore/v0.3.3-track-a-tooling",
-    "git_dirty": true,
-    "git_sha": "3ac756b9ad29656d1f56e2a5406257033faf668c",
+    "git_dirty": false,
+    "git_sha": "801faf42cf1104512148020a8195f7138d5b55ac",
     "phase": 1,
     "probes_enabled": false,
-    "ruleset_hash": "970e6792f98eeeb5",
-    "ruleset_revision": "2026-11-06.1",
-    "scanned_at": "2026-11-09T06:37:40+00:00",
-    "target": "/home/kc/Projects/Nistapp-agentic-frameworks/car-framework-track-a",
+    "ruleset_hash": "04e5d0ff9063e012",
+    "ruleset_revision": "2026-11-09.1",
+    "scanned_at": "2026-11-09T06:56:35+00:00",
+    "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {
       "paths_read": [],
@@ -1470,16 +1483,16 @@
       "attest": 0,
       "fail": 2,
       "partial": 3,
-      "pass": 60,
+      "pass": 61,
       "unknown": 4
     },
-    "checks_applicable": 69,
-    "checks_implemented": 69,
-    "checks_scoreable": 55,
+    "checks_applicable": 70,
+    "checks_implemented": 70,
+    "checks_scoreable": 56,
     "cosmetic": 0,
-    "coverage_note": "55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
+    "coverage_note": "56 of 56 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
     "degraders": 1,
-    "phase1_score": 0.873
+    "phase1_score": 0.875
   },
   "unattested": [
     "index-in-use",
