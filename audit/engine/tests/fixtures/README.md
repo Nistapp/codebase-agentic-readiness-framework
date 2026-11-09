@@ -65,6 +65,7 @@ fixtures/
   sec-02-env-reference/      api_key, password and token that name an environment variable or a secret store -> SEC-02 PASS
   sec-01-ok/                 .env present but untracked + ignored (needs git) -> SEC-01…03 PASS
   exec-01-unpinned/          node project, no toolchain pin       -> EXEC-01 FAIL
+  exec-01-nested-go-unpinned/ a nested go.mod with no go directive -> EXEC-01 FAIL
   exec-01-python-source-only/ a standard-library-only Python tool, no manifest, no pin -> EXEC-01 FAIL, EXEC-02 UNKNOWN
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
@@ -89,6 +90,7 @@ fixtures/
   tool-02-no-linter/         node project, no linter config or verb  -> TOOL-02 FAIL
   tool-03-nonstrict-ts/      tsconfig.json strict: false             -> TOOL-03 PARTIAL
   tool-04-no-audit-verb/     node project, no dependency-audit verb -> TOOL-04 FAIL
+  tool-04-make-security-no-audit/ make security runs a prerequisite that expands to a secrets scan, no dependency audit -> TOOL-04 PARTIAL
   tool-05-unwired-hooks/     .husky/ present but never referenced   -> TOOL-05 PARTIAL
   tool-06-no-commit-rule/    wired hooks, no commit-message rule    -> TOOL-06 FAIL
   tool-06-local-only-commit-rule/  commit-msg hook, no CI step     -> TOOL-06 PARTIAL

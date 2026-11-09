@@ -99,6 +99,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "tool-02-no-linter": {"TOOL-02": "FAIL"},
     "tool-03-nonstrict-ts": {"TOOL-03": "PARTIAL"},
     "tool-04-no-audit-verb": {"TOOL-04": "FAIL"},
+    "tool-04-make-security-no-audit": {"TOOL-04": "PARTIAL"},
     "tool-05-unwired-hooks": {"TOOL-05": "PARTIAL"},
     "tool-06-no-commit-rule": {"TOOL-06": "FAIL"},
     "tool-06-local-only-commit-rule": {"TOOL-06": "PARTIAL"},
@@ -138,6 +139,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "con-03-artefacts-not-ignored": {"CON-03": "FAIL"},
     # -- EXEC ---------------------------------------------------------------------------------
     "exec-01-unpinned": {"EXEC-01": "FAIL"},
+    "exec-01-nested-go-unpinned": {"EXEC-01": "FAIL"},
     "exec-01-python-source-only": {"EXEC-01": "FAIL", "EXEC-02": "UNKNOWN"},
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
     "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},

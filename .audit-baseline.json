@@ -123,19 +123,19 @@
             "verb": "typecheck"
           },
           {
-            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests",
+            "command": "$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)",
             "resolved": true,
             "runner": "Makefile",
             "verb": "test"
           },
           {
-            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint && make spell",
+            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make masters-check && make workflow-lint && make spell",
             "resolved": true,
             "runner": "Makefile",
             "verb": "check"
           },
           {
-            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline && go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))",
+            "command": "make security-secrets && go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)",
             "resolved": true,
             "runner": "Makefile",
             "verb": "security"
@@ -223,7 +223,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "20/28 harnesses reached; AGENTS.md:51 states the supported harnesses (Anthropic Claude Code, Cursor, Google Gemini CLI, OpenAI Codex CLI, opencode)",
+      "summary": "20/28 harnesses reached; AGENTS.md:52 states the supported harnesses (Anthropic Claude Code, Cursor, Google Gemini CLI, OpenAI Codex CLI, opencode)",
       "tier": "B",
       "title": "No competing instruction files, and the reach matrix is stated",
       "verdict": "PASS"
@@ -262,7 +262,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "46 markdown file(s) under docs/",
+      "summary": "50 markdown file(s) under docs/",
       "tier": "A",
       "title": "docs/ exists",
       "verdict": "PASS"
@@ -301,7 +301,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "7 ADR(s) indexed in docs/architecture/adrs/README.md",
+      "summary": "8 ADR(s) indexed in docs/architecture/adrs/README.md",
       "tier": "A",
       "title": "ADR directory and index",
       "verdict": "PASS"
@@ -337,19 +337,19 @@
             "verb": "typecheck"
           },
           {
-            "command": "cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests",
+            "command": "$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)",
             "resolved": true,
             "runner": "Makefile",
             "verb": "test"
           },
           {
-            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint && make spell",
+            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make masters-check && make workflow-lint && make spell",
             "resolved": true,
             "runner": "Makefile",
             "verb": "check"
           },
           {
-            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline && go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))",
+            "command": "make security-secrets && go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)",
             "resolved": true,
             "runner": "Makefile",
             "verb": "security"
@@ -453,7 +453,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "security -> git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline && go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))",
+      "summary": "security -> make security-secrets && go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)",
       "tier": "A",
       "title": "Dependency / security scan verb",
       "verdict": "PASS"
@@ -479,9 +479,22 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "commit rule: lefthook.yml:commit-msg",
+      "summary": "local: lefthook.yml:commit-msg; CI: dev/commit_lint.py (.github/workflows/ci.yml)",
       "tier": "A",
       "title": "Commit convention enforced",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
+      "id": "TOOL-07",
+      "pack": "TOOL",
+      "phase": 1,
+      "scored": true,
+      "severity": "COSMETIC",
+      "status": "implemented",
+      "summary": "branch guard at lefthook.yml:12; names dev, main",
+      "tier": "B",
+      "title": "Local guard against commits to a protected branch",
       "verdict": "PASS"
     },
     {
@@ -505,7 +518,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "CI verbs: check, security; local read-only verbs not exercised: format:check, lint, test, typecheck",
+      "summary": "CI verbs: check, security, test; local read-only verbs not exercised: format:check, lint, typecheck",
       "tier": "B",
       "title": "Local\u2194CI parity",
       "verdict": "PASS"
@@ -531,7 +544,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "github: local actionlint (.audit-baseline.json), actionlint (Makefile), actionlint (dev/tools/actionlint/go.mod), check-jsonschema (Makefile), zizmor (.audit-baseline.json), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI actionlint (.github/workflows/ci.yml), zizmor (.github/workflows/ci.yml)",
+      "summary": "github: local actionlint (.audit-baseline.json), actionlint (Makefile), actionlint (dev/tools/actionlint/go.mod), check-jsonschema (Makefile), zizmor (.audit-baseline.json), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI actionlint (.github/workflows/ci.yml), actionlint (.github/workflows/nightly.yml), zizmor (.github/workflows/ci.yml)",
       "tier": "B",
       "title": "Workflow files are linted",
       "verdict": "PASS"
@@ -608,6 +621,11 @@
           ".coveragerc",
           ".quality-baseline.json",
           ".secrets.baseline",
+          "docs/reference/audit-master.md",
+          "docs/reference/implement-master.md",
+          "audit/catalogue.json",
+          "audit/checks/",
+          "implement/playbooks/",
           ".skip",
           "README.md",
           "docs/",
@@ -660,7 +678,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, _typos.toml, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod (+47 more)",
+      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, _typos.toml, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod (+52 more)",
       "tier": "B",
       "title": "Allow/deny artifact present",
       "verdict": "PASS"
@@ -721,10 +739,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "unpinned: go",
+      "summary": "pinned: go (dev/tools/actionlint/go.mod (go directive)); node (.nvmrc); python (.python-version, dev/tools/pyproject.toml (requires-python))",
       "tier": "A",
       "title": "Toolchain pinned / wrapper committed",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -793,7 +811,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "15 documented command(s) resolve",
+      "summary": "16 documented command(s) resolve",
       "tier": "B",
       "title": "Documented commands resolve",
       "verdict": "PASS"
@@ -813,13 +831,26 @@
     },
     {
       "data": {},
+      "id": "EXEC-08",
+      "pack": "EXEC",
+      "phase": 1,
+      "scored": true,
+      "severity": "DEGRADER",
+      "status": "implemented",
+      "summary": "no literal tool version in 10 command file(s)",
+      "tier": "B",
+      "title": "Tool versions visible to dependency automation",
+      "verdict": "PASS"
+    },
+    {
+      "data": {},
       "id": "TST-01",
       "pack": "TST",
       "phase": 1,
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 88 test file(s)",
+      "summary": "test verb on Makefile ($(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)); 99 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -852,7 +883,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 88 test file(s): python 1; total 1",
+      "summary": "skip/xfail census across 99 test file(s): python 1; total 1",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -865,7 +896,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "fast path documented: AGENTS.md:41 `python3 -m unittest tests.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md, CONTRIBUTING.md)",
+      "summary": "fast path documented: AGENTS.md:42 `python3 -m unittest tests.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md, CONTRIBUTING.md)",
       "tier": "B",
       "title": "Fast path documented",
       "verdict": "PASS"
@@ -937,10 +968,10 @@
     },
     {
       "data": {
-        "denominator": 1189,
+        "denominator": 1275,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 477,
+        "numerator": 524,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -949,7 +980,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "477/1189 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
+      "summary": "524/1275 public symbols documented (41%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1248,7 +1279,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "dependency automation configured at .github/dependabot.yml",
+      "summary": "dependency automation configured at .github/dependabot.yml; covers github-actions, go, node, python",
       "tier": "A",
       "title": "Dependency update automation configured",
       "verdict": "PASS"
@@ -1274,7 +1305,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "branch protection declared as code at docs/reference/branch-protection.md",
+      "summary": "branch protection declared as code at .github/rulesets/dev-protection.json, .github/rulesets/main-protection.json; source-branch check at .github/workflows/pr-source-branch.yml:36",
       "tier": "B",
       "title": "Branch protection declared as code",
       "verdict": "PASS"
@@ -1291,16 +1322,6 @@
     }
   ],
   "findings": [
-    {
-      "check": "EXEC-01",
-      "evidence": [],
-      "id": "EXEC-01:go",
-      "phase": 1,
-      "remediation": "Commit the pin appropriate to go \u2014 .tool-versions \u2014 so the agent's runtime is the repository's, not the host's.",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot reproduce the go toolchain because the detected go project pins no toolchain version.",
-      "verdict": "FAIL"
-    },
     {
       "check": "BASE-02",
       "evidence": [
@@ -1365,8 +1386,8 @@
     }
   ],
   "inventory": {
-    "files_inspected": 352,
-    "files_set_aside": 463,
+    "files_inspected": 371,
+    "files_set_aside": 503,
     "files_skipped": 7,
     "set_aside": [
       {
@@ -1374,7 +1395,7 @@
         "path": "audit/engine/examples"
       },
       {
-        "files": 277,
+        "files": 307,
         "path": "audit/engine/tests/fixtures"
       },
       {
@@ -1382,7 +1403,7 @@
         "path": "audit/schema/examples"
       },
       {
-        "files": 94,
+        "files": 104,
         "path": "dev/eval/expected/fixtures"
       },
       {
@@ -1404,36 +1425,11 @@
   "probes": [
     {
       "command": [
-        "cd",
-        "$(ENGINE)",
-        "&&",
-        "$(PYTHON)",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "tests",
-        "&&",
-        "$(PYTHON)",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "audit/tools/tests",
-        "&&",
-        "$(PYTHON)",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "implement/tools/tests",
-        "&&",
-        "$(PYTHON)",
-        "-m",
-        "unittest",
-        "discover",
-        "-s",
-        "dev/tests"
+        "$(MAKE)",
+        "--no-print-directory",
+        "TEST_SUITES_SUBMAKE=1",
+        "$(TEST_JOBS)",
+        "$(TEST_SUITES)"
       ],
       "duration_s": 0.0,
       "exit_code": null,
@@ -1445,15 +1441,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "d6ba4cb0af8e785f4096bbdf9e8d89eeeb6c6d95",
-    "git_branch": "chore/v0.3.3-track-a-tooling",
-    "git_dirty": true,
-    "git_sha": "d6ba4cb0af8e785f4096bbdf9e8d89eeeb6c6d95",
+    "framework_revision": "f2ff3bda8424f74ac9010b26d7757855a65b081d",
+    "git_branch": "fix/v0.3.3-exec01-tool04-nested",
+    "git_dirty": false,
+    "git_sha": "f2ff3bda8424f74ac9010b26d7757855a65b081d",
     "phase": 1,
     "probes_enabled": false,
-    "ruleset_hash": "04e5d0ff9063e012",
-    "ruleset_revision": "2026-11-09.1",
-    "scanned_at": "2026-11-09T07:49:24+00:00",
+    "ruleset_hash": "a8fd206cd924e86a",
+    "ruleset_revision": "2026-11-09.8",
+    "scanned_at": "2026-11-09T15:41:36+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {
@@ -1484,21 +1480,21 @@
     "test_frameworks": []
   },
   "summary": {
-    "blockers": 1,
+    "blockers": 0,
     "checks": {
       "attest": 0,
-      "fail": 2,
+      "fail": 1,
       "partial": 3,
-      "pass": 61,
+      "pass": 64,
       "unknown": 4
     },
-    "checks_applicable": 70,
-    "checks_implemented": 70,
-    "checks_scoreable": 56,
+    "checks_applicable": 72,
+    "checks_implemented": 72,
+    "checks_scoreable": 58,
     "cosmetic": 0,
-    "coverage_note": "56 of 56 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
+    "coverage_note": "58 of 58 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
     "degraders": 2,
-    "phase1_score": 0.8831
+    "phase1_score": 0.9094
   },
   "unattested": [
     "index-in-use",

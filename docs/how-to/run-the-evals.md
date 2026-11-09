@@ -28,7 +28,7 @@
 
 The corpus is two kinds of repository (DP §11, review R-07):
 
-- **The engine's own one-defect fixtures** (`audit/engine/tests/fixtures/`), 103
+- **The engine's own one-defect fixtures** (`audit/engine/tests/fixtures/`), 105
   of them — each fails exactly one catalogue check by construction, so the expected verdict is known
   without a human re-deriving it. Their expected files are already generated and committed at
   `dev/eval/expected/fixtures/<fixture>.json`; regenerate with
