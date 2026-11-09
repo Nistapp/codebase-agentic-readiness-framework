@@ -25,6 +25,9 @@ To audit a repository, follow [`SKILL.md`](SKILL.md). The rest of this file is f
   tool.
 - Keep `tools/CATALOGUE.md` the same as each tool's `--describe` output. Regenerate it with
   `python3 dev/recipe_lint.py --write-catalogue .` from the repository root.
+- A change to `catalogue.json` or to a file in `checks/` changes the generated
+  [audit master list](../docs/reference/audit-master.md). Run `make update-masters` from the repository root and
+  commit the result in the same change.
 - Never run a target's own commands directly. Use the engine's probe runner. It is opt-in: `--run-gates` plus
   `--allow-probe <verb>`.
 - The model's judgment cites evidence. The tools do the counting.
