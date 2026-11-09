@@ -51,8 +51,8 @@ server is reachable, and freshness means nothing before an index exists.
 - **T7 done or `partial`.** The freshness rule is a line in the instruction file
   ([`adapt-agents-md`](adapt-agents-md.md) owns that file; this playbook adds one line, in the section the T7 work
   chose).
-- The index tool is installed on the machine that runs the playbook. If it is not, stop and tell the owner; this
-  playbook installs nothing.
+- The index tool is installed on the machine that runs the playbook, or the person installs it after Step 3's offer.
+  This playbook installs nothing.
 - Preferences this playbook reads, when present:
 
 | Key | Effect |
@@ -60,6 +60,7 @@ server is reachable, and freshness means nothing before an index exists.
 | `index.registration` | `project-file`, `document-only` or `none`: what the owner chose for this repository (Inputs 2) |
 | `index.user_config_consent` | `yes`: the owner allowed one named user-level edit. Absent or `no`: never edit a user-level file |
 | `index.freshness` | `agents-md-rule` (default), `hook` or `auto-refresh-documented` (Inputs 3) |
+| `index.first_run_offer` | `no` (default) or `yes`: whether the target's instruction file makes the first-run setup offer (Inputs 5) |
 | `agents_md.harness_deny` | Independent; a committed MCP config is not a permission file, but check both are consistent |
 
 ## Inputs to ask
@@ -81,11 +82,24 @@ No dependency is installed. Ask:
    resolves it, and the page says which one to install. Offer one file per harness the team uses, not one for every
    harness.
 
-   **Recommended project file: `.mcp.json` at the repository root** (owner decision, 2026-11-07). It is the most
+   **Default: `project-file`, as one `.mcp.json` at the repository root** (owner decisions, 2026-11-07 and
+   2026-11-09). It is the most
    widely known name and uses the common `mcpServers` format. No single file is read by every harness: Cursor reads
    `.cursor/mcp.json`, VS Code `.vscode/mcp.json`, opencode `opencode.json`, Gemini CLI `.gemini/settings.json`. So
    make `.mcp.json` the one source of truth, and have the instruction file say: "Tools that read another file copy
-   the `codebase-memory-mcp` entry from `.mcp.json`." Add a second file only when the team asks for it.
+   the `codebase-memory-mcp` entry from `.mcp.json`." Add a second file only when the team asks for it. The entry is
+   the bare command, so it works on any stack and any system where the binary is on `PATH`:
+
+   ```json
+   {
+     "mcpServers": {
+       "codebase-memory-mcp": {
+         "command": "codebase-memory-mcp"
+       }
+     }
+   }
+   ```
+
 3. **Freshness.** Default `agents-md-rule`: one line in the instruction file. Alternatives,
    offered only if the owner asks: a git hook that calls the refresh (machine-specific command, skipped by
    `--no-verify`), or a statement that the tool refreshes itself (an unverifiable claim; document it only with the
@@ -93,6 +107,10 @@ No dependency is installed. Ask:
 4. **User-level edit.** Ask only if the owner wants the playbook to edit a file under `$HOME`. Show the exact file and
    the exact change first. Without a recorded `index.user_config_consent=yes`, do not touch it; give the owner the text
    to add.
+5. **First-run offer in the target.** Default `no`. With `yes`, the target gets the offer this framework makes in
+   its own repository ([Set up the agent tools](../../docs/how-to/set-up-agent-tools.md#for-agents-the-first-run-offer)).
+   The first agent that changes the repository asks the person once to set up the index server. It costs one line
+   in the instruction file and one docs section. Recorded as `index.first_run_offer`.
 
 ## Steps
 
@@ -107,17 +125,55 @@ No dependency is installed. Ask:
      config's other entries.
    - `document-only`: add a short section to the docs page or `AGENTS.md` that says how to register the server for each
      harness the team uses. Mark IDX-01 `partial` with the reason.
-3. **Build the index (IDX-02).** Run `index_repository` for this checkout (root path), then confirm it answers:
+3. **Offer the setup to the person running this playbook.** The index server must run in the person's own harness
+   before Step 4 can build the index. Ask once, and do nothing without a yes:
+   - Name the harness from your own knowledge. If you are not sure, ask. Explain the server in two sentences: what it
+     gives the agent, and that it needs the `codebase-memory-mcp` binary on `PATH`.
+   - When the binary is missing, give the install routes from the server's own documentation. Choose by the
+     target's stack. Where Node is the toolchain: `npm install -g codebase-memory-mcp`. Otherwise: the install script
+     with `--skip-config` (macOS, Linux), or the quick start (Windows). Never run an installer yourself.
+   - With a yes, write the entry for that harness at project scope, from `.mcp.json`, in the harness's own format
+     (table below). Do not commit a harness copy: add its path to the target's ignore file, in the file's own style.
+     Then tell the person to restart the harness and approve or trust the server.
+   - With a no, record nothing in the target, say that Steps 4 and 5 need the server, and mark IDX-02 `blocked`
+     with the reason.
+
+   | Harness | Where the project entry goes | Shape of the entry |
+   |---|---|---|
+   | Claude Code | `.mcp.json` itself | Nothing to write; the person approves the server on the next start |
+   | VS Code with Copilot | `.mcp.json` itself | Nothing to write; the person trusts the folder |
+   | Cursor | `.cursor/mcp.json` | `mcpServers.<name>`: `{"type": "stdio", "command": "codebase-memory-mcp"}` |
+   | Gemini CLI | `.gemini/settings.json` | `mcpServers.<name>`: `{"command": "codebase-memory-mcp"}` |
+   | opencode | `opencode.json` | `mcp.servers.<name>`: `{"type": "local", "command": ["codebase-memory-mcp"]}` |
+   | Codex CLI | `.codex/config.toml` (trusted projects only) | `[mcp_servers.codebase-memory-mcp]` with `command = "codebase-memory-mcp"` |
+   | Antigravity | User level only | Give the person `agy mcp add codebase-memory-mcp -- codebase-memory-mcp` to run |
+
+   The formats were checked for this framework's own repository on 2026-11-09 (`dev/mcp_config.py`). They change:
+   confirm the file and key on the vendor's current page before you write, and cite the date in the note.
+4. **Build the index (IDX-02).** Run `index_repository` for this checkout (root path), then confirm it answers:
    `list_projects` shows the project and root, and `get_architecture` returns a summary whose file counts match the
    repository (`git ls-files | wc -l` within the engine's own filtering). An index of another checkout, or of a path
    under a different name, is not this checkout's. Do this on the integration branch's latest commit, or on the branch
    the playbook is working in, and say which.
-4. **Freshness (IDX-03).** Add one line to the instruction file: the agent re-indexes at the start of a task and after
+5. **Freshness (IDX-03).** Add one line to the instruction file: the agent re-indexes at the start of a task and after
    the last commit, and checks freshness with `detect_changes`. Write the sentence in the file's own voice, in the
    section where the file already keeps tool guidance, and keep it within the 400-line budget. Run `detect_changes` and
    record the result as the evidence; if it names changed files, re-index and run it again.
-5. **Commits:** one for the project config (if any), one for the instruction-file line. The engine re-check
-   ([Stage 4](../SKILL.md#stage-4-close-the-theme), step 1) runs with and without `--no-user-config`.
+6. **First-run offer (Inputs 5).** Only with `index.first_run_offer=yes`. Add a short section to the target's docs,
+   in the docs home T6 chose, that holds the offer's steps:
+   1. Name your harness.
+   2. If the record file says this harness was asked, stop.
+   3. Check that the binary is on `PATH`.
+   4. Explain the server and ask once.
+   5. With a yes, write the entry from the table in Step 3.
+   6. Record the answer.
+
+   The record is one git-ignored file (`.agentic-readiness/setup.json`, one key per harness). Add its folder to the
+   target's ignore file. Then add one line at the top of the instruction file: "Before your first change, read
+   `<docs page>#<section>` and make the setup offer once." Keep the line within the 400-line budget. The target has
+   no helper script: the agent follows the section by hand.
+7. **Commits:** one for the project config (if any), one for the instruction-file lines, one for the offer section.
+   The engine re-check ([Stage 4](../SKILL.md#stage-4-close-the-theme), step 1) runs with and without `--no-user-config`.
 
 ### Gradle and Quarkus
 
@@ -147,6 +203,7 @@ not indexed. In a repository with several apps, one index covers the root; the f
 | IDX-01 | Launcher with `--no-user-config`; read the project config | `project-file`: names `codebase-memory-mcp`, `PASS`. `document-only`: `FAIL` under the flag, item `partial` |
 | IDX-02 | `list_projects` and `get_architecture` | The project is listed with this root; counts match; `PASS` |
 | IDX-03 | `detect_changes` against `HEAD`; the instruction file's line | No drift reported, and the rule is written; the engine reports `UNKNOWN`, which the note explains |
+| (offer) | `git status --ignored` after the harness copy is written; the instruction file's first lines | The harness copy and `.agentic-readiness/` are ignored, not staged; with `index.first_run_offer=yes`, the line points at a section that exists |
 
 ## Rollback
 
@@ -161,6 +218,8 @@ undone.
 - Do not commit a config with an absolute path to one developer's machine, a token or any secret.
 - Do not create configuration for harnesses the team does not use.
 - Do not install the index tool, add a git hook or edit CI.
+- Do not write a harness copy of `.mcp.json` without the person's yes, and never commit one.
+- Do not copy `dev/mcp_config.py` into the target: it is this framework's dev tool, not a shipped one.
 - Do not print or quote a user-level config file; report the path and whether it names the server.
 - Do not claim the engine's IDX-03 verdict can pass today, and do not read its `UNKNOWN` as stale.
 - Do not index a different checkout and report it as this one's.
@@ -182,6 +241,8 @@ python3 implement/tools/progress.py pref set index.registration <project-file|do
 python3 implement/tools/progress.py pref set index.user_config_consent no \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set index.freshness agents-md-rule \
+  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py pref set index.first_run_offer no \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```
 
