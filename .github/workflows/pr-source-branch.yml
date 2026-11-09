@@ -18,6 +18,11 @@ on:
     branches: [main]
     types: [opened, reopened, synchronize, edited]
 
+# A newer event on the same pull request makes an older run pointless.
+concurrency:
+  group: pr-source-branch-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions: {}
 
 jobs:

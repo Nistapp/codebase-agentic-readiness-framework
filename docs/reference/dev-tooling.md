@@ -18,7 +18,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | jsonschema | The tools' schema validator disagrees with the reference package | `make crosscheck` | `check` | `dev/tools/pyproject.toml` |
 | `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `check` | This repository |
 | actionlint | Workflow mistakes: syntax, expressions, action inputs, shellcheck on `run:` blocks | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` (`actionlint-py`) |
-| zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
+| zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown. Runs at the pedantic persona, so a permission without a comment or a missing concurrency limit fails too | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | typos | Misspelled words in the tracked text, code identifiers included (word list: [`_typos.toml`](../../_typos.toml)) ([Spell check](#spell-check)) | `make spell`; `make spell-fix` writes the fixes | `check` | `dev/tools/pyproject.toml` |
 | check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | detect-secrets | Key-shaped strings not in `.secrets.baseline` | `make security` | `security` | `dev/tools/pyproject.toml` |

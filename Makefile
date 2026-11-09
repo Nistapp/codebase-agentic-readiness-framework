@@ -50,7 +50,8 @@ QUALITY_BASELINE := $(PYTHON) dev/quality_baseline.py check
 DEP_LOCKFILES := dev/tools/uv.lock dev/tools/package-lock.json dev/tools/osv/go.mod
 COVERAGE := uvx coverage@$(call pin,coverage)
 # Workflow and GitHub-config checks: actionlint (syntax, expressions, shellcheck on run: blocks), zizmor (workflow
-# and Dependabot security, offline) and check-jsonschema (the SchemaStore schemas it bundles, offline).
+# and Dependabot security, offline, at the pedantic persona: its help-level findings fail too) and check-jsonschema
+# (the SchemaStore schemas it bundles, offline).
 ACTIONLINT := uvx --from actionlint-py==$(call pin,actionlint-py) actionlint
 ZIZMOR := uvx zizmor@$(call pin,zizmor)
 # The spell check: typos reads _typos.toml (the word list and the excluded data paths) from the repository root,
@@ -175,7 +176,7 @@ spell-fix:
 
 workflow-lint:
 	$(ACTIONLINT)
-	$(ZIZMOR) --offline .github
+	$(ZIZMOR) --offline --persona pedantic .github
 	$(CHECK_JSONSCHEMA) --builtin-schema vendor.github-workflows .github/workflows/*.yml
 	$(CHECK_JSONSCHEMA) --builtin-schema vendor.dependabot .github/dependabot.yml
 

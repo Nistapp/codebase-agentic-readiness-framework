@@ -175,13 +175,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Require check, security, coverage, self-audit, docs and commits to have succeeded
+        # The results come in through env, never expanded into the script (zizmor: template-injection).
+        env:
+          check: ${{ needs.check.result }}
+          security: ${{ needs.security.result }}
+          coverage: ${{ needs.coverage.result }}
+          self_audit: ${{ needs.self-audit.result }}
+          docs: ${{ needs.docs.result }}
+          commits: ${{ needs.commits.result }}
         run: |
-          check="${{ needs.check.result }}"
-          security="${{ needs.security.result }}"
-          coverage="${{ needs.coverage.result }}"
-          self_audit="${{ needs.self-audit.result }}"
-          docs="${{ needs.docs.result }}"
-          commits="${{ needs.commits.result }}"
           echo "check: $check"
           echo "security: $security"
           echo "coverage: $coverage"

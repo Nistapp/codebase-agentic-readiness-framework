@@ -24,9 +24,9 @@ PROVENANCE_PERMISSIONS = ("contents: write", "id-token: write", "attestations: w
 
 
 def job_permissions(text: str) -> list[str]:
-    """The lines of the first job-level ``permissions:`` block (indented four spaces)."""
+    """The lines of the first job-level ``permissions:`` block (indented four spaces), without their comments."""
     block = re.search(r"(?m)^    permissions:\n((?:      \S.*\n)+)", text)
-    return [line.strip() for line in block.group(1).splitlines()] if block else []
+    return [line.split("#")[0].strip() for line in block.group(1).splitlines()] if block else []
 
 
 class ReleaseSignsProvenance(unittest.TestCase):

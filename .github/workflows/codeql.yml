@@ -27,8 +27,8 @@ jobs:
     name: analyze (${{ matrix.language }})
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      security-events: write
+      contents: read # check out the code
+      security-events: write # upload the analysis to the Security tab
     strategy:
       fail-fast: false
       matrix:

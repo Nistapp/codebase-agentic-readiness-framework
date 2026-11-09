@@ -36,10 +36,10 @@ jobs:
     name: release ${{ inputs.tag }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      id-token: write
-      attestations: write
-      artifact-metadata: write
+      contents: write # create the release and attach the files
+      id-token: write # mint the OIDC token that Sigstore signs the provenance with
+      attestations: write # store the provenance in the repository's attestations
+      artifact-metadata: write # record the release files as attested artifacts
     steps:
       - name: Require a tag of the form vX.Y.Z
         env:
