@@ -157,9 +157,9 @@ engine. The questions are about text. Ask them per finding, before the diff for 
      the default branch (`git symbolic-ref refs/remotes/origin/HEAD`);
      the branch that receives releases comes from the release workflow's trigger (`on.push.branches`), not from the
      default branch: the two can differ, and the old line "default remote branch is `main`" may be the stale one;
-   - every branch the declared branch rules protect by name. Read them where the repository keeps them: GitHub
-     ruleset files (`.github/rulesets/*.json`, each `conditions.ref_name.include` entry, `refs/heads/` removed), the
-     Settings app's `branches:` list (`.github/settings.yml`), or a Terraform `github_repository_ruleset`,
+   - every branch the declared branch rules protect by name. Read them where the repository keeps them. GitHub
+     ruleset files: `.github/rulesets/*.json`, each `conditions.ref_name.include` entry, `refs/heads/` removed. The
+     Settings app: the `branches:` list in `.github/settings.yml`. Terraform: a `github_repository_ruleset`,
      `github_branch_protection` or `gitlab_branch_protection` resource. Skip `~DEFAULT_BRANCH`, `~ALL` and glob
      patterns such as `release/*`; the default branch is already named above. Name each other branch as written
      (`staging`, not "the staging branch" alone), or AGT-09 stays `PARTIAL`. When the rules live only in the
