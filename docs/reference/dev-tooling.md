@@ -57,7 +57,7 @@ To fix a finding, do one of these:
 ## Dependency audit
 
 `make security` runs osv-scanner after the secrets scan
-([ADR 0006](../architecture/adrs/0006-security-verb-audits-dependencies-with-osv-scanner.md)). It reads the three
+([ADR 0007](../architecture/adrs/0007-security-verb-audits-dependencies-with-osv-scanner.md)). It reads the three
 dev-tool lockfiles and asks osv.dev for known vulnerabilities. It needs Go 1.27 or newer and the network. The first
 run builds osv-scanner, which takes about 30 seconds.
 
@@ -116,6 +116,47 @@ files and opens a pull request only for a security fix that is not a major versi
 another file repeats a version.
 
 To change a version, follow [Change a tool version](../../RELEASE_PROCESS.md#change-a-tool-version).
+
+## Agent tools (MCP)
+
+MCP servers make an agent faster. No gate, CI job or release step needs one. Anything that must be right runs
+through `make`.
+
+`.mcp.json` at the repository root registers one server, `codebase-memory-mcp` (the code index). It names the bare
+command, so each person installs the server and keeps its version. No version is written in the repository.
+`dev/tests/test_mcp_config.py` checks the file, and checks that `.claude/settings.json` approves no project server
+for you.
+
+How each harness treats a project MCP file (checked 2026-11-09 in each harness's own docs):
+
+| Harness | Reads | First start in this repository |
+| --- | --- | --- |
+| Claude Code | `.mcp.json` | Asks you to approve the server, once per person |
+| VS Code with Copilot | `.mcp.json` or `.vscode/mcp.json` | Starts it when the folder is trusted |
+| Cursor | `.cursor/mcp.json` | You turn each server on or off |
+| Gemini CLI | `.gemini/settings.json` (`mcpServers`) | Starts it after you trust the folder |
+| opencode | `opencode.json` (`mcp`) | Connects it with no prompt |
+| Codex CLI | `.codex/config.toml` (`[mcp_servers]`) | Loads it only for a trusted project |
+| Antigravity | Its own user-level list (`agy mcp add`) | Starts it in every repository |
+
+For a harness that does not read `.mcp.json`, `dev/mcp_config.py` translates the entry into that harness's format:
+
+| Command | What it does |
+| --- | --- |
+| `python3 dev/mcp_config.py show --harness <name> [--scope project\|user]` | Prints the target file and the entry. Writes nothing |
+| `python3 dev/mcp_config.py write --harness <name> [--scope project\|user]` | Adds the entry to the file. Stops if a different entry has the same name |
+| `python3 dev/mcp_config.py detect` | Names the harness from the variable it sets (`CLAUDECODE`, `ANTIGRAVITY_AGENT`, `OPENCODE`), or says to ask |
+| `python3 dev/mcp_config.py check` | Is each server's command on `PATH`? Prints its version, or the install routes |
+| `python3 dev/mcp_config.py status --harness <name>` | Has the person answered the setup offer for this harness? |
+| `python3 dev/mcp_config.py record --harness <name> --answer accepted\|declined` | Records the answer in `.agentic-readiness/setup.json` |
+
+A language server is an optional aid beside the index. `pyrightconfig.json` gives pyright and basedpyright the same
+import paths as `mypy.ini`, and `dev/tests/test_pyright_config.py` keeps the two in step. `make typecheck` stays the
+gate. Routes per harness: [Set up the agent tools](../how-to/set-up-agent-tools.md#optional-a-language-server).
+
+The names are `claude-code`, `vscode`, `cursor`, `gemini`, `opencode`, `codex`, `antigravity` and `other`. The tool
+installs nothing. If
+the server is not installed, it fails to start and the agent reads files instead.
 
 ## Settings on GitHub
 

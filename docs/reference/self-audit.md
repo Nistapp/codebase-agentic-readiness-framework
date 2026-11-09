@@ -16,19 +16,20 @@ score from falling.
 
 | Field | Value |
 | --- | --- |
-| Phase-1 score | **0.875** |
+| Phase-1 score | **0.8831** |
 | Date | 2026-11-09 |
 | Engine | `python-agentic-audit` 0.3.2 |
 | Ruleset | `2026-11-09.1` (hash `04e5d0ff9063e012`) |
 | Applicable checks | 70 (56 scoreable) |
-| Findings | 3: 2 BLOCKER, 1 DEGRADER |
+| Findings | 3: 1 BLOCKER, 2 DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; no user-level configuration read |
 
 Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` and `HYG-06` with the security policy,
 `SECURITY.md`. On 2026-11-09, `TOOL-04` closed with the dependency audit in
-`make security` ([ADR 0006](../architecture/adrs/0006-security-verb-audits-dependencies-with-osv-scanner.md)), and
-`SEC-01` and `SEC-03` closed when the `.env` rules in `.gitignore` began to match at any depth. `EXEC-01` opened as
-a false positive (below). The new check `CI-05` (workflow files are linted) passes through `make workflow-lint`.
+`make security` ([ADR 0007](../architecture/adrs/0007-security-verb-audits-dependencies-with-osv-scanner.md)), and
+`SEC-01` and `SEC-03` closed when the `.env` rules in `.gitignore` began to match at any depth, and `IDX-01` closed
+when `.mcp.json` began to register `codebase-memory-mcp`. `EXEC-01` and `EXEC-07` opened; both are owner exceptions
+(below). The new check `CI-05` (workflow files are linted) passes through `make workflow-lint`.
 
 The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 requirements it asks of others
 (see the [changelog](../../audit/CHANGELOG.md) and the engine's
@@ -53,14 +54,16 @@ Every check that is not `PASS`, with the reason it is open.
 
 | Check | Verdict | Severity | Why it is open |
 | --- | --- | --- | --- |
-| `IDX-01` | FAIL | BLOCKER | **Owner exception** (D21): no project `.mcp.json`. The index is optional here, and a project file would make every contributor's harness offer to run a binary. Review in v0.3 |
-| `BASE-02` | PARTIAL | DEGRADER | The T5 playbook was applied (D32): `.quality-baseline.json` holds the counts (ruff 0, mypy 0, Markdown lint outside the ratchet 735) and `make format-check`, `make typecheck` and `make docs-lint` fail when one goes up. The check still reads PARTIAL by design: it credits only a numeric budget flag (`--max-warnings N`), and none of these tools has one. Engine issue [#45](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/45) tracks it; the coverage floor (91) is unchanged and `BASE-04` passes |
 | `EXEC-01` | FAIL | BLOCKER | **Owner exception** (2026-11-09): a false positive. osv-scanner's Go module (`dev/tools/osv/go.mod`) pins Go with its `go` directive, but the check reads that directive only from a root `go.mod`. An engine fix is planned (v0.3.3 Track C) |
-| `EXEC-02` | PARTIAL | BLOCKER | No finding: the lockfiles (`dev/tools/uv.lock`, `dev/tools/package-lock.json`, `dev/tools/osv/go.sum`) are committed, but the engine does not run the tools, so it cannot confirm that they match their manifests. `dev/tests/test_tool_pins.py` checks that in `make test` |
-| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 40% of public symbols documented (460 of 1155). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
-| `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, user-level configuration, or `--emit-baseline`; not run here |
+| `BASE-02` | PARTIAL | DEGRADER | The T5 playbook was applied (D32): `.quality-baseline.json` holds the counts (ruff 0, mypy 0, Markdown lint outside the ratchet 735) and `make format-check`, `make typecheck` and `make docs-lint` fail when one goes up. The check still reads PARTIAL by design: it credits only a numeric budget flag (`--max-warnings N`), and none of these tools has one. Engine issue [#45](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/45) tracks it; the coverage floor (91) is unchanged and `BASE-04` passes |
+| `EXEC-07` | FAIL | DEGRADER | **Owner exception** (2026-11-09): `mypy.ini` and `pyrightconfig.json` both configure types. `make typecheck` (mypy strict) is the gate; `pyrightconfig.json` only gives a language server the same import paths, so an agent gets definitions and type errors without hundreds of unresolved imports. `dev/tests/test_pyright_config.py` keeps the paths in step. The check cannot read that delegation ([Set up the agent tools](../how-to/set-up-agent-tools.md#optional-a-language-server)) |
+| `EXEC-02` | PARTIAL | BLOCKER | No finding: the three lockfiles of the pinned dev tools (`dev/tools/uv.lock`, `dev/tools/package-lock.json`, `dev/tools/osv/go.sum`) cannot be checked against their manifests without running the package managers. `dev/tests/test_tool_pins.py` checks that they agree; the engine does not read that test |
+| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 40% of public symbols documented (476 of 1188). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
+| `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, the user-level index store, or `--emit-baseline`; not run here |
 
-Recorded decisions that keep a finding open or exempt: `IDX-01` and `EXEC-01` are owner exceptions (D21; 2026-11-09);
+Recorded decisions that keep a finding open or exempt: `EXEC-01` and `EXEC-07` (both 2026-11-09) are owner
+exceptions. The `IDX-01` exception (D21) and the `TOOL-04` exception (D33) ended on 2026-11-09: `.mcp.json` now
+registers `codebase-memory-mcp`, and `make security` now runs a dependency audit.
 `AGT-08` stays as it is for v0.2, because a stated harness list closes the gap even when a named harness does not read
 `AGENTS.md` natively, and is revisited in v0.3 (D31); `NAV-05` is informational and unscored (D34; reviewed again
 2026-11-09). The engine has no
@@ -105,7 +108,7 @@ strings), reviewing the diff.
 ## Neutralised path
 
 The framework repository is public, so the committed baseline and the published example are the engine's output with
-two hand edits: `provenance.target` is `.` (the engine writes the absolute local path), and the `IDX-01` summary
+two hand edits: `provenance.target` is `.` (the engine writes the absolute local path), and the `IDX-02` summary
 quotes `<repository>/.codebase-memory/graph.db.zst` instead of the absolute index path. Nothing else is changed.
 `make update-audit-baseline` copies the raw report, so follow it with the same two edits before committing:
 

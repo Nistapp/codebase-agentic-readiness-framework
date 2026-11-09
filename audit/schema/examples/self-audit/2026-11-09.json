@@ -9,10 +9,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "no project-level MCP configuration found (user-level configuration not read: --no-user-config)",
+      "summary": "codebase-memory-mcp registered in: .mcp.json (project)",
       "tier": "A",
       "title": "codebase-memory-mcp registered for this repository",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -161,7 +161,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "19 boundary rules reference real paths",
+      "summary": "20 boundary rules reference real paths",
       "tier": "B",
       "title": "Architectural boundaries declared",
       "verdict": "PASS"
@@ -223,7 +223,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "20/28 harnesses reached; AGENTS.md:46 states the supported harnesses (Anthropic Claude Code, Cursor, Google Gemini CLI, OpenAI Codex CLI, opencode)",
+      "summary": "20/28 harnesses reached; AGENTS.md:51 states the supported harnesses (Anthropic Claude Code, Cursor, Google Gemini CLI, OpenAI Codex CLI, opencode)",
       "tier": "B",
       "title": "No competing instruction files, and the reach matrix is stated",
       "verdict": "PASS"
@@ -262,7 +262,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "44 markdown file(s) under docs/",
+      "summary": "46 markdown file(s) under docs/",
       "tier": "A",
       "title": "docs/ exists",
       "verdict": "PASS"
@@ -301,7 +301,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "6 ADR(s) indexed in docs/architecture/adrs/README.md",
+      "summary": "7 ADR(s) indexed in docs/architecture/adrs/README.md",
       "tier": "A",
       "title": "ADR directory and index",
       "verdict": "PASS"
@@ -531,7 +531,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "github: local actionlint (Makefile), actionlint (dev/tools/pyproject.toml), check-jsonschema (Makefile), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI zizmor (.github/workflows/ci.yml)",
+      "summary": "github: local actionlint (.audit-baseline.json), actionlint (Makefile), actionlint (dev/tools/pyproject.toml), check-jsonschema (Makefile), zizmor (.audit-baseline.json), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI zizmor (.github/workflows/ci.yml)",
       "tier": "B",
       "title": "Workflow files are linted",
       "verdict": "PASS"
@@ -805,10 +805,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "lint: ruff.toml; types: mypy.ini",
+      "summary": "competing configs: types (mypy.ini, pyrightconfig.json)",
       "tier": "B",
       "title": "No competing configs for one concern",
-      "verdict": "PASS"
+      "verdict": "FAIL"
     },
     {
       "data": {},
@@ -818,7 +818,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 85 test file(s)",
+      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 88 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -851,7 +851,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 85 test file(s): python 1; total 1",
+      "summary": "skip/xfail census across 88 test file(s): python 1; total 1",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -864,7 +864,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "fast path documented: AGENTS.md:36 `python3 -m unittest tests.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md, CONTRIBUTING.md)",
+      "summary": "fast path documented: AGENTS.md:41 `python3 -m unittest tests.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md, CONTRIBUTING.md)",
       "tier": "B",
       "title": "Fast path documented",
       "verdict": "PASS"
@@ -936,10 +936,10 @@
     },
     {
       "data": {
-        "denominator": 1159,
+        "denominator": 1188,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 462,
+        "numerator": 476,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -948,7 +948,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "462/1159 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
+      "summary": "476/1188 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1301,22 +1301,6 @@
       "verdict": "FAIL"
     },
     {
-      "check": "IDX-01",
-      "evidence": [
-        {
-          "line": null,
-          "note": null,
-          "path": "<repository>"
-        }
-      ],
-      "id": "IDX-01",
-      "phase": 1,
-      "remediation": "Register the server in a project config (for example `opencode.json`) or a user config (`~/.config/opencode/opencode.json`).",
-      "severity": "BLOCKER",
-      "statement": "An agent cannot discover the codebase through an MCP index because no MCP configuration names codebase-memory-mcp for this repository.",
-      "verdict": "FAIL"
-    },
-    {
       "check": "BASE-02",
       "evidence": [
         {
@@ -1356,10 +1340,31 @@
       "severity": "DEGRADER",
       "statement": "An agent cannot state how many violations exist today because a counting surface exists but no numeric violation budget or count is committed.",
       "verdict": "PARTIAL"
+    },
+    {
+      "check": "EXEC-07",
+      "evidence": [
+        {
+          "line": null,
+          "note": null,
+          "path": "mypy.ini"
+        },
+        {
+          "line": null,
+          "note": null,
+          "path": "pyrightconfig.json"
+        }
+      ],
+      "id": "EXEC-07",
+      "phase": 1,
+      "remediation": "Keep one authoritative config per concern and document any deliberate delegation, or delete the redundant config.",
+      "severity": "DEGRADER",
+      "statement": "An agent cannot know which config wins for each concern because 1 concern(s) have more than one config: types (mypy.ini, pyrightconfig.json).",
+      "verdict": "FAIL"
     }
   ],
   "inventory": {
-    "files_inspected": 342,
+    "files_inspected": 350,
     "files_set_aside": 463,
     "files_skipped": 7,
     "set_aside": [
@@ -1439,15 +1444,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "801faf42cf1104512148020a8195f7138d5b55ac",
+    "framework_revision": "65024fb26b6cdc04d071ee448257a38c8b2bda10",
     "git_branch": "chore/v0.3.3-track-a-tooling",
-    "git_dirty": false,
-    "git_sha": "801faf42cf1104512148020a8195f7138d5b55ac",
+    "git_dirty": true,
+    "git_sha": "65024fb26b6cdc04d071ee448257a38c8b2bda10",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "04e5d0ff9063e012",
     "ruleset_revision": "2026-11-09.1",
-    "scanned_at": "2026-11-09T06:56:35+00:00",
+    "scanned_at": "2026-11-09T07:32:15+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {
@@ -1478,7 +1483,7 @@
     "test_frameworks": []
   },
   "summary": {
-    "blockers": 2,
+    "blockers": 1,
     "checks": {
       "attest": 0,
       "fail": 2,
@@ -1491,8 +1496,8 @@
     "checks_scoreable": 56,
     "cosmetic": 0,
     "coverage_note": "56 of 56 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
-    "degraders": 1,
-    "phase1_score": 0.875
+    "degraders": 2,
+    "phase1_score": 0.8831
   },
   "unattested": [
     "index-in-use",

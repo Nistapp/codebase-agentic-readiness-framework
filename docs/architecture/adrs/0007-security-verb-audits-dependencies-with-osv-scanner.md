@@ -1,4 +1,4 @@
-# 0006. The Security Verb Audits the Dev Tools' Dependencies with osv-scanner
+# 0007. The Security Verb Audits the Dev Tools' Dependencies with osv-scanner
 
 * **Status:** Accepted
 * **Date:** 2026-11-09
@@ -86,6 +86,6 @@ version updates. Three have no fix that reaches this repository and are accepted
   *Alternatives Considered*. Do NOT create a superseding ADR and do NOT leave a tombstone stub.
 * **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference
   plus the index table in `docs/architecture/adrs/README.md` in the same change set.
-* Archived wording: `git log --follow docs/architecture/adrs/0006-security-verb-audits-dependencies-with-osv-scanner.md`.
+* Archived wording: `git log --follow docs/architecture/adrs/0007-security-verb-audits-dependencies-with-osv-scanner.md`.
 
 See [`docs/STYLE_GUIDE.md`](../../STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.

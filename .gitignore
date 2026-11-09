@@ -39,3 +39,13 @@ id_rsa*
 .DS_Store
 Thumbs.db
 *.swp
+
+# agent tools: the first-run answer and the per-harness MCP configs that dev/mcp_config.py writes. `.mcp.json` is
+# the one committed source (ADR 0006); these are each person's own copies.
+/.agentic-readiness/
+/opencode.json
+/opencode.jsonc
+/.cursor/
+/.gemini/
+/.codex/
+/.vscode/mcp.json

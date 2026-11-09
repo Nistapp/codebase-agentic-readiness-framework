@@ -114,6 +114,30 @@ graph TB
 
 ---
 
+## Language Servers Beside the Code Index
+
+A language server (LSP) and the code index answer different questions. Use both where the harness allows it.
+
+| | Code index (`codebase-memory-mcp`) | Language server |
+| --- | --- | --- |
+| Gives the agent | The whole-repository graph: callers, dependencies, tests, across languages | Compiler-accurate definitions, references, types and renames for one language |
+| After an edit | A re-index refreshes the graph | Type errors show at once |
+| Needs from the repository | An index registered for the checkout (`IDX-01`) | The type-checker config, the import paths, and locked dependencies |
+
+A language server is an aid, never a gate. The repository's own type checker, run through its `typecheck` verb,
+stays the source of truth. No requirement asks for a language server to be installed.
+
+How each harness reaches a language server (checked 2026-11-09 in each harness's own documentation):
+
+| Harness | Route |
+| --- | --- |
+| Claude Code | A code-intelligence plugin, for example `pyright-lsp`. The language-server binary must be on `PATH` |
+| opencode | Built in, off by default: `"lsp": true` in `opencode.json`. The server, for example `pyright`, must be installed |
+| Cursor, VS Code | The editor runs language servers for its extensions. Their docs do not say what the agent receives |
+| Gemini CLI, Codex CLI, Antigravity | No built-in route documented. [Serena](https://github.com/oraios/serena), an MCP server on top of language servers, fills the gap |
+
+---
+
 ## Reference Implementation — `agentic-tdd`
 
 `agentic-tdd` is the live worked example of Phases 1–4, including the Phase 1 command

@@ -64,7 +64,7 @@ COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
 DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
-	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'docs/COMMUNICATION_RULES.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
+	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/how-to/contribute-a-change.md' 'docs/how-to/set-up-agent-tools.md' 'docs/COMMUNICATION_RULES.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
 	'docs/explanation/user-overview/03-trust-and-safety.md' 'docs/explanation/contributor-deep-dive/04-stack-profiles.md' 'docs/explanation/contributor-deep-dive/05-evaluation.md' 'docs/how-to/add-a-stack-profile.md' 'docs/reference/harness-notes.md' \
 	'audit/engine/docs/how-to/read-the-report.md'
 

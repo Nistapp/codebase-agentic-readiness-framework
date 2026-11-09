@@ -6,6 +6,11 @@ coding agents, plus tools that check it. `audit/` holds the audit recipe, its to
 rules: `audit/AGENTS.md`, `implement/AGENTS.md` and `audit/engine/AGENTS.md` (the strictest). Read the file for a
 folder before you change it.
 
+**Before you edit any file in this repository**, run `python3 dev/mcp_config.py status --harness <your harness>`.
+If it prints `not asked`, first make the one-time offer in `docs/how-to/set-up-agent-tools.md` ("For agents").
+`python3 dev/mcp_config.py detect` helps you name your harness. Skip this for an audit or implement run on another
+repository. Never install a server or write a harness config without the person's consent.
+
 ## Users: audit or implement a repository
 
 - When asked to audit a repository, follow `audit/SKILL.md` from this repository's root.
@@ -155,4 +160,5 @@ A change is done when all of this holds:
 - The engine's design, checks and ADRs: `audit/engine/docs/architecture/README.md`.
 - The tool contract and the tool catalogue: `audit/tools/README.md`, `audit/tools/CATALOGUE.md`.
 - Tool ecosystem and index tooling: `docs/framework/tool-ecosystem.md`. If `codebase-memory-mcp` is available, query it
-  before reading whole files.
+  before reading whole files. `.mcp.json` registers it; Claude Code and VS Code read that file. Another harness
+  copies the entry into its own config. No gate needs an MCP server (`docs/reference/dev-tooling.md`).

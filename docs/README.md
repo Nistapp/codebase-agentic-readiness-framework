@@ -20,6 +20,7 @@ output to `<output-path>`". To fix the findings, say "Start implementing the fix
 | Page | What it does |
 | --- | --- |
 | [Contribute a change](how-to/contribute-a-change.md) | Move one change from a work branch into `dev` through a pull request |
+| [Set up the agent tools](how-to/set-up-agent-tools.md) | Give your coding agent the code index, or skip it; the one-time offer agents make |
 | [Install the skills](how-to/install-the-skills.md) | Put both skills from a release into a project, with no clone |
 | [Run an audit](how-to/run-an-audit.md) | Produce a confirmed report through the agent and the audit recipe |
 | [Implement an audit report](how-to/implement-an-audit-report.md) | Apply the confirmed findings, one theme per branch |
