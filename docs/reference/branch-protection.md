@@ -67,13 +67,20 @@ Both checks come from GitHub Actions (integration id `15368`).
 ### `CI Gate`
 
 `CI Gate` is the last job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). CI runs on every pull
-request and on every push to `dev` and `main`. `CI Gate` needs six jobs and fails unless each one succeeded:
+request and on every push to `dev` and `main`. `CI Gate` needs eleven jobs and fails unless each one succeeded.
+The jobs run on Ubuntu (issue #82 tracks macOS and Windows). The first six run the steps of `make check` at once;
+`dev/tests/test_ci_parity.py` fails when a step of `check` has no job:
 
 | Job | What it runs |
 | --- | --- |
-| `check` | `make check` on Ubuntu and macOS, Python 3.11 and 3.14. It includes `make workflow-lint` |
+| `static` | `make format-check typecheck verify-rules recipe-lint masters-check workflow-lint spell` |
+| `crosscheck` | `make crosscheck` on Python 3.11 and 3.14 |
+| `test-engine` | `make coverage-engine`: the engine's suite under coverage.py, on Python 3.11 |
+| `test-tools` | `make coverage-audit-tools coverage-implement-tools` on Python 3.11 |
+| `test-dev` | `make test-dev` on Python 3.11 |
+| `test-py314` | `make test verify-rules` on Python 3.14; on Linux `make test` runs its four suites at once |
+| `coverage` | `make coverage-combine`: merges the suites' data files and fails below the floor in `.coveragerc` |
 | `security` | `make security` |
-| `coverage` | `make coverage`, which fails below the floor in `.coveragerc` |
 | `self-audit` | `make self-audit`: the engine on this repository; exit 2 when a finding appears that `.audit-baseline.json` did not have |
 | `docs` | `make docs-lint` and the Mermaid render check, when Markdown changed |
 | `commits` | `dev/commit_lint.py` on each commit that the pull request or push adds: Conventional Commits subjects; merge commits are skipped |

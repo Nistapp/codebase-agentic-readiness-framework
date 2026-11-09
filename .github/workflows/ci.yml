@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 #
-# CI runs the same verbs a human or agent runs locally (see the Makefile): `make check` and `make security`.
+# CI runs the same verbs a human or agent runs locally (see the Makefile): `make check`, split into jobs that run at
+# once, and `make security`.
 # `make security` needs the network: its dependency audit (osv-scanner) queries osv.dev.
 # Python 3.11 is the supported minimum and 3.14 the newest release (Q8); Windows is supported through WSL only.
 # CI runs on Linux only for now, to keep the wait per pull request short. Restoring macOS and adding Windows is
@@ -25,13 +26,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: check (${{ matrix.os }}, Python ${{ matrix.python }})
-    runs-on: ${{ matrix.os }}
+  # `make check` split into jobs that run at once; dev/tests/test_ci_parity.py fails when a step of `check` or a
+  # suite of `test` has no job here. The steps that are cheap share one job, because each job pays about 15 s of
+  # setup. Python 3.11 runs every step; Python 3.14 runs the runtime code: the suites and the schema cross-check.
+  static:
+    name: static (format, typecheck, rules, recipe lint, masters, workflow lint, spell)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: dev/tools/pyproject.toml
+      # Go builds actionlint (`make workflow-lint`) from dev/tools/actionlint/go.mod, through the Go module proxy.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: dev/tools/actionlint/go.mod
+          cache-dependency-path: dev/tools/actionlint/go.sum
+      - run: make format-check typecheck verify-rules recipe-lint masters-check workflow-lint spell
+
+  crosscheck:
+    name: crosscheck (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
         python: ["3.11", "3.14"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -43,12 +66,116 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: dev/tools/pyproject.toml
-      # Go builds actionlint (`make workflow-lint`) from dev/tools/actionlint/go.mod, through the Go module proxy.
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - run: make crosscheck
+
+  # The engine's suite under coverage.py. Its data file goes to the `coverage` job, which combines every suite's.
+  test-engine:
+    name: test-engine (Python 3.11, coverage)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          go-version-file: dev/tools/actionlint/go.mod
-          cache-dependency-path: dev/tools/actionlint/go.sum
-      - run: make check
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: dev/tools/pyproject.toml
+      - run: make coverage-engine
+        env:
+          CI: "true"
+      # The data file's name starts with a dot, so it is a hidden file to upload-artifact.
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-engine
+          path: dev/dist/coverage/.coverage.engine
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  # The audit tools' and the implement tools' suites under coverage.py; one job, because the second takes 2 s.
+  test-tools:
+    name: test-tools (Python 3.11, coverage)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: dev/tools/pyproject.toml
+      - run: make coverage-audit-tools coverage-implement-tools
+        env:
+          CI: "true"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: coverage-tools
+          path: |
+            dev/dist/coverage/.coverage.audit-tools
+            dev/dist/coverage/.coverage.implement-tools
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  # The dev checks' suite. coverage.py does not measure dev/ (.coveragerc), so this job runs it plainly.
+  test-dev:
+    name: test-dev (Python 3.11)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: dev/tools/pyproject.toml
+      - run: make test-dev
+
+  # Every suite on the newest Python, through the `test` verb itself. On Linux, `make test` runs its four suites at
+  # once (TEST_JOBS in the Makefile), so this job also proves the parallel run on every pull request.
+  test-py314:
+    name: test (Python 3.14)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: dev/tools/pyproject.toml
+      - run: make test verify-rules
+
+  # Combines the suites' data files and fails below the floor in .coveragerc (`fail_under`). `coverage-combine`
+  # fails when a suite's data file is missing, so a lost upload cannot pass with a partial total.
+  coverage:
+    name: coverage
+    needs: [test-engine, test-tools]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: dev/tools/pyproject.toml
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          pattern: coverage-*
+          merge-multiple: true
+          path: dev/dist/coverage
+      - run: make coverage-combine
 
   security:
     name: security
@@ -57,7 +184,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # The minimum Python the repository pins (.python-version); the `check` matrix above spans 3.11 and 3.14.
+      # The minimum Python the repository pins (.python-version).
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version-file: .python-version
@@ -70,24 +197,6 @@ jobs:
           go-version-file: dev/tools/osv/go.mod
           cache-dependency-path: dev/tools/osv/go.sum
       - run: make security
-
-  # The engine's and the recipe tools' suites under coverage.py; fails below the floor in .coveragerc.
-  coverage:
-    name: coverage
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
-        with:
-          python-version-file: .python-version
-      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
-        with:
-          version-file: dev/tools/pyproject.toml
-      - run: make coverage
-        env:
-          CI: "true"
 
   # The engine on this repository against the committed ratchet (.audit-baseline.json): exit 2 when a finding appears
   # that the baseline did not have. Read-only; the report stays under dist/self-audit/. Linux only.
@@ -173,52 +282,24 @@ jobs:
           fi
           python3 dev/commit_lint.py --range "$BASE..$HEAD_SHA"
 
-  # One required check that stands for the whole matrix, so adding or renaming a `check` leg (a Python
-  # version, an OS) never also requires a branch-protection edit.
+  # One required check that stands for every job above, so adding, splitting or renaming a job (a suite, a Python
+  # version, an OS) never also requires a branch-protection edit. It reads every result in `needs`, so a job listed
+  # there cannot be left unchecked.
   ci-gate:
     name: CI Gate
-    needs: [check, security, coverage, self-audit, docs, commits]
+    needs: [static, crosscheck, test-engine, test-tools, test-dev, test-py314, coverage, security, self-audit, docs, commits]
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - name: Require check, security, coverage, self-audit, docs and commits to have succeeded
+      - name: Require every needed job to have succeeded
         # The results come in through env, never expanded into the script (zizmor: template-injection).
         env:
-          check: ${{ needs.check.result }}
-          security: ${{ needs.security.result }}
-          coverage: ${{ needs.coverage.result }}
-          self_audit: ${{ needs.self-audit.result }}
-          docs: ${{ needs.docs.result }}
-          commits: ${{ needs.commits.result }}
+          NEEDS: ${{ toJSON(needs) }}
         run: |
-          echo "check: $check"
-          echo "security: $security"
-          echo "coverage: $coverage"
-          echo "self-audit: $self_audit"
-          echo "docs: $docs"
-          echo "commits: $commits"
-          if [[ "$check" != "success" ]]; then
-            echo "::error::check did not pass"
-            exit 1
-          fi
-          if [[ "$security" != "success" ]]; then
-            echo "::error::security did not pass"
-            exit 1
-          fi
-          if [[ "$coverage" != "success" ]]; then
-            echo "::error::coverage did not pass"
-            exit 1
-          fi
-          if [[ "$self_audit" != "success" ]]; then
-            echo "::error::self-audit did not pass"
-            exit 1
-          fi
-          if [[ "$docs" != "success" ]]; then
-            echo "::error::docs did not pass"
-            exit 1
-          fi
-          if [[ "$commits" != "success" ]]; then
-            echo "::error::commits did not pass"
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<< "$NEEDS"
+          failed=$(jq -r '[to_entries[] | select(.value.result != "success") | .key] | join(", ")' <<< "$NEEDS")
+          if [[ -n "$failed" ]]; then
+            echo "::error::did not pass: $failed"
             exit 1
           fi
           echo "CI Gate passed."
