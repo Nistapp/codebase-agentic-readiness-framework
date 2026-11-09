@@ -64,9 +64,17 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.rules.checks._common import declared_branch_rules, resolve_verbs, runner_commands, runner_target
+from audit.rules.checks._common import (
+    _expand_make,  # noqa: F401 (tested through this module)
+    _makefile_variables,  # noqa: F401
+    declared_branch_rules,
+    follow_makefile,
+    resolve_verbs,
+    runner_commands,
+    runner_target,
+)
 from audit.scan import Kind
-from audit.stack import CI_PROVIDERS, _logical_lines, extract_npm_scripts, parse_makefile
+from audit.stack import CI_PROVIDERS, extract_npm_scripts
 from audit.rules.payloads import Payload
 
 #: Formatter configuration filenames, across the ecosystems the catalogue names.
@@ -673,70 +681,9 @@ def _is_audit_command(command: str) -> bool:
     return any(pattern.search(command) for pattern in _AUDIT_PATTERNS)
 
 
-#: A simple Make assignment: ``NAME = value``, ``:=``, ``::=``, ``?=`` or ``+=``, optionally ``export``/``override``.
-_MAKE_ASSIGN_RE = re.compile(r"^(?:(?:export|override)\s+)*([A-Za-z_][A-Za-z0-9_.-]*)\s*(:{1,3}=|\?=|\+=|=)\s*(.*)$")
-#: A reference to a simple variable: ``$(NAME)`` or ``${NAME}``. ``$(call ...)`` and other functions are not.
-_MAKE_REF_RE = re.compile(r"\$[({]([A-Za-z_][A-Za-z0-9_.-]*)[)}]")
-#: A recipe line that runs another target of the same Makefile: ``make x`` or ``$(MAKE) x``, flags first.
-_MAKE_CALL_RE = re.compile(r"(?:^|[\s;&|(])(?:make|\$[({]MAKE[)}])((?:\s+-\S+)*)\s+([A-Za-z0-9_.\\:-]+)")
-_MAKE_EXPANSION_PASSES = 8
-
-
-def _makefile_variables(text: str) -> dict[str, str]:
-    """The simple variables a Makefile assigns outside a recipe, in file order (``?=`` keeps a first value)."""
-    variables: dict[str, str] = {}
-    for _number, line in _logical_lines(text):
-        if line.startswith("\t"):
-            continue
-        match = _MAKE_ASSIGN_RE.match(line.strip())
-        if not match:
-            continue
-        name, operator, value = match.groups()
-        if operator == "?=" and name in variables:
-            continue
-        variables[name] = f"{variables.get(name, '')} {value}".strip() if operator == "+=" else value.strip()
-    return variables
-
-
-def _expand_make(text: str, variables: dict[str, str]) -> str:
-    """``text`` with each known simple variable replaced, a bounded number of times; unknown ones are kept."""
-    for _ in range(_MAKE_EXPANSION_PASSES):
-        expanded = _MAKE_REF_RE.sub(lambda m: variables.get(m.group(1), m.group(0)), text)
-        if expanded == text:
-            break
-        text = expanded
-    return text
-
-
 def _makefile_audit(inventory, command: str) -> tuple[str, str] | None:
-    """Follow a root-Makefile verb's ``command`` through variables, prerequisites and ``make`` calls; return
-    ``(target, expanded line)`` for the first line that runs a dependency audit, else ``None``."""
-    parsed = parse_makefile(inventory)
-    if parsed.errors or not parsed.rules:
-        return None
-    variables = _makefile_variables(inventory.read("Makefile") or "")
-    pending: list[tuple[str, str]] = [("", step) for step in command.split(" && ")]
-    seen: set[str] = set()
-    while pending:
-        where, line = pending.pop(0)
-        expanded = _expand_make(line, variables)
-        if _is_audit_command(expanded):
-            return where, expanded
-        for flags, name in _MAKE_CALL_RE.findall(expanded):
-            name = name.replace("\\:", ":")
-            if any(
-                flag in ("-C", "-f", "--file", "--directory")
-                or flag.startswith(("-C", "-f", "--directory=", "--file="))
-                for flag in flags.split()
-            ):
-                continue
-            rule = parsed.rules.get(name)
-            if rule is None or name in seen:
-                continue
-            seen.add(name)
-            pending.extend((name, f"make {p}") for p in rule.prerequisites if p in parsed.rules)
-            pending.extend((name, step) for step in rule.recipe)
-    return None
+    """The first line a root-Makefile verb's ``command`` runs that is a dependency audit (``follow_makefile``)."""
+    return follow_makefile(inventory, command, _is_audit_command)
 
 
 #: CI actions and templates that run a dependency audit. Matched on the ``uses:`` (or GitLab ``template:``) value.

@@ -16,12 +16,12 @@ score from falling.
 
 | Field | Value |
 | --- | --- |
-| Phase-1 score | **0.9094** |
+| Phase-1 score | **0.9252** |
 | Date | 2026-11-09 |
 | Engine | `python-agentic-audit` 0.3.2 |
-| Ruleset | `2026-11-09.8` (hash `a8fd206cd924e86a`) |
+| Ruleset | `2026-11-09.11` (hash `a8fd206cd924e86a`) |
 | Applicable checks | 72 (58 scoreable) |
-| Findings | 2: both DEGRADER |
+| Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; no user-level configuration read |
 
 Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` and `HYG-06` with the security policy,
@@ -30,7 +30,8 @@ Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` 
 `SEC-01` and `SEC-03` closed when the `.env` rules in `.gitignore` began to match at any depth, and `IDX-01` closed
 when `.mcp.json` began to register `codebase-memory-mcp`. `EXEC-01` and `EXEC-07` opened as owner exceptions.
 `EXEC-01` closed with ruleset `2026-11-09.8`, which reads the `go` directive of a nested `go.mod`
-(`dev/tools/actionlint/go.mod`); `EXEC-07` stays an owner exception (below). The checks added since, `CI-05`
+(`dev/tools/actionlint/go.mod`). `EXEC-07` closed with ruleset `2026-11-09.11`, which reads `pyrightconfig.json` as a
+language-server mirror of the mypy gate. The checks added since, `CI-05`
 (workflow files are linted), `EXEC-08` (tool versions visible to dependency automation) and `TOOL-07` (local branch
 guard), all pass.
 
@@ -40,9 +41,9 @@ The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 re
 
 | Verdict | Checks |
 | --- | --: |
-| PASS | 64 |
+| PASS | 65 |
 | PARTIAL | 3 |
-| FAIL | 1 |
+| FAIL | 0 |
 | UNKNOWN | 4 |
 | ATTEST | 0 |
 | **Total** | **72** |
@@ -58,15 +59,14 @@ Every check that is not `PASS`, with the reason it is open.
 | Check | Verdict | Severity | Why it is open |
 | --- | --- | --- | --- |
 | `BASE-02` | PARTIAL | DEGRADER | The T5 playbook was applied (D32): `.quality-baseline.json` holds the counts (ruff 0, mypy 0, Markdown lint outside the ratchet 735) and `make format-check`, `make typecheck` and `make docs-lint` fail when one goes up. The check still reads PARTIAL by design: it credits only a numeric budget flag (`--max-warnings N`), and none of these tools has one. Engine issue [#45](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/45) tracks it; the coverage floor (91) is unchanged and `BASE-04` passes |
-| `EXEC-07` | FAIL | DEGRADER | **Owner exception** (2026-11-09): `mypy.ini` and `pyrightconfig.json` both configure types. `make typecheck` (mypy strict) is the gate; `pyrightconfig.json` only gives a language server the same import paths, so an agent gets definitions and type errors without hundreds of unresolved imports. `dev/tests/test_pyright_config.py` keeps the paths in step. The check cannot read that delegation ([Set up the agent tools](../how-to/set-up-agent-tools.md#optional-a-language-server)) |
 | `EXEC-02` | PARTIAL | BLOCKER | No finding: the lockfiles of the pinned dev tools (`dev/tools/uv.lock`, `dev/tools/package-lock.json` and the `go.sum` of each Go tool module, `dev/tools/osv/` and `dev/tools/actionlint/`) cannot be checked against their manifests without running the package managers. `dev/tests/test_tool_pins.py` checks that they agree; the engine does not read that test |
 | `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 40% of public symbols documented (476 of 1188). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
 | `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, the user-level index store, or `--emit-baseline`; not run here |
 
-Recorded decisions that keep a finding open or exempt: `EXEC-07` (2026-11-09) is an owner exception. The
-`IDX-01` exception (D21), the `TOOL-04` exception (D33) and the `EXEC-01` exception ended on 2026-11-09:
-`.mcp.json` now registers `codebase-memory-mcp`, `make security` now runs a dependency audit, and the engine reads a
-nested `go.mod`.
+No owner exception is open. The `IDX-01` exception (D21), the `TOOL-04` exception (D33) and the `EXEC-01` and
+`EXEC-07` exceptions ended on 2026-11-09: `.mcp.json` now registers `codebase-memory-mcp`, `make security` now runs
+a dependency audit, the engine reads a nested `go.mod`, and it reads `pyrightconfig.json` as a mirror of the mypy
+gate.
 `AGT-08` stays as it is for v0.2, because a stated harness list closes the gap even when a named harness does not read
 `AGENTS.md` natively, and is revisited in v0.3 (D31); `NAV-05` is informational and unscored (D34; reviewed again
 2026-11-09). The engine has no

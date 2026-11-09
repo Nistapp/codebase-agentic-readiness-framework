@@ -74,6 +74,7 @@ fixtures/
   exec-05-generated/         tracked generated file, no header (needs git) -> EXEC-05 FAIL
   exec-06-broken-command/    README runs an npm script that is not declared -> EXEC-06 FAIL
   exec-07-dual-lint/         .eslintrc.json + biome.json compete  -> EXEC-07 FAIL
+  exec-07-dual-python-types/ mypy.ini + pyrightconfig.json, typecheck runs pyright -> EXEC-07 FAIL
   exec-08-inline-version/    an npm script runs `npx eslint@9.0.0`, no manifest holds it -> EXEC-08 FAIL
   exec-08-duplicate-pin/     the same script, eslint 9.0.0 also in devDependencies -> EXEC-08 PARTIAL
   exec-ok/                   the smallest node repository passing every EXEC check (needs git)
