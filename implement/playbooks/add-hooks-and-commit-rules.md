@@ -31,24 +31,29 @@ elsewhere (the pull-request title) by the owner's decision.
 
 ## Inputs to ask
 
-1. **Hook manager.** Detect first and use what exists. If nothing, offer this set. Currency checked 2026-10-31
-   (GitHub releases API, npm registry); re-check when applied.
+1. **Hook manager.** Detect first and keep what exists. Never replace a working manager. If nothing exists,
+   recommend the manager that matches the stack (the stack profile's Tooling defaults, `audit/stacks/`), not this
+   framework's own choice. Offer the others as alternatives. Currency checked 2026-11-09 (npm registry and
+   downloads API, PyPI, GitHub API); re-check when applied.
 
-   | Tool | Version, date | Pros | Cons |
-   |---|---|---|---|
-   | lefthook (recommended) | v2.2.2, 2026-10-13 (about 9 million npm downloads a week) | One Go binary, no Node or Python needed, polyglot, one committed `lefthook.yml`, parallel hooks | A binary to install per developer; fewer ready-made hooks |
-   | pre-commit | v4.7.0, 2026-10-13 | Large hook catalogue, mature | Needs Python on every machine; pins hook repositories by revision |
-   | husky + lint-staged | husky 9.1.7, **2024-11-18** | Node standard | **Dropped: no release in over 12 months.** Needs a root Node manifest; runs only after `npm install` |
-   | A Gradle git-hooks plugin | not verified | Java only | Not checked for maintenance, no help for a Node repository; do not offer unless a maintained one is verified at apply time |
+   | Stack | Recommend | Version, date | Pros | Cons |
+   |---|---|---|---|---|
+   | Node or TypeScript with a root `package.json` | Husky + lint-staged | husky 9.1.7, 2024-11-18; lint-staged 17.6.0, 2026-09-26 (about 50 and 41 million npm downloads a week) | The Node default; installed by the package manager, pinned by the lockfile; `prepare: husky` wires it | Runs only after `npm install`; needs a root manifest |
+   | Python | pre-commit | v4.7.0, 2026-10-12 | Large hook catalogue, mature, the Python default | Needs Python on every machine; pins hook repositories by revision |
+   | Mixed stacks, Node with no root manifest, Java, or no profile | lefthook | v2.2.2, 2026-10-13 (about 9.5 million npm downloads a week) | One Go binary, no Node or Python needed, one committed `lefthook.yml`, parallel hooks | A binary to install per developer; fewer ready-made hooks |
 
-   Installing the binary is a developer step the owner approves, not a repository dependency.
+   Alternatives you may find, and keep: simple-git-hooks (Node, 2.14.0, 2026-08-28), or a committed
+   `.githooks/` folder. A build task sets `core.hooksPath` for it, often in Gradle or Maven repositories. A quiet
+   release history alone is no reason to reject a tool. Husky had no release since 2024-11-18. Its repository is
+   not archived, and it is the most used manager (checked 2026-11-09). Reject a tool only when it is archived or
+   has an open security advisory. Installing a binary is a developer step the owner approves, not a repository dependency.
 2. **Hook content.** Default below; the owner may remove, never add a slow hook silently.
 3. **Commit rule** (skip when already skipped in the state file):
 
    | Option | What | Engine reads it as |
    |---|---|---|
    | A. Document the PR-title rule | The repository squash-merges and a CI check rejects non-conventional PR titles; the PR title is what lands on the default branch. Write this in the contributing doc and record the finding `skipped` with that reason | TOOL-06 stays `FAIL` (the engine does not read CI; "TOOL-06's own blind spot"); owner-accepted |
-   | B. commitlint in a `commit-msg` stage | Config file plus a hook stage | `PASS`. Needs Node and `@commitlint/cli` (21.2.4); in a repository with no root manifest the version cannot be pinned by a lockfile |
+   | B. A commit-message rule in a `commit-msg` stage, matched to the stack | Node: commitlint (`@commitlint/cli` 21.2.4) in `.husky/commit-msg`. Python: a pre-commit `commit-msg` hook (conventional-pre-commit, commitizen or gitlint). Others: the manager's `commit-msg` stage | `PASS`. commitlint needs Node; with no root manifest its version cannot be pinned by a lockfile, so prefer the Python or lefthook route there |
    | C. Both | A and B | `PASS`; carries B's costs |
 
    Recommend A where squash merges and a title check exist (the history that matters is the squash commit);
@@ -64,8 +69,9 @@ elsewhere (the pull-request title) by the owner's decision.
    - the formatter's check on **staged files only** (the T1 changed-files form, never the full tree),
    - the secret scanner on staged changes, at the version already pinned in CI (one pin, shared).
    No tests, no full lint, no type check, no network access in a hook: those stay in the gate and in CI.
-3. **Install documentation.** Add the one-time install command (`lefthook install` or the manager's equivalent)
-   and the binary install line to the instruction file and the contributing doc. Say that CI is the real gate.
+3. **Install documentation.** Add the one-time install command to the instruction file and the contributing doc.
+   That is `npm install` for Husky, `pre-commit install` or `lefthook install`. For a binary manager, add the
+   binary install line too. Say that CI is the real gate.
    Never advise `--no-verify`; when a hook fails, fix the cause.
 4. **Commit rule** per the owner's option. For A: the contributing doc names the PR-title workflow and the type
    list it enforces. For B or C: add the config and the `commit-msg` stage, with the same type list as the
@@ -79,9 +85,16 @@ No Node is needed; the binary manager runs the Gradle formatter task limited to 
 changed-files verb. If the formatter only supports a whole-project run, hook it as report-only or leave the
 formatter out and say why (never run a full-tree format in a hook).
 
+### Node with a root manifest
+
+Use Husky + lint-staged. Add `husky` and `lint-staged` as dev dependencies (the lockfile pins them), set
+`"prepare": "husky"` in `package.json`, and write `.husky/pre-commit` as `npx lint-staged`. Configure lint-staged
+to run the formatter's check on the staged files only. The engine reads `.husky/` as wired only when a script
+names `husky` (`TOOL-05`). For the commit rule, `.husky/commit-msg` runs `npx --no -- commitlint --edit "$1"`.
+
 ### Node (npm, per-app layout)
 
-With no root manifest a Node-based manager has no home, which is another reason the binary manager is the default.
+With no root manifest a Node-based manager has no home, so lefthook is the recommendation here.
 The hook runs each app's changed-files verb from that app's directory (`layout.command_runner`).
 
 With lefthook (IR07.3):
@@ -110,7 +123,7 @@ With lefthook (IR07.3):
 
 | Check | Command or file | Expected |
 |---|---|---|
-| TOOL-05 | `test -f lefthook.yml` (or the manager's config) and `git config core.hooksPath` or the install step in the docs | The engine's wiring file exists; the install step is documented |
+| TOOL-05 | `test -f <manager config>` (`.husky/pre-commit`, `.pre-commit-config.yaml`, `lefthook.yml`) and `git config core.hooksPath` or the install step in the docs | The engine's wiring file exists; the install step is documented |
 | TOOL-05 (behaviour) | In a scratch worktree, stage a file with a deliberate format violation and a fake secret, run the hook | The commit is refused with a clear message; a clean staged change passes in a few seconds |
 | TOOL-06 | Option A: the contributing doc names the title check and the state records `skipped` with the owner's reason. Option B or C: the config and the `commit-msg` stage exist; a bad message is refused | As stated |
 
@@ -118,7 +131,8 @@ The engine reads TOOL-06 as a file or stage check; option A leaves it `FAIL` by 
 
 ## Rollback
 
-`git revert` the commits (config, docs, rule each revert alone). Developers run `lefthook uninstall`.
+`git revert` the commits (config, docs, rule each revert alone). Developers run the manager's uninstall
+(`lefthook uninstall`, `pre-commit uninstall`; for Husky, `git config --unset core.hooksPath`).
 
 ## Do-not-do
 
@@ -126,7 +140,7 @@ The engine reads TOOL-06 as a file or stage check; option A leaves it `FAIL` by 
 - Do not run tests, a full lint, a full-tree format or any network call in a hook.
 - Do not advise `--no-verify` or add a bypass variable.
 - Do not re-propose a `skipped` commit-convention finding.
-- Do not pick a manager by what looks familiar: detect, then offer the table.
+- Do not pick a manager by what looks familiar or by what this framework uses: detect, then recommend by stack.
 - Do not duplicate the secret-scanner version: reuse the CI pin.
 
 ## State updates
@@ -135,10 +149,10 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py pref set hooks.manager <lefthook|pre-commit|...> \
+python3 implement/tools/progress.py pref set hooks.manager <husky|pre-commit|lefthook|...> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> --by owner \
   --reason "<the owner's words: why the title check is enough>"
 python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
-  --commit <sha> --verification-command "test -f lefthook.yml" --verification-result "present; install documented"
+  --commit <sha> --verification-command "test -f <manager config>" --verification-result "present; install documented"
 ```
