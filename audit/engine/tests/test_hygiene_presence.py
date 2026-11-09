@@ -63,7 +63,7 @@ class HygienePresenceTests(unittest.TestCase):
                 "Makefile": MAKE,
                 ".github/CODEOWNERS": "* @a\n",
                 ".github/pull_request_template.md": "x",
-                ".github/dependabot.yml": "x",
+                ".github/dependabot.yml": "version: 2\nupdates:\n  - package-ecosystem: github-actions\n",
                 "CONTRIBUTING.md": "x",
                 "docs/SECURITY.md": "x",
                 "docs/how-to/release-process.md": "x",

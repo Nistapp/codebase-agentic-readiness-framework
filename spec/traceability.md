@@ -58,6 +58,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 | `EXEC-05` | No generated artifacts committed in-tree | DEGRADER | yes | [REQ-SH-043](readiness-requirements.md#req-sh-043--generated-files-marked-or-untracked) |
 | `EXEC-06` | Documented commands resolve | DEGRADER | yes | [REQ-SH-025](readiness-requirements.md#req-sh-025--documented-commands-resolve) |
 | `EXEC-07` | No competing configs for one concern | DEGRADER | yes | [REQ-SH-044](readiness-requirements.md#req-sh-044--one-configuration-per-concern) |
+| `EXEC-08` | Tool versions visible to dependency automation | DEGRADER | yes | [REQ-SH-058](readiness-requirements.md#req-sh-058--tool-versions-visible-to-dependency-automation) |
 | `TST-01` | Test verb exists, suite non-empty | BLOCKER | yes | [REQ-SH-045](readiness-requirements.md#req-sh-045--test-verb-and-suite) |
 | `TST-02` | Suite status known | DEGRADER | yes | [REQ-SH-046](readiness-requirements.md#req-sh-046--suite-passes) |
 | `TST-03` | Skip / xfail census | DEGRADER | yes | [REQ-SH-047](readiness-requirements.md#req-sh-047--no-skipped-tests) |

@@ -106,7 +106,7 @@ class FixtureMatrixImportTests(unittest.TestCase):
                 document, envelope = self.imported(name)
                 self.assertEqual(vr.validate_document(document).errors, [])
                 self.assertTrue(render_report.render(document))
-                self.assertEqual(len(document["checks"]), 70)
+                self.assertEqual(len(document["checks"]), 71)
                 checks = {c["id"]: c for c in document["checks"]}
                 for check_id, expected in self.matrix.MATRIX[name].items():
                     self.assertEqual(checks[check_id]["verdict"], expected, f"{name}: {check_id}")
@@ -115,7 +115,7 @@ class FixtureMatrixImportTests(unittest.TestCase):
                     if expected != "PASS":
                         defects += 1
                         self.assertNotEqual(checks[check_id]["verdict"], "PASS")
-                self.assertEqual(envelope["data"]["checks_imported"], 70)
+                self.assertEqual(envelope["data"]["checks_imported"], 71)
         self.assertGreater(defects, 40)
 
 

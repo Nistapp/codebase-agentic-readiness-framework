@@ -508,7 +508,7 @@ class ProvenanceTests(RenderCase):
         self.assertEqual(values["Status"], "final")
         self.assertEqual(values["Started"], "`2026-10-10T09:00:00+00:00`")
         self.assertEqual(values["Finalised"], "`2026-10-10T09:42:07+00:00`")
-        self.assertEqual(values["Recipe"], "`brownfield-audit` 0.1.0, catalogue `0.3.0`")
+        self.assertEqual(values["Recipe"], "`brownfield-audit` 0.1.0, catalogue `0.4.0`")
         self.assertEqual(
             values["Engine"],
             "`python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2`, "
@@ -1499,7 +1499,7 @@ class AppendixTests(RenderCase):
                     order.setdefault(check["id"].split("-")[0], len(order))
                 expected = sorted(report["checks"], key=lambda c: order[c["id"].split("-")[0]])
                 self.assertEqual(found, [f"`{c['id']}`" for c in expected])
-        self.assertEqual(len(rows_of(section(self.render(load(drafts()[0])), "Appendix — all checks"))), 70)
+        self.assertEqual(len(rows_of(section(self.render(load(drafts()[0])), "Appendix — all checks"))), 71)
 
     def test_a_row_gives_the_severity_method_scoring_both_verdicts_and_the_summary(self) -> None:
         text = section(self.render(service()), "Appendix — all checks")
@@ -1879,7 +1879,7 @@ class GoldenTests(RenderCase):
             with self.subTest(path=path.name):
                 report = load(path)
                 markdown = self.render(report)
-                self.assertEqual(len(rows_of(section(markdown, "Appendix — all checks"))), 70)
+                self.assertEqual(len(rows_of(section(markdown, "Appendix — all checks"))), 71)
                 for finding in report["findings"]:
                     self.assertEqual(markdown.count(f"{BR}finding `{finding['id']}`"), 1)
                 self.assertIn("> [!NOTE]\n> **Draft.**", markdown)

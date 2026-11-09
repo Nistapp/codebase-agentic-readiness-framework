@@ -291,3 +291,35 @@ Remediation      `untrack-generated` (detection and documentation only: keep one
 Pitfalls         `biome.json` matches both the `lint` and `format` globs by design (Biome itself combines
                  the two); a repository with only `biome.json` for both concerns is not competition —
                  only a second file matching the same single concern is.
+
+## EXEC-08 — Tool versions visible to dependency automation
+
+Why it matters   Dependabot and Renovate read manifests, not commands. A tool version typed into a
+                 `Makefile`, a workflow or a hook gets no security alert and no update, and an agent asked
+                 to upgrade the tool must find every copy by hand.
+Severity         DEGRADER
+Engine           `EXEC-08`. Reads, line by line, the command runners (`Makefile`, `*.mk`, `justfile`,
+                 `Taskfile`, `package.json`), the CI workflows (`.github/workflows/*`, `.gitlab-ci.yml`)
+                 and the hook files (`lefthook.yml`, `.husky/*`) for a literal version after a launcher:
+                 Node `npx`, `bunx`, `pnpm dlx`, `yarn dlx`, `npm exec`, `npm install -g`; Python `uvx`,
+                 `uv tool`, `uv run --with`, `pipx`, `pip install`; Go `go run`/`go install`; Rust
+                 `cargo install`; and the `version` input of `setup-uv`, `pnpm/action-setup`,
+                 `setup-bun` and `golangci-lint-action`. Each literal is looked up in every
+                 `package.json`, `pyproject.toml`, `requirements*.txt`, `go.mod` and `Cargo.toml`.
+Method           automated
+Look for         `name@1.2.3` or `name==1.2.3` after a launcher, where the version starts with a digit.
+                 A version read from a variable (`ruff@$(call pin,ruff)`) is not a literal.
+Rubric           PASS: no literal tool version in any file read, or the file is matched by a Renovate
+                 `customManagers` (or `regexManagers`) file pattern.
+                 PARTIAL: every literal version also appears, same name and version, in a manifest; the
+                 inline copy drifts when the bot updates the manifest.
+                 FAIL: at least one literal version that no manifest holds.
+                 NOT_APPLICABLE: never; the engine has no such verdict.
+                 UNKNOWN when: there is no command runner, workflow or hook file to read.
+Evidence to cite A `file` evidence item per literal, with its line and the tool and version.
+Absence proof    A PASS states how many command files were read and that none holds a literal version.
+Remediation      `pin-execution-environment`
+Pitfalls         Runtime versions (`node-version`, `python-version`, `go-version`) belong to `EXEC-01`,
+                 not here. `uses:` action pins are visible to Dependabot's `github-actions` ecosystem. A
+                 versionless `uvx ruff` floats; it is a reproducibility concern, not a visibility one, and
+                 passes this check. Scripts a verb calls and `Dockerfile` `RUN` lines are not read yet.

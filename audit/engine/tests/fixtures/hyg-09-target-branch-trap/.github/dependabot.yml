@@ -1,0 +1,11 @@
+# The npm entry sets target-branch and ignore: the ignore rule does not apply to security updates. HYG-09 PARTIAL.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    target-branch: develop
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]

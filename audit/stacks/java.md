@@ -43,7 +43,8 @@ Dependency-Check Gradle plugin (`org.owasp.dependencycheck`), registering `depen
 task name that does not match `security` literally, so a repository applying the plugin still reads
 `CMD-01` `FAIL` for that verb unless a `security` task delegates to it (see Pitfalls). Hook manager: none
 is standard; a committed `.githooks/` with `core.hooksPath` set by a build task, or lefthook (no JVM plugin
-needed). Commit rule: a `commit-msg` script or lefthook stage.
+needed). Commit rule: a `commit-msg` script or lefthook stage. Dependency updates: Dependabot
+`package-ecosystem: gradle` or `maven`; Renovate's `gradle` and `maven` managers.
 
 ## Execution determinism
 
@@ -57,6 +58,8 @@ version read by the build itself; its absence leaves the JDK to whatever `JAVA_H
 (`dependencyLocking { lockAllConfigurations() }`, writing `gradle.lockfile` files). `EXEC-02` recognises
 `gradle.lockfile`, at any depth, as the one lockfile name for `jvm`, so a Gradle build without it reads
 `FAIL` for that check (see Pitfalls).
+Tool versions (`EXEC-08`) are usually Gradle or Maven plugins in the build file, which Dependabot reads, so the
+check fires here only on an `npx` or `uvx` call with a typed version in a runner file or workflow.
 
 ## CI idiom
 

@@ -7,7 +7,7 @@
       "version": "0.1.0"
     },
     "framework_revision": "7eedf23c99c39f94cad435e8a52eb28642308a92",
-    "catalogue_version": "0.3.0",
+    "catalogue_version": "0.4.0",
     "engine": {
       "name": "python-agentic-audit",
       "version": "0.1.0",
@@ -1540,6 +1540,18 @@
       "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",
       "evidence": [],
       "searches": []
+    },
+    {
+      "id": "EXEC-08",
+      "title": "Tool versions visible to dependency automation",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",
+      "evidence": [],
+      "searches": []
     }
   ],
   "findings": [
@@ -2123,15 +2135,15 @@
     }
   ],
   "summary": {
-    "phase1_score": 0.7016,
-    "scored_checks": 56,
+    "phase1_score": 0.6905,
+    "scored_checks": 57,
     "blockers_remaining": {
       "total": 6,
       "fail": 2,
       "partial": 2,
       "unknown": 2
     },
-    "unknown_scored_checks": 5,
+    "unknown_scored_checks": 6,
     "unconfirmed_agent_findings": 0
   },
   "unattested": [
