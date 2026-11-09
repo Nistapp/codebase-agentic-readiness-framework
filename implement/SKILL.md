@@ -60,6 +60,9 @@ These apply through every stage, without exception:
   improvise silently.
 - **Smallest reasonable diff.** Match the repository's existing style. No unrelated refactors, no mass
   reformat; a reformat the owner asks for is its own pull request.
+- **Write to the owner plainly.** Every question, brief, status report and pull request description follows
+  [talking to the user](../audit/prompts/talking-to-the-user.md): the bottom line first, short sentences,
+  evidence labels, and a decision request with a recommendation and a default.
 
 ## Running the commands
 

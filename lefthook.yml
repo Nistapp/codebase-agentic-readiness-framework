@@ -18,7 +18,7 @@ pre-commit:
       run: make format-check
     docs-lint:
       # The ratchet path list lives in the Makefile (DOCS_LINT_PATHS); the globs here are its broadest match.
-      glob: "{implement/**/*.md,docs/**/*.md,AGENTS.md,CONTRIBUTING.md,CHANGELOG.md,RELEASE_PROCESS.md,SECURITY.md}"
+      glob: "{implement/**/*.md,docs/**/*.md,audit/prompts/*.md,AGENTS.md,CONTRIBUTING.md,CHANGELOG.md,RELEASE_PROCESS.md,SECURITY.md}"
       run: make docs-lint
     workflow-lint:
       glob: ".github/**"

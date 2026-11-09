@@ -135,4 +135,5 @@ When you ask several questions, number them and letter the options. Then the rea
 | Chat replies, plans, reports | Sections 1 to 5 |
 | Commit messages and pull request descriptions | Sections 1 and 2; Conventional Commits from [`AGENTS.md`](../AGENTS.md) |
 | Documentation pages | Sections 1 to 3, plus [`docs/STYLE_GUIDE.md`](STYLE_GUIDE.md) |
-| Recipe files (`SKILL.md`, playbooks, checks) | Section 2. Their messages to users are a planned change |
+| Recipe files (`SKILL.md`, playbooks, checks) | Section 2 |
+| The recipes' messages to their users | [`audit/prompts/talking-to-the-user.md`](../audit/prompts/talking-to-the-user.md), the recipe copy of sections 1, 2, 4 and 5 |

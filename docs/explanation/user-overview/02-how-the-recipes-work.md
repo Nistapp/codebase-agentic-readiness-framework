@@ -61,6 +61,12 @@ intake, what to do about drifted findings; at triage, keep, skip or defer for ev
 preferences for the run; per theme, the option for each choice and the change list; and the merge of every
 theme's branch, which only the owner or their review process does.
 
+Both recipes ask and report in the same way. They follow one shared prompt,
+[`audit/prompts/talking-to-the-user.md`](../../../audit/prompts/talking-to-the-user.md), which both skill
+bundles carry. Each message puts the bottom line first. Each question gives the options, a recommendation and the
+default. Each claim that matters is marked *checked*, *inferred* or *assumed*, and the labels match the evidence
+the report records.
+
 ## 4. Reading the report
 
 A report's `checks[]` carry a verdict (`PASS`, `PARTIAL`, `FAIL`, `NOT_APPLICABLE`, `UNKNOWN` or `ATTEST`)

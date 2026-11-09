@@ -20,8 +20,10 @@ Each bundle is replaced whole on every run, so a stale leftover from an earlier 
   ``agentic-readiness-audit`` (the name `skills-ref` checks against the bundle's folder name), and a
   ``metadata.version`` key added: the release version from ``.release-please-manifest.json``
   (:func:`stamp_frontmatter`), so an installed bundle says which release it is.
-- ``references/``: the check files (``audit/checks/``), the stack profiles (``audit/stacks/``) and the schema docs
-  (``audit/schema/*.schema.json``, ``SCHEMA.md``, ``LICENSING.md``) — read by the model, not run.
+- ``references/``: the check files (``audit/checks/``), the stack profiles (``audit/stacks/``), the shared prompt
+  on how to talk to the user (``audit/prompts/talking-to-the-user.md``, which the implement bundle carries too) and
+  the schema docs (``audit/schema/*.schema.json``, ``SCHEMA.md``, ``LICENSING.md``) — read by the model, not run.
+  ``SKILL.md``'s link to the prompt is rewritten to its place under ``references/prompts/``.
 - ``scripts/``: the five tools the recipe's Tools table calls (``facts.py``, ``engine.py``, ``report.py``,
   ``validate_report.py``, ``render_report.py``, from ``audit/tools/``) and the private modules they import; the
   schema files and ``catalogue.json`` those tools read at a fixed path next to themselves
@@ -39,7 +41,8 @@ every link it keeps:
 
 - ``SKILL.md``: ``implement/SKILL.md``, its ``name`` rewritten from ``implement`` to the bundle's name, and the
   same ``metadata.version`` added.
-- ``references/``: the state contract, the playbooks, the kickoff prompt, the check files, the stack profiles,
+- ``references/``: the state contract, the playbooks, the kickoff prompt, the shared prompt on how to talk to the
+  user (from ``audit/prompts/``), the check files, the stack profiles,
   ADR 0003, ``spec/command-surface.md`` and the spec decisions, the state schema and its docs, and the parts of
   the Tools CLI reference that cover the carried tools (:data:`TOOLS_CLI_SECTIONS`).
 - ``scripts/``: ``progress.py``, ``check_drift.py`` and ``compare_reports.py`` (from ``implement/tools/``), and
@@ -136,6 +139,15 @@ SCHEMA_FILES = (
     "LICENSING.md",
 )
 
+#: The prompts in `audit/prompts/` the audit bundle carries, under `references/prompts/`. `kickoff.md` stays out:
+#: a person pastes it into a harness; the skill does not read it.
+AUDIT_PROMPT_FILES = ("talking-to-the-user.md",)
+
+#: `audit/SKILL.md` links each carried prompt relative to itself; in the bundle the prompt sits under `references/`.
+AUDIT_SKILL_LINK_REWRITES = tuple(
+    (f"](prompts/{name})", f"](references/prompts/{name})") for name in AUDIT_PROMPT_FILES
+)
+
 SKILL_MD_SOURCE_NAME = "name: audit\n"
 SKILL_MD_BUNDLE_NAME = f"name: {BUNDLE_NAME}\n"
 
@@ -178,6 +190,8 @@ def stamp_frontmatter(text: str, source: str, source_name: str, bundle_name: str
 
 def _write_skill_md(bundle_dir: Path) -> None:
     text = (AUDIT / "SKILL.md").read_text(encoding="utf-8")
+    for old, new in AUDIT_SKILL_LINK_REWRITES:
+        text = text.replace(old, new)
     stamped = stamp_frontmatter(text, "audit/SKILL.md", SKILL_MD_SOURCE_NAME, SKILL_MD_BUNDLE_NAME, release_version())
     (bundle_dir / "SKILL.md").write_text(stamped, encoding="utf-8")
 
@@ -186,6 +200,10 @@ def _write_references(bundle_dir: Path) -> None:
     references = bundle_dir / "references"
     _copy_tree(AUDIT / "checks", references / "checks")
     _copy_tree(AUDIT / "stacks", references / "stacks")
+    prompts_dir = references / "prompts"
+    prompts_dir.mkdir(parents=True)
+    for name in AUDIT_PROMPT_FILES:
+        shutil.copy2(AUDIT / "prompts" / name, prompts_dir / name)
     schema_dir = references / "schema"
     schema_dir.mkdir(parents=True)
     for name in SCHEMA_FILES:
@@ -272,6 +290,7 @@ IMPLEMENT_REFERENCES = (
     ("implement/state.md", "references/state.md"),
     ("implement/playbooks", "references/playbooks"),
     ("implement/prompts", "references/prompts"),
+    ("audit/prompts/talking-to-the-user.md", "references/prompts/talking-to-the-user.md"),
     ("audit/checks", "references/checks"),
     ("audit/stacks", "references/stacks"),
     (
