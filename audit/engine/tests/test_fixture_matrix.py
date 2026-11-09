@@ -259,7 +259,7 @@ GOVERNED_FIXTURES = (
 
 #: Scoreable checks that cannot PASS without executed Tier-C probes or machine-local state.
 #: IDX-* assert the operator's harness and index store; TST-02 runs the suite to learn its status.
-#: They are covered by their own tests (test_idx_pack.py, the positive fixture) and are never
+#: They are covered by their own tests (packs/idx/test_idx_pack.py, the positive fixture) and are never
 #: faked as passes here.
 PROBE_OR_ENVIRONMENT_SCOPED = frozenset(
     {

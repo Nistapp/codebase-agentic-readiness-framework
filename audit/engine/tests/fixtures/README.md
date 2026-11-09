@@ -6,19 +6,19 @@ The catalogue's § Adding a Check makes this a merge requirement: no fixture, no
 Current state: the fixture matrix is complete and consolidated by `../test_fixture_matrix.py`, which
 carries one explicit expected verdict per fixture and asserts the positive fixtures collectively pass
 every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`, `12`) and
-`AGT-05` are exercised by `../test_agt_pack.py` and `../test_cmd_pack.py`; the earlier `AGT` checks
+`AGT-05` are exercised by `../packs/agt/test_agt_pack.py` and `../packs/cmd/test_cmd_pack.py`; the earlier `AGT` checks
 (`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`08`) are
-exercised by `../test_exec_pack.py` (and `EXEC-08` by `../test_exec08_inline_versions.py`); the `CMD` checks (`CMD-01`…`04`) by `../test_cmd_pack.py`; and
-the `SEC` checks (`SEC-01`…`03`) by `../test_sec_pack.py`, against the fixtures below. The `DOC` and
-`NAV` checks (`DOC-01`…`05`, `NAV-01`…`05`) are exercised by `../test_doc_nav_pack.py`. The `TOOL`
-checks (`TOOL-01`…`06`) are exercised by `../test_tool_pack.py`; the `CI` checks (`CI-01`…`03`) by
-`../test_ci_pack.py`; the `TST` checks (`TST-01`…`05`) by `../test_tst_pack.py`; the `BASE` checks
-(`BASE-01`…`04`) by `../test_base_pack.py`, with the ratchet exercised end to end by
+exercised by `../packs/exec/test_exec_pack.py` (and `EXEC-08` by `../packs/exec/test_exec08_inline_versions.py`); the `CMD` checks (`CMD-01`…`04`) by `../packs/cmd/test_cmd_pack.py`; and
+the `SEC` checks (`SEC-01`…`03`) by `../packs/sec/test_sec_pack.py`, against the fixtures below. The `DOC` and
+`NAV` checks (`DOC-01`…`05`, `NAV-01`…`05`) are exercised by `../packs/doc_nav/test_doc_nav_pack.py`. The `TOOL`
+checks (`TOOL-01`…`06`) are exercised by `../packs/tool/test_tool_pack.py`; the `CI` checks (`CI-01`…`03`) by
+`../packs/ci/test_ci_pack.py`; the `TST` checks (`TST-01`…`05`) by `../packs/tst/test_tst_pack.py`; the `BASE` checks
+(`BASE-01`…`04`) by `../packs/base/test_base_pack.py`, with the ratchet exercised end to end by
 `../test_ratchet.py`; the `CON` checks (`CON-02`, `CON-03`) plus the `CON-04` emitter by
-`../test_con_pack.py`; and the informational `HYG` checks (`HYG-01`…`11`) by
-`../test_hyg_pack.py`.
+`../packs/con/test_con_pack.py`; and the informational `HYG` checks (`HYG-01`…`11`) by
+`../packs/hyg/test_hyg_pack.py`.
 
-A fixture is correct for the runner it names, not only for the engine. `../test_make_fixtures.py` runs
+A fixture is correct for the runner it names, not only for the engine. `../packs/cmd/test_make_fixtures.py` runs
 `make -n -f <fixture>/Makefile check` on every fixture that has a `Makefile`, when `make` is installed, and requires
 success for all but `cmd-01-make-parse-error`, which it requires Make to refuse with the message the engine reports.
 
