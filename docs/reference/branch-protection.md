@@ -75,21 +75,26 @@ Both checks come from GitHub Actions (integration id `15368`).
 `CI Gate` is the last job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). CI runs on every pull
 request, on every merge group of the `dev` merge queue and on every push to `dev` and `main`. `CI Gate` needs eleven
 jobs and fails unless each one succeeded. The jobs run on Ubuntu (issue #82 tracks macOS and Windows). The first six
-run the steps of `make check` at once; `dev/tests/test_ci_parity.py` fails when a step of `check` has no job:
+run the steps of `make check` at once; `dev/tests/test_ci_parity.py` fails when a step of `check` has no job. The
+engine's suite runs in shards (`ENGINE_SHARDS` in the `Makefile`, split by `dev/test_shard.py`); the parity test also
+fails when a matrix misses a shard:
 
 | Job | What it runs |
 | --- | --- |
 | `static` | `make format-check typecheck verify-rules recipe-lint masters-check workflow-lint spell` |
 | `crosscheck` | `make crosscheck` on Python 3.11 and 3.14 |
-| `test-engine` | `make coverage-engine`: the engine's suite under coverage.py, on Python 3.11 |
+| `test-engine` | `make coverage-engine-shard`, one job per shard: the engine's suite under coverage.py, on Python 3.11 |
 | `test-tools` | `make coverage-audit-tools coverage-implement-tools` on Python 3.11 |
 | `test-dev` | `make test-dev` on Python 3.11 |
-| `test-py314` | `make test verify-rules` on Python 3.14; on Linux `make test` runs its four suites at once |
-| `coverage` | `make coverage-combine`: merges the suites' data files and fails below the floor in `.coveragerc` |
+| `test-py314` | `make test-part`, one job per engine shard: every suite of `make test` and `verify-rules` on Python 3.14; each part runs its targets at once |
+| `coverage` | `make coverage-combine SHARDED=1`: merges the data files (one per engine shard) and fails below the floor in `.coveragerc` |
 | `security` | `make security` |
 | `self-audit` | `make self-audit`: the engine on this repository; exit 2 when a finding appears that `.audit-baseline.json` did not have |
 | `docs` | `make docs-lint` and the Mermaid render check, when Markdown changed |
 | `commits` | `dev/commit_lint.py` on each commit that the pull request or push adds: Conventional Commits subjects; merge commits are skipped |
+
+[`.github/workflows/nightly.yml`](../../.github/workflows/nightly.yml) runs the unsharded `make check`, `make coverage`
+and `make test` once a night on `dev`. It is not a required check.
 
 The rulesets require `CI Gate` alone. Thus a new matrix leg or a renamed job never needs a ruleset change. Add a new
 job to `needs:` in the workflow, not to the rulesets.

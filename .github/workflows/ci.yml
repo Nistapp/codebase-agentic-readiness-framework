@@ -74,10 +74,18 @@ jobs:
           version-file: dev/tools/pyproject.toml
       - run: make crosscheck
 
-  # The engine's suite under coverage.py. Its data file goes to the `coverage` job, which combines every suite's.
+  # The engine's suite under coverage.py, in shards that run at once (ENGINE_SHARDS in the Makefile; the matrix lists
+  # 1 to ENGINE_SHARDS, which dev/tests/test_ci_parity.py checks). Each shard's data file goes to the `coverage` job,
+  # which combines every suite's.
   test-engine:
-    name: test-engine (Python 3.11, coverage)
+    name: test-engine (shard ${{ matrix.shard }}, Python 3.11, coverage)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      SHARD: ${{ matrix.shard }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -88,14 +96,14 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: dev/tools/pyproject.toml
-      - run: make coverage-engine
+      - run: make coverage-engine-shard
         env:
           CI: "true"
       # The data file's name starts with a dot, so it is a hidden file to upload-artifact.
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: coverage-engine
-          path: dev/dist/coverage/.coverage.engine
+          name: coverage-engine-${{ matrix.shard }}
+          path: dev/dist/coverage/.coverage.engine-${{ matrix.shard }}
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 1
@@ -143,11 +151,18 @@ jobs:
           version-file: dev/tools/pyproject.toml
       - run: make test-dev
 
-  # Every suite on the newest Python, through the `test` verb itself. On Linux, `make test` runs its four suites at
-  # once (TEST_JOBS in the Makefile), so this job also proves the parallel run on every pull request.
+  # Every suite on the newest Python, in parts with one engine shard each (`make test-part`; TEST_PART_<i> in the
+  # Makefile). Each part runs its targets at once, as `make test` runs its suites, so this job also proves the
+  # parallel run on every pull request. The nightly workflow runs the unsharded `make test`.
   test-py314:
-    name: test (Python 3.14)
+    name: test (part ${{ matrix.shard }}, Python 3.14)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
+    env:
+      SHARD: ${{ matrix.shard }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -158,10 +173,11 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: dev/tools/pyproject.toml
-      - run: make test verify-rules
+      - run: make test-part
 
-  # Combines the suites' data files and fails below the floor in .coveragerc (`fail_under`). `coverage-combine`
-  # fails when a suite's data file is missing, so a lost upload cannot pass with a partial total.
+  # Combines the suites' data files and fails below the floor in .coveragerc (`fail_under`). `coverage-combine
+  # SHARDED=1` fails when a suite's or an engine shard's data file is missing, so a lost upload cannot pass with a
+  # partial total.
   coverage:
     name: coverage
     needs: [test-engine, test-tools]
@@ -181,7 +197,7 @@ jobs:
           pattern: coverage-*
           merge-multiple: true
           path: dev/dist/coverage
-      - run: make coverage-combine
+      - run: make coverage-combine SHARDED=1
 
   security:
     name: security
