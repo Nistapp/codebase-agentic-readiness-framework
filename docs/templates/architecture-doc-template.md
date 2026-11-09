@@ -1,5 +1,6 @@
 # [Component / Stage Name]
 
+> **Purpose:** [One sentence: what this component does, and why a reader needs to know.]
 > **Audience:** Engineers & Architects
 > **Related ADRs:** [ADR-NNNN](../architecture/adrs/NNNN-title.md)
 > **Status:** Planned — not yet implemented.
