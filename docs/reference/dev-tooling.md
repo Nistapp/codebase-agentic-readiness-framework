@@ -13,8 +13,8 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | --- | --- | --- | --- | --- |
 | ruff | Python formatting and lint errors (rules in `ruff.toml`) | `make format`, `make format:check`, `make lint` | `static` | `dev/tools/pyproject.toml` |
 | mypy | Python type errors, strict mode (`mypy.ini`) | `make typecheck` | `static` | `dev/tools/pyproject.toml` |
-| unittest | Failing tests: the engine, the audit tools, the implement tools, the dev checks | `make test` (on Linux, its four suites at once) | `test-engine`, `test-tools`, `test-dev`, `test-py314` | Python standard library |
-| coverage.py | Test coverage below the floor in `.coveragerc` | `make coverage` (in CI: `coverage-<suite>`, then `coverage-combine`) | `test-engine`, `test-tools`, `coverage` | `dev/tools/pyproject.toml` |
+| unittest | Failing tests: the engine, the audit tools, the implement tools, the dev checks | `make test` (on Linux, its four suites at once; CI splits the engine's suite into shards with `dev/test_shard.py`) | `test-engine`, `test-tools`, `test-dev`, `test-py314`; unsharded in `nightly.yml` | Python standard library |
+| coverage.py | Test coverage below the floor in `.coveragerc` | `make coverage` (in CI: `coverage-<suite>` or `coverage-engine-shard`, then `coverage-combine SHARDED=1`) | `test-engine`, `test-tools`, `coverage`; unsharded in `nightly.yml` | `dev/tools/pyproject.toml` |
 | jsonschema | The tools' schema validator disagrees with the reference package | `make crosscheck` | `crosscheck` | `dev/tools/pyproject.toml` |
 | `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `static` | This repository |
 | `dev/build_masters.py` | An [audit master list](audit-master.md) or [implement master list](implement-master.md) that no longer matches the catalogue, the check files or the playbooks | `make masters-check`; `make update-masters` rewrites both pages | `static` | This repository |
