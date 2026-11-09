@@ -29,7 +29,7 @@ the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they a
 | Python 3.11 or newer | Everything | Pinned in `.python-version`; CI runs 3.11 and 3.14 |
 | `git` | Everything | |
 | [`uv`](https://docs.astral.sh/uv/) | `make check`, `make security`, `make coverage` | The dev tools (ruff, mypy, detect-secrets, coverage.py) run through `uvx` at the versions pinned in `dev/tools/`; nothing is installed into the project |
-| [Go](https://go.dev/doc/install) 1.27 or newer | `make security` | Builds the pinned osv-scanner from `dev/tools/osv/go.mod` on first use. `make security` also needs the network |
+| [Go](https://go.dev/doc/install) 1.27 or newer | `make check`, `make security` | Builds the pinned actionlint (`dev/tools/actionlint/go.mod`) and osv-scanner (`dev/tools/osv/go.mod`) on first use, through the Go module proxy. `make security` also needs the network |
 | `make` | Every command below | Linux and macOS. On Windows use WSL |
 | Node 22 | `make docs-lint` | The pinned `markdownlint-cli2` runs through `npx`; not needed for `make check` |
 | Chrome, through Puppeteer | `make docs-mermaid` | Only when you add or change a Mermaid block; the pinned mermaid-cli fetches it on first use |

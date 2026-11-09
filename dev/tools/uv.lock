@@ -7,12 +7,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "actionlint-py"
-version = "1.7.12.25"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/33/75/36ee89db39bb3620d1e46fe1f6ec77d6000d30ff45345699e51b4c850e83/actionlint_py-1.7.12.25.tar.gz", hash = "sha256:83f83be4cd317c79b15cbb7022787513a6994f00bfb2dd8da02fa4e62b4f640d", size = 12438, upload-time = "2026-09-22T16:24:42.477Z" }
-
-[[package]]
 name = "ast-serialize"
 version = "0.13.1"
 source = { registry = "https://pypi.org/simple" }
@@ -273,7 +267,6 @@ source = { virtual = "." }
 
 [package.dev-dependencies]
 tools = [
-    { name = "actionlint-py" },
     { name = "check-jsonschema" },
     { name = "coverage" },
     { name = "detect-secrets" },
@@ -290,7 +283,6 @@ tools = [
 
 [package.metadata.requires-dev]
 tools = [
-    { name = "actionlint-py", specifier = "==1.7.12.25" },
     { name = "check-jsonschema", specifier = "==0.39.0" },
     { name = "coverage", specifier = "==7.17.2" },
     { name = "detect-secrets", specifier = "==1.5.0" },

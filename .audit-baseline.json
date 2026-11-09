@@ -161,7 +161,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "20 boundary rules reference real paths",
+      "summary": "23 boundary rules reference real paths",
       "tier": "B",
       "title": "Architectural boundaries declared",
       "verdict": "PASS"
@@ -531,7 +531,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "github: local actionlint (.audit-baseline.json), actionlint (Makefile), actionlint (dev/tools/pyproject.toml), check-jsonschema (Makefile), zizmor (.audit-baseline.json), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI zizmor (.github/workflows/ci.yml)",
+      "summary": "github: local actionlint (.audit-baseline.json), actionlint (Makefile), actionlint (dev/tools/actionlint/go.mod), check-jsonschema (Makefile), zizmor (.audit-baseline.json), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI actionlint (.github/workflows/ci.yml), zizmor (.github/workflows/ci.yml)",
       "tier": "B",
       "title": "Workflow files are linted",
       "verdict": "PASS"
@@ -600,6 +600,7 @@
           "dev/tools/pyproject.toml",
           "dev/tools/package.json",
           "dev/tools/osv/go.mod",
+          "dev/tools/actionlint/go.mod",
           "lefthook.yml",
           "dev",
           ".github/",
@@ -659,7 +660,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, _typos.toml, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod (+46 more)",
+      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, _typos.toml, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod (+47 more)",
       "tier": "B",
       "title": "Allow/deny artifact present",
       "verdict": "PASS"
@@ -733,7 +734,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "consistency unverified: dev/tools/osv/go.sum, dev/tools/package-lock.json, dev/tools/uv.lock",
+      "summary": "consistency unverified: dev/tools/actionlint/go.sum, dev/tools/package-lock.json, dev/tools/uv.lock",
       "tier": "B",
       "title": "Lockfile committed and consistent",
       "verdict": "PARTIAL"
@@ -936,10 +937,10 @@
     },
     {
       "data": {
-        "denominator": 1188,
+        "denominator": 1189,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 476,
+        "numerator": 477,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -948,7 +949,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "476/1188 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
+      "summary": "477/1189 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1364,7 +1365,7 @@
     }
   ],
   "inventory": {
-    "files_inspected": 350,
+    "files_inspected": 352,
     "files_set_aside": 463,
     "files_skipped": 7,
     "set_aside": [
@@ -1444,15 +1445,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "65024fb26b6cdc04d071ee448257a38c8b2bda10",
+    "framework_revision": "d6ba4cb0af8e785f4096bbdf9e8d89eeeb6c6d95",
     "git_branch": "chore/v0.3.3-track-a-tooling",
     "git_dirty": true,
-    "git_sha": "65024fb26b6cdc04d071ee448257a38c8b2bda10",
+    "git_sha": "d6ba4cb0af8e785f4096bbdf9e8d89eeeb6c6d95",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "04e5d0ff9063e012",
     "ruleset_revision": "2026-11-09.1",
-    "scanned_at": "2026-11-09T07:32:15+00:00",
+    "scanned_at": "2026-11-09T07:49:24+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {

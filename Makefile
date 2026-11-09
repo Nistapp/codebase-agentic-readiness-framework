@@ -3,8 +3,8 @@
 #
 # The framework's command surface for this repository: seven verbs, the same names a human, an agent
 # and CI run. The runtime code is standard-library Python; the dev tools below are pinned in dev/tools/ and run
-# through uvx, so nothing is installed into the project. Needs make, git, python3 (3.11+) and uv; `make security`
-# also needs Go (1.27+) and the network.
+# through uvx or `go tool`, so nothing is installed into the project. Needs make, git, python3 (3.11+), uv and Go
+# (1.27+, for actionlint and osv-scanner); `make security` also needs the network.
 #
 #   make format         rewrite formatting in place
 #   make format:check   read-only: formatting and lint rules, and the ruff count against .quality-baseline.json
@@ -47,12 +47,14 @@ MARKDOWNLINT := npx --yes markdownlint-cli2@$(call npm_pin,markdownlint-cli2)
 # The compare step of the quality baseline (.quality-baseline.json): fails when a tool's full-tree count goes up.
 QUALITY_BASELINE := $(PYTHON) dev/quality_baseline.py check
 # The lockfiles that `make security` audits: every dev tool, Python, Node and Go.
-DEP_LOCKFILES := dev/tools/uv.lock dev/tools/package-lock.json dev/tools/osv/go.mod
+DEP_LOCKFILES := dev/tools/uv.lock dev/tools/package-lock.json dev/tools/osv/go.mod dev/tools/actionlint/go.mod
 COVERAGE := uvx coverage@$(call pin,coverage)
 # Workflow and GitHub-config checks: actionlint (syntax, expressions, shellcheck on run: blocks), zizmor (workflow
 # and Dependabot security, offline, at the pedantic persona: its help-level findings fail too) and check-jsonschema
 # (the SchemaStore schemas it bundles, offline).
-ACTIONLINT := uvx --from actionlint-py==$(call pin,actionlint-py) actionlint
+# actionlint is a Go `tool` in dev/tools/actionlint/go.mod: the Go module proxy serves it, go.sum checks it, and
+# Dependabot (gomod) sees the version. `go -C` runs it in that folder, so the workflows are passed by full path.
+ACTIONLINT := go -C dev/tools/actionlint tool actionlint
 ZIZMOR := uvx zizmor@$(call pin,zizmor)
 # The spell check: typos reads _typos.toml (the word list and the excluded data paths) from the repository root,
 # and walks the tracked files that .gitignore does not hide.
@@ -99,7 +101,7 @@ setup:
 	@$(PYTHON) -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else "setup: Python 3.11 or newer is required (see .python-version)")'
 	@command -v uv >/dev/null || { echo "setup: uv is required (https://docs.astral.sh/uv/)" >&2; exit 1; }
 	@command -v git >/dev/null || { echo "setup: git is required" >&2; exit 1; }
-	@command -v go >/dev/null || { echo "setup: Go 1.27 or newer is required for make security (https://go.dev/doc/install)" >&2; exit 1; }
+	@command -v go >/dev/null || { echo "setup: Go 1.27 or newer is required for make check and make security (https://go.dev/doc/install)" >&2; exit 1; }
 	@echo "setup: prerequisites present (python, uv, git, go); nothing to install"
 
 format:
@@ -175,7 +177,7 @@ spell-fix:
 	$(TYPOS) --write-changes
 
 workflow-lint:
-	$(ACTIONLINT)
+	$(ACTIONLINT) $(CURDIR)/.github/workflows/*.yml
 	$(ZIZMOR) --offline --persona pedantic .github
 	$(CHECK_JSONSCHEMA) --builtin-schema vendor.github-workflows .github/workflows/*.yml
 	$(CHECK_JSONSCHEMA) --builtin-schema vendor.dependabot .github/dependabot.yml

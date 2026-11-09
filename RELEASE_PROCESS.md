@@ -355,7 +355,7 @@ Each dev tool version is written once, in `dev/tools/`. The `Makefile`, `lefthoo
 the workflows read it from there. `dev/tests/test_tool_pins.py` fails when a version is written anywhere else.
 
 1. Change the version in `dev/tools/pyproject.toml` (Python tools), `dev/tools/package.json` (Node tools) or
-   `dev/tools/osv/go.mod` (osv-scanner).
+   the Go tool module (`dev/tools/osv/go.mod` for osv-scanner, `dev/tools/actionlint/go.mod` for actionlint).
 2. Make the lockfile again:
 
    ```bash
@@ -363,8 +363,8 @@ the workflows read it from there. `dev/tests/test_tool_pins.py` fails when a ver
    (cd dev/tools && npm install --package-lock-only --ignore-scripts)
    ```
 
-   For osv-scanner, or one of its Go dependencies, run
-   `go -C dev/tools/osv get <module>@<version>`, then `go -C dev/tools/osv mod tidy`.
+   For a Go tool, or one of its Go dependencies, run `go -C dev/tools/<tool> get <module>@<version>`, then
+   `go -C dev/tools/<tool> mod tidy`. `<tool>` is `osv` or `actionlint`.
 
 3. Run `make check`. If ruff or markdownlint changed a rule, fix the new findings in the same branch.
 4. Commit the manifest and its lockfile together, for example `build(dev): update ruff to 0.17.0`.

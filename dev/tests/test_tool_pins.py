@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""The dev tool versions live in three manifests only: ``dev/tools/pyproject.toml``, ``dev/tools/package.json`` and,
-for osv-scanner, the Go module ``dev/tools/osv/go.mod``.
+"""The dev tool versions live in the manifests in ``dev/tools/`` only: ``pyproject.toml``, ``package.json`` and one Go
+module per Go tool (``osv/go.mod`` for osv-scanner, ``actionlint/go.mod`` for actionlint).
 
 Dependabot reads those files and their lockfiles (``.github/dependabot.yml``). A version that is also written
 somewhere else would not move with a Dependabot pull request, so these tests fail when a pin is not exact, when a
@@ -12,6 +12,7 @@ lockfile disagrees with its manifest, or when a file that runs a tool repeats it
 from __future__ import annotations
 
 import datetime
+import pathlib
 import json
 import re
 import shutil
@@ -29,6 +30,11 @@ NODE_PINS = TOOLS / "package.json"
 NODE_LOCK = TOOLS / "package-lock.json"
 GO_MOD = TOOLS / "osv" / "go.mod"
 GO_SUM = TOOLS / "osv" / "go.sum"
+#: Each Go tool: its module folder, the module that provides it, and the command path of the `tool` directive.
+GO_TOOLS = {
+    "osv-scanner": (TOOLS / "osv", "github.com/google/osv-scanner/v2", "cmd/osv-scanner"),
+    "actionlint": (TOOLS / "actionlint", "github.com/rhysd/actionlint", "cmd/actionlint"),
+}
 OSV_CONFIG = TOOLS / "osv-scanner.toml"
 OSV_MODULE = "github.com/google/osv-scanner/v2"
 EXACT_GO = re.compile(r"^v[0-9]+\.[0-9]+\.[0-9]+$")
@@ -111,9 +117,9 @@ class LockfilesAgreeWithTheManifests(unittest.TestCase):
             self.assertEqual(lock["packages"][f"node_modules/{name}"]["version"], version)
 
 
-def go_requirements() -> dict[str, str]:
-    """``module -> version`` for each ``require`` line of the osv-scanner tool module."""
-    text = GO_MOD.read_text(encoding="utf-8")
+def go_requirements(go_mod: pathlib.Path = GO_MOD) -> dict[str, str]:
+    """``module -> version`` for each ``require`` line of a Go tool module (default: osv-scanner's)."""
+    text = go_mod.read_text(encoding="utf-8")
     block = re.search(r"^require \((.*?)^\)", text, re.S | re.M)
     lines = block.group(1).splitlines() if block else []
     lines += [m.group(1) for m in re.finditer(r"^require (\S+ \S+)", text, re.M)]
@@ -140,6 +146,26 @@ class GoModulePinsOsvScanner(unittest.TestCase):
     def test_go_sum_holds_the_pinned_osv_scanner(self) -> None:
         version = go_requirements()[OSV_MODULE]
         self.assertIn(f"{OSV_MODULE} {version} h1:", GO_SUM.read_text(encoding="utf-8"))
+
+
+class EachGoToolIsAPinnedToolRequirement(unittest.TestCase):
+    """Every Go tool has its own module: a `tool` directive, a tagged release, its checksum in go.sum."""
+
+    def test_each_go_tool_module(self) -> None:
+        for name, (folder, module, command) in GO_TOOLS.items():
+            with self.subTest(tool=name):
+                go_mod = folder / "go.mod"
+                text = go_mod.read_text(encoding="utf-8")
+                self.assertRegex(text, rf"(?m)^tool {re.escape(module)}/{re.escape(command)}$")
+                version = go_requirements(go_mod).get(module, "")
+                self.assertRegex(version, EXACT_GO, f"{name} must be a tagged release, not a pseudo-version")
+                self.assertIn(f"{module} {version} h1:", (folder / "go.sum").read_text(encoding="utf-8"))
+
+    def test_dependabot_watches_each_go_tool_module(self) -> None:
+        text = (REPO / ".github" / "dependabot.yml").read_text(encoding="utf-8")
+        for folder, _module, _command in GO_TOOLS.values():
+            with self.subTest(folder=folder.name):
+                self.assertIn(f'"/{folder.relative_to(REPO).as_posix()}"', text)
 
 
 class AcceptedVulnerabilitiesAreReviewed(unittest.TestCase):
@@ -202,6 +228,11 @@ class MakefileReadsTheManifests(unittest.TestCase):
         self.assertIn(f"typos@{python['typos']}", output)
         self.assertIn(f"markdownlint-cli2@{node['markdownlint-cli2']}", output)
 
+    def test_workflow_lint_runs_actionlint_from_its_go_module(self) -> None:
+        output = self.dry_run("workflow-lint")
+        self.assertIn(f"go -C dev/tools/actionlint tool actionlint {REPO}/.github/workflows/", output)
+        self.assertNotIn("actionlint-py", output)
+
     def test_check_runs_the_spell_check(self) -> None:
         self.assertIn(f"typos@{python_pins()['typos']}", self.dry_run("check"))
 
@@ -209,7 +240,7 @@ class MakefileReadsTheManifests(unittest.TestCase):
         output = self.dry_run("security")
         self.assertIn("go -C dev/tools/osv tool osv-scanner scan source", output)
         self.assertIn(f"--config={REPO}/dev/tools/osv-scanner.toml", output)
-        for lockfile in (TOOL_LOCK, NODE_LOCK, GO_MOD):
+        for lockfile in (TOOL_LOCK, NODE_LOCK, *(folder / "go.mod" for folder, _m, _c in GO_TOOLS.values())):
             with self.subTest(lockfile=lockfile.name):
                 self.assertIn(f"--lockfile={lockfile}", output)
         self.assertNotIn(go_requirements()[OSV_MODULE], output, "the Makefile must not write the osv-scanner version")

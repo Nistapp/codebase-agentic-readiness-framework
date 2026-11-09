@@ -41,14 +41,15 @@ GitHub's documentation (the Dependabot options reference and "Configuring Depend
 3. **One pull request per ecosystem.** A `security-fixes` group joins the minor and patch security fixes.
 4. **No `target-branch`.** The default branch is `dev`
    ([ADR 0002](0002-dev-integrates-main-releases.md)), so every Dependabot pull request goes to `dev` without it.
-5. **The dev tools are visible to Dependabot.** Their versions move to three manifests in `dev/tools/`, each with a
+5. **The dev tools are visible to Dependabot.** Their versions move to manifests in `dev/tools/`, each with a
    lockfile:
 
    | Manifest | Lockfile | Tools | Dependabot ecosystem |
    |---|---|---|---|
-   | [`pyproject.toml`](../../../dev/tools/pyproject.toml) (group `tools`) | `uv.lock` | actionlint-py, check-jsonschema, coverage, detect-secrets, jsonschema, mypy, ruff, skills-ref, typos, uv, zizmor | `uv` |
+   | [`pyproject.toml`](../../../dev/tools/pyproject.toml) (group `tools`) | `uv.lock` | check-jsonschema, coverage, detect-secrets, jsonschema, mypy, ruff, skills-ref, typos, uv, zizmor | `uv` |
    | [`package.json`](../../../dev/tools/package.json) | `package-lock.json` | markdownlint-cli2, mermaid-cli | `npm` |
    | [`osv/go.mod`](../../../dev/tools/osv/go.mod) (a `tool` directive) | `osv/go.sum` | osv-scanner ([ADR 0007](0007-security-verb-audits-dependencies-with-osv-scanner.md)) | `gomod` |
+   | [`actionlint/go.mod`](../../../dev/tools/actionlint/go.mod) (a `tool` directive) | `actionlint/go.sum` | actionlint | `gomod` |
 
    Nothing installs these projects. The [`Makefile`](../../../Makefile), [`lefthook.yml`](../../../lefthook.yml),
    [`dev/mermaid_check.py`](../../../dev/mermaid_check.py) and the workflows (`setup-uv` `version-file`) read each

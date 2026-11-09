@@ -57,9 +57,9 @@ no vendor-specific instruction file exists beside it.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
   `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`).
 - Python 3.11 or newer (pinned in `.python-version`), `uv` for the pinned dev tools (ruff, mypy, detect-secrets),
-  and Go 1.27 or newer for osv-scanner in `make security`.
-  Each tool version is written once, in `dev/tools/pyproject.toml`, `dev/tools/package.json` or
-  `dev/tools/osv/go.mod` (ADR 0003); never
+  and Go 1.27 or newer for actionlint (`make check`) and osv-scanner (`make security`).
+  Each tool version is written once, in `dev/tools/pyproject.toml`, `dev/tools/package.json` or a Go tool module
+  (`dev/tools/osv/go.mod`, `dev/tools/actionlint/go.mod`) (ADR 0003); never
   write a version in the `Makefile`, a hook or a workflow.
   Nothing is installed into the project.
 - Local hooks are `lefthook.yml` (a stop on commits to `dev` and `main`, format check on staged Python,

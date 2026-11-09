@@ -17,7 +17,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | coverage.py | Test coverage below the floor in `.coveragerc` | `make coverage` | `coverage` | `dev/tools/pyproject.toml` |
 | jsonschema | The tools' schema validator disagrees with the reference package | `make crosscheck` | `check` | `dev/tools/pyproject.toml` |
 | `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `check` | This repository |
-| actionlint | Workflow mistakes: syntax, expressions, action inputs, shellcheck on `run:` blocks | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` (`actionlint-py`) |
+| actionlint | Workflow mistakes: syntax, expressions, action inputs, shellcheck on `run:` blocks | `make workflow-lint` | `check` | `dev/tools/actionlint/go.mod` |
 | zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown. Runs at the pedantic persona, so a permission without a comment or a missing concurrency limit fails too | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | typos | Misspelled words in the tracked text, code identifiers included (word list: [`_typos.toml`](../../_typos.toml)) ([Spell check](#spell-check)) | `make spell`; `make spell-fix` writes the fixes | `check` | `dev/tools/pyproject.toml` |
 | check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
@@ -35,7 +35,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | release-please | Computes the next version from the commit subjects, writes `CHANGELOG.md`, tags and creates the GitHub release (`release-please-config.json`) | — | `release-please.yml`, on each push to `main` | `.github/workflows/release-please.yml` (action pinned by SHA) |
 | uv | Runs the Python tools through `uvx` and `uv run` | — | All jobs | `dev/tools/pyproject.toml` |
 | Node | Runs the Node tools through `npx` | — | `docs` | `.nvmrc` |
-| Go | Builds and runs osv-scanner through `go tool` | — | `security` | `dev/tools/osv/go.mod` (`go` line) |
+| Go | Builds and runs actionlint and osv-scanner through `go tool` | — | `check`, `security` | the `go` line of each Go tool module |
 
 `make check` runs `format:check`, `typecheck`, `test`, the engine's rule check, `crosscheck`, `recipe-lint`,
 `workflow-lint` and `spell`, in sequence. CI's `CI Gate` passes only when the `check`, `security`, `coverage`, `self-audit`,
@@ -57,9 +57,9 @@ To fix a finding, do one of these:
 ## Dependency audit
 
 `make security` runs osv-scanner after the secrets scan
-([ADR 0007](../architecture/adrs/0007-security-verb-audits-dependencies-with-osv-scanner.md)). It reads the three
-dev-tool lockfiles and asks osv.dev for known vulnerabilities. It needs Go 1.27 or newer and the network. The first
-run builds osv-scanner, which takes about 30 seconds.
+([ADR 0007](../architecture/adrs/0007-security-verb-audits-dependencies-with-osv-scanner.md)). It reads the
+dev-tool lockfiles (Python, Node and each Go tool module) and asks osv.dev for known vulnerabilities. It needs Go
+1.27 or newer and the network. The first run builds osv-scanner, which takes about 30 seconds.
 
 The scan fails when it finds a vulnerability that [`dev/tools/osv-scanner.toml`](../../dev/tools/osv-scanner.toml)
 does not accept. The output has one table row per vulnerability: the OSV link, the package, its version, the fixed
@@ -106,7 +106,8 @@ Each tool version is written once:
 
 - Python tools: `dev/tools/pyproject.toml`, group `tools`, locked in `dev/tools/uv.lock`.
 - Node tools: `dev/tools/package.json`, locked in `dev/tools/package-lock.json`.
-- osv-scanner: `dev/tools/osv/go.mod`, a Go `tool` requirement, with checksums in `dev/tools/osv/go.sum`.
+- Go tools: one module each, with a Go `tool` requirement and checksums in its `go.sum`: osv-scanner in
+  `dev/tools/osv/`, actionlint in `dev/tools/actionlint/`. The Go module proxy serves them.
 
 The `Makefile`, `lefthook.yml`, `dev/mermaid_check.py` and the workflows read each version from those files.
 Nothing is installed into the project: the tools run through `uvx`, `npx` and `go tool`. Dependabot watches these

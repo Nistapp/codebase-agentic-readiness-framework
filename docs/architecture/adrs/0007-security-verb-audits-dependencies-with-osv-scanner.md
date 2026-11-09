@@ -27,7 +27,8 @@ version updates. Three have no fix that reaches this repository and are accepted
 
 1. **osv-scanner runs inside `make security`.** After the secrets scan, the
    [`Makefile`](../../../Makefile) runs osv-scanner on every dev-tool lockfile: `dev/tools/uv.lock`,
-   `dev/tools/package-lock.json` and `dev/tools/osv/go.mod`. The tool name is written in the recipe, so `TOOL-04`
+   `dev/tools/package-lock.json` and the Go tool modules (`dev/tools/osv/go.mod`, `dev/tools/actionlint/go.mod`).
+   The tool name is written in the recipe, so `TOOL-04`
    sees it.
 2. **osv-scanner is a Go `tool` requirement.** [`dev/tools/osv/go.mod`](../../../dev/tools/osv/go.mod) pins a
    tagged release; `go.sum` holds the checksums. `go -C dev/tools/osv tool osv-scanner` builds and runs it. The
@@ -39,7 +40,9 @@ version updates. Three have no fix that reaches this repository and are accepted
    date passes, the scan fails again.
 5. **No offline switch.** `make security` needs the network (osv.dev). CI has it; a contributor without it cannot
    run the gate.
-6. **Contributors need Go 1.27 or newer.** `make setup` checks for it. CI installs it with `actions/setup-go` from
+6. **Contributors need Go 1.27 or newer.** `make setup` checks for it. Since 2026-11-09 actionlint is a Go tool
+   too (`make check`): its PyPI wrapper downloaded the binary from GitHub releases on each install, and a GitHub
+   outage failed CI. CI installs it with `actions/setup-go` from
    `go.mod`; the release job does so without a cache.
 
 ---
