@@ -160,9 +160,12 @@ The other checks score 10, or do not apply. The full, current list is on the
 | Ruleset | Target | State on GitHub |
 | --- | --- | --- |
 | `main protection` (id 26750008) | `refs/heads/main` | Active since 2026-11-07. Updated to [`main-protection.json`](../../.github/rulesets/main-protection.json) on 2026-11-08 |
-| `dev protection` (id 26787626) | `refs/heads/dev` | Active since 2026-11-08, from [`dev-protection.json`](../../.github/rulesets/dev-protection.json) |
+| `dev protection` (id 26787626) | `refs/heads/dev` | Active since 2026-11-08. Updated to [`dev-protection.json`](../../.github/rulesets/dev-protection.json) on 2026-11-09: the merge queue |
 
 On 2026-11-08 the default branch changed from `main` to `dev`.
+
+On 2026-11-09 CI moved to Linux only (issue #82 tracks macOS and Windows), `make check` became parallel jobs, and
+the `dev` merge queue was turned on. Pull requests into `dev` now land with `gh pr merge <n>`.
 
 On 2026-11-07 these settings were also turned on: private vulnerability reporting, secret scanning, push protection
 and Dependabot security updates (see [`SECURITY.md`](../../SECURITY.md)).
