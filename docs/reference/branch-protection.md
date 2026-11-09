@@ -53,7 +53,8 @@ Notes:
 - **Merge commit only.** A squash joins several Conventional Commits into one. A rebase rewrites them. A merge commit
   keeps each commit, so each one can be reverted alone.
 - **0 approvals.** A pull request is required, but an approval is not. The maintainer is the only person who merges.
-- **`dev` merges through a merge queue.** `gh pr merge <n>` adds a pull request to the queue. GitHub then merges it
+- **`dev` merges through a merge queue.** **Merge when ready** on the pull request page adds it to the queue (see
+  [Add a pull request to the merge queue](#add-a-pull-request-to-the-merge-queue)). GitHub then merges it
   onto the latest `dev`, together with the entries ahead of it, and runs CI on that result (the `merge_group`
   event). It lands only when `CI Gate` passes there, so nobody updates each branch by hand after every merge. The
   queue merges as soon as one entry is ready; it builds up to 5 groups at once and waits 30 minutes for `CI Gate`.
@@ -172,7 +173,7 @@ The other checks score 10, or do not apply. The full, current list is on the
 On 2026-11-08 the default branch changed from `main` to `dev`.
 
 On 2026-11-09 CI moved to Linux only (issue #82 tracks macOS and Windows), `make check` became parallel jobs, and
-the `dev` merge queue was turned on. Pull requests into `dev` now land with `gh pr merge <n>`. Later that day the
+the `dev` merge queue was turned on. Pull requests into `dev` now land through the queue. Later that day the
 `dev` ruleset stopped requiring an up-to-date branch, because the queue tests each pull request on the latest `dev`.
 
 On 2026-11-07 these settings were also turned on: private vulnerability reporting, secret scanning, push protection
@@ -197,6 +198,25 @@ gh api repos/Nistapp/codebase-agentic-readiness-framework/rules/branches/dev
 ```
 
 An empty list (`[]`) means that no rule applies to that branch.
+
+## Add a pull request to the merge queue
+
+The maintainer adds a pull request into `dev` to the queue once `CI Gate` passes on it. Use one of these:
+
+- **The web page.** Click **Merge when ready** on the pull request.
+- **The command line.** Call the `enqueuePullRequest` API with the pull request's id. Replace `<n>` with its number:
+
+  ```bash
+  gh api graphql \
+    -f query='mutation($id: ID!) { enqueuePullRequest(input: {pullRequestId: $id}) { mergeQueueEntry { position state } } }' \
+    -f id="$(gh pr view <n> --json id --jq .id)"
+  ```
+
+  It prints the entry's position and state, for example `QUEUED`.
+
+Do not use `gh pr merge <n>` for `dev`. On 2026-11-09 (gh 2.102.0) it asked GitHub to turn on auto-merge for the pull
+request instead, and this repository does not allow auto-merge. To leave the queue, click **Remove from queue** on
+the pull request.
 
 ## How the maintainer changes a ruleset
 
