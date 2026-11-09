@@ -73,7 +73,7 @@ Both checks come from GitHub Actions (integration id `15368`).
 ### `CI Gate`
 
 `CI Gate` is the last job in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml). CI runs on every pull
-request, on every merge group of the `dev` merge queue and on every push to `dev` and `main`. `CI Gate` needs ten
+request, on every merge group of the `dev` merge queue and on every push to `dev` and `main`. `CI Gate` needs eleven
 jobs and fails unless each one succeeded. The jobs run on Ubuntu (issue #82 tracks macOS and Windows). The first five
 run the steps of `make check` at once; `dev/tests/test_ci_parity.py` fails when a step of `check` has no job. The
 engine's and the audit tools' suites run in shards (`TEST_SHARDS` and `SHARDED_SUITES` in the `Makefile`, split by
@@ -87,7 +87,8 @@ engine's and the audit tools' suites run in shards (`TEST_SHARDS` and `SHARDED_S
 | `test-dev` | `make test-dev` on Python 3.11 |
 | `test-py314` | `make test-part`, one job per shard: every suite of `make test` and `verify-rules` on Python 3.14; each part runs its targets at once |
 | `coverage` | `make coverage-combine SHARDED=1`: merges the data files (one per shard of a sharded suite) and fails below the floor in `.coveragerc` |
-| `security` | `make security` |
+| `security-secrets` | `make security-secrets`: the secrets scan, the first part of `make security`; no Go |
+| `security-deps` | `make security-deps`: the dependency audit (osv-scanner), the second part of `make security` |
 | `self-audit` | `make self-audit`: the engine on this repository; exit 2 when a finding appears that `.audit-baseline.json` did not have |
 | `docs` | `make docs-lint` and the Mermaid render check, when Markdown changed |
 | `commits` | `dev/commit_lint.py` on each commit that the pull request or push adds: Conventional Commits subjects; merge commits are skipped |
