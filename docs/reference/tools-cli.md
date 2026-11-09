@@ -823,7 +823,7 @@ python3 implement/tools/progress.py --describe
 | `--default-branch` | `init`: the branch the theme PRs go into. Default: the report's `provenance.target.branch`, else `main`. |
 | `--phase` | `init`: the step recorded in the first log entry. Default: `init`. |
 | `--date` | `init`: the date recorded on the items and the log, `YYYY-MM-DD`. Default: today, UTC. |
-| `--framework-rev` | `init`: the framework commit to record. Default: `git rev-parse HEAD` of the framework checkout, or null. |
+| `--framework-rev` | `init`: the framework commit to record, cut to 12 digits. Default: the framework checkout's `HEAD`, or null outside one. |
 | `--label` | Every command but `init`: which state to use when the folder holds more than one. |
 | `FINDING STATUS` | `set-status`: the item and the status to move it to. The move must be in the state diagram of the [state contract](../../implement/state.md#item-statuses). `skipped`, `deferred` and the moves back out of them have their own commands. |
 | `--commit` | `set-status`: a commit SHA to add to the item (repeatable). |
@@ -840,14 +840,18 @@ python3 implement/tools/progress.py --describe
 
 **Outputs**
 
-`init` writes the JSON and the Markdown and puts their paths, the label, the item count, the count per status and
-the `not_queued` count in `data`, with `versions` as [`check_drift.py`](#check_driftpy) gives it. `show` puts
-the summary in `data`: counts per status and per theme (`items` and
-`open`, which is neither `done` nor `skipped`), the skipped finding ids, and the number of preferences, debt
-entries and log entries. `show --json` puts the state under `data.state`. `render` writes the Markdown and puts
-its path and size in `data`. Every other command checks the changed state whole, appends one log entry, replaces
-the JSON and puts the path and the count per status in `data`. A refused command changes nothing, and a refused move says which states the item may go to. The Markdown view keeps prose lines (item details, the full text of a cut preference cell) under 110 columns so it passes MD013; a preference's value or reason longer than 100 characters is cut in its table row and given in full in a list below the table. Each write is atomic; a temporary file a killed write left behind is removed, with a
-warning.
+`init` writes the JSON and the Markdown and puts their paths, the label, the item count, the count per status and the
+`not_queued` count in `data`, with `versions` as [`check_drift.py`](#check_driftpy) gives it. `show` puts the summary
+in `data`: counts per status and per theme (`items` and `open`, which is neither `done` nor `skipped`), the skipped
+finding ids, and the number of preferences, debt entries and log entries, with `versions`: the framework that created
+the state (`created`), the one that last wrote it (`last`) and these tools (`tools`). `show --json` puts the state
+under `data.state`, with the same `versions`. `render` writes the Markdown and puts its path and size in `data`. Every
+other command checks the changed state whole, appends one log entry (two when the framework changed since the last
+write: see `last_framework`), replaces the JSON and puts the path and the count per status in `data`. A refused
+command changes nothing, and a refused move says which states the item may go to. The Markdown view keeps prose lines
+(item details, the full text of a cut preference cell) under 110 columns so it passes MD013; a preference's value or
+reason longer than 100 characters is cut in its table row and given in full in a list below the table. Each write is
+atomic; a temporary file a killed write left behind is removed, with a warning.
 
 **Exit codes**
 
@@ -918,8 +922,7 @@ change the status or the exit code:
 - `report_changed` compares the report file's SHA-256 with `source_reports[].sha256` in the target's state
   (`progress.py init` records it). `true` means the report was edited since the state was created: a warning says not
   to trust its text until the owner confirms the change. `false` means it matches. `null` means there is nothing to
-  compare: the target has no state, the state predates the digest (schema `0.1`), or the state does not list this
-  report.
+  compare: the target has no state, or the state does not list this report.
 
 - `versions` compares the framework release and commit that made the report with these tools'. It holds
   `report` and `tools`, each with `release` and `revision` (12 digits, or `null` outside a checkout), and
@@ -975,7 +978,11 @@ python3 implement/tools/compare_reports.py --describe
 By default `data` holds `summary` and `markdown` (the deterministic report: summary lines, checks that moved,
 findings that moved, findings still open). With `--json` it holds `summary`, `checks` and `findings` as rows
 instead. `summary` has the two reports' file names, commits and scores, the counts per move, `rejected_ignored`,
-and `unexplained`. A warning is raised when the reports name different repositories. Long lists are bounded:
+and `unexplained`. `before` and `after` also hold each report's `framework` (`release`, `revision`) and
+`catalogue_version`. A warning is raised when the reports name different repositories, and `version_warnings`
+holds one when they come from different releases, from the same release at two commits, or from different
+catalogues, because a verdict can move for that reason alone; each is also a warning and a line in the Markdown.
+Long lists are bounded:
 `truncated` is `true` and the markdown (or `data.omitted`) says how many rows were left out.
 
 **Exit codes**

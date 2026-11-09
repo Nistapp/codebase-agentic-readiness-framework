@@ -335,12 +335,12 @@ class InitTests(BuilderCase):
     def test_the_framework_revision_is_this_checkout_or_nothing(self) -> None:
         recorded = read_json(self.start())["provenance"]["framework"]
         root = vr.RECIPES.parent
-        if rb.git_toplevel(root) == root.resolve():
+        if vr.git_toplevel(root) == root.resolve():
             self.assertEqual(recorded["install"], "checkout")
             self.assertEqual(recorded["revision"], _git.run_git(root, "rev-parse", "HEAD")[: rb.SHORT_SHA_CHARS])
         else:
             self.assertIsNone(recorded["revision"])
-        with mock.patch.object(rb, "git_toplevel", return_value=self.root):
+        with mock.patch.object(vr, "git_toplevel", return_value=self.root):
             self.assertIsNone(rb.framework_facts()["revision"])
 
     def test_a_framework_checkout_records_its_short_commit(self) -> None:

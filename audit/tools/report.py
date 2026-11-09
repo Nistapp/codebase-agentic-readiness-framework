@@ -122,12 +122,7 @@ def dumps(document: Mapping[str, Any]) -> str:
 # --- The target's provenance --------------------------------------------------------------------------
 
 
-def git_toplevel(path: Path) -> Path | None:
-    """The root of the git working tree that holds `path`, or None when it is in none or git cannot say."""
-    done = vr.git_output(path, ["rev-parse", "--show-toplevel"])
-    if done is None or done.returncode != 0 or not done.stdout.strip():
-        return None
-    return Path(done.stdout.strip()).resolve()
+git_toplevel = vr.git_toplevel
 
 
 def git_facts(target: Path) -> tuple[dict[str, Any], list[str]]:
@@ -173,39 +168,9 @@ def same_commit(recorded: str, scanned: str) -> bool:
     return scanned.startswith(recorded) or recorded.startswith(scanned)
 
 
-def framework_install(root: Path) -> str:
-    """How the framework at `root` is installed: `checkout`, `bundle` or `copy` (`provenance.framework.install`).
-
-    `root` is the folder above the recipe folder: the repository root in a checkout, the skill folder in a bundle,
-    where `SKILL.md` sits beside `scripts/`. A checkout is a git working tree whose top is `root`, or, when git is
-    missing, a `root` that holds `.git`.
-    """
-    if shutil.which("git") is not None:
-        if git_toplevel(root) == root:
-            return "checkout"
-    elif (root / ".git").exists():
-        return "checkout"
-    if (root / "SKILL.md").is_file():
-        return "bundle"
-    return "copy"
-
-
-def framework_revision(root: Path) -> str | None:
-    """The short commit of the framework checkout at `root`, or None when git cannot read one."""
-    if shutil.which("git") is None:
-        return None
-    head = vr.git_output(root, ["rev-parse", "HEAD"])
-    if head is None or head.returncode != 0 or not GIT_SHA.match(head.stdout.strip()):
-        return None
-    return head.stdout.strip()[:SHORT_SHA_CHARS]
-
-
 def framework_facts(root: Path | None = None) -> dict[str, Any]:
     """`provenance.framework`: the release, the commit (checkout only) and the install of the framework at `root`."""
-    root = (root or vr.RECIPES.parent).resolve()
-    install = framework_install(root)
-    revision = framework_revision(root) if install == "checkout" else None
-    return {"release": FRAMEWORK_RELEASE, "revision": revision, "install": install}
+    return vr.framework_facts(root or vr.RECIPES.parent, FRAMEWORK_RELEASE)
 
 
 # --- The intake ---------------------------------------------------------------------------------------

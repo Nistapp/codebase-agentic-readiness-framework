@@ -9,8 +9,9 @@ A skipped finding is final until the owner unskips it, and every preference bind
 | Field | Value |
 |---|---|
 | Default branch | `dev` |
-| Recipe | brownfield-implement 0.2.0-dev, framework `a7e5e023654d48620e4439168bee4158f4a7deaf` |
-| Source report | `docs/agentic-readiness-report/digital-assistant-server-first-audit-20261028T131409Z.json` at `4a48e1976e424f3f424d2510049413c1c3f38dd6`, catalogue 0.2.2 |
+| Created by | `v0.3.2` at `a7e5e023654d` (checkout) |
+| Last written by | `v0.3.2` at `a7e5e023654d` |
+| Source report | `docs/agentic-readiness-report/digital-assistant-server-first-audit-20261028T131409Z.json` at `4a48e1976e42`, catalogue 0.2.2, made by `v0.3.2` at `b4bf27df7915` |
 
 ## Summary
 
@@ -292,8 +293,8 @@ A skipped finding is final until the owner unskips it, and every preference bind
 - **F-018**: commits: `eaf8fab`; verification: `./gradlew jacocoTestCoverageVerification -x test (minimum 0.70
   then 0.71)` gave 0.70 passes (70.6 percent measured, two identical runs); 0.71 fails Rule violated
 - **F-038**: commits: `eaf8fab`, `b98c4f8`; verification: `./gradlew test jacocoTestReport (local stack up,
-  flock <lock-file>)` gave 167 tests 0 failures 0 skipped; report build/reports/jacoco/test; Quarkus
-  own report agrees (396 missed 951 covered lines)
+  flock <lock-file>)` gave 167 tests 0 failures 0 skipped; report build/reports/jacoco/test; Quarkus own
+  report agrees (396 missed 951 covered lines)
 
 ### T6 Docs and navigation
 

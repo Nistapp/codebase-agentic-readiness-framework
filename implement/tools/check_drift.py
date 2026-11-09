@@ -148,7 +148,7 @@ def handler(argv: Sequence[str]) -> _common.Result:
     if head is None:
         raise _common.UsageError(f"cannot read HEAD of {target}: not a git repository, or it has no commits")
     versions, warnings = validate_report.compare_versions(
-        document, progress.RECIPE_VERSION, progress.framework_revision()
+        document, progress.FRAMEWORK_RELEASE, progress.framework_facts()["revision"]
     )
     data: dict[str, Any] = {"audited_sha": audited, "head_sha": head, "drifted": False, "versions": versions}
     data["dirty"] = is_dirty(target)

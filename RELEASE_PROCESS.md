@@ -71,7 +71,8 @@ The version is written in five places, and release-please changes all five in th
 - `__version__` in [`audit/engine/audit/__init__.py`](audit/engine/audit/__init__.py): what `audit --version` and
   the report's `provenance.engine.version` print.
 - `FRAMEWORK_RELEASE` in [`audit/tools/report.py`](audit/tools/report.py): the report's `provenance.framework.release`.
-- `RECIPE_VERSION` in [`implement/tools/progress.py`](implement/tools/progress.py): the state's `recipe.version`.
+- `FRAMEWORK_RELEASE` in [`implement/tools/progress.py`](implement/tools/progress.py): the state's
+  `framework.release`.
 - The new entry in [`CHANGELOG.md`](CHANGELOG.md).
 
 Each of the three code lines carries the `x-release-please-version` marker and is an `extra-files` entry.
@@ -193,8 +194,8 @@ The push to `main` starts `release-please.yml`. A minute later the release pull 
    gh pr list --base main --head release-please--branches--main
    ```
 
-2. Read its diff. It changes `.release-please-manifest.json`, `__version__` in the engine, `FRAMEWORK_RELEASE`
-   in `report.py`, `RECIPE_VERSION` in `progress.py` and `CHANGELOG.md`. A second commit,
+2. Read its diff. It changes `.release-please-manifest.json`, `__version__` in the engine, the two
+   `FRAMEWORK_RELEASE` lines (`report.py` and `progress.py`) and `CHANGELOG.md`. A second commit,
    `style(changelog): ...`, holds the markdownlint fixes.
 3. Check the version. To force a different one, see [Choose the version](#choose-the-version).
 4. Without the App token, close and reopen the pull request to start CI:

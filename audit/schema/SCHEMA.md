@@ -14,7 +14,7 @@
 | [`audit-intake.schema.json`](audit-intake.schema.json) | The answers to the audit's Stage 0 questions, given in a file. `intake_version` `0.1`. |
 | [`catalogue.schema.json`](catalogue.schema.json) | The check catalogue, [`../catalogue.json`](../catalogue.json): every check in one ID namespace. |
 | [`facts.schema.json`](facts.schema.json) | The file `facts.py` writes: counts and names that describe a repository, with no verdict. `facts_version` `0.1`. See [Facts file](#facts-file). |
-| [`readiness-state.schema.json`](readiness-state.schema.json) | The implement recipe's per-repository state, which `progress.py` writes inside the target. `schema_version` `0.2`. See [Readiness state](#readiness-state). |
+| [`readiness-state.schema.json`](readiness-state.schema.json) | The implement recipe's per-repository state, which `progress.py` writes inside the target. `schema_version` `0.3`. See [Readiness state](#readiness-state). |
 | [`examples/minimal.json`](examples/minimal.json) | The smallest valid report: one agent check, no findings. |
 | [`examples/facts.minimal.json`](examples/facts.minimal.json) | A valid facts file for a small made-up service. |
 | [`examples/realistic/`](examples/realistic/) | The engine's real reports on three open-source repositories, each beside its conversion: `agentic-tdd`, `Digital-Assistant-SDK` and `Digital-Assistant-Server`. They were scanned on 2026-10-10 at the commits named in each report's `provenance.target`, with the engine at ruleset revision `2026-09-28.13`. A `*.engine-report.*.json` file is the engine's output, untouched. A `*.audit-draft.*.json` file is that report converted by the mapping below and nothing else: all 69 checks, every finding pending, no name anonymised and nothing invented, because the repositories are open source. In all three the recomputed phase-1 score equals the engine's (0.7311, 0.6513 and 0.4244). Each pair is the input and the expected output of the engine adapter: a test imports each raw report into a draft made from the golden draft's own `init` fields and requires the draft beside it, byte for byte. When the mapping changes, the drafts are regenerated from the raw reports and the raw reports are left alone. |
@@ -34,10 +34,13 @@ The Markdown report, which [`tools/render_report.py`](../tools/render_report.py)
 | `schema_version` | the report | The shape of the report. `0.2` today; see the note below the table. |
 | `intake_version` | the intake file | The shape of the intake file. `0.1` today. |
 | `facts_version` | the facts file | The shape of the facts file. `0.1` today. |
-| `schema_version` | the readiness state | The shape of the state file, a separate schema from the report's. `0.2` today; `0.2` added the optional `source_reports[].sha256`, and `0.1` states stay valid. |
+| `schema_version` | the readiness state | The shape of the state file, a separate schema from the report's. `0.3` today; see the note below the table. |
 | `catalogue_version` | `provenance` | The check catalogue the report was built against, `MAJOR.MINOR.PATCH`, as in [`catalogue.json`](../catalogue.json). The bump rules are in [`catalogue.schema.json`](catalogue.schema.json). |
 | `provenance.framework.release` | `provenance` | The framework release that produced the report. |
 | `provenance.engine.version`, `ruleset_hash` | `provenance` | The deterministic engine and its ruleset. |
+
+State schema `0.3` replaced `recipe` with `framework` and `last_framework`, added `release` and `revision` to each
+source report, and made `sha256` required. The tools do not read an older state.
 
 Report schema `0.2` replaced `provenance.recipe` and `provenance.framework_revision` with `provenance.framework`.
 The tools do not read a `0.1` report. The release is the version in
@@ -263,10 +266,11 @@ the skip, defer and preference rules are in the [state contract](../../implement
 
 | Section | Holds |
 |---|---|
-| `schema_version` | `0.2` (a `0.1` state is still read; it has no `sha256`) |
+| `schema_version` | `0.3`; the tools read no other |
 | `repo` | `label` (the report's `provenance.target.label`, which names the files) and `default_branch` |
-| `recipe` | `brownfield-implement`, its version, and `framework_rev`, the framework commit the state was created from or null |
-| `source_reports` | Each final report's path relative to the target, its `git_sha` and `catalogue_version`, copied as given, and `sha256`, the SHA-256 of the report file when `init` read it (optional; `0.2`) |
+| `framework` | The framework that created the state: `release`, `revision` (12 digits or null) and `install`, as in a report |
+| `last_framework` | The framework that last wrote the state: `release` and `revision`. A write that changes it logs the move |
+| `source_reports` | Each final report's path relative to the target, its `git_sha` (12 digits), `catalogue_version`, `release` and `revision`, and `sha256`, the SHA-256 of the report file when `init` read it |
 | `preferences` | The owner's choices: `key`, `value`, `reason`, `by: owner`, `date`, `phase` |
 | `themes` | T1 to T8 in order: `title`, `status` (`not_started`, `branch_open`, `pr_open`, `merged`), `phase`, `branch`, `pr`, `merged_sha` |
 | `items` | One per confirmed, edited or deferred finding: `finding`, `check`, `severity`, `theme`, `statement`, `status`, `by`, `date`, `reason`, `commits`, `verification`, `debt`, `notes` |

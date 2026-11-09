@@ -53,7 +53,7 @@ class CheckDriftTests(unittest.TestCase):
         self.assertEqual(code, 0)
         versions = envelope["data"]["versions"]
         self.assertEqual(versions["report"]["release"], "0.3.2")
-        self.assertEqual(versions["tools"]["release"], progress.RECIPE_VERSION)
+        self.assertEqual(versions["tools"]["release"], progress.FRAMEWORK_RELEASE)
         self.assertIn(versions["relation"], ("same", "older", "newer"))
 
     def test_a_report_from_an_older_release_warns_and_goes_on(self) -> None:

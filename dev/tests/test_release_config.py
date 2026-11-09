@@ -10,7 +10,8 @@ marker that release-please looks for or is not an ``extra-files`` entry, or when
 heading comes back into the changelog that release-please writes.
 
 The stamps are the engine's ``__version__``, ``FRAMEWORK_RELEASE`` in ``report.py`` (the audit report's
-``provenance.framework.release``) and ``RECIPE_VERSION`` in ``progress.py`` (the implement state's ``recipe.version``). The skill bundles' ``metadata.version``
+``provenance.framework.release``) and ``FRAMEWORK_RELEASE`` in ``progress.py`` (the implement state's
+``framework.release`` and ``last_framework.release``). The skill bundles' ``metadata.version``
 is copied from the manifest at build time; ``test_build_skills`` checks it.
 """
 
@@ -32,7 +33,7 @@ VERSION_LINE = re.compile(r'^__version__ = "(?P<version>[^"]+)"(?P<rest>.*)$', r
 STAMPS = {
     ENGINE_INIT: VERSION_LINE,
     "audit/tools/report.py": re.compile(r'^FRAMEWORK_RELEASE = "(?P<version>[^"]+)"(?P<rest>.*)$', re.MULTILINE),
-    "implement/tools/progress.py": re.compile(r'^RECIPE_VERSION = "(?P<version>[^"]+)"(?P<rest>.*)$', re.MULTILINE),
+    "implement/tools/progress.py": re.compile(r'^FRAMEWORK_RELEASE = "(?P<version>[^"]+)"(?P<rest>.*)$', re.MULTILINE),
 }
 
 

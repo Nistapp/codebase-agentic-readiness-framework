@@ -41,9 +41,10 @@ JSON_NAME = "example-service-agentic-readiness-state.json"
 MD_NAME = "example-service-agentic-readiness-STATE.md"
 # The values the checked-in example was made with.
 EXAMPLE_ARGS = ("--date", "2026-10-29", "--framework-rev", "cafecafecafecafecafecafecafecafecafecafe")
-# The recipe version it was made with. release-please bumps `progress.RECIPE_VERSION` each release; the checked-in
-# example keeps the version that made it, the same way it keeps its date.
-EXAMPLE_RECIPE_VERSION = "0.3.2"
+# The framework it was made with. release-please bumps `progress.FRAMEWORK_RELEASE` each release, and the commit
+# and the install depend on where the tests run; the checked-in example keeps the framework that made it, the same
+# way it keeps its date. `TargetCase` puts this in place of the live facts.
+EXAMPLE_FRAMEWORK = {"release": "0.3.2", "revision": "cafecafecafe", "install": "checkout"}
 
 
 def call(argv: Sequence[str]) -> tuple[int, dict[str, Any], str]:
@@ -67,6 +68,9 @@ class TargetCase(unittest.TestCase):
     """A temporary target that holds the example report where an audit leaves it."""
 
     def setUp(self) -> None:
+        facts = mock.patch.object(progress, "framework_facts", side_effect=lambda: dict(EXAMPLE_FRAMEWORK))
+        facts.start()
+        self.addCleanup(facts.stop)
         self.tmp = Path(tempfile.mkdtemp(prefix="progress-test-")).resolve()
         self.addCleanup(shutil.rmtree, self.tmp, True)
         self.target = self.tmp / "example-service"
@@ -121,17 +125,28 @@ class ContractTests(unittest.TestCase):
         self.assertEqual((code, envelope["ok"]), (1, False))
 
 
-class FrameworkRevisionTests(unittest.TestCase):
+class FrameworkFactsTests(unittest.TestCase):
     def test_a_bundle_inside_another_repository_has_no_framework_revision(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             project = Path(tmp).resolve() / "project"
             _git.make_repo(project)
             bundle = project / ".claude" / "skills" / "agentic-readiness-implement"
             bundle.mkdir(parents=True)
+            (bundle / "SKILL.md").write_text("---\nname: agentic-readiness-implement\n---\n", encoding="utf-8")
             with mock.patch.object(progress, "FRAMEWORK_ROOT", bundle):
-                self.assertIsNone(progress.framework_revision())
+                self.assertEqual(
+                    progress.framework_facts(),
+                    {"release": progress.FRAMEWORK_RELEASE, "revision": None, "install": "bundle"},
+                )
             with mock.patch.object(progress, "FRAMEWORK_ROOT", project):
-                self.assertEqual(progress.framework_revision(), _git.run_git(project, "rev-parse", "HEAD"))
+                self.assertEqual(
+                    progress.framework_facts(),
+                    {
+                        "release": progress.FRAMEWORK_RELEASE,
+                        "revision": _git.run_git(project, "rev-parse", "HEAD")[:12],
+                        "install": "checkout",
+                    },
+                )
 
 
 class InitTests(TargetCase):
@@ -153,15 +168,20 @@ class InitTests(TargetCase):
         self.assertEqual(envelope["data"]["versions"]["relation"], "older")
         self.assertTrue(any("made by framework v0.0.1" in warning for warning in envelope["warnings"]))
 
-    def test_init_stamps_the_release_version(self) -> None:
+    def test_init_stamps_the_framework_twice_and_the_reports_framework(self) -> None:
         self.init_ok()
         state = json.loads(self.json_path.read_text(encoding="utf-8"))
-        self.assertEqual(state["recipe"]["version"], progress.RECIPE_VERSION)
-        self.assertIn(f"brownfield-implement {progress.RECIPE_VERSION},", self.md_path.read_text(encoding="utf-8"))
+        self.assertEqual(state["framework"], EXAMPLE_FRAMEWORK)
+        self.assertEqual(state["last_framework"], {"release": "0.3.2", "revision": "cafecafecafe"})
+        report = json.loads(self.report.read_text(encoding="utf-8"))["provenance"]["framework"]
+        source = state["source_reports"][0]
+        self.assertEqual((source["release"], source["revision"]), (report["release"], report["revision"]))
+        markdown = self.md_path.read_text(encoding="utf-8")
+        self.assertIn("| Created by | `v0.3.2` at `cafecafecafe` (checkout) |", markdown)
+        self.assertIn("| Last written by | `v0.3.2` at `cafecafecafe` |", markdown)
 
     def test_init_writes_the_example_state_and_its_markdown(self) -> None:
-        with mock.patch.object(progress, "RECIPE_VERSION", EXAMPLE_RECIPE_VERSION):
-            envelope = self.init_ok()
+        envelope = self.init_ok()
         self.assertEqual(self.json_path.read_bytes(), EXAMPLE_STATE.read_bytes())
         self.assertEqual(self.md_path.read_bytes(), EXAMPLE_MD.read_bytes())
         data = envelope["data"]
@@ -173,7 +193,7 @@ class InitTests(TargetCase):
     def test_init_records_the_sha256_of_the_report_file(self) -> None:
         self.init_ok()
         state = json.loads(self.json_path.read_text(encoding="utf-8"))
-        self.assertEqual(state["schema_version"], "0.2")
+        self.assertEqual(state["schema_version"], "0.3")
         self.assertEqual(state["source_reports"][0]["sha256"], hashlib.sha256(self.report.read_bytes()).hexdigest())
 
     def test_init_maps_each_disposition(self) -> None:
@@ -191,7 +211,7 @@ class InitTests(TargetCase):
         self.assertTrue(deferred["reason"].startswith("The team uses two of the harnesses"))
         self.assertEqual(items["F-004"]["theme"], "T3")
         self.assertEqual(state["source_reports"][0]["path"], f"{REPORT_DIR}/{REPORT.name}")
-        self.assertEqual(state["source_reports"][0]["git_sha"], "deadbeef" * 5)
+        self.assertEqual(state["source_reports"][0]["git_sha"], "deadbeefdead")
         self.assertEqual(state["repo"], {"label": "example-service", "default_branch": "main"})
 
     def test_init_takes_the_default_branch_and_phase_given(self) -> None:
@@ -202,11 +222,18 @@ class InitTests(TargetCase):
         self.assertEqual(state["log"][0]["phase"], "IR03.1")
 
     def test_init_records_this_checkout_by_default(self) -> None:
-        with mock.patch.object(progress, "framework_revision", return_value="ab" * 20):
+        live = {"release": progress.FRAMEWORK_RELEASE, "revision": "ab" * 6, "install": "checkout"}
+        with mock.patch.object(progress, "framework_facts", return_value=live):
             code, _, _ = self.init("--date", "2026-10-29")
         self.assertEqual(code, 0)
         state = json.loads(self.json_path.read_text(encoding="utf-8"))
-        self.assertEqual(state["recipe"]["framework_rev"], "ab" * 20)
+        self.assertEqual(state["framework"], live)
+
+    def test_framework_rev_is_cut_to_12_digits(self) -> None:
+        code, _, _ = self.init("--date", "2026-10-29", "--framework-rev", "cd" * 20)
+        self.assertEqual(code, 0)
+        state = json.loads(self.json_path.read_text(encoding="utf-8"))
+        self.assertEqual(state["framework"]["revision"], "cd" * 6)
 
     def test_init_refuses_an_existing_state(self) -> None:
         self.init_ok()

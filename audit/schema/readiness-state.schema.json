@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:codebase-agentic-readiness-framework:readiness-state:0.2",
+  "$id": "urn:codebase-agentic-readiness-framework:readiness-state:0.3",
   "title": "Readiness state",
   "description": "The implement recipe's per-repository state: which audit findings are queued, done, partial, skipped or deferred, the owner's preferences, each theme's branch and PR, and a log. It lives in the target at docs/agentic-readiness/<label>-agentic-readiness-state.json and is written only by tools/progress.py. The rules the subset cannot express (a reason for some statuses, unique ids, the theme of each check) are checked by progress.py; they are listed in SCHEMA.md and implement/state.md.",
   "type": "object",
-  "required": ["schema_version", "repo", "recipe", "source_reports", "preferences", "themes", "items", "not_queued", "log"],
+  "required": ["schema_version", "repo", "framework", "last_framework", "source_reports", "preferences", "themes", "items", "not_queued", "log"],
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "description": "Version of this schema. 0.x versions may break between releases; consumers refuse a version they do not know. 0.2 added the optional source_reports[].sha256; a 0.1 state stays valid and is read as it is.",
-      "enum": ["0.1", "0.2"]
+      "description": "Version of this schema. 0.x versions may break between releases; consumers refuse a version they do not know. 0.3 replaced recipe with framework and last_framework, and added source_reports[].release and revision; an older state is not read (no backward compatibility before the first outside user or 1.0.0).",
+      "const": "0.3"
     },
     "repo": {
       "type": "object",
@@ -28,23 +28,25 @@
         }
       }
     },
-    "recipe": {
+    "framework": {
+      "description": "The framework that created the state, in the shape of the audit report's provenance.framework.",
       "type": "object",
-      "required": ["name", "version", "framework_rev"],
+      "required": ["release", "revision", "install"],
       "additionalProperties": false,
       "properties": {
-        "name": {
-          "const": "brownfield-implement"
-        },
-        "version": {
-          "description": "The implement recipe's version when the state was created.",
-          "type": "string",
-          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$"
-        },
-        "framework_rev": {
-          "description": "Git SHA of the framework repository the state was created from; null when it was not a git checkout.",
-          "$ref": "#/$defs/shaOrNull"
-        }
+        "release": { "$ref": "#/$defs/release" },
+        "revision": { "$ref": "#/$defs/shortShaOrNull" },
+        "install": { "enum": ["checkout", "bundle", "copy"] }
+      }
+    },
+    "last_framework": {
+      "description": "The framework that last wrote the state. Every write sets it; a write that changes it also appends a log entry.",
+      "type": "object",
+      "required": ["release", "revision"],
+      "additionalProperties": false,
+      "properties": {
+        "release": { "$ref": "#/$defs/release" },
+        "revision": { "$ref": "#/$defs/shortShaOrNull" }
       }
     },
     "source_reports": {
@@ -54,7 +56,7 @@
       "maxItems": 20,
       "items": {
         "type": "object",
-        "required": ["path", "git_sha", "catalogue_version"],
+        "required": ["path", "git_sha", "catalogue_version", "release", "revision", "sha256"],
         "additionalProperties": false,
         "properties": {
           "path": {
@@ -62,15 +64,23 @@
             "$ref": "#/$defs/relativePath"
           },
           "git_sha": {
-            "description": "The report's provenance.target.git_sha, copied as it is; null when the report has none.",
-            "$ref": "#/$defs/shaOrNull"
+            "description": "The report's provenance.target.git_sha, in 12 digits; null when the report has none.",
+            "$ref": "#/$defs/shortShaOrNull"
           },
           "catalogue_version": {
             "type": "string",
             "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
           },
+          "release": {
+            "description": "The report's provenance.framework.release: the framework release that made the report.",
+            "$ref": "#/$defs/release"
+          },
+          "revision": {
+            "description": "The report's provenance.framework.revision; null when the report has none.",
+            "$ref": "#/$defs/shortShaOrNull"
+          },
           "sha256": {
-            "description": "SHA-256 of the report file's bytes when init read it, 64 lower-case hex digits. check_drift.py recomputes it and reports report_changed when it differs. Absent in a 0.1 state.",
+            "description": "SHA-256 of the report file's bytes when init read it, 64 lower-case hex digits. check_drift.py recomputes it and reports report_changed when it differs.",
             "type": "string",
             "pattern": "^[0-9a-f]{64}$"
           }
@@ -223,6 +233,16 @@
     "shaOrNull": {
       "type": ["string", "null"],
       "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "shortShaOrNull": {
+      "description": "A commit in 12 lower-case hex digits, or null. The tools never write a full id: secret scanners read it as an access token.",
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{12}$"
+    },
+    "release": {
+      "description": "A framework release version, as in .release-please-manifest.json.",
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$"
     },
     "date": {
       "description": "A calendar date, YYYY-MM-DD.",
