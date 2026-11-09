@@ -1,0 +1,11 @@
+{
+  "name": "tool-04-local-only-audit",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write .",
+    "lint": "eslint .",
+    "prepare": "husky",
+    "security": "npm audit --audit-level=high"
+  }
+}

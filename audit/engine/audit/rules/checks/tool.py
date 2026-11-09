@@ -27,7 +27,11 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   it is **not** run (that would be Tier C). A `security` verb that runs something else ⇒ `PARTIAL`. On the root
   `Makefile` the verb is followed the way Make runs it: simple variables are expanded (`$(OSV)`, `${OSV}`), and each
   prerequisite target and each `make <target>` or `$(MAKE) <target>` line is read in turn (cycles and
-  `make -C`/`-f` calls into another Makefile are not followed).
+  `make -C`/`-f` calls into another Makefile are not followed). CI is read too, as `TOOL-06` reads it: a workflow
+  line that runs a scanner, a runner target whose command runs one (``make security-deps``, ``npm run security``),
+  a scanner action (``google/osv-scanner-action``, ``actions/dependency-review-action``, ...), or GitLab's
+  Dependency-Scanning template. Dependabot and Renovate do not count (``HYG-09``). Local and CI ⇒ `PASS`; one of
+  the two ⇒ `PARTIAL`; neither ⇒ `FAIL`. Whether the CI job runs on pull requests is not read.
 * **TOOL-05** — a wired hook chain: `.pre-commit-config.yaml`, `lefthook.yml`, a declared
   `core.hooksPath`, or `.husky/` referenced by a `prepare`/install script. Present but unwired ⇒
   `PARTIAL`.
@@ -735,27 +739,107 @@ def _makefile_audit(inventory, command: str) -> tuple[str, str] | None:
     return None
 
 
-def check_tool04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+#: CI actions and templates that run a dependency audit. Matched on the ``uses:`` (or GitLab ``template:``) value.
+_CI_AUDIT_ACTIONS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(p)
+    for p in (
+        r"\buses:\s*['\"]?google/osv-scanner-action\b",
+        r"\buses:\s*['\"]?actions/dependency-review-action\b",
+        r"\buses:\s*['\"]?aquasecurity/trivy-action\b",
+        r"\buses:\s*['\"]?snyk/actions\b",
+        r"\buses:\s*['\"]?anchore/scan-action\b",
+        r"\buses:\s*['\"]?pypa/gh-action-pip-audit\b",
+        r"\btemplate:\s*['\"]?(?:Jobs/|Security/)?Dependency-Scanning\b",
+    )
+)
+
+
+def _audit_in(command: str, inventory) -> bool:
+    """True when ``command`` runs a dependency audit, directly or through the root Makefile."""
+    return _is_audit_command(command) or _makefile_audit(inventory, command) is not None
+
+
+def _ci_audit_steps(inventory) -> list[tuple[str, int, str]]:
+    """``(workflow, line, what)`` for each CI line that runs a dependency audit: a scanner command, a scanner action
+    or template, or a runner target whose command runs one."""
+    targets: dict[str, str] = {}
+    for _runner, commands in reversed(runner_commands(inventory)):
+        targets.update(commands)
+    hits: list[tuple[str, int, str]] = []
+    for globs in CI_PROVIDERS.values():
+        for rel in sorted(inventory.match(*globs)):
+            for number, line in enumerate((inventory.read(rel) or "").splitlines(), start=1):
+                if line.lstrip().startswith("#"):
+                    continue
+                if _is_audit_command(line) or any(pattern.search(line) for pattern in _CI_AUDIT_ACTIONS):
+                    hits.append((rel, number, line.strip()[:120]))
+                    continue
+                target = runner_target(line)
+                if target in targets and _audit_in(targets[target], inventory):
+                    hits.append((rel, number, f"{target} ({targets[target][:80]})"))
+    return hits
+
+
+def _local_audit(inventory, stack) -> tuple[list[str], object]:
+    """The local verbs that run a dependency audit, as summary lines, and the ``security`` binding (or ``None``)."""
     bindings = resolve_verbs(inventory, stack)
-    audits = [(verb, b) for verb, b in bindings.items() if _is_audit_command(b.command)]
+    found = [f"{verb} -> {b.command}" for verb, b in sorted(bindings.items()) if _is_audit_command(b.command)]
+    if not found:
+        for verb, binding in sorted(bindings.items()):
+            if binding.runner != "Makefile":
+                continue
+            hit = _makefile_audit(inventory, binding.command)
+            if hit:
+                where, line = hit
+                through = f" (target {where})" if where else ""
+                found.append(f"{verb} -> {binding.command}; runs `{line}`{through}")
+    return found, bindings.get("security")
 
-    if audits:
-        detail = "; ".join(f"{verb} -> {b.command}" for verb, b in sorted(audits))
-        return _outcome(spec, Verdict.PASS, detail)
 
-    followed = []
-    for verb, binding in sorted(bindings.items()):
-        if binding.runner != "Makefile":
-            continue
-        hit = _makefile_audit(inventory, binding.command)
-        if hit:
-            where, line = hit
-            through = f" (target {where})" if where else ""
-            followed.append(f"{verb} -> {binding.command}; runs `{line}`{through}")
-    if followed:
-        return _outcome(spec, Verdict.PASS, "; ".join(followed))
+def check_tool04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+    local, security = _local_audit(inventory, stack)
+    ci_steps = _ci_audit_steps(inventory)
+    ci_seen = "; ".join(f"{rel}:{line} {what}" for rel, line, what in ci_steps[:3])
 
-    security = bindings.get("security")
+    if local and ci_steps:
+        return _outcome(spec, Verdict.PASS, f"{'; '.join(local)}; CI: {ci_seen}")
+    if local:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"{'; '.join(local)}; CI runs no dependency audit",
+            [
+                _finding(
+                    spec,
+                    "rely on every change being checked for a known vulnerability",
+                    "the dependency audit runs only when someone runs the verb; no CI step runs it",
+                    Verdict.PARTIAL,
+                    [
+                        Evidence(rel)
+                        for rel in sorted({r for globs in CI_PROVIDERS.values() for r in inventory.match(*globs)})
+                    ]
+                    or [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
+                    "Run the same verb in CI as its own job, beside the check job (it may need the network).",
+                )
+            ],
+        )
+    if ci_steps:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"CI runs a dependency audit ({ci_seen}) but no local verb does",
+            [
+                _finding(
+                    spec,
+                    "learn about a vulnerable dependency before it pushes",
+                    "only CI runs a dependency audit; no local verb runs it",
+                    Verdict.PARTIAL,
+                    [Evidence(rel, line=line, note=what) for rel, line, what in ci_steps],
+                    "Add a security verb that runs the same scanner, and have CI run that verb.",
+                )
+            ],
+        )
+
     if security is not None:
         return _outcome(
             spec,
@@ -769,7 +853,7 @@ def check_tool04(*, spec, target, inventory, stack, components, session) -> Chec
                     Verdict.PARTIAL,
                     [Evidence(security.runner, note=security.command)],
                     "Make the security verb run a dependency audit (npm audit, pip-audit, osv-scanner, "
-                    "cargo audit, govulncheck, snyk).",
+                    "cargo audit, govulncheck, snyk), and run that verb in CI.",
                 )
             ],
         )
@@ -786,7 +870,8 @@ def check_tool04(*, spec, target, inventory, stack, components, session) -> Chec
                     "no resolvable verb runs a dependency-audit check",
                     Verdict.FAIL,
                     [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
-                    "Add a dependency-audit verb (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, snyk).",
+                    "Add a dependency-audit verb (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, "
+                    "snyk) and run it in CI.",
                 )
             ],
         )

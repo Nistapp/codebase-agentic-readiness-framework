@@ -28,6 +28,10 @@ from audit.stack import detect_stack  # noqa: E402
 
 CHECK_ID = "TOOL-04"
 PYPROJECT = '[project]\nname = "x"\nversion = "0.1.0"\n'
+#: CI runs the verb, so the verdict turns on the local half, the Makefile walk under test (C6: local and CI ⇒ PASS).
+WORKFLOW = (
+    "on: [pull_request]\njobs:\n  security:\n    runs-on: ubuntu-latest\n    steps:\n      - run: make security\n"
+)
 
 
 class Tool04MakefileFollowTests(unittest.TestCase):
@@ -35,7 +39,12 @@ class Tool04MakefileFollowTests(unittest.TestCase):
         """Run the check in-process (so coverage traces it) on a repository with this root ``Makefile``."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            for rel, text in {"pyproject.toml": PYPROJECT, "Makefile": makefile, **(extra or {})}.items():
+            for rel, text in {
+                "pyproject.toml": PYPROJECT,
+                "Makefile": makefile,
+                ".github/workflows/ci.yml": WORKFLOW,
+                **(extra or {}),
+            }.items():
                 support.write(root, rel, text)
             inventory = build_inventory(root)
             outcome = CHECK(

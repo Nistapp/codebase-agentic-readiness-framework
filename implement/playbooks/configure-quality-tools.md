@@ -99,6 +99,10 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
 6. **Scan (TOOL-04).** `security` runs a dependency-vulnerability scan with a fixed severity threshold. It is the
    dependency gate only: secrets scanning (gitleaks and the like) stays in T3 and T4 hooks, not in `security`.
    Reuse a scan command the repository already runs in CI rather than adding a second scanner.
+   Then run the verb in CI as its own job, beside the `check` job. TOOL-04 reads `PARTIAL` when only one of the
+   two runs the scan. Use the stack profile's CI idiom line. The job may need the network; keep it out of `check`.
+   A scan that is red on day one gets a report-only job, named so. On GitHub Actions use `continue-on-error: true`;
+   on GitLab CI use `allow_failure: true`. Dependabot and Renovate never count as the scan.
 
 ### Java (Gradle)
 
@@ -186,7 +190,7 @@ Record each count on its item (`--debt what=...,count=N[,baseline=FILE]`) and se
 | TOOL-01 | The config file; run `format:check` on the untouched branch | Config present, `format` and `format:check` resolve, `format:check` exits 0 (ratchet) |
 | TOOL-02 | The config file; run `lint` | Config present, `lint` resolves, read-only (`git status` clean), exits 0 under the ratchet |
 | TOOL-03 | The type-check config; run `typecheck` | Strict flag on where the codebase allows; `typecheck` exits 0. JVM: compile passes; the engine's `UNKNOWN` is expected |
-| TOOL-04 | Run `security` | Runs the scanner with its threshold and exits as the scanner says; a `blocked` item names the theme it waits for |
+| TOOL-04 | Run `security`; read the CI workflow | Runs the scanner with its threshold and exits as the scanner says; a CI job runs the same verb; a `blocked` item names the theme it waits for |
 
 [Stage 4](../SKILL.md#stage-4-close-the-theme), step 1 re-runs the engine; explain each remaining TOOL non-`PASS` with
 the evidence above.

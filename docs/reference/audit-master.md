@@ -346,7 +346,8 @@ Can an agent run one command that formats, lints, type-checks and tests, and tru
 
 `DEGRADER` · scored · engine check · fixed by [`configure-quality-tools`](implement-master.md#configure-quality-tools)
 
-- **Passes when:** at least one resolved verb's command matches a known dependency-audit invocation.
+- **Passes when:** at least one resolved verb's command matches a known dependency-audit invocation, and a CI step runs
+  a dependency audit.
 - **Why it matters:** Third-party risk is real and agents add dependencies; without a scan, a vulnerability can enter
   through the very change an agent just made ([`docs/framework/phased-approach.md` §
   Activities](../framework/phased-approach.md#activities)).
