@@ -13,8 +13,8 @@
 #    dispatch is the one event that GITHUB_TOKEN may start a workflow with; a tag pushed by it starts nothing. And
 #    `back-merge` opens a pull request into `dev`
 #    from a new branch `chore/back-merge-vX.Y.Z` at the release commit, so `dev` gets the new version and changelog.
-#    The head is a branch of its own, not `main`: the `dev` ruleset requires an up-to-date branch, and "Update branch"
-#    must be able to merge `dev` into the head, which the `main` ruleset would refuse.
+#    The head is a branch of its own, not `main`: resolving a conflict with `dev` means a merge commit on the head,
+#    which the `main` ruleset would refuse.
 #
 # Token: a GitHub App installation token when the repository variable RELEASE_APP_CLIENT_ID and the secret
 # RELEASE_APP_PRIVATE_KEY are set; otherwise GITHUB_TOKEN. A pull request or a push made with GITHUB_TOKEN starts no

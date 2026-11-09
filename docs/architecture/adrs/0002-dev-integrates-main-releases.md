@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-11-08
-* **Last reviewed:** 2026-11-08 (release-please, [ADR 0005](0005-release-please-cuts-releases.md))
+* **Last reviewed:** 2026-11-09 (the `dev` merge queue replaces the up-to-date rule; decision 6)
 * **Deciders:** [@nistapp]
 
 ---
@@ -47,10 +47,11 @@ A GitHub ruleset can require a pull request and status checks. It cannot restric
    [`release.yml`](../../../.github/workflows/release.yml) refuses a tag whose commit is not on `main`.
 5. **A back-merge after each release.** The release pull request changes the version and the changelog on `main`.
    `dev` gets those changes through a back-merge pull request from `chore/back-merge-vX.Y.Z`, a branch at the release
-   commit. Its head is not `main` itself, so "Update branch" never needs a push to `main`.
+   commit. Its head is not `main` itself, so resolving a conflict with `dev` never needs a push to `main`.
 6. **`main` does not require an up-to-date branch.** Promotions from `dev` and the release pull request both merge into
-   `main`. A strict "up to date" rule would make each wait for the other for no gain. `dev` keeps the strict rule,
-   because many branches merge into it.
+   `main`. A strict "up to date" rule would make each wait for the other for no gain. Since 2026-11-09 `dev` does not
+   require it either: its merge queue tests each pull request merged onto the latest `dev`, so the rule only added a
+   CI run per update ([`branch-protection.md`](../../reference/branch-protection.md)).
 7. **A local guard.** [`lefthook.yml`](../../../lefthook.yml) stops a commit on `main` or `dev` before the push is
    refused.
 
