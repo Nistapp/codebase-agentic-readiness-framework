@@ -171,7 +171,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `EXEC-04` | Env-var inventory complete | B | BLOCKER | Set difference of env keys referenced in source against keys in the committed example file | Implemented |
 | `EXEC-05` | No generated artifacts committed in-tree | B | DEGRADER | Generated or vendored paths are either untracked or carry a generated-file header | Implemented |
 | `EXEC-06` | Documented commands resolve | B | DEGRADER | Every fenced command in README and `AGENTS.md` resolves to a real script, verb, or file | Implemented |
-| `EXEC-07` | No competing configs for one concern | B | DEGRADER | At most one authoritative config per concern (lint, format, test, types) | Implemented |
+| `EXEC-07` | No competing configs for one concern | B | DEGRADER | At most one authoritative config per concern (lint, format, test, types per language, security); a pyright config that mirrors the mypy gate is not a competitor | Implemented |
 | `EXEC-08` | Tool versions visible to dependency automation | B | DEGRADER | No literal tool version in a command, workflow or hook (`FAIL`), or only copies of a manifest pin (`PARTIAL`) | Implemented |
 
 ---

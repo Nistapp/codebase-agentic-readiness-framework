@@ -273,8 +273,13 @@ Engine           `EXEC-07`. For each of five concerns (lint, format, test, types
                  fixed set of root-level config file globs, plus (for a root `pyproject.toml`) specific
                  `[tool.*]` section headers mapped to the same concerns. Only repository-root configs are
                  counted on purpose, so a monorepo's per-component configs are never mistaken for
-                 competition. This check runs regardless of detected ecosystem — there is no `UNKNOWN`
-                 path. Distrust a `FAIL` where two matched configs are a deliberate, documented delegation
+                 competition. Types are counted per language: `types (TypeScript)` (`tsconfig.json`,
+                 `jsconfig.json`) and `types (Python)` (`mypy.ini`, `.mypy.ini`, `pyrightconfig.json`,
+                 `[tool.mypy]`, `[tool.pyright]`, `[tool.basedpyright]`). A `pyrightconfig.json` beside
+                 one mypy config file is a language-server mirror, not a competitor, when the `typecheck`
+                 verb runs mypy and not pyright (read through the root Makefile's variables and
+                 prerequisites); the summary names the mirror. This check runs regardless of detected
+                 ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` where two matched configs are a deliberate, documented delegation
                  (a `biome.json` that only re-exports to a nested project, say) — verify the files are
                  genuinely two authorities for the same concern, not one authority and one pointer to it.
 Method           automated
@@ -294,7 +299,10 @@ Remediation      `untrack-generated` (detection and documentation only: keep one
                  document any deliberate delegation; the playbook never deletes a config).
 Pitfalls         `biome.json` matches both the `lint` and `format` globs by design (Biome itself combines
                  the two); a repository with only `biome.json` for both concerns is not competition —
-                 only a second file matching the same single concern is.
+                 only a second file matching the same single concern is. The mirror rule reads only
+                 files and the `typecheck` verb; it does not compare the two configs' paths. Check by
+                 hand that the pyright config holds the gate's import paths, or a test keeps them in
+                 step, before you accept the `PASS`.
 
 ## EXEC-08 — Tool versions visible to dependency automation
 

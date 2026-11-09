@@ -39,7 +39,10 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   Shell builtins and obvious placeholders are skipped, never failed. Line continuations are joined.
 * **EXEC-07** — at most one authoritative config per concern (lint, format, test, types, security).
   Only repository-root configs are counted, so a monorepo's per-component configs are not mistaken
-  for competition.
+  for competition. Types are counted per language (TypeScript, Python), so ``tsconfig.json`` beside ``mypy.ini``
+  is two languages, not two configs. A pyright or basedpyright config beside one mypy config, when the
+  ``typecheck`` verb runs mypy and not pyright, gives a language server the gate's paths: it is a mirror, not a
+  competitor, and is named in the summary.
 * **EXEC-08** — a tool version written as a literal into a command (``uvx ruff@0.5.0``, ``npx x@1.2.3``,
   ``pip install x==1.2``, ``go install pkg@v1.2``, ``cargo install x --version 1.2``, or the ``version`` input of a
   tool-installer action) is invisible to Dependabot and Renovate. The surfaces read are the command runners
@@ -69,6 +72,7 @@ from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.rules.checks._common import (
     extract_fenced_commands,
+    follow_makefile,
     resolve_all_verbs,
     resolve_verbs,
     runner_kind,
@@ -1299,7 +1303,8 @@ _CONCERN_GLOBS: dict[str, tuple[str, ...]] = {
         "karma.conf.js",
         "cypress.config.*",
     ),
-    "types": ("tsconfig.json", "jsconfig.json", "mypy.ini", ".mypy.ini", "pyrightconfig.json"),
+    "types (TypeScript)": ("tsconfig.json", "jsconfig.json"),
+    "types (Python)": ("mypy.ini", ".mypy.ini", "pyrightconfig.json"),
     "security": (".gitleaks.toml", "semgrep.yml", ".semgrep.yml", ".snyk", "osv-scanner.toml", ".bandit"),
 }
 
@@ -1308,7 +1313,7 @@ _PYPROJECT_SECTIONS: dict[str, tuple[str, ...]] = {
     "lint": (r"\[tool\.ruff\]", r"\[tool\.pylint\]", r"\[tool\.flake8\]"),
     "format": (r"\[tool\.black\]", r"\[tool\.ruff\.format\]"),
     "test": (r"\[tool\.pytest", r"\[tool\.tox\]"),
-    "types": (r"\[tool\.mypy\]", r"\[tool\.pyright\]", r"\[tool\.basedpyright\]"),
+    "types (Python)": (r"\[tool\.mypy\]", r"\[tool\.pyright\]", r"\[tool\.basedpyright\]"),
     "security": (r"\[tool\.bandit\]",),
 }
 
@@ -1328,12 +1333,48 @@ def _concern_configs(inv: Inventory) -> dict[str, list[str]]:
     return found
 
 
+_MYPY_RE = re.compile(r"\bmypy\b")
+_PYRIGHT_RE = re.compile(r"\b(?:based)?pyright\b")
+_PYRIGHT_FILES = frozenset({"pyrightconfig.json"})
+_MYPY_FILES = frozenset({"mypy.ini", ".mypy.ini"})
+
+
+def _typecheck_runs(inventory: Inventory, stack, pattern: re.Pattern[str]) -> bool:
+    """True when the ``typecheck`` verb runs a tool ``pattern`` names, directly or through the root Makefile."""
+    binding = resolve_verbs(inventory, stack).get("typecheck")
+    if binding is None:
+        return False
+    if pattern.search(binding.command):
+        return True
+    return binding.runner == "Makefile" and follow_makefile(inventory, binding.command, pattern.search) is not None
+
+
+def _language_server_mirror(inventory: Inventory, stack, paths: list[str]) -> str | None:
+    """The pyright config that mirrors the one mypy config the ``typecheck`` verb runs, or ``None``.
+
+    Only files are read: a ``pyproject.toml`` that holds both tables is one path and never competes."""
+    mypy = [p for p in paths if p in _MYPY_FILES]
+    pyright = [p for p in paths if p in _PYRIGHT_FILES]
+    if len(mypy) != 1 or not pyright or len(mypy) + len(pyright) != len(paths):
+        return None
+    if not _typecheck_runs(inventory, stack, _MYPY_RE) or _typecheck_runs(inventory, stack, _PYRIGHT_RE):
+        return None
+    return f"{', '.join(pyright)} mirrors {mypy[0]} for a language server (typecheck runs mypy)"
+
+
 def check_exec07(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     found = _concern_configs(inventory)
     competing = {concern: sorted(set(paths)) for concern, paths in found.items() if len(set(paths)) > 1}
+    notes: list[str] = []
+    python = competing.get("types (Python)")
+    mirror = _language_server_mirror(inventory, stack, python) if python else None
+    if mirror:
+        del competing["types (Python)"]
+        found["types (Python)"] = [p for p in python if p in _MYPY_FILES]
+        notes.append(mirror)
     if not competing:
         authored = {c: (paths[0] if paths else None) for c, paths in found.items() if paths}
-        detail = "; ".join(f"{c}: {p}" for c, p in sorted(authored.items()))
+        detail = "; ".join([*(f"{c}: {p}" for c, p in sorted(authored.items())), *notes])
         return _outcome(spec, Verdict.PASS, detail or "no concern configs found")
 
     because = "; ".join(f"{concern} ({', '.join(paths)})" for concern, paths in sorted(competing.items()))

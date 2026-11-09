@@ -27,7 +27,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import support  # noqa: E402
 from audit.rules.checks._common import extract_fenced_commands, strip_shell_comment  # noqa: E402
 from audit.rules.checks.execution import _lock_consistency, _lockfile_paths  # noqa: E402
+from audit.rules.checks.execution import check_exec07  # noqa: E402
+from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
+from audit.stack import detect_stack  # noqa: E402
 
 #: fixture directory -> (check id under test, expected verdict, needs a git repository)
 FIXTURES: dict[str, tuple[str, str, bool]] = {
@@ -39,6 +42,7 @@ FIXTURES: dict[str, tuple[str, str, bool]] = {
     "exec-05-generated": ("EXEC-05", "FAIL", True),
     "exec-06-broken-command": ("EXEC-06", "FAIL", False),
     "exec-07-dual-lint": ("EXEC-07", "FAIL", False),
+    "exec-07-dual-python-types": ("EXEC-07", "FAIL", False),
 }
 
 EXEC_CHECKS = tuple(f"EXEC-0{i}" for i in range(1, 8))
@@ -625,6 +629,99 @@ class LockConsistencyTests(unittest.TestCase):
         files = {"Cargo.toml": manifest, "Cargo.lock": lock, "crate/Cargo.lock": lock}
         self.assertEqual(self.state(files, "rust", "Cargo.lock"), ("mismatch", {"serde"}))
         self.assertEqual(self.state(files, "rust", "crate/Cargo.lock"), ("unverified", set()))
+
+
+# -- EXEC-07: type configs per language, and the language-server mirror (v0.3.3 C12.0) ---------------------------
+# `tsconfig.json` beside `mypy.ini` is two languages. A `pyrightconfig.json` beside one mypy config, when the
+# `typecheck` verb runs mypy and not pyright, mirrors the gate for a language server and does not compete.
+
+EXEC07_ID = "EXEC-07"
+EXEC07_PYPROJECT = '[project]\nname = "x"\nversion = "0.1.0"\n'
+EXEC07_MYPY = "[mypy]\nstrict = True\n"
+EXEC07_PYRIGHT = '{"extraPaths": ["src"]}\n'
+EXEC07_MAKE_MYPY = "EXEC07_MYPY := uvx mypy@1.0\n\ntypecheck:\n\t$(EXEC07_MYPY) --config-file mypy.ini src\n"
+
+
+class Exec07LanguageServerMirrorTests(unittest.TestCase):
+    def check(self, files: dict[str, str]) -> dict:
+        """Run the check in-process (so coverage traces it) on a repository built from ``files``."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            inventory = build_inventory(root)
+            outcome = check_exec07(
+                spec=REGISTRY_BY_ID[EXEC07_ID],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+        return {"verdict": outcome.verdict.value, "summary": outcome.summary}
+
+    def test_a_pyright_mirror_of_the_mypy_gate_passes(self):
+        check = self.check(
+            {
+                "pyproject.toml": EXEC07_PYPROJECT,
+                "mypy.ini": EXEC07_MYPY,
+                "pyrightconfig.json": EXEC07_PYRIGHT,
+                "Makefile": EXEC07_MAKE_MYPY,
+            }
+        )
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertIn("pyrightconfig.json mirrors mypy.ini for a language server", check["summary"])
+        self.assertIn("types (Python): mypy.ini", check["summary"])
+
+    def test_an_npm_typecheck_script_that_runs_mypy_counts(self):
+        package = '{"name": "x", "scripts": {"typecheck": "mypy src"}}'
+        check = self.check({"package.json": package, "mypy.ini": EXEC07_MYPY, "pyrightconfig.json": EXEC07_PYRIGHT})
+        self.assertEqual(check["verdict"], "PASS")
+
+    def test_a_pyright_gate_beside_mypy_ini_competes(self):
+        makefile = "typecheck:\n\tpyright\n"
+        check = self.check(
+            {
+                "pyproject.toml": EXEC07_PYPROJECT,
+                "mypy.ini": EXEC07_MYPY,
+                "pyrightconfig.json": EXEC07_PYRIGHT,
+                "Makefile": makefile,
+            }
+        )
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertIn("types (Python) (mypy.ini, pyrightconfig.json)", check["summary"])
+
+    def test_a_typecheck_that_runs_both_competes(self):
+        makefile = "typecheck:\n\tmypy src\n\tpyright\n"
+        check = self.check(
+            {
+                "pyproject.toml": EXEC07_PYPROJECT,
+                "mypy.ini": EXEC07_MYPY,
+                "pyrightconfig.json": EXEC07_PYRIGHT,
+                "Makefile": makefile,
+            }
+        )
+        self.assertEqual(check["verdict"], "FAIL")
+
+    def test_no_typecheck_verb_competes(self):
+        check = self.check(
+            {"pyproject.toml": EXEC07_PYPROJECT, "mypy.ini": EXEC07_MYPY, "pyrightconfig.json": EXEC07_PYRIGHT}
+        )
+        self.assertEqual(check["verdict"], "FAIL")
+
+    def test_two_mypy_configs_still_compete(self):
+        pyproject = EXEC07_PYPROJECT + "\n[tool.mypy]\nstrict = true\n"
+        check = self.check({"pyproject.toml": pyproject, "mypy.ini": EXEC07_MYPY, "Makefile": EXEC07_MAKE_MYPY})
+        self.assertEqual(check["verdict"], "FAIL")
+
+    def test_typescript_beside_python_is_two_languages(self):
+        check = self.check({"pyproject.toml": EXEC07_PYPROJECT, "mypy.ini": EXEC07_MYPY, "tsconfig.json": "{}\n"})
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertIn("types (TypeScript): tsconfig.json", check["summary"])
+
+    def test_two_typescript_configs_still_compete(self):
+        check = self.check({"tsconfig.json": "{}\n", "jsconfig.json": "{}\n", "package.json": '{"name": "x"}'})
+        self.assertEqual(check["verdict"], "FAIL")
 
 
 if __name__ == "__main__":
