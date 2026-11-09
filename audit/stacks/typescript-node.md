@@ -67,6 +67,7 @@ GitHub Actions is the provider seen in all three repositories: `actions/checkout
 `check` script) as the one gate job calls. A matrix across `ubuntu-latest`/`macos-latest`/
 `windows-latest` was seen in one repository (§Verified) and is a strong signal, not a requirement. Workflow
 lint (`CI-05`): a `lint:workflows` script running actionlint, called from the Husky pre-commit hook and in CI.
+Dependency audit (`TOOL-04`): a `security` job that runs `npm run security`, beside the `check` job.
 
 ## Baseline / ratchet
 
