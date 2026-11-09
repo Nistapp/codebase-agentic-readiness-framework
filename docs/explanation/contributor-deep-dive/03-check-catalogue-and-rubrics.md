@@ -49,6 +49,17 @@ A check's `method` is one of the two that produce a verdict. The words are the s
 | `automated` | The engine | Every engine check | `engine_verdict` equals `verdict` unless an agent overrides it with counter-evidence and a reason |
 | `agent` | A model reading the repository | `AGT-11`, `CI-04` | A verdict with cited evidence, or a `FAIL` that says no evidence was found |
 
+The diagram shows where each kind of verdict comes from, and where a requirement with no check goes.
+
+```mermaid
+flowchart LR
+    E["Engine: --list-checks"] -->|seeds| C["catalogue.json"]
+    H["Agent-only checks, added by hand"] --> C
+    C -->|"method automated"| V1["Engine verdict, overridable with evidence and a reason"]
+    C -->|"method agent"| V2["Agent verdict with cited evidence"]
+    R["Requirement verified by human or attested"] --> U["unattested[] in the report: no check, no verdict"]
+```
+
 A requirement verified by a person (`human`) or by the owner's declaration (`attested`) has no check, so it has no row here. It appears in a report's `unattested[]`. The catalogue test requires that a check has the same method as every requirement it verifies, so the two vocabularies cannot drift.
 
 ## 3. Rubric anatomy

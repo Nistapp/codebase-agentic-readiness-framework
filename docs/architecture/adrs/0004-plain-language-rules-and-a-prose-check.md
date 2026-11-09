@@ -58,9 +58,12 @@ baseline count holds it. A writer fixes a warning in the change that touches the
 * `make docs-prose [FILES=...]` prints the issues. `PROSE_ARGS=--min-severity=warning` hides the notices.
 * The CI `docs` job runs it with `--format github` on the changed Markdown. The issues show as annotations on the
   pull request, and the job does not fail on them.
+* `make check` does not run it (decided 2026-11-09, v0.3.4 H2). A check that cannot fail adds only output to the
+  gate, and the pull request annotations already show the issues on the changed lines.
 
-**Scope.** The rules apply to this repository: agent messages and docs. How the audit and implement recipes talk to
-their users, and whether target repositories get a matching requirement, is listed for v0.3.4.
+**Scope.** The rules apply to this repository: agent messages and docs. The audit and implement recipes carry their
+own copy, `audit/prompts/talking-to-the-user.md`, for how they talk to their users. The skill bundles do not ship
+this repository's `docs/`. Whether target repositories get a matching requirement is listed for v0.3.4.
 
 ---
 
@@ -75,6 +78,7 @@ their users, and whether target repositories get a matching requirement, is list
 | textlint, with `textlint-rule-terminology` (reviewed 2026-11-09) | Pinnable through `dev/tools/package.json`, and its rules can be warnings. Not needed yet: revisit when passive voice or glossary terms need a check. |
 | proselint, write-good, alex, LanguageTool (reviewed 2026-11-09) | proselint is opinionated and hard to configure. write-good and alex are narrow. LanguageTool needs Java. |
 | Rules without a check | Rules without a check drift. Chat cannot be checked, but docs can. |
+| Run the advisory check in `make check` too (reviewed 2026-11-09) | It costs little (0.3 s over the whole tree), but it cannot fail, so the gate would only print about 1,750 issues that no one acts on there. The CI annotations put each issue on its own line in the pull request instead. |
 | A blocking check: a zero-issue path list (`PROSE_PATHS`) and a ratchet count in `.quality-baseline.json` (shipped 2026-11-08, reversed 2026-11-09) | Too strict for guidelines. On 2026-11-09, 1,574 of 1,624 issues were `PL001`, and a long sentence is often the clearest one. Blocking on it slowed work without a matching gain. |
 
 ---

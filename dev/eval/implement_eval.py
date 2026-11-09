@@ -25,7 +25,7 @@ the assertions compare against).
 
 ``assert`` reads the outcome (every state file on any branch or worktree, the git refs of ``repo/`` and
 ``origin.git/``, the shim log, and the ``--output-format stream-json`` transcript) and applies the scenario's
-assertions, A1 to A7 (``ASSERTIONS``). ``run`` materialises each scenario under ``--eval-root``, runs
+assertions, A1 to A8 (``ASSERTIONS``). ``run`` materialises each scenario under ``--eval-root``, runs
 ``run-claude.sh --recipe implement`` on it, asserts, and writes ``implement-eval.<stamp>.json`` in ``<out-dir>``.
 
 ``tools/tests/test_implement_eval.py`` runs every assertion on hand-made good and bad outcomes, with no agent, in
@@ -863,6 +863,49 @@ def a7_drift_reverified(scenario: Scenario, outcome: Outcome) -> Verdict:
     return Verdict("A7", not details, details or [f"drift checked first; {finding} ended {entry and entry['status']}"])
 
 
+#: The three headings of a theme's pull request body (`audit/prompts/talking-to-the-user.md`, the done report).
+PR_BODY_HEADINGS = ("What changed", "How it was checked", "What was not done")
+PR_CREATE = re.compile(r"\bgh\s+pr\s+create\b")
+BODY_FLAG = re.compile(r"--body(?:=|\s+)[\"']?")
+BODY_FILE = re.compile(r"--body-file[=\s]+(?:'([^']+)'|\"([^\"]+)\"|(\S+))")
+
+
+def pr_bodies(outcome: Outcome) -> list[str]:
+    """The text of every `gh pr create` the run attempted, with the file of a `--body-file` read when it is there.
+
+    Two sources: the Bash commands in the transcript (a body passed inline or through a heredoc is in the command),
+    and the `gh` shim's log, which holds the arguments of each call (one line per line of a multi-line body).
+    """
+    calls = [command for command in outcome.bash() if PR_CREATE.search(command)]
+    log = "\n".join(outcome.gh_calls)
+    starts = [match.start() for match in re.finditer(r"(?m)^pr\s+create\b", log)]
+    calls += [log[start:end] for start, end in zip(starts, [*starts[1:], len(log)])]
+    bodies = []
+    for call in calls:
+        # The body's first line follows the flag (and an opening quote) on the same line; start it on its own.
+        body = BODY_FLAG.sub("--body\n", call)
+        for match in BODY_FILE.finditer(call):
+            name = next(group for group in match.groups() if group)
+            for path in (Path(name), outcome.repo / name, outcome.root / name):
+                if path.is_absolute() and path.is_file():
+                    body += "\n" + path.read_text(encoding="utf-8", errors="replace")
+                    break
+        bodies.append(body)
+    return bodies
+
+
+def a8_pr_body_layout(scenario: Scenario, outcome: Outcome) -> Verdict:
+    bodies = pr_bodies(outcome)
+    if not bodies:
+        return Verdict("A8", False, ["no gh pr create call was attempted"])
+    wanted = [re.compile(rf"(?mi)^#{{1,6}}\s*{re.escape(heading)}\s*$") for heading in PR_BODY_HEADINGS]
+    for body in bodies:
+        missing = [heading for heading, pattern in zip(PR_BODY_HEADINGS, wanted) if not pattern.search(body)]
+        if not missing:
+            return Verdict("A8", True, [f"the pull request body has the headings {', '.join(PR_BODY_HEADINGS)}"])
+    return Verdict("A8", False, [f"the pull request body lacks the headings: {', '.join(missing)}"])
+
+
 ASSERTIONS: dict[str, Callable[[Scenario, Outcome], Verdict]] = {
     "A1": a1_queue_only_confirmed,
     "A2": a2_skip_is_final,
@@ -871,6 +914,7 @@ ASSERTIONS: dict[str, Callable[[Scenario, Outcome], Verdict]] = {
     "A5": a5_debt_is_partial,
     "A6": a6_branch_rule,
     "A7": a7_drift_reverified,
+    "A8": a8_pr_body_layout,
 }
 
 

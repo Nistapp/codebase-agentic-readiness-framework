@@ -3,6 +3,19 @@
 > [!NOTE]
 > This audit reports; it does not gate. A check that could not be settled is UNKNOWN: it earns no credit and is never shown as a pass.
 
+## Bottom line
+
+- **7 blockers remaining: 4 FAIL, 1 PARTIAL, 2 UNKNOWN.**
+- **Not settled by this scan:**
+  - 6 checks are UNKNOWN: `IDX-02`, `IDX-03`, `CMD-02`, `TOOL-03`, `TST-02` and 1 more.
+  - 5 requirements are unattested: no check settles them.
+
+**First actions** (1 of 1 open finding):
+
+| # | Finding | Severity | Effort | What it blocks | Fix |
+|---:|---|---|:---:|---|---|
+| 1 | `EXEC-03` (F-001) | BLOCKER | — | An agent cannot prepare the environment non-interactively because no devcontainer, compose file, Dockerfile, setup target/script, or documented install command exists. | Add a committed setup path (a devcontainer, compose file, or a documented install command in README.md) that runs with no prompts. |
+
 ## Provenance
 
 | Field | Value |
@@ -350,6 +363,24 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `HYG-09` | Dependency update automation configured | COSMETIC | automated | no | PASS | PASS | dependency automation configured at .github/dependabot.yml |
 | `HYG-10` | License present | COSMETIC | automated | no | PASS | PASS | license present at LICENSE |
 | `HYG-11` | Branch protection declared as code | COSMETIC | automated | no | PASS | PASS | branch protection declared as code at docs/branch-protection.md |
+
+## Terms
+
+| Term | Kind | Meaning |
+|---|---|---|
+| PASS | verdict | The requirement is met. |
+| PARTIAL | verdict | Part of the requirement is met. |
+| FAIL | verdict | The requirement is not met. |
+| UNKNOWN | verdict | The evidence could not be gathered. It is never read as a pass. |
+| NOT_APPLICABLE | verdict | The check does not apply to this repository. |
+| BLOCKER | severity | Agent work is impossible, unsafe or unverifiable. Fix before onboarding agents. |
+| DEGRADER | severity | Agent work is possible but unreliable or wasteful. |
+| COSMETIC | severity | Hygiene. Fix when convenient. |
+| pending | decision on a finding | No decision yet. |
+| confirmed | decision on a finding | The finding stands as written. |
+| edited | decision on a finding | The finding stands, with its wording or evidence corrected. |
+| rejected | decision on a finding | The finding is wrong (a false positive). It leaves the backlog. |
+| deferred | decision on a finding | The finding is real, and the person chose to leave it open for now. |
 
 ---
 

@@ -75,6 +75,9 @@ class BuildSkillsTests(unittest.TestCase):
             stacks = {p.name for p in (bundle_dir / "references" / "stacks").glob("*.md")}
             self.assertEqual(stacks, {"README.md", "java.md", "python.md", "typescript-node.md"})
 
+            prompts = {p.name for p in (bundle_dir / "references" / "prompts").iterdir()}
+            self.assertEqual(prompts, set(bs.AUDIT_PROMPT_FILES))
+
             ref_schema = {p.name for p in (bundle_dir / "references" / "schema").iterdir()}
             self.assertEqual(ref_schema, set(bs.SCHEMA_FILES))
 
@@ -86,6 +89,18 @@ class BuildSkillsTests(unittest.TestCase):
             self.assertTrue((bundle_dir / "scripts" / "engine" / "audit" / "__main__.py").is_file())
             self.assertFalse((bundle_dir / "scripts" / "deterministic-audit").exists())
             self.assertTrue((bundle_dir / "scripts" / "audit.pyz").is_file())
+
+    def test_skill_md_links_the_shared_prompt_inside_the_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_dir = bs.build_bundle(Path(tmp))
+            text = (bundle_dir / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("](references/prompts/talking-to-the-user.md)", text)
+            self.assertIn("](references/prompts/talking-to-the-user.md#status-report)", text)
+            self.assertNotIn("](prompts/talking-to-the-user.md", text)
+            self.assertEqual(
+                (bundle_dir / "references" / "prompts" / "talking-to-the-user.md").read_bytes(),
+                (bs.AUDIT / "prompts" / "talking-to-the-user.md").read_bytes(),
+            )
 
     def test_bundle_carries_the_code_licence(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -193,6 +208,7 @@ class ImplementBundleTests(unittest.TestCase):
             "SKILL.md",
             "references/state.md",
             "references/prompts/kickoff.md",
+            "references/prompts/talking-to-the-user.md",
             "references/playbooks/README.md",
             "references/playbooks/define-command-surface.md",
             "references/checks/04-command-surface.md",
@@ -231,6 +247,10 @@ class ImplementBundleTests(unittest.TestCase):
         self.assertIn(f"\nname: {bs.IMPLEMENT_BUNDLE_NAME}\n", text)
         self.assertNotIn("\nname: implement\n", text)
         self.assertEqual(frontmatter_version(text), manifest_version())
+
+    def test_skill_md_links_the_shared_prompt(self) -> None:
+        text = (self.bundle / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("](references/prompts/talking-to-the-user.md)", text)
 
     def test_no_framework_tool_command_is_left(self) -> None:
         for file in self.markdown_files():

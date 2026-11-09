@@ -49,23 +49,23 @@ python3 -m unittest discover -s audit/tools/tests -k catalogue
 python3 -m unittest discover -s implement/tools/tests
 ```
 
-This file is read by Claude Code, opencode, Codex, Gemini CLI, Cursor and any other harness that reads `AGENTS.md`;
-no vendor-specific instruction file exists beside it.
+This file is read by Claude Code, opencode, Codex, Gemini CLI, Cursor and any other harness that reads `AGENTS.md`.
+No vendor-specific instruction file exists beside it.
 
 - Run `make check` and `make security` before you propose a change. Do not run an ad-hoc substitute.
 - A misspelling fails `make spell` (in `make check`). Fix it, or run `make spell-fix` and review the diff. Add a word
   to `_typos.toml` only for a project term or a code token.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
-  `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`).
-- Python 3.11 or newer (pinned in `.python-version`), `uv` for the pinned dev tools (ruff, mypy, detect-secrets),
-  and Go 1.27 or newer for actionlint (`make check`) and osv-scanner (`make security`).
-  Each tool version is written once, in `dev/tools/pyproject.toml`, `dev/tools/package.json` or a Go tool module
-  (`dev/tools/osv/go.mod`, `dev/tools/actionlint/go.mod`) (ADR 0003); never
-  write a version in the `Makefile`, a hook or a workflow.
-  Nothing is installed into the project.
-- Local hooks are `lefthook.yml` (a stop on commits to `dev` and `main`, format check on staged Python,
-  `make docs-lint` on staged ratchet Markdown, `make workflow-lint` on staged `.github/` files, typos on staged
-  files, a secrets scan, and `dev/commit_lint.py` on the commit message).
+  `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`). Run
+  `make docs-prose FILES=<file.md>` too, and fix its warnings on the lines you changed; it never fails.
+- Prerequisites: Python 3.11 or newer (pinned in `.python-version`) and `uv` for the pinned dev tools (ruff, mypy,
+  detect-secrets). Go 1.27 or newer runs actionlint (`make check`) and osv-scanner (`make security`).
+  Each tool version is written once (ADR 0003): in `dev/tools/pyproject.toml`, in `dev/tools/package.json`, or in a
+  Go tool module (`dev/tools/osv/go.mod`, `dev/tools/actionlint/go.mod`).
+  Never write a version in the `Makefile`, a hook or a workflow. Nothing is installed into the project.
+- The local hooks live in `lefthook.yml`. They stop commits to `dev` and `main` and check the formatting of staged
+  Python. They run `make docs-lint` on staged ratchet Markdown and `make workflow-lint` on staged `.github/` files.
+  They run typos on staged files, a secrets scan, and `dev/commit_lint.py` on the commit message.
   The developer runs `lefthook install` once per clone; an agent never does.
   Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
 - `make coverage` runs the engine's, the audit tools' and the implement tools' suites under coverage.py. It fails
@@ -143,7 +143,7 @@ A change is done when all of this holds:
 - `make check` and `make security` pass.
 - `make docs-lint` passes when Markdown changed, and a new Markdown file under a ratchet path is clean.
 - New code has tests, and a new engine check has a fixture that fails exactly that check.
-- When a change alters a public interface, observable behaviour, the architecture or a decision, update the
+- A change can alter a public interface, observable behaviour, the architecture or a decision. Then update the
   affected documentation and the decision records in the same change set. When you fill in a page marked `Planned`,
   remove that note and update the doc router.
 - Python files carry the SPDX header `AGPL-3.0-or-later` and the copyright line. Documentation, schemas and published

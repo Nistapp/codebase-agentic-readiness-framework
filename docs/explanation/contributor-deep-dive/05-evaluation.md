@@ -135,7 +135,7 @@ A **runner** drives a recipe without a person and records what the run cost.
   - a copy of the recipe without the eval files.
 - In implement mode it also records a `stream-json` transcript, so a test can assert on every tool call.
 - The implement scenarios have no ground-truth verdicts. `dev/eval/implement_eval.py` asserts the recipe's hard rules
-  (A1 to A7) instead. See [Run the Evals](../../how-to/run-the-evals.md#implement-recipe-scenarios).
+  (A1 to A8) instead. See [Run the Evals](../../how-to/run-the-evals.md#implement-recipe-scenarios).
 
 ### `run-opencode.sh` and `run-codex.sh` (Planned)
 
