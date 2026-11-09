@@ -6,15 +6,16 @@
 ## Goal
 
 A commit runs a fast local hook chain before it is created, with one committed configuration and a documented
-one-time install. The commit-message convention is either enforced locally or explicitly recorded as enforced
-elsewhere (the pull-request title) by the owner's decision.
+one-time install. The commit-message convention runs in two places with one type list: a local `commit-msg` stage,
+so an agent learns of a bad subject before it pushes, and a CI step, which no `--no-verify` can skip. The owner may
+instead record the pull-request title check as enough.
 
 ## Checks resolved
 
 | Check | Rubric | What this playbook does for it |
 |---|---|---|
 | TOOL-05 | [05-tooling.md](../../audit/checks/05-tooling.md#tool-05--local-hook-chain-active) | Commits a hook-manager configuration the engine reads as wired, with fast changed-files hooks |
-| TOOL-06 | [05-tooling.md](../../audit/checks/05-tooling.md#tool-06--commit-convention-enforced) | Offers three options; the owner may skip when the title check is enough (see Commit rule) |
+| TOOL-06 | [05-tooling.md](../../audit/checks/05-tooling.md#tool-06--commit-convention-enforced) | Writes the commit rule as a local `commit-msg` stage and a CI step (`PASS`); the owner may skip when the title check is enough (see Commit rule) |
 
 ## Preconditions
 
@@ -25,9 +26,11 @@ elsewhere (the pull-request title) by the owner's decision.
   ([`define-command-surface`](define-command-surface.md), [`configure-quality-tools`](configure-quality-tools.md)). A
   hook calls those verbs; it never defines its own commands.
 - Preferences read, when present: `format.mass_reformat` (a `no` means hooks check changed files only, never the
-  full tree), `lint.mode`, `layout.command_runner`, `hooks.manager`, `commit.convention`.
+  full tree), `lint.mode`, `layout.command_runner`, `hooks.manager`, `commit.convention`, `commit.tool`.
 - **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a finding saying "no hook manager" can be stale; look for
   `lefthook.yml`, `.pre-commit-config.yaml`, `.husky/`, `.githooks/` and `core.hooksPath` on the current default branch.
+  A `TOOL-06` `PARTIAL` names which half is missing: "only in a local hook" needs the CI step, "only in CI" needs
+  the local stage. Keep the half that exists and add the other with the same tool and type list.
 
 ## Inputs to ask
 
@@ -48,16 +51,30 @@ elsewhere (the pull-request title) by the owner's decision.
    not archived, and it is the most used manager (checked 2026-11-09). Reject a tool only when it is archived or
    has an open security advisory. Installing a binary is a developer step the owner approves, not a repository dependency.
 2. **Hook content.** Default below; the owner may remove, never add a slow hook silently.
-3. **Commit rule** (skip when already skipped in the state file):
+3. **Commit rule** (skip when already skipped in the state file). One tool, run in both places, so the two
+   cannot disagree. Detect first: keep a tool the repository already runs in either place. Otherwise recommend by
+   stack (preference `commit.tool`). Versions checked 2026-11-09 (npm registry, PyPI, GitHub API); re-check when
+   applied.
+
+   | Stack | Tool | Local `commit-msg` stage | CI step (over the commits the pull request adds) |
+   |---|---|---|---|
+   | Node with a root manifest | commitlint (`@commitlint/cli` 21.2.4, 2026-10-18), a dev dependency | `.husky/commit-msg`: `npx --no -- commitlint --edit "$1"` | `npx commitlint --from "$BASE" --to "$HEAD" --verbose` |
+   | Python | commitizen (4.19.3, 2026-10-24), or gitlint (0.19.1, 2023-03-10) when the repository already uses it | pre-commit hook `commitizen` (or `gitlint`) with `stages: [commit-msg]` | `cz check --rev-range "$BASE..$HEAD"` (or `gitlint --commits "$BASE..$HEAD"`) |
+   | Mixed, Java, Node with no root manifest, or no profile | a commit-lint script in the repository ([template](#commit-lint-script-template)) | lefthook `commit-msg` stage, or `.githooks/commit-msg`, running the script with `--message-file` | the same script with `--range "$BASE..$HEAD"` |
+
+   conventional-pre-commit (4.5.0, 2026-10-29) checks one message file only, with no range form, so it cannot
+   be the CI half; keep it where it exists and run its type list through commitizen or the script in CI.
+   The engine sees the CI step by the tool's name, by the same script path in the hook and the workflow, or
+   through a runner target (`make commit-lint`, `npm run lint:commits`) whose command runs either.
 
    | Option | What | Engine reads it as |
    |---|---|---|
-   | A. Document the PR-title rule | The repository squash-merges and a CI check rejects non-conventional PR titles; the PR title is what lands on the default branch. Write this in the contributing doc and record the finding `skipped` with that reason | TOOL-06 stays `FAIL` (the engine does not read CI; "TOOL-06's own blind spot"); owner-accepted |
-   | B. A commit-message rule in a `commit-msg` stage, matched to the stack | Node: commitlint (`@commitlint/cli` 21.2.4) in `.husky/commit-msg`. Python: a pre-commit `commit-msg` hook (conventional-pre-commit, commitizen or gitlint). Others: the manager's `commit-msg` stage | `PASS`. commitlint needs Node; with no root manifest its version cannot be pinned by a lockfile, so prefer the Python or lefthook route there |
-   | C. Both | A and B | `PASS`; carries B's costs |
+   | A. The pull-request title check only | The repository squash-merges, and a CI check (`amannn/action-semantic-pull-request`, v6.1.2, 2026-11-05) rejects a non-conventional title, which becomes the squash commit's subject. Write this in the contributing doc and record the finding `skipped` with that reason | `PARTIAL` (CI only); owner-accepted |
+   | B. The commit rule, local and in CI | The tool above in the `commit-msg` stage and as a CI step | `PASS` |
+   | C. Both | A and B, with one type list | `PASS`; carries B's costs |
 
-   Recommend A where squash merges and a title check exist (the history that matters is the squash commit);
-   otherwise B. Only the owner skips; record the owner's words.
+   Recommend B, or C where squash merges and a title check already exist. Only the owner skips; record the
+   owner's words.
 
 ## Steps
 
@@ -74,8 +91,9 @@ elsewhere (the pull-request title) by the owner's decision.
    binary install line too. Say that CI is the real gate.
    Never advise `--no-verify`; when a hook fails, fix the cause.
 4. **Commit rule** per the owner's option. For A: the contributing doc names the PR-title workflow and the type
-   list it enforces. For B or C: add the config and the `commit-msg` stage, with the same type list as the
-   title rule so the two cannot disagree.
+   list it enforces. For B or C: add the config and the `commit-msg` stage, then the CI step for the provider
+   (see [Commit rule in CI](#commit-rule-in-ci)), with the same type list as the title rule so they cannot
+   disagree. Commit the local stage and the CI step separately, so either reverts alone.
 5. **Verify** with a deliberately bad staged file in a scratch worktree (see Verification). Commit config, docs
    and rule separately.
 
@@ -111,6 +129,123 @@ With lefthook (IR07.3):
 - Fetch the test binary into a scratch directory and compare its SHA-256 with the digest GitHub publishes for the
   release asset; do not put it on the owner's `PATH`.
 
+### Commit rule in CI
+
+The step checks every non-merge commit the pull request adds. It needs the full history (a shallow clone has no
+base commit) and must pass, not fail, when there is no base (a new branch). Put it in the workflow that already
+runs the gate, in a job of its own.
+
+GitHub Actions. `BASE` covers a pull request, a merge-queue group and a push:
+
+```yaml
+  commits:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@<pinned sha> # the repository's existing checkout pin
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Check the commit subjects
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha || github.sha }}
+        run: |
+          if [[ -z "$BASE" || "$BASE" =~ ^0+$ ]] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "No base commit to compare with (a new branch); nothing to check."
+            exit 0
+          fi
+          <the CI command from the table, with "$HEAD_SHA" as the head>
+```
+
+When the step runs a Node or Python tool, set it up as the gate's other jobs do (`actions/setup-node` and
+`npm ci`, or `astral-sh/setup-uv`), at the version the repository already pins.
+
+GitLab CI. Merge-request pipelines carry the base in `CI_MERGE_REQUEST_DIFF_BASE_SHA`:
+
+```yaml
+commits:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  variables:
+    GIT_DEPTH: "0"
+  script:
+    - <the CI command from the table, with BASE="$CI_MERGE_REQUEST_DIFF_BASE_SHA" and HEAD="$CI_COMMIT_SHA">
+```
+
+Another provider: the same three parts (full history, the pull request's base and head, a pass with no base).
+
+### Commit-lint script template
+
+For the mixed or Java route, or when the owner wants no new tool. A trimmed form of this framework's own
+`dev/commit_lint.py`; set `TYPES` to the repository's convention (`commit.convention`) and put the script where
+the repository keeps its scripts. Standard library only; needs Python 3.9 or newer.
+
+```python
+"""Check that commit subjects follow Conventional Commits: ``type(scope)!: subject``.
+
+    commit_lint.py --range <base>..<head>   every non-merge commit in the range (CI)
+    commit_lint.py --message-file <file>    the first line of one message (the commit-msg hook)
+
+Exit 0 when every subject passes, 1 when one fails, 2 on a usage or git error.
+"""
+
+import argparse
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+TYPES = ("feat", "fix", "docs", "test", "chore", "ci", "refactor", "perf", "build", "style", "revert")
+SUBJECT = re.compile(r"^(?:" + "|".join(TYPES) + r")(?:\([a-z0-9._-]+\))?!?: \S.*$")
+
+
+def subjects(revision_range):
+    out = subprocess.run(
+        ["git", "log", "--no-merges", "--format=%h%x00%s", revision_range],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if out.returncode != 0:
+        sys.exit(f"commit_lint: {out.stderr.strip() or 'git log failed'}")
+    return [tuple(line.split("\x00", 1)) for line in out.stdout.splitlines()]
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--range", dest="revision_range")
+    group.add_argument("--message-file", type=Path)
+    args = parser.parse_args()
+    if args.message_file:
+        lines = [l for l in args.message_file.read_text(encoding="utf-8").splitlines() if not l.startswith("#")]
+        pairs = [("message", lines[0].rstrip() if lines else "")]
+    else:
+        pairs = subjects(args.revision_range)
+    bad = [(sha, subject) for sha, subject in pairs if not SUBJECT.match(subject)]
+    for sha, subject in bad:
+        print(f"{sha}: not a Conventional Commits subject: {subject!r}")
+    print(f"allowed types: {', '.join(TYPES)}" if bad else f"commit_lint: {len(pairs)} subject(s) checked")
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+```
+
+With no Python on the machines (some Java repositories), a POSIX shell hook does the local half, and the CI step
+loops over `git log --no-merges --format=%s "$BASE..$HEAD"` with the same pattern:
+
+```sh
+#!/bin/sh
+# .githooks/commit-msg: the first non-comment line must be a Conventional Commits subject.
+subject=$(grep -v '^#' "$1" | head -n 1)
+printf '%s\n' "$subject" | grep -Eq '^(feat|fix|docs|test|chore|ci|refactor|perf|build|style|revert)(\([a-z0-9._-]+\))?!?: [^ ]' || {
+  echo "commit-msg: not a Conventional Commits subject: $subject" >&2
+  exit 1
+}
+```
+
 ## Continue on error
 
 - If the changed-files verb reveals existing debt in a staged file, the hook blocks only on files the commit
@@ -125,9 +260,10 @@ With lefthook (IR07.3):
 |---|---|---|
 | TOOL-05 | `test -f <manager config>` (`.husky/pre-commit`, `.pre-commit-config.yaml`, `lefthook.yml`) and `git config core.hooksPath` or the install step in the docs | The engine's wiring file exists; the install step is documented |
 | TOOL-05 (behaviour) | In a scratch worktree, stage a file with a deliberate format violation and a fake secret, run the hook | The commit is refused with a clear message; a clean staged change passes in a few seconds |
-| TOOL-06 | Option A: the contributing doc names the title check and the state records `skipped` with the owner's reason. Option B or C: the config and the `commit-msg` stage exist; a bad message is refused | As stated |
+| TOOL-06 | Option A: the contributing doc names the title check and the state records `skipped` with the owner's reason. Option B or C: the config and the `commit-msg` stage exist; a bad message is refused locally | As stated |
+| TOOL-06 (CI) | Option B or C: push a scratch branch with one bad subject and open a draft pull request only with the owner's approval; or run the CI command locally over `<base>..HEAD` | The CI step fails on the bad subject and passes on a clean range; the engine reads `TOOL-06` `PASS` |
 
-The engine reads TOOL-06 as a file or stage check; option A leaves it `FAIL` by design.
+The engine reads `TOOL-06` from files only: option A gives `PARTIAL` (CI only) by design.
 
 ## Rollback
 
@@ -150,6 +286,8 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 
 ```bash
 python3 implement/tools/progress.py pref set hooks.manager <husky|pre-commit|lefthook|...> \
+  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py pref set commit.tool <commitlint|commitizen|gitlint|script> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> --by owner \
   --reason "<the owner's words: why the title check is enough>"

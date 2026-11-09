@@ -208,13 +208,14 @@ Full playbook: [`add-ci-parity.md`](../../implement/playbooks/add-ci-parity.md).
 ### `add-hooks-and-commit-rules`
 
 A commit runs a fast local hook chain before it is created, with one committed configuration and a documented
-one-time install. The commit-message convention is either enforced locally or explicitly recorded as enforced
-elsewhere (the pull-request title) by the owner's decision.
+one-time install. The commit-message convention runs in two places with one type list: a local `commit-msg` stage,
+so an agent learns of a bad subject before it pushes, and a CI step, which no `--no-verify` can skip. The owner may
+instead record the pull-request title check as enough.
 
 | Check | What the playbook does |
 |---|---|
 | [`TOOL-05` Local hook chain active](audit-master.md#tool-05-local-hook-chain-active) | Commits a hook-manager configuration the engine reads as wired, with fast changed-files hooks |
-| [`TOOL-06` Commit convention enforced](audit-master.md#tool-06-commit-convention-enforced) | Offers three options; the owner may skip when the title check is enough (see Commit rule) |
+| [`TOOL-06` Commit convention enforced](audit-master.md#tool-06-commit-convention-enforced) | Writes the commit rule as a local `commit-msg` stage and a CI step (`PASS`); the owner may skip when the title check is enough (see Commit rule) |
 
 **What it never does:**
 
