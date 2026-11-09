@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all eight rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all nine rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
 
 ---
 
@@ -675,7 +675,7 @@ A run writes one file, the one `--out` names, in `facts.schema.json`'s format: `
 
 ## recipe_lint.py
 
-Checks the Markdown under `audit/`, `implement/` and `docs/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10), every `audit/tools/<name>.py` or `implement/tools/<name>.py` the Markdown names exists and answers `--describe`, every check, requirement and playbook ID named is one `catalogue.json` or `spec/readiness-requirements.md` actually has, and the generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md) matches what every tool's own `--describe` would produce today. The link rule also covers the framework pages outside those folders (the root `README.md`, `spec/` and `greenfield/`; the framework pages under `docs/framework/` are already recipe Markdown) and no other rule reads them; the `greenfield/templates/` links are examples relative to the destination and are skipped. It reads only, apart from running each tool's own `--describe`, which the contract guarantees does no work; nothing is written, unless `--write-catalogue` is given. The source is [`recipe_lint.py`](../../dev/recipe_lint.py).
+Checks the Markdown under `audit/`, `implement/` and `docs/` so that a recipe does not silently rot: every relative link and anchor resolves, a `SKILL.md`'s frontmatter is valid, each recipe's `SKILL.md` links the shared prompt [`audit/prompts/talking-to-the-user.md`](../../audit/prompts/talking-to-the-user.md), a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10), every `audit/tools/<name>.py` or `implement/tools/<name>.py` the Markdown names exists and answers `--describe`, every check, requirement and playbook ID named is one `catalogue.json` or `spec/readiness-requirements.md` actually has, and the generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md) matches what every tool's own `--describe` would produce today. The link rule also covers the framework pages outside those folders (the root `README.md`, `spec/` and `greenfield/`; the framework pages under `docs/framework/` are already recipe Markdown) and no other rule reads them; the `greenfield/templates/` links are examples relative to the destination and are skipped. It reads only, apart from running each tool's own `--describe`, which the contract guarantees does no work; nothing is written, unless `--write-catalogue` is given. The source is [`recipe_lint.py`](../../dev/recipe_lint.py).
 
 **Synopsis**
 
