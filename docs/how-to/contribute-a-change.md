@@ -156,7 +156,10 @@ If you changed Markdown, also run:
 
 ```bash
 make docs-lint
+make docs-prose FILES=<file.md>
 ```
+
+`docs-prose` never fails. Fix the warnings it reports on the lines you changed.
 
 If you added or changed a Mermaid diagram, also run this for each file:
 

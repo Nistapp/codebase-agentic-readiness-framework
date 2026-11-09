@@ -22,7 +22,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | detect-secrets | Key-shaped strings not in `.secrets.baseline` | `make security` | `security` | `dev/tools/pyproject.toml` |
 | markdownlint-cli2 | Markdown rule violations (`.markdownlint-cli2.jsonc`) | `make docs-lint`; `make changelog-fix` rewrites `CHANGELOG.md` with the fixes | `docs`; `format-changelog` in `release-please.yml` | `dev/tools/package.json` |
-| `dev/prose_check.py` | Long sentences, vague words, explanation pages without a diagram ([`COMMUNICATION_RULES.md`](../COMMUNICATION_RULES.md)) | `make docs-lint` | `docs` | This repository |
+| `dev/prose_check.py` | Long sentences, vague words, explanation pages without a diagram ([`COMMUNICATION_RULES.md`](../COMMUNICATION_RULES.md)). Advisory: warnings and notices, never a failure | `make docs-prose [FILES=...]` | `docs` (annotations on changed Markdown) | This repository |
 | mermaid-cli | A Mermaid block that does not render | `make docs-mermaid FILES=<file.md>` | `docs` | `dev/tools/package.json` |
 | skills-ref | A skill bundle that breaks the Agent Skills specification | `make validate-skills` | Release only | `dev/tools/pyproject.toml` |
 | `dev/commit_lint.py` | A commit subject that is not Conventional Commits | `make commit-lint` | `commits` | This repository |
@@ -42,7 +42,7 @@ fails its gate. When a count goes down, lower the baseline in the same change.
 
 | Ratchet | File | Checked by |
 | --- | --- | --- |
-| ruff, mypy, Markdown lint and prose counts | `.quality-baseline.json` | `make format:check`, `make typecheck`, `make docs-lint` |
+| ruff, mypy and Markdown lint counts | `.quality-baseline.json` | `make format:check`, `make typecheck`, `make docs-lint` |
 | Known key-shaped strings | `.secrets.baseline` | `make security` |
 | Coverage floor | `.coveragerc` (`fail_under`) | `make coverage` |
 | Readiness findings | `.audit-baseline.json` | `make self-audit` |

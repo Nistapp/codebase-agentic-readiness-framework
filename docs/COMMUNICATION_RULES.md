@@ -19,6 +19,9 @@ These rules come from the writing rules of ASD-STE100 (Simplified Technical Engl
 that help us. We do not use its fixed word list: technical names are fine.
 
 `dev/prose_check.py` checks the rules marked *checked*. A person or an agent applies the others.
+The rules are guidelines. The check reports warnings and notices, and it never blocks a change
+([ADR 0004](architecture/adrs/0004-plain-language-rules-and-a-prose-check.md)).
+Fix a warning in the change that touches the text. Treat a notice as a hint.
 
 1. **Bottom line first.** Put the answer, the result or the decision you need in the first two lines. Put the
    detail after it.

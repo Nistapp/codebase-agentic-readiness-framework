@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-11-08
-* **Last reviewed:** 2026-11-08
+* **Last reviewed:** 2026-11-09
 * **Deciders:** [@nistapp]
 
 ---
@@ -26,6 +26,7 @@ Three questions needed an answer:
 1. Where do the rules live, so that every harness reads them?
 2. How much of STE100 do we adopt?
 3. Does a tool check the rules, and which tool?
+4. Does the check block a change, or only advise?
 
 ---
 
@@ -41,18 +42,22 @@ Three questions needed an answer:
 [`AGENTS.md`](../../../AGENTS.md) carries a six-line summary, because every harness loads it. The style guide
 ([`docs/STYLE_GUIDE.md`](../../STYLE_GUIDE.md)) adds only the rules for doc pages and links to the rest.
 
-**Check.** [`dev/prose_check.py`](../../../dev/prose_check.py) is a standard-library script with three rules:
+**Check.** [`dev/prose_check.py`](../../../dev/prose_check.py) is a standard-library script with three rules. Each
+issue has a severity:
 
-* `PL001`: a sentence of more than 25 words, or more than 20 in a numbered step;
-* `PL002`: a vague or padded word, such as `simply` or `in order to`;
-* `PL003`: an explanation page or a tutorial without a Mermaid diagram.
+| Rule | Reports | Severity |
+|---|---|---|
+| `PL001` | A sentence of more than 25 words | Notice |
+| `PL001` | A sentence of more than 40 words, or more than 20 in a numbered step | Warning |
+| `PL002` | A vague or padded word, such as `simply` or `in order to` | Warning |
+| `PL003` | An explanation page or a tutorial without a Mermaid diagram | Warning |
 
-`make docs-lint` runs it two ways:
+**Advisory, never blocking.** The rules are guidelines. The check exits 0 whatever it finds. No gate, path list or
+baseline count holds it. A writer fixes a warning in the change that touches the text and treats a notice as a hint.
 
-* on the `PROSE_PATHS` list in the `Makefile`, which must have zero issues;
-* on all tracked Markdown, whose count may not rise above the `prose` entry of `.quality-baseline.json`.
-
-Both are ratchets. A page joins `PROSE_PATHS` once it is clean.
+* `make docs-prose [FILES=...]` prints the issues. `PROSE_ARGS=--min-severity=warning` hides the notices.
+* The CI `docs` job runs it with `--format github` on the changed Markdown. The issues show as annotations on the
+  pull request, and the job does not fail on them.
 
 **Scope.** The rules apply to this repository: agent messages and docs. How the audit and implement recipes talk to
 their users, and whether target repositories get a matching requirement, is listed for v0.3.4.
@@ -67,7 +72,10 @@ their users, and whether target repositories get a matching requirement, is list
 | Rules only in `AGENTS.md` | Every line costs context in every session, and `AGENTS.md` is already long. |
 | Rules only in `COMMUNICATION_RULES.md` | Agents often skip a linked file. The short summary in `AGENTS.md` keeps the core in view. |
 | Vale with a custom STE style (the v0.3.3 A4 pilot) | A Go binary: not on PyPI or npm, so it cannot be pinned the ADR 0003 way. Our three rules need about 200 lines of Python. |
+| textlint, with `textlint-rule-terminology` (reviewed 2026-11-09) | Pinnable through `dev/tools/package.json`, and its rules can be warnings. Not needed yet: revisit when passive voice or glossary terms need a check. |
+| proselint, write-good, alex, LanguageTool (reviewed 2026-11-09) | proselint is opinionated and hard to configure. write-good and alex are narrow. LanguageTool needs Java. |
 | Rules without a check | Rules without a check drift. Chat cannot be checked, but docs can. |
+| A blocking check: a zero-issue path list (`PROSE_PATHS`) and a ratchet count in `.quality-baseline.json` (shipped 2026-11-08, reversed 2026-11-09) | Too strict for guidelines. On 2026-11-09, 1,574 of 1,624 issues were `PL001`, and a long sentence is often the clearest one. Blocking on it slowed work without a matching gain. |
 
 ---
 
@@ -76,15 +84,16 @@ their users, and whether target repositories get a matching requirement, is list
 ### Positive
 
 * Every harness that reads `AGENTS.md` gets the core rules, and the full rules are one link away.
-* New and edited pages in `PROSE_PATHS` stay readable; the full-tree count can only go down.
+* Writers see the issues on their own lines, in the terminal or on the pull request, without being blocked.
+* Severities point attention at the issues that matter most: vague words, long steps and missing diagrams.
 * No new pinned tool, and no network.
 
 ### Negative / Trade-offs
 
 * The sentence splitter is a heuristic. It can miss a split, for example after a code span that ends with a full
   stop. Rewording the sentence fixes it.
-* The full-tree count starts high (about 1,680 issues on 2026-11-08). Most pages join the list only when someone edits
-  them.
+* Nothing stops the count from rising. The full tree had 1,624 issues on 2026-11-09. Review, not a gate, keeps new
+  text readable.
 * The check cannot see passive voice, one meaning per word or the bottom-line-first rule. People and agents apply
   those.
 

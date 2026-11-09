@@ -60,18 +60,11 @@ DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbook
 	'docs/explanation/user-overview/03-trust-and-safety.md' 'docs/explanation/contributor-deep-dive/04-stack-profiles.md' 'docs/explanation/contributor-deep-dive/05-evaluation.md' 'docs/how-to/add-a-stack-profile.md' 'docs/reference/harness-notes.md' \
 	'audit/engine/docs/how-to/read-the-report.md'
 
-# The Markdown that the prose check (dev/prose_check.py, the plain-language rules of docs/COMMUNICATION_RULES.md)
-# holds to zero issues. A ratchet like DOCS_LINT_PATHS: a page joins once it is clean, and the list only grows.
-# Outside it, the full-tree count may not rise above the `prose` entry of .quality-baseline.json.
-PROSE_PATHS := docs/COMMUNICATION_RULES.md docs/STYLE_GUIDE.md docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md \
-	docs/explanation/contributor-deep-dive/04-stack-profiles.md \
-	docs/explanation/contributor-deep-dive/05-evaluation.md \
-	docs/how-to/add-a-stack-profile.md \
-	docs/reference/harness-notes.md \
-	audit/engine/docs/how-to/read-the-report.md
+# The prose check (dev/prose_check.py, the plain-language rules of docs/COMMUNICATION_RULES.md) is advisory: it
+# reports warnings and notices and never fails a target. `make docs-prose` runs it; CI annotates changed Markdown.
 PROSE_CHECK := $(PYTHON) dev/prose_check.py
-# The tracked Markdown the prose count covers: the markdownlint scope, without fixtures, test data and the worked
-# example's copied reports.
+# The tracked Markdown `make docs-prose` reads when FILES is not set: the markdownlint scope, without fixtures,
+# test data and the worked example's copied reports.
 PROSE_SCOPE := git ls-files -z -- '*.md' ':(exclude,glob)**/fixtures/**' ':(exclude,glob)**/testdata/**' \
 	':(exclude,glob)**/server-worked-example/digital-assistant-server[-.]*.md'
 
@@ -84,12 +77,12 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not 
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-mermaid changelog-fix workflow-lint commit-lint
+.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  workflow-lint  commit-lint  update-secrets-baseline  validate-skills"
-	@echo "docs:  docs-lint  docs-lint-all  docs-mermaid FILES=...  changelog-fix"
+	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
 # through uvx and npx at pinned versions. This target checks the prerequisites without a prompt, exits 1 naming the
@@ -196,20 +189,27 @@ validate-skills:
 	$(SKILLS_REF) validate dev/dist/skills/agentic-readiness-audit
 	$(SKILLS_REF) validate dev/dist/skills/agentic-readiness-implement
 
-# Lints the Markdown in DOCS_LINT_PATHS and checks the prose in PROSE_PATHS; fails on any violation. Then compares
-# both full-tree counts with .quality-baseline.json. Needs Node (npx); the first run fetches the pinned CLI. CI runs
-# it in the `docs` job when a Markdown file changed.
+# Lints the Markdown in DOCS_LINT_PATHS; fails on any violation. Then compares the full-tree count with
+# .quality-baseline.json. The prose check is not part of it: see docs-prose. Needs Node (npx); the first run
+# fetches the pinned CLI. CI runs it in the `docs` job when a Markdown file changed.
 docs-lint:
 	$(MARKDOWNLINT) $(DOCS_LINT_PATHS)
-	$(PROSE_CHECK) $(PROSE_PATHS)
 	$(QUALITY_BASELINE) markdownlint -- sh -c "git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)"
-	$(QUALITY_BASELINE) prose -- sh -c "$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK) --quiet"
 
 # Reports violations in every tracked Markdown file (fixtures excluded by the config). Never fails: the debt
 # outside DOCS_LINT_PATHS is recorded, not gated.
 docs-lint-all:
 	-git ls-files -z '*.md' | xargs -0 $(MARKDOWNLINT)
-	-$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK)
+
+# Reports the prose check's warnings and notices (docs/COMMUNICATION_RULES.md) in FILES, or in all tracked Markdown
+# when FILES is not set. Advisory: the check exits 0 whatever it finds. Add PROSE_ARGS=--min-severity=warning to
+# hide the notices.
+docs-prose:
+ifdef FILES
+	$(PROSE_CHECK) $(PROSE_ARGS) $(FILES)
+else
+	$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK) $(PROSE_ARGS)
+endif
 
 # Rewrites CHANGELOG.md in place with the markdownlint fixes (release-please writes `*` bullets and double blank
 # lines). release-please.yml runs it on the release pull request; it fails when a violation is left that --fix

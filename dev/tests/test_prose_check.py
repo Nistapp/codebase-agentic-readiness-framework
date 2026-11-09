@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""Unit tests for ``prose_check.py``: the three rules, what is skipped, and the summary and exit code."""
+"""Unit tests for ``prose_check.py``: the three rules, their severities, what is skipped, the output and exit code."""
 
 from __future__ import annotations
 
@@ -54,6 +54,18 @@ class LongSentences(unittest.TestCase):
     def test_a_link_counts_as_its_text(self) -> None:
         self.assertEqual(_codes("Read [the guide](" + "a/" * 40 + "b.md) first.\n"), [])
 
+    def test_a_long_sentence_is_a_notice(self) -> None:
+        issues = pc.check_text("a.md", _words(40) + "\n")
+        self.assertEqual([(i.code, i.severity) for i in issues], [("PL001", pc.NOTICE)])
+
+    def test_a_very_long_sentence_is_a_warning(self) -> None:
+        issues = pc.check_text("a.md", _words(41) + "\n")
+        self.assertEqual([(i.code, i.severity) for i in issues], [("PL001", pc.WARNING)])
+
+    def test_a_long_step_is_a_warning(self) -> None:
+        issues = pc.check_text("a.md", "1. " + _words(21) + "\n")
+        self.assertEqual([i.severity for i in issues], [pc.WARNING])
+
     def test_the_line_number_is_the_block_start(self) -> None:
         issues = pc.check_text("a.md", "# Title\n\nShort.\n\n" + _words(30) + "\n")
         self.assertEqual(issues[0].line, 5)
@@ -81,6 +93,7 @@ class VagueWords(unittest.TestCase):
         issues = pc.check_text("a.md", "Simply run it in order to win, etc.\n")
         self.assertEqual([i.code for i in issues], ["PL002"] * 3)
         self.assertIn("'Simply'", issues[0].message)
+        self.assertEqual({i.severity for i in issues}, {pc.WARNING})
 
     def test_a_word_inside_another_is_not_reported(self) -> None:
         self.assertEqual(_codes("Adjust the justification.\n"), [])
@@ -91,7 +104,8 @@ class VagueWords(unittest.TestCase):
 
 class Diagrams(unittest.TestCase):
     def test_an_explanation_page_without_mermaid_fails(self) -> None:
-        self.assertEqual(_codes("Text.\n", "docs/explanation/user-overview/01-x.md"), ["PL003"])
+        issues = pc.check_text("docs/explanation/user-overview/01-x.md", "Text.\n")
+        self.assertEqual([(i.code, i.severity) for i in issues], [("PL003", pc.WARNING)])
 
     def test_an_explanation_page_with_mermaid_passes(self) -> None:
         text = "Text.\n\n```mermaid\nflowchart LR\n  A --> B\n```\n"
@@ -105,7 +119,7 @@ class Diagrams(unittest.TestCase):
 
 
 class Main(unittest.TestCase):
-    def _run(self, *texts: str, quiet: bool = False) -> tuple[int, str]:
+    def _run(self, *texts: str, quiet: bool = False, extra: tuple[str, ...] = ()) -> tuple[int, str]:
         with tempfile.TemporaryDirectory() as tmp:
             files = []
             for n, text in enumerate(texts):
@@ -114,23 +128,42 @@ class Main(unittest.TestCase):
                 files.append(str(path))
             out = io.StringIO()
             with contextlib.redirect_stdout(out):
-                code = pc.main([*files, *(["--quiet"] if quiet else [])])
+                code = pc.main([*files, *(["--quiet"] if quiet else []), *extra])
             return code, out.getvalue()
 
     def test_clean_files_exit_0_with_a_summary(self) -> None:
         code, out = self._run("Short.\n", "Also short.\n")
         self.assertEqual(code, 0)
-        self.assertEqual(out.strip(), "Summary: 0 issues in 2 files")
+        self.assertEqual(out.strip(), "Summary: 0 issues in 2 files (0 warnings, 0 notices)")
 
-    def test_issues_exit_1_and_are_listed(self) -> None:
-        code, out = self._run(_words(30) + "\n")
-        self.assertEqual(code, 1)
-        self.assertIn("PL001", out)
-        self.assertTrue(out.rstrip().endswith("Summary: 1 issue in 1 file"))
+    def test_issues_are_listed_and_still_exit_0(self) -> None:
+        code, out = self._run(_words(30) + " Simply.\n")
+        self.assertEqual(code, 0)
+        self.assertIn("PL001 notice: sentence has 30 words (limit 25)", out)
+        self.assertIn("PL002 warning: vague word 'Simply'", out)
+        self.assertTrue(out.rstrip().endswith("Summary: 2 issues in 1 file (1 warning, 1 notice)"))
 
     def test_quiet_prints_only_the_summary(self) -> None:
         code, out = self._run(_words(30) + "\n", quiet=True)
-        self.assertEqual((code, out.strip()), (1, "Summary: 1 issue in 1 file"))
+        self.assertEqual((code, out.strip()), (0, "Summary: 1 issue in 1 file (0 warnings, 1 notice)"))
+
+    def test_min_severity_warning_hides_notices(self) -> None:
+        code, out = self._run(_words(30) + " Simply.\n", extra=("--min-severity", "warning"))
+        self.assertEqual(code, 0)
+        self.assertNotIn("PL001", out)
+        self.assertIn("PL002", out)
+        self.assertTrue(out.rstrip().endswith("Summary: 1 issue in 1 file (1 warning, 0 notices)"))
+
+    def test_github_format_prints_annotations(self) -> None:
+        code, out = self._run(_words(30) + " Simply.\n", extra=("--format", "github"))
+        self.assertEqual(code, 0)
+        lines = out.splitlines()
+        self.assertRegex(lines[0], r"^::notice file=.*0\.md,line=1,title=PL001::sentence has 30 words \(limit 25\)$")
+        self.assertRegex(lines[1], r"^::warning file=.*0\.md,line=1,title=PL002::vague word 'Simply'$")
+
+    def test_github_format_escapes_the_path(self) -> None:
+        issue = pc.Issue("a,b:c.md", 3, "PL002", pc.WARNING, "x")
+        self.assertEqual(issue.github(), "::warning file=a%2Cb%3Ac.md,line=3,title=PL002::x")
 
     def test_a_missing_file_exits_2(self) -> None:
         err = io.StringIO()
