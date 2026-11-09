@@ -29,6 +29,7 @@ the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they a
 | Python 3.11 or newer | Everything | Pinned in `.python-version`; CI runs 3.11 and 3.14 |
 | `git` | Everything | |
 | [`uv`](https://docs.astral.sh/uv/) | `make check`, `make security`, `make coverage` | The dev tools (ruff, mypy, detect-secrets, coverage.py) run through `uvx` at the versions pinned in `dev/tools/`; nothing is installed into the project |
+| [Go](https://go.dev/doc/install) 1.27 or newer | `make security` | Builds the pinned osv-scanner from `dev/tools/osv/go.mod` on first use. `make security` also needs the network |
 | `make` | Every command below | Linux and macOS. On Windows use WSL |
 | Node 22 | `make docs-lint` | The pinned `markdownlint-cli2` runs through `npx`; not needed for `make check` |
 | Chrome, through Puppeteer | `make docs-mermaid` | Only when you add or change a Mermaid block; the pinned mermaid-cli fetches it on first use |
@@ -46,7 +47,7 @@ Run these before you propose a change. CI runs the same commands.
 | `make check` | The gate: formatting and lint, `mypy` strict, the engine's, the tools' and the dev checks' tests, the engine's rule check, the schema cross-check, the recipe linter and the workflow lint. It takes a couple of minutes |
 | `make workflow-lint` | Part of `make check`. actionlint, zizmor and check-jsonschema on `.github/`: workflow mistakes, workflow security, and `dependabot.yml` against its schema. Offline |
 | `make commit-lint` | Checks that each commit subject on your branch follows Conventional Commits (`RANGE=origin/dev..HEAD` by default). CI runs the same check on every pull request |
-| `make security` | A secrets scan against `.secrets.baseline` |
+| `make security` | A secrets scan against `.secrets.baseline`, then a dependency audit of the dev tools (osv-scanner) |
 | `make docs-lint` | Markdown lint over the ratchet path list in the `Makefile`. Run it when Markdown changed |
 | `make docs-prose FILES=<file.md>` | The plain-language check from [`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md). Advisory: it prints warnings and notices and never fails. Fix the warnings on the lines you changed |
 | `make docs-mermaid FILES=<file.md>` | Renders every Mermaid block in the files. Run it when you added or changed one |

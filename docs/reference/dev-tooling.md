@@ -21,6 +21,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `check` | `dev/tools/pyproject.toml` |
 | detect-secrets | Key-shaped strings not in `.secrets.baseline` | `make security` | `security` | `dev/tools/pyproject.toml` |
+| osv-scanner | A known vulnerability in a dev tool or its dependencies (Python, Node, Go lockfiles), unless [`osv-scanner.toml`](../../dev/tools/osv-scanner.toml) accepts it ([Dependency audit](#dependency-audit)) | `make security` | `security` | `dev/tools/osv/go.mod` |
 | markdownlint-cli2 | Markdown rule violations (`.markdownlint-cli2.jsonc`) | `make docs-lint`; `make changelog-fix` rewrites `CHANGELOG.md` with the fixes | `docs`; `format-changelog` in `release-please.yml` | `dev/tools/package.json` |
 | `dev/prose_check.py` | Long sentences, vague words, explanation pages without a diagram ([`COMMUNICATION_RULES.md`](../COMMUNICATION_RULES.md)). Advisory: warnings and notices, never a failure | `make docs-prose [FILES=...]` | `docs` (annotations on changed Markdown) | This repository |
 | mermaid-cli | A Mermaid block that does not render | `make docs-mermaid FILES=<file.md>` | `docs` | `dev/tools/package.json` |
@@ -31,10 +32,29 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | release-please | Computes the next version from the commit subjects, writes `CHANGELOG.md`, tags and creates the GitHub release (`release-please-config.json`) | — | `release-please.yml`, on each push to `main` | `.github/workflows/release-please.yml` (action pinned by SHA) |
 | uv | Runs the Python tools through `uvx` and `uv run` | — | All jobs | `dev/tools/pyproject.toml` |
 | Node | Runs the Node tools through `npx` | — | `docs` | `.nvmrc` |
+| Go | Builds and runs osv-scanner through `go tool` | — | `security` | `dev/tools/osv/go.mod` (`go` line) |
 
 `make check` runs `format:check`, `typecheck`, `test`, the engine's rule check, `crosscheck`, `recipe-lint` and
 `workflow-lint`, in sequence. CI's `CI Gate` passes only when the `check`, `security`, `coverage`, `self-audit`,
 `docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
+
+## Dependency audit
+
+`make security` runs osv-scanner after the secrets scan
+([ADR 0006](../architecture/adrs/0006-security-verb-audits-dependencies-with-osv-scanner.md)). It reads the three
+dev-tool lockfiles and asks osv.dev for known vulnerabilities. It needs Go 1.27 or newer and the network. The first
+run builds osv-scanner, which takes about 30 seconds.
+
+The scan fails when it finds a vulnerability that [`dev/tools/osv-scanner.toml`](../../dev/tools/osv-scanner.toml)
+does not accept. The output has one table row per vulnerability: the OSV link, the package, its version, the fixed
+version and the lockfile. To fix a finding, do one of these:
+
+1. Raise the tool or the dependency to the fixed version. Follow
+   [Change a tool version](../../RELEASE_PROCESS.md#change-a-tool-version).
+2. If no fix reaches this repository, add an entry to `osv-scanner.toml`. Give the `id` and a `reason`.
+   Set `ignoreUntil` to a date at most six months ahead. `dev/tests/test_tool_pins.py` checks the entry.
+
+When an `ignoreUntil` date passes, the scan fails again. Look at the advisory again, then fix or renew it.
 
 ## Ratchets
 
@@ -69,10 +89,11 @@ Each tool version is written once:
 
 - Python tools: `dev/tools/pyproject.toml`, group `tools`, locked in `dev/tools/uv.lock`.
 - Node tools: `dev/tools/package.json`, locked in `dev/tools/package-lock.json`.
+- osv-scanner: `dev/tools/osv/go.mod`, a Go `tool` requirement, with checksums in `dev/tools/osv/go.sum`.
 
 The `Makefile`, `lefthook.yml`, `dev/mermaid_check.py` and the workflows read each version from those files.
-Nothing is installed into the project: the tools run through `uvx` and `npx`. Dependabot watches these files and
-opens a pull request only for a security fix that is not a major version
+Nothing is installed into the project: the tools run through `uvx`, `npx` and `go tool`. Dependabot watches these
+files and opens a pull request only for a security fix that is not a major version
 ([ADR 0003](../architecture/adrs/0003-dependabot-security-pull-requests-only.md)).
 `dev/tests/test_tool_pins.py` fails when a version is not exact, when a lockfile disagrees with its manifest, or when
 another file repeats a version.

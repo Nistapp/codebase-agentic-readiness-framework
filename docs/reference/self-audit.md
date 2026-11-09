@@ -54,13 +54,13 @@ Every check that is not `PASS`, with the reason it is open.
 | `SEC-01` | PARTIAL | BLOCKER | `/.env` is root-anchored on purpose: the engine's fixtures hold `.env` files as data and must stay committable (comment in `.gitignore`). The check reads a root-only rule as incomplete |
 | `SEC-03` | PARTIAL | DEGRADER | Same cause as `SEC-01` for the dotenv shapes; the key, certificate and keystore shapes are covered |
 | `BASE-02` | PARTIAL | DEGRADER | The T5 playbook was applied (D32): `.quality-baseline.json` holds the counts (ruff 0, mypy 0, Markdown lint outside the ratchet 735) and `make format-check`, `make typecheck` and `make docs-lint` fail when one goes up. The check still reads PARTIAL by design: it credits only a numeric budget flag (`--max-warnings N`), and none of these tools has one. Engine issue [#45](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/45) tracks it; the coverage floor (91) is unchanged and `BASE-04` passes |
-| `TOOL-04` | PARTIAL | DEGRADER | **Owner exception** (D33): the repository has no third-party dependencies, so there is nothing for a dependency audit to scan; `make security` is a secrets scan |
+| `EXEC-01` | FAIL | BLOCKER | **Owner exception** (2026-11-09): a false positive. osv-scanner's Go module (`dev/tools/osv/go.mod`) pins Go with its `go` directive, but the check reads that directive only from a root `go.mod`. An engine fix is planned (v0.3.3 Track C) |
 | `HYG-02`, `HYG-06` | FAIL | COSMETIC | Need values only the owner has: `CODEOWNERS` names and a private disclosure contact for `SECURITY.md`. Stay open until supplied (D22) |
 | `NAV-05` | PARTIAL | COSMETIC | Informational, no work (D34): 44% of public symbols documented (638 of 1438) |
 | `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, user-level configuration, or `--emit-baseline`; not run here |
 | `EXEC-02`, `NAV-01` | UNKNOWN | mixed | The repository declares no dependencies and no components, so there is nothing for the check to read |
 
-Recorded decisions that keep a finding open or exempt: `IDX-01` and `TOOL-04` are owner exceptions (D21, D33);
+Recorded decisions that keep a finding open or exempt: `IDX-01` and `EXEC-01` are owner exceptions (D21; 2026-11-09);
 `AGT-08` stays as it is for v0.2, because a stated harness list closes the gap even when a named harness does not read
 `AGENTS.md` natively, and is revisited in v0.3 (D31); `NAV-05` is informational and unscored (D34). The engine has no
 way to record an owner exception, so this page is the record. Everything else is either a deliberate design choice stated in the

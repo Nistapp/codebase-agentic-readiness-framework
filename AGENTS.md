@@ -18,7 +18,7 @@ The rest of this file is for changes to this repository.
 The framework's seven verbs run through the root `Makefile`. CI runs the same commands.
 
 ```bash
-make setup          # check the prerequisites (Python 3.11+, uv, git); nothing is installed
+make setup          # check the prerequisites (Python 3.11+, uv, git, Go); nothing is installed
 make format         # rewrite formatting in place
 make format:check   # read-only: formatting and lint rules (alias: make format-check)
 make lint           # read-only lint
@@ -26,7 +26,7 @@ make typecheck      # mypy, strict, on audit/tools, implement/tools and dev, and
 make test           # the engine's suite, then the audit tools', the implement tools' and the dev checks'
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
                     # cross-check, recipe-lint, workflow-lint (actionlint, zizmor, check-jsonschema)
-make security       # secrets scan against .secrets.baseline
+make security       # secrets scan, then the dependency audit (osv-scanner; needs Go and the network)
 make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin/dev..HEAD); CI runs it on each PR
 ```
 
@@ -49,8 +49,10 @@ no vendor-specific instruction file exists beside it.
 - Run `make check` and `make security` before you propose a change. Do not run an ad-hoc substitute.
 - When you change Markdown, also run `make docs-lint` (needs Node; lints the ratchet path list in the
   `Makefile`) and validate every Mermaid block you add (`make docs-mermaid FILES=<file.md>`).
-- Python 3.11 or newer (pinned in `.python-version`), and `uv` for the pinned dev tools (ruff, mypy, detect-secrets).
-  Each tool version is written once, in `dev/tools/pyproject.toml` or `dev/tools/package.json` (ADR 0003); never
+- Python 3.11 or newer (pinned in `.python-version`), `uv` for the pinned dev tools (ruff, mypy, detect-secrets),
+  and Go 1.27 or newer for osv-scanner in `make security`.
+  Each tool version is written once, in `dev/tools/pyproject.toml`, `dev/tools/package.json` or
+  `dev/tools/osv/go.mod` (ADR 0003); never
   write a version in the `Makefile`, a hook or a workflow.
   Nothing is installed into the project.
 - Local hooks are `lefthook.yml` (a stop on commits to `dev` and `main`, format check on staged Python,

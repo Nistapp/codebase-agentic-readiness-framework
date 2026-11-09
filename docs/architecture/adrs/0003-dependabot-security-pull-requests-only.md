@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-11-08
-* **Last reviewed:** 2026-11-08
+* **Last reviewed:** 2026-11-09
 * **Deciders:** [@nistapp]
 
 ---
@@ -41,17 +41,18 @@ GitHub's documentation (the Dependabot options reference and "Configuring Depend
 3. **One pull request per ecosystem.** A `security-fixes` group joins the minor and patch security fixes.
 4. **No `target-branch`.** The default branch is `dev`
    ([ADR 0002](0002-dev-integrates-main-releases.md)), so every Dependabot pull request goes to `dev` without it.
-5. **The dev tools are visible to Dependabot.** Their versions move to two manifests in `dev/tools/`, each with a
+5. **The dev tools are visible to Dependabot.** Their versions move to three manifests in `dev/tools/`, each with a
    lockfile:
 
    | Manifest | Lockfile | Tools | Dependabot ecosystem |
    |---|---|---|---|
    | [`pyproject.toml`](../../../dev/tools/pyproject.toml) (group `tools`) | `uv.lock` | actionlint-py, check-jsonschema, coverage, detect-secrets, jsonschema, mypy, ruff, skills-ref, uv, zizmor | `uv` |
    | [`package.json`](../../../dev/tools/package.json) | `package-lock.json` | markdownlint-cli2, mermaid-cli | `npm` |
+   | [`osv/go.mod`](../../../dev/tools/osv/go.mod) (a `tool` directive) | `osv/go.sum` | osv-scanner ([ADR 0006](0006-security-verb-audits-dependencies-with-osv-scanner.md)) | `gomod` |
 
    Nothing installs these projects. The [`Makefile`](../../../Makefile), [`lefthook.yml`](../../../lefthook.yml),
    [`dev/mermaid_check.py`](../../../dev/mermaid_check.py) and the workflows (`setup-uv` `version-file`) read each
-   version from them, and still run the tools through `uvx` and `npx`. The root [`.nvmrc`](../../../.nvmrc) pins
+   version from them, and still run the tools through `uvx`, `npx` and `go tool`. The root [`.nvmrc`](../../../.nvmrc) pins
    Node for CI's `docs` job. [`test_tool_pins.py`](../../../dev/tests/test_tool_pins.py) fails when a pin is not
    exact, when a lockfile disagrees with its manifest, or when another file repeats a version.
 6. **Data is not a dependency.** The greenfield template (`greenfield/templates/`) and the engine's test fixtures

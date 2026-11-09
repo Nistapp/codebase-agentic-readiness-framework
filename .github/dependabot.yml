@@ -69,6 +69,25 @@ updates:
     commit-message:
       prefix: "build"
 
+  # osv-scanner, the dependency audit in `make security`, pinned as a Go `tool` in dev/tools/osv/go.mod with its
+  # dependencies. The Makefile runs it with `go -C dev/tools/osv tool osv-scanner`.
+  - package-ecosystem: gomod
+    directory: /dev/tools/osv
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      security-fixes:
+        applies-to: security-updates
+        patterns: ["*"]
+    commit-message:
+      prefix: "build"
+
   # Data, not dependencies: the greenfield template and the engine's test fixtures. No pull request, ever.
   - package-ecosystem: npm
     directories: ["/greenfield/templates", "/audit/engine/tests/fixtures/**"]

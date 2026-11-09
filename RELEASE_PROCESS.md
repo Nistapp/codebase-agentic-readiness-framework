@@ -350,13 +350,17 @@ The fix needs a major version, or the alert is on the template or a fixture.
 Each dev tool version is written once, in `dev/tools/`. The `Makefile`, `lefthook.yml`, `dev/mermaid_check.py` and
 the workflows read it from there. `dev/tests/test_tool_pins.py` fails when a version is written anywhere else.
 
-1. Change the version in `dev/tools/pyproject.toml` (Python tools) or `dev/tools/package.json` (Node tools).
+1. Change the version in `dev/tools/pyproject.toml` (Python tools), `dev/tools/package.json` (Node tools) or
+   `dev/tools/osv/go.mod` (osv-scanner).
 2. Make the lockfile again:
 
    ```bash
    uv lock --directory dev/tools
    (cd dev/tools && npm install --package-lock-only --ignore-scripts)
    ```
+
+   For osv-scanner, or one of its Go dependencies, run
+   `go -C dev/tools/osv get <module>@<version>`, then `go -C dev/tools/osv mod tidy`.
 
 3. Run `make check`. If ruff or markdownlint changed a rule, fix the new findings in the same branch.
 4. Commit the manifest and its lockfile together, for example `build(dev): update ruff to 0.17.0`.

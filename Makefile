@@ -3,7 +3,8 @@
 #
 # The framework's command surface for this repository: seven verbs, the same names a human, an agent
 # and CI run. The runtime code is standard-library Python; the dev tools below are pinned in dev/tools/ and run
-# through uvx, so nothing is installed into the project. Needs make, git, python3 (3.11+) and uv.
+# through uvx, so nothing is installed into the project. Needs make, git, python3 (3.11+) and uv; `make security`
+# also needs Go (1.27+) and the network.
 #
 #   make format         rewrite formatting in place
 #   make format:check   read-only: formatting and lint rules, and the ruff count against .quality-baseline.json
@@ -13,7 +14,8 @@
 #   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
 #                       cross-check, the recipe linter and the workflow lint
-#   make security       secrets scan against the committed baseline
+#   make security       secrets scan against the committed baseline, then the dependency audit (osv-scanner) of
+#                       the dev tools' lockfiles; needs Go and the network
 #   make coverage       (extra) both unittest suites under coverage.py; fails below the floor in .coveragerc
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
 #
@@ -44,6 +46,8 @@ SKILLS_REF := uvx --from skills-ref==$(call pin,skills-ref) agentskills
 MARKDOWNLINT := npx --yes markdownlint-cli2@$(call npm_pin,markdownlint-cli2)
 # The compare step of the quality baseline (.quality-baseline.json): fails when a tool's full-tree count goes up.
 QUALITY_BASELINE := $(PYTHON) dev/quality_baseline.py check
+# The lockfiles that `make security` audits: every dev tool, Python, Node and Go.
+DEP_LOCKFILES := dev/tools/uv.lock dev/tools/package-lock.json dev/tools/osv/go.mod
 COVERAGE := uvx coverage@$(call pin,coverage)
 # Workflow and GitHub-config checks: actionlint (syntax, expressions, shellcheck on run: blocks), zizmor (workflow
 # and Dependabot security, offline) and check-jsonschema (the SchemaStore schemas it bundles, offline).
@@ -91,7 +95,8 @@ setup:
 	@$(PYTHON) -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else "setup: Python 3.11 or newer is required (see .python-version)")'
 	@command -v uv >/dev/null || { echo "setup: uv is required (https://docs.astral.sh/uv/)" >&2; exit 1; }
 	@command -v git >/dev/null || { echo "setup: git is required" >&2; exit 1; }
-	@echo "setup: prerequisites present (python, uv, git); nothing to install"
+	@command -v go >/dev/null || { echo "setup: Go 1.27 or newer is required for make security (https://go.dev/doc/install)" >&2; exit 1; }
+	@echo "setup: prerequisites present (python, uv, git, go); nothing to install"
 
 format:
 	$(RUFF) format audit implement dev
@@ -174,8 +179,13 @@ check: format-check typecheck test verify-rules crosscheck recipe-lint workflow-
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.
+# The dependency audit: osv-scanner, pinned in dev/tools/osv/go.mod (a Go `tool` directive, so Dependabot sees it),
+# reads the dev tools' lockfiles and fails on a known vulnerability that dev/tools/osv-scanner.toml does not accept.
+# --no-call-analysis=go: the module holds no Go code of its own, so govulncheck has nothing to analyse.
+# The audit engine's TOOL-04 reads this recipe and needs the tool name written out, not hidden in a variable.
 security:
 	git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline
+	go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))
 
 # Run this after a deliberate change to a fixture or test that holds a key-shaped string, then review the diff.
 update-secrets-baseline:

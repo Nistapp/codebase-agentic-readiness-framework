@@ -22,7 +22,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "index store could not be located; searched: user-level locations (not read: --no-user-config), /home/kc/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework/.codebase-memory/graph.db.zst",
+      "summary": "index store could not be located; searched: user-level locations (not read: --no-user-config), /home/kc/Projects/Nistapp-agentic-frameworks/car-framework-track-a/.codebase-memory/graph.db.zst",
       "tier": "A",
       "title": "An index exists for this checkout",
       "verdict": "UNKNOWN"
@@ -135,7 +135,7 @@
             "verb": "check"
           },
           {
-            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline",
+            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline && go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))",
             "resolved": true,
             "runner": "Makefile",
             "verb": "security"
@@ -161,7 +161,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "20 boundary rules reference real paths",
+      "summary": "19 boundary rules reference real paths",
       "tier": "B",
       "title": "Architectural boundaries declared",
       "verdict": "PASS"
@@ -262,7 +262,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "39 markdown file(s) under docs/",
+      "summary": "44 markdown file(s) under docs/",
       "tier": "A",
       "title": "docs/ exists",
       "verdict": "PASS"
@@ -301,7 +301,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "3 ADR(s) indexed in docs/architecture/adrs/README.md",
+      "summary": "6 ADR(s) indexed in docs/architecture/adrs/README.md",
       "tier": "A",
       "title": "ADR directory and index",
       "verdict": "PASS"
@@ -349,7 +349,7 @@
             "verb": "check"
           },
           {
-            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline",
+            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline && go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))",
             "resolved": true,
             "runner": "Makefile",
             "verb": "security"
@@ -453,10 +453,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "security verb on Makefile runs no dependency audit (git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline)",
+      "summary": "security -> git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline && go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))",
       "tier": "A",
       "title": "Dependency / security scan verb",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -492,7 +492,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "PR-triggered: .github/workflows/ci.yml (github); .github/workflows/pr-source-branch.yml (github)",
+      "summary": "PR-triggered: .github/workflows/ci.yml (github); .github/workflows/codeql.yml (github); .github/workflows/pr-source-branch.yml (github)",
       "tier": "B",
       "title": "Pipeline present, triggered on PRs",
       "verdict": "PASS"
@@ -585,6 +585,7 @@
           ".python-version",
           "dev/tools/pyproject.toml",
           "dev/tools/package.json",
+          "dev/tools/osv/go.mod",
           "lefthook.yml",
           "dev",
           ".github/",
@@ -625,6 +626,8 @@
           "docs/architecture/adrs/README.md",
           ".env",
           "RELEASE_PROCESS.md",
+          "CHANGELOG.md",
+          ".release-please-manifest.json",
           ".github/rulesets/",
           "docs/reference/branch-protection.md",
           "audit/tools/",
@@ -642,7 +645,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, lefthook.yml, dev (+44 more)",
+      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod, lefthook.yml (+45 more)",
       "tier": "B",
       "title": "Allow/deny artifact present",
       "verdict": "PASS"
@@ -703,10 +706,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "pinned: node (.nvmrc); python (.python-version)",
+      "summary": "unpinned: go",
       "tier": "A",
       "title": "Toolchain pinned / wrapper committed",
-      "verdict": "PASS"
+      "verdict": "FAIL"
     },
     {
       "data": {},
@@ -716,7 +719,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "consistency unverified: dev/tools/package-lock.json, dev/tools/uv.lock",
+      "summary": "consistency unverified: dev/tools/osv/go.sum, dev/tools/package-lock.json, dev/tools/uv.lock",
       "tier": "B",
       "title": "Lockfile committed and consistent",
       "verdict": "PARTIAL"
@@ -801,7 +804,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 82 test file(s)",
+      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 84 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -834,7 +837,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 82 test file(s): python 1; total 1",
+      "summary": "skip/xfail census across 84 test file(s): python 1; total 1",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -919,10 +922,10 @@
     },
     {
       "data": {
-        "denominator": 1138,
+        "denominator": 1152,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 453,
+        "numerator": 459,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -931,7 +934,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "453/1138 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
+      "summary": "459/1152 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1275,6 +1278,16 @@
   ],
   "findings": [
     {
+      "check": "EXEC-01",
+      "evidence": [],
+      "id": "EXEC-01:go",
+      "phase": 1,
+      "remediation": "Commit the pin appropriate to go \u2014 .tool-versions \u2014 so the agent's runtime is the repository's, not the host's.",
+      "severity": "BLOCKER",
+      "statement": "An agent cannot reproduce the go toolchain because the detected go project pins no toolchain version.",
+      "verdict": "FAIL"
+    },
+    {
       "check": "IDX-01",
       "evidence": [
         {
@@ -1432,28 +1445,12 @@
       "severity": "DEGRADER",
       "statement": "An agent cannot trust that secret shapes cannot be committed because ignore rules are incomplete (root-anchored only: dotenv, dotenv variant (the rule covers the root, not nested files such as `a/.env`)).",
       "verdict": "PARTIAL"
-    },
-    {
-      "check": "TOOL-04",
-      "evidence": [
-        {
-          "line": null,
-          "note": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline",
-          "path": "Makefile"
-        }
-      ],
-      "id": "TOOL-04",
-      "phase": 1,
-      "remediation": "Make the security verb run a dependency audit (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, snyk).",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot know whether a dependency carries a known vulnerability because a security verb exists but it does not run a dependency-audit check.",
-      "verdict": "PARTIAL"
     }
   ],
   "inventory": {
-    "files_inspected": 325,
+    "files_inspected": 339,
     "files_set_aside": 460,
-    "files_skipped": 2250,
+    "files_skipped": 3,
     "set_aside": [
       {
         "files": 3,
@@ -1531,22 +1528,22 @@
     }
   ],
   "provenance": {
-    "framework_revision": "bdcbe3d516552fb17e1606cd8c77ae86635f688d",
-    "git_branch": "chore/review-for-release",
+    "framework_revision": "b678cd339ce6114fd1ed6df18a68d6b5596a8557",
+    "git_branch": "chore/v0.3.3-track-a-tooling",
     "git_dirty": true,
-    "git_sha": "bdcbe3d516552fb17e1606cd8c77ae86635f688d",
+    "git_sha": "b678cd339ce6114fd1ed6df18a68d6b5596a8557",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "970e6792f98eeeb5",
     "ruleset_revision": "2026-11-06.1",
-    "scanned_at": "2026-11-08T07:19:00+00:00",
-    "target": "/home/kc/Projects/Nistapp-agentic-frameworks/codebase-agentic-readiness-framework",
+    "scanned_at": "2026-11-09T05:17:36+00:00",
+    "target": "/home/kc/Projects/Nistapp-agentic-frameworks/car-framework-track-a",
     "tool": "python-agentic-audit",
     "user_config": {
       "paths_read": [],
       "read_allowed": false
     },
-    "version": "0.1.0"
+    "version": "0.3.2"
   },
   "schema_version": "2",
   "stack": {
@@ -1554,6 +1551,7 @@
       "github"
     ],
     "ecosystems": [
+      "go",
       "node",
       "python"
     ],
@@ -1562,17 +1560,18 @@
     ],
     "notes": [],
     "package_managers": [
+      "gomod",
       "npm",
       "uv"
     ],
     "test_frameworks": []
   },
   "summary": {
-    "blockers": 2,
+    "blockers": 3,
     "checks": {
       "attest": 0,
-      "fail": 1,
-      "partial": 6,
+      "fail": 2,
+      "partial": 5,
       "pass": 58,
       "unknown": 4
     },
@@ -1581,8 +1580,8 @@
     "checks_scoreable": 55,
     "cosmetic": 0,
     "coverage_note": "55 of 55 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
-    "degraders": 3,
-    "phase1_score": 0.8689
+    "degraders": 2,
+    "phase1_score": 0.8525
   },
   "unattested": [
     "index-in-use",
