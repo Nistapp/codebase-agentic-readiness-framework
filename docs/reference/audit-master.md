@@ -366,7 +366,8 @@ Can an agent run one command that formats, lints, type-checks and tests, and tru
 `COSMETIC` · scored · engine check · fixed by
 [`add-hooks-and-commit-rules`](implement-master.md#add-hooks-and-commit-rules)
 
-- **Passes when:** a commitlint config, a `commit-msg` hook file, or an equivalent pre-commit/lefthook stage is found.
+- **Passes when:** a local rule (commitlint config, `commit-msg` hook file or equivalent pre-commit/lefthook stage) and
+  a CI step that checks commit messages or the pull-request title are both found.
 - **Why it matters:** Release automation reads commit messages; without an enforced convention, version bumps and
   changelog generation silently stop working ([greenfield/README.md § 2.3 Git
   Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).

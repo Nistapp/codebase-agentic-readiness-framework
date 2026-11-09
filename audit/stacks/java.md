@@ -43,7 +43,8 @@ Dependency-Check Gradle plugin (`org.owasp.dependencycheck`), registering `depen
 task name that does not match `security` literally, so a repository applying the plugin still reads
 `CMD-01` `FAIL` for that verb unless a `security` task delegates to it (see Pitfalls). Hook manager: none
 is standard; a committed `.githooks/` with `core.hooksPath` set by a build task, or lefthook (no JVM plugin
-needed). Commit rule: a `commit-msg` script or lefthook stage. Dependency updates: Dependabot
+needed). Commit rule: a `commit-msg` script or lefthook stage, with
+the same script run over the pull request's commits in CI (`TOOL-06`). Dependency updates: Dependabot
 `package-ecosystem: gradle` or `maven`; Renovate's `gradle` and `maven` managers.
 
 ## Execution determinism

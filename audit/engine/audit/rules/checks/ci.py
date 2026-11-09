@@ -57,7 +57,7 @@ import re
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.probes import MUTATING_VERBS
-from audit.rules.checks._common import resolve_verbs, runner_commands
+from audit.rules.checks._common import resolve_verbs, runner_commands, runner_target
 from audit.stack import CI_PROVIDERS, VERBS
 from audit.rules.payloads import Payload
 from audit.scan import Kind
@@ -77,13 +77,6 @@ _PR_TRIGGER_PATTERNS: dict[str, tuple[re.Pattern[str], ...]] = {
 _STEP_KEY_RE = re.compile(r"^(\s*)(?:-\s+)?(run|script|command|commands|bash)\s*:\s*(.*)$")
 _BLOCK_SCALAR_VALUES = frozenset({"|", "|-", "|+", ">", ">-", ">+", ""})
 _COMMAND_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\|)\s*")
-
-#: Runner indirection: how a command names a verb/script through its runner.
-_NPM_RE = re.compile(r"\b(?:npm|pnpm|bun)\s+(?:run\s+)?([A-Za-z0-9:_.-]+)")
-_YARN_RE = re.compile(r"\byarn\s+(?:run\s+)?([A-Za-z0-9:_.-]+)")
-_TASK_RE = re.compile(r"\b(?:make|task|just|mise)\s+(?:-\S+\s+)*([A-Za-z0-9:_.-]+)")
-_GRADLE_RE = re.compile(r"\b(?:\./)?(?:gradlew|gradle)\s+([A-Za-z0-9:_.-]+)")
-_RUNNER_TARGET_RES = (_NPM_RE, _YARN_RE, _TASK_RE, _GRADLE_RE)
 
 #: Direct tool invocations, mapped to the framework verb they satisfy. `format:check` precedes
 #: `format` and `security` precedes the rest so the more specific form wins.
@@ -378,17 +371,9 @@ def _iter_run_commands(text: str) -> list[tuple[int, str]]:
     return commands
 
 
-def _runner_target(command: str) -> str | None:
-    for pattern in _RUNNER_TARGET_RES:
-        match = pattern.search(command)
-        if match:
-            return match.group(1)
-    return None
-
-
 def _command_verb(command: str) -> str | None:
     """The framework verb a command invokes, by runner indirection or direct tool, else ``None``."""
-    target = _runner_target(command)
+    target = runner_target(command)
     if target in VERBS:
         return target
     for verb, patterns in _DIRECT_VERB_PATTERNS:
@@ -517,7 +502,7 @@ def check_ci03(*, spec, target, inventory, stack, components, session) -> CheckO
     for rel, line, command in _all_run_commands(inventory, _workflows(inventory)):
         if _command_verb(command) is not None:
             continue  # CI-02's subject, not repeated here
-        target = _runner_target(command)
+        target = runner_target(command)
         if target is None or target in _PM_BUILTINS or target in local_targets:
             continue
         findings.append(

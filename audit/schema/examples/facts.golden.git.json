@@ -2,12 +2,12 @@
   "facts_version": "0.1",
   "label": "git-example",
   "git": {
-    "sha": "d0acc3aa52552759970e658d6cde4c5cb9897e85",
+    "sha": "26704539c7b7c54205f98ad260a919494bcc6c03",
     "dirty": true
   },
   "inventory": {
-    "files": 7,
-    "bytes": 666,
+    "files": 8,
+    "bytes": 1006,
     "by_kind": {
       "manifest": 1,
       "build": 0,
@@ -15,7 +15,7 @@
       "source": 2,
       "test": 0,
       "doc": 1,
-      "ci": 0,
+      "ci": 1,
       "script": 0,
       "generated": 0,
       "binary": 0,
@@ -32,7 +32,9 @@
     ],
     "source_only": [],
     "package_managers": [],
-    "ci_providers": [],
+    "ci_providers": [
+      "github"
+    ],
     "test_frameworks": [],
     "hook_managers": [
       "pre-commit"
@@ -49,8 +51,8 @@
   },
   "size": {
     "class": "small",
-    "files": 7,
-    "bytes": 666,
+    "files": 8,
+    "bytes": 1006,
     "truncated": false,
     "thresholds": {
       "small_below": 1000,

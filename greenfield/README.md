@@ -333,7 +333,7 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 ## Phase 4 — CI/CD & Release Management
 
 ### 4.1 Workflows
-- **`.github/workflows/ci.yml`**: `npm run check` → workflow lint → coverage thresholds → `npm run build:full` → `npm run security`. Every step is a script you can run locally. (See [template](templates/github/workflows/ci.yml))
+- **`.github/workflows/ci.yml`**: `npm run check` → workflow lint → coverage thresholds → `npm run build:full` → `npm run security`, and on a pull request commitlint over its commits (the `.husky/commit-msg` rule, which a skipped hook cannot bypass). Every step is a script you can run locally. (See [template](templates/github/workflows/ci.yml))
 - **Workflow lint**: the workflow files are linted locally and in CI by a linter that knows the CI provider.
   For GitHub Actions that is actionlint (`npm run lint:workflows`; install the binary once per machine). An agent
   that edits a workflow cannot run it locally, so the linter is its only check before a push.
@@ -438,7 +438,7 @@ name locally and in CI.
 | Test suite | Vitest | `npm test` + CI |
 | **Full gate** | `format:check` → `typecheck` → `test` | `npm run check` — pre-PR and CI, identical |
 | Dependency vulnerabilities | `npm audit --audit-level=high` | `npm run security` + CI |
-| Conventional Commits | commitlint | Pre-commit-msg hook |
+| Conventional Commits | commitlint | `commit-msg` hook and the CI `commits` job |
 | Test coverage thresholds | Vitest `thresholds` | `npm run test:coverage` + CI |
 | Branch protection | `enforce-dev-base.yml` | CI (on PR to main) |
 | Dependency freshness | Dependabot | Weekly PRs |
