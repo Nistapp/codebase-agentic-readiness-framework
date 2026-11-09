@@ -17,7 +17,9 @@ Each bundle is replaced whole on every run, so a stale leftover from an earlier 
 
 - ``SKILL.md``: the recipe's own file (``audit/SKILL.md``), with its frontmatter ``name`` rewritten from
   ``audit`` (the source folder's name, which `recipe_lint.py` requires there) to the bundle's own name,
-  ``agentic-readiness-audit`` (the name `skills-ref` checks against the bundle's folder name).
+  ``agentic-readiness-audit`` (the name `skills-ref` checks against the bundle's folder name), and a
+  ``metadata.version`` key added: the release version from ``.release-please-manifest.json``
+  (:func:`stamp_frontmatter`), so an installed bundle says which release it is.
 - ``references/``: the check files (``audit/checks/``), the stack profiles (``audit/stacks/``) and the schema docs
   (``audit/schema/*.schema.json``, ``SCHEMA.md``, ``LICENSING.md``) — read by the model, not run.
 - ``scripts/``: the five tools the recipe's Tools table calls (``facts.py``, ``engine.py``, ``report.py``,
@@ -35,7 +37,8 @@ not fixed, for the audit bundle.
 **agentic-readiness-implement** carries the implement recipe, a ``LICENSE`` like the audit bundle's, and resolves
 every link it keeps:
 
-- ``SKILL.md``: ``implement/SKILL.md``, its ``name`` rewritten from ``implement`` to the bundle's name.
+- ``SKILL.md``: ``implement/SKILL.md``, its ``name`` rewritten from ``implement`` to the bundle's name, and the
+  same ``metadata.version`` added.
 - ``references/``: the state contract, the playbooks, the kickoff prompt, the check files, the stack profiles,
   ADR 0003, ``spec/command-surface.md`` and the spec decisions, the state schema and its docs, and the parts of
   the Tools CLI reference that cover the carried tools (:data:`TOOLS_CLI_SECTIONS`).
@@ -61,12 +64,13 @@ modification times — which do not change between two builds in the same sessio
 
 Failure behaviour: a target problem (the engine's ``build.py`` is missing, or exits nonzero) is exit 1
 with the subprocess's stderr in ``data.errors``; so is a source file whose frontmatter ``name`` line or Tools CLI
-section is missing. Nothing else in this tool can fail the way a user-facing argument can, since it takes none
+section is missing, or whose frontmatter already has a ``metadata`` key. Nothing else in this tool can fail the way a user-facing argument can, since it takes none
 but ``--out-dir``.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import shutil
@@ -83,6 +87,7 @@ ENGINE = AUDIT / "engine"
 IMPLEMENT = REPO / "implement"
 IMPLEMENT_TOOLS = IMPLEMENT / "tools"
 LICENSE_CODE = REPO / "LICENSE-CODE"
+MANIFEST = REPO / ".release-please-manifest.json"
 
 # `_common` (and `recipe_lint`'s own `_common` import) live in audit/tools/, not beside this script.
 if str(AUDIT_TOOLS) not in sys.path:
@@ -143,14 +148,38 @@ def _write_license(bundle_dir: Path) -> None:
     shutil.copy2(LICENSE_CODE, bundle_dir / "LICENSE")
 
 
+def release_version() -> str:
+    """The release version: the root package's entry in `.release-please-manifest.json` (ADR 0005)."""
+    version = json.loads(MANIFEST.read_text(encoding="utf-8"))["."]
+    if not isinstance(version, str):
+        raise _common.ToolError(f".release-please-manifest.json: the '.' entry is not a string: {version!r}")
+    return version
+
+
+def stamp_frontmatter(text: str, source: str, source_name: str, bundle_name: str, version: str) -> str:
+    """Rewrite a `SKILL.md` for its bundle: the `name` line, and a `metadata.version` key before the closing `---`.
+
+    The Agent Skills spec allows `metadata` (a string map) and rejects a top-level `version`, so the release
+    version goes under `metadata`. `source` names the file in an error.
+    """
+    if source_name not in text:
+        raise _common.ToolError(
+            f"{source}'s frontmatter does not contain {source_name!r}; it may have been renamed without updating this tool"
+        )
+    if not text.startswith("---\n") or "\n---\n" not in text[3:]:
+        raise _common.ToolError(f"{source} does not start with a frontmatter block between two '---' lines")
+    end = text.index("\n---\n", 3) + 1
+    frontmatter = text[:end]
+    if "\nmetadata:" in frontmatter:
+        raise _common.ToolError(f"{source}'s frontmatter already has a metadata key; merge the version into it here")
+    frontmatter = frontmatter.replace(source_name, bundle_name, 1) + f'metadata:\n  version: "{version}"\n'
+    return frontmatter + text[end:]
+
+
 def _write_skill_md(bundle_dir: Path) -> None:
     text = (AUDIT / "SKILL.md").read_text(encoding="utf-8")
-    if SKILL_MD_SOURCE_NAME not in text:
-        raise _common.ToolError(
-            f"audit/SKILL.md's frontmatter does not contain {SKILL_MD_SOURCE_NAME!r}; "
-            "it may have been renamed without updating this tool"
-        )
-    (bundle_dir / "SKILL.md").write_text(text.replace(SKILL_MD_SOURCE_NAME, SKILL_MD_BUNDLE_NAME), encoding="utf-8")
+    stamped = stamp_frontmatter(text, "audit/SKILL.md", SKILL_MD_SOURCE_NAME, SKILL_MD_BUNDLE_NAME, release_version())
+    (bundle_dir / "SKILL.md").write_text(stamped, encoding="utf-8")
 
 
 def _write_references(bundle_dir: Path) -> None:
@@ -429,12 +458,9 @@ def build_implement_bundle(out_dir: Path) -> Path:
     for source, dest in markdown.items():
         text = source.read_text(encoding="utf-8")
         if dest == "SKILL.md":
-            if IMPLEMENT_SKILL_SOURCE_NAME not in text:
-                raise _common.ToolError(
-                    f"implement/SKILL.md's frontmatter does not contain {IMPLEMENT_SKILL_SOURCE_NAME!r}; "
-                    "it may have been renamed without updating this tool"
-                )
-            text = text.replace(IMPLEMENT_SKILL_SOURCE_NAME, IMPLEMENT_SKILL_BUNDLE_NAME, 1)
+            text = stamp_frontmatter(
+                text, "implement/SKILL.md", IMPLEMENT_SKILL_SOURCE_NAME, IMPLEMENT_SKILL_BUNDLE_NAME, release_version()
+            )
         elif dest == "references/tools-cli.md":
             text = extract_sections(text, TOOLS_CLI_SECTIONS)
         texts[dest] = (source, text)

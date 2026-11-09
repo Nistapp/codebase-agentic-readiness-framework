@@ -84,7 +84,7 @@ INFO = _common.ToolInfo(
 )
 
 RECIPE_NAME = "brownfield-audit"
-RECIPE_VERSION = "0.1.0"
+RECIPE_VERSION = "0.3.2"  # x-release-please-version
 SCHEMA_VERSION = "0.1"
 DRAFT_KIND = "audit-draft"
 DEFAULT_PROBE_TIMEOUT_S = 120

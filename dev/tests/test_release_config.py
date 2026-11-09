@@ -1,12 +1,17 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""The release-please setup stays consistent with the engine and the changelog (ADR 0005, RELEASE_PROCESS.md).
+"""The release-please setup stays consistent with the version stamps and the changelog (ADR 0005, RELEASE_PROCESS.md).
 
 release-please bumps the version in ``.release-please-manifest.json`` and in each of its ``extra-files``. These tests
-fail when the engine's ``__version__`` drifts from the manifest (as it did before release-please: the engine said
-0.1.0 while v0.3.0 was released), when the engine's version line loses the marker that release-please looks for, or
-when a hand-written ``[Unreleased]`` heading comes back into the changelog that release-please writes.
+fail when a version stamp drifts from the manifest (as the engine's did before release-please: it said 0.1.0 while
+v0.3.0 was released, and the audit report's recipe version said 0.1.0 through v0.3.2), when a stamp line loses the
+marker that release-please looks for or is not an ``extra-files`` entry, or when a hand-written ``[Unreleased]``
+heading comes back into the changelog that release-please writes.
+
+The stamps are the engine's ``__version__`` and the two recipes' ``RECIPE_VERSION`` (the audit report's
+``provenance.recipe.version`` and the implement state's ``recipe.version``). The skill bundles' ``metadata.version``
+is copied from the manifest at build time; ``test_build_skills`` checks it.
 """
 
 from __future__ import annotations
@@ -23,6 +28,12 @@ MANIFEST = REPO / ".release-please-manifest.json"
 ENGINE_INIT = "audit/engine/audit/__init__.py"
 MARKER = "x-release-please-version"
 VERSION_LINE = re.compile(r'^__version__ = "(?P<version>[^"]+)"(?P<rest>.*)$', re.MULTILINE)
+#: Every file that holds a copy of the release version, and the pattern of the one line that holds it.
+STAMPS = {
+    ENGINE_INIT: VERSION_LINE,
+    "audit/tools/report.py": re.compile(r'^RECIPE_VERSION = "(?P<version>[^"]+)"(?P<rest>.*)$', re.MULTILINE),
+    "implement/tools/progress.py": re.compile(r'^RECIPE_VERSION = "(?P<version>[^"]+)"(?P<rest>.*)$', re.MULTILINE),
+}
 
 
 class ReleaseConfigTest(unittest.TestCase):
@@ -41,6 +52,27 @@ class ReleaseConfigTest(unittest.TestCase):
 
     def test_engine_init_is_an_extra_file(self) -> None:
         self.assertIn(ENGINE_INIT, self.config["extra-files"])
+
+    def stamp_lines(self) -> dict[str, re.Match[str]]:
+        lines = {}
+        for path, pattern in STAMPS.items():
+            matches = list(pattern.finditer((REPO / path).read_text(encoding="utf-8")))
+            self.assertEqual(len(matches), 1, f"{path}: expected one version line, found {len(matches)}")
+            lines[path] = matches[0]
+        return lines
+
+    def test_every_stamp_matches_the_manifest(self) -> None:
+        for path, line in self.stamp_lines().items():
+            with self.subTest(path=path):
+                self.assertEqual(line["version"], self.manifest["."])
+
+    def test_every_stamp_line_carries_the_marker(self) -> None:
+        for path, line in self.stamp_lines().items():
+            with self.subTest(path=path):
+                self.assertIn(MARKER, line["rest"])
+
+    def test_every_stamp_file_is_an_extra_file(self) -> None:
+        self.assertEqual(sorted(self.config["extra-files"]), sorted(STAMPS))
 
     def test_one_root_package_with_plain_v_tags(self) -> None:
         self.assertEqual(list(self.config["packages"]), ["."])

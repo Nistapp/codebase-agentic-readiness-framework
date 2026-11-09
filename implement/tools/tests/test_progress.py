@@ -40,6 +40,9 @@ JSON_NAME = "example-service-agentic-readiness-state.json"
 MD_NAME = "example-service-agentic-readiness-STATE.md"
 # The values the checked-in example was made with.
 EXAMPLE_ARGS = ("--date", "2026-10-29", "--framework-rev", "cafecafecafecafecafecafecafecafecafecafe")
+# The recipe version it was made with. release-please bumps `progress.RECIPE_VERSION` each release; the checked-in
+# example keeps the version that made it, the same way it keeps its date.
+EXAMPLE_RECIPE_VERSION = "0.2.0-dev"
 
 
 def call(argv: Sequence[str]) -> tuple[int, dict[str, Any], str]:
@@ -118,8 +121,15 @@ class ContractTests(unittest.TestCase):
 
 
 class InitTests(TargetCase):
+    def test_init_stamps_the_release_version(self) -> None:
+        self.init_ok()
+        state = json.loads(self.json_path.read_text(encoding="utf-8"))
+        self.assertEqual(state["recipe"]["version"], progress.RECIPE_VERSION)
+        self.assertIn(f"brownfield-implement {progress.RECIPE_VERSION},", self.md_path.read_text(encoding="utf-8"))
+
     def test_init_writes_the_example_state_and_its_markdown(self) -> None:
-        envelope = self.init_ok()
+        with mock.patch.object(progress, "RECIPE_VERSION", EXAMPLE_RECIPE_VERSION):
+            envelope = self.init_ok()
         self.assertEqual(self.json_path.read_bytes(), EXAMPLE_STATE.read_bytes())
         self.assertEqual(self.md_path.read_bytes(), EXAMPLE_MD.read_bytes())
         data = envelope["data"]

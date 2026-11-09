@@ -48,7 +48,7 @@ import _jsonschema_subset as subset
 import validate_report
 
 RECIPE_NAME = "brownfield-implement"
-RECIPE_VERSION = "0.2.0-dev"
+RECIPE_VERSION = "0.3.2"  # x-release-please-version
 SCHEMA_VERSION = "0.2"
 SUPPORTED_SCHEMA_VERSIONS = ("0.1", "0.2")
 

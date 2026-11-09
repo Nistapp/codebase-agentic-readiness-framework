@@ -290,7 +290,7 @@ class InitTests(BuilderCase):
     def test_the_provenance_is_what_the_intake_and_the_catalogue_say(self) -> None:
         document = read_json(self.start())
         provenance = document["provenance"]
-        self.assertEqual(provenance["recipe"], {"name": "brownfield-audit", "version": "0.1.0"})
+        self.assertEqual(provenance["recipe"], {"name": "brownfield-audit", "version": rb.RECIPE_VERSION})
         self.assertEqual(provenance["agent"], {"harness": "claude-code", "model": "claude-sonnet-5-5"})
         self.assertEqual(provenance["catalogue_version"], vr.load_catalogue()["catalogue_version"])
         self.assertEqual(provenance["started_at"], "2026-10-10T09:30:00+00:00")
