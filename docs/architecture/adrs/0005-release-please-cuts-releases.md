@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-11-08
-* **Last reviewed:** 2026-11-08
+* **Last reviewed:** 2026-11-09
 * **Deciders:** [@nistapp]
 
 ---
@@ -34,10 +34,12 @@ uses the same pattern.
    the `simple` release type with one package at `.` and tags `vX.Y.Z`. Before 1.0.0, a breaking change bumps MINOR
    and any other change bumps PATCH, as [`RELEASE_PROCESS.md`](../../../RELEASE_PROCESS.md) says.
    [`.release-please-manifest.json`](../../../.release-please-manifest.json) holds the last released version.
-2. **The version lives in three places, and the bot changes all three.** The manifest, the engine's `__version__`
-   (an `extra-files` entry with the `x-release-please-version` marker) and the `CHANGELOG.md` entry.
-   `dev/tests/test_release_config.py` fails when the manifest and `__version__` disagree. `release.yml` refuses a tag
-   that differs from `__version__`.
+2. **The version lives in five places, and the bot changes all five.** The manifest, the `CHANGELOG.md` entry and
+   three code lines: the engine's `__version__` and `FRAMEWORK_RELEASE` in `audit/tools/report.py` and
+   `implement/tools/progress.py`. Each code line is an `extra-files` entry with the `x-release-please-version`
+   marker. `dev/tests/test_release_config.py` fails when a code line and the manifest disagree. `release.yml` refuses
+   a tag that differs from `__version__`. Every report and state carries this one version
+   ([ADR 0008](0008-one-release-version-and-current-schemas-only.md)).
 3. **The release pull request.** On each push to `main`,
    [`release-please.yml`](../../../.github/workflows/release-please.yml) opens or updates a pull request from
    `release-please--branches--main` into `main`. Merging it tags the release and creates the GitHub release, with the

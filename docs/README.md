@@ -35,6 +35,7 @@ output to `<output-path>`". To fix the findings, say "Start implementing the fix
 | [Audit master list](reference/audit-master.md) | Every audit check by area: what passes, why it matters, which playbook fixes it |
 | [Implement master list](reference/implement-master.md) | Every playbook by theme: its goal, what it changes per check, what it never does |
 | [Tools CLI](reference/tools-cli.md) | Each tool's synopsis, inputs, outputs and exit codes |
+| [Versions](reference/versions.md) | What each version number means, where it is written, and which reports and states the tools read |
 | [Harness notes](reference/harness-notes.md) | What differs between Claude Code, opencode, Codex and Cursor |
 | [Checks to framework map](reference/how-the-checks-map-to-the-framework.md) | Each check, its requirement and its framework section |
 | [Evaluation results](reference/eval-results.md) | Fixture-sweep and real-repository results |

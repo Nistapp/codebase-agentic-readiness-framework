@@ -42,6 +42,8 @@ The Markdown report, which [`tools/render_report.py`](../tools/render_report.py)
 State schema `0.3` replaced `recipe` with `framework` and `last_framework`, added `release` and `revision` to each
 source report, and made `sha256` required. The tools do not read an older state.
 
+[Versions](../../docs/reference/versions.md) lists every version number, where it is written and the read rule.
+
 Report schema `0.2` replaced `provenance.recipe` and `provenance.framework_revision` with `provenance.framework`.
 The tools do not read a `0.1` report. The release is the version in
 [`.release-please-manifest.json`](../../.release-please-manifest.json).
