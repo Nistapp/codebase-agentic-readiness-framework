@@ -47,7 +47,8 @@ needed). Commit rule: a `commit-msg` script or lefthook stage, with
 the same script run over the pull request's commits in CI (`TOOL-06`). Branch guard (`TOOL-07`): a
 `git branch --show-current` check in `.githooks/pre-commit` or a lefthook `pre-commit` command. Dependency updates:
 Dependabot
-`package-ecosystem: gradle` or `maven`; Renovate's `gradle` and `maven` managers.
+`package-ecosystem: gradle` or `maven`; Renovate's `gradle` and `maven` managers. Language-server inputs
+(`register-index`, advisory): the Gradle or Maven build with its wrapper; nothing more.
 
 ## Execution determinism
 

@@ -38,7 +38,8 @@ pip/uv/poetry's resolved environment) or `safety check`. Hook manager: pre-commi
 range form). Branch guard (`TOOL-07`): pre-commit-hooks' `no-commit-to-branch` with a `--branch` per
 protected branch. Dependency updates: Dependabot `package-ecosystem: pip`
 (pip, pipenv, poetry, pip-compile) or `uv` (a `uv.lock`); Renovate's `pep621`, `pip_requirements`,
-`poetry` and `pipenv` managers.
+`poetry` and `pipenv` managers. Language-server inputs (`register-index`, advisory): a pyright or basedpyright config
+that mirrors the type-check gate's import paths.
 
 ## Execution determinism
 

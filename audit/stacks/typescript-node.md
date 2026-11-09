@@ -46,7 +46,8 @@ pin a fixed severity threshold in config rather than a CLI flag. Hook manager: H
 commitlint in `.husky/commit-msg`, and `npx commitlint --from <base> --to <head>` in CI
 (`TOOL-06`). Branch guard (`TOOL-07`): a `git branch --show-current` check at the top of
 `.husky/pre-commit`. Dependency updates: Dependabot `package-ecosystem: npm` (npm, Yarn and
-pnpm lockfiles) or `bun`; Renovate's `npm` manager.
+pnpm lockfiles) or `bun`; Renovate's `npm` manager. Language-server inputs (`register-index`, advisory): a
+`tsconfig.json` per package, or project references from the root one.
 
 ## Execution determinism
 
