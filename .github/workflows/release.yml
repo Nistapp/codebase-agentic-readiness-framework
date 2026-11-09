@@ -3,12 +3,17 @@
 #
 # Builds the release files for a tag `vX.Y.Z` on `main` and attaches them to its GitHub release: the single-file
 # engine (audit.pyz), the agentic-readiness-audit and agentic-readiness-implement skill bundles as zips, and their
-# SHA-256 sums. Runs the same gates as CI first.
+# SHA-256 sums. Runs the same gates as CI first. Then it signs build provenance for the three files (actions/attest,
+# public Sigstore) and attaches the signed bundle, so a user can check that a file came from this workflow and tag:
+# `gh attestation verify <file> --repo <owner/repo> --source-ref refs/tags/<tag> --bundle <tag>.sigstore.json`.
 #
-# release-please.yml starts this workflow (workflow_dispatch) after release-please has made the tag and the release. A
+# release-please.yml starts this workflow (workflow_dispatch, from the tag: `--ref vX.Y.Z`) after release-please has
+# made the tag and the release. The run must start from the tag it builds, because the provenance records the run's
+# ref and commit, not the checkout. A
 # tag pushed by the default GITHUB_TOKEN starts no workflow, so this workflow has no `push: tags` trigger. The
 # maintainer can also start it by hand for an existing tag; then it creates the release when there is none. No secret
-# beyond GITHUB_TOKEN; `contents: write` is the only permission. Actions are pinned by commit SHA. A session of an AI
+# beyond GITHUB_TOKEN. The job's permissions are `contents: write` (the release) and, for the provenance,
+# `id-token: write`, `attestations: write` and `artifact-metadata: write`. Actions are pinned by commit SHA. A session of an AI
 # agent never triggers this workflow. How releases work: RELEASE_PROCESS.md.
 name: Release
 
@@ -20,8 +25,7 @@ on:
         required: true
         type: string
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: release-${{ inputs.tag }}
@@ -31,6 +35,11 @@ jobs:
   release:
     name: release ${{ inputs.tag }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     steps:
       - name: Require a tag of the form vX.Y.Z
         env:
@@ -38,6 +47,17 @@ jobs:
         run: |
           if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::'$TAG' is not a release tag of the form vX.Y.Z."
+            exit 1
+          fi
+      # The provenance names the ref the run started from. Started from main or a branch, it would name a commit
+      # that may not be the tagged one.
+      - name: Require the run to start from the tag
+        env:
+          TAG: ${{ inputs.tag }}
+          RUN_REF: ${{ github.ref }}
+        run: |
+          if [[ "$RUN_REF" != "refs/tags/$TAG" ]]; then
+            echo "::error::This run started from $RUN_REF. Start it from the tag: gh workflow run release.yml --ref $TAG -f tag=$TAG"
             exit 1
           fi
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -100,6 +120,18 @@ jobs:
           (cd "$out" && sha256sum audit.pyz "agentic-readiness-audit-$TAG.zip" "agentic-readiness-implement-$TAG.zip" > SHA256SUMS)
           cat "$out/SHA256SUMS"
           echo "RELEASE_DIR=$out" >> "$GITHUB_ENV"
+      # One signed SLSA build provenance statement for the three files in SHA256SUMS, stored in the repository's
+      # attestations. The bundle is attached to the release too, so a user can verify without a GitHub login.
+      - name: Sign build provenance
+        id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: ${{ env.RELEASE_DIR }}/SHA256SUMS
+      - name: Add the provenance bundle to the release files
+        env:
+          TAG: ${{ inputs.tag }}
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+        run: cp "$BUNDLE" "$RELEASE_DIR/$TAG.sigstore.json"
       # release-please has normally made the release already, with the changelog entry as its notes. Then only the
       # files are attached (--clobber makes a re-run safe). For a hand-started run on a tag with no release, the
       # release is created here.
@@ -112,5 +144,5 @@ jobs:
             gh release upload "$TAG" "$RELEASE_DIR"/* --repo "$GITHUB_REPOSITORY" --clobber
           else
             gh release create "$TAG" "$RELEASE_DIR"/* --repo "$GITHUB_REPOSITORY" --title "$TAG" --verify-tag \
-              --notes "See CHANGELOG.md. Verify a download with: sha256sum -c SHA256SUMS"
+              --notes "See CHANGELOG.md. Verify a download with: sha256sum -c SHA256SUMS (provenance: docs/how-to/install-the-skills.md)"
           fi

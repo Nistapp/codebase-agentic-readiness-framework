@@ -122,7 +122,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
-          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main -f "tag=$TAG"
+          # --ref is the tag, not main: the build provenance that release.yml signs names this ref and its commit.
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" -f "tag=$TAG"
           echo "Started release.yml for $TAG. Watch it: gh run list --workflow Release --limit 1"
 
   back-merge:

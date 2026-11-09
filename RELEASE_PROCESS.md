@@ -257,23 +257,27 @@ After the next promotion, the release pull request uses that version.
 | --- | --- | --- |
 | `release-please` | Every push to `main` | Opens or updates the release pull request; after its merge, tags `vX.Y.Z` and creates the GitHub release |
 | `format-changelog` | The release pull request was opened or updated | Runs `make changelog-fix` (markdownlint `--fix`) on `CHANGELOG.md` and pushes the fix to the release pull request. release-please writes `*` bullets and double blank lines, which the `docs-lint` ratchet refuses |
-| `publish` | A release was created | Starts `release.yml` with the tag (a dispatch is the one event that `GITHUB_TOKEN` may start a workflow with) |
+| `publish` | A release was created | Starts `release.yml` from the tag, with `--ref vX.Y.Z` (a dispatch is the one event that `GITHUB_TOKEN` may start a workflow with) |
 | `back-merge` | A release was created | Creates `chore/back-merge-vX.Y.Z` at the release commit and opens its pull request into `dev` |
 
 [`release.yml`](.github/workflows/release.yml) runs on a dispatch with a tag. It does these steps in sequence:
 
-1. It makes sure that the tag has the form `vX.Y.Z` and that its commit is on `main`.
+1. It makes sure that the tag has the form `vX.Y.Z`, that the run started from that tag, and that its commit is on
+   `main`. The run must start from the tag because the build provenance records the run's ref and commit.
 2. It makes sure that the engine's `__version__` equals the tag.
 3. It runs `make check` and `make security`. A tag on a red commit publishes nothing.
 4. It runs `python3 audit/engine/build.py`. This builds the reproducible single-file engine, `audit.pyz`.
 5. It runs `make validate-skills`. This builds the `agentic-readiness-audit` and `agentic-readiness-implement` skill
    bundles and validates both against the Agent Skills specification.
 6. It zips the two bundles from `dev/dist/skills/` and writes `SHA256SUMS` for `audit.pyz` and the two zips.
-7. It attaches the four files to the GitHub release. If the tag has no release (a run started by hand), it creates
+7. It signs build provenance for the three files in `SHA256SUMS` (`actions/attest`, public Sigstore). GitHub stores
+   the attestation. The signed bundle is written to `vX.Y.Z.sigstore.json`.
+8. It attaches the five files to the GitHub release. If the tag has no release (a run started by hand), it creates
    one.
 
 Every action in both workflows is pinned by commit SHA. To check a download, run `sha256sum -c SHA256SUMS` in the
-folder that holds all four files.
+folder that holds the files. To check where a file came from, follow
+[Step 2b of Install the skills](docs/how-to/install-the-skills.md#step-2b-optional-check-the-build-provenance).
 
 ## If the release fails
 
@@ -284,7 +288,7 @@ with no files.
 2. If the cause was outside the code (for example a network failure), run the workflow again for the same tag:
 
    ```bash
-   gh workflow run release.yml --ref main -f tag=vX.Y.Z
+   gh workflow run release.yml --ref vX.Y.Z -f tag=vX.Y.Z
    ```
 
 3. If the code must change, fix it on a work branch from `dev` and merge it. Then promote `dev` again. release-please
@@ -391,6 +395,8 @@ promotion ([Step 1](#step-1-make-sure-that-dev-is-ready)):
       a merge commit.
 - [ ] The release pull request shows the version you expect, its `CHANGELOG.md` entry reads well, and it is merged
       with a merge commit.
-- [ ] `release.yml` passed; the release lists `audit.pyz`, both skill zips and `SHA256SUMS`; and
-      `sha256sum -c SHA256SUMS` passes on the downloads.
+- [ ] `release.yml` passed; the release lists `audit.pyz`, both skill zips, `SHA256SUMS` and `vX.Y.Z.sigstore.json`;
+      `sha256sum -c SHA256SUMS` passes on the downloads; and
+      `gh attestation verify audit.pyz --repo Nistapp/codebase-agentic-readiness-framework --source-ref refs/tags/vX.Y.Z`
+      passes.
 - [ ] The back-merge pull request into `dev` is merged, and its branch is deleted.
