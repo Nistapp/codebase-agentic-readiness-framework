@@ -7,17 +7,17 @@
 
 | Field | Value |
 |---|---|
+| Framework | `v0.3.2`, checkout `c132d974bdc5` |
 | Target | `<target>` |
 | Commit | `ffce29f9c23a` — clean working tree |
 | Status | final |
 | Started | `2026-11-06T09:17:56+00:00` |
 | Finalised | `2026-11-06T12:34:00+00:00` |
-| Recipe | `brownfield-audit` 0.1.0, catalogue `0.2.8` |
+| Catalogue | `0.2.8` |
 | Engine | `python-agentic-audit` 0.1.0, ruleset `2026-11-06.1`, ruleset hash `970e6792f98eeeb5`, scanned `2026-11-06T09:18:01+00:00` |
-| Framework revision | `c132d974bdc5` |
 | Agent (self-reported) | `Claude Code` with `claude-sonnet-5-5` |
 | Probes | none: no command of the target was run |
-| Report schema | `0.1` |
+| Report schema | `0.2` |
 
 ## Readiness summary
 

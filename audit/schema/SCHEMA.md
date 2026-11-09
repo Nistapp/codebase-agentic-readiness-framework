@@ -10,7 +10,7 @@
 
 | Item | Description |
 |---|---|
-| [`audit-report.schema.json`](audit-report.schema.json) | The canonical result of an audit. JSON Schema 2020-12, `schema_version` `0.1`. |
+| [`audit-report.schema.json`](audit-report.schema.json) | The canonical result of an audit. JSON Schema 2020-12, `schema_version` `0.2`. |
 | [`audit-intake.schema.json`](audit-intake.schema.json) | The answers to the audit's Stage 0 questions, given in a file. `intake_version` `0.1`. |
 | [`catalogue.schema.json`](catalogue.schema.json) | The check catalogue, [`../catalogue.json`](../catalogue.json): every check in one ID namespace. |
 | [`facts.schema.json`](facts.schema.json) | The file `facts.py` writes: counts and names that describe a repository, with no verdict. `facts_version` `0.1`. See [Facts file](#facts-file). |
@@ -31,18 +31,24 @@ The Markdown report, which [`tools/render_report.py`](../tools/render_report.py)
 
 | Version | Where | Meaning |
 |---|---|---|
-| `schema_version` | the report | The shape of the report. `0.1` today. |
+| `schema_version` | the report | The shape of the report. `0.2` today; see the note below the table. |
 | `intake_version` | the intake file | The shape of the intake file. `0.1` today. |
 | `facts_version` | the facts file | The shape of the facts file. `0.1` today. |
 | `schema_version` | the readiness state | The shape of the state file, a separate schema from the report's. `0.2` today; `0.2` added the optional `source_reports[].sha256`, and `0.1` states stay valid. |
 | `catalogue_version` | `provenance` | The check catalogue the report was built against, `MAJOR.MINOR.PATCH`, as in [`catalogue.json`](../catalogue.json). The bump rules are in [`catalogue.schema.json`](catalogue.schema.json). |
-| `provenance.recipe.version` | `provenance` | The audit recipe that produced the report. |
+| `provenance.framework.release` | `provenance` | The framework release that produced the report. |
 | `provenance.engine.version`, `ruleset_hash` | `provenance` | The deterministic engine and its ruleset. |
+
+Report schema `0.2` replaced `provenance.recipe` and `provenance.framework_revision` with `provenance.framework`.
+The tools do not read a `0.1` report. The release is the version in
+[`.release-please-manifest.json`](../../.release-please-manifest.json).
 
 Policy:
 
 - A `0.x` schema may break between releases. The version is `1.0` once the audit recipe and the implementation recipe have both run end to end on two repositories. Until then nothing may rely on a field staying put.
 - A consumer refuses a `schema_version` it does not know. It never guesses.
+- No backward compatibility yet: a new `0.x` replaces the old one, and the tools read only the current one.
+  This holds until the first outside user or `1.0`, whichever comes first.
 - A schema change that adds a field is a new `0.x`. So is every change to a field's meaning, even where the field name stays. `0.1` itself stays open until the first tool that reads it ships (S2.2), so edits before then do not bump the version.
 - The schemas, the check catalogue, the check rubrics and the tools are one shared layer. A report records `catalogue_version` so that a later run can warn when its catalogue differs.
 
@@ -53,7 +59,7 @@ Policy:
 ```text
 report
 ├── schema_version, status
-├── provenance       recipe, framework_revision, catalogue_version, engine?, agent, target (label, path, …), started_at, finalised_at?
+├── provenance       framework (release, revision, install), catalogue_version, engine?, agent, target (label, path, …), started_at, finalised_at?
 ├── run_context      eval_mode, confirmation_policy, provider_exposure_acknowledged, index, probes, excluded, known_components, stack_profile?
 ├── stack            ecosystems, package_managers, ci_providers, test_frameworks, hook_managers, notes?
 ├── components[]     name, path, declared, declared_by?, manifest?, agents_md?
@@ -77,11 +83,11 @@ A `?` marks an optional field. Every object is closed: a field the schema does n
 
 ## Commit ids
 
-The tools write every commit id in a report (`provenance.framework_revision` and `provenance.target.git_sha`) as its
+The tools write every commit id in a report (`provenance.framework.revision` and `provenance.target.git_sha`) as its
 first 12 hex digits. A full 40-digit id has the same shape as an access token, and secret scanners (gitleaks' default
-rules, for one) flag it in a file they read, so a report committed to a repository with a scan would fail it. The schema
-still accepts a full id so that earlier reports stay valid. Twelve digits name the commit unambiguously in any realistic
-repository, and `git` accepts them.
+rules, for one) flag it in a file they read, so a report committed to a repository with a scan would fail it.
+`provenance.framework.revision` accepts only 12 digits. `provenance.target.git_sha` still accepts a full id.
+Twelve digits name the commit unambiguously in any realistic repository, and `git` accepts them.
 
 ## Fields
 
@@ -95,13 +101,18 @@ repository, and `git` accepts them.
 
 | Field | Meaning |
 |---|---|
-| `recipe` | Name and version of the audit recipe. |
-| `framework_revision` | Short Git SHA (12 hex digits) of the framework repository the recipe ran from. `null` when it was not a git checkout. See Commit ids. |
+| `framework.release` | The framework release of the tools that wrote the report. See Versioning. |
+| `framework.revision` | Short Git SHA (12 hex digits) of the framework checkout the tools ran from. `null` when `install` is not `checkout`, or git could not read it. See Commit ids. |
+| `framework.install` | `checkout` (git), `bundle` (an installed skill) or `copy` (anything else). See below. |
 | `catalogue_version` | See Versioning. |
 | `engine` | Absent until an engine report is imported. `name`, `version`, `ruleset_revision`, `ruleset_hash`, and `scanned_at` as the engine reported them. |
 | `agent` | `harness` and `model`. Self-reported by the operator or the agent and unverified. `none` for both when no agent took part, as in a report that only imports an engine run. |
 | `target` | `label`, `path`, `git_sha` (12 hex digits; see Commit ids), `branch` and `dirty`. `label` is the short repository name used in output file names (see Output files). The last three are `null` when the target is not a git repository. `report.py init` records the path resolved to an absolute one, so that later calls from another directory find the target; anonymise it before sharing a report if the repository is private. |
 | `started_at`, `finalised_at` | ISO 8601 with an offset. `finalised_at` is set with `status: final`. |
+
+`framework.install` is `checkout` for a git checkout of the framework repository, and `bundle` for an installed
+skill bundle, with `SKILL.md` beside the tools' `scripts/` folder. It is `copy` for anything else, such as a source
+archive with no `.git` folder.
 
 ### `run_context`
 
@@ -379,8 +390,8 @@ Every field of the engine's schema v2 is either carried or named as not carried.
 | `schema_version` | Not carried. The adapter accepts `"2"` and refuses any other value. |
 | `provenance.tool`, `version`, `ruleset_revision`, `ruleset_hash`, `scanned_at` | `provenance.engine.name`, `version`, `ruleset_revision`, `ruleset_hash`, `scanned_at` |
 | `provenance.target`, `git_sha`, `git_branch`, `git_dirty` | Not copied. `init` recorded the target's facts from the directory itself, and the draft keeps them. The adapter requires the engine's `target` to be the same directory as the draft's, and its `git_sha` to name the same commit as the draft's (the draft keeps 12 digits, the engine reports all 40) when both are known, and refuses a report that differs in either. A commit that only one side knows is a warning. |
-| `provenance.framework_revision` | Not carried. The report records its own `provenance.framework_revision`. |
-| `provenance.phase` | Not carried. A 0.1 report covers Phase 1; the adapter refuses an engine report for another phase. |
+| `provenance.framework_revision` | Not carried. The report records its own `provenance.framework`. |
+| `provenance.phase` | Not carried. An audit report covers Phase 1; the adapter refuses an engine report for another phase. |
 | `provenance.probes_enabled` | Not carried. `run_context.probes.allowed` says it. |
 | `summary.phase1_score` | `summary.phase1_score`, recomputed from the checks; the validator rejects a mismatch. The adapter compares the engine's number with the recomputed one and warns when they differ, and keeps the recomputed one. |
 | `summary.checks_scoreable` | `summary.scored_checks` |

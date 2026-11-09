@@ -232,7 +232,7 @@ class InitTests(BuilderCase):
         self.assertEqual(self.drafts(), [path.name])
         document = read_json(path)
         self.assertEqual(vr.validate_document(document).errors, [])
-        self.assertEqual((document["schema_version"], document["status"]), ("0.1", "draft"))
+        self.assertEqual((document["schema_version"], document["status"]), ("0.2", "draft"))
         self.assertEqual((document["checks"], document["findings"], document["components"]), ([], [], []))
         self.assertEqual(document["summary"], _summary.compute_summary(document))
         self.assertEqual(stderr, f"report: started {path.name} for my-service\n")
@@ -290,7 +290,8 @@ class InitTests(BuilderCase):
     def test_the_provenance_is_what_the_intake_and_the_catalogue_say(self) -> None:
         document = read_json(self.start())
         provenance = document["provenance"]
-        self.assertEqual(provenance["recipe"], {"name": "brownfield-audit", "version": rb.RECIPE_VERSION})
+        self.assertEqual(provenance["framework"], rb.framework_facts())
+        self.assertEqual(provenance["framework"]["release"], rb.FRAMEWORK_RELEASE)
         self.assertEqual(provenance["agent"], {"harness": "claude-code", "model": "claude-sonnet-5-5"})
         self.assertEqual(provenance["catalogue_version"], vr.load_catalogue()["catalogue_version"])
         self.assertEqual(provenance["started_at"], "2026-10-10T09:30:00+00:00")
@@ -332,15 +333,54 @@ class InitTests(BuilderCase):
         self.assertEqual((context["excluded"], context["known_components"]), ([], []))
 
     def test_the_framework_revision_is_this_checkout_or_nothing(self) -> None:
-        document = read_json(self.start())
-        recorded = document["provenance"]["framework_revision"]
+        recorded = read_json(self.start())["provenance"]["framework"]
         root = vr.RECIPES.parent
         if rb.git_toplevel(root) == root.resolve():
-            self.assertEqual(recorded, _git.run_git(root, "rev-parse", "HEAD")[: rb.SHORT_SHA_CHARS])
+            self.assertEqual(recorded["install"], "checkout")
+            self.assertEqual(recorded["revision"], _git.run_git(root, "rev-parse", "HEAD")[: rb.SHORT_SHA_CHARS])
         else:
-            self.assertIsNone(recorded)
+            self.assertIsNone(recorded["revision"])
         with mock.patch.object(rb, "git_toplevel", return_value=self.root):
-            self.assertIsNone(rb.framework_revision())
+            self.assertIsNone(rb.framework_facts()["revision"])
+
+    def test_a_framework_checkout_records_its_short_commit(self) -> None:
+        root = self.root / "framework"
+        _git.make_repo(root)
+        head = _git.run_git(root, "rev-parse", "HEAD")
+        self.assertEqual(
+            rb.framework_facts(root),
+            {"release": rb.FRAMEWORK_RELEASE, "revision": head[: rb.SHORT_SHA_CHARS], "install": "checkout"},
+        )
+
+    def test_a_skill_md_beside_the_scripts_is_a_bundle_with_no_revision(self) -> None:
+        root = self.root / "agentic-readiness-audit"
+        (root / "scripts").mkdir(parents=True)
+        (root / "SKILL.md").write_text("---\nname: agentic-readiness-audit\n---\n", encoding="utf-8")
+        self.assertEqual(
+            rb.framework_facts(root), {"release": rb.FRAMEWORK_RELEASE, "revision": None, "install": "bundle"}
+        )
+
+    def test_a_bundle_inside_another_repository_is_still_a_bundle(self) -> None:
+        _git.make_repo(self.root / "project")
+        root = self.root / "project" / ".claude" / "skills" / "agentic-readiness-audit"
+        root.mkdir(parents=True)
+        (root / "SKILL.md").write_text("---\nname: agentic-readiness-audit\n---\n", encoding="utf-8")
+        self.assertEqual(rb.framework_facts(root)["install"], "bundle")
+
+    def test_anything_else_is_a_copy_with_no_revision(self) -> None:
+        root = self.root / "source-archive"
+        root.mkdir()
+        self.assertEqual(
+            rb.framework_facts(root), {"release": rb.FRAMEWORK_RELEASE, "revision": None, "install": "copy"}
+        )
+
+    def test_without_git_a_dot_git_folder_is_a_checkout_with_no_revision(self) -> None:
+        root = self.root / "framework"
+        (root / ".git").mkdir(parents=True)
+        with mock.patch.object(shutil, "which", return_value=None):
+            self.assertEqual(
+                rb.framework_facts(root), {"release": rb.FRAMEWORK_RELEASE, "revision": None, "install": "checkout"}
+            )
 
 
 class TargetFactsTests(BuilderCase):

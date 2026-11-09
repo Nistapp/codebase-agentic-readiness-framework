@@ -345,7 +345,7 @@ def check_engine_report(engine: Any) -> None:
     phase = engine["provenance"]["phase"]
     if phase != PHASE:
         refuse(
-            f"the engine report is for phase {phase}, and a 0.1 report covers phase {PHASE}",
+            f"the engine report is for phase {phase}, and an audit report covers phase {PHASE}",
             [f"engine report: /provenance/phase: expected {PHASE}, found {phase}"],
         )
 

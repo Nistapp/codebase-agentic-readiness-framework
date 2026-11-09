@@ -1,12 +1,12 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "status": "final",
   "provenance": {
-    "recipe": {
-      "name": "brownfield-audit",
-      "version": "0.1.0"
+    "framework": {
+      "release": "0.3.2",
+      "revision": "b4bf27df7915",
+      "install": "checkout"
     },
-    "framework_revision": "b4bf27df7915d5ec7d79ced607ac03a5567adc7d",
     "catalogue_version": "0.2.2",
     "engine": {
       "name": "python-agentic-audit",

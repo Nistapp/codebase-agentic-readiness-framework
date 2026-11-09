@@ -9,8 +9,8 @@ v0.3.0 was released, and the audit report's recipe version said 0.1.0 through v0
 marker that release-please looks for or is not an ``extra-files`` entry, or when a hand-written ``[Unreleased]``
 heading comes back into the changelog that release-please writes.
 
-The stamps are the engine's ``__version__`` and the two recipes' ``RECIPE_VERSION`` (the audit report's
-``provenance.recipe.version`` and the implement state's ``recipe.version``). The skill bundles' ``metadata.version``
+The stamps are the engine's ``__version__``, ``FRAMEWORK_RELEASE`` in ``report.py`` (the audit report's
+``provenance.framework.release``) and ``RECIPE_VERSION`` in ``progress.py`` (the implement state's ``recipe.version``). The skill bundles' ``metadata.version``
 is copied from the manifest at build time; ``test_build_skills`` checks it.
 """
 
@@ -31,7 +31,7 @@ VERSION_LINE = re.compile(r'^__version__ = "(?P<version>[^"]+)"(?P<rest>.*)$', r
 #: Every file that holds a copy of the release version, and the pattern of the one line that holds it.
 STAMPS = {
     ENGINE_INIT: VERSION_LINE,
-    "audit/tools/report.py": re.compile(r'^RECIPE_VERSION = "(?P<version>[^"]+)"(?P<rest>.*)$', re.MULTILINE),
+    "audit/tools/report.py": re.compile(r'^FRAMEWORK_RELEASE = "(?P<version>[^"]+)"(?P<rest>.*)$', re.MULTILINE),
     "implement/tools/progress.py": re.compile(r'^RECIPE_VERSION = "(?P<version>[^"]+)"(?P<rest>.*)$', re.MULTILINE),
 }
 

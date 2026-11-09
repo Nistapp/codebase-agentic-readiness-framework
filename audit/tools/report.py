@@ -83,9 +83,9 @@ INFO = _common.ToolInfo(
     ),
 )
 
-RECIPE_NAME = "brownfield-audit"
-RECIPE_VERSION = "0.3.2"  # x-release-please-version
-SCHEMA_VERSION = "0.1"
+#: The framework release these tools belong to: `provenance.framework.release`. release-please rewrites the line.
+FRAMEWORK_RELEASE = "0.3.2"  # x-release-please-version
+SCHEMA_VERSION = "0.2"
 DRAFT_KIND = "audit-draft"
 DEFAULT_PROBE_TIMEOUT_S = 120
 FINAL_KIND = "audit-report"
@@ -173,15 +173,39 @@ def same_commit(recorded: str, scanned: str) -> bool:
     return scanned.startswith(recorded) or recorded.startswith(scanned)
 
 
-def framework_revision() -> str | None:
-    """The commit of the framework repository these tools run from, or None when they are not in a checkout of it."""
-    root = vr.RECIPES.parent.resolve()
-    if shutil.which("git") is None or git_toplevel(root) != root:
+def framework_install(root: Path) -> str:
+    """How the framework at `root` is installed: `checkout`, `bundle` or `copy` (`provenance.framework.install`).
+
+    `root` is the folder above the recipe folder: the repository root in a checkout, the skill folder in a bundle,
+    where `SKILL.md` sits beside `scripts/`. A checkout is a git working tree whose top is `root`, or, when git is
+    missing, a `root` that holds `.git`.
+    """
+    if shutil.which("git") is not None:
+        if git_toplevel(root) == root:
+            return "checkout"
+    elif (root / ".git").exists():
+        return "checkout"
+    if (root / "SKILL.md").is_file():
+        return "bundle"
+    return "copy"
+
+
+def framework_revision(root: Path) -> str | None:
+    """The short commit of the framework checkout at `root`, or None when git cannot read one."""
+    if shutil.which("git") is None:
         return None
     head = vr.git_output(root, ["rev-parse", "HEAD"])
     if head is None or head.returncode != 0 or not GIT_SHA.match(head.stdout.strip()):
         return None
     return head.stdout.strip()[:SHORT_SHA_CHARS]
+
+
+def framework_facts(root: Path | None = None) -> dict[str, Any]:
+    """`provenance.framework`: the release, the commit (checkout only) and the install of the framework at `root`."""
+    root = (root or vr.RECIPES.parent).resolve()
+    install = framework_install(root)
+    revision = framework_revision(root) if install == "checkout" else None
+    return {"release": FRAMEWORK_RELEASE, "revision": revision, "install": install}
 
 
 # --- The intake ---------------------------------------------------------------------------------------
@@ -240,7 +264,7 @@ def new_draft(
     target: Path,
     git: Mapping[str, Any],
     catalogue_version: str,
-    framework: str | None,
+    framework: Mapping[str, Any],
     started_at: str,
 ) -> dict[str, Any]:
     """An empty draft: provenance and run context from the intake, no checks, no findings.
@@ -253,8 +277,7 @@ def new_draft(
         "schema_version": SCHEMA_VERSION,
         "status": "draft",
         "provenance": {
-            "recipe": {"name": RECIPE_NAME, "version": RECIPE_VERSION},
-            "framework_revision": framework,
+            "framework": dict(framework),
             "catalogue_version": catalogue_version,
             "agent": {"harness": intake["harness"], "model": intake["model"]},
             "target": {
@@ -306,7 +329,7 @@ def run_init(args: argparse.Namespace) -> _common.Result:
         target=target,
         git=git,
         catalogue_version=str(vr.load_catalogue()["catalogue_version"]),
-        framework=framework_revision(),
+        framework=framework_facts(),
         started_at=moment.isoformat(),
     )
     outcome = vr.validate_document(document)

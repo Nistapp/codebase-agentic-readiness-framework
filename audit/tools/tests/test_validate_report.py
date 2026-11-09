@@ -110,7 +110,7 @@ class SchemaStageTests(unittest.TestCase):
 
     def test_a_report_with_a_version_this_tool_does_not_know_is_refused(self) -> None:
         report = base()
-        report["schema_version"] = "0.2"
+        report["schema_version"] = "0.1"
         self.assertTrue(any("/schema_version" in error for error in vr.validate_document(report).errors))
 
     def test_the_schema_errors_are_capped(self) -> None:
@@ -802,7 +802,7 @@ class ToolContractTests(unittest.TestCase):
             {
                 "valid": True,
                 "report": str(WORKED),
-                "schema_version": "0.1",
+                "schema_version": "0.2",
                 "status": "final",
                 "checks": 12,
                 "findings": 10,

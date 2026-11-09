@@ -7,17 +7,17 @@
 
 | Field | Value |
 |---|---|
+| Framework | `v0.3.2`, checkout `cafecafecafe` |
 | Target | `/work/example-service` |
 | Commit | `deadbeefdead` on `main` — clean working tree |
 | Status | final |
 | Started | `2026-10-10T09:00:00+00:00` |
 | Finalised | `2026-10-10T09:42:07+00:00` |
-| Recipe | `brownfield-audit` 0.1.0, catalogue `0.4.0` |
+| Catalogue | `0.4.0` |
 | Engine | `python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2`, scanned `2026-10-10T09:01:30+00:00` |
-| Framework revision | `cafecafecafe` |
 | Agent (self-reported) | `claude-code` with `claude-sonnet-5-5` |
 | Probes | none: no command of the target was run |
-| Report schema | `0.1` |
+| Report schema | `0.2` |
 
 ## Readiness summary
 

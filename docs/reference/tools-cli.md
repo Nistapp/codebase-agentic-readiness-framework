@@ -194,7 +194,7 @@ Starts a draft from an intake file. It reads the intake (the answers to the audi
 | `provenance.target.path` | The intake's `target_path`, resolved to an absolute path. |
 | `provenance.target.git_sha`, `branch`, `dirty` | Read from git with read-only commands. The commit id is recorded as its first 12 hex digits, because a full id is what secret scanners read as an access token. Each is `null` when it cannot be known: the target is not a repository, the repository has no commit, `HEAD` is detached (no branch), or git is missing. A target that is a subfolder of a repository records nothing and gives a warning, because a commit id says nothing about a subfolder. |
 | `provenance.target.label` | The intake's `repo_label`, or a label derived from the target directory's name. |
-| `provenance.framework_revision` | The framework checkout's commit (12 hex digits), or `null` outside one. |
+| `provenance.framework` | The release (`FRAMEWORK_RELEASE` in `report.py`), the framework checkout's commit (12 hex digits, or `null` outside a checkout) and the install: `checkout`, `bundle` or `copy`. |
 | `provenance.catalogue_version` | The version of [`catalogue.json`](../../audit/catalogue.json). |
 | `provenance.agent` | The intake's `harness` and `model`. |
 | `provenance.started_at` | The UTC start time. Its `YYYYMMDDTHHMMSSZ` form is the stamp in the file name. |
@@ -288,7 +288,7 @@ Nothing the engine said is dropped without a warning, except a placeholder and a
 | Message | Fix |
 |---|---|
 | `the engine report has schema_version X, and the adapter reads only '2'` | Scan again with [`engine.py`](#enginepy). |
-| `the engine report is for phase N, and a 0.1 report covers phase 1` | Scan again without `--phase`. |
+| `the engine report is for phase N, and an audit report covers phase 1` | Scan again without `--phase`. |
 | `the engine report has the wrong shape: N errors` | Each error starts `engine report: /pointer:` and names the field. The file is not an engine report, or was edited. |
 | `the engine report cannot be imported: N problems` | A check is not in [`catalogue.json`](../../audit/catalogue.json), or only an agent can judge it, or appears twice, or a finding names a check the report does not hold. The engine and the catalogue are from different revisions of the framework. |
 | `the engine report is not of this draft's target` | `data.errors` names both directories, or both commits. Scan the draft's own repository at its commit, or start a new draft with `init`. |
