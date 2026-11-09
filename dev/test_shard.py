@@ -52,8 +52,20 @@ def parse_shard(text: str) -> tuple[int, int]:
 
 
 def suite_modules(start: Path) -> list[str]:
-    """The test modules ``unittest discover`` finds in ``start``: ``test*.py`` files, by name."""
-    return sorted(path.stem for path in start.glob("test*.py") if path.is_file())
+    """The test modules ``unittest discover`` finds in ``start``: ``test*.py`` files, by name.
+
+    ``discover`` also walks a subfolder that is a package (it has ``__init__.py``), at any depth, and nothing else, so
+    a fixture repository's ``tests/test_app.py`` is never a module of the suite. Names are unique across the suite:
+    the weights and ``load`` find a module by its name alone."""
+    found: list[str] = []
+    folders = [start]
+    while folders:
+        folder = folders.pop()
+        found.extend(path.stem for path in folder.glob("test*.py") if path.is_file())
+        folders.extend(sub for sub in folder.iterdir() if sub.is_dir() and (sub / "__init__.py").is_file())
+    if len(found) != len(set(found)):
+        raise SystemExit(f"test_shard: two test modules in {start} share a name; rename one")
+    return sorted(found)
 
 
 def load_weights(path: Path = WEIGHTS) -> dict[str, dict[str, float]]:

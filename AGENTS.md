@@ -39,7 +39,7 @@ make update-masters # regenerate docs/reference/audit-master.md and implement-ma
 One test, without the whole suite. Run the engine's tests from `audit/engine/`:
 
 ```bash
-python3 -m unittest tests.test_cmd_pack -k verbs
+python3 -m unittest tests.packs.cmd.test_cmd_pack -k verbs
 ```
 
 Run the tools' tests from the repository root:

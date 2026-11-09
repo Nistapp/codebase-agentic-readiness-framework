@@ -64,7 +64,7 @@ Agents MUST respect the following structural rules.
 | `audit/report/md_render.py` | Generic section/table renderer over the report dict. |
 | `audit/report/md_writer.py` | Thin file-facing Markdown writer over the model. |
 | `build.py` | Zipapp builder producing `dist/audit.pyz`. |
-| `tests/` | Stdlib `unittest` suite and fixtures. |
+| `tests/` | Stdlib `unittest` suite: cross-pack and pipeline tests at the top, one package per check pack under `tests/packs/<pack>/`, fixtures under `tests/fixtures/`. |
 
 ### 2.2 Hard boundary rules
 
@@ -171,7 +171,10 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 ## 6. Testing Standards
 
 - **Framework:** stdlib `unittest` (import from `unittest`, not `pytest`).
-- **Location:** `tests/`, mirroring the source layout; fixtures under `tests/fixtures/`.
+- **Location:** a check pack's tests go in its package, `tests/packs/<pack>/` (`agt`, `cmd`, `exec`, `tool`, ...);
+  cross-pack and pipeline tests (the fixture matrix, scan, report, CLI) and the `support` helpers stay in `tests/`;
+  fixtures under `tests/fixtures/`. A test module name is unique across the suite (CI's shards find a module by
+  name). Keep each folder at 50 files or fewer: the self-audit's `NAV-03` reads a larger one as a catch-all.
 - **Fixtures:** one directory per check id, each a minimal repository that fails **exactly one** check.
   The catalogue's § Adding a Check makes this a merge requirement: **no fixture, no check.**
 - **Positive fixture:** a freshly generated `python-agentic-bootstrap` scaffold, **generated in the test run,
