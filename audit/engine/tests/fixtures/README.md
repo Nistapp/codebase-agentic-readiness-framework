@@ -90,7 +90,9 @@ fixtures/
   tool-04-no-audit-verb/     node project, no dependency-audit verb -> TOOL-04 FAIL
   tool-05-unwired-hooks/     .husky/ present but never referenced   -> TOOL-05 PARTIAL
   tool-06-no-commit-rule/    wired hooks, no commit-message rule    -> TOOL-06 FAIL
-  tool-ok-node/              the smallest node repository passing every TOOL check
+  tool-06-local-only-commit-rule/  commit-msg hook, no CI step     -> TOOL-06 PARTIAL
+  tool-06-ci-only-commit-rule/     PR-title check in CI, no hook   -> TOOL-06 PARTIAL
+  tool-ok-node/              the smallest node repository passing every TOOL check (hook and CI step)
   ci-01-no-pr-trigger/       workflow without a pull-request trigger -> CI-01 PARTIAL
   ci-02-parity-break/        CI runs a framework verb with no local script -> CI-02 FAIL
   ci-03-ci-only-step/        CI runs `npm run deploy` with no local script -> CI-03 FAIL
