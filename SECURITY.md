@@ -25,5 +25,5 @@ This policy covers what this repository ships and runs:
 
 Examples of what we want to hear about: a tool that writes outside the places its documentation names, a recipe step
 that leads an agent to expose a secret or run a command the user did not approve, or a release asset that does not
-match its `SHA256SUMS`. Problems in the framework documents themselves (wrong or unsafe advice) are welcome as
-reports too.
+match its `SHA256SUMS` or fails `gh attestation verify`. Problems in the framework documents themselves (wrong or
+unsafe advice) are welcome as reports too.

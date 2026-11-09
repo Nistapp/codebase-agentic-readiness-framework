@@ -3,7 +3,8 @@
 #
 # The framework's command surface for this repository: seven verbs, the same names a human, an agent
 # and CI run. The runtime code is standard-library Python; the dev tools below are pinned in dev/tools/ and run
-# through uvx, so nothing is installed into the project. Needs make, git, python3 (3.11+) and uv.
+# through uvx or `go tool`, so nothing is installed into the project. Needs make, git, python3 (3.11+), uv and Go
+# (1.27+, for actionlint and osv-scanner); `make security` also needs the network.
 #
 #   make format         rewrite formatting in place
 #   make format:check   read-only: formatting and lint rules, and the ruff count against .quality-baseline.json
@@ -12,8 +13,9 @@
 #   make typecheck      mypy, strict, on the typed scope below
 #   make test           the engine's unittest suite, then the recipe tools' (the catalogue checks), then the dev checks'
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
-#                       cross-check, the recipe linter and the workflow lint
-#   make security       secrets scan against the committed baseline
+#                       cross-check, the recipe linter, the workflow lint and the spell check
+#   make security       secrets scan against the committed baseline, then the dependency audit (osv-scanner) of
+#                       the dev tools' lockfiles; needs Go and the network
 #   make coverage       (extra) both unittest suites under coverage.py; fails below the floor in .coveragerc
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
 #
@@ -44,11 +46,19 @@ SKILLS_REF := uvx --from skills-ref==$(call pin,skills-ref) agentskills
 MARKDOWNLINT := npx --yes markdownlint-cli2@$(call npm_pin,markdownlint-cli2)
 # The compare step of the quality baseline (.quality-baseline.json): fails when a tool's full-tree count goes up.
 QUALITY_BASELINE := $(PYTHON) dev/quality_baseline.py check
+# The lockfiles that `make security` audits: every dev tool, Python, Node and Go.
+DEP_LOCKFILES := dev/tools/uv.lock dev/tools/package-lock.json dev/tools/osv/go.mod dev/tools/actionlint/go.mod
 COVERAGE := uvx coverage@$(call pin,coverage)
 # Workflow and GitHub-config checks: actionlint (syntax, expressions, shellcheck on run: blocks), zizmor (workflow
-# and Dependabot security, offline) and check-jsonschema (the SchemaStore schemas it bundles, offline).
-ACTIONLINT := uvx --from actionlint-py==$(call pin,actionlint-py) actionlint
+# and Dependabot security, offline, at the pedantic persona: its help-level findings fail too) and check-jsonschema
+# (the SchemaStore schemas it bundles, offline).
+# actionlint is a Go `tool` in dev/tools/actionlint/go.mod: the Go module proxy serves it, go.sum checks it, and
+# Dependabot (gomod) sees the version. `go -C` runs it in that folder, so the workflows are passed by full path.
+ACTIONLINT := go -C dev/tools/actionlint tool actionlint
 ZIZMOR := uvx zizmor@$(call pin,zizmor)
+# The spell check: typos reads _typos.toml (the word list and the excluded data paths) from the repository root,
+# and walks the tracked files that .gitignore does not hide.
+TYPOS := uvx typos@$(call pin,typos)
 CHECK_JSONSCHEMA := uvx --from check-jsonschema==$(call pin,check-jsonschema) check-jsonschema
 # The coverage data stays under the git-ignored build output; settings (the floor) are in .coveragerc.
 COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
@@ -77,11 +87,11 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not 
 
 .DEFAULT_GOAL := help
 .NOTPARALLEL:
-.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint
+.PHONY: help setup format format-check format\:check lint typecheck test coverage verify-rules crosscheck recipe-lint check security update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  workflow-lint  commit-lint  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -91,7 +101,8 @@ setup:
 	@$(PYTHON) -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else "setup: Python 3.11 or newer is required (see .python-version)")'
 	@command -v uv >/dev/null || { echo "setup: uv is required (https://docs.astral.sh/uv/)" >&2; exit 1; }
 	@command -v git >/dev/null || { echo "setup: git is required" >&2; exit 1; }
-	@echo "setup: prerequisites present (python, uv, git); nothing to install"
+	@command -v go >/dev/null || { echo "setup: Go 1.27 or newer is required for make check and make security (https://go.dev/doc/install)" >&2; exit 1; }
+	@echo "setup: prerequisites present (python, uv, git, go); nothing to install"
 
 format:
 	$(RUFF) format audit implement dev
@@ -158,9 +169,16 @@ recipe-lint:
 	$(PYTHON) dev/recipe_lint.py .
 
 # Lints the GitHub Actions workflows and checks .github/dependabot.yml. All three tools run offline.
+# Read-only: report each misspelling with its file and line. `make spell-fix` writes the suggested fixes; review them.
+spell:
+	$(TYPOS)
+
+spell-fix:
+	$(TYPOS) --write-changes
+
 workflow-lint:
-	$(ACTIONLINT)
-	$(ZIZMOR) --offline .github
+	$(ACTIONLINT) $(CURDIR)/.github/workflows/*.yml
+	$(ZIZMOR) --offline --persona pedantic .github
 	$(CHECK_JSONSCHEMA) --builtin-schema vendor.github-workflows .github/workflows/*.yml
 	$(CHECK_JSONSCHEMA) --builtin-schema vendor.dependabot .github/dependabot.yml
 
@@ -170,12 +188,17 @@ RANGE ?= origin/dev..HEAD
 commit-lint:
 	$(PYTHON) dev/commit_lint.py --range $(RANGE)
 
-check: format-check typecheck test verify-rules crosscheck recipe-lint workflow-lint
+check: format-check typecheck test verify-rules crosscheck recipe-lint workflow-lint spell
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.
+# The dependency audit: osv-scanner, pinned in dev/tools/osv/go.mod (a Go `tool` directive, so Dependabot sees it),
+# reads the dev tools' lockfiles and fails on a known vulnerability that dev/tools/osv-scanner.toml does not accept.
+# --no-call-analysis=go: the module holds no Go code of its own, so govulncheck has nothing to analyse.
+# The audit engine's TOOL-04 reads this recipe and needs the tool name written out, not hidden in a variable.
 security:
 	git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline
+	go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))
 
 # Run this after a deliberate change to a fixture or test that holds a key-shaped string, then review the diff.
 update-secrets-baseline:

@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+#
+# The spell check (typos; `make spell`, part of `make check`). typos reads this file from the repository root.
+# Add a word here only when it is a project term or a code token, never to hide a real typo.
+# How to read the output: docs/reference/dev-tooling.md, "Spell check".
+
+[files]
+# Data, not prose: the engine's fixtures and the worked examples hold deliberate mistakes and third-party text.
+# CHANGELOG.md is written by release-please from commit subjects; fix a typo in the commit, not in the file.
+extend-exclude = [
+    "**/fixtures/**",
+    "**/testdata/**",
+    "audit/schema/examples/**",
+    "CHANGELOG.md",
+    "*.lock",
+    "package-lock.json",
+    "go.sum",
+    ".secrets.baseline",
+    ".audit-baseline.json",
+]
+
+[default.extend-words]
+# Each entry: the token, then why it is correct here.
+mis = "mis"                 # "mis-cased", the engine's term for AGENTS.md spelled agents.md
+unparseable = "unparseable" # a valid spelling, used in the check docs
+xdescribe = "xdescribe"     # the Jasmine and Mocha skip API that TST checks look for
+behaviou = "behaviou"       # the regex stem behaviou?r
+ignor = "ignor"             # a regex stem in dev/eval
+execut = "execut"           # a regex stem in dev/eval
+alls = "alls"               # "catch-alls"
+Jod = "Jod"                 # the Node 22 release line's codename
+caf = "caf"                 # "café", a test path with a Unicode escape
+directorys = "directorys"   # a possessive in test names: test_the_directorys_own_...
+repositorys = "repositorys" # a possessive in test names: test_..._this_repositorys_head_...

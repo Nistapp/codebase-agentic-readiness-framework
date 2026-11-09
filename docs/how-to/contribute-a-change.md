@@ -70,8 +70,8 @@ Do these steps once, on each new machine.
    git switch dev
    ```
 
-4. Optional: install the local hooks. They stop a commit on `dev` or `main`. They also run four checks: the
-   format check, the Markdown lint, the secrets scan and the commit message check:
+4. Optional: install the local hooks. They stop a commit on `dev` or `main`. They also run these checks: the
+   format check, the Markdown lint, the workflow lint, the spell check, the secrets scan and the commit message check:
 
    ```bash
    lefthook install

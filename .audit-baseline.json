@@ -129,13 +129,13 @@
             "verb": "test"
           },
           {
-            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint",
+            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint && make spell",
             "resolved": true,
             "runner": "Makefile",
             "verb": "check"
           },
           {
-            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline",
+            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline && go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))",
             "resolved": true,
             "runner": "Makefile",
             "verb": "security"
@@ -161,7 +161,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "21 boundary rules reference real paths",
+      "summary": "23 boundary rules reference real paths",
       "tier": "B",
       "title": "Architectural boundaries declared",
       "verdict": "PASS"
@@ -262,7 +262,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "45 markdown file(s) under docs/",
+      "summary": "46 markdown file(s) under docs/",
       "tier": "A",
       "title": "docs/ exists",
       "verdict": "PASS"
@@ -301,7 +301,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "6 ADR(s) indexed in docs/architecture/adrs/README.md",
+      "summary": "7 ADR(s) indexed in docs/architecture/adrs/README.md",
       "tier": "A",
       "title": "ADR directory and index",
       "verdict": "PASS"
@@ -343,13 +343,13 @@
             "verb": "test"
           },
           {
-            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint",
+            "command": "make format-check && make typecheck && make test && make verify-rules && make crosscheck && make recipe-lint && make workflow-lint && make spell",
             "resolved": true,
             "runner": "Makefile",
             "verb": "check"
           },
           {
-            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline",
+            "command": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline && go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))",
             "resolved": true,
             "runner": "Makefile",
             "verb": "security"
@@ -453,10 +453,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "security verb on Makefile runs no dependency audit (git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline)",
+      "summary": "security -> git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline && go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go --config=$(CURDIR)/dev/tools/osv-scanner.toml $(foreach f,$(DEP_LOCKFILES),--lockfile=$(CURDIR)/$(f))",
       "tier": "A",
       "title": "Dependency / security scan verb",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -492,7 +492,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "PR-triggered: .github/workflows/ci.yml (github); .github/workflows/pr-source-branch.yml (github)",
+      "summary": "PR-triggered: .github/workflows/ci.yml (github); .github/workflows/codeql.yml (github); .github/workflows/pr-source-branch.yml (github)",
       "tier": "B",
       "title": "Pipeline present, triggered on PRs",
       "verdict": "PASS"
@@ -531,7 +531,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "github: local actionlint (Makefile), actionlint (dev/tools/pyproject.toml), check-jsonschema (Makefile), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI none",
+      "summary": "github: local actionlint (.audit-baseline.json), actionlint (Makefile), actionlint (dev/tools/actionlint/go.mod), check-jsonschema (Makefile), zizmor (.audit-baseline.json), zizmor (Makefile), zizmor (dev/tools/pyproject.toml), CI actionlint (.github/workflows/ci.yml), zizmor (.github/workflows/ci.yml)",
       "tier": "B",
       "title": "Workflow files are linted",
       "verdict": "PASS"
@@ -595,9 +595,12 @@
           "Makefile",
           "audit/engine/",
           "AGENTS.md",
+          "_typos.toml",
           ".python-version",
           "dev/tools/pyproject.toml",
           "dev/tools/package.json",
+          "dev/tools/osv/go.mod",
+          "dev/tools/actionlint/go.mod",
           "lefthook.yml",
           "dev",
           ".github/",
@@ -657,7 +660,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, lefthook.yml, dev (+44 more)",
+      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, _typos.toml, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod (+47 more)",
       "tier": "B",
       "title": "Allow/deny artifact present",
       "verdict": "PASS"
@@ -718,10 +721,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "pinned: node (.nvmrc); python (.python-version)",
+      "summary": "unpinned: go",
       "tier": "A",
       "title": "Toolchain pinned / wrapper committed",
-      "verdict": "PASS"
+      "verdict": "FAIL"
     },
     {
       "data": {},
@@ -731,7 +734,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "consistency unverified: dev/tools/package-lock.json, dev/tools/uv.lock",
+      "summary": "consistency unverified: dev/tools/actionlint/go.sum, dev/tools/package-lock.json, dev/tools/uv.lock",
       "tier": "B",
       "title": "Lockfile committed and consistent",
       "verdict": "PARTIAL"
@@ -816,7 +819,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 87 test file(s)",
+      "summary": "test verb on Makefile (cd $(ENGINE) && $(PYTHON) -m unittest discover -s tests && $(PYTHON) -m unittest discover -s audit/tools/tests && $(PYTHON) -m unittest discover -s implement/tools/tests && $(PYTHON) -m unittest discover -s dev/tests); 88 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -849,7 +852,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 87 test file(s): python 1; total 1",
+      "summary": "skip/xfail census across 88 test file(s): python 1; total 1",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -934,10 +937,10 @@
     },
     {
       "data": {
-        "denominator": 1182,
+        "denominator": 1189,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 472,
+        "numerator": 477,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -946,33 +949,33 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "472/1182 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
+      "summary": "477/1189 public symbols documented (40%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
     },
     {
       "data": {
-        "covered": [],
-        "kind": "secret_shapes",
-        "missing": [],
-        "root_only": [
+        "covered": [
           "dotenv",
           "dotenv variant"
         ],
+        "kind": "secret_shapes",
+        "missing": [],
+        "root_only": [],
         "shapes": [
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv",
             "probe": ".env",
-            "root_only": true,
+            "root_only": false,
             "suggested": ".env"
           },
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv variant",
             "probe": ".env.local",
-            "root_only": true,
+            "root_only": false,
             "suggested": ".env.*"
           }
         ]
@@ -983,10 +986,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "no tracked .env, but ignore rules are incomplete: root-anchored only: dotenv, dotenv variant (the rule covers the root, not nested files such as `a/.env`)",
+      "summary": "no tracked .env and ignore rules cover the shape",
       "tier": "B",
       "title": ".env untracked and ignored",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {
@@ -1027,6 +1030,8 @@
     {
       "data": {
         "covered": [
+          "dotenv",
+          "dotenv variant",
           "ssh private key",
           "PEM",
           "key",
@@ -1039,23 +1044,20 @@
         ],
         "kind": "secret_shapes",
         "missing": [],
-        "root_only": [
-          "dotenv",
-          "dotenv variant"
-        ],
+        "root_only": [],
         "shapes": [
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv",
             "probe": ".env",
-            "root_only": true,
+            "root_only": false,
             "suggested": ".env"
           },
           {
-            "covered": false,
+            "covered": true,
             "label": "dotenv variant",
             "probe": ".env.local",
-            "root_only": true,
+            "root_only": false,
             "suggested": ".env.*"
           },
           {
@@ -1129,10 +1131,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "covered: ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials; root-anchored only: dotenv, dotenv variant (the rule covers the root, not nested files such as `a/.env`)",
+      "summary": "covered: dotenv, dotenv variant, ssh private key, PEM, key, PKCS#12, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials",
       "tier": "B",
       "title": "Ignore patterns cover secret shapes",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -1290,55 +1292,14 @@
   ],
   "findings": [
     {
-      "check": "SEC-01",
-      "evidence": [
-        {
-          "line": null,
-          "note": "__pycache__",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "*.py[cod]",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".mypy_cache",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".ruff_cache",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/dev/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/audit/engine/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "*.pyz",
-          "path": ".gitignore"
-        }
-      ],
-      "id": "SEC-01",
+      "check": "EXEC-01",
+      "evidence": [],
+      "id": "EXEC-01:go",
       "phase": 1,
-      "remediation": "Add the .env shape without a leading slash (for example `.env` and `.env.*`) to .gitignore so an environment file cannot be committed by accident, at any depth.",
+      "remediation": "Commit the pin appropriate to go \u2014 .tool-versions \u2014 so the agent's runtime is the repository's, not the host's.",
       "severity": "BLOCKER",
-      "statement": "An agent cannot trust that a future .env stays out of history because ignore rules are incomplete (root-anchored only: dotenv, dotenv variant (the rule covers the root, not nested files such as `a/.env`)).",
-      "verdict": "PARTIAL"
+      "statement": "An agent cannot reproduce the go toolchain because the detected go project pins no toolchain version.",
+      "verdict": "FAIL"
     },
     {
       "check": "BASE-02",
@@ -1401,86 +1362,19 @@
       "severity": "DEGRADER",
       "statement": "An agent cannot know which config wins for each concern because 1 concern(s) have more than one config: types (mypy.ini, pyrightconfig.json).",
       "verdict": "FAIL"
-    },
-    {
-      "check": "SEC-03",
-      "evidence": [
-        {
-          "line": null,
-          "note": "__pycache__",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "*.py[cod]",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".mypy_cache",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": ".ruff_cache",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/dev/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/audit/engine/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "/dist",
-          "path": ".gitignore"
-        },
-        {
-          "line": null,
-          "note": "*.pyz",
-          "path": ".gitignore"
-        }
-      ],
-      "id": "SEC-03",
-      "phase": 1,
-      "remediation": "Add the missing shapes to .gitignore \u2014 for example `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.keystore`, `id_rsa*`, `*.crt`, `*.cer`, `.aws/*`.",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot trust that secret shapes cannot be committed because ignore rules are incomplete (root-anchored only: dotenv, dotenv variant (the rule covers the root, not nested files such as `a/.env`)).",
-      "verdict": "PARTIAL"
-    },
-    {
-      "check": "TOOL-04",
-      "evidence": [
-        {
-          "line": null,
-          "note": "git ls-files -z | xargs -0 $(DETECT_SECRETS_HOOK) --baseline .secrets.baseline",
-          "path": "Makefile"
-        }
-      ],
-      "id": "TOOL-04",
-      "phase": 1,
-      "remediation": "Make the security verb run a dependency audit (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, snyk).",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot know whether a dependency carries a known vulnerability because a security verb exists but it does not run a dependency-audit check.",
-      "verdict": "PARTIAL"
     }
   ],
   "inventory": {
-    "files_inspected": 342,
-    "files_set_aside": 467,
-    "files_skipped": 3,
+    "files_inspected": 352,
+    "files_set_aside": 463,
+    "files_skipped": 7,
     "set_aside": [
       {
         "files": 3,
         "path": "audit/engine/examples"
       },
       {
-        "files": 280,
+        "files": 277,
         "path": "audit/engine/tests/fixtures"
       },
       {
@@ -1500,7 +1394,7 @@
         "path": "docs/templates"
       },
       {
-        "files": 39,
+        "files": 38,
         "path": "greenfield/templates"
       }
     ],
@@ -1551,15 +1445,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "e0693eb82c2b975e579e53ceff19849da09ceccc",
-    "git_branch": "feat/v0.3.3-track-b-mcp",
-    "git_dirty": false,
-    "git_sha": "e0693eb82c2b975e579e53ceff19849da09ceccc",
+    "framework_revision": "d6ba4cb0af8e785f4096bbdf9e8d89eeeb6c6d95",
+    "git_branch": "chore/v0.3.3-track-a-tooling",
+    "git_dirty": true,
+    "git_sha": "d6ba4cb0af8e785f4096bbdf9e8d89eeeb6c6d95",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "04e5d0ff9063e012",
     "ruleset_revision": "2026-11-09.1",
-    "scanned_at": "2026-11-09T06:52:56+00:00",
+    "scanned_at": "2026-11-09T07:49:24+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {
@@ -1574,6 +1468,7 @@
       "github"
     ],
     "ecosystems": [
+      "go",
       "node",
       "python"
     ],
@@ -1582,6 +1477,7 @@
     ],
     "notes": [],
     "package_managers": [
+      "gomod",
       "npm",
       "uv"
     ],
@@ -1591,9 +1487,9 @@
     "blockers": 1,
     "checks": {
       "attest": 0,
-      "fail": 1,
-      "partial": 6,
-      "pass": 59,
+      "fail": 2,
+      "partial": 3,
+      "pass": 61,
       "unknown": 4
     },
     "checks_applicable": 70,
@@ -1601,8 +1497,8 @@
     "checks_scoreable": 56,
     "cosmetic": 0,
     "coverage_note": "56 of 56 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
-    "degraders": 4,
-    "phase1_score": 0.879
+    "degraders": 2,
+    "phase1_score": 0.8831
   },
   "unattested": [
     "index-in-use",

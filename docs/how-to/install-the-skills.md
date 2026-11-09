@@ -10,6 +10,7 @@
 
 - [ ] Python 3.11 or newer on `PATH`
 - [ ] `curl` (or a browser), `unzip` and `sha256sum` (on macOS: `shasum -a 256`)
+- [ ] Optional, for Step 2b: the [GitHub CLI](https://cli.github.com/) (`gh`). This page was checked with 2.102.0
 
 The quicker path is a clone: see the quick start in the root [`README.md`](../../README.md). Use this page when you
 want the skills inside another project instead.
@@ -33,6 +34,25 @@ sha256sum --ignore-missing -c SHA256SUMS
 
 Expect `OK` for each zip. On macOS, use `shasum -a 256 --ignore-missing -c SHA256SUMS`. Do not use a zip that fails
 this check.
+
+## Step 2b (optional): Check the build provenance
+
+The checksums prove that a file was not damaged. The build provenance also proves that the file was built by this
+repository's release workflow, from the tag you picked.
+
+1. Also download `<tag>.sigstore.json` from the release page.
+2. Run this command for each zip. Replace `<tag>` with the tag, for example `v0.3.3`:
+
+   ```bash
+   gh attestation verify agentic-readiness-audit-<tag>.zip \
+     --repo Nistapp/codebase-agentic-readiness-framework \
+     --source-ref refs/tags/<tag> \
+     --bundle <tag>.sigstore.json
+   ```
+
+The command exits with 0 when the file passes. Do not use a file that fails. With `--bundle`, you do not need a
+GitHub login. Without it, `gh` fetches the attestation from GitHub and asks you to run `gh auth login` first.
+Releases up to v0.3.2 have no provenance.
 
 ## Step 3: Unzip into the skills folder
 
