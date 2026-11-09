@@ -228,9 +228,9 @@ Can an agent find the code, the rules and the documents it needs before it edits
 `COSMETIC` · scored · engine check · fixed by [`establish-docs-contract`](implement-master.md#establish-docs-contract)
 
 - **Passes when:** every pass level holds.
-- **Why it matters:** An agent reads the docs to learn the repository and writes more of them; long sentences and vague
-  words cost the next reader time, and a flow with no diagram is slow to follow ([greenfield/README.md § 5.2 Templates &
-  Guides](../../greenfield/README.md#52-templates--guides)).
+- **Why it matters:** An agent reads the docs to learn the repository, and it writes more of them. Long sentences and
+  vague words cost the next reader time. A flow with no diagram is slow to follow ([greenfield/README.md § 5.2 Templates
+  & Guides](../../greenfield/README.md#52-templates--guides)).
 
 ### Navigation (NAV)
 

@@ -139,8 +139,8 @@ The instruction file MUST consist of instructions that are specific to the repos
 
 ### REQ-SH-060 — Communication rules stated
 
-The instruction file SHOULD state how agents write for people, in a section of its own or in a rules file it links:
-who the reader is, how an agent reports its work, and how it asks a person for a decision.
+The instruction file SHOULD state how agents write for people. The rules name who the reader is, how an agent
+reports its work, and how it asks a person for a decision. They sit in a section of the file or in a file it links.
 
 - **Phase:** 1
 - **Verification:** automated
