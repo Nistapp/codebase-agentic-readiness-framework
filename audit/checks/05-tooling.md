@@ -131,24 +131,30 @@ Engine           `TOOL-04`. Resolves every verb on every runner and tests each r
                  Tier C, opt-in only). On the root `Makefile` a verb is followed the way Make runs it:
                  simple variables are expanded (`$(OSV)`, `${OSV}`), and each prerequisite target and each
                  `make <target>` or `$(MAKE) <target>` line is read in turn; a cycle ends the walk, and a
-                 `make -C`/`-f` call into another Makefile is not followed. Any resolved verb matching is
-                 `PASS`; a `security` verb that resolves
-                 to something else is `PARTIAL`; no match at all, with a recognised ecosystem or runner, is
-                 `FAIL`. Distrust a `FAIL` or `PARTIAL` when the audit tool used is one the pattern list
-                 does not yet name — verify by reading the resolved command directly.
+                 `make -C`/`-f` call into another Makefile is not followed. CI is read too: a workflow line
+                 that runs a scanner, a runner target whose command runs one (`make security-deps`,
+                 `npm run security`), a scanner action (`google/osv-scanner-action`,
+                 `actions/dependency-review-action`, `aquasecurity/trivy-action`, `snyk/actions`,
+                 `anchore/scan-action`, `pypa/gh-action-pip-audit`), or GitLab's Dependency-Scanning
+                 template. A local verb and a CI step is `PASS`; one of the two is `PARTIAL`; a `security`
+                 verb that resolves to something else, with no CI step, is `PARTIAL`; no match at all, with
+                 a recognised ecosystem or runner, is `FAIL`. Distrust a `FAIL` or `PARTIAL` when the audit
+                 tool used is one the pattern list does not yet name — verify by reading the resolved command directly.
 Method           automated
 Look for         Every verb's resolved command text, not only `security`'s — the audit invocation can sit
-                 on any verb the runner exposes.
-Rubric           PASS: at least one resolved verb's command matches a known dependency-audit invocation.
-                 PARTIAL: a `security` verb resolves but its command does not match any known audit
-                 invocation.
-                 FAIL: no verb resolves to a dependency-audit invocation and the repository has a
-                 recognised ecosystem or runner manifest.
+                 on any verb the runner exposes — and every CI workflow line.
+Rubric           PASS: at least one resolved verb's command matches a known dependency-audit invocation,
+                 and a CI step runs a dependency audit.
+                 PARTIAL: only a local verb, or only CI, runs a dependency audit; or a `security` verb
+                 resolves but runs no known audit and CI runs none.
+                 FAIL: neither a verb nor CI runs a dependency audit and the repository has a recognised
+                 ecosystem or runner manifest.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no recognised ecosystem, runner manifest or dependency-audit verb exists, so
                  a dependency scan cannot be ruled out.
-Evidence to cite A `command` evidence item citing the matching verb and its resolved command text, or, for
-                 `PARTIAL`, the `security` verb's own non-matching command.
+Evidence to cite A `command` evidence item citing the matching verb and its resolved command text, and a
+                 `file` item for the CI line; for `PARTIAL`, the half that was found and the files searched
+                 for the other.
 Absence proof    A FAIL cites every runner manifest read as the evidence that no verb on any of them
                  resolves to a known dependency-audit invocation.
 Remediation      `configure-quality-tools`
@@ -157,7 +163,11 @@ Pitfalls         The audit tool does not have to live on the `security` verb by 
                  resolved command before concluding the repository has no dependency scan at all. The
                  Makefile walk does not read a variable set by a function (`$(shell ...)`, `$(call ...)`),
                  an included file, the environment, or a script the recipe calls; read those by hand
-                 before you accept a `PARTIAL`.
+                 before you accept a `PARTIAL`. Dependabot and Renovate open update pull requests; they do
+                 not audit, so they never count as the CI half (`HYG-09` owns them). The engine only reads
+                 text and stays offline; the target's own `security` verb may need the network, which is
+                 fine because `security` is not part of `check`. Whether the CI job runs on pull requests
+                 is not read.
 
 ## TOOL-05 — Local hook chain active
 

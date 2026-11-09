@@ -103,6 +103,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "tool-03-nonstrict-ts": {"TOOL-03": "PARTIAL"},
     "tool-04-no-audit-verb": {"TOOL-04": "FAIL"},
     "tool-04-make-security-no-audit": {"TOOL-04": "PARTIAL"},
+    "tool-04-local-only-audit": {"TOOL-04": "PARTIAL"},
     "tool-05-unwired-hooks": {"TOOL-05": "PARTIAL"},
     "tool-06-no-commit-rule": {"TOOL-06": "FAIL"},
     "tool-06-local-only-commit-rule": {"TOOL-06": "PARTIAL"},
@@ -151,6 +152,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-05-generated": {"EXEC-05": "FAIL"},
     "exec-06-broken-command": {"EXEC-06": "FAIL"},
     "exec-07-dual-lint": {"EXEC-07": "FAIL"},
+    "exec-07-dual-python-types": {"EXEC-07": "FAIL"},
     "exec-08-inline-version": {"EXEC-08": "FAIL"},
     "exec-08-duplicate-pin": {"EXEC-08": "PARTIAL"},
     "exec-ok": {

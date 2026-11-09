@@ -117,7 +117,7 @@ suspicious verdict.
 | `TOOL-01` | Formatter configured | B | DEGRADER | A formatter config file and a resolvable write verb | Implemented |
 | `TOOL-02` | Linter configured | B | DEGRADER | A linter config file and a resolvable read-only verb | Implemented |
 | `TOOL-03` | Type checker configured | A | DEGRADER | Language-appropriate strict configuration (`tsconfig`, `mypy`/`pyright`, `global.json` nullable settings, etc.) | Implemented |
-| `TOOL-04` | Dependency / security scan verb | A | DEGRADER | A resolvable verb performing a dependency-audit check | Implemented |
+| `TOOL-04` | Dependency / security scan verb | A | DEGRADER | A resolvable verb performing a dependency-audit check, and a CI step that runs one | Implemented |
 | `TOOL-05` | Local hook chain active | B | DEGRADER | Hook manager configured and wired (`core.hooksPath`, `.pre-commit-config.yaml`, `lefthook.yml`) | Implemented |
 | `TOOL-06` | Commit convention enforced | A | COSMETIC | A commit-message rule runs in a local `commit-msg` stage and in CI | Implemented |
 | `TOOL-07` | Local guard against commits to a protected branch | B | COSMETIC | A wired `pre-commit` or `commit-msg` hook refuses a commit on each branch the declared rules protect | Implemented |
@@ -173,7 +173,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `EXEC-04` | Env-var inventory complete | B | BLOCKER | Set difference of env keys referenced in source against keys in the committed example file | Implemented |
 | `EXEC-05` | No generated artifacts committed in-tree | B | DEGRADER | Generated or vendored paths are either untracked or carry a generated-file header | Implemented |
 | `EXEC-06` | Documented commands resolve | B | DEGRADER | Every fenced command in README and `AGENTS.md` resolves to a real script, verb, or file | Implemented |
-| `EXEC-07` | No competing configs for one concern | B | DEGRADER | At most one authoritative config per concern (lint, format, test, types) | Implemented |
+| `EXEC-07` | No competing configs for one concern | B | DEGRADER | At most one authoritative config per concern (lint, format, test, types per language, security); a pyright config that mirrors the mypy gate is not a competitor | Implemented |
 | `EXEC-08` | Tool versions visible to dependency automation | B | DEGRADER | No literal tool version in a command, workflow or hook (`FAIL`), or only copies of a manifest pin (`PARTIAL`) | Implemented |
 
 ---

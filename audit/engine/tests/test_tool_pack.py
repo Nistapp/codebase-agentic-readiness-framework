@@ -30,6 +30,7 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "tool-03-nonstrict-ts": ("TOOL-03", "PARTIAL"),
     "tool-04-no-audit-verb": ("TOOL-04", "FAIL"),
     "tool-04-make-security-no-audit": ("TOOL-04", "PARTIAL"),
+    "tool-04-local-only-audit": ("TOOL-04", "PARTIAL"),
     "tool-05-unwired-hooks": ("TOOL-05", "PARTIAL"),
     "tool-06-no-commit-rule": ("TOOL-06", "FAIL"),
     "tool-06-local-only-commit-rule": ("TOOL-06", "PARTIAL"),

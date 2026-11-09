@@ -253,7 +253,7 @@
         "REQ-SH-060"
       ],
       "engine_id": "AGT-12",
-      "since_ruleset": "2026-11-09.10",
+      "since_ruleset": "2026-11-10.1",
       "playbooks": [
         "adapt-agents-md"
       ]
@@ -339,7 +339,7 @@
         "REQ-SH-061"
       ],
       "engine_id": "DOC-05",
-      "since_ruleset": "2026-11-10.1",
+      "since_ruleset": "2026-11-10.2",
       "playbooks": [
         "establish-docs-contract"
       ]

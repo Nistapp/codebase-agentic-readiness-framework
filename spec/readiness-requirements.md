@@ -276,7 +276,7 @@ Where the language has a type checker, the repository MUST configure it in stric
 - **Checks:** TOOL-03
 
 ### REQ-SH-030 — Dependency vulnerability scan
-The `security` verb MUST run a dependency vulnerability scan.
+The `security` verb MUST run a dependency vulnerability scan, and CI SHOULD run the same scan.
 
 - **Phase:** 1
 - **Verification:** automated

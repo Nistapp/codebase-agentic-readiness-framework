@@ -135,7 +135,7 @@
             "verb": "check"
           },
           {
-            "command": "make security-secrets && go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)",
+            "command": "make security-secrets && make security-deps",
             "resolved": true,
             "runner": "Makefile",
             "verb": "security"
@@ -161,7 +161,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "23 boundary rules reference real paths",
+      "summary": "21 boundary rules reference real paths",
       "tier": "B",
       "title": "Architectural boundaries declared",
       "verdict": "PASS"
@@ -349,7 +349,7 @@
             "verb": "check"
           },
           {
-            "command": "make security-secrets && go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)",
+            "command": "make security-secrets && make security-deps",
             "resolved": true,
             "runner": "Makefile",
             "verb": "security"
@@ -453,7 +453,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "security -> make security-secrets && go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)",
+      "summary": "security -> make security-secrets && make security-deps; runs `go -C dev/tools/osv tool osv-scanner scan source --no-call-analysis=go $(foreach f,dev/tools/uv.lock dev/tools/package-lock.json dev/tools/osv/go.mod dev/tools/actionlint/go.mod,--lockfile=$(CURDIR)/$(f))` (target security-deps); CI: .github/workflows/ci.yml:196 name: security-deps (osv-scanner); .github/workflows/ci.yml:207 security-deps (go -C dev/tools/osv tool osv-scanner $(OSV_SCAN_ARGS)); .github/workflows/release.yml:105 security (make security-secrets && make security-deps)",
       "tier": "A",
       "title": "Dependency / security scan verb",
       "verdict": "PASS"
@@ -824,10 +824,10 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "competing configs: types (mypy.ini, pyrightconfig.json)",
+      "summary": "lint: ruff.toml; types (Python): mypy.ini; pyrightconfig.json mirrors mypy.ini for a language server (typecheck runs mypy)",
       "tier": "B",
       "title": "No competing configs for one concern",
-      "verdict": "FAIL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -850,7 +850,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile ($(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)); 99 test file(s)",
+      "summary": "test verb on Makefile ($(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)); 101 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -883,7 +883,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 99 test file(s): python 1; total 1",
+      "summary": "skip/xfail census across 101 test file(s): python 1; total 1",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -968,10 +968,10 @@
     },
     {
       "data": {
-        "denominator": 1275,
+        "denominator": 1293,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 524,
+        "numerator": 531,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -980,7 +980,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "524/1275 public symbols documented (41%); method: python: module-level def/class not starting with '_'",
+      "summary": "531/1293 public symbols documented (41%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1362,32 +1362,11 @@
       "severity": "DEGRADER",
       "statement": "An agent cannot state how many violations exist today because a counting surface exists but no numeric violation budget or count is committed.",
       "verdict": "PARTIAL"
-    },
-    {
-      "check": "EXEC-07",
-      "evidence": [
-        {
-          "line": null,
-          "note": null,
-          "path": "mypy.ini"
-        },
-        {
-          "line": null,
-          "note": null,
-          "path": "pyrightconfig.json"
-        }
-      ],
-      "id": "EXEC-07",
-      "phase": 1,
-      "remediation": "Keep one authoritative config per concern and document any deliberate delegation, or delete the redundant config.",
-      "severity": "DEGRADER",
-      "statement": "An agent cannot know which config wins for each concern because 1 concern(s) have more than one config: types (mypy.ini, pyrightconfig.json).",
-      "verdict": "FAIL"
     }
   ],
   "inventory": {
-    "files_inspected": 371,
-    "files_set_aside": 503,
+    "files_inspected": 374,
+    "files_set_aside": 529,
     "files_skipped": 7,
     "set_aside": [
       {
@@ -1395,7 +1374,7 @@
         "path": "audit/engine/examples"
       },
       {
-        "files": 307,
+        "files": 329,
         "path": "audit/engine/tests/fixtures"
       },
       {
@@ -1403,7 +1382,7 @@
         "path": "audit/schema/examples"
       },
       {
-        "files": 104,
+        "files": 107,
         "path": "dev/eval/expected/fixtures"
       },
       {
@@ -1411,7 +1390,7 @@
         "path": "dev/eval/implement-fixtures/testdata"
       },
       {
-        "files": 5,
+        "files": 6,
         "path": "docs/templates"
       },
       {
@@ -1441,15 +1420,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "f2ff3bda8424f74ac9010b26d7757855a65b081d",
-    "git_branch": "fix/v0.3.3-exec01-tool04-nested",
+    "framework_revision": "73fa46b328828bed4b2904b2280c80b69a793228",
+    "git_branch": "fix/v0.3.3-exec07-language-server-mirror",
     "git_dirty": false,
-    "git_sha": "f2ff3bda8424f74ac9010b26d7757855a65b081d",
+    "git_sha": "73fa46b328828bed4b2904b2280c80b69a793228",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "a8fd206cd924e86a",
-    "ruleset_revision": "2026-11-09.8",
-    "scanned_at": "2026-11-09T15:41:36+00:00",
+    "ruleset_revision": "2026-11-09.11",
+    "scanned_at": "2026-11-09T22:41:56+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {
@@ -1483,9 +1462,9 @@
     "blockers": 0,
     "checks": {
       "attest": 0,
-      "fail": 1,
+      "fail": 0,
       "partial": 3,
-      "pass": 64,
+      "pass": 65,
       "unknown": 4
     },
     "checks_applicable": 72,
@@ -1493,8 +1472,8 @@
     "checks_scoreable": 58,
     "cosmetic": 0,
     "coverage_note": "58 of 58 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
-    "degraders": 2,
-    "phase1_score": 0.9094
+    "degraders": 1,
+    "phase1_score": 0.9252
   },
   "unattested": [
     "index-in-use",

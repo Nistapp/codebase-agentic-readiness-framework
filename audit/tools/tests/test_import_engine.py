@@ -748,11 +748,11 @@ NEWER_TOOL_07 = (
     "UNKNOWN; scan again with a newer engine"
 )
 NEWER_AGT_12 = (
-    "AGT-12: the engine's ruleset 2026-09-28.13 is older than the check (2026-11-09.10), so it is recorded as "
+    "AGT-12: the engine's ruleset 2026-09-28.13 is older than the check (2026-11-10.1), so it is recorded as "
     "UNKNOWN; scan again with a newer engine"
 )
 NEWER_DOC_05 = (
-    "DOC-05: the engine's ruleset 2026-09-28.13 is older than the check (2026-11-10.1), so it is recorded as "
+    "DOC-05: the engine's ruleset 2026-09-28.13 is older than the check (2026-11-10.2), so it is recorded as "
     "UNKNOWN; scan again with a newer engine"
 )
 #: The checks newer than the raw reports' ruleset, in catalogue order.

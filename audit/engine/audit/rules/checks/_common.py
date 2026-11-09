@@ -16,6 +16,8 @@ It exists only to answer questions more than one pack asks. The ones that motiva
   shell blocks (``extract_fenced_commands``);
 * **"where is the prohibitions section?"** — AGT-07, CON-01 and CON-02 all read it
   (``prohibitions_section``), so heading detection cannot drift between them;
+* **"what does a Makefile verb run, through variables and prerequisites?"** — TOOL-04 looks for a dependency
+  audit and EXEC-07 for the type checker the ``typecheck`` verb runs (``follow_makefile``);
 * **"which branches do the declared rules protect?"** — HYG-11 reads the branch rules declared as code, and the
   local guard and the instruction file are compared with the same list (``declared_branch_rules``).
 
@@ -27,6 +29,7 @@ from __future__ import annotations
 import json
 import re
 import shlex
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from audit.ignore import IgnoreDecision, IgnoreRule, decide, load_scoped_rules, tracked_files
@@ -37,6 +40,7 @@ from audit.stack import (
     VERBS,
     MakeError,
     Stack,
+    _logical_lines,
     extract_npm_scripts,
     parse_makefile,
     parse_makefile_targets,
@@ -675,6 +679,78 @@ def _parse_maven_plugins(text: str, inventory: Inventory) -> dict[str, str]:
 def _maven_lifecycle(inventory: Inventory) -> dict[str, str]:
     launcher = _launcher(inventory, "mvnw", "mvn")
     return {verb: f"{launcher} {phase}" for verb, phase in _MAVEN_LIFECYCLE_PHASES}
+
+
+# ---------------------------------------------------------------------------
+# what a Makefile verb runs, followed the way Make runs it
+# ---------------------------------------------------------------------------
+
+#: A simple Make assignment: ``NAME = value``, ``:=``, ``::=``, ``?=`` or ``+=``, optionally ``export``/``override``.
+_MAKE_ASSIGN_RE = re.compile(r"^(?:(?:export|override)\s+)*([A-Za-z_][A-Za-z0-9_.-]*)\s*(:{1,3}=|\?=|\+=|=)\s*(.*)$")
+#: A reference to a simple variable: ``$(NAME)`` or ``${NAME}``. ``$(call ...)`` and other functions are not.
+_MAKE_REF_RE = re.compile(r"\$[({]([A-Za-z_][A-Za-z0-9_.-]*)[)}]")
+#: A recipe line that runs another target of the same Makefile: ``make x`` or ``$(MAKE) x``, flags first.
+_MAKE_CALL_RE = re.compile(r"(?:^|[\s;&|(])(?:make|\$[({]MAKE[)}])((?:\s+-\S+)*)\s+([A-Za-z0-9_.\\:-]+)")
+_MAKE_EXPANSION_PASSES = 8
+
+
+def _makefile_variables(text: str) -> dict[str, str]:
+    """The simple variables a Makefile assigns outside a recipe, in file order (``?=`` keeps a first value)."""
+    variables: dict[str, str] = {}
+    for _number, line in _logical_lines(text):
+        if line.startswith("\t"):
+            continue
+        match = _MAKE_ASSIGN_RE.match(line.strip())
+        if not match:
+            continue
+        name, operator, value = match.groups()
+        if operator == "?=" and name in variables:
+            continue
+        variables[name] = f"{variables.get(name, '')} {value}".strip() if operator == "+=" else value.strip()
+    return variables
+
+
+def _expand_make(text: str, variables: dict[str, str]) -> str:
+    """``text`` with each known simple variable replaced, a bounded number of times; unknown ones are kept."""
+    for _ in range(_MAKE_EXPANSION_PASSES):
+        expanded = _MAKE_REF_RE.sub(lambda m: variables.get(m.group(1), m.group(0)), text)
+        if expanded == text:
+            break
+        text = expanded
+    return text
+
+
+def follow_makefile(inventory: Inventory, command: str, matches: Callable[[str], bool]) -> tuple[str, str] | None:
+    """Follow a root-Makefile verb's ``command`` the way Make runs it: simple variables expanded, prerequisites and
+    ``make <target>`` / ``$(MAKE) <target>`` lines read in turn, cycles ended, ``make -C``/``-f`` not followed.
+    Return ``(target, expanded line)`` for the first line ``matches`` accepts (``target`` is ``""`` for the verb's
+    own line), else ``None``. TOOL-04 asks it for a dependency audit, EXEC-07 for the type checker."""
+    parsed = parse_makefile(inventory)
+    if parsed.errors or not parsed.rules:
+        return None
+    variables = _makefile_variables(inventory.read("Makefile") or "")
+    pending: list[tuple[str, str]] = [("", step) for step in command.split(" && ")]
+    seen: set[str] = set()
+    while pending:
+        where, line = pending.pop(0)
+        expanded = _expand_make(line, variables)
+        if matches(expanded):
+            return where, expanded
+        for flags, name in _MAKE_CALL_RE.findall(expanded):
+            name = name.replace("\\:", ":")
+            if any(
+                flag in ("-C", "-f", "--file", "--directory")
+                or flag.startswith(("-C", "-f", "--directory=", "--file="))
+                for flag in flags.split()
+            ):
+                continue
+            rule = parsed.rules.get(name)
+            if rule is None or name in seen:
+                continue
+            seen.add(name)
+            pending.extend((name, f"make {p}") for p in rule.prerequisites if p in parsed.rules)
+            pending.extend((name, step) for step in rule.recipe)
+    return None
 
 
 # ---------------------------------------------------------------------------
