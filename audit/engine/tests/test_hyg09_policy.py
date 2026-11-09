@@ -20,6 +20,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
 
+from audit.rules.checks.hyg import check_hyg09 as CHECK  # noqa: E402
+from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
+from audit.scan import build_inventory  # noqa: E402
+from audit.stack import detect_stack  # noqa: E402
+
+CHECK_ID = "HYG-09"
+
 PACKAGE_JSON = '{"name": "x", "version": "0.1.0", "private": true}\n'
 WORKFLOW = (
     "name: CI\non: [pull_request]\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n      - run: make check\n"
@@ -37,14 +44,25 @@ def entry(ecosystem: str, *extra: str) -> str:
 
 class Hyg09PolicyTests(unittest.TestCase):
     def check(self, files: dict[str, str]) -> dict:
+        """Run the check in-process (so coverage traces it) on a repository built from ``files``."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             for rel, text in files.items():
                 support.write(root, rel, text)
-            report = support.run_audit(root)
-        check = next(c for c in report["checks"] if c["id"] == "HYG-09")
-        check["findings"] = [f for f in report.get("findings", []) if f["check"] == "HYG-09"]
-        return check
+            inventory = build_inventory(root)
+            outcome = CHECK(
+                spec=REGISTRY_BY_ID[CHECK_ID],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+        return {
+            "verdict": outcome.verdict.value,
+            "summary": outcome.summary,
+            "findings": [finding.to_dict() for finding in outcome.findings],
+        }
 
     def test_every_ecosystem_covered_passes(self):
         check = self.check(

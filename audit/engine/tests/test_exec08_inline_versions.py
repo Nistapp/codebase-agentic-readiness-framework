@@ -19,6 +19,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
 
+from audit.rules.checks.execution import check_exec08 as CHECK  # noqa: E402
+from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
+from audit.scan import build_inventory  # noqa: E402
+from audit.stack import detect_stack  # noqa: E402
+
+CHECK_ID = "EXEC-08"
+
 MAKE_HEAD = "check:\n"
 
 
@@ -28,14 +35,25 @@ def make(*recipe: str) -> str:
 
 class Exec08Tests(unittest.TestCase):
     def check(self, files: dict[str, str]) -> dict:
+        """Run the check in-process (so coverage traces it) on a repository built from ``files``."""
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             for rel, text in files.items():
                 support.write(root, rel, text)
-            report = support.run_audit(root)
-        check = next(c for c in report["checks"] if c["id"] == "EXEC-08")
-        check["findings"] = [f for f in report.get("findings", []) if f["check"] == "EXEC-08"]
-        return check
+            inventory = build_inventory(root)
+            outcome = CHECK(
+                spec=REGISTRY_BY_ID[CHECK_ID],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+        return {
+            "verdict": outcome.verdict.value,
+            "summary": outcome.summary,
+            "findings": [finding.to_dict() for finding in outcome.findings],
+        }
 
     def tools(self, check: dict) -> list[str]:
         return sorted(e["note"] for f in check["findings"] for e in f["evidence"])
