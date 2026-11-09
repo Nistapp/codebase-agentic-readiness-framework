@@ -65,7 +65,7 @@ can carry workflow files that never invoke a build verb (see Pitfalls), so prese
 build gate. The idiomatic job is `actions/checkout`, `actions/setup-java` with `distribution` and
 `java-version` pinned, Gradle's own dependency cache (`actions/setup-java`'s `cache: gradle` input, or
 `gradle/actions/setup-gradle`), then `./gradlew check` (never a bare `gradle check`, which bypasses the
-pinned wrapper version).
+pinned wrapper version). Workflow lint (`CI-05`): actionlint from a Gradle task, `.githooks/` or lefthook.
 
 ## Baseline / ratchet
 

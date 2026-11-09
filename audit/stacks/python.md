@@ -48,6 +48,7 @@ actually acts on, not just which file exists. The matching lockfile (`poetry.loc
 GitHub Actions is the common provider: `actions/checkout`, `actions/setup-python` with `python-version`
 pinned to `requires-python`/`.python-version`, the matching manager's own cache (`setup-python`'s
 `cache: pip`, or `astral-sh/setup-uv`/`cache: poetry` for the others), then the project's `check` target.
+Workflow lint (`CI-05`): actionlint or zizmor as pre-commit hooks (or `uvx zizmor` in a target), run in CI too.
 
 ## Baseline / ratchet
 

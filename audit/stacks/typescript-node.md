@@ -60,7 +60,8 @@ GitHub Actions is the provider seen in all three repositories: `actions/checkout
 `actions/setup-node` with `node-version` pinned to the same major as `engines.node` and `cache: npm`
 (or the matching `pnpm`/`yarn` cache key), then `npm ci`, then `npm run check` (or the repository's own
 `check` script) as the one gate job calls. A matrix across `ubuntu-latest`/`macos-latest`/
-`windows-latest` was seen in one repository (§Verified) and is a strong signal, not a requirement.
+`windows-latest` was seen in one repository (§Verified) and is a strong signal, not a requirement. Workflow
+lint (`CI-05`): a `lint:workflows` script running actionlint, called from the Husky pre-commit hook and in CI.
 
 ## Baseline / ratchet
 
