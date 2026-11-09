@@ -53,7 +53,8 @@ The rules are in [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md) sections 2 a
 - **Define a term on first use,** or link it to [`docs/glossary.md`](glossary.md).
 - **Keep a page to one topic.** When a page grows past about 300 lines, split it.
 
-`make docs-lint` runs the prose check. Section 6 says which pages must be clean.
+`make docs-prose FILES=<file.md>` runs the prose check. It reports warnings and notices and never fails.
+CI shows them as annotations on the pull request.
 
 ## 4. Format
 
@@ -95,13 +96,14 @@ Paths are relative to `docs/`.
 | Tool | What it checks | Where it must be clean |
 |---|---|---|
 | `markdownlint-cli2` | Markdown format | `DOCS_LINT_PATHS` in the `Makefile` |
-| `dev/prose_check.py` | Sentence length, vague words, diagrams on explanation pages | `PROSE_PATHS` in the `Makefile` |
+| `dev/prose_check.py` | Sentence length, vague words, diagrams on explanation pages | Nowhere: advisory warnings and notices |
 | `dev/mermaid_check.py` | Each Mermaid block renders | The files you pass to `make docs-mermaid` |
 | `dev/recipe_lint.py` | Links resolve inside the repository | Recipes, `docs/` and the root pages |
 
-Both path lists are ratchets: a page joins once it is clean, and the lists only grow. Outside the lists, the
-total count of issues may not go up (`.quality-baseline.json`). When you edit a page outside the lists, fix its
-issues and add it to the list.
+`DOCS_LINT_PATHS` is a ratchet: a page joins once it is clean, and the list only grows. Outside the list, the
+total count of Markdown issues may not go up (`.quality-baseline.json`). When you edit a page outside the list, fix
+its issues and add it to the list. The prose check has no list and no count. Fix its warnings on the lines you
+edit.
 
 ## 7. Agents writing docs
 

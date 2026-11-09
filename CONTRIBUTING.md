@@ -48,6 +48,7 @@ Run these before you propose a change. CI runs the same commands.
 | `make commit-lint` | Checks that each commit subject on your branch follows Conventional Commits (`RANGE=origin/dev..HEAD` by default). CI runs the same check on every pull request |
 | `make security` | A secrets scan against `.secrets.baseline` |
 | `make docs-lint` | Markdown lint over the ratchet path list in the `Makefile`. Run it when Markdown changed |
+| `make docs-prose FILES=<file.md>` | The plain-language check from [`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md). Advisory: it prints warnings and notices and never fails. Fix the warnings on the lines you changed |
 | `make docs-mermaid FILES=<file.md>` | Renders every Mermaid block in the files. Run it when you added or changed one |
 | `make coverage` | The engine's and the tools' suites under coverage.py; fails below the floor in `.coveragerc`. The floor only goes up |
 | `make self-audit` | The engine on this repository against `.audit-baseline.json`; exit 2 on a regression. See [Self-Audit](docs/reference/self-audit.md) |
