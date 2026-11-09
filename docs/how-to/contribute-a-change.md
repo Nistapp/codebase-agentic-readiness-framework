@@ -70,14 +70,17 @@ Do these steps once, on each new machine.
    git switch dev
    ```
 
-4. Optional: install the local hooks. They stop a commit on `dev` or `main`. They also run four checks: the
-   format check, the Markdown lint, the secrets scan and the commit message check:
+4. Optional: install the local hooks. They stop a commit on `dev` or `main`. They also run these checks: the
+   format check, the Markdown lint, the workflow lint, the spell check, the secrets scan and the commit message check:
 
    ```bash
    lefthook install
    ```
 
    Get `lefthook` from [lefthook.dev](https://lefthook.dev). The hooks do not replace the gates in CI.
+
+5. Optional: give your coding agent the code index. Your agent offers this once, before its first edit. To do it
+   yourself, follow [Set up the agent tools](set-up-agent-tools.md). No gate needs it.
 
 ---
 

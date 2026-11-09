@@ -23,6 +23,9 @@ pre-commit:
     workflow-lint:
       glob: ".github/**"
       run: make workflow-lint
+    spell:
+      # typos on the staged files; _typos.toml holds the word list and the excluded data paths.
+      run: uvx "typos@$(sed -n 's/^ *"typos==\([^"]*\)".*/\1/p' dev/tools/pyproject.toml)" --force-exclude {staged_files}
     secrets:
       # The version is the one pinned in dev/tools/pyproject.toml, where Dependabot sees it.
       run: uvx --from "$(grep -o 'detect-secrets==[^"]*' dev/tools/pyproject.toml)" detect-secrets-hook --baseline .secrets.baseline {staged_files}  # pragma: allowlist secret

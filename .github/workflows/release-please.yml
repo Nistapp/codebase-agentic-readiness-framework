@@ -37,9 +37,9 @@ jobs:
     name: release-please
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      issues: write
-      pull-requests: write
+      contents: write # create the tag and the GitHub release
+      issues: write # create the release labels that release-please uses
+      pull-requests: write # open and update the release pull request
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
@@ -71,7 +71,7 @@ jobs:
     if: needs.release-please.outputs.prs_created == 'true' && needs.release-please.outputs.pr_branch != ''
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # push the markdownlint fix of CHANGELOG.md to the release branch
     steps:
       - name: Make a GitHub App token
         id: app-token
@@ -115,14 +115,15 @@ jobs:
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     permissions:
-      actions: write
+      actions: write # start release.yml with a workflow dispatch
     steps:
       - name: Start release.yml for the new tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.release-please.outputs.tag_name }}
         run: |
-          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref main -f "tag=$TAG"
+          # --ref is the tag, not main: the build provenance that release.yml signs names this ref and its commit.
+          gh workflow run release.yml --repo "$GITHUB_REPOSITORY" --ref "$TAG" -f "tag=$TAG"
           echo "Started release.yml for $TAG. Watch it: gh run list --workflow Release --limit 1"
 
   back-merge:
@@ -131,8 +132,8 @@ jobs:
     if: needs.release-please.outputs.release_created == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
+      contents: write # create the back-merge branch
+      pull-requests: write # open its pull request into dev
     steps:
       - name: Make a GitHub App token
         id: app-token

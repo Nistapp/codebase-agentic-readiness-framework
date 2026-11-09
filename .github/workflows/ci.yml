@@ -2,6 +2,7 @@
 # Copyright (C) 2026 K. C. Ramakrishna
 #
 # CI runs the same verbs a human or agent runs locally (see the Makefile): `make check` and `make security`.
+# `make security` needs the network: its dependency audit (osv-scanner) queries osv.dev.
 # Python 3.11 is the supported minimum and 3.14 the newest release (Q8); Windows is supported through WSL only.
 # The `docs` job runs `make docs-lint` and the Mermaid check when a Markdown file changed; it needs Node, so it
 # stays out of `make check` and the matrix. It also annotates the prose of the changed files, which never fails.
@@ -40,6 +41,11 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: dev/tools/pyproject.toml
+      # Go builds actionlint (`make workflow-lint`) from dev/tools/actionlint/go.mod, through the Go module proxy.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: dev/tools/actionlint/go.mod
+          cache-dependency-path: dev/tools/actionlint/go.sum
       - run: make check
 
   security:
@@ -56,6 +62,11 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           version-file: dev/tools/pyproject.toml
+      # Go builds osv-scanner, the dependency audit in `make security`, from dev/tools/osv/go.mod.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: dev/tools/osv/go.mod
+          cache-dependency-path: dev/tools/osv/go.sum
       - run: make security
 
   # The engine's and the recipe tools' suites under coverage.py; fails below the floor in .coveragerc.
@@ -169,13 +180,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Require check, security, coverage, self-audit, docs and commits to have succeeded
+        # The results come in through env, never expanded into the script (zizmor: template-injection).
+        env:
+          check: ${{ needs.check.result }}
+          security: ${{ needs.security.result }}
+          coverage: ${{ needs.coverage.result }}
+          self_audit: ${{ needs.self-audit.result }}
+          docs: ${{ needs.docs.result }}
+          commits: ${{ needs.commits.result }}
         run: |
-          check="${{ needs.check.result }}"
-          security="${{ needs.security.result }}"
-          coverage="${{ needs.coverage.result }}"
-          self_audit="${{ needs.self-audit.result }}"
-          docs="${{ needs.docs.result }}"
-          commits="${{ needs.commits.result }}"
           echo "check: $check"
           echo "security: $security"
           echo "coverage: $coverage"

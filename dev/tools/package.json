@@ -4,7 +4,7 @@
   "description": "The Node dev tools of this repository, as exact versions. Nothing installs this file: the Makefile and dev/mermaid_check.py read each version from here and run the tool through npx. It exists so that Dependabot (the npm entry for /dev/tools in .github/dependabot.yml) sees the tools and, through package-lock.json, their dependencies. After a change, run `npm install --package-lock-only --ignore-scripts` in dev/tools. dev/tests/test_tool_pins.py checks that every version is exact.",
   "license": "AGPL-3.0-or-later",
   "devDependencies": {
-    "@mermaid-js/mermaid-cli": "12.0.0",
+    "@mermaid-js/mermaid-cli": "12.2.0",
     "markdownlint-cli2": "0.24.0"
   }
 }
