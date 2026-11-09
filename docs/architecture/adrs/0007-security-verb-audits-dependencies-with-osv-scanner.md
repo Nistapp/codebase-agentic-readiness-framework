@@ -34,10 +34,12 @@ version updates. Three have no fix that reaches this repository and are accepted
    tagged release; `go.sum` holds the checksums. `go -C dev/tools/osv tool osv-scanner` builds and runs it. The
    version is written once, and Dependabot's `gomod` entry sees it, under the policy of ADR 0003.
 3. **A known vulnerability fails the gate.** osv-scanner exits non-zero, so `make security` and `CI Gate` fail.
-4. **Exceptions are reviewed and expire.** [`dev/tools/osv-scanner.toml`](../../../dev/tools/osv-scanner.toml)
-   lists each accepted vulnerability with an `id`, a `reason` and an `ignoreUntil` date at most six months ahead.
+4. **Exceptions are reviewed and expire.** An `osv-scanner.toml` next to the lockfiles it covers
+   ([`dev/tools/osv-scanner.toml`](../../../dev/tools/osv-scanner.toml), `dev/tools/osv/osv-scanner.toml`) lists each
+   accepted vulnerability with an `id`, a `reason` and an `ignoreUntil` date at most six months ahead.
    [`test_tool_pins.py`](../../../dev/tests/test_tool_pins.py) checks the format and the six-month limit. When the
-   date passes, the scan fails again.
+   date passes, the scan fails again. `make security` passes no `--config`, so osv-scanner reads these files the way
+   OpenSSF Scorecard does.
 5. **No offline switch.** `make security` needs the network (osv.dev). CI has it; a contributor without it cannot
    run the gate.
 6. **Contributors need Go 1.27 or newer.** `make setup` checks for it. Since 2026-11-09 actionlint is a Go tool

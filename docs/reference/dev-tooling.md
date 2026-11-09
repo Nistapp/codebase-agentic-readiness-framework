@@ -31,7 +31,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | The audit engine | A readiness finding that `.audit-baseline.json` does not have | `make self-audit` | `self-audit` | This repository |
 | actions/attest | Signs build provenance for the release files; users check it with `gh attestation verify` ([Install the skills](../how-to/install-the-skills.md#step-2b-optional-check-the-build-provenance)) | — | `release.yml`, release only | `.github/workflows/release.yml` (action pinned by SHA) |
 | CodeQL | Security flaws in the Python code and the workflows. Advisory: alerts go to the Security tab ([Code scanning](branch-protection.md#code-scanning)) | — | `codeql.yml`, outside `CI Gate` | `.github/workflows/codeql.yml` (action pinned by SHA) |
-| OpenSSF Scorecard | Weak security practices of the repository (Branch-Protection, Pinned-Dependencies, Token-Permissions, Signed-Releases, ...). Advisory: alerts go to the Security tab; results are not published ([Code scanning](branch-protection.md#code-scanning)) | — | `scorecard.yml`, on push to `dev` and weekly | `.github/workflows/scorecard.yml` (action pinned by SHA) |
+| OpenSSF Scorecard | Weak security practices of the repository (Branch-Protection, Pinned-Dependencies, Token-Permissions, Signed-Releases, ...). Advisory: alerts go to the Security tab; the score is published on scorecard.dev and in the README badge ([Scorecard alerts](branch-protection.md#scorecard-alerts)) | — | `scorecard.yml`, on push to `dev` and weekly | `.github/workflows/scorecard.yml` (action pinned by SHA) |
 | release-please | Computes the next version from the commit subjects, writes `CHANGELOG.md`, tags and creates the GitHub release (`release-please-config.json`) | — | `release-please.yml`, on each push to `main` | `.github/workflows/release-please.yml` (action pinned by SHA) |
 | uv | Runs the Python tools through `uvx` and `uv run` | — | All jobs | `dev/tools/pyproject.toml` |
 | Node | Runs the Node tools through `npx` | — | `docs` | `.nvmrc` |
@@ -61,13 +61,18 @@ To fix a finding, do one of these:
 dev-tool lockfiles (Python, Node and each Go tool module) and asks osv.dev for known vulnerabilities. It needs Go
 1.27 or newer and the network. The first run builds osv-scanner, which takes about 30 seconds.
 
-The scan fails when it finds a vulnerability that [`dev/tools/osv-scanner.toml`](../../dev/tools/osv-scanner.toml)
-does not accept. The output has one table row per vulnerability: the OSV link, the package, its version, the fixed
-version and the lockfile. To fix a finding, do one of these:
+The scan fails when it finds a vulnerability that no `osv-scanner.toml` accepts. Each ignore file covers the
+lockfiles in its own folder: [`dev/tools/osv-scanner.toml`](../../dev/tools/osv-scanner.toml) for `uv.lock` and
+`package-lock.json`, and `dev/tools/<tool>/osv-scanner.toml` for a Go tool module. OpenSSF Scorecard reads the same
+files, so an accepted vulnerability raises no Scorecard alert either.
+
+The output has one table row per vulnerability: the OSV link, the package, its version, the fixed version and the
+lockfile. To fix a finding, do one of these:
 
 1. Raise the tool or the dependency to the fixed version. Follow
    [Change a tool version](../../RELEASE_PROCESS.md#change-a-tool-version).
-2. If no fix reaches this repository, add an entry to `osv-scanner.toml`. Give the `id` and a `reason`.
+2. If no fix reaches this repository, add an entry to the `osv-scanner.toml` next to the lockfile. Give the `id` and
+   a `reason`.
    Set `ignoreUntil` to a date at most six months ahead. `dev/tests/test_tool_pins.py` checks the entry.
 
 When an `ignoreUntil` date passes, the scan fails again. Look at the advisory again, then fix or renew it.

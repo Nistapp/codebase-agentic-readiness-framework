@@ -1,5 +1,7 @@
 # Codebase Agentic Readiness Framework
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Nistapp/codebase-agentic-readiness-framework/badge)](https://scorecard.dev/viewer/?uri=github.com/Nistapp/codebase-agentic-readiness-framework)
+
 > *"The more you sweat in peace, the less you bleed in war."* Preparing a codebase for AI coding agents is the sweat;
 > agents changing it from user prompts is the war.
 
