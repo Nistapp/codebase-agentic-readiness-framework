@@ -6,7 +6,7 @@
   },
   "recipe": {
     "name": "brownfield-implement",
-    "version": "0.2.0-dev",
+    "version": "0.3.2",
     "framework_rev": "cafecafecafecafecafecafecafecafecafecafe"
   },
   "source_reports": [

@@ -257,11 +257,10 @@ def _finding_order(finding_id: str) -> tuple[int, str]:
     return (int(digits) if digits.isdigit() else 0, finding_id)
 
 
-def framework_revision() -> str | None:
-    """HEAD of the framework checkout this tool runs from, read with git; None when it is not a git checkout."""
+def _framework_git(*args: str) -> str | None:
     try:
         done = subprocess.run(
-            ["git", "-C", str(FRAMEWORK_ROOT), "rev-parse", "HEAD"],
+            ["git", "-C", str(FRAMEWORK_ROOT), *args],
             capture_output=True,
             text=True,
             timeout=GIT_TIMEOUT_S,
@@ -269,8 +268,20 @@ def framework_revision() -> str | None:
         )
     except (OSError, subprocess.SubprocessError):
         return None
-    sha = done.stdout.strip()
-    return sha if done.returncode == 0 and re.fullmatch(r"[0-9a-f]{40}", sha) else None
+    return done.stdout.strip() if done.returncode == 0 else None
+
+
+def framework_revision() -> str | None:
+    """HEAD of the framework checkout this tool runs from; None when it is not one.
+
+    `FRAMEWORK_ROOT` must be the top of the git working tree. An installed bundle inside another repository is in a
+    working tree too, but that tree's HEAD is the other repository's commit, not the framework's.
+    """
+    top = _framework_git("rev-parse", "--show-toplevel")
+    if top is None or Path(top).resolve() != FRAMEWORK_ROOT.resolve():
+        return None
+    sha = _framework_git("rev-parse", "HEAD")
+    return sha if sha is not None and re.fullmatch(r"[0-9a-f]{40}", sha) else None
 
 
 def build_state(
@@ -399,6 +410,7 @@ def run_init(args: Any) -> _common.Result:
         )
     report = validate_report.read_report(report_file)
     outcome = validate_report.validate_document(report)
+    validate_report.refuse_unknown_schema(outcome)
     if outcome.errors:
         raise _common.ValidationFailed(
             f"the report is not valid: {len(outcome.errors)} errors; run validate_report.py on it",
@@ -408,6 +420,7 @@ def run_init(args: Any) -> _common.Result:
         raise _common.ValidationFailed(
             f"the report is a {report['status']}, not final", hint="finalise it first with: report.py finalise"
         )
+    versions, version_warnings = validate_report.compare_versions(report, RECIPE_VERSION, framework_revision())
     label = report["provenance"]["target"]["label"]
     json_name, md_name = state_names(label)
     directory = state_directory(target)
@@ -436,9 +449,12 @@ def run_init(args: Any) -> _common.Result:
     _common.atomic_write_text(json_path, encode_state(state))
     _common.atomic_write_text(md_path, render(state))
     counts = status_counts(state)
-    warnings = [f"removed {swept} temporary files an interrupted write left in {directory}"] if swept else []
+    warnings = [*version_warnings]
+    if swept:
+        warnings.append(f"removed {swept} temporary files an interrupted write left in {directory}")
     return _common.Result(
         data={
+            "versions": versions,
             "state": str(json_path),
             "markdown": str(md_path),
             "label": label,

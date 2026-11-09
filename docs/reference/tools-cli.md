@@ -131,7 +131,7 @@ rule 6: /checks/6: TOOL-03 overrides the engine's PARTIAL with PASS and gives no
 schema: /checks/1/verdict: expected one of ["PASS", "PARTIAL", "FAIL", "UNKNOWN", "NOT_APPLICABLE"]
 ```
 
-The tool checks in two stages. The first applies the schema, and a report that fails it is returned with its schema errors alone, up to 500. The second applies the rules, only to a report that passed the first, because the rules read fields the schema guarantees. Errors come in rule order, then in the order of the document. An error names the place with a JSON Pointer and never repeats the value it found, so a credential in a quote does not travel into the list.
+The tool checks in three stages. The first reads `schema_version`. A report with another version than the schema's gets one plain error that names both versions and what to do: run a new audit (an older report), or update the framework (a newer one). Then it applies the schema, and a report that fails it is returned with its schema errors alone, up to 500. The second applies the rules, only to a report that passed the first, because the rules read fields the schema guarantees. Errors come in rule order, then in the order of the document. An error names the place with a JSON Pointer and never repeats the value it found, so a credential in a quote does not travel into the list.
 
 **Exit codes**
 
@@ -149,6 +149,7 @@ The tool checks in two stages. The first applies the schema, and a report that f
 | `rule 1: ...` to `rule 12: ...` | The rule is in [Rules beyond the schema](../../audit/schema/SCHEMA.md#rules-beyond-the-schema). The message says which item to change. |
 | `rule 10: /summary/...: the report says X and its checks and findings give Y` | The summary is stale. It is never edited by hand: the report builder, [`report.py`](#reportpy), recomputes it on every change, so the report was changed outside the builder. Y is the correct number. |
 | `rule 11: ... it looks like a credential` | Shorten the quote or the output tail, or leave it out. The patterns are the engine's, so a line such as `token: abc` is flagged even when it is not a secret. |
+| `the report has schema 'X' (made by framework vY); these tools read schema 'Z'. ...` | The report and these tools come from releases with different report schemas. The message says what to do; there is no conversion. |
 | `schema: /path: ...` | The pointer names the field. The schema is [`audit-report.schema.json`](../../audit/schema/audit-report.schema.json). |
 | `the file is not a report: ...` | The file is not one JSON document that this tool accepts. |
 
@@ -840,7 +841,8 @@ python3 implement/tools/progress.py --describe
 **Outputs**
 
 `init` writes the JSON and the Markdown and puts their paths, the label, the item count, the count per status and
-the `not_queued` count in `data`. `show` puts the summary in `data`: counts per status and per theme (`items` and
+the `not_queued` count in `data`, with `versions` as [`check_drift.py`](#check_driftpy) gives it. `show` puts
+the summary in `data`: counts per status and per theme (`items` and
 `open`, which is neither `done` nor `skipped`), the skipped finding ids, and the number of preferences, debt
 entries and log entries. `show --json` puts the state under `data.state`. `render` writes the Markdown and puts
 its path and size in `data`. Every other command checks the changed state whole, appends one log entry, replaces
@@ -853,7 +855,7 @@ warning.
 |---|---|
 | `0` | Done. |
 | `1` | A bad argument, a missing report or target, a report outside the target, an existing state for `init`, no state for `show` or `render`, a state folder that leaves the target, or a state file that is a symlink. |
-| `2` | The report is invalid, not final, or has a finding on a check with no theme; or the state fails the schema or its rules. `data.errors` lists what to fix. |
+| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules. `data.errors` lists what to fix. |
 | `3` | Internal error, including a write the system refused. The old file is left whole. |
 
 **Errors**
@@ -861,6 +863,7 @@ warning.
 | Message | Fix |
 |---|---|
 | `the report is a draft, not final` | Finalise it with `report.py finalise` and pass the final report. |
+| `the report was made by framework vX; these tools are vY. Update the framework ...` | The report is newer than these tools. Install release vX or later of both skills, or run a new audit with vY. |
 | `the report must be inside the target, so the state can point at it` | Commit the report folder to the target and pass that path. |
 | `a state already exists: ...; init never replaces one` | Use `show`, `render` and the transition commands. |
 | `F-nnn is done and done is final` | A regression is a new finding in the next audit. |
@@ -918,6 +921,12 @@ change the status or the exit code:
   compare: the target has no state, the state predates the digest (schema `0.1`), or the state does not list this
   report.
 
+- `versions` compares the framework release and commit that made the report with these tools'. It holds
+  `report` and `tools`, each with `release` and `revision` (12 digits, or `null` outside a checkout), and
+  `relation`: `same`, `older` or `newer`. `older` gives a warning that verdicts can differ between releases, and a
+  note in the text output. With the same release at two known commits, a warning names both. A `newer` report stops
+  the tool with exit 2: these tools may not know its checks.
+
 When the audited commit is not an ancestor of `HEAD`, the diff is
 between the two trees and a warning says so. Long lists are bounded: `changed_paths_omitted` and
 `findings_omitted` count what was left out, and `truncated` is `true`.
@@ -928,7 +937,7 @@ between the two trees and a warning says so. Long lists are bounded: `changed_pa
 |---|---|
 | `0` | Done, whatever the status. Read `data.status`. |
 | `1` | A bad argument, a missing report or target, or a target that is not a git repository. |
-| `2` | The report is not valid; `data.errors` lists what to fix. |
+| `2` | The report is not valid, or it comes from a newer framework release than these tools; `data.error` says what to do. |
 | `3` | Internal error. |
 
 ## compare_reports.py

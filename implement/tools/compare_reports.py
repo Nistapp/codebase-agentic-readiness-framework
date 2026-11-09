@@ -240,6 +240,7 @@ def _counts_text(values: Mapping[str, int]) -> str:
 def read_valid(path: str, which: str) -> Any:
     document = validate_report.read_report(Path(path).expanduser(), f"{which} report")
     outcome = validate_report.validate_document(document)
+    validate_report.refuse_unknown_schema(outcome)
     if outcome.errors:
         count = len(outcome.errors)
         raise _common.ValidationFailed(

@@ -417,6 +417,7 @@ def read_valid_report(path: Path, *, when: str) -> dict[str, Any]:
     """The report at `path`, draft or final, which must be valid. `when` says what the caller was about to do."""
     document = vr.read_report(path, "draft")
     outcome = vr.validate_document(document)
+    vr.refuse_unknown_schema(outcome)
     if outcome.errors:
         count = len(outcome.errors)
         raise _common.ValidationFailed(

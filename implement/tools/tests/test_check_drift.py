@@ -40,10 +40,43 @@ class CheckDriftTests(unittest.TestCase):
         self.audited = _git.run_git(self.repo, "rev-parse", "HEAD")
         self.report_path = base / "report.json"
 
-    def write_report(self, sha: str | None) -> None:
+    def write_report(self, sha: str | None, release: str | None = None) -> None:
         report = json.loads(REPORT.read_text(encoding="utf-8"))
         report["provenance"]["target"]["git_sha"] = sha
+        if release is not None:
+            report["provenance"]["framework"]["release"] = release
         self.report_path.write_text(json.dumps(report), encoding="utf-8")
+
+    def test_the_versions_of_the_report_and_the_tools_are_in_the_data(self) -> None:
+        self.write_report(self.audited)
+        code, envelope, _ = self.run_tool()
+        self.assertEqual(code, 0)
+        versions = envelope["data"]["versions"]
+        self.assertEqual(versions["report"]["release"], "0.3.2")
+        self.assertEqual(versions["tools"]["release"], progress.RECIPE_VERSION)
+        self.assertIn(versions["relation"], ("same", "older", "newer"))
+
+    def test_a_report_from_an_older_release_warns_and_goes_on(self) -> None:
+        self.write_report(self.audited, release="0.0.1")
+        code, envelope, stderr = self.run_tool()
+        self.assertEqual(code, 0)
+        self.assertEqual(envelope["data"]["versions"]["relation"], "older")
+        self.assertTrue(any("made by framework v0.0.1" in warning for warning in envelope["warnings"]))
+        self.assertIn("the report is from an older framework release", stderr)
+
+    def test_a_report_from_a_newer_release_stops(self) -> None:
+        self.write_report(self.audited, release="99.0.0")
+        code, envelope, _ = self.run_tool()
+        self.assertEqual(code, 2)
+        self.assertIn("Update the framework to v99.0.0 or later", envelope["data"]["error"])
+
+    def test_a_report_with_another_schema_stops_with_the_plain_message(self) -> None:
+        report = json.loads(REPORT.read_text(encoding="utf-8"))
+        report["schema_version"] = "0.1"
+        self.report_path.write_text(json.dumps(report), encoding="utf-8")
+        code, envelope, _ = self.run_tool()
+        self.assertEqual(code, 2)
+        self.assertTrue(envelope["data"]["error"].startswith("the report has schema '0.1'"))
 
     def commit(self, name: str, text: str) -> None:
         (self.repo / name).parent.mkdir(parents=True, exist_ok=True)

@@ -42,15 +42,17 @@ The report is committed on the integration branch at
 `source_reports[].sha256`; `check_drift.py` recomputes it and reports `report_changed` when the file was edited
 since. A state made before schema `0.2` has no digest, and `report_changed` is then `null`, not `false`.
 
-`init` records the framework commit it ran from in `recipe.framework_rev`, read with `git` from the folder that
-holds the tools. From an installed skill that folder is not a framework checkout: `init` then records the commit of
-any git repository the skills folder sits in, or `null` when there is none. Pass `--framework-rev <commit>` with the
+`init` records the framework commit it ran from in `recipe.framework_rev`, read with `git` from the folder above
+the tools, but only when that folder is the top of a git working tree. From an installed skill it is not, even when
+the skills folder sits inside another repository, so `init` records `null`. Pass `--framework-rev <commit>` with the
 framework release's commit when you know it.
 
-`init` refuses a report that is not final or that `validate_report.py` rejects, a report outside the target, and an
-existing state. It queues confirmed and edited findings (an edited finding's note goes into `notes`), imports a
-finding the owner deferred during the audit as `deferred` with the owner's note as its reason, and lists rejected
-findings as `not_queued`. Each item gets the theme of its check from the table in the tool.
+`init` refuses a report that is not final or that `validate_report.py` rejects, a report from a newer framework
+release than the tools, a report outside the target, and an existing state. A report from an older release gives a
+warning; `data.versions` holds both releases and commits. It queues confirmed and edited findings (an edited
+finding's note goes into `notes`), imports a finding the owner deferred during the audit as `deferred` with the
+owner's note as its reason, and lists rejected findings as `not_queued`. Each item gets the theme of its check
+from the table in the tool.
 
 ## Item statuses
 

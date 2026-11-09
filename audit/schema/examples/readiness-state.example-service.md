@@ -9,7 +9,7 @@ A skipped finding is final until the owner unskips it, and every preference bind
 | Field | Value |
 |---|---|
 | Default branch | `main` |
-| Recipe | brownfield-implement 0.2.0-dev, framework `cafecafecafecafecafecafecafecafecafecafe` |
+| Recipe | brownfield-implement 0.3.2, framework `cafecafecafecafecafecafecafecafecafecafe` |
 | Source report | `docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json` at `deadbeefdeadbeefdeadbeefdeadbeefdeadbeef`, catalogue 0.4.0 |
 
 ## Summary

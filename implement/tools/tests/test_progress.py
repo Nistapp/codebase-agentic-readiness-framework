@@ -24,6 +24,7 @@ from typing import Any, Sequence
 from unittest import mock
 
 import _implement_paths
+import _git
 import _common
 import progress
 
@@ -42,7 +43,7 @@ MD_NAME = "example-service-agentic-readiness-STATE.md"
 EXAMPLE_ARGS = ("--date", "2026-10-29", "--framework-rev", "cafecafecafecafecafecafecafecafecafecafe")
 # The recipe version it was made with. release-please bumps `progress.RECIPE_VERSION` each release; the checked-in
 # example keeps the version that made it, the same way it keeps its date.
-EXAMPLE_RECIPE_VERSION = "0.2.0-dev"
+EXAMPLE_RECIPE_VERSION = "0.3.2"
 
 
 def call(argv: Sequence[str]) -> tuple[int, dict[str, Any], str]:
@@ -120,7 +121,38 @@ class ContractTests(unittest.TestCase):
         self.assertEqual((code, envelope["ok"]), (1, False))
 
 
+class FrameworkRevisionTests(unittest.TestCase):
+    def test_a_bundle_inside_another_repository_has_no_framework_revision(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            project = Path(tmp).resolve() / "project"
+            _git.make_repo(project)
+            bundle = project / ".claude" / "skills" / "agentic-readiness-implement"
+            bundle.mkdir(parents=True)
+            with mock.patch.object(progress, "FRAMEWORK_ROOT", bundle):
+                self.assertIsNone(progress.framework_revision())
+            with mock.patch.object(progress, "FRAMEWORK_ROOT", project):
+                self.assertEqual(progress.framework_revision(), _git.run_git(project, "rev-parse", "HEAD"))
+
+
 class InitTests(TargetCase):
+    def with_release(self, release: str) -> None:
+        report = json.loads(self.report.read_text(encoding="utf-8"))
+        report["provenance"]["framework"]["release"] = release
+        self.report.write_text(json.dumps(report), encoding="utf-8")
+
+    def test_init_refuses_a_report_from_a_newer_release_and_writes_nothing(self) -> None:
+        self.with_release("99.0.0")
+        code, envelope, _ = self.init(*EXAMPLE_ARGS)
+        self.assertEqual(code, 2)
+        self.assertIn("Update the framework to v99.0.0 or later", envelope["data"]["error"])
+        self.assertFalse(self.state_dir.exists())
+
+    def test_init_warns_about_a_report_from_an_older_release(self) -> None:
+        self.with_release("0.0.1")
+        envelope = self.init_ok()
+        self.assertEqual(envelope["data"]["versions"]["relation"], "older")
+        self.assertTrue(any("made by framework v0.0.1" in warning for warning in envelope["warnings"]))
+
     def test_init_stamps_the_release_version(self) -> None:
         self.init_ok()
         state = json.loads(self.json_path.read_text(encoding="utf-8"))

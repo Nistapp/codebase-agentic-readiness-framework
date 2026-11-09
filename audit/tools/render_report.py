@@ -1012,6 +1012,7 @@ def handler(argv: Sequence[str]) -> _common.Result:
     source = Path(args.report).expanduser()
     document = vr.read_report(source)
     outcome = vr.validate_document(document)
+    vr.refuse_unknown_schema(outcome)
     if outcome.errors:
         total = len(outcome.errors)
         raise _common.ValidationFailed(
