@@ -39,4 +39,5 @@ Every ADR folder follows it: the root `docs/architecture/adrs/`, `spec/decisions
 
 - The implement recipe writes ADRs into a target repository under the same rules. See the
   [`establish-docs-contract`](../implement/playbooks/establish-docs-contract.md) playbook.
-- The greenfield templates ship a copy of this policy for new repositories.
+- The greenfield templates ship a copy of this policy for new repositories:
+  [`greenfield/templates/docs/ADR_POLICY.md`](../greenfield/templates/docs/ADR_POLICY.md).
