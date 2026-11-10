@@ -20,6 +20,7 @@ A decision is recorded in the ADR folder of the component it governs: `spec/deci
 `audit/docs/architecture/adrs/`, `implement/docs/architecture/adrs/`, or `audit/engine/docs/architecture/adrs/`. A
 decision that spans components goes in this folder. This folder's [`README.md`](README.md) indexes all of them, and is
 updated in the same change set as any ADR added elsewhere.
+Every ADR, in every folder, is written and changed under the [ADR policy](../../ADR_POLICY.md).
 
 The v0.3 restructure kept this decision; only the folder paths changed (owner, 2026-11-07).
 

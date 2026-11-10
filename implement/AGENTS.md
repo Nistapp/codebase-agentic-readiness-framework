@@ -41,6 +41,7 @@ folder.
 
 - The tool reference: [`docs/reference/tools-cli.md`](../docs/reference/tools-cli.md).
 - All decisions: the root index, [`docs/architecture/adrs/README.md`](../docs/architecture/adrs/README.md).
+- How to add, change or delete an ADR: [`docs/ADR_POLICY.md`](../docs/ADR_POLICY.md).
 
 ## Test this folder
 

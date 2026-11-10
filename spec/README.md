@@ -62,7 +62,7 @@ The report format itself is defined later by the report schema in `audit/schema/
 
 ### Decision records
 
-Where the framework documents leave a question open, the answer is recorded in `decisions/NNNN-short-title.md`, written from the [greenfield ADR template](../greenfield/templates/docs/templates/adr-template.md). A record is a living, current-state document: when the decision changes, its body is overwritten and the reversal is folded into its *Alternatives Considered* table. Numbers are never reused. The requirements the decision affects state its outcome, so the record does not need reading to apply them.
+Where the framework documents leave a question open, the answer is recorded in `decisions/NNNN-short-title.md`, written from the [ADR template](../docs/templates/adr-template.md) and kept under the [ADR policy](../docs/ADR_POLICY.md). The requirements the decision affects state its outcome, so the record does not need reading to apply them.
 
 ### Supporting formats
 
