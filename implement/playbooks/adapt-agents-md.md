@@ -61,7 +61,7 @@ before the first diff.
 | `agents_md.deferral` | `inline` (default) or `harness-config`: how a deferral to a second rules file is resolved (Inputs 4) |
 | `agents_md.generic_text` | `move-to-docs` (default) or `delete`, per section if the owner chose per section (Inputs 5) |
 | `agents_md.contradicted_rules` | `target-state` (default) or `describe-code` (Inputs 5) |
-| `extra.agt-12` | The owner asked by name for the "How to write for people" section with no `AGT-12` finding; the change then has no finding for the re-audit to confirm, so say so in the pull request |
+| `extra.agt-12` | The owner asked by name for the "How to write for people" section with no `AGT-12` finding; the change then has no finding for the re-audit to confirm, so say so in the pull request, under "What changed" |
 | `agents_md.reader` | The reader persona the owner confirmed for the AGT-12 section (Inputs 7) |
 | `agents_md.comm_long_form` | `no` (default) or `yes`: also write a long-form communication rules file (Inputs 7) |
 | `docs.language` | The language the docs are written in; `en` (default) or another (Inputs 7) |
@@ -91,7 +91,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
      (`agents_md.stubs=delete-asked`) and loses that harness's reach.
    - A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move,
      not copy) and ask whether the vendor file then becomes the one-line pointer. A rule that only makes sense for
-     that harness (a tool preference, a harness setting) may stay there; say so in the PR.
+     that harness (a tool preference, a harness setting) may stay there; say so in the pull request, under
+     "What changed".
    - A vendor file with independent rules and no pointer (a true competitor): reconcile its rules into `AGENTS.md`
      and offer the one-line pointer. Never delete it unasked.
 4. **A second rules file the instruction file defers to (AGT-10).** Default `inline`: move the rules that must
@@ -113,17 +114,16 @@ engine. The questions are about text. Ask them per finding, before the diff for 
      tracked on purpose), the line states that decision; it does not change the files.
 6. **Release boundary (AGT-09).** Default: one sentence built from facts (Steps 6). The owner reviews the sentence;
    never ask the owner to write it from scratch.
-7. **Communication rules (AGT-12).** Two questions, asked together:
-   1. **The reader.** Draft the persona from the stack profile and the code. Example: "a new engineer who knows
-      Java and Gradle, but not this repository or its terms". The owner confirms or edits it (`agents_md.reader`).
-      Never ask the owner to write it from nothing.
-   2. **The docs language.** Default `en`. The rules and the check are for English. For another language, the owner
-      supplies the rules in that language (`docs.language`). The item is then `partial`: the check reads English
-      words.
-
-   Also offer the long form once: a separate rules file, like the framework's own
-   [`docs/COMMUNICATION_RULES.md`](../../docs/COMMUNICATION_RULES.md). Default `no` (`agents_md.comm_long_form`).
-   The style guide holds the docs rules ([`establish-docs-contract`](establish-docs-contract.md)).
+7. **Communication rules (AGT-12).** Three questions, asked together in one numbered block with lettered options
+   ([decision requests](../../audit/prompts/talking-to-the-user.md#decision-requests)):
+   1. **The reader** (`agents_md.reader`). Draft the persona from the stack profile and the code, for example "a new
+      engineer who knows Java and Gradle, but not this repository or its terms". a. the draft (default); b. the
+      owner's edit. Never ask the owner to write it from nothing.
+   2. **The docs language** (`docs.language`). a. English, `en` (default); b. another language: the owner supplies
+      the rules in that language, and the item is `partial`, because the check reads English words.
+   3. **The long form** (`agents_md.comm_long_form`): a separate rules file, like the framework's own
+      [`docs/COMMUNICATION_RULES.md`](../../docs/COMMUNICATION_RULES.md). a. no (default): the style guide holds
+      the docs rules ([`establish-docs-contract`](establish-docs-contract.md)); b. yes.
 8. **Owner-only values.** None is needed for this playbook. If a step seems to need one (a reviewer name, a
    contact), ask in the order `SKILL.md` Stage 2, step 6 gives (supply it, draft one for review, or skip).
 
@@ -263,7 +263,8 @@ and React".
   (`what=files that break the <rule> rule,count=N`). The count may only go down; the item is `partial` until it is 0
   or the owner records the rule as describing the code.
 - **Stale claims the owner has not settled** (a line whose correct wording needs an owner decision not in the state):
-  the line is left as it is, flagged in the PR description, and the item is `partial` with a note.
+  the line is left as it is, flagged in the pull request under "What was not done", and the item is `partial`
+  with a note.
 - **Generic text the owner keeps:** the item is `partial` with the measured ratio as debt
   (`what=generic rule lines,count=N`), or `skipped` if the owner says so.
 - A verb that does not resolve is not fixed here; record it and point at T1.

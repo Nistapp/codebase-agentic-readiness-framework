@@ -39,7 +39,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
   `docs.prose_check_licence` (Inputs 6), `docs.language` (the language
   of the docs; see [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask), Inputs 7), `extra.*`.
 - The `DOC-05` steps run on a confirmed `DOC-05` finding. They also run when the owner asked for them by name in
-  Stage 1 (`extra.doc-05`); that change has no finding for the re-audit to confirm, so say so in the pull request.
+  Stage 1 (`extra.doc-05`); that change has no finding for the re-audit to confirm, so say so in the pull request,
+  under "What changed".
 - **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a finding that says "no `docs/` directory" can be stale: an
   earlier theme or an audit-report commit may have created `docs/`. The engine passes DOC-01 on any Markdown file under
   `docs/`, so the report folders alone make it pass. Add the index to the folder that exists; never create a second
@@ -84,9 +85,10 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    The AGENTS.md theme (T7) reorganises the file later; tell it in the status that the line exists.
 6. **Prose check (DOC-05).** The framework has a stdlib Python template that checks the style guide's rules and can
    fail above a count: [`templates/docs_prose_check.py`](templates/docs_prose_check.py). It is code under the
-   framework's own licence, and a copy never carries that licence. So flag the option, and offer two answers:
-   1. **Skip (default).** Add no tool. The `DOC-05` counts are recorded as debt (`docs.prose_check=skip`).
-   2. **Copy it under a licence the owner names.** Ask for the licence as an SPDX identifier (for example `MIT` or
+   framework's own licence, and a copy never carries that licence. So flag the option, and offer two answers as a
+   [decision request](../../audit/prompts/talking-to-the-user.md#decision-requests):
+   - a. **Skip (default).** Add no tool. The `DOC-05` counts are recorded as debt (`docs.prose_check=skip`).
+   - b. **Copy it under a licence the owner names.** Ask for the licence as an SPDX identifier (for example `MIT` or
       `Apache-2.0`); never suggest the framework's own. Record `docs.prose_check=template` and
       `docs.prose_check_licence=<id>`. The copy needs Python 3.11 or newer where it runs, and
       `ci.edits_authorised` for the runner command and the CI step.
@@ -143,7 +145,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    Rules:
    - Git is the archive: no record carries a status, a date or an approval line. The owner accepts the records
      by merging the branch, and edits or deletes one before that. The pull request body (or the status note,
-     when no pull request is opened) lists each record as waiting for the owner's review.
+     when no pull request is opened) lists each record under "What was not done", as waiting for the owner's
+     review.
    - The engine matches the numbered-file pattern (three or four digits, hyphen, slug, `.md`). The template file
      `0000-template.md` counts as a numbered entry, so list it in the index too.
    - Context and Decision come from the code and the existing docs, with file paths. State plainly what is
@@ -176,7 +179,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       baseline count from step 1 (final value after the last render, see step 1) on the docs item it belongs to
       (`set-status F-nnn partial --debt "what=markdown lint violations,count=N,baseline=<lint script>"`), and keep
       the script's `BASELINE` constant and a `docs.lint_ratchet` preference equal to it. When no docs item is open,
-      record the count in the `docs.lint_ratchet` preference and the pull request body.
+      record the count in the `docs.lint_ratchet` preference and in the pull request, under "How it was checked".
    3. Add a separate CI job, path-filtered to changed Markdown, that runs the linter and renders every Mermaid
       block with `mmdc` (`--no-sandbox` in CI, cache the npm and Puppeteer directories keyed by the pinned
       versions). Pin both versions exactly; never use an unpinned `npx`. If the repository already has Node,
@@ -241,8 +244,8 @@ The repository already has Node, so the job can reuse its pinned Node version.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
   because the engine counts, it does not judge. Mark the item `partial` with that reason, or `skipped` if the
   owner calls it by design.
-- An ADR the owner has not reviewed: listed in the pull request body or the status note as waiting for the
-  owner. The owner edits, deletes or merges it.
+- An ADR the owner has not reviewed: listed in the pull request under "What was not done", or in the status note,
+  as waiting for the owner. The owner edits, deletes or merges it.
 - A docs job the merge gate cannot yet require: left advisory, noted for the CI theme.
 
 ## Verification
