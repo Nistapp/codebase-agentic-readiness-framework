@@ -37,7 +37,8 @@ Every ADR folder follows it: the root `docs/architecture/adrs/`, `spec/decisions
 11. **Read only the ADRs you need.** Use the index summaries to pick the ADRs that govern the folder you change.
 
 `make adr-lint`, part of `make check`, checks the mechanical rules in every ADR folder. An ADR has no lifecycle
-field or footer and no retired-ADR marker. It holds the four sections, and the root index has its row.
+field or footer and no retired-ADR marker. It holds the four sections. The root index has its row, and so does
+the engine's index for an engine ADR. No Markdown page names an ADR number or ADR path that no folder holds.
 
 ## Where else this applies
 
