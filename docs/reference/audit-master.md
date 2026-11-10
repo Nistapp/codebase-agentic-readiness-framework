@@ -218,7 +218,8 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 `COSMETIC` · scored · engine check · fixed by [`establish-docs-contract`](implement-master.md#establish-docs-contract)
 
-- **Passes when:** a numbered-ADR directory exists, holds at least one entry, and an index lists every entry.
+- **Passes when:** a numbered-ADR directory exists, holds at least one entry, an index lists every entry, and no entry
+  is a tombstone.
 - **Why it matters:** Architectural decisions need a location and a registry, or the rationale lives only in chat and
   pull requests, and agents re-litigate settled decisions ([greenfield/README.md § 5.2 Templates &
   Guides](../../greenfield/README.md#52-templates--guides)).
@@ -570,7 +571,8 @@ Does the same command give the same result on a fresh machine, without a human i
 [`pin-execution-environment`](implement-master.md#pin-execution-environment)
 
 - **Passes when:** every detected pinnable ecosystem has at least one of its own pin files, or a matching
-  `.tool-versions` line, or (node/python/go) the manifest-level constraint.
+  `.tool-versions` line, or (node/python/go) the manifest-level constraint, and a pin reaches every module manifest of
+  each pinned ecosystem.
 - **Why it matters:** An agent's runtime must be the repository's, not whatever happens to be on the host — otherwise
   the gate passes locally and fails in CI, or an agent reproduces nothing ([greenfield/README.md § File Tree — What Gets
   Created](../../greenfield/README.md#file-tree--what-gets-created)).

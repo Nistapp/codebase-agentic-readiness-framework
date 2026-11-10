@@ -22,8 +22,7 @@ This page tells you how to write a documentation page in this repository. It app
 4. **Point to the source.** Name the file. Once the file exists, link to it, with line anchors where they help.
    Example: `[report.py#L1-L40](../audit/tools/report.py#L1-L40)`. While a file is planned, write its name as a
    code span and do not link to it.
-5. **An ADR describes the current design only.** When a decision changes, edit the ADR in place. When it no longer
-   applies, delete it. Git keeps the history.
+5. **An ADR describes the current design only.** The rules are in [`ADR_POLICY.md`](ADR_POLICY.md).
 
 ## 2. Kinds of page and their readers
 
@@ -99,6 +98,7 @@ Paths are relative to `docs/`.
 | `dev/prose_check.py` | Sentence length, vague words, diagrams on explanation pages | Nowhere: advisory warnings and notices |
 | `dev/mermaid_check.py` | Each Mermaid block renders | The files you pass to `make docs-mermaid` |
 | `dev/recipe_lint.py` | Links resolve inside the repository | Recipes, `docs/` and the root pages |
+| `dev/adr_lint.py` | Every ADR follows [`ADR_POLICY.md`](ADR_POLICY.md) and is indexed; no page names a missing ADR | The ADR folders, their indexes and every Markdown page |
 
 `DOCS_LINT_PATHS` is a ratchet: a page joins once it is clean, and the list only grows. Outside the list, the
 total count of Markdown issues may not go up (`.quality-baseline.json`). When you edit a page outside the list, fix
@@ -109,7 +109,7 @@ edit.
 
 1. Where `codebase-memory-mcp` is available, use it to check symbols and file paths before you read whole files.
 2. Look for an existing page first. Update it; do not write a second page on the same topic.
-3. Before you add an ADR, find the highest number ever used in that folder. Use the next number.
+3. Before you add, change or delete an ADR, read [`ADR_POLICY.md`](ADR_POLICY.md).
 
 Some changes alter a tool's interface, a schema, a recipe stage, what a check means or the architecture. For such a
 change, do all of this in the same change set:
@@ -120,16 +120,8 @@ change, do all of this in the same change set:
 
 ## 8. ADR lifecycle
 
-ADRs start from `templates/adr-template.md`.
-
-1. **Add:** use the highest number ever used plus one. Numbers of deleted ADRs are not used again.
-2. **Index:** add a row to [`architecture/adrs/README.md`](architecture/adrs/README.md) in the same change set.
-3. **Change in place:** rewrite the body and keep the number. Move the old choice into *Alternatives Considered*.
-4. **Delete** an ADR that no longer applies. Fix every link to it in the same change set.
-
-> [!IMPORTANT]
-> An ADR has two states. `Proposed` is allowed while the change is open, but is never merged. A merged ADR is
-> `Accepted`. There is no `Deprecated`, `Superseded` or `Rejected` state.
+[`ADR_POLICY.md`](ADR_POLICY.md) holds every ADR rule: numbering, the index, changing and deleting. ADRs start from
+[`templates/adr-template.md`](templates/adr-template.md).
 
 ## 9. What does not go in `docs/`
 

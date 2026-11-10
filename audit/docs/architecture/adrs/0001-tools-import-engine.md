@@ -1,32 +1,21 @@
 # 0001. Tools Import the Engine in Process
 
-* **Status:** Accepted
-* **Date:** 2026-10-10
-* **Last reviewed:** 2026-11-07
-* **Deciders:** [@nistapp]
-
-> **Paths updated (v0.3, 2026-11-07):** the decision stands. The text keeps the paths of its date:
-> `brownfield-recipes/tools/` is now `audit/tools/`, and `deterministic-audit/` is now `audit/engine/`.
-> The "Moved" table in the root [`CHANGELOG.md`](../../../../CHANGELOG.md) maps every old path.
-
----
-
 ## Context
 
-The recipes' tools and the deterministic engine are both standard-library Python, and the tools need the engine in two ways. `tools/engine.py` must run it from any working directory with one command. Later tools need pieces of it rather than a whole run: the validator wants the engine's secret-redaction patterns (S2.2), and the facts tool wants its file inventory (S2.7).
+The recipes' tools and the deterministic engine are both standard-library Python, and the tools need the engine in two ways. `tools/engine.py` must run it from any working directory with one command. Other tools need pieces of it rather than a whole run: the validator wants the engine's secret-redaction patterns, and the facts tool wants its file inventory.
 
 Four constraints bind the choice:
 
 - One copy of each module. A second copy of the engine's code would drift from the first.
-- No install step. A fresh clone must run `python3 brownfield-recipes/tools/<tool>.py` at once, because an audit starts on a machine where nothing is set up.
+- No install step. A fresh clone must run `python3 audit/tools/<tool>.py` at once, because an audit starts on a machine where nothing is set up.
 - The engine's behaviour and tests do not change for the sake of the tools.
 - Standard library only, in both.
 
-The engine is a package named `audit` in [`deterministic-audit/`](../../../engine/audit/__init__.py). Its entry point, [`main(argv)`](../../../engine/audit/__main__.py), takes the arguments explicitly and returns the exit code, which [ADR-0005 of the engine](../../../engine/docs/architecture/adrs/0005-module-layout-and-zipapp-distribution.md) keeps stable.
+The engine is a package named `audit` in [`audit/engine/`](../../../engine/audit/__init__.py). Its entry point, [`main(argv)`](../../../engine/audit/__main__.py), takes the arguments explicitly and returns the exit code, which [ADR-0005 of the engine](../../../engine/docs/architecture/adrs/0005-module-layout-and-zipapp-distribution.md) keeps stable.
 
 ## Decision
 
-A tool imports the engine in process. [`load_engine`](../../../tools/engine.py#L57-L66) puts `deterministic-audit/` on `sys.path`, resolved from the location of `engine.py`, and imports `audit.__main__`. It then refuses to go on if the `audit` package it got did not come from that folder, so a different package called `audit` that happens to be installed cannot be run in its place.
+A tool imports the engine in process. [`load_engine`](../../../tools/engine.py#L57-L66) puts `audit/engine/` on `sys.path`, resolved from the location of `engine.py`, and imports `audit.__main__`. It then refuses to go on if the `audit` package it got did not come from that folder, so a different package called `audit` that happens to be installed cannot be run in its place.
 
 - [`tools/engine.py`](../../../tools/engine.py) calls the engine's `main(argv)` through [`run_engine`](../../../tools/engine.py#L69-L83), with its stdout and stderr captured, so the launcher's own stdout stays a single envelope.
 - A tool that needs engine internals calls `engine.load_engine()` first and imports from `audit` after it, so that the path and the guard are always the same.
@@ -35,10 +24,10 @@ A tool imports the engine in process. [`load_engine`](../../../tools/engine.py#L
 
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | Run the engine as a subprocess (`python3 -m audit`) | It isolates the engine's module-level state and gives clean exit codes. But it cannot hand over internals, so the validator and the facts tool would need a second mechanism beside it. Two mechanisms for one engine is worse than one. |
-| A shared `common/` package that both depend on (the design plan's fallback) | Nothing needs it: the import works, and a shared package would move engine code that has no reason to move. |
+| A shared `common/` package that both depend on | Nothing needs it: the import works, and a shared package would move engine code that has no reason to move. |
 | Install the engine, or run the `dist/audit.pyz` build | Both add a step before the first audit. The zipapp also needs a build and goes stale against the source. |
 | Copy the engine's modules into `tools/` | Two copies drift. |
 

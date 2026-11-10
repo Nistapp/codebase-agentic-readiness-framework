@@ -5,6 +5,7 @@ include =
     */audit/engine/audit/*
     */audit/tools/*
     */implement/tools/*
+    */implement/playbooks/templates/*
 omit =
     */tests/*
 

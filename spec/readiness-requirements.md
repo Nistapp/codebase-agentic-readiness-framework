@@ -174,7 +174,8 @@ When `artefacts/`, `artifacts/` or a directory where an agent tool keeps its own
 - **Checks:** DOC-03, CON-03
 
 ### REQ-SH-019 — ADR directory and index
-The repository SHOULD have an ADR directory with numbered entries and an index that lists every entry.
+The repository SHOULD have an ADR directory with numbered entries and an index that lists every entry. No entry
+SHOULD be marked superseded, deprecated or rejected: a retired ADR is deleted, and git keeps its history.
 
 - **Phase:** 1
 - **Verification:** automated
@@ -276,7 +277,8 @@ Where the language has a type checker, the repository MUST configure it in stric
 - **Checks:** TOOL-03
 
 ### REQ-SH-030 — Dependency vulnerability scan
-The `security` verb MUST run a dependency vulnerability scan, and CI SHOULD run the same scan.
+A verb MUST run a dependency vulnerability scan, and it SHOULD be the `security` verb. CI SHOULD run the same scan;
+see [decision 0003](decisions/0003-dependency-scan-verb.md).
 
 - **Phase:** 1
 - **Verification:** automated

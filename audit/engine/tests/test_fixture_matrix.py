@@ -68,6 +68,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "doc-03-tracked-artefacts": {"DOC-03": "FAIL"},
     "ignore-ok-nested-gitignore": {"DOC-03": "PASS", "CON-03": "PASS"},
     "doc-04-adr-unindexed": {"DOC-04": "PARTIAL"},
+    "doc-04-adr-tombstone": {"DOC-04": "PARTIAL"},
     "doc-05-long-sentences": {"DOC-01": "PASS", "DOC-02": "PASS", "DOC-04": "PASS", "DOC-05": "FAIL"},
     "doc-nav-ok": {
         "DOC-01": "PASS",
@@ -109,6 +110,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "tool-06-local-only-commit-rule": {"TOOL-06": "PARTIAL"},
     "tool-06-ci-only-commit-rule": {"TOOL-06": "PARTIAL"},
     "tool-07-no-branch-guard": {"TOOL-05": "PASS", "TOOL-07": "FAIL"},
+    "tool-07-guard-no-exit": {"TOOL-05": "PASS", "TOOL-07": "PARTIAL"},
     "tool-ok-node": {
         "TOOL-01": "PASS",
         "TOOL-02": "PASS",
@@ -144,6 +146,7 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- EXEC ---------------------------------------------------------------------------------
     "exec-01-unpinned": {"EXEC-01": "FAIL"},
     "exec-01-nested-go-unpinned": {"EXEC-01": "FAIL"},
+    "exec-01-sibling-module-unpinned": {"EXEC-01": "PARTIAL"},
     "exec-01-python-source-only": {"EXEC-01": "FAIL", "EXEC-02": "UNKNOWN"},
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
     "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},

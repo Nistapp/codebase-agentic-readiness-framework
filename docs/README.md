@@ -79,7 +79,8 @@ The framework is normative. If a tool disagrees with it, the tool is wrong.
 ## Decisions
 
 The [ADR index](architecture/adrs/README.md) lists every decision of record, in all five groups. ADRs live beside the
-component they govern ([ADR 0001](architecture/adrs/0001-decisions-live-beside-the-component.md)).
+component they govern ([ADR 0001](architecture/adrs/0001-decisions-live-beside-the-component.md)). The
+[ADR policy](ADR_POLICY.md) says how to add, change and delete one.
 
 ## Components
 
@@ -103,6 +104,7 @@ repository, before and after the implement recipe.
 | [Explanation template](templates/explanation-template.md) | Start an explanation page |
 | [Reference template](templates/reference-template.md) | Start a reference page |
 | [Architecture doc template](templates/architecture-doc-template.md) | Start an architecture page |
+| [ADR policy](ADR_POLICY.md) | How to add, change and delete a decision record |
 | [ADR template](templates/adr-template.md) | Start a decision record |
 
 Gates and commit rules: [`AGENTS.md`](../AGENTS.md). Setup and contributing: [`CONTRIBUTING.md`](../CONTRIBUTING.md).

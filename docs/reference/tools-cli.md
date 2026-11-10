@@ -797,12 +797,11 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
 - `references/`: read by the model;
 - `scripts/`: run by it.
 
-- **`agentic-readiness-audit`**: `references/` holds the check files, the stack profiles, the shared prompt on
-  how to talk to the user and the schema docs. `scripts/` holds the tools the recipe calls. Beside them are the
-  schema files and the `catalogue.json` they read at a fixed path, and the engine's `audit` package, one folder
-  level up as `engine.py` expects. `audit.pyz` is the engine's single-file build. The link to the shared prompt is
-  rewritten to its place in the bundle. Some other links in its `SKILL.md` point outside what the bundle carries
-  (found, not fixed; `skills-ref` validates only the frontmatter and the directory-name match).
+- **`agentic-readiness-audit`**: `references/` holds the check files, the stack profiles and the schema docs. It
+  also holds the shared prompt on how to talk to the user and the sections of this page for the tools it carries.
+  `scripts/` holds the tools the recipe calls. Beside them are the schema files and the `catalogue.json` they read
+  at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. `audit.pyz` is
+  the engine's single-file build. Its Markdown files are rewritten the same way as the implement bundle's, below.
 - **`agentic-readiness-implement`**: `references/` holds the state contract, the playbooks, the kickoff prompt and
   the shared prompt on how to talk to the user. It also holds the check files, the stack profiles, ADR 0003,
   `spec/command-surface.md` and the spec decisions, the state schema and its docs, and the sections of this page
@@ -810,9 +809,9 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
   `validate_report.py` with their private modules, the schema files, `catalogue.json`, and an `engine.py` shim.
   The engine is not copied. The shim loads `engine.py` from the `agentic-readiness-audit` skill installed in the
   same skills folder, so both skills run one engine. A tool that needs the engine without it exits 1 and names the
-  missing skill. Every carried Markdown file is rewritten in three ways:
+  missing skill. In both bundles, every carried Markdown file is rewritten in three ways:
   - a `python3 audit/tools/<tool>.py` command becomes the path from the skill's own folder
-    (`python3 scripts/tools/<tool>.py`, or the audit skill's path for `engine.py`);
+    (`python3 scripts/tools/<tool>.py`; in the implement bundle, the audit skill's path for `engine.py`);
   - a link to a carried file points at its place in the bundle;
   - any other relative link becomes plain text that names the framework path. No link leaves the bundle.
 
@@ -888,7 +887,7 @@ python3 implement/tools/progress.py --describe
 | `--framework-rev` | `init`: the framework commit to record, cut to 12 digits. Default: the framework checkout's `HEAD`, or null outside one. |
 | `--label` | Every command but `init`: which state to use when the folder holds more than one. |
 | `FINDING STATUS` | `set-status`: the item and the status to move it to. The move must be in the state diagram of the [state contract](../../implement/state.md#item-statuses). `skipped`, `deferred` and the moves back out of them have their own commands. |
-| `--commit` | `set-status`: a commit SHA to add to the item (repeatable). |
+| `--commit` | `set-status`: a commit SHA to add to the item (repeatable), 7 to 40 digits, stored cut to 12. |
 | `--verification-command`, `--verification-result` | `set-status`: the verification and what it gave; given together. `done` needs one. |
 | `--debt`, `--clear-debt` | `set-status`: record debt (repeatable; same `what` replaces) or drop it. `partial` needs debt; `done` needs none. |
 | `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer` and `pref`. |
@@ -897,7 +896,7 @@ python3 implement/tools/progress.py --describe
 | `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer` and `pref` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
 | `--phase` | Every write: the step recorded in the log entry and on the item or preference. |
 | `--render` | Every write: also replace the Markdown view. Without it the tool warns that the view is out of date. |
-| `--status`, `--branch`, `--pr`, `--merged-sha` | `theme`: the theme's new status (it only moves forward) and the data that status needs: a branch, then a PR, then the merge SHA. |
+| `--status`, `--branch`, `--pr`, `--merged-sha` | `theme`: the theme's new status (it only moves forward) and the data that status needs: a branch, then a PR, then the merge SHA (stored cut to 12 digits). |
 | `--json` | `show`: print the state itself instead of the summary. Long lists are cut to fit the output and `truncated` is set; the log keeps its newest entries. |
 
 **Outputs**

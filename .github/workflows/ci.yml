@@ -36,7 +36,7 @@ jobs:
   # suite of `test` has no job here. The steps that are cheap share one job, because each job pays about 15 s of
   # setup. Python 3.11 runs every step; Python 3.14 runs the runtime code: the suites and the schema cross-check.
   static:
-    name: static (format, typecheck, rules, recipe lint, masters, workflow lint, spell)
+    name: static (format, typecheck, rules, recipe lint, ADR lint, masters, workflow lint, spell)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -53,7 +53,7 @@ jobs:
         with:
           go-version-file: dev/tools/actionlint/go.mod
           cache-dependency-path: dev/tools/actionlint/go.sum
-      - run: make format-check typecheck verify-rules recipe-lint masters-check workflow-lint spell
+      - run: make format-check typecheck verify-rules recipe-lint adr-lint masters-check eval-expected-check workflow-lint spell
 
   crosscheck:
     name: crosscheck (Python ${{ matrix.python }})
@@ -126,9 +126,10 @@ jobs:
           version-file: dev/tools/pyproject.toml
       - run: make test-dev
 
-  # Every suite on the newest Python, in parts with one shard of each sharded suite (`make test-part`;
-  # TEST_PART_<i> in the Makefile). Each part runs its targets at once, as `make test` runs its suites, so this job also proves the
-  # parallel run on every pull request. The nightly workflow runs the unsharded `make test`.
+  # Every suite on the newest Python, in parts with one shard of each suite in TEST_SHARDED_SUITES, the dev checks
+  # included (`make test-part`; TEST_PART_<i> in the Makefile). Each part runs its targets at once, as `make test` runs
+  # its suites, so this job also proves the parallel run on every pull request. The nightly workflow runs the
+  # unsharded `make test`.
   test-py314:
     name: test (part ${{ matrix.shard }}, Python 3.14)
     runs-on: ubuntu-latest

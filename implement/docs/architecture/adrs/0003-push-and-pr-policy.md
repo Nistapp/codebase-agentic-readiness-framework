@@ -1,23 +1,14 @@
 # 0003. The Implement Recipe Pushes and Opens a Pull Request Only When the Owner Opted In
 
-* **Status:** Accepted
-* **Date:** 2026-11-05
-* **Last reviewed:** 2026-11-05
-* **Deciders:** [@nistapp] (Q1, accepted 2026-11-05)
-
----
-
 ## Context
 
-Three pages said three things about the end of a theme. [`implement/SKILL.md`](../../../SKILL.md) said the
-recipe pushes the theme branch and opens a pull request. The
-[purpose and non-goals page](../../../../docs/explanation/user-overview/01-purpose-and-non-goals.md)
-said it never pushes and never opens one. The
-[trust and safety page](../../../../docs/explanation/user-overview/03-trust-and-safety.md) said
-the question was open.
+Three pages describe the end of a theme: [`implement/SKILL.md`](../../../SKILL.md), the
+[purpose and non-goals page](../../../../docs/explanation/user-overview/01-purpose-and-non-goals.md) and the
+[trust and safety page](../../../../docs/explanation/user-overview/03-trust-and-safety.md). Without one rule, they
+can disagree on whether the recipe pushes the theme branch and opens a pull request.
 
-Both repositories the recipe has run on today let a session push the phase branch and open the pull request; the
-orchestrator or the owner merges. A reader who trusts the non-goals page would be surprised by that. A recipe that
+The repositories the recipe runs on let a session push the phase branch and open the pull request; the
+orchestrator or the owner merges. A recipe that
 never pushes would break the one-pull-request-per-theme flow those runs depend on.
 
 ## Decision
@@ -34,7 +25,7 @@ never pushes would break the one-pull-request-per-theme flow those runs depend o
 
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | Always push and open a pull request | The agent would act with a push credential in repositories whose owner never said so, and the non-goals page would be false. |
 | Never push | Every playbook ending and the Stage 1 and Stage 4 steps would change, and each theme would need a manual push by a person. |

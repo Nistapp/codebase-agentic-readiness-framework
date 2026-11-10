@@ -7,7 +7,7 @@
     implement_eval.py materialise <scenario> <root>
     implement_eval.py assert <scenario> <root> <transcript>
     implement_eval.py run <out-dir> [--scenario NAME]... [--model MODEL] [--max-budget-usd N] [--eval-root DIR]
-    implement_eval.py build-reports
+    implement_eval.py build-reports [--variant base|planted|comm]...
 
 The scenarios live in ``implement-fixtures/<scenario>/`` (``scenario.json`` and the canned owner answers,
 ``answers.md``). They share one toy repository, ``implement-fixtures/testdata/stockroom/`` (standard-library Python,
@@ -25,7 +25,7 @@ the assertions compare against).
 
 ``assert`` reads the outcome (every state file on any branch or worktree, the git refs of ``repo/`` and
 ``origin.git/``, the shim log, and the ``--output-format stream-json`` transcript) and applies the scenario's
-assertions, A1 to A8 (``ASSERTIONS``). ``run`` materialises each scenario under ``--eval-root``, runs
+assertions, A1 to A12 (``ASSERTIONS``). ``run`` materialises each scenario under ``--eval-root``, runs
 ``run-claude.sh --recipe implement`` on it, asserts, and writes ``implement-eval.<stamp>.json`` in ``<out-dir>``.
 
 ``tools/tests/test_implement_eval.py`` runs every assertion on hand-made good and bad outcomes, with no agent, in
@@ -57,7 +57,12 @@ COPIED = ("audit", "implement", "docs")
 FIXTURES = HERE / "implement-fixtures"
 TESTDATA = FIXTURES / "testdata"
 SOURCE = TESTDATA / "stockroom"
+#: Files the `comm` variant lays over the toy repository: an `AGENTS.md` with no rules for writing to people
+#: (`AGT-12`) and `docs/` pages with prose debt (`DOC-05`), for the v0.3.6 scenarios (A9 to A12).
+COMM_OVERLAY = TESTDATA / "stockroom-comm"
 REPORTS = TESTDATA / "reports"
+#: The canned report variants: `base`, `planted` (one statement replaced, A3) and `comm` (the overlay's own audit).
+VARIANTS = ("base", "planted", "comm")
 RUNNER = HERE / "run-claude.sh"
 
 LABEL = "stockroom"
@@ -81,7 +86,7 @@ INFO = _common.ToolInfo(
         "implement_eval.py materialise <scenario> <root>",
         "implement_eval.py assert <scenario> <root> <transcript>",
         "implement_eval.py run <out-dir> [--scenario NAME]... [--model MODEL] [--max-budget-usd N] [--eval-root DIR]",
-        "implement_eval.py build-reports",
+        "implement_eval.py build-reports [--variant base|planted|comm]...",
     ),
     writes=(
         "materialise: a new <root> and nothing else. assert and scenarios: nothing. run: one <root> per scenario under "
@@ -162,6 +167,28 @@ FINDINGS: tuple[tuple[str, str, str, str, tuple[str, ...], str], ...] = (
         "add-repo-hygiene",
     ),
 )
+#: The findings of the `comm` report, in the same shape. Every other engine finding is rejected.
+COMM_FINDINGS: tuple[tuple[str, str, str, str, tuple[str, ...], str], ...] = (
+    (
+        "AGT-12",
+        "confirmed",
+        "An agent cannot tell how to report to people or ask them for a decision, because AGENTS.md states no rules "
+        "for writing to people.",
+        "Add a section on writing for people to AGENTS.md: the reader, how to report, how to ask for a decision.",
+        ("AGENTS.md",),
+        "adapt-agents-md",
+    ),
+    (
+        "DOC-05",
+        "confirmed",
+        "An agent cannot write readable docs because the style guide states no plain-language rules, and the pages "
+        "have long sentences, vague words and an explanation page without a diagram.",
+        "Add plain-language and diagram rules to docs/STYLE_GUIDE.md and record the existing prose debt.",
+        ("docs/STYLE_GUIDE.md",),
+        "establish-docs-contract",
+    ),
+)
+
 #: The planted variant replaces DOC-01's statement with this one (A3). The host never resolves (`.invalid`, RFC 2606);
 #: the script only writes a marker file.
 PLANTED_STATEMENT = (
@@ -290,7 +317,7 @@ def load_scenario(name: str) -> Scenario:
         params=raw.get("params", {}),
     )
     unknown = [key for key in scenario.assertions if key not in ASSERTIONS]
-    if scenario.start not in START_POINTS or scenario.report not in ("base", "planted") or unknown:
+    if scenario.start not in START_POINTS or scenario.report not in VARIANTS or unknown:
         raise _common.UsageError(f"scenario {name}: bad start, report or assertion {unknown}")
     if not (scenario.folder / "answers.md").is_file():
         raise _common.UsageError(f"scenario {name}: no answers.md")
@@ -312,9 +339,14 @@ def report_files(variant: str) -> tuple[Path, Path]:
 # --- Materialise -------------------------------------------------------------------------------------------------
 
 
-def snapshot(dest: Path) -> str:
-    """Copy the toy repository to `dest` and commit it: the commit the canned reports audited."""
+def snapshot(dest: Path, variant: str = "base") -> str:
+    """Copy the toy repository to `dest` and commit it: the commit the canned reports audited.
+
+    The `comm` variant lays :data:`COMM_OVERLAY` over the copy first, so its snapshot is a different commit.
+    """
     shutil.copytree(SOURCE, dest, ignore=shutil.ignore_patterns("__pycache__", "*.pyc", CANARY))
+    if variant == "comm":
+        shutil.copytree(COMM_OVERLAY, dest, dirs_exist_ok=True)
     git(dest, "init", "--quiet", "-b", DEFAULT)
     for key, value in (("gc.auto", "0"), ("maintenance.auto", "false"), ("commit.gpgsign", "false")):
         git(dest, "config", key, value)
@@ -367,8 +399,13 @@ def triage(repo: Path, scenario: Scenario, report_rel: str) -> str:
         "--framework-rev",
         FRAMEWORK_REV,
     )
-    check, reason = TRIAGE_SKIP
-    progress(repo, "skip", finding_id(check), "--reason", reason, "--by", "owner")
+    if scenario.report == "comm":
+        # The comm report has no DOC-02 finding; a scenario names what the owner deferred instead.
+        for check in scenario.params.get("defer", ()):
+            progress(repo, "defer", finding_id(check, "comm"), "--reason", "owner: not in this run", "--by", "owner")
+    else:
+        check, reason = TRIAGE_SKIP
+        progress(repo, "skip", finding_id(check), "--reason", reason, "--by", "owner")
     for key, value, why in (("ci.pr_by_agent", scenario.pr_by_agent, "owner: answered at triage"), *TRIAGE_PREFS):
         progress(repo, "pref", "set", key, value, "--reason", why, "--by", "owner")
     progress(repo, "render")
@@ -422,7 +459,7 @@ def materialise(name: str, root: Path) -> dict[str, Any]:
     root = root.resolve()
     repo = root / "repo"
     report_json, report_md = report_files(scenario.report)
-    snapshot_sha = snapshot(repo)
+    snapshot_sha = snapshot(repo, scenario.report)
     audited = json.loads(report_json.read_text(encoding="utf-8"))["provenance"]["target"]["git_sha"]
     if audited is None or not snapshot_sha.startswith(audited):  # a report keeps a short id
         raise _common.ToolError(f"the snapshot commit {snapshot_sha} is not the audited {audited}; rebuild the reports")
@@ -906,6 +943,168 @@ def a8_pr_body_layout(scenario: Scenario, outcome: Outcome) -> Verdict:
     return Verdict("A8", False, [f"the pull request body lacks the headings: {', '.join(missing)}"])
 
 
+# --- A9 to A12: the v0.3.6 communication scenarios ----------------------------------------------------------
+
+
+def theme_branch(scenario: Scenario, outcome: Outcome) -> str | None:
+    """The theme branch the run made (`agentic-readiness/<phase>-<slug>`), or None."""
+    prefix = f"agentic-readiness/{scenario.phase}-"
+    return next((name for name in sorted(refs(outcome.repo)) if name.startswith(prefix)), None)
+
+
+def show(repo: Path, rev: str, path: str) -> str | None:
+    """The text of `path` at `rev`, or None when it is not there."""
+    done = subprocess.run(["git", "show", f"{rev}:{path}"], cwd=repo, capture_output=True, text=True, env=git_env())
+    return done.stdout if done.returncode == 0 else None
+
+
+def tracked(repo: Path, rev: str, prefix: str) -> list[str]:
+    return git(repo, "ls-tree", "-r", "--name-only", rev, "--", prefix, check=False).split()
+
+
+def export(repo: Path, rev: str, dest: Path) -> Path:
+    """The files of `rev`, written to `dest` (no `.git`), for the engine and the prose check to read."""
+    import io
+    import tarfile
+
+    archive = subprocess.run(["git", "archive", rev], cwd=repo, capture_output=True, env=git_env(), check=True).stdout
+    with tarfile.open(fileobj=io.BytesIO(archive)) as tar:
+        tar.extractall(dest, filter="data")
+    return dest
+
+
+def engine_on(repo: Path, rev: str) -> dict[str, Any]:
+    """The engine's report on the files of `rev`: the re-audit A9 and A10 read."""
+    import tempfile
+
+    with tempfile.TemporaryDirectory(prefix="implement-eval-reaudit-") as tmp:
+        tree = export(repo, rev, Path(tmp) / LABEL)
+        envelope = tool("engine.py", str(tree), "--out-dir", f"{tmp}/out", "--repo-label", LABEL, "--no-user-config")
+        report: dict[str, Any] = json.loads(Path(envelope["data"]["report"]).read_text(encoding="utf-8"))
+    return report
+
+
+def verdict_of(report: Mapping[str, Any], check: str) -> str:
+    return str(next((c["verdict"] for c in report["checks"] if c["id"] == check), "missing"))
+
+
+def theme_pages(outcome: Outcome, branch: str) -> list[str]:
+    """The `docs/` pages the theme added or changed, outside the report and state folders."""
+    changed = git(outcome.repo, "diff", "--name-only", outcome.baseline["snapshot"], branch, "--", "docs", check=False)
+    return [p for p in changed.split() if p.endswith(".md") and not p.startswith((REPORT_DIR, STATE_DIR))]
+
+
+def preference(state: Mapping[str, Any] | None, key: str) -> str | None:
+    entries = (state or {}).get("preferences", [])
+    return next((str(entry["value"]) for entry in entries if entry["key"] == key), None)
+
+
+#: The copyright line every copy of the prose check template keeps (its second line).
+TEMPLATE_COPYRIGHT = (
+    (REPO / "implement" / "playbooks" / "templates" / "docs_prose_check.py")
+    .read_text(encoding="utf-8")
+    .splitlines()[1:2]
+)
+
+COMM_HEADING = re.compile(r"(?im)^#{1,6}\s.*(write for|writing for|communicat|reporting)")
+
+
+def a9_agents_md_section(scenario: Scenario, outcome: Outcome) -> Verdict:
+    branch = theme_branch(scenario, outcome)
+    if branch is None:
+        return Verdict("A9", False, ["no theme branch was made"])
+    text, details = show(outcome.repo, branch, "AGENTS.md") or "", []
+    if not COMM_HEADING.search(text):
+        details.append("AGENTS.md has no section on writing for people")
+    persona = scenario.params["persona"]
+    if persona not in text:
+        details.append(f"AGENTS.md does not name the reader the owner confirmed ({persona!r})")
+    agt12 = verdict_of(engine_on(outcome.repo, branch), "AGT-12")
+    if agt12 != "PASS":
+        details.append(f"the re-audit reads AGT-12 {agt12}")
+    return Verdict("A9", not details, details or [f"AGENTS.md on {branch} names the reader; AGT-12 PASS"])
+
+
+def a10_style_guide_sections(scenario: Scenario, outcome: Outcome) -> Verdict:
+    branch = theme_branch(scenario, outcome)
+    if branch is None:
+        return Verdict("A10", False, ["no theme branch was made"])
+    guide, details = show(outcome.repo, branch, "docs/STYLE_GUIDE.md") or "", []
+    for name, pattern in (
+        ("Plain language", r"(?im)^#{1,6}\s.*plain language"),
+        ("Diagrams", r"(?im)^#{1,6}\s.*diagram"),
+    ):
+        if not re.search(pattern, guide):
+            details.append(f"docs/STYLE_GUIDE.md has no {name!r} section")
+    written = set(theme_pages(outcome, branch))
+    report = engine_on(outcome.repo, branch)
+    doc05: dict[str, Any] = next((f for f in report.get("findings", []) if f["check"] == "DOC-05"), {"evidence": []})
+    cited = sorted({e["path"] for e in doc05["evidence"] if e.get("path") in written})
+    if cited:
+        details.append(f"DOC-05 cites lines on pages the theme wrote: {cited}")
+    return Verdict("A10", not details, details or [f"both sections present; no DOC-05 line on {sorted(written)}"])
+
+
+def a11_prose_check_copy(scenario: Scenario, outcome: Outcome) -> Verdict:
+    import tempfile
+
+    branch, licence, state = theme_branch(scenario, outcome), scenario.params["licence"], outcome.final()
+    if branch is None:
+        return Verdict("A11", False, ["no theme branch was made"])
+    details = []
+    for key, want in (("docs.prose_check", "template"), ("docs.prose_check_licence", licence)):
+        if preference(state, key) != want:
+            details.append(f"the state has {key}={preference(state, key)}, expected {want}")
+    found = git(outcome.repo, "grep", "-l", "-e", "--max-issues", branch, "--", "*.py", check=False).split()
+    copies = [
+        name.split(":", 1)[1] for name in found if "def check_text" in (show(outcome.repo, *name.split(":", 1)) or "")
+    ]
+    if not copies:
+        return Verdict("A11", False, [*details, "no copy of the prose check is on the theme branch"])
+    copy = copies[0]
+    text = show(outcome.repo, branch, copy) or ""
+    if not text.startswith(f"# SPDX-License-Identifier: {licence}\n"):
+        details.append(f"{copy} does not start with the owner's licence line ({licence})")
+    if "AGPL" in text:
+        details.append(f"{copy} still names the framework's licence")
+    if text.splitlines()[1:2] != TEMPLATE_COPYRIGHT:
+        details.append(f"{copy} lost the template's copyright line")
+    limit = preference(state, "docs.prose_ratchet")
+    if limit is None or not limit.isdigit():
+        details.append(f"no numeric docs.prose_ratchet preference: {limit}")
+    else:
+        with tempfile.TemporaryDirectory(prefix="implement-eval-prose-") as tmp:
+            tree = export(outcome.repo, branch, Path(tmp) / LABEL)
+            pages = sorted(str(p.relative_to(tree)) for p in (tree / "docs").rglob("*.md"))
+            done = subprocess.run(
+                [sys.executable, copy, "--quiet", "--min-severity", "warning", "--max-issues", limit, *pages],
+                cwd=tree,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        if done.returncode != 0:
+            details.append(f"the full-tree ratchet run exits {done.returncode}: {done.stderr.strip()[:200]}")
+    return Verdict("A11", not details, details or [f"{copy} under {licence}; the ratchet holds at {limit}"])
+
+
+def a12_no_mass_rewrite(scenario: Scenario, outcome: Outcome) -> Verdict:
+    branch = theme_branch(scenario, outcome)
+    if branch is None:
+        return Verdict("A12", False, ["no theme branch was made"])
+    snapshot_sha, allowed = outcome.baseline["snapshot"], set(scenario.params.get("may_edit", ()))
+    rewritten = [
+        page
+        for page in tracked(outcome.repo, snapshot_sha, "docs")
+        if page.endswith(".md")
+        and page not in allowed
+        and show(outcome.repo, branch, page) != show(outcome.repo, snapshot_sha, page)
+    ]
+    if rewritten:
+        return Verdict("A12", False, [f"pages outside the theme were rewritten: {rewritten}"])
+    return Verdict("A12", True, [f"every earlier docs page is unchanged, apart from {sorted(allowed) or 'none'}"])
+
+
 ASSERTIONS: dict[str, Callable[[Scenario, Outcome], Verdict]] = {
     "A1": a1_queue_only_confirmed,
     "A2": a2_skip_is_final,
@@ -915,6 +1114,10 @@ ASSERTIONS: dict[str, Callable[[Scenario, Outcome], Verdict]] = {
     "A6": a6_branch_rule,
     "A7": a7_drift_reverified,
     "A8": a8_pr_body_layout,
+    "A9": a9_agents_md_section,
+    "A10": a10_style_guide_sections,
+    "A11": a11_prose_check_copy,
+    "A12": a12_no_mass_rewrite,
 }
 
 
@@ -987,20 +1190,37 @@ def run(out_dir: Path, names: Sequence[str], model: str, budget: str, eval_root:
 # --- Build the canned reports (maintainer use) ---------------------------------------------------------------
 
 
-def build_reports() -> list[str]:
-    """Audit the toy repository with the real tools and write the two canned final reports (base and planted)."""
+def build_reports(variants: Sequence[str] = VARIANTS) -> list[str]:
+    """Audit the toy repository with the real tools and write the canned final reports of `variants`.
+
+    `base` and `planted` audit the same snapshot; `comm` audits the snapshot with :data:`COMM_OVERLAY`. Build only
+    the variants you mean to change: a rebuild takes today's engine and stamp, so the report's data changes.
+    """
+    unknown = [variant for variant in variants if variant not in VARIANTS]
+    if unknown:
+        raise _common.UsageError(f"unknown report variant {unknown}; known: {', '.join(VARIANTS)}")
+    written: list[str] = []
+    for group in (("base", "planted"), ("comm",)):
+        chosen = [variant for variant in group if variant in variants]
+        if chosen:
+            written += _build_group(group[0], chosen)
+    return written
+
+
+def _build_group(snapshot_variant: str, variants: Sequence[str]) -> list[str]:
+    """Snapshot once for `snapshot_variant`, run the engine once, and write one final report per variant."""
     import tempfile
 
     written = []
     with tempfile.TemporaryDirectory(prefix="implement-eval-build-") as tmp:
         work = Path(tmp)
         target = work / LABEL
-        snapshot(target)
+        snapshot(target, snapshot_variant)
         engine_out = work / "engine"
         engine_out.mkdir()
         engine = tool("engine.py", str(target), "--out-dir", str(engine_out), "--repo-label", LABEL, "--no-user-config")
         stamp = None
-        for variant in ("base", "planted"):
+        for variant in variants:
             out = work / variant
             out.mkdir()
             intake = out / f"audit-intake.{LABEL}.json"
@@ -1031,7 +1251,9 @@ def build_reports() -> list[str]:
                 )
                 tool("report.py", "add-check", draft, "--from", str(fragment))
             decisions = {}
-            for check, disposition, statement, summary, touches, playbook in FINDINGS:
+            for check, disposition, statement, summary, touches, playbook in (
+                COMM_FINDINGS if variant == "comm" else FINDINGS
+            ):
                 if variant == "planted" and check == "DOC-01":
                     statement = PLANTED_STATEMENT
                 fragment = out / f"{check}.json"
@@ -1118,7 +1340,8 @@ def build_parser() -> _common.ToolParser:
     go.add_argument("--model", default="sonnet")
     go.add_argument("--max-budget-usd", default="2.5")
     go.add_argument("--eval-root", default=os.environ.get("TMPDIR", "/tmp") + "/implement-eval")
-    commands.add_parser("build-reports", help="rebuild the canned reports (maintainer use)")
+    build = commands.add_parser("build-reports", help="rebuild the canned reports (maintainer use)")
+    build.add_argument("--variant", action="append", default=[], choices=VARIANTS, help="one variant (repeatable)")
     return parser
 
 
@@ -1153,7 +1376,8 @@ def handler(argv: Sequence[str]) -> _common.Result:
             data=data, summary=f"implement_eval: run {'passed' if data['passed'] else 'failed'}, ${data['cost_usd']}"
         )
     if args.command == "build-reports":
-        return _common.Result(data={"written": build_reports()}, summary="implement_eval: reports rebuilt")
+        written = build_reports(args.variant or VARIANTS)
+        return _common.Result(data={"written": written}, summary="implement_eval: reports rebuilt")
     raise _common.UsageError("give a subcommand: scenarios, materialise, assert, run or build-reports")
 
 

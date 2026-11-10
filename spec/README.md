@@ -62,7 +62,7 @@ The report format itself is defined later by the report schema in `audit/schema/
 
 ### Decision records
 
-Where the framework documents leave a question open, the answer is recorded in `decisions/NNNN-short-title.md`, written from the [greenfield ADR template](../greenfield/templates/docs/templates/adr-template.md). A record is a living, current-state document: when the decision changes, its body is overwritten and the reversal is folded into its *Alternatives Considered* table. Numbers are never reused. The requirements the decision affects state its outcome, so the record does not need reading to apply them.
+Where the framework documents leave a question open, the answer is recorded in `decisions/NNNN-short-title.md`, written from the [ADR template](../docs/templates/adr-template.md) and kept under the [ADR policy](../docs/ADR_POLICY.md). The requirements the decision affects state its outcome, so the record does not need reading to apply them.
 
 ### Supporting formats
 
@@ -79,7 +79,7 @@ Where the framework documents leave a question open, the answer is recorded in `
 - [command-surface.md](command-surface.md): the verbs every repository exposes and how each runner spells them.
 - [readiness-summary.md](readiness-summary.md): the headline of a readiness report: the Phase-1 score, the blockers remaining and the unattested list.
 - [traceability.md](traceability.md): which requirements each audit-engine check verifies, which requirements have no check, and which go beyond the framework documents.
-- [decisions/](decisions/0001-constraint-artifact.md): decision records. 0001 settles what the allow/deny artifact is; 0002 settles where lint is gated.
+- [decisions/](decisions/0001-constraint-artifact.md): decision records. 0001 settles what the allow/deny artifact is; 0002 settles where lint is gated; 0003 settles which verb runs the dependency scan.
 
 ### Planned
 

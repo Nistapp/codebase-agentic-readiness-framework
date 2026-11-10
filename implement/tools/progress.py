@@ -410,7 +410,7 @@ def _sha(text: str) -> str:
 def _sha_option(text: str) -> str:
     if not re.fullmatch(r"[0-9a-f]{7,40}", text):
         raise _common.UsageError(f"--merged-sha must be 7 to 40 lower-case hex digits, not {text!r}")
-    return text
+    return short_sha(text) or text
 
 
 def run_init(args: Any) -> _common.Result:
@@ -852,7 +852,7 @@ def parse_debt(text: str) -> dict[str, Any]:
 def _commit(text: str) -> str:
     if not re.fullmatch(r"[0-9a-f]{7,40}", text):
         raise _refuse(f"--commit must be 7 to 40 lower-case hex digits, not {text!r}")
-    return text
+    return short_sha(text) or text
 
 
 def find_item(state: dict[str, Any], finding: str) -> dict[str, Any]:

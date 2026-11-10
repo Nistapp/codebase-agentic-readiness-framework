@@ -13,11 +13,13 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | --- | --- | --- | --- | --- |
 | ruff | Python formatting and lint errors (rules in `ruff.toml`) | `make format`, `make format:check`, `make lint` | `static` | `dev/tools/pyproject.toml` |
 | mypy | Python type errors, strict mode (`mypy.ini`) | `make typecheck` | `static` | `dev/tools/pyproject.toml` |
-| unittest | Failing tests: the engine, the audit tools, the implement tools, the dev checks | `make test` (on Linux, its four suites at once; CI splits the engine's and the audit tools' suites into shards with `dev/test_shard.py`) | `test-coverage`, `test-dev`, `test-py314`; unsharded in `nightly.yml` | Python standard library |
+| unittest | Failing tests: the engine, the audit tools, the implement tools, the dev checks | `make test` (on Linux, its four suites at once; CI splits the engine's and the audit tools' suites into shards with `dev/test_shard.py`, and the dev checks too on Python 3.14) | `test-coverage`, `test-dev`, `test-py314`; unsharded in `nightly.yml` | Python standard library |
 | coverage.py | Test coverage below the floor in `.coveragerc` | `make coverage` (in CI: `coverage-part`, then `coverage-combine SHARDED=1`) | `test-coverage`, `coverage`; unsharded in `nightly.yml` | `dev/tools/pyproject.toml` |
 | jsonschema | The tools' schema validator disagrees with the reference package | `make crosscheck` | `crosscheck` | `dev/tools/pyproject.toml` |
 | `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, a recipe `SKILL.md` that does not link the shared user prompt, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `static` | This repository |
+| `dev/adr_lint.py` | An ADR with a lifecycle field, a lifecycle footer or a retired-ADR marker, a missing template section, or no row in the [ADR index](../architecture/adrs/README.md) (and, for an engine ADR, the engine's index); an index row to a missing ADR; a page that names an ADR number or path no folder holds | `make adr-lint` | `static` | This repository |
 | `dev/build_masters.py` | An [audit master list](audit-master.md) or [implement master list](implement-master.md) that no longer matches the catalogue, the check files or the playbooks | `make masters-check`; `make update-masters` rewrites both pages | `static` | This repository |
+| `dev/eval/generate_fixture_expected.py` | An eval-expected file (`dev/eval/expected/fixtures/`) that no longer matches a fresh engine run on its fixture | `make eval-expected-check`; the script without `--check` rewrites the files | `static` | This repository |
 | actionlint | Workflow mistakes: syntax, expressions, action inputs, shellcheck on `run:` blocks | `make workflow-lint` | `static` | `dev/tools/actionlint/go.mod` |
 | zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown. Runs at the pedantic persona, so a permission without a comment or a missing concurrency limit fails too | `make workflow-lint` | `static` | `dev/tools/pyproject.toml` |
 | typos | Misspelled words in the tracked text, code identifiers included (word list: [`_typos.toml`](../../_typos.toml)) ([Spell check](#spell-check)) | `make spell`; `make spell-fix` writes the fixes | `static` | `dev/tools/pyproject.toml` |
@@ -25,7 +27,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | detect-secrets | Key-shaped strings not in `.secrets.baseline` | `make security` (part: `security-secrets`) | `security-secrets` | `dev/tools/pyproject.toml` |
 | osv-scanner | A known vulnerability in a dev tool or its dependencies (Python, Node, Go lockfiles), unless [`osv-scanner.toml`](../../dev/tools/osv-scanner.toml) accepts it ([Dependency audit](#dependency-audit)) | `make security` (part: `security-deps`) | `security-deps` | `dev/tools/osv/go.mod` |
 | markdownlint-cli2 | Markdown rule violations (`.markdownlint-cli2.jsonc`) | `make docs-lint`; `make changelog-fix` rewrites `CHANGELOG.md` with the fixes | `docs`; `format-changelog` in `release-please.yml` | `dev/tools/package.json` |
-| `dev/prose_check.py` | Long sentences, vague words, explanation pages without a diagram ([`COMMUNICATION_RULES.md`](../COMMUNICATION_RULES.md)). Advisory: warnings and notices, never a failure | `make docs-prose [FILES=...]` | `docs` (annotations on changed Markdown) | This repository |
+| `dev/prose_check.py` | Long sentences, vague words, explanation pages without a diagram ([`COMMUNICATION_RULES.md`](../COMMUNICATION_RULES.md)). Advisory: warnings and notices, never a failure. Its copy for target repositories, `implement/playbooks/templates/docs_prose_check.py`, adds `--max-issues`; `dev/tests/test_prose_template_parity.py` holds the two equal | `make docs-prose [FILES=...]` | `docs` (annotations on changed Markdown) | This repository |
 | mermaid-cli | A Mermaid block that does not render | `make docs-mermaid FILES=<file.md>` | `docs` | `dev/tools/package.json` |
 | skills-ref | A skill bundle that breaks the Agent Skills specification | `make validate-skills` | Release only | `dev/tools/pyproject.toml` |
 | `dev/commit_lint.py` | A commit subject that is not Conventional Commits | `make commit-lint` | `commits` | This repository |
@@ -39,8 +41,8 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | Go | Builds and runs actionlint and osv-scanner through `go tool` | — | `check`, `security` | the `go` line of each Go tool module |
 
 `make check` runs `format:check`, `typecheck`, `test`, the engine's rule check, `crosscheck`, `recipe-lint`,
-`masters-check`, `workflow-lint` and `spell`, in sequence. CI's `CI Gate` passes only when the `check`, `security`,
-`coverage`, `self-audit`, `docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
+`adr-lint`, `masters-check`, `eval-expected-check`, `workflow-lint` and `spell`, in sequence. CI's `CI Gate`
+passes only when the `check`, `security`, `coverage`, `self-audit`, `docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
 
 ## Spell check
 

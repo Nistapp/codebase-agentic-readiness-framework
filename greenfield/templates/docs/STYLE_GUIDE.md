@@ -12,7 +12,8 @@
 2. **Zero Specification Drift:** Code and architecture specs MUST remain synchronized. Every behavioral change requires a matching spec update **in the same change set**.
 3. **Empirical Grounding:** Never document aspirational features as existing facts. All claims must be verifiable against source code or tests; planned work MUST carry an explicit notice banner.
 4. **Symbol Anchoring:** Reference code symbols using fully-qualified names and explicit file paths with markdown links to source line anchors (e.g. `[orchestrator.ts#L37-L61](../src/core/orchestrator.ts#L37-L61)`).
-5. **Living ADRs (Current-State Only):** An ADR MUST describe only the shipped, current codebase. When a decision changes, revise the ADR body **in place**; when an ADR becomes irrelevant, delete it. Git is the archive — never keep tombstone, superseded, or deprecated stubs.
+5. **Current-State ADRs:** An ADR states only the current decision; git is the archive. The rules are in
+   [`ADR_POLICY.md`](ADR_POLICY.md).
 
 ---
 
@@ -34,7 +35,7 @@ Rules:
 ## 3. Formatting Standards
 
 - **Headers:** ATX style (`#`, `##`, `###`), maximum 4 levels deep.
-- **Diagrams:** Use Mermaid (`flowchart`, `sequenceDiagram`, `stateDiagram-v2`). Do not embed external images when a Mermaid representation is possible.
+- **Diagrams:** Use Mermaid; see §9. Do not embed external images when a Mermaid representation is possible.
 - **Alerts:** Use GitHub-flavored Markdown alerts (`[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`).
 - **Tables:** Use standard GFM tables with aligned headers for scannability.
 - **Blank lines:** one blank line before and after headers, code blocks, tables, and alert blocks.
@@ -48,6 +49,7 @@ Rules:
 | This style guide | `docs/STYLE_GUIDE.md` | `STYLE_GUIDE.md` |
 | Architecture overview / explanations | `docs/architecture/` | `<topic>.md` |
 | Architectural Decision Records | `docs/architecture/adrs/` | `NNNN-short-title.md` |
+| ADR policy | `docs/ADR_POLICY.md` | `ADR_POLICY.md` |
 | ADR index & doc router | `docs/architecture/README.md` | `README.md` |
 | Domain glossary | `docs/architecture/glossary.md` | `glossary.md` |
 | How-to guides | `docs/how-to/` | `<task>.md` |
@@ -65,7 +67,7 @@ New documents MUST start from the matching template in `docs/templates/`.
 
 1. **Query-first:** consult `codebase-memory-mcp` (`search_graph`, `get_code_snippet`, `get_architecture`) to verify symbols and file locations against the current codebase before grepping or reading whole files.
 2. Check existing pages in `docs/` — update rather than duplicate.
-3. Check `docs/architecture/adrs/` for the highest sequence number ever used before creating an ADR.
+3. Before you add, change or delete an ADR, read [`ADR_POLICY.md`](ADR_POLICY.md).
 
 ### 5.2 Doc Maintenance Trigger (definition of done)
 
@@ -85,40 +87,10 @@ Pure internal refactors with no observable or documentation impact do not requir
 
 ---
 
-## 6. ADR Lifecycle
+## 6. ADRs
 
-ADRs live in `docs/architecture/adrs/` and are created from `docs/templates/adr-template.md`.
-
-```markdown
-# NNNN. Short Title
-
-* **Status:** Accepted
-* **Date:** YYYY-MM-DD
-* **Last reviewed:** YYYY-MM-DD
-* **Deciders:** [@github-handle]
-
-## Context
-[Technical context, problem statement, alternatives considered.]
-
-## Decision
-[Chosen architecture, pattern, or dependency, with links to source interfaces.]
-
-## Consequences
-### Positive
-* [Benefit]
-
-### Negative / Trade-offs
-* [Trade-off]
-```
-
-1. **Create:** assign `highest-ever sequence number + 1`. A number whose ADR was deleted is retired and MUST NOT be reused.
-2. **Record:** use `docs/templates/adr-template.md`.
-3. **Index:** add a row to the index table in `docs/architecture/README.md` in the same change set.
-4. **Revise in place:** when a decision changes, overwrite the ADR body and keep its number. Fold the reversal into the ADR's own *Alternatives considered* table. Do NOT create a second "superseding" ADR and do NOT leave a tombstone stub. Use `git log --follow` to recover older wording.
-5. **Delete when irrelevant:** when an ADR no longer describes anything in the current codebase, delete the file and update every inbound reference in the same change set. Feature-level deprecation belongs in the glossary or roadmap, never as a lingering ADR.
-
-> [!IMPORTANT]
-> There is no `Deprecated`, `Superseded`, or `Rejected` status. A merged ADR is always `Accepted` (`Proposed` is allowed in-flight but MUST NOT be merged). Stale instructions pollute agent context, so staleness is treated as a defect, not as history.
+ADRs live in `docs/architecture/adrs/` and start from `docs/templates/adr-template.md`. How to add, change or
+delete one: [`ADR_POLICY.md`](ADR_POLICY.md).
 
 ---
 
@@ -133,3 +105,48 @@ ADRs live in `docs/architecture/adrs/` and are created from `docs/templates/adr-
 
 `artefacts/` is never an architectural source of truth and is excluded from the
 `codebase-memory` index; see [`AGENTS.md` §4](../AGENTS.md).
+
+---
+
+## 8. Plain Language
+
+Write for the reader that [`AGENTS.md`](../AGENTS.md) §8.1 names. These rules come from ASD-STE100 (Simplified
+Technical English), without its fixed word list: technical names are fine. The audit check `DOC-05` measures
+rules 2 and 6 over every page under `docs/`.
+
+1. **Bottom line first.** Put the answer, the result or the decision in the first two lines.
+2. **Short sentences.** At most 20 words in a step of a procedure. At most 25 words in other text.
+3. **One instruction per sentence.** Write steps in the imperative: "Run the tests", not "You should run them".
+4. **Active voice.** Say who does what: "The service reads the file", not "The file is read".
+5. **One word, one meaning.** Use the same term every time. Do not change words for variety.
+6. **No vague or padded words.** Do not write `simply`, `just`, `obviously`, `clearly`, `basically`, `easily`,
+   `utilize`, `leverage`, `in order to`, `and/or` or `etc.`. Name the real items instead of `etc.`.
+
+Example (the "before" text breaks rules 2, 4 and 6 on purpose, so the check skips it):
+
+<!-- prose-check off -->
+
+> Before: In order to ensure that the build is green, it is recommended that the tests are run by the
+> contributor prior to the proposal of a change.
+>
+> After: Run the tests before you propose a change.
+
+<!-- prose-check on -->
+
+---
+
+## 9. Diagrams
+
+A diagram often explains a flow faster than text. Every page under `docs/explanation/` and `docs/tutorials/`
+(an index page excepted) has at least one Mermaid diagram. Pick the type by what you show:
+
+| You show | Mermaid type |
+|---|---|
+| Steps and choices in a process | `flowchart` |
+| Who calls whom, in order | `sequenceDiagram` |
+| The states of one thing and how it moves between them | `stateDiagram-v2` |
+| Data shapes and how they relate | `classDiagram` or `erDiagram` |
+
+- Keep a diagram to about 12 nodes. Split a larger one.
+- Write one sentence before the diagram that says what it shows.
+- Validate every block before you commit it: render it with the Mermaid CLI, or a Mermaid validator.

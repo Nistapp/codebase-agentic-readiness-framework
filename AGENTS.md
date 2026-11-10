@@ -27,10 +27,11 @@ make setup          # check the prerequisites (Python 3.11+, uv, git, Go); nothi
 make format         # rewrite formatting in place
 make format:check   # read-only: formatting and lint rules (alias: make format-check)
 make lint           # read-only lint
-make typecheck      # mypy, strict, on audit/tools, implement/tools and dev, and the engine's build.py
+make typecheck      # mypy, strict: audit/tools, implement/tools, the playbook templates, dev, the engine build.py
 make test           # the engine's, the audit tools', the implement tools' and the dev checks' suites (at once on Linux)
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
-                    # cross-check, recipe-lint, masters-check, workflow-lint (actionlint, zizmor, check-jsonschema), spell (typos)
+                    # cross-check, recipe-lint, adr-lint, masters-check, eval-expected-check, workflow-lint (actionlint,
+                    # zizmor, check-jsonschema), spell (typos)
 make security       # secrets scan, then the dependency audit (osv-scanner; needs Go and the network)
 make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin/dev..HEAD); CI runs it on each PR
 make update-masters # regenerate docs/reference/audit-master.md and implement-master.md (check runs masters-check)
@@ -112,7 +113,9 @@ reports, commit messages, pull request descriptions and docs.
 | `artefacts/` | Scratch notes and plans. The folder is tracked, its contents are git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
 
 Decisions (ADRs) live beside the component they govern (root ADR 0001). The root index,
-`docs/architecture/adrs/README.md`, lists all of them.
+`docs/architecture/adrs/README.md`, lists all of them. **Every ADR you add, change or delete follows
+`docs/ADR_POLICY.md`.** Git is the archive, so an ADR states only the current decision. Overwrite a changed
+decision in place. Delete a superseded one, and never refer to it again.
 
 A folder with no files yet is not written yet; the docs page that describes it says `Planned`.
 
@@ -146,6 +149,7 @@ A change is done when all of this holds:
 - A change can alter a public interface, observable behaviour, the architecture or a decision. Then update the
   affected documentation and the decision records in the same change set. When you fill in a page marked `Planned`,
   remove that note and update the doc router.
+- An ADR you added or changed follows `docs/ADR_POLICY.md` and has its row in the ADR index.
 - Python files carry the SPDX header `AGPL-3.0-or-later` and the copyright line. Documentation, schemas and published
   outputs are `GFDL-1.3-only`. The zones are in `docs/reference/licensing.md`.
 - Commits follow Conventional Commits, one logical change each, so any one can be reverted alone.
@@ -159,7 +163,7 @@ A change is done when all of this holds:
   `docs/how-to/contribute-a-change.md`.
 - How to write for people: `docs/COMMUNICATION_RULES.md`.
 - Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
-  `docs/architecture/adrs/README.md`.
+  `docs/architecture/adrs/README.md`. The ADR rules: `docs/ADR_POLICY.md`.
 - Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.
 - What an audit checks and what an implement run changes, for a reader: `docs/reference/audit-master.md` and
   `docs/reference/implement-master.md`.

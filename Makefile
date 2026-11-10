@@ -69,7 +69,7 @@ COVERAGE_DATA := $(CURDIR)/dev/dist/coverage/.coverage
 # The Markdown that `docs-lint` holds to zero violations. A ratchet: a path joins once it is clean, and the list
 # only grows. Everything else is reported by `docs-lint-all` and never fails.
 DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbooks/*.md' 'implement/prompts/*.md' \
-	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/reference/audit-master.md' 'docs/reference/implement-master.md' 'docs/how-to/contribute-a-change.md' 'docs/how-to/set-up-agent-tools.md' 'docs/COMMUNICATION_RULES.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
+	'docs/README.md' 'docs/STYLE_GUIDE.md' 'docs/architecture/**/*.md' 'docs/reference/branch-protection.md' 'docs/reference/dev-tooling.md' 'docs/reference/audit-master.md' 'docs/reference/implement-master.md' 'docs/how-to/contribute-a-change.md' 'docs/how-to/set-up-agent-tools.md' 'docs/COMMUNICATION_RULES.md' 'docs/ADR_POLICY.md' 'docs/templates/adr-template.md' 'CONTRIBUTING.md' 'CHANGELOG.md' 'RELEASE_PROCESS.md' 'SECURITY.md' \
 	'docs/explanation/user-overview/03-trust-and-safety.md' 'docs/explanation/contributor-deep-dive/04-stack-profiles.md' 'docs/explanation/contributor-deep-dive/05-evaluation.md' 'docs/how-to/add-a-stack-profile.md' 'docs/reference/harness-notes.md' \
 	'audit/engine/docs/how-to/read-the-report.md' 'docs/reference/versions.md' 'docs/how-to/implement-an-audit-report.md' \
 	'docs/how-to/resume-an-interrupted-run.md' 'docs/glossary.md' 'AGENTS.md' 'audit/prompts/talking-to-the-user.md' \
@@ -88,7 +88,7 @@ ENGINE := audit/engine
 # Mypy covers the recipe tools, the dev-only checks and the engine's build script. The engine's own code joins
 # later, through a ratchet. The find picks up every Python file under audit/tools, implement/tools and
 # dev, tests included, except the toy repositories under testdata/ (eval data).
-TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
+TYPED_SOURCES := $(shell find audit/tools implement/tools implement/playbooks/templates dev -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
 
 .DEFAULT_GOAL := help
 
@@ -107,13 +107,13 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint adr-lint masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  masters-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -161,9 +161,12 @@ test-dev:
 # CI splits the slow suites (SHARDED_SUITES) into TEST_SHARDS parts that run in separate jobs; SHARD=<i> picks one
 # (1 to TEST_SHARDS). dev/test_shard.py finds the modules at run time and balances them by
 # dev/test_shard_weights.json; every module is in exactly one shard, and a shard that selects no test fails. `test`
-# and `coverage` never shard.
+# and `coverage` never shard. TEST_SHARDED_SUITES are the suites that test-part shards: SHARDED_SUITES, plus the dev
+# checks, which coverage.py does not measure. The dev checks are sharded only in the Python 3.14 parts, where the whole
+# suite set the length of the run (76-97 s, against 60 s or less for every other job; measured 2026-11-10).
 TEST_SHARDS := 2
 SHARDED_SUITES := engine audit-tools
+TEST_SHARDED_SUITES := engine audit-tools dev
 test_shard = $(CURDIR)/dev/test_shard.py --suite $(1) --shard $(SHARD)/$(TEST_SHARDS)
 require_shard = @test -n "$(SHARD)" || { echo "$@: set SHARD to a number from 1 to $(TEST_SHARDS)" >&2; exit 1; }
 
@@ -175,15 +178,19 @@ test-audit-tools-shard:
 	$(require_shard)
 	$(PYTHON) $(call test_shard,audit-tools)
 
-# Every suite of `test` in TEST_SHARDS parts, for CI's Python 3.14 jobs: part <i> is shard <i> of each sharded suite
-# plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. test-dev takes about as long as an engine
-# shard, so it shares a part with no other whole suite. dev/tests/test_ci_parity.py fails when the parts leave out a
-# suite of `test`.
-TEST_PART_1 := test-implement-tools verify-rules
-TEST_PART_2 := test-dev
+test-dev-shard:
+	$(require_shard)
+	$(PYTHON) $(call test_shard,dev)
+
+# Every suite of `test` in TEST_SHARDS parts, for CI's Python 3.14 jobs: part <i> is shard <i> of each suite in
+# TEST_SHARDED_SUITES plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. The dev checks' first
+# shard is test_implement_eval alone (about 40 s), so the small whole targets go with the second.
+# dev/tests/test_ci_parity.py fails when the parts leave out a suite of `test`.
+TEST_PART_1 :=
+TEST_PART_2 := test-implement-tools verify-rules
 test-part:
 	$(require_shard)
-	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(SHARDED_SUITES:%=test-%-shard) $(TEST_PART_$(SHARD))
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SHARDED_SUITES:%=test-%-shard) $(TEST_PART_$(SHARD))
 
 # Runs the engine's suite and the tools' suites under coverage.py and fails when the total drops below the floor in
 # .coveragerc (`fail_under`). Not part of `check`; needs uv. Each coverage-<suite> writes its own data file
@@ -285,6 +292,10 @@ crosscheck:
 recipe-lint:
 	$(PYTHON) dev/recipe_lint.py .
 
+# Every ADR follows docs/ADR_POLICY.md: no lifecycle fields or tombstones, the four sections, a row in the root index.
+adr-lint:
+	$(PYTHON) dev/adr_lint.py .
+
 # The audit and implement master lists (docs/reference/*-master.md) are generated from the catalogue, the check files
 # and the playbooks. masters-check fails when either page is stale; update-masters rewrites them.
 masters-check:
@@ -292,6 +303,12 @@ masters-check:
 
 update-masters:
 	$(PYTHON) dev/build_masters.py --write
+
+# The eval-expected files (dev/eval/expected/fixtures/) are generated from the engine's fixture matrix by running the
+# engine on each fixture (a few seconds). eval-expected-check fails when one is stale; run the script without --check
+# to rewrite them.
+eval-expected-check:
+	$(PYTHON) dev/eval/generate_fixture_expected.py --check
 
 # Lints the GitHub Actions workflows and checks .github/dependabot.yml. All three tools run offline.
 # Read-only: report each misspelling with its file and line. `make spell-fix` writes the suggested fixes; review them.
@@ -313,7 +330,7 @@ RANGE ?= origin/dev..HEAD
 commit-lint:
 	$(PYTHON) dev/commit_lint.py --range $(RANGE)
 
-check: format-check typecheck test verify-rules crosscheck recipe-lint masters-check workflow-lint spell
+check: format-check typecheck test verify-rules crosscheck recipe-lint adr-lint masters-check eval-expected-check workflow-lint spell
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.

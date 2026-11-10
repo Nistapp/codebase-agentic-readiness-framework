@@ -6,7 +6,7 @@
 ## Goal
 
 An agent finds permanent knowledge in one place: `docs/` has an index, a short style guide that the instruction
-file names, a decision log with a template and an index, and a short architecture page with a diagram that was
+file names, a decision log with a policy, a template and an index, and a short architecture page with a diagram that was
 checked. Scratch work stays out of version control. Structural traps (very large files, binaries) are listed,
 not moved.
 
@@ -17,8 +17,8 @@ not moved.
 | DOC-01 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-01--docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home |
 | DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
-| DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with a template, an index and two or three first records marked `proposed` |
-| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Not written yet: the steps that add plain-language rules to the style guide and a prose check are planned. Until then, report the finding to the owner and leave it open |
+| DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
+| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner picks one of three permissive licences for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
 | NAV-01 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-01--declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | NAV-02 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-02--obvious-entry-points) | Verification only: names the entry points in the architecture page |
 | NAV-03 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-03--structural-red-flags) | Census of oversized files, catch-all directories, binaries and minified assets; document, never move |
@@ -33,8 +33,14 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 - The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
   worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `format.mass_reformat` (a `no` means every docs check is a
-  baseline or ratchet, never a reformat), `layout.command_runner`, `ci.edits_authorised` (needed to add the docs
-  CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `extra.*`.
+  baseline or ratchet, never a reformat; for prose, `yes` changes nothing, see Do-not-do), `extra.prose-rewrite`
+  (the pages the owner named for a prose rewrite), `layout.command_runner`, `ci.edits_authorised` (needed to add the docs
+  CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `docs.prose_check` and
+  `docs.prose_check_licence` (Inputs 6), `docs.language` (the language
+  of the docs; see [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask), Inputs 7), `extra.*`.
+- The `DOC-05` steps run on a confirmed `DOC-05` finding. They also run when the owner asked for them by name in
+  Stage 1 (`extra.doc-05`); that change has no finding for the re-audit to confirm, so say so in the pull request,
+  under "What changed".
 - **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a finding that says "no `docs/` directory" can be stale: an
   earlier theme or an audit-report commit may have created `docs/`. The engine passes DOC-01 on any Markdown file under
   `docs/`, so the report folders alone make it pass. Add the index to the folder that exists; never create a second
@@ -65,18 +71,29 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    > rather than implementing it. See the owner-facing comparison in the track research note
    > (`node-vs-java-docs-lint`, not part of the recipe). An owner who asks "why not Java" gets this answer; the
    > docs job stays separate from the build, so the build toolchain is unchanged.
-2. **Style guide source.** Default: adapt the framework's
-   [`docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) (Diátaxis) to one page. The alternative
+2. **Style guide source.** Default: adapt the greenfield
+   [`docs/STYLE_GUIDE.md`](../../greenfield/templates/docs/STYLE_GUIDE.md) (Diátaxis) to one page. The alternative
    (the owner's own house rules) is allowed only when those rules are not private to a different repository.
-3. **First ADRs.** Ask which two or three existing decisions to record. If the owner has no preference, pick them
-   from the code and the existing docs (a schema-migration tool, a search or storage engine, an authentication
-   or tenant-selection mechanism, a branch model) and say why you picked them. Mark each `proposed`.
+   Either way, the guide gains the "Plain language" and "Diagrams" sections (Steps 3) when DOC-05 is in the theme.
+3. **First ADRs.** Ask which two or three existing decisions to record. With no owner preference, pick them
+   from the code and the existing docs, and say why you picked them. Good candidates: a schema-migration tool, a
+   search or storage engine, an authentication or tenant-selection mechanism, a branch model.
 4. **Architecture overview scope.** Default: modules or apps, entry points, data stores, one authentication or
    request flow, from the code index of this repository only.
-5. **Instruction-file line.** One line naming `docs/STYLE_GUIDE.md`, `docs/adr/` and `docs/architecture/`,
-   placed beside the existing pointer line (section per `agents_md.pointer_section`). The AGENTS.md theme (T7)
-   reorganises the file later; tell it in the status that the line exists.
-6. **NAV-03 findings.** The owner chooses per path: document (default), or skip as by-design. Moving or
+5. **Instruction-file line.** One line naming `docs/STYLE_GUIDE.md`, `docs/adr/`, the ADR policy page and
+   `docs/architecture/`, placed beside the existing pointer line (section per `agents_md.pointer_section`).
+   The AGENTS.md theme (T7) reorganises the file later; tell it in the status that the line exists.
+6. **Prose check (DOC-05).** The framework has a stdlib Python template that checks the style guide's rules and can
+   fail above a count: [`templates/docs_prose_check.py`](templates/docs_prose_check.py). It is code under the
+   framework's own licence, and a copy never carries that licence. So flag the option, and offer two answers as a
+   [decision request](../../audit/prompts/talking-to-the-user.md#decision-requests):
+   - a. **Skip (default).** Add no tool. The `DOC-05` counts are recorded as debt (`docs.prose_check=skip`).
+   - b. **Copy it under a licence the owner picks from this list:** `MIT`, `Apache-2.0` or `BSD-3-Clause`. These
+     are the licences the template's copyright holder grants for a copy. Offer no other licence, and never the
+     framework's own. When the owner wants another licence, record skip (a). Record `docs.prose_check=template` and
+     `docs.prose_check_licence=<id>`. The copy needs Python 3.11 or newer where it runs, and
+     `ci.edits_authorised` for the runner command and the CI step.
+7. **NAV-03 findings.** The owner chooses per path: document (default), or skip as by-design. Moving or
    untracking a file is a separate owner decision and, for generated output, belongs to the
    [`untrack-generated`](untrack-generated.md) playbook.
 
@@ -102,14 +119,36 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    validated before saving, relative links, "no values from env files, credentials or keystores", "cite code by
    path", "decisions go in `docs/adr/`". Link to the lint config instead of restating its rules. Add the
    instruction-file line (Inputs 5). The check reads the literal string `STYLE_GUIDE.md`.
-4. **ADRs (DOC-04).** Create `docs/adr/` with `README.md` (the index: a table of number, title, status, one
-   line each, linking every file by its path), `0000-template.md` (adapted from the greenfield
-   [`adr-template.md`](../../greenfield/templates/docs/templates/adr-template.md): Status, Date,
-   Context, Decision, Alternatives considered, Consequences) and the first records as `0001-short-title.md`.
+
+   **Plain language and diagrams (DOC-05).** Add two sections to the style guide. The template is the greenfield
+   style guide: [§ 8 Plain Language](../../greenfield/templates/docs/STYLE_GUIDE.md#8-plain-language) and
+   [§ 9 Diagrams](../../greenfield/templates/docs/STYLE_GUIDE.md#9-diagrams). They hold rules 1 to 6 of the
+   framework's [communication rules](../../docs/COMMUNICATION_RULES.md#2-plain-language-rules) and the diagram rule,
+   with the limits `DOC-05` measures (25 words, 20 in a step, the same vague words). Rules:
+   - A style guide that already exists keeps its text. Add only the missing sections or rules, in the file's own
+     heading style. A limit of its own (for example 30 words) stays; tell the owner how it differs from the check.
+   - Keep the "before" example inside `<!-- prose-check off -->` and `<!-- prose-check on -->`, or the check counts
+     it.
+   - With a non-English `docs.language`, the owner supplies the rules in that language. `DOC-05` then reads
+     `UNKNOWN`; record the item `partial`.
+   - Every page this theme writes follows the rules: the index, the style guide, the ADR policy page, the ADRs and
+     the architecture page. Re-run the engine before the theme closes: `DOC-05` cites no line on those pages.
+4. **ADRs (DOC-04).** Create `docs/adr/` with four parts:
+   - `README.md`, the index: a table of number, title and a one-line summary, linking every file by its path.
+   - `0000-template.md`, copied from the greenfield
+     [`adr-template.md`](../../greenfield/templates/docs/templates/adr-template.md):
+     Context, Decision, Alternatives Considered, Consequences. It has no status, date or decider fields.
+   - An ADR policy page, adapted from the greenfield [`ADR_POLICY.md`](../../greenfield/templates/docs/ADR_POLICY.md).
+     Keep its rules; replace its folder list and links with the target's. Name the page to fit the target's
+     file names: `docs/ADR_POLICY.md` beside `docs/STYLE_GUIDE.md` by default, or `docs/adr-policy.md` where
+     the docs use lower-case names. The instruction-file line names it (Inputs 5).
+   - The first records, as `0001-short-title.md`.
+
    Rules:
-   - Status is `proposed` until the owner accepts; the owner changes it. This differs from the greenfield
-     template (which forbids merging `Proposed`): a retrospective record whose rationale the agent inferred
-     must say so on its face.
+   - Git is the archive: no record carries a status, a date or an approval line. The owner accepts the records
+     by merging the branch, and edits or deletes one before that. The pull request body (or the status note,
+     when no pull request is opened) lists each record under "What was not done", as waiting for the owner's
+     review.
    - The engine matches the numbered-file pattern (three or four digits, hyphen, slug, `.md`). The template file
      `0000-template.md` counts as a numbered entry, so list it in the index too.
    - Context and Decision come from the code and the existing docs, with file paths. State plainly what is
@@ -142,7 +181,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       baseline count from step 1 (final value after the last render, see step 1) on the docs item it belongs to
       (`set-status F-nnn partial --debt "what=markdown lint violations,count=N,baseline=<lint script>"`), and keep
       the script's `BASELINE` constant and a `docs.lint_ratchet` preference equal to it. When no docs item is open,
-      record the count in the `docs.lint_ratchet` preference and the pull request body.
+      record the count in the `docs.lint_ratchet` preference and in the pull request, under "How it was checked".
    3. Add a separate CI job, path-filtered to changed Markdown, that runs the linter and renders every Mermaid
       block with `mmdc` (`--no-sandbox` in CI, cache the npm and Puppeteer directories keyed by the pinned
       versions). Pin both versions exactly; never use an unpinned `npx`. If the repository already has Node,
@@ -153,6 +192,28 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       Check the repository's merge-gate job: a
       new job that must be green needs adding to it, which is the owner's call.
    4. If `lychee` was chosen: relative links only, report-only at first.
+   5. **Prose check (only with `docs.prose_check=template`).** Copy the template to the place and name the
+      repository uses for its scripts (D18), for example `scripts/docs_prose_check.py`. Replace its SPDX line with
+      the licence the owner picked (`docs.prose_check_licence`). Keep the copyright line: the template's author keeps
+      the copyright, and the owner gets the licence. Remove nothing else. Where the repository keeps a list of
+      third-party code (a `THIRD_PARTY_NOTICES` file or similar), add the copy to it.
+      Wire it as a ratchet, as for the lint. Both runs count warnings only (`--min-severity warning`): a sentence
+      over 40 words, a step over 20, a vague word, a page without its diagram. A sentence of 26 to 40 words stays a
+      notice, shown but not counted: a long sentence is often the clearest one (the framework's own
+      [ADR 0004](../../docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md) reversed a ratchet that
+      counted them).
+
+      - a runner command (`docs-prose` or the runner's own spelling) runs the copy with
+        `--min-severity warning --max-issues 0` on the pages held clean: the pages this theme wrote, and any page
+        that is already clean;
+      - a second run on every Markdown page under `docs/` uses `--max-issues <baseline>`. Measure the baseline after
+        the last render, with the new pages staged, as for the lint count;
+      - if the explanation pages live elsewhere (for example `docs/architecture/`), pass `--diagram-dir` once per
+        folder;
+      - both runs go in the docs CI job from item 3. Use `--format github` there, so issues show on the pull request.
+        A third run with no limit and no `--min-severity` shows the notices too, as advice.
+
+      Record the baseline (warnings) as debt on the `DOC-05` item, and in the `docs.prose_ratchet` preference.
 9. **Commits:** docs, then lint config, then CI.
 
 ### Gradle and Quarkus
@@ -178,11 +239,17 @@ The repository already has Node, so the job can reuse its pinned Node version.
   held by the ratchet so the count cannot rise. Never mass-fix, reformat or suppress a rule to make the count
   fall unless the owner chooses that.
 - Dead links (if `lychee` runs): counted, report-only.
+- No Python 3.11 where the prose check must run: tell the owner, and fall back to `docs.prose_check=skip`.
+- DOC-05 counts on pages the theme did not write: the long sentences, vague words and pages without a diagram
+  stay. Record one debt entry per measure on the item (`partial`). The note names the worst pages, at most five,
+  worst first, from the engine's cited lines. The owner decides on a rewrite (`extra.prose-rewrite`).
+- A page the theme edits anyway (for example the docs index) joins the clean path list only when it passes the
+  rules. Until then it stays in the debt count.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
   because the engine counts, it does not judge. Mark the item `partial` with that reason, or `skipped` if the
   owner calls it by design.
-- A proposed ADR the owner has not accepted: stays `proposed`, listed in the pull request body as waiting for
-  the owner.
+- An ADR the owner has not reviewed: listed in the pull request under "What was not done", or in the status note,
+  as waiting for the owner. The owner edits, deletes or merges it.
 - A docs job the merge gate cannot yet require: left advisory, noted for the CI theme.
 
 ## Verification
@@ -191,18 +258,21 @@ The repository already has Node, so the job can reuse its pinned Node version.
 |---|---|---|
 | DOC-01 | `git ls-files 'docs/*.md' 'docs/**/*.md'` | At least one file; `docs/README.md` links every page; no second docs home |
 | DOC-02 | `test -f docs/STYLE_GUIDE.md` and `grep -n STYLE_GUIDE.md <instruction file>` | File exists; the instruction file names it |
+| DOC-05 | `grep -n -i 'plain language\|diagram' docs/STYLE_GUIDE.md`; the engine's DOC-05 | Both sections present; no cited line on a page this theme wrote; `PASS`, or `partial` with the counts as debt |
 | DOC-03 | `git ls-files artefacts artifacts` and `git check-ignore -v artefacts/x` | No scratch directory, or nothing tracked and the rule matches |
-| DOC-04 | List `docs/adr/`; read `docs/adr/README.md` | At least one numbered file; the index links every numbered file by path, the template included |
+| DOC-04 | List `docs/adr/`; read `docs/adr/README.md`; `grep -n -i 'adr' <instruction file>` | At least one numbered file; the index links every numbered file by path, the template included; the ADR policy page exists and the instruction file names it |
 | NAV-01 | Read the components table in the overview | Every declared component listed with its manifest path |
 | NAV-02 | Read the entry-points list | Each entry point is a real path (check with `test -f`) |
 | NAV-03 | The "Repository notes" section | Every counted path is listed with a tag; nothing moved (`git status` shows only docs and config) |
 | NAV-04 | `docs/architecture/overview.md` exists | Present, with a diagram that rendered |
 | NAV-05 | The ratio the re-audit prints | Recorded; no source edited |
+| Prose check | The runner's `docs-prose` command, then `head -2 <copy>` | Only with `docs.prose_check=template`: exit 0; the full-tree limit equals `docs.prose_ratchet`; the SPDX line is the owner's licence |
 | Lint | The repository's docs lint command and the CI job | Zero violations in the ratchet path list; baseline total not higher than recorded |
 
 ## Rollback
 
-`git revert` the commits: docs, lint config and CI job each revert alone. Nothing was moved, untracked or
+`git revert` the commits: docs, lint config and CI job each revert alone. The style guide sections revert with the
+docs commit. Nothing was moved, untracked or
 deleted by this playbook except, with owner consent, the scratch files in step 7 (`git revert` returns them to the
 index).
 
@@ -212,11 +282,18 @@ index).
 - Do not create a second `docs/` or restructure the existing report folders.
 - Do not copy content, paths, names or values from a private repository or workspace into an open-source
   repository's docs or ADRs, or from any target repository into the framework.
-- Do not invent the reason behind a decision. Inferred means "proposed" and says it is inferred.
+- Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
+  fill in".
 - Do not move, resize, delete or untrack files for NAV-03.
 - Do not put values from env files, credentials, realm exports or keystores in any page.
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
-- Do not accept an ADR on the owner's behalf.
+- Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
+  change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one
+  commit per page.
+- Do not copy the prose check template unless the owner picked `MIT`, `Apache-2.0` or `BSD-3-Clause` for the copy.
+  Never copy it under another licence, the framework's own included, and never remove or replace its copyright
+  line.
+- Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
 
 ## State updates
 
@@ -229,6 +306,14 @@ python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phas
   --verification-result "present; named in the instruction file"
 python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --debt "what=markdown lint violations,count=<n>,baseline=<file>" --note "<mechanism>"
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+  --commit <sha> --debt "what=long sentences in docs,count=<n>" --debt "what=vague words in docs,count=<n>" \
+  --debt "what=docs pages without a diagram,count=<n>" \
+  --note "style guide sections added; worst pages: docs/a.md (12), docs/b.md (9)"
+python3 implement/tools/progress.py pref set docs.prose_check <skip|template> \
+  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py pref set docs.prose_check_licence <SPDX id> \
+  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```

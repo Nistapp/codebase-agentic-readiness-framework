@@ -92,6 +92,10 @@ Coverage: the core `jacoco` plugin gives `jacocoTestReport` and `jacocoTestCover
 file, so a floor configured there reads `FAIL`; verify it from the build file. The implement playbook
 `add-baselines-and-ratchet` covers both.
 
+Prose (`DOC-05`): the `establish-docs-contract` prose check is a stdlib Python script, copied only under a licence
+the owner names. It needs Python 3.11 or newer on the developer machine and the CI runner; the Gradle build does not
+change. Run it from the docs CI job, or wrap it in a Gradle `Exec` task (`docsProse`) if the team wants one verb.
+
 ## Boundaries
 
 A multi-module Gradle build (`settings.gradle`'s `include()` calls) expresses boundaries through each

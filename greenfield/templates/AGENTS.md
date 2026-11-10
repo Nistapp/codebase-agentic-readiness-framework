@@ -108,7 +108,7 @@ The `codebase-memory-mcp` tool is mandatory. You must use it proactively before 
 - **`docs/` is the single source of truth** for permanent documentation; `artefacts/` is transient and off-limits to agents (see §4).
 - **Every `.md` file under `docs/` MUST follow `docs/STYLE_GUIDE.md`** — the canonical authoring rules. Link to the relevant section rather than restating rules here, because restated rules drift.
 - **Definition of done:** when a change alters a public interface, observable behaviour, architecture, or an ADR, update the affected documentation pages, their source anchors, and the ADR index tables **in the same change set**. Pure internal refactors with no observable or documentation impact do not require doc edits.
-- New or revised ADRs MUST follow `docs/STYLE_GUIDE.md` § ADR Lifecycle and be registered in `docs/architecture/README.md`.
+- **Every ADR you add, change or delete follows `docs/ADR_POLICY.md`.** Register every ADR in `docs/architecture/README.md`.
 
 ---
 
@@ -147,7 +147,7 @@ section only states the layout and the triggers; the style guide states the rule
 
 - **Single Source of Truth:** `docs/` is the only valid directory for permanent documentation.
 - **Categories:** content is classified as tutorial, how-to, reference, or explanation; architecture material lives under `docs/architecture/`.
-- **ADRs:** Architectural Decision Records live in `docs/architecture/adrs/NNNN-short-title.md` and are indexed in `docs/architecture/README.md`. New runtime dependencies or architectural changes require an ADR.
+- **ADRs:** Architectural Decision Records live in `docs/architecture/adrs/NNNN-short-title.md` and are indexed in `docs/architecture/README.md`. New runtime dependencies or architectural changes require an ADR. The rules: `docs/ADR_POLICY.md`.
 - **Transience:** Agent scratchpads, implementation plans, and WIP research go in `artefacts/` (git-ignored contents, and off-limits to agents per §4).
 - **Glossary:** domain terms are defined once in `docs/architecture/glossary.md` and used consistently everywhere else.
 
@@ -175,7 +175,7 @@ These rules apply to chat replies, plans, reports, commit messages, pull request
 
 ## 10. Explicit "Do Not Do" Rules
 
-1. ❌ **Do not** introduce runtime dependencies without an approved ADR.
+1. ❌ **Do not** introduce runtime dependencies without an ADR that records the decision.
 2. ❌ **Do not** use `any`, `// @ts-ignore`, or `as any`.
 3. ❌ **Do not** merge failing tests. Fix them.
 4. ❌ **Do not** skip `codebase-memory-mcp` indexing at the start of a session.

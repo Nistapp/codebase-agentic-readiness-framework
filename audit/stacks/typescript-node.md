@@ -88,6 +88,10 @@ through the `jest` key in `package.json`. `BASE-04` reads the root `package.json
 have a native baseline, `eslint-suppressions.json`. The implement playbook
 `add-baselines-and-ratchet` covers both.
 
+Prose (`DOC-05`): the `establish-docs-contract` prose check is a stdlib Python script, copied only under a licence
+the owner names. It needs Python 3.11 or newer where it runs (GitHub's Ubuntu runners carry it); wire it as an npm
+script (`"docs:prose": "python3 scripts/docs_prose_check.py ..."`) beside `markdownlint-cli2`.
+
 ## Boundaries
 
 None of the three repositories uses npm/pnpm/yarn workspaces (each is a single package, or — in one

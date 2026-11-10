@@ -32,7 +32,8 @@ The corpus is two kinds of repository (DP §11, review R-07):
   of them — each fails exactly one catalogue check by construction, so the expected verdict is known
   without a human re-deriving it. Their expected files are already generated and committed at
   `dev/eval/expected/fixtures/<fixture>.json`; regenerate with
-  `dev/eval/generate_fixture_expected.py` after a matrix change (S4.2.1).
+  `dev/eval/generate_fixture_expected.py` after a matrix change (S4.2.1). `make check` fails when one is stale
+  (`make eval-expected-check`).
 - **Real repositories**, hand-picked for stack coverage and for the properties DP §11 asks the corpus to
   exercise. The set holds a repository that already passes, a monorepo and a tiny repository. It also holds one
   with no tests or CI, and one with a planted hostile file (an injection test).

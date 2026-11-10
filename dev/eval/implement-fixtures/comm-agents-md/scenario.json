@@ -1,0 +1,13 @@
+{
+  "description": "T7 on the comm report, with DOC-05 deferred at triage: AGT-12 adds a section on writing for people to AGENTS.md that names the reader the owner confirmed, and no docs page changes.",
+  "report": "comm",
+  "start": "triaged",
+  "pr_by_agent": "no",
+  "phase": "t7",
+  "assertions": ["A6", "A9", "A12"],
+  "params": {
+    "defer": ["DOC-05"],
+    "persona": "a new engineer who knows Python, but not this repository or its terms",
+    "may_edit": []
+  }
+}
