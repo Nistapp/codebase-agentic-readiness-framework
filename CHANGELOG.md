@@ -14,6 +14,65 @@ this file by hand on `dev`: write a clear commit subject instead. How it works:
 Paths in entries before v0.3.0 use the old layout. The v0.3.0 entry has a "Moved" table from each old path to its new
 one.
 
+## [0.3.4](https://github.com/Nistapp/codebase-agentic-readiness-framework/compare/v0.3.3...v0.3.4) (2026-11-10)
+
+### Features
+
+- **dev:** add adr-lint to make check ([58c5307](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/58c53072ac41068885aae235d9191419ef792495))
+- **dev:** adr-lint checks the engine index and mentions of missing ADRs ([2a492e5](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/2a492e5a73f4db965b506dbef03db77d63b454ab))
+- **dev:** adr-lint checks the engine index and mentions of missing ADRs ([090de46](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/090de4644770088ab3930473c802fe6cb4b3458b))
+- **engine:** DOC-04 flags superseded, deprecated or rejected ADRs ([568bc5c](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/568bc5c11c5f929c00db9aac0c41181e3dfdeca1))
+- **implement:** add a prose check template for target repositories ([b4e5fbe](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/b4e5fbed579727bb2f9a339dd6a116e164fa7848))
+- **implement:** bring the writing rules to target repositories (v0.3.6) ([8ec7fee](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/8ec7fee7c5f60ba6dc4b95a1526a91b99e69aaaa))
+- record the ADR policy in ADR 0009 and check it (DOC-04, adr-lint) ([c304ee5](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/c304ee56cbf02d52d3143b3b376f771b80b57f48))
+
+### Bug fixes
+
+- **engine:** add the tool-07-guard-no-exit eval file to the secrets baseline ([54c10e0](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/54c10e030c14a56edef057d6f82e554eeda5e946))
+- **engine:** EXEC-01 reads every module of a pinned ecosystem ([86cab41](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/86cab41d9f27e5c4a6191e45f1ecbc1855816c10))
+- **engine:** TOOL-07 needs a guard that exits non-zero ([71b4e61](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/71b4e616f1ea8d48746c1c68e6ccc49a5b81cd08))
+- **eval:** regenerate the eval-expected files with the current paths ([0ccd527](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0ccd527015468f70ba2221040e42f9a2b1b4709d))
+- **implement:** store commit ids in the state as 12 digits ([ddf8b05](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/ddf8b05d1e64eaa670239af84abfb7d4a52549cf))
+- **skills:** resolve every link the audit bundle keeps ([6a98a5d](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/6a98a5dd6cd7acba2a95c728867d9bbe50d4a3cf))
+
+### Documentation
+
+- add the agent-tuned ADR policy and a lean template ([46e6577](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/46e6577ff00d522392b27fee32c5ac8c8889588d))
+- an agent-tuned ADR policy, a lean template and every ADR converted ([b735040](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/b73504045eacc88b6ca6efa7225ef4706986ec83))
+- convert the audit ADR to the lean template ([274b16d](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/274b16d9f5b88be260639bdf72841d2fbacd7662))
+- convert the engine ADRs to the lean template ([a1327e5](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/a1327e56dbf425ac121e9577dfc1feb287d5b143))
+- convert the implement ADRs to the lean template ([81ab990](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/81ab9907d80ce6387f4da2155f9842085e17c3d5))
+- convert the root ADRs to the lean template ([1d3b048](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/1d3b048fc46ee4b2eb331e218ed6282fcedca133))
+- convert the spec decision records to the lean template ([221fff3](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/221fff3c203b135307403d1cc353a9aded2a9ded))
+- describe how the implement recipe brings the writing rules to a target ([907fd76](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/907fd7697b8f2b4bf848d3e0f5a0c98a8598f11c))
+- give ADR 0005 the current reason to reject a back-merge from main ([111fedb](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/111fedbac771f7d5618e809c0157ce5a4002b930))
+- **greenfield:** ship the ADR policy and the lean template ([83ce5b8](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/83ce5b83f1bfc7f471a13ab21755ea23080ae6fa))
+- **implement:** add plain-language and diagram rules to the style guide ([4d78aea](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/4d78aea9ed46d9b960d97fa088c2877a736b1ebd))
+- **implement:** add the Dependabot pre-commit ecosystem to step 8 ([9db8c0b](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/9db8c0b325cab76cc281af01ed46a8e49d1d6fed))
+- **implement:** confirm the GitLab variables of the source-branch job ([18ec3b3](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/18ec3b3f58c48d8bd30a7591abd1b29447736839))
+- **implement:** count only warnings in the target's prose ratchet ([9c7ba80](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/9c7ba80b4020fa8844cb4c6c754b7d7477e804cc))
+- **implement:** limit prose check copies to three permissive licences ([d2bf4ca](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/d2bf4ca2a7e24b2f393cff7588f14dfdac83b51a))
+- **implement:** name what triggers the AGT-12 and DOC-05 steps ([31f9a9a](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/31f9a9a36cbd67052ce2f092e4cdd311347cc973))
+- **implement:** record existing prose debt instead of rewriting it ([4a1f495](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/4a1f49525e93d720b981d1ad9f6294e1fdd0fc6d))
+- **implement:** use the shared message layouts in the two playbooks ([2aa044e](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/2aa044eba06793844923dfa8c9c8794a8dc8970b))
+- **implement:** write a "How to write for people" section in adapt-agents-md ([87940ae](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/87940ae60a09c79d6fc2bf45f747e034841869fc))
+- **implement:** write ADRs into targets under the ADR policy ([8abd227](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/8abd2273a83b47cbf318d9da11da4ca8046e9d5c))
+- **implement:** write the Renovate security-only form from Renovate's docs ([af0b6a1](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/af0b6a1e9ea2d78326561f6faf0e61e6f7d09478))
+- license the greenfield templates under MIT-0 ([786fba5](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/786fba5a2c3e437e374a9a5f81e93f0bae4a1f20))
+- license the greenfield templates under MIT-0 ([93c6b66](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/93c6b66c4e5482e8b86b98dd354b35a3a533cf0c))
+- point every agent file and router at the ADR policy ([ad0e4b5](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/ad0e4b5537bd296a0c135a32a07dddf912c7b128))
+- record why ADRs hold only the current decision (ADR 0009) ([30ac7e5](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/30ac7e56f1e886a008146bcffd07f98284b152fa))
+- replace ADR index status and date columns with summaries ([9bf7534](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/9bf7534bb42f83865ddca5319f0b229310c146dd))
+- restore the two style guide headings an edit merged ([c9dc09f](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/c9dc09f12e7cd146061d5d8c49f4c8f7354ac2d0))
+- **spec:** let any verb run the dependency scan in REQ-SH-030 ([5182077](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/518207775a3653fa2ba531672b5d9728eead3526))
+- word the AGENTS.md ADR pointer as a rule, not a deferral ([52fe131](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/52fe1312761ff8491a6dc7587a2e1b671ca8e32d))
+
+### CI and release
+
+- run the eval-expected check in make check ([d25eae4](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/d25eae4558695621aa9d7cd0489a860c795e780d))
+- shard the dev checks in the Python 3.14 test parts ([2dd517d](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/2dd517d87304fe4962e5caaebb51227692a33cc7))
+- shard the dev checks in the Python 3.14 test parts ([4bac0ca](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/4bac0caed1a11323f6fd908be5ec16b4ecb45a7b))
+
 ## [0.3.3](https://github.com/Nistapp/codebase-agentic-readiness-framework/compare/v0.3.2...v0.3.3) (2026-11-10)
 
 ### Features
