@@ -107,7 +107,7 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
@@ -161,9 +161,12 @@ test-dev:
 # CI splits the slow suites (SHARDED_SUITES) into TEST_SHARDS parts that run in separate jobs; SHARD=<i> picks one
 # (1 to TEST_SHARDS). dev/test_shard.py finds the modules at run time and balances them by
 # dev/test_shard_weights.json; every module is in exactly one shard, and a shard that selects no test fails. `test`
-# and `coverage` never shard.
+# and `coverage` never shard. TEST_SHARDED_SUITES are the suites that test-part shards: SHARDED_SUITES, plus the dev
+# checks, which coverage.py does not measure. The dev checks are sharded only in the Python 3.14 parts, where the whole
+# suite set the length of the run (76-97 s, against 60 s or less for every other job; measured 2026-11-10).
 TEST_SHARDS := 2
 SHARDED_SUITES := engine audit-tools
+TEST_SHARDED_SUITES := engine audit-tools dev
 test_shard = $(CURDIR)/dev/test_shard.py --suite $(1) --shard $(SHARD)/$(TEST_SHARDS)
 require_shard = @test -n "$(SHARD)" || { echo "$@: set SHARD to a number from 1 to $(TEST_SHARDS)" >&2; exit 1; }
 
@@ -175,15 +178,19 @@ test-audit-tools-shard:
 	$(require_shard)
 	$(PYTHON) $(call test_shard,audit-tools)
 
-# Every suite of `test` in TEST_SHARDS parts, for CI's Python 3.14 jobs: part <i> is shard <i> of each sharded suite
-# plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. test-dev takes about as long as an engine
-# shard, so it shares a part with no other whole suite. dev/tests/test_ci_parity.py fails when the parts leave out a
-# suite of `test`.
-TEST_PART_1 := test-implement-tools verify-rules
-TEST_PART_2 := test-dev
+test-dev-shard:
+	$(require_shard)
+	$(PYTHON) $(call test_shard,dev)
+
+# Every suite of `test` in TEST_SHARDS parts, for CI's Python 3.14 jobs: part <i> is shard <i> of each suite in
+# TEST_SHARDED_SUITES plus the targets in TEST_PART_<i>, run at once as `test` runs its suites. The dev checks' first
+# shard is test_implement_eval alone (about 40 s), so the small whole targets go with the second.
+# dev/tests/test_ci_parity.py fails when the parts leave out a suite of `test`.
+TEST_PART_1 :=
+TEST_PART_2 := test-implement-tools verify-rules
 test-part:
 	$(require_shard)
-	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(SHARDED_SUITES:%=test-%-shard) $(TEST_PART_$(SHARD))
+	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SHARDED_SUITES:%=test-%-shard) $(TEST_PART_$(SHARD))
 
 # Runs the engine's suite and the tools' suites under coverage.py and fails when the total drops below the floor in
 # .coveragerc (`fail_under`). Not part of `check`; needs uv. Each coverage-<suite> writes its own data file
