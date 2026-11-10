@@ -47,7 +47,7 @@ import _jsonschema_subset as subset
 import validate_report
 
 #: The framework release these tools belong to: the state's `framework.release`. release-please rewrites the line.
-FRAMEWORK_RELEASE = "0.3.3"  # x-release-please-version
+FRAMEWORK_RELEASE = "0.3.4"  # x-release-please-version
 SCHEMA_VERSION = "0.3"
 
 RECIPES = Path(__file__).resolve().parent.parent
