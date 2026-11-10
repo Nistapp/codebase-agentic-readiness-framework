@@ -2,7 +2,8 @@
 
 This page says how to write, change and delete an architecture decision record (ADR) in this repository. It is a
 variant of the usual ADR conventions, tuned for AI agents rather than people. Agents load ADRs as instructions,
-so a stale or historical ADR is a defect, not a record.
+so a stale or historical ADR is a defect, not a record. The reasons are in
+[ADR 0009](architecture/adrs/0009-adrs-hold-only-the-current-decision.md).
 
 Every ADR folder follows it: the root `docs/architecture/adrs/`, `spec/decisions/`, `audit/docs/architecture/adrs/`,
 `implement/docs/architecture/adrs/` and `audit/engine/docs/architecture/adrs/`. Where each decision goes is
@@ -35,8 +36,13 @@ Every ADR folder follows it: the root `docs/architecture/adrs/`, `spec/decisions
     recorded; owner to fill in".
 11. **Read only the ADRs you need.** Use the index summaries to pick the ADRs that govern the folder you change.
 
+`make adr-lint`, part of `make check`, checks the mechanical rules in every ADR folder. An ADR has no lifecycle
+field or footer and no retired-ADR marker. It holds the four sections, and the root index has its row.
+
 ## Where else this applies
 
+- The audit flags a retired ADR (marked superseded, deprecated or rejected) in an audited repository: its DOC-04
+  check gives `PARTIAL`.
 - The implement recipe writes ADRs into a target repository under the same rules. See the
   [`establish-docs-contract`](../implement/playbooks/establish-docs-contract.md) playbook.
 - The greenfield templates ship a copy of this policy for new repositories:

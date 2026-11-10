@@ -106,7 +106,7 @@ The framework's verbs are the contract. The runner is the **root `Makefile`** of
 | `lint` | `make lint` | ruff lint rules over `audit`, `implement` and `dev`, read-only. |
 | `typecheck` | `make typecheck` | mypy strict, on `audit/tools`, `implement/tools`, `dev` and this directory's `build.py`. The rest of the engine joins later through a ratchet. |
 | `test` | `make test` | `python3 -m unittest discover -s tests` in this directory, then the audit tools' suite in `audit/tools/tests`, the implement tools' in `implement/tools/tests`, then the dev checks' in `dev/tests`. |
-| `check` | `make check` | `format:check`, `typecheck`, `test`, `--verify-rules`, the schema cross-check (`crosscheck`) and `recipe-lint`. |
+| `check` | `make check` | `format:check`, `typecheck`, `test`, `--verify-rules`, the schema cross-check (`crosscheck`), `recipe-lint` and `adr-lint`. |
 | `security` | `make security` | Secrets scan against the committed baseline, then osv-scanner on the dev tools' lockfiles. The engine itself has no dependencies to audit. |
 
 The dev tools (ruff, mypy, detect-secrets) are pinned in `dev/tools/pyproject.toml` and run through `uvx`. They

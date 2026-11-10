@@ -144,6 +144,11 @@ Engine           `DOC-04`. Looks for `docs/architecture/adrs/` or `docs/adr/` ho
                  index (a `README.md`/`index.md`/`_index.md` beside them, or the parent directory's own
                  README) is `PARTIAL`; an index that lists some but not all entries (matched by filename or
                  the first four characters of the ADR number) is `PARTIAL`; every entry listed is `PASS`.
+                 An entry that is a tombstone is `PARTIAL` even when the index lists every entry: a
+                 status line or field, or a `## Status` section, that says superseded, deprecated,
+                 rejected or obsolete, or a line that opens with "superseded by", "replaced by" or
+                 "deprecated by / in favour of". The word inside a sentence or an alternatives table
+                 does not count, and `Status: Accepted` is not flagged.
                  Distrust a `PARTIAL` on "index omits some" when the index links to entries by a title that
                  does not embed the filename or number fragment the engine's matcher looks for — verify by
                  reading the index for a link to each ADR's actual path.
@@ -151,16 +156,17 @@ Method           automated
 Look for         `docs/architecture/adrs/` first (the convention this project's own docs use), else
                  `docs/adr/`; the index file beside the entries, or the architecture README that lists them
                  instead.
-Rubric           PASS: a numbered-ADR directory exists, holds at least one entry, and an index lists every
-                 entry.
+Rubric           PASS: a numbered-ADR directory exists, holds at least one entry, an index lists every
+                 entry, and no entry is a tombstone.
                  PARTIAL: the directory exists with entries but no index, or an index that omits some, or
-                 the directory exists with no numbered entry at all.
+                 the directory exists with no numbered entry at all, or an entry is marked superseded,
+                 deprecated, rejected or obsolete (an agent loads it as a current rule).
                  FAIL: no ADR directory (at either known location) exists.
                  NOT_APPLICABLE: never — `REQ-SH-019` is a `SHOULD`, but the catalogue still scores it as
                  `DOC-04`, at `COSMETIC` severity, so it is never excused as not applicable.
                  UNKNOWN when: never — directory and file presence are always knowable from the inventory.
-Evidence to cite A `file` evidence item per unlisted entry (for the omits-some case), or the directory path
-                 alone (for the no-directory or no-entry cases).
+Evidence to cite A `file` evidence item per unlisted entry (for the omits-some case), the file and line of
+                 each tombstone, or the directory path alone (for the no-directory or no-entry cases).
 Absence proof    A FAIL records a `glob` search for `docs/architecture/adrs/*.md` and `docs/adr/*.md`, each
                  with a `0` hit count.
 Remediation      Playbook: `establish-docs-contract`. Add `docs/architecture/adrs/` with
