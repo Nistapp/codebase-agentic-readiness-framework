@@ -29,7 +29,7 @@ wholesale.
 | AGT-09 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-09--branch-and-release-boundary-declared) | One release-boundary sentence built from the state and the repository |
 | AGT-10 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-10--instruction-indirection-resolved) | A "read X first" deferral becomes an ordinary link, with the must-always rules moved into `AGENTS.md` |
 | AGT-11 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-11--instructions-are-specific-and-not-inferable) | Generic text moves to `docs/`; contradicted rules become target state with the exception count; stale lines corrected |
-| AGT-12 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-12--communication-rules-stated) | Not written yet: the step that adds a "How to write for people" section is planned. Until then, report the finding to the owner and leave it open |
+| AGT-12 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-12--communication-rules-stated) | Not written yet: the step that adds a "How to write for people" section is planned. Until then, report the finding to the owner and leave it open. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
 | EXEC-06 | [09-execution-determinism.md](../../audit/checks/09-execution-determinism.md#exec-06--documented-commands-resolve) | Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline |
 | TST-04 | [10-tests.md](../../audit/checks/10-tests.md#tst-04--fast-path-documented) | Verification only, when T5 wrote the fenced single-test line; written here when the item sits in T7 |
 
@@ -61,6 +61,7 @@ before the first diff.
 | `agents_md.deferral` | `inline` (default) or `harness-config`: how a deferral to a second rules file is resolved (Inputs 4) |
 | `agents_md.generic_text` | `move-to-docs` (default) or `delete`, per section if the owner chose per section (Inputs 5) |
 | `agents_md.contradicted_rules` | `target-state` (default) or `describe-code` (Inputs 5) |
+| `extra.agt-12` | The owner asked by name for the "How to write for people" section with no `AGT-12` finding; the change then has no finding for the re-audit to confirm, so say so in the pull request |
 | `agents_md.release_tags` | What an agent may do with tags and releases; feeds the AGT-09 sentence (Inputs 6) |
 | `ci.pr_by_agent` | Whether the AGT-09 sentence allows pushing a branch and opening a pull request ([ADR 0003](../docs/architecture/adrs/0003-push-and-pr-policy.md)) |
 | `docs.agents_line` | T6 already wrote the docs line; AGT-03 then only verifies it |

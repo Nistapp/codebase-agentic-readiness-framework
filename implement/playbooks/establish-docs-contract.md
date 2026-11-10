@@ -18,7 +18,7 @@ not moved.
 | DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with a template, an index and two or three first records marked `proposed` |
-| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Not written yet: the steps that add plain-language rules to the style guide and a prose check are planned. Until then, report the finding to the owner and leave it open |
+| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Not written yet: the steps that add plain-language rules to the style guide and a prose check are planned. Until then, report the finding to the owner and leave it open. Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
 | NAV-01 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-01--declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | NAV-02 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-02--obvious-entry-points) | Verification only: names the entry points in the architecture page |
 | NAV-03 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-03--structural-red-flags) | Census of oversized files, catch-all directories, binaries and minified assets; document, never move |
@@ -35,6 +35,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 - Preferences this playbook reads, when present: `format.mass_reformat` (a `no` means every docs check is a
   baseline or ratchet, never a reformat), `layout.command_runner`, `ci.edits_authorised` (needed to add the docs
   CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `extra.*`.
+- The `DOC-05` steps run on a confirmed `DOC-05` finding. They also run when the owner asked for them by name in
+  Stage 1 (`extra.doc-05`); that change has no finding for the re-audit to confirm, so say so in the pull request.
 - **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a finding that says "no `docs/` directory" can be stale: an
   earlier theme or an audit-report commit may have created `docs/`. The engine passes DOC-01 on any Markdown file under
   `docs/`, so the report folders alone make it pass. Add the index to the folder that exists; never create a second
