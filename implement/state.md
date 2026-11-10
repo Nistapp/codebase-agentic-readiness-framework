@@ -40,17 +40,23 @@ python3 implement/tools/progress.py render --target <target>
 The report is committed on the integration branch at
 `docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.{json,md}`. `init` records the report file's SHA-256 in
 `source_reports[].sha256`; `check_drift.py` recomputes it and reports `report_changed` when the file was edited
-since. A state made before schema `0.2` has no digest, and `report_changed` is then `null`, not `false`.
+since.
 
-`init` records the framework commit it ran from in `recipe.framework_rev`, read with `git` from the folder that
-holds the tools. From an installed skill that folder is not a framework checkout: `init` then records the commit of
-any git repository the skills folder sits in, or `null` when there is none. Pass `--framework-rev <commit>` with the
-framework release's commit when you know it.
+`init` records the framework that created the state in `framework`: the release, the commit and how it was
+installed, in the shape of the report's `provenance.framework`. Every later write sets `last_framework` to the
+framework that wrote it, and logs `Framework moved from v0.3.2 at <commit> to v0.3.3 at <commit>.` when that
+changed. `progress.py show` gives all three in `data.versions`: `created`, `last` and `tools`. The commit is read
+with `git` from the folder above the tools, but only when that folder is the top of a git working tree. From an
+installed skill it is not, even when the skills folder sits inside another repository, so `init` records `null`.
+Pass `--framework-rev <commit>` with the framework release's commit when you know it; `init` keeps its first 12
+digits.
 
-`init` refuses a report that is not final or that `validate_report.py` rejects, a report outside the target, and an
-existing state. It queues confirmed and edited findings (an edited finding's note goes into `notes`), imports a
-finding the owner deferred during the audit as `deferred` with the owner's note as its reason, and lists rejected
-findings as `not_queued`. Each item gets the theme of its check from the table in the tool.
+`init` refuses a report that is not final or that `validate_report.py` rejects, a report from a newer framework
+release than the tools, a report outside the target, and an existing state. A report from an older release gives a
+warning; `data.versions` holds both releases and commits. It queues confirmed and edited findings (an edited
+finding's note goes into `notes`), imports a finding the owner deferred during the audit as `deferred` with the
+owner's note as its reason, and lists rejected findings as `not_queued`. Each item gets the theme of its check
+from the table in the tool.
 
 ## Item statuses
 
@@ -134,7 +140,7 @@ record `done` for an item that is `partial`.
 ## JSON shape
 
 The schema is [`schema/readiness-state.schema.json`](../audit/schema/readiness-state.schema.json), `schema_version`
-`0.2` (a `0.1` state is still read); field notes are in
+`0.3`; the tools read no other, and refuse an older state with a message that names both versions. Field notes are in
 [the schema reference](../audit/schema/SCHEMA.md#readiness-state). Two examples are in the framework repository, under
 `audit/schema/examples/`:
 `readiness-state.example-service.json`, which `init` writes for the framework's example report, and
@@ -148,5 +154,6 @@ The schema subset cannot express these rules, so `progress.py` checks them on ev
 - A finding appears once, in `items` or in `not_queued`.
 - `themes` holds T1 to T8, each once, in order; preference keys and source report paths are unique.
 
-Commit SHAs (`git_sha`, `framework_rev`, `commits`, `merged_sha`) are copied as given, 7 to 40 lower-case hex
-digits.
+The tools write the framework commits (`framework.revision`, `last_framework.revision`) and each source report's
+`git_sha` as 12 lower-case hex digits, as the report does: a full id has the shape secret scanners read as a token.
+`commits` and `merged_sha` are copied as given, 7 to 40 digits.

@@ -20,10 +20,21 @@ The Markdown report has these sections, in this order. Read them in the order of
 
 ```mermaid
 flowchart LR
-    P[Provenance] --> S[Scorecard] --> U[Unattested] --> F[Findings, one table per severity] --> A[Appendix: full check results]
+    B[Bottom line] --> P[Provenance] --> S[Scorecard] --> U[Unattested] --> F[Findings, one table per severity]
+    F --> A[Appendix: full check results] --> T[Terms]
 ```
 
-### Step 1: Read the provenance block first
+### Step 1: Read the bottom line, then the provenance block
+
+The **Bottom line** section comes first. It gives the answer in three parts:
+
+- the number of blocker findings;
+- what the scan could not settle: the `UNKNOWN` checks, the `ATTEST` checks and the unattested properties;
+- the first three actions: the findings in severity order, then by check ID, each with what it blocks and its fix.
+  The engine records no effort and no dependency between findings, so it ranks by nothing finer.
+
+The engine derives the section from the JSON report. It adds no fact, and no verdict depends on it. The **Terms**
+section at the end says what each verdict and severity means.
 
 The provenance block says what the report is *about*:
 

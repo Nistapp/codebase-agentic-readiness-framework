@@ -121,7 +121,7 @@ git checkout -b dev          # dev is the working branch from day one
   "files": ["dist"],                 // what npm publishes — nothing else leaves the repo
   "publishConfig": { "access": "public" },
   "scripts": {
-    // the seven verbs from §1.4, plus clean/build/build:full/dev
+    // the seven verbs from §1.4, plus clean/build/build:full/dev and lint:workflows (actionlint)
     "check": "npm run format:check && npm run typecheck && npm test",
     "prepublishOnly": "npm run check && npm run build:full",
     "prepare": "husky"
@@ -296,7 +296,8 @@ what consumers may rely on. Everything else stays internal.
 
 The hooks are provided as templates — copy them and let husky wire the hook path itself:
 
-- **`.husky/pre-commit`**: (See [template](templates/husky/pre-commit)) — `npx lint-staged`, mode `0755`
+- **`.husky/pre-commit`**: (See [template](templates/husky/pre-commit)) — refuses a commit on `main` or `dev`,
+  then `npx lint-staged`, mode `0755`
 - **`.husky/commit-msg`**: (See [template](templates/husky/commit-msg)) — `npx --no -- commitlint --edit "$1"`, mode `0755`
 - **`commitlint.config.js`**: (See [template](templates/commitlint.config.js))
 
@@ -333,7 +334,10 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 ## Phase 4 — CI/CD & Release Management
 
 ### 4.1 Workflows
-- **`.github/workflows/ci.yml`**: `npm run check` → coverage thresholds → `npm run build:full` → `npm run security`. Every step is a script you can run locally. (See [template](templates/github/workflows/ci.yml))
+- **`.github/workflows/ci.yml`**: `npm run check` → workflow lint → coverage thresholds → `npm run build:full` → `npm run security`, and on a pull request commitlint over its commits (the `.husky/commit-msg` rule, which a skipped hook cannot bypass). Every step is a script you can run locally. (See [template](templates/github/workflows/ci.yml))
+- **Workflow lint**: the workflow files are linted locally and in CI by a linter that knows the CI provider.
+  For GitHub Actions that is actionlint (`npm run lint:workflows`; install the binary once per machine). An agent
+  that edits a workflow cannot run it locally, so the linter is its only check before a push.
 - **`.github/workflows/enforce-dev-base.yml`**: Enforce Dev branch PR source for Main. (See [template](templates/github/workflows/enforce-dev-base.yml))
 - **`.github/workflows/release-and-sync.yml`**: Release Please, npm publish via OIDC provenance, automated back-merge to dev. (See [template](templates/github/workflows/release-and-sync.yml))
 - **`.github/dependabot.yml`**: Weekly automated dependency updates. (See [template](templates/github/dependabot.yml))
@@ -358,6 +362,12 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 - [**`docs/STYLE_GUIDE.md`**](templates/docs/STYLE_GUIDE.md) — the canonical rule set for every `.md` file under `docs/`: invariants, RFC 2119 tone, ATX headers, doc-maintenance trigger.
 - **`AGENTS.md` MUST name the documentation contract:** `docs/` is the single source of truth for permanent documentation, `docs/STYLE_GUIDE.md` is the canonical authoring rule set, `artefacts/` is transient scratch that agents MUST NOT read unless a human passes an explicit path.
 - **`AGENTS.md` MUST state the definition of done:** a change that alters a public interface, observable behaviour, architecture, or an ADR updates the affected doc pages, their anchors, and the ADR index **in the same change set**. Link to the style guide — never restate its rules in `AGENTS.md`, because restated rules drift.
+- **`AGENTS.md` SHOULD state how agents write for people:** who the reader is, the bottom line first, the layout
+  of a status or done report, and how to ask for a decision (the options, a recommendation and a default). The
+  template's §8.1 is a short example.
+- **The docs SHOULD read plainly:** few sentences over 25 words (20 in a numbered step), no vague or padded words
+  (`simply`, `just`, `in order to` and the like), and a Mermaid diagram on each explanation or tutorial page.
+  `docs/STYLE_GUIDE.md` is the place to state these rules.
 - [**`docs/architecture/README.md`**](templates/docs/architecture/README.md) — ADR index & doc router.
 - [**`docs/architecture/glossary.md`**](templates/docs/architecture/glossary.md) — Domain glossary.
 - [**`docs/templates/adr-template.md`**](templates/docs/templates/adr-template.md) — Architectural Decision Record (living, current-state only — revised in place, never tombstoned).
@@ -435,7 +445,7 @@ name locally and in CI.
 | Test suite | Vitest | `npm test` + CI |
 | **Full gate** | `format:check` → `typecheck` → `test` | `npm run check` — pre-PR and CI, identical |
 | Dependency vulnerabilities | `npm audit --audit-level=high` | `npm run security` + CI |
-| Conventional Commits | commitlint | Pre-commit-msg hook |
+| Conventional Commits | commitlint | `commit-msg` hook and the CI `commits` job |
 | Test coverage thresholds | Vitest `thresholds` | `npm run test:coverage` + CI |
 | Branch protection | `enforce-dev-base.yml` | CI (on PR to main) |
 | Dependency freshness | Dependabot | Weekly PRs |

@@ -22,7 +22,9 @@ Engine           `EXEC-01`. For every detected ecosystem among node, python, jvm
                  ecosystem's pin: a version file (`.nvmrc`, `.python-version`, `.ruby-version`,
                  `rust-toolchain.toml`/`rust-toolchain`), a wrapper (`gradlew`, `mvnw`), `global.json`
                  for dotnet, a matching line in a shared `.tool-versions`, `package.json`'s
-                 `engines.node`, `pyproject.toml`'s `requires-python`, or `go.mod`'s `go` directive. No
+                 `engines.node`, `pyproject.toml`'s `requires-python`, or `go.mod`'s `go` directive. Pin
+                 files and these manifests count at any depth: a nested module (`tools/osv/go.mod`) pins
+                 its ecosystem, and one pinning manifest is enough (the shallowest is cited). No
                  ecosystem from this pinnable set is detected at all ⇒ `UNKNOWN` — there is no toolchain
                  to choose a pin for. php is a recognised ecosystem the table does not assert a pin for,
                  so a php-only repository is also `UNKNOWN` on this check. Distrust a `FAIL` when the
@@ -49,7 +51,9 @@ Remediation      `pin-execution-environment`
 Pitfalls         A monorepo where only one of several ecosystems is pinned still reads `FAIL` overall —
                  the engine fails the whole check on the first unpinned ecosystem, so a `FAIL` summary
                  naming one ecosystem does not mean the others are also unpinned; read which ecosystem
-                 the finding actually names before writing remediation.
+                 the finding actually names before writing remediation. The reverse holds within one
+                 ecosystem: one pinned nested module passes it even when a sibling module has no pin, so
+                 read each module's manifest before you accept a `PASS` in a monorepo.
 
 ## EXEC-02 — Lockfile committed and consistent
 
@@ -269,10 +273,16 @@ Engine           `EXEC-07`. For each of five concerns (lint, format, test, types
                  fixed set of root-level config file globs, plus (for a root `pyproject.toml`) specific
                  `[tool.*]` section headers mapped to the same concerns. Only repository-root configs are
                  counted on purpose, so a monorepo's per-component configs are never mistaken for
-                 competition. This check runs regardless of detected ecosystem — there is no `UNKNOWN`
-                 path. Distrust a `FAIL` where two matched configs are a deliberate, documented delegation
-                 (a `biome.json` that only re-exports to a nested project, say) — verify the files are
-                 genuinely two authorities for the same concern, not one authority and one pointer to it.
+                 competition. Types are counted per language: `types (TypeScript)` (`tsconfig.json`,
+                 `jsconfig.json`) and `types (Python)` (`mypy.ini`, `.mypy.ini`, `pyrightconfig.json`,
+                 `[tool.mypy]`, `[tool.pyright]`, `[tool.basedpyright]`). A `pyrightconfig.json` beside
+                 one mypy config file is a language-server mirror, not a competitor, when the `typecheck`
+                 verb runs mypy and not pyright (read through the root Makefile's variables and
+                 prerequisites); the summary names the mirror. This check runs regardless of detected
+                 ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` where two matched configs are a
+                 deliberate, documented delegation (a `biome.json` that only re-exports to a nested project,
+                 say) — verify the files are genuinely two authorities for the same concern, not one
+                 authority and one pointer to it.
 Method           automated
 Look for         Root-level files matching each concern's glob set; a root `pyproject.toml`'s `[tool.*]`
                  section headers for the same five concerns.
@@ -290,4 +300,39 @@ Remediation      `untrack-generated` (detection and documentation only: keep one
                  document any deliberate delegation; the playbook never deletes a config).
 Pitfalls         `biome.json` matches both the `lint` and `format` globs by design (Biome itself combines
                  the two); a repository with only `biome.json` for both concerns is not competition —
-                 only a second file matching the same single concern is.
+                 only a second file matching the same single concern is. The mirror rule reads only
+                 files and the `typecheck` verb; it does not compare the two configs' paths. Check by
+                 hand that the pyright config holds the gate's import paths, or a test keeps them in
+                 step, before you accept the `PASS`.
+
+## EXEC-08 — Tool versions visible to dependency automation
+
+Why it matters   Dependabot and Renovate read manifests, not commands. A tool version typed into a
+                 `Makefile`, a workflow or a hook gets no security alert and no update, and an agent asked
+                 to upgrade the tool must find every copy by hand.
+Severity         DEGRADER
+Engine           `EXEC-08`. Reads, line by line, the command runners (`Makefile`, `*.mk`, `justfile`,
+                 `Taskfile`, `package.json`), the CI workflows (`.github/workflows/*`, `.gitlab-ci.yml`)
+                 and the hook files (`lefthook.yml`, `.husky/*`) for a literal version after a launcher:
+                 Node `npx`, `bunx`, `pnpm dlx`, `yarn dlx`, `npm exec`, `npm install -g`; Python `uvx`,
+                 `uv tool`, `uv run --with`, `pipx`, `pip install`; Go `go run`/`go install`; Rust
+                 `cargo install`; and the `version` input of `setup-uv`, `pnpm/action-setup`,
+                 `setup-bun` and `golangci-lint-action`. Each literal is looked up in every
+                 `package.json`, `pyproject.toml`, `requirements*.txt`, `go.mod` and `Cargo.toml`.
+Method           automated
+Look for         `name@1.2.3` or `name==1.2.3` after a launcher, where the version starts with a digit.
+                 A version read from a variable (`ruff@$(call pin,ruff)`) is not a literal.
+Rubric           PASS: no literal tool version in any file read, or the file is matched by a Renovate
+                 `customManagers` (or `regexManagers`) file pattern.
+                 PARTIAL: every literal version also appears, same name and version, in a manifest; the
+                 inline copy drifts when the bot updates the manifest.
+                 FAIL: at least one literal version that no manifest holds.
+                 NOT_APPLICABLE: never; the engine has no such verdict.
+                 UNKNOWN when: there is no command runner, workflow or hook file to read.
+Evidence to cite A `file` evidence item per literal, with its line and the tool and version.
+Absence proof    A PASS states how many command files were read and that none holds a literal version.
+Remediation      `pin-execution-environment`
+Pitfalls         Runtime versions (`node-version`, `python-version`, `go-version`) belong to `EXEC-01`,
+                 not here. `uses:` action pins are visible to Dependabot's `github-actions` ecosystem. A
+                 versionless `uvx ruff` floats; it is a reproducibility concern, not a visibility one, and
+                 passes this check. Scripts a verb calls and `Dockerfile` `RUN` lines are not read yet.

@@ -20,6 +20,7 @@ output to `<output-path>`". To fix the findings, say "Start implementing the fix
 | Page | What it does |
 | --- | --- |
 | [Contribute a change](how-to/contribute-a-change.md) | Move one change from a work branch into `dev` through a pull request |
+| [Set up the agent tools](how-to/set-up-agent-tools.md) | Give your coding agent the code index, or skip it; the one-time offer agents make |
 | [Install the skills](how-to/install-the-skills.md) | Put both skills from a release into a project, with no clone |
 | [Run an audit](how-to/run-an-audit.md) | Produce a confirmed report through the agent and the audit recipe |
 | [Implement an audit report](how-to/implement-an-audit-report.md) | Apply the confirmed findings, one theme per branch |
@@ -31,7 +32,10 @@ output to `<output-path>`". To fix the findings, say "Start implementing the fix
 
 | Page | What it lists |
 | --- | --- |
+| [Audit master list](reference/audit-master.md) | Every audit check by area: what passes, why it matters, which playbook fixes it |
+| [Implement master list](reference/implement-master.md) | Every playbook by theme: its goal, what it changes per check, what it never does |
 | [Tools CLI](reference/tools-cli.md) | Each tool's synopsis, inputs, outputs and exit codes |
+| [Versions](reference/versions.md) | What each version number means, where it is written, and which reports and states the tools read |
 | [Harness notes](reference/harness-notes.md) | What differs between Claude Code, opencode, Codex and Cursor |
 | [Checks to framework map](reference/how-the-checks-map-to-the-framework.md) | Each check, its requirement and its framework section |
 | [Evaluation results](reference/eval-results.md) | Fixture-sweep and real-repository results |
@@ -96,6 +100,7 @@ repository, before and after the implement recipe.
 | [Style guide](STYLE_GUIDE.md) | The authoring rules for every page |
 | [Tutorial template](templates/tutorial-template.md) | Start a tutorial |
 | [How-to template](templates/how-to-template.md) | Start a how-to guide |
+| [Explanation template](templates/explanation-template.md) | Start an explanation page |
 | [Reference template](templates/reference-template.md) | Start a reference page |
 | [Architecture doc template](templates/architecture-doc-template.md) | Start an architecture page |
 | [ADR template](templates/adr-template.md) | Start a decision record |

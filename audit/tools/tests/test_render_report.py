@@ -471,14 +471,14 @@ class SummaryTests(RenderCase):
 
 class ProvenanceTests(RenderCase):
     FIELDS = [
+        "Framework",
         "Target",
         "Commit",
         "Status",
         "Started",
         "Finalised",
-        "Recipe",
+        "Catalogue",
         "Engine",
-        "Framework revision",
         "Agent (self-reported)",
         "Probes",
         "Report schema",
@@ -487,13 +487,13 @@ class ProvenanceTests(RenderCase):
     def provenance(self, report: dict[str, Any]) -> dict[str, str]:
         return {r[0]: r[1] for r in rows_of(section(self.render(report), "Provenance"))}
 
-    def test_provenance_is_the_first_section_once_and_comes_after_the_title_and_the_banners(self) -> None:
+    def test_provenance_comes_once_right_after_the_bottom_line_which_follows_the_title_and_the_banners(self) -> None:
         markdown = self.render(service())
         headings = [line for line in markdown.split("\n") if line.startswith("## ")]
-        self.assertEqual(headings[0], "## Provenance")
+        self.assertEqual(headings[:2], ["## Bottom line", "## Provenance"])
         self.assertEqual(markdown.count("## Provenance"), 1)
         self.assertLess(markdown.index("# Agentic readiness audit"), markdown.index("> [!NOTE]"))
-        self.assertLess(markdown.index("> [!NOTE]"), markdown.index("## Provenance"))
+        self.assertLess(markdown.index("> [!NOTE]"), markdown.index("## Bottom line"))
         self.assertLess(markdown.index("## Provenance"), markdown.index("## Readiness summary"))
 
     def test_the_table_is_a_field_and_value_table_with_one_row_for_each_fact_in_a_fixed_order(self) -> None:
@@ -508,16 +508,16 @@ class ProvenanceTests(RenderCase):
         self.assertEqual(values["Status"], "final")
         self.assertEqual(values["Started"], "`2026-10-10T09:00:00+00:00`")
         self.assertEqual(values["Finalised"], "`2026-10-10T09:42:07+00:00`")
-        self.assertEqual(values["Recipe"], "`brownfield-audit` 0.1.0, catalogue `0.2.0`")
+        self.assertEqual(values["Framework"], "`v0.3.2`, checkout `cafecafecafe`")
+        self.assertEqual(values["Catalogue"], "`0.7.0`")
         self.assertEqual(
             values["Engine"],
             "`python-agentic-audit` 0.1.0, ruleset `2026-09-28.13`, ruleset hash `a1b2a1b2a1b2a1b2`, "
             "scanned `2026-10-10T09:01:30+00:00`",
         )
-        self.assertEqual(values["Framework revision"], "`cafecafecafe`")
         self.assertEqual(values["Agent (self-reported)"], "`claude-code` with `claude-sonnet-5-5`")
         self.assertEqual(values["Probes"], "none: no command of the target was run")
-        self.assertEqual(values["Report schema"], "`0.1`")
+        self.assertEqual(values["Report schema"], "`0.2`")
 
     def test_a_dirty_working_tree_is_in_bold_and_an_unknown_one_says_nothing(self) -> None:
         report = service()
@@ -558,10 +558,18 @@ class ProvenanceTests(RenderCase):
         report["run_context"]["probes"] = {"allowed": ["test", "lint"], "timeout_s": 90}
         self.assertEqual(self.provenance(report)["Probes"], "`test`, `lint`, timeout 90 s")
 
-    def test_a_report_with_no_engine_or_framework_revision_says_so(self) -> None:
+    def test_a_report_with_no_engine_from_a_bundle_says_so(self) -> None:
         values = self.provenance(minimal())
         self.assertEqual(values["Engine"], "No engine report is part of this report.")
-        self.assertEqual(values["Framework revision"], "—")
+        self.assertEqual(values["Framework"], "`v0.3.2`, installed as a bundle")
+
+    def test_the_framework_row_says_how_the_framework_was_installed(self) -> None:
+        report = service()
+        framework = report["provenance"]["framework"]
+        framework.update(revision=None)
+        self.assertEqual(self.provenance(report)["Framework"], "`v0.3.2`, checkout (no revision)")
+        framework.update(install="copy")
+        self.assertEqual(self.provenance(report)["Framework"], "`v0.3.2`, a copy with no git history")
 
     def test_the_engine_row_names_only_what_the_report_records(self) -> None:
         report = service()
@@ -1499,7 +1507,7 @@ class AppendixTests(RenderCase):
                     order.setdefault(check["id"].split("-")[0], len(order))
                 expected = sorted(report["checks"], key=lambda c: order[c["id"].split("-")[0]])
                 self.assertEqual(found, [f"`{c['id']}`" for c in expected])
-        self.assertEqual(len(rows_of(section(self.render(load(drafts()[0])), "Appendix — all checks"))), 69)
+        self.assertEqual(len(rows_of(section(self.render(load(drafts()[0])), "Appendix — all checks"))), 74)
 
     def test_a_row_gives_the_severity_method_scoring_both_verdicts_and_the_summary(self) -> None:
         text = section(self.render(service()), "Appendix — all checks")
@@ -1661,6 +1669,7 @@ class OtherSectionTests(RenderCase):
         self.assertEqual(
             headings,
             [
+                "## Bottom line",
                 "## Provenance",
                 "## Readiness summary",
                 "## Checks by verdict and severity",
@@ -1673,6 +1682,7 @@ class OtherSectionTests(RenderCase):
                 "## Stack and components",
                 "## Run context",
                 "## Appendix — all checks",
+                "## Terms",
             ],
         )
         self.assertTrue(markdown.startswith("# Agentic readiness audit: example-service\n"))
@@ -1843,6 +1853,65 @@ class PurityTests(RenderCase):
         self.assertIsNone(re.search(r"\d", footer))
 
 
+class BottomLineTests(RenderCase):
+    def headings(self, markdown: str) -> list[str]:
+        return [line[3:] for line in markdown.split("\n") if line.startswith("## ")]
+
+    def actions(self, report: dict[str, Any]) -> list[str]:
+        return [" | ".join(row) for row in rows_of(section(self.render(report), "Bottom line"))]
+
+    def action_ids(self, report: dict[str, Any]) -> list[str]:
+        return [found for line in self.actions(report) for found in re.findall(r"\bF-\d+\b", line)[:1]]
+
+    def test_it_is_the_first_section_and_terms_is_the_last(self) -> None:
+        headings = self.headings(self.render(service()))
+        self.assertEqual(headings[:2], ["Bottom line", "Provenance"])
+        self.assertEqual(headings[-1], "Terms")
+
+    def test_it_counts_the_blockers_from_the_summary(self) -> None:
+        self.assertIn("- **4 blockers remaining: 4 FAIL.**", section(self.render(service()), "Bottom line"))
+
+    def test_a_finding_that_waits_on_an_open_one_comes_after_the_rest_of_its_severity(self) -> None:
+        self.assertEqual(self.action_ids(service()), ["F-001", "F-003", "F-004"])
+
+    def test_once_its_dependency_is_closed_a_finding_ranks_by_effort(self) -> None:
+        report = service()
+        finding_of(report, "F-001")["disposition"] = "rejected"
+        self.assertEqual(self.action_ids(report), ["F-002", "F-003", "F-004"])
+
+    def test_rejected_and_deferred_findings_are_left_out(self) -> None:
+        report = service()
+        for finding in report["findings"]:
+            finding["disposition"] = "rejected" if finding["severity"] == "BLOCKER" else "deferred"
+        bottom = section(self.render(report), "Bottom line")
+        self.assertIn("**First actions:** none. No finding is open.", bottom)
+        self.assertEqual(rows_of(bottom), [])
+
+    def test_a_pending_finding_is_marked(self) -> None:
+        report = service()
+        finding_of(report, "F-001")["disposition"] = "pending"
+        self.assertIn("**Awaits a decision.**", self.actions(report)[0])
+
+    def test_untrusted_text_is_escaped(self) -> None:
+        report = service()
+        finding_of(report, "F-001")["remediation"]["summary"] = "[click](http://x) <b>"
+        self.assertIn(r"\[click\](http://x) \<b>", self.actions(report)[0])
+
+    def test_it_lists_five_unknown_checks_then_the_rest_as_a_count(self) -> None:
+        report = service()
+        for check in report["checks"]:
+            set_verdict(check, "UNKNOWN")
+        total = len(report["checks"])
+        self.assertGreater(total, rr.UNKNOWN_LISTED + 1)
+        bottom = section(self.render(report), "Bottom line")
+        self.assertIn(f"{total} checks are UNKNOWN: ", bottom)
+        self.assertIn(f" and {total - rr.UNKNOWN_LISTED} more.", bottom)
+
+    def test_the_terms_cover_every_verdict_severity_and_decision(self) -> None:
+        terms = [row[0] for row in rows_of(section(self.render(minimal()), "Terms"))]
+        self.assertEqual(terms, [*rr.VERDICTS, *rr.SEVERITIES, *rr.DISPOSITION_MEANINGS])
+
+
 class GoldenTests(RenderCase):
     def assert_golden(self, json_path: Path, golden: Path) -> None:
         self.assertTrue(golden.is_file(), f"the golden file {golden} is missing")
@@ -1879,7 +1948,7 @@ class GoldenTests(RenderCase):
             with self.subTest(path=path.name):
                 report = load(path)
                 markdown = self.render(report)
-                self.assertEqual(len(rows_of(section(markdown, "Appendix — all checks"))), 69)
+                self.assertEqual(len(rows_of(section(markdown, "Appendix — all checks"))), 74)
                 for finding in report["findings"]:
                     self.assertEqual(markdown.count(f"{BR}finding `{finding['id']}`"), 1)
                 self.assertIn("> [!NOTE]\n> **Draft.**", markdown)

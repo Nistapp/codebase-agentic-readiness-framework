@@ -62,7 +62,8 @@ CATALOGUE_FIELDS = ("title", "phase", "severity", "scored", "method")
 
 @dataclass
 class Outcome:
-    """What validation found. `stage` is `schema` when the schema stopped it, and `rules` when the rules ran."""
+    """What validation found. `stage` is `version` when the report's `schema_version` is one these tools do not read,
+    `schema` when the schema stopped it, and `rules` when the rules ran."""
 
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -147,6 +148,109 @@ def read_report(path: Path, what: str = "report") -> Any:
 @lru_cache(maxsize=1)
 def schema_validator() -> subset.SubsetValidator:
     return subset.SubsetValidator(json.loads(REPORT_SCHEMA.read_text(encoding="utf-8")))
+
+
+# --- Versions: the report's schema and release against these tools' ------------------------------------
+
+RELEASE = re.compile(r"^(\d+)\.(\d+)\.(\d+)")
+
+
+@lru_cache(maxsize=1)
+def known_schema_version() -> str:
+    """The one report `schema_version` these tools read: the schema's `const`."""
+    schema = json.loads(REPORT_SCHEMA.read_text(encoding="utf-8"))
+    return str(schema["properties"]["schema_version"]["const"])
+
+
+def version_key(version: str) -> tuple[int, ...]:
+    """`MAJOR.MINOR.PATCH` (or `MAJOR.MINOR`) as numbers, for ordering; a suffix is ignored. () when unreadable."""
+    match = RELEASE.match(version) or re.match(r"^(\d+)\.(\d+)", version)
+    return tuple(int(part) for part in match.groups()) if match else ()
+
+
+def relation(theirs: str, ours: str) -> str:
+    """`same`, `older` or `newer`: where `theirs` stands against `ours`. Equal numbers, other text: `older`."""
+    if theirs == ours:
+        return "same"
+    return "newer" if version_key(theirs) > version_key(ours) else "older"
+
+
+def report_release(document: Mapping[str, Any]) -> str | None:
+    """The framework release a report names, in any schema this tool has known; None when it names none."""
+    provenance = document.get("provenance")
+    if not isinstance(provenance, Mapping):
+        return None
+    for holder, key in ((provenance.get("framework"), "release"), (provenance.get("recipe"), "version")):
+        if isinstance(holder, Mapping) and isinstance(holder.get(key), str):
+            return str(holder[key])
+    return None
+
+
+def schema_version_error(document: Any) -> str | None:
+    """The plain message for a report whose `schema_version` these tools do not read; None when they read it.
+
+    It names both versions and what to do next, so the owner can act on it without reading the schema. An engine
+    report (its `provenance` names a `tool`) has a schema of its own; the schema stage refuses it, not this one.
+    """
+    if not isinstance(document, Mapping) or "schema_version" not in document:
+        return None
+    provenance = document.get("provenance")
+    if isinstance(provenance, Mapping) and "tool" in provenance:
+        return None
+    found, known = document["schema_version"], known_schema_version()
+    if found == known:
+        return None
+    release = report_release(document)
+    made_by = f"framework v{release}" if release else "an unknown framework release"
+    head = f"the report has schema {found!r} (made by {made_by}); these tools read schema {known!r}."
+    if isinstance(found, str) and relation(found, known) == "newer":
+        return f"{head} Update the framework to the release that made the report (recommended), or run a new audit."
+    return f"{head} Run a new audit with this framework (recommended), or use {made_by} to work with this report."
+
+
+def refuse_unknown_schema(outcome: "Outcome") -> None:
+    """Raise `ValidationFailed` with the plain version message when the version stage stopped `outcome`."""
+    if outcome.stage == "version":
+        raise _common.ValidationFailed(outcome.errors[0], errors=outcome.errors)
+
+
+def compare_versions(
+    document: Mapping[str, Any], release: str, revision: str | None
+) -> tuple[dict[str, Any], list[str]]:
+    """The report's framework release and commit against these tools' (`release`, `revision`), for a valid report.
+
+    Returns the `versions` data (`report`, `tools`, `relation`) and the warnings. Raises `ValidationFailed` when
+    the report is newer than the tools: they may not know its checks. An older report is a warning; so is the same
+    release at another commit, when both commits are known.
+    """
+    framework = document["provenance"]["framework"]
+    theirs = str(framework["release"])
+    tools_revision = revision[: len(framework["revision"])] if revision and framework["revision"] else revision
+    where = relation(theirs, release)
+    data: dict[str, Any] = {
+        "report": {"release": theirs, "revision": framework["revision"]},
+        "tools": {"release": release, "revision": revision[:12] if revision else None},
+        "relation": where,
+    }
+    if where == "newer":
+        raise _common.ValidationFailed(
+            f"the report was made by framework v{theirs}; these tools are v{release}. Update the framework to "
+            f"v{theirs} or later (recommended), or run a new audit with v{release}.",
+            errors=[f"/provenance/framework/release: {theirs} is newer than these tools' {release}"],
+        )
+    warnings: list[str] = []
+    if where == "older":
+        warnings.append(
+            f"the report was made by framework v{theirs}; these tools are v{release}. Verdicts can differ between "
+            f"releases: run a new audit with v{release} before you rely on them."
+        )
+    elif framework["revision"] and tools_revision and framework["revision"] != tools_revision:
+        warnings.append(
+            f"the report was made at framework commit {framework['revision']}; these tools run at "
+            f"{data['tools']['revision']} (both v{release}). The checks may have changed in between: run a new "
+            "audit if that matters."
+        )
+    return data, warnings
 
 
 @lru_cache(maxsize=1)
@@ -504,6 +608,58 @@ def git_output(target: Path, args: Sequence[str], stdin: str | None = None) -> s
         return None
 
 
+def git_toplevel(path: Path) -> Path | None:
+    """The root of the git working tree that holds `path`, or None when it is in none or git cannot say."""
+    done = git_output(path, ["rev-parse", "--show-toplevel"])
+    if done is None or done.returncode != 0 or not done.stdout.strip():
+        return None
+    return Path(done.stdout.strip()).resolve()
+
+
+# --- The framework that runs these tools ----------------------------------------------------------------
+
+#: A commit is recorded in this many hex digits, never the full 40: a full id has the shape that secret scanners
+#: (gitleaks' default rules) read as an access token, and reports and states are committed to repositories.
+SHORT_SHA_CHARS = 12
+FULL_SHA = re.compile(r"^[0-9a-f]{40}\Z")
+
+
+def framework_install(root: Path) -> str:
+    """How the framework at `root` is installed: `checkout`, `bundle` or `copy`.
+
+    `root` is the folder above the recipe folder: the repository root in a checkout, the skill folder in a bundle,
+    where `SKILL.md` sits beside `scripts/`. A checkout is a git working tree whose top is `root`, or, when git is
+    missing, a `root` that holds `.git`. A bundle inside another repository is in a working tree too, but not at its
+    top, so it is never taken for a checkout.
+    """
+    if shutil.which("git") is not None:
+        if git_toplevel(root) == root:
+            return "checkout"
+    elif (root / ".git").exists():
+        return "checkout"
+    if (root / "SKILL.md").is_file():
+        return "bundle"
+    return "copy"
+
+
+def framework_revision(root: Path) -> str | None:
+    """The short commit of the framework checkout at `root`, or None when git cannot read one."""
+    if shutil.which("git") is None:
+        return None
+    head = git_output(root, ["rev-parse", "HEAD"])
+    if head is None or head.returncode != 0 or not FULL_SHA.match(head.stdout.strip()):
+        return None
+    return head.stdout.strip()[:SHORT_SHA_CHARS]
+
+
+def framework_facts(root: Path, release: str) -> dict[str, Any]:
+    """The `framework` object of a report or a state: `release`, `revision` (checkout only) and `install`."""
+    root = root.resolve()
+    install = framework_install(root)
+    revision = framework_revision(root) if install == "checkout" else None
+    return {"release": release, "revision": revision, "install": install}
+
+
 def cited_paths(report: Mapping[str, Any]) -> dict[str, str]:
     """Each repository path that `file` evidence cites, with the pointer of the first item that cites it."""
     paths: dict[str, str] = {}
@@ -577,6 +733,11 @@ def validate_document(
 ) -> Outcome:
     """Validate a parsed report. The target, the catalogue and the credential patterns default to the real ones."""
     out = Outcome()
+    version_error = schema_version_error(document)
+    if version_error is not None:
+        out.stage = "version"
+        out.errors = [version_error]
+        return out
     found = schema_validator().validate(document, limit=MAX_SCHEMA_ERRORS)
     if found:
         out.stage = "schema"
@@ -611,6 +772,7 @@ def handler(argv: Sequence[str]) -> _common.Result:
     path = Path(args.report).expanduser()
     document = read_report(path)
     outcome = validate_document(document, target=target)
+    refuse_unknown_schema(outcome)
     if outcome.errors:
         count = len(outcome.errors)
         raise _common.ValidationFailed(

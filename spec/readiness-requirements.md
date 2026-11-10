@@ -137,6 +137,16 @@ The instruction file MUST consist of instructions that are specific to the repos
 - **Source:** [Phased-Approach.md § Activities](../docs/framework/phased-approach.md#activities)
 - **Checks:** AGT-11
 
+### REQ-SH-060 — Communication rules stated
+
+The instruction file SHOULD state how agents write for people. The rules name who the reader is, how an agent
+reports its work, and how it asks a person for a decision. They sit in a section of the file or in a file it links.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [greenfield/README.md § 5.2 Templates & Guides](../greenfield/README.md#52-templates--guides)
+- **Checks:** AGT-12
+
 ## Documentation contract
 
 ### REQ-SH-016 — Documentation directory
@@ -170,6 +180,16 @@ The repository SHOULD have an ADR directory with numbered entries and an index t
 - **Verification:** automated
 - **Source:** [greenfield/README.md § 5.2 Templates & Guides](../greenfield/README.md#52-templates--guides)
 - **Checks:** DOC-04
+
+### REQ-SH-061 — Documentation is readable
+
+The prose in `docs/` SHOULD follow plain-language rules: few sentences over 25 words (20 in a numbered step), no
+vague or padded words, and a diagram on each explanation or tutorial page.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [greenfield/README.md § 5.2 Templates & Guides](../greenfield/README.md#52-templates--guides)
+- **Checks:** DOC-05
 
 ### REQ-SH-020 — Documentation is accurate
 The repository's owner MUST declare that the permanent documentation describes what the code does today.
@@ -256,7 +276,7 @@ Where the language has a type checker, the repository MUST configure it in stric
 - **Checks:** TOOL-03
 
 ### REQ-SH-030 — Dependency vulnerability scan
-The `security` verb MUST run a dependency vulnerability scan.
+The `security` verb MUST run a dependency vulnerability scan, and CI SHOULD run the same scan.
 
 - **Phase:** 1
 - **Verification:** automated
@@ -272,12 +292,23 @@ The repository MUST wire a local Git hook chain, through a hook manager or `core
 - **Checks:** TOOL-05
 
 ### REQ-SH-032 — Commit convention enforced
-The repository SHOULD enforce its commit-message convention with a `commit-msg` hook or an equivalent stage.
+The repository SHOULD enforce its commit-message convention with a `commit-msg` hook or an equivalent stage, and
+SHOULD check the same rule in CI.
 
 - **Phase:** 1
 - **Verification:** automated
 - **Source:** [greenfield/README.md § 2.3 Git Hooks](../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)
 - **Checks:** TOOL-06
+
+### REQ-SH-059 — Local guard against commits to a protected branch
+
+The repository SHOULD wire a local hook that refuses a commit on each branch its branch rules protect, so that an
+agent learns it is on a protected branch before it commits, not when the push is refused.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [greenfield/README.md § 2.3 Git Hooks](../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)
+- **Checks:** TOOL-07
 
 ## Continuous integration
 
@@ -304,6 +335,16 @@ On every pull request the CI pipeline MUST run the verbs that make up `check` an
 - **Verification:** agent
 - **Source:** [greenfield/README.md § 1.4 The standardized command surface](../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)
 - **Checks:** CI-04
+
+### REQ-SH-057 — Workflow files linted
+
+The repository's CI workflow files MUST be checked by a linter that understands the CI provider. The linter MUST
+be runnable locally, through the command surface or a hook, as well as in CI.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [greenfield/README.md § 4.1 Workflows](../greenfield/README.md#41-workflows)
+- **Checks:** CI-05
 
 ## Baselines and the ratchet
 
@@ -414,6 +455,16 @@ Each of lint, format, test, types and security MUST have at most one authoritati
 - **Verification:** automated
 - **Source:** [Phased-Approach.md § Phase 1: Agentic Bootstrap](../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)
 - **Checks:** EXEC-07
+
+### REQ-SH-058 — Tool versions visible to dependency automation
+
+A tool version that a command, a workflow or a hook runs MUST be held in a manifest that dependency automation
+reads, or in a file a configured custom manager reads. It MUST NOT be written only as a literal in the command.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [Phased-Approach.md § Phase 1: Agentic Bootstrap](../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)
+- **Checks:** EXEC-08
 
 ## Tests
 

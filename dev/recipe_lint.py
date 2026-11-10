@@ -9,7 +9,7 @@ frontmatter and oversize files.
 
 ``<root>`` is the framework repository, the one that holds ``audit/`` (and, beside it, ``implement/`` and
 ``docs/``); a link may climb out of those folders (a check file citing ``docs/framework/phased-approach.md`` or
-``spec/`` does), but never out of ``<root>``. Eight checks, each independent of the others. The link rule also
+``spec/`` does), but never out of ``<root>``. Nine checks, each independent of the others. The link rule also
 covers the framework pages outside those folders (the root ``README.md``, ``AGENTS.md``, ``CONTRIBUTING.md``,
 ``RELEASE_PROCESS.md`` and ``SECURITY.md``, ``spec/`` and ``greenfield/``; the
 framework pages under ``docs/framework/`` are already recipe Markdown); no other check reads them:
@@ -26,6 +26,9 @@ framework pages under ``docs/framework/`` are already recipe Markdown); no other
 - **Size.** A ``SKILL.md``, and a check-family file under ``audit/checks/`` (``NN-*.md``), must be 500 lines or
   fewer (R-10's ``SKILL.md`` budget, shared by the family files for the same reason: an agent loads the whole
   file at once, D46).
+- **User prompt.** Each recipe's ``SKILL.md`` (``audit/SKILL.md`` and ``implement/SKILL.md``) must hold an inline
+  link, outside a code fence, to the shared prompt ``audit/prompts/talking-to-the-user.md``: how the agent writes to
+  the person who runs it. A tree without that prompt has nothing to link to, and the check is skipped.
 - **Tool references.** Every ``audit/tools/<name>.py`` or ``implement/tools/<name>.py`` named in a command or a
   code span, wherever it appears in a line, must exist in that folder and answer ``--describe`` with the
   contract's envelope, inside a time limit. A line that admits the tool is not built yet (starts with ``TBD:``,
@@ -112,6 +115,9 @@ TBD_LINE = re.compile(r"^\s*(?:[-*>]\s*)*TBD:")
 ENVELOPE_KEYS = ("tool", "version", "ok", "data", "warnings", "truncated")
 REQUIREMENT_ID = re.compile(r"\bREQ-[A-Z]+-[0-9]+\b")
 REQUIREMENT_HEADING = re.compile(r"^### (REQ-[A-Z]+-[0-9]+)\b", re.MULTILINE)
+# The shared prompt on how a recipe's agent writes to its user, and the recipe files that must link it.
+USER_PROMPT = "audit/prompts/talking-to-the-user.md"
+RECIPE_SKILLS = ("audit/SKILL.md", "implement/SKILL.md")
 PLAYBOOK_REFERENCE = re.compile(r'Playbook `([a-z][a-z0-9-]*)`|"playbook":\s*"([a-z][a-z0-9-]*)"')
 
 # Whole files whose links are examples and are never meant to resolve, as a path prefix relative to <root>.
@@ -258,6 +264,29 @@ def check_links(root: Path, file: Path, lines: Sequence[str], cache: dict[Path, 
 def excluded_from_links(file: Path, root: Path) -> bool:
     relative = file.relative_to(root).as_posix()
     return any(relative.startswith(prefix) for prefix in EXCLUDED_FROM_LINKS)
+
+
+# --- The user-prompt rule -------------------------------------------------------------------------------
+
+
+def links_to(file: Path, lines: Sequence[str], target: Path) -> bool:
+    """Whether an inline link outside a code fence in `file` resolves to `target`."""
+    for _, text in scan_lines(lines):
+        for match in _LINK.finditer(text):
+            path_part = match.group(1).partition("#")[0]
+            if path_part and not _EXTERNAL.match(path_part) and (file.parent / path_part).resolve() == target:
+                return True
+    return False
+
+
+def check_user_prompt(root: Path, out: Outcome) -> None:
+    prompt = (root / USER_PROMPT).resolve()
+    if not prompt.is_file():
+        return
+    for relative in RECIPE_SKILLS:
+        skill = root / relative
+        if skill.is_file() and not links_to(skill, skill.read_text(encoding="utf-8").splitlines(), prompt):
+            out.error(skill, 1, f"a recipe's SKILL.md must link the shared prompt {USER_PROMPT}")
 
 
 # --- The frontmatter rule -------------------------------------------------------------------------------
@@ -608,6 +637,7 @@ def lint(
                 check_playbook_references(file, lines, catalogue, out)
             if requirement_ids is not None:
                 check_requirement_references(file, lines, requirement_ids, out)
+    check_user_prompt(root, out)
     for page in root_pages:
         if not excluded_from_links(page, root):
             check_links(root, page, page.read_text(encoding="utf-8").splitlines(), link_cache, out)

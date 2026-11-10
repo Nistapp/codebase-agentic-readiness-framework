@@ -3,18 +3,23 @@
 
 """Check Markdown prose against the plain-language rules in ``docs/COMMUNICATION_RULES.md``.
 
-    prose_check.py FILE...
+    prose_check.py [--format text|github] [--min-severity notice|warning] [--quiet] FILE...
 
-Three rules, each reported as ``path:line: CODE message``:
+The check is advisory: it never fails. Three rules, each reported as ``path:line: CODE severity: message``:
 
-* ``PL001`` a sentence is longer than 25 words, or longer than 20 words in a numbered step;
-* ``PL002`` a vague or padded word from :data:`VAGUE` (``simply``, ``in order to`` and the others);
-* ``PL003`` an explanation or tutorial page (see :func:`needs_diagram`) has no Mermaid block.
+* ``PL001`` a sentence is longer than 25 words (a notice), longer than 40 words (a warning), or longer than 20 words
+  in a numbered step (a warning);
+* ``PL002`` a vague or padded word from :data:`VAGUE` (``simply``, ``in order to`` and the others), a warning;
+* ``PL003`` an explanation or tutorial page (see :func:`needs_diagram`) has no Mermaid block, a warning.
+
+A *warning* is worth fixing in the change that touches the text. A *notice* is a hint: fix it when it helps the
+reader. ``--format github`` prints each issue as a GitHub Actions annotation (``::warning`` or ``::notice``), which
+shows on the pull request without failing the job. ``--min-severity warning`` hides the notices.
 
 Only prose is read: paragraphs, list items and blockquotes. Fenced code, tables, headings, HTML comments and inline
 code spans are skipped. A region between ``<!-- prose-check off -->`` and ``<!-- prose-check on -->`` is skipped, for
-a deliberate bad example. The last line is ``Summary: N issues``; the exit code is 1 when N is above zero, so the
-Makefile can hold a path list to zero and ``quality_baseline.py`` can ratchet the full-tree count.
+a deliberate bad example. The last line is ``Summary: N issues in M files (W warnings, K notices)``. The exit code
+is 0 whatever the count; it is 2 only when a file cannot be read.
 
 Dev-only and standard library only. The sentence splitter is a heuristic: it splits at ``.``, ``!`` or ``?`` before a
 space and a capital letter, a digit, a code span or an opening bracket.
@@ -30,6 +35,12 @@ from pathlib import Path, PurePosixPath
 
 MAX_WORDS = 25
 MAX_WORDS_STEP = 20
+# A sentence this long is hard to follow even for a patient reader, so it is a warning, not a notice.
+MAX_WORDS_WARNING = 40
+
+WARNING = "warning"
+NOTICE = "notice"
+SEVERITIES = (NOTICE, WARNING)
 
 VAGUE = (
     "simply",
@@ -76,10 +87,17 @@ class Issue:
     path: str
     line: int
     code: str
+    severity: str
     message: str
 
     def __str__(self) -> str:
-        return f"{self.path}:{self.line}: {self.code} {self.message}"
+        return f"{self.path}:{self.line}: {self.code} {self.severity}: {self.message}"
+
+    def github(self) -> str:
+        """The issue as a GitHub Actions workflow command (an annotation on the file and line)."""
+        message = self.message.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+        path = self.path.replace("%", "%25").replace(",", "%2C").replace(":", "%3A")
+        return f"::{self.severity} file={path},line={self.line},title={self.code}::{message}"
 
 
 @dataclass
@@ -189,11 +207,14 @@ def check_text(path: str, content: str) -> list[Issue]:
             words = sum(1 for token in sentence.split() if _WORD.search(token))
             if words > limit:
                 kind = "step" if block.step else "sentence"
-                issues.append(Issue(path, block.line, "PL001", f"{kind} has {words} words (limit {limit})"))
+                severity = WARNING if block.step or words > MAX_WORDS_WARNING else NOTICE
+                message = f"{kind} has {words} words (limit {limit})"
+                issues.append(Issue(path, block.line, "PL001", severity, message))
         for match in _VAGUE_RE.finditer(prose):
-            issues.append(Issue(path, block.line, "PL002", f"vague word '{match.group(1)}'"))
+            issues.append(Issue(path, block.line, "PL002", WARNING, f"vague word '{match.group(1)}'"))
     if needs_diagram(path) and not has_mermaid:
-        issues.append(Issue(path, 1, "PL003", "explanation or tutorial page without a Mermaid diagram"))
+        message = "explanation or tutorial page without a Mermaid diagram"
+        issues.append(Issue(path, 1, "PL003", WARNING, message))
     return issues
 
 
@@ -201,22 +222,37 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else None)
     parser.add_argument("files", nargs="*", type=Path, help="Markdown files to check")
     parser.add_argument("--quiet", action="store_true", help="print the summary line only")
+    parser.add_argument("--format", choices=("text", "github"), default="text", help="issue format (default: text)")
+    parser.add_argument(
+        "--min-severity", choices=SEVERITIES, default=NOTICE, help="hide issues below this severity (default: notice)"
+    )
     args = parser.parse_args(argv)
-    total = 0
+    shown = SEVERITIES[SEVERITIES.index(args.min_severity) :]
+    counts = dict.fromkeys(SEVERITIES, 0)
     for file in args.files:
         try:
             content = file.read_text(encoding="utf-8")
         except OSError as exc:
             print(f"prose_check: cannot read {file}: {exc}", file=sys.stderr)
             return 2
-        issues = check_text(file.as_posix(), content)
-        total += len(issues)
-        if not args.quiet:
-            for issue in issues:
-                print(issue)
-    files = len(args.files)
-    print(f"Summary: {total} issue{'' if total == 1 else 's'} in {files} file{'' if files == 1 else 's'}")
-    return 1 if total else 0
+        issues = [i for i in check_text(file.as_posix(), content) if i.severity in shown]
+        for issue in issues:
+            counts[issue.severity] += 1
+            if not args.quiet:
+                print(issue.github() if args.format == "github" else issue)
+    print(summary(counts, len(args.files)))
+    return 0
+
+
+def _plural(n: int, word: str) -> str:
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def summary(counts: dict[str, int], files: int) -> str:
+    """``Summary: N issues in M files (W warnings, K notices)``."""
+    total = sum(counts.values())
+    detail = ", ".join(_plural(counts[s], s) for s in (WARNING, NOTICE))
+    return f"Summary: {_plural(total, 'issue')} in {_plural(files, 'file')} ({detail})"
 
 
 if __name__ == "__main__":

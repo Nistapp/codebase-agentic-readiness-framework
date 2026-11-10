@@ -32,14 +32,26 @@ protection. It is never used merely because an artifact is absent.
 * **HYG-08** — a text/markdown document whose filename contains "release" (a release process or
   release-notes page), at the same places. CI workflow files named `release.yml` are not documents and do
   not count.
-* **HYG-09** — Dependabot or Renovate configuration at any of its conventional locations.
+* **HYG-09** — Dependabot or Renovate configuration at any of its conventional locations, read for two defects
+  that hold whatever update policy the owner chose. (1) **Coverage:** every ecosystem the stack names from a
+  manifest, plus `github-actions` when GitHub CI is detected, has a Dependabot entry of an accepted
+  `package-ecosystem` (:data:`_DEPENDABOT_ECOSYSTEMS`); Renovate covers every manager unless `enabledManagers`
+  leaves one out (:data:`_RENOVATE_MANAGERS`). (2) **The `target-branch` trap:** a Dependabot entry that sets
+  `target-branch` together with `ignore` or `groups`, whose options then do not apply to security updates. Either
+  defect is `PARTIAL`. A configuration whose content cannot be read (no `updates:` list, invalid JSON) is
+  ``UNKNOWN`` when it is the only one or when an ecosystem is uncovered; `renovate.json5` and `renovate.config.js`
+  count on presence. Coverage is per ecosystem, not per directory.
 * **HYG-10** — a root license file: `LICENSE*`, `LICENCE*`, `COPYING*`, `COPYRIGHT*` or `UNLICENSE*`
   (case-insensitive, bare name or document suffix).
-* **HYG-11** — branch protection declared as code, where the provider allows it. A
-  `*branch-protection*`/`*branch_protection*` file, a `*branch_protection*` Terraform resource, or a
-  document describing the provider's config is `PASS`. None found is `FAIL` when the CI provider is
-  one that offers config-as-code (GitHub, GitLab); it is ``UNKNOWN`` when no such provider is
-  recognised, because whether protection *can* be declared as code is provider-dependent.
+* **HYG-11** — branch protection declared as code, where the provider allows it
+  (:func:`audit.rules.checks._common.declared_branch_rules`). A GitHub ruleset file (`.github/rulesets/*.json`), the
+  Settings app's `branches:` (`.github/settings.yml`), a Terraform protection resource, or a non-document file whose
+  path names branch protection is `PASS`; when the rules protect an integration branch (`dev`, `develop`, ...) and
+  another branch, a workflow must also read the pull request's source branch (GitHub `github.head_ref`, GitLab
+  `CI_MERGE_REQUEST_SOURCE_BRANCH_NAME`), or the verdict is `PARTIAL`. A document only (`docs/branch-protection.md`)
+  records the rules without declaring them: `PARTIAL`. A ruleset file that is not a ruleset is ``UNKNOWN``. None
+  found is `FAIL` when the CI provider offers config-as-code (GitHub, GitLab); otherwise ``UNKNOWN``, because
+  whether protection *can* be declared as code is provider-dependent. Live settings are never read (no network).
 
 Presence is repository-level (ADR-0008): a hygiene file counts at the root or under `.github/`, `.gitlab/` or
 `docs/` (:func:`_repository_level`), never in a component's or a template's directory. Carried data
@@ -52,12 +64,17 @@ latest commit, so an abandoned repository is judged on its own clock, not the au
 from __future__ import annotations
 
 import datetime as dt
+import json
+import re
 import subprocess
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
+from audit.rules.checks._common import BranchRules, _indent, declared_branch_rules
 from audit.scan import Inventory
+from audit.stack import CI_PROVIDERS, Stack
 from audit.rules.payloads import Payload
 
 #: A README below this many characters of trimmed text is present but not documentation.
@@ -87,6 +104,39 @@ _DEPENDENCY_AUTOMATION = (
     ".github/renovate.json",
     "renovate.config.js",
 )
+
+#: Renovate files the engine can parse with the standard library; the others count on presence.
+_RENOVATE_JSON = frozenset({"renovate.json", ".renovaterc", ".renovaterc.json"})
+_RENOVATE_UNPARSED = frozenset({"renovate.json5", "renovate.config.js"})
+
+#: Stack ecosystem (or ``github`` for the CI provider) -> the Dependabot ``package-ecosystem`` values that cover it.
+_DEPENDABOT_ECOSYSTEMS: dict[str, tuple[str, ...]] = {
+    "node": ("npm", "bun"),
+    "python": ("pip", "uv"),
+    "jvm": ("maven", "gradle"),
+    "go": ("gomod",),
+    "rust": ("cargo",),
+    "dotnet": ("nuget",),
+    "ruby": ("bundler",),
+    "php": ("composer",),
+    "github": ("github-actions",),
+}
+
+#: The same, as Renovate manager names for ``enabledManagers``.
+_RENOVATE_MANAGERS: dict[str, tuple[str, ...]] = {
+    "node": ("npm", "bun"),
+    "python": ("pep621", "pip_requirements", "pip_setup", "pip-compile", "pipenv", "poetry", "setuptools"),
+    "jvm": ("maven", "gradle"),
+    "go": ("gomod",),
+    "rust": ("cargo",),
+    "dotnet": ("nuget",),
+    "ruby": ("bundler",),
+    "php": ("composer",),
+    "github": ("github-actions",),
+}
+
+#: The Dependabot entry options that the owner expects to bind security updates, and that ``target-branch`` drops.
+_TRAPPED_OPTIONS = frozenset({"ignore", "groups"})
 
 
 def _outcome(
@@ -488,24 +538,176 @@ def check_hyg08(*, spec, target, inventory, stack, components, session) -> Check
 # ===========================================================================
 
 
+@dataclass
+class _UpdateEntry:
+    """One item of a Dependabot ``updates:`` list: its ecosystem, its option keys and their line numbers."""
+
+    line: int
+    ecosystem: str | None = None
+    keys: dict[str, int] = field(default_factory=dict)
+
+
+@dataclass
+class _AutomationConfig:
+    """What one dependency-update file tells the check. ``covers`` is ``None`` when it covers every ecosystem."""
+
+    path: str
+    readable: bool = True
+    covers: set[str] | None = None
+    traps: list[_UpdateEntry] = field(default_factory=list)
+
+
+def _scalar(value: str) -> str:
+    value = re.sub(r"\s+#.*$", "", value).strip()
+    return value.strip("\"'")
+
+
+def _dependabot_entries(text: str) -> list[_UpdateEntry] | None:
+    """Minimal reader for the ``updates:`` list of a Dependabot file; ``None`` when there is no such list.
+
+    No YAML library is available (stdlib only), so this understands block style: ``- key: value`` items and
+    their sibling keys. Anchors, flow-style items and multi-document files are not interpreted.
+    """
+    lines = text.splitlines()
+    try:
+        start = next(i for i, line in enumerate(lines) if re.match(r"^updates:\s*(#.*)?$", line))
+    except StopIteration:
+        return None
+    entries: list[_UpdateEntry] = []
+    item_indent: int | None = None
+    key_indent = 0
+    for number, line in enumerate(lines[start + 1 :], start=start + 2):
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        indent = _indent(line)
+        stripped = line.strip()
+        if stripped.startswith("- ") and (item_indent is None or indent == item_indent):
+            item_indent = indent
+            key_indent = indent + 2
+            entries.append(_UpdateEntry(line=number))
+            stripped = stripped[2:].strip()
+            indent = key_indent
+        elif item_indent is None or indent <= item_indent:
+            break
+        key = re.match(r"^([A-Za-z0-9_-]+):(.*)$", stripped)
+        if entries and key and indent == key_indent:
+            name, value = key.group(1), key.group(2)
+            entries[-1].keys.setdefault(name, number)
+            if name == "package-ecosystem":
+                entries[-1].ecosystem = _scalar(value)
+    return entries
+
+
+def _read_dependabot(rel: str, text: str | None) -> _AutomationConfig:
+    entries = _dependabot_entries(text or "")
+    if entries is None:
+        return _AutomationConfig(rel, readable=False, covers=set())
+    named = {entry.ecosystem for entry in entries if entry.ecosystem}
+    covers = {eco for eco, accepted in _DEPENDABOT_ECOSYSTEMS.items() if named & set(accepted)}
+    traps = [entry for entry in entries if "target-branch" in entry.keys and _TRAPPED_OPTIONS & set(entry.keys)]
+    return _AutomationConfig(rel, covers=covers, traps=traps)
+
+
+def _read_renovate(rel: str, text: str | None) -> _AutomationConfig:
+    if _basename(rel) in _RENOVATE_UNPARSED:
+        return _AutomationConfig(rel)
+    try:
+        config = json.loads(text or "")
+    except ValueError:
+        return _AutomationConfig(rel, readable=False, covers=set())
+    if not isinstance(config, dict):
+        return _AutomationConfig(rel, readable=False, covers=set())
+    enabled = config.get("enabledManagers")
+    if not isinstance(enabled, list):
+        return _AutomationConfig(rel)
+    names = {str(name) for name in enabled}
+    return _AutomationConfig(rel, covers={eco for eco, accepted in _RENOVATE_MANAGERS.items() if names & set(accepted)})
+
+
+def _required_coverage(stack: Stack) -> set[str]:
+    """The ecosystems a dependency-update policy must reach: those a manifest names, plus GitHub Actions."""
+    required = {eco for eco in stack.ecosystems - stack.source_only if eco in _DEPENDABOT_ECOSYSTEMS}
+    if "github" in stack.ci_providers:
+        required.add("github")
+    return required
+
+
+def _coverage_label(eco: str) -> str:
+    return "github-actions" if eco == "github" else eco
+
+
 def check_hyg09(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     found = _present(inventory, *_DEPENDENCY_AUTOMATION)
-    if found:
-        return _outcome(spec, Verdict.PASS, f"dependency automation configured at {found[0]}")
-    return _outcome(
-        spec,
-        Verdict.FAIL,
-        "no dependency update automation",
-        [
+    if not found:
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            "no dependency update automation",
+            [
+                _finding(
+                    spec,
+                    Verdict.FAIL,
+                    "keep dependencies patched without manual sweeps",
+                    "no Dependabot or Renovate configuration exists",
+                    remediation="Add .github/dependabot.yml (or renovate.json) with an update schedule.",
+                ),
+            ],
+        )
+
+    configs = [
+        _read_renovate(rel, inventory.read(rel)) if "renovate" in rel else _read_dependabot(rel, inventory.read(rel))
+        for rel in found
+    ]
+    required = _required_coverage(stack)
+    covered: set[str] = set()
+    for config in configs:
+        covered |= required if config.covers is None else config.covers
+    missing = sorted(required - covered)
+    unreadable = [config.path for config in configs if not config.readable]
+
+    findings = [
+        _finding(
+            spec,
+            Verdict.PARTIAL,
+            "rely on the update policy reaching security updates",
+            f"the `{entry.ecosystem or 'unnamed'}` entry sets `target-branch` together with "
+            f"`{'`, `'.join(sorted(_TRAPPED_OPTIONS & set(entry.keys)))}`, and Dependabot drops those options for "
+            "security updates, which always go to the default branch",
+            evidence=[Evidence(config.path, line=entry.keys["target-branch"], note="target-branch")],
+            path=f"{config.path}:{entry.keys['target-branch']}",
+            remediation="Remove `target-branch` when it names the default branch; otherwise make that branch the "
+            "default, so the entry's options apply to security updates too.",
+        )
+        for config in configs
+        for entry in config.traps
+    ]
+    if missing and not unreadable:
+        labels = ", ".join(_coverage_label(eco) for eco in missing)
+        accepted = "; ".join(f"{_coverage_label(eco)}: {' or '.join(_DEPENDABOT_ECOSYSTEMS[eco])}" for eco in missing)
+        findings.append(
             _finding(
                 spec,
-                Verdict.FAIL,
-                "keep dependencies patched without manual sweeps",
-                "no Dependabot or Renovate configuration exists",
-                remediation="Add .github/dependabot.yml (or renovate.json) with an update schedule.",
-            ),
-        ],
-    )
+                Verdict.PARTIAL,
+                "keep every ecosystem's dependencies under the update policy",
+                f"the dependency-update configuration has no entry for {labels}",
+                evidence=[Evidence(config.path) for config in configs],
+                path=configs[0].path,
+                remediation=f"Add an update entry for each detected ecosystem (Dependabot `package-ecosystem` "
+                f"{accepted}), or the matching Renovate manager to `enabledManagers`.",
+            )
+        )
+    if findings:
+        return _outcome(
+            spec, Verdict.PARTIAL, f"dependency automation at {found[0]} has {len(findings)} defect(s)", findings
+        )
+    if missing or len(unreadable) == len(configs):
+        return _outcome(
+            spec,
+            Verdict.UNKNOWN,
+            f"dependency automation at {', '.join(unreadable)} could not be read; coverage is not settled",
+        )
+    reach = ", ".join(_coverage_label(eco) for eco in sorted(required)) or "no ecosystem with a manifest"
+    return _outcome(spec, Verdict.PASS, f"dependency automation configured at {found[0]}; covers {reach}")
 
 
 # ===========================================================================
@@ -539,20 +741,108 @@ def check_hyg10(*, spec, target, inventory, stack, components, session) -> Check
 # ===========================================================================
 
 
-def _branch_protection_config(inventory: Inventory) -> list[str]:
-    named = [
+#: An integration branch name: with another protected branch beside it, the repository runs a two-branch model
+#: (work branch -> integration -> release), and the release branch needs a source-branch check.
+_INTEGRATION_BRANCHES = frozenset({"dev", "develop", "development", "integration", "next"})
+
+#: Per CI provider, the variables that hold a pull request's source branch.
+_SOURCE_BRANCH_TOKENS: dict[str, tuple[str, ...]] = {
+    "github": ("github.head_ref", "GITHUB_HEAD_REF", "pull_request.head.ref"),
+    "gitlab": ("CI_MERGE_REQUEST_SOURCE_BRANCH_NAME",),
+}
+
+#: Keys whose value uses the source branch for something else: a concurrency group, a checkout ref.
+_NOT_A_SOURCE_CHECK_RE = re.compile(r"^\s*-?\s*(?:group|ref)\s*:")
+
+
+def _protection_pages(inventory: Inventory) -> tuple[list[str], list[str]]:
+    """Files whose path names branch protection: ``(documents, other files)``. A document records the rules; any
+    other such file (``.github/branch-protection.yml``) is read as configuration."""
+    named = sorted(
         f.rel for f in inventory.files if "branch-protection" in f.rel.lower() or "branch_protection" in f.rel.lower()
-    ]
-    terraform = sorted(
-        rel for rel in inventory.with_suffix(".tf") if "branch_protection" in (inventory.read(rel) or "").lower()
     )
-    return sorted(set(named) | set(terraform))
+    documents = [rel for rel in named if _basename(rel).lower().endswith(_DOC_SUFFIXES)]
+    return documents, [rel for rel in named if rel not in documents]
+
+
+def _two_branch_model(rules: BranchRules) -> bool:
+    literal = set(rules.literal_branches)
+    integration = literal & _INTEGRATION_BRANCHES
+    return bool(integration) and len(set(rules.branches) - integration) >= 1
+
+
+def _source_branch_check(inventory: Inventory) -> tuple[str, int] | None:
+    """The first workflow line that reads a pull request's source branch, outside a concurrency group or a
+    checkout ref."""
+    for provider, globs in CI_PROVIDERS.items():
+        tokens = _SOURCE_BRANCH_TOKENS.get(provider)
+        if not tokens:
+            continue
+        for rel in sorted(inventory.match(*globs)):
+            for number, line in enumerate((inventory.read(rel) or "").splitlines(), start=1):
+                code = line.split(" #", 1)[0]
+                if code.lstrip().startswith("#") or _NOT_A_SOURCE_CHECK_RE.match(code):
+                    continue
+                if any(token in code for token in tokens):
+                    return rel, number
+    return None
 
 
 def check_hyg11(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    config = _branch_protection_config(inventory)
-    if config:
-        return _outcome(spec, Verdict.PASS, f"branch protection declared as code at {config[0]}")
+    rules = declared_branch_rules(inventory)
+    documents, configs = _protection_pages(inventory)
+    sources = sorted(set(rules.sources) | set(configs))
+    if sources:
+        declared = f"branch protection declared as code at {', '.join(sources)}"
+        if not _two_branch_model(rules):
+            return _outcome(spec, Verdict.PASS, declared)
+        source_check = _source_branch_check(inventory)
+        if source_check:
+            rel, line = source_check
+            return _outcome(spec, Verdict.PASS, f"{declared}; source-branch check at {rel}:{line}")
+        protected = ", ".join(rules.branches)
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"{declared}; {protected} are protected but no CI job checks a pull request's source branch",
+            [
+                _finding(
+                    spec,
+                    Verdict.PARTIAL,
+                    "rely on the release branch accepting changes from the integration branch only",
+                    f"the rules protect {protected}, and no workflow reads the pull request's source branch",
+                    evidence=[Evidence(rel, note="declares branch rules") for rel in sources],
+                    remediation="Add a CI job on pull requests into the release branch that fails unless the source "
+                    "branch is the integration branch, and make it a required status check (rulesets cannot "
+                    "restrict the source branch).",
+                ),
+            ],
+        )
+
+    if rules.unreadable:
+        return _outcome(
+            spec,
+            Verdict.UNKNOWN,
+            f"{', '.join(rules.unreadable)} cannot be read as a ruleset (invalid JSON, or no rules list)",
+        )
+
+    if documents:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"branch protection recorded at {documents[0]}, not declared as code",
+            [
+                _finding(
+                    spec,
+                    Verdict.PARTIAL,
+                    "review a change to the protected-branch rules like any other change",
+                    f"{documents[0]} describes the rules, but no ruleset file or Terraform resource declares them",
+                    evidence=[Evidence(rel, note="describes the rules") for rel in documents],
+                    remediation="Export the rules as code: a JSON file per ruleset under .github/rulesets/ on "
+                    "GitHub, or a Terraform protection resource. Keep the page as the summary.",
+                ),
+            ],
+        )
 
     recognised = sorted(_PROTECTION_PROVIDERS & set(stack.ci_providers))
     if recognised:
@@ -566,9 +856,8 @@ def check_hyg11(*, spec, target, inventory, stack, components, session) -> Check
                     Verdict.FAIL,
                     "reproduce the protected-branch rules as code",
                     f"the {', '.join(recognised)} provider is detected but no branch-protection configuration exists",
-                    remediation="Declare branch protection in code (a Terraform resource or "
-                    ".github/branch-protection) so it is reviewed like any other "
-                    "change.",
+                    remediation="Declare branch protection in code (a JSON file per ruleset under .github/rulesets/ "
+                    "on GitHub, or a Terraform protection resource) so it is reviewed like any other change.",
                 ),
             ],
         )

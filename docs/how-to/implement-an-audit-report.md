@@ -97,6 +97,18 @@ every debt entry with its count and baseline.
 
 ---
 
+## When the versions differ
+
+Each report says which framework release made it (`provenance.framework.release`). The agent's tools compare it with
+their own release in Stage 0. [Versions](../reference/versions.md) has the whole rule. You can meet four cases:
+
+| What the agent tells you | Why | What to do |
+|---|---|---|
+| `the report has schema '0.1' (made by framework v0.1.0); these tools read schema '0.2'. Run a new audit ...` | The report comes from a release with another report schema. The tools read only their own. | Run a new audit with this framework. Or install the release that made the report. |
+| `the report was made by framework v0.3.3; these tools are v0.3.2. Update the framework ...` | The report is newer than the tools, which may not know its checks. The run stops. | Install release v0.3.3 or later of both skills. Or run a new audit with v0.3.2. |
+| `the report was made by framework v0.3.1; these tools are v0.3.2. Verdicts can differ ...` | A warning. The run goes on. | Decide if you want a new audit before the agent acts on the findings. |
+| `the report was made at framework commit ...; these tools run at ...` | Both come from checkouts of one release, at two commits. A warning. | Run a new audit if the checks changed in between. |
+
 ## A real run
 
 The [worked example](../../audit/schema/examples/server-worked-example/README.md) holds the before and after reports,

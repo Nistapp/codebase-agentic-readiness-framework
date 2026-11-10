@@ -5,7 +5,7 @@
 
 Anchor: `docs/framework/phased-approach.md` § Key Deliverables.
 
-Implemented here: `TOOL-01` … `TOOL-06`.
+Implemented here: `TOOL-01` … `TOOL-07`.
 
 The pack verifies that the tools an agent leans on are configured **and reachable through the command
 surface**, not merely installed. Verb evidence comes from `audit.rules.checks._common.resolve_verbs`;
@@ -24,12 +24,31 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   `UNKNOWN`. It never invents a type checker for an ecosystem that has none.
 * **TOOL-04** — a resolved verb whose command runs a known dependency-audit tool (`npm audit`,
   `pip-audit`, `osv-scanner`, `cargo audit`, `govulncheck`, `snyk`, …). The verb is the evidence;
-  it is **not** run (that would be Tier C). A `security` verb that runs something else ⇒ `PARTIAL`.
+  it is **not** run (that would be Tier C). A `security` verb that runs something else ⇒ `PARTIAL`. On the root
+  `Makefile` the verb is followed the way Make runs it: simple variables are expanded (`$(OSV)`, `${OSV}`), and each
+  prerequisite target and each `make <target>` or `$(MAKE) <target>` line is read in turn (cycles and
+  `make -C`/`-f` calls into another Makefile are not followed). CI is read too, as `TOOL-06` reads it: a workflow
+  line that runs a scanner, a runner target whose command runs one (``make security-deps``, ``npm run security``),
+  a scanner action (``google/osv-scanner-action``, ``actions/dependency-review-action``, ...), or GitLab's
+  Dependency-Scanning template. Dependabot and Renovate do not count (``HYG-09``). Local and CI ⇒ `PASS`; one of
+  the two ⇒ `PARTIAL`; neither ⇒ `FAIL`. Whether the CI job runs on pull requests is not read.
 * **TOOL-05** — a wired hook chain: `.pre-commit-config.yaml`, `lefthook.yml`, a declared
   `core.hooksPath`, or `.husky/` referenced by a `prepare`/install script. Present but unwired ⇒
   `PARTIAL`.
-* **TOOL-06** — a commit-message rule: a commitlint config, a `commit-msg` hook, or an equivalent
-  pre-commit/lefthook stage. Absent ⇒ `FAIL` (`COSMETIC`).
+* **TOOL-06** — a commit-message rule in two places. Locally: a commitlint config, a `commit-msg` hook, or an
+  equivalent pre-commit/lefthook stage. In CI: a workflow line that runs a commit-message linter (commitlint,
+  commitizen's `cz check`, gitlint, the pre-commit or lefthook `commit-msg` stage), a pull-request title check, a
+  script the local `commit-msg` stage also runs, or a runner target whose command does one of those. Both ⇒
+  `PASS`; one of the two ⇒ `PARTIAL`; neither ⇒ `FAIL` (`COSMETIC`). Whether the CI job runs on pull requests is
+  not read.
+* **TOOL-07** — a local guard that refuses a commit on a protected branch: pre-commit's `no-commit-to-branch` hook
+  (its `--branch`/`--pattern` arguments; `main` and `master` without `--branch`), or a lefthook command, a Husky hook or a
+  `pre-commit`/`commit-msg` hook script that reads the current branch (`git symbolic-ref ... HEAD`,
+  `git branch --show-current`, `git rev-parse --abbrev-ref HEAD`). The branches it must name are the literal ones
+  the declared rules protect (:func:`audit.rules.checks._common.declared_branch_rules`); with none declared, any
+  guard counts. A guard in a wired chain that names them all ⇒ `PASS`; a guard in a chain that is not wired, or one
+  that misses a protected branch ⇒ `PARTIAL`; hooks but no guard ⇒ `FAIL`; no hook at all ⇒ `UNKNOWN`, which is
+  `TOOL-05`'s finding. Whether the guard exits non-zero, and a guard in a script the hook calls, are not read.
 
 Deliberate limits, recorded rather than hidden. **Config detection is filename-based** against the
 documented set below; a config that lives somewhere unexpected is not seen. **Verb resolution is
@@ -45,9 +64,17 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.rules.checks._common import resolve_verbs, runner_commands
+from audit.rules.checks._common import (
+    _expand_make,  # noqa: F401 (tested through this module)
+    _makefile_variables,  # noqa: F401
+    declared_branch_rules,
+    follow_makefile,
+    resolve_verbs,
+    runner_commands,
+    runner_target,
+)
 from audit.scan import Kind
-from audit.stack import extract_npm_scripts
+from audit.stack import CI_PROVIDERS, extract_npm_scripts
 from audit.rules.payloads import Payload
 
 #: Formatter configuration filenames, across the ecosystems the catalogue names.
@@ -130,6 +157,24 @@ _COMMITLINT_CONFIG_NAMES: tuple[str, ...] = (
 
 #: Hook managers whose mere presence is a wired chain.
 _WIRED_HOOK_FILES: tuple[str, ...] = (".pre-commit-config.yaml", "lefthook.yml", "lefthook.yaml")
+
+#: TOOL-06: a CI line that checks commit messages or the pull-request title, by tool. ``@commitlint/cli`` (an
+#: install) is not a run; ``wagoid/commitlint-github-action`` is.
+_CI_COMMIT_TOOLS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
+    (name, re.compile(pattern))
+    for name, pattern in (
+        ("commitlint", r"(?<!@)\bcommitlint\b(?!/)"),
+        ("commitizen", r"\b(?:cz|commitizen)\s+check\b"),
+        ("gitlint", r"\bgitlint\b"),
+        ("pre-commit commit-msg stage", r"\bpre-commit\s+run\b.*--hook-stage[=\s]+commit-msg\b"),
+        ("lefthook commit-msg", r"\blefthook\s+run\s+commit-msg\b"),
+        ("pull-request title check", r"\baction-semantic-pull-request\b"),
+    )
+)
+
+#: TOOL-06: a token in a `commit-msg` stage that may name a repository script.
+_PATH_TOKEN_RE = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_./-]*")
+_SCRIPT_SUFFIXES: tuple[str, ...] = (".py", ".sh", ".bash", ".js", ".mjs", ".cjs", ".ts", ".rb", ".pl", ".ps1")
 
 #: Ecosystems for which this pack knows a strict type-check configuration.
 _TYPECHECK_ECOSYSTEMS: frozenset[str] = frozenset({"node", "python", "dotnet"})
@@ -636,15 +681,112 @@ def _is_audit_command(command: str) -> bool:
     return any(pattern.search(command) for pattern in _AUDIT_PATTERNS)
 
 
-def check_tool04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+def _makefile_audit(inventory, command: str) -> tuple[str, str] | None:
+    """The first line a root-Makefile verb's ``command`` runs that is a dependency audit (``follow_makefile``)."""
+    return follow_makefile(inventory, command, _is_audit_command)
+
+
+#: CI actions and templates that run a dependency audit. Matched on the ``uses:`` (or GitLab ``template:``) value.
+_CI_AUDIT_ACTIONS: tuple[re.Pattern[str], ...] = tuple(
+    re.compile(p)
+    for p in (
+        r"\buses:\s*['\"]?google/osv-scanner-action\b",
+        r"\buses:\s*['\"]?actions/dependency-review-action\b",
+        r"\buses:\s*['\"]?aquasecurity/trivy-action\b",
+        r"\buses:\s*['\"]?snyk/actions\b",
+        r"\buses:\s*['\"]?anchore/scan-action\b",
+        r"\buses:\s*['\"]?pypa/gh-action-pip-audit\b",
+        r"\btemplate:\s*['\"]?(?:Jobs/|Security/)?Dependency-Scanning\b",
+    )
+)
+
+
+def _audit_in(command: str, inventory) -> bool:
+    """True when ``command`` runs a dependency audit, directly or through the root Makefile."""
+    return _is_audit_command(command) or _makefile_audit(inventory, command) is not None
+
+
+def _ci_audit_steps(inventory) -> list[tuple[str, int, str]]:
+    """``(workflow, line, what)`` for each CI line that runs a dependency audit: a scanner command, a scanner action
+    or template, or a runner target whose command runs one."""
+    targets: dict[str, str] = {}
+    for _runner, commands in reversed(runner_commands(inventory)):
+        targets.update(commands)
+    hits: list[tuple[str, int, str]] = []
+    for globs in CI_PROVIDERS.values():
+        for rel in sorted(inventory.match(*globs)):
+            for number, line in enumerate((inventory.read(rel) or "").splitlines(), start=1):
+                if line.lstrip().startswith("#"):
+                    continue
+                if _is_audit_command(line) or any(pattern.search(line) for pattern in _CI_AUDIT_ACTIONS):
+                    hits.append((rel, number, line.strip()[:120]))
+                    continue
+                target = runner_target(line)
+                if target in targets and _audit_in(targets[target], inventory):
+                    hits.append((rel, number, f"{target} ({targets[target][:80]})"))
+    return hits
+
+
+def _local_audit(inventory, stack) -> tuple[list[str], object]:
+    """The local verbs that run a dependency audit, as summary lines, and the ``security`` binding (or ``None``)."""
     bindings = resolve_verbs(inventory, stack)
-    audits = [(verb, b) for verb, b in bindings.items() if _is_audit_command(b.command)]
+    found = [f"{verb} -> {b.command}" for verb, b in sorted(bindings.items()) if _is_audit_command(b.command)]
+    if not found:
+        for verb, binding in sorted(bindings.items()):
+            if binding.runner != "Makefile":
+                continue
+            hit = _makefile_audit(inventory, binding.command)
+            if hit:
+                where, line = hit
+                through = f" (target {where})" if where else ""
+                found.append(f"{verb} -> {binding.command}; runs `{line}`{through}")
+    return found, bindings.get("security")
 
-    if audits:
-        detail = "; ".join(f"{verb} -> {b.command}" for verb, b in sorted(audits))
-        return _outcome(spec, Verdict.PASS, detail)
 
-    security = bindings.get("security")
+def check_tool04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+    local, security = _local_audit(inventory, stack)
+    ci_steps = _ci_audit_steps(inventory)
+    ci_seen = "; ".join(f"{rel}:{line} {what}" for rel, line, what in ci_steps[:3])
+
+    if local and ci_steps:
+        return _outcome(spec, Verdict.PASS, f"{'; '.join(local)}; CI: {ci_seen}")
+    if local:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"{'; '.join(local)}; CI runs no dependency audit",
+            [
+                _finding(
+                    spec,
+                    "rely on every change being checked for a known vulnerability",
+                    "the dependency audit runs only when someone runs the verb; no CI step runs it",
+                    Verdict.PARTIAL,
+                    [
+                        Evidence(rel)
+                        for rel in sorted({r for globs in CI_PROVIDERS.values() for r in inventory.match(*globs)})
+                    ]
+                    or [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
+                    "Run the same verb in CI as its own job, beside the check job (it may need the network).",
+                )
+            ],
+        )
+    if ci_steps:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"CI runs a dependency audit ({ci_seen}) but no local verb does",
+            [
+                _finding(
+                    spec,
+                    "learn about a vulnerable dependency before it pushes",
+                    "only CI runs a dependency audit; no local verb runs it",
+                    Verdict.PARTIAL,
+                    [Evidence(rel, line=line, note=what) for rel, line, what in ci_steps],
+                    "Add a security verb that runs the same scanner, and have CI run that verb.",
+                )
+            ],
+        )
+
     if security is not None:
         return _outcome(
             spec,
@@ -658,7 +800,7 @@ def check_tool04(*, spec, target, inventory, stack, components, session) -> Chec
                     Verdict.PARTIAL,
                     [Evidence(security.runner, note=security.command)],
                     "Make the security verb run a dependency audit (npm audit, pip-audit, osv-scanner, "
-                    "cargo audit, govulncheck, snyk).",
+                    "cargo audit, govulncheck, snyk), and run that verb in CI.",
                 )
             ],
         )
@@ -675,7 +817,8 @@ def check_tool04(*, spec, target, inventory, stack, components, session) -> Chec
                     "no resolvable verb runs a dependency-audit check",
                     Verdict.FAIL,
                     [Evidence(runner) for runner, _cmds in runner_commands(inventory)],
-                    "Add a dependency-audit verb (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, snyk).",
+                    "Add a dependency-audit verb (npm audit, pip-audit, osv-scanner, cargo audit, govulncheck, "
+                    "snyk) and run it in CI.",
                 )
             ],
         )
@@ -741,10 +884,117 @@ def check_tool05(*, spec, target, inventory, stack, components, session) -> Chec
 # ===========================================================================
 
 
+def _commit_msg_text(inventory) -> list[str]:
+    """The lines of every local `commit-msg` stage: the hook files, lefthook's `commit-msg:` block, and each
+    pre-commit hook item whose text names the `commit-msg` stage."""
+    lines: list[str] = []
+    for rel in (".husky/commit-msg", ".githooks/commit-msg"):
+        lines.extend((inventory.read(rel) or "").splitlines())
+    for rel in ("lefthook.yml", "lefthook.yaml"):
+        inside = False
+        for line in (inventory.read(rel) or "").splitlines():
+            if line and not line[0].isspace() and not line.startswith("#"):
+                inside = line.split(":", 1)[0].strip().strip("'\"") == "commit-msg"
+                continue
+            if inside:
+                lines.append(line)
+    item: list[str] = []
+    for line in [*(inventory.read(".pre-commit-config.yaml") or "").splitlines(), "- id: <end>"]:
+        if re.match(r"^\s*-\s+(?:id|repo)\s*:", line):
+            if any("commit-msg" in text for text in item):
+                lines.extend(item)
+            item = []
+        item.append(line)
+    return lines
+
+
+def _commit_msg_scripts(inventory) -> list[str]:
+    """Repository scripts a local `commit-msg` stage runs, by path, so CI can be seen to run the same rule."""
+    paths = set(inventory.paths())
+    scripts: set[str] = set()
+    for line in _commit_msg_text(inventory):
+        for token in _PATH_TOKEN_RE.findall(line):
+            rel = token.removeprefix("./")
+            if rel in paths and rel.endswith(_SCRIPT_SUFFIXES):
+                scripts.add(rel)
+    return sorted(scripts)
+
+
+def _commit_rule_in(text: str, scripts: list[str]) -> str | None:
+    """What in ``text`` checks commit messages: a known tool, or a script the local stage runs."""
+    for name, pattern in _CI_COMMIT_TOOLS:
+        if pattern.search(text):
+            return name
+    for rel in scripts:
+        if re.search(r"(?<![\w/.-])(?:\./)?" + re.escape(rel) + r"(?![\w/-])", text):
+            return rel
+    return None
+
+
+def _ci_commit_steps(inventory, scripts: list[str]) -> list[tuple[str, int, str]]:
+    """``(workflow, line, what)`` for each workflow line that checks commit messages or the pull-request title,
+    directly or through a runner target (``make commit-lint``, ``npm run commitlint``)."""
+    targets: dict[str, str] = {}
+    for _runner, commands in reversed(runner_commands(inventory)):
+        targets.update(commands)
+    hits: list[tuple[str, int, str]] = []
+    for globs in CI_PROVIDERS.values():
+        for rel in sorted(inventory.match(*globs)):
+            for number, line in enumerate((inventory.read(rel) or "").splitlines(), start=1):
+                if line.lstrip().startswith("#"):
+                    continue
+                what = _commit_rule_in(line, scripts)
+                target = runner_target(line)
+                if what is None and target in targets:
+                    via = _commit_rule_in(targets[target], scripts)
+                    what = f"{target} ({via})" if via else None
+                if what:
+                    hits.append((rel, number, what))
+    return hits
+
+
 def check_tool06(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    rules = _commit_rule(inventory)
+    rules = sorted(set(_commit_rule(inventory)))
+    ci_steps = _ci_commit_steps(inventory, _commit_msg_scripts(inventory))
+    ci_seen = ", ".join(sorted({f"{what} ({rel})" for rel, _line, what in ci_steps}))
+    detail = f"local: {', '.join(rules) or 'none'}; CI: {ci_seen or 'none'}"
+
+    if rules and ci_steps:
+        return _outcome(spec, Verdict.PASS, detail)
     if rules:
-        return _outcome(spec, Verdict.PASS, f"commit rule: {', '.join(sorted(set(rules)))}")
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            detail,
+            [
+                _finding(
+                    spec,
+                    "rely on every commit following the convention",
+                    "the commit-message rule runs only in a local hook, which `--no-verify` or a missing install "
+                    "skips, and no CI step checks it",
+                    Verdict.PARTIAL,
+                    [Evidence(rel.split(" ")[0].split(":")[0]) for rel in rules],
+                    "Run the same commit-message rule in CI over the commits a pull request adds (or check the "
+                    "pull-request title when the repository squash-merges).",
+                )
+            ],
+        )
+    if ci_steps:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            detail,
+            [
+                _finding(
+                    spec,
+                    "learn that a commit message breaks the convention before it pushes",
+                    "the commit-message rule runs only in CI; no local `commit-msg` stage runs it",
+                    Verdict.PARTIAL,
+                    [Evidence(rel, line=line, note=what) for rel, line, what in ci_steps],
+                    "Run the same rule in a local `commit-msg` hook, with the type list CI uses.",
+                )
+            ],
+        )
 
     wired, configured = _hook_wiring(inventory)
     if stack.ecosystems or wired or configured:
@@ -756,15 +1006,185 @@ def check_tool06(*, spec, target, inventory, stack, components, session) -> Chec
                 _finding(
                     spec,
                     "rely on a consistent commit-message convention",
-                    "no commitlint config, commit-msg hook, or equivalent exists",
+                    "no commitlint config, commit-msg hook, equivalent stage or CI step exists",
                     Verdict.FAIL,
                     _manifest_evidence(inventory),
-                    "Add a commitlint config or a commit-msg hook so commit messages follow one convention.",
+                    "Add a commit-message rule to a commit-msg hook and run the same rule in CI.",
                 )
             ],
         )
 
     return _unknown(spec, "no recognised ecosystem and no hook configuration, so a commit convention cannot be judged")
+
+
+# ===========================================================================
+# TOOL-07 — local guard against commits to a protected branch
+# ===========================================================================
+
+#: A hook command that reads the branch being committed to.
+_BRANCH_READ_RE = re.compile(
+    r"git\s+(?:symbolic-ref\b[^\n]*\bHEAD\b|branch\s+--show-current\b|rev-parse\s+--abbrev-ref\s+HEAD\b)"
+)
+
+#: Hook scripts by name: ``.husky/``, ``.githooks/`` or any ``core.hooksPath`` directory. A commit-msg hook also
+#: stops the commit, so either stage counts; ``pre-push`` does not.
+_GUARD_HOOK_NAMES = frozenset({"pre-commit", "commit-msg"})
+
+#: pre-commit-hooks' ``no-commit-to-branch`` protects these when it is given no ``--branch`` argument, with or
+#: without ``--pattern`` (``args.branch or ('master', 'main')`` in its source, checked at v6.0.0).
+_NO_COMMIT_DEFAULTS = ("main", "master")
+
+_ARG_SEP = r"[\s,='\"\-]+"
+_BRANCH_ARG_RE = re.compile(r"(?:--branch|\B-b)" + _ARG_SEP + r"([A-Za-z0-9_][\w./-]*)")
+_PATTERN_ARG_RE = re.compile(r"(?:--pattern|\B-p)" + _ARG_SEP + r"([^\s,'\"\]]+)")
+
+
+class _Guard:
+    """One guard: where it is, whether its hook chain is wired, and which branches it names."""
+
+    def __init__(self, rel: str, line: int, wired: bool, text: str, patterns: tuple[str, ...] = ()) -> None:
+        self.rel = rel
+        self.line = line
+        self.wired = wired
+        self.text = text
+        self.patterns = patterns
+
+    def covers(self, branch: str) -> bool:
+        for pattern in self.patterns:
+            try:
+                if re.match(pattern, branch):
+                    return True
+            except re.error:
+                continue
+        return re.search(rf"(?<![\w/.-]){re.escape(branch)}(?![\w/.-])", self.text) is not None
+
+
+def _block(lines: list[str], start: int) -> str:
+    """Line ``start`` and the lines after it indented at least as deep: the command a branch read belongs to."""
+    depth = len(lines[start]) - len(lines[start].lstrip())
+    out = [lines[start]]
+    for line in lines[start + 1 :]:
+        if line.strip() and len(line) - len(line.lstrip()) < depth:
+            break
+        out.append(line)
+    return "\n".join(out)
+
+
+def _pre_commit_guards(text: str, rel: str) -> list[_Guard]:
+    guards: list[_Guard] = []
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if re.match(r"^\s*-?\s*id:\s*['\"]?no-commit-to-branch\b", line):
+            block = _block(lines, index)
+            branches = _BRANCH_ARG_RE.findall(block)
+            patterns = tuple(_PATTERN_ARG_RE.findall(block))
+            if not branches:
+                branches = list(_NO_COMMIT_DEFAULTS)
+            guards.append(_Guard(rel, index + 1, True, " ".join(branches), patterns))
+    return guards
+
+
+def _stage(lines: list[str], index: int) -> str:
+    """The top-level key above line ``index``: a lefthook stage name."""
+    for line in reversed(lines[: index + 1]):
+        if line.strip() and not line[0].isspace() and not line.startswith("#"):
+            return line.split(":", 1)[0].strip()
+    return ""
+
+
+def _branch_read_guards(text: str, rel: str, wired: bool, *, whole_file: bool, staged: bool = False) -> list[_Guard]:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        if line.lstrip().startswith("#") or not _BRANCH_READ_RE.search(line):
+            continue
+        if staged and _stage(lines, index) not in _GUARD_HOOK_NAMES:
+            continue
+        return [_Guard(rel, index + 1, wired, text if whole_file else _block(lines, index))]
+    return []
+
+
+def _local_guards(inventory) -> list[_Guard]:
+    hooks_path = bool(
+        inventory.grep(r"core\.hooksPath", kinds=(Kind.MANIFEST, Kind.CONFIG, Kind.SCRIPT, Kind.CI, Kind.BUILD))
+    )
+    guards: list[_Guard] = []
+    for rel in _present(inventory, _WIRED_HOOK_FILES):
+        text = inventory.read(rel) or ""
+        if rel == ".pre-commit-config.yaml":
+            guards.extend(_pre_commit_guards(text, rel))
+        guards.extend(_branch_read_guards(text, rel, True, whole_file=False, staged=rel.startswith("lefthook")))
+    for entry in inventory.files:
+        name = entry.rel.rsplit("/", 1)[-1]
+        if name not in _GUARD_HOOK_NAMES or entry.rel.startswith(".git/"):
+            continue
+        wired = _husky_referenced(inventory) if entry.rel.startswith(".husky/") else hooks_path
+        guards.extend(_branch_read_guards(inventory.read(entry.rel) or "", entry.rel, wired, whole_file=True))
+    return sorted(guards, key=lambda guard: (guard.rel, guard.line))
+
+
+def check_tool07(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+    guards = _local_guards(inventory)
+    protected = declared_branch_rules(inventory).literal_branches
+    if not guards:
+        wired, configured = _hook_wiring(inventory)
+        if not wired and not configured:
+            return _unknown(spec, "no hook chain to hold a branch guard; TOOL-05 owns that finding")
+        hooks = ", ".join(sorted(set(wired + configured)))
+        return _outcome(
+            spec,
+            Verdict.FAIL,
+            f"hooks present ({hooks}) but none refuses a commit on a protected branch",
+            [
+                _finding(
+                    spec,
+                    "learn it is on a protected branch before it commits",
+                    "no local hook reads the current branch or runs no-commit-to-branch",
+                    Verdict.FAIL,
+                    [Evidence(rel.split(" ")[0]) for rel in sorted(set(wired + configured))],
+                    "Add a pre-commit guard that refuses a commit on the protected branches: pre-commit's "
+                    "no-commit-to-branch, or a hook command that reads `git branch --show-current` and exits 1.",
+                )
+            ],
+        )
+
+    wired_guards = [guard for guard in guards if guard.wired]
+    where = ", ".join(f"{guard.rel}:{guard.line}" for guard in (wired_guards or guards))
+    if not wired_guards:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"branch guard at {where}, but its hook chain is not wired",
+            [
+                _finding(
+                    spec,
+                    "rely on the branch guard to run before a commit",
+                    f"the guard at {where} is in a hook directory nothing installs",
+                    Verdict.PARTIAL,
+                    [Evidence(guard.rel, line=guard.line) for guard in guards],
+                    "Wire the hook chain (TOOL-05) so the guard runs.",
+                )
+            ],
+        )
+
+    missing = [branch for branch in protected if not any(guard.covers(branch) for guard in wired_guards)]
+    if missing:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"branch guard at {where} does not name {', '.join(missing)}, which the declared rules protect",
+            [
+                _finding(
+                    spec,
+                    f"learn before a commit that {', '.join(missing)} is protected",
+                    f"the guard at {where} does not name {', '.join(missing)}",
+                    Verdict.PARTIAL,
+                    [Evidence(guard.rel, line=guard.line) for guard in wired_guards],
+                    f"Add {', '.join(missing)} to the guard's branch list.",
+                )
+            ],
+        )
+    named = f"; names {', '.join(protected)}" if protected else ""
+    return _outcome(spec, Verdict.PASS, f"branch guard at {where}{named}")
 
 
 IMPLEMENTATIONS = {
@@ -774,4 +1194,5 @@ IMPLEMENTATIONS = {
     "TOOL-04": check_tool04,
     "TOOL-05": check_tool05,
     "TOOL-06": check_tool06,
+    "TOOL-07": check_tool07,
 }

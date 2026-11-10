@@ -70,14 +70,17 @@ Do these steps once, on each new machine.
    git switch dev
    ```
 
-4. Optional: install the local hooks. They stop a commit on `dev` or `main`. They also run four checks: the
-   format check, the Markdown lint, the secrets scan and the commit message check:
+4. Optional: install the local hooks. They stop a commit on `dev` or `main`. They also run these checks: the
+   format check, the Markdown lint, the workflow lint, the spell check, the secrets scan and the commit message check:
 
    ```bash
    lefthook install
    ```
 
    Get `lefthook` from [lefthook.dev](https://lefthook.dev). The hooks do not replace the gates in CI.
+
+5. Optional: give your coding agent the code index. Your agent offers this once, before its first edit. To do it
+   yourself, follow [Set up the agent tools](set-up-agent-tools.md). No gate needs it.
 
 ---
 
@@ -156,7 +159,10 @@ If you changed Markdown, also run:
 
 ```bash
 make docs-lint
+make docs-prose FILES=<file.md>
 ```
+
+`docs-prose` never fails. Fix the warnings it reports on the lines you changed.
 
 If you added or changed a Mermaid diagram, also run this for each file:
 
@@ -217,7 +223,8 @@ If `CI Gate` fails:
 2. Make the change, commit and push. Or answer the comment with your reason.
 3. Resolve each conversation when it is done. The `dev` ruleset blocks the merge while a conversation is open.
 
-If GitHub says that your branch is out of date with `dev`, bring the new `dev` commits into your branch:
+Your branch does not need the newest `dev` commits: the merge queue tests it merged onto the latest `dev`. Bring
+`dev` into your branch only when GitHub reports a conflict, or when you want to run the gates on the combined result:
 
 ```bash
 git fetch origin
@@ -229,7 +236,8 @@ You can also click **Update branch** on the pull request page. Do not rebase a b
 
 ### Step 9: The maintainer merges
 
-The maintainer merges your pull request with a merge commit. You do not merge it yourself.
+The maintainer adds your pull request to the merge queue. GitHub merges it onto the latest `dev`, runs CI on the
+result, and lands it with a merge commit when `CI Gate` passes. You do not merge it yourself.
 
 ### Step 10: Clean up
 

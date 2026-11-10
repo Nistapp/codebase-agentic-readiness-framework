@@ -1,13 +1,13 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "status": "draft",
   "provenance": {
-    "recipe": {
-      "name": "brownfield-audit",
-      "version": "0.1.0"
+    "framework": {
+      "release": "0.3.2",
+      "revision": null,
+      "install": "bundle"
     },
-    "framework_revision": null,
-    "catalogue_version": "0.2.0",
+    "catalogue_version": "0.7.0",
     "agent": {
       "harness": "claude-code",
       "model": "claude-sonnet-5-5"

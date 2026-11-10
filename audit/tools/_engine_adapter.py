@@ -55,6 +55,9 @@ UNATTESTED_REQUIREMENTS = {
 }
 NOT_APPLICABLE_SUMMARY = "The engine did not run this check: it does not apply to the detected stack."
 BLOCKED_SUMMARY = "The engine did not evaluate this check: its ruleset had blocked it."
+NOT_IN_RULESET_SUMMARY = (
+    "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine."
+)
 
 STACK_LISTS = ("ecosystems", "package_managers", "ci_providers", "test_frameworks", "hook_managers")
 
@@ -287,6 +290,15 @@ def safe_key(engine_id: str) -> str:
 # --- The conversion -----------------------------------------------------------------------------------------
 
 
+RULESET_REVISION = re.compile(r"^([0-9]{4}-[0-9]{2}-[0-9]{2})\.([0-9]+)$")
+
+
+def ruleset_order(revision: Any) -> tuple[str, int] | None:
+    """A ruleset revision (`2026-11-09.1`) as a pair that sorts in time order, or `None` when it is not one."""
+    found = RULESET_REVISION.match(revision) if isinstance(revision, str) else None
+    return (found.group(1), int(found.group(2))) if found else None
+
+
 @dataclass(frozen=True)
 class Conversion:
     """What an engine report becomes: the engine's own record, the target it says it scanned, and the checks.
@@ -333,7 +345,7 @@ def check_engine_report(engine: Any) -> None:
     phase = engine["provenance"]["phase"]
     if phase != PHASE:
         refuse(
-            f"the engine report is for phase {phase}, and a 0.1 report covers phase {PHASE}",
+            f"the engine report is for phase {phase}, and an audit report covers phase {PHASE}",
             [f"engine report: /provenance/phase: expected {PHASE}, found {phase}"],
         )
 
@@ -585,6 +597,43 @@ class Converter:
             "searches": [],
         }
 
+    def not_in_ruleset(self, reported: Collection[str]) -> list[dict[str, Any]]:
+        """The catalogue's engine checks that are newer than the report's ruleset, as UNKNOWN with no engine verdict.
+
+        A catalogue entry with `since_ruleset` names the engine ruleset that added it. When the report's ruleset is
+        older, the report cannot hold the check, so it is recorded as UNKNOWN, which earns no credit, and the draft can
+        still be finished; a scan with a newer engine evaluates it. Any other check the report lacks stays missing, and
+        so does every check when the report gives no ruleset revision.
+        """
+        revision = ruleset_order(self.engine["provenance"].get("ruleset_revision"))
+        if revision is None:
+            return []
+        missing: list[dict[str, Any]] = []
+        for entry in self.entries.values():
+            check_id = entry["id"]
+            since = ruleset_order(entry.get("since_ruleset"))
+            if since is None or revision >= since or entry["phase"] != PHASE or check_id in reported:
+                continue
+            self.warnings.append(
+                f"{check_id}: the engine's ruleset {self.engine['provenance']['ruleset_revision']} is older than the "
+                f"check ({entry['since_ruleset']}), so it is recorded as UNKNOWN; scan again with a newer engine"
+            )
+            missing.append(
+                {
+                    "id": check_id,
+                    "title": entry["title"],
+                    "phase": entry["phase"],
+                    "severity": entry["severity"],
+                    "scored": entry["scored"],
+                    "method": "automated",
+                    "verdict": "UNKNOWN",
+                    "summary": NOT_IN_RULESET_SUMMARY,
+                    "evidence": [],
+                    "searches": [],
+                }
+            )
+        return missing
+
     def inventory(self) -> dict[str, Any]:
         """The engine's file counts, in the report's order. A scan the engine cut short is said."""
         raw = self.engine["inventory"]
@@ -697,6 +746,8 @@ class Converter:
             skipped = self.not_applicable(number, check_id)
             if skipped is not None:
                 checks.append(skipped)
+        reported = {raw["id"] for raw in raw_checks} | set(self.engine["not_applicable"])
+        checks.extend(self.not_in_ruleset(reported))
         for check_id in sorted(set(commands) - {made["id"] for made in checks if made["verdict"] != "NOT_APPLICABLE"}):
             self.warnings.append(f"probe: {check_id} ran it, and the report holds no such check, so it is not carried")
         if self.problems:

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Template Version:** 1.1.1
+> **Template Version:** 1.2.0
 > **Purpose:** This file governs how AI coding agents (Antigravity, Claude Code, Gemini CLI, etc.) work inside this repository.
 > **Action:** Read it in full before making any change to the codebase.
 
@@ -150,6 +150,17 @@ section only states the layout and the triggers; the style guide states the rule
 - **ADRs:** Architectural Decision Records live in `docs/architecture/adrs/NNNN-short-title.md` and are indexed in `docs/architecture/README.md`. New runtime dependencies or architectural changes require an ADR.
 - **Transience:** Agent scratchpads, implementation plans, and WIP research go in `artefacts/` (git-ignored contents, and off-limits to agents per §4).
 - **Glossary:** domain terms are defined once in `docs/architecture/glossary.md` and used consistently everywhere else.
+
+### 8.1 How to write for people
+
+These rules apply to chat replies, plans, reports, commit messages, pull request descriptions and docs.
+
+- **Reader:** write for a new engineer who knows TypeScript and Node, but not this repository or its terms.
+- **Bottom line first:** put the answer, the result or the decision you need in the first two lines.
+- **Plain language:** short sentences (at most 25 words), active voice, one term per meaning.
+- **Reports:** a status report says what is done, not done, blocked and next. A done report says what changed, how
+  it was checked and what was not done.
+- **Decisions:** give the context, two to four options with pros and cons, your recommendation and the default.
 
 ---
 

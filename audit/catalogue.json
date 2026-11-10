@@ -1,6 +1,6 @@
 {
-  "catalogue_version": "0.2.8",
-  "fingerprint": "e33c95eda9f58b9d",
+  "catalogue_version": "0.7.0",
+  "fingerprint": "c150d929fed634cb",
   "checks": [
     {
       "id": "IDX-01",
@@ -241,6 +241,24 @@
       ]
     },
     {
+      "id": "AGT-12",
+      "family": "AGT",
+      "title": "Communication rules stated",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-060"
+      ],
+      "engine_id": "AGT-12",
+      "since_ruleset": "2026-11-10.1",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    {
       "id": "DOC-01",
       "family": "DOC",
       "title": "docs/ exists",
@@ -304,6 +322,24 @@
         "REQ-SH-019"
       ],
       "engine_id": "DOC-04",
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    {
+      "id": "DOC-05",
+      "family": "DOC",
+      "title": "Docs are readable",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-061"
+      ],
+      "engine_id": "DOC-05",
+      "since_ruleset": "2026-11-10.2",
       "playbooks": [
         "establish-docs-contract"
       ]
@@ -479,6 +515,24 @@
       ]
     },
     {
+      "id": "TOOL-07",
+      "family": "TOOL",
+      "title": "Local guard against commits to a protected branch",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-059"
+      ],
+      "engine_id": "TOOL-07",
+      "since_ruleset": "2026-11-09.6",
+      "playbooks": [
+        "add-hooks-and-commit-rules"
+      ]
+    },
+    {
       "id": "CI-01",
       "family": "CI",
       "title": "Pipeline present, triggered on PRs",
@@ -542,6 +596,24 @@
         "REQ-SH-035"
       ],
       "engine_id": null,
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    {
+      "id": "CI-05",
+      "family": "CI",
+      "title": "Workflow files are linted",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-057"
+      ],
+      "engine_id": "CI-05",
+      "since_ruleset": "2026-11-09.1",
       "playbooks": [
         "add-ci-parity"
       ]
@@ -795,6 +867,24 @@
       "engine_id": "EXEC-07",
       "playbooks": [
         "untrack-generated"
+      ]
+    },
+    {
+      "id": "EXEC-08",
+      "family": "EXEC",
+      "title": "Tool versions visible to dependency automation",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-058"
+      ],
+      "engine_id": "EXEC-08",
+      "since_ruleset": "2026-11-09.3",
+      "playbooks": [
+        "pin-execution-environment"
       ]
     },
     {

@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+#
+# The unsharded verbs, once a night, on the default branch (`dev`). CI (ci.yml) splits the suites into shards and
+# parts that run at once; this run calls `make check`, `make coverage` and `make test` whole, as a person runs them.
+# It catches a test that passes only in its shard, or only in a particular order. It is not a required check: a
+# failure here shows on the Actions page and goes to the person who last changed the schedule.
+name: Nightly
+
+on:
+  schedule:
+    - cron: "41 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: check and coverage (Python 3.11, unsharded)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version-file: .python-version
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: dev/tools/pyproject.toml
+      # Go builds actionlint (`make workflow-lint`, a step of `check`) from dev/tools/actionlint/go.mod.
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: dev/tools/actionlint/go.mod
+          cache-dependency-path: dev/tools/actionlint/go.sum
+      - run: make check
+      - run: make coverage
+
+  test-py314:
+    name: test (Python 3.14, unsharded)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.14"
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          version-file: dev/tools/pyproject.toml
+      - run: make test verify-rules

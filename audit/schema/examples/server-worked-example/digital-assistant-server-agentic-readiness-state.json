@@ -1,19 +1,26 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.3",
   "repo": {
     "label": "digital-assistant-server",
     "default_branch": "dev"
   },
-  "recipe": {
-    "name": "brownfield-implement",
-    "version": "0.2.0-dev",
-    "framework_rev": "a7e5e023654d48620e4439168bee4158f4a7deaf"
+  "framework": {
+    "release": "0.3.2",
+    "revision": "a7e5e023654d",
+    "install": "checkout"
+  },
+  "last_framework": {
+    "release": "0.3.2",
+    "revision": "a7e5e023654d"
   },
   "source_reports": [
     {
       "path": "docs/agentic-readiness-report/digital-assistant-server-first-audit-20261028T131409Z.json",
-      "git_sha": "4a48e1976e424f3f424d2510049413c1c3f38dd6",
-      "catalogue_version": "0.2.2"
+      "git_sha": "4a48e1976e42",
+      "catalogue_version": "0.2.2",
+      "release": "0.3.2",
+      "revision": "b4bf27df7915",
+      "sha256": "934f8c8d295f7420f941bfa520c694b2868c582f0f1249e8cc514332cadc809e"
     }
   ],
   "preferences": [

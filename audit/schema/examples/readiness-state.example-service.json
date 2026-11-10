@@ -1,20 +1,26 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "repo": {
     "label": "example-service",
     "default_branch": "main"
   },
-  "recipe": {
-    "name": "brownfield-implement",
-    "version": "0.2.0-dev",
-    "framework_rev": "cafecafecafecafecafecafecafecafecafecafe"
+  "framework": {
+    "release": "0.3.2",
+    "revision": "cafecafecafe",
+    "install": "checkout"
+  },
+  "last_framework": {
+    "release": "0.3.2",
+    "revision": "cafecafecafe"
   },
   "source_reports": [
     {
       "path": "docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json",
-      "git_sha": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-      "catalogue_version": "0.2.0",
-      "sha256": "6deeb580fb116df5b17cb6fd148858b62426ba8cf1139be1a10684542a61d867"
+      "git_sha": "deadbeefdead",
+      "catalogue_version": "0.7.0",
+      "release": "0.3.2",
+      "revision": "cafecafecafe",
+      "sha256": "53560c6c3c028370c9dac4b58aa5e3dc38fe56c270236b8ffcf879ed49c97c98"
     }
   ],
   "preferences": [],

@@ -41,7 +41,13 @@ plugin-dependent rules keeps a minimal ESLint config alongside it rather than sw
 checker: `tsc` reading `tsconfig.json`'s `compilerOptions.strict`. Test runner: Vitest or Jest, both
 seen across the corpus (§Verified) — a third option, Node's own built-in test runner, is untested here.
 Dependency scanner: the package manager's own `audit` command; `audit-ci` or Snyk are alternatives that
-pin a fixed severity threshold in config rather than a CLI flag.
+pin a fixed severity threshold in config rather than a CLI flag. Hook manager: Husky + lint-staged
+(`prepare: husky`), or simple-git-hooks; lefthook when there is no root `package.json`. Commit rule:
+commitlint in `.husky/commit-msg`, and `npx commitlint --from <base> --to <head>` in CI
+(`TOOL-06`). Branch guard (`TOOL-07`): a `git branch --show-current` check at the top of
+`.husky/pre-commit`. Dependency updates: Dependabot `package-ecosystem: npm` (npm, Yarn and
+pnpm lockfiles) or `bun`; Renovate's `npm` manager. Language-server inputs (`register-index`, advisory): a
+`tsconfig.json` per package, or project references from the root one.
 
 ## Execution determinism
 
@@ -50,7 +56,9 @@ but a `.nvmrc`/`.tool-versions` exact version is stronger and preferred for a fr
 repository) — none of the three profile repos committed an `.nvmrc`, all three used `engines.node`
 alone. The lockfile matching the declared package manager (`package-lock.json` for npm, etc.) must be
 git-tracked at the repository root; `npm ci`/`pnpm install --frozen-lockfile`/`yarn install
---immutable` is the non-interactive setup path (EXEC-03), never a bare `install`.
+--immutable` is the non-interactive setup path (EXEC-03), never a bare `install`. Tool versions (`EXEC-08`) go
+in `devDependencies`, so `npx <tool>` resolves the locked one; `npx <tool>@1.2.3` in a script or workflow is
+invisible to Dependabot.
 
 ## CI idiom
 
@@ -58,7 +66,10 @@ GitHub Actions is the provider seen in all three repositories: `actions/checkout
 `actions/setup-node` with `node-version` pinned to the same major as `engines.node` and `cache: npm`
 (or the matching `pnpm`/`yarn` cache key), then `npm ci`, then `npm run check` (or the repository's own
 `check` script) as the one gate job calls. A matrix across `ubuntu-latest`/`macos-latest`/
-`windows-latest` was seen in one repository (§Verified) and is a strong signal, not a requirement.
+`windows-latest` was seen in one repository (§Verified) and is a strong signal, not a requirement. Workflow
+lint (`CI-05`): a `lint:workflows` script running actionlint, called from the Husky pre-commit hook and in CI.
+Dependency audit (`TOOL-04`): a `security` job that runs `npm run security`, beside the `check` job.
+Release provenance (optional, `add-repo-hygiene` step 6): `npm publish --provenance` from the CI job.
 
 ## Baseline / ratchet
 

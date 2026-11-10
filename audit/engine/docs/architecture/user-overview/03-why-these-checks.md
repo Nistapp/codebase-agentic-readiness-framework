@@ -15,6 +15,17 @@ mode must be concrete and attributable to the agent's ability to work.
 This is why the report is a *short* list compared to a general code-quality tool, and why the informational set
 is kept numberless: a scored item is a claim that its absence costs agent effectiveness.
 
+The diagram shows the rule as the two questions a candidate check must pass.
+
+```mermaid
+flowchart TD
+    Q["A candidate check"] --> D{"Does its absence change what an agent can do, verify or safely touch?"}
+    D -->|"no: only good practice"| X["Not a check"]
+    D -->|yes| E{"Is the failure mode concrete and attributable to the agent's work?"}
+    E -->|no| X
+    E -->|yes| K["A check, with its failure mode on this page"]
+```
+
 ---
 
 ## 2. Discovery and Index (`IDX`)
@@ -46,6 +57,7 @@ down is invisible.
 | `AGT-07` Do-not-do / deny rules | Explicit prohibitions work; implicit ones do not | Agent weakens tests, edits generated files, commits to main |
 | `AGT-08` No competing instruction files | `AGENTS.md` + `CLAUDE.md` + `.cursorrules` disagreeing is obeyed as ambiguity | Inconsistent behaviour across harnesses, untraceable |
 | `AGT-09` Branch and release boundary | Agents must know whether they may tag, release, or push | Agent triggers a release it had no authority to cut |
+| `AGT-12` Communication rules stated | An agent reports to people and asks them for decisions | Each agent picks its own layout; the reader must dig for the bottom line and the decision asked of them |
 
 ---
 
@@ -57,6 +69,7 @@ down is invisible.
 | `DOC-02` `STYLE_GUIDE.md` exists | Agents need authoring rules they can cite instead of restating | Rules get restated per page and drift |
 | `DOC-03` `artefacts/` exists and is ignored | Transient scratch must be separable and off-limits | Agent reads WIP notes as current requirements |
 | `DOC-04` ADR directory and index | Architectural decisions need a location and a registry | Rationale lives in chat and pull requests; agents re-litigate settled decisions |
+| `DOC-05` Docs are readable | Agents and people learn the repository from the docs | Long, vague pages are misread; the next agent copies their style |
 
 ---
 
@@ -83,6 +96,7 @@ One command surface, three consumers. This family is the core of Phase 1 and the
 | `TOOL-04` Dependency/security scan | Third-party risk, and agents add dependencies | Vulnerability enters through the agent's own change |
 | `TOOL-05` Local hook chain active | Enforcement must exist where the agent works | Rules that live only in CI are rules agents cannot honour |
 | `TOOL-06` Commit convention enforced | Release automation reads commit messages | Version bumps and changelogs silently stop working |
+| `TOOL-07` Local guard against commits to a protected branch | An agent commits on whatever branch is checked out | It learns the branch is protected only when the push is refused, then moves its commits by hand |
 
 ---
 
@@ -93,6 +107,7 @@ One command surface, three consumers. This family is the core of Phase 1 and the
 | `CI-01` Pipeline present, triggered on PRs | Verification must be automatic and independent of the author | "I ran the tests" is unverifiable |
 | `CI-02` Local↔CI parity | The gate an agent *can* run must be the gate that *decides* | Agent optimises against a weaker local gate; rework at review |
 | `CI-03` CI-only steps flagged | A step with no local equivalent is unreachable by an agent | Agent cannot reproduce the failure it is being failed on |
+| `CI-05` Workflow files are linted | An agent cannot run a workflow locally, so a linter is its only check before a push | A broken expression or an injection risk is found only after the push, by CI or by an attacker |
 
 ---
 
@@ -136,6 +151,7 @@ Where brownfield repositories fail hardest, and where the framework's Phase 1 is
 | `EXEC-05` No generated artifacts committed in-tree | Agents edit files that are regenerated | Work silently discarded after review |
 | `EXEC-06` Documented commands resolve | Agents obey written instructions literally | The most expensive brownfield trap there is |
 | `EXEC-07` No competing configs for one concern | One question, one authority | Agent picks the config that happens to match the first result |
+| `EXEC-08` Tool versions visible to dependency automation | One place per tool version, where the update bot looks | A vulnerable tool stays in the gate with no alert, and an upgrade misses the copies |
 
 ---
 

@@ -16,6 +16,12 @@ runner/dependency scanner are the stack's defaults, and so on. Checks and playbo
 toolchain; a profile is where that knowledge lives, so the same check file reads correctly for Node, Java or
 Python.
 
+**Stack-adaptive rule (owner, 2026-11-09).** A check accepts any recognised tool that does the job for the
+stack. A playbook keeps the tool a repository already uses. When there is none, it recommends the tool that
+matches the stack, from the profile's Tooling defaults, never this framework's own choice by default. For
+hooks: Husky with lint-staged for Node, pre-commit for Python, lefthook for a mixed repository. A quiet
+release history alone does not rule a tool out; an archived repository or an open security advisory does.
+
 ## 2. Anatomy
 
 Every profile follows this fixed shape, in this order:
@@ -28,8 +34,10 @@ Detection signals      files and dependencies that identify the stack and its fr
 Command-surface map    how each verb is usually realised, and the runner (npm scripts / Makefile /
                        Taskfile / Gradle / Maven)
 Tooling defaults       recommended formatter, linter, type checker, test runner, coverage tool,
-                       dependency scanner, with "alternatives you may find" so an existing choice is
-                       respected, never replaced without being asked
+                       dependency scanner, hook manager, commit-message rule and dependency-update
+                       ecosystem (Dependabot and Renovate names), with "alternatives
+                       you may find" so an existing choice is respected, never replaced without being
+                       asked
 Execution determinism  version pinning and lockfile expectations for this stack
 CI idiom               how to run the verbs in the common CI providers for this stack
 Baseline / ratchet     how to adopt "no new violations" for this stack

@@ -37,6 +37,19 @@ LINK = re.compile(r"(?<!!)\[[^\]\n]*\]\(([^)\s]+)\)")
 FENCE = re.compile(r"^\s*(```+|~~~+)")
 
 
+def manifest_version() -> str:
+    version = json.loads((bs.REPO / ".release-please-manifest.json").read_text(encoding="utf-8"))["."]
+    assert isinstance(version, str)
+    return version
+
+
+def frontmatter_version(text: str) -> str | None:
+    """The `metadata.version` value inside a `SKILL.md`'s frontmatter, or None."""
+    frontmatter = text[: text.index("\n---\n", 3)]
+    match = re.search(r'^metadata:\n  version: "([^"]+)"$', frontmatter, re.MULTILINE)
+    return match[1] if match else None
+
+
 def call(argv: Sequence[str]) -> tuple[int, dict[str, Any], str]:
     out, err = io.StringIO(), io.StringIO()
     code = _common.run_tool(bs.INFO, bs.handler, list(argv), stdout=out, stderr=err)
@@ -62,6 +75,9 @@ class BuildSkillsTests(unittest.TestCase):
             stacks = {p.name for p in (bundle_dir / "references" / "stacks").glob("*.md")}
             self.assertEqual(stacks, {"README.md", "java.md", "python.md", "typescript-node.md"})
 
+            prompts = {p.name for p in (bundle_dir / "references" / "prompts").iterdir()}
+            self.assertEqual(prompts, set(bs.AUDIT_PROMPT_FILES))
+
             ref_schema = {p.name for p in (bundle_dir / "references" / "schema").iterdir()}
             self.assertEqual(ref_schema, set(bs.SCHEMA_FILES))
 
@@ -73,6 +89,18 @@ class BuildSkillsTests(unittest.TestCase):
             self.assertTrue((bundle_dir / "scripts" / "engine" / "audit" / "__main__.py").is_file())
             self.assertFalse((bundle_dir / "scripts" / "deterministic-audit").exists())
             self.assertTrue((bundle_dir / "scripts" / "audit.pyz").is_file())
+
+    def test_skill_md_links_the_shared_prompt_inside_the_bundle(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            bundle_dir = bs.build_bundle(Path(tmp))
+            text = (bundle_dir / "SKILL.md").read_text(encoding="utf-8")
+            self.assertIn("](references/prompts/talking-to-the-user.md)", text)
+            self.assertIn("](references/prompts/talking-to-the-user.md#status-report)", text)
+            self.assertNotIn("](prompts/talking-to-the-user.md", text)
+            self.assertEqual(
+                (bundle_dir / "references" / "prompts" / "talking-to-the-user.md").read_bytes(),
+                (bs.AUDIT / "prompts" / "talking-to-the-user.md").read_bytes(),
+            )
 
     def test_bundle_carries_the_code_licence(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -91,6 +119,23 @@ class BuildSkillsTests(unittest.TestCase):
             text = (bundle_dir / "SKILL.md").read_text(encoding="utf-8")
             self.assertIn(f"\nname: {bs.BUNDLE_NAME}\n", text)
             self.assertNotIn("\nname: audit\n", text)
+            self.assertEqual(frontmatter_version(text), manifest_version())
+
+    def test_stamp_frontmatter_puts_the_version_inside_the_frontmatter(self) -> None:
+        text = "---\nname: demo\ndescription: A demo.\n---\n\n# Demo\n"
+        stamped = bs.stamp_frontmatter(text, "demo/SKILL.md", "name: demo\n", "name: bundle\n", "9.8.7")
+        self.assertEqual(
+            stamped, '---\nname: bundle\ndescription: A demo.\nmetadata:\n  version: "9.8.7"\n---\n\n# Demo\n'
+        )
+
+    def test_stamp_frontmatter_refuses_a_metadata_key_it_would_duplicate(self) -> None:
+        text = "---\nname: demo\nmetadata:\n  owner: x\n---\n# Demo\n"
+        with self.assertRaisesRegex(_common.ToolError, "already has a metadata key"):
+            bs.stamp_frontmatter(text, "demo/SKILL.md", "name: demo\n", "name: bundle\n", "9.8.7")
+
+    def test_stamp_frontmatter_refuses_a_missing_name_line(self) -> None:
+        with self.assertRaisesRegex(_common.ToolError, "does not contain 'name: demo"):
+            bs.stamp_frontmatter("---\nname: other\n---\n", "demo/SKILL.md", "name: demo\n", "name: b\n", "1.0.0")
 
     def test_handler_reports_the_bundle_path_and_file_count(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -163,6 +208,7 @@ class ImplementBundleTests(unittest.TestCase):
             "SKILL.md",
             "references/state.md",
             "references/prompts/kickoff.md",
+            "references/prompts/talking-to-the-user.md",
             "references/playbooks/README.md",
             "references/playbooks/define-command-surface.md",
             "references/checks/04-command-surface.md",
@@ -200,6 +246,11 @@ class ImplementBundleTests(unittest.TestCase):
         text = (self.bundle / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn(f"\nname: {bs.IMPLEMENT_BUNDLE_NAME}\n", text)
         self.assertNotIn("\nname: implement\n", text)
+        self.assertEqual(frontmatter_version(text), manifest_version())
+
+    def test_skill_md_links_the_shared_prompt(self) -> None:
+        text = (self.bundle / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("](references/prompts/talking-to-the-user.md)", text)
 
     def test_no_framework_tool_command_is_left(self) -> None:
         for file in self.markdown_files():

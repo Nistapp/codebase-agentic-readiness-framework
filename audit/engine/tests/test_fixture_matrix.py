@@ -59,6 +59,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "agt-07-missing-deny": {"AGT-07": "PARTIAL"},
     "agt-08-competitor": {"AGT-08": "FAIL"},
     "agt-09-no-release": {"AGT-09": "PARTIAL"},
+    "agt-09-ruleset-branch-unnamed": {"AGT-09": "PARTIAL"},
+    "agt-12-no-rules": {"AGT-09": "PASS", "AGT-12": "FAIL"},
     "agt-10-deferred": {"AGT-10": "FAIL"},
     # -- DOC / NAV ----------------------------------------------------------------------------
     "doc-01-empty": {"DOC-01": "PARTIAL"},
@@ -66,11 +68,13 @@ MATRIX: dict[str, dict[str, str]] = {
     "doc-03-tracked-artefacts": {"DOC-03": "FAIL"},
     "ignore-ok-nested-gitignore": {"DOC-03": "PASS", "CON-03": "PASS"},
     "doc-04-adr-unindexed": {"DOC-04": "PARTIAL"},
+    "doc-05-long-sentences": {"DOC-01": "PASS", "DOC-02": "PASS", "DOC-04": "PASS", "DOC-05": "FAIL"},
     "doc-nav-ok": {
         "DOC-01": "PASS",
         "DOC-02": "PASS",
         "DOC-03": "PASS",
         "DOC-04": "PASS",
+        "DOC-05": "PASS",
         "NAV-01": "PASS",
         "NAV-02": "PASS",
         "NAV-03": "PASS",
@@ -98,8 +102,13 @@ MATRIX: dict[str, dict[str, str]] = {
     "tool-02-no-linter": {"TOOL-02": "FAIL"},
     "tool-03-nonstrict-ts": {"TOOL-03": "PARTIAL"},
     "tool-04-no-audit-verb": {"TOOL-04": "FAIL"},
+    "tool-04-make-security-no-audit": {"TOOL-04": "PARTIAL"},
+    "tool-04-local-only-audit": {"TOOL-04": "PARTIAL"},
     "tool-05-unwired-hooks": {"TOOL-05": "PARTIAL"},
     "tool-06-no-commit-rule": {"TOOL-06": "FAIL"},
+    "tool-06-local-only-commit-rule": {"TOOL-06": "PARTIAL"},
+    "tool-06-ci-only-commit-rule": {"TOOL-06": "PARTIAL"},
+    "tool-07-no-branch-guard": {"TOOL-05": "PASS", "TOOL-07": "FAIL"},
     "tool-ok-node": {
         "TOOL-01": "PASS",
         "TOOL-02": "PASS",
@@ -112,7 +121,9 @@ MATRIX: dict[str, dict[str, str]] = {
     "ci-01-no-pr-trigger": {"CI-01": "PARTIAL"},
     "ci-02-parity-break": {"CI-02": "FAIL"},
     "ci-03-ci-only-step": {"CI-03": "FAIL"},
-    "ci-ok-gh": {"CI-01": "PASS", "CI-02": "PASS", "CI-03": "PASS"},
+    "ci-05-no-workflow-lint": {"CI-05": "FAIL"},
+    "ci-05-ci-only-lint": {"CI-05": "PARTIAL"},
+    "ci-ok-gh": {"CI-01": "PASS", "CI-02": "PASS", "CI-03": "PASS", "CI-05": "PASS"},
     # -- BASE ---------------------------------------------------------------------------------
     "base-01-no-baseline": {"BASE-01": "FAIL"},
     "base-02-no-count": {"BASE-02": "PARTIAL"},
@@ -132,6 +143,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "con-03-artefacts-not-ignored": {"CON-03": "FAIL"},
     # -- EXEC ---------------------------------------------------------------------------------
     "exec-01-unpinned": {"EXEC-01": "FAIL"},
+    "exec-01-nested-go-unpinned": {"EXEC-01": "FAIL"},
     "exec-01-python-source-only": {"EXEC-01": "FAIL", "EXEC-02": "UNKNOWN"},
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
     "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},
@@ -140,6 +152,9 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-05-generated": {"EXEC-05": "FAIL"},
     "exec-06-broken-command": {"EXEC-06": "FAIL"},
     "exec-07-dual-lint": {"EXEC-07": "FAIL"},
+    "exec-07-dual-python-types": {"EXEC-07": "FAIL"},
+    "exec-08-inline-version": {"EXEC-08": "FAIL"},
+    "exec-08-duplicate-pin": {"EXEC-08": "PARTIAL"},
     "exec-ok": {
         "EXEC-01": "PASS",
         "EXEC-02": "PASS",
@@ -168,7 +183,10 @@ MATRIX: dict[str, dict[str, str]] = {
     "idx-02-no-index": {"IDX-02": "UNKNOWN", "IDX-03": "UNKNOWN"},
     # -- HYG (informational, reported never scored) -------------------------------------------
     "hyg-01-placeholder-readme": {"HYG-01": "FAIL", "HYG-10": "FAIL"},
+    "hyg-09-uncovered-ecosystem": {"HYG-09": "PARTIAL"},
+    "hyg-09-target-branch-trap": {"HYG-09": "PARTIAL"},
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
+    "hyg-11-no-source-branch-check": {"HYG-11": "PARTIAL"},
     "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN"},
     # -- the AGT-content positive fixture -----------------------------------------------------
     "governed-minimal": {
@@ -180,6 +198,7 @@ MATRIX: dict[str, dict[str, str]] = {
         "AGT-07": "PASS",
         "AGT-09": "PASS",
         "AGT-10": "PASS",
+        "AGT-12": "PASS",
     },
 }
 
@@ -240,7 +259,7 @@ GOVERNED_FIXTURES = (
 
 #: Scoreable checks that cannot PASS without executed Tier-C probes or machine-local state.
 #: IDX-* assert the operator's harness and index store; TST-02 runs the suite to learn its status.
-#: They are covered by their own tests (test_idx_pack.py, the positive fixture) and are never
+#: They are covered by their own tests (packs/idx/test_idx_pack.py, the positive fixture) and are never
 #: faked as passes here.
 PROBE_OR_ENVIRONMENT_SCOPED = frozenset(
     {

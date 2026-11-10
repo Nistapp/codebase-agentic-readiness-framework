@@ -35,22 +35,20 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-import subprocess
 import sys
 import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 import _audit_tools_path  # noqa: F401  (puts audit/tools on sys.path in a checkout)
 import _common
 import _jsonschema_subset as subset
 import validate_report
 
-RECIPE_NAME = "brownfield-implement"
-RECIPE_VERSION = "0.2.0-dev"
-SCHEMA_VERSION = "0.2"
-SUPPORTED_SCHEMA_VERSIONS = ("0.1", "0.2")
+#: The framework release these tools belong to: the state's `framework.release`. release-please rewrites the line.
+FRAMEWORK_RELEASE = "0.3.2"  # x-release-please-version
+SCHEMA_VERSION = "0.3"
 
 RECIPES = Path(__file__).resolve().parent.parent
 FRAMEWORK_ROOT = RECIPES.parent
@@ -64,7 +62,6 @@ STATE_DIR = Path("docs") / "agentic-readiness"
 STATE_JSON_SUFFIX = "-agentic-readiness-state.json"
 STATE_MD_SUFFIX = "-agentic-readiness-STATE.md"
 MAX_STATE_BYTES = 8 * 1024 * 1024
-GIT_TIMEOUT_S = 10
 
 
 def _span(prefix: str, first: int, last: int, *, skip: Sequence[int] = ()) -> tuple[str, ...]:
@@ -75,12 +72,12 @@ def _span(prefix: str, first: int, last: int, *, skip: Sequence[int] = ()) -> tu
 # a test holds the two together. CON-04 (unscored, no playbook) sits with CON-01..03: add-deny-rules reads its draft.
 THEMES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("T1", "Command surface and quality tools", _span("CMD", 1, 4) + _span("TOOL", 1, 4)),
-    ("T2", "Execution determinism", _span("EXEC", 1, 7, skip=(4,))),
+    ("T2", "Execution determinism", _span("EXEC", 1, 8, skip=(4,))),
     ("T3", "Secrets and env", _span("SEC", 1, 3) + ("EXEC-04",)),
-    ("T4", "CI parity, hooks, commits", _span("CI", 1, 4) + ("TOOL-05", "TOOL-06")),
+    ("T4", "CI parity, hooks, commits", _span("CI", 1, 5) + ("TOOL-05", "TOOL-06", "TOOL-07")),
     ("T5", "Tests and baselines", _span("TST", 1, 5) + _span("BASE", 1, 4)),
-    ("T6", "Docs and navigation", _span("DOC", 1, 4) + _span("NAV", 1, 5)),
-    ("T7", "AGENTS.md and governance", _span("AGT", 1, 11) + _span("CON", 1, 4)),
+    ("T6", "Docs and navigation", _span("DOC", 1, 5) + _span("NAV", 1, 5)),
+    ("T7", "AGENTS.md and governance", _span("AGT", 1, 12) + _span("CON", 1, 4)),
     ("T8", "Hygiene and index", _span("HYG", 1, 11) + _span("IDX", 1, 3)),
 )
 CHECK_THEME: dict[str, str] = {check: theme for theme, _, checks in THEMES for check in checks}
@@ -225,6 +222,19 @@ def state_errors(state: Any) -> list[str]:
     return [f"rule: {error}" for error in state_rule_errors(state)]
 
 
+def refuse_unknown_state_schema(state: Any) -> None:
+    """Raise `ValidationFailed` with a plain message when the state's `schema_version` is not the one these tools read."""
+    if not isinstance(state, dict) or state.get("schema_version", SCHEMA_VERSION) == SCHEMA_VERSION:
+        return
+    found = state["schema_version"]
+    release = (state.get("framework") or {}).get("release") or (state.get("recipe") or {}).get("version")
+    made_by = f"framework v{release}" if isinstance(release, str) else "an unknown framework release"
+    raise _common.ValidationFailed(
+        f"the state has schema {found!r} (made by {made_by}); these tools read schema {SCHEMA_VERSION!r}. Move the "
+        f"old state files aside and run init again from a final report (recommended), or use {made_by} to resume it."
+    )
+
+
 def read_state(path: Path) -> dict[str, Any]:
     try:
         size = path.stat().st_size
@@ -237,6 +247,7 @@ def read_state(path: Path) -> dict[str, Any]:
     except UnicodeDecodeError:
         raise _common.ValidationFailed("the file is not a state file: it is not UTF-8 text") from None
     state = validate_report.parse_report(text, "state file")
+    refuse_unknown_state_schema(state)
     errors = state_errors(state)
     if errors:
         raise _common.ValidationFailed(f"the state is not valid: {len(errors)} errors", errors=errors)
@@ -257,20 +268,32 @@ def _finding_order(finding_id: str) -> tuple[int, str]:
     return (int(digits) if digits.isdigit() else 0, finding_id)
 
 
-def framework_revision() -> str | None:
-    """HEAD of the framework checkout this tool runs from, read with git; None when it is not a git checkout."""
-    try:
-        done = subprocess.run(
-            ["git", "-C", str(FRAMEWORK_ROOT), "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=GIT_TIMEOUT_S,
-            check=False,
+def framework_facts() -> dict[str, Any]:
+    """The framework these tools run from: `release`, `revision` (12 digits, checkout only) and `install`."""
+    return validate_report.framework_facts(FRAMEWORK_ROOT, FRAMEWORK_RELEASE)
+
+
+def describe_framework(framework: Mapping[str, Any]) -> str:
+    """`v0.3.2 at cafecafecafe`, or `v0.3.2` when no commit is known."""
+    return f"v{framework['release']}" + (f" at {framework['revision']}" if framework["revision"] else "")
+
+
+def track_framework(state: dict[str, Any], args: Any) -> None:
+    """Set `last_framework` to these tools, and log the move when it differs from the one that wrote last."""
+    facts = framework_facts()
+    now = {"release": facts["release"], "revision": facts["revision"]}
+    if state["last_framework"] != now:
+        record(
+            state,
+            args,
+            f"Framework moved from {describe_framework(state['last_framework'])} to {describe_framework(now)}.",
         )
-    except (OSError, subprocess.SubprocessError):
-        return None
-    sha = done.stdout.strip()
-    return sha if done.returncode == 0 and re.fullmatch(r"[0-9a-f]{40}", sha) else None
+        state["last_framework"] = now
+
+
+def short_sha(sha: str | None) -> str | None:
+    """A commit id cut to the 12 digits a state records (`validate_report.SHORT_SHA_CHARS`)."""
+    return sha[: validate_report.SHORT_SHA_CHARS] if sha else None
 
 
 def build_state(
@@ -280,8 +303,8 @@ def build_state(
     default_branch: str,
     phase: str,
     date: str,
-    framework_rev: str | None,
-    report_sha256: str | None = None,
+    framework: Mapping[str, Any],
+    report_sha256: str,
 ) -> dict[str, Any]:
     """The first state for a final, valid `report`. Raises `ValidationFailed` for a check that has no theme."""
     unmapped = sorted({finding["check"] for finding in report["findings"] if finding["check"] not in CHECK_THEME})
@@ -325,13 +348,16 @@ def build_state(
     return {
         "schema_version": SCHEMA_VERSION,
         "repo": {"label": provenance["target"]["label"], "default_branch": default_branch},
-        "recipe": {"name": RECIPE_NAME, "version": RECIPE_VERSION, "framework_rev": framework_rev},
+        "framework": dict(framework),
+        "last_framework": {"release": framework["release"], "revision": framework["revision"]},
         "source_reports": [
             {
                 "path": report_path,
-                "git_sha": provenance["target"]["git_sha"],
+                "git_sha": short_sha(provenance["target"]["git_sha"]),
                 "catalogue_version": provenance["catalogue_version"],
-                **({"sha256": report_sha256} if report_sha256 else {}),
+                "release": provenance["framework"]["release"],
+                "revision": provenance["framework"]["revision"],
+                "sha256": report_sha256,
             }
         ],
         "preferences": [],
@@ -399,6 +425,7 @@ def run_init(args: Any) -> _common.Result:
         )
     report = validate_report.read_report(report_file)
     outcome = validate_report.validate_document(report)
+    validate_report.refuse_unknown_schema(outcome)
     if outcome.errors:
         raise _common.ValidationFailed(
             f"the report is not valid: {len(outcome.errors)} errors; run validate_report.py on it",
@@ -408,6 +435,10 @@ def run_init(args: Any) -> _common.Result:
         raise _common.ValidationFailed(
             f"the report is a {report['status']}, not final", hint="finalise it first with: report.py finalise"
         )
+    framework = framework_facts()
+    if args.framework_rev:
+        framework["revision"] = short_sha(_sha(args.framework_rev))
+    versions, version_warnings = validate_report.compare_versions(report, FRAMEWORK_RELEASE, framework["revision"])
     label = report["provenance"]["target"]["label"]
     json_name, md_name = state_names(label)
     directory = state_directory(target)
@@ -421,7 +452,7 @@ def run_init(args: Any) -> _common.Result:
         default_branch=default_branch,
         phase=args.phase,
         date=_date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d"),
-        framework_rev=_sha(args.framework_rev) if args.framework_rev else framework_revision(),
+        framework=framework,
         report_sha256=file_sha256(report_file),
     )
     errors = state_errors(state)
@@ -436,9 +467,12 @@ def run_init(args: Any) -> _common.Result:
     _common.atomic_write_text(json_path, encode_state(state))
     _common.atomic_write_text(md_path, render(state))
     counts = status_counts(state)
-    warnings = [f"removed {swept} temporary files an interrupted write left in {directory}"] if swept else []
+    warnings = [*version_warnings]
+    if swept:
+        warnings.append(f"removed {swept} temporary files an interrupted write left in {directory}")
     return _common.Result(
         data={
+            "versions": versions,
             "state": str(json_path),
             "markdown": str(md_path),
             "label": label,
@@ -495,8 +529,14 @@ def run_show(args: Any) -> _common.Result:
         f"progress: {label}: {summary['items']} items ({', '.join(f'{n} {s}' for s, n in counts.items() if n)}), "
         f"{summary['not_queued']} not queued, {summary['preferences']} preferences"
     )
+    facts = framework_facts()
+    versions = {
+        "created": state["framework"],
+        "last": state["last_framework"],
+        "tools": {"release": facts["release"], "revision": facts["revision"]},
+    }
     if not args.json:
-        return _common.Result(data={"state": str(path), **summary}, summary=line)
+        return _common.Result(data={"state": str(path), **summary, "versions": versions}, summary=line)
     shown = dict(state)
     omitted: dict[str, int] = {}
     for key, budget in SHOW_BUDGETS.items():
@@ -505,7 +545,7 @@ def run_show(args: Any) -> _common.Result:
         shown[key] = list(reversed(kept)) if key == "log" else kept
         if left_out:
             omitted[key] = left_out
-    data: dict[str, Any] = {"state_file": str(path), "state": shown}
+    data: dict[str, Any] = {"state_file": str(path), "state": shown, "versions": versions}
     warnings = []
     if omitted:
         data["omitted"] = omitted
@@ -557,6 +597,12 @@ def _table(header: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
     return lines
 
 
+def framework_cell(framework: Mapping[str, Any]) -> str:
+    """`` `v0.3.2` at `cafecafecafe` ``, or `` `v0.3.2` `` with no commit, plus the install when it is known."""
+    text = code(f"v{framework['release']}") + (f" at {code(framework['revision'])}" if framework["revision"] else "")
+    return f"{text} ({framework['install']})" if "install" in framework else text
+
+
 def render(state: dict[str, Any]) -> str:
     """The Markdown view of `state`. It reads keys by name and sorts every list, so key order never changes a byte."""
     label = state["repo"]["label"]
@@ -564,8 +610,6 @@ def render(state: dict[str, Any]) -> str:
     items = sorted(state["items"], key=lambda item: (item["theme"], _finding_order(item["finding"])))
     themes = sorted(state["themes"], key=lambda theme: theme["id"])
     titles = {theme["id"]: theme["title"] for theme in themes}
-    recipe = state["recipe"]
-    rev = recipe["framework_rev"]
     out: list[str] = [
         f"# Agentic readiness state: {label}",
         "",
@@ -580,17 +624,14 @@ def render(state: dict[str, Any]) -> str:
         ("Field", "Value"),
         [
             ("Default branch", code(state["repo"]["default_branch"])),
-            (
-                "Recipe",
-                f"{cell(recipe['name'])} {cell(recipe['version'])}, framework "
-                + (code(rev) if rev else "not a git checkout"),
-            ),
+            ("Created by", framework_cell(state["framework"])),
+            ("Last written by", framework_cell(state["last_framework"])),
         ]
         + [
             (
                 "Source report",
                 f"{code(report['path'])} at {code(report['git_sha']) if report['git_sha'] else 'no commit'}, "
-                f"catalogue {cell(report['catalogue_version'])}",
+                f"catalogue {cell(report['catalogue_version'])}, made by {framework_cell(report)}",
             )
             for report in sorted(state["source_reports"], key=lambda report: report["path"])
         ],
@@ -909,7 +950,11 @@ def record(state: dict[str, Any], args: Any, event: str) -> None:
 
 
 def commit_change(args: Any, label: str, path: Path, state: dict[str, Any], summary: str) -> _common.Result:
-    """Check the changed `state` whole, replace the JSON atomically, and the Markdown when `--render` is given."""
+    """Check the changed `state` whole, replace the JSON atomically, and the Markdown when `--render` is given.
+
+    Every write records the framework that made it in `last_framework`, with a log entry when that changed.
+    """
+    track_framework(state, args)
     errors = state_errors(state)
     if errors:
         raise _common.ValidationFailed(f"the change would make the state invalid: {len(errors)} errors", errors=errors)

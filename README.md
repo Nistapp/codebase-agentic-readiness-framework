@@ -1,5 +1,7 @@
 # Codebase Agentic Readiness Framework
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/Nistapp/codebase-agentic-readiness-framework/badge)](https://scorecard.dev/viewer/?uri=github.com/Nistapp/codebase-agentic-readiness-framework)
+
 > *"The more you sweat in peace, the less you bleed in war."* Preparing a codebase for AI coding agents is the sweat;
 > agents changing it from user prompts is the war.
 
@@ -50,20 +52,24 @@ it pushes a branch only if you opt in.
 | Install the skills from the release zips, with no clone | [Install the skills](docs/how-to/install-the-skills.md) |
 | See a real run: one repository audited, fixed and audited again | [Worked example](audit/schema/examples/server-worked-example/README.md) |
 | Start a new repository that is agent-ready from the first commit | [Greenfield](greenfield/README.md) |
+| See every check an audit runs, and what an implement run changes | [Audit master list](docs/reference/audit-master.md), [Implement master list](docs/reference/implement-master.md) |
 | Read the method: the seven phases and the requirements | [Phased approach](docs/framework/phased-approach.md), [`spec/`](spec/README.md) |
 | Find any other page | [Documentation index](docs/README.md) |
 
 ## Platforms
 
 - **Linux:** tested.
-- **macOS:** the tools are tested in CI. The Claude Code path above is not yet checked by hand. macOS ships an older
+- **macOS:** the tools were tested in CI until November 2026. CI runs on Linux only for now; issue
+  [#82](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/82) tracks bringing macOS back.
+  The Claude Code path above is not yet checked by hand. macOS ships an older
   Python; install Python 3.11 or newer, for example with Homebrew.
 - **Windows:** not tested. WSL may work.
 
 ## Contributing
 
 Start at [`CONTRIBUTING.md`](CONTRIBUTING.md): the repository map, the gates (`make check`, `make security`) and the
-commit rules. Agents read [`AGENTS.md`](AGENTS.md).
+commit rules. Agents read [`AGENTS.md`](AGENTS.md). To give your coding agent the code index here, see
+[Set up the agent tools](docs/how-to/set-up-agent-tools.md).
 
 `dev` is the default branch and holds the work in progress; `main` holds the latest release. Start your branch from
 `dev` and open your pull request into `dev`. Nobody commits to `dev` or `main` directly, and only `dev` is promoted

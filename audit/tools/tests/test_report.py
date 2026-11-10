@@ -104,7 +104,8 @@ class BuilderCase(unittest.TestCase):
         return sorted(p.name for p in self.out.iterdir()) if self.out.is_dir() else []
 
     def engine_draft(self) -> Path:
-        """A copy of the engine's real report on agentic-tdd, converted: 69 engine checks, 24 pending findings.
+        """A copy of the engine's real report on agentic-tdd, converted: 74 engine checks (CI-05, EXEC-08, TOOL-07, AGT-12 and DOC-05 newer, so UNKNOWN), 24
+        pending findings.
 
         The copy points at the temporary target, with no commit, so that nothing depends on this machine.
         """
@@ -231,7 +232,7 @@ class InitTests(BuilderCase):
         self.assertEqual(self.drafts(), [path.name])
         document = read_json(path)
         self.assertEqual(vr.validate_document(document).errors, [])
-        self.assertEqual((document["schema_version"], document["status"]), ("0.1", "draft"))
+        self.assertEqual((document["schema_version"], document["status"]), ("0.2", "draft"))
         self.assertEqual((document["checks"], document["findings"], document["components"]), ([], [], []))
         self.assertEqual(document["summary"], _summary.compute_summary(document))
         self.assertEqual(stderr, f"report: started {path.name} for my-service\n")
@@ -289,7 +290,8 @@ class InitTests(BuilderCase):
     def test_the_provenance_is_what_the_intake_and_the_catalogue_say(self) -> None:
         document = read_json(self.start())
         provenance = document["provenance"]
-        self.assertEqual(provenance["recipe"], {"name": "brownfield-audit", "version": "0.1.0"})
+        self.assertEqual(provenance["framework"], rb.framework_facts())
+        self.assertEqual(provenance["framework"]["release"], rb.FRAMEWORK_RELEASE)
         self.assertEqual(provenance["agent"], {"harness": "claude-code", "model": "claude-sonnet-5-5"})
         self.assertEqual(provenance["catalogue_version"], vr.load_catalogue()["catalogue_version"])
         self.assertEqual(provenance["started_at"], "2026-10-10T09:30:00+00:00")
@@ -331,15 +333,54 @@ class InitTests(BuilderCase):
         self.assertEqual((context["excluded"], context["known_components"]), ([], []))
 
     def test_the_framework_revision_is_this_checkout_or_nothing(self) -> None:
-        document = read_json(self.start())
-        recorded = document["provenance"]["framework_revision"]
+        recorded = read_json(self.start())["provenance"]["framework"]
         root = vr.RECIPES.parent
-        if rb.git_toplevel(root) == root.resolve():
-            self.assertEqual(recorded, _git.run_git(root, "rev-parse", "HEAD")[: rb.SHORT_SHA_CHARS])
+        if vr.git_toplevel(root) == root.resolve():
+            self.assertEqual(recorded["install"], "checkout")
+            self.assertEqual(recorded["revision"], _git.run_git(root, "rev-parse", "HEAD")[: rb.SHORT_SHA_CHARS])
         else:
-            self.assertIsNone(recorded)
-        with mock.patch.object(rb, "git_toplevel", return_value=self.root):
-            self.assertIsNone(rb.framework_revision())
+            self.assertIsNone(recorded["revision"])
+        with mock.patch.object(vr, "git_toplevel", return_value=self.root):
+            self.assertIsNone(rb.framework_facts()["revision"])
+
+    def test_a_framework_checkout_records_its_short_commit(self) -> None:
+        root = self.root / "framework"
+        _git.make_repo(root)
+        head = _git.run_git(root, "rev-parse", "HEAD")
+        self.assertEqual(
+            rb.framework_facts(root),
+            {"release": rb.FRAMEWORK_RELEASE, "revision": head[: rb.SHORT_SHA_CHARS], "install": "checkout"},
+        )
+
+    def test_a_skill_md_beside_the_scripts_is_a_bundle_with_no_revision(self) -> None:
+        root = self.root / "agentic-readiness-audit"
+        (root / "scripts").mkdir(parents=True)
+        (root / "SKILL.md").write_text("---\nname: agentic-readiness-audit\n---\n", encoding="utf-8")
+        self.assertEqual(
+            rb.framework_facts(root), {"release": rb.FRAMEWORK_RELEASE, "revision": None, "install": "bundle"}
+        )
+
+    def test_a_bundle_inside_another_repository_is_still_a_bundle(self) -> None:
+        _git.make_repo(self.root / "project")
+        root = self.root / "project" / ".claude" / "skills" / "agentic-readiness-audit"
+        root.mkdir(parents=True)
+        (root / "SKILL.md").write_text("---\nname: agentic-readiness-audit\n---\n", encoding="utf-8")
+        self.assertEqual(rb.framework_facts(root)["install"], "bundle")
+
+    def test_anything_else_is_a_copy_with_no_revision(self) -> None:
+        root = self.root / "source-archive"
+        root.mkdir()
+        self.assertEqual(
+            rb.framework_facts(root), {"release": rb.FRAMEWORK_RELEASE, "revision": None, "install": "copy"}
+        )
+
+    def test_without_git_a_dot_git_folder_is_a_checkout_with_no_revision(self) -> None:
+        root = self.root / "framework"
+        (root / ".git").mkdir(parents=True)
+        with mock.patch.object(shutil, "which", return_value=None):
+            self.assertEqual(
+                rb.framework_facts(root), {"release": rb.FRAMEWORK_RELEASE, "revision": None, "install": "checkout"}
+            )
 
 
 class TargetFactsTests(BuilderCase):
@@ -565,7 +606,7 @@ class AddCheckTests(BuilderCase):
                 "action": "added",
                 "verdict": "PASS",
                 "checks_recorded": 1,
-                "checks_expected": 71,
+                "checks_expected": 76,
             },
         )
         self.assertEqual(stderr, "report: AGT-11 added as PASS\n")
@@ -917,7 +958,7 @@ class OverrideTests(BuilderCase):
     def test_an_agent_only_check_is_added_beside_the_engines(self) -> None:
         code, envelope, _ = self.add_check(self.draft, agent_check())
         self.assertEqual(code, 0)
-        self.assertEqual(envelope["data"]["checks_recorded"], 70)
+        self.assertEqual(envelope["data"]["checks_recorded"], 75)
         self.assertEqual(self.check("AGT-11")["method"], "agent")
 
 
@@ -1548,20 +1589,20 @@ class StatusTests(BuilderCase):
         self.assertEqual(
             (data["status"], data["eval_mode"], data["confirmation_policy"]), ("draft", False, "interactive")
         )
-        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (0, 71))
+        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (0, 76))
         self.assertEqual(data["families_done"], "")
         self.assertEqual(
             list(data["families_remaining"]),
             ["IDX", "AGT", "DOC", "CMD", "TOOL", "CI", "BASE", "CON", "EXEC", "TST", "NAV", "SEC", "HYG"],
         )
-        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03 CI-04")
+        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03 CI-04 CI-05")
         self.assertEqual((data["findings"], data["findings_pending"], data["blockers_pending"]), (0, 0, 0))
-        self.assertEqual((data["ready_to_finalise"], data["blocking"]), (False, "71 of 71 checks are not recorded"))
+        self.assertEqual((data["ready_to_finalise"], data["blocking"]), (False, "76 of 76 checks are not recorded"))
         self.assertEqual(data["pending"], [])
         self.assertNotIn("pending_omitted", data)
         self.assertFalse(envelope["truncated"])
         self.assertEqual(
-            stderr, "report: 0 of 71 checks recorded; not ready to finalise: 71 of 71 checks are not recorded\n"
+            stderr, "report: 0 of 76 checks recorded; not ready to finalise: 76 of 76 checks are not recorded\n"
         )
 
     def test_recording_a_check_takes_it_off_the_remaining_list(self) -> None:
@@ -1569,17 +1610,17 @@ class StatusTests(BuilderCase):
         self.add_check(draft, agent_check(id="CI-04", verdict="FAIL", evidence=[]))
         data = self.data(draft)
         self.assertEqual(data["checks_recorded"], 1)
-        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03")
+        self.assertEqual(data["families_remaining"]["CI"], "CI-01 CI-02 CI-03 CI-05")
         self.assertNotIn("CI-04", " ".join(data["families_remaining"].values()))
 
     def test_an_engine_draft_lists_what_is_left_and_the_pending_findings_blockers_first(self) -> None:
         draft = self.engine_draft()
         data = self.data(draft)
-        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (69, 71))
+        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (74, 76))
         self.assertEqual(data["families_remaining"], {"AGT": "AGT-11", "CI": "CI-04"})
         self.assertEqual(data["families_done"], "IDX DOC CMD TOOL BASE CON EXEC TST NAV SEC HYG")
         self.assertEqual((data["findings"], data["findings_pending"], data["blockers_pending"]), (24, 24, 4))
-        self.assertEqual(data["blocking"], "2 of 71 checks are not recorded; 24 findings are pending")
+        self.assertEqual(data["blocking"], "2 of 76 checks are not recorded; 24 findings are pending")
         findings = read_json(draft)["findings"]
         blockers = [f for f in findings if f["severity"] == "BLOCKER"]
         self.assertEqual(data["pending"][: len(blockers)], [f"{f['id']} BLOCKER {f['key']}" for f in blockers])
@@ -1603,10 +1644,10 @@ class StatusTests(BuilderCase):
         self.assertEqual(code, 0)
         self.assertIs(envelope["truncated"], True)
 
-    def test_a_report_of_70_checks_prints_40_lines_or_fewer(self) -> None:
+    def test_a_report_of_75_checks_prints_40_lines_or_fewer(self) -> None:
         draft = self.engine_draft()
         self.add_check(draft, agent_check())
-        self.assertEqual(len(read_json(draft)["checks"]), 70)
+        self.assertEqual(len(read_json(draft)["checks"]), 75)
         self.assertLessEqual(self.stdout_lines("status", str(draft)), 40)
 
     def test_no_draft_can_make_it_print_more_than_40_lines(self) -> None:
@@ -1626,11 +1667,11 @@ class StatusTests(BuilderCase):
     def test_it_is_ready_when_every_check_is_recorded_and_every_finding_decided(self) -> None:
         draft = self.complete_engine_draft()
         data = self.data(draft)
-        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (71, 71))
+        self.assertEqual((data["checks_recorded"], data["checks_expected"]), (76, 76))
         self.assertEqual((data["families_remaining"], data["findings_pending"], data["blockers_pending"]), ({}, 0, 0))
         self.assertEqual((data["ready_to_finalise"], data["blocking"]), (True, ""))
         self.assertEqual(data["pending"], [])
-        self.assertEqual(self.status(draft)[2], "report: 71 of 71 checks recorded; ready to finalise\n")
+        self.assertEqual(self.status(draft)[2], "report: 76 of 76 checks recorded; ready to finalise\n")
 
     def test_one_pending_finding_is_enough_to_hold_it_back(self) -> None:
         draft = self.complete_engine_draft()
@@ -1734,7 +1775,7 @@ class FinaliseTests(BuilderCase):
         self.assertEqual(envelope["data"]["draft"], str(self.draft))
         self.assertEqual(envelope["data"]["status"], "final")
         self.assertEqual(envelope["data"]["finalised_at"], "2026-10-10T11:45:30+00:00")
-        self.assertEqual((envelope["data"]["checks"], envelope["data"]["findings"]), (71, 24))
+        self.assertEqual((envelope["data"]["checks"], envelope["data"]["findings"]), (76, 24))
         self.assertEqual(envelope["data"]["summary"], read_json(final)["summary"])
         self.assertRegex(
             stderr,

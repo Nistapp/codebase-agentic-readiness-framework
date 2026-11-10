@@ -5,20 +5,20 @@ The catalogue's § Adding a Check makes this a merge requirement: no fixture, no
 
 Current state: the fixture matrix is complete and consolidated by `../test_fixture_matrix.py`, which
 carries one explicit expected verdict per fixture and asserts the positive fixtures collectively pass
-every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`) and
-`AGT-05` are exercised by `../test_agt_pack.py` and `../test_cmd_pack.py`; the earlier `AGT` checks
-(`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`07`) are
-exercised by `../test_exec_pack.py`; the `CMD` checks (`CMD-01`…`04`) by `../test_cmd_pack.py`; and
-the `SEC` checks (`SEC-01`…`03`) by `../test_sec_pack.py`, against the fixtures below. The `DOC` and
-`NAV` checks (`DOC-01`…`04`, `NAV-01`…`05`) are exercised by `../test_doc_nav_pack.py`. The `TOOL`
-checks (`TOOL-01`…`06`) are exercised by `../test_tool_pack.py`; the `CI` checks (`CI-01`…`03`) by
-`../test_ci_pack.py`; the `TST` checks (`TST-01`…`05`) by `../test_tst_pack.py`; the `BASE` checks
-(`BASE-01`…`04`) by `../test_base_pack.py`, with the ratchet exercised end to end by
+every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`, `12`) and
+`AGT-05` are exercised by `../packs/agt/test_agt_pack.py` and `../packs/cmd/test_cmd_pack.py`; the earlier `AGT` checks
+(`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`08`) are
+exercised by `../packs/exec/test_exec_pack.py` (and `EXEC-08` by `../packs/exec/test_exec08_inline_versions.py`); the `CMD` checks (`CMD-01`…`04`) by `../packs/cmd/test_cmd_pack.py`; and
+the `SEC` checks (`SEC-01`…`03`) by `../packs/sec/test_sec_pack.py`, against the fixtures below. The `DOC` and
+`NAV` checks (`DOC-01`…`05`, `NAV-01`…`05`) are exercised by `../packs/doc_nav/test_doc_nav_pack.py`. The `TOOL`
+checks (`TOOL-01`…`06`) are exercised by `../packs/tool/test_tool_pack.py`; the `CI` checks (`CI-01`…`03`) by
+`../packs/ci/test_ci_pack.py`; the `TST` checks (`TST-01`…`05`) by `../packs/tst/test_tst_pack.py`; the `BASE` checks
+(`BASE-01`…`04`) by `../packs/base/test_base_pack.py`, with the ratchet exercised end to end by
 `../test_ratchet.py`; the `CON` checks (`CON-02`, `CON-03`) plus the `CON-04` emitter by
-`../test_con_pack.py`; and the informational `HYG` checks (`HYG-01`…`11`) by
-`../test_hyg_pack.py`.
+`../packs/con/test_con_pack.py`; and the informational `HYG` checks (`HYG-01`…`11`) by
+`../packs/hyg/test_hyg_pack.py`.
 
-A fixture is correct for the runner it names, not only for the engine. `../test_make_fixtures.py` runs
+A fixture is correct for the runner it names, not only for the engine. `../packs/cmd/test_make_fixtures.py` runs
 `make -n -f <fixture>/Makefile check` on every fixture that has a `Makefile`, when `make` is installed, and requires
 success for all but `cmd-01-make-parse-error`, which it requires Make to refuse with the message the engine reports.
 
@@ -38,6 +38,8 @@ fixtures/
   agt-07-missing-deny/       prohibitions cover tests only        -> AGT-07 PARTIAL
   agt-08-competitor/         AGENTS.md + CLAUDE.md                -> AGT-08 FAIL
   agt-09-no-release/         branches stated, no release boundary -> AGT-09 PARTIAL
+  agt-09-ruleset-branch-unnamed/ a ruleset protects staging, AGENTS.md does not name it -> AGT-09 PARTIAL
+  agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
   agt-05-ok/                 all verbs named and resolved on a runner -> AGT-05 PASS
@@ -64,6 +66,7 @@ fixtures/
   sec-02-env-reference/      api_key, password and token that name an environment variable or a secret store -> SEC-02 PASS
   sec-01-ok/                 .env present but untracked + ignored (needs git) -> SEC-01…03 PASS
   exec-01-unpinned/          node project, no toolchain pin       -> EXEC-01 FAIL
+  exec-01-nested-go-unpinned/ a nested go.mod with no go directive -> EXEC-01 FAIL
   exec-01-python-source-only/ a standard-library-only Python tool, no manifest, no pin -> EXEC-01 FAIL, EXEC-02 UNKNOWN
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
@@ -72,12 +75,16 @@ fixtures/
   exec-05-generated/         tracked generated file, no header (needs git) -> EXEC-05 FAIL
   exec-06-broken-command/    README runs an npm script that is not declared -> EXEC-06 FAIL
   exec-07-dual-lint/         .eslintrc.json + biome.json compete  -> EXEC-07 FAIL
+  exec-07-dual-python-types/ mypy.ini + pyrightconfig.json, typecheck runs pyright -> EXEC-07 FAIL
+  exec-08-inline-version/    an npm script runs `npx eslint@9.0.0`, no manifest holds it -> EXEC-08 FAIL
+  exec-08-duplicate-pin/     the same script, eslint 9.0.0 also in devDependencies -> EXEC-08 PARTIAL
   exec-ok/                   the smallest node repository passing every EXEC check (needs git)
   doc-01-empty/              docs/ present, no markdown page      -> DOC-01 PARTIAL
   doc-02-no-style-guide/     docs/ present, no STYLE_GUIDE.md     -> DOC-02 FAIL
   doc-03-tracked-artefacts/  artefacts/ ignored but force-added (needs git) -> DOC-03 FAIL
   ignore-ok-nested-gitignore/ `artefacts/.gitignore` holds `*` and re-includes itself and its README (needs git) -> DOC-03, CON-03 PASS (ADR-0009)
   doc-04-adr-unindexed/      an ADR with no index                 -> DOC-04 PARTIAL
+  doc-05-long-sentences/     two thirds of the docs' sentences over 25 words -> DOC-05 FAIL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL
@@ -86,13 +93,20 @@ fixtures/
   tool-02-no-linter/         node project, no linter config or verb  -> TOOL-02 FAIL
   tool-03-nonstrict-ts/      tsconfig.json strict: false             -> TOOL-03 PARTIAL
   tool-04-no-audit-verb/     node project, no dependency-audit verb -> TOOL-04 FAIL
+  tool-04-local-only-audit/  npm run security runs npm audit, no CI step runs it -> TOOL-04 PARTIAL
+  tool-04-make-security-no-audit/ make security runs a prerequisite that expands to a secrets scan, no dependency audit -> TOOL-04 PARTIAL
   tool-05-unwired-hooks/     .husky/ present but never referenced   -> TOOL-05 PARTIAL
   tool-06-no-commit-rule/    wired hooks, no commit-message rule    -> TOOL-06 FAIL
-  tool-ok-node/              the smallest node repository passing every TOOL check
+  tool-06-local-only-commit-rule/  commit-msg hook, no CI step     -> TOOL-06 PARTIAL
+  tool-06-ci-only-commit-rule/     PR-title check in CI, no hook   -> TOOL-06 PARTIAL
+  tool-07-no-branch-guard/   wired lefthook, no protected-branch guard -> TOOL-07 FAIL
+  tool-ok-node/              the smallest node repository passing every TOOL check (hook and CI step)
   ci-01-no-pr-trigger/       workflow without a pull-request trigger -> CI-01 PARTIAL
   ci-02-parity-break/        CI runs a framework verb with no local script -> CI-02 FAIL
   ci-03-ci-only-step/        CI runs `npm run deploy` with no local script -> CI-03 FAIL
-  ci-ok-gh/                  a PR-triggered GitHub workflow calling the local verbs
+  ci-05-no-workflow-lint/    workflows exist and no linter checks them -> CI-05 FAIL
+  ci-05-ci-only-lint/        actionlint runs only as a CI action -> CI-05 PARTIAL
+  ci-ok-gh/                  a PR-triggered GitHub workflow calling the local verbs, actionlint local
   tst-01-no-suite/           test files but no resolvable test verb -> TST-01 PARTIAL
   tst-03-skip-markers/       a suite with skip/todo markers -> TST-03 PASS (non-zero census)
   tst-04-no-fastpath/        docs show the full suite only -> TST-04 FAIL
@@ -113,7 +127,10 @@ fixtures/
   con-02-specs-are-not-tests/ `specs/` holds feature specifications, `tests/` is named -> CON-02 PASS
   con-03-artefacts-not-ignored/ artefacts/ present, no ignore rule      -> CON-03 FAIL
   hyg-01-placeholder-readme/ README is a TODO stub                      -> HYG-01 FAIL
+  hyg-09-uncovered-ecosystem/ package.json, a Dependabot file with only a pip entry -> HYG-09 PARTIAL
+  hyg-09-target-branch-trap/ the npm entry sets target-branch and ignore -> HYG-09 PARTIAL
   hyg-10-no-license/         real README, no LICENSE at the root         -> HYG-10 FAIL
+  hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 UNKNOWN
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test
 ```

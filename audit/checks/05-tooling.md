@@ -1,10 +1,10 @@
 # Tooling (`TOOL`)
 
-> Follows the anatomy in [`README.md`](README.md). Six checks, all `method: automated`. See
+> Follows the anatomy in [`README.md`](README.md). Seven checks, all `method: automated`. See
 > [Why These Checks §6](../engine/docs/architecture/user-overview/03-why-these-checks.md#6-tooling-tool)
 > for the consequence behind this family: a tool that is installed but not reachable through the command
 > surface, or configured but not strict, gives an agent false confidence. TOOL-01 to TOOL-04 are remediated
-> by `configure-quality-tools`; TOOL-05 and TOOL-06 are remediated by `add-hooks-and-commit-rules`.
+> by `configure-quality-tools`; TOOL-05 to TOOL-07 are remediated by `add-hooks-and-commit-rules`.
 
 ---
 
@@ -128,29 +128,46 @@ Engine           `TOOL-04`. Resolves every verb on every runner and tests each r
                  `safety check`, `osv-scanner`, `cargo audit`, `govulncheck`, `snyk`, `trivy`, `grype`,
                  `bundler-audit`, `composer audit`, `audit-ci`, `dotnet list package --vulnerable`, and
                  others the pattern list names). The verb is evidence; the engine never runs it (that is
-                 Tier C, opt-in only). Any resolved verb matching is `PASS`; a `security` verb that resolves
-                 to something else is `PARTIAL`; no match at all, with a recognised ecosystem or runner, is
-                 `FAIL`. Distrust a `FAIL` or `PARTIAL` when the audit tool used is one the pattern list
-                 does not yet name — verify by reading the resolved command directly.
+                 Tier C, opt-in only). On the root `Makefile` a verb is followed the way Make runs it:
+                 simple variables are expanded (`$(OSV)`, `${OSV}`), and each prerequisite target and each
+                 `make <target>` or `$(MAKE) <target>` line is read in turn; a cycle ends the walk, and a
+                 `make -C`/`-f` call into another Makefile is not followed. CI is read too: a workflow line
+                 that runs a scanner, a runner target whose command runs one (`make security-deps`,
+                 `npm run security`), a scanner action (`google/osv-scanner-action`,
+                 `actions/dependency-review-action`, `aquasecurity/trivy-action`, `snyk/actions`,
+                 `anchore/scan-action`, `pypa/gh-action-pip-audit`), or GitLab's Dependency-Scanning
+                 template. A local verb and a CI step is `PASS`; one of the two is `PARTIAL`; a `security`
+                 verb that resolves to something else, with no CI step, is `PARTIAL`; no match at all, with
+                 a recognised ecosystem or runner, is `FAIL`. Distrust a `FAIL` or `PARTIAL` when the audit
+                 tool used is one the pattern list does not yet name — verify by reading the resolved command directly.
 Method           automated
 Look for         Every verb's resolved command text, not only `security`'s — the audit invocation can sit
-                 on any verb the runner exposes.
-Rubric           PASS: at least one resolved verb's command matches a known dependency-audit invocation.
-                 PARTIAL: a `security` verb resolves but its command does not match any known audit
-                 invocation.
-                 FAIL: no verb resolves to a dependency-audit invocation and the repository has a
-                 recognised ecosystem or runner manifest.
+                 on any verb the runner exposes — and every CI workflow line.
+Rubric           PASS: at least one resolved verb's command matches a known dependency-audit invocation,
+                 and a CI step runs a dependency audit.
+                 PARTIAL: only a local verb, or only CI, runs a dependency audit; or a `security` verb
+                 resolves but runs no known audit and CI runs none.
+                 FAIL: neither a verb nor CI runs a dependency audit and the repository has a recognised
+                 ecosystem or runner manifest.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no recognised ecosystem, runner manifest or dependency-audit verb exists, so
                  a dependency scan cannot be ruled out.
-Evidence to cite A `command` evidence item citing the matching verb and its resolved command text, or, for
-                 `PARTIAL`, the `security` verb's own non-matching command.
+Evidence to cite A `command` evidence item citing the matching verb and its resolved command text, and a
+                 `file` item for the CI line; for `PARTIAL`, the half that was found and the files searched
+                 for the other.
 Absence proof    A FAIL cites every runner manifest read as the evidence that no verb on any of them
                  resolves to a known dependency-audit invocation.
 Remediation      `configure-quality-tools`
 Pitfalls         The audit tool does not have to live on the `security` verb by name — a `test` or `check`
                  verb that happens to run `npm audit` as one of its steps still earns `PASS`; read every
-                 resolved command before concluding the repository has no dependency scan at all.
+                 resolved command before concluding the repository has no dependency scan at all. The
+                 Makefile walk does not read a variable set by a function (`$(shell ...)`, `$(call ...)`),
+                 an included file, the environment, or a script the recipe calls; read those by hand
+                 before you accept a `PARTIAL`. Dependabot and Renovate open update pull requests; they do
+                 not audit, so they never count as the CI half (`HYG-09` owns them). The engine only reads
+                 text and stays offline; the target's own `security` verb may need the network, which is
+                 fine because `security` is not part of `check`. Whether the CI job runs on pull requests
+                 is not read.
 
 ## TOOL-05 — Local hook chain active
 
@@ -194,31 +211,76 @@ Why it matters   Release automation reads commit messages; without an enforced c
                   and changelog generation silently stop working
                   ([greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).
 Severity         COSMETIC
-Engine           `TOOL-06`. Reads for a commitlint config file (`commitlint.config.*`, `.commitlintrc*`, or
-                 `package.json`'s `"commitlint"` key), a `commit-msg` hook file under `.husky/` or
-                 `.githooks/`, or a `commit-msg`/`commitlint`/`conventional` reference inside
-                 `.pre-commit-config.yaml`/`lefthook.yml`/`.yaml`. Any found is `PASS`; none found, with a
-                 detected ecosystem or any hook wiring already present, is `FAIL`. Distrust a `FAIL` when
-                 the convention is enforced through a server-side hook or a CI-only check this check does
-                 not read (CI enforcement is `TOOL-06`'s own blind spot, not a reason to call the finding
-                 wrong without checking CI first) — verify by reading the CI workflow.
+Engine           `TOOL-06`. Reads two places. Locally: a commitlint config file (`commitlint.config.*`,
+                 `.commitlintrc*`, or `package.json`'s `"commitlint"` key), a `commit-msg` hook file under
+                 `.husky/` or `.githooks/`, or a `commit-msg`/`commitlint`/`conventional` reference inside
+                 `.pre-commit-config.yaml`/`lefthook.yml`/`.yaml`. In CI (every workflow file of a detected
+                 provider): a line that runs commitlint (`npx commitlint`, `wagoid/commitlint-github-action`),
+                 `cz check`, `gitlint`, `pre-commit run --hook-stage commit-msg` or `lefthook run commit-msg`; a
+                 pull-request title check (`amannn/action-semantic-pull-request`); a repository script that the
+                 local `commit-msg` stage also runs; or a runner target (`make commit-lint`, `npm run …`) whose
+                 command does one of those. An install line (`@commitlint/cli`) and a comment do not count.
+                 Distrust a `PARTIAL` or `FAIL` when CI checks commits through a reusable workflow, a
+                 server-side hook or a script the local stage does not name — verify by reading the CI
+                 workflow. The engine does not read whether the job runs on pull requests.
 Method           automated
 Look for         The commitlint config file or `package.json` key; the hook files under `.husky/` and
-                 `.githooks/`; the hook-manager config's own text for a commit-message stage.
-Rubric           PASS: a commitlint config, a `commit-msg` hook file, or an equivalent pre-commit/lefthook
-                 stage is found.
-                 PARTIAL: not used by this check (the engine's outcome is binary: the rule exists locally
-                 or it does not).
-                 FAIL: none of the above is found and the repository has a detected ecosystem, or any hook
-                 chain (wired or merely configured) is already present.
+                 `.githooks/`; the hook-manager config's own text for a commit-message stage; the workflow line
+                 that runs the same rule.
+Rubric           PASS: a local rule (commitlint config, `commit-msg` hook file or equivalent pre-commit/lefthook
+                 stage) and a CI step that checks commit messages or the pull-request title are both found.
+                 PARTIAL: only one of the two is found. Local only: `--no-verify` or a missing hook install
+                 skips the rule. CI only: an agent learns of a bad subject only after it pushes.
+                 FAIL: neither is found and the repository has a detected ecosystem, or any hook chain (wired
+                 or merely configured) is already present.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no recognised ecosystem and no hook configuration exists at all, so a commit
                  convention cannot be judged either way.
 Evidence to cite A `file` evidence item citing the commitlint config, the `commit-msg` hook file, or the
-                 hook-manager config line that matched.
+                 hook-manager config line that matched; for CI only, the workflow line and what it runs.
 Absence proof    A FAIL cites every runner manifest or detected ecosystem signal as the evidence that no
-                 commitlint config, `commit-msg` hook, or equivalent stage was found.
+                 commitlint config, `commit-msg` hook, equivalent stage or CI step was found.
 Remediation      `add-hooks-and-commit-rules`
 Pitfalls         `COSMETIC` severity means this check never raises a repository's audit to BLOCKER on its
                  own — do not treat a `TOOL-06` `FAIL` as equivalent in urgency to a `DEGRADER` finding
                  elsewhere in this family.
+
+## TOOL-07 — Local guard against commits to a protected branch
+
+Why it matters   An agent commits on whatever branch is checked out. Without a local guard it learns that the
+                  branch is protected only when the push is refused, and then has to move its commits by hand
+                  ([greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint)).
+Severity         COSMETIC
+Engine           `TOOL-07`. A guard is pre-commit's `no-commit-to-branch` hook (in `.pre-commit-config.yaml`;
+                 its `--branch` and `--pattern` arguments; `main` and `master` when it has no `--branch`), or a
+                 hook that reads the current branch (`git symbolic-ref … HEAD`, `git branch --show-current`,
+                 `git rev-parse --abbrev-ref HEAD`): a `pre-commit` or `commit-msg` command in
+                 `lefthook.yml`/`.yaml` (a `pre-push` command does not stop a commit), or a `pre-commit` or
+                 `commit-msg` hook script (`.husky/`, `.githooks/` or any other hook directory). A lefthook
+                 guard names the branches in its own command block; a hook script names them anywhere in the
+                 file. The branches it must name are the literal ones the declared rules protect (`HYG-11`
+                 reads them: `.github/rulesets/`, `.github/settings.yml`, Terraform); `~DEFAULT_BRANCH` and
+                 globs are not required. With no declared rules, any guard counts. A `.husky/` guard is
+                 wired when a `package.json` script runs `husky`; another hook directory is wired when
+                 `core.hooksPath` is set. Distrust a `FAIL` when the hook calls a script that holds the guard
+                 (`.husky/pre-commit` running `node scripts/check-branch.js`) — read the script. The engine
+                 does not read whether the guard exits non-zero.
+Method           automated
+Look for         `.pre-commit-config.yaml` for `no-commit-to-branch` and its `args`; the `pre-commit` and
+                 `commit-msg` stages of `lefthook.yml`; the hook scripts named `pre-commit` and `commit-msg`;
+                 the declared rules' branch list (`HYG-11`'s evidence).
+Rubric           PASS: a guard in a wired hook chain names every branch the declared rules protect, or any
+                 guard is wired and no rules are declared.
+                 PARTIAL: a guard exists but its hook chain is not wired (an unreferenced `.husky/`, a
+                 `.githooks/` with no `core.hooksPath`); or a wired guard does not name a protected branch.
+                 FAIL: a hook chain exists (wired or configured) and no hook in it is a guard.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: no hook chain exists at all; `TOOL-05` owns that finding.
+Evidence to cite A `file` evidence item with the line of each guard; for a PARTIAL on coverage, the branches
+                 the guard misses.
+Absence proof    A FAIL cites the hook files that exist and states that none runs `no-commit-to-branch` or
+                 reads the current branch in a `pre-commit` or `commit-msg` stage.
+Remediation      `add-hooks-and-commit-rules`
+Pitfalls         The guard is a convenience: the server's branch rules are the enforcement, and
+                 `git commit --no-verify` skips any hook. Do not read a `TOOL-07` PASS as protection, or a
+                 FAIL as an unprotected branch; `HYG-11` is where protection is judged.

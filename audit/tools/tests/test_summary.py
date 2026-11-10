@@ -203,11 +203,13 @@ class ExamplesTests(unittest.TestCase):
             self.assertEqual(len(drafts), 1, raw_path.name)
             raw = json.loads(raw_path.read_text(encoding="utf-8"))
             draft = json.loads(drafts[0].read_text(encoding="utf-8"))
-            # A check the engine's ruleset blocked did not run: the draft scores it as the catalogue does, the engine's
-            # own number does not, so the engine's number is what the draft's is with that check left unscored.
+            # A check the engine's ruleset blocked did not run, and a check newer than its ruleset (CI-05) is not in
+            # its report: the draft scores both as the catalogue does, the engine's own number does not, so the
+            # engine's number is what the draft's is with those checks left unscored.
             blocked = {check["id"] for check in raw["checks"] if check["status"] == "blocked"}
+            reported = {check["id"] for check in raw["checks"]} | set(raw["not_applicable"])
             for check in draft["checks"]:
-                if check["id"] in blocked:
+                if check["id"] in blocked or check["id"] not in reported:
                     check["scored"] = False
             ours = _summary.compute_summary(draft)
             with self.subTest(report=raw_path.name, stamp=stamp):

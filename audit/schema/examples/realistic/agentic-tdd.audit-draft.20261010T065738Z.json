@@ -1,13 +1,13 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "status": "draft",
   "provenance": {
-    "recipe": {
-      "name": "brownfield-audit",
-      "version": "0.1.0"
+    "framework": {
+      "release": "0.3.2",
+      "revision": "7eedf23c99c3",
+      "install": "checkout"
     },
-    "framework_revision": "7eedf23c99c39f94cad435e8a52eb28642308a92",
-    "catalogue_version": "0.2.0",
+    "catalogue_version": "0.7.0",
     "engine": {
       "name": "python-agentic-audit",
       "version": "0.1.0",
@@ -1528,6 +1528,66 @@
       "summary": "github offers branch protection as code, none found",
       "evidence": [],
       "searches": []
+    },
+    {
+      "id": "AGT-12",
+      "title": "Communication rules stated",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "DOC-05",
+      "title": "Docs are readable",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "TOOL-07",
+      "title": "Local guard against commits to a protected branch",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "CI-05",
+      "title": "Workflow files are linted",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "EXEC-08",
+      "title": "Tool versions visible to dependency automation",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",
+      "evidence": [],
+      "searches": []
     }
   ],
   "findings": [
@@ -2111,15 +2171,15 @@
     }
   ],
   "summary": {
-    "phase1_score": 0.7131,
-    "scored_checks": 55,
+    "phase1_score": 0.6744,
+    "scored_checks": 60,
     "blockers_remaining": {
       "total": 6,
       "fail": 2,
       "partial": 2,
       "unknown": 2
     },
-    "unknown_scored_checks": 4,
+    "unknown_scored_checks": 9,
     "unconfirmed_agent_findings": 0
   },
   "unattested": [

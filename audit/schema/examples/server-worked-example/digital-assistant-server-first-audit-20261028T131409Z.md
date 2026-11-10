@@ -3,21 +3,36 @@
 > [!NOTE]
 > This audit reports; it does not gate. A check that could not be settled is UNKNOWN: it earns no credit and is never shown as a pass.
 
+## Bottom line
+
+- **6 blockers remaining: 5 FAIL, 1 PARTIAL.**
+- **Not settled by this scan:**
+  - 3 checks are UNKNOWN: `TOOL-03`, `TST-02`, `NAV-05`.
+  - 5 requirements are unattested: no check settles them.
+
+**First actions** (3 of 40 open findings):
+
+| # | Finding | Severity | Effort | What it blocks | Fix |
+|---:|---|---|:---:|---|---|
+| 1 | `EXEC-04` (F-005) | BLOCKER | S | An agent cannot know the CI variables the scripts need because AWS_ROLE_ARN, INSTANCE_ID, SSM_DOCUMENT (repository variables), IMAGE_TAR and CACHE_DIR (optional script inputs) are documented only in scripts/ci/README.md and script headers, not in a committed example file (SECONDS, also reported by the engine, is a bash builtin and is not a gap). | Add a committed example file (for example scripts/ci/env.example) listing the CI variables and the QUARKUS\_\* overrides the README documents. |
+| 2 | `CMD-01` (F-001) | BLOCKER | — | An agent cannot run the standardized command surface literally because 5 of 7 framework verbs are not defined on any runner (format, format:check, lint, typecheck, security). | Define every verb (format, format:check, lint, typecheck, test, check, security) as a script/target so an agent never has to invent a command. |
+| 3 | `CON-02` (F-002) | BLOCKER | — | An agent cannot trust that a failing test is not rewritten to pass because the prohibitions section of AGENTS.md does not name any test directory. | Name src/test/ in a code span in the prohibitions section of AGENTS.md, so test edits are bounded and reviewed. |
+
 ## Provenance
 
 | Field | Value |
 |---|---|
+| Framework | `v0.3.2`, checkout `b4bf27df7915` |
 | Target | `<target>` |
 | Commit | `4a48e1976e42` on `dev` — clean working tree |
 | Status | final |
 | Started | `2026-10-28T12:49:11+00:00` |
 | Finalised | `2026-10-28T13:14:09+00:00` |
-| Recipe | `brownfield-audit` 0.1.0, catalogue `0.2.2` |
+| Catalogue | `0.2.2` |
 | Engine | `python-agentic-audit` 0.1.0, ruleset `2026-10-19.2`, ruleset hash `970e6792f98eeeb5`, scanned `2026-10-28T12:49:15+00:00` |
-| Framework revision | `b4bf27df7915` |
 | Agent (self-reported) | `Claude Code` with `claude-sonnet-5-5` |
 | Probes | none: no command of the target was run |
-| Report schema | `0.1` |
+| Report schema | `0.2` |
 
 ## Readiness summary
 
@@ -276,8 +291,8 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
-| `IDX-01` | codebase-memory-mcp registered for this repository | BLOCKER | automated | yes | PASS | PASS | codebase-memory-mcp registered in: <home>/.config/opencode/opencode.jsonc (user) |
-| `IDX-02` | An index exists for this checkout | BLOCKER | automated | yes | PASS | PASS | index store <home>/.cache/codebase-memory-mcp contains a project rooted at <target> |
+| `IDX-01` | codebase-memory-mcp registered for this repository | BLOCKER | automated | yes | PASS | PASS | codebase-memory-mcp registered in: \<home>/.config/opencode/opencode.jsonc (user) |
+| `IDX-02` | An index exists for this checkout | BLOCKER | automated | yes | PASS | PASS | index store \<home>/.cache/codebase-memory-mcp contains a project rooted at \<target> |
 | `IDX-03` | Index freshness | DEGRADER | automated | yes | PARTIAL | UNKNOWN | Index built 2026-10-28T09:43:48Z; HEAD 4a48e19 (committed 11:27Z) is the one later commit, touching only a workflow, a CI script and a CI README. |
 
 ### AGT
@@ -407,6 +422,24 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `HYG-09` | Dependency update automation configured | COSMETIC | automated | no | PASS | PASS | dependency automation configured at .github/dependabot.yml |
 | `HYG-10` | License present | COSMETIC | automated | no | PASS | PASS | license present at LICENSE |
 | `HYG-11` | Branch protection declared as code | COSMETIC | automated | no | FAIL | FAIL | github offers branch protection as code, none found |
+
+## Terms
+
+| Term | Kind | Meaning |
+|---|---|---|
+| PASS | verdict | The requirement is met. |
+| PARTIAL | verdict | Part of the requirement is met. |
+| FAIL | verdict | The requirement is not met. |
+| UNKNOWN | verdict | The evidence could not be gathered. It is never read as a pass. |
+| NOT_APPLICABLE | verdict | The check does not apply to this repository. |
+| BLOCKER | severity | Agent work is impossible, unsafe or unverifiable. Fix before onboarding agents. |
+| DEGRADER | severity | Agent work is possible but unreliable or wasteful. |
+| COSMETIC | severity | Hygiene. Fix when convenient. |
+| pending | decision on a finding | No decision yet. |
+| confirmed | decision on a finding | The finding stands as written. |
+| edited | decision on a finding | The finding stands, with its wording or evidence corrected. |
+| rejected | decision on a finding | The finding is wrong (a false positive). It leaves the backlog. |
+| deferred | decision on a finding | The finding is real, and the person chose to leave it open for now. |
 
 ---
 

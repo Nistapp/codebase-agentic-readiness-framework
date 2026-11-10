@@ -153,11 +153,13 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("AGT-08", "No competing instruction files, and the reach matrix is stated", "B", _S.DEGRADER),
     _c("AGT-09", "Branch and release boundary declared", "B", _S.DEGRADER),
     _c("AGT-10", "Instruction indirection resolved", "B", _S.DEGRADER),
+    _c("AGT-12", "Communication rules stated", "B", _S.COSMETIC),
     # -- DOC ------------------------------------------------------------
     _c("DOC-01", "docs/ exists", "A", _S.DEGRADER),
     _c("DOC-02", "docs/STYLE_GUIDE.md exists", "A", _S.DEGRADER),
     _c("DOC-03", "artefacts/ exists and is ignored", "B", _S.DEGRADER),
     _c("DOC-04", "ADR directory and index", "A", _S.COSMETIC),
+    _c("DOC-05", "Docs are readable", "B", _S.COSMETIC),
     # -- CMD ------------------------------------------------------------
     _c("CMD-01", "Seven verbs resolvable on one runner", "B", _S.BLOCKER),
     _c("CMD-02", "check composes the read-only verbs", "B", _S.BLOCKER),
@@ -170,10 +172,12 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("TOOL-04", "Dependency / security scan verb", "A", _S.DEGRADER),
     _c("TOOL-05", "Local hook chain active", "B", _S.DEGRADER),
     _c("TOOL-06", "Commit convention enforced", "A", _S.COSMETIC),
+    _c("TOOL-07", "Local guard against commits to a protected branch", "B", _S.COSMETIC),
     # -- CI -------------------------------------------------------------
     _c("CI-01", "Pipeline present, triggered on PRs", "B", _S.BLOCKER),
     _c("CI-02", "Local↔CI parity", "B", _S.BLOCKER),
     _c("CI-03", "CI-only steps flagged", "B", _S.DEGRADER),
+    _c("CI-05", "Workflow files are linted", "B", _S.DEGRADER),
     # -- BASE -----------------------------------------------------------
     _c("BASE-01", "Baseline artifact exists", "A", _S.DEGRADER),
     _c("BASE-02", "Current violation counts measured", "B", _S.DEGRADER),
@@ -207,6 +211,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("EXEC-05", "No generated artifacts committed in-tree", "B", _S.DEGRADER),
     _c("EXEC-06", "Documented commands resolve", "B", _S.DEGRADER),
     _c("EXEC-07", "No competing configs for one concern", "B", _S.DEGRADER),
+    _c("EXEC-08", "Tool versions visible to dependency automation", "B", _S.DEGRADER),
     # -- TST ------------------------------------------------------------
     _c("TST-01", "Test verb exists, suite non-empty", "A", _S.BLOCKER),
     _c("TST-02", "Suite status known", "C", _S.DEGRADER),

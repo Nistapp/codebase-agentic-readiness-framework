@@ -31,7 +31,15 @@ Formatter: Ruff's own formatter, or Black. Linter: Ruff (replacing Flake8/Pylint
 Flake8/Pylint on an older one; config in `pyproject.toml`'s `[tool.ruff]`/`[tool.black]` or standalone
 `ruff.toml`/`.flake8`/`.pylintrc`. Type checker: mypy or Pyright, `[tool.mypy]`/`[tool.pyright]` or
 `mypy.ini`'s `strict = true`. Test runner: pytest. Dependency scanner: `pip-audit` (works against any of
-pip/uv/poetry's resolved environment) or `safety check`.
+pip/uv/poetry's resolved environment) or `safety check`. Hook manager: pre-commit
+(`.pre-commit-config.yaml`); lefthook in a mixed repository. Commit rule: a pre-commit `commit-msg` hook
+(conventional-pre-commit, commitizen or gitlint), and the same rule in CI (`TOOL-06`):
+`cz check --rev-range` or `gitlint --commits` over the pull request's commits (conventional-pre-commit has no
+range form). Branch guard (`TOOL-07`): pre-commit-hooks' `no-commit-to-branch` with a `--branch` per
+protected branch. Dependency updates: Dependabot `package-ecosystem: pip`
+(pip, pipenv, poetry, pip-compile) or `uv` (a `uv.lock`); Renovate's `pep621`, `pip_requirements`,
+`poetry` and `pipenv` managers. Language-server inputs (`register-index`, advisory): a pyright or basedpyright config
+that mirrors the type-check gate's import paths.
 
 ## Execution determinism
 
@@ -40,12 +48,17 @@ poetry both honour `.python-version` directly, pip does not read it at all — s
 actually acts on, not just which file exists. The matching lockfile (`poetry.lock`/`uv.lock`/
 `Pipfile.lock`) must be git-tracked at the root; `uv sync --frozen`/`poetry install --no-update`/
 `pipenv sync` is the non-interactive install path, never a bare `install` that can resolve new versions.
+Tool versions (`EXEC-08`) go in a dependency group of a `pyproject.toml`, locked in `uv.lock`, never inline in
+`uvx ruff@0.5.0` or `pip install black==24.1.0`; the runner reads the pin or runs `uv run`.
 
 ## CI idiom
 
 GitHub Actions is the common provider: `actions/checkout`, `actions/setup-python` with `python-version`
 pinned to `requires-python`/`.python-version`, the matching manager's own cache (`setup-python`'s
 `cache: pip`, or `astral-sh/setup-uv`/`cache: poetry` for the others), then the project's `check` target.
+Workflow lint (`CI-05`): actionlint or zizmor as pre-commit hooks (or `uvx zizmor` in a target), run in CI too.
+Dependency audit (`TOOL-04`): a `security` job that runs the runner's `security` target (`pip-audit`), beside `check`.
+Release provenance (optional, `add-repo-hygiene` step 6): PyPI Trusted Publishing with attestations on.
 
 ## Baseline / ratchet
 

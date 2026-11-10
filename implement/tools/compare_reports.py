@@ -162,6 +162,12 @@ def score(report: Mapping[str, Any]) -> str:
     return f"{summary['phase1_score']} ({summary['blockers_remaining']['total']} blockers)"
 
 
+def made_by(side: Mapping[str, Any]) -> str:
+    framework = side["framework"]
+    commit = f" at `{framework['revision']}`" if framework["revision"] else ""
+    return f"framework `v{framework['release']}`{commit}, catalogue `{side['catalogue_version']}`"
+
+
 def render(
     summary: Mapping[str, Any],
     checks: Sequence[Mapping[str, Any]],
@@ -171,8 +177,11 @@ def render(
     lines = [
         f"# Audit comparison: {summary['label']}",
         "",
-        f"- Before: `{summary['before']['report']}` at `{summary['before']['git_sha']}`, score {summary['before']['score']}",
-        f"- After: `{summary['after']['report']}` at `{summary['after']['git_sha']}`, score {summary['after']['score']}",
+        f"- Before: `{summary['before']['report']}` at `{summary['before']['git_sha']}`, score {summary['before']['score']}"
+        f", {made_by(summary['before'])}",
+        f"- After: `{summary['after']['report']}` at `{summary['after']['git_sha']}`, score {summary['after']['score']}"
+        f", {made_by(summary['after'])}",
+        *(f"- **Warning:** {warning}" for warning in summary["version_warnings"]),
         f"- State: {'used' if summary['state_used'] else 'not given, labels are `-`'}",
         f"- Checks: {_counts_text(summary['checks'])}",
         f"- Findings: {_counts_text(summary['findings'])}; {summary['rejected_ignored']} rejected ignored",
@@ -240,6 +249,7 @@ def _counts_text(values: Mapping[str, int]) -> str:
 def read_valid(path: str, which: str) -> Any:
     document = validate_report.read_report(Path(path).expanduser(), f"{which} report")
     outcome = validate_report.validate_document(document)
+    validate_report.refuse_unknown_schema(outcome)
     if outcome.errors:
         count = len(outcome.errors)
         raise _common.ValidationFailed(
@@ -258,6 +268,33 @@ def build_parser() -> _common.ToolParser:
     return parser
 
 
+def version_warnings(before: Mapping[str, Any], after: Mapping[str, Any]) -> list[str]:
+    """Why a verdict can move although the repository did not: the two reports come from other frameworks or catalogues."""
+    old, new = before["provenance"], after["provenance"]
+    warnings: list[str] = []
+    if old["framework"]["release"] != new["framework"]["release"]:
+        warnings.append(
+            f"the reports come from different framework releases (v{old['framework']['release']} and "
+            f"v{new['framework']['release']}): a verdict can move because the framework changed"
+        )
+    elif (
+        old["framework"]["revision"]
+        and new["framework"]["revision"]
+        and old["framework"]["revision"] != new["framework"]["revision"]
+    ):
+        warnings.append(
+            f"the reports come from framework commits {old['framework']['revision']} and "
+            f"{new['framework']['revision']} (both v{new['framework']['release']}): a verdict can move because the "
+            "checks changed in between"
+        )
+    if old["catalogue_version"] != new["catalogue_version"]:
+        warnings.append(
+            f"the reports use different catalogues ({old['catalogue_version']} and {new['catalogue_version']}): "
+            "checks may have been added, removed or changed in meaning"
+        )
+    return warnings
+
+
 def handler(argv: Sequence[str]) -> _common.Result:
     args = build_parser().parse_args(list(argv))
     before = read_valid(args.before, "before")
@@ -267,6 +304,8 @@ def handler(argv: Sequence[str]) -> _common.Result:
     labels = {before["provenance"]["target"]["label"], after["provenance"]["target"]["label"]}
     if len(labels) > 1:
         warnings.append(f"the reports are for different repositories: {', '.join(sorted(labels))}")
+    versions = version_warnings(before, after)
+    warnings += versions
     statuses, state_warnings = items_by_finding(state, before)
     warnings += state_warnings
     with_state = state is not None
@@ -279,17 +318,28 @@ def handler(argv: Sequence[str]) -> _common.Result:
             "report": Path(args.before).name,
             "git_sha": before["provenance"]["target"]["git_sha"],
             "score": score(before),
+            "framework": {
+                "release": before["provenance"]["framework"]["release"],
+                "revision": before["provenance"]["framework"]["revision"],
+            },
+            "catalogue_version": before["provenance"]["catalogue_version"],
         },
         "after": {
             "report": Path(args.after).name,
             "git_sha": after["provenance"]["target"]["git_sha"],
             "score": score(after),
+            "framework": {
+                "release": after["provenance"]["framework"]["release"],
+                "revision": after["provenance"]["framework"]["revision"],
+            },
+            "catalogue_version": after["provenance"]["catalogue_version"],
         },
         "state_used": with_state,
         "checks": counts(checks),
         "findings": counts(findings),
         "rejected_ignored": rejected,
         "unexplained": unexplained,
+        "version_warnings": versions,
     }
     line = (
         f"compare_reports: {_counts_text(summary['checks'])} (checks); {_counts_text(summary['findings'])} (findings)"

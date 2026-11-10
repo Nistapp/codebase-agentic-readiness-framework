@@ -18,7 +18,9 @@ pushes, opens a pull request, merges or starts a workflow ([`AGENTS.md`](AGENTS.
    example `fix/report-score` or `docs/release-process`.
 5. Every pull request must pass the required check `CI Gate`. A pull request into `main` must also pass
    `Check source branch`.
-6. Merge with a merge commit. Do not squash. Do not rebase.
+6. Merge with a merge commit. Do not squash. Do not rebase. A pull request into `dev` goes through the merge queue:
+   **Merge when ready** adds it, and GitHub merges it when `CI Gate` passes on it merged onto the latest `dev`. See
+   [Add a pull request to the merge queue](docs/reference/branch-protection.md#add-a-pull-request-to-the-merge-queue).
 7. Commit subjects follow Conventional Commits. They decide the next version, and they become the changelog.
 8. A release is a tag `vX.Y.Z` that release-please makes on `main` when the release pull request is merged.
 
@@ -64,14 +66,19 @@ since the last release:
 | A `feat:` | PATCH | MINOR |
 | Only `fix:`, `docs:`, `ci:` and other types | PATCH | PATCH |
 
-The version is written in three places, and release-please changes all three in the release pull request:
+The version is written in five places, and release-please changes all five in the release pull request:
 
 - [`.release-please-manifest.json`](.release-please-manifest.json): the last released version.
 - `__version__` in [`audit/engine/audit/__init__.py`](audit/engine/audit/__init__.py): what `audit --version` and
-  each report's provenance print.
+  the report's `provenance.engine.version` print.
+- `FRAMEWORK_RELEASE` in [`audit/tools/report.py`](audit/tools/report.py): the report's `provenance.framework.release`.
+- `FRAMEWORK_RELEASE` in [`implement/tools/progress.py`](implement/tools/progress.py): the state's
+  `framework.release`.
 - The new entry in [`CHANGELOG.md`](CHANGELOG.md).
 
-[`dev/tests/test_release_config.py`](dev/tests/test_release_config.py) fails when the manifest and `__version__`
+Each of the three code lines carries the `x-release-please-version` marker and is an `extra-files` entry.
+`dev/build_skills.py` copies the manifest's version into each skill bundle's `SKILL.md` as `metadata.version`.
+[`dev/tests/test_release_config.py`](dev/tests/test_release_config.py) fails when a stamp and the manifest
 disagree. The configuration is [`release-please-config.json`](release-please-config.json).
 
 ## One-time setup
@@ -188,8 +195,9 @@ The push to `main` starts `release-please.yml`. A minute later the release pull 
    gh pr list --base main --head release-please--branches--main
    ```
 
-2. Read its diff. It changes `.release-please-manifest.json`, `__version__` in the engine and `CHANGELOG.md`. A second
-   commit, `style(changelog): ...`, holds the markdownlint fixes.
+2. Read its diff. It changes `.release-please-manifest.json`, `__version__` in the engine, the two
+   `FRAMEWORK_RELEASE` lines (`report.py` and `progress.py`) and `CHANGELOG.md`. A second commit,
+   `style(changelog): ...`, holds the markdownlint fixes.
 3. Check the version. To force a different one, see [Choose the version](#choose-the-version).
 4. Without the App token, close and reopen the pull request to start CI:
 
@@ -228,12 +236,11 @@ release commit on `main`. It brings the new version and the changelog entry into
    ```
 
 2. Without the App token, close and reopen it to start CI.
-3. If `dev` moved since the release, click "Update branch" (the `dev` ruleset requires an up-to-date branch).
-4. When `CI Gate` passes, merge it with a merge commit. GitHub deletes the branch:
-
-   ```bash
-   gh pr merge <n> --merge
-   ```
+3. If GitHub reports a conflict with `dev`, merge `dev` into the back-merge branch and resolve it there. An
+   out-of-date branch is fine: the merge queue tests it on the latest `dev`.
+4. When `CI Gate` passes, add it to the merge queue: click **Merge when ready**, or use the command in
+   [Add a pull request to the merge queue](docs/reference/branch-protection.md#add-a-pull-request-to-the-merge-queue).
+   GitHub merges it with a merge commit and deletes the branch.
 
 Merge it before the next promotion. If you forget, nothing breaks: the files do not conflict. But `dev` shows the old
 version until you merge it.
@@ -257,23 +264,27 @@ After the next promotion, the release pull request uses that version.
 | --- | --- | --- |
 | `release-please` | Every push to `main` | Opens or updates the release pull request; after its merge, tags `vX.Y.Z` and creates the GitHub release |
 | `format-changelog` | The release pull request was opened or updated | Runs `make changelog-fix` (markdownlint `--fix`) on `CHANGELOG.md` and pushes the fix to the release pull request. release-please writes `*` bullets and double blank lines, which the `docs-lint` ratchet refuses |
-| `publish` | A release was created | Starts `release.yml` with the tag (a dispatch is the one event that `GITHUB_TOKEN` may start a workflow with) |
+| `publish` | A release was created | Starts `release.yml` from the tag, with `--ref vX.Y.Z` (a dispatch is the one event that `GITHUB_TOKEN` may start a workflow with) |
 | `back-merge` | A release was created | Creates `chore/back-merge-vX.Y.Z` at the release commit and opens its pull request into `dev` |
 
 [`release.yml`](.github/workflows/release.yml) runs on a dispatch with a tag. It does these steps in sequence:
 
-1. It makes sure that the tag has the form `vX.Y.Z` and that its commit is on `main`.
+1. It makes sure that the tag has the form `vX.Y.Z`, that the run started from that tag, and that its commit is on
+   `main`. The run must start from the tag because the build provenance records the run's ref and commit.
 2. It makes sure that the engine's `__version__` equals the tag.
 3. It runs `make check` and `make security`. A tag on a red commit publishes nothing.
 4. It runs `python3 audit/engine/build.py`. This builds the reproducible single-file engine, `audit.pyz`.
 5. It runs `make validate-skills`. This builds the `agentic-readiness-audit` and `agentic-readiness-implement` skill
    bundles and validates both against the Agent Skills specification.
 6. It zips the two bundles from `dev/dist/skills/` and writes `SHA256SUMS` for `audit.pyz` and the two zips.
-7. It attaches the four files to the GitHub release. If the tag has no release (a run started by hand), it creates
+7. It signs build provenance for the three files in `SHA256SUMS` (`actions/attest`, public Sigstore). GitHub stores
+   the attestation. The signed bundle is written to `vX.Y.Z.sigstore.json`.
+8. It attaches the five files to the GitHub release. If the tag has no release (a run started by hand), it creates
    one.
 
 Every action in both workflows is pinned by commit SHA. To check a download, run `sha256sum -c SHA256SUMS` in the
-folder that holds all four files.
+folder that holds the files. To check where a file came from, follow
+[Step 2b of Install the skills](docs/how-to/install-the-skills.md#step-2b-optional-check-the-build-provenance).
 
 ## If the release fails
 
@@ -284,7 +295,7 @@ with no files.
 2. If the cause was outside the code (for example a network failure), run the workflow again for the same tag:
 
    ```bash
-   gh workflow run release.yml --ref main -f tag=vX.Y.Z
+   gh workflow run release.yml --ref vX.Y.Z -f tag=vX.Y.Z
    ```
 
 3. If the code must change, fix it on a work branch from `dev` and merge it. Then promote `dev` again. release-please
@@ -329,7 +340,8 @@ Dependabot opens a pull request only for a security fix, and never for a major v
 
 1. Make sure that its base is `dev`. Dependabot uses the default branch, which is `dev`.
 2. Read the list of updates and the release notes that Dependabot links.
-3. Wait for `CI Gate`. Then merge with a merge commit, like any other pull request.
+3. Wait for `CI Gate`. Then add it to the merge queue, like any other pull request into `dev`. See
+   [Add a pull request to the merge queue](docs/reference/branch-protection.md#add-a-pull-request-to-the-merge-queue).
 
 Do not turn on auto-merge for Dependabot.
 
@@ -350,13 +362,17 @@ The fix needs a major version, or the alert is on the template or a fixture.
 Each dev tool version is written once, in `dev/tools/`. The `Makefile`, `lefthook.yml`, `dev/mermaid_check.py` and
 the workflows read it from there. `dev/tests/test_tool_pins.py` fails when a version is written anywhere else.
 
-1. Change the version in `dev/tools/pyproject.toml` (Python tools) or `dev/tools/package.json` (Node tools).
+1. Change the version in `dev/tools/pyproject.toml` (Python tools), `dev/tools/package.json` (Node tools) or
+   the Go tool module (`dev/tools/osv/go.mod` for osv-scanner, `dev/tools/actionlint/go.mod` for actionlint).
 2. Make the lockfile again:
 
    ```bash
    uv lock --directory dev/tools
    (cd dev/tools && npm install --package-lock-only --ignore-scripts)
    ```
+
+   For a Go tool, or one of its Go dependencies, run `go -C dev/tools/<tool> get <module>@<version>`, then
+   `go -C dev/tools/<tool> mod tidy`. `<tool>` is `osv` or `actionlint`.
 
 3. Run `make check`. If ruff or markdownlint changed a rule, fix the new findings in the same branch.
 4. Commit the manifest and its lockfile together, for example `build(dev): update ruff to 0.17.0`.
@@ -381,12 +397,14 @@ promotion ([Step 1](#step-1-make-sure-that-dev-is-ready)):
 - [ ] Both rulesets are active, and [Branch protection](docs/reference/branch-protection.md) says so with the date.
 - [ ] `SECURITY.md` is present. Private vulnerability reporting, secret scanning and push protection are on.
 - [ ] The root `README.md` quick start works from a fresh clone in a clean directory (Linux checked; macOS by the
-      maintainer, or stated as CI-only).
+      maintainer, or stated as not tested while CI is Linux only, issue #82).
 - [ ] The docs state platform support truthfully: no native Windows claim.
 - [ ] The promotion pull request from `dev` into `main` passed `CI Gate` and `Check source branch`, and is merged with
       a merge commit.
 - [ ] The release pull request shows the version you expect, its `CHANGELOG.md` entry reads well, and it is merged
       with a merge commit.
-- [ ] `release.yml` passed; the release lists `audit.pyz`, both skill zips and `SHA256SUMS`; and
-      `sha256sum -c SHA256SUMS` passes on the downloads.
+- [ ] `release.yml` passed; the release lists `audit.pyz`, both skill zips, `SHA256SUMS` and `vX.Y.Z.sigstore.json`;
+      `sha256sum -c SHA256SUMS` passes on the downloads; and
+      `gh attestation verify audit.pyz --repo Nistapp/codebase-agentic-readiness-framework --source-ref refs/tags/vX.Y.Z`
+      passes.
 - [ ] The back-merge pull request into `dev` is merged, and its branch is deleted.

@@ -18,11 +18,14 @@ pre-commit:
       run: make format-check
     docs-lint:
       # The ratchet path list lives in the Makefile (DOCS_LINT_PATHS); the globs here are its broadest match.
-      glob: "{implement/**/*.md,docs/**/*.md,CONTRIBUTING.md,CHANGELOG.md,RELEASE_PROCESS.md,SECURITY.md}"
+      glob: "{implement/**/*.md,docs/**/*.md,audit/prompts/*.md,AGENTS.md,CONTRIBUTING.md,CHANGELOG.md,RELEASE_PROCESS.md,SECURITY.md}"
       run: make docs-lint
     workflow-lint:
       glob: ".github/**"
       run: make workflow-lint
+    spell:
+      # typos on the staged files; _typos.toml holds the word list and the excluded data paths.
+      run: uvx "typos@$(sed -n 's/^ *"typos==\([^"]*\)".*/\1/p' dev/tools/pyproject.toml)" --force-exclude {staged_files}
     secrets:
       # The version is the one pinned in dev/tools/pyproject.toml, where Dependabot sees it.
       run: uvx --from "$(grep -o 'detect-secrets==[^"]*' dev/tools/pyproject.toml)" detect-secrets-hook --baseline .secrets.baseline {staged_files}  # pragma: allowlist secret

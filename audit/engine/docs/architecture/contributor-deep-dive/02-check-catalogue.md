@@ -21,27 +21,28 @@
 | Group | Checks | Tier A | Tier B | Tier C |
 |---|---|---|---|---|
 | `IDX` Discovery & index | 3 | 2 | — | 1 |
-| `AGT` Agent governance | 10 | 2 | 8 | — |
-| `DOC` Documentation contract | 4 | 3 | 1 | — |
+| `AGT` Agent governance | 11 | 2 | 9 | — |
+| `DOC` Documentation contract | 5 | 3 | 2 | — |
 | `CMD` Command surface | 4 | — | 4 | — |
-| `TOOL` Tooling | 6 | 3 | 3 | — |
-| `CI` CI | 3 | — | 3 | — |
+| `TOOL` Tooling | 7 | 3 | 4 | — |
+| `CI` CI | 4 | — | 4 | — |
 | `BASE` Baselines & ratchet | 4 | 2 | 2 | — |
 | `CON` Constraints | 4 | — | 3 | — |
-| `EXEC` Execution determinism | 7 | 2 | 5 | — |
+| `EXEC` Execution determinism | 8 | 2 | 6 | — |
 | `TST` Tests | 5 | 2 | 2 | 1 |
 | `NAV` Navigation | 3 | 1 | 2 | — |
 | `SEC` Security hygiene | 3 | — | 3 | — |
-| **Total catalogued** | **56** | **17** | **36** | **2** |
+| **Total catalogued** | **61** | **17** | **41** | **2** |
 
 Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
 
-Of the 56, `CON-04` is an emitter rather than a check, leaving **55 scoreable checks** in v1. (`CON-01` carried weight 0
+Of the 61, `CON-04` is an emitter rather than a check, leaving **60 scoreable checks** in v1. (`CON-01` carried weight 0
 until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
 prohibitions section now.)
 
 > [!NOTE]
-> The tier columns sum to 55, not 56: `CON-04` is an emitter with no tier. The variant research added `AGT-10`.
+> The tier columns sum to 60, not 61: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
+> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`; v0.3.4 added `AGT-12` and `DOC-05`.
 > Earlier revisions of this table carried per-group tier splits that disagreed with their own rows — `--list-checks`
 > is the executable truth, and a mismatch between it and this page is a defect in this page.
 
@@ -80,8 +81,9 @@ suspicious verdict.
 | `AGT-06` | Architectural boundaries declared | B | DEGRADER | At least two named boundary rules referencing real paths | Implemented |
 | `AGT-07` | Do-not-do / deny rules present | B | DEGRADER | A prohibitions section exists (a heading with `Do Not Do`, `Never`, `Prohibited`, `Forbidden`, `Deny` or the like; a heading inside a code fence is not one) and the file, anywhere in it, covers tests, generated files, default branch, secrets. `prohibitions_section` in `audit/rules/checks/_common.py` finds the section for this check, `CON-01` and `CON-02`, so that they cannot disagree on where it is | Implemented |
 | `AGT-08` | No competing instruction files; reach stated | B | DEGRADER | No variant file competes with the canonical one; shadow pairs reconciled; the harnesses that reach nothing are stated | Implemented |
-| `AGT-09` | Branch and release boundary declared | B | DEGRADER | States which branches exist and whether an agent may tag or release | Implemented |
+| `AGT-09` | Branch and release boundary declared | B | DEGRADER | States which branches exist and whether an agent may tag or release, and names every branch the declared branch rules protect by name | Implemented |
 | `AGT-10` | Instruction indirection resolved | B | DEGRADER | A file the entry file defers to ("first read …") is named in a harness config (`.aider.conf.yml` `read:`, `opencode.json` `instructions`, `.codex/config.toml` `model_instructions_file`, `.gemini/settings.json` `context.fileName`) or inlined | Implemented |
+| `AGT-12` | Communication rules stated | B | COSMETIC | A section of the instruction file headed for writing to people, or a linked file whose name says `communicat`, names the reader, how to report and how to ask for a decision; a named file that does not exist, or a missing element, is `PARTIAL` | Implemented |
 
 ---
 
@@ -93,6 +95,7 @@ suspicious verdict.
 | `DOC-02` | `docs/STYLE_GUIDE.md` exists | A | DEGRADER | File present; `AGT-03` must reference it | Implemented |
 | `DOC-03` | `artefacts/` exists and is ignored | B | DEGRADER | Directory present and matched by an ignore rule; contents not tracked | Implemented |
 | `DOC-04` | ADR directory and index | A | COSMETIC | An ADR directory exists with an index listing its files | Implemented |
+| `DOC-05` | Docs are readable | B | COSMETIC | The prose under `docs/`: at most 10% of sentences over 25 words (20 in a numbered step), at most 1 vague word per 1,000 words, and a Mermaid block on each explanation or tutorial page ⇒ `PASS`; over 25% long ⇒ `FAIL`; else `PARTIAL`; under 10 sentences, or under 20% common English function words ⇒ `UNKNOWN` | Implemented |
 
 ---
 
@@ -114,9 +117,10 @@ suspicious verdict.
 | `TOOL-01` | Formatter configured | B | DEGRADER | A formatter config file and a resolvable write verb | Implemented |
 | `TOOL-02` | Linter configured | B | DEGRADER | A linter config file and a resolvable read-only verb | Implemented |
 | `TOOL-03` | Type checker configured | A | DEGRADER | Language-appropriate strict configuration (`tsconfig`, `mypy`/`pyright`, `global.json` nullable settings, etc.) | Implemented |
-| `TOOL-04` | Dependency / security scan verb | A | DEGRADER | A resolvable verb performing a dependency-audit check | Implemented |
+| `TOOL-04` | Dependency / security scan verb | A | DEGRADER | A resolvable verb performing a dependency-audit check, and a CI step that runs one | Implemented |
 | `TOOL-05` | Local hook chain active | B | DEGRADER | Hook manager configured and wired (`core.hooksPath`, `.pre-commit-config.yaml`, `lefthook.yml`) | Implemented |
-| `TOOL-06` | Commit convention enforced | A | COSMETIC | A commit-message hook or equivalent exists | Implemented |
+| `TOOL-06` | Commit convention enforced | A | COSMETIC | A commit-message rule runs in a local `commit-msg` stage and in CI | Implemented |
+| `TOOL-07` | Local guard against commits to a protected branch | B | COSMETIC | A wired `pre-commit` or `commit-msg` hook refuses a commit on each branch the declared rules protect | Implemented |
 
 ---
 
@@ -127,6 +131,7 @@ suspicious verdict.
 | `CI-01` | Pipeline present, triggered on PRs | B | BLOCKER | A workflow file exists and declares a pull-request trigger | Implemented |
 | `CI-02` | Local↔CI parity | B | BLOCKER | Set comparison of CI-invoked commands against the resolved verb set from `CMD-01` | Implemented |
 | `CI-03` | CI-only steps flagged | B | DEGRADER | CI steps with no local equivalent are listed as findings | Implemented |
+| `CI-05` | Workflow files are linted | B | DEGRADER | A linter that knows the CI provider is named on the local surface (`PASS`) or only in CI (`PARTIAL`) | Implemented |
 
 ---
 
@@ -168,7 +173,8 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `EXEC-04` | Env-var inventory complete | B | BLOCKER | Set difference of env keys referenced in source against keys in the committed example file | Implemented |
 | `EXEC-05` | No generated artifacts committed in-tree | B | DEGRADER | Generated or vendored paths are either untracked or carry a generated-file header | Implemented |
 | `EXEC-06` | Documented commands resolve | B | DEGRADER | Every fenced command in README and `AGENTS.md` resolves to a real script, verb, or file | Implemented |
-| `EXEC-07` | No competing configs for one concern | B | DEGRADER | At most one authoritative config per concern (lint, format, test, types) | Implemented |
+| `EXEC-07` | No competing configs for one concern | B | DEGRADER | At most one authoritative config per concern (lint, format, test, types per language, security); a pyright config that mirrors the mypy gate is not a competitor | Implemented |
+| `EXEC-08` | Tool versions visible to dependency automation | B | DEGRADER | No literal tool version in a command, workflow or hook (`FAIL`), or only copies of a manifest pin (`PARTIAL`) | Implemented |
 
 ---
 
@@ -218,13 +224,25 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `HYG-06` | SECURITY | A | Present | Implemented |
 | `HYG-07` | CHANGELOG | A | Present and dated recently | Implemented |
 | `HYG-08` | Release process documented | A | A release document exists | Implemented |
-| `HYG-09` | Dependency update automation | A | Dependabot, Renovate, or equivalent configured | Implemented |
+| `HYG-09` | Dependency update automation | A | Dependabot or Renovate configured, an entry for each detected ecosystem, and no `target-branch` beside `ignore` or `groups` | Implemented |
 | `HYG-10` | License | A | A license file exists | Implemented |
-| `HYG-11` | Branch protection | B | Protection declared by configuration-as-code where the provider allows | Implemented |
+| `HYG-11` | Branch protection | B | Protection declared by configuration-as-code where the provider allows (ruleset files, the Settings app, Terraform), plus a source-branch check for a two-branch model | Implemented |
 
 ---
 
 ## 15. Adding a Check
+
+The diagram shows the steps below in order. A check that misses one does not merge.
+
+```mermaid
+flowchart LR
+    A["Next id in its group"] --> B["Tier, anchor, severity, falsifiable evidence rule"]
+    B --> C["Failure mode in Why These Checks"]
+    C --> D["summary and a typed data payload"]
+    D --> E["A fixture that fails only this check"]
+    E --> F["Summary table row and framework anchor"]
+    F --> G["Merge"]
+```
 
 1. Assign the next id in the appropriate group.
 2. State tier, phase anchor, severity, and a **falsifiable** evidence rule — one that a reviewer can apply to a

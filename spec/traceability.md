@@ -6,7 +6,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 
 ## Checks to requirements
 
-71 checks: 69 of the audit engine and 2 that only an agent runs. 57 scored checks trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
+76 checks: 74 of the audit engine and 2 that only an agent runs. 62 scored checks trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
 
 | Check | Title | Severity | Scored | Requirements |
 |---|---|---|---|---|
@@ -24,10 +24,12 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 | `AGT-09` | Branch and release boundary declared | DEGRADER | yes | [REQ-SH-013](readiness-requirements.md#req-sh-013--branch-and-release-boundary-declared) |
 | `AGT-10` | Instruction indirection resolved | DEGRADER | yes | [REQ-SH-014](readiness-requirements.md#req-sh-014--instruction-indirection-resolved) |
 | `AGT-11` | Instructions are specific and not inferable | DEGRADER | yes (agent) | [REQ-SH-015](readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) |
+| `AGT-12` | Communication rules stated | COSMETIC | yes | [REQ-SH-060](readiness-requirements.md#req-sh-060--communication-rules-stated) |
 | `DOC-01` | docs/ exists | DEGRADER | yes | [REQ-SH-016](readiness-requirements.md#req-sh-016--documentation-directory) |
 | `DOC-02` | docs/STYLE_GUIDE.md exists | DEGRADER | yes | [REQ-SH-017](readiness-requirements.md#req-sh-017--style-guide) |
 | `DOC-03` | artefacts/ exists and is ignored | DEGRADER | yes | [REQ-SH-018](readiness-requirements.md#req-sh-018--scratch-and-tool-state-directories-ignored) |
 | `DOC-04` | ADR directory and index | COSMETIC | yes | [REQ-SH-019](readiness-requirements.md#req-sh-019--adr-directory-and-index) |
+| `DOC-05` | Docs are readable | COSMETIC | yes | [REQ-SH-061](readiness-requirements.md#req-sh-061--documentation-is-readable) |
 | `CMD-01` | Seven verbs resolvable on one runner | BLOCKER | yes | [REQ-SH-021](readiness-requirements.md#req-sh-021--verbs-defined-on-one-runner) |
 | `CMD-02` | check composes the read-only verbs | BLOCKER | yes | [REQ-SH-022](readiness-requirements.md#req-sh-022--check-composes-the-read-only-verbs) |
 | `CMD-03` | No divergent second definition | DEGRADER | yes | [REQ-SH-023](readiness-requirements.md#req-sh-023--no-second-definition-of-the-gate) |
@@ -38,10 +40,12 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 | `TOOL-04` | Dependency / security scan verb | DEGRADER | yes | [REQ-SH-030](readiness-requirements.md#req-sh-030--dependency-vulnerability-scan) |
 | `TOOL-05` | Local hook chain active | DEGRADER | yes | [REQ-SH-031](readiness-requirements.md#req-sh-031--local-hook-chain) |
 | `TOOL-06` | Commit convention enforced | COSMETIC | yes | [REQ-SH-032](readiness-requirements.md#req-sh-032--commit-convention-enforced) |
+| `TOOL-07` | Local guard against commits to a protected branch | COSMETIC | yes | [REQ-SH-059](readiness-requirements.md#req-sh-059--local-guard-against-commits-to-a-protected-branch) |
 | `CI-01` | Pipeline present, triggered on PRs | BLOCKER | yes | [REQ-SH-033](readiness-requirements.md#req-sh-033--pipeline-on-pull-requests) |
 | `CI-02` | Local↔CI parity | BLOCKER | yes | [REQ-SH-034](readiness-requirements.md#req-sh-034--ci-runs-the-verbs) |
 | `CI-03` | CI-only steps flagged | DEGRADER | yes | [REQ-SH-034](readiness-requirements.md#req-sh-034--ci-runs-the-verbs) |
 | `CI-04` | CI enforces the same gate as the local check | DEGRADER | yes (agent) | [REQ-SH-035](readiness-requirements.md#req-sh-035--ci-enforces-the-gate) |
+| `CI-05` | Workflow files are linted | DEGRADER | yes | [REQ-SH-057](readiness-requirements.md#req-sh-057--workflow-files-linted) |
 | `BASE-01` | Baseline artifact exists | DEGRADER | yes | [REQ-BF-001](readiness-requirements.md#req-bf-001--quality-baseline) |
 | `BASE-02` | Current violation counts measured | DEGRADER | yes | [REQ-BF-002](readiness-requirements.md#req-bf-002--violation-count-recorded) |
 | `BASE-03` | No-new-violations mechanism | DEGRADER | yes | [REQ-BF-003](readiness-requirements.md#req-bf-003--no-new-violations) |
@@ -57,6 +61,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 | `EXEC-05` | No generated artifacts committed in-tree | DEGRADER | yes | [REQ-SH-043](readiness-requirements.md#req-sh-043--generated-files-marked-or-untracked) |
 | `EXEC-06` | Documented commands resolve | DEGRADER | yes | [REQ-SH-025](readiness-requirements.md#req-sh-025--documented-commands-resolve) |
 | `EXEC-07` | No competing configs for one concern | DEGRADER | yes | [REQ-SH-044](readiness-requirements.md#req-sh-044--one-configuration-per-concern) |
+| `EXEC-08` | Tool versions visible to dependency automation | DEGRADER | yes | [REQ-SH-058](readiness-requirements.md#req-sh-058--tool-versions-visible-to-dependency-automation) |
 | `TST-01` | Test verb exists, suite non-empty | BLOCKER | yes | [REQ-SH-045](readiness-requirements.md#req-sh-045--test-verb-and-suite) |
 | `TST-02` | Suite status known | DEGRADER | yes | [REQ-SH-046](readiness-requirements.md#req-sh-046--suite-passes) |
 | `TST-03` | Skip / xfail census | DEGRADER | yes | [REQ-SH-047](readiness-requirements.md#req-sh-047--no-skipped-tests) |
@@ -84,7 +89,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 
 ## Requirements without a check
 
-5 of the 60 requirements have no check. All five are attested, and they are the engine's unattested list: the report shows them as unattested and they earn no credit.
+5 of the 63 requirements have no check. All five are attested, and they are the engine's unattested list: the report shows them as unattested and they earn no credit.
 
 | Requirement | Title | Verification | Why |
 |---|---|---|---|
@@ -96,7 +101,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 
 ## Derived requirements
 
-20 of the 60 requirements go beyond what the framework documents say. They follow from the Phase 1 objective, "Make the repository executable, discoverable, and safe for agent interaction", or they come from the audit engine's rule packs. Each is still tied to the nearest framework heading. These are the requirements to review first.
+20 of the 63 requirements go beyond what the framework documents say. They follow from the Phase 1 objective, "Make the repository executable, discoverable, and safe for agent interaction", or they come from the audit engine's rule packs. Each is still tied to the nearest framework heading. These are the requirements to review first.
 
 | Requirement | Title | What the framework does not say |
 |---|---|---|

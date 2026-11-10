@@ -9,6 +9,17 @@
 
 ## 1. Read-only audit
 
+The diagram shows where an audit may read, write and run, and what leaves the machine.
+
+```mermaid
+flowchart LR
+    T["Target repository"] -->|read| AG["Agent and tools"]
+    AG -->|"what the agent reads"| MP["Model provider"]
+    AG -->|"every write"| O["Output directory, outside the target"]
+    AG -->|"only an allowed verb, with a timeout"| R["Engine Tier-C runner"]
+    R -->|runs| T
+```
+
 The audit never writes inside the repository it assesses. Every tool it calls refuses an output path
 inside the target on its own, and the recipe says so to the operator as well as relying on the tool's
 refusal. All of its writes — the draft, the final report, the facts file, the engine's own report — go to
@@ -24,6 +35,12 @@ operator set. The default is that no verb is allowed, so by default nothing in t
 target's own command is arbitrary code it owns, not a sandboxed operation the recipe controls: the recipe
 says so before asking for consent, and suggests a disposable worktree or container when any verb is
 allowed. Sandboxing beyond that is the operator's own responsibility.
+
+The audit makes one network read, and only with consent: the platform's live branch rules, for `HYG-11` and
+`CI-04`. The recipe asks once. On a yes, and with an authenticated `gh` or `glab`, it runs read-only API calls
+(`gh api repos/<owner>/<repo>/rulesets` and `.../rules/branches/<branch>`) and cites them as evidence. The result
+is a note on the check (the live rules agree with the files, drift, or not readable). It never changes the
+engine's verdict, and the engine itself never uses the network.
 
 ## 3. Data egress
 

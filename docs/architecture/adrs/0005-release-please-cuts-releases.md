@@ -2,7 +2,7 @@
 
 * **Status:** Accepted
 * **Date:** 2026-11-08
-* **Last reviewed:** 2026-11-08
+* **Last reviewed:** 2026-11-09
 * **Deciders:** [@nistapp]
 
 ---
@@ -34,10 +34,12 @@ uses the same pattern.
    the `simple` release type with one package at `.` and tags `vX.Y.Z`. Before 1.0.0, a breaking change bumps MINOR
    and any other change bumps PATCH, as [`RELEASE_PROCESS.md`](../../../RELEASE_PROCESS.md) says.
    [`.release-please-manifest.json`](../../../.release-please-manifest.json) holds the last released version.
-2. **The version lives in three places, and the bot changes all three.** The manifest, the engine's `__version__`
-   (an `extra-files` entry with the `x-release-please-version` marker) and the `CHANGELOG.md` entry.
-   `dev/tests/test_release_config.py` fails when the manifest and `__version__` disagree. `release.yml` refuses a tag
-   that differs from `__version__`.
+2. **The version lives in five places, and the bot changes all five.** The manifest, the `CHANGELOG.md` entry and
+   three code lines: the engine's `__version__` and `FRAMEWORK_RELEASE` in `audit/tools/report.py` and
+   `implement/tools/progress.py`. Each code line is an `extra-files` entry with the `x-release-please-version`
+   marker. `dev/tests/test_release_config.py` fails when a code line and the manifest disagree. `release.yml` refuses
+   a tag that differs from `__version__`. Every report and state carries this one version
+   ([ADR 0008](0008-one-release-version-and-current-schemas-only.md)).
 3. **The release pull request.** On each push to `main`,
    [`release-please.yml`](../../../.github/workflows/release-please.yml) opens or updates a pull request from
    `release-please--branches--main` into `main`. Merging it tags the release and creates the GitHub release, with the
@@ -51,8 +53,8 @@ uses the same pattern.
    `release-please.yml` dispatches it with the tag. A dispatch is the one event that `GITHUB_TOKEN` may start a
    workflow with. The maintainer can also dispatch it by hand.
 6. **Back-merge.** After a release, `release-please.yml` opens a pull request into `dev` from a new branch,
-   `chore/back-merge-vX.Y.Z`, at the release commit. The head is not `main` itself. The `dev` ruleset requires an
-   up-to-date branch, and "Update branch" would have to push to `main`.
+   `chore/back-merge-vX.Y.Z`, at the release commit. The head is not `main` itself: resolving a conflict with `dev`
+   would have to push to `main`.
 7. **Token.** A GitHub App installation token, when the variable `RELEASE_APP_CLIENT_ID` and the secret
    `RELEASE_APP_PRIVATE_KEY` are set. Each job asks it for the permissions that job needs. Without them,
    `GITHUB_TOKEN`, and the maintainer closes and reopens each bot pull request to start CI.

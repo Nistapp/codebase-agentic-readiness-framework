@@ -69,6 +69,43 @@ class CompareReportsTests(unittest.TestCase):
         found: dict[str, Any] = next(row for row in envelope["data"][section] if row[key] == name)
         return found
 
+    def test_reports_from_one_framework_and_catalogue_give_no_version_warning(self) -> None:
+        code, envelope, _ = self.compare(copy.deepcopy(self.before), "--json", validate=True)
+        self.assertEqual(code, 0)
+        self.assertEqual(envelope["data"]["summary"]["version_warnings"], [])
+        self.assertEqual(
+            envelope["data"]["summary"]["after"]["framework"], {"release": "0.3.2", "revision": "cafecafecafe"}
+        )
+
+    def test_another_release_and_catalogue_each_give_a_warning_and_a_markdown_line(self) -> None:
+        after = self.after_report()
+        after["provenance"]["framework"]["release"] = "0.3.3"
+        after["provenance"]["catalogue_version"] = "0.8.0"
+        code, envelope, _ = self.compare(after)
+        self.assertEqual(code, 0)
+        self.assertEqual(
+            envelope["warnings"][:2],
+            [
+                "the reports come from different framework releases (v0.3.2 and v0.3.3): a verdict can move because "
+                "the framework changed",
+                "the reports use different catalogues (0.7.0 and 0.8.0): checks may have been added, removed or "
+                "changed in meaning",
+            ],
+        )
+        markdown = envelope["data"]["markdown"]
+        self.assertIn("- **Warning:** the reports come from different framework releases", markdown)
+        self.assertIn("framework `v0.3.3` at `cafecafecafe`, catalogue `0.8.0`", markdown)
+
+    def test_the_same_release_at_two_commits_gives_a_warning(self) -> None:
+        after = self.after_report()
+        after["provenance"]["framework"]["revision"] = "beefbeefbeef"
+        _, envelope, _ = self.compare(after)
+        self.assertIn(
+            "the reports come from framework commits cafecafecafe and beefbeefbeef (both v0.3.2): a verdict can move "
+            "because the checks changed in between",
+            envelope["warnings"],
+        )
+
     def test_identical_reports_have_no_moves(self) -> None:
         code, envelope, _ = self.compare(copy.deepcopy(self.before), "--json", validate=True)
         self.assertEqual(code, 0)

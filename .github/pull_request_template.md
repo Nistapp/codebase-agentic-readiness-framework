@@ -12,6 +12,7 @@
 - [ ] The base branch is `dev`, and the head is a work branch named `<type>/<topic>` that started from `dev`
 - [ ] `make check` and `make security` pass
 - [ ] `make docs-lint` passes when Markdown changed; Mermaid blocks validated (`make docs-mermaid FILES=<file.md>`)
+- [ ] `make docs-prose FILES=<file.md>` run on changed Markdown, and its warnings on the changed lines fixed (advisory)
 - [ ] New code has tests; a new engine check has a fixture that fails exactly that check
 - [ ] Documentation and decision records updated in the same change when an interface, behaviour or decision changed
 - [ ] Commits follow Conventional Commits, one logical change each, with a `Roadmap-Step:` trailer when a track applies

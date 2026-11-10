@@ -31,7 +31,7 @@ To go the other way, start from a framework heading, find the requirements whose
 
 ## Every check, generated
 
-All 71 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
+All 76 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
 `Source` field links. Generated 2026-10-19 from `catalogue.json`'s `req_ids` and
 `readiness-requirements.md`'s `Source` fields — the same two steps as the worked example above, run once
 per check rather than by hand. 14 checks are informational or an emitter and trace to no requirement
@@ -50,6 +50,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `AGT-09` | Branch and release boundary declared | DEGRADER | yes | [REQ-SH-013](../../spec/readiness-requirements.md#req-sh-013--branch-and-release-boundary-declared) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `AGT-10` | Instruction indirection resolved | DEGRADER | yes | [REQ-SH-014](../../spec/readiness-requirements.md#req-sh-014--instruction-indirection-resolved) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `AGT-11` | Instructions are specific and not inferable | DEGRADER | yes | [REQ-SH-015](../../spec/readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
+| `AGT-12` | Communication rules stated | COSMETIC | yes | [REQ-SH-060](../../spec/readiness-requirements.md#req-sh-060--communication-rules-stated) | [greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides) |
 | `BASE-01` | Baseline artifact exists | DEGRADER | yes | [REQ-BF-001](../../spec/readiness-requirements.md#req-bf-001--quality-baseline) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `BASE-02` | Current violation counts measured | DEGRADER | yes | [REQ-BF-002](../../spec/readiness-requirements.md#req-bf-002--violation-count-recorded) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `BASE-03` | No-new-violations mechanism | DEGRADER | yes | [REQ-BF-003](../../spec/readiness-requirements.md#req-bf-003--no-new-violations) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
@@ -58,6 +59,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `CI-02` | Local↔CI parity | BLOCKER | yes | [REQ-SH-034](../../spec/readiness-requirements.md#req-sh-034--ci-runs-the-verbs) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
 | `CI-03` | CI-only steps flagged | DEGRADER | yes | [REQ-SH-034](../../spec/readiness-requirements.md#req-sh-034--ci-runs-the-verbs) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
 | `CI-04` | CI enforces the same gate as the local check | DEGRADER | yes | [REQ-SH-035](../../spec/readiness-requirements.md#req-sh-035--ci-enforces-the-gate) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
+| `CI-05` | Workflow files are linted | DEGRADER | yes | [REQ-SH-057](../../spec/readiness-requirements.md#req-sh-057--workflow-files-linted) | [greenfield/README.md § 4.1 Workflows](../../greenfield/README.md#41-workflows) |
 | `CMD-01` | Seven verbs resolvable on one runner | BLOCKER | yes | [REQ-SH-021](../../spec/readiness-requirements.md#req-sh-021--verbs-defined-on-one-runner) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
 | `CMD-02` | check composes the read-only verbs | BLOCKER | yes | [REQ-SH-022](../../spec/readiness-requirements.md#req-sh-022--check-composes-the-read-only-verbs) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
 | `CMD-03` | No divergent second definition | DEGRADER | yes | [REQ-SH-023](../../spec/readiness-requirements.md#req-sh-023--no-second-definition-of-the-gate) | [greenfield/README.md § 1.4 The standardized command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs) |
@@ -70,6 +72,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `DOC-02` | docs/STYLE_GUIDE.md exists | DEGRADER | yes | [REQ-SH-017](../../spec/readiness-requirements.md#req-sh-017--style-guide) | [greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides) |
 | `DOC-03` | artefacts/ exists and is ignored | DEGRADER | yes | [REQ-SH-018](../../spec/readiness-requirements.md#req-sh-018--scratch-and-tool-state-directories-ignored) | [greenfield/README.md § 6.2 Agent Scratchpad](../../greenfield/README.md#62-agent-scratchpad--artefacts) |
 | `DOC-04` | ADR directory and index | COSMETIC | yes | [REQ-SH-019](../../spec/readiness-requirements.md#req-sh-019--adr-directory-and-index) | [greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides) |
+| `DOC-05` | Docs are readable | COSMETIC | yes | [REQ-SH-061](../../spec/readiness-requirements.md#req-sh-061--documentation-is-readable) | [greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides) |
 | `EXEC-01` | Toolchain pinned / wrapper committed | BLOCKER | yes | [REQ-SH-039](../../spec/readiness-requirements.md#req-sh-039--toolchain-pinned) | [greenfield/README.md § File Tree — What Gets Created](../../greenfield/README.md#file-tree--what-gets-created) |
 | `EXEC-02` | Lockfile committed and consistent | BLOCKER | yes | [REQ-SH-040](../../spec/readiness-requirements.md#req-sh-040--lockfile-tracked-and-consistent) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `EXEC-03` | Non-interactive setup path | BLOCKER | yes | [REQ-SH-041](../../spec/readiness-requirements.md#req-sh-041--non-interactive-setup) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
@@ -77,6 +80,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `EXEC-05` | No generated artifacts committed in-tree | DEGRADER | yes | [REQ-SH-043](../../spec/readiness-requirements.md#req-sh-043--generated-files-marked-or-untracked) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `EXEC-06` | Documented commands resolve | DEGRADER | yes | [REQ-SH-025](../../spec/readiness-requirements.md#req-sh-025--documented-commands-resolve) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `EXEC-07` | No competing configs for one concern | DEGRADER | yes | [REQ-SH-044](../../spec/readiness-requirements.md#req-sh-044--one-configuration-per-concern) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
+| `EXEC-08` | Tool versions visible to dependency automation | DEGRADER | yes | [REQ-SH-058](../../spec/readiness-requirements.md#req-sh-058--tool-versions-visible-to-dependency-automation) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `HYG-01` | README present and non-placeholder | COSMETIC | no | none | none |
 | `HYG-02` | CODEOWNERS present | COSMETIC | no | none | none |
 | `HYG-03` | Pull-request template present | COSMETIC | no | none | none |
@@ -105,13 +109,14 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `TOOL-04` | Dependency / security scan verb | DEGRADER | yes | [REQ-SH-030](../../spec/readiness-requirements.md#req-sh-030--dependency-vulnerability-scan) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `TOOL-05` | Local hook chain active | DEGRADER | yes | [REQ-SH-031](../../spec/readiness-requirements.md#req-sh-031--local-hook-chain) | [greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint) |
 | `TOOL-06` | Commit convention enforced | COSMETIC | yes | [REQ-SH-032](../../spec/readiness-requirements.md#req-sh-032--commit-convention-enforced) | [greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint) |
+| `TOOL-07` | Local guard against commits to a protected branch | COSMETIC | yes | [REQ-SH-059](../../spec/readiness-requirements.md#req-sh-059--local-guard-against-commits-to-a-protected-branch) | [greenfield/README.md § 2.3 Git Hooks](../../greenfield/README.md#23-git-hooks--husky--lint-staged--commitlint) |
 | `TST-01` | Test verb exists, suite non-empty | BLOCKER | yes | [REQ-SH-045](../../spec/readiness-requirements.md#req-sh-045--test-verb-and-suite) | [greenfield/README.md § 3.2 Testing Policies](../../greenfield/README.md#32-testing-policies-enforced-via-agentsmd) |
 | `TST-02` | Suite status known | DEGRADER | yes | [REQ-SH-046](../../spec/readiness-requirements.md#req-sh-046--suite-passes) | [greenfield/README.md § 3.2 Testing Policies](../../greenfield/README.md#32-testing-policies-enforced-via-agentsmd) |
 | `TST-03` | Skip / xfail census | DEGRADER | yes | [REQ-SH-047](../../spec/readiness-requirements.md#req-sh-047--no-skipped-tests) | [greenfield/README.md § 3.2 Testing Policies](../../greenfield/README.md#32-testing-policies-enforced-via-agentsmd) |
 | `TST-04` | Fast path documented | DEGRADER | yes | [REQ-SH-048](../../spec/readiness-requirements.md#req-sh-048--fast-path-documented) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `TST-05` | Coverage configuration present | COSMETIC | yes | [REQ-SH-049](../../spec/readiness-requirements.md#req-sh-049--coverage-reporting) | [greenfield/README.md § 3.1 vitest.config.ts](../../greenfield/README.md#31-vitestconfigts--with-coverage) |
 
-71 checks total.
+76 checks total.
 
 ## Where the relation is held
 

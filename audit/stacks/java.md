@@ -41,7 +41,14 @@ SpotBugs is a static-analysis alternative. Type checker: none separate from the 
 Gradle's built-in `test` task (`useJUnitPlatform()` in the build file). Dependency scanner: the OWASP
 Dependency-Check Gradle plugin (`org.owasp.dependencycheck`), registering `dependencyCheckAnalyze` — a
 task name that does not match `security` literally, so a repository applying the plugin still reads
-`CMD-01` `FAIL` for that verb unless a `security` task delegates to it (see Pitfalls).
+`CMD-01` `FAIL` for that verb unless a `security` task delegates to it (see Pitfalls). Hook manager: none
+is standard; a committed `.githooks/` with `core.hooksPath` set by a build task, or lefthook (no JVM plugin
+needed). Commit rule: a `commit-msg` script or lefthook stage, with
+the same script run over the pull request's commits in CI (`TOOL-06`). Branch guard (`TOOL-07`): a
+`git branch --show-current` check in `.githooks/pre-commit` or a lefthook `pre-commit` command. Dependency updates:
+Dependabot
+`package-ecosystem: gradle` or `maven`; Renovate's `gradle` and `maven` managers. Language-server inputs
+(`register-index`, advisory): the Gradle or Maven build with its wrapper; nothing more.
 
 ## Execution determinism
 
@@ -55,6 +62,8 @@ version read by the build itself; its absence leaves the JDK to whatever `JAVA_H
 (`dependencyLocking { lockAllConfigurations() }`, writing `gradle.lockfile` files). `EXEC-02` recognises
 `gradle.lockfile`, at any depth, as the one lockfile name for `jvm`, so a Gradle build without it reads
 `FAIL` for that check (see Pitfalls).
+Tool versions (`EXEC-08`) are usually Gradle or Maven plugins in the build file, which Dependabot reads, so the
+check fires here only on an `npx` or `uvx` call with a typed version in a runner file or workflow.
 
 ## CI idiom
 
@@ -63,7 +72,10 @@ can carry workflow files that never invoke a build verb (see Pitfalls), so prese
 build gate. The idiomatic job is `actions/checkout`, `actions/setup-java` with `distribution` and
 `java-version` pinned, Gradle's own dependency cache (`actions/setup-java`'s `cache: gradle` input, or
 `gradle/actions/setup-gradle`), then `./gradlew check` (never a bare `gradle check`, which bypasses the
-pinned wrapper version).
+pinned wrapper version). Workflow lint (`CI-05`): actionlint from a Gradle task, `.githooks/` or lefthook.
+Dependency audit (`TOOL-04`): a `security` job that runs `./gradlew security`, beside the `check` job.
+Release provenance (optional, `add-repo-hygiene` step 6): `actions/attest` on the published jars, beside the
+signatures Maven Central asks for.
 
 ## Baseline / ratchet
 
