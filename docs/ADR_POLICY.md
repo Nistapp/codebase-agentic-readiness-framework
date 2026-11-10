@@ -2,7 +2,8 @@
 
 This page says how to write, change and delete an architecture decision record (ADR) in this repository. It is a
 variant of the usual ADR conventions, tuned for AI agents rather than people. Agents load ADRs as instructions,
-so a stale or historical ADR is a defect, not a record.
+so a stale or historical ADR is a defect, not a record. The reasons are in
+[ADR 0009](architecture/adrs/0009-adrs-hold-only-the-current-decision.md).
 
 Every ADR folder follows it: the root `docs/architecture/adrs/`, `spec/decisions/`, `audit/docs/architecture/adrs/`,
 `implement/docs/architecture/adrs/` and `audit/engine/docs/architecture/adrs/`. Where each decision goes is

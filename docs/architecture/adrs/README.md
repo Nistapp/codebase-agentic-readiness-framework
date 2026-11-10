@@ -16,6 +16,7 @@ The root router is [`docs/README.md`](../../README.md).
 | [0006](0006-first-run-agent-tool-offer.md) | One Committed `.mcp.json`; Agents Offer Each Person a One-Time Setup for Their Harness | One committed `.mcp.json`; each agent offers its person a one-time, consented setup for their harness. |
 | [0007](0007-security-verb-audits-dependencies-with-osv-scanner.md) | The Security Verb Audits the Dev Tools' Dependencies with osv-scanner | `make security` runs osv-scanner over every dev-tool lockfile after the secrets scan. |
 | [0008](0008-one-release-version-and-current-schemas-only.md) | Stamp One Release Version in Every Report and State, and Read Only the Current Schemas | Reports and state files carry the one release version; readers accept only the current schemas. |
+| [0009](0009-adrs-hold-only-the-current-decision.md) | ADRs Hold Only the Current Decision; Stale and Unnecessary Ones Are Deleted | Agents read ADRs as instructions, so an ADR states only today's decision and a stale one is deleted. |
 
 ## Requirements: `spec/decisions/`
 
