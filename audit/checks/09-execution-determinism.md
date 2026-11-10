@@ -35,8 +35,11 @@ Method           automated
 Look for         Each detected pinnable ecosystem's own pin file or declaration, named above; absent any
                  of them, `.tool-versions` for a matching line.
 Rubric           PASS: every detected pinnable ecosystem has at least one of its own pin files, or a
-                 matching `.tool-versions` line, or (node/python/go) the manifest-level constraint.
-                 PARTIAL: not used by this check — any one ecosystem left unpinned fails the whole check.
+                 matching `.tool-versions` line, or (node/python/go) the manifest-level constraint, and a
+                 pin reaches every module manifest of each pinned ecosystem.
+                 PARTIAL: every ecosystem is pinned, but a module manifest of a pinned ecosystem has no pin
+                 of its own and no pin in its folder or a parent folder. An ecosystem left unpinned still
+                 fails the whole check.
                  FAIL: at least one detected pinnable ecosystem has none of its pin evidence.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no ecosystem from the pinnable set (node, python, jvm, dotnet, rust, ruby,
@@ -51,9 +54,11 @@ Remediation      `pin-execution-environment`
 Pitfalls         A monorepo where only one of several ecosystems is pinned still reads `FAIL` overall —
                  the engine fails the whole check on the first unpinned ecosystem, so a `FAIL` summary
                  naming one ecosystem does not mean the others are also unpinned; read which ecosystem
-                 the finding actually names before writing remediation. The reverse holds within one
-                 ecosystem: one pinned nested module passes it even when a sibling module has no pin, so
-                 read each module's manifest before you accept a `PASS` in a monorepo.
+                 the finding actually names before writing remediation. Within one ecosystem, each module
+                 manifest (`package.json`, `pyproject.toml`, `go.mod`) must be reached by a pin: its own
+                 manifest, or a pin file or (node, python) a pinning manifest in its folder or a parent
+                 folder; one unreached module reads `PARTIAL` and is named in the evidence. A nested
+                 `.tool-versions` is not read, and a parent `go.mod` does not pin a nested Go module.
 
 ## EXEC-02 — Lockfile committed and consistent
 

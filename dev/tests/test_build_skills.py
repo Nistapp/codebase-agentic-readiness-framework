@@ -3,8 +3,8 @@
 
 """The skill bundler: each bundle has its three parts (`SKILL.md`, `references/`, `scripts/`) and a `LICENSE`,
 the frontmatter name is rewritten for the bundle, and two builds from the same source tree agree file for file.
-The implement bundle also keeps no framework tool path and no link that leaves it, and its tools run against the
-audit bundle installed beside it.
+Neither bundle keeps a framework tool path or a link that leaves it, and the implement bundle's tools run against
+the audit bundle installed beside it.
 
 Builds for real, into a temporary directory — there is no fixture to fake this against, since the whole
 point is copying this repository's own files; a build that can run only against a double would not prove the
@@ -172,6 +172,66 @@ class BuildSkillsTests(unittest.TestCase):
             self.assertFalse(stray.exists())
 
 
+def assert_links_resolve_inside(test: unittest.TestCase, bundle: Path) -> None:
+    """Every relative link in every Markdown file of `bundle` names an existing file inside it, and a heading there."""
+    root = bundle.resolve()
+    for file in sorted(bundle.rglob("*.md")):
+        text = file.read_text(encoding="utf-8")
+        for target in links_outside_fences(text):
+            if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", target):
+                continue
+            where = f"{file.relative_to(bundle)} -> {target}"
+            path_part, _, fragment = target.partition("#")
+            resolved = (file.parent / path_part).resolve() if path_part else file.resolve()
+            test.assertTrue(resolved == root or root in resolved.parents, f"leaves the bundle: {where}")
+            test.assertTrue(resolved.exists(), f"does not resolve: {where}")
+            if fragment and resolved.suffix == ".md":
+                lines = resolved.read_text(encoding="utf-8").splitlines()
+                test.assertIn(fragment, recipe_lint.heading_slugs(resolved, lines), f"no such heading: {where}")
+
+
+class AuditBundleLinkTests(unittest.TestCase):
+    _tmp: "tempfile.TemporaryDirectory[str]"
+    bundle: Path
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.bundle = bs.build_bundle(Path(cls._tmp.name))
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._tmp.cleanup()
+
+    def test_every_link_resolves_inside_the_bundle(self) -> None:
+        assert_links_resolve_inside(self, self.bundle)
+
+    def test_a_link_to_a_file_the_bundle_lacks_becomes_plain_text(self) -> None:
+        text = (self.bundle / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("(framework: `spec/command-surface.md", text)
+        self.assertNotIn("](../", text)
+
+    def test_skill_md_links_the_carried_tools_cli_sections(self) -> None:
+        text = (self.bundle / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("](references/tools-cli.md#enginepy)", text)
+        reference = (self.bundle / "references" / "tools-cli.md").read_text(encoding="utf-8")
+        headings = [line[3:] for line in reference.splitlines() if line.startswith("## ")]
+        self.assertEqual(headings, list(bs.AUDIT_TOOLS_CLI_SECTIONS))
+        self.assertNotIn("engine's own section", reference)
+
+    def test_no_framework_tool_command_is_left(self) -> None:
+        for file in sorted(self.bundle.rglob("*.md")):
+            text = file.read_text(encoding="utf-8")
+            for prefix in SOURCE_TOOL_PREFIXES:
+                self.assertNotIn(prefix, text, file.relative_to(self.bundle))
+
+    def test_both_schema_doc_copies_are_rewritten_for_their_place(self) -> None:
+        references = (self.bundle / "references" / "schema" / "SCHEMA.md").read_text(encoding="utf-8")
+        scripts = (self.bundle / "scripts" / "schema" / "SCHEMA.md").read_text(encoding="utf-8")
+        self.assertIn("](../../scripts/tools/facts.py)", references)
+        self.assertIn("](../tools/facts.py)", scripts)
+
+
 def links_outside_fences(text: str) -> list[str]:
     targets: list[str] = []
     fenced = False
@@ -262,25 +322,13 @@ class ImplementBundleTests(unittest.TestCase):
         self.assertIn(f"python3 ../{bs.BUNDLE_NAME}/scripts/tools/engine.py", skill)
 
     def test_every_link_resolves_inside_the_bundle(self) -> None:
-        root = self.bundle.resolve()
-        for file in self.markdown_files():
-            text = file.read_text(encoding="utf-8")
-            for target in links_outside_fences(text):
-                if re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*:", target):
-                    continue
-                where = f"{file.relative_to(self.bundle)} -> {target}"
-                path_part, _, fragment = target.partition("#")
-                resolved = (file.parent / path_part).resolve() if path_part else file.resolve()
-                self.assertTrue(resolved == root or root in resolved.parents, f"leaves the bundle: {where}")
-                self.assertTrue(resolved.exists(), f"does not resolve: {where}")
-                if fragment and resolved.suffix == ".md":
-                    lines = resolved.read_text(encoding="utf-8").splitlines()
-                    self.assertIn(fragment, recipe_lint.heading_slugs(resolved, lines), f"no such heading: {where}")
+        assert_links_resolve_inside(self, self.bundle)
 
     def test_tools_cli_reference_keeps_only_the_carried_tools(self) -> None:
         text = (self.bundle / "references" / "tools-cli.md").read_text(encoding="utf-8")
         headings = [line[3:] for line in text.splitlines() if line.startswith("## ")]
         self.assertEqual(headings, list(bs.TOOLS_CLI_SECTIONS))
+        self.assertIn(f"The engine's own section is in the {bs.BUNDLE_NAME} skill.", text)
 
     def test_extract_sections_refuses_a_missing_section(self) -> None:
         with self.assertRaises(_common.ToolError):

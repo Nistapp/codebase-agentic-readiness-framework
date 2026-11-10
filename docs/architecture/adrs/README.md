@@ -23,6 +23,7 @@ The root router is [`docs/README.md`](../../README.md).
 | --- | --- | --- | --- |
 | [0001](../../../spec/decisions/0001-constraint-artifact.md) | Use the prohibitions section as the deny list | Accepted | 2026-10-10 |
 | [0002](../../../spec/decisions/0002-lint-in-the-gate.md) | Lint is gated through `format:check` | Accepted | 2026-11-05 |
+| [0003](../../../spec/decisions/0003-dependency-scan-verb.md) | Any verb may run the dependency scan; `security` is the preferred one | Accepted | 2026-11-10 |
 
 ## Audit recipe and tools: `audit/docs/architecture/adrs/`
 

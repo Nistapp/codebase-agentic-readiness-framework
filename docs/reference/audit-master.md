@@ -570,7 +570,8 @@ Does the same command give the same result on a fresh machine, without a human i
 [`pin-execution-environment`](implement-master.md#pin-execution-environment)
 
 - **Passes when:** every detected pinnable ecosystem has at least one of its own pin files, or a matching
-  `.tool-versions` line, or (node/python/go) the manifest-level constraint.
+  `.tool-versions` line, or (node/python/go) the manifest-level constraint, and a pin reaches every module manifest of
+  each pinned ecosystem.
 - **Why it matters:** An agent's runtime must be the repository's, not whatever happens to be on the host — otherwise
   the gate passes locally and fails in CI, or an agent reproduces nothing ([greenfield/README.md § File Tree — What Gets
   Created](../../greenfield/README.md#file-tree--what-gets-created)).

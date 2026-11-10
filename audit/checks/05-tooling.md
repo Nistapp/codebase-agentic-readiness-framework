@@ -263,8 +263,11 @@ Engine           `TOOL-07`. A guard is pre-commit's `no-commit-to-branch` hook (
                  globs are not required. With no declared rules, any guard counts. A `.husky/` guard is
                  wired when a `package.json` script runs `husky`; another hook directory is wired when
                  `core.hooksPath` is set. Distrust a `FAIL` when the hook calls a script that holds the guard
-                 (`.husky/pre-commit` running `node scripts/check-branch.js`) — read the script. The engine
-                 does not read whether the guard exits non-zero.
+                 (`.husky/pre-commit` running `node scripts/check-branch.js`) — read the script. A guard
+                 that reads the branch must also exit non-zero (`exit 1`, `process.exit(1)`, a bare `false`)
+                 in its lefthook command block or anywhere in its hook script; `no-commit-to-branch` always
+                 does. The exit is not tied to the branch test, so read a script whose only `exit 1` is for
+                 another reason.
 Method           automated
 Look for         `.pre-commit-config.yaml` for `no-commit-to-branch` and its `args`; the `pre-commit` and
                  `commit-msg` stages of `lefthook.yml`; the hook scripts named `pre-commit` and `commit-msg`;
@@ -272,7 +275,9 @@ Look for         `.pre-commit-config.yaml` for `no-commit-to-branch` and its `ar
 Rubric           PASS: a guard in a wired hook chain names every branch the declared rules protect, or any
                  guard is wired and no rules are declared.
                  PARTIAL: a guard exists but its hook chain is not wired (an unreferenced `.husky/`, a
-                 `.githooks/` with no `core.hooksPath`); or a wired guard does not name a protected branch.
+                 `.githooks/` with no `core.hooksPath`); or no wired guard exits non-zero (it reads the
+                 branch, prints a warning and lets the commit go ahead); or a wired guard does not name a
+                 protected branch.
                  FAIL: a hook chain exists (wired or configured) and no hook in it is a guard.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no hook chain exists at all; `TOOL-05` owns that finding.

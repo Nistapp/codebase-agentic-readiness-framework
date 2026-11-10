@@ -241,8 +241,10 @@ the policy files, and for nothing else:
                fi
      ```
 
-     GitLab CI (the owner also turns on "Pipelines must succeed"). The variable names are assumed from GitLab's
-     predefined variables; confirm them in GitLab's documentation before you write the job:
+     GitLab CI (the owner also turns on "Pipelines must succeed"). The variables are GitLab's predefined ones
+     (`docs.gitlab.com/ci/variables/predefined_variables/`); the two branch names exist only in merge request
+     pipelines. GitLab does not run a pipeline that holds only `.pre` jobs, so the file needs a job in another
+     stage:
 
      ```yaml
      check-source-branch:
@@ -265,10 +267,12 @@ the policy files, and for nothing else:
    - **Tool.** Keep the tool the repository already uses. With none: Dependabot on GitHub, Renovate on GitLab,
      Azure DevOps or Bitbucket, where Dependabot does not run.
    - **Coverage.** One entry per ecosystem the audit detected from a manifest, with the `package-ecosystem` the
-     stack profile names (Node `npm`, Python `pip` or `uv`, Java `maven` or `gradle`, Go `gomod`, Rust `cargo`,
-     .NET `nuget`, Ruby `bundler`, PHP `composer`), plus `github-actions` when the repository has GitHub
-     workflows. Set `directory` (or `directories`) to where each manifest lives. Renovate needs no entry per
-     ecosystem; remove a detected one from `enabledManagers` only when the owner asks.
+     stack profile names (Node `npm`, Python `pip` or `uv`, Java `maven` or `gradle`, Go `gomod`, Rust `cargo`, .NET
+     `nuget`, Ruby `bundler`, PHP `composer`). Add `github-actions` when the repository has GitHub workflows. With a
+     `.pre-commit-config.yaml` and a policy other than `security-only`, add a `pre-commit` entry: Dependabot updates
+     the hooks' `rev:` lines. It has no security updates for this ecosystem (GitHub's "Supported ecosystems and
+     repositories" page). Set `directory` (or `directories`) to where each manifest lives. Renovate needs no entry
+     per ecosystem; remove a detected one from `enabledManagers` only when the owner asks.
    - **The `target-branch` trap.** Dependabot drops an entry's `ignore` and `groups` for security updates when the
      entry sets `target-branch`; security pull requests always go to the default branch. If `target-branch` names
      the default branch, delete the line. If it names another branch, do not change it: ask the owner whether to
@@ -277,10 +281,21 @@ the policy files, and for nothing else:
      (version updates off; security updates are a repository setting and an owner action), an `ignore` for
      `version-update:semver-major` (a major stays an advisory alert), a `security-fixes` group with
      `applies-to: security-updates`, and `cooldown: default-days: 7`. `security-and-minor` drops the limit and
-     keeps the major `ignore`; `all` drops both. For Renovate, write the same policy with `vulnerabilityAlerts`,
-     a `packageRules` entry with `enabled: false` for other updates, and `minimumReleaseAge: "7 days"`; confirm
-     the exact form in Renovate's configuration documentation before writing it, and cite the page in the pull
-     request body. The cooldown matches zizmor's `dependabot-cooldown` rule (CI-05).
+     keeps the major `ignore`; `all` drops both. The cooldown matches zizmor's `dependabot-cooldown` rule (CI-05).
+     For Renovate, `security-only` extends the `security:only-security-updates` preset and adds
+     `minimumReleaseAge: "7 days"`:
+
+     ```json
+     { "extends": ["config:recommended", "security:only-security-updates"], "minimumReleaseAge": "7 days" }
+     ```
+
+     The preset turns off every other update (`packageRules` with `matchPackageNames: ["*"]` and
+     `enabled: false`). It turns on `vulnerabilityAlerts` and `osvVulnerabilityAlerts`. `vulnerabilityAlerts`
+     reads GitHub's alerts, so it works on GitHub only. On GitLab, Azure DevOps and Bitbucket, the security pull
+     requests come from `osvVulnerabilityAlerts` (osv.dev). Renovate marks it experimental, and it covers direct
+     dependencies only; say so in the pull request body. Source: Renovate's docs, "Security presets"
+     (`docs.renovatebot.com/presets-security/`) and the `vulnerabilityAlerts` and `osvVulnerabilityAlerts`
+     options (`docs.renovatebot.com/configuration-options/`).
    - **Owner action.** Record "turn on Dependabot security updates in the repository settings" as a note on the
      item: an agent can neither read nor set it.
    - When HYG-09 passed and has no item, name it in the pull request body and change nothing.
