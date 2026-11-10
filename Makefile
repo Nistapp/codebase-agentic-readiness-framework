@@ -107,13 +107,13 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  masters-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -300,6 +300,12 @@ masters-check:
 update-masters:
 	$(PYTHON) dev/build_masters.py --write
 
+# The eval-expected files (dev/eval/expected/fixtures/) are generated from the engine's fixture matrix by running the
+# engine on each fixture (a few seconds). eval-expected-check fails when one is stale; run the script without --check
+# to rewrite them.
+eval-expected-check:
+	$(PYTHON) dev/eval/generate_fixture_expected.py --check
+
 # Lints the GitHub Actions workflows and checks .github/dependabot.yml. All three tools run offline.
 # Read-only: report each misspelling with its file and line. `make spell-fix` writes the suggested fixes; review them.
 spell:
@@ -320,7 +326,7 @@ RANGE ?= origin/dev..HEAD
 commit-lint:
 	$(PYTHON) dev/commit_lint.py --range $(RANGE)
 
-check: format-check typecheck test verify-rules crosscheck recipe-lint masters-check workflow-lint spell
+check: format-check typecheck test verify-rules crosscheck recipe-lint masters-check eval-expected-check workflow-lint spell
 
 # No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
 # lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.

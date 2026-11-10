@@ -30,7 +30,8 @@ make lint           # read-only lint
 make typecheck      # mypy, strict, on audit/tools, implement/tools and dev, and the engine's build.py
 make test           # the engine's, the audit tools', the implement tools' and the dev checks' suites (at once on Linux)
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
-                    # cross-check, recipe-lint, masters-check, workflow-lint (actionlint, zizmor, check-jsonschema), spell (typos)
+                    # cross-check, recipe-lint, masters-check, eval-expected-check, workflow-lint (actionlint,
+                    # zizmor, check-jsonschema), spell (typos)
 make security       # secrets scan, then the dependency audit (osv-scanner; needs Go and the network)
 make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin/dev..HEAD); CI runs it on each PR
 make update-masters # regenerate docs/reference/audit-master.md and implement-master.md (check runs masters-check)

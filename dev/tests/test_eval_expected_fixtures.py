@@ -5,9 +5,10 @@
 
 ``dev/eval/generate_fixture_expected.py`` wrote one ``dev/eval/expected/fixtures/<fixture>.json``
 per row of the engine's ``tests/test_fixture_matrix.py`` (``MATRIX``), running the real engine on a throwaway,
-deterministically-committed copy of each fixture. Running the engine 89 times is too slow for this suite, so
-this test does not regenerate anything — it loads the committed files and checks them against the matrix and
-the expected-results schema directly. Regenerate with the script above after a matrix change. Standard
+deterministically-committed copy of each fixture. This test does not regenerate anything: it loads the
+committed files and checks them against the matrix and the expected-results schema directly.
+``make eval-expected-check`` (part of ``make check``) compares them with a fresh run. Regenerate with the script
+above after a matrix change. Standard
 library only.
 """
 

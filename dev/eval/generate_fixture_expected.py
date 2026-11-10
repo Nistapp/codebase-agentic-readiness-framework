@@ -21,9 +21,9 @@ A fixture that needs an isolated ``HOME`` (``NEEDS_ISOLATED_ENV``) or a forced-t
 rule (``FORCE_ADD``) is prepared the same way ``test_fixture_matrix.py`` prepares it for its own run.
 
 ``--check`` compares the already-written files against a fresh generation without rewriting them, and exits
-1 on any difference. It is not run by ``make check`` or ``make test`` — regenerating means running the
-engine 69 times — so ``tools/tests/test_eval_expected_fixtures.py`` instead loads the committed files and
-checks them against the matrix directly, with no engine run. Standard library only.
+1 on any difference. ``make check`` runs it as ``make eval-expected-check`` (a few seconds), so a stale file fails
+the gate. ``dev/tests/test_eval_expected_fixtures.py`` also loads the committed files and checks them against the
+matrix directly, with no engine run. Standard library only.
 """
 
 from __future__ import annotations
