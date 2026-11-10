@@ -36,8 +36,13 @@ Every ADR folder follows it: the root `docs/architecture/adrs/`, `spec/decisions
     recorded; owner to fill in".
 11. **Read only the ADRs you need.** Use the index summaries to pick the ADRs that govern the folder you change.
 
+`make adr-lint`, part of `make check`, checks the mechanical rules in every ADR folder. An ADR has no lifecycle
+field or footer and no retired-ADR marker. It holds the four sections, and the root index has its row.
+
 ## Where else this applies
 
+- The audit flags a retired ADR (marked superseded, deprecated or rejected) in an audited repository: its DOC-04
+  check gives `PARTIAL`.
 - The implement recipe writes ADRs into a target repository under the same rules. See the
   [`establish-docs-contract`](../implement/playbooks/establish-docs-contract.md) playbook.
 - The greenfield templates ship a copy of this policy for new repositories:

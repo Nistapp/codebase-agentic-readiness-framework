@@ -17,6 +17,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | coverage.py | Test coverage below the floor in `.coveragerc` | `make coverage` (in CI: `coverage-part`, then `coverage-combine SHARDED=1`) | `test-coverage`, `coverage`; unsharded in `nightly.yml` | `dev/tools/pyproject.toml` |
 | jsonschema | The tools' schema validator disagrees with the reference package | `make crosscheck` | `crosscheck` | `dev/tools/pyproject.toml` |
 | `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, a recipe `SKILL.md` that does not link the shared user prompt, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `static` | This repository |
+| `dev/adr_lint.py` | An ADR with a lifecycle field, a lifecycle footer or a retired-ADR marker, a missing template section, or no row in the [ADR index](../architecture/adrs/README.md); an index row to a missing ADR | `make adr-lint` | `static` | This repository |
 | `dev/build_masters.py` | An [audit master list](audit-master.md) or [implement master list](implement-master.md) that no longer matches the catalogue, the check files or the playbooks | `make masters-check`; `make update-masters` rewrites both pages | `static` | This repository |
 | `dev/eval/generate_fixture_expected.py` | An eval-expected file (`dev/eval/expected/fixtures/`) that no longer matches a fresh engine run on its fixture | `make eval-expected-check`; the script without `--check` rewrites the files | `static` | This repository |
 | actionlint | Workflow mistakes: syntax, expressions, action inputs, shellcheck on `run:` blocks | `make workflow-lint` | `static` | `dev/tools/actionlint/go.mod` |
@@ -40,8 +41,8 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | Go | Builds and runs actionlint and osv-scanner through `go tool` | — | `check`, `security` | the `go` line of each Go tool module |
 
 `make check` runs `format:check`, `typecheck`, `test`, the engine's rule check, `crosscheck`, `recipe-lint`,
-`masters-check`, `eval-expected-check`, `workflow-lint` and `spell`, in sequence. CI's `CI Gate` passes only when
-the `check`, `security`, `coverage`, `self-audit`, `docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
+`adr-lint`, `masters-check`, `eval-expected-check`, `workflow-lint` and `spell`, in sequence. CI's `CI Gate`
+passes only when the `check`, `security`, `coverage`, `self-audit`, `docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
 
 ## Spell check
 

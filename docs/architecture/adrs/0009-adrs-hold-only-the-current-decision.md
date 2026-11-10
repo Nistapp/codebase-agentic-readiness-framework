@@ -43,6 +43,8 @@ them too.
 - An agent that loads an ADR gets a rule that holds today.
 - ADRs stay short, so an agent can load the ones it needs without spending context on history.
 - A reader sees each rejected option and its current reason in one table.
+- The rules are checked, not only written. Here `make adr-lint` fails on a lifecycle field or a retired ADR.
+  In an audited repository, the audit's DOC-04 check flags a retired ADR.
 
 ### Negative / Trade-offs
 
