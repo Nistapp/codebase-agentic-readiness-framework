@@ -296,6 +296,8 @@ the owner agreed to trim, the new `docs/` page and the long-form communication r
 ## Do-not-do
 
 - Do not rewrite `AGENTS.md` wholesale, reorder its sections, or reflow its lines.
+- Do not reword the rest of `AGENTS.md` to meet the plain-language rules. Only the new AGT-12 section follows
+  them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
 - Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).
 - Do not edit code to make a rule true, and do not drop a rule because the code breaks it.

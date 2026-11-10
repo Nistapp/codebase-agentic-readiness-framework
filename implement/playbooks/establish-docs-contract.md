@@ -33,7 +33,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 - The shared procedure in `SKILL.md` applies: [Stage 3](../SKILL.md#stage-3-apply) (state read first, drift first,
   worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `format.mass_reformat` (a `no` means every docs check is a
-  baseline or ratchet, never a reformat), `layout.command_runner`, `ci.edits_authorised` (needed to add the docs
+  baseline or ratchet, never a reformat; for prose, `yes` changes nothing, see Do-not-do), `extra.prose-rewrite`
+  (the pages the owner named for a prose rewrite), `layout.command_runner`, `ci.edits_authorised` (needed to add the docs
   CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `docs.prose_check` and
   `docs.prose_check_licence` (Inputs 6), `docs.language` (the language
   of the docs; see [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask), Inputs 7), `extra.*`.
@@ -233,7 +234,10 @@ The repository already has Node, so the job can reuse its pinned Node version.
 - Dead links (if `lychee` runs): counted, report-only.
 - No Python 3.11 where the prose check must run: tell the owner, and fall back to `docs.prose_check=skip`.
 - DOC-05 counts on pages the theme did not write: the long sentences, vague words and pages without a diagram
-  stay. Record them as debt on the item (`partial`); the owner decides on a rewrite.
+  stay. Record one debt entry per measure on the item (`partial`). The note names the worst pages, at most five,
+  worst first, from the engine's cited lines. The owner decides on a rewrite (`extra.prose-rewrite`).
+- A page the theme edits anyway (for example the docs index) joins the clean path list only when it passes the
+  rules. Until then it stays in the debt count.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
   because the engine counts, it does not judge. Mark the item `partial` with that reason, or `skipped` if the
   owner calls it by design.
@@ -276,6 +280,9 @@ index).
 - Do not move, resize, delete or untrack files for NAV-03.
 - Do not put values from env files, credentials, realm exports or keystores in any page.
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
+- Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
+  change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one
+  commit per page.
 - Do not copy the prose check template unless the owner named a licence for the copy, and never under the
   framework's own licence.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
@@ -292,7 +299,9 @@ python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phas
 python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --debt "what=markdown lint violations,count=<n>,baseline=<file>" --note "<mechanism>"
 python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
-  --commit <sha> --debt "what=long sentences in docs,count=<n>" --note "style guide sections added; DOC-05 counts"
+  --commit <sha> --debt "what=long sentences in docs,count=<n>" --debt "what=vague words in docs,count=<n>" \
+  --debt "what=docs pages without a diagram,count=<n>" \
+  --note "style guide sections added; worst pages: docs/a.md (12), docs/b.md (9)"
 python3 implement/tools/progress.py pref set docs.prose_check <skip|template> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.prose_check_licence <SPDX id> \

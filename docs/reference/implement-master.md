@@ -297,6 +297,9 @@ not moved.
 - Do not move, resize, delete or untrack files for NAV-03.
 - Do not put values from env files, credentials, realm exports or keystores in any page.
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
+- Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
+  change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one
+  commit per page.
 - Do not copy the prose check template unless the owner named a licence for the copy, and never under the
   framework's own licence.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
@@ -335,6 +338,8 @@ wholesale.
 **What it never does:**
 
 - Do not rewrite `AGENTS.md` wholesale, reorder its sections, or reflow its lines.
+- Do not reword the rest of `AGENTS.md` to meet the plain-language rules. Only the new AGT-12 section follows
+  them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
 - Do not edit the prohibitions section; that is [`add-deny-rules`](../../implement/playbooks/add-deny-rules.md).
 - Do not edit code to make a rule true, and do not drop a rule because the code breaks it.
