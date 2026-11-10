@@ -22,7 +22,8 @@ a deliberate bad example. The last line is ``Summary: N issues in M files (W war
 
 Exit codes: 0 by default, whatever the count (advisory). With ``--max-issues N``, 1 when more than N issues are
 shown, so the script works as a ratchet: run it with ``--max-issues 0`` on the pages held clean, and with the
-baseline count on every page. 2 when a file cannot be read.
+baseline count on every page. Add ``--min-severity warning`` to count warnings only, as the playbook does: a
+sentence of 26 to 40 words is often the clearest one. 2 when a file cannot be read.
 
 ``--diagram-dir`` names a folder whose pages need a diagram; give it once per folder. Without it, the folders are
 :data:`DIAGRAM_DIRS`. Standard library only, Python 3.11 or newer. The sentence splitter is a heuristic: it splits at

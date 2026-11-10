@@ -189,16 +189,23 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    5. **Prose check (only with `docs.prose_check=template`).** Copy the template to the place and name the
       repository uses for its scripts (D18), for example `scripts/docs_prose_check.py`. Replace its SPDX line with
       the licence the owner named (`docs.prose_check_licence`). Keep the copyright line, and remove nothing else.
-      Wire it as a ratchet, as for the lint:
-      - a runner command (`docs-prose` or the runner's own spelling) runs the copy with `--max-issues 0` on the
-        pages held clean: the pages this theme wrote, and any page that is already clean;
+      Wire it as a ratchet, as for the lint. Both runs count warnings only (`--min-severity warning`): a sentence
+      over 40 words, a step over 20, a vague word, a page without its diagram. A sentence of 26 to 40 words stays a
+      notice, shown but not counted: a long sentence is often the clearest one (the framework's own
+      [ADR 0004](../../docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md) reversed a ratchet that
+      counted them).
+
+      - a runner command (`docs-prose` or the runner's own spelling) runs the copy with
+        `--min-severity warning --max-issues 0` on the pages held clean: the pages this theme wrote, and any page
+        that is already clean;
       - a second run on every Markdown page under `docs/` uses `--max-issues <baseline>`. Measure the baseline after
         the last render, with the new pages staged, as for the lint count;
       - if the explanation pages live elsewhere (for example `docs/architecture/`), pass `--diagram-dir` once per
         folder;
       - both runs go in the docs CI job from item 3. Use `--format github` there, so issues show on the pull request.
+        A third run with no limit and no `--min-severity` shows the notices too, as advice.
 
-      Record the baseline as debt on the `DOC-05` item, and in the `docs.prose_ratchet` preference.
+      Record the baseline (warnings) as debt on the `DOC-05` item, and in the `docs.prose_ratchet` preference.
 9. **Commits:** docs, then lint config, then CI.
 
 ### Gradle and Quarkus
