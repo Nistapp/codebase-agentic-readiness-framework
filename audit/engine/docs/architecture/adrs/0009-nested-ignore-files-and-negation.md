@@ -1,29 +1,20 @@
 # 0009. Nested Ignore Files and Negation
 
-* **Status:** Accepted
-* **Date:** 2026-11-05
-* **Last reviewed:** 2026-11-05
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
-ADR-0006 gave the engine one ignore matcher, a documented subset kept exactly as the walk had it: root ignore
-files only, `!` lines dropped, anchoring and `**` not interpreted. Four checks ask a different question from the
+ADR-0006 gives the walk one ignore matcher, a documented subset: root ignore files only, `!` lines dropped,
+anchoring and `**` not interpreted. Four checks ask a different question from the
 walk. `DOC-03` and `CON-03` ask whether the scratch directory is kept out of git; `SEC-01` and `SEC-03` ask
-whether the ignore rules cover a secret shape. Two defects followed.
+whether the ignore rules cover a secret shape. For them, the walk's matcher has two defects.
 
-1. **A nested `.gitignore` was invisible.** This repository keeps `artefacts/.gitignore` containing `*`, with
-   `!.gitignore` and `!README.md`. No root rule names `artefacts/`, so both checks reported "matched by no ignore
-   rule" (issue #22), and the tracked `README.md` read as scratch committed by mistake (issue #12).
-2. **`!` never re-included.** Dropping the line was documented, but it made `SEC-03` credit a shape that a
-   later `!server.crt` had opened again, and made a deliberate exception look like a defect.
+1. **A nested `.gitignore` is invisible.** This repository keeps `artefacts/.gitignore` containing `*`, with
+   `!.gitignore` and `!README.md`. No root rule names `artefacts/`. Both checks would report "matched by no ignore
+   rule". The tracked `README.md` would read as scratch committed by mistake.
+2. **`!` never re-includes.** With the line dropped, `SEC-03` credits a shape that a later `!server.crt` opens
+   again. A deliberate exception then looks like a defect.
 
-The operator's remedy, `--exclude`, made it worse: excluding `artefacts/**` (as every self-audit does) also removed
-the nested `.gitignore` from the inventory, so the rule that ignores the directory was no longer read.
-
----
+The operator's remedy, `--exclude`, makes it worse: excluding `artefacts/**` (as every self-audit does) also
+removes the nested `.gitignore` from the inventory, so the rule that ignores the directory is not read.
 
 ## Decision
 
@@ -54,19 +45,15 @@ not move. The four checks above use a **scoped matcher** in `audit/ignore.py`:
 6. **The parser stays the authority.** Neither matcher runs `git check-ignore`. When git cannot report the tracked
    set the checks stay `UNKNOWN`, as before.
 
----
-
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | Change the one matcher for the walk too | It would shift what every check reads, for a question only four checks ask. The walk keeps ADR-0006's behaviour; a later change can move it with its own ruleset bump. |
 | Shell out to `git check-ignore -v` | Needs git and a work tree; the engine must answer on a bare directory. It would also make the verdict depend on the host's git version and global excludes file. Left as an optional confirmation for a later revision. |
 | Exempt `artefacts/` from `--exclude` | Special-cases one name. Reading the tracked ignore files is general and says why. |
 | Treat every tracked file under a scratch root as allowed when the root is ignored | It would hide `artefacts/plan.md` force-added past the rule, which is the defect `DOC-03` exists to find. |
 | Read nested ignore files of every kind | `.cbmignore` and the other names are tool files read at the root; only `.gitignore` nests in git. |
-
----
 
 ## Consequences
 
@@ -84,14 +71,3 @@ not move. The four checks above use a **scoped matcher** in `audit/ignore.py`:
   what `re` reads, no core.excludesFile or `.git/info/exclude`. A rule outside the subset reads as no match.
 * Issue #12 (a tracked file that an ignore rule covers) is answered for the scratch roots only. Issue #22
   (untracked ignored runtime data in evidence) is not touched: the walk still lists such files.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*. Do NOT create a superseding ADR and do NOT leave a tombstone stub.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
-* Archived wording: `git log --follow docs/architecture/adrs/NNNN-title.md`.
-
-See the [style guide](../../../../../docs/STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.
