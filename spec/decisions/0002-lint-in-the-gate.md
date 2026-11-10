@@ -1,19 +1,12 @@
 # 0002. Lint is gated through `format:check`
 
-* **Status:** Accepted
-* **Date:** 2026-11-05
-* **Last reviewed:** 2026-11-05
-* **Deciders:** K. C. Ramakrishna (Q2, accepted 2026-11-05)
-
----
-
 ## Context
 
-[REQ-SH-022](../readiness-requirements.md#req-sh-022--check-composes-the-read-only-verbs) said `check` runs
-`format:check`, `typecheck` and `test`, and said nothing about lint. The [command surface](../command-surface.md)
-already described `format:check` as "formatting and lint rules" and listed `lint` as not part of `check`. The
-framework's own `Makefile` follows the second reading: its `format-check` runs the formatter's check and the linter.
-The two pages could be read to mean that lint is gated, or that it is not.
+[REQ-SH-022](../readiness-requirements.md#req-sh-022--check-composes-the-read-only-verbs) says `check` runs
+`format:check`, `typecheck` and `test`. The [command surface](../command-surface.md) describes `format:check` as
+"formatting and lint rules" and lists `lint` as not part of `check`. The framework's own `Makefile` runs the
+formatter's check and the linter in its `format-check`. Without a rule, the two pages can be read to mean that lint
+is gated, or that it is not.
 
 ## Decision
 
@@ -25,16 +18,16 @@ The two pages could be read to mean that lint is gated, or that it is not.
 
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | `check` = `format:check` + `lint` + `typecheck` + `test` | Changes the requirement, the verb table, the `CMD-02` check and every existing target's `check`. `lint` and `format:check` overlap in most runners. |
-| `check` MUST gate lint by either route (`format:check` includes it, or `check` also runs `lint`) | Closes the case where a separate `lint` is not gated, but `CMD-02` would have to recognise two shapes. Left for later if that case matters. |
+| `check` MUST gate lint by either route (`format:check` includes it, or `check` also runs `lint`) | Closes the case where a separate `lint` is not gated, but `CMD-02` would have to recognise two shapes. |
 
 ## Consequences
 
 ### Positive
 
-* No change for a target that already follows the command surface; the framework's own `Makefile` already conforms.
+* A target that follows the command surface needs no change; the framework's own `Makefile` conforms.
 * One sentence in the requirement states the rule.
 
 ### Negative / Trade-offs
