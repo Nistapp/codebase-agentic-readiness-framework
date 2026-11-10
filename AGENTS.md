@@ -112,7 +112,7 @@ reports, commit messages, pull request descriptions and docs.
 | `artefacts/` | Scratch notes and plans. The folder is tracked, its contents are git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
 
 Decisions (ADRs) live beside the component they govern (root ADR 0001). The root index,
-`docs/architecture/adrs/README.md`, lists all of them. **Before you add, change or delete an ADR, read
+`docs/architecture/adrs/README.md`, lists all of them. **Every ADR you add, change or delete follows
 `docs/ADR_POLICY.md`.** Git is the archive, so an ADR states only the current decision. Overwrite a changed
 decision in place. Delete a superseded one, and never refer to it again.
 
