@@ -1,31 +1,20 @@
 # 0005. Module Layout and Zipapp Distribution
 
-* **Status:** Accepted
-* **Date:** 2026-09-28
-* **Last reviewed:** 2026-09-28
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
-The audit began as a single-file design, inheriting `python-agentic-bootstrap`'s `DESIGN.md` rule verbatim: *"a
-single Python file, standard library only"*. That rule was justified for the scaffolder on two grounds — the whole
-job is directory creation plus string substitution, and a single file needs no build step, so the tool runs before
-the target's toolchain exists.
+The sibling scaffolder, `python-agentic-bootstrap`, has a `DESIGN.md` rule: *"a single Python file, standard
+library only"*. That rule rests on two grounds. First, the whole job is directory creation plus string
+substitution. Second, a single file needs no build step, so the tool runs before the target's toolchain exists.
 
-The second ground is a real requirement and does not change here. The first does not survive contact with this
+The second ground is a real requirement for the audit too. The first does not hold for this
 tool: the audit's own design is ~50 checks, four pipeline stages of traversal and classification, per-ecosystem
 component detection, a ~45-entry instruction-variant table, a probe runner and two report writers — an order of
 magnitude more code than the scaffolder. One file of that size is hard to navigate, impossible to unit-test by
 stage, and produces tracebacks that name a single line number in a single file for every failure.
 
-The question raised was whether the code can be split into modules and then *compiled* into a single executable,
-as in C. Python's answer is different in kind: a module tree can be packed into one **archive** that runs anywhere
-Python runs, but it cannot be **compiled** into a machine-code binary without a C toolchain or bundling an
-interpreter — both of which cost the property that motivates the rule in the first place.
-
----
+Can the code be split into modules and then *compiled* into a single executable, as in C? Python's answer is
+different in kind: a module tree can be packed into one **archive** that runs anywhere Python runs. It cannot be
+**compiled** into a machine-code binary without a C toolchain or a bundled interpreter — both of which cost the property that motivates the rule in the first place.
 
 ## Decision
 
@@ -55,11 +44,9 @@ interpreter — both of which cost the property that motivates the rule in the f
    and shipping it a second convention would be churn without benefit. The shared constraint between the two
    tools is *"standard library only, no build step to run"* — not *"one file"*.
 
----
-
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | Keep one large `audit.py` | Inherited rule, but its justification (a small script) does not hold at 10× the size. Cost is permanent: no per-stage tests, unrunnable tracebacks, painful review. |
 | PyInstaller / cx_Freeze | Produces a per-OS binary that bundles an interpreter (10–30 MB), needs third-party tooling at build time, and trips antivirus heuristics. Breaks "runs anywhere with Python", which is the reason the tool ships as a script. |
@@ -67,10 +54,8 @@ interpreter — both of which cost the property that motivates the rule in the f
 | shiv / pex | Single-file executables, but third-party and only earn their keep by resolving dependencies. This project has none, so they add a dependency to solve a problem it does not have. |
 | A build step that concatenates modules into one `.py` | Fragile (import ordering, name collisions, `__main__` handling), loses real tracebacks, and is a bespoke build system to maintain. |
 | `src/` layout with `pip install -e .` | Requires an install step before the tool can run at all, which contradicts the constraint that the audit must work before the target's toolchain exists. |
-| A `pyproject.toml` and PyPI packaging in v1 | Adds setuptools to a tool whose distinguishing property is having no dependencies. Distribution is roadmap v2's TypeScript npm package; v1 ships an archive attached to a release. |
+| A `pyproject.toml` and PyPI packaging | Adds setuptools to a tool whose distinguishing property is having no dependencies. Distribution is roadmap v2's TypeScript npm package; v1 ships an archive attached to a release. |
 | Commit `dist/audit.pyz` to the repository | An unreviewable binary in git, and a second source of truth that will silently disagree with the code. |
-
----
 
 ## Consequences
 
@@ -86,21 +71,11 @@ interpreter — both of which cost the property that motivates the rule in the f
 
 ### Negative / Trade-offs
 
-* Distribution now has a build step, though running does not. Two entry paths must both stay tested —
+* Distribution has a build step, though running does not. Two entry paths must both stay tested —
   `python3 -m audit` and `./dist/audit.pyz`; the test suite builds the archive and runs it.
 * A `.pyz` cannot be read with `Path(__file__)`, so any future data file must go through `importlib.resources`.
   Considered acceptable, and the reason tables stay in code.
 * The package name `audit` is generic; a consumer importing it must be aware of the shadowing risk if they ship
   their own `audit` module. The command interface is the supported surface, not the import path.
-* Two conventions now exist across the two sibling tools. This is a deliberate, recorded divergence, not drift:
+* Two conventions exist across the two sibling tools. This is a deliberate, recorded divergence, not drift:
   the shared rule is the constraint that matters and the file-count rule was never the point.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
-
-See the [style guide](../../../../../docs/STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.

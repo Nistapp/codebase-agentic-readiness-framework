@@ -1,12 +1,5 @@
 # 0002. Read-Only by Default; Tier-C Probes Are Opt-In
 
-* **Status:** Accepted
-* **Date:** 2026-09-28
-* **Last reviewed:** 2026-09-28
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
 An audit runs inside a repository it does not own, usually one the operator has never run before. Three
@@ -22,8 +15,6 @@ produce, and the target may be a production checkout.
 
 Third, the audit's own value depends on being safe to run anywhere, including in CI on a pull request from a fork
 and on a client's machine under change control. A tool that must be trusted before it can be run has already lost.
-
----
 
 ## Decision
 
@@ -46,19 +37,15 @@ Implemented by the probe runner in `audit/probes.py` (`ProbeSession.run`) and th
 see
 [Scan Engine & Tiering](../contributor-deep-dive/01-scan-engine-and-tiering.md) § 6.
 
----
-
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | Run the target's gates always, for maximum signal | Executes untrusted code on open. Silent code execution is not a scan; it is a remote-execution feature with a report attached. |
 | Never run probes at all | Loses the highest-signal check in the catalogue — whether the verification loop actually works today (`TST-02`) — which is close to the whole point of the tool. |
 | Containerise the target automatically to make probes safe | Needs a container runtime the audit cannot assume and must not install, so it would break the "runs anywhere with Python" property. Kept as a documented operator step. |
 | Install dependencies so probes can run | Mutates the target and defeats the reason the tool is stdlib-only: it must run *before* the project's toolchain exists. |
 | Redact secrets when rendering the report | Captured output passes through scoring and the JSON model first; rendering-time redaction leaks into structures the renderer does not own. |
-
----
 
 ## Consequences
 
@@ -76,13 +63,3 @@ see
   why in its own output rather than assuming the docs were read.
 * Redaction at capture time is more code than a post-processing pass, and a redaction bug is a security defect
   rather than a cosmetic one.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
-
-See the [style guide](../../../../../docs/STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.

@@ -1,51 +1,30 @@
-# [NNNN]. [Short Imperative Title]
+# NNNN. Short Imperative Title
 
-* **Status:** Accepted *(Proposed is permitted in-flight but MUST NOT be merged)*
-* **Date:** YYYY-MM-DD
-* **Last reviewed:** YYYY-MM-DD
-* **Deciders:** [@github-handle]
-
----
+<!-- Rules: docs/ADR_POLICY.md. No status, date or decider fields: git holds them. Present tense, current
+decision only. Delete these comments when you copy the template. -->
 
 ## Context
 
-[Technical context, problem statement, business driver, and constraints.
-Mention what alternative solutions were evaluated.]
-
----
+<!-- The problem, the constraints and the forces. Link to the code and the spec. -->
 
 ## Decision
 
-[Chosen design, pattern, or dependency. Links to affected source files.]
-
----
+<!-- The chosen design, as numbered rules where you can. Link to the files it affects. -->
 
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
-|---|---|
-| [Option B] | [Reason] |
+| Alternative | Why it is rejected |
+| --- | --- |
+| Option B | Reason |
 
-> A later reversal of this decision is folded into this table, so the rejected direction
-> keeps its rationale inside the accepted record.
-
----
+<!-- When the decision changes, the old choice becomes a row here. -->
 
 ## Consequences
 
 ### Positive
-* [Key benefit 1]
+
+- Benefit
 
 ### Negative / Trade-offs
-* [Known trade-off]
 
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*. Do NOT create a superseding ADR and do NOT leave a tombstone stub.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
-* Archived wording: `git log --follow docs/architecture/adrs/NNNN-title.md`.
-
-See [`docs/STYLE_GUIDE.md`](../STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.
+- Trade-off

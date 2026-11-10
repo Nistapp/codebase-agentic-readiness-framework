@@ -1,19 +1,12 @@
 # 0006. One Committed `.mcp.json`; Agents Offer Each Person a One-Time Setup for Their Harness
 
-* **Status:** Accepted
-* **Date:** 2026-11-09
-* **Last reviewed:** 2026-11-09
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
 This repository asks target repositories to register the code index, `codebase-memory-mcp` (`IDX-01`,
-`REQ-SH-001`). Until v0.3.3 it did not register the index for itself, and its own self-audit showed that.
+`REQ-SH-001`). It registers the index for itself too, so its own self-audit can pass that check.
 
 Six harnesses are in use. Each reads a different project file, and they act differently on the first start
-(checked 2026-11-09 in each harness's own documentation; the table is in
+(from each harness's own documentation; the table is in
 [Development tooling](../../reference/dev-tooling.md#agent-tools-mcp)):
 
 * Claude Code reads `.mcp.json` and asks each person to approve each server.
@@ -24,9 +17,7 @@ Six harnesses are in use. Each reads a different project file, and they act diff
 * Antigravity keeps its servers at user level only (`agy mcp add`, checked with `agy` 1.5.1).
 
 An MCP server is a program that runs on the person's machine. Many people clone this repository only to audit
-their own code; they do not need the server here. The owner decided on one committed file, not one per harness.
-
----
+their own code; they do not need the server here. The owner wants one committed file, not one per harness.
 
 ## Decision
 
@@ -56,13 +47,11 @@ their own code; they do not need the server here. The owner decided on one commi
    language server is an optional aid: `pyrightconfig.json` mirrors the `mypy.ini` import paths, and the offer
    does not cover it.
 
----
-
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
-| A committed config file for each harness | The owner chose one file. Six copies drift, and opencode would start a committed server with no prompt |
+| A committed config file for each harness | The owner wants one file. Six copies drift, and opencode would start a committed server with no prompt |
 | `npx -y codebase-memory-mcp@<version>` in `.mcp.json` | The package downloads a native binary when it runs. The version would need a second place or a generator. It can differ from the version that built the person's index |
 | A dedicated skill for the offer | Not every harness reads skills. Every harness reads `AGENTS.md` |
 | Detect the harness from environment variables only | Only Claude Code's variable is confirmed. A wrong guess writes the wrong file |
@@ -70,8 +59,6 @@ their own code; they do not need the server here. The owner decided on one commi
 | Serena in `.mcp.json` | Only Claude Code and VS Code read the file, and both have their own language-server route. The harnesses that need Serena do not read it, and its launch command differs per harness (`--context`) |
 | Pre-approve the server in `.claude/settings.json` | It would start a program on every contributor's machine without asking |
 | No offer: document the setup only | The setup is easy to miss, and agents then read whole files where a graph query would do |
-
----
 
 ## Consequences
 
@@ -87,16 +74,3 @@ their own code; they do not need the server here. The owner decided on one commi
 * The translation follows each harness's current format (opencode `mcp.servers`, checked with opencode v2.0.24). A
   harness that changes its format needs a change in `dev/mcp_config.py`.
 * Each person installs a binary to get the benefit.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into
-  *Alternatives Considered*. Do NOT create a superseding ADR and do NOT leave a tombstone stub.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference
-  plus the index table in `docs/architecture/adrs/README.md` in the same change set.
-* Archived wording: `git log --follow docs/architecture/adrs/0006-first-run-agent-tool-offer.md`.
-
-See [`docs/STYLE_GUIDE.md`](../../STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.

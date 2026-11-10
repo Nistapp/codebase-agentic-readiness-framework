@@ -216,9 +216,8 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 - **Doc router:** `docs/architecture/README.md` is the entry point and the ADR index.
 - **Categories (Diátaxis):** tutorial, how-to, reference, explanation; architecture material lives under
   `docs/architecture/`.
-- **ADRs:** `docs/architecture/adrs/NNNN-short-title.md`, created from
-  [`../docs/templates/adr-template.md`](../../docs/templates/adr-template.md), indexed in `docs/architecture/README.md`. Revise in place — there is no
-  `Superseded` or `Deprecated` status, no tombstones, and a retired sequence number is never reused.
+- **ADRs:** `docs/architecture/adrs/NNNN-short-title.md`, indexed in `docs/architecture/README.md`. Read
+  [`../docs/ADR_POLICY.md`](../../docs/ADR_POLICY.md) before you add, change or delete one.
 - **Definition of done:** when a change alters a public interface, observable behaviour, architecture, a
   check's semantics, or an ADR, update the affected documentation pages, their source line anchors, and the
   ADR index **in the same change set**. Pure internal refactors with no documentation impact are exempt.
@@ -255,7 +254,7 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 9. ❌ **Do not** restate the shared style guide (`../docs/STYLE_GUIDE.md`) or the readiness framework — link to them.
 10. ❌ **Do not** document a check as implemented while it is only in the catalogue.
 11. ❌ **Do not** merge a check without its one-defect fixture (no fixture, no check).
-12. ❌ **Do not** reuse a retired ADR number, or leave a `Superseded` / `Deprecated` tombstone.
+12. ❌ **Do not** add, change or delete an ADR without following [`../docs/ADR_POLICY.md`](../../docs/ADR_POLICY.md).
 13. ❌ **Do not** weaken, `.skip`, or comment out a failing test to get green (the CI skip in §6 is the one exception).
 14. ❌ **Do not** push, `git init`, or commit unless KC asks or your session's instructions say to commit.
 15. ❌ **Do not** verify work with an ad-hoc command; use the sanctioned surface in §3.1.

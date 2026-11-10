@@ -1,28 +1,20 @@
 # 0003. Dependabot Opens Security Pull Requests Only; Major Versions Are Advisory
 
-* **Status:** Accepted
-* **Date:** 2026-11-08
-* **Last reviewed:** 2026-11-09
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
-Dependabot opened weekly version-update pull requests for the GitHub Actions, for example #47 and #48. Each one is
-work for the maintainer, and a major version can break CI or the release.
+Weekly version-update pull requests from Dependabot are work for the maintainer, and a major version can break CI
+or the release.
 
 The owner wants two things:
 
 * Dependabot opens a pull request only for a security fix.
 * A major version is advisory: it never arrives as a pull request that is ready to merge.
 
-Before this decision, the dev tool versions were in the `Makefile` only (ruff, mypy, detect-secrets, coverage,
-jsonschema, skills-ref, markdownlint-cli2) and in the workflows (uv). Dependabot cannot read a `Makefile`, so these
-tools had no security alerts.
+Dependabot cannot read a `Makefile` or a workflow input. A tool whose version is written only there gets no
+security alerts.
 
-GitHub's documentation (the Dependabot options reference and "Configuring Dependabot security updates", read on
-2026-11-08) gives these facts:
+GitHub's documentation (the Dependabot options reference and "Configuring Dependabot security updates") gives these
+facts:
 
 * `open-pull-requests-limit: 0` stops version updates. Security updates have their own, fixed limit.
 * `ignore`, with `update-types`, applies to version updates and to security updates.
@@ -41,7 +33,7 @@ GitHub's documentation (the Dependabot options reference and "Configuring Depend
 3. **One pull request per ecosystem.** A `security-fixes` group joins the minor and patch security fixes.
 4. **No `target-branch`.** The default branch is `dev`
    ([ADR 0002](0002-dev-integrates-main-releases.md)), so every Dependabot pull request goes to `dev` without it.
-5. **The dev tools are visible to Dependabot.** Their versions move to manifests in `dev/tools/`, each with a
+5. **The dev tools are visible to Dependabot.** Their versions live in manifests in `dev/tools/`, each with a
    lockfile:
 
    | Manifest | Lockfile | Tools | Dependabot ecosystem |
@@ -62,25 +54,18 @@ GitHub's documentation (the Dependabot options reference and "Configuring Depend
 7. **Routine and major upgrades are planned.** Before each release, the maintainer reviews the pins and the open
    alerts ([`RELEASE_PROCESS.md`](../../../RELEASE_PROCESS.md#dependency-updates)).
 
----
-
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
-| Weekly version updates for every level (the design before this ADR) | A pull request each week, majors included. A major can break CI or the release. |
+| Weekly version updates for every level | A pull request each week, majors included. A major can break CI or the release. |
 | Version updates for minor and patch only | Minor releases of ruff and markdownlint often change rules, which changes many files. The owner wants security pull requests only. |
-| Patch-only version updates for the dev tools, grouped monthly | Offered on 2026-11-08; the owner chose security pull requests only. |
+| Patch-only version updates for the dev tools, grouped monthly | The owner wants security pull requests only. |
 | `target-branch: dev` on each entry | It stops `ignore` and `groups` from applying to security updates. `dev` is the default branch, so it is not needed. |
 | Keep the tool pins in the `Makefile` | Dependabot cannot read a `Makefile`. The tools would get no security alerts. |
 | `requirements.txt` without a lockfile | The repository's own audit then fails `EXEC-02` (no lockfile) for Python and Node, and `EXEC-01` for Node. |
 | Exclude `dev/tools/` from the self-audit | It narrows a gate to get green. |
 | Pin `uv` in each workflow | Four copies of one version, and Dependabot does not read a `setup-uv` input. |
-
-> A later reversal of this decision is folded into this table, so the rejected direction
-> keeps its rationale inside the accepted record.
-
----
 
 ## Consequences
 
@@ -98,16 +83,3 @@ GitHub's documentation (the Dependabot options reference and "Configuring Depend
 * Two lockfiles, about 380 KB together, are in the repository. After a manual pin change, regenerate them
   (`uv lock --directory dev/tools`; `npm install --package-lock-only --ignore-scripts` in `dev/tools`).
 * The template and the fixtures can raise alerts that need no action. The maintainer dismisses them.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into
-  *Alternatives Considered*. Do NOT create a superseding ADR and do NOT leave a tombstone stub.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference
-  plus the index table in `docs/architecture/adrs/README.md` in the same change set.
-* Archived wording: `git log --follow docs/architecture/adrs/0003-dependabot-security-pull-requests-only.md`.
-
-See [`docs/STYLE_GUIDE.md`](../../STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.

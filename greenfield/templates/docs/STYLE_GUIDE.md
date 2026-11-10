@@ -12,7 +12,8 @@
 2. **Zero Specification Drift:** Code and architecture specs MUST remain synchronized. Every behavioral change requires a matching spec update **in the same change set**.
 3. **Empirical Grounding:** Never document aspirational features as existing facts. All claims must be verifiable against source code or tests; planned work MUST carry an explicit notice banner.
 4. **Symbol Anchoring:** Reference code symbols using fully-qualified names and explicit file paths with markdown links to source line anchors (e.g. `[orchestrator.ts#L37-L61](../src/core/orchestrator.ts#L37-L61)`).
-5. **Living ADRs (Current-State Only):** An ADR MUST describe only the shipped, current codebase. When a decision changes, revise the ADR body **in place**; when an ADR becomes irrelevant, delete it. Git is the archive — never keep tombstone, superseded, or deprecated stubs.
+5. **Current-State ADRs:** An ADR states only the current decision; git is the archive. The rules are in
+   [`ADR_POLICY.md`](ADR_POLICY.md).
 
 ---
 
@@ -48,6 +49,7 @@ Rules:
 | This style guide | `docs/STYLE_GUIDE.md` | `STYLE_GUIDE.md` |
 | Architecture overview / explanations | `docs/architecture/` | `<topic>.md` |
 | Architectural Decision Records | `docs/architecture/adrs/` | `NNNN-short-title.md` |
+| ADR policy | `docs/ADR_POLICY.md` | `ADR_POLICY.md` |
 | ADR index & doc router | `docs/architecture/README.md` | `README.md` |
 | Domain glossary | `docs/architecture/glossary.md` | `glossary.md` |
 | How-to guides | `docs/how-to/` | `<task>.md` |
@@ -65,7 +67,7 @@ New documents MUST start from the matching template in `docs/templates/`.
 
 1. **Query-first:** consult `codebase-memory-mcp` (`search_graph`, `get_code_snippet`, `get_architecture`) to verify symbols and file locations against the current codebase before grepping or reading whole files.
 2. Check existing pages in `docs/` — update rather than duplicate.
-3. Check `docs/architecture/adrs/` for the highest sequence number ever used before creating an ADR.
+3. Before you add, change or delete an ADR, read [`ADR_POLICY.md`](ADR_POLICY.md).
 
 ### 5.2 Doc Maintenance Trigger (definition of done)
 
@@ -85,40 +87,10 @@ Pure internal refactors with no observable or documentation impact do not requir
 
 ---
 
-## 6. ADR Lifecycle
+## 6. ADRs
 
-ADRs live in `docs/architecture/adrs/` and are created from `docs/templates/adr-template.md`.
-
-```markdown
-# NNNN. Short Title
-
-* **Status:** Accepted
-* **Date:** YYYY-MM-DD
-* **Last reviewed:** YYYY-MM-DD
-* **Deciders:** [@github-handle]
-
-## Context
-[Technical context, problem statement, alternatives considered.]
-
-## Decision
-[Chosen architecture, pattern, or dependency, with links to source interfaces.]
-
-## Consequences
-### Positive
-* [Benefit]
-
-### Negative / Trade-offs
-* [Trade-off]
-```
-
-1. **Create:** assign `highest-ever sequence number + 1`. A number whose ADR was deleted is retired and MUST NOT be reused.
-2. **Record:** use `docs/templates/adr-template.md`.
-3. **Index:** add a row to the index table in `docs/architecture/README.md` in the same change set.
-4. **Revise in place:** when a decision changes, overwrite the ADR body and keep its number. Fold the reversal into the ADR's own *Alternatives considered* table. Do NOT create a second "superseding" ADR and do NOT leave a tombstone stub. Use `git log --follow` to recover older wording.
-5. **Delete when irrelevant:** when an ADR no longer describes anything in the current codebase, delete the file and update every inbound reference in the same change set. Feature-level deprecation belongs in the glossary or roadmap, never as a lingering ADR.
-
-> [!IMPORTANT]
-> There is no `Deprecated`, `Superseded`, or `Rejected` status. A merged ADR is always `Accepted` (`Proposed` is allowed in-flight but MUST NOT be merged). Stale instructions pollute agent context, so staleness is treated as a defect, not as history.
+ADRs live in `docs/architecture/adrs/` and start from `docs/templates/adr-template.md`. How to add, change or
+delete one: [`ADR_POLICY.md`](ADR_POLICY.md).
 
 ---
 

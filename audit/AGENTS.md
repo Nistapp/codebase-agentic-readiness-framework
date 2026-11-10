@@ -43,6 +43,7 @@ To audit a repository, follow [`SKILL.md`](SKILL.md). The rest of this file is f
 - The tool design: the
   [Tool Contract](../docs/explanation/contributor-deep-dive/01-tool-contract.md) page.
 - All decisions: the root index, [`docs/architecture/adrs/README.md`](../docs/architecture/adrs/README.md).
+- How to add, change or delete an ADR: [`docs/ADR_POLICY.md`](../docs/ADR_POLICY.md).
 
 ## Test this folder
 
