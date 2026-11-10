@@ -184,6 +184,51 @@ class Tool07BranchGuardTests(unittest.TestCase):
         self.assertEqual(check["verdict"], "PARTIAL")
         self.assertIn("does not name dev", check["summary"])
 
+    # -- the guard must stop the commit -------------------------------------------------------------------------
+
+    def test_a_guard_that_only_warns_is_partial(self):
+        lefthook = LEFTHOOK_GUARD.replace("exit 1;;", "echo protected >&2;;")
+        check = self.check({"lefthook.yml": lefthook, **RULESETS})
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertIn("never exits non-zero", check["summary"])
+        self.assertIn("so the commit goes ahead", check["findings"][0]["statement"])
+
+    def test_a_commented_out_exit_does_not_stop_the_commit(self):
+        script = SHELL_GUARD.replace("  exit 1", "  # exit 1")
+        check = self.check({"package.json": PACKAGE_WITH_HUSKY, ".husky/pre-commit": script})
+        self.assertEqual(check["verdict"], "PARTIAL")
+
+    def test_a_bare_false_stops_the_commit(self):
+        script = SHELL_GUARD.replace("  exit 1", "  false")
+        check = self.check({"package.json": PACKAGE_WITH_HUSKY, ".husky/pre-commit": script})
+        self.assertEqual(check["verdict"], "PASS")
+
+    def test_process_exit_in_a_node_hook_stops_the_commit(self):
+        script = (
+            "#!/usr/bin/env node\n"
+            "const branch = require('child_process').execSync('git branch --show-current').toString().trim();\n"
+            "if (branch === 'main') { console.error('protected'); process.exit(1); }\n"
+        )
+        check = self.check({"package.json": PACKAGE_WITH_HUSKY, ".husky/pre-commit": script})
+        self.assertEqual(check["verdict"], "PASS")
+
+    def test_one_stopping_guard_is_enough_and_is_the_evidence(self):
+        warn = "#!/bin/sh\ngit branch --show-current\n"
+        makefile = "setup:\n\tgit config core.hooksPath .githooks\n"
+        files = {"Makefile": makefile, ".githooks/commit-msg": warn, ".githooks/pre-commit": SHELL_GUARD}
+        check = self.check(files)
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertEqual(check["summary"], "branch guard at .githooks/pre-commit:2")
+
+    def test_the_coverage_finding_cites_only_stopping_guards(self):
+        warn = "#!/bin/sh\ngit branch --show-current\necho dev main\n"
+        makefile = "setup:\n\tgit config core.hooksPath .githooks\n"
+        files = {"Makefile": makefile, ".githooks/commit-msg": warn, ".githooks/pre-commit": SHELL_GUARD, **RULESETS}
+        check = self.check(files)
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertIn("does not name dev", check["summary"])
+        self.assertNotIn("commit-msg", check["summary"])
+
     # -- no guard -----------------------------------------------------------------------------------------------
 
     def test_hooks_without_a_guard_fail(self):

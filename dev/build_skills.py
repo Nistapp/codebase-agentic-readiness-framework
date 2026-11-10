@@ -22,8 +22,8 @@ Each bundle is replaced whole on every run, so a stale leftover from an earlier 
   (:func:`stamp_frontmatter`), so an installed bundle says which release it is.
 - ``references/``: the check files (``audit/checks/``), the stack profiles (``audit/stacks/``), the shared prompt
   on how to talk to the user (``audit/prompts/talking-to-the-user.md``, which the implement bundle carries too) and
-  the schema docs (``audit/schema/*.schema.json``, ``SCHEMA.md``, ``LICENSING.md``) — read by the model, not run.
-  ``SKILL.md``'s link to the prompt is rewritten to its place under ``references/prompts/``.
+  the schema docs (``audit/schema/*.schema.json``, ``SCHEMA.md``, ``LICENSING.md``), and the parts of the Tools CLI
+  reference that cover the audit tools (:data:`AUDIT_TOOLS_CLI_SECTIONS`) — read by the model, not run.
 - ``scripts/``: the five tools the recipe's Tools table calls (``facts.py``, ``engine.py``, ``report.py``,
   ``validate_report.py``, ``render_report.py``, from ``audit/tools/``) and the private modules they import; the
   schema files and ``catalogue.json`` those tools read at a fixed path next to themselves
@@ -32,12 +32,7 @@ Each bundle is replaced whole on every run, so a stale leftover from an earlier 
   and ``audit.pyz``, the engine's single-file build, for a person who wants to run it directly with no Python path
   setup at all.
 
-Some of the audit ``SKILL.md``'s own relative links point outside what that bundle carries (the Tools CLI
-reference, ``spec/command-surface.md``, ``docs/framework/phased-approach.md`` from the check files) — found,
-not fixed, for the audit bundle.
-
-**agentic-readiness-implement** carries the implement recipe, a ``LICENSE`` like the audit bundle's, and resolves
-every link it keeps:
+**agentic-readiness-implement** carries the implement recipe and a ``LICENSE`` like the audit bundle's:
 
 - ``SKILL.md``: ``implement/SKILL.md``, its ``name`` rewritten from ``implement`` to the bundle's name, and the
   same ``metadata.version`` added.
@@ -53,9 +48,10 @@ every link it keeps:
   agentic-readiness-audit skill installed in the same skills folder, so the two skills share one engine copy
   (``validate_report.py`` reads the engine's credential patterns).
 
-Every carried Markdown file is rewritten in two ways. A command ``python3 audit/tools/<tool>.py`` or
+Both bundles resolve every link they keep. Every carried Markdown file is rewritten in two ways. A command ``python3 audit/tools/<tool>.py`` or
 ``python3 implement/tools/<tool>.py`` becomes the path from the skill's own folder
-(``python3 scripts/tools/<tool>.py``; ``engine.py`` points at the audit skill beside it). A relative link to a
+(``python3 scripts/tools/<tool>.py``; in the implement bundle ``engine.py`` points at the audit skill beside it).
+A relative link to a
 carried file is rewritten to that file's place in the bundle; a link to anything else becomes plain text naming the
 framework path, so no link leaves the bundle.
 
@@ -143,9 +139,32 @@ SCHEMA_FILES = (
 #: a person pastes it into a harness; the skill does not read it.
 AUDIT_PROMPT_FILES = ("talking-to-the-user.md",)
 
-#: `audit/SKILL.md` links each carried prompt relative to itself, with or without a heading anchor; in the bundle
-#: the prompt sits under `references/`.
-AUDIT_SKILL_LINK_REWRITES = tuple((f"](prompts/{name}", f"](references/prompts/{name}") for name in AUDIT_PROMPT_FILES)
+#: The level-2 sections of the Tools CLI reference the audit bundle carries, in page order: the five tools of
+#: `audit/SKILL.md`'s Tools table and the contract every tool shares.
+AUDIT_TOOLS_CLI_SECTIONS = (
+    "Every tool",
+    "engine.py",
+    "validate_report.py",
+    "report.py",
+    "render_report.py",
+    "facts.py",
+)
+
+#: The source of each carried Markdown file or folder of the audit bundle and its place in the bundle, as
+#: :data:`IMPLEMENT_REFERENCES` is for the implement bundle. The first place of a source is the one links point at;
+#: the schema docs also sit beside the schema files in `scripts/schema/`, rewritten for that place.
+AUDIT_REFERENCES = (
+    ("audit/SKILL.md", "SKILL.md"),
+    ("audit/checks", "references/checks"),
+    ("audit/stacks", "references/stacks"),
+    *((f"audit/prompts/{name}", f"references/prompts/{name}") for name in AUDIT_PROMPT_FILES),
+    *((f"audit/schema/{name}", f"references/schema/{name}") for name in SCHEMA_FILES if name.endswith(".md")),
+    ("docs/reference/tools-cli.md", "references/tools-cli.md"),
+    *((f"audit/schema/{name}", f"scripts/schema/{name}") for name in SCHEMA_FILES if name.endswith(".md")),
+)
+
+#: The audit sources name a tool by its file name alone; a command written for a checkout still gets the bundle path.
+AUDIT_COMMAND_REWRITES = (("python3 audit/tools/", "python3 scripts/tools/"),)
 
 SKILL_MD_SOURCE_NAME = "name: audit\n"
 SKILL_MD_BUNDLE_NAME = f"name: {BUNDLE_NAME}\n"
@@ -187,26 +206,40 @@ def stamp_frontmatter(text: str, source: str, source_name: str, bundle_name: str
     return frontmatter + text[end:]
 
 
-def _write_skill_md(bundle_dir: Path) -> None:
-    text = (AUDIT / "SKILL.md").read_text(encoding="utf-8")
-    for old, new in AUDIT_SKILL_LINK_REWRITES:
-        text = text.replace(old, new)
-    stamped = stamp_frontmatter(text, "audit/SKILL.md", SKILL_MD_SOURCE_NAME, SKILL_MD_BUNDLE_NAME, release_version())
-    (bundle_dir / "SKILL.md").write_text(stamped, encoding="utf-8")
+def _audit_carried_other() -> dict[Path, str]:
+    """The audit bundle's carried files that are not Markdown: tools, schema files, the catalogue, the licence."""
+    carried = {(AUDIT_TOOLS / name).resolve(): f"scripts/tools/{name}" for name in TOOL_FILES}
+    for name in SCHEMA_FILES:
+        if not name.endswith(".md"):
+            carried[(AUDIT_SCHEMA / name).resolve()] = f"references/schema/{name}"
+    carried[(AUDIT / "catalogue.json").resolve()] = "scripts/catalogue.json"
+    carried[LICENSE_CODE.resolve()] = "LICENSE"
+    return carried
+
+
+def _write_audit_markdown(bundle_dir: Path) -> None:
+    """Write every carried Markdown file of the audit bundle, its commands and links rewritten for the bundle."""
+    markdown = _carried_markdown(AUDIT_REFERENCES)
+    carried = {**_audit_carried_other(), **markdown}
+    texts: dict[str, tuple[Path, str]] = {}
+    for source, dest in _reference_places(AUDIT_REFERENCES):
+        text = source.read_text(encoding="utf-8")
+        if dest == "SKILL.md":
+            text = stamp_frontmatter(
+                text, "audit/SKILL.md", SKILL_MD_SOURCE_NAME, SKILL_MD_BUNDLE_NAME, release_version()
+            )
+        elif dest == "references/tools-cli.md":
+            text = extract_sections(text, AUDIT_TOOLS_CLI_SECTIONS)
+        texts[dest] = (source, text)
+    _write_rewritten(bundle_dir, texts, carried, AUDIT_COMMAND_REWRITES)
 
 
 def _write_references(bundle_dir: Path) -> None:
-    references = bundle_dir / "references"
-    _copy_tree(AUDIT / "checks", references / "checks")
-    _copy_tree(AUDIT / "stacks", references / "stacks")
-    prompts_dir = references / "prompts"
-    prompts_dir.mkdir(parents=True)
-    for name in AUDIT_PROMPT_FILES:
-        shutil.copy2(AUDIT / "prompts" / name, prompts_dir / name)
-    schema_dir = references / "schema"
+    schema_dir = bundle_dir / "references" / "schema"
     schema_dir.mkdir(parents=True)
     for name in SCHEMA_FILES:
-        shutil.copy2(AUDIT_SCHEMA / name, schema_dir / name)
+        if not name.endswith(".md"):
+            shutil.copy2(AUDIT_SCHEMA / name, schema_dir / name)
 
 
 def _build_pyz(dest: Path) -> None:
@@ -230,7 +263,8 @@ def _write_scripts(bundle_dir: Path) -> None:
     schema_dir = scripts / "schema"
     schema_dir.mkdir()
     for name in SCHEMA_FILES:
-        shutil.copy2(AUDIT_SCHEMA / name, schema_dir / name)
+        if not name.endswith(".md"):
+            shutil.copy2(AUDIT_SCHEMA / name, schema_dir / name)
     shutil.copy2(AUDIT / "catalogue.json", scripts / "catalogue.json")
     _copy_tree(ENGINE / "audit", scripts / "engine" / "audit")
     _build_pyz(scripts / "audit.pyz")
@@ -243,9 +277,9 @@ def build_bundle(out_dir: Path) -> Path:
         shutil.rmtree(bundle_dir)
     bundle_dir.mkdir(parents=True)
     _write_license(bundle_dir)
-    _write_skill_md(bundle_dir)
     _write_references(bundle_dir)
     _write_scripts(bundle_dir)
+    _write_audit_markdown(bundle_dir)
     return bundle_dir
 
 
@@ -365,17 +399,40 @@ _EXTERNAL = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:|^mailto:")
 _LEVEL2 = re.compile(r"^## (.+?)\s*$")
 
 
-def _carried_markdown() -> dict[Path, str]:
-    """Every carried Markdown source file (absolute) and its path in the bundle (POSIX, relative)."""
-    carried: dict[Path, str] = {}
-    for source, dest in IMPLEMENT_REFERENCES:
+def _reference_places(references: Sequence[tuple[str, str]]) -> list[tuple[Path, str]]:
+    """Every carried Markdown source file (absolute) and each of its places in the bundle (POSIX, relative)."""
+    places: list[tuple[Path, str]] = []
+    for source, dest in references:
         path = REPO / source
         if path.is_dir():
-            for file in sorted(path.rglob("*.md")):
-                carried[file.resolve()] = f"{dest}/{file.relative_to(path).as_posix()}"
+            places.extend(
+                (file.resolve(), f"{dest}/{file.relative_to(path).as_posix()}") for file in sorted(path.rglob("*.md"))
+            )
         else:
-            carried[path.resolve()] = dest
+            places.append((path.resolve(), dest))
+    return places
+
+
+def _carried_markdown(references: Sequence[tuple[str, str]]) -> dict[Path, str]:
+    """Every carried Markdown source file and the place in the bundle a link to it points at: its first place."""
+    carried: dict[Path, str] = {}
+    for source, dest in _reference_places(references):
+        carried.setdefault(source, dest)
     return carried
+
+
+def _write_rewritten(
+    bundle_dir: Path,
+    texts: dict[str, tuple[Path, str]],
+    carried: dict[Path, str],
+    commands: Sequence[tuple[str, str]],
+) -> None:
+    """Write each text at its bundle place `dest`, its tool commands and relative links rewritten for that place."""
+    slugs = {dest: _heading_slugs(text) for dest, (_, text) in texts.items()}
+    for dest, (source, text) in texts.items():
+        target = bundle_dir / dest
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(rewrite_text(text, source, dest, carried, slugs, commands), encoding="utf-8")
 
 
 def _carried_other() -> dict[Path, str]:
@@ -390,8 +447,9 @@ def _carried_other() -> dict[Path, str]:
     return carried
 
 
-def extract_sections(text: str, titles: Sequence[str]) -> str:
-    """The page's title line, a note, and only the level-2 sections named in `titles`, in page order."""
+def extract_sections(text: str, titles: Sequence[str], note_tail: str = "") -> str:
+    """The page's title line, a note (ending with `note_tail`), and only the level-2 sections named in `titles`,
+    in page order."""
     lines = text.splitlines(keepends=True)
     sections: dict[str, list[str]] = {}
     current: str | None = None
@@ -409,23 +467,30 @@ def extract_sections(text: str, titles: Sequence[str]) -> str:
     if missing:
         raise _common.ToolError(f"docs/reference/tools-cli.md has no section {', '.join(missing)}")
     title = lines[0] if lines and lines[0].startswith("# ") else "# Tools CLI Reference\n"
-    note = (
-        "\nThe sections of the framework's Tools CLI reference that cover the tools this skill carries. The "
-        f"engine's own section is in the {BUNDLE_NAME} skill.\n\n"
+    note = "\nThe sections of the framework's Tools CLI reference that cover the tools this skill carries." + (
+        f" {note_tail}" if note_tail else ""
     )
+    note += "\n\n"
     body = "".join("".join(sections[t]).rstrip("\n") + "\n\n" for t in titles)
     return title + note + body.rstrip("\n") + "\n"
 
 
 def _heading_slugs(text: str) -> set[str]:
-    import recipe_lint  # a sibling tool; imported here so the audit-only path does not need it
+    import recipe_lint  # a sibling tool, imported where it is used
 
     return recipe_lint.heading_slugs(Path("x.md"), text.splitlines())
 
 
-def rewrite_text(text: str, source: Path, dest: str, carried: dict[Path, str], slugs: dict[str, set[str]]) -> str:
+def rewrite_text(
+    text: str,
+    source: Path,
+    dest: str,
+    carried: dict[Path, str],
+    slugs: dict[str, set[str]],
+    commands: Sequence[tuple[str, str]] = COMMAND_REWRITES,
+) -> str:
     """Rewrite one carried file's tool commands and relative links for its place `dest` in the bundle."""
-    for old, new in COMMAND_REWRITES:
+    for old, new in commands:
         text = text.replace(old, new)
     out: list[str] = []
     fenced = False
@@ -472,23 +537,21 @@ def build_implement_bundle(out_dir: Path) -> Path:
         shutil.rmtree(bundle_dir)
     bundle_dir.mkdir(parents=True)
     _write_license(bundle_dir)
-    markdown = _carried_markdown()
+    markdown = _carried_markdown(IMPLEMENT_REFERENCES)
     carried = {**_carried_other(), **markdown}
     texts: dict[str, tuple[Path, str]] = {}
-    for source, dest in markdown.items():
+    for source, dest in _reference_places(IMPLEMENT_REFERENCES):
         text = source.read_text(encoding="utf-8")
         if dest == "SKILL.md":
             text = stamp_frontmatter(
                 text, "implement/SKILL.md", IMPLEMENT_SKILL_SOURCE_NAME, IMPLEMENT_SKILL_BUNDLE_NAME, release_version()
             )
         elif dest == "references/tools-cli.md":
-            text = extract_sections(text, TOOLS_CLI_SECTIONS)
+            text = extract_sections(
+                text, TOOLS_CLI_SECTIONS, f"The engine's own section is in the {BUNDLE_NAME} skill."
+            )
         texts[dest] = (source, text)
-    slugs = {dest: _heading_slugs(text) for dest, (_, text) in texts.items()}
-    for dest, (source, text) in texts.items():
-        target = bundle_dir / dest
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(rewrite_text(text, source, dest, carried, slugs), encoding="utf-8")
+    _write_rewritten(bundle_dir, texts, carried, COMMAND_REWRITES)
     for name in IMPLEMENT_SCHEMA_FILES:
         shutil.copy2(AUDIT_SCHEMA / name, bundle_dir / "references" / "schema" / name)
     tools_dir = bundle_dir / "scripts" / "tools"

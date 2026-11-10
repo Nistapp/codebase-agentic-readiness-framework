@@ -156,4 +156,4 @@ The schema subset cannot express these rules, so `progress.py` checks them on ev
 
 The tools write the framework commits (`framework.revision`, `last_framework.revision`) and each source report's
 `git_sha` as 12 lower-case hex digits, as the report does: a full id has the shape secret scanners read as a token.
-`commits` and `merged_sha` are copied as given, 7 to 40 digits.
+`progress.py` cuts `commits` and `merged_sha` to 12 digits too; a shorter id given (7 to 11 digits) is kept as it is.

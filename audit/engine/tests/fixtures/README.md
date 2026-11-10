@@ -67,6 +67,7 @@ fixtures/
   sec-01-ok/                 .env present but untracked + ignored (needs git) -> SEC-01…03 PASS
   exec-01-unpinned/          node project, no toolchain pin       -> EXEC-01 FAIL
   exec-01-nested-go-unpinned/ a nested go.mod with no go directive -> EXEC-01 FAIL
+  exec-01-sibling-module-unpinned/ one go.mod pins Go, its sibling does not -> EXEC-01 PARTIAL
   exec-01-python-source-only/ a standard-library-only Python tool, no manifest, no pin -> EXEC-01 FAIL, EXEC-02 UNKNOWN
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
@@ -100,6 +101,7 @@ fixtures/
   tool-06-local-only-commit-rule/  commit-msg hook, no CI step     -> TOOL-06 PARTIAL
   tool-06-ci-only-commit-rule/     PR-title check in CI, no hook   -> TOOL-06 PARTIAL
   tool-07-no-branch-guard/   wired lefthook, no protected-branch guard -> TOOL-07 FAIL
+  tool-07-guard-no-exit/     wired lefthook guard reads the branch but only warns, no non-zero exit -> TOOL-07 PARTIAL
   tool-ok-node/              the smallest node repository passing every TOOL check (hook and CI step)
   ci-01-no-pr-trigger/       workflow without a pull-request trigger -> CI-01 PARTIAL
   ci-02-parity-break/        CI runs a framework verb with no local script -> CI-02 FAIL

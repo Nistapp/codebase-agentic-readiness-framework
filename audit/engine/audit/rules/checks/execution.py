@@ -12,8 +12,9 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
 * **EXEC-01** — a toolchain pin appropriate to each **detected** ecosystem (``.nvmrc``, ``engines``,
   ``.python-version``/``requires-python``, ``gradlew``/``mvnw``, ``global.json``,
   ``rust-toolchain.toml``, the ``go`` directive). Pin files and manifests count at any depth, so a nested
-  ``go.mod``'s ``go`` directive, a nested ``requires-python`` or a nested ``engines.node`` pins the ecosystem; one
-  pin is enough. No recognised ecosystem ⇒ ``UNKNOWN``; an ecosystem with no pin in the table (php) is not
+  ``go.mod``'s ``go`` directive, a nested ``requires-python`` or a nested ``engines.node`` pins the ecosystem. A
+  pinned ecosystem with a module manifest that no pin reaches (:func:`_unpinned_modules`: not its own manifest, nor
+  a pin file or a node/python pinning manifest in its folder or a parent) ⇒ ``PARTIAL``. No recognised ecosystem ⇒ ``UNKNOWN``; an ecosystem with no pin in the table (php) is not
   asserted against.
 * **EXEC-02** — the ecosystem's lockfile is **tracked** (``audit.ignore.tracked_files``) and its
   declared dependencies agree with the manifest. ``tracked_files`` returning ``None`` (not a git
@@ -168,18 +169,94 @@ def _pin_evidence(inv: Inventory, ecosystem: str) -> list[str]:
     return sorted(dict.fromkeys(evidence))
 
 
+#: The manifest that makes a module of the ecosystem, and what in it pins the toolchain.
+_MODULE_MANIFESTS = {"node": "package.json", "python": "pyproject.toml", "go": "go.mod"}
+
+#: At most this many unpinned modules are named in a summary; the finding's evidence lists them all.
+_MODULES_NAMED = 5
+
+
+def _dir_of(rel: str) -> str:
+    return rel.rsplit("/", 1)[0] if "/" in rel else ""
+
+
+def _manifest_pins(inv: Inventory, ecosystem: str, rel: str) -> bool:
+    text = inv.read(rel) or ""
+    if ecosystem == "node":
+        try:
+            engines = json.loads(text or "{}").get("engines")
+        except (json.JSONDecodeError, AttributeError):
+            return False
+        return isinstance(engines, dict) and bool(engines.get("node"))
+    if ecosystem == "python":
+        return re.search(r"(?m)^\s*requires-python\s*=", text) is not None
+    return re.search(r"(?m)^\s*go\s+\d", text) is not None
+
+
+def _unpinned_modules(inv: Inventory, ecosystem: str) -> list[str]:
+    """The module manifests of ``ecosystem`` that no pin reaches. A pin reaches a module when the module's own
+    manifest pins, or when its folder or a parent folder holds a pin file (``.nvmrc``, ``.python-version``, a
+    ``.tool-versions`` line) or, for node and python, a pinning manifest (a workspace root's ``engines.node`` or
+    ``requires-python``). A Go module is its own toolchain unit, so a parent ``go.mod`` does not reach it."""
+    name = _MODULE_MANIFESTS.get(ecosystem)
+    if name is None:
+        return []
+    manifests = _manifests(inv, name)
+    pin_dirs: set[str] = set()
+    pin_names = set(_PIN_FILES.get(ecosystem, ()))
+    pattern = _TOOL_VERSIONS.get(ecosystem)
+    for entry in inv.files:
+        base = entry.rel.rsplit("/", 1)[-1]
+        if base in pin_names or (
+            base == ".tool-versions" and pattern is not None and pattern.search(inv.read(entry.rel) or "")
+        ):
+            pin_dirs.add(_dir_of(entry.rel))
+    pinning = {rel for rel in manifests if _manifest_pins(inv, ecosystem, rel)}
+    if ecosystem != "go":
+        pin_dirs |= {_dir_of(rel) for rel in pinning}
+
+    def reached(folder: str) -> bool:
+        return any(pin == "" or folder == pin or folder.startswith(pin + "/") for pin in pin_dirs)
+
+    return [rel for rel in manifests if rel not in pinning and not reached(_dir_of(rel))]
+
+
 def check_exec01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     ecosystems = sorted(stack.ecosystems & _PINNABLE)
     if not ecosystems:
         return _unknown(spec, "no recognised ecosystem, so no toolchain pin can be chosen")
 
     findings: list[Finding] = []
+    partial: list[Finding] = []
     pinned: list[str] = []
     unpinned: list[str] = []
+    gaps: list[str] = []
     for ecosystem in ecosystems:
         evidence = _pin_evidence(inventory, ecosystem)
         if evidence:
             pinned.append(f"{ecosystem} ({', '.join(evidence)})")
+            modules = _unpinned_modules(inventory, ecosystem)
+            if modules:
+                named = ", ".join(modules[:_MODULES_NAMED])
+                more = f" and {len(modules) - _MODULES_NAMED} more" if len(modules) > _MODULES_NAMED else ""
+                gaps.append(f"{ecosystem} ({named}{more})")
+                partial.append(
+                    Finding(
+                        check=spec.id,
+                        severity=spec.severity,
+                        phase=spec.phase,
+                        verdict=Verdict.PARTIAL,
+                        statement=statement(
+                            f"reproduce the {ecosystem} toolchain in every module",
+                            f"{len(modules)} {ecosystem} module(s) carry no pin and sit under no pinned folder",
+                        ),
+                        remediation=f"Pin each {ecosystem} module: a pin in its own manifest, or a "
+                        f"{', '.join(_PIN_FILES.get(ecosystem) or ('.tool-versions',))} in its folder or a "
+                        "parent folder.",
+                        path=ecosystem,
+                        evidence=[Evidence(rel) for rel in modules],
+                    )
+                )
             continue
         unpinned.append(ecosystem)
         findings.append(
@@ -200,7 +277,10 @@ def check_exec01(*, spec, target, inventory, stack, components, session) -> Chec
         )
 
     if findings:
-        return _outcome(spec, Verdict.FAIL, f"unpinned: {', '.join(unpinned)}", findings)
+        return _outcome(spec, Verdict.FAIL, f"unpinned: {', '.join(unpinned)}", findings + partial)
+    if partial:
+        summary = "pinned: " + "; ".join(pinned) + "; modules no pin reaches: " + "; ".join(gaps)
+        return _outcome(spec, Verdict.PARTIAL, summary, partial)
     return _outcome(spec, Verdict.PASS, "pinned: " + "; ".join(pinned))
 
 

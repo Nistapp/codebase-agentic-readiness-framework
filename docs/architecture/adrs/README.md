@@ -23,6 +23,7 @@ The root router is [`docs/README.md`](../../README.md).
 | --- | --- | --- |
 | [0001](../../../spec/decisions/0001-constraint-artifact.md) | Use the prohibitions section as the deny list | The deny list is the instruction file's prohibitions section; there is no separate allow list. |
 | [0002](../../../spec/decisions/0002-lint-in-the-gate.md) | Lint is gated through `format:check` | `check` is `format:check`, `typecheck` and `test`; `format:check` must include the lint rules. |
+| [0003](../../../spec/decisions/0003-dependency-scan-verb.md) | Any verb may run the dependency scan; `security` is the preferred one | A verb must run a dependency scan; it should be `security`, and CI should run it too. |
 
 ## Audit recipe and tools: `audit/docs/architecture/adrs/`
 

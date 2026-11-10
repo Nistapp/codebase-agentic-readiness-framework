@@ -85,7 +85,7 @@ fails when a matrix misses a shard or a part misses a suite:
 
 | Job | What it runs |
 | --- | --- |
-| `static` | `make format-check typecheck verify-rules recipe-lint masters-check workflow-lint spell` |
+| `static` | `make format-check typecheck verify-rules recipe-lint masters-check eval-expected-check workflow-lint spell` |
 | `crosscheck` | `make crosscheck` on Python 3.11 and 3.14 |
 | `test-coverage` | `make coverage-part`, one job per shard: a shard of the engine's and of the audit tools' suites, and the implement tools in part 1, under coverage.py on Python 3.11; each part runs its targets at once |
 | `test-dev` | `make test-dev` on Python 3.11 |
