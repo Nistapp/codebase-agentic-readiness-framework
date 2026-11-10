@@ -60,7 +60,7 @@ uses the same pattern.
 | Keep `CHANGELOG.md` written by hand; release-please only bumps versions | Someone must still date `[Unreleased]` on every release. The owner chose a generated changelog. |
 | Take `CHANGELOG.md` out of the `docs-lint` ratchet | It relaxes a gate. The `--fix` job keeps the gate and costs one commit on the release pull request. |
 | Call `release.yml` as a reusable workflow | zizmor asks for the new `$/` self-repository syntax and the pinned actionlint rejects it. A dispatch needs neither and no suppression. |
-| Back-merge from `main` itself | The `dev` ruleset requires an up-to-date head. Once `dev` moves, the pull request can only be updated by a push to `main`, which the `main` ruleset refuses. |
+| Back-merge from `main` itself | A conflict with `dev` is fixed by a merge commit on the pull request's head branch. With `main` as the head, that commit needs a push to `main`, which the `main` ruleset refuses. |
 
 ## Consequences
 
