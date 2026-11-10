@@ -279,7 +279,7 @@ not moved.
 | [`DOC-02` docs/STYLE_GUIDE.md exists](audit-master.md#doc-02-docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
 | [`DOC-03` artefacts/ exists and is ignored](audit-master.md#doc-03-artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | [`DOC-04` ADR directory and index](audit-master.md#doc-04-adr-directory-and-index) | Adds `docs/adr/` with a template, an index and two or three first records marked `proposed` |
-| [`DOC-05` Docs are readable](audit-master.md#doc-05-docs-are-readable) | Not written yet: the steps that add plain-language rules to the style guide and a prose check are planned. Until then, report the finding to the owner and leave it open. Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
+| [`DOC-05` Docs are readable](audit-master.md#doc-05-docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
 | [`NAV-01` Declared component boundaries](audit-master.md#nav-01-declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | [`NAV-02` Obvious entry points](audit-master.md#nav-02-obvious-entry-points) | Verification only: names the entry points in the architecture page |
 | [`NAV-03` Structural red flags](audit-master.md#nav-03-structural-red-flags) | Census of oversized files, catch-all directories, binaries and minified assets; document, never move |

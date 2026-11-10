@@ -34,7 +34,7 @@ Rules:
 ## 3. Formatting Standards
 
 - **Headers:** ATX style (`#`, `##`, `###`), maximum 4 levels deep.
-- **Diagrams:** Use Mermaid (`flowchart`, `sequenceDiagram`, `stateDiagram-v2`). Do not embed external images when a Mermaid representation is possible.
+- **Diagrams:** Use Mermaid; see §9. Do not embed external images when a Mermaid representation is possible.
 - **Alerts:** Use GitHub-flavored Markdown alerts (`[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]`, `[!CAUTION]`).
 - **Tables:** Use standard GFM tables with aligned headers for scannability.
 - **Blank lines:** one blank line before and after headers, code blocks, tables, and alert blocks.
@@ -133,3 +133,48 @@ ADRs live in `docs/architecture/adrs/` and are created from `docs/templates/adr-
 
 `artefacts/` is never an architectural source of truth and is excluded from the
 `codebase-memory` index; see [`AGENTS.md` §4](../AGENTS.md).
+
+---
+
+## 8. Plain Language
+
+Write for the reader that [`AGENTS.md`](../AGENTS.md) §8.1 names. These rules come from ASD-STE100 (Simplified
+Technical English), without its fixed word list: technical names are fine. The audit check `DOC-05` measures
+rules 2 and 6 over every page under `docs/`.
+
+1. **Bottom line first.** Put the answer, the result or the decision in the first two lines.
+2. **Short sentences.** At most 20 words in a step of a procedure. At most 25 words in other text.
+3. **One instruction per sentence.** Write steps in the imperative: "Run the tests", not "You should run them".
+4. **Active voice.** Say who does what: "The service reads the file", not "The file is read".
+5. **One word, one meaning.** Use the same term every time. Do not change words for variety.
+6. **No vague or padded words.** Do not write `simply`, `just`, `obviously`, `clearly`, `basically`, `easily`,
+   `utilize`, `leverage`, `in order to`, `and/or` or `etc.`. Name the real items instead of `etc.`.
+
+Example (the "before" text breaks rules 2, 4 and 6 on purpose, so the check skips it):
+
+<!-- prose-check off -->
+
+> Before: In order to ensure that the build is green, it is recommended that the tests are run by the
+> contributor prior to the proposal of a change.
+>
+> After: Run the tests before you propose a change.
+
+<!-- prose-check on -->
+
+---
+
+## 9. Diagrams
+
+A diagram often explains a flow faster than text. Every page under `docs/explanation/` and `docs/tutorials/`
+(an index page excepted) has at least one Mermaid diagram. Pick the type by what you show:
+
+| You show | Mermaid type |
+|---|---|
+| Steps and choices in a process | `flowchart` |
+| Who calls whom, in order | `sequenceDiagram` |
+| The states of one thing and how it moves between them | `stateDiagram-v2` |
+| Data shapes and how they relate | `classDiagram` or `erDiagram` |
+
+- Keep a diagram to about 12 nodes. Split a larger one.
+- Write one sentence before the diagram that says what it shows.
+- Validate every block before you commit it: render it with the Mermaid CLI, or a Mermaid validator.

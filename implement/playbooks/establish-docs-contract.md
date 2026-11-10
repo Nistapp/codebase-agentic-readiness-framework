@@ -18,7 +18,7 @@ not moved.
 | DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with a template, an index and two or three first records marked `proposed` |
-| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Not written yet: the steps that add plain-language rules to the style guide and a prose check are planned. Until then, report the finding to the owner and leave it open. Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
+| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
 | NAV-01 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-01--declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | NAV-02 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-02--obvious-entry-points) | Verification only: names the entry points in the architecture page |
 | NAV-03 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-03--structural-red-flags) | Census of oversized files, catch-all directories, binaries and minified assets; document, never move |
@@ -34,7 +34,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
   worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `format.mass_reformat` (a `no` means every docs check is a
   baseline or ratchet, never a reformat), `layout.command_runner`, `ci.edits_authorised` (needed to add the docs
-  CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `extra.*`.
+  CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `docs.language` (the language
+  of the docs; see [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask), Inputs 7), `extra.*`.
 - The `DOC-05` steps run on a confirmed `DOC-05` finding. They also run when the owner asked for them by name in
   Stage 1 (`extra.doc-05`); that change has no finding for the re-audit to confirm, so say so in the pull request.
 - **Drift** ([Stage 3](../SKILL.md#stage-3-apply), step 2): a finding that says "no `docs/` directory" can be stale: an
@@ -70,6 +71,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 2. **Style guide source.** Default: adapt the framework's
    [`docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) (Diátaxis) to one page. The alternative
    (the owner's own house rules) is allowed only when those rules are not private to a different repository.
+   Either way, the guide gains the "Plain language" and "Diagrams" sections (Steps 3) when DOC-05 is in the theme.
 3. **First ADRs.** Ask which two or three existing decisions to record. If the owner has no preference, pick them
    from the code and the existing docs (a schema-migration tool, a search or storage engine, an authentication
    or tenant-selection mechanism, a branch model) and say why you picked them. Mark each `proposed`.
@@ -104,6 +106,20 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    validated before saving, relative links, "no values from env files, credentials or keystores", "cite code by
    path", "decisions go in `docs/adr/`". Link to the lint config instead of restating its rules. Add the
    instruction-file line (Inputs 5). The check reads the literal string `STYLE_GUIDE.md`.
+
+   **Plain language and diagrams (DOC-05).** Add two sections to the style guide. The template is the greenfield
+   style guide: [§ 8 Plain Language](../../greenfield/templates/docs/STYLE_GUIDE.md#8-plain-language) and
+   [§ 9 Diagrams](../../greenfield/templates/docs/STYLE_GUIDE.md#9-diagrams). They hold rules 1 to 6 of the
+   framework's [communication rules](../../docs/COMMUNICATION_RULES.md#2-plain-language-rules) and the diagram rule,
+   with the limits `DOC-05` measures (25 words, 20 in a step, the same vague words). Rules:
+   - A style guide that already exists keeps its text. Add only the missing sections or rules, in the file's own
+     heading style. A limit of its own (for example 30 words) stays; tell the owner how it differs from the check.
+   - Keep the "before" example inside `<!-- prose-check off -->` and `<!-- prose-check on -->`, or the check counts
+     it.
+   - With a non-English `docs.language`, the owner supplies the rules in that language. `DOC-05` then reads
+     `UNKNOWN`; record the item `partial`.
+   - Every page this theme writes (the index, the style guide, the ADRs, the architecture page) follows the rules.
+     Re-run the engine before the theme closes: `DOC-05` cites no line on those pages.
 4. **ADRs (DOC-04).** Create `docs/adr/` with `README.md` (the index: a table of number, title, status, one
    line each, linking every file by its path), `0000-template.md` (adapted from the greenfield
    [`adr-template.md`](../../greenfield/templates/docs/templates/adr-template.md): Status, Date,
@@ -180,6 +196,8 @@ The repository already has Node, so the job can reuse its pinned Node version.
   held by the ratchet so the count cannot rise. Never mass-fix, reformat or suppress a rule to make the count
   fall unless the owner chooses that.
 - Dead links (if `lychee` runs): counted, report-only.
+- DOC-05 counts on pages the theme did not write: the long sentences, vague words and pages without a diagram
+  stay. Record them as debt on the item (`partial`); the owner decides on a rewrite.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
   because the engine counts, it does not judge. Mark the item `partial` with that reason, or `skipped` if the
   owner calls it by design.
@@ -193,6 +211,7 @@ The repository already has Node, so the job can reuse its pinned Node version.
 |---|---|---|
 | DOC-01 | `git ls-files 'docs/*.md' 'docs/**/*.md'` | At least one file; `docs/README.md` links every page; no second docs home |
 | DOC-02 | `test -f docs/STYLE_GUIDE.md` and `grep -n STYLE_GUIDE.md <instruction file>` | File exists; the instruction file names it |
+| DOC-05 | `grep -n -i 'plain language\|diagram' docs/STYLE_GUIDE.md`; the engine's DOC-05 | Both sections present; no cited line on a page this theme wrote; `PASS`, or `partial` with the counts as debt |
 | DOC-03 | `git ls-files artefacts artifacts` and `git check-ignore -v artefacts/x` | No scratch directory, or nothing tracked and the rule matches |
 | DOC-04 | List `docs/adr/`; read `docs/adr/README.md` | At least one numbered file; the index links every numbered file by path, the template included |
 | NAV-01 | Read the components table in the overview | Every declared component listed with its manifest path |
@@ -204,7 +223,8 @@ The repository already has Node, so the job can reuse its pinned Node version.
 
 ## Rollback
 
-`git revert` the commits: docs, lint config and CI job each revert alone. Nothing was moved, untracked or
+`git revert` the commits: docs, lint config and CI job each revert alone. The style guide sections revert with the
+docs commit. Nothing was moved, untracked or
 deleted by this playbook except, with owner consent, the scratch files in step 7 (`git revert` returns them to the
 index).
 
@@ -231,6 +251,8 @@ python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phas
   --verification-result "present; named in the instruction file"
 python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --debt "what=markdown lint violations,count=<n>,baseline=<file>" --note "<mechanism>"
+python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+  --commit <sha> --debt "what=long sentences in docs,count=<n>" --note "style guide sections added; DOC-05 counts"
 python3 implement/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```
