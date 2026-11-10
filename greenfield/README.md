@@ -7,6 +7,11 @@
 
 ---
 
+The files in `templates/` are MIT-0 ([`LICENSE-TEMPLATES`](../LICENSE-TEMPLATES)): copy and change them freely,
+with no notice. Your project then owns its copy and picks its own licence.
+
+---
+
 ## File Tree — What Gets Created
 
 ```

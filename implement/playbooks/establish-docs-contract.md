@@ -18,7 +18,7 @@ not moved.
 | DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
-| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner names a licence for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
+| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner picks one of three permissive licences for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
 | NAV-01 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-01--declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | NAV-02 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-02--obvious-entry-points) | Verification only: names the entry points in the architecture page |
 | NAV-03 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-03--structural-red-flags) | Census of oversized files, catch-all directories, binaries and minified assets; document, never move |
@@ -71,8 +71,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    > rather than implementing it. See the owner-facing comparison in the track research note
    > (`node-vs-java-docs-lint`, not part of the recipe). An owner who asks "why not Java" gets this answer; the
    > docs job stays separate from the build, so the build toolchain is unchanged.
-2. **Style guide source.** Default: adapt the framework's
-   [`docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) (Diátaxis) to one page. The alternative
+2. **Style guide source.** Default: adapt the greenfield
+   [`docs/STYLE_GUIDE.md`](../../greenfield/templates/docs/STYLE_GUIDE.md) (Diátaxis) to one page. The alternative
    (the owner's own house rules) is allowed only when those rules are not private to a different repository.
    Either way, the guide gains the "Plain language" and "Diagrams" sections (Steps 3) when DOC-05 is in the theme.
 3. **First ADRs.** Ask which two or three existing decisions to record. With no owner preference, pick them
@@ -135,10 +135,11 @@ They stay here so a repository that has one has a procedure, and so the re-audit
      the architecture page. Re-run the engine before the theme closes: `DOC-05` cites no line on those pages.
 4. **ADRs (DOC-04).** Create `docs/adr/` with four parts:
    - `README.md`, the index: a table of number, title and a one-line summary, linking every file by its path.
-   - `0000-template.md`, copied from the framework's [`adr-template.md`](../../docs/templates/adr-template.md):
+   - `0000-template.md`, copied from the greenfield
+     [`adr-template.md`](../../greenfield/templates/docs/templates/adr-template.md):
      Context, Decision, Alternatives Considered, Consequences. It has no status, date or decider fields.
-   - An ADR policy page, adapted from the framework's [`ADR_POLICY.md`](../../docs/ADR_POLICY.md). Keep its
-     rules; replace the framework's folder list and links with the target's. Name the page to fit the target's
+   - An ADR policy page, adapted from the greenfield [`ADR_POLICY.md`](../../greenfield/templates/docs/ADR_POLICY.md).
+     Keep its rules; replace its folder list and links with the target's. Name the page to fit the target's
      file names: `docs/ADR_POLICY.md` beside `docs/STYLE_GUIDE.md` by default, or `docs/adr-policy.md` where
      the docs use lower-case names. The instruction-file line names it (Inputs 5).
    - The first records, as `0001-short-title.md`.
