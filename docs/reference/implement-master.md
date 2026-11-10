@@ -325,7 +325,7 @@ wholesale.
 | [`AGT-09` Branch and release boundary declared](audit-master.md#agt-09-branch-and-release-boundary-declared) | One release-boundary sentence built from the state and the repository |
 | [`AGT-10` Instruction indirection resolved](audit-master.md#agt-10-instruction-indirection-resolved) | A "read X first" deferral becomes an ordinary link, with the must-always rules moved into `AGENTS.md` |
 | [`AGT-11` Instructions are specific and not inferable](audit-master.md#agt-11-instructions-are-specific-and-not-inferable) | Generic text moves to `docs/`; contradicted rules become target state with the exception count; stale lines corrected |
-| [`AGT-12` Communication rules stated](audit-master.md#agt-12-communication-rules-stated) | Not written yet: the step that adds a "How to write for people" section is planned. Until then, report the finding to the owner and leave it open. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
+| [`AGT-12` Communication rules stated](audit-master.md#agt-12-communication-rules-stated) | A "How to write for people" section that names the reader, how to report and how to ask for a decision. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
 | [`EXEC-06` Documented commands resolve](audit-master.md#exec-06-documented-commands-resolve) | Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline |
 | [`TST-04` Fast path documented](audit-master.md#tst-04-fast-path-documented) | Verification only, when T5 wrote the fenced single-test line; written here when the item sits in T7 |
 
@@ -338,7 +338,8 @@ wholesale.
 - Do not create a harness configuration file to point at a second rules file.
 - Do not write a fact an earlier theme has not made true (a verb that does not resolve, a docs page that does not
   exist), and do not name a harness in the reach line that does not load the file.
-- Do not add generic prose, persona text or an overview to fill a section.
+- Do not add generic prose, role-play persona text or an overview to fill a section. The reader persona of the
+  AGT-12 section is not generic text.
 - Do not copy content from a private repository or workspace into an open-source one, or from any target into the
   framework.
 

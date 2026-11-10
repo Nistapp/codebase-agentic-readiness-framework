@@ -29,7 +29,7 @@ wholesale.
 | AGT-09 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-09--branch-and-release-boundary-declared) | One release-boundary sentence built from the state and the repository |
 | AGT-10 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-10--instruction-indirection-resolved) | A "read X first" deferral becomes an ordinary link, with the must-always rules moved into `AGENTS.md` |
 | AGT-11 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-11--instructions-are-specific-and-not-inferable) | Generic text moves to `docs/`; contradicted rules become target state with the exception count; stale lines corrected |
-| AGT-12 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-12--communication-rules-stated) | Not written yet: the step that adds a "How to write for people" section is planned. Until then, report the finding to the owner and leave it open. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
+| AGT-12 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-12--communication-rules-stated) | A "How to write for people" section that names the reader, how to report and how to ask for a decision. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
 | EXEC-06 | [09-execution-determinism.md](../../audit/checks/09-execution-determinism.md#exec-06--documented-commands-resolve) | Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline |
 | TST-04 | [10-tests.md](../../audit/checks/10-tests.md#tst-04--fast-path-documented) | Verification only, when T5 wrote the fenced single-test line; written here when the item sits in T7 |
 
@@ -62,6 +62,9 @@ before the first diff.
 | `agents_md.generic_text` | `move-to-docs` (default) or `delete`, per section if the owner chose per section (Inputs 5) |
 | `agents_md.contradicted_rules` | `target-state` (default) or `describe-code` (Inputs 5) |
 | `extra.agt-12` | The owner asked by name for the "How to write for people" section with no `AGT-12` finding; the change then has no finding for the re-audit to confirm, so say so in the pull request |
+| `agents_md.reader` | The reader persona the owner confirmed for the AGT-12 section (Inputs 7) |
+| `agents_md.comm_long_form` | `no` (default) or `yes`: also write a long-form communication rules file (Inputs 7) |
+| `docs.language` | The language the docs are written in; `en` (default) or another (Inputs 7) |
 | `agents_md.release_tags` | What an agent may do with tags and releases; feeds the AGT-09 sentence (Inputs 6) |
 | `ci.pr_by_agent` | Whether the AGT-09 sentence allows pushing a branch and opening a pull request ([ADR 0003](../docs/architecture/adrs/0003-push-and-pr-policy.md)) |
 | `docs.agents_line` | T6 already wrote the docs line; AGT-03 then only verifies it |
@@ -74,7 +77,7 @@ No tool is installed by this playbook: the instruction file is plain Markdown an
 engine. The questions are about text. Ask them per finding, before the diff for that finding.
 
 1. **Order of the diffs.** Default order, smallest risk first: AGT-05 and EXEC-06 (commands), TST-04 (verify),
-   AGT-03, AGT-04, AGT-06, AGT-09, AGT-08, AGT-10, AGT-11. The owner may reorder or skip any; a skip goes through
+   AGT-03, AGT-04, AGT-06, AGT-09, AGT-08, AGT-10, AGT-11, AGT-12. The owner may reorder or skip any; a skip goes through
    `progress.py skip` by the owner.
 2. **Boundary rules (AGT-06).** Propose two or three rules from the code index (which directory may import which,
    which layer owns persistence, which folder is generated or vendored). The owner picks; never invent a boundary
@@ -100,7 +103,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 5. **Generic and contradicted text (AGT-11).** Defaults:
    - Generic text (persona and role-play prompts, general maxims, restated tool defaults) moves to a page under
      `docs/` named in the repository's own convention, with a one-line link from `AGENTS.md`. Nothing the owner
-     wrote is lost. Option `delete` is offered per section.
+     wrote is lost. Option `delete` is offered per section. A reader persona (who the docs and messages are
+     written for, AGT-12) is a communication rule, not a role-play prompt: it stays.
    - A rule the code contradicts becomes **target state**: "New code must X. N existing files do not yet; find them
      with `<command>`." The count is measured, not copied from the finding. Option `describe-code` (reword the rule
      to describe the code as it is) is offered per rule. T7 never edits code to make a rule true.
@@ -109,7 +113,18 @@ engine. The questions are about text. Ask them per finding, before the diff for 
      tracked on purpose), the line states that decision; it does not change the files.
 6. **Release boundary (AGT-09).** Default: one sentence built from facts (Steps 6). The owner reviews the sentence;
    never ask the owner to write it from scratch.
-7. **Owner-only values.** None is needed for this playbook. If a step seems to need one (a reviewer name, a
+7. **Communication rules (AGT-12).** Two questions, asked together:
+   1. **The reader.** Draft the persona from the stack profile and the code. Example: "a new engineer who knows
+      Java and Gradle, but not this repository or its terms". The owner confirms or edits it (`agents_md.reader`).
+      Never ask the owner to write it from nothing.
+   2. **The docs language.** Default `en`. The rules and the check are for English. For another language, the owner
+      supplies the rules in that language (`docs.language`). The item is then `partial`: the check reads English
+      words.
+
+   Also offer the long form once: a separate rules file, like the framework's own
+   [`docs/COMMUNICATION_RULES.md`](../../docs/COMMUNICATION_RULES.md). Default `no` (`agents_md.comm_long_form`).
+   The style guide holds the docs rules ([`establish-docs-contract`](establish-docs-contract.md)).
+8. **Owner-only values.** None is needed for this playbook. If a step seems to need one (a reviewer name, a
    contact), ask in the order `SKILL.md` Stage 2, step 6 gives (supply it, draft one for review, or skip).
 
 ## Steps
@@ -201,9 +216,24 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     override file beside it. For a multi-component repository, a component `AGENTS.md` is written only when the owner
     asks and the component has rules the root file cannot state; otherwise record AGT-02 as the owner's choice
     (component scoping is planned for a later framework version).
-11. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
+11. **Communication rules (AGT-12).** Add a section headed "How to write for people". Match the file's heading
+    level and style (D18), and keep a word the check reads (`write for`, `communication`, `reporting`). Place it
+    after the section `agents_md.pointer_section` names; without that preference, place it before the prohibitions
+    section. Start from the template in the greenfield
+    [`AGENTS.md` § 8.1](../../greenfield/templates/AGENTS.md#81-how-to-write-for-people), five bullets:
+    - the reader: the persona the owner confirmed (Inputs 7);
+    - bottom line first;
+    - plain language: short sentences (at most 25 words), active voice, one term per meaning;
+    - reports: a status report (done, not done, blocked, next) and a done report (what changed, how it was checked,
+      what was not done);
+    - decisions: the context, two to four options with pros and cons, a recommendation and the default.
+
+    An existing section that already covers one of the three (reader, reports, decisions) gets only the missing
+    bullets. With `agents_md.comm_long_form=yes`, write the long-form file under `docs/`, named in the repository's
+    convention (D18), and link it from the section. Then run the engine's AGT-12.
+12. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
     record the overage as debt. Never shorten by reflowing or deleting the owner's rules.
-12. **Commits:** one per finding, so the owner can revert any one alone.
+13. **Commits:** one per finding, so the owner can revert any one alone.
 
 ### Gradle and Quarkus
 
@@ -212,7 +242,8 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#command-surface-map). Ver
 The single-test form is `./gradlew test --tests '<fully.qualified.Class>'` (add `.<method>` for one method). Boundary candidates
 come from the package layout: REST resources, services, repositories or entities, and the migration folder
 (`src/main/resources/db/migration/`); a "never inject X in Y" rule is the usual contradicted rule, counted with a
-code-index query on the injection points. JDK and wrapper preconditions sit next to the commands.
+code-index query on the injection points. JDK and wrapper preconditions sit next to the commands. The AGT-12 persona names
+the language and the build tool: "a new engineer who knows Java, Quarkus and Gradle".
 
 ### Node (npm, NestJS, React)
 
@@ -221,6 +252,8 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#com
 `cd <app>` line, annotated. A verb an app does not have (no `typecheck` in a plain JavaScript app) is stated as such,
 not invented. Jest single test: `npx jest -t '<name>'` from the app folder. Boundary candidates: the app folders
 themselves (one app never imports another), `src/` versus `test/`, generated clients, and the infrastructure folder.
+The AGT-12 persona names the languages and frameworks the apps use: "a new engineer who knows TypeScript, NestJS
+and React".
 
 ## Continue on error
 
@@ -249,6 +282,7 @@ themselves (one app never imports another), `src/` versus `test/`, generated cli
 | AGT-09 | The release-boundary sentence | Branches named, each protected branch the declared rules name included; push and PR only as the state allows; never merge, tag or release; `PASS` |
 | AGT-10 | `grep -n -i 'read .* first' AGENTS.md` | No unconfigured deferral; `PASS` |
 | AGT-11 | The rule-line tally in the state note | At least 80% specific, every specific line verified; else `partial` with the count |
+| AGT-12 | `grep -n -i -A6 'write for' AGENTS.md`; the engine's AGT-12 | The section names the confirmed persona, how to report and how to ask for a decision; `PASS` (`partial` for a non-English docs language) |
 | EXEC-06 | The engine's EXEC-06 | Every fenced command resolves; `PASS` |
 | TST-04 | `grep -n -A2 'single test' AGENTS.md` | A fenced single-test command for the runner; `PASS` |
 | Budget | `wc -l AGENTS.md` | 400 or fewer, or the overage recorded as debt |
@@ -257,7 +291,7 @@ themselves (one app never imports another), `src/` versus `test/`, generated cli
 
 `git revert` the commits: one per finding, each revertible alone. Text moved to `docs/` comes back with the revert of
 its commit; nothing outside `AGENTS.md`, the vendor pointer files the owner agreed to change, the second rules file
-the owner agreed to trim, and the new `docs/` page is touched.
+the owner agreed to trim, the new `docs/` page and the long-form communication rules file is touched.
 
 ## Do-not-do
 
@@ -268,7 +302,8 @@ the owner agreed to trim, and the new `docs/` page is touched.
 - Do not create a harness configuration file to point at a second rules file.
 - Do not write a fact an earlier theme has not made true (a verb that does not resolve, a docs page that does not
   exist), and do not name a harness in the reach line that does not load the file.
-- Do not add generic prose, persona text or an overview to fill a section.
+- Do not add generic prose, role-play persona text or an overview to fill a section. The reader persona of the
+  AGT-12 section is not generic text.
 - Do not copy content from a private repository or workspace into an open-source one, or from any target into the
   framework.
 
@@ -285,6 +320,11 @@ python3 implement/tools/progress.py pref set agents_md.generic_text move-to-docs
 python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
   --commit <sha> --verification-command "grep -n -i 'same change set' AGENTS.md" \
   --verification-result "one sentence, triggers named"
+python3 implement/tools/progress.py pref set agents_md.reader "a new engineer who knows Java and Gradle" \
+  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+  --commit <sha> --verification-command "grep -n -i -A6 'write for' AGENTS.md" \
+  --verification-result "section names the reader, reports and decisions; AGT-12 PASS"
 python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --commit <sha> --debt "what=files that break the <rule> rule,count=<N>" --note "rule kept as target state"
 ```
