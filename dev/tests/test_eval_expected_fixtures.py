@@ -3,7 +3,7 @@
 
 """The fixture corpus's expected files agree with the engine's own matrix (S4.2.1).
 
-``tools/eval/generate_fixture_expected.py`` wrote one ``schema/examples/eval-expected/fixtures/<fixture>.json``
+``dev/eval/generate_fixture_expected.py`` wrote one ``dev/eval/expected/fixtures/<fixture>.json``
 per row of the engine's ``tests/test_fixture_matrix.py`` (``MATRIX``), running the real engine on a throwaway,
 deterministically-committed copy of each fixture. Running the engine 89 times is too slow for this suite, so
 this test does not regenerate anything — it loads the committed files and checks them against the matrix and
