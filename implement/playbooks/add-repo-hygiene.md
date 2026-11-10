@@ -267,10 +267,12 @@ the policy files, and for nothing else:
    - **Tool.** Keep the tool the repository already uses. With none: Dependabot on GitHub, Renovate on GitLab,
      Azure DevOps or Bitbucket, where Dependabot does not run.
    - **Coverage.** One entry per ecosystem the audit detected from a manifest, with the `package-ecosystem` the
-     stack profile names (Node `npm`, Python `pip` or `uv`, Java `maven` or `gradle`, Go `gomod`, Rust `cargo`,
-     .NET `nuget`, Ruby `bundler`, PHP `composer`), plus `github-actions` when the repository has GitHub
-     workflows. Set `directory` (or `directories`) to where each manifest lives. Renovate needs no entry per
-     ecosystem; remove a detected one from `enabledManagers` only when the owner asks.
+     stack profile names (Node `npm`, Python `pip` or `uv`, Java `maven` or `gradle`, Go `gomod`, Rust `cargo`, .NET
+     `nuget`, Ruby `bundler`, PHP `composer`). Add `github-actions` when the repository has GitHub workflows. With a
+     `.pre-commit-config.yaml` and a policy other than `security-only`, add a `pre-commit` entry: Dependabot updates
+     the hooks' `rev:` lines. It has no security updates for this ecosystem (GitHub's "Supported ecosystems and
+     repositories" page). Set `directory` (or `directories`) to where each manifest lives. Renovate needs no entry
+     per ecosystem; remove a detected one from `enabledManagers` only when the owner asks.
    - **The `target-branch` trap.** Dependabot drops an entry's `ignore` and `groups` for security updates when the
      entry sets `target-branch`; security pull requests always go to the default branch. If `target-branch` names
      the default branch, delete the line. If it names another branch, do not change it: ask the owner whether to
