@@ -191,6 +191,13 @@ class LegalMoveTests(TransitionCase):
         self.assertEqual(item["notes"], "retry")
         self.assertEqual(item["reason"], "y")
 
+    def test_full_commit_ids_are_stored_cut_to_12_digits(self) -> None:
+        f = self.to_in_progress()
+        full = (SHA * 4)[:40]
+        self.ok("set-status", f, "failed", "--reason", "x", "--commit", full, "--commit", "abcdef1")
+        self.ok("set-status", f, "in_progress", "--commit", full, "--note", "same commit again")
+        self.assertEqual(self.item(f)["commits"], [SHA, "abcdef1"])
+
     def test_leaving_failed_clears_the_reason(self) -> None:
         f = self.to_in_progress()
         self.ok("set-status", f, "blocked", "--reason", "waits")
@@ -426,6 +433,12 @@ class ThemeTests(TransitionCase):
              "branch": "agentic-readiness/ir04-x", "pr": 12, "merged_sha": SHA},
         )  # fmt: skip
         self.assertIn("theme T1 pr_open to merged", self.state()["log"][-1]["event"])
+
+    def test_a_full_merge_sha_is_stored_cut_to_12_digits(self) -> None:
+        self.to_in_progress()
+        full = (SHA2 * 4)[:40]
+        self.ok("theme", "T1", "--status", "merged", "--branch", "b", "--pr", "1", "--merged-sha", full)
+        self.assertEqual(self.theme()["merged_sha"], SHA2)
 
     def test_a_theme_may_skip_a_step_when_it_has_the_data(self) -> None:
         self.ok("theme", "T2", "--status", "pr_open", "--branch", "b", "--pr", "3")
