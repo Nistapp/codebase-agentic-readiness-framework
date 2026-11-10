@@ -11,16 +11,23 @@ Each numbered ADR (``NNNN-slug.md``) in :data:`ADR_FOLDERS` must:
 * carry no lifecycle field (Status, Date, Last reviewed, Deciders) and no ``## Lifecycle`` footer;
 * not be a tombstone: no superseded, deprecated, rejected or obsolete marker (the audit's DOC-04 rule);
 * hold the four template sections, in order: Context, Decision, Alternatives Considered, Consequences;
-* have a row in the root index, :data:`INDEX`, which links it by path.
+* have a row, a link by path, in each index of :data:`INDEXES` that covers its folder: the root index covers every
+  folder, and the engine's architecture page covers the engine's.
 
-The index must not link a numbered ADR that does not exist. Exit 0 when all hold, 1 when one fails (each failure is
-printed), 2 on a usage error. ``make adr-lint`` runs it inside ``make check``. Standard library only.
+An index must not link a numbered ADR that does not exist. No Markdown page may name an ADR that does not exist: a
+path such as ``adrs/0004-slug.md`` must resolve in an ADR folder, and "ADR 0004" must be a number some folder uses.
+Generated history (``CHANGELOG.md``), fixtures, scratch and the greenfield templates (whose ADR numbers belong to a
+new project) are not read. The number check cannot tell folders apart: "ADR 0001" passes while any folder has one.
+
+Exit 0 when all hold, 1 when one fails (each failure is printed), 2 on a usage error. ``make adr-lint`` runs it
+inside ``make check``. Standard library only.
 """
 
 from __future__ import annotations
 
 import argparse
 import importlib
+import os
 import re
 import sys
 from pathlib import Path
@@ -40,12 +47,24 @@ ADR_FOLDERS = (
     "audit/engine/docs/architecture/adrs",
 )
 INDEX = "docs/architecture/adrs/README.md"
+ENGINE_INDEX = "audit/engine/docs/architecture/README.md"
+#: Each index and the ADR folders it must list in full.
+INDEXES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (INDEX, ADR_FOLDERS),
+    (ENGINE_INDEX, ("audit/engine/docs/architecture/adrs",)),
+)
 SECTIONS = ("Context", "Decision", "Alternatives Considered", "Consequences")
 
 ADR_FILE = re.compile(r"^(\d{4})-[a-z0-9-]+\.md$")
 LIFECYCLE_FIELD = re.compile(r"^[ \t>*_-]*(status|date|last reviewed|deciders)[ \t*_]*:", re.IGNORECASE | re.MULTILINE)
 LIFECYCLE_FOOTER = re.compile(r"^#{1,6}\s*lifecycle\b", re.IGNORECASE | re.MULTILINE)
 LINK = re.compile(r"\]\(([^)#\s]+)(?:#[^)]*)?\)")
+ADR_NUMBER_MENTION = re.compile(r"\bADR[- ]?(\d{1,4})\b")
+ADR_PATH_MENTION = re.compile(r"(?:adrs|decisions)/(\d{4}-[A-Za-z0-9._-]+\.md)")
+#: Directories never read for mentions: scratch (off-limits), generated output, fixtures and the greenfield templates.
+SKIP_DIRS = {".git", "node_modules", ".venv", "artefacts", "fixtures", "testdata", "dist", "__pycache__"}
+SKIP_PREFIXES = ("greenfield/templates/",)
+SKIP_FILES = {"CHANGELOG.md"}
 
 
 def adr_files(root: Path) -> list[Path]:
@@ -85,11 +104,61 @@ def lint_adr(path: Path, text: str) -> list[str]:
     return problems
 
 
-def index_links(root: Path) -> set[Path]:
-    """The files the root index links to, resolved."""
-    index = root / INDEX
+def index_links(index: Path) -> set[Path]:
+    """The files ``index`` links to, resolved."""
     text = index.read_text(encoding="utf-8")
     return {(index.parent / target).resolve() for target in LINK.findall(text) if "://" not in target}
+
+
+def lint_index(root: Path, index_rel: str, folders: tuple[str, ...], adrs: list[Path]) -> list[str]:
+    """``index_rel`` links every ADR in ``folders``, and no numbered ADR there that does not exist."""
+    index = root / index_rel
+    covered = {(root / folder).resolve() for folder in folders}
+    if not index.is_file():
+        holds = any(path.resolve().parent in covered for path in adrs)
+        return [f"{index_rel}: the ADR index is missing"] if holds else []
+    linked = index_links(index)
+    failures = [
+        f"{path.relative_to(root).as_posix()}:1: no row in {index_rel}"
+        for path in adrs
+        if path.resolve().parent in covered and path.resolve() not in linked
+    ]
+    for target in sorted(linked):
+        if target.parent in covered and ADR_FILE.match(target.name) and not target.is_file():
+            failures.append(f"{index_rel}: links {target.relative_to(root.resolve()).as_posix()}, which does not exist")
+    return failures
+
+
+def markdown_pages(root: Path) -> list[Path]:
+    """The Markdown pages read for ADR mentions; skipped folders are pruned before the walk enters them."""
+    pages: list[Path] = []
+    for directory, subdirs, files in os.walk(root):
+        rel_dir = Path(directory).relative_to(root).as_posix()
+        subdirs[:] = sorted(
+            d for d in subdirs if d not in SKIP_DIRS and not f"{rel_dir}/{d}/".lstrip("./").startswith(SKIP_PREFIXES)
+        )
+        pages += [Path(directory) / name for name in sorted(files) if name.endswith(".md") and name not in SKIP_FILES]
+    return pages
+
+
+def lint_mentions(root: Path, adrs: list[Path]) -> list[str]:
+    """Every mention of an ADR number or path that no ADR folder holds."""
+    numbers = {path.name[:4] for path in adrs}
+    names = {path.name for path in adrs}
+    indexes = {index_rel for index_rel, _ in INDEXES}
+    failures: list[str] = []
+    for page in markdown_pages(root):
+        rel = page.relative_to(root).as_posix()
+        # An index's ADR paths are its rows, which lint_index checks; report each dead row once.
+        path_mention = None if rel in indexes else ADR_PATH_MENTION
+        for number, line in enumerate(page.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
+            for match in ADR_NUMBER_MENTION.finditer(line):
+                if match.group(1).zfill(4) not in numbers:
+                    failures.append(f"{rel}:{number}: names {match.group(0)}, which no ADR folder holds")
+            for match in path_mention.finditer(line) if path_mention else ():
+                if match.group(1) not in names:
+                    failures.append(f"{rel}:{number}: names {match.group(1)}, which no ADR folder holds")
+    return failures
 
 
 def lint(root: Path) -> list[str]:
@@ -99,18 +168,9 @@ def lint(root: Path) -> list[str]:
     for path in adrs:
         rel = path.relative_to(root).as_posix()
         failures += [f"{rel}:{problem}" for problem in lint_adr(path, path.read_text(encoding="utf-8"))]
-
-    if not (root / INDEX).is_file():
-        return failures + [f"{INDEX}: the ADR index is missing"]
-    linked = index_links(root)
-    for path in adrs:
-        if path.resolve() not in linked:
-            failures.append(f"{path.relative_to(root).as_posix()}:1: no row in {INDEX}")
-    folders = {(root / folder).resolve() for folder in ADR_FOLDERS}
-    for target in sorted(linked):
-        if target.parent in folders and ADR_FILE.match(target.name) and not target.is_file():
-            failures.append(f"{INDEX}: links {target.relative_to(root.resolve()).as_posix()}, which does not exist")
-    return failures
+    for index_rel, folders in INDEXES:
+        failures += lint_index(root, index_rel, folders, adrs)
+    return failures + lint_mentions(root, adrs)
 
 
 def main(argv: Sequence[str] | None = None) -> int:

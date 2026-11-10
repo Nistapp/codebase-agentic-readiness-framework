@@ -83,7 +83,9 @@ class LintAdr(unittest.TestCase):
         )
 
 
-class LintTree(unittest.TestCase):
+class TreeCase(unittest.TestCase):
+    """Builds a throwaway repository from a mapping of paths to text."""
+
     def tree(self, files: dict[str, str]) -> Path:
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
@@ -94,6 +96,8 @@ class LintTree(unittest.TestCase):
             path.write_text(text, encoding="utf-8")
         return root
 
+
+class LintTree(TreeCase):
     def test_an_indexed_set_in_two_folders_passes(self) -> None:
         root = self.tree(
             {
@@ -129,6 +133,75 @@ class LintTree(unittest.TestCase):
     def test_main_returns_two_for_a_missing_root(self) -> None:
         with redirect_stderr(io.StringIO()):
             self.assertEqual(adr_lint.main([str(REPO / "no-such-dir")]), 2)
+
+
+ENGINE_ADR = "audit/engine/docs/architecture/adrs/0001-use-one-thing.md"
+ROOT_ROW = "[0001](../../../audit/engine/docs/architecture/adrs/0001-use-one-thing.md)\n"
+
+
+class EngineIndex(TreeCase):
+    def test_an_engine_adr_listed_in_both_indexes_passes(self) -> None:
+        root = self.tree(
+            {ENGINE_ADR: GOOD, adr_lint.INDEX: ROOT_ROW, adr_lint.ENGINE_INDEX: "[0001](adrs/0001-use-one-thing.md)\n"}
+        )
+        self.assertEqual(adr_lint.lint(root), [])
+
+    def test_an_engine_adr_missing_from_the_engine_index_fails(self) -> None:
+        root = self.tree({ENGINE_ADR: GOOD, adr_lint.INDEX: ROOT_ROW, adr_lint.ENGINE_INDEX: "No rows.\n"})
+        self.assertEqual(adr_lint.lint(root), [f"{ENGINE_ADR}:1: no row in {adr_lint.ENGINE_INDEX}"])
+
+    def test_the_engine_index_linking_a_deleted_adr_fails(self) -> None:
+        engine_index = "[0001](adrs/0001-use-one-thing.md) [0002](adrs/0002-gone.md)\n"
+        root = self.tree({ENGINE_ADR: GOOD, adr_lint.INDEX: ROOT_ROW, adr_lint.ENGINE_INDEX: engine_index})
+        self.assertEqual(
+            adr_lint.lint(root),
+            [f"{adr_lint.ENGINE_INDEX}: links audit/engine/docs/architecture/adrs/0002-gone.md, which does not exist"],
+        )
+
+    def test_a_missing_engine_index_fails_only_when_the_engine_has_adrs(self) -> None:
+        root = self.tree({ENGINE_ADR: GOOD, adr_lint.INDEX: ROOT_ROW})
+        self.assertEqual(adr_lint.lint(root), [f"{adr_lint.ENGINE_INDEX}: the ADR index is missing"])
+        root = self.tree(
+            {
+                "spec/decisions/0001-use-one-thing.md": GOOD,
+                adr_lint.INDEX: "[0001](../../../spec/decisions/0001-use-one-thing.md)\n",
+            }
+        )
+        self.assertEqual(adr_lint.lint(root), [])
+
+
+class Mentions(TreeCase):
+    def base(self, extra: dict[str, str]) -> Path:
+        files = {
+            "docs/architecture/adrs/0001-use-one-thing.md": GOOD,
+            adr_lint.INDEX: "[0001](0001-use-one-thing.md)\n",
+        }
+        return self.tree({**files, **extra})
+
+    def test_a_mention_of_an_existing_adr_passes(self) -> None:
+        root = self.base({"docs/page.md": "See ADR 0001, ADR-0001 and ADR 1, and adrs/0001-use-one-thing.md.\n"})
+        self.assertEqual(adr_lint.lint(root), [])
+
+    def test_a_number_no_folder_holds_fails(self) -> None:
+        root = self.base({"docs/page.md": "Intro.\nSee ADR 0007 for the old rule.\n"})
+        self.assertEqual(adr_lint.lint(root), ["docs/page.md:2: names ADR 0007, which no ADR folder holds"])
+
+    def test_a_path_to_a_deleted_adr_fails(self) -> None:
+        root = self.base({"README.md": "Read `docs/architecture/adrs/0003-old-rule.md`.\n"})
+        self.assertEqual(adr_lint.lint(root), ["README.md:1: names 0003-old-rule.md, which no ADR folder holds"])
+
+    def test_history_scratch_fixtures_and_greenfield_are_not_read(self) -> None:
+        stale = "ADR 0009 was removed.\n"
+        root = self.base(
+            {
+                "CHANGELOG.md": stale,
+                "artefacts/notes.md": stale,
+                "audit/engine/tests/fixtures/x/README.md": stale,
+                "dev/dist/skills/x.md": stale,
+                "greenfield/templates/docs/x.md": stale,
+            }
+        )
+        self.assertEqual(adr_lint.lint(root), [])
 
 
 class ThisRepository(unittest.TestCase):
