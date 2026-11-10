@@ -277,10 +277,21 @@ the policy files, and for nothing else:
      (version updates off; security updates are a repository setting and an owner action), an `ignore` for
      `version-update:semver-major` (a major stays an advisory alert), a `security-fixes` group with
      `applies-to: security-updates`, and `cooldown: default-days: 7`. `security-and-minor` drops the limit and
-     keeps the major `ignore`; `all` drops both. For Renovate, write the same policy with `vulnerabilityAlerts`,
-     a `packageRules` entry with `enabled: false` for other updates, and `minimumReleaseAge: "7 days"`; confirm
-     the exact form in Renovate's configuration documentation before writing it, and cite the page in the pull
-     request body. The cooldown matches zizmor's `dependabot-cooldown` rule (CI-05).
+     keeps the major `ignore`; `all` drops both. The cooldown matches zizmor's `dependabot-cooldown` rule (CI-05).
+     For Renovate, `security-only` extends the `security:only-security-updates` preset and adds
+     `minimumReleaseAge: "7 days"`:
+
+     ```json
+     { "extends": ["config:recommended", "security:only-security-updates"], "minimumReleaseAge": "7 days" }
+     ```
+
+     The preset turns off every other update (`packageRules` with `matchPackageNames: ["*"]` and
+     `enabled: false`). It turns on `vulnerabilityAlerts` and `osvVulnerabilityAlerts`. `vulnerabilityAlerts`
+     reads GitHub's alerts, so it works on GitHub only. On GitLab, Azure DevOps and Bitbucket, the security pull
+     requests come from `osvVulnerabilityAlerts` (osv.dev). Renovate marks it experimental, and it covers direct
+     dependencies only; say so in the pull request body. Source: Renovate's docs, "Security presets"
+     (`docs.renovatebot.com/presets-security/`) and the `vulnerabilityAlerts` and `osvVulnerabilityAlerts`
+     options (`docs.renovatebot.com/configuration-options/`).
    - **Owner action.** Record "turn on Dependabot security updates in the repository settings" as a note on the
      item: an agent can neither read nor set it.
    - When HYG-09 passed and has no item, name it in the pull request body and change nothing.
