@@ -241,8 +241,10 @@ the policy files, and for nothing else:
                fi
      ```
 
-     GitLab CI (the owner also turns on "Pipelines must succeed"). The variable names are assumed from GitLab's
-     predefined variables; confirm them in GitLab's documentation before you write the job:
+     GitLab CI (the owner also turns on "Pipelines must succeed"). The variables are GitLab's predefined ones
+     (`docs.gitlab.com/ci/variables/predefined_variables/`); the two branch names exist only in merge request
+     pipelines. GitLab does not run a pipeline that holds only `.pre` jobs, so the file needs a job in another
+     stage:
 
      ```yaml
      check-source-branch:
