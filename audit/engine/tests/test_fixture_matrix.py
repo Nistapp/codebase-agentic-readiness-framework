@@ -145,6 +145,7 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- EXEC ---------------------------------------------------------------------------------
     "exec-01-unpinned": {"EXEC-01": "FAIL"},
     "exec-01-nested-go-unpinned": {"EXEC-01": "FAIL"},
+    "exec-01-sibling-module-unpinned": {"EXEC-01": "PARTIAL"},
     "exec-01-python-source-only": {"EXEC-01": "FAIL", "EXEC-02": "UNKNOWN"},
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
     "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},
