@@ -214,6 +214,8 @@ class ImplementBundleTests(unittest.TestCase):
             "references/checks/04-command-surface.md",
             "references/stacks/java.md",
             "references/adrs/0003-push-and-pr-policy.md",
+            "references/adr-policy/ADR_POLICY.md",
+            "references/adr-policy/adr-template.md",
             "references/spec/command-surface.md",
             "references/spec/decisions/0002-lint-in-the-gate.md",
             "references/schema/SCHEMA.md",
@@ -251,6 +253,12 @@ class ImplementBundleTests(unittest.TestCase):
     def test_skill_md_links_the_shared_prompt(self) -> None:
         text = (self.bundle / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("](references/prompts/talking-to-the-user.md)", text)
+
+    def test_docs_contract_playbook_links_the_carried_adr_policy(self) -> None:
+        playbook = self.bundle / "references" / "playbooks" / "establish-docs-contract.md"
+        text = playbook.read_text(encoding="utf-8")
+        self.assertIn("](../adr-policy/ADR_POLICY.md)", text)
+        self.assertIn("](../adr-policy/adr-template.md)", text)
 
     def test_no_framework_tool_command_is_left(self) -> None:
         for file in self.markdown_files():

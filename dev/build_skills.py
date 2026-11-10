@@ -43,7 +43,7 @@ every link it keeps:
   same ``metadata.version`` added.
 - ``references/``: the state contract, the playbooks, the kickoff prompt, the shared prompt on how to talk to the
   user (from ``audit/prompts/``), the check files, the stack profiles,
-  ADR 0003, ``spec/command-surface.md`` and the spec decisions, the state schema and its docs, and the parts of
+  ADR 0003, the ADR policy and the ADR template, ``spec/command-surface.md`` and the spec decisions, the state schema and its docs, and the parts of
   the Tools CLI reference that cover the carried tools (:data:`TOOLS_CLI_SECTIONS`).
 - ``scripts/``: ``progress.py``, ``check_drift.py`` and ``compare_reports.py`` (from ``implement/tools/``), and
   ``validate_report.py`` with the private modules they import (from ``audit/tools/``), side by side in
@@ -296,6 +296,8 @@ IMPLEMENT_REFERENCES = (
         "implement/docs/architecture/adrs/0003-push-and-pr-policy.md",
         "references/adrs/0003-push-and-pr-policy.md",
     ),
+    ("docs/ADR_POLICY.md", "references/adr-policy/ADR_POLICY.md"),
+    ("docs/templates/adr-template.md", "references/adr-policy/adr-template.md"),
     ("spec/command-surface.md", "references/spec/command-surface.md"),
     ("spec/decisions/0001-constraint-artifact.md", "references/spec/decisions/0001-constraint-artifact.md"),
     ("spec/decisions/0002-lint-in-the-gate.md", "references/spec/decisions/0002-lint-in-the-gate.md"),

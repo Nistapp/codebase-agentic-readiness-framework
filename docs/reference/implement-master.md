@@ -269,7 +269,7 @@ Full playbook: [`add-baselines-and-ratchet.md`](../../implement/playbooks/add-ba
 ### `establish-docs-contract`
 
 An agent finds permanent knowledge in one place: `docs/` has an index, a short style guide that the instruction
-file names, a decision log with a template and an index, and a short architecture page with a diagram that was
+file names, a decision log with a policy, a template and an index, and a short architecture page with a diagram that was
 checked. Scratch work stays out of version control. Structural traps (very large files, binaries) are listed,
 not moved.
 
@@ -278,7 +278,7 @@ not moved.
 | [`DOC-01` docs/ exists](audit-master.md#doc-01-docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home |
 | [`DOC-02` docs/STYLE_GUIDE.md exists](audit-master.md#doc-02-docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
 | [`DOC-03` artefacts/ exists and is ignored](audit-master.md#doc-03-artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
-| [`DOC-04` ADR directory and index](audit-master.md#doc-04-adr-directory-and-index) | Adds `docs/adr/` with a template, an index and two or three first records marked `proposed` |
+| [`DOC-04` ADR directory and index](audit-master.md#doc-04-adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
 | [`DOC-05` Docs are readable](audit-master.md#doc-05-docs-are-readable) | Not written yet: the steps that add plain-language rules to the style guide and a prose check are planned. Until then, report the finding to the owner and leave it open |
 | [`NAV-01` Declared component boundaries](audit-master.md#nav-01-declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | [`NAV-02` Obvious entry points](audit-master.md#nav-02-obvious-entry-points) | Verification only: names the entry points in the architecture page |
@@ -292,11 +292,12 @@ not moved.
 - Do not create a second `docs/` or restructure the existing report folders.
 - Do not copy content, paths, names or values from a private repository or workspace into an open-source
   repository's docs or ADRs, or from any target repository into the framework.
-- Do not invent the reason behind a decision. Inferred means "proposed" and says it is inferred.
+- Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
+  fill in".
 - Do not move, resize, delete or untrack files for NAV-03.
 - Do not put values from env files, credentials, realm exports or keystores in any page.
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
-- Do not accept an ADR on the owner's behalf.
+- Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
 
 Full playbook: [`establish-docs-contract.md`](../../implement/playbooks/establish-docs-contract.md).
 
