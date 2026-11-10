@@ -5,7 +5,8 @@
 
 A test imports this module first. The unittest runner starts in this tests folder, which holds neither the implement
 tools (``implement/tools/``) nor the shared helpers they import (``audit/tools/``) nor the shared test helpers
-(``audit/tools/tests/``, for example ``_git``); none of them is a package.
+(``audit/tools/tests/``, for example ``_git``) nor the playbook templates (``implement/playbooks/templates/``); none
+of them is a package.
 """
 
 from __future__ import annotations
@@ -17,7 +18,8 @@ TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parents[1]
 AUDIT = REPO / "audit"
 AUDIT_TOOLS = AUDIT / "tools"
+TEMPLATES = REPO / "implement" / "playbooks" / "templates"
 
-for _path in (AUDIT_TOOLS / "tests", AUDIT_TOOLS, TOOLS):
+for _path in (TEMPLATES, AUDIT_TOOLS / "tests", AUDIT_TOOLS, TOOLS):
     if str(_path) not in sys.path:
         sys.path.insert(0, str(_path))

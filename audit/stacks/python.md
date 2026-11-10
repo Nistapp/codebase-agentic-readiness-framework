@@ -67,6 +67,10 @@ Ruff and mypy both support an incremental-only invocation (changed files alone i
 existing files while a stricter rule set is phased in. Not verified against a real repository in this
 leaf.
 
+Prose (`DOC-05`): the `establish-docs-contract` prose check is a stdlib Python script, copied only under a licence
+the owner names. It runs with the project's own Python; add it to the runner beside the lint (`make docs-prose`, a
+`nox` session or a `tox` environment).
+
 ## Boundaries
 
 A `src/<package>/` layout with internal-only modules under a leading underscore is the idiom; nothing in

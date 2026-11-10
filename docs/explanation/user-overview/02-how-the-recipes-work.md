@@ -84,6 +84,10 @@ default. Each claim that matters is marked *checked*, *inferred* or *assumed*, a
 the report records. The prompt fixes the layout of the audit intake, the finding confirmation, the triage, each
 status report and each pull request description.
 
+The implement recipe also brings these practices to the target. Its `AGENTS.md` theme writes a short section on
+writing for people (check `AGT-12`). Its docs theme adds plain-language and diagram rules to the target's style
+guide (check `DOC-05`). Existing pages are counted as debt, not rewritten.
+
 ## 4. Reading the report
 
 A report's `checks[]` carry a verdict (`PASS`, `PARTIAL`, `FAIL`, `NOT_APPLICABLE`, `UNKNOWN` or `ATTEST`)

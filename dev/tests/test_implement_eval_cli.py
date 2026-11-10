@@ -83,13 +83,13 @@ class NeutraliseTests(unittest.TestCase):
 
 
 class BuildReportsTests(unittest.TestCase):
-    def test_both_canned_reports_are_built_and_valid(self) -> None:
+    def test_every_canned_report_is_built_and_valid(self) -> None:
         with tempfile.TemporaryDirectory(prefix="implement-eval-reports-") as tmp:
             reports = Path(tmp)
             with mock.patch.object(ie, "REPORTS", reports):
                 written = ie.build_reports()
-            self.assertEqual(len(written), 4)
-            for variant in ("base", "planted"):
+            self.assertEqual(len(written), 6)
+            for variant in ie.VARIANTS:
                 documents = sorted((reports / variant).glob("*.json"))
                 self.assertEqual(len(documents), 1, variant)
                 text = documents[0].read_text(encoding="utf-8")
@@ -98,6 +98,18 @@ class BuildReportsTests(unittest.TestCase):
                 self.assertEqual(document["status"], "final")
                 self.assertEqual(validate_report.validate_document(document).errors, [])
                 self.assertTrue(documents[0].with_suffix(".md").is_file())
+
+    def test_one_variant_is_built_alone(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="implement-eval-reports-") as tmp:
+            reports = Path(tmp)
+            with mock.patch.object(ie, "REPORTS", reports):
+                written = ie.build_reports(["comm"])
+            self.assertEqual(len(written), 2)
+            self.assertEqual(sorted(p.name for p in reports.iterdir()), ["comm"])
+
+    def test_an_unknown_variant_is_a_usage_error(self) -> None:
+        with self.assertRaises(_common.UsageError):
+            ie.build_reports(["nope"])
 
 
 if __name__ == "__main__":

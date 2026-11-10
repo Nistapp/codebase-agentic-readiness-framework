@@ -9,6 +9,7 @@
     "audit/tools/tests",
     "implement/tools",
     "implement/tools/tests",
+    "implement/playbooks/templates",
     "dev",
     "dev/eval",
     "dev/tests"

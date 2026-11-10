@@ -118,12 +118,12 @@ change, do all of this in the same change set:
 2. Remove the `Planned` note from each page whose content now exists.
 3. Update the ADR index when you add, change or delete an ADR.
 
-## 8. ADR life## 8. ADR lifecycle
+## 8. ADR lifecycle
 
 [`ADR_POLICY.md`](ADR_POLICY.md) holds every ADR rule: numbering, the index, changing and deleting. ADRs start from
 [`templates/adr-template.md`](templates/adr-template.md).
 
-s not go in `docs/`
+## 9. What does not go in `docs/`
 
 | Not in `docs/` | Where it goes |
 |---|---|

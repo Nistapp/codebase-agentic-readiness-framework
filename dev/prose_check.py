@@ -21,7 +21,8 @@ code spans are skipped. A region between ``<!-- prose-check off -->`` and ``<!--
 a deliberate bad example. The last line is ``Summary: N issues in M files (W warnings, K notices)``. The exit code
 is 0 whatever the count; it is 2 only when a file cannot be read.
 
-Dev-only and standard library only. The sentence splitter is a heuristic: it splits at ``.``, ``!`` or ``?`` before a
+Its copy for target repositories is ``implement/playbooks/templates/docs_prose_check.py``; a rule change edits both,
+and ``dev/tests/test_prose_template_parity.py`` fails until they match. Dev-only and standard library only. The sentence splitter is a heuristic: it splits at ``.``, ``!`` or ``?`` before a
 space and a capital letter, a digit, a code span or an opening bracket.
 """
 

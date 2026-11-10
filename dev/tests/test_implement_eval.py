@@ -4,7 +4,7 @@
 """The implement eval without an agent: the fixtures, the containment, and every assertion on good and bad outcomes.
 
 `implement_eval.py` asserts on what a headless run of the implement recipe leaves behind (IR13). A passing headless
-run proves something only if the assertion code is right, so each assertion, A1 to A8, runs here on outcomes made by
+run proves something only if the assertion code is right, so each assertion, A1 to A12, runs here on outcomes made by
 hand on a materialised scenario: one that follows the recipe (it must pass) and one or more that break the rule the
 assertion stands for (each must fail). The hand-made outcomes use the real `progress.py` and real git, as an agent
 would, and a synthetic stream-json transcript. Standard library only; no network, no `claude`.
@@ -104,7 +104,7 @@ class ScenarioCase(unittest.TestCase):
 class FixtureTests(unittest.TestCase):
     def test_every_scenario_loads_with_known_assertions(self) -> None:
         names = ie.scenario_names()
-        self.assertEqual(len(names), 7)
+        self.assertEqual(len(names), 9)
         covered = set()
         for name in names:
             scenario = ie.load_scenario(name)
@@ -114,7 +114,7 @@ class FixtureTests(unittest.TestCase):
         self.assertEqual(sum(ie.load_scenario(n).pr_by_agent == "yes" for n in names), 1)
 
     def test_the_canned_reports_are_valid_and_final(self) -> None:
-        for variant in ("base", "planted"):
+        for variant in ie.VARIANTS:
             report = json.loads(ie.report_files(variant)[0].read_text(encoding="utf-8"))
             outcome = validate_report.validate_document(report)
             self.assertEqual(outcome.errors, [], variant)
@@ -659,6 +659,87 @@ class DriftTests(ScenarioCase):
     def test_a7_fails_when_the_fixed_finding_is_redone_silently(self) -> None:
         self.run_t6(redo=True, result="index written")
         self.assertFails("A7", "re-done")
+
+
+# --- A9 to A12: the communication scenarios (v0.3.6) ---------------------------------------------------------
+
+TEMPLATE = _dev_paths.REPO / "implement" / "playbooks" / "templates" / "docs_prose_check.py"
+SECTIONS = (
+    "\n## Plain language\n\nShort sentences, active voice.\n\n## Diagrams\n\nOne Mermaid diagram per explanation.\n"
+)
+
+
+class CommDocsContractTests(ScenarioCase):
+    scenario_name = "comm-docs-contract"
+
+    def apply(self, *, sections: bool = True, licence: str = "MIT", limit: str = "100", owner: str = "") -> Path:
+        tree = self.worktree("docs-contract")
+        if sections:
+            guide = (tree / "docs/STYLE_GUIDE.md").read_text(encoding="utf-8")
+            self.commit_file(tree, "docs/STYLE_GUIDE.md", guide + SECTIONS, "docs: add the rules")
+        copy = TEMPLATE.read_text(encoding="utf-8").replace("AGPL-3.0-or-later", licence, 1)
+        if owner:
+            copy = copy.replace("K. C. Ramakrishna", owner, 1)
+        self.commit_file(tree, "scripts/docs_prose_check.py", copy, "build: add the prose check")
+        for key, value in (("docs.prose_check", "template"), ("docs.prose_check_licence", "MIT")):
+            self.progress(tree, "pref", "set", key, value, "--reason", "owner: canned answer", "--by", "owner")
+        self.progress(
+            tree, "pref", "set", "docs.prose_ratchet", limit, "--reason", "owner: the measured count", "--by", "owner"
+        )
+        self.commit_state(tree)
+        return tree
+
+    def test_a10_a11_a12_pass_on_a_run_that_follows_the_playbook(self) -> None:
+        self.apply()
+        for key in ("A10", "A11", "A12", "A6"):
+            self.assertPasses(key)
+
+    def test_a10_fails_without_the_sections(self) -> None:
+        self.apply(sections=False)
+        self.assertFails("A10", "Plain language")
+
+    def test_a11_fails_on_a_copy_under_the_framework_licence(self) -> None:
+        self.apply(licence="AGPL-3.0-or-later")
+        self.assertFails("A11", "licence line")
+
+    def test_a11_fails_when_the_copyright_line_is_replaced(self) -> None:
+        self.apply(owner="Example Corp")
+        self.assertFails("A11", "copyright line")
+
+    def test_a11_fails_when_the_ratchet_limit_is_below_the_count(self) -> None:
+        self.apply(limit="0")
+        self.assertFails("A11", "ratchet run exits 1")
+
+    def test_a12_fails_when_an_earlier_page_is_rewritten(self) -> None:
+        tree = self.apply()
+        self.commit_file(tree, "docs/usage.md", "# Usage\n\nAdd items with `add`.\n", "docs: shorten usage")
+        self.assertFails("A12", "docs/usage.md")
+
+
+class CommAgentsMdTests(ScenarioCase):
+    scenario_name = "comm-agents-md"
+
+    def apply(self, persona: str) -> None:
+        tree = self.worktree("agents-md")
+        text = (tree / "AGENTS.md").read_text(encoding="utf-8")
+        section = (
+            f"\n## How to write for people\n\n- **Reader:** write for {persona}.\n"
+            "- **Bottom line first.**\n- **Reports:** a status report says what is done, not done, blocked and next.\n"
+            "- **Decisions:** give the options, your recommendation and the default.\n"
+        )
+        self.commit_file(tree, "AGENTS.md", text + section, "docs: add how to write for people")
+
+    def test_a9_and_a12_pass_when_the_section_names_the_reader(self) -> None:
+        self.apply(self.scenario.params["persona"])
+        self.assertPasses("A9")
+        self.assertPasses("A12")
+
+    def test_a9_fails_when_the_section_names_another_reader(self) -> None:
+        self.apply("a reader")
+        self.assertFails("A9", "does not name the reader")
+
+    def test_a9_fails_without_a_theme_branch(self) -> None:
+        self.assertFails("A9", "no theme branch")
 
 
 if __name__ == "__main__":
