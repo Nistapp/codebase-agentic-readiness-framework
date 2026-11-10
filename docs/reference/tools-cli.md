@@ -797,12 +797,11 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
 - `references/`: read by the model;
 - `scripts/`: run by it.
 
-- **`agentic-readiness-audit`**: `references/` holds the check files, the stack profiles, the shared prompt on
-  how to talk to the user and the schema docs. `scripts/` holds the tools the recipe calls. Beside them are the
-  schema files and the `catalogue.json` they read at a fixed path, and the engine's `audit` package, one folder
-  level up as `engine.py` expects. `audit.pyz` is the engine's single-file build. The link to the shared prompt is
-  rewritten to its place in the bundle. Some other links in its `SKILL.md` point outside what the bundle carries
-  (found, not fixed; `skills-ref` validates only the frontmatter and the directory-name match).
+- **`agentic-readiness-audit`**: `references/` holds the check files, the stack profiles and the schema docs. It
+  also holds the shared prompt on how to talk to the user and the sections of this page for the tools it carries.
+  `scripts/` holds the tools the recipe calls. Beside them are the schema files and the `catalogue.json` they read
+  at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. `audit.pyz` is
+  the engine's single-file build. Its Markdown files are rewritten the same way as the implement bundle's, below.
 - **`agentic-readiness-implement`**: `references/` holds the state contract, the playbooks, the kickoff prompt and
   the shared prompt on how to talk to the user. It also holds the check files, the stack profiles, ADR 0003,
   `spec/command-surface.md` and the spec decisions, the state schema and its docs, and the sections of this page
@@ -810,9 +809,9 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
   `validate_report.py` with their private modules, the schema files, `catalogue.json`, and an `engine.py` shim.
   The engine is not copied. The shim loads `engine.py` from the `agentic-readiness-audit` skill installed in the
   same skills folder, so both skills run one engine. A tool that needs the engine without it exits 1 and names the
-  missing skill. Every carried Markdown file is rewritten in three ways:
+  missing skill. In both bundles, every carried Markdown file is rewritten in three ways:
   - a `python3 audit/tools/<tool>.py` command becomes the path from the skill's own folder
-    (`python3 scripts/tools/<tool>.py`, or the audit skill's path for `engine.py`);
+    (`python3 scripts/tools/<tool>.py`; in the implement bundle, the audit skill's path for `engine.py`);
   - a link to a carried file points at its place in the bundle;
   - any other relative link becomes plain text that names the framework path. No link leaves the bundle.
 
