@@ -126,9 +126,10 @@ jobs:
           version-file: dev/tools/pyproject.toml
       - run: make test-dev
 
-  # Every suite on the newest Python, in parts with one shard of each sharded suite (`make test-part`;
-  # TEST_PART_<i> in the Makefile). Each part runs its targets at once, as `make test` runs its suites, so this job also proves the
-  # parallel run on every pull request. The nightly workflow runs the unsharded `make test`.
+  # Every suite on the newest Python, in parts with one shard of each suite in TEST_SHARDED_SUITES, the dev checks
+  # included (`make test-part`; TEST_PART_<i> in the Makefile). Each part runs its targets at once, as `make test` runs
+  # its suites, so this job also proves the parallel run on every pull request. The nightly workflow runs the
+  # unsharded `make test`.
   test-py314:
     name: test (part ${{ matrix.shard }}, Python 3.14)
     runs-on: ubuntu-latest

@@ -4,7 +4,8 @@
 """Runs one shard of a unittest suite, so CI can split a slow suite over jobs that run at once.
 
 ``python3 dev/test_shard.py --suite engine --shard 1/2`` finds the suite's test modules at run time, assigns them
-to shards by the weights in ``dev/test_shard_weights.json`` and runs the modules of one shard. Each module is loaded
+to shards by the weights in ``dev/test_shard_weights.json`` and runs the modules of one shard. The suites are the
+engine's, the audit tools' and the dev checks' (``SUITES``). Each module is loaded
 as ``python3 -m unittest discover`` loads it, from the same working directory and ``sys.path``. A module with no
 weight gets ``DEFAULT_WEIGHT``, so a new module is always in exactly one shard. A shard that selects no test exits 1,
 so a shard cannot pass by running nothing.
@@ -38,6 +39,7 @@ WEIGHTS = DEV / "test_shard_weights.json"
 SUITES = {
     "engine": (REPO / "audit" / "engine", "tests"),
     "audit-tools": (REPO, "audit/tools/tests"),
+    "dev": (REPO, "dev/tests"),
 }
 #: The weight of a module that the weights file does not name yet (seconds).
 DEFAULT_WEIGHT = 1.0
