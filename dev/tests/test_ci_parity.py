@@ -7,7 +7,8 @@ CI does not call ``make check`` as one command: ``.github/workflows/ci.yml`` run
 they run at once. These tests fail when a step of ``check`` (or a suite of ``test``) has no CI job, so a step
 added to ``check`` cannot silently drop out of the gate that decides a pull request.
 
-CI also splits the slow suites into shards (``SHARDED_SUITES``, ``TEST_SHARDS``, ``dev/test_shard.py``). These tests fail when a
+CI also splits the slow suites into shards (``SHARDED_SUITES``, ``TEST_SHARDED_SUITES``, ``TEST_SHARDS``,
+``dev/test_shard.py``). These tests fail when a
 matrix misses a shard, when a shard leaves the coverage environment, or when a verb (``test``, ``coverage``) starts
 to shard. The nightly workflow runs the verbs whole.
 """
@@ -85,6 +86,7 @@ class CheckRunsInCI(unittest.TestCase):
         self.suites = make_variable(self.makefile, "TEST_SUITES")
         self.coverage_suites = make_variable(self.makefile, "COVERAGE_SUITES")
         self.sharded = make_variable(self.makefile, "SHARDED_SUITES")
+        self.test_sharded = make_variable(self.makefile, "TEST_SHARDED_SUITES")
         self.count = int(make_variable(self.makefile, "TEST_SHARDS")[0])
 
     def test_every_step_of_check_has_a_ci_job(self) -> None:
@@ -96,12 +98,17 @@ class CheckRunsInCI(unittest.TestCase):
         """``target`` runs whole, or in shards (test_shard_matrices_list_every_shard checks that none is missing)."""
         return target in targets or f"{target}-shard" in targets
 
+    def sharded_by(self, kind: str) -> tuple[str, list[str]]:
+        """The variable that names the suites ``make <kind>-part`` shards, and its suites."""
+        return ("TEST_SHARDED_SUITES", self.test_sharded) if kind == "test" else ("SHARDED_SUITES", self.sharded)
+
     def parts(self, kind: str) -> set[str]:
         """Every target that ``make <kind>-part`` runs over its TEST_SHARDS parts: each sharded suite's shard target,
         plus ``<KIND>_PART_<i>``."""
         recipe = make_recipe(self.makefile, f"{kind}-part")
-        self.assertIn(f"$(SHARDED_SUITES:%={kind}-%-shard) $({kind.upper()}_PART_$(SHARD))", recipe)
-        targets = {f"{kind}-{suite}-shard" for suite in self.sharded}
+        variable, suites = self.sharded_by(kind)
+        self.assertIn(f"$({variable}:%={kind}-%-shard) $({kind.upper()}_PART_$(SHARD))", recipe)
+        targets = {f"{kind}-{suite}-shard" for suite in suites}
         for shard in range(1, self.count + 1):
             targets.update(make_variable(self.makefile, f"{kind.upper()}_PART_{shard}"))
         return targets
@@ -197,7 +204,7 @@ class CheckRunsInCI(unittest.TestCase):
         # A job that runs a shard target must run it once for each of the TEST_SHARDS shards, or a part of a suite
         # never runs. Each shard reads its number from the job's SHARD variable.
         shard_targets = {"test-part", "coverage-part"} | {
-            f"{kind}-{suite}-shard" for kind in ("test", "coverage") for suite in self.sharded
+            f"{kind}-{suite}-shard" for kind in ("test", "coverage") for suite in self.sharded_by(kind)[1]
         }
         sharded = []
         for job, block in ci_jobs(CI.read_text(encoding="utf-8")).items():
@@ -210,8 +217,10 @@ class CheckRunsInCI(unittest.TestCase):
         self.assertEqual(sorted(sharded), ["test-coverage", "test-py314"], "both Pythons run the suites in shards")
 
     def test_the_makefile_and_the_runner_shard_the_same_suites(self) -> None:
-        self.assertEqual(sorted(self.sharded), sorted(test_shard.SUITES))
-        for suite in self.sharded:
+        # test-part shards every suite the runner knows; coverage-part shards a subset (coverage.py skips dev/).
+        self.assertEqual(sorted(self.test_sharded), sorted(test_shard.SUITES))
+        self.assertLessEqual(set(self.sharded), set(self.test_sharded))
+        for suite in self.test_sharded:
             with self.subTest(suite=suite):
                 self.assertIn(f"test-{suite}", self.suites)
                 self.assertIn(f"$(call test_shard,{suite})", make_recipe(self.makefile, f"test-{suite}-shard"))
@@ -227,7 +236,11 @@ class CheckRunsInCI(unittest.TestCase):
                 self.assertIn(f"$(call test_shard,{suite})", recipe)
 
     def test_the_verbs_never_shard(self) -> None:
-        rules = ["test", "coverage", *(f"{kind}-{suite}" for kind in ("test", "coverage") for suite in self.sharded)]
+        rules = [
+            "test",
+            "coverage",
+            *(f"{kind}-{suite}" for kind in ("test", "coverage") for suite in self.sharded_by(kind)[1]),
+        ]
         for rule in rules:
             with self.subTest(rule=rule):
                 recipe = make_recipe(self.makefile, rule) + " ".join(make_rule(self.makefile, rule))

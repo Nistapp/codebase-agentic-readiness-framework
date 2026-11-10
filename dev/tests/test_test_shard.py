@@ -33,7 +33,7 @@ class Assignment(unittest.TestCase):
         ]
 
     def test_every_suite_has_modules_and_weights(self) -> None:
-        self.assertEqual(sorted(test_shard.SUITES), ["audit-tools", "engine"])
+        self.assertEqual(sorted(test_shard.SUITES), ["audit-tools", "dev", "engine"])
         for name, modules, weights in self.suites():
             with self.subTest(suite=name):
                 self.assertGreater(len(modules), 10)

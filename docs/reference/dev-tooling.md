@@ -13,7 +13,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | --- | --- | --- | --- | --- |
 | ruff | Python formatting and lint errors (rules in `ruff.toml`) | `make format`, `make format:check`, `make lint` | `static` | `dev/tools/pyproject.toml` |
 | mypy | Python type errors, strict mode (`mypy.ini`) | `make typecheck` | `static` | `dev/tools/pyproject.toml` |
-| unittest | Failing tests: the engine, the audit tools, the implement tools, the dev checks | `make test` (on Linux, its four suites at once; CI splits the engine's and the audit tools' suites into shards with `dev/test_shard.py`) | `test-coverage`, `test-dev`, `test-py314`; unsharded in `nightly.yml` | Python standard library |
+| unittest | Failing tests: the engine, the audit tools, the implement tools, the dev checks | `make test` (on Linux, its four suites at once; CI splits the engine's and the audit tools' suites into shards with `dev/test_shard.py`, and the dev checks too on Python 3.14) | `test-coverage`, `test-dev`, `test-py314`; unsharded in `nightly.yml` | Python standard library |
 | coverage.py | Test coverage below the floor in `.coveragerc` | `make coverage` (in CI: `coverage-part`, then `coverage-combine SHARDED=1`) | `test-coverage`, `coverage`; unsharded in `nightly.yml` | `dev/tools/pyproject.toml` |
 | jsonschema | The tools' schema validator disagrees with the reference package | `make crosscheck` | `crosscheck` | `dev/tools/pyproject.toml` |
 | `dev/recipe_lint.py` | Broken links, bad `SKILL.md` frontmatter, a recipe `SKILL.md` that does not link the shared user prompt, oversize files, unknown tools, check IDs and requirement IDs | `make recipe-lint` | `static` | This repository |
