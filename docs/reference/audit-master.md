@@ -218,7 +218,8 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 `COSMETIC` · scored · engine check · fixed by [`establish-docs-contract`](implement-master.md#establish-docs-contract)
 
-- **Passes when:** a numbered-ADR directory exists, holds at least one entry, and an index lists every entry.
+- **Passes when:** a numbered-ADR directory exists, holds at least one entry, an index lists every entry, and no entry
+  is a tombstone.
 - **Why it matters:** Architectural decisions need a location and a registry, or the rationale lives only in chat and
   pull requests, and agents re-litigate settled decisions ([greenfield/README.md § 5.2 Templates &
   Guides](../../greenfield/README.md#52-templates--guides)).
