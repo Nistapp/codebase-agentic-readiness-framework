@@ -1,0 +1,10 @@
+# The hook chain is wired (lefthook) and a command reads the branch, but it only warns: no non-zero exit, so the
+# commit goes ahead on a protected branch.
+pre-commit:
+  commands:
+    protected-branch:
+      run: >-
+        branch="$(git symbolic-ref --quiet --short HEAD || true)";
+        case "$branch" in main|master) echo "You are committing on $branch." >&2;; esac
+    lint:
+      run: make lint

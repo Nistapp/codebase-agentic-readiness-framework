@@ -100,6 +100,7 @@ fixtures/
   tool-06-local-only-commit-rule/  commit-msg hook, no CI step     -> TOOL-06 PARTIAL
   tool-06-ci-only-commit-rule/     PR-title check in CI, no hook   -> TOOL-06 PARTIAL
   tool-07-no-branch-guard/   wired lefthook, no protected-branch guard -> TOOL-07 FAIL
+  tool-07-guard-no-exit/     wired lefthook guard reads the branch but only warns, no non-zero exit -> TOOL-07 PARTIAL
   tool-ok-node/              the smallest node repository passing every TOOL check (hook and CI step)
   ci-01-no-pr-trigger/       workflow without a pull-request trigger -> CI-01 PARTIAL
   ci-02-parity-break/        CI runs a framework verb with no local script -> CI-02 FAIL

@@ -46,9 +46,12 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   `pre-commit`/`commit-msg` hook script that reads the current branch (`git symbolic-ref ... HEAD`,
   `git branch --show-current`, `git rev-parse --abbrev-ref HEAD`). The branches it must name are the literal ones
   the declared rules protect (:func:`audit.rules.checks._common.declared_branch_rules`); with none declared, any
-  guard counts. A guard in a wired chain that names them all ⇒ `PASS`; a guard in a chain that is not wired, or one
+  guard counts. A guard that reads the branch must also exit non-zero (``exit 1``, ``process.exit(1)``, a bare
+  ``false``) in its command block or hook script; ``no-commit-to-branch`` always does. A stopping guard in a wired
+  chain that names them all ⇒ `PASS`; a guard in a chain that is not wired, a guard with no non-zero exit, or one
   that misses a protected branch ⇒ `PARTIAL`; hooks but no guard ⇒ `FAIL`; no hook at all ⇒ `UNKNOWN`, which is
-  `TOOL-05`'s finding. Whether the guard exits non-zero, and a guard in a script the hook calls, are not read.
+  `TOOL-05`'s finding. The exit is read anywhere in a hook script, not tied to the branch test; a guard in a script
+  the hook calls is not read.
 
 Deliberate limits, recorded rather than hidden. **Config detection is filename-based** against the
 documented set below; a config that lives somewhere unexpected is not seen. **Verb resolution is
@@ -1034,6 +1037,12 @@ _GUARD_HOOK_NAMES = frozenset({"pre-commit", "commit-msg"})
 #: without ``--pattern`` (``args.branch or ('master', 'main')`` in its source, checked at v6.0.0).
 _NO_COMMIT_DEFAULTS = ("main", "master")
 
+#: A command that ends the hook with a non-zero status, so the commit stops: ``exit 1`` (any 1 to 255),
+#: ``process.exit(1)`` or ``sys.exit(1)`` in a script hook, or a bare ``false`` as a command.
+_NONZERO_EXIT_RE = re.compile(
+    r"\bexit\s+[1-9]|\bexit\s*\(\s*[1-9]|(?:^|[;&|{(]|\bthen|\belse|\bdo)\s*false\s*(?:$|[;&|})])", re.MULTILINE
+)
+
 _ARG_SEP = r"[\s,='\"\-]+"
 _BRANCH_ARG_RE = re.compile(r"(?:--branch|\B-b)" + _ARG_SEP + r"([A-Za-z0-9_][\w./-]*)")
 _PATTERN_ARG_RE = re.compile(r"(?:--pattern|\B-p)" + _ARG_SEP + r"([^\s,'\"\]]+)")
@@ -1042,12 +1051,15 @@ _PATTERN_ARG_RE = re.compile(r"(?:--pattern|\B-p)" + _ARG_SEP + r"([^\s,'\"\]]+)
 class _Guard:
     """One guard: where it is, whether its hook chain is wired, and which branches it names."""
 
-    def __init__(self, rel: str, line: int, wired: bool, text: str, patterns: tuple[str, ...] = ()) -> None:
+    def __init__(
+        self, rel: str, line: int, wired: bool, text: str, patterns: tuple[str, ...] = (), *, exits: bool = True
+    ) -> None:
         self.rel = rel
         self.line = line
         self.wired = wired
         self.text = text
         self.patterns = patterns
+        self.exits = exits
 
     def covers(self, branch: str) -> bool:
         for pattern in self.patterns:
@@ -1099,7 +1111,9 @@ def _branch_read_guards(text: str, rel: str, wired: bool, *, whole_file: bool, s
             continue
         if staged and _stage(lines, index) not in _GUARD_HOOK_NAMES:
             continue
-        return [_Guard(rel, index + 1, wired, text if whole_file else _block(lines, index))]
+        guard_text = text if whole_file else _block(lines, index)
+        uncommented = "\n".join(line for line in guard_text.splitlines() if not line.lstrip().startswith("#"))
+        return [_Guard(rel, index + 1, wired, guard_text, exits=bool(_NONZERO_EXIT_RE.search(uncommented)))]
     return []
 
 
@@ -1166,7 +1180,25 @@ def check_tool07(*, spec, target, inventory, stack, components, session) -> Chec
             ],
         )
 
-    missing = [branch for branch in protected if not any(guard.covers(branch) for guard in wired_guards)]
+    stopping = [guard for guard in wired_guards if guard.exits]
+    if not stopping:
+        return _outcome(
+            spec,
+            Verdict.PARTIAL,
+            f"branch guard at {where} reads the branch but never exits non-zero",
+            [
+                _finding(
+                    spec,
+                    "rely on the branch guard to stop a commit on a protected branch",
+                    f"the guard at {where} reads the branch but has no non-zero exit, so the commit goes ahead",
+                    Verdict.PARTIAL,
+                    [Evidence(guard.rel, line=guard.line) for guard in wired_guards],
+                    "End the guard with `exit 1` when the branch is protected, so the hook stops the commit.",
+                )
+            ],
+        )
+    where = ", ".join(f"{guard.rel}:{guard.line}" for guard in stopping)
+    missing = [branch for branch in protected if not any(guard.covers(branch) for guard in stopping)]
     if missing:
         return _outcome(
             spec,
@@ -1178,7 +1210,7 @@ def check_tool07(*, spec, target, inventory, stack, components, session) -> Chec
                     f"learn before a commit that {', '.join(missing)} is protected",
                     f"the guard at {where} does not name {', '.join(missing)}",
                     Verdict.PARTIAL,
-                    [Evidence(guard.rel, line=guard.line) for guard in wired_guards],
+                    [Evidence(guard.rel, line=guard.line) for guard in stopping],
                     f"Add {', '.join(missing)} to the guard's branch list.",
                 )
             ],
