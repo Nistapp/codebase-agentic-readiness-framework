@@ -174,7 +174,8 @@ When `artefacts/`, `artifacts/` or a directory where an agent tool keeps its own
 - **Checks:** DOC-03, CON-03
 
 ### REQ-SH-019 — ADR directory and index
-The repository SHOULD have an ADR directory with numbered entries and an index that lists every entry.
+The repository SHOULD have an ADR directory with numbered entries and an index that lists every entry. No entry
+SHOULD be marked superseded, deprecated or rejected: a retired ADR is deleted, and git keeps its history.
 
 - **Phase:** 1
 - **Verification:** automated

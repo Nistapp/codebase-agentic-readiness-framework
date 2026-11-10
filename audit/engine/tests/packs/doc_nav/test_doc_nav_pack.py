@@ -31,6 +31,8 @@ import support  # noqa: E402
 from audit.rules.checks.nav import _jvm_entry, _python_entry  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 from audit.rules.checks import _prose  # noqa: E402
+from audit.rules.checks.doc import _adr_tombstone  # noqa: E402
+from audit.rules.checks.doc import check_doc04 as CHECK_DOC04  # noqa: E402
 from audit.rules.checks.doc import check_doc05 as CHECK_DOC05  # noqa: E402
 from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 from audit.stack import detect_stack  # noqa: E402
@@ -40,6 +42,7 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "doc-01-empty": ("DOC-01", "PARTIAL"),
     "doc-02-no-style-guide": ("DOC-02", "FAIL"),
     "doc-04-adr-unindexed": ("DOC-04", "PARTIAL"),
+    "doc-04-adr-tombstone": ("DOC-04", "PARTIAL"),
     "doc-05-long-sentences": ("DOC-05", "FAIL"),
     "nav-01-no-manifest": ("NAV-01", "UNKNOWN"),
     "nav-02-no-entry": ("NAV-02", "FAIL"),
@@ -278,6 +281,79 @@ class Doc04TemplateEntryTests(unittest.TestCase):
         check = self._doc04({"docs/architecture/adrs/0000-template.md": "# NNNN title\n"})
         self.assertEqual(check["verdict"], "PARTIAL")
         self.assertIn("holds no numbered ADR", check["summary"])
+
+
+class Doc04TombstoneTests(unittest.TestCase):
+    """An ADR marked superseded, deprecated or rejected is a tombstone: an agent loads it as a current rule."""
+
+    INDEX = "| [0001](0001-a.md) | A |\n| [0002](0002-b.md) | B |\n"
+
+    def check(self, second: str) -> dict:
+        """Run DOC-04 in-process (so coverage traces it) on two indexed ADRs, the second with ``second``."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "docs/adr/0001-a.md", "# 0001. A\n\n## Decision\n\nUse A.\n")
+            support.write(root, "docs/adr/0002-b.md", second)
+            support.write(root, "docs/adr/README.md", self.INDEX)
+            inventory = build_inventory(root)
+            outcome = CHECK_DOC04(
+                spec=REGISTRY_BY_ID["DOC-04"],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+        return {
+            "verdict": outcome.verdict.value,
+            "summary": outcome.summary,
+            "findings": [finding.to_dict() for finding in outcome.findings],
+        }
+
+    def test_a_current_adr_set_passes(self):
+        check = self.check("# 0002. B\n\n## Decision\n\nUse B.\n")
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertEqual(check["findings"], [])
+
+    def test_a_superseded_status_field_is_partial_and_cites_the_line(self):
+        check = self.check("# 0002. B\n\n* **Status:** Superseded by 0001\n")
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertIn("1 ADR(s) marked superseded, deprecated or rejected", check["summary"])
+        self.assertEqual(check["findings"][0]["evidence"][0]["path"], "docs/adr/0002-b.md")
+        self.assertEqual(check["findings"][0]["evidence"][0]["line"], 3)
+
+    def test_an_unindexed_tombstone_reports_both_findings(self):
+        INDEX, self.INDEX = self.INDEX, "| [0001](0001-a.md) | A |\n"
+        self.addCleanup(setattr, self, "INDEX", INDEX)
+        check = self.check("# 0002. B\n\nStatus: Deprecated\n")
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertEqual(len(check["findings"]), 2)
+        self.assertIn("1/2 ADR(s) listed", check["summary"])
+
+    def test_each_retiring_form_is_found(self):
+        for text, line in (
+            ("Status: Superseded\n", 1),
+            ("# T\n\n* **Status:** Deprecated\n", 3),
+            ("| Status | Rejected |\n", 1),
+            ("---\nstatus: superseded by ADR-0005\n---\n", 2),
+            ("# T\n\n## Status\n\nObsolete since the rewrite.\n", 3),
+            ("# T\n\n> Superseded by [ADR 0007](0007-x.md)\n", 3),
+            ("# T\n\nDeprecated in favour of 0009.\n", 3),
+            ("# T\n\nReplaced by 0004.\n", 3),
+        ):
+            with self.subTest(text=text):
+                self.assertEqual(_adr_tombstone(text), line)
+
+    def test_a_current_record_that_discusses_retired_options_is_not_a_tombstone(self):
+        for text in (
+            "# T\n\n* **Status:** Accepted\n",
+            "| Tombstone or superseded ADR stubs | Git is the archive. |\n",
+            "| A status lifecycle with superseded records kept | Agents read them as current. |\n",
+            "The cache entry is superseded by newer data on each write.\n",
+            "## Status\n\nAccepted.\n",
+        ):
+            with self.subTest(text=text):
+                self.assertIsNone(_adr_tombstone(text))
 
 
 # -- DOC-05: docs are readable, in-process ------------------------------------------------------------
