@@ -1,0 +1,12 @@
+{
+  "description": "T6 on the comm report: DOC-05 adds the plain-language and diagram sections to the existing style guide, copies the prose check under the owner's MIT licence as a warnings-only ratchet, and rewrites no earlier page.",
+  "report": "comm",
+  "start": "triaged",
+  "pr_by_agent": "no",
+  "phase": "t6",
+  "assertions": ["A6", "A10", "A11", "A12"],
+  "params": {
+    "licence": "MIT",
+    "may_edit": ["docs/STYLE_GUIDE.md", "docs/README.md"]
+  }
+}
