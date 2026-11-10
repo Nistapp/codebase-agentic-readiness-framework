@@ -88,10 +88,11 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    framework's own licence, and a copy never carries that licence. So flag the option, and offer two answers as a
    [decision request](../../audit/prompts/talking-to-the-user.md#decision-requests):
    - a. **Skip (default).** Add no tool. The `DOC-05` counts are recorded as debt (`docs.prose_check=skip`).
-   - b. **Copy it under a licence the owner names.** Ask for the licence as an SPDX identifier (for example `MIT` or
-      `Apache-2.0`); never suggest the framework's own. Record `docs.prose_check=template` and
-      `docs.prose_check_licence=<id>`. The copy needs Python 3.11 or newer where it runs, and
-      `ci.edits_authorised` for the runner command and the CI step.
+   - b. **Copy it under a licence the owner picks from this list:** `MIT`, `Apache-2.0` or `BSD-3-Clause`. These
+     are the licences the template's copyright holder grants for a copy. Offer no other licence, and never the
+     framework's own. When the owner wants another licence, record skip (a). Record `docs.prose_check=template` and
+     `docs.prose_check_licence=<id>`. The copy needs Python 3.11 or newer where it runs, and
+     `ci.edits_authorised` for the runner command and the CI step.
 7. **NAV-03 findings.** The owner chooses per path: document (default), or skip as by-design. Moving or
    untracking a file is a separate owner decision and, for generated output, belongs to the
    [`untrack-generated`](untrack-generated.md) playbook.
@@ -192,7 +193,9 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    4. If `lychee` was chosen: relative links only, report-only at first.
    5. **Prose check (only with `docs.prose_check=template`).** Copy the template to the place and name the
       repository uses for its scripts (D18), for example `scripts/docs_prose_check.py`. Replace its SPDX line with
-      the licence the owner named (`docs.prose_check_licence`). Keep the copyright line, and remove nothing else.
+      the licence the owner picked (`docs.prose_check_licence`). Keep the copyright line: the template's author keeps
+      the copyright, and the owner gets the licence. Remove nothing else. Where the repository keeps a list of
+      third-party code (a `THIRD_PARTY_NOTICES` file or similar), add the copy to it.
       Wire it as a ratchet, as for the lint. Both runs count warnings only (`--min-severity warning`): a sentence
       over 40 words, a step over 20, a vague word, a page without its diagram. A sentence of 26 to 40 words stays a
       notice, shown but not counted: a long sentence is often the clearest one (the framework's own
@@ -286,8 +289,9 @@ index).
 - Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
   change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one
   commit per page.
-- Do not copy the prose check template unless the owner named a licence for the copy, and never under the
-  framework's own licence.
+- Do not copy the prose check template unless the owner picked `MIT`, `Apache-2.0` or `BSD-3-Clause` for the copy.
+  Never copy it under another licence, the framework's own included, and never remove or replace its copyright
+  line.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
 
 ## State updates

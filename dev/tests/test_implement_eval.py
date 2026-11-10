@@ -672,12 +672,14 @@ SECTIONS = (
 class CommDocsContractTests(ScenarioCase):
     scenario_name = "comm-docs-contract"
 
-    def apply(self, *, sections: bool = True, licence: str = "MIT", limit: str = "100") -> Path:
+    def apply(self, *, sections: bool = True, licence: str = "MIT", limit: str = "100", owner: str = "") -> Path:
         tree = self.worktree("docs-contract")
         if sections:
             guide = (tree / "docs/STYLE_GUIDE.md").read_text(encoding="utf-8")
             self.commit_file(tree, "docs/STYLE_GUIDE.md", guide + SECTIONS, "docs: add the rules")
         copy = TEMPLATE.read_text(encoding="utf-8").replace("AGPL-3.0-or-later", licence, 1)
+        if owner:
+            copy = copy.replace("K. C. Ramakrishna", owner, 1)
         self.commit_file(tree, "scripts/docs_prose_check.py", copy, "build: add the prose check")
         for key, value in (("docs.prose_check", "template"), ("docs.prose_check_licence", "MIT")):
             self.progress(tree, "pref", "set", key, value, "--reason", "owner: canned answer", "--by", "owner")
@@ -699,6 +701,10 @@ class CommDocsContractTests(ScenarioCase):
     def test_a11_fails_on_a_copy_under_the_framework_licence(self) -> None:
         self.apply(licence="AGPL-3.0-or-later")
         self.assertFails("A11", "licence line")
+
+    def test_a11_fails_when_the_copyright_line_is_replaced(self) -> None:
+        self.apply(owner="Example Corp")
+        self.assertFails("A11", "copyright line")
 
     def test_a11_fails_when_the_ratchet_limit_is_below_the_count(self) -> None:
         self.apply(limit="0")

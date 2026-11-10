@@ -7,7 +7,8 @@
                         [--max-issues N] [--diagram-dir DIR]... FILE...
 
 This is the template that the implement playbook ``establish-docs-contract`` copies into a target repository, only
-when the owner names a licence for the copy. The copy's first line then carries that licence, never this one. The
+when the owner picks ``MIT``, ``Apache-2.0`` or ``BSD-3-Clause`` for the copy: the licences its copyright holder
+grants for a copy. The copy's first line then carries that licence, never this one; the copyright line stays. The
 rules match the audit check ``DOC-05`` and the framework's own ``dev/prose_check.py``. Three rules, each reported
 as ``path:line: CODE severity: message``:
 

@@ -13,7 +13,7 @@ folder.
 |---|---|
 | `SKILL.md`, `prompts/` | The LLM-driven implement recipe and its kickoff prompt |
 | `playbooks/` | One playbook per class of finding. See [`playbooks/README.md`](playbooks/README.md) |
-| `playbooks/templates/` | Code a playbook copies into a target, with tests in `tools/tests/`. Never copied under this repository's licence |
+| `playbooks/templates/` | Code a playbook copies into a target, with tests in `tools/tests/`. A copy carries `MIT`, `Apache-2.0` or `BSD-3-Clause`, never this repository's licence |
 | `state.md` | The state contract: the per-repository state that `progress.py` keeps |
 | `tools/` | `progress.py`, `check_drift.py`, `compare_reports.py`, and their tests in `tools/tests/` |
 | `docs/architecture/adrs/` | Decisions for this folder (ADR 0002 and ADR 0003) |
@@ -21,6 +21,8 @@ folder.
 ## Rules
 
 - Use the standard library only in `tools/`. Never add a third-party import.
+- Code in `playbooks/templates/` is relicensed when a playbook copies it into a target. Only its copyright holder
+  changes it, or a contributor who agrees in writing to that relicensing. Say so in the pull request.
 - Every tool follows the tool contract in [`audit/tools/README.md`](../audit/tools/README.md).
 - `progress.py` is the one tool that writes inside a target. It writes only the target's two state files. See
   [ADR 0002](docs/architecture/adrs/0002-progress-writes-state-in-target.md). No other tool writes inside a target.

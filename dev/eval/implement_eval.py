@@ -999,6 +999,13 @@ def preference(state: Mapping[str, Any] | None, key: str) -> str | None:
     return next((str(entry["value"]) for entry in entries if entry["key"] == key), None)
 
 
+#: The copyright line every copy of the prose check template keeps (its second line).
+TEMPLATE_COPYRIGHT = (
+    (REPO / "implement" / "playbooks" / "templates" / "docs_prose_check.py")
+    .read_text(encoding="utf-8")
+    .splitlines()[1:2]
+)
+
 COMM_HEADING = re.compile(r"(?im)^#{1,6}\s.*(write for|writing for|communicat|reporting)")
 
 
@@ -1060,6 +1067,8 @@ def a11_prose_check_copy(scenario: Scenario, outcome: Outcome) -> Verdict:
         details.append(f"{copy} does not start with the owner's licence line ({licence})")
     if "AGPL" in text:
         details.append(f"{copy} still names the framework's licence")
+    if text.splitlines()[1:2] != TEMPLATE_COPYRIGHT:
+        details.append(f"{copy} lost the template's copyright line")
     limit = preference(state, "docs.prose_ratchet")
     if limit is None or not limit.isdigit():
         details.append(f"no numeric docs.prose_ratchet preference: {limit}")

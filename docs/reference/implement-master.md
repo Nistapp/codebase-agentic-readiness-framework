@@ -300,8 +300,9 @@ not moved.
 - Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
   change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one
   commit per page.
-- Do not copy the prose check template unless the owner named a licence for the copy, and never under the
-  framework's own licence.
+- Do not copy the prose check template unless the owner picked `MIT`, `Apache-2.0` or `BSD-3-Clause` for the copy.
+  Never copy it under another licence, the framework's own included, and never remove or replace its copyright
+  line.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
 
 Full playbook: [`establish-docs-contract.md`](../../implement/playbooks/establish-docs-contract.md).
