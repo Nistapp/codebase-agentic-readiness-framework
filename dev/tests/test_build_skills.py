@@ -293,6 +293,13 @@ class ImplementBundleTests(unittest.TestCase):
         bundle_playbooks = {p.name for p in (self.bundle / "references" / "playbooks").glob("*.md")}
         self.assertEqual(bundle_playbooks, source_playbooks)
 
+    def test_bundle_carries_every_playbook_template(self) -> None:
+        source = {p.name for p in bs.IMPLEMENT_TEMPLATES.iterdir() if p.suffix == ".py"}
+        self.assertEqual(set(bs.IMPLEMENT_TEMPLATE_FILES), source)
+        for name in bs.IMPLEMENT_TEMPLATE_FILES:
+            copied = self.bundle / "references" / "playbooks" / "templates" / name
+            self.assertEqual(copied.read_bytes(), (bs.IMPLEMENT_TEMPLATES / name).read_bytes(), name)
+
     def test_bundle_carries_the_code_licence(self) -> None:
         self.assertEqual((self.bundle / "LICENSE").read_bytes(), bs.LICENSE_CODE.read_bytes())
 

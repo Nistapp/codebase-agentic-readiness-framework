@@ -18,7 +18,7 @@ not moved.
 | DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with a template, an index and two or three first records marked `proposed` |
-| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
+| DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner names a licence for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
 | NAV-01 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-01--declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | NAV-02 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-02--obvious-entry-points) | Verification only: names the entry points in the architecture page |
 | NAV-03 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-03--structural-red-flags) | Census of oversized files, catch-all directories, binaries and minified assets; document, never move |
@@ -34,7 +34,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
   worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `format.mass_reformat` (a `no` means every docs check is a
   baseline or ratchet, never a reformat), `layout.command_runner`, `ci.edits_authorised` (needed to add the docs
-  CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `docs.language` (the language
+  CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `docs.prose_check` and
+  `docs.prose_check_licence` (Inputs 6), `docs.language` (the language
   of the docs; see [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask), Inputs 7), `extra.*`.
 - The `DOC-05` steps run on a confirmed `DOC-05` finding. They also run when the owner asked for them by name in
   Stage 1 (`extra.doc-05`); that change has no finding for the re-audit to confirm, so say so in the pull request.
@@ -80,7 +81,15 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 5. **Instruction-file line.** One line naming `docs/STYLE_GUIDE.md`, `docs/adr/` and `docs/architecture/`,
    placed beside the existing pointer line (section per `agents_md.pointer_section`). The AGENTS.md theme (T7)
    reorganises the file later; tell it in the status that the line exists.
-6. **NAV-03 findings.** The owner chooses per path: document (default), or skip as by-design. Moving or
+6. **Prose check (DOC-05).** The framework has a stdlib Python template that checks the style guide's rules and can
+   fail above a count: [`templates/docs_prose_check.py`](templates/docs_prose_check.py). It is code under the
+   framework's own licence, and a copy never carries that licence. So flag the option, and offer two answers:
+   1. **Skip (default).** Add no tool. The `DOC-05` counts are recorded as debt (`docs.prose_check=skip`).
+   2. **Copy it under a licence the owner names.** Ask for the licence as an SPDX identifier (for example `MIT` or
+      `Apache-2.0`); never suggest the framework's own. Record `docs.prose_check=template` and
+      `docs.prose_check_licence=<id>`. The copy needs Python 3.11 or newer where it runs, and
+      `ci.edits_authorised` for the runner command and the CI step.
+7. **NAV-03 findings.** The owner chooses per path: document (default), or skip as by-design. Moving or
    untracking a file is a separate owner decision and, for generated output, belongs to the
    [`untrack-generated`](untrack-generated.md) playbook.
 
@@ -171,6 +180,19 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       Check the repository's merge-gate job: a
       new job that must be green needs adding to it, which is the owner's call.
    4. If `lychee` was chosen: relative links only, report-only at first.
+   5. **Prose check (only with `docs.prose_check=template`).** Copy the template to the place and name the
+      repository uses for its scripts (D18), for example `scripts/docs_prose_check.py`. Replace its SPDX line with
+      the licence the owner named (`docs.prose_check_licence`). Keep the copyright line, and remove nothing else.
+      Wire it as a ratchet, as for the lint:
+      - a runner command (`docs-prose` or the runner's own spelling) runs the copy with `--max-issues 0` on the
+        pages held clean: the pages this theme wrote, and any page that is already clean;
+      - a second run on every Markdown page under `docs/` uses `--max-issues <baseline>`. Measure the baseline after
+        the last render, with the new pages staged, as for the lint count;
+      - if the explanation pages live elsewhere (for example `docs/architecture/`), pass `--diagram-dir` once per
+        folder;
+      - both runs go in the docs CI job from item 3. Use `--format github` there, so issues show on the pull request.
+
+      Record the baseline as debt on the `DOC-05` item, and in the `docs.prose_ratchet` preference.
 9. **Commits:** docs, then lint config, then CI.
 
 ### Gradle and Quarkus
@@ -196,6 +218,7 @@ The repository already has Node, so the job can reuse its pinned Node version.
   held by the ratchet so the count cannot rise. Never mass-fix, reformat or suppress a rule to make the count
   fall unless the owner chooses that.
 - Dead links (if `lychee` runs): counted, report-only.
+- No Python 3.11 where the prose check must run: tell the owner, and fall back to `docs.prose_check=skip`.
 - DOC-05 counts on pages the theme did not write: the long sentences, vague words and pages without a diagram
   stay. Record them as debt on the item (`partial`); the owner decides on a rewrite.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
@@ -219,6 +242,7 @@ The repository already has Node, so the job can reuse its pinned Node version.
 | NAV-03 | The "Repository notes" section | Every counted path is listed with a tag; nothing moved (`git status` shows only docs and config) |
 | NAV-04 | `docs/architecture/overview.md` exists | Present, with a diagram that rendered |
 | NAV-05 | The ratio the re-audit prints | Recorded; no source edited |
+| Prose check | The runner's `docs-prose` command, then `head -2 <copy>` | Only with `docs.prose_check=template`: exit 0; the full-tree limit equals `docs.prose_ratchet`; the SPDX line is the owner's licence |
 | Lint | The repository's docs lint command and the CI job | Zero violations in the ratchet path list; baseline total not higher than recorded |
 
 ## Rollback
@@ -238,6 +262,8 @@ index).
 - Do not move, resize, delete or untrack files for NAV-03.
 - Do not put values from env files, credentials, realm exports or keystores in any page.
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
+- Do not copy the prose check template unless the owner named a licence for the copy, and never under the
+  framework's own licence.
 - Do not accept an ADR on the owner's behalf.
 
 ## State updates
@@ -253,6 +279,10 @@ python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --p
   --debt "what=markdown lint violations,count=<n>,baseline=<file>" --note "<mechanism>"
 python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
   --commit <sha> --debt "what=long sentences in docs,count=<n>" --note "style guide sections added; DOC-05 counts"
+python3 implement/tools/progress.py pref set docs.prose_check <skip|template> \
+  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py pref set docs.prose_check_licence <SPDX id> \
+  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
   --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
 ```

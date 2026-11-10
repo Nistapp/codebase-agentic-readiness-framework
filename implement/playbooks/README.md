@@ -42,6 +42,8 @@ Rules for every playbook:
 - A playbook never restates a check's rubric or a requirement; it links to the check file in
   [`audit/checks/`](../../audit/checks/README.md) and to `spec/`.
 - Templates come from `greenfield/templates/` by reference, never copied verbatim into the playbook.
+- Code a playbook copies into a target lives in [`templates/`](templates/), with its tests in
+  `implement/tools/tests/`. A copy carries the licence the owner names, never this repository's.
 - A playbook does not restate the shared procedure of `SKILL.md` Stages 2 to 4; it links to the stage step.
 - A new playbook name is added to the `playbooks` list of each check it resolves in `catalogue.json`, in the same change
   that writes the file; the framework's recipe linter (`recipe_lint.py`) rejects a playbook name the catalogue does not

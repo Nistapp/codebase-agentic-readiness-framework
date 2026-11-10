@@ -39,7 +39,9 @@ Each bundle is replaced whole on every run, so a stale leftover from an earlier 
 - ``references/``: the state contract, the playbooks, the kickoff prompt, the shared prompt on how to talk to the
   user (from ``audit/prompts/``), the check files, the stack profiles,
   ADR 0003, ``spec/command-surface.md`` and the spec decisions, the state schema and its docs, and the parts of
-  the Tools CLI reference that cover the carried tools (:data:`TOOLS_CLI_SECTIONS`).
+  the Tools CLI reference that cover the carried tools (:data:`TOOLS_CLI_SECTIONS`). The playbook templates
+  (:data:`IMPLEMENT_TEMPLATE_FILES`) sit beside the playbooks in ``references/playbooks/templates/``, so a playbook
+  step can copy one into the target.
 - ``scripts/``: ``progress.py``, ``check_drift.py`` and ``compare_reports.py`` (from ``implement/tools/``), and
   ``validate_report.py`` with the private modules they import (from ``audit/tools/``), side by side in
   ``scripts/tools/``; ``_audit_tools_path.py``, which the implement tools import first and which does nothing in the
@@ -85,6 +87,7 @@ AUDIT_SCHEMA = AUDIT / "schema"
 ENGINE = AUDIT / "engine"
 IMPLEMENT = REPO / "implement"
 IMPLEMENT_TOOLS = IMPLEMENT / "tools"
+IMPLEMENT_TEMPLATES = IMPLEMENT / "playbooks" / "templates"
 LICENSE_CODE = REPO / "LICENSE-CODE"
 MANIFEST = REPO / ".release-please-manifest.json"
 
@@ -306,6 +309,9 @@ IMPLEMENT_SHARED_TOOL_FILES = (
 #: Every file in the implement bundle's `scripts/tools/` apart from the engine shim, in one flat folder.
 IMPLEMENT_TOOL_FILES = IMPLEMENT_OWN_TOOL_FILES + IMPLEMENT_SHARED_TOOL_FILES
 
+#: The files a playbook copies into a target (in `implement/playbooks/templates/`), carried beside the playbooks.
+IMPLEMENT_TEMPLATE_FILES = ("docs_prose_check.py",)
+
 #: Read at a fixed path next to the tools (`validate_report.RECIPES`, `progress.STATE_SCHEMA`).
 IMPLEMENT_SCHEMA_FILES = (
     "audit-report.schema.json",
@@ -440,6 +446,8 @@ def _carried_other() -> dict[Path, str]:
         carried[(AUDIT_TOOLS / name).resolve()] = f"scripts/tools/{name}"
     for name in IMPLEMENT_SCHEMA_FILES:
         carried[(AUDIT_SCHEMA / name).resolve()] = f"references/schema/{name}"
+    for name in IMPLEMENT_TEMPLATE_FILES:
+        carried[(IMPLEMENT_TEMPLATES / name).resolve()] = f"references/playbooks/templates/{name}"
     carried[(AUDIT / "catalogue.json").resolve()] = "scripts/catalogue.json"
     carried[LICENSE_CODE.resolve()] = "LICENSE"
     return carried
@@ -552,6 +560,10 @@ def build_implement_bundle(out_dir: Path) -> Path:
     _write_rewritten(bundle_dir, texts, carried, COMMAND_REWRITES)
     for name in IMPLEMENT_SCHEMA_FILES:
         shutil.copy2(AUDIT_SCHEMA / name, bundle_dir / "references" / "schema" / name)
+    templates_dir = bundle_dir / "references" / "playbooks" / "templates"
+    templates_dir.mkdir(parents=True, exist_ok=True)
+    for name in IMPLEMENT_TEMPLATE_FILES:
+        shutil.copy2(IMPLEMENT_TEMPLATES / name, templates_dir / name)
     tools_dir = bundle_dir / "scripts" / "tools"
     tools_dir.mkdir(parents=True)
     for name in IMPLEMENT_OWN_TOOL_FILES:

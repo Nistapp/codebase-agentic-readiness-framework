@@ -88,7 +88,7 @@ ENGINE := audit/engine
 # Mypy covers the recipe tools, the dev-only checks and the engine's build script. The engine's own code joins
 # later, through a ratchet. The find picks up every Python file under audit/tools, implement/tools and
 # dev, tests included, except the toy repositories under testdata/ (eval data).
-TYPED_SOURCES := $(shell find audit/tools implement/tools dev -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
+TYPED_SOURCES := $(shell find audit/tools implement/tools implement/playbooks/templates dev -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
 
 .DEFAULT_GOAL := help
 
