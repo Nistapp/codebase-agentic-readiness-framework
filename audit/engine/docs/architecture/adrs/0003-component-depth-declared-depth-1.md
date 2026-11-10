@@ -1,12 +1,5 @@
 # 0003. Component Depth: Declared Components, Depth 1
 
-* **Status:** Accepted
-* **Date:** 2026-09-28
-* **Last reviewed:** 2026-09-28
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
 Phase 1 of the framework requires root **and component-level** `AGENTS.md` files. Component-level governance is
@@ -23,8 +16,6 @@ declares a module is the person who would write its `AGENTS.md`.
 
 Recursion adds real cost: cycle and symlink handling, duplicate findings for a module of a module, a report that
 grows faster than its usefulness, and a per-component ratio whose denominator the reader cannot reconstruct.
-
----
 
 ## Decision
 
@@ -45,19 +36,15 @@ grows faster than its usefulness, and a per-component ratio whose denominator th
 Implemented by the component model in `audit/components.py` (`detect_components`); see
 [Scan Engine & Tiering](../contributor-deep-dive/01-scan-engine-and-tiering.md) § 4.
 
----
-
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | Recursive walk over all directories | Report bloat, cycle guards, and duplicate findings for nested modules; the per-component ratio stops being reconstructible by the reader. |
 | Infer components from directory depth without manifests | Produces noise in precisely the brownfield targets the tool serves — language package nesting would be scored as "components". |
 | Root `AGENTS.md` only | Contradicts the framework's explicit requirement and discards the most valuable monorepo signal the tool can produce. |
 | Ask a model which directories are components | Non-deterministic, and the answer would be a guess dressed as a fact. Build manifests are ground truth ([ADR-0004](0004-no-llm-in-v1.md)). |
 | Score the candidate (undeclared) list as well | Punishes repositories that legitimately have a flat layout, and scores the absence of a convention rather than the absence of governance. |
-
----
 
 ## Consequences
 
@@ -76,13 +63,3 @@ Implemented by the component model in `audit/components.py` (`detect_components`
 * Repositories that declare components for packaging reasons but never intend per-component governance will
   receive a `PARTIAL` ratio they consider noise; the correct fix is to improve `AGENTS.md` coverage, not to
   weaken the check.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
-
-See the [style guide](../../../../../docs/STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.

@@ -1,22 +1,13 @@
 # 0007. The JSON Report Is the Render Contract; the Markdown Is a Template Over It
 
-* **Status:** Accepted
-* **Date:** 2026-09-30
-* **Last reviewed:** 2026-09-30
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
 The audit emits two artifacts from one run: a machine-readable JSON report and a human Markdown page.
-They were written by two independent functions, one per format, that each walked
-the in-memory `AuditResult` separately. Nothing forced them to agree, the Markdown carried only prose
-findings, and every check's structured facts — the missing verbs, the credential file×line matrix, the
-harness reach list — were flattened into one human `detail` string that no renderer could turn into a
-table.
+Two independent writers, one per format, would each walk the in-memory `AuditResult` separately. Nothing would
+force them to agree, and every check's structured facts — the missing verbs, the credential file×line matrix, the
+harness reach list — would be flattened into one human `detail` string that no renderer can turn into a table.
 
-Three forces pushed for a change:
+Three forces shape the design:
 
 1. **The Markdown should evolve quickly.** Formatting is the artifact most likely to be iterated on;
    it should not require touching the verdict engine or every check pack.
@@ -28,8 +19,6 @@ Three forces pushed for a change:
 A naive answer is a separate `.md` template file. That is unavailable: a `.pyz` has no filesystem, so
 a shipped data file cannot be read via `Path(__file__)` (ADR-0005 § 5) — the same reason the
 instruction-variant table is code.
-
----
 
 ## Decision
 
@@ -54,19 +43,15 @@ code.**
    generic engine; the check packs keep their verdict logic. Adding a new derived view is one builder
    plus one template entry.
 
----
-
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | Keep two independent writers over `AuditResult` | They can disagree; the Markdown cannot be re-rendered from a saved report; formatting changes touch both paths. |
 | A standalone `.md` template file | A `.pyz` has no filesystem; the template must be code or shipped via `importlib.resources`, which ADR-0005 § 5 rejects. |
 | A bespoke Mustache/Jinja-style template language | A parser and engine to maintain, third-party or hand-rolled, to solve a problem a data structure already solves. Contradicts ADR-0005's "code, not data" reasoning. |
 | Keep `detail` and parse it in the renderer | Prose parsing is brittle, lossy, and re-introduces the coupling the change exists to remove. |
 | Carry structured data in a side table keyed by check id | Splits the fact from the check that produced it; a check's evidence would live outside its outcome. |
-
----
 
 ## Consequences
 
@@ -84,17 +69,6 @@ code.**
 
 * Every check that wants a dedicated table must populate a payload; checks without one fall back to
   their `summary`. This is incremental work, deliberately not done for every check at once.
-* The schema is versioned (`schema_version: "2"`) and `detail` is gone, so any external consumer of
-  the v1 JSON must be updated. The project is pre-release, so this was taken now rather than later.
-* The template is code, not a document a non-programmer edits. That is the ADR-0005 trade the project
-  has already accepted.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
-
-See the [style guide](../../../../../docs/STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.
+* The schema is versioned (`schema_version: "2"`) and has no `detail` field. A consumer of an older
+  report must update ([ADR 0008](../../../../../docs/architecture/adrs/0008-one-release-version-and-current-schemas-only.md)).
+* The template is code, not a document a non-programmer edits. That is the ADR-0005 trade.

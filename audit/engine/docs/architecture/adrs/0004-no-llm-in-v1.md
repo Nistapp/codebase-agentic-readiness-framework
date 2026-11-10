@@ -1,12 +1,5 @@
 # 0004. No LLM Calls in v1
 
-* **Status:** Accepted
-* **Date:** 2026-09-28
-* **Last reviewed:** 2026-09-28
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
 Several checks in the catalogue are semantic at heart. Is `AGENTS.md` *accurate* about this codebase? Do the
@@ -25,15 +18,13 @@ manufacture either.
 There is also a practical consideration. Reports are diffed against a baseline to detect regression. A report
 whose content varies between runs cannot be diffed, regression-tested, or attributed to a revision of the rules.
 
----
-
 ## Decision
 
-**Deterministic, standard-library only, no model in v1.**
+**Deterministic, standard-library only, no model.**
 
 This decision binds the deterministic engine in this directory. The
-[brownfield recipes](../../../../README.md) are a separate component, in development. They are meant to run the
-engine first and add an LLM-assisted assessment of the items it parks as `ATTEST`, so they are not bound by it.
+[audit recipe](../../../../README.md) is a separate component. It runs the engine first and adds an LLM-assisted
+assessment of the items the engine parks as `ATTEST`, so it is not bound by this decision.
 
 1. No LLM calls, no network calls by default, no embedding of a model client.
 2. Every check's evidence rule must be **falsifiable by inspection** — a reviewer applies it to a fixture and
@@ -44,30 +35,27 @@ engine first and add an LLM-assisted assessment of the items it parks as `ATTEST
 5. Same constraint as the greenfield scaffolder, for the same reason: the tool must run before the target's
    toolchain exists, on a machine with nothing installed.
 
-Prose generation — a `--narrate` mode that rewrites findings as readable paragraphs — is a **roadmap item**, and
-would be restricted to prose. Verdicts are never model-produced. See
+The engine has no prose-generation mode. A `--narrate` mode that rewrites findings as readable paragraphs would be
+restricted to prose. Verdicts are never model-produced. See
 [Scan Engine & Tiering](../contributor-deep-dive/01-scan-engine-and-tiering.md) § 7.
-
----
 
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | LLM-assist for the semantic checks (`AGT-03`, `AGT-06`, `TST-02`) | Non-reproducible reports cannot be diffed or regression-tested, and an opinion with a scanner's authority is worse than an honest `ATTEST`. |
-| LLM for remediation prose only, verdicts still deterministic | Defensible, but v1 scope creep; held as `--narrate` on the roadmap rather than built now. |
+| LLM for remediation prose only, verdicts still deterministic | Defensible, but not needed for a correct report. It is the `--narrate` mode, which is not built. |
 | Heuristics that *approximate* the semantic checks | A pattern that guesses "the governance file is accurate" is a fabricated verdict with extra steps. |
 | Embed a local model to keep it offline | Still non-deterministic across machines and versions, and breaks the "runs anywhere with Python" property. |
 | Ask the model to *rank* findings by severity | Severity is a rule-pack attribute, reviewable and diffable. A model ranking would change between runs and make the work queue unstable. |
-
----
 
 ## Consequences
 
 ### Positive
 
 * Every finding is arguable, and every score is traceable to evidence a reader can open.
-* Reports are byte-stable and therefore diffable — which is what makes the ratchet in [ADR-0001](0001-report-not-a-gate.md) possible.
+* Reports are byte-stable and therefore diffable, which makes the ratchet in
+  [ADR-0001](0001-report-not-a-gate.md) possible.
 * The tool has no API key, no cost, no rate limit, and no data leaving the machine.
 
 ### Negative / Trade-offs
@@ -76,14 +64,4 @@ would be restricted to prose. Verdicts are never model-produced. See
   a gap to users who expected the tool to answer them.
 * Some checks are proxied by structural signals — doc-comment coverage instead of doc quality — and those proxies
   must be labelled as signals rather than verdicts.
-* The `--narrate` roadmap item will need re-opening this ADR's boundary between prose and verdict when it lands.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
-
-See the [style guide](../../../../../docs/STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.
+* A `--narrate` mode would have to re-open this ADR's boundary between prose and verdict.

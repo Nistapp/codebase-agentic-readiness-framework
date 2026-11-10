@@ -1,34 +1,25 @@
 # 0004. Plain-Language Rules in One File, Checked by a Standard-Library Prose Check
 
-* **Status:** Accepted
-* **Date:** 2026-11-08
-* **Last reviewed:** 2026-11-09
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
-The owner found AI output and some docs dense and hard to follow. In chat, the owner asked agents for four things:
+AI output and some docs are dense and hard to follow. The owner wants four things from agents:
 
 * STE100 (Simplified Technical English);
 * explanations aimed at an intern;
 * Mermaid diagrams;
 * options with a recommendation before a decision.
 
-Each session had to ask again, and no rule said how a doc page should read.
+Without a written rule, each session must ask again, and nothing says how a doc page should read.
 
-Measured on 2026-11-08: 11 of 71 doc pages had a Mermaid diagram. Four pages averaged 30 to 39 words per sentence.
+Few doc pages have a Mermaid diagram (11 of 71 in one count), and some average 30 to 39 words per sentence.
 STE100 sets 20 words for a procedure step and 25 for other text.
 
-Three questions needed an answer:
+Four questions need an answer:
 
 1. Where do the rules live, so that every harness reads them?
 2. How much of STE100 do we adopt?
 3. Does a tool check the rules, and which tool?
 4. Does the check block a change, or only advise?
-
----
 
 ## Decision
 
@@ -58,30 +49,26 @@ baseline count holds it. A writer fixes a warning in the change that touches the
 * `make docs-prose [FILES=...]` prints the issues. `PROSE_ARGS=--min-severity=warning` hides the notices.
 * The CI `docs` job runs it with `--format github` on the changed Markdown. The issues show as annotations on the
   pull request, and the job does not fail on them.
-* `make check` does not run it (decided 2026-11-09, v0.3.4 H2). A check that cannot fail adds only output to the
+* `make check` does not run it. A check that cannot fail adds only output to the
   gate, and the pull request annotations already show the issues on the changed lines.
 
 **Scope.** The rules apply to this repository: agent messages and docs. The audit and implement recipes carry their
 own copy, `audit/prompts/talking-to-the-user.md`, for how they talk to their users. The skill bundles do not ship
-this repository's `docs/`. Whether target repositories get a matching requirement is listed for v0.3.4.
-
----
+this repository's `docs/`.
 
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | The full STE100 standard, with its approved word list | Made for maintenance manuals. The word list blocks the technical terms this repository needs. |
 | Rules only in `AGENTS.md` | Every line costs context in every session, and `AGENTS.md` is already long. |
 | Rules only in `COMMUNICATION_RULES.md` | Agents often skip a linked file. The short summary in `AGENTS.md` keeps the core in view. |
-| Vale with a custom STE style (the v0.3.3 A4 pilot) | A Go binary: not on PyPI or npm, so it cannot be pinned the ADR 0003 way. Our three rules need about 200 lines of Python. |
-| textlint, with `textlint-rule-terminology` (reviewed 2026-11-09) | Pinnable through `dev/tools/package.json`, and its rules can be warnings. Not needed yet: revisit when passive voice or glossary terms need a check. |
-| proselint, write-good, alex, LanguageTool (reviewed 2026-11-09) | proselint is opinionated and hard to configure. write-good and alex are narrow. LanguageTool needs Java. |
+| Vale with a custom STE style | A Go binary: not on PyPI or npm, so it cannot be pinned the ADR 0003 way. Our three rules need about 200 lines of Python. |
+| textlint, with `textlint-rule-terminology` | Pinnable through `dev/tools/package.json`, and its rules can be warnings. Not needed yet: revisit when passive voice or glossary terms need a check. |
+| proselint, write-good, alex, LanguageTool | proselint is opinionated and hard to configure. write-good and alex are narrow. LanguageTool needs Java. |
 | Rules without a check | Rules without a check drift. Chat cannot be checked, but docs can. |
-| Run the advisory check in `make check` too (reviewed 2026-11-09) | It costs little (0.3 s over the whole tree), but it cannot fail, so the gate would only print about 1,750 issues that no one acts on there. The CI annotations put each issue on its own line in the pull request instead. |
-| A blocking check: a zero-issue path list (`PROSE_PATHS`) and a ratchet count in `.quality-baseline.json` (shipped 2026-11-08, reversed 2026-11-09) | Too strict for guidelines. On 2026-11-09, 1,574 of 1,624 issues were `PL001`, and a long sentence is often the clearest one. Blocking on it slowed work without a matching gain. |
-
----
+| Run the advisory check in `make check` too | It costs little (0.3 s over the whole tree), but it cannot fail, so the gate would only print about 1,750 issues that no one acts on there. The CI annotations put each issue on its own line in the pull request instead. |
+| A blocking check: a zero-issue path list (`PROSE_PATHS`) and a ratchet count in `.quality-baseline.json` | Too strict for guidelines. In one count, 1,574 of 1,624 issues were `PL001`, and a long sentence is often the clearest one. Blocking on it slowed work without a matching gain. |
 
 ## Consequences
 
@@ -96,21 +83,6 @@ this repository's `docs/`. Whether target repositories get a matching requiremen
 
 * The sentence splitter is a heuristic. It can miss a split, for example after a code span that ends with a full
   stop. Rewording the sentence fixes it.
-* Nothing stops the count from rising. The full tree had 1,624 issues on 2026-11-09. Review, not a gate, keeps new
-  text readable.
+* Nothing stops the count from rising. Review, not a gate, keeps new text readable.
 * The check cannot see passive voice, one meaning per word or the bottom-line-first rule. People and agents apply
   those.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or
-  `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into
-  *Alternatives Considered*. Do NOT create a superseding ADR and do NOT leave a tombstone stub.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference
-  plus the index table in `docs/architecture/adrs/README.md` in the same change set.
-* Archived wording: `git log --follow docs/architecture/adrs/0004-plain-language-rules-and-a-prose-check.md`.
-
-See [`docs/STYLE_GUIDE.md`](../../STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.

@@ -44,4 +44,4 @@ Thank you for considering contributing to this project!
 - `docs/` is the single source of truth for permanent documentation; `artefacts/` is transient scratch (agents must not read it unless you pass an explicit path).
 - Every `.md` file under `docs/` MUST follow [`docs/STYLE_GUIDE.md`](docs/STYLE_GUIDE.md).
 - A change that alters a public interface, observable behaviour, architecture, or an ADR MUST update the affected doc pages and their source anchors in the same PR.
-- New ADRs: `docs/architecture/adrs/NNNN-short-title.md`, plus a row in `docs/architecture/README.md`.
+- New ADRs: `docs/architecture/adrs/NNNN-short-title.md`, plus a row in `docs/architecture/README.md`. Follow `docs/ADR_POLICY.md`.

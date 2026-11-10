@@ -113,7 +113,9 @@ reports, commit messages, pull request descriptions and docs.
 | `artefacts/` | Scratch notes and plans. The folder is tracked, its contents are git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
 
 Decisions (ADRs) live beside the component they govern (root ADR 0001). The root index,
-`docs/architecture/adrs/README.md`, lists all of them.
+`docs/architecture/adrs/README.md`, lists all of them. **Every ADR you add, change or delete follows
+`docs/ADR_POLICY.md`.** Git is the archive, so an ADR states only the current decision. Overwrite a changed
+decision in place. Delete a superseded one, and never refer to it again.
 
 A folder with no files yet is not written yet; the docs page that describes it says `Planned`.
 
@@ -147,6 +149,7 @@ A change is done when all of this holds:
 - A change can alter a public interface, observable behaviour, the architecture or a decision. Then update the
   affected documentation and the decision records in the same change set. When you fill in a page marked `Planned`,
   remove that note and update the doc router.
+- An ADR you added or changed follows `docs/ADR_POLICY.md` and has its row in the ADR index.
 - Python files carry the SPDX header `AGPL-3.0-or-later` and the copyright line. Documentation, schemas and published
   outputs are `GFDL-1.3-only`. The zones are in `docs/reference/licensing.md`.
 - Commits follow Conventional Commits, one logical change each, so any one can be reverted alone.
@@ -160,7 +163,7 @@ A change is done when all of this holds:
   `docs/how-to/contribute-a-change.md`.
 - How to write for people: `docs/COMMUNICATION_RULES.md`.
 - Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
-  `docs/architecture/adrs/README.md`.
+  `docs/architecture/adrs/README.md`. The ADR rules: `docs/ADR_POLICY.md`.
 - Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.
 - What an audit checks and what an implement run changes, for a reader: `docs/reference/audit-master.md` and
   `docs/reference/implement-master.md`.

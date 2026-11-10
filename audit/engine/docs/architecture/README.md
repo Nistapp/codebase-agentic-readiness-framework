@@ -12,17 +12,17 @@
 
 ## ADR Index
 
-| # | Title | Status | Date |
-|---|---|---|---|
-| [0001](adrs/0001-report-not-a-gate.md) | The Audit Reports; It Does Not Gate | Accepted | 2026-09-28 |
-| [0002](adrs/0002-read-only-and-tier-c-opt-in.md) | Read-Only by Default; Tier-C Probes Are Opt-In | Accepted | 2026-09-28 |
-| [0003](adrs/0003-component-depth-declared-depth-1.md) | Component Depth: Declared Components, Depth 1 | Accepted | 2026-09-28 |
-| [0004](adrs/0004-no-llm-in-v1.md) | No LLM Calls in v1 | Accepted | 2026-09-28 |
-| [0005](adrs/0005-module-layout-and-zipapp-distribution.md) | Module Layout and Zipapp Distribution | Accepted | 2026-09-28 |
-| [0006](adrs/0006-private-check-helpers-and-ignore-engine.md) | Private Check Helpers and the Ignore Engine | Accepted | 2026-09-28 |
-| [0007](adrs/0007-json-report-render-contract.md) | The JSON Report Is the Render Contract; the Markdown Is a Template Over It | Accepted | 2026-09-30 |
-| [0008](adrs/0008-what-counts-as-the-repository.md) | What Counts as the Repository | Accepted | 2026-11-05 |
-| [0009](adrs/0009-nested-ignore-files-and-negation.md) | Nested Ignore Files and Negation | Accepted | 2026-11-05 |
+| # | Title | Summary |
+|---|---|---|
+| [0001](adrs/0001-report-not-a-gate.md) | The Audit Reports; It Does Not Gate | A completed scan exits 0 whatever it finds; `--fail-on` exists but is off by default. |
+| [0002](adrs/0002-read-only-and-tier-c-opt-in.md) | Read-Only by Default; Tier-C Probes Are Opt-In | The engine never writes to or installs into the target; Tier-C probes run only on explicit request. |
+| [0003](adrs/0003-component-depth-declared-depth-1.md) | Component Depth: Declared Components, Depth 1 | Only components a build manifest declares are scored, and only at depth 1. |
+| [0004](adrs/0004-no-llm-in-v1.md) | No LLM Calls in v1 | The engine is deterministic and standard-library only, with no model calls. |
+| [0005](adrs/0005-module-layout-and-zipapp-distribution.md) | Module Layout and Zipapp Distribution | The package tree is the source; a zipapp is the distributable; nothing needs installing. |
+| [0006](adrs/0006-private-check-helpers-and-ignore-engine.md) | Private Check Helpers and the Ignore Engine | Checks share two private helpers, `audit/ignore.py` and `rules/checks/_common.py`; no new stage or pack. |
+| [0007](adrs/0007-json-report-render-contract.md) | The JSON Report Is the Render Contract; the Markdown Is a Template Over It | The JSON report (schema v2) is the contract; the Markdown report is a code template over it. |
+| [0008](adrs/0008-what-counts-as-the-repository.md) | What Counts as the Repository | Runners rank depth first; templates, examples and fixtures are set aside, and the report lists them. |
+| [0009](adrs/0009-nested-ignore-files-and-negation.md) | Nested Ignore Files and Negation | Four checks use a scoped matcher that honours nested `.gitignore` files and negation; the walk is unchanged. |
 
 ## Key Documents
 
@@ -61,7 +61,8 @@
 | [Wire the ratchet into CI](../how-to/wire-the-ratchet-into-ci.md) | Fail only on regression, never on the first scan | Published (design) |
 
 > [!TIP]
-> When adding a new ADR, assign the next sequence number and add a row to the index table above before merging.
+> Before you add, change or delete an ADR, read [`ADR_POLICY.md`](../../../../docs/ADR_POLICY.md). Add its row to this
+> table and to the root index in the same change.
 
 ## Framework Dependencies
 

@@ -1,12 +1,5 @@
 # 0001. The Audit Reports; It Does Not Gate
 
-* **Status:** Accepted
-* **Date:** 2026-09-28
-* **Last reviewed:** 2026-09-28
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
 The tool exists to tell a team what to improve so that AI coding agents can work effectively in an existing
@@ -23,8 +16,6 @@ There is a second consideration. The audit cannot verify several Phase-1 propert
 used, whether a baseline is adequate, whether a suite is trustworthy. A verdict that aggregates verified and
 unverifiable properties into one pass/fail number would manufacture exactly the false confidence the framework
 warns about.
-
----
 
 ## Decision
 
@@ -46,19 +37,15 @@ The audit **reports and never gates**:
 Implemented by the exit-code and scoring stages in `audit/evaluate.py` (`AuditResult.exit_code`); see
 [The Readiness Model](../user-overview/02-the-readiness-model.md) § 8.
 
----
-
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | Fail the build on any Phase-1 gap (a true gate) | Unfixable in one change set; the predictable outcome is a disabled check, which is worse than no check. |
 | No exit-code signalling at all — report only, always `0` | Removes the ratchet, and with it the only reason to re-run the audit after the first engagement. Debt would regress invisibly. |
 | Fail on a score threshold (e.g. "below 80% fails") | A weighted score hides *which* property regressed. A diff of findings says what changed; a threshold says only that something did. |
 | A pull-request comment bot only, no machine-readable output | Same report, but it withholds the JSON that the remediation pass consumes and makes regression diffing impossible. |
 | Count `UNKNOWN` as a pass so the score stays clean | Converts missing evidence into apparent quality — the precise defect the framework calls false confidence (R8). |
-
----
 
 ## Consequences
 
@@ -76,13 +63,3 @@ Implemented by the exit-code and scoring stages in `audit/evaluate.py` (`AuditRe
   will ask for the gate anyway, and the correct answer is the repository's own `check` verb, not this tool.
 * Severity is a judgement encoded in the rule packs; a mis-severity finding is a defect that only human review
   catches.
-
----
-
-## Lifecycle — Living, Current-State ADRs
-
-* **This ADR MUST describe only the shipped, current design.** There is no `Deprecated`, `Superseded`, or `Rejected` status.
-* **Decision changed?** Overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*.
-* **Decision no longer relevant?** Delete the file, retire its number forever, and update every inbound reference plus the index table in `docs/architecture/README.md` in the same change set.
-
-See the [style guide](../../../../../docs/STYLE_GUIDE.md) § ADR Lifecycle for the canonical rules.

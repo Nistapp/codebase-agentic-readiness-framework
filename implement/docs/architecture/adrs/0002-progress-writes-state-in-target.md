@@ -1,12 +1,5 @@
 # 0002. `progress.py` Writes the State Files Inside the Target
 
-* **Status:** Accepted
-* **Date:** 2026-10-29
-* **Last reviewed:** 2026-10-29
-* **Deciders:** [@nistapp]
-
----
-
 ## Context
 
 The implement recipe keeps one state per target repository: which findings are queued, done, partial, skipped or
@@ -42,7 +35,7 @@ only these two files:
 
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | Print the state on stdout, or write it to an `--out` path outside the target, and let the agent copy it in | Rule 6 would stay absolute, but the copy step is unvalidated. A session can skip it, copy a stale render, or edit the copy, which is the corruption the tool exists to stop. Every later transition would need a manual read-modify-write. |
 | An explicit `--state <file>` that must end in one of the two names, wherever it is | The same exception in practice, with weaker path checks: the tool would not know which repository the file belongs to. |
@@ -56,6 +49,6 @@ only these two files:
 
 ### Negative / Trade-offs
 
-* Rule 6 is no longer absolute; a reader of the contract must know this exception.
+* Rule 6 is not absolute; a reader of the contract must know this exception.
 * For a moment during each write a temporary file exists in the target's `docs/agentic-readiness/` folder.
 * A later tool that wants the same exception needs its own ADR. This one does not extend to it.

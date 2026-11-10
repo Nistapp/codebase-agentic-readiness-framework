@@ -6,7 +6,7 @@
 ## Goal
 
 An agent finds permanent knowledge in one place: `docs/` has an index, a short style guide that the instruction
-file names, a decision log with a template and an index, and a short architecture page with a diagram that was
+file names, a decision log with a policy, a template and an index, and a short architecture page with a diagram that was
 checked. Scratch work stays out of version control. Structural traps (very large files, binaries) are listed,
 not moved.
 
@@ -17,7 +17,7 @@ not moved.
 | DOC-01 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-01--docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home |
 | DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
-| DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with a template, an index and two or three first records marked `proposed` |
+| DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
 | DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Not written yet: the steps that add plain-language rules to the style guide and a prose check are planned. Until then, report the finding to the owner and leave it open |
 | NAV-01 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-01--declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | NAV-02 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-02--obvious-entry-points) | Verification only: names the entry points in the architecture page |
@@ -68,14 +68,14 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 2. **Style guide source.** Default: adapt the framework's
    [`docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) (Diátaxis) to one page. The alternative
    (the owner's own house rules) is allowed only when those rules are not private to a different repository.
-3. **First ADRs.** Ask which two or three existing decisions to record. If the owner has no preference, pick them
-   from the code and the existing docs (a schema-migration tool, a search or storage engine, an authentication
-   or tenant-selection mechanism, a branch model) and say why you picked them. Mark each `proposed`.
+3. **First ADRs.** Ask which two or three existing decisions to record. With no owner preference, pick them
+   from the code and the existing docs, and say why you picked them. Good candidates: a schema-migration tool, a
+   search or storage engine, an authentication or tenant-selection mechanism, a branch model.
 4. **Architecture overview scope.** Default: modules or apps, entry points, data stores, one authentication or
    request flow, from the code index of this repository only.
-5. **Instruction-file line.** One line naming `docs/STYLE_GUIDE.md`, `docs/adr/` and `docs/architecture/`,
-   placed beside the existing pointer line (section per `agents_md.pointer_section`). The AGENTS.md theme (T7)
-   reorganises the file later; tell it in the status that the line exists.
+5. **Instruction-file line.** One line naming `docs/STYLE_GUIDE.md`, `docs/adr/`, the ADR policy page and
+   `docs/architecture/`, placed beside the existing pointer line (section per `agents_md.pointer_section`).
+   The AGENTS.md theme (T7) reorganises the file later; tell it in the status that the line exists.
 6. **NAV-03 findings.** The owner chooses per path: document (default), or skip as by-design. Moving or
    untracking a file is a separate owner decision and, for generated output, belongs to the
    [`untrack-generated`](untrack-generated.md) playbook.
@@ -102,14 +102,20 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    validated before saving, relative links, "no values from env files, credentials or keystores", "cite code by
    path", "decisions go in `docs/adr/`". Link to the lint config instead of restating its rules. Add the
    instruction-file line (Inputs 5). The check reads the literal string `STYLE_GUIDE.md`.
-4. **ADRs (DOC-04).** Create `docs/adr/` with `README.md` (the index: a table of number, title, status, one
-   line each, linking every file by its path), `0000-template.md` (adapted from the greenfield
-   [`adr-template.md`](../../greenfield/templates/docs/templates/adr-template.md): Status, Date,
-   Context, Decision, Alternatives considered, Consequences) and the first records as `0001-short-title.md`.
+4. **ADRs (DOC-04).** Create `docs/adr/` with four parts:
+   - `README.md`, the index: a table of number, title and a one-line summary, linking every file by its path.
+   - `0000-template.md`, copied from the framework's [`adr-template.md`](../../docs/templates/adr-template.md):
+     Context, Decision, Alternatives Considered, Consequences. It has no status, date or decider fields.
+   - An ADR policy page, adapted from the framework's [`ADR_POLICY.md`](../../docs/ADR_POLICY.md). Keep its
+     rules; replace the framework's folder list and links with the target's. Name the page to fit the target's
+     file names: `docs/ADR_POLICY.md` beside `docs/STYLE_GUIDE.md` by default, or `docs/adr-policy.md` where
+     the docs use lower-case names. The instruction-file line names it (Inputs 5).
+   - The first records, as `0001-short-title.md`.
+
    Rules:
-   - Status is `proposed` until the owner accepts; the owner changes it. This differs from the greenfield
-     template (which forbids merging `Proposed`): a retrospective record whose rationale the agent inferred
-     must say so on its face.
+   - Git is the archive: no record carries a status, a date or an approval line. The owner accepts the records
+     by merging the branch, and edits or deletes one before that. The pull request body (or the status note,
+     when no pull request is opened) lists each record as waiting for the owner's review.
    - The engine matches the numbered-file pattern (three or four digits, hyphen, slug, `.md`). The template file
      `0000-template.md` counts as a numbered entry, so list it in the index too.
    - Context and Decision come from the code and the existing docs, with file paths. State plainly what is
@@ -181,8 +187,8 @@ The repository already has Node, so the job can reuse its pinned Node version.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
   because the engine counts, it does not judge. Mark the item `partial` with that reason, or `skipped` if the
   owner calls it by design.
-- A proposed ADR the owner has not accepted: stays `proposed`, listed in the pull request body as waiting for
-  the owner.
+- An ADR the owner has not reviewed: listed in the pull request body or the status note as waiting for the
+  owner. The owner edits, deletes or merges it.
 - A docs job the merge gate cannot yet require: left advisory, noted for the CI theme.
 
 ## Verification
@@ -192,7 +198,7 @@ The repository already has Node, so the job can reuse its pinned Node version.
 | DOC-01 | `git ls-files 'docs/*.md' 'docs/**/*.md'` | At least one file; `docs/README.md` links every page; no second docs home |
 | DOC-02 | `test -f docs/STYLE_GUIDE.md` and `grep -n STYLE_GUIDE.md <instruction file>` | File exists; the instruction file names it |
 | DOC-03 | `git ls-files artefacts artifacts` and `git check-ignore -v artefacts/x` | No scratch directory, or nothing tracked and the rule matches |
-| DOC-04 | List `docs/adr/`; read `docs/adr/README.md` | At least one numbered file; the index links every numbered file by path, the template included |
+| DOC-04 | List `docs/adr/`; read `docs/adr/README.md`; `grep -n -i 'adr' <instruction file>` | At least one numbered file; the index links every numbered file by path, the template included; the ADR policy page exists and the instruction file names it |
 | NAV-01 | Read the components table in the overview | Every declared component listed with its manifest path |
 | NAV-02 | Read the entry-points list | Each entry point is a real path (check with `test -f`) |
 | NAV-03 | The "Repository notes" section | Every counted path is listed with a tag; nothing moved (`git status` shows only docs and config) |
@@ -212,11 +218,12 @@ index).
 - Do not create a second `docs/` or restructure the existing report folders.
 - Do not copy content, paths, names or values from a private repository or workspace into an open-source
   repository's docs or ADRs, or from any target repository into the framework.
-- Do not invent the reason behind a decision. Inferred means "proposed" and says it is inferred.
+- Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
+  fill in".
 - Do not move, resize, delete or untrack files for NAV-03.
 - Do not put values from env files, credentials, realm exports or keystores in any page.
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
-- Do not accept an ADR on the owner's behalf.
+- Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
 
 ## State updates
 

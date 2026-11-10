@@ -1,25 +1,16 @@
 # 0001. Use the prohibitions section as the deny list
 
-* **Status:** Accepted
-* **Date:** 2026-10-10
-* **Last reviewed:** 2026-10-10
-* **Deciders:** K. C. Ramakrishna (decided 2026-10-09; written down 2026-10-10)
-
----
-
 ## Context
 
 Phase 1 of the framework asks a repository to "establish initial Constraint Engineering allow/deny lists" ([Phased-Approach.md](../../docs/framework/phased-approach.md#activities)). Its Key Deliverables table gives the form as "Config files" and the consumer as agents. It names no file and no schema. Constraint Engineering itself is described in [Overview.md](../../docs/framework/overview.md#constraint-engineering).
 
-The audit engine could not check what no document defined. Before it adopted this decision:
+The audit engine cannot check what no document defines. Without a defined artifact:
 
-* `CON-01` ("Allow/deny artifact present") was blocked and carried weight 0.
-* `CON-02` ("Test directories protected") accepted one of about twenty root-level file names, such as `.cursorignore`, `constraints.yaml` and `denylist.txt`. Without one it fell back to ignore rules and to CI text, and never passed.
-* Two equally well-governed repositories got different verdicts depending on the file name they happened to choose.
+* `CON-01` ("Allow/deny artifact present") is blocked and carries weight 0.
+* `CON-02` ("Test directories protected") must accept any of about twenty root-level file names, such as `.cursorignore`, `constraints.yaml` and `denylist.txt`. Without one it falls back to ignore rules and to CI text, and never passes.
+* Two equally well-governed repositories get different verdicts depending on the file name they happen to choose.
 
 An agent reads the instruction file at the start of every session. It reads no other file unless its harness is configured to. The framework's own template already has a "Do Not Do" section in that file ([greenfield `AGENTS.md`](../../greenfield/templates/AGENTS.md), section 10).
-
----
 
 ## Decision
 
@@ -38,7 +29,7 @@ Three requirements concern the deny list, and each answers one question:
 
 An absence is reported once, by the check that owns it. With no instruction file, `AGT-01` reports it and the other three are `UNKNOWN`. With no prohibitions section, `AGT-07` reports it and `CON-01` and `CON-02` are `UNKNOWN`.
 
-### What the two checks mean now
+### What the two checks mean
 
 A prohibitions entry *names a path* when the path, or a pattern that covers it, appears in a code span in the entry.
 
@@ -49,24 +40,21 @@ A prohibitions entry *names a path* when the path, or a pattern that covers it, 
 | `FAIL` | The section names no path or pattern. | It names none of the test directories. |
 | `UNKNOWN` | No instruction file, or no prohibitions section. | The same, or the repository has no test directory. |
 
-`CON-02` stops counting constraint files, ignore rules and CI text as evidence. A repository that protects its tests only that way is reported as not naming them in its deny list. The change is deliberate: the other mechanisms are not the artifact.
+`CON-02` does not count constraint files, ignore rules or CI text as evidence. A repository that protects its tests only that way is reported as not naming them in its deny list. This is deliberate: the other mechanisms are not the artifact.
 
 ### `CON-04`, the draft emitter
 
-`CON-04` stays as a drafting aid. Its value is the deterministic scan: which secret, migration, generated, test, infrastructure and production paths exist. Its output changes: a Markdown section to paste under the instruction file's prohibitions heading, in place of `constraints.draft.yaml`, which nothing reads any more.
-
----
+`CON-04` stays as a drafting aid. Its value is the deterministic scan: which secret, migration, generated, test, infrastructure and production paths exist. Its output is a Markdown section to paste under the instruction file's prohibitions heading.
 
 ## Alternatives Considered
 
-| Alternative | Why it was rejected |
+| Alternative | Why it is rejected |
 |---|---|
 | A neutral machine-readable constraints file, with generators for each harness | No harness reads it, so it adds a file and a generator without adding enforcement. It can come later if enforcement is wanted, and the section can be its source. |
 | Harness-native configuration as the policy | One configuration per harness, and a repository may serve several. The policy would sit in files an agent does not read as instructions. |
 | Keep accepting any of the root-level file names | A verdict that depends on a naming choice, and no single place for the agent or the playbook to write to. |
+| `CON-04` writes a `constraints.draft.yaml` | Nothing reads that file. |
 | Retire `CON-04` | The scan that finds the candidates is deterministic and tested. A model should not rediscover the same paths by exploring the repository. |
-
----
 
 ## Consequences
 
@@ -80,11 +68,5 @@ A prohibitions entry *names a path* when the path, or a pattern that covers it, 
 
 * The section is prose, so the checks are heuristics: headings and code spans. A path written without backticks is not seen.
 * The list is a statement, not a mechanism. An agent can ignore it, and optional native configuration is how a team enforces it.
-* A repository governed through ignore files loses the credit it had under the old `CON-02`.
+* A repository governed through ignore files gets no credit for them in `CON-02`.
 * The Key Deliverables table in [Phased-Approach.md](../../docs/framework/phased-approach.md#key-deliverables) says "Config files". The spec reads that as the instruction file, and the table's wording is left to the framework's maintainer.
-
----
-
-## Lifecycle
-
-A decision record describes the current decision only. When the decision changes, overwrite the body, keep the file and its number, and fold the reversal into *Alternatives Considered*. See [README.md](../README.md#decision-records).
