@@ -120,7 +120,7 @@ report = json.loads((root / "eval-baseline.json").read_text(encoding="utf-8"))["
 text = (
     block.group(1)
     .replace("<path to the repository>", str(root / "repo"))
-    .replace("<path to the report JSON inside it>", str(root / report))
+    .replace("<path to the final report JSON>", str(root / report))
     .replace("<integration branch>", "dev")
 )
 print(text.rstrip())

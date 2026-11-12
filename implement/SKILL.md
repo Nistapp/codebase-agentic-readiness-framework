@@ -94,14 +94,14 @@ you can; otherwise write from the target repository's own facts. Never invent wh
 | 1 | Triage | Walk the confirmed findings grouped by theme; the owner keeps, skips (with reason) or defers each, and states preferences; all recorded in the workspace | Decides | Live |
 | 2 | Plan a theme | Record merged themes; pick the next theme in dependency order; brief what, why and the options; propose the change list | Approves | Live |
 | 3 | Apply | Worktree and branch from the integration branch; drift first; per item: re-verify, apply the playbook, verify, commit, record; continue on error | Approves choices | Live |
-| 4 | Close the theme | Engine re-check of the theme's checks; the repository's gate; state commit; with `ci.pr_by_agent=yes` push and open a pull request; stop | Reviews, merges | Live |
+| 4 | Close the theme | Engine re-check of the theme's checks; the repository's gate; render the state; with `ci.pr_by_agent=yes` push and open a pull request; stop | Reviews, merges | Live |
 | 5 | Close-out | After the last theme: record the last merge; full re-audit with the audit recipe; compare the two reports; list skipped, deferred and debt | Reviews | Live |
 
 At the end of each stage, and of each theme, send the owner a
 [status report](../audit/prompts/talking-to-the-user.md#status-report).
 
-A run can stop after any theme and resume another day: everything needed is in the state file. One theme per
-session is the normal pace: Stage 2 of the next theme needs the previous theme's pull request merged.
+A run can stop after any theme and resume another day: everything needed is in the state file in the workspace. One
+theme per session is the normal pace: Stage 2 of the next theme needs the previous theme's pull request merged.
 
 ## Stage 0: Intake
 
@@ -249,17 +249,14 @@ theme back: that theme neither waits for it nor is started for it.
 
 Goal: the owner knows what the next theme changes and approves a concrete change list. Change nothing yet.
 
-1. **Read and record merges.** Fetch the integration branch and run `progress.py show --target <repo>`. If no state
-   is there yet, the triage branch is not merged: stop and ask the owner to merge it; never start a theme from
-   unrecorded triage decisions. For each theme the state shows `pr_open` (or `branch_open` with a pull request the
-   owner opened), confirm it is merged:
-   `gh pr view <n> --json state,mergeCommit` when the harness has `gh`, otherwise ask the owner for the pull
-   request number and the merge commit. Record each merged theme with `progress.py theme Tn --status merged --pr N
-   --merged-sha SHA --target <worktree> --phase <phase>` in the new theme's worktree (Stage 3, step 1), so it lands
-   in that branch's first state commit; the state on the integration branch lags by one theme until then. A theme
-   whose pull request is still open blocks the themes that depend on it: say so and stop, unless the owner agrees
-   to branch from the unmerged theme branch. `progress.py` records a merge only with a pull request number; for a
-   branch merged without one, ask the owner how to record it.
+1. **Read and record merges.** Fetch the integration branch and run `progress.py show`. Check each theme the state
+   shows as `pr_open`, or as `branch_open` with a pull request the owner opened. Confirm it is merged with
+   `gh pr view <n> --json state,mergeCommit` when the harness has `gh`. Otherwise ask the owner for the pull request
+   number and the merge commit. Record each merged theme at once:
+   `progress.py theme Tn --status merged --pr N --merged-sha SHA --phase <phase>`. A theme whose pull request is
+   still open blocks the themes that depend on it. Say so and stop, unless the owner agrees to branch from the
+   unmerged theme branch. `progress.py` records a merge only with a pull request number. For a branch merged
+   without one, ask the owner how to record it.
 2. **Pick the next theme.** The first theme, in an order the diagram allows, that still has `queued` items its own
    playbooks work and whose predecessors are `merged`. A predecessor with nothing left for its own playbooks (no
    item, or every such item ended, skipped or deferred) counts as satisfied, and is not started. A playbook
@@ -296,24 +293,22 @@ only what is specific to it.
 1. **Worktree and branch.** `git -C <repo> fetch origin`, then
    `git -C <repo> worktree add <worktree> -b agentic-readiness/<phase>-<slug> origin/<integration branch>`, with
    `<worktree>` outside the repository and `<slug>` from the theme table. Expect a clean worktree. If the branch
-   exists already, this is a resume: see [Resuming](#resuming). All edits and every `progress.py` write happen in
-   the worktree (`--target <worktree>`). Record the merges from Stage 2, step 1, then
-   `progress.py theme Tn --status branch_open --branch <branch> --target <worktree> --phase <phase> --render`.
-2. **Drift first.** Run `python3 implement/tools/check_drift.py <report> <worktree>` (the report path
-   inside the worktree). Earlier themes and the owner's own pull requests close findings without the state knowing,
-   and move lines. Re-measure every claim a finding quotes (line numbers, counts, sizes, "not named: ...") on the
-   current tree. A finding already true is set `in_progress`, then `done` with the drift as the evidence; it is not
-   rewritten and not skipped.
+   exists already, this is a resume: see [Resuming](#resuming). All edits happen in the worktree; every
+   `progress.py` write goes to the workspace. Record the theme:
+   `progress.py theme Tn --status branch_open --branch <branch> --phase <phase> --render`.
+2. **Drift first.** Run `python3 implement/tools/check_drift.py <report> <worktree>`. Earlier themes and the owner's
+   own pull requests close findings without the state knowing, and move lines. Re-measure every claim a finding
+   quotes (line numbers, counts, sizes, "not named: ...") on the current tree. A finding already true is set
+   `in_progress`, then `done` with the drift as the evidence; it is not rewritten and not skipped.
 3. **Per item**, in the playbook's order:
-   1. `progress.py set-status F-nnn in_progress --target <worktree> --phase <phase>` before touching anything.
+   1. `progress.py set-status F-nnn in_progress --phase <phase>` before touching anything.
    2. Re-verify the finding with the check's own method.
    3. Apply the playbook's Steps for it, with the tool and option the owner chose.
    4. Verify with the playbook's Verification row and keep the command and its result.
    5. Commit: one logical change per commit, in the repository's commit convention, each revertible alone. Stage
-      named paths (`git add <path>`), never `commit -a`, so the state JSON that `progress.py` rewrites does not
-      ride along in a code commit.
+      named paths (`git add <path>`), never `commit -a`, so only the change you mean goes into the commit.
    6. End the item: `set-status F-nnn done --commit <sha> --verification-command "<cmd>" --verification-result
-      "<what it showed>" --target <worktree> --phase <phase>`; or `partial` with
+      "<what it showed>" --phase <phase>`; or `partial` with
       `--debt "what=<text>,count=<n>[,baseline=<file>]"` (repeatable); or `failed` or `blocked` with `--reason`. A
       `partial` item has debt and a `done` one has none.
 4. **Transitions.** Only `in_progress` ends. `partial` and `failed` go back to `in_progress` before they end again;
@@ -328,11 +323,10 @@ only what is specific to it.
    left; the playbook's "Continue on error" section says how for its tools. A count that must go up, or a floor that
    must go down, needs the owner and is recorded as an exception (see `add-baselines-and-ratchet`).
 7. **Render after every set of changes.** Pass `--render` to the last `progress.py` write of a set (or run
-   `render`), so the generated STATE.md never lags the JSON; `show` warns while it does. Commit the two state
-   files together, after the code commits they describe.
+   `render`), so the generated STATE.md never lags the JSON; `show` warns while it does. The state files stay in
+   the workspace and are never committed.
 8. **Owner choices on the way.** A new choice is recorded at once with `pref set ... --by owner` and the owner's
-   words. Re-record preferences the owner gave in an earlier session with `pref set`; never cherry-pick an old
-   state commit, which conflicts as soon as the integration branch has moved.
+   words. Preferences from earlier sessions are already in the workspace; read them, never ask again.
 9. **Markdown and diagrams.** Lint every changed Markdown file with the repository's own linter, and validate
    every Mermaid block before saving.
 10. **Ask** before any step the playbook does not cover, and before any step that does not fit the repository.
@@ -353,7 +347,7 @@ when allowed, the pull request) is ready for the owner.
 3. **Every item ended.** Each item the theme works is `done`, `partial`, `failed`, `blocked`, `deferred` or
    `skipped`; none is `queued` or `in_progress`. A verification that needs a CI run (a green run on the branch, a
    job summary, a first scan count) is recorded when that run exists: by this session if it opened the pull request
-   and CI finished, otherwise as a note in the next Stage 2. Render and commit the state.
+   and CI finished, otherwise as a note in the next Stage 2. Render the state.
 4. **Ending** ([ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md)):
    - Without `ci.pr_by_agent=yes`: stop at the local branch. Give the owner the branch name, the commits and the
      summary below; the owner pushes it and opens the pull request. The theme stays `branch_open` until the next
@@ -364,9 +358,8 @@ when allowed, the pull request) is ready for the owner.
      with its three headings. Under "What changed": items `done`, and items `partial` with their debt. Under
      "How it was checked": each item's verification, the engine re-check and the gate. Under "What was not
      done": `failed` and `blocked` items with the reason, items the owner skipped, checks that pass with no item,
-     and engine limits. Then `progress.py theme Tn --status pr_open --branch <branch> --pr N --target
-     <worktree> --phase <phase> --render` (`pr_open` needs the real number, so it comes after the pull request
-     exists), commit the state and push again.
+     and engine limits. Then `progress.py theme Tn --status pr_open --branch <branch> --pr N --phase <phase>
+     --render`. `pr_open` needs the real number, so it comes after the pull request exists.
 5. **Stop.** Remove the worktree (`git worktree remove <worktree>`; the branch stays), re-index, and stop.
    Never merge and never wait for the merge in the same session.
 
@@ -374,29 +367,31 @@ when allowed, the pull request) is ready for the owner.
 
 Goal: a second audit shows what the run changed, and the owner sees every skip, deferral and debt in one place.
 
-1. **Last merge.** When every theme with items is merged, or the owner calls the run finished, create a worktree
-   on `agentic-readiness/<phase>-close-out` from the integration branch (Stage 3, step 1) and record the last
-   merges (Stage 2, step 1).
+1. **Last merge.** Start when every theme with items is merged, or when the owner calls the run finished. Record
+   the last merges as in Stage 2, step 1.
 2. **Re-audit.** Run the [audit recipe](../audit/SKILL.md) (the `agentic-readiness-audit` skill) on the
-   integration branch at a pinned commit: a new intake, output outside the target, the same probe and
-   `--no-user-config` choices as the first audit where possible. The owner confirms and finalises it like any
-   audit. Note the commit.
-3. **Hand it over** as in Stage 0, step 2: the owner commits the second pair in `docs/agentic-readiness-report/`
-   beside the first, under its own name. Never edit or replace the first report.
-4. **Compare.** Run `python3 implement/tools/compare_reports.py <first report> <second report> --state
-   <state JSON>`. Label each move: explained by the state (an item `done` or `partial`), explained by an engine
-   change between the two audits (a different ruleset; name it), or unexplained (cite an open engine issue if one
-   matches, else say so). A skipped finding is owner-accepted, not a new gap.
-5. **Summary.** Write it into the close-out pull request body (or give it to the owner): the score before and
-   after, the moves and their labels, each skipped item with the owner's reason, each deferred item, and each
-   debt entry with its count and baseline.
-6. **Ending.** Commit the state on the close-out branch and end as Stage 4, step 4 says, with a `docs:` title and
-   without the `theme` command (the close-out is not a theme). Never merge.
+   integration branch at a pinned commit. Use a new intake and a new output folder of its own, outside the target.
+   Keep the same probe and `--no-user-config` choices as the first audit where possible. The owner confirms and
+   finalises it like any audit. Note the commit.
+3. **Keep both reports where the audits wrote them.** The first stays in the workspace and the second in its own
+   run folder. Never copy, edit or replace either.
+4. **Compare.** Run `python3 implement/tools/compare_reports.py <report> <second report> --state
+   <workspace>/<label>-agentic-readiness-state.json`. Label each move with one of three causes:
+   - explained by the state: an item `done` or `partial`;
+   - explained by an engine change between the two audits: a different ruleset, which you name;
+   - unexplained: cite an open engine issue if one matches, else say so.
+
+   A skipped finding is owner-accepted, not a new gap.
+5. **Summary.** Give the owner a
+   [done report](../audit/prompts/talking-to-the-user.md#done-report-and-pull-request-description). It holds the
+   score before and after, and the moves with their labels. It lists each skipped item with the owner's reason and
+   each deferred item. It gives each debt entry with its count and baseline.
+6. **Ending.** The close-out changes nothing in the target: no branch, no commit, no pull request. Never merge.
 
 ## Resuming
 
-- **Read the state where it is newest.** An open theme branch holds a newer state than the integration branch:
-  `git -C <repo> branch --list 'agentic-readiness/*'` and `git log` on it, then `progress.py show` on its worktree.
+- **Find the workspace.** The owner gives the report path again; the workspace is its folder. Run `progress.py
+  show` there. A target that still keeps a state in `docs/agentic-readiness/` is adopted first (Stage 0, step 6).
 - **An existing branch or worktree.** Reuse it (`git worktree list`; `git worktree add <worktree> <branch>` when
   only the branch is left). Never create a second branch for the same theme.
 - **An item left `in_progress`.** Check `git log` on the theme branch for its commit before changing anything
