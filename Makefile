@@ -385,10 +385,11 @@ else
 	$(PROSE_SCOPE) | xargs -0 $(PROSE_CHECK) $(PROSE_ARGS)
 endif
 
-# Rewrites CHANGELOG.md in place with the markdownlint fixes (release-please writes `*` bullets and double blank
-# lines). release-please.yml runs it on the release pull request; it fails when a violation is left that --fix
-# cannot fix.
+# Rewrites CHANGELOG.md in place: dev/wrap_changelog.py wraps the lines MD013 refuses (release-please writes a
+# breaking-change footer as one long bullet), then the markdownlint fixes (`*` bullets, double blank lines).
+# release-please.yml runs it on the release pull request; it fails when a violation is left that neither can fix.
 changelog-fix:
+	$(PYTHON) dev/wrap_changelog.py CHANGELOG.md
 	$(MARKDOWNLINT) --fix CHANGELOG.md
 
 # Renders every Mermaid block in FILES with the pinned mermaid-cli; fails on a block that does not render.
