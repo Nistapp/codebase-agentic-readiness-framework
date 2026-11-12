@@ -71,6 +71,12 @@ the repository. Discuss as long as you like; it installs nothing until you name 
 picks no tool, so it still asks about each one. If you choose none, it records that. It then lists the check it
 could not run in every report and pull request.
 
+The agent also checks the version of each tool it runs against the version your repository pins, for example in CI.
+A tool that is a little older (same major version, and it reads your config) gets a one-line warning, and the run
+goes on. A tool that is far older makes the agent stop. It offers an upgrade, a one-off run of the pinned version, or
+going on with yours. It upgrades nothing without your yes, and it accepts "go on". Each gap is recorded, and every
+report and pull request names it, since local results may then differ from CI.
+
 Two themes bring the framework's writing rules to your repository. The `AGENTS.md` theme (T7) adds a "How to write
 for people" section; the agent drafts the reader persona and you confirm it. The docs theme (T6) adds "Plain
 language" and "Diagrams" sections to your style guide. It records the prose debt of your existing pages and never

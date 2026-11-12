@@ -53,7 +53,9 @@ These apply through every stage, without exception:
 - **The owner chooses tools.** Use the tool the repository already has for a job. If it has none, offer two
   to four current, maintained options with pros and cons and a recommendation, and let the owner decide.
   Never install a dependency the owner did not approve. This holds at every step, not only in a playbook's
-  "Inputs to ask": follow [When a needed tool is missing](#when-a-needed-tool-is-missing).
+  "Inputs to ask": follow [When a needed tool is missing](#when-a-needed-tool-is-missing). A tool that is
+  present but older than the target pins follows
+  [When a found tool is older than needed](#when-a-found-tool-is-older-than-needed).
 - **Never touch secrets.** Never open, print or quote a `.env` file or any other secret store. Inventory
   variable names, never values.
 - **Keep private content private.** Nothing from a private repository or workspace (names, paths, values)
@@ -427,6 +429,39 @@ recommendation or a playbook's recommendation is not the owner's pick.
      that names the check not run.
    - List every check not run in each status report, and under "What was not done" in the pull request body and
      the close-out summary.
+
+## When a found tool is older than needed
+
+A tool on the machine can be older than the version the target pins: gitleaks 8.21.2 locally while CI pins
+8.30.1. Results then differ between the machine and CI. Check the version every time; never assume it.
+
+1. **Check before the first run.** Before a step first runs a tool in a session, run its version command (`gitleaks
+   version`, `ruff --version`). Note which binary ran (`command -v <tool>`); a stale copy earlier on `PATH` can
+   hide a newer one.
+2. **Find the reference.** Use the version the target pins: in CI, a lockfile, a hook config or a tool manifest.
+   When the target pins none, use the version the owning playbook cites. With no reference at all, record the
+   local version and carry on.
+3. **Sort the gap into one of three bands.**
+   - **Same or newer:** carry on.
+   - **Older but usable:** same major version, and the tool accepts the config and the flags the step uses. Warn
+     in one line, record it (step 5) and carry on. Do not ask.
+   - **Unacceptable:** another major version, or the tool rejects the config or a flag the step needs. Stop and
+     ask (step 4).
+4. **Ask, and respect the answer.** Send a
+   [decision request](../audit/prompts/talking-to-the-user.md#decision-requests) with three options:
+   - Upgrade on the machine. The owner does it, or approves the command you show them.
+   - Run the pinned version once, outside the target (`npx`, `uvx`, or a checksum-verified download into a
+     scratch folder). Nothing is installed on the machine or added to the repository.
+   - Carry on with the local version.
+
+   Name the step that waits. Upgrade nothing without the owner's yes. "Carry on" is a valid answer: take it.
+5. **Record it.**
+   - An owner's choice: `progress.py pref set tool.<tool>.version "<local> vs <reference>; <choice>" --reason
+     "<owner's words>" --by owner --phase <phase>`. Do not ask again while both versions stay the same.
+   - A usable gap: add a `--note "<tool> <local> vs <reference>, usable"` when you end the item that ran it.
+6. **Report it.** Name each open gap under "What was not done" in status reports and the pull request body. Give
+   the tool, both versions, and the warning that local results may differ from CI.
+7. **When CI disagrees with a local run**, name the version gap first as a likely cause.
 
 ## Resuming
 
