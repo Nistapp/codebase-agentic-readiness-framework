@@ -73,10 +73,13 @@ licence you name; by default it adds no tool.
 
 ### Step 4: Review the theme branch and merge it yourself
 
-The agent works in a separate worktree on `agentic-readiness/<phase>-<slug>` (Stage 3). Per finding: it re-verifies
-the finding, applies the playbook, verifies, commits one logical change, and records the end status: `done`, or
-`partial` with the debt counted and guarded so it cannot grow. It then re-runs the engine for the theme's checks and
-the repository's gate (Stage 4).
+The agent works in a separate worktree on `agentic-readiness/<phase>-<slug>` (Stage 3). Before the first change it
+runs your repository's gate once and tells you the result: this baseline separates old failures from new ones. Per
+finding: it re-verifies the finding, applies the playbook, verifies, runs your tests, commits one logical change, and
+records the end status: `done`, or `partial` with the debt counted and guarded so it cannot grow. It commits each
+change as soon as it passes, so you can roll back any one commit alone. A new test failure blocks the commit.
+After each commit it tells you the test result against the baseline. It then re-runs the engine for the theme's
+checks and the repository's gate. It shows you the gate's result beside the baseline (Stage 4).
 
 Without `ci.pr_by_agent=yes` it stops at the local branch and gives you the branch and a summary; you push it and
 open the pull request. With it, the agent pushes and opens the pull request, listing what is done, what is partial

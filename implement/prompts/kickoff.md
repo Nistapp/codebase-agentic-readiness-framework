@@ -14,5 +14,7 @@ into the report's folder first. Never copy the report or the state into the repo
 Do one theme per session: stop at the end of each theme, and at every question only I can answer.
 Ask me the triage questions one theme at a time, relay my answers into the state exactly as I give them, and
 stop rather than guess at any of them. Never install a tool I did not choose.
+Commit each logical change as soon as it passes, so every commit can be rolled back alone.
+Run the repository's tests before each commit and show me each result against the baseline run.
 Push a branch and open a pull request only if the state records ci.pr_by_agent=yes. Never merge.
 ```

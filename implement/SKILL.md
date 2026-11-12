@@ -93,12 +93,14 @@ you can; otherwise write from the target repository's own facts. Never invent wh
 | 0 | Intake | Check the tools; find the workspace; validate the report and refuse a non-final one; drift check; read, create or adopt the state; version skew; re-index | Confirms | Live |
 | 1 | Triage | Walk the confirmed findings grouped by theme; the owner keeps, skips (with reason) or defers each, and states preferences; all recorded in the workspace | Decides | Live |
 | 2 | Plan a theme | Record merged themes; pick the next theme in dependency order; brief what, why and the options; propose the change list | Approves | Live |
-| 3 | Apply | Worktree and branch from the integration branch; drift first; per item: re-verify, apply the playbook, verify, commit, record; continue on error | Approves choices | Live |
-| 4 | Close the theme | Engine re-check of the theme's checks; the repository's gate; render the state; with `ci.pr_by_agent=yes` push and open a pull request; stop | Reviews, merges | Live |
+| 3 | Apply | Worktree and branch from the integration branch; drift first; baseline gate; per item: re-verify, apply the playbook, verify, run the tests, commit, record; continue on error | Approves choices | Live |
+| 4 | Close the theme | Engine re-check of the theme's checks; the repository's gate against the baseline; render the state; with `ci.pr_by_agent=yes` push and open a pull request; stop | Reviews, merges | Live |
 | 5 | Close-out | After the last theme: record the last merge; full re-audit with the audit recipe; compare the two reports; list skipped, deferred and debt | Reviews | Live |
 
 At the end of each stage, and of each theme, send the owner a
-[status report](../audit/prompts/talking-to-the-user.md#status-report).
+[status report](../audit/prompts/talking-to-the-user.md#status-report). From Stage 3 on, add a **Tests:** line to
+it: the command, the result now and the result at the baseline, for example "**Tests:** `make check` exit 0; baseline
+exit 0; 0 new failures". When the tests did not run, the line says so and why.
 
 A run can stop after any theme and resume another day: everything needed is in the state file in the workspace. One
 theme per session is the normal pace: Stage 2 of the next theme needs the previous theme's pull request merged.
@@ -300,36 +302,51 @@ only what is specific to it.
    own pull requests close findings without the state knowing, and move lines. Re-measure every claim a finding
    quotes (line numbers, counts, sizes, "not named: ...") on the current tree. A finding already true is set
    `in_progress`, then `done` with the drift as the evidence; it is not rewritten and not skipped.
-3. **Per item**, in the playbook's order:
+3. **Baseline gate.** Before the first change, run the repository's gate in the new worktree. Use its `check`
+   verb. Before T1 has defined one, use the build and test commands the repository documents. Respect
+   `tests.stack_dependent`: run the offline subset it names. Never start a stack the owner did not allow. Keep the
+   exact command, its exit code and the count of failures. This baseline tells this theme's failures from older
+   ones. Tell the owner the result in one line before the first item. For example: "Baseline: `make check` exit 1,
+   3 failing tests". When nothing can run, say so plainly and name what stays unchecked.
+4. **Per item**, in the playbook's order:
    1. `progress.py set-status F-nnn in_progress --phase <phase>` before touching anything.
    2. Re-verify the finding with the check's own method.
    3. Apply the playbook's Steps for it, with the tool and option the owner chose.
    4. Verify with the playbook's Verification row and keep the command and its result.
-   5. Commit: one logical change per commit, in the repository's commit convention, each revertible alone. Stage
-      named paths (`git add <path>`), never `commit -a`, so only the change you mean goes into the commit.
-   6. End the item: `set-status F-nnn done --commit <sha> --verification-command "<cmd>" --verification-result
+   5. Run the repository's tests before the commit, with the baseline command. When the full run takes more than a
+      few minutes, run the subset that covers the changed files, and name it. Compare the result with the
+      baseline. A new failure blocks the commit. Fix it, or end the item `failed` with the failure as the reason.
+      A change that no code or test reads (a Markdown page) needs no test run. Say "tests not run: docs only".
+   6. Commit one logical change per commit, in the repository's commit convention. Each is revertible alone.
+      Commit as often as practical: as soon as a change passes its verification and the tests. Never hold
+      finished changes back for one large commit. Small commits keep the branch close to the state. They make a
+      resume safe and let the owner roll back one change alone. Stage named paths (`git add <path>`), never
+      `commit -a`, so only the change you mean goes into the commit.
+   7. Tell the owner one line per commit. Give the item, the short SHA, and the test result against the
+      baseline. For example: "F-004 `a1b2c3d`: `make test` 212 passed, 3 failed, 0 new failures".
+   8. End the item: `set-status F-nnn done --commit <sha> --verification-command "<cmd>" --verification-result
       "<what it showed>" --phase <phase>`; or `partial` with
       `--debt "what=<text>,count=<n>[,baseline=<file>]"` (repeatable); or `failed` or `blocked` with `--reason`. A
       `partial` item has debt and a `done` one has none.
-4. **Transitions.** Only `in_progress` ends. `partial` and `failed` go back to `in_progress` before they end again;
+5. **Transitions.** Only `in_progress` ends. `partial` and `failed` go back to `in_progress` before they end again;
    `blocked` goes back to `queued`. A note on an item that stays where it is: `set-status` to its own status with
    `--note "..."`. An owner who decides to skip or defer an item already `in_progress`: set it `blocked` (reason: the
    owner's decision), then `queued`, both with `--by owner`, then record the owner's `skip` or `defer`. The full table
    is in the [state contract](state.md#item-statuses).
-5. **A check that passes with no item.** A playbook resolves checks the audit passed or the owner did not confirm.
+6. **A check that passes with no item.** A playbook resolves checks the audit passed or the owner did not confirm.
    Verify them like the rest, name them in the pull request body, and record nothing: the state has no item for
    them.
-6. **Continue on error.** Existing debt is counted, wired so it cannot grow, recorded on the item as `partial`, and
+7. **Continue on error.** Existing debt is counted, wired so it cannot grow, recorded on the item as `partial`, and
    left; the playbook's "Continue on error" section says how for its tools. A count that must go up, or a floor that
    must go down, needs the owner and is recorded as an exception (see `add-baselines-and-ratchet`).
-7. **Render after every set of changes.** Pass `--render` to the last `progress.py` write of a set (or run
+8. **Render after every set of changes.** Pass `--render` to the last `progress.py` write of a set (or run
    `render`), so the generated STATE.md never lags the JSON; `show` warns while it does. The state files stay in
    the workspace and are never committed.
-8. **Owner choices on the way.** A new choice is recorded at once with `pref set ... --by owner` and the owner's
+9. **Owner choices on the way.** A new choice is recorded at once with `pref set ... --by owner` and the owner's
    words. Preferences from earlier sessions are already in the workspace; read them, never ask again.
-9. **Markdown and diagrams.** Lint every changed Markdown file with the repository's own linter, and validate
+10. **Markdown and diagrams.** Lint every changed Markdown file with the repository's own linter, and validate
    every Mermaid block before saving.
-10. **Ask** before any step the playbook does not cover, and before any step that does not fit the repository.
+11. **Ask** before any step the playbook does not cover, and before any step that does not fit the repository.
 
 ## Stage 4: Close the theme
 
@@ -340,23 +357,26 @@ when allowed, the pull request) is ready for the owner.
    target>` (add `--no-user-config` when the playbook asks). Compare each of the theme's checks with the audit
    report and explain every remaining non-`PASS`: a known engine limit (the playbook's Verification names them),
    recorded debt, or a real gap, which means the item is not `done`.
-2. **The repository's gate.** Run its `check` verb (and its docs lint when Markdown changed) in the worktree. A
-   failure that exists on the integration branch too is debt: record it, do not stop. A failure this theme caused
-   is fixed before the theme closes. Before T1 has defined `check`, run the build and test commands the repository
-   documents, and say there is no gate yet.
+2. **The repository's gate.** Run its `check` verb (and its docs lint when Markdown changed) in the worktree, with
+   the same command as the baseline (Stage 3, step 3), plus any verb this theme added. Compare the two runs. A
+   failure in the baseline too is debt: record it, do not stop. A failure this theme caused is fixed before the
+   theme closes. Before T1 has defined `check`, run the build and test commands the repository documents, and say
+   there is no gate yet. Show the owner both runs side by side: "`make check`: baseline exit 1 (3 failing
+   tests), now exit 1 (3 failing tests, 0 new)".
 3. **Every item ended.** Each item the theme works is `done`, `partial`, `failed`, `blocked`, `deferred` or
    `skipped`; none is `queued` or `in_progress`. A verification that needs a CI run (a green run on the branch, a
    job summary, a first scan count) is recorded when that run exists: by this session if it opened the pull request
    and CI finished, otherwise as a note in the next Stage 2. Render the state.
 4. **Ending** ([ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md)):
-   - Without `ci.pr_by_agent=yes`: stop at the local branch. Give the owner the branch name, the commits and the
-     summary below; the owner pushes it and opens the pull request. The theme stays `branch_open` until the next
-     Stage 2 records it.
+   - Without `ci.pr_by_agent=yes`: stop at the local branch. Give the owner the branch name, the commits and a
+     done report with the same three headings as the pull request body below, "How it was checked" included; the
+     owner pushes it and opens the pull request. The theme stays `branch_open` until the next Stage 2 records it.
    - With it: `git push -u origin <branch>` (never force), then open one pull request into the integration
      branch, titled with a conventional type the repository allows. The body is a
      [done report](../audit/prompts/talking-to-the-user.md#done-report-and-pull-request-description)
      with its three headings. Under "What changed": items `done`, and items `partial` with their debt. Under
-     "How it was checked": each item's verification, the engine re-check and the gate. Under "What was not
+     "How it was checked": each item's verification, the tests run before each commit, the engine re-check, and
+     the gate against its baseline, each with its command and result. Under "What was not
      done": `failed` and `blocked` items with the reason, items the owner skipped, checks that pass with no item,
      and engine limits. Then `progress.py theme Tn --status pr_open --branch <branch> --pr N --phase <phase>
      --render`. `pr_open` needs the real number, so it comes after the pull request exists.
