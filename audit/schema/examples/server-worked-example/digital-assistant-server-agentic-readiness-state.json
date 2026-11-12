@@ -15,7 +15,7 @@
   },
   "source_reports": [
     {
-      "path": "docs/agentic-readiness-report/digital-assistant-server-first-audit-20261028T131409Z.json",
+      "path": "digital-assistant-server-first-audit-20261028T131409Z.json",
       "git_sha": "4a48e1976e42",
       "catalogue_version": "0.2.2",
       "release": "0.3.2",
@@ -1461,7 +1461,7 @@
     {
       "date": "2026-10-30",
       "phase": "IR03.1",
-      "event": "State created from docs/agentic-readiness-report/digital-assistant-server-first-audit-20261028T131409Z.json: 40 queued, 0 deferred, 2 not queued."
+      "event": "State created from digital-assistant-server-first-audit-20261028T131409Z.json: 40 queued, 0 deferred, 2 not queued."
     },
     {
       "date": "2026-10-30",

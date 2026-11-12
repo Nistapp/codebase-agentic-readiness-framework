@@ -261,8 +261,8 @@ The size class is by the engine's file count: `small` below 1,000 files, `medium
 ## Readiness state
 
 [`readiness-state.schema.json`](readiness-state.schema.json) describes `<label>-agentic-readiness-state.json`, the
-state the implement recipe keeps in a target's `docs/agentic-readiness/` folder. [`tools/progress.py`](../../implement/tools/progress.py)
-is its only writer, the one tool allowed to write inside a target
+state the implement recipe keeps in its workspace: the folder of the final audit report, outside the target.
+[`tools/progress.py`](../../implement/tools/progress.py) is its only writer, and it writes nothing inside a target
 ([ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)).
 The statuses, the transitions and the skip, defer and preference rules are in the [state contract](../../implement/state.md).
 
@@ -272,7 +272,7 @@ The statuses, the transitions and the skip, defer and preference rules are in th
 | `repo` | `label` (the report's `provenance.target.label`, which names the files) and `default_branch` |
 | `framework` | The framework that created the state: `release`, `revision` (12 digits or null) and `install`, as in a report |
 | `last_framework` | The framework that last wrote the state: `release` and `revision`. A write that changes it logs the move |
-| `source_reports` | Each final report's path relative to the target, its `git_sha` (12 digits), `catalogue_version`, `release` and `revision`, and `sha256`, the SHA-256 of the report file when `init` read it |
+| `source_reports` | Each final report's path relative to the workspace (its file name), its `git_sha` (12 digits), `catalogue_version`, `release` and `revision`, and `sha256`, the SHA-256 of the report file when `init` read it |
 | `preferences` | The owner's choices: `key`, `value`, `reason`, `by: owner`, `date`, `phase` |
 | `themes` | T1 to T8 in order: `title`, `status` (`not_started`, `branch_open`, `pr_open`, `merged`), `phase`, `branch`, `pr`, `merged_sha` |
 | `items` | One per confirmed, edited or deferred finding: `finding`, `check`, `severity`, `theme`, `statement`, `status`, `by`, `date`, `reason`, `commits`, `verification`, `debt`, `notes` |

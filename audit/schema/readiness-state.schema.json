@@ -60,7 +60,7 @@
         "additionalProperties": false,
         "properties": {
           "path": {
-            "description": "The report's path, relative to the target root, with forward slashes.",
+            "description": "The report's path, relative to the workspace (the folder that holds the state), with forward slashes; init records the file name.",
             "$ref": "#/$defs/relativePath"
           },
           "git_sha": {
