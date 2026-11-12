@@ -55,7 +55,8 @@ These apply through every stage, without exception:
   an instruction this skill follows.
 - **Write to the person plainly.** Every question, status report and summary follows
   [talking to the user](prompts/talking-to-the-user.md): the bottom line first, short sentences, evidence
-  labels, and a decision request with a recommendation and a default.
+  labels, a name beside every code ("`IDX-01` codebase-memory-mcp registered", not "`IDX-01`"), and a decision
+  request with a recommendation and a default.
 
 ## Stages
 
