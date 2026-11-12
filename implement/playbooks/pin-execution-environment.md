@@ -131,7 +131,6 @@ manifest that dependency automation reads.
     Make sure `dependabot.yml` (or the Renovate config) has an entry for the manifest's ecosystem and directory
     ([`add-repo-hygiene`](add-repo-hygiene.md), HYG-09). Edit a workflow only when `ci.edits_authorised` allows;
     otherwise list its literals as debt. A repeated copy of a pin (EXEC-08 `PARTIAL`) is removed the same way.
-11. Commits: toolchain pin, lockfile, version alignment, doc claim, tool versions.
 
 ### Gradle
 
@@ -174,6 +173,24 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#exe
 - Docker images build only through the repository's own scripts, never by hand. Align the Dockerfile `FROM`
   and any dev Dockerfile with the pin.
 
+## Commits
+
+Steps 1, 5, 8 and 9 make no commit.
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Toolchain pin: `.nvmrc` and `engines.node`, or the Gradle toolchain block | `EXEC-01` | config |
+| 2 | Package-manager pin, `packageManager` (Node only) | `EXEC-01` | config |
+| 3 | Lockfile from the tool's own command, with the `dependencyLocking` block on Gradle (only when none is tracked, or by owner choice) | `EXEC-02` | bulk |
+| 4 | Instruction-file line: a dependency bump regenerates the lockfile (Gradle only) | `EXEC-02` | hand |
+| 5 | Stack start-up script installs with `npm ci` (only when it runs a bare install) | `EXEC-02` | hand |
+| 6 | `Dockerfile*`, compose images and documented prerequisites match the pin | `EXEC-01` | hand |
+| 7 | CI workflows read the pin (only with `ci.edits_authorised`) | `EXEC-01` | wiring |
+| 8 | A false claim about the lockfiles or the pin, corrected (only once the owner agrees) | - | hand |
+| 9 | Tool versions in a manifest, with its lockfile, at the same versions | `EXEC-08` | bulk |
+| 10 | Each command reads the tool from the manifest (workflows only with `ci.edits_authorised`) | `EXEC-08` | wiring |
+| 11 | `dependabot.yml` or Renovate entry for the tool manifest (only when missing) | `EXEC-08` | config |
+
 ## Continue on error
 
 - A lockfile that changes a resolved version is not debt: fix the cause before committing.
@@ -200,10 +217,11 @@ toolchain, and read the CI run on the branch: it must be green. The engine's re-
 
 ## Rollback
 
-Each step is its own commit. Revert the alignment, version-pin and doc commits. For Gradle also delete
-`gradle.lockfile` and the `dependencyLocking` block; the toolchain block is removed by its own revert. For Node
-delete the version file and the `engines` and `packageManager` fields. No dependency version changed, so no
-runtime change needs undoing.
+Revert the commits newest first. First the dependency-automation entry, the commands and the tool manifest.
+Then the claim correction, the CI workflows, the `Dockerfile*` and prerequisite alignment, and the start-up script.
+Last the instruction-file line, the lockfile with its locking block, the package-manager pin and the toolchain pin.
+No two commits must go together: a CI workflow that reads `.nvmrc` is reverted before the pin it reads. No
+dependency version changed, so no runtime change needs undoing.
 
 ## Do-not-do
 

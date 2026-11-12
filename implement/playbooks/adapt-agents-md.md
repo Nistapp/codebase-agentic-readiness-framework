@@ -233,7 +233,6 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     convention (D18), and link it from the section. Then run the engine's AGT-12.
 12. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
     record the overage as debt. Never shorten by reflowing or deleting the owner's rules.
-13. **Commits:** one per finding, so the owner can revert any one alone.
 
 ### Gradle and Quarkus
 
@@ -254,6 +253,32 @@ not invented. Jest single test: `npx jest -t '<name>'` from the app folder. Boun
 themselves (one app never imports another), `src/` versus `test/`, generated clients, and the infrastructure folder.
 The AGT-12 persona names the languages and frameworks the apps use: "a new engineer who knows TypeScript, NestJS
 and React".
+
+## Commits
+
+One commit per finding, so the owner can revert any one alone. A row that says "one per" repeats for each case. A
+finding the owner skips makes no commit, and the owner's order (Inputs 1) replaces the order below.
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | The seven verbs in a fenced block, annotated | `AGT-05` | hand |
+| 2 | Fix of the command a finding names (one per finding) | `EXEC-06` | hand |
+| 3 | Precondition lines and lines T2 deferred, beside the commands (only when missing) | - | hand |
+| 4 | Fenced single-test line (only when the item sits in T7) | `TST-04` | hand |
+| 5 | Documentation contract lines (only the missing ones) | `AGT-03` | hand |
+| 6 | Boundary rules the owner picked | `AGT-06` | hand |
+| 7 | Definition-of-done sentence | `AGT-04` | hand |
+| 8 | Release-boundary sentence | `AGT-09` | hand |
+| 9 | Reach line | `AGT-08` | hand |
+| 10 | Vendor file reconciled (one per file the owner agreed to change) | `AGT-08` | hand |
+| 11 | Deferral resolved: must-always rules moved in, link line | `AGT-10` | hand |
+| 12 | Generic text moved to a `docs/` page (one per section) | `AGT-11` | hand |
+| 13 | Contradicted rule as target state (one per rule) | `AGT-11` | hand |
+| 14 | Stale lines corrected | `AGT-11` | hand |
+| 15 | Component `AGENTS.md` (only when the owner asks) | `AGT-02` | hand |
+| 16 | "How to write for people" section | `AGT-12` | hand |
+| 17 | Long-form communication rules file and its link (only with `agents_md.comm_long_form=yes`) | `AGT-12` | hand |
+| 18 | Long section moved to `docs/` (only when over the 400-line budget) | - | hand |
 
 ## Continue on error
 
@@ -290,9 +315,10 @@ and React".
 
 ## Rollback
 
-`git revert` the commits: one per finding, each revertible alone. Text moved to `docs/` comes back with the revert of
-its commit; nothing outside `AGENTS.md`, the vendor pointer files the owner agreed to change, the second rules file
-the owner agreed to trim, the new `docs/` page and the long-form communication rules file is touched.
+`git revert` the commits, newest first: one per finding, each revertible alone. Some commits move a rule or a
+text block: a reconciled vendor file, the deferral, generic text, a long section. The revert returns the text to its
+old place. This playbook touches only `AGENTS.md`, the new `docs/` page and the long-form communication rules
+file. It also touches a vendor pointer file or the second rules file, but only where the owner agreed.
 
 ## Do-not-do
 
