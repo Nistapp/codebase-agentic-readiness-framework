@@ -218,23 +218,19 @@ class CheckDriftTests(unittest.TestCase):
 
 
 class ReportDigestTests(unittest.TestCase):
-    """`report_changed`: the report file against the SHA-256 `progress.py init` recorded in the target's state."""
+    """`report_changed`: the report file against the SHA-256 `progress.py init` recorded in the workspace's state."""
 
     def setUp(self) -> None:
         self._tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self._tmp.cleanup)
         self.repo = Path(self._tmp.name) / "repo"
         _git.make_repo(self.repo, FILES)
-        self.report = self.repo / "docs" / "agentic-readiness-report" / REPORT.name
-        self.report.parent.mkdir(parents=True)
+        self.workspace = Path(self._tmp.name) / "workspace"
+        self.report = self.workspace / REPORT.name
+        self.workspace.mkdir()
         document = json.loads(REPORT.read_text(encoding="utf-8"))
         document["provenance"]["target"]["git_sha"] = _git.run_git(self.repo, "rev-parse", "HEAD")
         self.report.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
-        self.commit_all("add the report")
-
-    def commit_all(self, message: str) -> None:
-        _git.run_git(self.repo, "add", "-A")
-        _git.run_git(self.repo, "commit", "-q", "-m", message)
 
     def init_state(self) -> None:
         out = io.StringIO()
@@ -246,7 +242,6 @@ class ReportDigestTests(unittest.TestCase):
             stderr=io.StringIO(),
         )
         self.assertEqual(code, 0, out.getvalue())
-        self.commit_all("add the state")
 
     def drift(self) -> dict[str, Any]:
         code, envelope, _ = call([str(self.report), str(self.repo)])
@@ -263,7 +258,6 @@ class ReportDigestTests(unittest.TestCase):
     def test_edited_report_is_changed_and_says_so(self) -> None:
         self.init_state()
         self.report.write_text(self.report.read_text(encoding="utf-8").replace("package.json", "package.JSON", 1))
-        self.commit_all("edit the report")
         out, err = io.StringIO(), io.StringIO()
         code = _common.run_tool(
             check_drift.INFO, check_drift.handler, [str(self.report), str(self.repo)], stdout=out, stderr=err
@@ -279,12 +273,11 @@ class ReportDigestTests(unittest.TestCase):
 
     def test_a_state_from_before_the_digest_means_unknown(self) -> None:
         self.init_state()
-        state_path = next((self.repo / "docs" / "agentic-readiness").glob("*-state.json"))
+        state_path = next(self.workspace.glob("*-state.json"))
         state = json.loads(state_path.read_text(encoding="utf-8"))
         state["schema_version"] = "0.1"
         del state["source_reports"][0]["sha256"]
         state_path.write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
-        self.commit_all("downgrade the state")
         self.assertIsNone(self.drift()["report_changed"])
 
     def test_a_report_the_state_does_not_list_means_unknown(self) -> None:

@@ -57,7 +57,7 @@ A short human summary goes to stderr, one or two lines. Progress and diagnostics
 
 ### 3. Describe itself
 
-`<tool>.py --describe` prints an envelope whose `data` is a manifest: `name`, `version`, `summary`, `synopsis`, `writes` (what the tool writes, and where), `network` (always `false`), `writes_inside_target` (`false` for every tool except `progress.py`, see rule 6) and `exit_codes`. It needs no other argument and runs no work. The generated tool catalogue is built from these manifests.
+`<tool>.py --describe` prints an envelope whose `data` is a manifest: `name`, `version`, `summary`, `synopsis`, `writes` (what the tool writes, and where), `network` (always `false`), `writes_inside_target` (`false` for every tool, see rule 6) and `exit_codes`. It needs no other argument and runs no work. The generated tool catalogue is built from these manifests.
 
 ### 4. Keep its output small
 
@@ -71,11 +71,11 @@ No tool opens a socket, calls a package index or fetches a URL. The one thing th
 
 A tool reads the repository it is pointed at and never writes there: no report, no cache, no lock file, no temporary file. Output goes to an output directory outside the target, and a tool refuses an output directory that is inside the target, including through a symlink. A tool also refuses to read a path that resolves outside the target, so a symlink cannot lead it out.
 
-One exception, decided in [ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md): `progress.py` writes the implement recipe's two state files, `docs/agentic-readiness/<label>-agentic-readiness-state.json` and `<label>-agentic-readiness-STATE.md`, and nothing else in the target. It validates the whole state before every write, refuses a folder that resolves outside the target and a state file that is a symlink, and replaces each file atomically. Its manifest says `writes_inside_target: true`. No other tool may claim the exception without its own ADR.
+The rule has no exception ([ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)). `progress.py` keeps the implement recipe's state in the workspace, the folder of the final audit report, and refuses a workspace that resolves inside the target. Every manifest says `writes_inside_target: false`.
 
 ### 7. Never replace a file
 
-A tool that writes a file gives it a name that carries the repository's name, `<label>.<kind>.<stamp>.<ext>`, and creates it only if the name is free. When the name is taken, which happens if two runs start in the same second, the tool adds `-2`, `-3` and so on after the stamp. No tool has an overwrite option. There are three exceptions, each a run atomically replacing a file it owns in place: a run updating its own draft report, `recipe_lint.py --write-catalogue` regenerating [`tools/CATALOGUE.md`](CATALOGUE.md), and `progress.py` replacing a target's state files (rule 6). The rule, the label and the stamp are defined under "Output files" in the [report schema notes](../schema/SCHEMA.md#output-files).
+A tool that writes a file gives it a name that carries the repository's name, `<label>.<kind>.<stamp>.<ext>`, and creates it only if the name is free. When the name is taken, which happens if two runs start in the same second, the tool adds `-2`, `-3` and so on after the stamp. No tool has an overwrite option. There are three exceptions, each a run atomically replacing a file it owns in place: a run updating its own draft report, `recipe_lint.py --write-catalogue` regenerating [`tools/CATALOGUE.md`](CATALOGUE.md), and `progress.py` replacing its state files in the workspace. The rule, the label and the stamp are defined under "Output files" in the [report schema notes](../schema/SCHEMA.md#output-files).
 
 ### 8. Check the Python version first
 

@@ -13,8 +13,9 @@ listed here is one the agent should re-check before it acts on the report's text
 Two more facts come with it, neither of which changes the exit code. ``data.dirty`` is true when the target's working
 tree has uncommitted changes (``git status --porcelain`` is not empty; null when git could not say), so an agent need
 not run ``git status`` by hand. ``data.report_changed`` compares the report file's SHA-256 with the digest
-``progress.py init`` recorded in the target's state: true when they differ, false when they match, null when the
-target has no state, the state has no digest for this report (a ``0.1`` state) or the report is not one the state lists.
+``progress.py init`` recorded in the state beside the report (the workspace): true when they differ, false when they
+match, null when the workspace has no state, the state has no digest for this report (a ``0.1`` state) or the report is
+not one the state lists.
 
 ``data.status`` is one of ``current`` (``HEAD`` is the audited commit), ``drifted`` (it is not), ``sha_missing`` (the
 audited commit is not in the target's history, so nothing can be compared and every finding is unverified) and
@@ -99,25 +100,24 @@ def is_dirty(target: Path) -> bool | None:
     return bool(done.stdout.strip())
 
 
-def recorded_digest(target: Path, report_file: Path, label: str) -> str | None:
-    """The SHA-256 the target's state recorded for `report_file`, or None: no state, no digest, or another report."""
+def recorded_digest(report_file: Path, label: str) -> str | None:
+    """The SHA-256 the state beside `report_file` recorded for it, or None: no state, no digest, or another report."""
+    resolved = report_file.resolve()
     try:
-        _, state_path = progress.find_state(progress.state_directory(target), label)
+        _, state_path = progress.find_state(resolved.parent, label)
         state = progress.read_state(state_path)
     except _common.ToolError:
         return None
-    resolved = report_file.resolve()
-    relative = resolved.relative_to(target).as_posix() if _common.is_within(target, resolved) else None
     for entry in state["source_reports"]:
-        if entry["path"] == relative or (relative is None and Path(entry["path"]).name == resolved.name):
+        if entry["path"] == resolved.name:
             digest = entry.get("sha256")
             return digest if isinstance(digest, str) else None
     return None
 
 
-def report_changed(target: Path, report_file: Path, label: str) -> bool | None:
+def report_changed(report_file: Path, label: str) -> bool | None:
     """True when the report file no longer matches the digest `progress.py init` recorded; None when none was recorded."""
-    recorded = recorded_digest(target, report_file, label)
+    recorded = recorded_digest(report_file, label)
     if recorded is None:
         return None
     return hashlib.sha256(report_file.read_bytes()).hexdigest() != recorded
@@ -152,9 +152,7 @@ def handler(argv: Sequence[str]) -> _common.Result:
     )
     data: dict[str, Any] = {"audited_sha": audited, "head_sha": head, "drifted": False, "versions": versions}
     data["dirty"] = is_dirty(target)
-    data["report_changed"] = report_changed(
-        target, Path(args.report).expanduser(), document["provenance"]["target"]["label"]
-    )
+    data["report_changed"] = report_changed(Path(args.report).expanduser(), document["provenance"]["target"]["label"])
     if data["report_changed"]:
         warnings.append(
             "the report file differs from the digest recorded when the state was created; it was edited, "

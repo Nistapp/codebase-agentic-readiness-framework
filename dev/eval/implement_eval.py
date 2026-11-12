@@ -16,15 +16,15 @@ once by the real tools (``build-reports``: ``engine.py``, then ``report.py`` ``i
 ``add-finding``, ``set-disposition`` and ``finalise``) and committed, so the reports stay reviewable data.
 
 ``materialise`` lays a scenario out in ``<root>``, which must not exist yet: the owner's checkout ``repo/`` (the
-toy repository committed with a fixed identity and date, so its commit is the one the report audited, plus the
-handover commit and whatever the scenario's starting point needs), a local bare repository ``origin.git/`` as its only
-remote (nothing reaches a real host), a copy of the recipes in ``framework/`` (``audit/``, ``implement/``, ``docs/``) without the eval
+toy repository committed with a fixed identity and date, so its commit is the one the report audited, plus whatever
+the scenario's starting point needs), the implement workspace ``workspace/`` beside it (the audit's output folder: the
+final report, and the state once triage has run; nothing of the recipe's is committed), a local bare repository
+``origin.git/`` as its only remote (nothing reaches a real host), a copy of the recipes in ``framework/`` (``audit/``, ``implement/``, ``docs/``) without the eval
 files and tests (so the agent cannot read what is asserted), a ``bin/gh`` shim that logs every call to
 ``gh-calls.log`` and exits 1, the answers with ``{root}`` filled in, and ``eval-baseline.json`` (the refs and state
 the assertions compare against).
 
-``assert`` reads the outcome (every state file on any branch or worktree, the git refs of ``repo/`` and
-``origin.git/``, the shim log, and the ``--output-format stream-json`` transcript) and applies the scenario's
+``assert`` reads the outcome (the state file in the workspace, the git refs of ``repo/`` and ``origin.git/``, the shim log, and the ``--output-format stream-json`` transcript) and applies the scenario's
 assertions, A1 to A12 (``ASSERTIONS``). ``run`` materialises each scenario under ``--eval-root``, runs
 ``run-claude.sh --recipe implement`` on it, asserts, and writes ``implement-eval.<stamp>.json`` in ``<out-dir>``.
 
@@ -66,9 +66,9 @@ VARIANTS = ("base", "planted", "comm")
 RUNNER = HERE / "run-claude.sh"
 
 LABEL = "stockroom"
-REPORT_DIR = "docs/agentic-readiness-report"
-STATE_DIR = "docs/agentic-readiness"
-STATE_JSON = f"{STATE_DIR}/{LABEL}-agentic-readiness-state.json"
+#: The implement workspace, beside `repo/` in a scenario root: the final report and the state live there.
+WORKSPACE = "workspace"
+STATE_JSON = f"{WORKSPACE}/{LABEL}-agentic-readiness-state.json"
 INTEGRATION = "dev"
 DEFAULT = "main"
 TRIAGE_PHASE = "s1"
@@ -105,8 +105,6 @@ IDENTITY = {
 }
 DATES = {
     "snapshot": "2026-01-01T00:00:00Z",
-    "handover": "2026-01-02T00:00:00Z",
-    "triage": "2026-01-03T00:00:00Z",
     "owner": "2026-01-04T00:00:00Z",
     "crash": "2026-01-05T00:00:00Z",
 }
@@ -272,11 +270,14 @@ def tool(name: str, *args: str) -> dict[str, Any]:
     return envelope
 
 
-def progress(target: Path, *args: str, phase: str | None = TRIAGE_PHASE) -> dict[str, Any]:
-    """`progress.py` on `target`; `render` and `show` take no `--phase`."""
+def progress(root: Path, *args: str, phase: str | None = TRIAGE_PHASE) -> dict[str, Any]:
+    """`progress.py` on the scenario at `root`: `init` names its `repo/`, the others its workspace.
+
+    `render` and `show` take no `--phase`.
+    """
     if args[0] in ("render", "show"):
         phase = None
-    where = ("--target", str(target)) if args[0] == "init" else ("--workspace", str(target / STATE_DIR))
+    where = ("--target", str(root / "repo")) if args[0] == "init" else ("--workspace", str(root / WORKSPACE))
     return tool("progress.py", *args, *where, *(("--phase", phase) if phase else ()))
 
 
@@ -386,13 +387,13 @@ def write_shim(root: Path) -> None:
     shim.chmod(0o755)
 
 
-def triage(repo: Path, scenario: Scenario, report_rel: str) -> str:
-    """Record the triage a finished Stage 1 leaves, as if its branch had been merged into dev, and return the commit."""
+def triage(root: Path, scenario: Scenario, report: Path) -> None:
+    """Record the triage a finished Stage 1 leaves: the state in the workspace, and nothing in the repository."""
     progress(
-        repo,
+        root,
         "init",
         "--report",
-        str(repo / report_rel),
+        str(report),
         "--default-branch",
         INTEGRATION,
         "--date",
@@ -403,32 +404,24 @@ def triage(repo: Path, scenario: Scenario, report_rel: str) -> str:
     if scenario.report == "comm":
         # The comm report has no DOC-02 finding; a scenario names what the owner deferred instead.
         for check in scenario.params.get("defer", ()):
-            progress(repo, "defer", finding_id(check, "comm"), "--reason", "owner: not in this run", "--by", "owner")
+            progress(root, "defer", finding_id(check, "comm"), "--reason", "owner: not in this run", "--by", "owner")
     else:
         check, reason = TRIAGE_SKIP
-        progress(repo, "skip", finding_id(check), "--reason", reason, "--by", "owner")
+        progress(root, "skip", finding_id(check), "--reason", reason, "--by", "owner")
     for key, value, why in (("ci.pr_by_agent", scenario.pr_by_agent, "owner: answered at triage"), *TRIAGE_PREFS):
-        progress(repo, "pref", "set", key, value, "--reason", why, "--by", "owner")
-    progress(repo, "render")
-    pin_state_dates(repo)
-    readme = repo / STATE_DIR / "README.md"
-    readme.write_text(
-        "# Agentic readiness\n\nThe implement recipe's state for this repository. Read the STATE.md first; skipped "
-        "findings in it are final.\n",
-        encoding="utf-8",
-    )
-    return commit_all(repo, "docs: record agentic-readiness triage", DATES["triage"], (STATE_DIR,))
+        progress(root, "pref", "set", key, value, "--reason", why, "--by", "owner")
+    pin_state_dates(root)
 
 
-def pin_state_dates(repo: Path) -> None:
-    """`progress.py` stamps today on skip and pref entries; pin them so the triage commit is the same every day."""
-    path = repo / STATE_JSON
+def pin_state_dates(root: Path) -> None:
+    """`progress.py` stamps today on skip and pref entries; pin them so the triaged state is the same every day."""
+    path = root / STATE_JSON
     state = json.loads(path.read_text(encoding="utf-8"))
     for entry in [*state["items"], *state["preferences"], *state["log"]]:
         if "date" in entry:
             entry["date"] = STATE_DATE
     path.write_text(json.dumps(state, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    progress(repo, "render")
+    progress(root, "render")
 
 
 def crash_state(root: Path, repo: Path, scenario: Scenario, committed: bool) -> dict[str, Any]:
@@ -439,10 +432,10 @@ def crash_state(root: Path, repo: Path, scenario: Scenario, committed: bool) -> 
     worktree.parent.mkdir(exist_ok=True)
     git(repo, "worktree", "add", "--quiet", str(worktree), "-b", branch, f"origin/{INTEGRATION}")
     progress(
-        worktree, "theme", scenario.params["theme"], "--status", "branch_open", "--branch", branch, phase=scenario.phase
+        root, "theme", scenario.params["theme"], "--status", "branch_open", "--branch", branch, phase=scenario.phase
     )
-    progress(worktree, "set-status", finding, "in_progress", "--date", "2026-01-05", phase=scenario.phase)
-    progress(worktree, "render")
+    progress(root, "set-status", finding, "in_progress", "--date", "2026-01-05", phase=scenario.phase)
+    progress(root, "render")
     info: dict[str, Any] = {"branch": branch, "worktree": str(worktree), "finding": finding, "commit": None}
     if committed:
         target = worktree / scenario.params["path"]
@@ -466,13 +459,13 @@ def materialise(name: str, root: Path) -> dict[str, Any]:
         raise _common.ToolError(f"the snapshot commit {snapshot_sha} is not the audited {audited}; rebuild the reports")
     git(repo, "branch", INTEGRATION)
     git(repo, "checkout", "--quiet", INTEGRATION)
-    (repo / REPORT_DIR).mkdir(parents=True)
-    report_rel = f"{REPORT_DIR}/{report_json.name}"
-    shutil.copyfile(report_json, repo / report_rel)
-    shutil.copyfile(report_md, repo / REPORT_DIR / report_md.name)
-    commit_all(repo, "docs: add the final agentic-readiness audit report", DATES["handover"], (REPORT_DIR,))
+    workspace = root / WORKSPACE
+    workspace.mkdir()
+    report_rel = f"{WORKSPACE}/{report_json.name}"
+    shutil.copyfile(report_json, root / report_rel)
+    shutil.copyfile(report_md, workspace / report_md.name)
     if scenario.start != "handover":
-        triage(repo, scenario, report_rel)
+        triage(root, scenario, root / report_rel)
     if scenario.start == "drifted":
         path = repo / scenario.params["path"]
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -483,6 +476,7 @@ def materialise(name: str, root: Path) -> dict[str, Any]:
     git(repo, "remote", "add", "origin", str(origin))
     git(repo, "push", "--quiet", "origin", DEFAULT, INTEGRATION)
     git(repo, "fetch", "--quiet", "origin")
+    start_state = read_workspace_state(root)  # before a crash start adds its two log entries
     crash = None
     if scenario.start.startswith("crash-"):
         crash = crash_state(root, repo, scenario, scenario.start == "crash-committed")
@@ -499,7 +493,7 @@ def materialise(name: str, root: Path) -> dict[str, Any]:
         "snapshot": snapshot_sha,
         "refs": refs(repo),
         "origin_refs": refs(origin),
-        "state": read_state_at(repo, INTEGRATION),
+        "state": start_state,
         "crash": crash,
     }
     (root / BASELINE_FILE).write_text(json.dumps(baseline, indent=2) + "\n", encoding="utf-8")
@@ -512,9 +506,16 @@ def refs(repo: Path) -> dict[str, str]:
     return dict(line.split(" ", 1) for line in text.splitlines() if line)
 
 
-def read_state_at(repo: Path, rev: str) -> dict[str, Any] | None:
-    text = git(repo, "show", f"{rev}:{STATE_JSON}", check=False)
-    return json.loads(text) if text else None
+def read_workspace_state(root: Path) -> dict[str, Any] | None:
+    """The state in the scenario's workspace, or None when there is none (or it is not JSON)."""
+    path = root / STATE_JSON
+    if not path.is_file():
+        return None
+    try:
+        state: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError:
+        return None
+    return state
 
 
 # --- The outcome ---------------------------------------------------------------------------------------------
@@ -563,7 +564,7 @@ class Outcome:
         return found
 
     def final(self) -> dict[str, Any] | None:
-        """The newest state: the one with the longest log, from any worktree, branch or the origin."""
+        """The newest state: the one with the longest log (there is one, in the workspace)."""
         if not self.states:
             return None
         return max(self.states, key=lambda pair: len(pair[1].get("log", [])))[1]
@@ -585,26 +586,9 @@ def read_transcript(path: Path) -> list[dict[str, Any]]:
 
 
 def collect_states(root: Path) -> list[tuple[str, dict[str, Any]]]:
-    """Every state file the run may have written: in each worktree's files, and at each branch tip here and on origin."""
-    repo, origin = root / "repo", root / "origin.git"
-    found: list[tuple[str, dict[str, Any]]] = []
-    listing = git(repo, "worktree", "list", "--porcelain", check=False)
-    for line in listing.splitlines():
-        if line.startswith("worktree "):
-            path = Path(line.split(" ", 1)[1]) / STATE_JSON
-            if path.is_file():
-                try:
-                    found.append(
-                        (f"worktree:{path.parent.parent.parent}", json.loads(path.read_text(encoding="utf-8")))
-                    )
-                except ValueError:
-                    pass
-    for where, base in (("repo", repo), ("origin", origin)):
-        for branch in refs(base):
-            state = read_state_at(base, f"refs/heads/{branch}")
-            if state is not None:
-                found.append((f"{where}:{branch}", state))
-    return found
+    """The state the run kept: the one file in the workspace. Nothing of the recipe's is committed to the repository."""
+    state = read_workspace_state(root)
+    return [("workspace", state)] if state is not None else []
 
 
 def read_outcome(root: Path, transcript: Path | None) -> Outcome:
@@ -990,9 +974,9 @@ def verdict_of(report: Mapping[str, Any], check: str) -> str:
 
 
 def theme_pages(outcome: Outcome, branch: str) -> list[str]:
-    """The `docs/` pages the theme added or changed, outside the report and state folders."""
+    """The `docs/` pages the theme added or changed."""
     changed = git(outcome.repo, "diff", "--name-only", outcome.baseline["snapshot"], branch, "--", "docs", check=False)
-    return [p for p in changed.split() if p.endswith(".md") and not p.startswith((REPORT_DIR, STATE_DIR))]
+    return [p for p in changed.split() if p.endswith(".md")]
 
 
 def preference(state: Mapping[str, Any] | None, key: str) -> str | None:

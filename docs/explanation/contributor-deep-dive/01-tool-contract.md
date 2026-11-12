@@ -48,7 +48,7 @@ sequenceDiagram
 
 ## 2. Self-description
 
-Each tool declares a [`ToolInfo`](../../../audit/tools/_common.py#L103-L128): its name, summary, synopsis and what it writes. `<tool>.py --describe` prints its `manifest()` as the envelope's `data`, runs no work and needs no other argument. The manifest says `network: false` as a fact about every tool and `writes_inside_target: false` for every tool but `progress.py`, the one exception ([ADR 0004](../../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)), and lists the exit codes.
+Each tool declares a [`ToolInfo`](../../../audit/tools/_common.py#L103-L128): its name, summary, synopsis and what it writes. `<tool>.py --describe` prints its `manifest()` as the envelope's `data`, runs no work and needs no other argument. The manifest says `network: false` as a fact about every tool and `writes_inside_target: false` for every tool, with no exception ([ADR 0004](../../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)), and lists the exit codes.
 
 The manifest is the machine-readable source for the [Tools CLI reference](../../reference/tools-cli.md). [`recipe_lint.py`](../../../dev/recipe_lint.py) collects every tool's manifest into [`tools/CATALOGUE.md`](../../../audit/tools/CATALOGUE.md), sorted by name and byte-stable, and fails `make check` when the file is stale or a recipe names a tool that does not exist.
 

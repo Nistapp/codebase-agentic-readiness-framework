@@ -40,7 +40,7 @@ helpers from `audit/tools/`.
 
 | Tool | Does |
 | --- | --- |
-| `progress.py` | Creates, shows and renders the state; the only tool that writes inside the target ([ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)) |
+| `progress.py` | Creates, shows and renders the state beside the audit report, outside the target ([ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)) |
 | `check_drift.py` | Tells which findings the repository has moved under since the audit |
 | `compare_reports.py` | Compares two audit reports of the same repository |
 

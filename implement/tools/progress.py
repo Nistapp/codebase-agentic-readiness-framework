@@ -9,18 +9,18 @@
     progress.py render --workspace <dir> [--label LABEL]
     progress.py set-status|skip|unskip|defer|undefer|pref|theme ... --workspace <dir>   (the transitions; see --help)
 
-Every command but ``init`` finds the state in the folder ``--workspace`` names: the folder that holds the two state
-files. It must exist; a symlink on the way is followed, and a state file that is a symlink is refused.
-
-The state is ``docs/agentic-readiness/<label>-agentic-readiness-state.json`` in the target, the source of truth, and
+The state lives in the workspace: the folder of the final report given to ``init``, normally the audit run's output
+folder (ADR 0004). It is ``<label>-agentic-readiness-state.json``, the source of truth, and
 ``<label>-agentic-readiness-STATE.md`` beside it, rendered from the JSON. Its format is
 ``schema/readiness-state.schema.json``; the rules the schema subset cannot express are in :func:`state_rule_errors`.
+Every command but ``init`` finds the state in the folder ``--workspace`` names. It must exist; a symlink on the way is
+followed, and a state file that is a symlink is refused.
 
-This is the one tool that writes inside a target, and it writes those two files and nothing else (ADR 0004). Both
-are written atomically: a temporary file beside the target file, then a rename, so a reader sees the old file or the
-new one and never half of one. The folder must resolve inside the target, and neither file may be a symlink.
+The tool writes those two files and nothing else, and never inside the target: ``init`` refuses a workspace that
+resolves inside it. Both files are written atomically: a temporary file beside the file, then a rename, so a reader
+sees the old file or the new one and never half of one.
 
-``init`` reads a final audit report that ``validate_report.py`` accepts, inside the target. Confirmed and edited
+``init`` reads a final audit report that ``validate_report.py`` accepts, outside the target. Confirmed and edited
 findings become ``queued`` items, a finding the owner deferred during the audit becomes a ``deferred`` item with the
 owner's note as its reason, and rejected findings are listed in ``not_queued``. Each item gets the theme of its check
 from :data:`THEMES`. ``init`` never replaces a state; the transitions come in a later step.
@@ -109,11 +109,11 @@ INFO = _common.ToolInfo(
         " --workspace DIR --phase PHASE [--render]",
     ),
     writes=(
-        "Inside the target, and only there: docs/agentic-readiness/<label>-agentic-readiness-state.json (init) and "
-        "<label>-agentic-readiness-STATE.md (init, render, and any command given --render), each replaced atomically. "
-        "init never replaces a state; show writes nothing; every other command rewrites the JSON after validating it."
+        "Only in the workspace, the report's folder, which must be outside the target: "
+        "<label>-agentic-readiness-state.json (init) and <label>-agentic-readiness-STATE.md (init, render, and any "
+        "command given --render), each replaced atomically. init never replaces a state; show writes nothing; every "
+        "other command rewrites the JSON after validating it."
     ),
-    writes_inside_target=True,
 )
 
 
@@ -124,11 +124,6 @@ def state_names(label: str) -> tuple[str, str]:
     if not _common.EXPLICIT_LABEL.match(label):
         raise _common.UsageError(f"not a repository label: {label!r}")
     return label + STATE_JSON_SUFFIX, label + STATE_MD_SUFFIX
-
-
-def state_directory(target: Path) -> Path:
-    """`docs/agentic-readiness` in `target`, resolved. A folder on the way that leads out of the target is refused."""
-    return _common.resolve_within(target, STATE_DIR)
 
 
 def state_file(directory: Path, name: str) -> Path:
@@ -433,9 +428,11 @@ def run_init(args: Any) -> _common.Result:
         report_file = Path(args.report).expanduser().resolve(strict=True)
     except (OSError, RuntimeError):
         raise _common.UsageError(f"report not found: {args.report}") from None
-    if not _common.is_within(target, report_file):
+    workspace = report_file.parent
+    if _common.is_within(target, workspace):
         raise _common.PathNotAllowed(
-            f"the report must be inside the target, so the state can point at it: {report_file}"
+            f"the report's folder is inside the target, and the state is written beside the report: {workspace}",
+            hint="keep the report in the audit's output folder, outside the target, and pass that path to --report",
         )
     report = validate_report.read_report(report_file)
     outcome = validate_report.validate_document(report)
@@ -455,14 +452,13 @@ def run_init(args: Any) -> _common.Result:
     versions, version_warnings = validate_report.compare_versions(report, FRAMEWORK_RELEASE, framework["revision"])
     label = report["provenance"]["target"]["label"]
     json_name, md_name = state_names(label)
-    directory = state_directory(target)
-    json_path, md_path = state_file(directory, json_name), state_file(directory, md_name)
+    json_path, md_path = state_file(workspace, json_name), state_file(workspace, md_name)
     if json_path.exists():
         raise _common.UsageError(f"a state already exists: {json_path}; init never replaces one")
     default_branch = args.default_branch or report["provenance"]["target"]["branch"] or "main"
     state = build_state(
         report,
-        report_path=report_file.relative_to(target).as_posix(),
+        report_path=report_file.name,
         default_branch=default_branch,
         phase=args.phase,
         date=_date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d"),
@@ -474,16 +470,13 @@ def run_init(args: Any) -> _common.Result:
         raise _common.ToolError(
             "the state built from the report is not valid, which is a bug in the tool", errors=errors
         )
-    directory.mkdir(parents=True, exist_ok=True)
-    if not _common.is_within(target, directory.resolve()):  # a folder swapped for a link since the check
-        raise _common.PathNotAllowed(f"the state folder leaves the target: {directory}")
-    swept = sweep_temporaries(directory, (json_name, md_name))
+    swept = sweep_temporaries(workspace, (json_name, md_name))
     _common.atomic_write_text(json_path, encode_state(state))
     _common.atomic_write_text(md_path, render(state))
     counts = status_counts(state)
     warnings = [*version_warnings]
     if swept:
-        warnings.append(f"removed {swept} temporary files an interrupted write left in {directory}")
+        warnings.append(f"removed {swept} temporary files an interrupted write left in {workspace}")
     return _common.Result(
         data={
             "versions": versions,
@@ -1117,8 +1110,12 @@ WORKSPACE_HELP = "the folder that holds the state files"
 def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(prog="progress.py", description=INFO.summary)
     commands = parser.add_subparsers(dest="command", required=True, parser_class=_common.ToolParser)
-    init = commands.add_parser("init", help="create the state from a final audit report inside the target")
-    init.add_argument("--report", required=True, help="the final audit report (JSON), inside the target")
+    init = commands.add_parser("init", help="create the state beside a final audit report, outside the target")
+    init.add_argument(
+        "--report",
+        required=True,
+        help="the final audit report (JSON); its folder, outside the target, is the workspace",
+    )
     init.add_argument("--target", required=True, help="the repository the report audited")
     init.add_argument("--default-branch", help="the branch PRs go into (default: the report's branch, else main)")
     init.add_argument("--phase", default="init", help="the step that creates the state, for the log (default: init)")

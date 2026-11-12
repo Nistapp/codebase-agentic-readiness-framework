@@ -25,9 +25,8 @@ folder.
 - Code in `playbooks/templates/` is relicensed when a playbook copies it into a target. Only its copyright holder
   changes it, or a contributor who agrees in writing to that relicensing. Say so in the pull request.
 - Every tool follows the tool contract in [`audit/tools/README.md`](../audit/tools/README.md).
-- `progress.py` is the one tool that writes inside a target. It writes only the target's two state files. See
-  [ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md). No other tool writes
-  inside a target.
+- No tool writes inside a target. `progress.py` keeps the state in the workspace, the folder of the audit report,
+  outside the target. See [ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md).
 - The recipe stops at a local branch by default. It pushes and opens a pull request only when the owner opted in.
   It never merges, force-pushes or pushes tags. See [ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md).
 - Read [`playbooks/README.md`](playbooks/README.md) before you add or change a playbook. Keep the anatomy it fixes,

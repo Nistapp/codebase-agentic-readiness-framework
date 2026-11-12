@@ -90,7 +90,7 @@ compare_reports.py BEFORE AFTER [--state STATE] [--json]
 ## progress.py
 
 **Version:** 0.1.0  
-**Writes:** Inside the target, and only there: docs/agentic-readiness/<label>-agentic-readiness-state.json (init) and <label>-agentic-readiness-STATE.md (init, render, and any command given --render), each replaced atomically. init never replaces a state; show writes nothing; every other command rewrites the JSON after validating it.
+**Writes:** Only in the workspace, the report's folder, which must be outside the target: <label>-agentic-readiness-state.json (init) and <label>-agentic-readiness-STATE.md (init, render, and any command given --render), each replaced atomically. init never replaces a state; show writes nothing; every other command rewrites the JSON after validating it.
 
 Create, show and render the implement recipe's per-repository state from a final audit report.
 
