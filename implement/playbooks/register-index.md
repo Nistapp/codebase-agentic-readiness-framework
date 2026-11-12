@@ -185,9 +185,6 @@ No dependency is installed. Ask:
    target's ignore file. Then add one line at the top of the instruction file: "Before your first change, read
    `<docs page>#<section>` and make the setup offer once." Keep the line within the 400-line budget. The target has
    no helper script: the agent follows the section by hand.
-8. **Commits:** one per concern. Commit the project config (if any), the instruction-file lines, the offer section,
-   and each language-server input the owner accepted.
-   The engine re-check ([Stage 4](../SKILL.md#stage-4-close-the-theme), step 1) runs with and without `--no-user-config`.
 
 ### Gradle and Quarkus
 
@@ -199,6 +196,22 @@ exists, check it is ignored and untracked (CON-03, owned by [`add-deny-rules`](a
 
 Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md). `node_modules/`, `dist/` and `build/` are
 not indexed. In a repository with several apps, one index covers the root; the freshness check names the root, not an app.
+
+## Commits
+
+One commit per concern. Building the index (Step 4) commits nothing: the index is machine-local.
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Project config, `.mcp.json` (only with `project-file`) | `IDX-01` | config |
+| 2 | Instruction-file line: other harnesses copy the entry from `.mcp.json` (same condition as 1) | `IDX-01` | hand |
+| 3 | Registration section in the docs or `AGENTS.md` (only with `document-only`) | `IDX-01` | hand |
+| 4 | Ignore rule for the harness copy (only on a yes, for a harness that needs a copy) | `IDX-02` | config |
+| 5 | Freshness line in the instruction file | `IDX-03` | hand |
+| 6 | Language-server input (one per input the owner accepted) | - | config |
+| 7 | First-run offer section in the docs (only with `index.first_run_offer=yes`) | - | hand |
+| 8 | Ignore rule for `.agentic-readiness/` (same condition as 7) | - | config |
+| 9 | Instruction-file line pointing at the offer section (same condition as 7) | - | hand |
 
 ## Continue on error
 
@@ -212,6 +225,8 @@ not indexed. In a repository with several apps, one index covers the root; the f
 
 ## Verification
 
+The engine re-check ([Stage 4](../SKILL.md#stage-4-close-the-theme), step 1) runs with and without `--no-user-config`.
+
 | Check | Command or file | Expected |
 |---|---|---|
 | IDX-01 | Launcher with `--no-user-config`; read the project config | `project-file`: names `codebase-memory-mcp`, `PASS`. `document-only`: `FAIL` under the flag, item `partial` |
@@ -221,10 +236,11 @@ not indexed. In a repository with several apps, one index covers the root; the f
 
 ## Rollback
 
-`git revert` the commits (project config, instruction-file line). The index itself is machine-local and harmless to
-leave; delete the project with `delete_project` only if the owner asks. No user-level file is edited without recorded
-consent, so there is nothing to put back there; when consent was given, the state records the exact edit so it can be
-undone.
+`git revert` the commits, newest first. Each reverts alone, except two pairs. The project config goes with the
+instruction-file line that names `.mcp.json`. The offer section goes with the line that points at it. Revert the
+line first in each pair. The index itself is machine-local and harmless to leave; delete the project with
+`delete_project` only if the owner asks. No user-level file is edited without recorded consent, so there is nothing
+to put back there; when consent was given, the state records the exact edit so it can be undone.
 
 ## Do-not-do
 

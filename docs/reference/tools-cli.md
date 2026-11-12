@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all nine rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all ten rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
 
 ---
 
@@ -15,7 +15,7 @@
 | [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live |
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
 | [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
-| [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, and a stale tool catalogue | Live |
+| [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, a playbook without its Commits table, and a stale tool catalogue | Live |
 | [`build_skills.py`](#build_skillspy) | Builds the agentic-readiness-audit and agentic-readiness-implement skill bundles under `dist/skills/` | Live |
 | [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state, in the workspace beside the audit report | Live |
 | [`check_drift.py`](#check_driftpy) | Lists the audit findings whose cited files changed between the audited commit and `HEAD` | Live |
@@ -722,6 +722,9 @@ Checks the Markdown under `audit/`, `implement/` and `docs/`, so that a recipe d
 - a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10);
 - every `audit/tools/<name>.py` or `implement/tools/<name>.py` the Markdown names exists and answers `--describe`;
 - every check, requirement and playbook ID named is one that `catalogue.json` or `spec/readiness-requirements.md` has;
+- every playbook (`implement/playbooks/<name>.md`) has a `## Commits` section between Steps and Continue on error. Its
+  table has the header `| # | Commit | Checks | Kind |`, rows numbered from 1, a kind of `hand`, `bulk`, `config`
+  or `wiring`, and only checks that its Checks resolved section lists;
 - the generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md) matches what every tool's own `--describe`
   would produce today.
 
@@ -755,7 +758,7 @@ Nothing is written by a plain `recipe_lint.py <root>`; a clean run's `data` hold
 |---|---|
 | `0` | Every file is clean, or (with `--write-catalogue`) the catalogue was written. |
 | `1` | A bad argument, or `<root>` has no `audit/` directory. |
-| `2` | A link does not resolve, an anchor matches nothing, a `SKILL.md`'s frontmatter is invalid, a file is over its line budget, a named tool is missing or fails `--describe`, a named check, requirement or playbook ID does not exist, or `tools/CATALOGUE.md` is missing, stale or could not be generated. `data.errors` lists every one; the markdown rules give `path:line: message`. |
+| `2` | A link does not resolve, an anchor matches nothing, a `SKILL.md`'s frontmatter is invalid, a file is over its line budget, a named tool is missing or fails `--describe`, a named check, requirement or playbook ID does not exist, a playbook's Commits section is missing or malformed, or `tools/CATALOGUE.md` is missing, stale or could not be generated. `data.errors` lists every one; the markdown rules give `path:line: message`. |
 
 **Errors**
 
@@ -801,11 +804,12 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
   `scripts/` holds the tools the recipe calls. Beside them are the schema files and the `catalogue.json` they read
   at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. `audit.pyz` is
   the engine's single-file build. Its Markdown files are rewritten the same way as the implement bundle's, below.
-- **`agentic-readiness-implement`**: `references/` holds the state contract, the playbooks, the kickoff prompt and
-  the shared prompt on how to talk to the user. It also holds the check files, the stack profiles, ADR 0003,
-  `spec/command-surface.md` and the spec decisions, the state schema and its docs, and the sections of this page
-  for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`, `compare_reports.py` and
-  `validate_report.py` with their private modules, the schema files, `catalogue.json`, and an `engine.py` shim.
+- **`agentic-readiness-implement`**: `references/` holds the state contract, the tool-choice procedures, the
+  playbooks, the kickoff prompt and the shared prompt on how to talk to the user. It also holds the check files,
+  the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the state schema and its docs,
+  and the sections of this page for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`,
+  `compare_reports.py` and `validate_report.py` with their private modules, the schema files, `catalogue.json`,
+  and an `engine.py` shim.
   The engine is not copied. The shim loads `engine.py` from the `agentic-readiness-audit` skill installed in the
   same skills folder, so both skills run one engine. A tool that needs the engine without it exits 1 and names the
   missing skill. In both bundles, every carried Markdown file is rewritten in three ways:

@@ -301,8 +301,6 @@ the policy files, and for nothing else:
    - When HYG-09 passed and has no item, name it in the pull request body and change nothing.
    - **Licence (HYG-10).** Verify only. If a `LICENSE` is missing, do not pick one: raise it as an owner question
      and set the item `blocked` (reason: the owner chooses a licence).
-9. **Commits:** one per concern: policy files (CODEOWNERS and SECURITY); contribution files (README, CONTRIBUTING
-   and the templates); release and protection pages; the dependency-update file.
 
 ### Gradle and Quarkus
 
@@ -318,6 +316,26 @@ README links to the apps' own READMEs; it does not replace them and they do not 
 rule per app only if the owner supplies different owners; otherwise the default `*` line is enough. A release tool that
 tags per package (component in the tag) is described in the release page with the tag format. Commands in the README
 and CONTRIBUTING are the root scripts, or per-app commands with the directory named.
+
+## Commits
+
+One commit per file or concern. A check that already passes makes no commit.
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Root README (only when missing or failing) | `HYG-01` | hand |
+| 2 | CODEOWNERS, routing-only header | `HYG-02` | config |
+| 3 | Pull-request template | `HYG-03` | hand |
+| 4 | Issue templates | `HYG-04` | hand |
+| 5 | CONTRIBUTING, new or as a diff | `HYG-05` | hand |
+| 6 | SECURITY, with `TODO(owner)` placeholders | `HYG-06` | hand |
+| 7 | Changelog skeleton (only with no release tool, on the owner's yes) | `HYG-07` | hand |
+| 8 | Release-process page | `HYG-08` | hand |
+| 9 | Branch rules as code: ruleset files or Terraform (none on GitLab without Terraform) | `HYG-11` | config |
+| 10 | Source-branch CI job (only for a two-branch model) | `HYG-11` | wiring |
+| 11 | Source-branch job in the release branch's required checks (same condition as 10) | `HYG-11` | config |
+| 12 | Branch-protection page | `HYG-11` | hand |
+| 13 | Dependency-update file | `HYG-09` | config |
 
 ## Continue on error
 
@@ -352,7 +370,9 @@ and CONTRIBUTING are the root scripts, or per-app commands with the directory na
 
 ## Rollback
 
-`git revert` the commits, one per concern. Nothing outside the repository changes: GitHub settings (private
+`git revert` the commits, newest first, one per concern. Each reverts alone, except the source-branch job: revert
+its required-check entry first, or the release branch requires a check that never runs. Nothing outside the
+repository changes: GitHub settings (private
 vulnerability reporting, branch protection, required reviews) are never touched, so there is nothing to put back.
 
 ## Do-not-do

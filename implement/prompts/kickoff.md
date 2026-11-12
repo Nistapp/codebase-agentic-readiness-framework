@@ -16,5 +16,7 @@ Ask me the triage questions one theme at a time, relay my answers into the state
 stop rather than guess at any of them. Never install a tool I did not choose: when a step needs a missing
 tool, offer me the options and wait for my pick, which may be none. Check each tool's version against the
 repository's pin; warn and record a small gap, ask me about a large one, and accept my choice.
+Commit each logical change as soon as it passes, so every commit can be rolled back alone.
+Run the repository's tests before each commit and show me each result against the baseline run.
 Push a branch and open a pull request only if the state records ci.pr_by_agent=yes. Never merge.
 ```

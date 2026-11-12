@@ -138,8 +138,6 @@ No tool is installed. Ask:
    prohibitions (tests, secrets, default branch) to a configuration file that already exists, in its own commit;
    it still never creates one. When no harness configuration is present, report "none present" and stop. A
    permission rule is hardening, not the deny list; the audit never scores it.
-7. **Commits:** one for the section, one for any `.gitignore` change. The engine re-check
-   ([Stage 4](../SKILL.md#stage-4-close-the-theme), step 1) covers AGT-07, CON-01, CON-02 and CON-03.
 
 ### Gradle and Quarkus
 
@@ -156,6 +154,15 @@ rule covers: say so in the test rule ("and any `*.test.ts` or `*.spec.ts` file")
 directories. Generated output is `dist/`, `build/` and `coverage/`; `node_modules/` is never edited. In a per-app
 layout name each app's directories (`app-a/test/`), not a root `test/` that does not exist.
 
+## Commits
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Prohibitions section: one rule per concern, paths in code spans | `AGT-07`, `CON-01`, `CON-02` | hand |
+| 2 | Ignore rule for the scratch and tool-state roots (only when a root lacks one) | `CON-03` | config |
+| 3 | Untrack the scratch files, `git rm --cached` (only those the owner confirms) | `CON-03` | bulk |
+| 4 | Deny entries in an existing harness file (only with `agents_md.harness_deny=yes`) | `AGT-07` | config |
+
 ## Continue on error
 
 - **A test directory the owner does not want named** (fixtures that are data, a folder being deleted): the item is
@@ -168,6 +175,9 @@ layout name each app's directories (`app-a/test/`), not a root `test/` that does
 
 ## Verification
 
+The engine re-check ([Stage 4](../SKILL.md#stage-4-close-the-theme), step 1) covers AGT-07, CON-01, CON-02 and
+CON-03.
+
 | Check | Command or file | Expected |
 |---|---|---|
 | AGT-07 | The prohibitions section; the engine's AGT-07 | Heading found; one rule each for tests, generated files, default branch, secrets; `PASS` |
@@ -178,9 +188,9 @@ layout name each app's directories (`app-a/test/`), not a root `test/` that does
 
 ## Rollback
 
-`git revert` the section commit, and the `.gitignore` commit if there was one (`git revert` returns any untracked
-scratch file to the index). A harness configuration commit exists only with `agents_md.harness_deny=yes` and
-reverts alone.
+`git revert` the commits, newest first: the harness deny entries (only with `agents_md.harness_deny=yes`), the
+untracking, the ignore rule, then the prohibitions section. Each reverts alone. Reverting the untracking returns the
+scratch files to the index.
 
 ## Do-not-do
 

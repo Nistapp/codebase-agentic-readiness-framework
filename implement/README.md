@@ -30,6 +30,7 @@ skill runs the audit skill's engine.
 | [`prompts/`](prompts/kickoff.md) | The kickoff prompt, also used to resume |
 | [`playbooks/`](playbooks/README.md) | Thirteen playbooks, one per class of finding, and their anatomy |
 | [`state.md`](state.md) | The per-repository state contract: files, statuses, skip, preferences |
+| [`tool-choice.md`](tool-choice.md) | What a step does when a tool it needs is missing, or older than the repository's pin |
 | [`tools/`](tools/) | The implement tools and their tests |
 | [`docs/architecture/adrs/`](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md) | This recipe's decisions |
 

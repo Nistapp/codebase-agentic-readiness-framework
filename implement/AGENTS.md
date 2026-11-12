@@ -15,6 +15,7 @@ folder.
 | `playbooks/` | One playbook per class of finding. See [`playbooks/README.md`](playbooks/README.md) |
 | `playbooks/templates/` | Code a playbook copies into a target, with tests in `tools/tests/`. A copy carries `MIT`, `Apache-2.0` or `BSD-3-Clause`, never this repository's licence |
 | `state.md` | The state contract: the per-repository state that `progress.py` keeps |
+| `tool-choice.md` | What a step does when a tool it needs is missing, or older than the repository's pin |
 | `tools/` | `progress.py`, `check_drift.py`, `compare_reports.py`, and their tests in `tools/tests/` |
 | `docs/architecture/adrs/` | Decisions for this folder (ADR 0003 and ADR 0004) |
 
