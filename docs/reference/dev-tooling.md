@@ -31,6 +31,7 @@ and where its version is pinned. The rules for the gates are in [`AGENTS.md`](..
 | mermaid-cli | A Mermaid block that does not render | `make docs-mermaid FILES=<file.md>` | `docs` | `dev/tools/package.json` |
 | skills-ref | A skill bundle that breaks the Agent Skills specification | `make validate-skills` | Release only | `dev/tools/pyproject.toml` |
 | `dev/commit_lint.py` | A commit subject that is not Conventional Commits | `make commit-lint` | `commits` | This repository |
+| `dev/wrap_changelog.py` | A `CHANGELOG.md` line over 120 columns that markdownlint cannot fix (a long breaking-change note) | `make changelog-fix` rewrites it | `format-changelog` in `release-please.yml` | This repository |
 | The audit engine | A readiness finding that `.audit-baseline.json` does not have | `make self-audit` | `self-audit` | This repository |
 | actions/attest | Signs build provenance for the release files; users check it with `gh attestation verify` ([Install the skills](../how-to/install-the-skills.md#step-2b-optional-check-the-build-provenance)) | — | `release.yml`, release only | `.github/workflows/release.yml` (action pinned by SHA) |
 | CodeQL | Security flaws in the Python code and the workflows. Advisory: alerts go to the Security tab ([Code scanning](branch-protection.md#code-scanning)) | — | `codeql.yml`, outside `CI Gate` | `.github/workflows/codeql.yml` (action pinned by SHA) |

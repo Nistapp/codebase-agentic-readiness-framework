@@ -263,7 +263,7 @@ After the next promotion, the release pull request uses that version.
 | Job | When | What it does |
 | --- | --- | --- |
 | `release-please` | Every push to `main` | Opens or updates the release pull request; after its merge, tags `vX.Y.Z` and creates the GitHub release |
-| `format-changelog` | The release pull request was opened or updated | Runs `make changelog-fix` (markdownlint `--fix`) on `CHANGELOG.md` and pushes the fix to the release pull request. release-please writes `*` bullets and double blank lines, which the `docs-lint` ratchet refuses |
+| `format-changelog` | The release pull request was opened or updated | Runs `make changelog-fix` on `CHANGELOG.md` and pushes the fix to the release pull request. `dev/wrap_changelog.py` wraps the lines over 120 columns (release-please writes a breaking-change footer as one long bullet), then markdownlint `--fix` fixes the `*` bullets and double blank lines. The `docs-lint` ratchet refuses all three |
 | `publish` | A release was created | Starts `release.yml` from the tag, with `--ref vX.Y.Z` (a dispatch is the one event that `GITHUB_TOKEN` may start a workflow with) |
 | `back-merge` | A release was created | Creates `chore/back-merge-vX.Y.Z` at the release commit and opens its pull request into `dev` |
 
