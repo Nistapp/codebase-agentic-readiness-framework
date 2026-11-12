@@ -7,7 +7,7 @@ final message instead of guessing.
 - Create every worktree under `{root}/worktrees/`.
 - This session has no code-graph tool: say that you read files directly.
 
-- Session phase id: `t6`. Triage is merged into `dev` (the state is there).
+- Session phase id: `t6`. Triage is done (the state is in the workspace).
 - Theme for this session: T6 (documentation contract). `{id:DOC-05}` (DOC-05) is the item.
 - T6 change list: approved as long as it stays inside the playbook.
 - Docs tooling: none. No Markdown linter, no Mermaid CLI, no link checker, and no install.
