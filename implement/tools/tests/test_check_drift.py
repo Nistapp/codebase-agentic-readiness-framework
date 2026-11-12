@@ -271,6 +271,14 @@ class ReportDigestTests(unittest.TestCase):
     def test_no_state_means_unknown(self) -> None:
         self.assertIsNone(self.drift()["report_changed"])
 
+    def test_a_state_left_in_the_target_is_not_read(self) -> None:
+        self.init_state()
+        old = self.repo / "docs" / "agentic-readiness"
+        old.mkdir(parents=True)
+        for path in self.workspace.glob("*-agentic-readiness-*"):
+            path.rename(old / path.name)
+        self.assertIsNone(self.drift()["report_changed"])
+
     def test_a_state_from_before_the_digest_means_unknown(self) -> None:
         self.init_state()
         state_path = next(self.workspace.glob("*-state.json"))
