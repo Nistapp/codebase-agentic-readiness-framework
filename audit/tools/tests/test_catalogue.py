@@ -29,10 +29,12 @@ ENGINE = AUDIT / "engine"
 CATALOGUE = AUDIT / "catalogue.json"
 REQUIREMENTS = REPO_ROOT / "spec" / "readiness-requirements.md"
 TRACEABILITY = REPO_ROOT / "spec" / "traceability.md"
+CHECK_FILES = AUDIT / "checks"
 
 CHECK_ID = re.compile(r"^[A-Z]{2,5}-[0-9]{2,3}$")
 REQ_ID = re.compile(r"REQ-(?:BF|GF|SH)-[0-9]{3}")
 VERSION = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
+FAMILY_HEADING = re.compile(r"^# (.+?) \(`([A-Z]{2,5})`\)", re.MULTILINE)
 
 Check = dict[str, Any]
 
@@ -129,6 +131,21 @@ class CatalogueTests(unittest.TestCase):
         for c in self.checks:
             self.assertRegex(c["id"], CHECK_ID)
             self.assertEqual(c["family"], c["id"].split("-")[0], f"{c['id']}: family is not the ID's prefix")
+
+    def test_families_name_each_family_once_in_check_order(self) -> None:
+        listed = [family["id"] for family in self.catalogue["families"]]
+        used = list(dict.fromkeys(c["family"] for c in self.checks))
+        self.assertEqual(listed, used, "families must list each family the checks use, once, in first-use order")
+
+    def test_each_family_name_matches_its_check_file_heading(self) -> None:
+        headings: dict[str, str] = {}
+        for path in sorted(CHECK_FILES.glob("[0-9][0-9]-*.md")):
+            match = FAMILY_HEADING.search(path.read_text(encoding="utf-8"))
+            self.assertIsNotNone(match, f"{path.name}: no '# <name> (`<FAMILY>`)' heading")
+            assert match is not None
+            headings[match.group(2)] = match.group(1)
+        names = {family["id"]: family["name"] for family in self.catalogue["families"]}
+        self.assertEqual(names, headings)
 
     def test_version_is_well_formed_and_the_fingerprint_is_current(self) -> None:
         self.assertRegex(self.catalogue["catalogue_version"], VERSION)

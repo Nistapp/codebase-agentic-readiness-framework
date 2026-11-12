@@ -1493,8 +1493,25 @@ class AppendixTests(RenderCase):
         text = section(self.render(service()), "Appendix — all checks")
         self.assertEqual(
             [h for h in text.split("\n") if h.startswith("### ")],
-            ["### IDX", "### AGT", "### CMD", "### TOOL", "### CI", "### EXEC", "### SEC", "### TST"],
+            [
+                "### Discovery and Index (`IDX`)",
+                "### Agent Governance (`AGT`)",
+                "### Command Surface (`CMD`)",
+                "### Tooling (`TOOL`)",
+                "### Continuous Integration (`CI`)",
+                "### Execution determinism (`EXEC`)",
+                "### Security hygiene (`SEC`)",
+                "### Tests (`TST`)",
+            ],
         )
+
+    def test_a_family_the_catalogue_does_not_name_is_headed_by_its_code(self) -> None:
+        catalogue = dict(vr.load_catalogue())
+        catalogue["families"] = [f for f in catalogue["families"] if f["id"] != "IDX"]
+        with mock.patch.object(vr, "load_catalogue", return_value=catalogue):
+            text = section(self.render(service()), "Appendix — all checks")
+        self.assertIn("### `IDX`\n", text)
+        self.assertIn("### Agent Governance (`AGT`)\n", text)
 
     def test_every_check_of_every_example_has_a_row_in_report_order(self) -> None:
         for path in [EXAMPLES / SERVICE, EXAMPLES / "minimal.json", *drafts()]:
@@ -1886,6 +1903,13 @@ class BottomLineTests(RenderCase):
         bottom = section(self.render(report), "Bottom line")
         self.assertIn("**First actions:** none. No finding is open.", bottom)
         self.assertEqual(rows_of(bottom), [])
+
+    def test_an_action_names_its_check_beside_the_check_id(self) -> None:
+        self.assertIn("F-001: `CMD-01` Seven verbs resolvable on one runner", self.actions(service())[0])
+
+    def test_an_unknown_check_is_listed_with_its_title(self) -> None:
+        bottom = section(self.render(service()), "Bottom line")
+        self.assertIn("1 check is UNKNOWN: `TST-02` Suite status known.", bottom)
 
     def test_a_pending_finding_is_marked(self) -> None:
         report = service()

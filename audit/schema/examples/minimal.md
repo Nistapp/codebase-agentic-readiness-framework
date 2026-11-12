@@ -139,7 +139,7 @@ No component is recorded.
 
 All 1 check, grouped by family. The engine's structured payloads (the command surface, the credential-shaped-lines total, missing secret-shape ignore rules, and so on) are in the JSON report only, for now.
 
-### AGT
+### Agent Governance (`AGT`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
