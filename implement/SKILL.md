@@ -52,7 +52,10 @@ These apply through every stage, without exception:
   never turn a rule off, unless the owner chooses that and the choice is recorded as a preference.
 - **The owner chooses tools.** Use the tool the repository already has for a job. If it has none, offer two
   to four current, maintained options with pros and cons and a recommendation, and let the owner decide.
-  Never install a dependency the owner did not approve.
+  Never install a dependency the owner did not approve. This holds at every step, not only in a playbook's
+  "Inputs to ask": follow [When a needed tool is missing](tool-choice.md#when-a-needed-tool-is-missing). A tool that is
+  present but older than the target pins follows
+  [When a found tool is older than needed](tool-choice.md#when-a-found-tool-is-older-than-needed).
 - **Never touch secrets.** Never open, print or quote a `.env` file or any other secret store. Inventory
   variable names, never values.
 - **Keep private content private.** Nothing from a private repository or workspace (names, paths, values)
@@ -359,7 +362,8 @@ only what is specific to it.
 9. **Owner choices on the way.** A new choice is recorded at once with `pref set ... --by owner` and the owner's
    words. Preferences from earlier sessions are already in the workspace; read them, never ask again.
 10. **Markdown and diagrams.** Lint every changed Markdown file with the repository's own linter, and validate
-   every Mermaid block before saving.
+   every Mermaid block before saving. When the repository has no linter, follow
+   [When a needed tool is missing](tool-choice.md#when-a-needed-tool-is-missing).
 11. **Ask** before any step the playbook does not cover, and before any step that does not fit the repository.
 
 ### What one commit holds
@@ -396,8 +400,9 @@ when allowed, the pull request) is ready for the owner.
    the same command as the baseline (Stage 3, step 3), plus any verb this theme added. Compare the two runs. A
    failure in the baseline too is debt: record it, do not stop. A failure this theme caused is fixed before the
    theme closes. Before T1 has defined `check`, run the build and test commands the repository documents, and say
-   there is no gate yet. Show the owner both runs side by side: "`make check`: baseline exit 1 (3 failing
-   tests), now exit 1 (3 failing tests, 0 new)".
+   there is no gate yet. A check with no tool to run it goes to [When a needed tool is
+   missing](tool-choice.md#when-a-needed-tool-is-missing). Show the owner both runs side by side: "`make check`:
+   baseline exit 1 (3 failing tests), now exit 1 (3 failing tests, 0 new)".
 3. **Every item ended.** Each item the theme works is `done`, `partial`, `failed`, `blocked`, `deferred` or
    `skipped`; none is `queued` or `in_progress`. A verification that needs a CI run (a green run on the branch, a
    job summary, a first scan count) is recorded when that run exists: by this session if it opened the pull request
@@ -413,8 +418,9 @@ when allowed, the pull request) is ready for the owner.
      "How it was checked": each item's verification, the tests run before each commit, the engine re-check, and
      the gate against its baseline, each with its command and result. Under "What was not
      done": `failed` and `blocked` items with the reason, items the owner skipped, checks that pass with no item,
-     and engine limits. Then `progress.py theme Tn --status pr_open --branch <branch> --pr N --phase <phase>
-     --render`. `pr_open` needs the real number, so it comes after the pull request exists.
+     engine limits, and the checks not run for want of a tool. Then `progress.py theme Tn --status pr_open
+     --branch <branch> --pr N --phase <phase> --render`. `pr_open` needs the real number, so it comes after the
+     pull request exists.
 5. **Stop.** Remove the worktree (`git worktree remove <worktree>`; the branch stays), re-index, and stop.
    Never merge and never wait for the merge in the same session.
 
@@ -440,7 +446,8 @@ Goal: a second audit shows what the run changed, and the owner sees every skip, 
 5. **Summary.** Give the owner a
    [done report](../audit/prompts/talking-to-the-user.md#done-report-and-pull-request-description). It holds the
    score before and after, and the moves with their labels. It lists each skipped item with the owner's reason and
-   each deferred item. It gives each debt entry with its count and baseline.
+   each deferred item. It gives each debt entry with its count and baseline, and each check not run for want of a
+   tool.
 6. **Ending.** The close-out changes nothing in the target: no branch, no commit, no pull request. Never merge.
 
 ## Resuming

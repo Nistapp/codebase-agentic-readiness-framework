@@ -804,11 +804,12 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
   `scripts/` holds the tools the recipe calls. Beside them are the schema files and the `catalogue.json` they read
   at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. `audit.pyz` is
   the engine's single-file build. Its Markdown files are rewritten the same way as the implement bundle's, below.
-- **`agentic-readiness-implement`**: `references/` holds the state contract, the playbooks, the kickoff prompt and
-  the shared prompt on how to talk to the user. It also holds the check files, the stack profiles, ADR 0003,
-  `spec/command-surface.md` and the spec decisions, the state schema and its docs, and the sections of this page
-  for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`, `compare_reports.py` and
-  `validate_report.py` with their private modules, the schema files, `catalogue.json`, and an `engine.py` shim.
+- **`agentic-readiness-implement`**: `references/` holds the state contract, the tool-choice procedures, the
+  playbooks, the kickoff prompt and the shared prompt on how to talk to the user. It also holds the check files,
+  the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the state schema and its docs,
+  and the sections of this page for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`,
+  `compare_reports.py` and `validate_report.py` with their private modules, the schema files, `catalogue.json`,
+  and an `engine.py` shim.
   The engine is not copied. The shim loads `engine.py` from the `agentic-readiness-audit` skill installed in the
   same skills folder, so both skills run one engine. A tool that needs the engine without it exits 1 and names the
   missing skill. In both bundles, every carried Markdown file is rewritten in three ways:

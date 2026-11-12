@@ -38,7 +38,7 @@ branch, so an agent learns it is on the wrong branch before it commits, not when
 ## Inputs to ask
 
 1. **Hook manager.** Detect first and keep what exists. Never replace a working manager. If nothing exists,
-   recommend the manager that matches the stack (the stack profile's Tooling defaults, `audit/stacks/`), not this
+   recommend the manager that matches the stack (the stack profile's Tooling options, `audit/stacks/`), not this
    framework's own choice. Offer the others as alternatives. Currency checked 2026-11-09 (npm registry and
    downloads API, PyPI, GitHub API); re-check when applied.
 

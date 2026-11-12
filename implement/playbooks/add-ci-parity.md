@@ -56,7 +56,7 @@ recorded, and a committed record shows which CI job the platform requires before
 5. **Names to preserve:** the merge-gate job name and the docs-only skip (path filter or change-detection job).
 6. **Workflow linter (CI-05).** Detect first and keep a linter that already runs. Look in Makefile targets,
    `package.json` scripts, hooks (`.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`) and CI steps. If there is
-   none, choose the linter by CI provider and the route by stack (the stack profile's Tooling defaults).
+   none, choose the linter by CI provider and the route by stack (the stack profile's Tooling options).
    Currency checked 2026-11-09 (GitHub releases API, PyPI); re-check when applied.
 
    | Provider | Recommend | Version, date | Notes |

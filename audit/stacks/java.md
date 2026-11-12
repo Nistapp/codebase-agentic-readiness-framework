@@ -31,7 +31,7 @@ Dependency-Check plugin for `security` — none of these were seen in the one re
 Pitfalls). `typecheck` has no idiom in Java: the compiler's own type checking runs inside `compileJava`,
 which no verb name surfaces on its own.
 
-## Tooling defaults
+## Tooling options
 
 Formatter: Spotless (`com.diffplug.spotless`), with Google Java Format or an Eclipse config as its
 backing formatter — not seen in the one repository checked. Linter: Checkstyle or PMD, run through their
@@ -165,7 +165,7 @@ toolchain block, no `dependencyLocking` block, single-module (`settings.gradle` 
 verb), `AGENTS.md` and `CONVENTIONS.md` present at the root but describing a Maven/multi-service layout
 the repository does not have. Read via `tools/facts.py` and direct inspection of `build.gradle`,
 `settings.gradle`, `gradle.properties`, `gradle/wrapper/gradle-wrapper.properties`, `.github/workflows/`
-and `AGENTS.md`; no target command was run. Tooling defaults checked against current docs the same day:
+and `AGENTS.md`; no target command was run. Tooling options checked against current docs the same day:
 dependency locking is opt-in, through a `dependencyLocking { lockAllConfigurations() }` block and
 `--write-locks`, per [Gradle's own user guide](https://docs.gradle.org/current/userguide/dependency_locking.html);
 the OWASP Dependency-Check Gradle plugin's own task is named `dependencyCheckAnalyze`, not `security`, confirmed

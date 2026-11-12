@@ -267,6 +267,7 @@ class ImplementBundleTests(unittest.TestCase):
         for relative in (
             "SKILL.md",
             "references/state.md",
+            "references/tool-choice.md",
             "references/prompts/kickoff.md",
             "references/prompts/talking-to-the-user.md",
             "references/playbooks/README.md",

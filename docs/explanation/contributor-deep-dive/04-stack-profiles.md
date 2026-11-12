@@ -49,7 +49,7 @@ Every profile has the same ten sections, in this order:
 
 1. Detection signals
 2. Command-surface map
-3. Tooling defaults
+3. Tooling options
 4. Execution determinism
 5. CI idiom
 6. Baseline / ratchet

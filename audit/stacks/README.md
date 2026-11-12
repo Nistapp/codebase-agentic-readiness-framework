@@ -18,7 +18,8 @@ Python.
 
 **Stack-adaptive rule (owner, 2026-11-09).** A check accepts any recognised tool that does the job for the
 stack. A playbook keeps the tool a repository already uses. When there is none, it recommends the tool that
-matches the stack, from the profile's Tooling defaults, never this framework's own choice by default. For
+matches the stack, from the profile's Tooling options, never this framework's own choice by default. The
+recommendation is offered, never installed: the owner picks, and may pick none. For
 hooks: Husky with lint-staged for Node, pre-commit for Python, lefthook for a mixed repository. A quiet
 release history alone does not rule a tool out; an archived repository or an open security advisory does.
 
@@ -33,7 +34,7 @@ Detection signals      files and dependencies that identify the stack and its fr
                        already read)
 Command-surface map    how each verb is usually realised, and the runner (npm scripts / Makefile /
                        Taskfile / Gradle / Maven)
-Tooling defaults       recommended formatter, linter, type checker, test runner, coverage tool,
+Tooling options        recommended formatter, linter, type checker, test runner, coverage tool,
                        dependency scanner, hook manager, commit-message rule and dependency-update
                        ecosystem (Dependabot and Renovate names), with "alternatives
                        you may find" so an existing choice is respected, never replaced without being
@@ -103,5 +104,5 @@ tested" is never confused with "the agent's best guess this run."
 ## 6. One profile, one file
 
 Each file is this folder's single source for its stack: nothing about a toolchain's command surface or
-tooling defaults is duplicated into a check file or a playbook, which stay stack-neutral and link here
+tooling options is duplicated into a check file or a playbook, which stay stack-neutral and link here
 instead.
