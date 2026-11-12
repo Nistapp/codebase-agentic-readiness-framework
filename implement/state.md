@@ -29,7 +29,7 @@ edited; the state points at it.
 
 [`progress.py`](tools/progress.py) is the only writer of the JSON and the renderer of the Markdown view.
 Writing inside a target repository is an exception to the tools rule, limited to these two files and decided in
-[ADR 0002](docs/architecture/adrs/0002-progress-writes-state-in-target.md).
+[ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md).
 
 ```bash
 python3 implement/tools/progress.py init --report <target>/<report folder>/<final report>.json --target <target>

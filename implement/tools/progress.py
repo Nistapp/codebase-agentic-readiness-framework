@@ -13,7 +13,7 @@ The state is ``docs/agentic-readiness/<label>-agentic-readiness-state.json`` in 
 ``<label>-agentic-readiness-STATE.md`` beside it, rendered from the JSON. Its format is
 ``schema/readiness-state.schema.json``; the rules the schema subset cannot express are in :func:`state_rule_errors`.
 
-This is the one tool that writes inside a target, and it writes those two files and nothing else (ADR 0002). Both
+This is the one tool that writes inside a target, and it writes those two files and nothing else (ADR 0004). Both
 are written atomically: a temporary file beside the target file, then a rename, so a reader sees the old file or the
 new one and never half of one. The folder must resolve inside the target, and neither file may be a symlink.
 

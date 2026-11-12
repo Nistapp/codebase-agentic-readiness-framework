@@ -855,7 +855,7 @@ Creates the implement recipe's state for a target from a final audit report. It 
 file in `source_reports[].sha256`. It summarises the state, renders its Markdown view, and applies the validated
 changes to it: status transitions, skip and defer, preferences and theme progress. It is the one tool that writes
 inside a target, and only the two state files, by [ADR
-0002](../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md). The source is
+0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md). The source is
 [`progress.py`](../../implement/tools/progress.py); the format is
 [`readiness-state.schema.json`](../../audit/schema/readiness-state.schema.json), described in [Readiness
 state](../../audit/schema/SCHEMA.md#readiness-state); the rules are the [state contract](../../implement/state.md).

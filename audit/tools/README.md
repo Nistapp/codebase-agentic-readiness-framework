@@ -71,7 +71,7 @@ No tool opens a socket, calls a package index or fetches a URL. The one thing th
 
 A tool reads the repository it is pointed at and never writes there: no report, no cache, no lock file, no temporary file. Output goes to an output directory outside the target, and a tool refuses an output directory that is inside the target, including through a symlink. A tool also refuses to read a path that resolves outside the target, so a symlink cannot lead it out.
 
-One exception, decided in [ADR 0002](../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md): `progress.py` writes the implement recipe's two state files, `docs/agentic-readiness/<label>-agentic-readiness-state.json` and `<label>-agentic-readiness-STATE.md`, and nothing else in the target. It validates the whole state before every write, refuses a folder that resolves outside the target and a state file that is a symlink, and replaces each file atomically. Its manifest says `writes_inside_target: true`. No other tool may claim the exception without its own ADR.
+One exception, decided in [ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md): `progress.py` writes the implement recipe's two state files, `docs/agentic-readiness/<label>-agentic-readiness-state.json` and `<label>-agentic-readiness-STATE.md`, and nothing else in the target. It validates the whole state before every write, refuses a folder that resolves outside the target and a state file that is a symlink, and replaces each file atomically. Its manifest says `writes_inside_target: true`. No other tool may claim the exception without its own ADR.
 
 ### 7. Never replace a file
 

@@ -263,8 +263,8 @@ The size class is by the engine's file count: `small` below 1,000 files, `medium
 [`readiness-state.schema.json`](readiness-state.schema.json) describes `<label>-agentic-readiness-state.json`, the
 state the implement recipe keeps in a target's `docs/agentic-readiness/` folder. [`tools/progress.py`](../../implement/tools/progress.py)
 is its only writer, the one tool allowed to write inside a target
-([ADR 0002](../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md)). The statuses, the transitions and
-the skip, defer and preference rules are in the [state contract](../../implement/state.md).
+([ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)).
+The statuses, the transitions and the skip, defer and preference rules are in the [state contract](../../implement/state.md).
 
 | Section | Holds |
 |---|---|
