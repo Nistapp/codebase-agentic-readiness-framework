@@ -23,11 +23,22 @@ nothing from it.
 | Preconditions | The state preferences it reads, the earlier themes it needs, and what must already be true in the repository |
 | Inputs to ask | The tool-choice step: detect what the repository already has (manifests, build plugins, configs, the code index) and use it; if nothing is there, offer two to four current options with pros and cons and a recommendation, in a table. Every other question for the owner |
 | Steps | Generic steps first, then one subsection per stack that points at the stack profile in [`stacks/`](../../audit/stacks/README.md) instead of restating it. Only what is specific to the playbook: the shared procedure is `SKILL.md` Stage 3 |
+| Commits | The commits the Steps make, in order, as a table: `#`, `Commit` (what it holds, in a few words), `Checks` (the check IDs it serves, from Checks resolved, or `-` for a commit that serves the theme as a whole) and `Kind` (`hand`, `bulk`, `config` or `wiring`). Each row follows [What one commit holds](../SKILL.md#what-one-commit-holds); a Step that makes no commit is left out |
 | Continue on error | What counts as existing debt for this playbook, how it is counted and recorded, and how the check is wired so the debt cannot grow (ratchet, baseline file, or a report-only step) |
 | Verification | One observable done-criterion per check resolved: the command to run or the file to read, and the expected result |
 | Rollback | How to undo the change: which commits to revert, which files to delete |
 | Do-not-do | What this playbook never does (for example, no mass reformat, no rule turned off) |
 | State updates | The `done` and `partial` lines, debt texts and preference keys specific to the playbook (see the [state contract](../state.md)); the shared lines are in `SKILL.md` Stages 3 and 4 |
+
+How to write the Commits section:
+
+- One row per commit, in the order the Steps make them. A commit that a stack or an owner choice adds or drops says
+  so in its `Commit` cell: "(only with a hook manager)".
+- `Kind`: `hand` for hand-written edits, `bulk` for generated or tool output (a lockfile, a baseline file, a
+  formatter run), `config` for a tool's own config, `wiring` for a verb, a hook or a CI step that runs a tool.
+  Bulk output and config never share a commit with hand edits or wiring. A dependency change and the lockfile it
+  regenerates are one `bulk` commit, so `npm ci` and the like never break between them.
+- The Rollback section reverts these commits, newest first, and names any that must go together.
 
 How to write the State updates section so each line runs as written:
 

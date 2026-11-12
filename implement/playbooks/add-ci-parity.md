@@ -107,7 +107,6 @@ recorded, and a committed record shows which CI job the platform requires before
    `uses:` action; an action needs the owner's approval. Fix what the linter reports in the workflows you edit.
    Record older findings as debt, as for scans. Lint every workflow you changed before pushing. Edit workflows
    only in a PR.
-8. **Commits:** wrapper, workflow, record.
 
 ### GitHub Actions and Gradle
 
@@ -142,6 +141,23 @@ Lessons from the multi-app Node application (IR07.3):
 - A README table row you add counts against any Markdown lint baseline. Keep new rows under the line limit and put
   longer notes in a wrapped paragraph.
 
+## Commits
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Pull-request trigger (only when missing) | `CI-01` | wiring |
+| 2 | Wrapper calls the local verb (only with wrappers) | `CI-02` | wiring |
+| 3 | Workflow steps run the verbs; CI-only steps named so | `CI-02`, `CI-03` | wiring |
+| 4 | CI doc lists the CI-only steps | `CI-03` | hand |
+| 5 | Real scans for placeholders; report-only names on debt steps (only when needed) | `CI-04` | wiring |
+| 6 | Scan ignore list, a reason and expiry per entry (only for a blocking scan with debt) | `CI-04` | config |
+| 7 | Merge gate: `needs`, `if: always()`, the result check | `CI-04` | wiring |
+| 8 | Branch-protection record | `CI-04` | hand |
+| 9 | Workflow-linter version pin, with the lockfile when the pin adds a dev dependency | `CI-05` | config |
+| 10 | Fixes the linter reports in the edited workflows | `CI-05` | hand |
+| 11 | Local workflow-lint command | `CI-05` | wiring |
+| 12 | Workflow-lint CI step | `CI-05` | wiring |
+
 ## Continue on error
 
 - Existing scan findings: counted once with the real scan, recorded as debt on the item (`partial`) with count,
@@ -167,7 +183,8 @@ close-out comparison (`SKILL.md` Stage 5) labels the move.
 
 ## Rollback
 
-`git revert` the commits: wrapper, workflow and record revert alone. A reverted scan returns to its prior state,
+`git revert` the commits, newest first: the workflow-lint CI step and local command before the linter pin. The pin
+carries its lockfile. The other commits revert alone. A reverted scan returns to its prior state,
 but a reverted placeholder is a green no-op again: record that in the PR.
 
 ## Do-not-do

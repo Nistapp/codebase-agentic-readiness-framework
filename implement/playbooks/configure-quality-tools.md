@@ -171,6 +171,36 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#too
   [`tsconfig.json`](../../greenfield/templates/tsconfig.json) templates are references, never
   copied.
 
+## Commits
+
+The rows follow step 2, one tool at a time: formatter, linter, type checker, scan. A tool the repository already
+has skips its dependency row, and its config row when the config stays as it is.
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Formatter dependency, pinned exact, with its lockfile change | `TOOL-01` | bulk |
+| 2 | Formatter config file | `TOOL-01` | config |
+| 3 | Changed-files script for the ratchets (only on a per-app Node layout with debt) | `TOOL-01`, `TOOL-02` | hand |
+| 4 | `format` and `format:check` run the formatter, in ratchet form with debt | `TOOL-01` | wiring |
+| 5 | Report-only full `format:check` in CI (only with debt) | `TOOL-01` | wiring |
+| 6 | Linter dependency, pinned exact, with its lockfile change | `TOOL-02` | bulk |
+| 7 | Linter config: the ruleset, with the PMD exclude list when there is debt | `TOOL-02` | config |
+| 8 | ESLint suppressions file (only when the owner chose it as the baseline) | `TOOL-02` | bulk |
+| 9 | `lint` runs the linter read-only, in ratchet form with debt | `TOOL-02` | wiring |
+| 10 | Report-only full lint in CI (only with debt) | `TOOL-02` | wiring |
+| 11 | Type-check config in its strictest passing mode (not on the JVM) | `TOOL-03` | config |
+| 12 | Strict ratchet script (only with type errors under strict) | `TOOL-03` | hand |
+| 13 | Strict debt list (only with type errors under strict) | `TOOL-03` | bulk |
+| 14 | `typecheck` runs the type checker, in ratchet form with debt | `TOOL-03` | wiring |
+| 15 | Report-only full type check in CI (only with debt) | `TOOL-03` | wiring |
+| 16 | Scanner dependency, pinned exact (only for a scanner that is not built in) | `TOOL-04` | bulk |
+| 17 | `security` runs the scan with its threshold | `TOOL-04` | wiring |
+| 18 | CI job runs `security`, report-only when the scan is red today | `TOOL-04` | wiring |
+
+On Gradle a plugin is one line in `build.gradle`, with no lockfile. So the plugin and its config are one
+`config` commit (rows 1 and 2, rows 6 and 7). PMD's exclude list lands in that same commit, because applying `pmd` adds
+`pmdMain` to `check`.
+
 ## Continue on error
 
 | Debt | How it is counted | How it cannot grow |
@@ -197,8 +227,10 @@ the evidence above.
 
 ## Rollback
 
-Revert the per-tool commits. Each removes its config file, its dependency and its verb wiring; the ratchet and
-report-only CI steps go with them. Nothing outside those files changes.
+Revert the commits newest first, one tool at a time: scan, type checker, linter, formatter. Within a tool that is
+the CI step, the verb wiring, the debt list or suppressions file, the ratchet script, the config, then the
+dependency. To drop one tool alone, revert only its rows; keep the changed-files script (row 3) while the other
+ratchet still calls it. Nothing outside those files changes.
 
 ## Do-not-do
 

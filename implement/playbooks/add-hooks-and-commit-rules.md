@@ -101,10 +101,9 @@ branch, so an agent learns it is on the wrong branch before it commits, not when
 4. **Commit rule** per the owner's option. For A: the contributing doc names the PR-title workflow and the type
    list it enforces. For B or C: add the config and the `commit-msg` stage, then the CI step for the provider
    (see [Commit rule in CI](#commit-rule-in-ci)), with the same type list as the title rule so they cannot
-   disagree. Commit the local stage and the CI step separately, so either reverts alone.
+   disagree.
 5. **Branch guard** in the same manager (see [Branch guard](#branch-guard)), naming the Inputs 4 branches.
-6. **Verify** with a deliberately bad staged file in a scratch worktree (see Verification). Commit config, docs,
-   rule and guard separately.
+6. **Verify** with a deliberately bad staged file in a scratch worktree (see Verification).
 
 ### Gradle and Quarkus
 
@@ -306,6 +305,23 @@ printf '%s\n' "$subject" | grep -Eq '^(feat|fix|docs|test|chore|ci|refactor|perf
 }
 ```
 
+## Commits
+
+Commit the local stage and the CI step of the commit rule separately, so either reverts alone.
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | `husky` and `lint-staged` dev dependencies in `package.json`, with the lockfile (only with Husky) | `TOOL-05` | bulk |
+| 2 | Hook-manager config: the `pre-commit` stage (formatter check, secret scan) | `TOOL-05` | wiring |
+| 3 | One-time install in the instruction file and the contributing doc | `TOOL-05` | hand |
+| 4 | Contributing doc names the PR-title check and its type list (only with option A) | `TOOL-06` | hand |
+| 5 | commitlint dev dependency in `package.json`, with the lockfile (only with commitlint) | `TOOL-06` | bulk |
+| 6 | Commit-rule config (only with option B or C and a tool's own config) | `TOOL-06` | config |
+| 7 | Commit-lint script (only with option B or C on the script route) | `TOOL-06` | hand |
+| 8 | Local `commit-msg` stage (only with option B or C) | `TOOL-06` | wiring |
+| 9 | CI step over the pull request's commits (only with option B or C) | `TOOL-06` | wiring |
+| 10 | Branch guard in the `pre-commit` stage | `TOOL-07` | wiring |
+
 ## Continue on error
 
 - If the changed-files verb reveals existing debt in a staged file, the hook blocks only on files the commit
@@ -328,7 +344,8 @@ The engine reads `TOOL-06` from files only: option A gives `PARTIAL` (CI only) b
 
 ## Rollback
 
-`git revert` the commits (config, docs, rule each revert alone). Developers run the manager's uninstall
+`git revert` the commits, newest first. Each reverts alone, a dependency with its lockfile in one commit.
+Revert the install docs with the hook-manager config. Developers run the manager's uninstall
 (`lefthook uninstall`, `pre-commit uninstall`; for Husky, `git config --unset core.hooksPath`).
 
 ## Do-not-do

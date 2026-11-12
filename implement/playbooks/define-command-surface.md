@@ -91,7 +91,6 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 8. **Write the verbs down.** The instruction file (`AGENTS.md`, else `CONTRIBUTING.md`) lists the exact command
    for each verb per component (`spec/command-surface.md` rule 4). Fill an existing placeholder; do not
    rewrite the file, which is T7's job.
-9. Commits: the verbs, then the split writer, then the doc lines.
 
 ### Gradle
 
@@ -130,6 +129,16 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#com
 - `typecheck` = `tsc --noEmit -p tsconfig.json` (and a second `-p` for a separate test config when one exists).
   Check whether the component is TypeScript or JavaScript before offering a type check at all.
 
+## Commits
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | The missing verbs on the authoritative runner, `test` included | `CMD-01`, `TST-01` | wiring |
+| 2 | `check` calls `format:check`, `typecheck` and `test`, in that order | `CMD-02` | wiring |
+| 3 | The writer split out of a read-only verb (only when a read-only verb writes) | `CMD-04` | wiring |
+| 4 | The second runner delegates to the authoritative one (only with a second runner) | `CMD-03` | wiring |
+| 5 | The verb commands and the setup command in the instruction file | `CMD-01`, `EXEC-03` | hand |
+
 ## Continue on error
 
 This playbook installs names and wiring, so its own debt is rare. What counts:
@@ -159,8 +168,9 @@ per-component evidence above, not as a remaining gap.
 
 ## Rollback
 
-Each step is its own commit: revert the doc-line commit, the writer-split commit and the verb commit, in that
-order. The verbs add no dependency by themselves; tool dependencies roll back with `configure-quality-tools`.
+Revert the commits newest first: the instruction-file lines, the second-runner delegation, the writer split,
+the `check` composition, then the verbs. No two commits must go together. The verbs add no dependency by
+themselves; tool dependencies roll back with `configure-quality-tools`.
 
 ## Do-not-do
 
