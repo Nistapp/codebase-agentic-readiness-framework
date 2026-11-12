@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""The recipe linter: each of its nine rules (links, SKILL.md frontmatter, the user prompt, size, tool, check,
-requirement, playbook references and the tool catalogue) has a fixture that passes it and one that breaks it, and the tool
+"""The recipe linter: each of its ten rules (links, SKILL.md frontmatter, the user prompt, size, tool, check,
+requirement, playbook references, playbook commits and the tool catalogue) has a fixture that passes it and one that breaks it, and the tool
 honours the contract (envelope, exit codes, nothing written unless `--write-catalogue` is given).
 
 A fixture is a small repository tree built in a temporary folder, with its own `audit/` (the folder that marks a
@@ -589,6 +589,109 @@ class CatalogueReferenceTests(FixtureTests):
         self.repo.write_catalogue([a_check("CMD-01")])
         self.repo.write("audit/engine/docs/source.md", "See `CMD-99`, the engine's own.\n")
         self.assertEqual(self.lint().errors, [])
+
+
+# --- The playbook commits rule -------------------------------------------------------------------------------
+
+
+COMMITS_TABLE = """| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Formatter config | `FMT-01` | config |
+| 2 | The format verb | `FMT-01`, `FMT-02` | wiring |
+| 3 | Docs line | - | hand |
+"""
+
+
+def a_playbook(commits: str | None = COMMITS_TABLE, *, after: str = "Continue on error") -> str:
+    """A playbook with the anatomy's sections; `commits` is the Commits section's body, or None for no section."""
+    parts = [
+        "# Some playbook\n",
+        "## Goal\n\nA goal.\n",
+        "## Checks resolved\n\n| Check | What |\n|---|---|\n| `FMT-01` | x |\n| `FMT-02` | y |\n",
+        "## Steps\n\n1. Do it.\n",
+    ]
+    tail = ["## Continue on error\n\nDebt.\n", "## Verification\n\nRun it.\n"]
+    if commits is not None:
+        section = f"## Commits\n\n{commits}"
+        if after == "Continue on error":
+            parts.append(section)
+            parts.extend(tail)
+        else:
+            parts.extend(tail)
+            parts.append(section)
+    else:
+        parts.extend(tail)
+    return "\n".join(parts)
+
+
+class PlaybookCommitsTests(FixtureTests):
+    def errors_for(self, text: str, name: str = "implement/playbooks/some-playbook.md") -> list[str]:
+        self.repo.write(name, text)
+        return self.lint().errors
+
+    def test_a_well_formed_commits_section_passes(self) -> None:
+        self.assertEqual(self.errors_for(a_playbook()), [])
+
+    def test_a_playbook_without_a_commits_section_is_reported(self) -> None:
+        errors = self.errors_for(a_playbook(None))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("a playbook needs a '## Commits' section", errors[0])
+
+    def test_the_playbook_folder_readme_is_not_a_playbook(self) -> None:
+        self.assertEqual(self.errors_for("# Playbooks\n\nThe list.\n", "implement/playbooks/README.md"), [])
+
+    def test_a_file_outside_the_playbook_folder_is_never_checked(self) -> None:
+        self.assertEqual(self.errors_for("# Notes\n", "implement/playbooks/templates/notes.md"), [])
+        self.assertEqual(self.errors_for("# Notes\n", "docs/some-playbook.md"), [])
+
+    def test_a_commits_section_in_the_wrong_place_is_reported(self) -> None:
+        errors = self.errors_for(a_playbook(after="Verification"))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("right after Steps and right before Continue on error", errors[0])
+
+    def test_a_commits_section_with_no_table_is_reported(self) -> None:
+        errors = self.errors_for(a_playbook("One commit per finding.\n"))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("needs a table with a header row and at least one commit", errors[0])
+
+    def test_a_wrong_header_is_reported(self) -> None:
+        errors = self.errors_for(a_playbook("| # | What | Kind |\n|---|---|---|\n| 1 | x | hand |\n"))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("the Commits table's header must be | # | Commit | Checks | Kind |", errors[0])
+
+    def test_rows_out_of_order_are_reported(self) -> None:
+        table = COMMITS_TABLE.replace("| 2 | The format verb", "| 4 | The format verb")
+        errors = self.errors_for(a_playbook(table))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("the Commits row numbered '4' should be 2", errors[0])
+
+    def test_an_unknown_kind_is_reported(self) -> None:
+        errors = self.errors_for(a_playbook(COMMITS_TABLE.replace("| config |", "| misc |")))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("the Commits kind 'misc' is not one of bulk, config, hand, wiring", errors[0])
+
+    def test_a_check_the_playbook_does_not_resolve_is_reported(self) -> None:
+        errors = self.errors_for(a_playbook(COMMITS_TABLE.replace("`FMT-01`, `FMT-02`", "`FMT-01`, `LNT-03`")))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("names LNT-03, which Checks resolved does not list", errors[0])
+
+    def test_a_checks_cell_with_no_id_and_no_dash_is_reported(self) -> None:
+        errors = self.errors_for(a_playbook(COMMITS_TABLE.replace("| - | hand |", "| all | hand |")))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("name no check ID; write '-' for none", errors[0])
+
+    def test_a_row_with_too_few_cells_is_reported(self) -> None:
+        errors = self.errors_for(a_playbook(COMMITS_TABLE.replace("| 3 | Docs line | - | hand |", "| 3 | Docs line |")))
+        self.assertEqual(len(errors), 1)
+        self.assertIn("a Commits row has 2 cells; it needs 4", errors[0])
+
+    def test_only_the_first_table_is_the_commit_list(self) -> None:
+        second = "\nA note.\n\n| Stack | Extra |\n|---|---|\n| Go | none |\n"
+        self.assertEqual(self.errors_for(a_playbook(COMMITS_TABLE + second)), [])
+
+    def test_a_table_inside_a_code_fence_does_not_count_as_a_heading(self) -> None:
+        fenced = COMMITS_TABLE + "\n```markdown\n## Not a heading\n```\n"
+        self.assertEqual(self.errors_for(a_playbook(fenced)), [])
 
 
 # --- The tool contract -------------------------------------------------------------------------------------

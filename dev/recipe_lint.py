@@ -9,7 +9,7 @@ frontmatter and oversize files.
 
 ``<root>`` is the framework repository, the one that holds ``audit/`` (and, beside it, ``implement/`` and
 ``docs/``); a link may climb out of those folders (a check file citing ``docs/framework/phased-approach.md`` or
-``spec/`` does), but never out of ``<root>``. Nine checks, each independent of the others. The link rule also
+``spec/`` does), but never out of ``<root>``. Ten checks, each independent of the others. The link rule also
 covers the framework pages outside those folders (the root ``README.md``, ``AGENTS.md``, ``CONTRIBUTING.md``,
 ``RELEASE_PROCESS.md`` and ``SECURITY.md``, ``spec/`` and ``greenfield/``; the
 framework pages under ``docs/framework/`` are already recipe Markdown); no other check reads them:
@@ -45,6 +45,12 @@ framework pages under ``docs/framework/`` are already recipe Markdown); no other
   ``audit/catalogue.json`` names. A playbook may be named before its file exists under ``implement/playbooks/``
   (``audit/schema/SCHEMA.md``, "Rules beyond the schema", rule 2: the catalogue, not the folder, is what
   "exists" means), so this never checks the folder.
+- **Playbook commits.** A playbook, ``implement/playbooks/<name>.md`` other than ``README.md``, must hold a
+  ``## Commits`` section between ``## Steps`` and ``## Continue on error`` (the anatomy in
+  ``implement/playbooks/README.md``). Its table has the header ``| # | Commit | Checks | Kind |`` and at least one
+  row; ``#`` counts up from 1; ``Kind`` is ``hand``, ``bulk``, ``config`` or ``wiring``; and ``Checks`` is ``-`` or
+  a comma-separated list of check IDs that the playbook's ``## Checks resolved`` section names. So the Stage 3
+  commit loop of ``implement/SKILL.md`` always has a commit list to follow.
 - **Tool catalogue.** ``audit/tools/CATALOGUE.md`` must be byte-identical to what every ``<name>.py
   --describe`` directly in ``audit/tools/`` and in ``implement/tools/`` (every file there not starting with
   ``_``) would generate: the audit tools first, sorted by tool name, then the implement tools, sorted by tool
@@ -118,6 +124,11 @@ REQUIREMENT_HEADING = re.compile(r"^### (REQ-[A-Z]+-[0-9]+)\b", re.MULTILINE)
 # The shared prompt on how a recipe's agent writes to its user, and the recipe files that must link it.
 USER_PROMPT = "audit/prompts/talking-to-the-user.md"
 RECIPE_SKILLS = ("audit/SKILL.md", "implement/SKILL.md")
+# The playbook folder, its commit table's header and the kinds of commit the table allows.
+PLAYBOOK_DIR = "implement/playbooks"
+COMMITS_HEADER = ("#", "Commit", "Checks", "Kind")
+COMMIT_KINDS = frozenset({"hand", "bulk", "config", "wiring"})
+CHECK_ID = re.compile(r"\b[A-Z]+-[0-9]{2}\b")
 PLAYBOOK_REFERENCE = re.compile(r'Playbook `([a-z][a-z0-9-]*)`|"playbook":\s*"([a-z][a-z0-9-]*)"')
 
 # Whole files whose links are examples and are never meant to resolve, as a path prefix relative to <root>.
@@ -484,6 +495,70 @@ def check_playbook_references(file: Path, lines: Sequence[str], catalogue: Catal
                 out.error(file, number, f"the catalogue names no playbook {name!r}")
 
 
+# --- The playbook commits rule ---------------------------------------------------------------------------
+
+
+def is_playbook(file: Path, root: Path) -> bool:
+    relative = file.relative_to(root)
+    return relative.parent.as_posix() == PLAYBOOK_DIR and file.name != "README.md"
+
+
+def table_cells(line: str) -> list[str]:
+    """The cells of one Markdown table row, stripped, without the outer pipes."""
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def check_playbook_commits(file: Path, lines: Sequence[str], out: Outcome) -> None:
+    """The `## Commits` section of one playbook: where it sits, its table's shape, and the checks it names."""
+    headings = [(number, text[3:].strip()) for number, text in scan_lines(lines) if text.startswith("## ")]
+    names = [name for _, name in headings]
+    if "Commits" not in names:
+        out.error(file, 1, "a playbook needs a '## Commits' section (implement/playbooks/README.md, Anatomy)")
+        return
+    at = names.index("Commits")
+    start = headings[at][0]
+    if at == 0 or names[at - 1] != "Steps" or at + 1 >= len(names) or names[at + 1] != "Continue on error":
+        out.error(file, start, "the Commits section goes right after Steps and right before Continue on error")
+    end = headings[at + 1][0] if at + 1 < len(headings) else len(lines) + 1
+    resolved: set[str] = set()
+    if "Checks resolved" in names:
+        r_at = names.index("Checks resolved")
+        r_end = headings[r_at + 1][0] if r_at + 1 < len(headings) else len(lines) + 1
+        resolved = set(CHECK_ID.findall("\n".join(lines[headings[r_at][0] : r_end - 1])))
+    rows: list[tuple[int, str]] = []
+    for number in range(start + 1, end):
+        line = lines[number - 1]
+        if line.lstrip().startswith("|"):
+            rows.append((number, line))
+        elif rows:
+            break  # the first table only: a later one is prose, not the commit list
+    if len(rows) < 3:
+        out.error(file, start, "the Commits section needs a table with a header row and at least one commit")
+        return
+    header = tuple(table_cells(rows[0][1]))
+    if header != COMMITS_HEADER:
+        out.error(file, rows[0][0], f"the Commits table's header must be | {' | '.join(COMMITS_HEADER)} |")
+        return
+    for expected, (number, line) in enumerate(rows[2:], start=1):
+        cells = table_cells(line)
+        if len(cells) != len(COMMITS_HEADER):
+            out.error(file, number, f"a Commits row has {len(cells)} cells; it needs {len(COMMITS_HEADER)}")
+            continue
+        order, _, checks, kind = cells
+        if order != str(expected):
+            out.error(file, number, f"the Commits row numbered {order!r} should be {expected}")
+        if kind.strip("`") not in COMMIT_KINDS:
+            out.error(file, number, f"the Commits kind {kind!r} is not one of {', '.join(sorted(COMMIT_KINDS))}")
+        if checks.strip("`") == "-":
+            continue
+        named = CHECK_ID.findall(checks)
+        if not named:
+            out.error(file, number, f"the Commits checks {checks!r} name no check ID; write '-' for none")
+        for check_id in named:
+            if check_id not in resolved:
+                out.error(file, number, f"the Commits row names {check_id}, which Checks resolved does not list")
+
+
 # --- The tool catalogue ---------------------------------------------------------------------------------
 
 CATALOGUE_HEADER = (
@@ -631,6 +706,8 @@ def lint(
             check_frontmatter(file, text, out)
         check_size(file, lines, out)
         check_tool_references(root, file, lines, tool_cache, out, timeout=describe_timeout)
+        if is_playbook(file, root):
+            check_playbook_commits(file, lines, out)
         if not excluded_from_catalogue_checks(file, root):
             if catalogue is not None:
                 check_catalogue_references(file, lines, catalogue, out)
