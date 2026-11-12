@@ -198,7 +198,7 @@ A batch that spans themes, such as the COSMETIC batch, names the theme in each r
 
 | # | Finding | Theme | Check | Statement |
 |---|---|---|---|---|
-| 1 | F-038 local commit check | T4 CI parity, hooks, commits | `TOOL-06` commit convention enforced | Commit messages are checked only on PR titles in CI |
+| 1 | F-038 local commit check | T4 CI parity, Git hooks and commit messages | `TOOL-06` commit convention enforced | Commit messages are checked only on PR titles in CI |
 | 2 | F-026 ADRs | T6 Docs and navigation | `DOC-04` ADR directory and index | No ADR folder |
 
 Options: a. keep all; b. skip all; c. go through them one by one. **Default:** a (keep all).

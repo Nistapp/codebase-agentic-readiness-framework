@@ -34,8 +34,8 @@ Themes run in dependency order: the order and the dependencies are in
 |---|---|---|
 | [T1 Command surface and quality tools](#t1-command-surface-and-quality-tools) | [`define-command-surface`](#define-command-surface), [`configure-quality-tools`](#configure-quality-tools) | 10 |
 | [T2 Execution determinism](#t2-execution-determinism) | [`pin-execution-environment`](#pin-execution-environment), [`untrack-generated`](#untrack-generated) | 6 |
-| [T3 Secrets and env](#t3-secrets-and-env) | [`env-inventory-and-secrets`](#env-inventory-and-secrets) | 4 |
-| [T4 CI parity, hooks, commits](#t4-ci-parity-hooks-commits) | [`add-ci-parity`](#add-ci-parity), [`add-hooks-and-commit-rules`](#add-hooks-and-commit-rules) | 8 |
+| [T3 Secrets and environment variables](#t3-secrets-and-environment-variables) | [`env-inventory-and-secrets`](#env-inventory-and-secrets) | 4 |
+| [T4 CI parity, Git hooks and commit messages](#t4-ci-parity-git-hooks-and-commit-messages) | [`add-ci-parity`](#add-ci-parity), [`add-hooks-and-commit-rules`](#add-hooks-and-commit-rules) | 8 |
 | [T5 Tests and baselines](#t5-tests-and-baselines) | [`add-baselines-and-ratchet`](#add-baselines-and-ratchet) | 8 |
 | [T6 Docs and navigation](#t6-docs-and-navigation) | [`establish-docs-contract`](#establish-docs-contract) | 10 |
 | [T7 AGENTS.md and governance](#t7-agentsmd-and-governance) | [`adapt-agents-md`](#adapt-agents-md), [`add-deny-rules`](#add-deny-rules) | 17 |
@@ -146,7 +146,7 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 
 Full playbook: [`untrack-generated.md`](../../implement/playbooks/untrack-generated.md).
 
-## T3 Secrets and env
+## T3 Secrets and environment variables
 
 ### `env-inventory-and-secrets`
 
@@ -175,7 +175,7 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 
 Full playbook: [`env-inventory-and-secrets.md`](../../implement/playbooks/env-inventory-and-secrets.md).
 
-## T4 CI parity, hooks, commits
+## T4 CI parity, Git hooks and commit messages
 
 ### `add-ci-parity`
 

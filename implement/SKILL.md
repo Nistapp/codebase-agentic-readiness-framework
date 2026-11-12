@@ -221,10 +221,10 @@ matters: `AGENTS.md` comes late because it must name the verbs, documents and ru
 
 ```mermaid
 flowchart LR
-    T1["T1 Command surface<br/>and quality tools"] --> T4["T4 CI parity,<br/>hooks, commits"]
+    T1["T1 Command surface<br/>and quality tools"] --> T4["T4 CI parity, Git hooks<br/>and commit messages"]
     T1 --> T5["T5 Tests and<br/>baselines"]
     T2["T2 Execution<br/>determinism"] --> T4
-    T3["T3 Secrets<br/>and env"] --> T7
+    T3["T3 Secrets and<br/>environment variables"] --> T7
     T4 --> T5
     T5 --> T7["T7 AGENTS.md<br/>and governance"]
     T6["T6 Docs and<br/>navigation"] --> T7
