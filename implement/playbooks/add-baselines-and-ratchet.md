@@ -73,11 +73,11 @@ TST-04 has two playbooks: this one writes the fenced line when the repository's 
 
 2. **Baseline form (the default, owner-approved for this playbook).** Tool-native first: a tool that has its own
    baseline, exclude list or budget flag keeps it. Everything else (a scanner count, a strict-mode error count, a
-   report-only step's number) goes into **one committed counts file** under the state folder,
-   `docs/agentic-readiness/<label>-quality-baseline.json` (renamed to the repository's own convention when it has
-   one), checked by a short compare script that `format:check` calls. Alternatives the owner may choose instead: a
-   counts file for every tool (one format, but duplicates native ratchets), or tool-native only (no script, but tools
-   without a native form stay unguarded). Record a non-default choice with `pref set baseline.form`.
+   report-only step's number) goes into **one committed counts file**. Its default is `quality-baseline.json`
+   beside the repository's quality configuration. Use the repository's own name when it has a convention. A short
+   compare script that `format:check` calls checks it. Alternatives the owner may choose instead: a counts file for
+   every tool (one format, but duplicates native ratchets), or tool-native only (no script, but tools without a
+   native form stay unguarded). Record a non-default choice with `pref set baseline.form`.
 
 3. **Coverage gate.** Ask per repository, record `pref set tests.coverage_gate check|ci`:
    - `check` (default): the floor sits in the test runner's configuration and the coverage-instrumented run is part
@@ -145,7 +145,6 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
 10. **Fast path (TST-04)**, when the item is in T5: add the single-test command for the repository's runner to
     `AGENTS.md` in a fenced shell block (the engine reads only fenced commands), for example
     `./gradlew test --tests '<Class>'` or `npx jest <path/to/file.spec.ts>`.
-11. Commits: baseline, compare step, coverage, docs.
 
 ### Java (Gradle)
 
@@ -225,6 +224,30 @@ a containerised test profile (Quarkus Dev Services or Testcontainers) so tests s
 unit-only subset as a fast offline verb. Record the answer in `tests.stack_dependent`. With
 `check.verify_without_stack=yes`, the coverage gate goes to CI unless the owner says otherwise.
 
+## Commits
+
+A commit that raises a count or lowers a floor carries the `Baseline-Exception` body line (see
+[Continue on error](#continue-on-error)).
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Shrink a stale exclude list (only when it names clean files) | `BASE-01` | config |
+| 2 | Native baseline file the tool writes, such as `eslint-suppressions.json` (only when used) | `BASE-01` | bulk |
+| 3 | Counts file, one entry per tool without a native baseline | `BASE-01`, `BASE-02` | bulk |
+| 4 | Compare script | `BASE-03` | hand |
+| 5 | Compare call in `format:check` | `BASE-03` | wiring |
+| 6 | Counts file named in the CI step that runs `check` | `BASE-03` | wiring |
+| 7 | Today's count on a budget flag in the verb (only where a tool has one) | `BASE-02` | wiring |
+| 8 | Baseline paragraph in `AGENTS.md` | `BASE-01`, `BASE-03` | hand |
+| 9 | Coverage configuration in the runner | `TST-05` | config |
+| 10 | Coverage verb (only when none exists) | `TST-05` | wiring |
+| 11 | Coverage floor in the runner's configuration | `BASE-04` | config |
+| 12 | Floor wired into `check` or a CI step, per `tests.coverage_gate` | `BASE-04` | wiring |
+| 13 | Floor sentence in `AGENTS.md` (only where the engine cannot read the floor) | `BASE-04` | hand |
+| 14 | Failing-suite entry in the counts file (only when a suite outside `check` fails) | `TST-02` | bulk |
+| 15 | One-line reasons next to deliberate skip markers | `TST-03` | hand |
+| 16 | Fenced single-test command in `AGENTS.md` (only when the item is in T5) | `TST-04` | hand |
+
 ## Continue on error
 
 | Debt | How it is counted | How it cannot grow |
@@ -269,9 +292,9 @@ last column above.
 
 ## Rollback
 
-Revert the per-change commits: the counts file and compare script go together with the `format:check` wiring; the
-coverage commit removes the plugin or config keys and the verb; the `AGENTS.md` paragraph goes with the last one. A
-shrunk exclude list can stay shrunk.
+`git revert` the commits, newest first. The baseline paragraph in `AGENTS.md` goes together with the counts file,
+the compare script, the compare call and the CI step it names. The floor sentence goes together with the coverage
+floor and its wiring. The other commits revert alone. A shrunk exclude list can stay shrunk.
 
 ## Do-not-do
 
@@ -290,15 +313,15 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 
 ```bash
 python3 implement/tools/progress.py pref set tests.coverage_gate check \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --commit <sha> --debt "what=PMD violations,count=<N>,baseline=config/pmd/ruleset.xml" \
-  --debt "what=dependency advisories,count=<N>,baseline=docs/agentic-readiness/<label>-quality-baseline.json" \
+  --debt "what=dependency advisories,count=<N>,baseline=quality-baseline.json" \
   --verification-command "<format:check verb>" --verification-result "exit 0; exit 1 with one count raised"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --commit <sha> --debt "what=coverage floor (line %),count=<NN>,baseline=<runner config file>"
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "grep -n -A2 'single test' AGENTS.md" --verification-result "fenced block"
 python3 implement/tools/progress.py pref set baseline.exception.<what> "<old>-><new> <YYYY-MM-DD> <reason>" \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```

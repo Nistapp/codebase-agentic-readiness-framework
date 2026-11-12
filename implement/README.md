@@ -30,8 +30,9 @@ skill runs the audit skill's engine.
 | [`prompts/`](prompts/kickoff.md) | The kickoff prompt, also used to resume |
 | [`playbooks/`](playbooks/README.md) | Thirteen playbooks, one per class of finding, and their anatomy |
 | [`state.md`](state.md) | The per-repository state contract: files, statuses, skip, preferences |
+| [`tool-choice.md`](tool-choice.md) | What a step does when a tool it needs is missing, or older than the repository's pin |
 | [`tools/`](tools/) | The implement tools and their tests |
-| [`docs/architecture/adrs/`](docs/architecture/adrs/0002-progress-writes-state-in-target.md) | This recipe's decisions |
+| [`docs/architecture/adrs/`](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md) | This recipe's decisions |
 
 ## Tools
 
@@ -40,7 +41,7 @@ helpers from `audit/tools/`.
 
 | Tool | Does |
 | --- | --- |
-| `progress.py` | Creates, shows and renders the state; the only tool that writes inside the target ([ADR 0002](docs/architecture/adrs/0002-progress-writes-state-in-target.md)) |
+| `progress.py` | Creates, shows and renders the state beside the audit report, outside the target ([ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)) |
 | `check_drift.py` | Tells which findings the repository has moved under since the audit |
 | `compare_reports.py` | Compares two audit reports of the same repository |
 

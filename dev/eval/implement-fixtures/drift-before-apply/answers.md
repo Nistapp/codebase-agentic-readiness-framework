@@ -7,7 +7,7 @@ final message instead of guessing.
 - Create every worktree under `{root}/worktrees/`.
 - This session has no code-graph tool: say that you read files directly.
 
-- Session phase id: `t6`. Triage is merged into `dev` (the state is there).
+- Session phase id: `t6`. Triage is done (the state is in the workspace).
 - Theme for this session: T6 (docs). The diagram allows it before T1.
 - T6 change list: approved as long as it stays inside the playbook. `DOC-01`: create `docs/README.md` as the
   documentation index (what the project is, where code and tests live, which commands exist). No new tool and no

@@ -38,8 +38,8 @@ Number 0001 is retired in this group.
 
 | ADR | Title | Summary |
 | --- | --- | --- |
-| [0002](../../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md) | `progress.py` Writes the State Files Inside the Target | `progress.py` may write only the target's two state files under `docs/agentic-readiness/`. |
 | [0003](../../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) | The Implement Recipe Pushes and Opens a Pull Request Only When the Owner Opted In | The recipe stops at a local branch unless the owner opted in to a push and one pull request. |
+| [0004](../../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md) | The Implement State Lives in the Audit Workspace, Outside the Target | `progress.py` keeps the state beside the final report, outside the target; no tool writes inside a target. |
 
 ## Audit engine: `audit/engine/docs/architecture/adrs/`
 

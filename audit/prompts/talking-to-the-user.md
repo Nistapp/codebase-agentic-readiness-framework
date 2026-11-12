@@ -23,6 +23,17 @@ Write for a new engineer who knows Git and their own stack, but not this framewo
    `leverage`, `in order to`, `and/or`, `etc.`. Name the real items instead of `etc.`.
 7. **Exact facts.** Give the path, the command, the check ID and the number: "3 of 11 checks", not "some".
 8. **Code names in code spans:** file names, commands, check IDs, keys and verdicts.
+9. **Name every code.** The reader does not know what `T7`, `IDX` or `F-020` means. Put the name next to the
+   code each time, in chat, tables and reports, in the same table cell:
+   - a theme with its title: "T7 AGENTS.md and governance", not "T7";
+   - a check with its title: "`IDX-01` codebase-memory-mcp registered", not "`IDX-01`";
+   - a family with its name: "Discovery and Index (`IDX`)", not "the `IDX` checks";
+   - a finding with its subject: "F-020 style guide", not "F-020".
+
+   Take each name from the files. A theme's title is in `progress.py show`, a check's title in the report's
+   `checks[].title`. A family's name is the `# <name> (<FAMILY>)` heading of its `references/checks/` file.
+   Shorten a long title, but keep its meaning. Write other short forms out in full: "environment", not "env".
+   Keep a short form that every engineer knows, such as CI, PR or URL.
 
 ## Evidence labels
 
@@ -54,7 +65,8 @@ Send one at the end of every stage, and at the end of every implement theme. Nam
 **Stage 2 (Assess) done.**
 
 - **Done:** 47 of 52 checks have a verdict; 5 blockers verified.
-- **Not done:** 5 checks are `UNKNOWN`: `IDX-01`, `IDX-02`, ...; the scan cannot read them.
+- **Not done:** 5 checks are `UNKNOWN`, and the scan cannot read them: `IDX-01` codebase-memory-mcp registered,
+  `IDX-02` an index exists, and 3 more in the draft.
 - **Blocked:** nothing. (Or: what stops you, and what you need.)
 - **Next:** Stage 3. The draft is `/full/path/to/<label>.audit-report.draft.json`.
 ```
@@ -67,20 +79,22 @@ pull request. Use these three headings, exactly, as Markdown headings:
 ```markdown
 ## What changed
 
-- F-001 `CMD-01`: added the `check` verb (`a1b2c3d`). Done.
-- F-004 `TST-02`: added a ratchet; 12 failing tests counted as debt (`d4e5f6a`). Partial.
+| Finding | Status | What changed | Evidence |
+|---|---|---|---|
+| F-001 seven verbs | done | Added the `check` verb (`a1b2c3d`) | `CMD-01` seven verbs on one runner: PASS |
+| F-004 failing tests | partial | Added a ratchet; 12 failing tests counted as debt (`d4e5f6a`) | `TST-02` suite status known: PARTIAL |
 
 ## How it was checked
 
 - `make check`: passed.
-- Engine re-check: `CMD-01` PASS, `TST-02` PARTIAL (the debt above).
+- Engine re-check: the evidence column above.
 
 ## What was not done
 
-- Skipped by the owner: F-007 `CI-01` ("CI comes next quarter").
+- Skipped by the owner: F-007 no CI pipeline (`CI-01` pipeline present): "CI comes next quarter".
 - Failed or blocked: none.
-- Engine limits: `CMD-02` stays `UNKNOWN` on Gradle; verified by hand.
-- Checks that pass with no item: `CMD-03`.
+- Engine limits: `CMD-02` check composes the read-only verbs stays `UNKNOWN` on Gradle; verified by hand.
+- Checks that pass with no item: `CMD-03` no divergent second definition.
 ```
 
 Write "none" under a heading with nothing to report. Never leave a heading out.
@@ -104,7 +118,7 @@ When you ask several questions, number them and letter the options, so the perso
 
 | Option | Pros | Cons | Cost here | How hard to undo |
 |---|---|---|---|---|
-| a. Native runner | One runner; the engine reads it | `CMD-02` stays `UNKNOWN` | 1 file | Easy: one revert |
+| a. Native runner | One runner; the engine reads it | `CMD-02` check composes the read-only verbs stays `UNKNOWN` | 1 file | Easy: one revert |
 | b. Thin root `Makefile` | Same `make check` everywhere | A second runner to keep in step | 2 files, Make on CI | Easy |
 
 **Recommendation:** a, because the repository already builds with Gradle. **Default:** a, applied only when you
@@ -136,7 +150,8 @@ take every default shown.
 A blocker, one at a time. A disposition never has a default.
 
 ```markdown
-**F-003, blocker 1 of 5: `CMD-01`.** The command surface has no `check` verb.
+**F-003 no `check` verb, blocker 1 of 5: `CMD-01` seven verbs resolvable on one runner.** The command surface
+has no `check` verb.
 
 - **Evidence:** `Makefile` has no `check` target (*checked*: the engine read it).
 - **My verification:** I read `Makefile` and `package.json`; neither defines `check` (*checked*).
@@ -149,11 +164,11 @@ A blocker, one at a time. A disposition never has a default.
 Other findings, one numbered table per batch:
 
 ```markdown
-**Batch 2 of 4: documentation (`DOC-`), 3 findings.**
+**Batch 2 of 4: Documentation Contract (`DOC`), 3 findings.**
 
 | # | Finding | Check | Severity | Statement | Recommendation |
 |---|---|---|---|---|---|
-| 1 | F-010 | `DOC-02` | COSMETIC | No style guide | a. confirmed |
+| 1 | F-010 style guide | `DOC-02` style guide exists | COSMETIC | No `docs/STYLE_GUIDE.md` | a. confirmed |
 
 Options per row: a. confirmed; b. rejected; c. deferred; d. edited. Reply "all a", or "all a except 2c".
 **Default:** none; the batch waits for your reply.
@@ -165,13 +180,26 @@ One numbered table per theme. Keep is the default, because a kept finding stays 
 You never skip or defer on your own.
 
 ```markdown
-**Triage: T1 Command surface (theme 1 of 8), 4 findings.**
+**Triage: T1 Command surface and quality tools (theme 1 of 8), 4 findings.**
 
 | # | Finding | Check | Severity | Statement | Playbook |
 |---|---|---|---|---|---|
-| 1 | F-001 | `CMD-01` | BLOCKER | No `check` verb | `define-command-surface` |
+| 1 | F-001 seven verbs | `CMD-01` seven verbs on one runner | BLOCKER | No `check` verb | `define-command-surface` |
 
 Options per row: a. keep; b. skip (final: never offered again); c. defer (kept for later). Give a reason for b
 or c. Reply "all a", or "all a except 3b: we use Bazel".
 **Default:** a (keep).
+```
+
+A batch that spans themes, such as the COSMETIC batch, names the theme in each row:
+
+```markdown
+**Triage: COSMETIC batch, 15 findings.**
+
+| # | Finding | Theme | Check | Statement |
+|---|---|---|---|---|
+| 1 | F-038 local commit check | T4 CI parity, Git hooks and commit messages | `TOOL-06` commit convention enforced | Commit messages are checked only on PR titles in CI |
+| 2 | F-026 ADRs | T6 Docs and navigation | `DOC-04` ADR directory and index | No ADR folder |
+
+Options: a. keep all; b. skip all; c. go through them one by one. **Default:** a (keep all).
 ```

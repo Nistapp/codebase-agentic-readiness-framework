@@ -23,11 +23,22 @@ nothing from it.
 | Preconditions | The state preferences it reads, the earlier themes it needs, and what must already be true in the repository |
 | Inputs to ask | The tool-choice step: detect what the repository already has (manifests, build plugins, configs, the code index) and use it; if nothing is there, offer two to four current options with pros and cons and a recommendation, in a table. Every other question for the owner |
 | Steps | Generic steps first, then one subsection per stack that points at the stack profile in [`stacks/`](../../audit/stacks/README.md) instead of restating it. Only what is specific to the playbook: the shared procedure is `SKILL.md` Stage 3 |
+| Commits | The commits the Steps make, in order, as a table: `#`, `Commit` (what it holds, in a few words), `Checks` (the check IDs it serves, from Checks resolved, or `-` for a commit that serves the theme as a whole) and `Kind` (`hand`, `bulk`, `config` or `wiring`). Each row follows [What one commit holds](../SKILL.md#what-one-commit-holds); a Step that makes no commit is left out |
 | Continue on error | What counts as existing debt for this playbook, how it is counted and recorded, and how the check is wired so the debt cannot grow (ratchet, baseline file, or a report-only step) |
 | Verification | One observable done-criterion per check resolved: the command to run or the file to read, and the expected result |
 | Rollback | How to undo the change: which commits to revert, which files to delete |
 | Do-not-do | What this playbook never does (for example, no mass reformat, no rule turned off) |
 | State updates | The `done` and `partial` lines, debt texts and preference keys specific to the playbook (see the [state contract](../state.md)); the shared lines are in `SKILL.md` Stages 3 and 4 |
+
+How to write the Commits section:
+
+- One row per commit, in the order the Steps make them. A commit that a stack or an owner choice adds or drops says
+  so in its `Commit` cell: "(only with a hook manager)".
+- `Kind`: `hand` for hand-written edits, `bulk` for generated or tool output (a lockfile, a baseline file, a
+  formatter run), `config` for a tool's own config, `wiring` for a verb, a hook or a CI step that runs a tool.
+  Bulk output and config never share a commit with hand edits or wiring. A dependency change and the lockfile it
+  regenerates are one `bulk` commit, so `npm ci` and the like never break between them.
+- The Rollback section reverts these commits, newest first, and names any that must go together.
 
 How to write the State updates section so each line runs as written:
 
@@ -64,9 +75,9 @@ in IR04.1, `untrack-generated` in IR05.1, `establish-docs-contract` in IR09.1,
 | [`configure-quality-tools`](configure-quality-tools.md) | T1 Command surface and quality tools | TOOL-01, TOOL-02, TOOL-03, TOOL-04 | yes | Drafted (IR04.1); applied in IR04.2, IR04.3 |
 | [`pin-execution-environment`](pin-execution-environment.md) | T2 Execution determinism | EXEC-01, EXEC-02, EXEC-08 | yes | Drafted (IR05.1); applied and corrected in IR05.2, IR05.3 (T2 closed) |
 | [`untrack-generated`](untrack-generated.md) | T2 Execution determinism | EXEC-05, EXEC-07 | yes | Drafted (IR05.1); applied and corrected in IR05.2, IR05.3 (T2 closed) |
-| [`env-inventory-and-secrets`](env-inventory-and-secrets.md) | T3 Secrets and env | EXEC-04, SEC-01, SEC-02, SEC-03 | yes | Applied and corrected (IR06.1-IR06.3) |
-| [`add-ci-parity`](add-ci-parity.md) | T4 CI parity, hooks, commits | CI-01, CI-02, CI-03, CI-04, CI-05 | yes | Drafted (IR07.1); applied and corrected in IR07.2, IR07.3 (T4 closed) |
-| [`add-hooks-and-commit-rules`](add-hooks-and-commit-rules.md) | T4 CI parity, hooks, commits | TOOL-05, TOOL-06, TOOL-07 | yes | Drafted (IR07.1); applied and corrected in IR07.2, IR07.3 (T4 closed) |
+| [`env-inventory-and-secrets`](env-inventory-and-secrets.md) | T3 Secrets and environment variables | EXEC-04, SEC-01, SEC-02, SEC-03 | yes | Applied and corrected (IR06.1-IR06.3) |
+| [`add-ci-parity`](add-ci-parity.md) | T4 CI parity, Git hooks and commit messages | CI-01, CI-02, CI-03, CI-04, CI-05 | yes | Drafted (IR07.1); applied and corrected in IR07.2, IR07.3 (T4 closed) |
+| [`add-hooks-and-commit-rules`](add-hooks-and-commit-rules.md) | T4 CI parity, Git hooks and commit messages | TOOL-05, TOOL-06, TOOL-07 | yes | Drafted (IR07.1); applied and corrected in IR07.2, IR07.3 (T4 closed) |
 | [`add-baselines-and-ratchet`](add-baselines-and-ratchet.md) | T5 Tests and baselines | BASE-01, BASE-02, BASE-03, BASE-04, TST-02, TST-03, TST-04, TST-05 | yes | Drafted (IR08.1); applied in IR08.2, IR08.3 |
 | [`establish-docs-contract`](establish-docs-contract.md) | T6 Docs and navigation | DOC-01, DOC-02, DOC-03, DOC-04, DOC-05, NAV-01, NAV-02, NAV-03, NAV-04, NAV-05 | yes | Drafted (IR09.1); applied in IR09.2, IR09.3 |
 | [`adapt-agents-md`](adapt-agents-md.md) | T7 AGENTS.md and governance | AGT-01, AGT-02, AGT-03, AGT-04, AGT-05, AGT-06, AGT-08, AGT-09, AGT-10, AGT-11, AGT-12, EXEC-06, TST-04 | yes | Drafted (IR10.1); applied in IR10.2, IR10.3 |

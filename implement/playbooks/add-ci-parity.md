@@ -56,7 +56,7 @@ recorded, and a committed record shows which CI job the platform requires before
 5. **Names to preserve:** the merge-gate job name and the docs-only skip (path filter or change-detection job).
 6. **Workflow linter (CI-05).** Detect first and keep a linter that already runs. Look in Makefile targets,
    `package.json` scripts, hooks (`.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`) and CI steps. If there is
-   none, choose the linter by CI provider and the route by stack (the stack profile's Tooling defaults).
+   none, choose the linter by CI provider and the route by stack (the stack profile's Tooling options).
    Currency checked 2026-11-09 (GitHub releases API, PyPI); re-check when applied.
 
    | Provider | Recommend | Version, date | Notes |
@@ -107,7 +107,6 @@ recorded, and a committed record shows which CI job the platform requires before
    `uses:` action; an action needs the owner's approval. Fix what the linter reports in the workflows you edit.
    Record older findings as debt, as for scans. Lint every workflow you changed before pushing. Edit workflows
    only in a PR.
-8. **Commits:** wrapper, workflow, record.
 
 ### GitHub Actions and Gradle
 
@@ -142,6 +141,23 @@ Lessons from the multi-app Node application (IR07.3):
 - A README table row you add counts against any Markdown lint baseline. Keep new rows under the line limit and put
   longer notes in a wrapped paragraph.
 
+## Commits
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Pull-request trigger (only when missing) | `CI-01` | wiring |
+| 2 | Wrapper calls the local verb (only with wrappers) | `CI-02` | wiring |
+| 3 | Workflow steps run the verbs; CI-only steps named so | `CI-02`, `CI-03` | wiring |
+| 4 | CI doc lists the CI-only steps | `CI-03` | hand |
+| 5 | Real scans for placeholders; report-only names on debt steps (only when needed) | `CI-04` | wiring |
+| 6 | Scan ignore list, a reason and expiry per entry (only for a blocking scan with debt) | `CI-04` | config |
+| 7 | Merge gate: `needs`, `if: always()`, the result check | `CI-04` | wiring |
+| 8 | Branch-protection record | `CI-04` | hand |
+| 9 | Workflow-linter version pin, with the lockfile when the pin adds a dev dependency | `CI-05` | config |
+| 10 | Fixes the linter reports in the edited workflows | `CI-05` | hand |
+| 11 | Local workflow-lint command | `CI-05` | wiring |
+| 12 | Workflow-lint CI step | `CI-05` | wiring |
+
 ## Continue on error
 
 - Existing scan findings: counted once with the real scan, recorded as debt on the item (`partial`) with count,
@@ -167,7 +183,8 @@ close-out comparison (`SKILL.md` Stage 5) labels the move.
 
 ## Rollback
 
-`git revert` the commits: wrapper, workflow and record revert alone. A reverted scan returns to its prior state,
+`git revert` the commits, newest first: the workflow-lint CI step and local command before the linter pin. The pin
+carries its lockfile. The other commits revert alone. A reverted scan returns to its prior state,
 but a reverted placeholder is a green no-op again: record that in the PR.
 
 ## Do-not-do
@@ -188,14 +205,14 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "<wrapper or grep>" --verification-result "<result>"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=dependency findings,count=<n>,baseline=<file>" --note "<report-only step, review date>"
 python3 implement/tools/progress.py pref set ci.shape <wrappers-call-verbs|direct> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set ci.edits_authorised <value> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set ci.workflow_linter <actionlint|zizmor|check-jsonschema|...> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```

@@ -9,7 +9,8 @@
 
 ## Prerequisites
 
-- [ ] A final audit report: the `.json` and `.md` pair `report.py finalise` wrote, which sit outside the target
+- [ ] A final audit report: the `.json` and `.md` pair `report.py finalise` wrote, outside the target. Their folder
+      is the **workspace**, where the run keeps its state
 - [ ] A clean working tree in the target, on the integration branch (for example `dev`)
 - [ ] Python 3.11+ on `PATH`
 - [ ] The recipe: a framework checkout, or the `agentic-readiness-implement` skill installed beside the
@@ -19,32 +20,27 @@
 
 ## Step-by-Step Instructions
 
-### Step 1: Hand the report over to the target and create the state
+### Step 1: Point `init` at the report
 
-The audit writes only outside the target, and the implement recipe reads the report from inside it, so the owner
-moves it across. Nothing else copies it.
+The audit's output folder is the implement workspace. The report stays there, and the state goes beside it.
+Nothing of the run's own goes into the target, and nothing is committed or pushed for it
+([ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)).
 
-1. Copy the final report's two files into the target, named
-   `docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.json` and `.md` (`<kind>` is a short name for the
-   repository, such as `server`; `<ts>` is the stamp from the audit's file name). Use the target's own naming if it
-   has one ([ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) records the
-   push and PR policy that follows).
-2. Commit the pair on the integration branch, and let it reach the branch the work will start from. The report is
-   evidence; do not edit it afterwards. An edit is detected: `progress.py init` records the SHA-256 of the
-   `.json`, and `check_drift.py` reports `report_changed` if the file differs.
-3. Start the agent with [`implement/prompts/kickoff.md`](../../implement/prompts/kickoff.md). Its Stage 0
-   validates the report, runs the drift check and creates the state in a worktree on a triage branch, so nothing
-   is committed on the integration branch itself (`init` refuses a draft or an invalid report, a report outside the
-   target, and an existing state):
+1. Keep the workspace until the run ends. The skips and preferences live only there.
+2. Do not copy, commit or edit the report. `progress.py init` records the SHA-256 of the `.json`.
+   `check_drift.py` reports `report_changed` when the file differs.
+3. Start the agent with [`implement/prompts/kickoff.md`](../../implement/prompts/kickoff.md), with the path to the
+   final report's `.json`. Its Stage 0 validates the report, runs the drift check and creates the state:
 
    ```bash
    python3 implement/tools/progress.py init \
-     --report <triage worktree>/docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.json \
-     --target <triage worktree> --default-branch <integration branch> --phase <session id>
+     --report <workspace>/<label>.audit-report.<stamp>.json \
+     --target <repo> --default-branch <integration branch> --phase <session id>
    ```
 
-4. Stage 1 commits the two state files (`docs/agentic-readiness/<label>-agentic-readiness-state.json` and
-   `-STATE.md`) on that branch. Merge the triage branch before the first theme starts.
+   `init` refuses a draft or an invalid report, a workspace inside the target, and an existing state.
+4. The two state files land beside the report: `<label>-agentic-readiness-state.json` and
+   `<label>-agentic-readiness-STATE.md`. The target does not change.
 
 ### Step 2: Triage once
 
@@ -56,7 +52,8 @@ Then it walks the queued findings theme by theme (Stage 1). For each one you cho
 reason; a skip is final for every later session. You also state the preferences that bind the run: tools you
 prefer, scope limits such as "no mass reformat", and whether the agent may push a branch and open a pull request
 (`ci.pr_by_agent`; without `yes` it stops at a local branch, [ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md)).
-The agent records each answer with `progress.py` as you give it, commits the state on a triage branch, and stops.
+The agent records each answer with `progress.py` in the workspace as you give it, and stops. Triage changes nothing
+in the target.
 
 ### Step 3: Approve each theme's plan
 
@@ -68,6 +65,18 @@ record. You choose, and approve the change list. Nothing changes before that.
 For a value only you have (a code owner, a security contact, a review date), the agent asks you to supply it,
 offers to draft one for your review, or records your skip so it does not ask again.
 
+When a step needs a tool your repository lacks, such as a Markdown linter for a README, the agent stops and asks.
+It offers two to four options and a recommendation, plus "none". It asks whether to run the tool once or add it to
+the repository. Discuss as long as you like; it installs nothing until you name one. "Install whatever you need"
+picks no tool, so it still asks about each one. If you choose none, it records that. It then lists the check it
+could not run in every report and pull request.
+
+The agent also checks the version of each tool it runs against the version your repository pins, for example in CI.
+A tool that is a little older (same major version, and it reads your config) gets a one-line warning, and the run
+goes on. A tool that is far older makes the agent stop. It offers an upgrade, a one-off run of the pinned version, or
+going on with yours. It upgrades nothing without your yes, and it accepts "go on". Each gap is recorded, and every
+report and pull request names it, since local results may then differ from CI.
+
 Two themes bring the framework's writing rules to your repository. The `AGENTS.md` theme (T7) adds a "How to write
 for people" section; the agent drafts the reader persona and you confirm it. The docs theme (T6) adds "Plain
 language" and "Diagrams" sections to your style guide. It records the prose debt of your existing pages and never
@@ -76,10 +85,23 @@ licence you name; by default it adds no tool.
 
 ### Step 4: Review the theme branch and merge it yourself
 
-The agent works in a separate worktree on `agentic-readiness/<phase>-<slug>` (Stage 3). Per finding: it re-verifies
-the finding, applies the playbook, verifies, commits one logical change, and records the end status: `done`, or
-`partial` with the debt counted and guarded so it cannot grow. It then re-runs the engine for the theme's checks and
-the repository's gate (Stage 4).
+The agent works in a separate worktree on `agentic-readiness/<phase>-<slug>` (Stage 3). Before the first change it
+runs your repository's gate once and tells you the result and how long it took. This baseline separates old failures
+from new ones. It also sets how often the tests run:
+
+| Gate takes | Each commit runs | Each finding's end runs |
+|---|---|---|
+| Two minutes or less | The full gate | The full gate |
+| Longer | A named fast subset, such as the unit tests | The full gate |
+
+Per finding, the agent re-verifies it, then works it in small commits, in the order the playbook's Commits table
+gives. Each commit holds one concern, is tested, and is committed before the next one starts. Each leaves the tree
+no worse than the baseline, so you can roll back any commit alone, newest first. A new test failure blocks the
+commit. After each commit the agent tells you the SHA and the test result against the baseline. At the end of each
+finding it records the end status: `done`, or `partial` with the debt counted and guarded so it cannot grow. Then it
+fetches your integration branch. When that branch changed a file the theme also touches, the agent stops and asks
+you how to go on; it never rebases. At the end of the theme it re-runs the drift check, the engine for the theme's
+checks and the repository's gate. It shows you the gate's result beside the baseline (Stage 4).
 
 Without `ci.pr_by_agent=yes` it stops at the local branch and gives you the branch and a summary; you push it and
 open the pull request. With it, the agent pushes and opens the pull request, listing what is done, what is partial
@@ -88,13 +110,13 @@ session records the merge.
 
 ### Step 5: Close out
 
-After the last theme is merged (Stage 5), the agent records the last merge, and you run a second audit with the
-audit recipe on a pinned commit and hand that report over as in Step 1, beside the first, which is never edited.
-The agent compares the two:
+After the last theme is merged (Stage 5), the agent records the last merge. Then you run a second audit with the
+audit recipe on a pinned commit. It writes to an output folder of its own. The first report stays in the workspace,
+and neither report is ever copied or edited. The agent compares the two:
 
 ```bash
 python3 implement/tools/compare_reports.py <first report> <second report> \
-  --state <target>/docs/agentic-readiness/<label>-agentic-readiness-state.json
+  --state <workspace>/<label>-agentic-readiness-state.json
 ```
 
 Each move is labelled: explained by the state, by an engine change between the audits, or unexplained. The
@@ -124,7 +146,7 @@ annotated one.
 
 ## Verification
 
-- `python3 implement/tools/progress.py show --target <target>` lists no item as `queued` or `in_progress`;
+- `python3 implement/tools/progress.py show --workspace <workspace>` lists no item as `queued` or `in_progress`;
   every item is `done`, `partial` (with debt), `failed` or `blocked` (with a reason), `deferred` or `skipped`.
 - Every theme with items is `merged` in the state, with its pull request and merge commit.
 - `compare_reports.py` on the two reports labels every moved check, and the target's own gate passes on the

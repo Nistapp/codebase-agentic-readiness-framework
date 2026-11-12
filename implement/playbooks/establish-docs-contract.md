@@ -52,8 +52,10 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 ## Inputs to ask
 
 1. **Docs tooling.** Detect first: an existing Markdown linter config (`.markdownlint*`, `.remarkrc*`), a docs
-   job in CI, a link checker. Use what exists. If none, offer this set (the framework's default) and
-   the owner decides. Currency checked 2026-10-30 (npm registry, GitHub releases API); re-check when applied.
+   job in CI, a link checker. Use what exists. If none, offer this set (the framework's recommendation) and
+   the owner decides, none included. A one-off pick from an earlier theme (`docs.lint_tools`, scope one-off)
+   is offered first here; adopting it is still the owner's choice. Currency checked 2026-10-30 (npm registry,
+   GitHub releases API); re-check when applied.
 
    | Tool | Version, date | Weekly downloads | Pros | Cons |
    |---|---|---|---|---|
@@ -80,8 +82,9 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    search or storage engine, an authentication or tenant-selection mechanism, a branch model.
 4. **Architecture overview scope.** Default: modules or apps, entry points, data stores, one authentication or
    request flow, from the code index of this repository only.
-5. **Instruction-file line.** One line naming `docs/STYLE_GUIDE.md`, `docs/adr/`, the ADR policy page and
-   `docs/architecture/`, placed beside the existing pointer line (section per `agents_md.pointer_section`).
+5. **Instruction-file line.** One line names `docs/STYLE_GUIDE.md`, `docs/adr/`, the ADR policy page and
+   `docs/architecture/`. It goes in the section `agents_md.pointer_section` names. Without that preference, ask
+   the owner where it goes and record the answer with `pref set agents_md.pointer_section`.
    The AGENTS.md theme (T7) reorganises the file later; tell it in the status that the line exists.
 6. **Prose check (DOC-05).** The framework has a stdlib Python template that checks the style guide's rules and can
    fail above a count: [`templates/docs_prose_check.py`](templates/docs_prose_check.py). It is code under the
@@ -103,9 +106,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 
 1. **Baseline.** List the Markdown files under `docs/`, in the root and in sub-folders. Count
    Markdown lint violations with the pinned linter on every tracked Markdown file (report only, nothing is
-   fixed). Record the count, but it is a draft: `progress.py render` adds a generated state view that is itself
-   Markdown with a few violations, and so do the new pages, so **measure the final baseline after the last render**
-   (with the new pages staged, since the report lists tracked files) and set it then.
+   fixed). Record the count, but it is a draft: the new pages add a few violations. So **measure the final baseline
+   after the last new page**, and set it then. Stage the new pages first, since the report lists tracked files.
    The census numbers in the finding text are another thing to re-measure: a stale NAV-03 count usually comes from
    untracked data on disk, so count with `git ls-files`.
 2. **Docs index (DOC-01).** If `docs/README.md` (or `index.md`) does not exist, write it: one paragraph on what
@@ -118,7 +120,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    scratch lives, heading and table rules, line length (match the lint config), Mermaid in fenced blocks and
    validated before saving, relative links, "no values from env files, credentials or keystores", "cite code by
    path", "decisions go in `docs/adr/`". Link to the lint config instead of restating its rules. Add the
-   instruction-file line (Inputs 5). The check reads the literal string `STYLE_GUIDE.md`.
+   instruction-file line (Inputs 5) once the pages it names exist; [Commits](#commits) row 7 orders it. The check
+   reads the literal string `STYLE_GUIDE.md`.
 
    **Plain language and diagrams (DOC-05).** Add two sections to the style guide. The template is the greenfield
    style guide: [§ 8 Plain Language](../../greenfield/templates/docs/STYLE_GUIDE.md#8-plain-language) and
@@ -214,7 +217,6 @@ They stay here so a repository that has one has a procedure, and so the re-audit
         A third run with no limit and no `--min-severity` shows the notices too, as advice.
 
       Record the baseline (warnings) as debt on the `DOC-05` item, and in the `docs.prose_ratchet` preference.
-9. **Commits:** docs, then lint config, then CI.
 
 ### Gradle and Quarkus
 
@@ -232,6 +234,30 @@ compose file. In a per-app layout (`layout.command_runner`), put the lint config
 run the docs job once from there. For infrastructure folders, read the routing from the files that are actually
 active (a gateway may enable its upstream rules per environment); say in the page what you could not verify.
 The repository already has Node, so the job can reuse its pinned Node version.
+
+## Commits
+
+Docs first, then the lint config, then the wiring. The instruction-file line waits until the pages it names exist.
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Docs index, `docs/README.md` (only when missing) | `DOC-01` | hand |
+| 2 | Style guide, `docs/STYLE_GUIDE.md` | `DOC-02` | hand |
+| 3 | Plain language and Diagrams sections in the style guide (only for DOC-05) | `DOC-05` | hand |
+| 4 | Decision log: `docs/adr/` index, template, ADR policy page, first records | `DOC-04` | hand |
+| 5 | Architecture overview with its diagram | `NAV-01`, `NAV-02`, `NAV-04` | hand |
+| 6 | Repository notes section: the NAV-03 census | `NAV-03` | hand |
+| 7 | Instruction-file line naming the docs pages | `DOC-02`, `DOC-04` | hand |
+| 8 | Ignore rule for the scratch directory (only when one exists and lacks it) | `DOC-03` | config |
+| 9 | Untrack the scratch files, `git rm --cached` (only those the owner confirms) | `DOC-03` | bulk |
+| 10 | Markdown lint config | - | config |
+| 11 | Lint ratchet: the gating and report commands, with the baseline | - | wiring |
+| 12 | Docs CI job: lint and Mermaid render | - | wiring |
+| 13 | Link check in the docs CI job (only when the owner chose `lychee`) | - | wiring |
+| 14 | Prose check copy with the owner's licence line (only with `docs.prose_check=template`) | `DOC-05` | bulk |
+| 15 | Third-party notice entry for the copy (only where the repository keeps such a list) | `DOC-05` | hand |
+| 16 | Prose ratchet: the runner command and the full-tree run (same condition as 14) | `DOC-05` | wiring |
+| 17 | Prose runs in the docs CI job (same condition as 14) | `DOC-05` | wiring |
 
 ## Continue on error
 
@@ -271,10 +297,10 @@ The repository already has Node, so the job can reuse its pinned Node version.
 
 ## Rollback
 
-`git revert` the commits: docs, lint config and CI job each revert alone. The style guide sections revert with the
-docs commit. Nothing was moved, untracked or
-deleted by this playbook except, with owner consent, the scratch files in step 7 (`git revert` returns them to the
-index).
+`git revert` the commits, newest first. Revert the prose CI runs and the prose ratchet before the prose check copy.
+Revert the docs CI job and the lint ratchet before the lint config. The instruction-file line goes with any docs
+commit whose page it names. The other commits revert alone. This playbook moves, untracks and deletes nothing,
+except the scratch files in step 7, with owner consent. `git revert` returns them to the index.
 
 ## Do-not-do
 
@@ -301,19 +327,19 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "test -f docs/STYLE_GUIDE.md" \
   --verification-result "present; named in the instruction file"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=markdown lint violations,count=<n>,baseline=<file>" --note "<mechanism>"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --commit <sha> --debt "what=long sentences in docs,count=<n>" --debt "what=vague words in docs,count=<n>" \
   --debt "what=docs pages without a diagram,count=<n>" \
   --note "style guide sections added; worst pages: docs/a.md (12), docs/b.md (9)"
 python3 implement/tools/progress.py pref set docs.prose_check <skip|template> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.prose_check_licence <SPDX id> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```

@@ -36,7 +36,7 @@ flowchart LR
 1. Create `stacks/<id>.md`.
 2. Copy the ten section headings from [`stacks/README.md`](../../audit/stacks/README.md) §2, in the same order.
 
-The headings are: Detection signals, Command-surface map, Tooling defaults, Execution determinism, CI idiom,
+The headings are: Detection signals, Command-surface map, Tooling options, Execution determinism, CI idiom,
 Baseline / ratchet, Boundaries, Engine coverage, Pitfalls, Verified.
 
 Some frameworks share a toolchain with an existing profile, for example Spring Boot on Maven or Django on pip.

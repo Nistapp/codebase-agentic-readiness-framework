@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all nine rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all ten rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
 
 ---
 
@@ -15,9 +15,9 @@
 | [`report.py`](#reportpy) | Builds and updates the audit report; the only writer | Live |
 | [`render_report.py`](#render_reportpy) | Renders a report to Markdown | Live |
 | [`facts.py`](#factspy) | Emits inventory, stack, instruction-file and component facts, no verdicts | Live |
-| [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, and a stale tool catalogue | Live |
+| [`recipe_lint.py`](#recipe_lintpy) | Checks recipe Markdown for broken links, bad SKILL.md frontmatter, oversize files, missing tools, unknown check, requirement or playbook IDs, a playbook without its Commits table, and a stale tool catalogue | Live |
 | [`build_skills.py`](#build_skillspy) | Builds the agentic-readiness-audit and agentic-readiness-implement skill bundles under `dist/skills/` | Live |
-| [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state; the only tool that writes inside a target | Live |
+| [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state, in the workspace beside the audit report | Live |
 | [`check_drift.py`](#check_driftpy) | Lists the audit findings whose cited files changed between the audited commit and `HEAD` | Live |
 | [`compare_reports.py`](#compare_reportspy) | Compares two audit reports: which checks and findings moved, and which moves the readiness state explains | Live |
 
@@ -25,8 +25,7 @@
 
 Every tool follows the [tool contract](../../audit/tools/README.md#the-contract). It prints one JSON envelope on
 stdout, uses the exit codes below and answers `--describe`. Its output is bounded, it uses no network, and it checks
-for Python 3.11 first. It writes nothing inside the target; `progress.py` and the target's two state files are the
-one exception. The explanation is in [Tool Contract](../explanation/contributor-deep-dive/01-tool-contract.md).
+for Python 3.11 first. It writes nothing inside the target, with no exception. The explanation is in [Tool Contract](../explanation/contributor-deep-dive/01-tool-contract.md).
 
 | Exit code | Meaning |
 |---|---|
@@ -723,6 +722,9 @@ Checks the Markdown under `audit/`, `implement/` and `docs/`, so that a recipe d
 - a `SKILL.md` or a check-family file (`audit/checks/NN-*.md`) stays inside its 500-line budget (R-10);
 - every `audit/tools/<name>.py` or `implement/tools/<name>.py` the Markdown names exists and answers `--describe`;
 - every check, requirement and playbook ID named is one that `catalogue.json` or `spec/readiness-requirements.md` has;
+- every playbook (`implement/playbooks/<name>.md`) has a `## Commits` section between Steps and Continue on error. Its
+  table has the header `| # | Commit | Checks | Kind |`, rows numbered from 1, a kind of `hand`, `bulk`, `config`
+  or `wiring`, and only checks that its Checks resolved section lists;
 - the generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md) matches what every tool's own `--describe`
   would produce today.
 
@@ -756,7 +758,7 @@ Nothing is written by a plain `recipe_lint.py <root>`; a clean run's `data` hold
 |---|---|
 | `0` | Every file is clean, or (with `--write-catalogue`) the catalogue was written. |
 | `1` | A bad argument, or `<root>` has no `audit/` directory. |
-| `2` | A link does not resolve, an anchor matches nothing, a `SKILL.md`'s frontmatter is invalid, a file is over its line budget, a named tool is missing or fails `--describe`, a named check, requirement or playbook ID does not exist, or `tools/CATALOGUE.md` is missing, stale or could not be generated. `data.errors` lists every one; the markdown rules give `path:line: message`. |
+| `2` | A link does not resolve, an anchor matches nothing, a `SKILL.md`'s frontmatter is invalid, a file is over its line budget, a named tool is missing or fails `--describe`, a named check, requirement or playbook ID does not exist, a playbook's Commits section is missing or malformed, or `tools/CATALOGUE.md` is missing, stale or could not be generated. `data.errors` lists every one; the markdown rules give `path:line: message`. |
 
 **Errors**
 
@@ -802,11 +804,12 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
   `scripts/` holds the tools the recipe calls. Beside them are the schema files and the `catalogue.json` they read
   at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. `audit.pyz` is
   the engine's single-file build. Its Markdown files are rewritten the same way as the implement bundle's, below.
-- **`agentic-readiness-implement`**: `references/` holds the state contract, the playbooks, the kickoff prompt and
-  the shared prompt on how to talk to the user. It also holds the check files, the stack profiles, ADR 0003,
-  `spec/command-surface.md` and the spec decisions, the state schema and its docs, and the sections of this page
-  for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`, `compare_reports.py` and
-  `validate_report.py` with their private modules, the schema files, `catalogue.json`, and an `engine.py` shim.
+- **`agentic-readiness-implement`**: `references/` holds the state contract, the tool-choice procedures, the
+  playbooks, the kickoff prompt and the shared prompt on how to talk to the user. It also holds the check files,
+  the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the state schema and its docs,
+  and the sections of this page for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`,
+  `compare_reports.py` and `validate_report.py` with their private modules, the schema files, `catalogue.json`,
+  and an `engine.py` shim.
   The engine is not copied. The shim loads `engine.py` from the `agentic-readiness-audit` skill installed in the
   same skills folder, so both skills run one engine. A tool that needs the engine without it exits 1 and names the
   missing skill. In both bundles, every carried Markdown file is rewritten in three ways:
@@ -853,9 +856,10 @@ folder from the import path and the import of `_common` fails).
 
 Creates the implement recipe's state for a target from a final audit report. It records the SHA-256 of the report
 file in `source_reports[].sha256`. It summarises the state, renders its Markdown view, and applies the validated
-changes to it: status transitions, skip and defer, preferences and theme progress. It is the one tool that writes
-inside a target, and only the two state files, by [ADR
-0002](../../implement/docs/architecture/adrs/0002-progress-writes-state-in-target.md). The source is
+changes to it: status transitions, skip and defer, preferences and theme progress. It writes only in the
+**workspace**: the folder of the report given to `init`, which must be outside the target. It writes nothing inside
+the target ([ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)).
+`adopt` moves a state that an earlier release kept in the target into a workspace. The source is
 [`progress.py`](../../implement/tools/progress.py); the format is
 [`readiness-state.schema.json`](../../audit/schema/readiness-state.schema.json), described in [Readiness
 state](../../audit/schema/SCHEMA.md#readiness-state); the rules are the [state contract](../../implement/state.md).
@@ -864,14 +868,15 @@ state](../../audit/schema/SCHEMA.md#readiness-state); the rules are the [state c
 
 ```text
 python3 implement/tools/progress.py init --report REPORT --target REPO [--default-branch BRANCH] [--phase PHASE] [--date YYYY-MM-DD] [--framework-rev SHA]
-python3 implement/tools/progress.py show --target REPO [--label LABEL] [--json]
-python3 implement/tools/progress.py render --target REPO [--label LABEL]
-python3 implement/tools/progress.py set-status FINDING STATUS --target REPO --phase PHASE [--commit SHA] [--verification-command CMD --verification-result TEXT] [--debt what=TEXT,count=N[,baseline=FILE]] [--clear-debt] [--reason TEXT] [--note TEXT] [--by owner|agent] [--date YYYY-MM-DD] [--label LABEL] [--render]
-python3 implement/tools/progress.py skip|defer FINDING --reason TEXT --by owner --target REPO --phase PHASE [--render]
-python3 implement/tools/progress.py unskip|undefer FINDING --by owner --target REPO --phase PHASE [--reason TEXT] [--render]
-python3 implement/tools/progress.py pref set KEY VALUE --reason TEXT --by owner --target REPO --phase PHASE [--render]
-python3 implement/tools/progress.py pref unset KEY --reason TEXT --by owner --target REPO --phase PHASE [--render]
-python3 implement/tools/progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --target REPO --phase PHASE [--render]
+python3 implement/tools/progress.py adopt --target REPO --workspace DIR --phase PHASE [--label LABEL] [--date YYYY-MM-DD]
+python3 implement/tools/progress.py show --workspace DIR [--label LABEL] [--json]
+python3 implement/tools/progress.py render --workspace DIR [--label LABEL]
+python3 implement/tools/progress.py set-status FINDING STATUS --workspace DIR --phase PHASE [--commit SHA] [--verification-command CMD --verification-result TEXT] [--debt what=TEXT,count=N[,baseline=FILE]] [--clear-debt] [--reason TEXT] [--note TEXT] [--by owner|agent] [--date YYYY-MM-DD] [--label LABEL] [--render]
+python3 implement/tools/progress.py skip|defer FINDING --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+python3 implement/tools/progress.py unskip|undefer FINDING --by owner --workspace DIR --phase PHASE [--reason TEXT] [--render]
+python3 implement/tools/progress.py pref set KEY VALUE --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+python3 implement/tools/progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+python3 implement/tools/progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py --describe
 ```
 
@@ -879,13 +884,14 @@ python3 implement/tools/progress.py --describe
 
 | Argument | Meaning |
 |---|---|
-| `--report` | `init`: the final audit report (JSON). It must be inside the target, so the state can point at it, and `validate_report.py` must accept it. |
-| `--target` | The repository. The state is `docs/agentic-readiness/<label>-agentic-readiness-state.json` in it, and its view `<label>-agentic-readiness-STATE.md`. |
+| `--report` | `init`: the final audit report (JSON). Its folder becomes the workspace, so it must be outside the target, and `validate_report.py` must accept it. |
+| `--target` | `init`: the audited repository. `adopt`: the checkout whose `docs/agentic-readiness/` holds a state an earlier release wrote; read only. No other command takes it. |
+| `--workspace` | Every command but `init`: the folder that holds the state, `<label>-agentic-readiness-state.json`, and its view `<label>-agentic-readiness-STATE.md`. It must be outside the target. `adopt` creates it when it is missing. |
 | `--default-branch` | `init`: the branch the theme PRs go into. Default: the report's `provenance.target.branch`, else `main`. |
-| `--phase` | `init`: the step recorded in the first log entry. Default: `init`. |
-| `--date` | `init`: the date recorded on the items and the log, `YYYY-MM-DD`. Default: today, UTC. |
+| `--phase` | `init`: the step recorded in the first log entry. Default: `init`. `adopt` requires it. |
+| `--date` | `init`, `adopt` and every write: the date recorded on the items and the log, `YYYY-MM-DD`. Default: today, UTC. |
 | `--framework-rev` | `init`: the framework commit to record, cut to 12 digits. Default: the framework checkout's `HEAD`, or null outside one. |
-| `--label` | Every command but `init`: which state to use when the folder holds more than one. |
+| `--label` | Every command but `init`: which state to use when the folder holds more than one. For `adopt`, the folder is the target's `docs/agentic-readiness/`. |
 | `FINDING STATUS` | `set-status`: the item and the status to move it to. The move must be in the state diagram of the [state contract](../../implement/state.md#item-statuses). `skipped`, `deferred` and the moves back out of them have their own commands. |
 | `--commit` | `set-status`: a commit SHA to add to the item (repeatable), 7 to 40 digits, stored cut to 12. |
 | `--verification-command`, `--verification-result` | `set-status`: the verification and what it gave; given together. `done` needs one. |
@@ -901,14 +907,20 @@ python3 implement/tools/progress.py --describe
 
 **Outputs**
 
-`init` writes the JSON and the Markdown. Its `data` holds their paths, the label, the item count, the count per
-status and the `not_queued` count, with `versions` as [`check_drift.py`](#check_driftpy) gives it. `show` puts the
-summary in `data`:
+`init` writes the JSON and the Markdown beside the report. Its `data` holds their paths, the label, the item count,
+the count per status and the `not_queued` count, with `versions` as [`check_drift.py`](#check_driftpy) gives it.
+`show` puts the summary in `data`:
 
 - the counts per status and per theme (`items`, and `open`: neither `done` nor `skipped`);
 - the skipped finding ids, and the number of preferences, debt entries and log entries;
 - `versions`: the framework that created the state (`created`), the one that last wrote it (`last`) and these
   tools (`tools`).
+
+`adopt` writes both state files into the workspace, and copies each source report and the `.md` beside it there.
+It rewrites each `source_reports[].path` to the file name and appends the log entry `State adopted from <path>.`
+Its `data` holds `state`, `markdown`, `label`, `adopted_from`, `copied` and `may_remove`. `may_remove` lists the
+in-repo files the owner may now remove: the state folder, the report folder and an `AGENTS.md` that names the
+state folder. `adopt` writes and deletes nothing in the target.
 
 `show --json` puts the state under `data.state`, with the same `versions`. `render` writes the Markdown and puts its
 path and size in `data`. Every other command checks the changed state whole and appends one log entry. It appends
@@ -924,8 +936,8 @@ left behind is removed, with a warning.
 | Code | When |
 |---|---|
 | `0` | Done. |
-| `1` | A bad argument, a missing report or target, a report outside the target, an existing state for `init`, no state for `show` or `render`, a state folder that leaves the target, or a state file that is a symlink. |
-| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules. `data.errors` lists what to fix. |
+| `1` | A bad argument, a missing report or target, a workspace inside the target, a missing workspace, an existing state for `init` or `adopt`, no state for `show` or `render`, a state file that is a symlink, or, for `adopt`, a listed report missing from the target. |
+| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules; or, for `adopt`, a report no longer matches its recorded SHA-256. `data.errors` lists what to fix. |
 | `3` | Internal error, including a write the system refused. The old file is left whole. |
 
 **Errors**
@@ -934,8 +946,13 @@ left behind is removed, with a warning.
 |---|---|
 | `the report is a draft, not final` | Finalise it with `report.py finalise` and pass the final report. |
 | `the report was made by framework vX; these tools are vY. Update the framework ...` | The report is newer than these tools. Install release vX or later of both skills, or run a new audit with vY. |
-| `the report must be inside the target, so the state can point at it` | Commit the report folder to the target and pass that path. |
+| `the report's folder is inside the target, and the state is written beside the report: ...` | Keep the report in the audit's output folder, outside the target, and pass that path to `--report`. |
 | `a state already exists: ...; init never replaces one` | Use `show`, `render` and the transition commands. |
+| `the workspace is inside the target: ...` | `adopt`: pick a folder outside the repository, for example the audit run's output folder. |
+| `the workspace already holds a state for L: ...; adopt never replaces one` | Resume from that workspace with `show --workspace`, or adopt into another folder. |
+| `the report was edited after init: ... no longer matches the SHA-256 the state recorded` | Restore the report the state was made from (`git log -- <report>`), then run `adopt` again. |
+| `the state lists a report that is not in the target: ...` | Adopt from a checkout of the branch that holds the report. |
+| `workspace not found: ...` | Pass the folder that holds the final report and its state. |
 | `F-nnn is done and done is final` | A regression is a new finding in the next audit. |
 | `F-nnn is skipped and only the owner can bring it back` | Ask the owner, then `unskip --by owner`. |
 | `F-nnn is queued and must be in_progress before it can be ...` | Move it to `in_progress` first. |
@@ -985,10 +1002,11 @@ change the status or the exit code:
 - `dirty` is `true` when the target's working tree has uncommitted or untracked changes (`git status --porcelain` is
   not empty), `false` when it is clean, `null` when git could not say. A warning and a line in the text output say so
   when it is `true`, so the recipe does not ask the agent to run `git status` by hand.
-- `report_changed` compares the report file's SHA-256 with `source_reports[].sha256` in the target's state
-  (`progress.py init` records it). `true` means the report was edited since the state was created: a warning says not
-  to trust its text until the owner confirms the change. `false` means it matches. `null` means there is nothing to
-  compare: the target has no state, or the state does not list this report.
+- `report_changed` compares the report file's SHA-256 with `source_reports[].sha256` in the state beside the
+  report, in the workspace (`progress.py init` records it). `true` means the report was edited since the state was
+  created: a warning says not to trust its text until the owner confirms the change. `false` means it matches.
+  `null` means there is nothing to compare: the report's folder holds no state, or the state does not list this
+  report.
 
 - `versions` compares the framework release and commit that made the report with these tools'. It holds
   `report` and `tools`, each with `release` and `revision` (12 digits, or `null` outside a checkout), and

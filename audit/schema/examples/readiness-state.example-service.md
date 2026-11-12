@@ -11,7 +11,7 @@ A skipped finding is final until the owner unskips it, and every preference bind
 | Default branch | `main` |
 | Created by | `v0.3.2` at `cafecafecafe` (checkout) |
 | Last written by | `v0.3.2` at `cafecafecafe` |
-| Source report | `docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json` at `deadbeefdead`, catalogue 0.7.0, made by `v0.3.2` at `cafecafecafe` |
+| Source report | `example-service.audit-report.20261010T094207Z.json` at `deadbeefdead`, catalogue 0.7.0, made by `v0.3.2` at `cafecafecafe` |
 
 ## Summary
 
@@ -38,8 +38,8 @@ None recorded.
 |---|---|---|---|---|---|---|---|---|
 | T1 | Command surface and quality tools | not_started | 2 | 2 | - | - | - | - |
 | T2 | Execution determinism | not_started | 1 | 1 | - | - | - | - |
-| T3 | Secrets and env | not_started | 1 | 1 | - | - | - | - |
-| T4 | CI parity, hooks, commits | not_started | 1 | 1 | - | - | - | - |
+| T3 | Secrets and environment variables | not_started | 1 | 1 | - | - | - | - |
+| T4 | CI parity, Git hooks and commit messages | not_started | 1 | 1 | - | - | - | - |
 | T5 | Tests and baselines | not_started | 0 | 0 | - | - | - | - |
 | T6 | Docs and navigation | not_started | 0 | 0 | - | - | - | - |
 | T7 | AGENTS.md and governance | not_started | 3 | 3 | - | - | - | - |
@@ -51,29 +51,29 @@ None recorded.
 
 | Finding | Check | Severity | Status | By | Date | Statement |
 |---|---|---|---|---|---|---|
-| F-001 | CMD-01 | BLOCKER | queued | agent | 2026-10-29 | An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not defined on any runner (format:check, typecheck, check, security). |
-| F-002 | CMD-02 | BLOCKER | queued | agent | 2026-10-29 | An agent cannot run one command that proves a change is safe because the check verb is not defined on any runner. |
+| F-001 | `CMD-01` Seven verbs resolvable on one runner | BLOCKER | queued | agent | 2026-10-29 | An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not defined on any runner (format:check, typecheck, check, security). |
+| F-002 | `CMD-02` check composes the read-only verbs | BLOCKER | queued | agent | 2026-10-29 | An agent cannot run one command that proves a change is safe because the check verb is not defined on any runner. |
 
 ### T2 Execution determinism
 
 | Finding | Check | Severity | Status | By | Date | Statement |
 |---|---|---|---|---|---|---|
-| F-003 | EXEC-01 | BLOCKER | queued | agent | 2026-10-29 | An agent cannot reproduce the toolchain because node is not pinned by a version file, an engines constraint or a wrapper. |
+| F-003 | `EXEC-01` Toolchain pinned / wrapper committed | BLOCKER | queued | agent | 2026-10-29 | An agent cannot reproduce the toolchain because node is not pinned by a version file, an engines constraint or a wrapper. |
 
 - **F-003**: notes: Edited during the audit: The owner pins Node 22 in .nvmrc and leaves the engines field
   alone.
 
-### T3 Secrets and env
+### T3 Secrets and environment variables
 
 | Finding | Check | Severity | Status | By | Date | Statement |
 |---|---|---|---|---|---|---|
-| F-004 | SEC-02 | BLOCKER | queued | agent | 2026-10-29 | An agent cannot keep credentials out of the repository and its history because src/config/constants.ts contains 1 credential-shaped line(s). |
+| F-004 | `SEC-02` No key-shaped strings in tracked files | BLOCKER | queued | agent | 2026-10-29 | An agent cannot keep credentials out of the repository and its history because src/config/constants.ts contains 1 credential-shaped line(s). |
 
-### T4 CI parity, hooks, commits
+### T4 CI parity, Git hooks and commit messages
 
 | Finding | Check | Severity | Status | By | Date | Statement |
 |---|---|---|---|---|---|---|
-| F-008 | CI-04 | DEGRADER | queued | agent | 2026-10-29 | An agent cannot trust a green CI run to mean the local gate passed because we did not find any evidence that the workflow runs the check verb. |
+| F-008 | `CI-04` CI enforces the same gate as the local check | DEGRADER | queued | agent | 2026-10-29 | An agent cannot trust a green CI run to mean the local gate passed because we did not find any evidence that the workflow runs the check verb. |
 
 ### T5 Tests and baselines
 
@@ -87,9 +87,9 @@ No items.
 
 | Finding | Check | Severity | Status | By | Date | Statement |
 |---|---|---|---|---|---|---|
-| F-006 | AGT-07 | DEGRADER | queued | agent | 2026-10-29 | An agent cannot rely on an explicit do-not list because AGENTS.md has no prohibitions section. |
-| F-007 | AGT-11 | DEGRADER | queued | agent | 2026-10-29 | An agent cannot learn the project's non-obvious rules from AGENTS.md because most of its lines restate what the manifests already show. |
-| F-010 | AGT-08 | COSMETIC | deferred | owner | 2026-10-29 | An agent cannot be reached by every agent harness because 8 of 28 known harnesses cannot read AGENTS.md. |
+| F-006 | `AGT-07` Do-not-do / deny rules present | DEGRADER | queued | agent | 2026-10-29 | An agent cannot rely on an explicit do-not list because AGENTS.md has no prohibitions section. |
+| F-007 | `AGT-11` Instructions are specific and not inferable | DEGRADER | queued | agent | 2026-10-29 | An agent cannot learn the project's non-obvious rules from AGENTS.md because most of its lines restate what the manifests already show. |
+| F-010 | `AGT-08` No competing instruction files, and the reach matrix is stated | COSMETIC | deferred | owner | 2026-10-29 | An agent cannot be reached by every agent harness because 8 of 28 known harnesses cannot read AGENTS.md. |
 
 - **F-010**: reason: The team uses two of the harnesses it lacks files for; revisit when it adds a third.
 
@@ -105,7 +105,7 @@ None.
 
 | Finding | Check | Theme | Reason | By | Date |
 |---|---|---|---|---|---|
-| F-010 | AGT-08 | T7 | The team uses two of the harnesses it lacks files for; revisit when it adds a third. | owner | 2026-10-29 |
+| F-010 | `AGT-08` No competing instruction files, and the reach matrix is stated | T7 AGENTS.md and governance | The team uses two of the harnesses it lacks files for; revisit when it adds a third. | owner | 2026-10-29 |
 
 ## Debt
 
@@ -115,11 +115,11 @@ None recorded.
 
 | Finding | Check | Severity | Audit note |
 |---|---|---|---|
-| F-005 | SEC-02 | BLOCKER | Placeholder values in a unit test, not credentials. |
-| F-009 | TOOL-03 | DEGRADER | Overridden to PASS: strict is set in the extended base config. |
+| F-005 | `SEC-02` No key-shaped strings in tracked files | BLOCKER | Placeholder values in a unit test, not credentials. |
+| F-009 | `TOOL-03` Type checker configured | DEGRADER | Overridden to PASS: strict is set in the extended base config. |
 
 ## Log
 
 | Date | Phase | Event |
 |---|---|---|
-| 2026-10-29 | init | State created from docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json: 7 queued, 1 deferred, 2 not queued. |
+| 2026-10-29 | init | State created from example-service.audit-report.20261010T094207Z.json: 7 queued, 1 deferred, 2 not queued. |

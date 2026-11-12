@@ -117,6 +117,17 @@ same `git ls-files -ci` list and goes to the secrets theme, not here. Applied on
 static bundle bind-mounted read-only into a proxy: the stack script rebuilt the folder before the proxy
 started, so untracking was safe once the owner said yes.
 
+## Commits
+
+Steps 2, 3, 4 and 6 make no commit. With no competing pair, row 4 is not made.
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Ignore rule for a path (only when `git check-ignore` finds none) | `EXEC-05` | config |
+| 2 | Untrack one approved path or directory (`git rm -r --cached`); one commit each | `EXEC-05` | bulk |
+| 3 | Generated-file marker in the generator's template (only for the header route) | `EXEC-05` | hand |
+| 4 | Delegation between configs documented in the instruction file | `EXEC-07` | hand |
+
 ## Continue on error
 
 - A path the owner declines to untrack: `skipped`, with the owner's reason. The count of remaining tracked
@@ -138,8 +149,10 @@ started, so untracking was safe once the owner said yes.
 
 ## Rollback
 
-`git revert` the untracking commit: the files return to the index from history. Nothing else changed. A removed
-ignore rule or a header goes with its own commit.
+Revert the commits newest first: the delegation note, the marker, each untracking commit, then the ignore rules.
+Reverting an untracking commit returns the files to the index from history; the working-tree copy is unchanged.
+An added ignore rule and the untracking of its path go together: revert the untracking first, then the rule.
+Nothing else changed.
 
 ## Do-not-do
 
@@ -157,9 +170,9 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "git ls-files -ci --exclude-standard" \
   --verification-result "<no build output listed; regenerating command recreates it>"
-python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> \
+python3 implement/tools/progress.py skip F-nnn --workspace <workspace> --phase <phase> \
   --reason "<the owner's words>" --by owner
 ```

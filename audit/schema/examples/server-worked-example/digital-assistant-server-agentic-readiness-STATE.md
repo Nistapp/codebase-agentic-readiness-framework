@@ -11,7 +11,7 @@ A skipped finding is final until the owner unskips it, and every preference bind
 | Default branch | `dev` |
 | Created by | `v0.3.2` at `a7e5e023654d` (checkout) |
 | Last written by | `v0.3.2` at `a7e5e023654d` |
-| Source report | `docs/agentic-readiness-report/digital-assistant-server-first-audit-20261028T131409Z.json` at `4a48e1976e42`, catalogue 0.2.2, made by `v0.3.2` at `b4bf27df7915` |
+| Source report | `digital-assistant-server-first-audit-20261028T131409Z.json` at `4a48e1976e42`, catalogue 0.2.2, made by `v0.3.2` at `b4bf27df7915` |
 
 ## Summary
 
@@ -430,7 +430,7 @@ A skipped finding is final until the owner unskips it, and every preference bind
 
 | Date | Phase | Event |
 |---|---|---|
-| 2026-10-30 | IR03.1 | State created from docs/agentic-readiness-report/digital-assistant-server-first-audit-20261028T131409Z.json: 40 queued, 0 deferred, 2 not queued. |
+| 2026-10-30 | IR03.1 | State created from digital-assistant-server-first-audit-20261028T131409Z.json: 40 queued, 0 deferred, 2 not queued. |
 | 2026-10-30 | IR03.1 | F-011 queued to skipped by owner: CLAUDE.md is an @AGENTS.md import stub (11 bytes), not a shadowing file; the audit could not tell the pattern apart. Owner: go with the recommendations (owner answer via Hermes 2026-10-30) |
 | 2026-10-30 | IR03.1 | F-037 queued to skipped by owner: Commit format already enforced where it counts: pr-title.yml rejects non-Conventional-Commit PR titles and merges are squashed, so a local hook adds install friction for no change in dev history (o... |
 | 2026-10-30 | IR03.1 | F-042 queued to skipped by owner: Moment-in-time observation (index one commit behind HEAD at audit time), not a repository artefact; re-indexing before agent work is the remedy (owner answer via Hermes 2026-10-30) |

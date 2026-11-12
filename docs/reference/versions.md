@@ -136,6 +136,12 @@ The tools read only the current report schema and the current state schema. A sc
 version; nothing converts an old file. This holds until the first outside user or release `1.0.0`, whichever comes
 first ([ADR 0008](../architecture/adrs/0008-one-release-version-and-current-schemas-only.md)).
 
+One move is not a conversion. Release v0.3.4 and earlier kept the state in the target's `docs/agentic-readiness/`.
+`progress.py adopt` moves such a state into a workspace, unchanged in shape, when its schema is the current one.
+It is the one relocation path, and it stays until the owner removes it
+([ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md),
+[Resume an interrupted run](../how-to/resume-an-interrupted-run.md#move-a-run-that-keeps-its-state-in-the-repository)).
+
 `test_release_config.py` fails when the manifest reaches `1.0.0`. The owner then decides which older schemas the
 tools read, updates this page and the ADR, and replaces that test.
 

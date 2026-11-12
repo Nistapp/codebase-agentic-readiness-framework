@@ -7,7 +7,7 @@ final message instead of guessing.
 - Create every worktree under `{root}/worktrees/`.
 - This session has no code-graph tool: say that you read files directly.
 
-- Session phase id: `t7`. Triage is merged into `dev` (the state is there). DOC-05 was deferred at triage, so
+- Session phase id: `t7`. Triage is done (the state is in the workspace). DOC-05 was deferred at triage, so
   T6 has nothing left.
 - Theme for this session: T7 (`AGENTS.md` and governance). `{id:AGT-12}` (AGT-12) is the item.
 - T7 change list: approved as long as it stays inside the playbook.

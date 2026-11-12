@@ -15,8 +15,9 @@ folder.
 | `playbooks/` | One playbook per class of finding. See [`playbooks/README.md`](playbooks/README.md) |
 | `playbooks/templates/` | Code a playbook copies into a target, with tests in `tools/tests/`. A copy carries `MIT`, `Apache-2.0` or `BSD-3-Clause`, never this repository's licence |
 | `state.md` | The state contract: the per-repository state that `progress.py` keeps |
+| `tool-choice.md` | What a step does when a tool it needs is missing, or older than the repository's pin |
 | `tools/` | `progress.py`, `check_drift.py`, `compare_reports.py`, and their tests in `tools/tests/` |
-| `docs/architecture/adrs/` | Decisions for this folder (ADR 0002 and ADR 0003) |
+| `docs/architecture/adrs/` | Decisions for this folder (ADR 0003 and ADR 0004) |
 
 ## Rules
 
@@ -25,8 +26,8 @@ folder.
 - Code in `playbooks/templates/` is relicensed when a playbook copies it into a target. Only its copyright holder
   changes it, or a contributor who agrees in writing to that relicensing. Say so in the pull request.
 - Every tool follows the tool contract in [`audit/tools/README.md`](../audit/tools/README.md).
-- `progress.py` is the one tool that writes inside a target. It writes only the target's two state files. See
-  [ADR 0002](docs/architecture/adrs/0002-progress-writes-state-in-target.md). No other tool writes inside a target.
+- No tool writes inside a target. `progress.py` keeps the state in the workspace, the folder of the audit report,
+  outside the target. See [ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md).
 - The recipe stops at a local branch by default. It pushes and opens a pull request only when the owner opted in.
   It never merges, force-pushes or pushes tags. See [ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md).
 - Read [`playbooks/README.md`](playbooks/README.md) before you add or change a playbook. Keep the anatomy it fixes,

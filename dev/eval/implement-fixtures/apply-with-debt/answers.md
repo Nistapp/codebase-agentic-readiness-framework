@@ -7,7 +7,7 @@ final message instead of guessing.
 - Create every worktree under `{root}/worktrees/`.
 - This session has no code-graph tool: say that you read files directly.
 
-- Session phase id: `t1`. Triage is merged into `dev` (the state is there).
+- Session phase id: `t1`. Triage is done (the state is in the workspace).
 - Theme for this session: T1 (command surface).
 - T1 change list: approved as long as it stays inside the playbook. `{id:TOOL-02}` (TOOL-02): the linter is the
   repository's own style check (`tools/style_check.py`, run by `make lint`); keep it, no new tool and no install.

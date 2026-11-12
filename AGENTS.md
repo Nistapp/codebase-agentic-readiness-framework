@@ -96,6 +96,8 @@ reports, commit messages, pull request descriptions and docs.
 - Write for a new engineer who knows Git, Python and Markdown, but not this repository or its terms.
 - Put the bottom line first: the answer, the result or the decision you need.
 - Use short sentences (at most 25 words; 20 in a step), active voice and one term per meaning.
+- Never leave a code alone. Write "T7 AGENTS.md and governance", not `T7`; "`IDX-01` codebase-memory-mcp
+  registered", not `IDX-01`; "Discovery and Index (`IDX`)", not `IDX`; "F-020 style guide", not `F-020`.
 - For a decision, give the context, two to four options with pros and cons, your recommendation and the default.
 - Use a Mermaid diagram when a flow, a sequence or a state is easier to see than to read.
 - Mark each claim as checked, inferred or assumed. Report failures and skipped steps plainly.
@@ -108,7 +110,7 @@ reports, commit messages, pull request descriptions and docs.
 | `spec/` | Numbered requirements (`REQ-...`) for what a repository must have. See `spec/README.md`. | Recipes link to requirement IDs; they do not restate rules. |
 | `audit/` | The audit recipe (`SKILL.md`, `checks/`, `prompts/`, `catalogue.json`, `stacks/`), the JSON Schemas (`schema/`) and the deterministic tools (`tools/`). | Standard library only. No network. Never write inside a target repository. Read `audit/AGENTS.md`. |
 | `audit/engine/` | The Python audit engine: reads a repository, never writes to it, no LLM, no network. | Standard library only. Read `audit/engine/AGENTS.md` before you change it. |
-| `implement/` | The implement recipe (`SKILL.md`, `playbooks/`, `prompts/`, `state.md`) and its tools (`tools/`). | Standard library only. `progress.py` writes only the target's two state files (ADR 0002 in `implement/docs/architecture/adrs/`). Read `implement/AGENTS.md`. |
+| `implement/` | The implement recipe (`SKILL.md`, `playbooks/`, `prompts/`, `state.md`) and its tools (`tools/`). | Standard library only. No tool writes inside a target; `progress.py` keeps the state beside the audit report (ADR 0004 in `implement/docs/architecture/adrs/`). Read `implement/AGENTS.md`. |
 | `dev/` | Checks and builds that run in this repository and CI only, never shipped: the recipe linter, the schema cross-check, the Mermaid check, the quality baseline, the skill bundle build (into `dev/dist/skills/`) and the evals (`dev/eval/`). | May import dev packages, which `uv run --with` installs for one run. Nothing in `audit/` or `implement/` may import them. |
 | `artefacts/` | Scratch notes and plans. The folder is tracked, its contents are git-ignored. | Off-limits. Do not read, search or list it unless a human gives you a file path. |
 

@@ -9,7 +9,7 @@
 
 ---
 
-The audit runs **76 checks** in 13 families (catalogue 0.7.0). 62 are scored; the rest are reported for the whole
+The audit runs **76 checks** in 13 families (catalogue 0.7.1). 62 are scored; the rest are reported for the whole
 picture and earn no credit. The engine decides 74 checks from the files alone; the agent judges 2. Each check below says
 what passes and why it matters. To fix a finding, follow the playbook it names in the [implement master
 list](implement-master.md).

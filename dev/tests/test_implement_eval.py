@@ -63,9 +63,10 @@ class ScenarioCase(unittest.TestCase):
     def git(self, cwd: Path, *args: str, date: str = "2026-02-01T00:00:00Z") -> str:
         return ie.git(cwd, *args, date=date)
 
-    def progress(self, target: Path, *args: str) -> dict[str, Any]:
-        self.events.append(tool_use(f"python3 implement/tools/progress.py {' '.join(args)} --target {target}"))
-        return ie.progress(target, *args, phase=self.scenario.phase)
+    def progress(self, *args: str) -> dict[str, Any]:
+        where = f"--target {self.repo}" if args[0] == "init" else f"--workspace {self.root / ie.WORKSPACE}"
+        self.events.append(tool_use(f"python3 implement/tools/progress.py {' '.join(args)} {where}"))
+        return ie.progress(self.root, *args, phase=self.scenario.phase)
 
     def worktree(self, slug: str) -> Path:
         path = self.root / "worktrees" / f"{self.scenario.phase}-{slug}"
@@ -77,9 +78,6 @@ class ScenarioCase(unittest.TestCase):
         (where / path).parent.mkdir(parents=True, exist_ok=True)
         (where / path).write_text(content, encoding="utf-8")
         return ie.commit_all(where, message, "2026-02-01T00:00:00Z", (path,))
-
-    def commit_state(self, where: Path) -> str:
-        return ie.commit_all(where, "docs: update the agentic-readiness state", "2026-02-02T00:00:00Z", (ie.STATE_DIR,))
 
     def verdict(self, key: str, events: Sequence[dict[str, Any]] | None = None) -> ie.Verdict:
         transcript = self.tmp / "transcript.jsonl"
@@ -191,13 +189,24 @@ class MaterialiseTests(unittest.TestCase):
         prefs = {p["key"]: p["value"] for p in state["preferences"]}
         self.assertEqual(prefs["ci.pr_by_agent"], "yes")
 
+    def test_the_triaged_start_keeps_the_report_and_state_out_of_the_repository(self) -> None:
+        root = self.tmp / "root"
+        ie.materialise("apply-with-debt", root)
+        repo = root / "repo"
+        self.assertTrue((root / ie.STATE_JSON).is_file())
+        self.assertTrue((root / ie.WORKSPACE / ie.report_files("base")[0].name).is_file())
+        tracked = ie.git(repo, "ls-files").split()
+        self.assertEqual([path for path in tracked if "agentic-readiness" in path], [])
+        self.assertEqual(ie.git(repo, "log", "--format=%s", ie.INTEGRATION).splitlines(), [ie.SNAPSHOT_MESSAGE])
+        self.assertEqual(ie.git(repo, "status", "--porcelain"), "")
+
     def test_the_crash_starts_leave_the_item_in_progress(self) -> None:
         committed = ie.materialise("resume-mid-item-committed", self.tmp / "a")["crash"]
         uncommitted = ie.materialise("resume-mid-item-uncommitted", self.tmp / "b")["crash"]
         self.assertIsNotNone(committed["commit"])
         self.assertIsNone(uncommitted["commit"])
-        for crash in (committed, uncommitted):
-            state = json.loads((Path(crash["worktree"]) / ie.STATE_JSON).read_text(encoding="utf-8"))
+        for crash, root in ((committed, self.tmp / "a"), (uncommitted, self.tmp / "b")):
+            state = json.loads((root / ie.STATE_JSON).read_text(encoding="utf-8"))
             self.assertEqual(ie.item(state, crash["finding"])["status"], "in_progress")  # type: ignore[index]
 
 
@@ -242,24 +251,19 @@ class RunnerTests(unittest.TestCase):
 class TriageAssertionTests(ScenarioCase):
     scenario_name = "triage-dispositions"
 
-    def triage(self, skip: bool = True) -> Path:
-        worktree = self.worktree("triage")
-        report = worktree / self.baseline["report"]
-        self.progress(worktree, "init", "--report", str(report), "--default-branch", "dev")
+    def triage(self, skip: bool = True) -> None:
+        report = self.root / self.baseline["report"]
+        self.progress("init", "--report", str(report), "--default-branch", "dev")
         if skip:
-            self.progress(
-                worktree, "skip", ie.finding_id("HYG-05"), "--reason", "owner: maintainer only", "--by", "owner"
-            )
-        self.commit_state(worktree)
-        return worktree
+            self.progress("skip", ie.finding_id("HYG-05"), "--reason", "owner: maintainer only", "--by", "owner")
 
     def test_a1_passes_when_the_tool_queued_the_report(self) -> None:
         self.triage()
         self.assertPasses("A1")
 
     def test_a1_fails_when_a_rejected_finding_is_queued(self) -> None:
-        worktree = self.triage()
-        path = worktree / ie.STATE_JSON
+        self.triage()
+        path = self.root / ie.STATE_JSON
         state = json.loads(path.read_text(encoding="utf-8"))
         rejected = ie.rejected_ids()[0]
         entry = next(e for e in state["not_queued"] if e["finding"] == rejected)
@@ -310,13 +314,12 @@ class ResumeAfterSkipTests(ScenarioCase):
     def apply_t6(self, *, style_guide: bool = False) -> Path:
         worktree = self.worktree("docs")
         finding = ie.finding_id("DOC-01")
-        self.progress(worktree, "theme", "T6", "--status", "branch_open", "--branch", "agentic-readiness/t6-docs")
-        self.progress(worktree, "set-status", finding, "in_progress")
+        self.progress("theme", "T6", "--status", "branch_open", "--branch", "agentic-readiness/t6-docs")
+        self.progress("set-status", finding, "in_progress")
         sha = self.commit_file(worktree, "docs/README.md", "# docs\n", "docs: add an index")
         if style_guide:
             self.commit_file(worktree, "docs/STYLE_GUIDE.md", "# style\n", "docs: add a style guide")
         self.progress(
-            worktree,
             "set-status",
             finding,
             "done",
@@ -327,7 +330,6 @@ class ResumeAfterSkipTests(ScenarioCase):
             "--verification-result",
             "docs/README.md exists",
         )
-        self.commit_state(worktree)
         return worktree
 
     def test_a2_passes_when_the_skipped_finding_is_left_alone(self) -> None:
@@ -339,9 +341,8 @@ class ResumeAfterSkipTests(ScenarioCase):
         self.assertFails("A2", "docs/STYLE_GUIDE.md")
 
     def test_a2_fails_when_the_skipped_finding_is_unskipped(self) -> None:
-        worktree = self.apply_t6()
-        self.progress(worktree, "unskip", ie.finding_id("DOC-02"), "--by", "owner")
-        self.commit_state(worktree)
+        self.apply_t6()
+        self.progress("unskip", ie.finding_id("DOC-02"), "--by", "owner")
         self.events.append(tool_use(f"python3 progress.py unskip {ie.finding_id('DOC-02')} --by owner"))
         verdict = self.verdict("A2")
         self.assertFalse(verdict.passed)
@@ -384,9 +385,7 @@ class ResumeCommittedTests(ScenarioCase):
 
     def end_item(self, sha: str) -> None:
         crash = self.baseline["crash"]
-        worktree = Path(crash["worktree"])
         self.progress(
-            worktree,
             "set-status",
             crash["finding"],
             "done",
@@ -397,7 +396,6 @@ class ResumeCommittedTests(ScenarioCase):
             "--verification-result",
             "docs/README.md exists",
         )
-        self.commit_state(worktree)
 
     def test_a4_passes_when_the_resume_records_the_existing_commit(self) -> None:
         self.end_item(self.baseline["crash"]["commit"])
@@ -423,7 +421,6 @@ class ResumeUncommittedTests(ScenarioCase):
         worktree = Path(crash["worktree"])
         sha = self.commit_file(worktree, "docs/README.md", "# docs\n", "docs: add the index")
         self.progress(
-            worktree,
             "set-status",
             crash["finding"],
             "done",
@@ -434,7 +431,6 @@ class ResumeUncommittedTests(ScenarioCase):
             "--verification-result",
             "exists",
         )
-        self.commit_state(worktree)
         self.assertPasses("A4")
 
     def test_a4_fails_when_the_recorded_commit_is_not_on_the_branch(self) -> None:
@@ -442,7 +438,6 @@ class ResumeUncommittedTests(ScenarioCase):
         worktree = Path(crash["worktree"])
         self.commit_file(worktree, "docs/README.md", "# docs\n", "docs: add the index")
         self.progress(
-            worktree,
             "set-status",
             crash["finding"],
             "done",
@@ -453,7 +448,6 @@ class ResumeUncommittedTests(ScenarioCase):
             "--verification-result",
             "exists",
         )
-        self.commit_state(worktree)
         self.assertFails("A4", "not on")
 
     def test_a4_fails_on_two_commits_with_the_same_change(self) -> None:
@@ -464,7 +458,6 @@ class ResumeUncommittedTests(ScenarioCase):
         self.git(worktree, "commit", "--quiet", "-m", "docs: drop the index")
         self.commit_file(worktree, "docs/README.md", "# docs\n", "docs: add the index")
         self.progress(
-            worktree,
             "set-status",
             crash["finding"],
             "done",
@@ -475,7 +468,6 @@ class ResumeUncommittedTests(ScenarioCase):
             "--verification-result",
             "exists",
         )
-        self.commit_state(worktree)
         verdict = self.verdict("A4")
         self.assertFalse(verdict.passed)
         self.assertTrue(any("same change" in line for line in verdict.details), verdict.details)
@@ -490,10 +482,9 @@ class ApplyWithDebtTests(ScenarioCase):
     def apply_t1(self, status: str, *extra: str) -> Path:
         worktree = self.worktree("command-surface")
         finding = ie.finding_id("TOOL-02")
-        self.progress(worktree, "set-status", finding, "in_progress")
+        self.progress("set-status", finding, "in_progress")
         sha = self.commit_file(worktree, "Makefile", "check: lint typecheck test\n", "build: add a check target")
         self.progress(
-            worktree,
             "set-status",
             finding,
             status,
@@ -505,7 +496,6 @@ class ApplyWithDebtTests(ScenarioCase):
             "lint reports 3 existing violations",
             *extra,
         )
-        self.commit_state(worktree)
         return worktree
 
     def push(self) -> None:
@@ -621,7 +611,7 @@ class DriftTests(ScenarioCase):
             self.events.append(drift)
         worktree = self.worktree("docs")
         finding = ie.finding_id("DOC-01")
-        self.progress(worktree, "set-status", finding, "in_progress")
+        self.progress("set-status", finding, "in_progress")
         if not drift_first:
             self.events.append(drift)
         extra: tuple[str, ...] = ()
@@ -631,7 +621,6 @@ class DriftTests(ScenarioCase):
                 self.commit_file(worktree, "docs/README.md", "# rewritten\n", "docs: rewrite the index"),
             )
         self.progress(
-            worktree,
             "set-status",
             finding,
             "done",
@@ -641,7 +630,6 @@ class DriftTests(ScenarioCase):
             "--verification-result",
             result,
         )
-        self.commit_state(worktree)
 
     def test_a7_passes_when_the_drift_is_checked_first_and_cited(self) -> None:
         self.run_t6()
@@ -682,11 +670,10 @@ class CommDocsContractTests(ScenarioCase):
             copy = copy.replace("K. C. Ramakrishna", owner, 1)
         self.commit_file(tree, "scripts/docs_prose_check.py", copy, "build: add the prose check")
         for key, value in (("docs.prose_check", "template"), ("docs.prose_check_licence", "MIT")):
-            self.progress(tree, "pref", "set", key, value, "--reason", "owner: canned answer", "--by", "owner")
+            self.progress("pref", "set", key, value, "--reason", "owner: canned answer", "--by", "owner")
         self.progress(
-            tree, "pref", "set", "docs.prose_ratchet", limit, "--reason", "owner: the measured count", "--by", "owner"
+            "pref", "set", "docs.prose_ratchet", limit, "--reason", "owner: the measured count", "--by", "owner"
         )
-        self.commit_state(tree)
         return tree
 
     def test_a10_a11_a12_pass_on_a_run_that_follows_the_playbook(self) -> None:

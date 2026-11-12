@@ -133,7 +133,6 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    documents variables by hand: one pointer, not a second copy. If the instruction file says env files are
    ignored and a tracked one exists, record the contradiction; the AGENTS.md theme fixes it. A deploy doc that
    names variables by hand gets one pointer line to the example file, not a copy.
-10. Commits: example file, ignore rules, untracking.
 
 ### Gradle and Quarkus
 
@@ -158,6 +157,19 @@ owner calls a by-design local file is listed, never opened.
 `ARG NAME` and `ENV NAME` in Dockerfiles; `${NAME}`, `${NAME:-x}` and `env_file:` in compose files (the
 `env_file` path is a tracked-file candidate for step 3); `vars.NAME`, `secrets.NAME` and `env:` in workflow
 files. Repository variables and secrets are not in the repo: the example file is their only declaration.
+
+## Commits
+
+| # | Commit | Checks | Kind |
+|---|---|---|---|
+| 1 | Untrack the files the owner chose to untrack, `git rm --cached` (only with that answer) | `SEC-01` | bulk |
+| 2 | Fix the docs that name an untracked file (only when a doc names one) | `SEC-01` | hand |
+| 3 | Example file(s), names only | `EXEC-04` | hand |
+| 4 | Missing secret shapes, named `!` exceptions and the owner-kept comment in the ignore file | `SEC-03` | config |
+| 5 | Fake-token fixtures in the scanner's allowlist (only when the owner agrees) | `SEC-02` | config |
+| 6 | Pointers to the example file in the instruction file, CI README and deploy doc | `EXEC-04` | hand |
+
+A path that step 6.4 newly lists goes back to step 3: its untracking is one more commit like 1, after 4.
 
 ## Continue on error
 
@@ -184,7 +196,8 @@ files. Repository variables and secrets are not in the repo: the example file is
 
 ## Rollback
 
-`git revert` the commit: the example file, the ignore rules and the untracking each revert alone. Untracking
+`git revert` the commits, newest first: the pointers, the allowlist, the ignore rules, the example file, then the
+doc fix and the untracking. Each reverts alone, except the doc fix, which goes with its untracking. Untracking
 only removes the path from the index; `git revert` returns it. Nothing was rotated, so nothing else needs
 undoing.
 
@@ -206,12 +219,12 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "git ls-files -ci --exclude-standard" \
   --verification-result "<empty, or only the recorded exceptions>"
-python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> \
+python3 implement/tools/progress.py skip F-nnn --workspace <workspace> --phase <phase> \
   --reason "<the owner's words>" --by owner
-python3 implement/tools/progress.py pref set layout.env_example <path> --target <repo> --phase <phase> \
+python3 implement/tools/progress.py pref set layout.env_example <path> --workspace <workspace> --phase <phase> \
   --reason "<the owner's words>" --by owner
 ```
 

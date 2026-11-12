@@ -20,5 +20,4 @@ final message instead of guessing.
   - `format.mass_reformat`: `no`.
   - `layout.command_runner`: `root-make` (one root Makefile).
   - `tests.stack_dependent`: `no`.
-- The repository has no root `AGENTS.md`: record that and leave the pointer line to T7.
-- Stop at the end of Stage 1 (triage committed on the local triage branch).
+- Stop at the end of Stage 1 (the triage is recorded in the workspace; nothing is committed).

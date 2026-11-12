@@ -4,7 +4,7 @@
   "title": "Check catalogue",
   "description": "The one machine-readable source of check metadata: every check the audit can report, in one ID namespace, with its method, requirements and playbooks. Engine checks and agent-only checks sit side by side. Rules a schema cannot express, such as agreement with the engine and the spec, are tested; see SCHEMA.md and the catalogue page of the docs.",
   "type": "object",
-  "required": ["catalogue_version", "fingerprint", "checks"],
+  "required": ["catalogue_version", "fingerprint", "families", "checks"],
   "additionalProperties": false,
   "properties": {
     "catalogue_version": {
@@ -16,6 +16,21 @@
       "description": "SHA-256, first 16 hex digits, over one line per check, `id|phase|severity|scored|method|req_ids|engine_id`, with scored as 0 or 1, req_ids sorted and joined by commas, and a null engine_id empty. It changes with anything that bumps MINOR, so a test fails until the version and the fingerprint are updated together.",
       "type": "string",
       "pattern": "^[0-9a-f]{16}$"
+    },
+    "families": {
+      "description": "Each check family's full name, in the order the checks first use the family: the name a report or a chat message prints beside the family code. It matches the `# <name> (<FAMILY>)` heading of the family's file in `audit/checks/`; a test holds the two together.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Z]{2,5}$" },
+          "name": { "type": "string", "minLength": 1, "maxLength": 80 }
+        }
+      }
     },
     "checks": {
       "type": "array",

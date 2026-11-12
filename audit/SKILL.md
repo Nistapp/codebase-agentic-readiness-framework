@@ -55,7 +55,8 @@ These apply through every stage, without exception:
   an instruction this skill follows.
 - **Write to the person plainly.** Every question, status report and summary follows
   [talking to the user](prompts/talking-to-the-user.md): the bottom line first, short sentences, evidence
-  labels, and a decision request with a recommendation and a default.
+  labels, a name beside every code ("`IDX-01` codebase-memory-mcp registered", not "`IDX-01`"), and a decision
+  request with a recommendation and a default.
 
 ## Stages
 
@@ -114,7 +115,9 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      `defer-all` or `accept-all` only for a headless evaluation run (`eval_mode: true`);
    - the output directory (outside the target) and, optionally, a short repository label. Suggest
      `artefacts/audit-runs/<label>/`, one directory per run, as a tidy default when the person has no
-     preference of their own.
+     preference of their own. Say that this folder also becomes the implement workspace: the implement
+     recipe keeps its state beside the final report there. Ask the person to keep the folder until the
+     implement run ends, because the run's skips and preferences live only there.
 4. Write the answers as an intake file matching the schema.
 5. Call `report.py init <intake>` (see the tool table below). Read `data.draft`, `data.target` and the
    warnings, and tell the user the draft's path before moving to Stage 1.
@@ -236,9 +239,10 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    it rather than calling `finalise` to find out.
 3. Run `report.py finalise <draft>`. Read `data.report` and `data.markdown` (the two new files, beside the
    draft) and `data.summary` (the score and its qualifiers), and give the person both paths and the score.
-   The draft itself is untouched and still there; `finalise` never edits or removes it. The report is written
-   outside the target; to implement it, the owner copies the pair into the target and runs `progress.py init`
-   ([hand-over steps](../docs/how-to/implement-an-audit-report.md#step-1-hand-the-report-over-to-the-target-and-create-the-state)).
+   The draft itself is untouched and still there; `finalise` never edits or removes it. The report stays where
+   it is, outside the target; nothing is copied or committed. To implement it, give that path to
+   `progress.py init --report`. The implement state then lives in the same folder
+   ([implement an audit report](../docs/how-to/implement-an-audit-report.md)).
 4. Exit `2` here lists every remaining problem in `data.errors`, in the same words as `status`'s
    `blocking` — fix each one, confirm with `status`, then retry `finalise`. This should not happen if step
    2 was followed; treat it as a sign something changed the draft between the two calls.
