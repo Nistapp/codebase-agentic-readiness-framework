@@ -37,9 +37,9 @@ bug-reports, suggestions and improvements in
 4. You have full control on what/how to implement during the 'implementation' phase. You can prescribe, customise,
    skip or accept the defaults provided by the tool. When you are ready to implement, open claude (fresh session is
    recommended for clean context) in the same directory as this skill and say: **"Start implementing the fixes on
-   /path/to/your/repo based on /path/to/output/\<repo-name\>.audit-report.\<timestamp\>.json"**. First, the skill
-   asks you to copy the report (`.json` and `.md`) into your repository under `docs/agentic-readiness-report/` and
-   commit it. It does not copy the report itself.
+   /path/to/your/repo based on /path/to/output/\<repo-name\>.audit-report.\<timestamp\>.json"**. The skill keeps
+   its state beside the report, in `/path/to/output/`, and puts none of its own files into your repository. Keep
+   that folder until the run ends: your skips and preferences live only there.
 
 What happens: the skill asks a few questions, shows you a plan, and asks before each step that changes something.
 The audit never writes inside your repository. The implement skill commits on local branches. It never merges, and
