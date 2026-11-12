@@ -96,6 +96,8 @@ reports, commit messages, pull request descriptions and docs.
 - Write for a new engineer who knows Git, Python and Markdown, but not this repository or its terms.
 - Put the bottom line first: the answer, the result or the decision you need.
 - Use short sentences (at most 25 words; 20 in a step), active voice and one term per meaning.
+- Never leave a code alone. Write "T7 AGENTS.md and governance", not `T7`; "`IDX-01` codebase-memory-mcp
+  registered", not `IDX-01`; "Discovery and Index (`IDX`)", not `IDX`; "F-020 style guide", not `F-020`.
 - For a decision, give the context, two to four options with pros and cons, your recommendation and the default.
 - Use a Mermaid diagram when a flow, a sequence or a state is easier to see than to read.
 - Mark each claim as checked, inferred or assumed. Report failures and skipped steps plainly.

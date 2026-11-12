@@ -38,6 +38,11 @@ Fix a warning in the change that touches the text. Treat a notice as a hint.
 8. **Exact facts.** Give the file path, the command, the number and the unit. Write "3 of 11 checks", not
    "some checks".
 9. **Code names in code spans.** Write file names, commands, check IDs and keys as `code`.
+10. **Name every code.** A reader who is new here does not know what `T7`, `IDX`, `F-020` or `S4.6` means.
+    Put the name next to the code each time, in the same sentence or table cell. Examples: "T7 AGENTS.md
+    and governance", "`IDX-01` codebase-memory-mcp registered", "Discovery and Index (`IDX`)", "F-020 style
+    guide" and "issue #121 (probe `PATH`)". Write other short forms out in full ("environment", not "env").
+    Keep a short form that every engineer knows, such as CI, PR or URL.
 
 ### Example
 

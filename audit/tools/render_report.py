@@ -455,11 +455,29 @@ def first_actions(report: Mapping[str, Any]) -> list[Mapping[str, Any]]:
     return sorted(findings, key=rank)[:FIRST_ACTIONS]
 
 
-def action_row(number: int, finding: Mapping[str, Any]) -> list[str]:
+def check_titles(report: Mapping[str, Any]) -> dict[str, str]:
+    """Each check's ID mapped to its title, so no check ID is printed without its name."""
+    return {check["id"]: check["title"] for check in report["checks"]}
+
+
+def named_check(check_id: str, titles: Mapping[str, str]) -> str:
+    """The check ID in a code span and its title beside it; the ID alone when the report has no such check."""
+    title = titles.get(check_id)
+    return f"{code(check_id)} {text(title)}" if title else code(check_id)
+
+
+def family_heading(family: str) -> str:
+    """The family's full name from the catalogue with its code, or the code alone for a family it does not name."""
+    names = {entry["id"]: entry["name"] for entry in vr.load_catalogue().get("families", [])}
+    name = names.get(family)
+    return f"{text(name)} ({code(family)})" if name else code(family)
+
+
+def action_row(number: int, finding: Mapping[str, Any], titles: Mapping[str, str]) -> list[str]:
     waiting = " **Awaits a decision.**" if finding["disposition"] == "pending" else ""
     return [
         str(number),
-        f"{code(finding['check'])} ({finding['id']})",
+        f"{finding['id']}: {named_check(finding['check'], titles)}",
         finding["severity"],
         finding["remediation"].get("effort", "—"),
         text(finding["statement"]),
@@ -471,8 +489,9 @@ def bottom_line_section(report: Mapping[str, Any], summary: Mapping[str, Any]) -
     """The answer first: the blockers left, the first actions, and what the scan could not settle."""
     actions = first_actions(report)
     left_open = len(open_findings(report))
+    titles = check_titles(report)
     unknown = [check["id"] for check in report["checks"] if check["verdict"] == "UNKNOWN"]
-    listed = joined(unknown[:UNKNOWN_LISTED]) + (
+    listed = "; ".join(named_check(check_id, titles) for check_id in unknown[:UNKNOWN_LISTED]) + (
         f" and {len(unknown) - UNKNOWN_LISTED} more" if len(unknown) > UNKNOWN_LISTED else ""
     )
     unattested = len(report["unattested"])
@@ -488,7 +507,7 @@ def bottom_line_section(report: Mapping[str, Any], summary: Mapping[str, Any]) -
         intro = f"**First actions** ({len(actions)} of {count(left_open, 'open finding')}):"
         listing = table(
             ["#", "Finding", "Severity", "Effort", "What it blocks", "Fix"],
-            [action_row(number, finding) for number, finding in enumerate(actions, start=1)],
+            [action_row(number, finding, titles) for number, finding in enumerate(actions, start=1)],
             ["right", "left", "left", "center", "left", "left"],
         )
     else:
@@ -976,7 +995,7 @@ def appendix_section(report: Mapping[str, Any]) -> list[str]:
     else:
         parts.append([f"All {count(len(checks), 'check')}, grouped by family. {payloads_note}"])
     for family, rows in families.items():
-        parts.append([f"### {family}"])
+        parts.append([f"### {family_heading(family)}"])
         parts.append(table(["Check", "Title", "Severity", "Method", "Scored", "Verdict", "Engine", "Summary"], rows))
     return blocks(*parts)
 

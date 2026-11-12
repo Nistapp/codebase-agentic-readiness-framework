@@ -1,6 +1,60 @@
 {
-  "catalogue_version": "0.7.0",
+  "catalogue_version": "0.7.1",
   "fingerprint": "c150d929fed634cb",
+  "families": [
+    {
+      "id": "IDX",
+      "name": "Discovery and Index"
+    },
+    {
+      "id": "AGT",
+      "name": "Agent Governance"
+    },
+    {
+      "id": "DOC",
+      "name": "Documentation Contract"
+    },
+    {
+      "id": "CMD",
+      "name": "Command Surface"
+    },
+    {
+      "id": "TOOL",
+      "name": "Tooling"
+    },
+    {
+      "id": "CI",
+      "name": "Continuous Integration"
+    },
+    {
+      "id": "BASE",
+      "name": "Baselines and the Ratchet"
+    },
+    {
+      "id": "CON",
+      "name": "Constraints"
+    },
+    {
+      "id": "EXEC",
+      "name": "Execution determinism"
+    },
+    {
+      "id": "TST",
+      "name": "Tests"
+    },
+    {
+      "id": "NAV",
+      "name": "Navigation"
+    },
+    {
+      "id": "SEC",
+      "name": "Security hygiene"
+    },
+    {
+      "id": "HYG",
+      "name": "Hygiene"
+    }
+  ],
   "checks": [
     {
       "id": "IDX-01",

@@ -85,8 +85,8 @@ def _span(prefix: str, first: int, last: int, *, skip: Sequence[int] = ()) -> tu
 THEMES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("T1", "Command surface and quality tools", _span("CMD", 1, 4) + _span("TOOL", 1, 4)),
     ("T2", "Execution determinism", _span("EXEC", 1, 8, skip=(4,))),
-    ("T3", "Secrets and env", _span("SEC", 1, 3) + ("EXEC-04",)),
-    ("T4", "CI parity, hooks, commits", _span("CI", 1, 5) + ("TOOL-05", "TOOL-06", "TOOL-07")),
+    ("T3", "Secrets and environment variables", _span("SEC", 1, 3) + ("EXEC-04",)),
+    ("T4", "CI parity, Git hooks and commit messages", _span("CI", 1, 5) + ("TOOL-05", "TOOL-06", "TOOL-07")),
     ("T5", "Tests and baselines", _span("TST", 1, 5) + _span("BASE", 1, 4)),
     ("T6", "Docs and navigation", _span("DOC", 1, 5) + _span("NAV", 1, 5)),
     ("T7", "AGENTS.md and governance", _span("AGT", 1, 12) + _span("CON", 1, 4)),
@@ -707,6 +707,17 @@ def clipped(text: object) -> str:
     return value if len(value) <= CELL_LIMIT else value[: CELL_LIMIT - 3].rstrip() + "..."
 
 
+def check_titles() -> dict[str, str]:
+    """Each check's ID mapped to its title in the catalogue these tools carry."""
+    return {check["id"]: check["title"] for check in validate_report.load_catalogue()["checks"]}
+
+
+def named_check(check_id: str, titles: Mapping[str, str]) -> str:
+    """The check ID and its title in one cell, so a reader never meets a bare ID; the ID alone for an unknown check."""
+    title = titles.get(check_id)
+    return f"{code(check_id)} {cell(title)}" if title else code(check_id)
+
+
 def _table(header: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
     lines = ["| " + " | ".join(header) + " |", "|" + "|".join("---" for _ in header) + "|"]
     lines += ["| " + " | ".join(row) + " |" for row in rows]
@@ -726,6 +737,11 @@ def render(state: dict[str, Any]) -> str:
     items = sorted(state["items"], key=lambda item: (item["theme"], _finding_order(item["finding"])))
     themes = sorted(state["themes"], key=lambda theme: theme["id"])
     titles = {theme["id"]: theme["title"] for theme in themes}
+    checks = check_titles()
+
+    def named_theme(theme_id: str) -> str:
+        return f"{theme_id} {cell(titles[theme_id])}" if theme_id in titles else theme_id
+
     out: list[str] = [
         f"# Agentic readiness state: {label}",
         "",
@@ -808,7 +824,15 @@ def render(state: dict[str, Any]) -> str:
         out += _table(
             ("Finding", "Check", "Severity", "Status", "By", "Date", "Statement"),
             [
-                (i["finding"], i["check"], i["severity"], i["status"], i["by"], i["date"], cell(i["statement"]))
+                (
+                    i["finding"],
+                    named_check(i["check"], checks),
+                    i["severity"],
+                    i["status"],
+                    i["by"],
+                    i["date"],
+                    cell(i["statement"]),
+                )
                 for i in mine
             ],
         )
@@ -833,7 +857,17 @@ def render(state: dict[str, Any]) -> str:
         if chosen:
             out += _table(
                 ("Finding", "Check", "Theme", "Reason", "By", "Date"),
-                [(i["finding"], i["check"], i["theme"], cell(i["reason"]), i["by"], i["date"]) for i in chosen],
+                [
+                    (
+                        i["finding"],
+                        named_check(i["check"], checks),
+                        named_theme(i["theme"]),
+                        cell(i["reason"]),
+                        i["by"],
+                        i["date"],
+                    )
+                    for i in chosen
+                ],
             )
         else:
             out.append("None.")
@@ -843,7 +877,13 @@ def render(state: dict[str, Any]) -> str:
         out += _table(
             ("Finding", "Check", "What", "Count", "Baseline file"),
             [
-                (item["finding"], item["check"], cell(entry["what"]), str(entry["count"]), code(entry["baseline_file"]))
+                (
+                    item["finding"],
+                    named_check(item["check"], checks),
+                    cell(entry["what"]),
+                    str(entry["count"]),
+                    code(entry["baseline_file"]),
+                )
                 for item, entry in debt
             ],
         )
@@ -854,7 +894,7 @@ def render(state: dict[str, Any]) -> str:
     if rejected:
         out += _table(
             ("Finding", "Check", "Severity", "Audit note"),
-            [(e["finding"], e["check"], e["severity"], cell(e["note"])) for e in rejected],
+            [(e["finding"], named_check(e["check"], checks), e["severity"], cell(e["note"])) for e in rejected],
         )
     else:
         out.append("None.")

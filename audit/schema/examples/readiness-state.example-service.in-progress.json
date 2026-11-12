@@ -62,7 +62,7 @@
     },
     {
       "id": "T3",
-      "title": "Secrets and env",
+      "title": "Secrets and environment variables",
       "status": "not_started",
       "phase": null,
       "branch": null,
@@ -71,7 +71,7 @@
     },
     {
       "id": "T4",
-      "title": "CI parity, hooks, commits",
+      "title": "CI parity, Git hooks and commit messages",
       "status": "not_started",
       "phase": null,
       "branch": null,

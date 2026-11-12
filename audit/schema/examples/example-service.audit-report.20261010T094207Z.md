@@ -7,16 +7,16 @@
 
 - **4 blockers remaining: 4 FAIL.**
 - **Not settled by this scan:**
-  - 1 check is UNKNOWN: `TST-02`.
+  - 1 check is UNKNOWN: `TST-02` Suite status known.
   - 5 requirements are unattested: no check settles them.
 
 **First actions** (3 of 7 open findings):
 
 | # | Finding | Severity | Effort | What it blocks | Fix |
 |---:|---|---|:---:|---|---|
-| 1 | `CMD-01` (F-001) | BLOCKER | S | An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not defined on any runner (format:check, typecheck, check, security). | Define every verb as a script so an agent never has to invent a command. |
-| 2 | `EXEC-01` (F-003) | BLOCKER | S | An agent cannot reproduce the toolchain because node is not pinned by a version file, an engines constraint or a wrapper. | Pin Node 22 in .nvmrc. |
-| 3 | `SEC-02` (F-004) | BLOCKER | M | An agent cannot keep credentials out of the repository and its history because src/config/constants.ts contains 1 credential-shaped line(s). | Remove the value from the file and its history, load it from the environment, and rotate the credential. |
+| 1 | F-001: `CMD-01` Seven verbs resolvable on one runner | BLOCKER | S | An agent cannot run the standardized command surface literally because 4 of 7 framework verbs are not defined on any runner (format:check, typecheck, check, security). | Define every verb as a script so an agent never has to invent a command. |
+| 2 | F-003: `EXEC-01` Toolchain pinned / wrapper committed | BLOCKER | S | An agent cannot reproduce the toolchain because node is not pinned by a version file, an engines constraint or a wrapper. | Pin Node 22 in .nvmrc. |
+| 3 | F-004: `SEC-02` No key-shaped strings in tracked files | BLOCKER | M | An agent cannot keep credentials out of the repository and its history because src/config/constants.ts contains 1 credential-shaped line(s). | Remove the value from the file and its history, load it from the environment, and rotate the credential. |
 
 ## Provenance
 
@@ -206,13 +206,13 @@ Quotes and command output that the tables above point to, each under the check t
 
 All 12 checks, grouped by family. The command surface and the credential-shaped-lines total above are rendered from the engine's structured payloads; other payloads (env-key inventories, harness-reach matrices, and so on) are in the JSON report only, for now.
 
-### IDX
+### Discovery and Index (`IDX`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
 | `IDX-01` | codebase-memory-mcp registered for this repository | BLOCKER | automated | yes | PASS | PASS | codebase-memory-mcp registered in: ~/.config/opencode/opencode.jsonc (user) |
 
-### AGT
+### Agent Governance (`AGT`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -220,39 +220,39 @@ All 12 checks, grouped by family. The command surface and the credential-shaped-
 | `AGT-08` | No competing instruction files, and the reach matrix is stated | DEGRADER | automated | yes | PARTIAL | PARTIAL | 20/28 harnesses reached |
 | `AGT-11` | Instructions are specific and not inferable | DEGRADER | agent | yes | PARTIAL | — | AGENTS.md states the non-obvious branch and release rules, but most other lines restate what package.json already shows. |
 
-### CMD
+### Command Surface (`CMD`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
 | `CMD-01` | Seven verbs resolvable on one runner | BLOCKER | automated | yes | FAIL | FAIL | format -> package.json; format:check -> missing; lint -> package.json; typecheck -> missing; test -> package.json; check -> missing; security -> missing |
 | `CMD-02` | check composes the read-only verbs | BLOCKER | automated | yes | FAIL | FAIL | the check verb is not defined on any runner |
 
-### TOOL
+### Tooling (`TOOL`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
 | `TOOL-03` | Type checker configured | DEGRADER | automated | yes | PASS | PARTIAL | type checker configured and strict: tsconfig.base.json |
 
-### CI
+### Continuous Integration (`CI`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
 | `CI-01` | Pipeline present, triggered on PRs | BLOCKER | automated | yes | PASS | PASS | workflow file(s): .github/workflows/ci.yml, triggered on pull_request |
 | `CI-04` | CI enforces the same gate as the local check | DEGRADER | agent | yes | FAIL | — | We did not find any evidence that the CI workflow runs the repository's check verb or fails the run when it fails. |
 
-### EXEC
+### Execution determinism (`EXEC`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
 | `EXEC-01` | Toolchain pinned / wrapper committed | BLOCKER | automated | yes | FAIL | FAIL | unpinned: node |
 
-### SEC
+### Security hygiene (`SEC`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
 | `SEC-02` | No key-shaped strings in tracked files | BLOCKER | automated | yes | FAIL | FAIL | 3 credential-shaped line(s) across 2 file(s) in tracked text files |
 
-### TST
+### Tests (`TST`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|

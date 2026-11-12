@@ -636,6 +636,21 @@ class RenderTests(TargetCase):
         self.assertEqual(progress.render(shuffled), expected)
         self.assertTrue(expected.endswith("|\n") and not expected.endswith("\n\n"))
 
+    def test_render_names_each_theme_and_check_beside_its_id(self) -> None:
+        text = progress.render(json.loads(LATER_STATE.read_text(encoding="utf-8")))
+        skipped = text.split("## Skipped", 1)[1].split("\n## ", 1)[0]
+        self.assertIn(
+            "| F-004 | `SEC-02` No key-shaped strings in tracked files | T3 Secrets and environment variables |",
+            skipped,
+        )
+        self.assertIn("| F-001 | `CMD-01` Seven verbs resolvable on one runner | BLOCKER |", text)
+
+    def test_render_gives_a_check_the_catalogue_lacks_by_its_id_alone(self) -> None:
+        state = json.loads(LATER_STATE.read_text(encoding="utf-8"))
+        with mock.patch.object(progress, "check_titles", return_value={}):
+            text = progress.render(state)
+        self.assertIn("| F-001 | `CMD-01` | BLOCKER |", text)
+
     def test_render_escapes_table_cells(self) -> None:
         state = json.loads(LATER_STATE.read_text(encoding="utf-8"))
         state["log"].append({"date": "2026-11-01", "phase": "IR04.2", "event": "a | b\nc"})
