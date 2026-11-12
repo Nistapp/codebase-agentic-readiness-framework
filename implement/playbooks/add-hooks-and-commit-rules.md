@@ -347,13 +347,13 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 
 ```bash
 python3 implement/tools/progress.py pref set hooks.manager <husky|pre-commit|lefthook|...> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set commit.tool <commitlint|commitizen|gitlint|script> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set hooks.protected_branches "main,dev" \
-  --target <repo> --phase <phase> --reason "<the owner's words, or: from .github/rulesets/>" --by owner
-python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> --by owner \
+  --workspace <workspace> --phase <phase> --reason "<the owner's words, or: from .github/rulesets/>" --by owner
+python3 implement/tools/progress.py skip F-nnn --workspace <workspace> --phase <phase> --by owner \
   --reason "<the owner's words: why the title check is enough>"
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "test -f <manager config>" --verification-result "present; install documented"
 ```

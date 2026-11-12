@@ -42,7 +42,7 @@ Server's other files there are not copied.
 
 ## What was edited in these copies
 
-The copies are **not byte-identical** to the Server repository's files. One mechanical edit was applied, and the
+The copies are **not byte-identical** to the Server repository's files. Two mechanical edits were applied, and the
 originals in the Server repository were not touched:
 
 | Replaced | With | Why |
@@ -52,6 +52,7 @@ originals in the Server repository were not touched:
 | the scratch directories of the second run | `<target>` / `<work>` | Same |
 | the lock file path under `/tmp` | `<lock-file>` | Same |
 | the user prefix in the code-index project name | `<index-prefix>` | The name embedded a user name |
+| the state's report path `docs/agentic-readiness-report/<name>` (in `source_reports` and the first log entry) | `<name>` | A state now records the report's path relative to its workspace ([ADR 0004](../../../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)) |
 
 After the edit the reports were validated again (`validate_report.py`, and the state against
 `readiness-state.schema.json`), and the files were searched for the user name and for `/home/` and `/tmp/` paths.

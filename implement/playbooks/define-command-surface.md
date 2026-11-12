@@ -177,9 +177,9 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "./gradlew check --dry-run" --verification-result "<what it showed>"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=security verb waits for T2 lockfile,count=1" --note "<which verb, why>"
 ```
 

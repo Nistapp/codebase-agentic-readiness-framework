@@ -11,7 +11,7 @@ A skipped finding is final until the owner unskips it, and every preference bind
 | Default branch | `main` |
 | Created by | `v0.3.2` at `cafecafecafe` (checkout) |
 | Last written by | `v0.3.2` at `cafecafecafe` |
-| Source report | `docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json` at `deadbeefdead`, catalogue 0.7.0, made by `v0.3.2` at `cafecafecafe` |
+| Source report | `example-service.audit-report.20261010T094207Z.json` at `deadbeefdead`, catalogue 0.7.0, made by `v0.3.2` at `cafecafecafe` |
 
 ## Summary
 
@@ -134,7 +134,7 @@ No items.
 
 | Date | Phase | Event |
 |---|---|---|
-| 2026-10-29 | init | State created from docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json: 7 queued, 1 deferred, 2 not queued. |
+| 2026-10-29 | init | State created from example-service.audit-report.20261010T094207Z.json: 7 queued, 1 deferred, 2 not queued. |
 | 2026-10-30 | IR04.2 | T1 PR #12 opened |
 | 2026-10-30 | IR04.2 | F-001 partial: 41 eslint errors baselined |
 | 2026-10-30 | IR04.2 | T1 PR #12 merged |

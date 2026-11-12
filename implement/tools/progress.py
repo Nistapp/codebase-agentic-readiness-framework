@@ -5,19 +5,23 @@
 
     progress.py init --report <final report.json> --target <repo> [--default-branch B] [--phase P] [--date D]
                      [--framework-rev SHA]
-    progress.py show --target <repo> [--label LABEL] [--json]
-    progress.py render --target <repo> [--label LABEL]
-    progress.py set-status|skip|unskip|defer|undefer|pref|theme ...   (the transitions; see --help of each)
+    progress.py adopt --target <repo> --workspace <dir> --phase P [--label LABEL] [--date D]
+    progress.py show --workspace <dir> [--label LABEL] [--json]
+    progress.py render --workspace <dir> [--label LABEL]
+    progress.py set-status|skip|unskip|defer|undefer|pref|theme ... --workspace <dir>   (the transitions; see --help)
 
-The state is ``docs/agentic-readiness/<label>-agentic-readiness-state.json`` in the target, the source of truth, and
+The state lives in the workspace: the folder of the final report given to ``init``, normally the audit run's output
+folder (ADR 0004). It is ``<label>-agentic-readiness-state.json``, the source of truth, and
 ``<label>-agentic-readiness-STATE.md`` beside it, rendered from the JSON. Its format is
 ``schema/readiness-state.schema.json``; the rules the schema subset cannot express are in :func:`state_rule_errors`.
+Every command but ``init`` finds the state in the folder ``--workspace`` names. It must exist; a symlink on the way is
+followed, and a state file that is a symlink is refused.
 
-This is the one tool that writes inside a target, and it writes those two files and nothing else (ADR 0002). Both
-are written atomically: a temporary file beside the target file, then a rename, so a reader sees the old file or the
-new one and never half of one. The folder must resolve inside the target, and neither file may be a symlink.
+The tool writes those two files and nothing else, and never inside the target: ``init`` refuses a workspace that
+resolves inside it. Both files are written atomically: a temporary file beside the file, then a rename, so a reader
+sees the old file or the new one and never half of one.
 
-``init`` reads a final audit report that ``validate_report.py`` accepts, inside the target. Confirmed and edited
+``init`` reads a final audit report that ``validate_report.py`` accepts, outside the target. Confirmed and edited
 findings become ``queued`` items, a finding the owner deferred during the audit becomes a ``deferred`` item with the
 owner's note as its reason, and rejected findings are listed in ``not_queued``. Each item gets the theme of its check
 from :data:`THEMES`. ``init`` never replaces a state; the transitions come in a later step.
@@ -27,15 +31,23 @@ atomically; ``--render`` replaces the Markdown too. They enforce the state diagr
 other move with a message of its own. Only the owner skips, defers, unskips, undefers and sets preferences, which the
 caller states with ``--by owner`` (the agent relays what the owner said; the tool cannot see who is typing).
 
+``adopt`` moves a state that older tools kept in ``<target>/docs/agentic-readiness/`` into a workspace. It reads
+the target and never writes or deletes there. It refuses a state of another schema version and a report whose
+SHA-256 differs from the one recorded; it copies each report (and the Markdown beside it) into the workspace,
+rewrites the report paths to the file names, logs one entry and lists the in-repo files the owner may now remove.
+
 ``render`` is a pure function of the JSON: the same state, in any key order, gives the same bytes.
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
+import os
 import re
 import sys
+import tempfile
 import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
@@ -93,24 +105,26 @@ INFO = _common.ToolInfo(
     synopsis=(
         "progress.py init --report REPORT --target REPO [--default-branch BRANCH] [--phase PHASE] [--date YYYY-MM-DD]"
         " [--framework-rev SHA]",
-        "progress.py show --target REPO [--label LABEL] [--json]",
-        "progress.py render --target REPO [--label LABEL]",
-        "progress.py set-status FINDING STATUS --target REPO --phase PHASE [--commit SHA] [--verification-command CMD"
+        "progress.py adopt --target REPO --workspace DIR --phase PHASE [--label LABEL] [--date YYYY-MM-DD]",
+        "progress.py show --workspace DIR [--label LABEL] [--json]",
+        "progress.py render --workspace DIR [--label LABEL]",
+        "progress.py set-status FINDING STATUS --workspace DIR --phase PHASE [--commit SHA] [--verification-command CMD"
         " --verification-result TEXT] [--debt what=..,count=N[,baseline=FILE]] [--clear-debt] [--reason TEXT]"
         " [--note TEXT] [--by owner|agent] [--date YYYY-MM-DD] [--label LABEL] [--render]",
-        "progress.py skip|defer FINDING --reason TEXT --by owner --target REPO --phase PHASE [--render]",
-        "progress.py unskip|undefer FINDING --by owner --target REPO --phase PHASE [--reason TEXT] [--render]",
-        "progress.py pref set KEY VALUE --reason TEXT --by owner --target REPO --phase PHASE [--render]",
-        "progress.py pref unset KEY --reason TEXT --by owner --target REPO --phase PHASE [--render]",
+        "progress.py skip|defer FINDING --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
+        "progress.py unskip|undefer FINDING --by owner --workspace DIR --phase PHASE [--reason TEXT] [--render]",
+        "progress.py pref set KEY VALUE --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
+        "progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
         "progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA]"
-        " --target REPO --phase PHASE [--render]",
+        " --workspace DIR --phase PHASE [--render]",
     ),
     writes=(
-        "Inside the target, and only there: docs/agentic-readiness/<label>-agentic-readiness-state.json (init) and "
-        "<label>-agentic-readiness-STATE.md (init, render, and any command given --render), each replaced atomically. "
-        "init never replaces a state; show writes nothing; every other command rewrites the JSON after validating it."
+        "Only in the workspace, the report's folder, which must be outside the target: "
+        "<label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, "
+        "render, and any command given --render), each replaced atomically; adopt also copies the source reports "
+        "there, never over a different file. init and adopt never replace a state; show writes nothing; every other "
+        "command rewrites the JSON after validating it."
     ),
-    writes_inside_target=True,
 )
 
 
@@ -123,11 +137,6 @@ def state_names(label: str) -> tuple[str, str]:
     return label + STATE_JSON_SUFFIX, label + STATE_MD_SUFFIX
 
 
-def state_directory(target: Path) -> Path:
-    """`docs/agentic-readiness` in `target`, resolved. A folder on the way that leads out of the target is refused."""
-    return _common.resolve_within(target, STATE_DIR)
-
-
 def state_file(directory: Path, name: str) -> Path:
     """`directory / name`, refusing a symlink, so a write can never go through a link to somewhere else."""
     path = directory / name
@@ -138,9 +147,20 @@ def state_file(directory: Path, name: str) -> Path:
     return path
 
 
-def find_state(target: Path, label: str | None) -> tuple[str, Path]:
-    """The label and the JSON path of the state in `target`. Without `label` there must be exactly one state."""
-    directory = state_directory(target)
+def workspace_directory(path: str | Path) -> Path:
+    """The workspace folder `--workspace` names, resolved. It must exist and be a directory."""
+    candidate = Path(path).expanduser()
+    try:
+        resolved = candidate.resolve(strict=True)
+    except (OSError, RuntimeError):
+        raise _common.UsageError(f"workspace not found: {candidate}") from None
+    if not resolved.is_dir():
+        raise _common.UsageError(f"workspace is not a directory: {resolved}")
+    return resolved
+
+
+def find_state(directory: Path, label: str | None) -> tuple[str, Path]:
+    """The label and the JSON path of the state in `directory`. Without `label` there must be exactly one state."""
     if label is None:
         found = sorted(directory.glob("*" + STATE_JSON_SUFFIX)) if directory.is_dir() else []
         labels = [path.name[: -len(STATE_JSON_SUFFIX)] for path in found]
@@ -419,9 +439,11 @@ def run_init(args: Any) -> _common.Result:
         report_file = Path(args.report).expanduser().resolve(strict=True)
     except (OSError, RuntimeError):
         raise _common.UsageError(f"report not found: {args.report}") from None
-    if not _common.is_within(target, report_file):
+    workspace = report_file.parent
+    if _common.is_within(target, workspace):
         raise _common.PathNotAllowed(
-            f"the report must be inside the target, so the state can point at it: {report_file}"
+            f"the report's folder is inside the target, and the state is written beside the report: {workspace}",
+            hint="keep the report in the audit's output folder, outside the target, and pass that path to --report",
         )
     report = validate_report.read_report(report_file)
     outcome = validate_report.validate_document(report)
@@ -441,14 +463,13 @@ def run_init(args: Any) -> _common.Result:
     versions, version_warnings = validate_report.compare_versions(report, FRAMEWORK_RELEASE, framework["revision"])
     label = report["provenance"]["target"]["label"]
     json_name, md_name = state_names(label)
-    directory = state_directory(target)
-    json_path, md_path = state_file(directory, json_name), state_file(directory, md_name)
+    json_path, md_path = state_file(workspace, json_name), state_file(workspace, md_name)
     if json_path.exists():
         raise _common.UsageError(f"a state already exists: {json_path}; init never replaces one")
     default_branch = args.default_branch or report["provenance"]["target"]["branch"] or "main"
     state = build_state(
         report,
-        report_path=report_file.relative_to(target).as_posix(),
+        report_path=report_file.name,
         default_branch=default_branch,
         phase=args.phase,
         date=_date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d"),
@@ -460,16 +481,13 @@ def run_init(args: Any) -> _common.Result:
         raise _common.ToolError(
             "the state built from the report is not valid, which is a bug in the tool", errors=errors
         )
-    directory.mkdir(parents=True, exist_ok=True)
-    if not _common.is_within(target, directory.resolve()):  # a folder swapped for a link since the check
-        raise _common.PathNotAllowed(f"the state folder leaves the target: {directory}")
-    swept = sweep_temporaries(directory, (json_name, md_name))
+    swept = sweep_temporaries(workspace, (json_name, md_name))
     _common.atomic_write_text(json_path, encode_state(state))
     _common.atomic_write_text(md_path, render(state))
     counts = status_counts(state)
     warnings = [*version_warnings]
     if swept:
-        warnings.append(f"removed {swept} temporary files an interrupted write left in {directory}")
+        warnings.append(f"removed {swept} temporary files an interrupted write left in {workspace}")
     return _common.Result(
         data={
             "versions": versions,
@@ -483,6 +501,105 @@ def run_init(args: Any) -> _common.Result:
         summary=(
             f"progress: created the state for {label}: {counts['queued']} queued, {counts['deferred']} deferred, "
             f"{len(state['not_queued'])} not queued"
+        ),
+        warnings=warnings,
+    )
+
+
+# --- adopt --------------------------------------------------------------------------------------------
+
+
+def _copy_new(source: Path, dest: Path) -> bool:
+    """Copy `source` to `dest` through a temporary file. False when `dest` already holds the same bytes."""
+    data = source.read_bytes()
+    if dest.exists():
+        return False
+    fd, temp = tempfile.mkstemp(dir=str(dest.parent), prefix=f".{dest.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp, dest)
+    except BaseException:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(temp)
+        raise
+    return True
+
+
+def run_adopt(args: Any) -> _common.Result:
+    args.date = _date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    target = _common.resolve_target(args.target)
+    workspace = Path(args.workspace).expanduser().resolve()
+    if _common.is_within(target, workspace):
+        raise _common.PathNotAllowed(
+            f"the workspace is inside the target: {workspace}",
+            hint="pick a folder outside the repository, for example the audit run's output folder",
+        )
+    if workspace.exists() and not workspace.is_dir():
+        raise _common.UsageError(f"workspace is not a directory: {workspace}")
+    label, source = find_state(_common.resolve_within(target, STATE_DIR), args.label)
+    source_rel = source.relative_to(target).as_posix()
+    state = read_state(source)
+    if state["repo"]["label"] != label:
+        raise _common.ValidationFailed(f"the state in {source.name} is for {state['repo']['label']!r}, not {label!r}")
+    json_name, md_name = state_names(label)
+    json_path, md_path = state_file(workspace, json_name), state_file(workspace, md_name)
+    if json_path.exists():
+        raise _common.UsageError(
+            f"the workspace already holds a state for {label}: {json_path}; adopt never replaces one"
+        )
+    copies: list[tuple[Path, Path]] = []
+    report_folders: list[str] = []
+    for entry in state["source_reports"]:
+        report = _common.resolve_within(target, entry["path"])
+        if not report.is_file():
+            raise _common.UsageError(f"the state lists a report that is not in the target: {entry['path']}")
+        if file_sha256(report) != entry["sha256"]:
+            raise _common.ValidationFailed(
+                f"the report was edited after init: {entry['path']} no longer matches the SHA-256 the state recorded",
+                hint="restore the report the state was made from (git log -- <report>), then run adopt again",
+            )
+        pair = [report] + [md for md in (report.with_suffix(".md"),) if md.is_file()]
+        for file in pair:
+            dest = workspace / file.name
+            if any(dest == planned for _, planned in copies):
+                raise _common.UsageError(f"two source reports share the file name {file.name}")
+            if dest.is_symlink() or (dest.exists() and dest.read_bytes() != file.read_bytes()):
+                raise _common.PathNotAllowed(f"the workspace already holds a different {file.name}: {dest}")
+            copies.append((file, dest))
+        entry["path"] = report.name
+        folder = report.parent.relative_to(target).as_posix() + "/"
+        if folder not in report_folders:
+            report_folders.append(folder)
+    record(state, args, f"State adopted from {source_rel}.")
+    track_framework(state, args)
+    errors = state_errors(state)
+    if errors:
+        raise _common.ValidationFailed(f"the adopted state would be invalid: {len(errors)} errors", errors=errors)
+    workspace.mkdir(parents=True, exist_ok=True)
+    copied = [dest.name for file, dest in copies if _copy_new(file, dest)]
+    swept = sweep_temporaries(workspace, (json_name, md_name))
+    _common.atomic_write_text(json_path, encode_state(state))
+    _common.atomic_write_text(md_path, render(state))
+    removable = [STATE_DIR.as_posix() + "/", *report_folders]
+    agents = target / "AGENTS.md"
+    if agents.is_file() and not agents.is_symlink() and STATE_DIR.as_posix() in agents.read_text(encoding="utf-8"):
+        removable.append(f"the line in AGENTS.md that points at {STATE_DIR.as_posix()}/")
+    warnings = [f"removed {swept} temporary files an interrupted write left in {workspace}"] if swept else []
+    return _common.Result(
+        data={
+            "state": str(json_path),
+            "markdown": str(md_path),
+            "label": label,
+            "adopted_from": source_rel,
+            "copied": copied,
+            "may_remove": removable,
+        },
+        summary=(
+            f"progress: adopted the state for {label} into {workspace}; the target is unchanged. The owner may now "
+            f"remove from the target: {', '.join(removable)}"
         ),
         warnings=warnings,
     )
@@ -520,8 +637,7 @@ SHOW_BUDGETS = {"items": 24 * 1024, "preferences": 8 * 1024, "not_queued": 6 * 1
 
 
 def run_show(args: Any) -> _common.Result:
-    target = _common.resolve_target(args.target)
-    label, path = find_state(target, args.label)
+    label, path = find_state(workspace_directory(args.workspace), args.label)
     state = read_state(path)
     summary = summary_data(state)
     counts = summary["statuses"]
@@ -751,8 +867,7 @@ def render(state: dict[str, Any]) -> str:
 
 
 def run_render(args: Any) -> _common.Result:
-    target = _common.resolve_target(args.target)
-    label, path = find_state(target, args.label)
+    label, path = find_state(workspace_directory(args.workspace), args.label)
     state = read_state(path)
     if state["repo"]["label"] != label:
         raise _common.ValidationFailed(f"the state in {path.name} is for {state['repo']['label']!r}, not {label!r}")
@@ -862,7 +977,7 @@ def find_item(state: dict[str, Any], finding: str) -> dict[str, Any]:
     for entry in state["not_queued"]:
         if entry["finding"] == finding:
             raise _refuse(f"{finding} was rejected in the audit and is never queued")
-    raise _refuse(f"no item for {finding}", "see the findings with: progress.py show --target REPO --json")
+    raise _refuse(f"no item for {finding}", "see the findings with: progress.py show --workspace DIR --json")
 
 
 def require_owner(args: Any, action: str) -> None:
@@ -974,8 +1089,7 @@ def commit_change(args: Any, label: str, path: Path, state: dict[str, Any], summ
 
 def open_state(args: Any) -> tuple[str, Path, dict[str, Any]]:
     args.date = _date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    target = _common.resolve_target(args.target)
-    label, path = find_state(target, args.label)
+    label, path = find_state(workspace_directory(args.workspace), args.label)
     state = read_state(path)
     if state["repo"]["label"] != label:
         raise _common.ValidationFailed(f"the state in {path.name} is for {state['repo']['label']!r}, not {label!r}")
@@ -1100,27 +1214,42 @@ def run_theme(args: Any) -> _common.Result:
 # --- Arguments ----------------------------------------------------------------------------------------
 
 
+WORKSPACE_HELP = "the folder that holds the state files"
+
+
 def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(prog="progress.py", description=INFO.summary)
     commands = parser.add_subparsers(dest="command", required=True, parser_class=_common.ToolParser)
-    init = commands.add_parser("init", help="create the state from a final audit report inside the target")
-    init.add_argument("--report", required=True, help="the final audit report (JSON), inside the target")
+    init = commands.add_parser("init", help="create the state beside a final audit report, outside the target")
+    init.add_argument(
+        "--report",
+        required=True,
+        help="the final audit report (JSON); its folder, outside the target, is the workspace",
+    )
     init.add_argument("--target", required=True, help="the repository the report audited")
     init.add_argument("--default-branch", help="the branch PRs go into (default: the report's branch, else main)")
     init.add_argument("--phase", default="init", help="the step that creates the state, for the log (default: init)")
     init.add_argument("--date", help="the date to record, YYYY-MM-DD (default: today, UTC)")
     init.add_argument("--framework-rev", help="the framework SHA to record (default: this checkout's HEAD)")
+    adopt = commands.add_parser(
+        "adopt", help="move a state kept in the target's docs/agentic-readiness/ into a workspace"
+    )
+    adopt.add_argument("--target", required=True, help="the checkout that holds the state (read only)")
+    adopt.add_argument("--workspace", required=True, help="the folder outside the target to keep the state in")
+    adopt.add_argument("--label", help="the state to adopt when the target holds more than one")
+    adopt.add_argument("--phase", required=True, help="the step or session making the move, for the log")
+    adopt.add_argument("--date", help="the date to record, YYYY-MM-DD (default: today, UTC)")
     show = commands.add_parser("show", help="summarise the state; --json prints it")
-    show.add_argument("--target", required=True)
-    show.add_argument("--label", help="the state to read when the target holds more than one")
+    show.add_argument("--workspace", required=True, help=WORKSPACE_HELP)
+    show.add_argument("--label", help="the state to read when the workspace holds more than one")
     show.add_argument("--json", action="store_true", help="print the state itself, bounded")
     render_command = commands.add_parser("render", help="write the Markdown view from the JSON")
-    render_command.add_argument("--target", required=True)
-    render_command.add_argument("--label", help="the state to render when the target holds more than one")
+    render_command.add_argument("--workspace", required=True, help=WORKSPACE_HELP)
+    render_command.add_argument("--label", help="the state to render when the workspace holds more than one")
 
     def write_options(command: _common.ToolParser, *, by_default: str = "agent") -> None:
-        command.add_argument("--target", required=True)
-        command.add_argument("--label", help="the state to change when the target holds more than one")
+        command.add_argument("--workspace", required=True, help=WORKSPACE_HELP)
+        command.add_argument("--label", help="the state to change when the workspace holds more than one")
         command.add_argument("--phase", required=True, help="the step or session making the change, for the log")
         command.add_argument(
             "--by", choices=("owner", "agent"), default=by_default, help="who decided (default: agent)"
@@ -1164,6 +1293,8 @@ def handler(argv: Sequence[str]) -> _common.Result:
     args = build_parser().parse_args(list(argv))
     if args.command == "init":
         return run_init(args)
+    if args.command == "adopt":
+        return run_adopt(args)
     if args.command == "show":
         return run_show(args)
     if args.command == "set-status":

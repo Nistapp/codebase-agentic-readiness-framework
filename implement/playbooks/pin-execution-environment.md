@@ -224,13 +224,13 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "./gradlew dependencies (before and after)" \
   --verification-result "<resolved versions identical; gradle.lockfile tracked>"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=version mismatch in CI,count=2" --note "<places, why not edited>"
 python3 implement/tools/progress.py pref set tools.node_major <value> --reason "<owner's words>" \
-  --by owner --target <repo> --phase <phase>
+  --by owner --workspace <workspace> --phase <phase>
 ```
 
 Owner choices to record as preferences: runtime major, pin mechanism, Gradle lock width, accepted

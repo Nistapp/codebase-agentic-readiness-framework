@@ -44,7 +44,7 @@ class TransitionCase(TargetCase):
         return next(item for item in self.state()["items"] if item["finding"] == finding)
 
     def run_cmd(self, *argv: str, by: str | None = None) -> tuple[int, dict[str, Any], str]:
-        tail = ["--target", str(self.target), "--phase", "IRtest", "--date", "2026-11-01"]
+        tail = ["--workspace", str(self.state_dir), "--phase", "IRtest", "--date", "2026-11-01"]
         if by:
             tail += ["--by", by]
         return call([*argv, *tail])
@@ -104,7 +104,7 @@ class FrameworkTrackingTests(TransitionCase):
         self.assertEqual(self.state()["log"][-1]["event"], "Framework moved from v0.3.2 at cafecafecafe to v0.3.3.")
 
     def test_show_gives_the_creating_the_last_and_these_tools_framework(self) -> None:
-        code, envelope, _ = call(["show", "--target", str(self.target)])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 0)
         self.assertEqual(
             envelope["data"]["versions"],
@@ -119,7 +119,7 @@ class FrameworkTrackingTests(TransitionCase):
         state = self.state()
         state["schema_version"] = "0.2"
         self.json_path.write_text(json.dumps(state), encoding="utf-8")
-        code, envelope, _ = call(["show", "--target", str(self.target)])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 2)
         self.assertTrue(envelope["data"]["error"].startswith("the state has schema '0.2'"))
 
@@ -489,7 +489,7 @@ class WriteTests(TransitionCase):
         self.assertEqual(self.temporaries(), [])
 
     def test_a_write_needs_a_state_and_a_phase(self) -> None:
-        code, _, _ = call(["set-status", "F-001", "in_progress", "--target", str(self.target)])
+        code, _, _ = call(["set-status", "F-001", "in_progress", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 1)
         self.json_path.unlink()
         code, envelope, _ = self.run_cmd("set-status", self.queued, "in_progress")
@@ -501,8 +501,8 @@ class WriteTests(TransitionCase):
                 "set-status",
                 self.queued,
                 "in_progress",
-                "--target",
-                str(self.target),
+                "--workspace",
+                str(self.state_dir),
                 "--phase",
                 "p",
                 "--date",

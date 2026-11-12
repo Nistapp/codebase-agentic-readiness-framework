@@ -216,10 +216,10 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 
 ```bash
 python3 implement/tools/progress.py pref set lint.java pmd --reason "<owner's words>" --by owner \
-  --target <repo> --phase <phase>
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+  --workspace <workspace> --phase <phase>
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --commit <sha> --debt "what=PMD violations,count=<N>,baseline=config/pmd/ruleset.xml" \
   --verification-command "./gradlew lint" --verification-result "exit 0 under the exclude list"
-python3 implement/tools/progress.py set-status F-nnn blocked --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn blocked --workspace <workspace> --phase <phase> \
   --reason "needs T2 lockfile"
 ```

@@ -188,14 +188,14 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "<wrapper or grep>" --verification-result "<result>"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=dependency findings,count=<n>,baseline=<file>" --note "<report-only step, review date>"
 python3 implement/tools/progress.py pref set ci.shape <wrappers-call-verbs|direct> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set ci.edits_authorised <value> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set ci.workflow_linter <actionlint|zizmor|check-jsonschema|...> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```

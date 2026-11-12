@@ -13,8 +13,8 @@ never pushes would break the one-pull-request-per-theme flow those runs depend o
 
 ## Decision
 
-1. **Default: stop at a local branch.** At the end of a theme (Stage 4) and of triage (Stage 1 step 9) the recipe
-   commits on the theme branch and stops. The operator reviews and pushes.
+1. **Default: stop at a local branch.** At the end of a theme (Stage 4) the recipe commits on the theme branch and
+   stops. The operator reviews and pushes. Triage commits nothing: its decisions stay in the workspace.
 2. **Opt-in: push and open a pull request.** When the owner recorded the preference `ci.pr_by_agent` with the value
    `yes`, the recipe pushes the theme branch and opens one pull request into the integration branch, then stops.
    Triage asks for it and records it with `progress.py pref set ci.pr_by_agent yes --by owner`. An absent key, or any

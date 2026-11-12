@@ -104,8 +104,8 @@ class Result:
 class ToolInfo:
     """A tool's identity. `manifest` is what `--describe` prints.
 
-    `writes_inside_target` stays `False` for every tool but one: `progress.py` writes the target's two state files,
-    the documented exception to rule 6 in README.md (ADR 0002).
+    `writes_inside_target` is `False` for every tool: rule 6 in README.md has no exception (ADR 0004). The field
+    stays in the manifest so that `--describe` and the catalogue state the guarantee.
     """
 
     name: str

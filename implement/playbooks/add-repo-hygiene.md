@@ -375,20 +375,20 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) and [Stage 4](..
 the T8 branch shared with [`register-index`](register-index.md):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "ls .github/CODEOWNERS" --verification-result "present"
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "ls SECURITY.md" --verification-result "present" \
   --note "owner action: enable private vulnerability reporting; fill TODO(owner) mailbox and response time"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=changelog absent until first release,count=1" \
   --note "release tool writes it; revisit when the first release pull request is merged"
 python3 implement/tools/progress.py pref set github.owner_handle <@handle> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set codeowners.default owner-owns-all \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set security.disclosure <github-private-reporting|private-contact> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```
 
 Record a preference only when the owner answers; absent means the default above. The theme closes once, after

@@ -36,7 +36,6 @@ EXAMPLE_STATE = EXAMPLES / "readiness-state.example-service.json"
 EXAMPLE_MD = EXAMPLES / "readiness-state.example-service.md"
 LATER_STATE = EXAMPLES / "readiness-state.example-service.in-progress.json"
 LATER_MD = EXAMPLES / "readiness-state.example-service.in-progress.md"
-REPORT_DIR = "docs/agentic-readiness-report"
 JSON_NAME = "example-service-agentic-readiness-state.json"
 MD_NAME = "example-service-agentic-readiness-STATE.md"
 # The values the checked-in example was made with.
@@ -64,8 +63,13 @@ def reversed_keys(value: Any) -> Any:
     return value
 
 
+def tree_bytes(root: Path) -> dict[str, bytes]:
+    """Every file under `root` and its bytes, to show a command left a tree as it was."""
+    return {path.relative_to(root).as_posix(): path.read_bytes() for path in sorted(root.rglob("*")) if path.is_file()}
+
+
 class TargetCase(unittest.TestCase):
-    """A temporary target that holds the example report where an audit leaves it."""
+    """A temporary target, and a workspace outside it that holds the example report where an audit leaves it."""
 
     def setUp(self) -> None:
         facts = mock.patch.object(progress, "framework_facts", side_effect=lambda: dict(EXAMPLE_FRAMEWORK))
@@ -74,10 +78,13 @@ class TargetCase(unittest.TestCase):
         self.tmp = Path(tempfile.mkdtemp(prefix="progress-test-")).resolve()
         self.addCleanup(shutil.rmtree, self.tmp, True)
         self.target = self.tmp / "example-service"
-        (self.target / REPORT_DIR).mkdir(parents=True)
-        self.report = self.target / REPORT_DIR / REPORT.name
+        self.target.mkdir()
+        (self.target / "README.md").write_text("# example-service\n", encoding="utf-8")
+        # The workspace: the audit run's output folder, outside the target, where the report stays.
+        self.state_dir = self.tmp / "audit-run"
+        self.state_dir.mkdir()
+        self.report = self.state_dir / REPORT.name
         shutil.copyfile(REPORT, self.report)
-        self.state_dir = self.target / "docs" / "agentic-readiness"
         self.json_path = self.state_dir / JSON_NAME
         self.md_path = self.state_dir / MD_NAME
 
@@ -92,6 +99,9 @@ class TargetCase(unittest.TestCase):
     def place_state(self, source: Path) -> None:
         self.state_dir.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, self.json_path)
+
+    def no_state(self) -> bool:
+        return not self.json_path.exists() and not self.md_path.exists()
 
     def temporaries(self) -> list[str]:
         return sorted(path.name for path in self.state_dir.iterdir() if path.name.endswith(".tmp"))
@@ -110,15 +120,16 @@ class ThemeMapTests(unittest.TestCase):
 
 
 class ContractTests(unittest.TestCase):
-    def test_describe_names_the_one_write_inside_the_target(self) -> None:
+    def test_describe_says_it_never_writes_inside_the_target(self) -> None:
         code, envelope, _ = call(["--describe"])
         self.assertEqual(code, 0)
         manifest = envelope["data"]
         self.assertEqual(manifest, progress.INFO.manifest())
         self.assertEqual(manifest["name"], "progress")
-        self.assertIs(manifest["writes_inside_target"], True)
+        self.assertIs(manifest["writes_inside_target"], False)
         self.assertIs(manifest["network"], False)
-        self.assertIn("docs/agentic-readiness/<label>-agentic-readiness-state.json", manifest["writes"])
+        self.assertIn("Only in the workspace", manifest["writes"])
+        self.assertIn("<label>-agentic-readiness-state.json", manifest["writes"])
 
     def test_no_subcommand_is_a_usage_error(self) -> None:
         code, envelope, _ = call([])
@@ -160,7 +171,7 @@ class InitTests(TargetCase):
         code, envelope, _ = self.init(*EXAMPLE_ARGS)
         self.assertEqual(code, 2)
         self.assertIn("Update the framework to v99.0.0 or later", envelope["data"]["error"])
-        self.assertFalse(self.state_dir.exists())
+        self.assertTrue(self.no_state())
 
     def test_init_warns_about_a_report_from_an_older_release(self) -> None:
         self.with_release("0.0.1")
@@ -210,7 +221,7 @@ class InitTests(TargetCase):
         self.assertEqual((deferred["status"], deferred["by"], deferred["theme"]), ("deferred", "owner", "T7"))
         self.assertTrue(deferred["reason"].startswith("The team uses two of the harnesses"))
         self.assertEqual(items["F-004"]["theme"], "T3")
-        self.assertEqual(state["source_reports"][0]["path"], f"{REPORT_DIR}/{REPORT.name}")
+        self.assertEqual(state["source_reports"][0]["path"], REPORT.name)
         self.assertEqual(state["source_reports"][0]["git_sha"], "deadbeefdead")
         self.assertEqual(state["repo"], {"label": "example-service", "default_branch": "main"})
 
@@ -244,12 +255,12 @@ class InitTests(TargetCase):
         self.assertEqual(self.json_path.read_bytes(), before)
 
     def test_init_refuses_a_draft(self) -> None:
-        draft = self.target / REPORT_DIR / DRAFT.name
+        draft = self.state_dir / DRAFT.name
         shutil.copyfile(DRAFT, draft)
         code, envelope, _ = self.init(*EXAMPLE_ARGS, report=draft)
         self.assertEqual(code, 2)
         self.assertEqual(envelope["data"]["error"], "the report is a draft, not final")
-        self.assertFalse(self.state_dir.exists())
+        self.assertTrue(self.no_state())
 
     def test_init_refuses_an_invalid_report(self) -> None:
         report = json.loads(self.report.read_text(encoding="utf-8"))
@@ -258,29 +269,47 @@ class InitTests(TargetCase):
         code, envelope, _ = self.init(*EXAMPLE_ARGS)
         self.assertEqual(code, 2)
         self.assertIn("the report is not valid", envelope["data"]["error"])
-        self.assertFalse(self.state_dir.exists())
+        self.assertTrue(self.no_state())
 
-    def test_init_refuses_a_report_outside_the_target(self) -> None:
-        code, envelope, _ = self.init(*EXAMPLE_ARGS, report=REPORT)
+    def test_init_writes_beside_the_report_and_nothing_in_the_target(self) -> None:
+        before = tree_bytes(self.target)
+        envelope = self.init_ok()
+        self.assertEqual(tree_bytes(self.target), before)
+        self.assertEqual(Path(envelope["data"]["state"]), self.json_path)
+        self.assertEqual(Path(envelope["data"]["markdown"]), self.md_path)
+        self.assertEqual(
+            sorted(path.name for path in self.state_dir.iterdir()), sorted([REPORT.name, JSON_NAME, MD_NAME])
+        )
+
+    def test_init_refuses_a_report_inside_the_target(self) -> None:
+        inside = self.target / "docs" / "agentic-readiness-report" / REPORT.name
+        inside.parent.mkdir(parents=True)
+        shutil.copyfile(REPORT, inside)
+        before = tree_bytes(self.target)
+        code, envelope, err = self.init(*EXAMPLE_ARGS, report=inside)
         self.assertEqual(code, 1)
-        self.assertIn("the report must be inside the target", envelope["data"]["error"])
+        self.assertIn("the report's folder is inside the target", envelope["data"]["error"])
+        self.assertIn("keep the report in the audit's output folder, outside the target", err)
+        self.assertEqual(tree_bytes(self.target), before)
 
     def test_init_refuses_a_missing_report(self) -> None:
         code, envelope, _ = self.init(report=self.target / "nothing.json")
         self.assertEqual(code, 1)
         self.assertIn("report not found", envelope["data"]["error"])
 
-    def test_init_refuses_a_state_folder_that_leaves_the_target(self) -> None:
-        outside = self.tmp / "elsewhere"
-        outside.mkdir()
-        (self.target / "docs" / "agentic-readiness").symlink_to(outside, target_is_directory=True)
-        code, envelope, _ = self.init(*EXAMPLE_ARGS)
+    def test_init_refuses_a_workspace_that_links_into_the_target(self) -> None:
+        inside = self.target / "reports"
+        inside.mkdir()
+        shutil.copyfile(REPORT, inside / REPORT.name)
+        link = self.tmp / "linked-run"
+        link.symlink_to(inside, target_is_directory=True)
+        code, envelope, _ = self.init(*EXAMPLE_ARGS, report=link / REPORT.name)
         self.assertEqual(code, 1)
-        self.assertIn("the path leaves the target", envelope["data"]["error"])
-        self.assertEqual(list(outside.iterdir()), [])
+        self.assertIn("the report's folder is inside the target", envelope["data"]["error"])
+        self.assertEqual(sorted(path.name for path in inside.iterdir()), [REPORT.name])
 
     def test_init_refuses_a_state_file_that_is_a_symlink(self) -> None:
-        self.state_dir.mkdir(parents=True)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         decoy = self.tmp / "decoy.md"
         decoy.write_text("keep\n", encoding="utf-8")
         self.md_path.symlink_to(decoy)
@@ -316,7 +345,7 @@ class InitTests(TargetCase):
 class ShowTests(TargetCase):
     def test_show_summarises_the_state(self) -> None:
         self.place_state(LATER_STATE)
-        code, envelope, err = call(["show", "--target", str(self.target)])
+        code, envelope, err = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 0)
         data = envelope["data"]
         self.assertEqual(data["label"], "example-service")
@@ -328,7 +357,7 @@ class ShowTests(TargetCase):
 
     def test_show_json_prints_the_state(self) -> None:
         self.place_state(LATER_STATE)
-        code, envelope, _ = call(["show", "--target", str(self.target), "--json"])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir), "--json"])
         self.assertEqual(code, 0)
         self.assertEqual(envelope["data"]["state"], json.loads(LATER_STATE.read_text(encoding="utf-8")))
         self.assertIs(envelope["truncated"], False)
@@ -338,9 +367,9 @@ class ShowTests(TargetCase):
         state["log"] = [
             {"date": "2026-11-01", "phase": "IR04.2", "event": f"event {n} " + "x" * 400} for n in range(60)
         ]
-        self.state_dir.mkdir(parents=True)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         self.json_path.write_text(json.dumps(state), encoding="utf-8")
-        code, envelope, _ = call(["show", "--target", str(self.target), "--json"])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir), "--json"])
         self.assertEqual(code, 0)
         self.assertIs(envelope["truncated"], True)
         shown = envelope["data"]["state"]["log"]
@@ -348,7 +377,8 @@ class ShowTests(TargetCase):
         self.assertEqual(len(shown) + envelope["data"]["omitted"]["log"], 60)
 
     def test_show_needs_a_state(self) -> None:
-        code, envelope, err = call(["show", "--target", str(self.target)])
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        code, envelope, err = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 1)
         self.assertIn("no state in", envelope["data"]["error"])
         self.assertIn("progress.py init", err)
@@ -358,33 +388,239 @@ class ShowTests(TargetCase):
         other = json.loads(LATER_STATE.read_text(encoding="utf-8"))
         other["repo"]["label"] = "other"
         (self.state_dir / "other-agentic-readiness-state.json").write_text(json.dumps(other), encoding="utf-8")
-        code, envelope, _ = call(["show", "--target", str(self.target)])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 1)
         self.assertIn("pick one with --label: example-service, other", envelope["data"]["error"])
-        code, envelope, _ = call(["show", "--target", str(self.target), "--label", "other"])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir), "--label", "other"])
         self.assertEqual((code, envelope["data"]["label"]), (0, "other"))
 
     def test_show_refuses_an_invalid_state(self) -> None:
         state = json.loads(LATER_STATE.read_text(encoding="utf-8"))
         state["items"][0]["status"] = "skipped"
-        self.state_dir.mkdir(parents=True)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         self.json_path.write_text(json.dumps(state), encoding="utf-8")
-        code, envelope, _ = call(["show", "--target", str(self.target)])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 2)
         self.assertTrue(any("needs a reason" in error for error in envelope["data"]["errors"]))
 
     def test_show_refuses_a_repeated_key(self) -> None:
-        self.state_dir.mkdir(parents=True)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         self.json_path.write_text('{"schema_version": "0.1", "schema_version": "0.1"}', encoding="utf-8")
-        code, envelope, _ = call(["show", "--target", str(self.target)])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 2)
         self.assertIn("repeats the key", envelope["data"]["error"])
+
+
+class WorkspaceTests(TargetCase):
+    """Every command but init finds the state in the folder --workspace names."""
+
+    def test_a_missing_workspace_is_refused(self) -> None:
+        code, envelope, _ = call(["show", "--workspace", str(self.tmp / "nowhere")])
+        self.assertEqual(code, 1)
+        self.assertIn("workspace not found", envelope["data"]["error"])
+
+    def test_a_workspace_that_is_a_file_is_refused(self) -> None:
+        plain = self.tmp / "plain.txt"
+        plain.write_text("x\n", encoding="utf-8")
+        code, envelope, _ = call(["render", "--workspace", str(plain)])
+        self.assertEqual(code, 1)
+        self.assertIn("workspace is not a directory", envelope["data"]["error"])
+
+    def test_no_command_but_init_takes_target(self) -> None:
+        self.place_state(LATER_STATE)
+        for argv in (
+            ["show"],
+            ["render"],
+            ["set-status", "F-001", "in_progress", "--phase", "p"],
+            ["skip", "F-001", "--reason", "r", "--by", "owner", "--phase", "p"],
+            ["pref", "set", "k", "v", "--reason", "r", "--by", "owner", "--phase", "p"],
+            ["theme", "T1", "--status", "branch_open", "--branch", "b", "--phase", "p"],
+        ):
+            with self.subTest(command=argv[0]):
+                code, envelope, _ = call([*argv, "--target", str(self.target)])
+                self.assertEqual(code, 1, envelope)
+                self.assertIn("--workspace", envelope["data"]["error"])
+
+    def test_a_workspace_reached_through_a_symlink_is_followed(self) -> None:
+        self.place_state(LATER_STATE)
+        link = self.tmp / "workspace-link"
+        link.symlink_to(self.state_dir, target_is_directory=True)
+        code, envelope, _ = call(["show", "--workspace", str(link)])
+        self.assertEqual((code, envelope["data"]["label"]), (0, "example-service"))
+
+    def test_a_state_file_that_is_a_symlink_is_refused(self) -> None:
+        elsewhere = self.tmp / "elsewhere"
+        elsewhere.mkdir()
+        shutil.copyfile(LATER_STATE, elsewhere / JSON_NAME)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
+        self.json_path.symlink_to(elsewhere / JSON_NAME)
+        code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
+        self.assertEqual(code, 1)
+        self.assertIn("is a symlink", envelope["data"]["error"])
+        self.assertFalse(self.md_path.exists())
+
+
+OLD_STATE_DIR = "docs/agentic-readiness"
+OLD_REPORT_DIR = "docs/agentic-readiness-report"
+
+
+class AdoptTests(TargetCase):
+    """`adopt` moves a state the older tools kept in the target into a workspace, and writes nothing in the target."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.old = self.target / OLD_STATE_DIR
+        self.old.mkdir(parents=True)
+        reports = self.target / OLD_REPORT_DIR
+        reports.mkdir(parents=True)
+        shutil.copyfile(REPORT, reports / REPORT.name)
+        shutil.copyfile(REPORT.with_suffix(".md"), reports / REPORT.with_suffix(".md").name)
+        state = json.loads(EXAMPLE_STATE.read_text(encoding="utf-8"))
+        state["source_reports"][0]["path"] = f"{OLD_REPORT_DIR}/{REPORT.name}"
+        self.write_old(state)
+        (self.target / "AGENTS.md").write_text(
+            f"# AGENTS.md\n\nRead {OLD_STATE_DIR}/example-service-agentic-readiness-STATE.md first.\n", encoding="utf-8"
+        )
+        self.workspace = self.tmp / "workspace"
+        self.json_path = self.workspace / JSON_NAME
+        self.md_path = self.workspace / MD_NAME
+
+    def write_old(self, state: dict[str, Any], name: str = JSON_NAME) -> None:
+        (self.old / name).write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+
+    def adopt(self, *extra: str, workspace: Path | None = None) -> tuple[int, dict[str, Any], str]:
+        where = str(workspace or self.workspace)
+        return call(["adopt", "--target", str(self.target), "--workspace", where, "--phase", "IW", *extra])
+
+    def adopt_ok(self, *extra: str) -> dict[str, Any]:
+        code, envelope, err = self.adopt("--date", "2026-11-12", *extra)
+        self.assertEqual(code, 0, (envelope, err))
+        return envelope
+
+    def test_adopt_moves_the_state_and_both_report_files_into_the_workspace(self) -> None:
+        before = json.loads((self.old / JSON_NAME).read_text(encoding="utf-8"))
+        envelope = self.adopt_ok()
+        md_report = REPORT.with_suffix(".md").name
+        self.assertEqual(
+            sorted(path.name for path in self.workspace.iterdir()), sorted([JSON_NAME, MD_NAME, REPORT.name, md_report])
+        )
+        self.assertEqual((self.workspace / REPORT.name).read_bytes(), REPORT.read_bytes())
+        state = json.loads(self.json_path.read_text(encoding="utf-8"))
+        self.assertEqual(state["source_reports"][0]["path"], REPORT.name)
+        self.assertEqual(state["log"][:-1], before["log"])
+        self.assertEqual(
+            state["log"][-1],
+            {"date": "2026-11-12", "phase": "IW", "event": f"State adopted from {OLD_STATE_DIR}/{JSON_NAME}."},
+        )
+        self.assertEqual(self.md_path.read_text(encoding="utf-8"), progress.render(state))
+        self.assertEqual(envelope["data"]["copied"], [REPORT.name, md_report])
+        self.assertEqual(envelope["data"]["adopted_from"], f"{OLD_STATE_DIR}/{JSON_NAME}")
+        code, shown, _ = call(["show", "--workspace", str(self.workspace)])
+        self.assertEqual((code, shown["data"]["label"]), (0, "example-service"))
+
+    def test_adopt_leaves_the_target_byte_for_byte(self) -> None:
+        before = tree_bytes(self.target)
+        self.adopt_ok()
+        self.assertEqual(tree_bytes(self.target), before)
+
+    def test_the_envelope_lists_what_the_owner_may_remove(self) -> None:
+        code, envelope, err = self.adopt()
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(
+            envelope["data"]["may_remove"],
+            [f"{OLD_STATE_DIR}/", f"{OLD_REPORT_DIR}/", f"the line in AGENTS.md that points at {OLD_STATE_DIR}/"],
+        )
+        self.assertIn("the target is unchanged", err)
+        self.assertIn(f"remove from the target: {OLD_STATE_DIR}/", err)
+
+    def test_the_agents_line_is_listed_only_when_it_is_there(self) -> None:
+        (self.target / "AGENTS.md").write_text("# AGENTS.md\n", encoding="utf-8")
+        self.assertEqual(self.adopt_ok()["data"]["may_remove"], [f"{OLD_STATE_DIR}/", f"{OLD_REPORT_DIR}/"])
+
+    def test_a_report_that_was_edited_stops_it(self) -> None:
+        report = self.target / OLD_REPORT_DIR / REPORT.name
+        report.write_text(
+            report.read_text(encoding="utf-8").replace("package.json", "package.JSON", 1), encoding="utf-8"
+        )
+        code, envelope, err = self.adopt()
+        self.assertEqual(code, 2, envelope)
+        self.assertIn("the report was edited after init", envelope["data"]["error"])
+        self.assertIn("restore the report", err)
+        self.assertFalse(self.workspace.exists())
+
+    def test_a_workspace_that_holds_the_label_stops_it(self) -> None:
+        self.adopt_ok()
+        before = self.json_path.read_bytes()
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("already holds a state for example-service", envelope["data"]["error"])
+        self.assertEqual(self.json_path.read_bytes(), before)
+
+    def test_two_states_need_a_label(self) -> None:
+        other = json.loads((self.old / JSON_NAME).read_text(encoding="utf-8"))
+        other["repo"]["label"] = "other"
+        self.write_old(other, "other-agentic-readiness-state.json")
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("pick one with --label: example-service, other", envelope["data"]["error"])
+        self.assertFalse(self.workspace.exists())
+        self.adopt_ok("--label", "example-service")
+        self.assertTrue(self.json_path.is_file())
+
+    def test_a_state_file_that_is_a_symlink_stops_it(self) -> None:
+        elsewhere = self.tmp / "elsewhere.json"
+        (self.old / JSON_NAME).rename(elsewhere)
+        (self.old / JSON_NAME).symlink_to(elsewhere)
+        code, envelope, _ = self.adopt("--label", "example-service")
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("is a symlink", envelope["data"]["error"])
+        self.assertFalse(self.workspace.exists())
+
+    def test_a_missing_report_stops_it(self) -> None:
+        (self.target / OLD_REPORT_DIR / REPORT.name).unlink()
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("a report that is not in the target", envelope["data"]["error"])
+        self.assertFalse(self.workspace.exists())
+
+    def test_another_schema_version_stops_it_with_the_plain_message(self) -> None:
+        state = json.loads((self.old / JSON_NAME).read_text(encoding="utf-8"))
+        state["schema_version"] = "0.2"
+        self.write_old(state)
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 2, envelope)
+        error = envelope["data"]["error"]
+        self.assertIn("the state has schema '0.2'", error)
+        self.assertIn("these tools read schema '0.3'", error)
+        self.assertIn("run init again from a final report", error)
+        self.assertFalse(self.workspace.exists())
+
+    def test_a_workspace_inside_the_target_stops_it(self) -> None:
+        code, envelope, _ = self.adopt(workspace=self.target / "state")
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("the workspace is inside the target", envelope["data"]["error"])
+        self.assertFalse((self.target / "state").exists())
+
+    def test_a_different_report_file_in_the_workspace_stops_it(self) -> None:
+        self.workspace.mkdir()
+        (self.workspace / REPORT.name).write_text("{}\n", encoding="utf-8")
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn(f"already holds a different {REPORT.name}", envelope["data"]["error"])
+        self.assertEqual((self.workspace / REPORT.name).read_text(encoding="utf-8"), "{}\n")
+        self.assertFalse(self.json_path.exists())
+
+    def test_the_same_report_already_in_the_workspace_is_kept(self) -> None:
+        self.workspace.mkdir()
+        shutil.copyfile(REPORT, self.workspace / REPORT.name)
+        envelope = self.adopt_ok()
+        self.assertEqual(envelope["data"]["copied"], [REPORT.with_suffix(".md").name])
 
 
 class RenderTests(TargetCase):
     def test_render_writes_the_golden_markdown(self) -> None:
         self.place_state(LATER_STATE)
-        code, envelope, _ = call(["render", "--target", str(self.target)])
+        code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 0)
         self.assertEqual(self.md_path.read_bytes(), LATER_MD.read_bytes())
         self.assertEqual(envelope["data"]["bytes"], len(LATER_MD.read_bytes()))
@@ -415,7 +651,7 @@ class RenderTests(TargetCase):
         self.place_state(LATER_STATE)
         self.md_path.write_text("old view\n", encoding="utf-8")
         with mock.patch("os.replace", side_effect=OSError("killed")):
-            code, envelope, _ = call(["render", "--target", str(self.target)])
+            code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 3)
         self.assertIn("killed", envelope["data"]["error"])
         self.assertEqual(self.md_path.read_text(encoding="utf-8"), "old view\n")
@@ -427,7 +663,7 @@ class RenderTests(TargetCase):
         stale.write_text("half", encoding="utf-8")
         unrelated = self.state_dir / ".other.tmp"
         unrelated.write_text("keep", encoding="utf-8")
-        code, envelope, _ = call(["render", "--target", str(self.target)])
+        code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 0)
         self.assertFalse(stale.exists())
         self.assertTrue(unrelated.exists())
@@ -436,9 +672,9 @@ class RenderTests(TargetCase):
     def test_render_refuses_a_state_whose_label_differs_from_its_name(self) -> None:
         state = json.loads(LATER_STATE.read_text(encoding="utf-8"))
         state["repo"]["label"] = "other"
-        self.state_dir.mkdir(parents=True)
+        self.state_dir.mkdir(parents=True, exist_ok=True)
         self.json_path.write_text(json.dumps(state), encoding="utf-8")
-        code, envelope, _ = call(["render", "--target", str(self.target)])
+        code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 2)
         self.assertIn("is for 'other'", envelope["data"]["error"])
         self.assertFalse(self.md_path.exists())
@@ -448,7 +684,7 @@ class RenderTests(TargetCase):
         decoy = self.tmp / "decoy.md"
         decoy.write_text("keep\n", encoding="utf-8")
         self.md_path.symlink_to(decoy)
-        code, _, _ = call(["render", "--target", str(self.target)])
+        code, _, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 1)
         self.assertEqual(decoy.read_text(encoding="utf-8"), "keep\n")
         self.assertTrue(os.path.islink(self.md_path))

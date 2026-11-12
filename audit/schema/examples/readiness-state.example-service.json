@@ -15,7 +15,7 @@
   },
   "source_reports": [
     {
-      "path": "docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json",
+      "path": "example-service.audit-report.20261010T094207Z.json",
       "git_sha": "deadbeefdead",
       "catalogue_version": "0.7.0",
       "release": "0.3.2",
@@ -238,7 +238,7 @@
     {
       "date": "2026-10-29",
       "phase": "init",
-      "event": "State created from docs/agentic-readiness-report/example-service.audit-report.20261010T094207Z.json: 7 queued, 1 deferred, 2 not queued."
+      "event": "State created from example-service.audit-report.20261010T094207Z.json: 7 queued, 1 deferred, 2 not queued."
     }
   ]
 }

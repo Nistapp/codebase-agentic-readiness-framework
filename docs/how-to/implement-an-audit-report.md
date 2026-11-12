@@ -9,7 +9,8 @@
 
 ## Prerequisites
 
-- [ ] A final audit report: the `.json` and `.md` pair `report.py finalise` wrote, which sit outside the target
+- [ ] A final audit report: the `.json` and `.md` pair `report.py finalise` wrote, outside the target. Their folder
+      is the **workspace**, where the run keeps its state
 - [ ] A clean working tree in the target, on the integration branch (for example `dev`)
 - [ ] Python 3.11+ on `PATH`
 - [ ] The recipe: a framework checkout, or the `agentic-readiness-implement` skill installed beside the
@@ -19,32 +20,27 @@
 
 ## Step-by-Step Instructions
 
-### Step 1: Hand the report over to the target and create the state
+### Step 1: Point `init` at the report
 
-The audit writes only outside the target, and the implement recipe reads the report from inside it, so the owner
-moves it across. Nothing else copies it.
+The audit's output folder is the implement workspace. The report stays there, and the state goes beside it.
+Nothing of the run's own goes into the target, and nothing is committed or pushed for it
+([ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)).
 
-1. Copy the final report's two files into the target, named
-   `docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.json` and `.md` (`<kind>` is a short name for the
-   repository, such as `server`; `<ts>` is the stamp from the audit's file name). Use the target's own naming if it
-   has one ([ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) records the
-   push and PR policy that follows).
-2. Commit the pair on the integration branch, and let it reach the branch the work will start from. The report is
-   evidence; do not edit it afterwards. An edit is detected: `progress.py init` records the SHA-256 of the
-   `.json`, and `check_drift.py` reports `report_changed` if the file differs.
-3. Start the agent with [`implement/prompts/kickoff.md`](../../implement/prompts/kickoff.md). Its Stage 0
-   validates the report, runs the drift check and creates the state in a worktree on a triage branch, so nothing
-   is committed on the integration branch itself (`init` refuses a draft or an invalid report, a report outside the
-   target, and an existing state):
+1. Keep the workspace until the run ends. The skips and preferences live only there.
+2. Do not copy, commit or edit the report. `progress.py init` records the SHA-256 of the `.json`.
+   `check_drift.py` reports `report_changed` when the file differs.
+3. Start the agent with [`implement/prompts/kickoff.md`](../../implement/prompts/kickoff.md), with the path to the
+   final report's `.json`. Its Stage 0 validates the report, runs the drift check and creates the state:
 
    ```bash
    python3 implement/tools/progress.py init \
-     --report <triage worktree>/docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.json \
-     --target <triage worktree> --default-branch <integration branch> --phase <session id>
+     --report <workspace>/<label>.audit-report.<stamp>.json \
+     --target <repo> --default-branch <integration branch> --phase <session id>
    ```
 
-4. Stage 1 commits the two state files (`docs/agentic-readiness/<label>-agentic-readiness-state.json` and
-   `-STATE.md`) on that branch. Merge the triage branch before the first theme starts.
+   `init` refuses a draft or an invalid report, a workspace inside the target, and an existing state.
+4. The two state files land beside the report: `<label>-agentic-readiness-state.json` and
+   `<label>-agentic-readiness-STATE.md`. The target does not change.
 
 ### Step 2: Triage once
 
@@ -56,7 +52,8 @@ Then it walks the queued findings theme by theme (Stage 1). For each one you cho
 reason; a skip is final for every later session. You also state the preferences that bind the run: tools you
 prefer, scope limits such as "no mass reformat", and whether the agent may push a branch and open a pull request
 (`ci.pr_by_agent`; without `yes` it stops at a local branch, [ADR 0003](../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md)).
-The agent records each answer with `progress.py` as you give it, commits the state on a triage branch, and stops.
+The agent records each answer with `progress.py` in the workspace as you give it, and stops. Triage changes nothing
+in the target.
 
 ### Step 3: Approve each theme's plan
 
@@ -88,13 +85,13 @@ session records the merge.
 
 ### Step 5: Close out
 
-After the last theme is merged (Stage 5), the agent records the last merge, and you run a second audit with the
-audit recipe on a pinned commit and hand that report over as in Step 1, beside the first, which is never edited.
-The agent compares the two:
+After the last theme is merged (Stage 5), the agent records the last merge. Then you run a second audit with the
+audit recipe on a pinned commit. It writes to an output folder of its own. The first report stays in the workspace,
+and neither report is ever copied or edited. The agent compares the two:
 
 ```bash
 python3 implement/tools/compare_reports.py <first report> <second report> \
-  --state <target>/docs/agentic-readiness/<label>-agentic-readiness-state.json
+  --state <workspace>/<label>-agentic-readiness-state.json
 ```
 
 Each move is labelled: explained by the state, by an engine change between the audits, or unexplained. The
@@ -124,7 +121,7 @@ annotated one.
 
 ## Verification
 
-- `python3 implement/tools/progress.py show --target <target>` lists no item as `queued` or `in_progress`;
+- `python3 implement/tools/progress.py show --workspace <workspace>` lists no item as `queued` or `in_progress`;
   every item is `done`, `partial` (with debt), `failed` or `blocked` (with a reason), `deferred` or `skipped`.
 - Every theme with items is `merged` in the state, with its pull request and merge commit.
 - `compare_reports.py` on the two reports labels every moved check, and the target's own gate passes on the

@@ -80,8 +80,9 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    search or storage engine, an authentication or tenant-selection mechanism, a branch model.
 4. **Architecture overview scope.** Default: modules or apps, entry points, data stores, one authentication or
    request flow, from the code index of this repository only.
-5. **Instruction-file line.** One line naming `docs/STYLE_GUIDE.md`, `docs/adr/`, the ADR policy page and
-   `docs/architecture/`, placed beside the existing pointer line (section per `agents_md.pointer_section`).
+5. **Instruction-file line.** One line names `docs/STYLE_GUIDE.md`, `docs/adr/`, the ADR policy page and
+   `docs/architecture/`. It goes in the section `agents_md.pointer_section` names. Without that preference, ask
+   the owner where it goes and record the answer with `pref set agents_md.pointer_section`.
    The AGENTS.md theme (T7) reorganises the file later; tell it in the status that the line exists.
 6. **Prose check (DOC-05).** The framework has a stdlib Python template that checks the style guide's rules and can
    fail above a count: [`templates/docs_prose_check.py`](templates/docs_prose_check.py). It is code under the
@@ -103,9 +104,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 
 1. **Baseline.** List the Markdown files under `docs/`, in the root and in sub-folders. Count
    Markdown lint violations with the pinned linter on every tracked Markdown file (report only, nothing is
-   fixed). Record the count, but it is a draft: `progress.py render` adds a generated state view that is itself
-   Markdown with a few violations, and so do the new pages, so **measure the final baseline after the last render**
-   (with the new pages staged, since the report lists tracked files) and set it then.
+   fixed). Record the count, but it is a draft: the new pages add a few violations. So **measure the final baseline
+   after the last new page**, and set it then. Stage the new pages first, since the report lists tracked files.
    The census numbers in the finding text are another thing to re-measure: a stale NAV-03 count usually comes from
    untracked data on disk, so count with `git ls-files`.
 2. **Docs index (DOC-01).** If `docs/README.md` (or `index.md`) does not exist, write it: one paragraph on what
@@ -301,19 +301,19 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "test -f docs/STYLE_GUIDE.md" \
   --verification-result "present; named in the instruction file"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=markdown lint violations,count=<n>,baseline=<file>" --note "<mechanism>"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --commit <sha> --debt "what=long sentences in docs,count=<n>" --debt "what=vague words in docs,count=<n>" \
   --debt "what=docs pages without a diagram,count=<n>" \
   --note "style guide sections added; worst pages: docs/a.md (12), docs/b.md (9)"
 python3 implement/tools/progress.py pref set docs.prose_check <skip|template> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.prose_check_licence <SPDX id> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```

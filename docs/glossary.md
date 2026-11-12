@@ -25,6 +25,7 @@ redefined; see [`docs/framework/glossary.md`](framework/glossary.md).
 | `captured_by` | Whether evidence was captured by a tool or reported by the agent. |
 | Eval mode | A run with fixed answers and confirmation policy, used for evaluation only. |
 | Finding key | A finding's stable identifier: the check ID, then an optional scope after a colon. A re-audit matches findings by it. |
+| Workspace | The folder that holds the final audit report an implement run starts from, normally the audit's output folder. The run keeps its state there, beside the report, outside the target. See the [state contract](../implement/state.md#files-and-paths). |
 | Intake file | The JSON file that answers the audit's Stage 0 questions, so that a run needs no interview. |
 | Override | A report verdict that differs from the engine's, recorded with a reason and agent-captured counter-evidence. |
 | Framework release | The release version of the framework, such as `0.3.2`, from `.release-please-manifest.json`. Every report and state records the release that made it. See [Versions](reference/versions.md). |

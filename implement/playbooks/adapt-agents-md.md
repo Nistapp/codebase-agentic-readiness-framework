@@ -56,7 +56,7 @@ before the first diff.
 
 | Key | Effect |
 |---|---|
-| `agents_md.pointer_section` | Where the readiness pointer and the docs line already sit; keep them there |
+| `agents_md.pointer_section` | Where the docs line already sits; keep it there |
 | `agents_md.stubs` | `keep` (default) or `delete-asked`: what happens to a vendor pointer file (Inputs 3) |
 | `agents_md.deferral` | `inline` (default) or `harness-config`: how a deferral to a second rules file is resolved (Inputs 4) |
 | `agents_md.generic_text` | `move-to-docs` (default) or `delete`, per section if the owner chose per section (Inputs 5) |
@@ -159,11 +159,11 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    is the worked example.
 4. **Documentation contract and boundaries (AGT-03, AGT-06).** Three facts, each on its own line: `docs/` is the
    documentation home, `docs/STYLE_GUIDE.md` holds the writing rules, the scratch directory (`artefacts/`) is scratch
-   and off-limits as a source of truth. T6 usually wrote the first two beside the readiness pointer
-   (`docs.agents_line`); keep them there and add only what is missing. If the repository has no scratch directory, the
-   third line says where scratch goes, so the rule exists before the folder does. Then add the boundary rules the owner
-   picked (Inputs 2), one line each, each naming a path that exists (`test -e <path>`), in the section where the file
-   describes its structure.
+   and off-limits as a source of truth. T6 usually wrote the first two in the section `agents_md.pointer_section`
+   names (`docs.agents_line`). Keep them there and add only what is missing. If the repository has no scratch
+   directory, the third line says where scratch goes, so the rule exists before the folder does. Then add the
+   boundary rules the owner picked (Inputs 2), one line each, each naming a path that exists (`test -e <path>`), in
+   the section where the file describes its structure.
 5. **Definition of done (AGT-04).** One sentence, in the definition-of-done section (create the section only if none
    exists), naming the triggers and the same change set. The framework's own wording is the example:
    "When a change alters a public interface, observable behaviour, the architecture or a decision, update the
@@ -317,18 +317,18 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 
 ```bash
 python3 implement/tools/progress.py pref set agents_md.stubs keep \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set agents_md.generic_text move-to-docs \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "grep -n -i 'same change set' AGENTS.md" \
   --verification-result "one sentence, triggers named"
 python3 implement/tools/progress.py pref set agents_md.reader "a new engineer who knows Java and Gradle" \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "grep -n -i -A6 'write for' AGENTS.md" \
   --verification-result "section names the reader, reports and decisions; AGT-12 PASS"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --commit <sha> --debt "what=files that break the <rule> rule,count=<N>" --note "rule kept as target state"
 ```
 
