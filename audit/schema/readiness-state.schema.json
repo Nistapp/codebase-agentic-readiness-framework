@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:codebase-agentic-readiness-framework:readiness-state:0.3",
   "title": "Readiness state",
-  "description": "The implement recipe's per-repository state: which audit findings are queued, done, partial, skipped or deferred, the owner's preferences, each theme's branch and PR, and a log. It lives in the target at docs/agentic-readiness/<label>-agentic-readiness-state.json and is written only by tools/progress.py. The rules the subset cannot express (a reason for some statuses, unique ids, the theme of each check) are checked by progress.py; they are listed in SCHEMA.md and implement/state.md.",
+  "description": "The implement recipe's per-repository state: which audit findings are queued, done, partial, skipped or deferred, the owner's preferences, each theme's branch and PR, and a log. It lives in the workspace, the folder of the final audit report, outside the target, as <label>-agentic-readiness-state.json, and is written only by tools/progress.py. The rules the subset cannot express (a reason for some statuses, unique ids, the theme of each check) are checked by progress.py; they are listed in SCHEMA.md and implement/state.md.",
   "type": "object",
   "required": ["schema_version", "repo", "framework", "last_framework", "source_reports", "preferences", "themes", "items", "not_queued", "log"],
   "additionalProperties": false,
