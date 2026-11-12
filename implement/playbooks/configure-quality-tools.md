@@ -45,7 +45,9 @@ The verb names, `check`'s composition and the split of write verbs belong to
    already has is used, at the version it has.** Upgrading it is not T1 work; offer it only as a separate
    owner choice.
 2. **Offer only when nothing exists.** Two to four current options, pros and cons, a recommendation, from the
-   tables below. The owner decides; record it with `progress.py pref set`.
+   tables below, plus none. The owner decides; record it with `progress.py pref set`. A one-off pick from an
+   earlier step is offered first. A blanket go-ahead picks no tool; see
+   [When a needed tool is missing](../SKILL.md#when-a-needed-tool-is-missing).
 3. **Style.** When a style document fixes indentation, line endings or width, the formatter MUST honour it.
    Changing the style document instead is the owner's alternative, never the default.
 4. **Adoption mode** for a tool that fails on today's code: ratchet (changed files only) inside `check`, plus a

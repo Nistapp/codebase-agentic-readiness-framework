@@ -52,7 +52,8 @@ These apply through every stage, without exception:
   never turn a rule off, unless the owner chooses that and the choice is recorded as a preference.
 - **The owner chooses tools.** Use the tool the repository already has for a job. If it has none, offer two
   to four current, maintained options with pros and cons and a recommendation, and let the owner decide.
-  Never install a dependency the owner did not approve.
+  Never install a dependency the owner did not approve. This holds at every step, not only in a playbook's
+  "Inputs to ask": follow [When a needed tool is missing](#when-a-needed-tool-is-missing).
 - **Never touch secrets.** Never open, print or quote a `.env` file or any other secret store. Inventory
   variable names, never values.
 - **Keep private content private.** Nothing from a private repository or workspace (names, paths, values)
@@ -328,7 +329,8 @@ only what is specific to it.
 8. **Owner choices on the way.** A new choice is recorded at once with `pref set ... --by owner` and the owner's
    words. Preferences from earlier sessions are already in the workspace; read them, never ask again.
 9. **Markdown and diagrams.** Lint every changed Markdown file with the repository's own linter, and validate
-   every Mermaid block before saving.
+   every Mermaid block before saving. When the repository has no linter, follow
+   [When a needed tool is missing](#when-a-needed-tool-is-missing).
 10. **Ask** before any step the playbook does not cover, and before any step that does not fit the repository.
 
 ## Stage 4: Close the theme
@@ -343,7 +345,8 @@ when allowed, the pull request) is ready for the owner.
 2. **The repository's gate.** Run its `check` verb (and its docs lint when Markdown changed) in the worktree. A
    failure that exists on the integration branch too is debt: record it, do not stop. A failure this theme caused
    is fixed before the theme closes. Before T1 has defined `check`, run the build and test commands the repository
-   documents, and say there is no gate yet.
+   documents, and say there is no gate yet. A check with no tool to run it goes to
+   [When a needed tool is missing](#when-a-needed-tool-is-missing).
 3. **Every item ended.** Each item the theme works is `done`, `partial`, `failed`, `blocked`, `deferred` or
    `skipped`; none is `queued` or `in_progress`. A verification that needs a CI run (a green run on the branch, a
    job summary, a first scan count) is recorded when that run exists: by this session if it opened the pull request
@@ -358,8 +361,9 @@ when allowed, the pull request) is ready for the owner.
      with its three headings. Under "What changed": items `done`, and items `partial` with their debt. Under
      "How it was checked": each item's verification, the engine re-check and the gate. Under "What was not
      done": `failed` and `blocked` items with the reason, items the owner skipped, checks that pass with no item,
-     and engine limits. Then `progress.py theme Tn --status pr_open --branch <branch> --pr N --phase <phase>
-     --render`. `pr_open` needs the real number, so it comes after the pull request exists.
+     engine limits, and the checks not run for want of a tool. Then `progress.py theme Tn --status pr_open
+     --branch <branch> --pr N --phase <phase> --render`. `pr_open` needs the real number, so it comes after the
+     pull request exists.
 5. **Stop.** Remove the worktree (`git worktree remove <worktree>`; the branch stays), re-index, and stop.
    Never merge and never wait for the merge in the same session.
 
@@ -385,8 +389,44 @@ Goal: a second audit shows what the run changed, and the owner sees every skip, 
 5. **Summary.** Give the owner a
    [done report](../audit/prompts/talking-to-the-user.md#done-report-and-pull-request-description). It holds the
    score before and after, and the moves with their labels. It lists each skipped item with the owner's reason and
-   each deferred item. It gives each debt entry with its count and baseline.
+   each deferred item. It gives each debt entry with its count and baseline, and each check not run for want of a
+   tool.
 6. **Ending.** The close-out changes nothing in the target: no branch, no commit, no pull request. Never merge.
+
+## When a needed tool is missing
+
+A step needs a tool the repository does not have: a Markdown linter for a README, a formatter, a scanner. This
+happens most often before the theme that owns the tool has run. Never pick the tool yourself. A stack profile's
+recommendation or a playbook's recommendation is not the owner's pick.
+
+1. **Read the preference first.** Use the owning playbook's key when one exists (`docs.lint_tools`, `format.*`,
+   `lint.*`, `scanner.*`). Otherwise use `tool.<concern>`, for example `tool.markdown-lint`. A recorded answer
+   stands: never ask it again.
+2. **Stop and ask.** Send a [decision request](../audit/prompts/talking-to-the-user.md#decision-requests).
+   Offer two to four current, maintained options from the owning playbook's "Inputs to ask" or the stack profile.
+   Add a last option: none. Name the step that waits for the answer.
+3. **Ask the scope too.**
+   - One-off: run the tool once, outside the target (for example through `npx` or `uvx` at a pinned version).
+     Nothing is added to the repository.
+   - Adopt: add the tool, pinned, with its config, as a change in this theme's change list.
+
+   When a later theme's playbook owns the tool, recommend one-off now and adoption in that theme. A one-off pick
+   does not answer that playbook's adoption question; it still asks, and offers the one-off tool first.
+4. **Discuss until the owner names one.** The owner may ask questions, compare options or name another tool.
+   Answer with evidence: the latest release and its date, and the maintenance status. Install and run nothing
+   until the owner names a tool and a scope.
+5. **A blanket go-ahead is not a choice.** "Install whatever is needed" lets you ask; it picks no tool. Ask
+   several tools' questions in one numbered message if you like, but each tool needs its own answer.
+6. **Record at once.** `progress.py pref set <key> <tool> --reason "<owner's words>; scope <one-off|adopt>" --by
+   owner --phase <phase>`.
+7. **When the owner picks none.** Record `none` with the owner's words, so the question is not asked again. Then:
+   - Say plainly which check cannot run, and what that leaves unchecked.
+   - The item's own Verification needs the tool: the item is not `done`. End it `blocked` with the reason "owner
+     chose no `<concern>` tool".
+   - The check was only a side step, such as a README the item changed: end the item as usual. Add a `--note`
+     that names the check not run.
+   - List every check not run in each status report, and under "What was not done" in the pull request body and
+     the close-out summary.
 
 ## Resuming
 
