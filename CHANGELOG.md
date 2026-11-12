@@ -14,6 +14,56 @@ this file by hand on `dev`: write a clear commit subject instead. How it works:
 Paths in entries before v0.3.0 use the old layout. The v0.3.0 entry has a "Moved" table from each old path to its new
 one.
 
+## [0.4.0](https://github.com/Nistapp/codebase-agentic-readiness-framework/compare/v0.3.4...v0.4.0) (2026-11-12)
+
+### ⚠ BREAKING CHANGES
+
+- **implement:** progress.py init takes the report from outside the target and writes the state beside it. show, render,
+  set-status, skip, unskip, defer, undefer, pref and theme take --workspace DIR (the report's folder) instead of
+  --target. A state kept in a target's docs/agentic-readiness/ is no longer found.
+
+### Features
+
+- **audit:** print family names and check titles beside their codes ([70a7d5a](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/70a7d5a5261281f70424f704b23887aaa4443334))
+- **dev:** check each playbook's Commits table in recipe-lint ([35268ab](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/35268ab8229752bca440c0dbed3fd5cf8b9f455c))
+- **implement:** add progress.py adopt to move an in-repo state into a workspace ([ff3d2b3](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/ff3d2b31025e4044d73b9e245dc89618a912e71f))
+- **implement:** keep the state beside the audit report, outside the target ([5c96be2](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/5c96be2a24b66dacfa0d9e164b4dd8228d6354c3))
+- **implement:** name each theme and check in the state file ([2414301](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/2414301dabf9a23a442fb3f2bbb8e99af0e77f1e))
+
+### Bug fixes
+
+- **dev:** wrap long changelog lines before the release lint ([5e3691f](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/5e3691f1ff6bc68539543f25ea09980bb8479b4f))
+- **dev:** wrap long changelog lines before the release lint ([c209ceb](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/c209cebefca91c82524b0366509775361dc1a977))
+- **implement:** ask the owner for each missing tool, none included ([05572d1](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/05572d15921cdf33dbaf7f44064e2ac91cce42fb))
+- **implement:** ask the owner for each missing tool, none included ([b0ccd80](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/b0ccd804bd1a0995ddd75953fba5cbceb42ae3db))
+- **implement:** check each tool's version against the target's pin ([b0005fc](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/b0005fcc32352d7f97a3aac5945e796e9101c30e))
+- **implement:** check each tool's version against the target's pin ([d95bd63](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/d95bd63e844fed2909cb9750102d9575c1f21bcc))
+- **implement:** run the repository's tests before each commit and show the result ([7079eab](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/7079eab5ce364f2f48b35b68cb321b99109258e0))
+- **implement:** run the target's tests at every commit and work items in small commits ([e7d7d20](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/e7d7d20ed2976677ae86cb1872eed051b8d2bca9))
+- **implement:** work each item in small tested commits ([f1835af](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/f1835af8405052cd6bf2f2bc772ce3af0d838393))
+- name every code in chat, the audit report and the state file ([d1ec456](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/d1ec456b71fe630a2fb0ee195602465f46e35e21))
+
+### Documentation
+
+- **audit:** name the output folder as the implement workspace ([e783115](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/e783115fe994bba241191d36c292b87881f09e98))
+- describe the implement workspace in the reference pages ([f6f761e](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/f6f761e479a88a717b6bfc3960e7c7611c8eceec))
+- **how-to:** implement and resume from the audit workspace ([e89515c](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/e89515c96207e1a69934dcd5431e9b03c4861a52))
+- **implement:** describe the workspace in the state contract ([0bff0cd](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0bff0cd9dd6ad5e7958befd34d273aeafd57618e))
+- **implement:** keep playbook files out of the state folder ([f792448](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/f792448a6c7e7af3b823774cabe53baf58d3aec9))
+- **implement:** keep state commits out of theme branches ([ecea19d](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/ecea19d9ecdb3e77d17bf515d752cab63f90ae52))
+- **implement:** keep the implement state in the audit workspace ([f118cb2](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/f118cb2ecf90801c43be3f63aec0f45cf43c1d07))
+- **implement:** run intake and triage in the workspace ([0c7b716](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0c7b71638d27f4fd47ea5aa9473e4d476bd0d301))
+- **playbooks:** give every playbook a Commits table ([ed01692](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/ed016922ccc7988ea70c3fc38e7400881b2ed344))
+- **readme:** say how long an audit and an implement run take ([0962c07](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/0962c07399beae3d435345bc49075c1465199e95))
+- **recipes:** name every code in chat and reports ([27fa2bb](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/27fa2bbbc594a9a493df60419977fa1848519a9e))
+- **schema:** make the state's report path relative to the workspace ([8929c65](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/8929c657c0bc6bae50cea45e74269adf045047f0))
+- **schema:** say the state lives in the workspace ([adc6704](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/adc670498f0415c571750187f54a51e721dfe0d1))
+- **stacks:** rename "Tooling defaults" to "Tooling options" ([040ae0b](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/040ae0b56f71096a0f30b98fa8201a3a3926c385))
+
+### Refactoring
+
+- **implement:** find the state through --workspace ([b825e16](https://github.com/Nistapp/codebase-agentic-readiness-framework/commit/b825e16df462640dc91349c822b52739b0ac040e))
+
 ## [0.3.4](https://github.com/Nistapp/codebase-agentic-readiness-framework/compare/v0.3.3...v0.3.4) (2026-11-10)
 
 ### Features
