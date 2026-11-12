@@ -84,7 +84,7 @@ INFO = _common.ToolInfo(
 )
 
 #: The framework release these tools belong to: `provenance.framework.release`. release-please rewrites the line.
-FRAMEWORK_RELEASE = "0.3.4"  # x-release-please-version
+FRAMEWORK_RELEASE = "0.4.0"  # x-release-please-version
 SCHEMA_VERSION = "0.2"
 DRAFT_KIND = "audit-draft"
 DEFAULT_PROBE_TIMEOUT_S = 120
