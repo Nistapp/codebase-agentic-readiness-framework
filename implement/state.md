@@ -1,7 +1,8 @@
 # State contract
 
-The [implement recipe](SKILL.md) keeps one tracked state per target repository. The state is what lets a run
-stop after any theme and resume another day, and it is where the owner's skips and preferences live. This
+The [implement recipe](SKILL.md) keeps one state per run, in the audit workspace, outside the target repository.
+The state is what lets a run stop after any theme and resume another day, and it is where the owner's skips and
+preferences live. This
 page is an agent directive: MUST and MUST NOT are used in the RFC 2119 sense.
 
 > [!NOTE]
@@ -11,36 +12,37 @@ page is an agent directive: MUST and MUST NOT are used in the RFC 2119 sense.
 
 ## Files and paths
 
-The state lives in the target repository, in `docs/agentic-readiness/`. The audit report folder is never
-edited; the state points at it.
+The state lives in the **workspace**: the folder that holds the final audit report, normally the audit run's
+output folder. The workspace is outside the target. Nothing of the state goes into the target, and nothing of it is
+committed or pushed ([ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)).
 
 | File | Role |
 |---|---|
+| The final report, `.json` and `.md` | Written by the audit and never edited; the state names it by file name |
 | `<label>-agentic-readiness-state.json` | The source of truth |
-| `<label>-agentic-readiness-STATE.md` | Rendered from the JSON. Its header says it is generated and must not be edited |
-| `README.md` | What the folder is, how to resume a run, a link to the audit report folder |
+| `<label>-agentic-readiness-STATE.md` | Rendered from the JSON; its header says it is generated and not to be edited |
 
 `<label>` is the audit report's `provenance.target.label`.
 
 - The JSON MUST be the only file a session changes by intent; the Markdown view MUST be re-rendered from it,
   never edited by hand.
-- The target's root `AGENTS.md` MUST carry one line that points at the STATE.md file and says: read it before
-  changing tooling, CI, docs or `AGENTS.md`; skipped findings in it are final.
+- The workspace MUST be kept until the run ends. The skips, the deferrals and the preferences live only there, so a
+  lost workspace loses the run.
+- A session MUST NOT copy the state or the report into the target, and MUST NOT commit either of them.
 
-[`progress.py`](tools/progress.py) is the only writer of the JSON and the renderer of the Markdown view.
-Writing inside a target repository is an exception to the tools rule, limited to these two files and decided in
-[ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md).
+[`progress.py`](tools/progress.py) is the only writer of the JSON and the renderer of the Markdown view. No tool
+writes inside a target: `init` takes the workspace from the report's folder and refuses one inside the target.
 
 ```bash
-python3 implement/tools/progress.py init --report <target>/<report folder>/<final report>.json --target <target>
-python3 implement/tools/progress.py show --target <target> [--json]
-python3 implement/tools/progress.py render --target <target>
+python3 implement/tools/progress.py init --report <workspace>/<final report>.json --target <target>
+python3 implement/tools/progress.py show --workspace <workspace> [--json]
+python3 implement/tools/progress.py render --workspace <workspace>
 ```
 
-The report is committed on the integration branch at
-`docs/agentic-readiness-report/<label>-<kind>-audit-<ts>.{json,md}`. `init` records the report file's SHA-256 in
-`source_reports[].sha256`; `check_drift.py` recomputes it and reports `report_changed` when the file was edited
-since.
+The transitions (`set-status`, `skip`, `unskip`, `defer`, `undefer`, `pref`, `theme`) take `--workspace` too.
+`init` records the report's file name in `source_reports[].path` and its SHA-256 in `source_reports[].sha256`.
+`check_drift.py <workspace>/<final report>.json <target>` recomputes the digest and reports `report_changed` when
+the file was edited since.
 
 `init` records the framework that created the state in `framework`: the release, the commit and how it was
 installed, in the shape of the report's `provenance.framework`. Every later write sets `last_framework` to the
@@ -51,12 +53,32 @@ installed skill it is not, even when the skills folder sits inside another repos
 Pass `--framework-rev <commit>` with the framework release's commit when you know it; `init` keeps its first 12
 digits.
 
-`init` refuses a report that is not final or that `validate_report.py` rejects, a report from a newer framework
-release than the tools, a report outside the target, and an existing state. A report from an older release gives a
-warning; `data.versions` holds both releases and commits. It queues confirmed and edited findings (an edited
-finding's note goes into `notes`), imports a finding the owner deferred during the audit as `deferred` with the
-owner's note as its reason, and lists rejected findings as `not_queued`. Each item gets the theme of its check
-from the table in the tool.
+`init` refuses a report that is not final or that `validate_report.py` rejects, and a report from a newer framework
+release than the tools. It also refuses a report whose folder is inside the target, and an existing state. A report
+from an older release gives a warning; `data.versions` holds both releases and commits. It queues confirmed and
+edited findings (an edited finding's note goes into `notes`), imports a finding the owner deferred during the audit
+as `deferred` with the owner's note as its reason, and lists rejected findings as `not_queued`. Each item gets the
+theme of its check from the table in the tool.
+
+## Move a state kept in the target
+
+A run started with an earlier framework release keeps its state in the target's `docs/agentic-readiness/`
+folder, with the report in `docs/agentic-readiness-report/`. `adopt` moves that state into a workspace:
+
+```bash
+python3 implement/tools/progress.py adopt --target <checkout> --workspace <workspace> --phase <step> [--label <label>]
+```
+
+- `adopt` reads the checkout and never writes or deletes anything in it. It copies each source report and the
+  Markdown beside it into the workspace. It rewrites the report paths to the file names, appends one log entry and
+  writes both state files.
+- It refuses a state of another schema version and a report whose SHA-256 differs from the recorded one. It also
+  refuses a missing report, a workspace inside the target, and a workspace that already holds the label.
+- Theme branches can hold a newer state than the integration branch. A session MUST adopt from the checkout whose
+  state has the newest log entry, and MUST tell the owner which branch it chose. The tool does not merge states.
+- Its envelope lists the in-repo files the owner may now remove, in `data.may_remove`. They are the state folder,
+  the report folder and the `AGENTS.md` line that points at the state. A session removes them only with the owner's
+  consent, as a normal change in the next theme branch or a small `chore` branch.
 
 ## Item statuses
 
