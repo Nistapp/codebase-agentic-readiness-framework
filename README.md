@@ -10,8 +10,13 @@ spaghettification of code. [What is an agentic-ready codebase?](docs/framework/o
 
 This gives you two skills that act on it:
 
-- The **audit** skill measures an existing repository and writes an evidence-cited readiness report.
-- The **implement** skill then fixes the confirmed findings, one theme at a time, on a branch per theme.
+- The **audit** skill measures an existing repository and writes an evidence-cited readiness report. An audit
+  typically takes 10 to 30 minutes.
+- The **implement** skill then fixes the confirmed findings, one theme at a time, on a branch per theme. An
+  implement run typically takes 3 to 6 hours.
+
+Both times are typical ranges, not promises. They depend on the size of the repository and on how quickly you
+answer the skill's questions.
 
 ## Quick start
 
