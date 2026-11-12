@@ -52,8 +52,10 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 ## Inputs to ask
 
 1. **Docs tooling.** Detect first: an existing Markdown linter config (`.markdownlint*`, `.remarkrc*`), a docs
-   job in CI, a link checker. Use what exists. If none, offer this set (the framework's default) and
-   the owner decides. Currency checked 2026-10-30 (npm registry, GitHub releases API); re-check when applied.
+   job in CI, a link checker. Use what exists. If none, offer this set (the framework's recommendation) and
+   the owner decides, none included. A one-off pick from an earlier theme (`docs.lint_tools`, scope one-off)
+   is offered first here; adopting it is still the owner's choice. Currency checked 2026-10-30 (npm registry,
+   GitHub releases API); re-check when applied.
 
    | Tool | Version, date | Weekly downloads | Pros | Cons |
    |---|---|---|---|---|

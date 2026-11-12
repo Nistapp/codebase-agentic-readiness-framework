@@ -30,7 +30,7 @@ seven verbs: `format` → `prettier --write .`, `format:check` → `prettier --c
 the other managers). `npm run <verb>` invokes any of them (`npm test` for `test` alone); `pnpm run
 <verb>`; `yarn <verb>`.
 
-## Tooling defaults
+## Tooling options
 
 Formatter: Prettier (`.prettierrc*`, or `package.json`'s `"prettier"` key). Linter: ESLint, flat config
 (`eslint.config.*`) by default since ESLint 9, with the legacy `.eslintrc*` format (or `package.json`'s
@@ -155,7 +155,7 @@ Node packages composed only through Docker: a Create-React-App front end (no com
 `start`/`build`/`test`, gitignored lockfile) and a NestJS service (see its own section, ESLint, Jest,
 gitignored lockfile), with no CI config in the repository at all. Read via `tools/facts.py` and direct inspection of
 each repository's `package.json`, lockfile, `tsconfig.json` and `.github/workflows/`; no target command
-was run. Tooling defaults checked against current docs the same day: flat config (`eslint.config.*`) is
+was run. Tooling options checked against current docs the same day: flat config (`eslint.config.*`) is
 the default since [ESLint 9](https://eslint.org/blog/2023/12/eslint-v9.0.0-alpha.0-released/), with
 `.eslintrc*` removed in ESLint 10, so a repository on the legacy format reads correctly but is on a
 deprecated path, worth a note to the user though not a check of its own; Biome's ecosystem still lacks

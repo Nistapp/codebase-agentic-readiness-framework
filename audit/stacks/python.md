@@ -25,7 +25,7 @@ defines. Typical realisation: `format` → `ruff format`/`black .`, `format:chec
 `black --check .`, `lint` → `ruff check`, `typecheck` → `mypy`/`pyright`, `test` → `pytest`, `check` →
 the four above in sequence, `security` → `pip-audit`/`safety check`.
 
-## Tooling defaults
+## Tooling options
 
 Formatter: Ruff's own formatter, or Black. Linter: Ruff (replacing Flake8/Pylint in new projects) or
 Flake8/Pylint on an older one; config in `pyproject.toml`'s `[tool.ruff]`/`[tool.black]` or standalone

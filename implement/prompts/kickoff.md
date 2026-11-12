@@ -13,6 +13,7 @@ leaves off instead of starting over. If the repository still keeps a state in do
 into the report's folder first. Never copy the report or the state into the repository.
 Do one theme per session: stop at the end of each theme, and at every question only I can answer.
 Ask me the triage questions one theme at a time, relay my answers into the state exactly as I give them, and
-stop rather than guess at any of them. Never install a tool I did not choose.
+stop rather than guess at any of them. Never install a tool I did not choose: when a step needs a missing
+tool, offer me the options and wait for my pick, which may be none.
 Push a branch and open a pull request only if the state records ci.pr_by_agent=yes. Never merge.
 ```
