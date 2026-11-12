@@ -276,7 +276,8 @@ def progress(target: Path, *args: str, phase: str | None = TRIAGE_PHASE) -> dict
     """`progress.py` on `target`; `render` and `show` take no `--phase`."""
     if args[0] in ("render", "show"):
         phase = None
-    return tool("progress.py", *args, "--target", str(target), *(("--phase", phase) if phase else ()))
+    where = ("--target", str(target)) if args[0] == "init" else ("--workspace", str(target / STATE_DIR))
+    return tool("progress.py", *args, *where, *(("--phase", phase) if phase else ()))
 
 
 # --- Scenarios ---------------------------------------------------------------------------------------------------

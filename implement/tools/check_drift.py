@@ -102,7 +102,7 @@ def is_dirty(target: Path) -> bool | None:
 def recorded_digest(target: Path, report_file: Path, label: str) -> str | None:
     """The SHA-256 the target's state recorded for `report_file`, or None: no state, no digest, or another report."""
     try:
-        _, state_path = progress.find_state(target, label)
+        _, state_path = progress.find_state(progress.state_directory(target), label)
         state = progress.read_state(state_path)
     except _common.ToolError:
         return None

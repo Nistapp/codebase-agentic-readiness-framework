@@ -96,12 +96,12 @@ Create, show and render the implement recipe's per-repository state from a final
 
 ```text
 progress.py init --report REPORT --target REPO [--default-branch BRANCH] [--phase PHASE] [--date YYYY-MM-DD] [--framework-rev SHA]
-progress.py show --target REPO [--label LABEL] [--json]
-progress.py render --target REPO [--label LABEL]
-progress.py set-status FINDING STATUS --target REPO --phase PHASE [--commit SHA] [--verification-command CMD --verification-result TEXT] [--debt what=..,count=N[,baseline=FILE]] [--clear-debt] [--reason TEXT] [--note TEXT] [--by owner|agent] [--date YYYY-MM-DD] [--label LABEL] [--render]
-progress.py skip|defer FINDING --reason TEXT --by owner --target REPO --phase PHASE [--render]
-progress.py unskip|undefer FINDING --by owner --target REPO --phase PHASE [--reason TEXT] [--render]
-progress.py pref set KEY VALUE --reason TEXT --by owner --target REPO --phase PHASE [--render]
-progress.py pref unset KEY --reason TEXT --by owner --target REPO --phase PHASE [--render]
-progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --target REPO --phase PHASE [--render]
+progress.py show --workspace DIR [--label LABEL] [--json]
+progress.py render --workspace DIR [--label LABEL]
+progress.py set-status FINDING STATUS --workspace DIR --phase PHASE [--commit SHA] [--verification-command CMD --verification-result TEXT] [--debt what=..,count=N[,baseline=FILE]] [--clear-debt] [--reason TEXT] [--note TEXT] [--by owner|agent] [--date YYYY-MM-DD] [--label LABEL] [--render]
+progress.py skip|defer FINDING --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+progress.py unskip|undefer FINDING --by owner --workspace DIR --phase PHASE [--reason TEXT] [--render]
+progress.py pref set KEY VALUE --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --workspace DIR --phase PHASE [--render]
 ```

@@ -316,7 +316,7 @@ class InitTests(TargetCase):
 class ShowTests(TargetCase):
     def test_show_summarises_the_state(self) -> None:
         self.place_state(LATER_STATE)
-        code, envelope, err = call(["show", "--target", str(self.target)])
+        code, envelope, err = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 0)
         data = envelope["data"]
         self.assertEqual(data["label"], "example-service")
@@ -328,7 +328,7 @@ class ShowTests(TargetCase):
 
     def test_show_json_prints_the_state(self) -> None:
         self.place_state(LATER_STATE)
-        code, envelope, _ = call(["show", "--target", str(self.target), "--json"])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir), "--json"])
         self.assertEqual(code, 0)
         self.assertEqual(envelope["data"]["state"], json.loads(LATER_STATE.read_text(encoding="utf-8")))
         self.assertIs(envelope["truncated"], False)
@@ -340,7 +340,7 @@ class ShowTests(TargetCase):
         ]
         self.state_dir.mkdir(parents=True)
         self.json_path.write_text(json.dumps(state), encoding="utf-8")
-        code, envelope, _ = call(["show", "--target", str(self.target), "--json"])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir), "--json"])
         self.assertEqual(code, 0)
         self.assertIs(envelope["truncated"], True)
         shown = envelope["data"]["state"]["log"]
@@ -348,7 +348,8 @@ class ShowTests(TargetCase):
         self.assertEqual(len(shown) + envelope["data"]["omitted"]["log"], 60)
 
     def test_show_needs_a_state(self) -> None:
-        code, envelope, err = call(["show", "--target", str(self.target)])
+        self.state_dir.mkdir(parents=True)
+        code, envelope, err = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 1)
         self.assertIn("no state in", envelope["data"]["error"])
         self.assertIn("progress.py init", err)
@@ -358,10 +359,10 @@ class ShowTests(TargetCase):
         other = json.loads(LATER_STATE.read_text(encoding="utf-8"))
         other["repo"]["label"] = "other"
         (self.state_dir / "other-agentic-readiness-state.json").write_text(json.dumps(other), encoding="utf-8")
-        code, envelope, _ = call(["show", "--target", str(self.target)])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 1)
         self.assertIn("pick one with --label: example-service, other", envelope["data"]["error"])
-        code, envelope, _ = call(["show", "--target", str(self.target), "--label", "other"])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir), "--label", "other"])
         self.assertEqual((code, envelope["data"]["label"]), (0, "other"))
 
     def test_show_refuses_an_invalid_state(self) -> None:
@@ -369,22 +370,71 @@ class ShowTests(TargetCase):
         state["items"][0]["status"] = "skipped"
         self.state_dir.mkdir(parents=True)
         self.json_path.write_text(json.dumps(state), encoding="utf-8")
-        code, envelope, _ = call(["show", "--target", str(self.target)])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 2)
         self.assertTrue(any("needs a reason" in error for error in envelope["data"]["errors"]))
 
     def test_show_refuses_a_repeated_key(self) -> None:
         self.state_dir.mkdir(parents=True)
         self.json_path.write_text('{"schema_version": "0.1", "schema_version": "0.1"}', encoding="utf-8")
-        code, envelope, _ = call(["show", "--target", str(self.target)])
+        code, envelope, _ = call(["show", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 2)
         self.assertIn("repeats the key", envelope["data"]["error"])
+
+
+class WorkspaceTests(TargetCase):
+    """Every command but init finds the state in the folder --workspace names."""
+
+    def test_a_missing_workspace_is_refused(self) -> None:
+        code, envelope, _ = call(["show", "--workspace", str(self.tmp / "nowhere")])
+        self.assertEqual(code, 1)
+        self.assertIn("workspace not found", envelope["data"]["error"])
+
+    def test_a_workspace_that_is_a_file_is_refused(self) -> None:
+        plain = self.tmp / "plain.txt"
+        plain.write_text("x\n", encoding="utf-8")
+        code, envelope, _ = call(["render", "--workspace", str(plain)])
+        self.assertEqual(code, 1)
+        self.assertIn("workspace is not a directory", envelope["data"]["error"])
+
+    def test_no_command_but_init_takes_target(self) -> None:
+        self.place_state(LATER_STATE)
+        for argv in (
+            ["show"],
+            ["render"],
+            ["set-status", "F-001", "in_progress", "--phase", "p"],
+            ["skip", "F-001", "--reason", "r", "--by", "owner", "--phase", "p"],
+            ["pref", "set", "k", "v", "--reason", "r", "--by", "owner", "--phase", "p"],
+            ["theme", "T1", "--status", "branch_open", "--branch", "b", "--phase", "p"],
+        ):
+            with self.subTest(command=argv[0]):
+                code, envelope, _ = call([*argv, "--target", str(self.target)])
+                self.assertEqual(code, 1, envelope)
+                self.assertIn("--workspace", envelope["data"]["error"])
+
+    def test_a_workspace_reached_through_a_symlink_is_followed(self) -> None:
+        self.place_state(LATER_STATE)
+        link = self.tmp / "workspace-link"
+        link.symlink_to(self.state_dir, target_is_directory=True)
+        code, envelope, _ = call(["show", "--workspace", str(link)])
+        self.assertEqual((code, envelope["data"]["label"]), (0, "example-service"))
+
+    def test_a_state_file_that_is_a_symlink_is_refused(self) -> None:
+        elsewhere = self.tmp / "elsewhere"
+        elsewhere.mkdir()
+        shutil.copyfile(LATER_STATE, elsewhere / JSON_NAME)
+        self.state_dir.mkdir(parents=True)
+        self.json_path.symlink_to(elsewhere / JSON_NAME)
+        code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
+        self.assertEqual(code, 1)
+        self.assertIn("is a symlink", envelope["data"]["error"])
+        self.assertFalse(self.md_path.exists())
 
 
 class RenderTests(TargetCase):
     def test_render_writes_the_golden_markdown(self) -> None:
         self.place_state(LATER_STATE)
-        code, envelope, _ = call(["render", "--target", str(self.target)])
+        code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 0)
         self.assertEqual(self.md_path.read_bytes(), LATER_MD.read_bytes())
         self.assertEqual(envelope["data"]["bytes"], len(LATER_MD.read_bytes()))
@@ -415,7 +465,7 @@ class RenderTests(TargetCase):
         self.place_state(LATER_STATE)
         self.md_path.write_text("old view\n", encoding="utf-8")
         with mock.patch("os.replace", side_effect=OSError("killed")):
-            code, envelope, _ = call(["render", "--target", str(self.target)])
+            code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 3)
         self.assertIn("killed", envelope["data"]["error"])
         self.assertEqual(self.md_path.read_text(encoding="utf-8"), "old view\n")
@@ -427,7 +477,7 @@ class RenderTests(TargetCase):
         stale.write_text("half", encoding="utf-8")
         unrelated = self.state_dir / ".other.tmp"
         unrelated.write_text("keep", encoding="utf-8")
-        code, envelope, _ = call(["render", "--target", str(self.target)])
+        code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 0)
         self.assertFalse(stale.exists())
         self.assertTrue(unrelated.exists())
@@ -438,7 +488,7 @@ class RenderTests(TargetCase):
         state["repo"]["label"] = "other"
         self.state_dir.mkdir(parents=True)
         self.json_path.write_text(json.dumps(state), encoding="utf-8")
-        code, envelope, _ = call(["render", "--target", str(self.target)])
+        code, envelope, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 2)
         self.assertIn("is for 'other'", envelope["data"]["error"])
         self.assertFalse(self.md_path.exists())
@@ -448,7 +498,7 @@ class RenderTests(TargetCase):
         decoy = self.tmp / "decoy.md"
         decoy.write_text("keep\n", encoding="utf-8")
         self.md_path.symlink_to(decoy)
-        code, _, _ = call(["render", "--target", str(self.target)])
+        code, _, _ = call(["render", "--workspace", str(self.state_dir)])
         self.assertEqual(code, 1)
         self.assertEqual(decoy.read_text(encoding="utf-8"), "keep\n")
         self.assertTrue(os.path.islink(self.md_path))

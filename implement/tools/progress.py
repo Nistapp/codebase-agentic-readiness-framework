@@ -5,9 +5,12 @@
 
     progress.py init --report <final report.json> --target <repo> [--default-branch B] [--phase P] [--date D]
                      [--framework-rev SHA]
-    progress.py show --target <repo> [--label LABEL] [--json]
-    progress.py render --target <repo> [--label LABEL]
-    progress.py set-status|skip|unskip|defer|undefer|pref|theme ...   (the transitions; see --help of each)
+    progress.py show --workspace <dir> [--label LABEL] [--json]
+    progress.py render --workspace <dir> [--label LABEL]
+    progress.py set-status|skip|unskip|defer|undefer|pref|theme ... --workspace <dir>   (the transitions; see --help)
+
+Every command but ``init`` finds the state in the folder ``--workspace`` names: the folder that holds the two state
+files. It must exist; a symlink on the way is followed, and a state file that is a symlink is refused.
 
 The state is ``docs/agentic-readiness/<label>-agentic-readiness-state.json`` in the target, the source of truth, and
 ``<label>-agentic-readiness-STATE.md`` beside it, rendered from the JSON. Its format is
@@ -93,17 +96,17 @@ INFO = _common.ToolInfo(
     synopsis=(
         "progress.py init --report REPORT --target REPO [--default-branch BRANCH] [--phase PHASE] [--date YYYY-MM-DD]"
         " [--framework-rev SHA]",
-        "progress.py show --target REPO [--label LABEL] [--json]",
-        "progress.py render --target REPO [--label LABEL]",
-        "progress.py set-status FINDING STATUS --target REPO --phase PHASE [--commit SHA] [--verification-command CMD"
+        "progress.py show --workspace DIR [--label LABEL] [--json]",
+        "progress.py render --workspace DIR [--label LABEL]",
+        "progress.py set-status FINDING STATUS --workspace DIR --phase PHASE [--commit SHA] [--verification-command CMD"
         " --verification-result TEXT] [--debt what=..,count=N[,baseline=FILE]] [--clear-debt] [--reason TEXT]"
         " [--note TEXT] [--by owner|agent] [--date YYYY-MM-DD] [--label LABEL] [--render]",
-        "progress.py skip|defer FINDING --reason TEXT --by owner --target REPO --phase PHASE [--render]",
-        "progress.py unskip|undefer FINDING --by owner --target REPO --phase PHASE [--reason TEXT] [--render]",
-        "progress.py pref set KEY VALUE --reason TEXT --by owner --target REPO --phase PHASE [--render]",
-        "progress.py pref unset KEY --reason TEXT --by owner --target REPO --phase PHASE [--render]",
+        "progress.py skip|defer FINDING --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
+        "progress.py unskip|undefer FINDING --by owner --workspace DIR --phase PHASE [--reason TEXT] [--render]",
+        "progress.py pref set KEY VALUE --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
+        "progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
         "progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA]"
-        " --target REPO --phase PHASE [--render]",
+        " --workspace DIR --phase PHASE [--render]",
     ),
     writes=(
         "Inside the target, and only there: docs/agentic-readiness/<label>-agentic-readiness-state.json (init) and "
@@ -138,9 +141,20 @@ def state_file(directory: Path, name: str) -> Path:
     return path
 
 
-def find_state(target: Path, label: str | None) -> tuple[str, Path]:
-    """The label and the JSON path of the state in `target`. Without `label` there must be exactly one state."""
-    directory = state_directory(target)
+def workspace_directory(path: str | Path) -> Path:
+    """The workspace folder `--workspace` names, resolved. It must exist and be a directory."""
+    candidate = Path(path).expanduser()
+    try:
+        resolved = candidate.resolve(strict=True)
+    except (OSError, RuntimeError):
+        raise _common.UsageError(f"workspace not found: {candidate}") from None
+    if not resolved.is_dir():
+        raise _common.UsageError(f"workspace is not a directory: {resolved}")
+    return resolved
+
+
+def find_state(directory: Path, label: str | None) -> tuple[str, Path]:
+    """The label and the JSON path of the state in `directory`. Without `label` there must be exactly one state."""
     if label is None:
         found = sorted(directory.glob("*" + STATE_JSON_SUFFIX)) if directory.is_dir() else []
         labels = [path.name[: -len(STATE_JSON_SUFFIX)] for path in found]
@@ -520,8 +534,7 @@ SHOW_BUDGETS = {"items": 24 * 1024, "preferences": 8 * 1024, "not_queued": 6 * 1
 
 
 def run_show(args: Any) -> _common.Result:
-    target = _common.resolve_target(args.target)
-    label, path = find_state(target, args.label)
+    label, path = find_state(workspace_directory(args.workspace), args.label)
     state = read_state(path)
     summary = summary_data(state)
     counts = summary["statuses"]
@@ -751,8 +764,7 @@ def render(state: dict[str, Any]) -> str:
 
 
 def run_render(args: Any) -> _common.Result:
-    target = _common.resolve_target(args.target)
-    label, path = find_state(target, args.label)
+    label, path = find_state(workspace_directory(args.workspace), args.label)
     state = read_state(path)
     if state["repo"]["label"] != label:
         raise _common.ValidationFailed(f"the state in {path.name} is for {state['repo']['label']!r}, not {label!r}")
@@ -862,7 +874,7 @@ def find_item(state: dict[str, Any], finding: str) -> dict[str, Any]:
     for entry in state["not_queued"]:
         if entry["finding"] == finding:
             raise _refuse(f"{finding} was rejected in the audit and is never queued")
-    raise _refuse(f"no item for {finding}", "see the findings with: progress.py show --target REPO --json")
+    raise _refuse(f"no item for {finding}", "see the findings with: progress.py show --workspace DIR --json")
 
 
 def require_owner(args: Any, action: str) -> None:
@@ -974,8 +986,7 @@ def commit_change(args: Any, label: str, path: Path, state: dict[str, Any], summ
 
 def open_state(args: Any) -> tuple[str, Path, dict[str, Any]]:
     args.date = _date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    target = _common.resolve_target(args.target)
-    label, path = find_state(target, args.label)
+    label, path = find_state(workspace_directory(args.workspace), args.label)
     state = read_state(path)
     if state["repo"]["label"] != label:
         raise _common.ValidationFailed(f"the state in {path.name} is for {state['repo']['label']!r}, not {label!r}")
@@ -1100,6 +1111,9 @@ def run_theme(args: Any) -> _common.Result:
 # --- Arguments ----------------------------------------------------------------------------------------
 
 
+WORKSPACE_HELP = "the folder that holds the state files"
+
+
 def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(prog="progress.py", description=INFO.summary)
     commands = parser.add_subparsers(dest="command", required=True, parser_class=_common.ToolParser)
@@ -1111,16 +1125,16 @@ def build_parser() -> _common.ToolParser:
     init.add_argument("--date", help="the date to record, YYYY-MM-DD (default: today, UTC)")
     init.add_argument("--framework-rev", help="the framework SHA to record (default: this checkout's HEAD)")
     show = commands.add_parser("show", help="summarise the state; --json prints it")
-    show.add_argument("--target", required=True)
-    show.add_argument("--label", help="the state to read when the target holds more than one")
+    show.add_argument("--workspace", required=True, help=WORKSPACE_HELP)
+    show.add_argument("--label", help="the state to read when the workspace holds more than one")
     show.add_argument("--json", action="store_true", help="print the state itself, bounded")
     render_command = commands.add_parser("render", help="write the Markdown view from the JSON")
-    render_command.add_argument("--target", required=True)
-    render_command.add_argument("--label", help="the state to render when the target holds more than one")
+    render_command.add_argument("--workspace", required=True, help=WORKSPACE_HELP)
+    render_command.add_argument("--label", help="the state to render when the workspace holds more than one")
 
     def write_options(command: _common.ToolParser, *, by_default: str = "agent") -> None:
-        command.add_argument("--target", required=True)
-        command.add_argument("--label", help="the state to change when the target holds more than one")
+        command.add_argument("--workspace", required=True, help=WORKSPACE_HELP)
+        command.add_argument("--label", help="the state to change when the workspace holds more than one")
         command.add_argument("--phase", required=True, help="the step or session making the change, for the log")
         command.add_argument(
             "--by", choices=("owner", "agent"), default=by_default, help="who decided (default: agent)"
