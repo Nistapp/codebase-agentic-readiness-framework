@@ -199,15 +199,15 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) and [Stage 4](..
 the T7 branch shared with [`adapt-agents-md`](adapt-agents-md.md):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "<launcher run>; read CON-02" \
   --verification-result "every test directory named in the prohibitions section"
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "read the prohibitions section" \
   --verification-result "four concerns covered" \
   --note "harness review: <none present | gaps listed in the PR>"
 python3 implement/tools/progress.py pref set agents_md.harness_deny no \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```
 
 Record `agents_md.harness_deny` only when the owner answers; absent means report only. The theme closes once, after

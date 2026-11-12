@@ -244,20 +244,20 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) and [Stage 4](..
 the T8 branch shared with [`add-repo-hygiene`](add-repo-hygiene.md):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "engine.py <repo> --no-user-config; read IDX-01" \
   --verification-result "project config names the server"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=engine cannot verify freshness (store records no revision),count=1" \
   --note "freshness rule written; detect_changes clean on <sha>"
 python3 implement/tools/progress.py pref set index.registration <project-file|document-only> \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set index.user_config_consent no \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set index.freshness agents-md-rule \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set index.first_run_offer no \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```
 
 Record a preference only when the owner answers; absent means the default above, and `index.user_config_consent` absent

@@ -157,9 +157,9 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 [Stage 4](../SKILL.md#stage-4-close-the-theme) (the ending):
 
 ```bash
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "git ls-files -ci --exclude-standard" \
   --verification-result "<no build output listed; regenerating command recreates it>"
-python3 implement/tools/progress.py skip F-nnn --target <repo> --phase <phase> \
+python3 implement/tools/progress.py skip F-nnn --workspace <workspace> --phase <phase> \
   --reason "<the owner's words>" --by owner
 ```

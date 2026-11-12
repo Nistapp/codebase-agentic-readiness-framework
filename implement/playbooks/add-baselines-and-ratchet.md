@@ -73,11 +73,11 @@ TST-04 has two playbooks: this one writes the fenced line when the repository's 
 
 2. **Baseline form (the default, owner-approved for this playbook).** Tool-native first: a tool that has its own
    baseline, exclude list or budget flag keeps it. Everything else (a scanner count, a strict-mode error count, a
-   report-only step's number) goes into **one committed counts file** under the state folder,
-   `docs/agentic-readiness/<label>-quality-baseline.json` (renamed to the repository's own convention when it has
-   one), checked by a short compare script that `format:check` calls. Alternatives the owner may choose instead: a
-   counts file for every tool (one format, but duplicates native ratchets), or tool-native only (no script, but tools
-   without a native form stay unguarded). Record a non-default choice with `pref set baseline.form`.
+   report-only step's number) goes into **one committed counts file**. Its default is `quality-baseline.json`
+   beside the repository's quality configuration. Use the repository's own name when it has a convention. A short
+   compare script that `format:check` calls checks it. Alternatives the owner may choose instead: a counts file for
+   every tool (one format, but duplicates native ratchets), or tool-native only (no script, but tools without a
+   native form stay unguarded). Record a non-default choice with `pref set baseline.form`.
 
 3. **Coverage gate.** Ask per repository, record `pref set tests.coverage_gate check|ci`:
    - `check` (default): the floor sits in the test runner's configuration and the coverage-instrumented run is part
@@ -290,15 +290,15 @@ Beyond the shared lines in [Stage 3](../SKILL.md#stage-3-apply) (`in_progress`, 
 
 ```bash
 python3 implement/tools/progress.py pref set tests.coverage_gate check \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --commit <sha> --debt "what=PMD violations,count=<N>,baseline=config/pmd/ruleset.xml" \
-  --debt "what=dependency advisories,count=<N>,baseline=docs/agentic-readiness/<label>-quality-baseline.json" \
+  --debt "what=dependency advisories,count=<N>,baseline=quality-baseline.json" \
   --verification-command "<format:check verb>" --verification-result "exit 0; exit 1 with one count raised"
-python3 implement/tools/progress.py set-status F-nnn partial --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --commit <sha> --debt "what=coverage floor (line %),count=<NN>,baseline=<runner config file>"
-python3 implement/tools/progress.py set-status F-nnn done --target <repo> --phase <phase> \
+python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace> --phase <phase> \
   --commit <sha> --verification-command "grep -n -A2 'single test' AGENTS.md" --verification-result "fenced block"
 python3 implement/tools/progress.py pref set baseline.exception.<what> "<old>-><new> <YYYY-MM-DD> <reason>" \
-  --target <repo> --phase <phase> --reason "<the owner's words>" --by owner
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```
