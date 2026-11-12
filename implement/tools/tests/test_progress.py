@@ -460,6 +460,163 @@ class WorkspaceTests(TargetCase):
         self.assertFalse(self.md_path.exists())
 
 
+OLD_STATE_DIR = "docs/agentic-readiness"
+OLD_REPORT_DIR = "docs/agentic-readiness-report"
+
+
+class AdoptTests(TargetCase):
+    """`adopt` moves a state the older tools kept in the target into a workspace, and writes nothing in the target."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.old = self.target / OLD_STATE_DIR
+        self.old.mkdir(parents=True)
+        reports = self.target / OLD_REPORT_DIR
+        reports.mkdir(parents=True)
+        shutil.copyfile(REPORT, reports / REPORT.name)
+        shutil.copyfile(REPORT.with_suffix(".md"), reports / REPORT.with_suffix(".md").name)
+        state = json.loads(EXAMPLE_STATE.read_text(encoding="utf-8"))
+        state["source_reports"][0]["path"] = f"{OLD_REPORT_DIR}/{REPORT.name}"
+        self.write_old(state)
+        (self.target / "AGENTS.md").write_text(
+            f"# AGENTS.md\n\nRead {OLD_STATE_DIR}/example-service-agentic-readiness-STATE.md first.\n", encoding="utf-8"
+        )
+        self.workspace = self.tmp / "workspace"
+        self.json_path = self.workspace / JSON_NAME
+        self.md_path = self.workspace / MD_NAME
+
+    def write_old(self, state: dict[str, Any], name: str = JSON_NAME) -> None:
+        (self.old / name).write_text(json.dumps(state, indent=2) + "\n", encoding="utf-8")
+
+    def adopt(self, *extra: str, workspace: Path | None = None) -> tuple[int, dict[str, Any], str]:
+        where = str(workspace or self.workspace)
+        return call(["adopt", "--target", str(self.target), "--workspace", where, "--phase", "IW", *extra])
+
+    def adopt_ok(self, *extra: str) -> dict[str, Any]:
+        code, envelope, err = self.adopt("--date", "2026-11-12", *extra)
+        self.assertEqual(code, 0, (envelope, err))
+        return envelope
+
+    def test_adopt_moves_the_state_and_both_report_files_into_the_workspace(self) -> None:
+        before = json.loads((self.old / JSON_NAME).read_text(encoding="utf-8"))
+        envelope = self.adopt_ok()
+        md_report = REPORT.with_suffix(".md").name
+        self.assertEqual(
+            sorted(path.name for path in self.workspace.iterdir()), sorted([JSON_NAME, MD_NAME, REPORT.name, md_report])
+        )
+        self.assertEqual((self.workspace / REPORT.name).read_bytes(), REPORT.read_bytes())
+        state = json.loads(self.json_path.read_text(encoding="utf-8"))
+        self.assertEqual(state["source_reports"][0]["path"], REPORT.name)
+        self.assertEqual(state["log"][:-1], before["log"])
+        self.assertEqual(
+            state["log"][-1],
+            {"date": "2026-11-12", "phase": "IW", "event": f"State adopted from {OLD_STATE_DIR}/{JSON_NAME}."},
+        )
+        self.assertEqual(self.md_path.read_text(encoding="utf-8"), progress.render(state))
+        self.assertEqual(envelope["data"]["copied"], [REPORT.name, md_report])
+        self.assertEqual(envelope["data"]["adopted_from"], f"{OLD_STATE_DIR}/{JSON_NAME}")
+        code, shown, _ = call(["show", "--workspace", str(self.workspace)])
+        self.assertEqual((code, shown["data"]["label"]), (0, "example-service"))
+
+    def test_adopt_leaves_the_target_byte_for_byte(self) -> None:
+        before = tree_bytes(self.target)
+        self.adopt_ok()
+        self.assertEqual(tree_bytes(self.target), before)
+
+    def test_the_envelope_lists_what_the_owner_may_remove(self) -> None:
+        code, envelope, err = self.adopt()
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(
+            envelope["data"]["may_remove"],
+            [f"{OLD_STATE_DIR}/", f"{OLD_REPORT_DIR}/", f"the line in AGENTS.md that points at {OLD_STATE_DIR}/"],
+        )
+        self.assertIn("the target is unchanged", err)
+        self.assertIn(f"remove from the target: {OLD_STATE_DIR}/", err)
+
+    def test_the_agents_line_is_listed_only_when_it_is_there(self) -> None:
+        (self.target / "AGENTS.md").write_text("# AGENTS.md\n", encoding="utf-8")
+        self.assertEqual(self.adopt_ok()["data"]["may_remove"], [f"{OLD_STATE_DIR}/", f"{OLD_REPORT_DIR}/"])
+
+    def test_a_report_that_was_edited_stops_it(self) -> None:
+        report = self.target / OLD_REPORT_DIR / REPORT.name
+        report.write_text(
+            report.read_text(encoding="utf-8").replace("package.json", "package.JSON", 1), encoding="utf-8"
+        )
+        code, envelope, err = self.adopt()
+        self.assertEqual(code, 2, envelope)
+        self.assertIn("the report was edited after init", envelope["data"]["error"])
+        self.assertIn("restore the report", err)
+        self.assertFalse(self.workspace.exists())
+
+    def test_a_workspace_that_holds_the_label_stops_it(self) -> None:
+        self.adopt_ok()
+        before = self.json_path.read_bytes()
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("already holds a state for example-service", envelope["data"]["error"])
+        self.assertEqual(self.json_path.read_bytes(), before)
+
+    def test_two_states_need_a_label(self) -> None:
+        other = json.loads((self.old / JSON_NAME).read_text(encoding="utf-8"))
+        other["repo"]["label"] = "other"
+        self.write_old(other, "other-agentic-readiness-state.json")
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("pick one with --label: example-service, other", envelope["data"]["error"])
+        self.assertFalse(self.workspace.exists())
+        self.adopt_ok("--label", "example-service")
+        self.assertTrue(self.json_path.is_file())
+
+    def test_a_state_file_that_is_a_symlink_stops_it(self) -> None:
+        elsewhere = self.tmp / "elsewhere.json"
+        (self.old / JSON_NAME).rename(elsewhere)
+        (self.old / JSON_NAME).symlink_to(elsewhere)
+        code, envelope, _ = self.adopt("--label", "example-service")
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("is a symlink", envelope["data"]["error"])
+        self.assertFalse(self.workspace.exists())
+
+    def test_a_missing_report_stops_it(self) -> None:
+        (self.target / OLD_REPORT_DIR / REPORT.name).unlink()
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("a report that is not in the target", envelope["data"]["error"])
+        self.assertFalse(self.workspace.exists())
+
+    def test_another_schema_version_stops_it_with_the_plain_message(self) -> None:
+        state = json.loads((self.old / JSON_NAME).read_text(encoding="utf-8"))
+        state["schema_version"] = "0.2"
+        self.write_old(state)
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 2, envelope)
+        error = envelope["data"]["error"]
+        self.assertIn("the state has schema '0.2'", error)
+        self.assertIn("these tools read schema '0.3'", error)
+        self.assertIn("run init again from a final report", error)
+        self.assertFalse(self.workspace.exists())
+
+    def test_a_workspace_inside_the_target_stops_it(self) -> None:
+        code, envelope, _ = self.adopt(workspace=self.target / "state")
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("the workspace is inside the target", envelope["data"]["error"])
+        self.assertFalse((self.target / "state").exists())
+
+    def test_a_different_report_file_in_the_workspace_stops_it(self) -> None:
+        self.workspace.mkdir()
+        (self.workspace / REPORT.name).write_text("{}\n", encoding="utf-8")
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn(f"already holds a different {REPORT.name}", envelope["data"]["error"])
+        self.assertEqual((self.workspace / REPORT.name).read_text(encoding="utf-8"), "{}\n")
+        self.assertFalse(self.json_path.exists())
+
+    def test_the_same_report_already_in_the_workspace_is_kept(self) -> None:
+        self.workspace.mkdir()
+        shutil.copyfile(REPORT, self.workspace / REPORT.name)
+        envelope = self.adopt_ok()
+        self.assertEqual(envelope["data"]["copied"], [REPORT.with_suffix(".md").name])
+
+
 class RenderTests(TargetCase):
     def test_render_writes_the_golden_markdown(self) -> None:
         self.place_state(LATER_STATE)

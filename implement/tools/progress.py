@@ -5,6 +5,7 @@
 
     progress.py init --report <final report.json> --target <repo> [--default-branch B] [--phase P] [--date D]
                      [--framework-rev SHA]
+    progress.py adopt --target <repo> --workspace <dir> --phase P [--label LABEL] [--date D]
     progress.py show --workspace <dir> [--label LABEL] [--json]
     progress.py render --workspace <dir> [--label LABEL]
     progress.py set-status|skip|unskip|defer|undefer|pref|theme ... --workspace <dir>   (the transitions; see --help)
@@ -30,15 +31,23 @@ atomically; ``--render`` replaces the Markdown too. They enforce the state diagr
 other move with a message of its own. Only the owner skips, defers, unskips, undefers and sets preferences, which the
 caller states with ``--by owner`` (the agent relays what the owner said; the tool cannot see who is typing).
 
+``adopt`` moves a state that older tools kept in ``<target>/docs/agentic-readiness/`` into a workspace. It reads
+the target and never writes or deletes there. It refuses a state of another schema version and a report whose
+SHA-256 differs from the one recorded; it copies each report (and the Markdown beside it) into the workspace,
+rewrites the report paths to the file names, logs one entry and lists the in-repo files the owner may now remove.
+
 ``render`` is a pure function of the JSON: the same state, in any key order, gives the same bytes.
 """
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
+import os
 import re
 import sys
+import tempfile
 import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
@@ -96,6 +105,7 @@ INFO = _common.ToolInfo(
     synopsis=(
         "progress.py init --report REPORT --target REPO [--default-branch BRANCH] [--phase PHASE] [--date YYYY-MM-DD]"
         " [--framework-rev SHA]",
+        "progress.py adopt --target REPO --workspace DIR --phase PHASE [--label LABEL] [--date YYYY-MM-DD]",
         "progress.py show --workspace DIR [--label LABEL] [--json]",
         "progress.py render --workspace DIR [--label LABEL]",
         "progress.py set-status FINDING STATUS --workspace DIR --phase PHASE [--commit SHA] [--verification-command CMD"
@@ -110,9 +120,10 @@ INFO = _common.ToolInfo(
     ),
     writes=(
         "Only in the workspace, the report's folder, which must be outside the target: "
-        "<label>-agentic-readiness-state.json (init) and <label>-agentic-readiness-STATE.md (init, render, and any "
-        "command given --render), each replaced atomically. init never replaces a state; show writes nothing; every "
-        "other command rewrites the JSON after validating it."
+        "<label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, "
+        "render, and any command given --render), each replaced atomically; adopt also copies the source reports "
+        "there, never over a different file. init and adopt never replace a state; show writes nothing; every other "
+        "command rewrites the JSON after validating it."
     ),
 )
 
@@ -490,6 +501,105 @@ def run_init(args: Any) -> _common.Result:
         summary=(
             f"progress: created the state for {label}: {counts['queued']} queued, {counts['deferred']} deferred, "
             f"{len(state['not_queued'])} not queued"
+        ),
+        warnings=warnings,
+    )
+
+
+# --- adopt --------------------------------------------------------------------------------------------
+
+
+def _copy_new(source: Path, dest: Path) -> bool:
+    """Copy `source` to `dest` through a temporary file. False when `dest` already holds the same bytes."""
+    data = source.read_bytes()
+    if dest.exists():
+        return False
+    fd, temp = tempfile.mkstemp(dir=str(dest.parent), prefix=f".{dest.name}.", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temp, dest)
+    except BaseException:
+        with contextlib.suppress(FileNotFoundError):
+            os.unlink(temp)
+        raise
+    return True
+
+
+def run_adopt(args: Any) -> _common.Result:
+    args.date = _date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    target = _common.resolve_target(args.target)
+    workspace = Path(args.workspace).expanduser().resolve()
+    if _common.is_within(target, workspace):
+        raise _common.PathNotAllowed(
+            f"the workspace is inside the target: {workspace}",
+            hint="pick a folder outside the repository, for example the audit run's output folder",
+        )
+    if workspace.exists() and not workspace.is_dir():
+        raise _common.UsageError(f"workspace is not a directory: {workspace}")
+    label, source = find_state(_common.resolve_within(target, STATE_DIR), args.label)
+    source_rel = source.relative_to(target).as_posix()
+    state = read_state(source)
+    if state["repo"]["label"] != label:
+        raise _common.ValidationFailed(f"the state in {source.name} is for {state['repo']['label']!r}, not {label!r}")
+    json_name, md_name = state_names(label)
+    json_path, md_path = state_file(workspace, json_name), state_file(workspace, md_name)
+    if json_path.exists():
+        raise _common.UsageError(
+            f"the workspace already holds a state for {label}: {json_path}; adopt never replaces one"
+        )
+    copies: list[tuple[Path, Path]] = []
+    report_folders: list[str] = []
+    for entry in state["source_reports"]:
+        report = _common.resolve_within(target, entry["path"])
+        if not report.is_file():
+            raise _common.UsageError(f"the state lists a report that is not in the target: {entry['path']}")
+        if file_sha256(report) != entry["sha256"]:
+            raise _common.ValidationFailed(
+                f"the report was edited after init: {entry['path']} no longer matches the SHA-256 the state recorded",
+                hint="restore the report the state was made from (git log -- <report>), then run adopt again",
+            )
+        pair = [report] + [md for md in (report.with_suffix(".md"),) if md.is_file()]
+        for file in pair:
+            dest = workspace / file.name
+            if any(dest == planned for _, planned in copies):
+                raise _common.UsageError(f"two source reports share the file name {file.name}")
+            if dest.is_symlink() or (dest.exists() and dest.read_bytes() != file.read_bytes()):
+                raise _common.PathNotAllowed(f"the workspace already holds a different {file.name}: {dest}")
+            copies.append((file, dest))
+        entry["path"] = report.name
+        folder = report.parent.relative_to(target).as_posix() + "/"
+        if folder not in report_folders:
+            report_folders.append(folder)
+    record(state, args, f"State adopted from {source_rel}.")
+    track_framework(state, args)
+    errors = state_errors(state)
+    if errors:
+        raise _common.ValidationFailed(f"the adopted state would be invalid: {len(errors)} errors", errors=errors)
+    workspace.mkdir(parents=True, exist_ok=True)
+    copied = [dest.name for file, dest in copies if _copy_new(file, dest)]
+    swept = sweep_temporaries(workspace, (json_name, md_name))
+    _common.atomic_write_text(json_path, encode_state(state))
+    _common.atomic_write_text(md_path, render(state))
+    removable = [STATE_DIR.as_posix() + "/", *report_folders]
+    agents = target / "AGENTS.md"
+    if agents.is_file() and not agents.is_symlink() and STATE_DIR.as_posix() in agents.read_text(encoding="utf-8"):
+        removable.append(f"the line in AGENTS.md that points at {STATE_DIR.as_posix()}/")
+    warnings = [f"removed {swept} temporary files an interrupted write left in {workspace}"] if swept else []
+    return _common.Result(
+        data={
+            "state": str(json_path),
+            "markdown": str(md_path),
+            "label": label,
+            "adopted_from": source_rel,
+            "copied": copied,
+            "may_remove": removable,
+        },
+        summary=(
+            f"progress: adopted the state for {label} into {workspace}; the target is unchanged. The owner may now "
+            f"remove from the target: {', '.join(removable)}"
         ),
         warnings=warnings,
     )
@@ -1121,6 +1231,14 @@ def build_parser() -> _common.ToolParser:
     init.add_argument("--phase", default="init", help="the step that creates the state, for the log (default: init)")
     init.add_argument("--date", help="the date to record, YYYY-MM-DD (default: today, UTC)")
     init.add_argument("--framework-rev", help="the framework SHA to record (default: this checkout's HEAD)")
+    adopt = commands.add_parser(
+        "adopt", help="move a state kept in the target's docs/agentic-readiness/ into a workspace"
+    )
+    adopt.add_argument("--target", required=True, help="the checkout that holds the state (read only)")
+    adopt.add_argument("--workspace", required=True, help="the folder outside the target to keep the state in")
+    adopt.add_argument("--label", help="the state to adopt when the target holds more than one")
+    adopt.add_argument("--phase", required=True, help="the step or session making the move, for the log")
+    adopt.add_argument("--date", help="the date to record, YYYY-MM-DD (default: today, UTC)")
     show = commands.add_parser("show", help="summarise the state; --json prints it")
     show.add_argument("--workspace", required=True, help=WORKSPACE_HELP)
     show.add_argument("--label", help="the state to read when the workspace holds more than one")
@@ -1175,6 +1293,8 @@ def handler(argv: Sequence[str]) -> _common.Result:
     args = build_parser().parse_args(list(argv))
     if args.command == "init":
         return run_init(args)
+    if args.command == "adopt":
+        return run_adopt(args)
     if args.command == "show":
         return run_show(args)
     if args.command == "set-status":

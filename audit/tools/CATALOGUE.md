@@ -90,12 +90,13 @@ compare_reports.py BEFORE AFTER [--state STATE] [--json]
 ## progress.py
 
 **Version:** 0.1.0  
-**Writes:** Only in the workspace, the report's folder, which must be outside the target: <label>-agentic-readiness-state.json (init) and <label>-agentic-readiness-STATE.md (init, render, and any command given --render), each replaced atomically. init never replaces a state; show writes nothing; every other command rewrites the JSON after validating it.
+**Writes:** Only in the workspace, the report's folder, which must be outside the target: <label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, render, and any command given --render), each replaced atomically; adopt also copies the source reports there, never over a different file. init and adopt never replace a state; show writes nothing; every other command rewrites the JSON after validating it.
 
 Create, show and render the implement recipe's per-repository state from a final audit report.
 
 ```text
 progress.py init --report REPORT --target REPO [--default-branch BRANCH] [--phase PHASE] [--date YYYY-MM-DD] [--framework-rev SHA]
+progress.py adopt --target REPO --workspace DIR --phase PHASE [--label LABEL] [--date YYYY-MM-DD]
 progress.py show --workspace DIR [--label LABEL] [--json]
 progress.py render --workspace DIR [--label LABEL]
 progress.py set-status FINDING STATUS --workspace DIR --phase PHASE [--commit SHA] [--verification-command CMD --verification-result TEXT] [--debt what=..,count=N[,baseline=FILE]] [--clear-debt] [--reason TEXT] [--note TEXT] [--by owner|agent] [--date YYYY-MM-DD] [--label LABEL] [--render]
