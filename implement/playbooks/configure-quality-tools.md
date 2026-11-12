@@ -108,7 +108,7 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
 
 ### Java (Gradle)
 
-Profile: [`stacks/java.md`](../../audit/stacks/java.md#tooling-defaults).
+Profile: [`stacks/java.md`](../../audit/stacks/java.md#tooling-options).
 
 | Concern | Options | Recommend |
 |---|---|---|
@@ -134,7 +134,7 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#tooling-defaults).
 
 ### TypeScript and Node
 
-Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#tooling-defaults).
+Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#tooling-options).
 
 | Concern | Options | Recommend |
 |---|---|---|
