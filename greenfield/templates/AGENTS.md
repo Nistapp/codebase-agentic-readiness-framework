@@ -33,8 +33,11 @@ npx vitest run test/<path>/<file>.test.ts -t '<test name>'
 ```
 
 `<Runtime and version, for example Node.js 24 with ESM; any precondition a command needs.>`
+<A rule the tools do not enforce, for example: local imports end in .js (NodeNext).>
 
 Run `npm run check` before every commit and pull request. If you cannot make it pass, report the blocker.
+
+`<If the repository has a code index, query it before you read whole files.>`
 
 ---
 
@@ -90,6 +93,8 @@ These rules apply to chat replies, plans, reports, commit messages, pull request
   `.env.example`.
 - Never edit `<.github/workflows/>` or `<dist/>` by hand.
 - Never skip, delete or weaken a test or a lint rule to get a gate green.
+- Never ship a public method without a positive and a negative test. Never let a unit test touch the real
+  filesystem, git or network; inject a stub.
 - Never verify work with an ad-hoc command. Use the seven verbs in section 1.
 - Never add a runtime dependency without an ADR that records the decision.
 - Never commit to `<main>` or `<dev>`, and never merge, tag or publish a release.
