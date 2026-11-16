@@ -384,7 +384,7 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 ## Phase 6 — Agent Governance
 
 ### 6.1 `AGENTS.md`
-Copy and customize the [**`AGENTS.md` Template**](templates/AGENTS.md). It is a short skeleton of what an agent cannot infer from the code: the standardized command surface (§1), the architectural boundaries (§2), the documentation contract that points at `docs/STYLE_GUIDE.md` (§3), the branch and release rules (§4), how to write for people (§5) and the prohibitions (§6). Replace each `<placeholder>` with a fact you checked.
+Copy and customize the [**`AGENTS.md` Template**](templates/AGENTS.md). It is a short skeleton of what an agent cannot infer from the code: the standardized command surface (§1), the architectural boundaries (§2), the documentation contract that points at `docs/STYLE_GUIDE.md` (§3), the branch and release rules (§4), how to write for people (§5) and the prohibitions (§6). Every line is true for a freshly scaffolded project; change a line when the project changes. To write one for an existing repository, use the [`adapt-agents-md`](../implement/playbooks/adapt-agents-md.md) playbook instead.
 
 ### 6.2 Agent Scratchpad — `artefacts/`
 Transient workspace for AI agents (`artefacts/*` in `.gitignore`, directory preserved via `.gitkeep`).
