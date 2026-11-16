@@ -49,6 +49,7 @@ Each rule names a path that exists.
 - `<src/infrastructure/>` holds every filesystem, git and OS operation. It implements interfaces from `<src/core/interfaces.ts>`.
 - `<src/cli/>` is the composition root. It reads `process.env` and wires the dependencies.
 - `<dist/>` is generated. Regenerate it with `npm run build`.
+- `<Naming rules a linter does not enforce, for example: files are kebab-case.ts; interfaces start with I. Delete the line if there are none.>`
 
 ---
 
