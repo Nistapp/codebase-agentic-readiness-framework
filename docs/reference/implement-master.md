@@ -317,12 +317,13 @@ what an agent may do with branches and releases, which harnesses read the file, 
 from the code. Every line is true against the repository, and the file stays within the 400-line budget.
 
 **The rule this playbook enforces: the playbook drafts, the owner edits.** `AGENTS.md` is the owner's voice. Each
-finding gets the smallest diff that closes it, proposed and reviewed one at a time. The file is never rewritten
-wholesale.
+finding gets the smallest diff that closes it, proposed and reviewed one at a time. An existing file is never
+rewritten wholesale. When no instruction file exists, the playbook creates a bare skeleton first and fills it one
+section, one commit at a time ([details](../../implement/playbooks/adapt-agents-md.md#no-instruction-file-yet)).
 
 | Check | What the playbook does |
 |---|---|
-| [`AGT-01` Instruction file present, canonical, and non-trivial](audit-master.md#agt-01-instruction-file-present-canonical-and-non-trivial) | Verification: a canonical root `AGENTS.md`, correctly cased, no stub markers, no override file |
+| [`AGT-01` Instruction file present, canonical, and non-trivial](audit-master.md#agt-01-instruction-file-present-canonical-and-non-trivial) | Verification: a canonical root `AGENTS.md`, correctly cased, no stub markers, no override file. Creates the file from the greenfield skeleton when none exists |
 | [`AGT-02` Component coverage by instruction files](audit-master.md#agt-02-component-coverage-by-instruction-files) | Verification; a component `AGENTS.md` only when the owner asks (component scoping is planned for a later framework version) |
 | [`AGT-03` Documentation contract named](audit-master.md#agt-03-documentation-contract-named) | One line each for `docs/`, `docs/STYLE_GUIDE.md` and the scratch directory |
 | [`AGT-04` Definition of done stated](audit-master.md#agt-04-definition-of-done-stated) | One definition-of-done sentence tying documentation triggers to the same change set |
@@ -338,7 +339,9 @@ wholesale.
 
 **What it never does:**
 
-- Do not rewrite `AGENTS.md` wholesale, reorder its sections, or reflow its lines.
+- Do not rewrite an existing `AGENTS.md` wholesale, reorder its sections, or reflow its lines.
+- Do not copy the template's example text, a placeholder or a generic line into a created file, and do not create
+  `AGENTS.md` beside a vendor file that holds real rules.
 - Do not reword the rest of `AGENTS.md` to meet the plain-language rules. Only the new AGT-12 section follows
   them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
