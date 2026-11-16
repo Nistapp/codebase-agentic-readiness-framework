@@ -71,6 +71,7 @@ before the first diff.
 | `docs.agents_line` | T6 already wrote the docs line; AGT-03 then only verifies it |
 | `layout.command_runner` | `per-app`: verbs are listed per app, not at the root |
 | `format.mass_reformat` | `no` (usual): never reflow or reformat the file to make it shorter |
+| `agents_md.create` | `yes` or `no`: create `AGENTS.md` when no instruction file exists (Inputs 9). Asked in Stage 1, because earlier themes write to the file |
 
 ## Inputs to ask
 
@@ -127,9 +128,10 @@ engine. The questions are about text. Ask them per finding, before the diff for 
       the docs rules ([`establish-docs-contract`](establish-docs-contract.md)); b. yes.
 8. **Owner-only values.** None is needed for this playbook. If a step seems to need one (a reviewer name, a
    contact), ask in the order `SKILL.md` Stage 2, step 6 gives (supply it, draft one for review, or skip).
-9. **No instruction file yet.** Ask only when no instruction file of any kind exists and AGT-01 is a confirmed
-   finding. One question: create `AGENTS.md` from the skeleton? a. yes (default); b. no, record the item `skipped`
-   by the owner. If a vendor file such as `CLAUDE.md` carries real rules, do not create a second file: handle it as
+9. **No instruction file yet** (`agents_md.create`). Asked in [Stage 1](../SKILL.md#stage-1-triage), step 5,
+   when no instruction file of any kind exists and AGT-01 is a confirmed finding. One question: create `AGENTS.md`
+   from the skeleton? a. yes (default); b. no: earlier themes write to `CONTRIBUTING.md`, and the owner skips the
+   AGT-01 item. If a vendor file such as `CLAUDE.md` carries real rules, do not create a second file: handle it as
    Inputs 3 says.
 
 ## Steps
@@ -242,12 +244,16 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 ### No instruction file yet
 
 Use this branch only when the engine's AGT-01 finds no instruction file in any variant (`AGENTS.md`, `CLAUDE.md`,
-`GEMINI.md`, `.cursorrules` and the rest of the variant table) and the owner agreed (Inputs 9). A stub that holds
-the owner's text is an existing file: use the Generic steps. A vendor file with real rules is AGT-08's (Inputs 3).
+`GEMINI.md`, `.cursorrules` and the rest of the variant table) and `agents_md.create=yes` (Inputs 9). A stub that
+holds the owner's text is an existing file: use the Generic steps. A vendor file with real rules is AGT-08's
+(Inputs 3).
 
-1. **Skeleton.** Copy the [greenfield `AGENTS.md` template](../../greenfield/templates/AGENTS.md) to the repository
-   root. Keep the title, the reach line and the six section headings. Remove the header block and every body line:
-   nothing from the template's example text (npm commands, `src/core/` paths) is written into the target.
+1. **Skeleton.** The first theme that writes to the instruction file makes this step, often T1
+   ([Stage 3, step 11](../SKILL.md#stage-3-apply)). Create `AGENTS.md` at the repository root with the title and
+   the six section headings of the [greenfield `AGENTS.md` template](../../greenfield/templates/AGENTS.md), and
+   nothing else. The template is a filled example for one Node project: none of its body text is written into the
+   target. That theme then writes its own lines into the matching section. When T7 starts, the file exists and
+   steps 2 to 4 below fill the rest.
 2. **Fill each section with the Generic step that owns it, one commit per section.** Every fact comes from the
    repository, never from the template. A line you cannot make true stays out, and no `<placeholder>` or `TODO`
    remains in the file.
@@ -296,7 +302,7 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 
 | # | Commit | Checks | Kind |
 |---|---|---|---|
-| 1 | Skeleton: title, reach line and section headings (only when no instruction file existed) | `AGT-01`, `AGT-08` | hand |
+| 1 | Skeleton: title and section headings (only when no instruction file existed; made by the first theme that writes to the file) | `AGT-01` | hand |
 | 2 | The seven verbs in a fenced block, annotated | `AGT-05` | hand |
 | 3 | Fix of the command a finding names (one per finding) | `EXEC-06` | hand |
 | 4 | Precondition lines and lines T2 deferred, beside the commands (only when missing) | - | hand |
