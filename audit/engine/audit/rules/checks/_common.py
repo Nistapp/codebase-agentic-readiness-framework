@@ -275,7 +275,7 @@ def entry_instruction_file(inventory: Inventory) -> tuple[str, str]:
     return "", ""
 
 
-#: The words that make a heading a prohibitions heading: the template's "Do Not Do" and the other spellings of
+#: The words that make a heading a prohibitions heading: the template's "Never" and the other spellings of
 #: the same list (decision 0001, ``spec/decisions/0001-constraint-artifact.md``).
 PROHIBITION_HEADING_RE = re.compile(r"(?i)\b(do[- ]?not|don't|prohibit\w*|deny|forbidden|never|no[- ]?go)\b")
 

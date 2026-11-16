@@ -162,8 +162,8 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
                 statement=statement(
                     "learn the project's conventions", "no agent-instruction file exists anywhere in the repository"
                 ),
-                remediation="Create AGENTS.md at the repository root using the framework template "
-                "(codebase-agentic-readiness-framework templates/AGENTS.md).",
+                remediation="Create AGENTS.md at the repository root with the adapt-agents-md playbook: the "
+                "headings of the framework's greenfield template, each section filled with this repository's facts.",
             )
         )
     else:
@@ -181,8 +181,8 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
                             "work to this project's conventions", f"AGENTS.md exists but is a stub — {reason}"
                         ),
                         evidence=[Evidence("AGENTS.md", note=f"{_rule_line_count(text)} rule lines")],
-                        remediation="Fill AGENTS.md from the framework template: verbs, boundaries, "
-                        "definition of done, prohibitions.",
+                        remediation="Fill AGENTS.md with this repository's facts, using the adapt-agents-md "
+                        "playbook: verbs, boundaries, definition of done, prohibitions.",
                         path="AGENTS.md",
                     )
                 )
