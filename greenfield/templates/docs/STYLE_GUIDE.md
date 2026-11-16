@@ -2,7 +2,7 @@
 
 > **Scope:** Governs all documentation under `docs/`. Applies to both human writers and AI documentation agents.
 > **Standard:** [Diátaxis Framework](https://diataxis.fr/) + Constraint-Driven Agent Invariants.
-> **Enforcement:** [`AGENTS.md`](../AGENTS.md) §5.3 and §8 require compliance with this file. Link to these rules; never restate them elsewhere — restated rules drift.
+> **Enforcement:** [`AGENTS.md`](../AGENTS.md) §3 requires compliance with this file. Link to these rules; never restate them elsewhere — restated rules drift.
 
 ---
 
@@ -104,13 +104,13 @@ delete one: [`ADR_POLICY.md`](ADR_POLICY.md).
 | Secrets, tokens, and environment values | `.env` (never committed) |
 
 `artefacts/` is never an architectural source of truth and is excluded from the
-`codebase-memory` index; see [`AGENTS.md` §4](../AGENTS.md).
+`codebase-memory` index; see [`AGENTS.md` §3](../AGENTS.md).
 
 ---
 
 ## 8. Plain Language
 
-Write for the reader that [`AGENTS.md`](../AGENTS.md) §8.1 names. These rules come from ASD-STE100 (Simplified
+Write for the reader that [`AGENTS.md`](../AGENTS.md) §5 names. These rules come from ASD-STE100 (Simplified
 Technical English), without its fixed word list: technical names are fine. The audit check `DOC-05` measures
 rules 2 and 6 over every page under `docs/`.
 

@@ -19,7 +19,7 @@ Thank you for considering contributing to this project!
 
 ## Coding Standards
 
-- See `AGENTS.md` for the full coding standards.
+- See `AGENTS.md` for the commands and boundaries.
 - TypeScript `strict` mode — zero errors from `npm run typecheck`.
 - No `any`. Use `unknown` and narrow.
 - Named imports only. Group: Node built-ins → third-party → internal.

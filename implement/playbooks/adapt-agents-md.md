@@ -220,7 +220,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     level and style (D18), and keep a word the check reads (`write for`, `communication`, `reporting`). Place it
     after the section `agents_md.pointer_section` names; without that preference, place it before the prohibitions
     section. Start from the template in the greenfield
-    [`AGENTS.md` § 8.1](../../greenfield/templates/AGENTS.md#81-how-to-write-for-people), five bullets:
+    [`AGENTS.md` § 5](../../greenfield/templates/AGENTS.md#5-how-to-write-for-people), five bullets:
     - the reader: the persona the owner confirmed (Inputs 7);
     - bottom line first;
     - plain language: short sentences (at most 25 words), active voice, one term per meaning;
