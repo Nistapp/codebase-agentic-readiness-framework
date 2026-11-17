@@ -40,6 +40,31 @@ Rules:
 - **Tables:** Use standard GFM tables with aligned headers for scannability.
 - **Blank lines:** one blank line before and after headers, code blocks, tables, and alert blocks.
 
+### 3.1 Form follows content
+
+Choose the form from the kind of content, not from habit. A reader scans a table or a diagram faster than a long
+paragraph.
+
+| Content | Form | Example |
+|---|---|---|
+| Steps in a fixed order | Numbered steps, each with a check | Deploy, release |
+| Rules people cite in review | Nested numbers: `## 2.`, `### 2.1`, `2.1.1`, then `a.` | `AGENTS.md`, `CONVENTIONS.md`, this guide |
+| Rules that vary along one axis | A table | Path to "token needed"; action to result |
+| A flow or a decision | A Mermaid diagram (§9) | Request to handler; input to error type |
+| A reason or an edge case | A `[!NOTE]` alert or a `<details>` block | Why a default is safe |
+| A warning that breaks things | A `[!IMPORTANT]` alert | "Send the tenant header on every call" |
+| A setting | A one-line table row, with a link to numbered details | `docs/reference/configuration.md` |
+
+3.1.1 A lettered item (`a.`) is one full sentence: a capital first, a full stop last. End every lettered line but
+the last with a backslash (`\`), so each item renders on its own line. Use a table when the items share columns.
+
+3.1.2 A table cell holds one line. Longer text goes into numbered details below the table.
+
+3.1.3 A paragraph holds at most three sentences. More than that becomes numbered items or a table.
+
+3.1.4 Some files keep their own shape: ADRs ([`ADR_POLICY.md`](ADR_POLICY.md)), the glossary, tutorials, the
+changelog and the issue templates.
+
 ---
 
 ## 4. Document Types & Locations
@@ -55,9 +80,27 @@ Rules:
 | How-to guides | `docs/how-to/` | `<task>.md` |
 | Tutorials | `docs/tutorials/` | `<topic>.md` |
 | Reference (generated) | `docs/api/` | TypeDoc output — never hand-edited |
+| Reference (hand-written): settings, environment variables, limits | `docs/reference/` | `<topic>.md` |
 | Document templates | `docs/templates/` | `<type>-template.md` |
 
 New documents MUST start from the matching template in `docs/templates/`.
+
+### 4.1 A README is a landing page
+
+4.1.1 The root `README.md` holds four things: what the project is, the setup command, how to start it, and links
+into `docs/`.
+
+4.1.2 Two commands stay in a root file: the setup command, and the command that runs one test. Two audit checks
+look for them in `README.md`, `AGENTS.md`, `CLAUDE.md` and `CONTRIBUTING.md`, never in `docs/`:\
+a. `EXEC-03` non-interactive setup path reads the setup command.\
+b. `TST-04` fast path documented reads the single-test command.
+
+4.1.3 Everything else moves to `docs/`, by type:\
+a. Deployment and operations go to a how-to guide in `docs/how-to/`.\
+b. Settings go to a reference page in `docs/reference/`.\
+c. Design and behaviour go to an explanation page in `docs/architecture/`.
+
+4.1.4 A section that moves leaves a link table behind in the README, so old readers still find it.
 
 ---
 
@@ -150,3 +193,32 @@ A diagram often explains a flow faster than text. Every page under `docs/explana
 - Keep a diagram to about 12 nodes. Split a larger one.
 - Write one sentence before the diagram that says what it shows.
 - Validate every block before you commit it: render it with the Mermaid CLI, or a Mermaid validator.
+
+---
+
+## 10. One home for each rule
+
+Each topic has one home. Every other file links to the home and does not restate the rule, because a copy drifts.
+
+10.1 **The exception.** `AGENTS.md` is the one file an agent is sure to read. A harness may not follow its links
+(`AGT-10` instruction indirection resolved). So `AGENTS.md` keeps what an agent needs in every session: the
+commands, the boundaries and the never-rules. It links for the rest.
+
+10.2 **The ownership map.**
+
+| Topic | Home | Other files |
+|---|---|---|
+| Commands (setup, gate, one test) | `AGENTS.md`, "Commands"; the setup command also in `README.md` | `CONTRIBUTING.md` links |
+| Never-rules and boundaries | `AGENTS.md`, "Boundaries" and "Never" | No copies |
+| Branches, commits, pull requests | `CONTRIBUTING.md` | `AGENTS.md` keeps what an agent may push, and links |
+| Releases | `RELEASE_PROCESS.md` | `AGENTS.md` and `CONTRIBUTING.md` link |
+| Code conventions | `CONVENTIONS.md` | `AGENTS.md` and `CONTRIBUTING.md` link |
+| Writing rules | This file (pages) and `docs/COMMUNICATION_RULES.md` (wording) | `AGENTS.md` keeps a summary |
+| Definition of done | `AGENTS.md` | `CONTRIBUTING.md` links |
+| Domain terms | `docs/architecture/glossary.md` | Others link |
+| Decisions | `docs/architecture/adrs/` | Others link |
+| Configuration and deployment | `docs/` pages (§4.1) | `README.md` links |
+
+10.3 **Why some homes are fixed.** Two audit checks read `AGENTS.md`:\
+a. `AGT-04` definition of done stated needs the rule there, so it never moves out.\
+b. `AGT-12` communication rules stated needs a section on writing for people, or a link to a rules file.
