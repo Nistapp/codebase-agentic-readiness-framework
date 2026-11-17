@@ -31,6 +31,7 @@ section, one commit at a time ([details](#no-instruction-file-yet)).
 | AGT-10 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-10--instruction-indirection-resolved) | A "read X first" deferral becomes an ordinary link, with the must-always rules moved into `AGENTS.md` |
 | AGT-11 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-11--instructions-are-specific-and-not-inferable) | Generic text moves to `docs/`; contradicted rules become target state with the exception count; stale lines corrected |
 | AGT-12 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-12--communication-rules-stated) | A "How to write for people" section that names the reader, how to report and how to ask for a decision. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
+| AGT-13 | [02-agent-governance-2.md](../../audit/checks/02-agent-governance-2.md#agt-13--coding-conventions-written) | Writes `CONVENTIONS.md` from the greenfield template when no conventions exist; at `PARTIAL`, suggests the missing items and adds the ones the owner accepts. Trigger: a confirmed finding |
 | EXEC-06 | [09-execution-determinism.md](../../audit/checks/09-execution-determinism.md#exec-06--documented-commands-resolve) | Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline |
 | TST-04 | [10-tests.md](../../audit/checks/10-tests.md#tst-04--fast-path-documented) | Verification only, when T5 wrote the fenced single-test line; written here when the item sits in T7 |
 
@@ -73,6 +74,7 @@ before the first diff.
 | `format.mass_reformat` | `no` (usual): never reflow or reformat the file to make it shorter |
 | `agents_md.create` | `yes` or `no`: create `AGENTS.md` when no instruction file exists (Inputs 9). Asked in Stage 1, because earlier themes write to the file |
 | `agents_md.numbering` | `keep` (default for an existing file): its numbering stays. `nested` (a created file, or an existing one by opt-in): Steps 13 and 15 |
+| `agents_md.conventions` | `create` (default): write or complete the conventions. `skip`: leave them as they are (Inputs 11, Step 16) |
 
 ## Inputs to ask
 
@@ -80,8 +82,8 @@ No tool is installed by this playbook: the instruction file is plain Markdown an
 engine. The questions are about text. Ask them per finding, before the diff for that finding.
 
 1. **Order of the diffs.** Default order, smallest risk first: AGT-05 and EXEC-06 (commands), TST-04 (verify),
-   AGT-03, AGT-04, AGT-06, AGT-09, AGT-08, AGT-10, AGT-11, AGT-12. The owner may reorder or skip any; a skip goes through
-   `progress.py skip` by the owner.
+   AGT-03, AGT-04, AGT-06, AGT-09, AGT-08, AGT-10, AGT-11, AGT-12, AGT-13. The owner may reorder or skip any; a skip
+   goes through `progress.py skip` by the owner.
 2. **Boundary rules (AGT-06).** Propose two or three rules from the code index (which directory may import which,
    which layer owns persistence, which folder is generated or vendored). The owner picks; never invent a boundary
    the code does not show. If the code index shows no boundary, ask the owner for one or record the item `partial`.
@@ -138,6 +140,15 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     numbering or asks for nested style. One question: a. `keep` (default): the file's numbering stays; b. `nested`:
     Step 15 renumbers it, one top-level section per commit, with an audit before and after each commit. Never renumber
     a file the owner did not opt in for.
+11. **Coding conventions (AGT-13)** (`agents_md.conventions`). Ask when `AGT-13` is a confirmed finding. One question,
+    with the options that fit the verdict:
+    1. No conventions yet (`FAIL`). a. Write `CONVENTIONS.md` from the greenfield template, one section at a time
+       (default); b. skip: record the item `skipped`.
+    2. Conventions exist at `PARTIAL`. a. List the missing items as suggestions and add each one the owner accepts
+       (default); b. leave the conventions as they are: the item is `partial`, with debt.
+
+    The owner confirms every section before it is committed. A stub word (`TBD`, `TODO`) in the conventions goes to the
+    owner as a question, never as a guess.
 
 ## Steps
 
@@ -294,6 +305,39 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     The two traps of Step 14 still hold: the renumbering never splits a boundary path from its rule word, and never
     moves a prohibition word into another section. This step fits the Do-not-do line on reflowing: a line keeps its
     words, its breaks and its place, and only its number, marker or trailing `\` changes.
+16. **Coding conventions (AGT-13).** Run the engine's `AGT-13` first and read which of the five items it names as
+    missing: naming, layering, errors and logging, testing, and the link to the formatter or linter config. Then follow
+    the owner's answer (Inputs 11). A conventions file or section holds only rules that a tool does not enforce and a
+    reader cannot infer from the code.
+    - **a. No conventions.** Write `CONVENTIONS.md` from the greenfield
+      [`CONVENTIONS.md`](../../greenfield/templates/CONVENTIONS.md) template. Adapt it to the target's stack and to its
+      own naming of files (D18): a repository that already calls its docs `CODE_STYLE.md` or keeps them under `docs/`
+      gets that name and place, because the engine finds any of the names the check page lists. Keep the template's
+      five sections. Replace `[Project Name]` and every example with the target's own. Text comes from
+      `greenfield/templates/` only: write no rule from memory or from this playbook. Add one link line to `AGENTS.md`,
+      in the section that names the documentation, and state no convention there a second time.
+    - **b. Evidence for every rule.** Every rule written comes from the code. Find it with the code index
+      (`search_graph` for the types, the layers and the error classes) and cross-check it with a `grep` or `rg`. With
+      no code index, a `grep` stands in; say which one you used. Evidence by item:
+      - naming: the file names and the type names in the source tree and the test tree;
+      - layering: the import lines between directories, as in Inputs 2;
+      - errors and logging: the error classes that exist and the logger the code calls;
+      - testing: the test directories, the runner config and the test file names;
+      - the config link: the formatter and linter config files that exist (`test -e <path>`). Link each one. Never copy
+        its settings.
+
+      The owner confirms each section before its commit. A rule with no evidence stays out, and the item is `partial`.
+    - **c. Conventions at `PARTIAL`.** List the missing items as suggestions, each with the evidence behind it. Add only
+      the items the owner accepts. Never invent the missing rule. A stub word (`TBD`, `TODO`) goes to the owner as a
+      question: "this line says `TBD`; what is the rule?" Remove the word only when the owner answers or says to drop
+      the line.
+    - **d. Where it stays.** A conventions section in `AGENTS.md` or `CONTRIBUTING.md` stays where it is, unless the
+      owner asks to move it. Complete it in place.
+    - **Git rules.** Branch and commit rules belong in `CONTRIBUTING.md`, the home of branches, commits and pull
+      requests. Link to it from the conventions and write none of them there. Moving the Git rules out of an existing
+      conventions file is a separate diff, made only when the owner asks.
+
+    Then run the engine's `AGT-13`. Run `AGT-08` too: it must not count the new file as a vendor instruction file.
 
 ### No instruction file yet
 
@@ -338,7 +382,10 @@ The single-test form is `./gradlew test --tests '<fully.qualified.Class>'` (add 
 come from the package layout: REST resources, services, repositories or entities, and the migration folder
 (`src/main/resources/db/migration/`); a "never inject X in Y" rule is the usual contradicted rule, counted with a
 code-index query on the injection points. JDK and wrapper preconditions sit next to the commands. The AGT-12 persona names
-the language and the build tool: "a new engineer who knows Java, Quarkus and Gradle".
+the language and the build tool: "a new engineer who knows Java, Quarkus and Gradle". For `AGT-13` (Step 16), naming
+evidence comes from the package and class names (`*Resource`, `*Service`, `*Repository`) and the test class names;
+layering evidence comes from the package layout and the injection points; the config links are `.editorconfig`,
+`checkstyle*.xml` and the `spotless` block of `build.gradle`; testing evidence is `src/test/` and the JUnit setup.
 
 ### Node (npm, NestJS, React)
 
@@ -348,7 +395,11 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#com
 not invented. Jest single test: `npx jest -t '<name>'` from the app folder. Boundary candidates: the app folders
 themselves (one app never imports another), `src/` versus `test/`, generated clients, and the infrastructure folder.
 The AGT-12 persona names the languages and frameworks the apps use: "a new engineer who knows TypeScript, NestJS
-and React".
+and React". For `AGT-13` (Step 16), write one conventions file per repository, not one per app, and name the app a
+rule covers when the apps differ. Naming evidence comes from the file names under each `src/` (`*.controller.ts`,
+`*.module.ts`, `*.test.tsx`); layering evidence comes from the import lines between app folders and the NestJS module
+layout; the config links are `.editorconfig`, `.prettierrc`, `eslint.config.*` and `biome.json`, with `tsconfig.json`
+for strict mode; testing evidence is the Jest or Vitest config and the test folders.
 
 ## Commits
 
@@ -377,6 +428,10 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 | 18 | Long-form communication rules file and its link (only with `agents_md.comm_long_form=yes`) | `AGT-12` | hand |
 | 19 | Long section moved to `docs/` (only when over the 400-line budget) | - | hand |
 | 20 | One top-level section renumbered in nested style (only with `agents_md.numbering=nested` on an existing file; one per section) | - | hand |
+| 21 | `CONVENTIONS.md` written from the template, one section per commit (only when no conventions exist) | `AGT-13` | hand |
+| 22 | Link line to the conventions in `AGENTS.md` (only when the file is new) | `AGT-13` | hand |
+| 23 | Missing conventions items the owner accepted (only at `PARTIAL`; one per item) | `AGT-13` | hand |
+| 24 | Stub word settled with the owner's answer (one per word) | `AGT-13` | hand |
 
 ## Continue on error
 
@@ -394,6 +449,11 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 - **A changed verdict in the renumbering (Step 15):** the step stops at that section. The item is `partial` with a
   note that names the check and the section. Sections already renumbered stay; the rest keep their old numbering.
   Say so in the pull request, under "What was not done".
+- **The owner declines conventions items (Step 16):** the item is `partial`, with each declined item as debt
+  (`what=conventions items missing (<names>),count=N`). The count may only go down. A rule with no evidence in the code
+  stays out and counts the same way.
+- **A stub word the owner has not answered:** the line stays as it is, the item is `partial`, and the pull request says
+  so under "What was not done".
 
 ## Verification
 
@@ -410,6 +470,7 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 | AGT-10 | `grep -n -i 'read .* first' AGENTS.md` | No unconfigured deferral; `PASS` |
 | AGT-11 | The rule-line tally in the state note | At least 80% specific, every specific line verified; else `partial` with the count |
 | AGT-12 | `grep -n -i -A6 'write for' AGENTS.md`; the engine's AGT-12 | The section names the confirmed persona, how to report and how to ask for a decision; `PASS` (`partial` for a non-English docs language) |
+| AGT-13 | The engine's AGT-13; `grep -n -i 'TBD\|TODO' CONVENTIONS.md` | Naming, layering, errors and logging, testing and the config link are covered, with no stub word; `PASS`, or `partial` with the missing items named |
 | EXEC-06 | The engine's EXEC-06 | Every fenced command resolves; `PASS` |
 | TST-04 | `grep -n -A2 'single test' AGENTS.md` | A fenced single-test command for the runner; `PASS` |
 | Budget | `wc -l AGENTS.md` | 400 or fewer, or the overage recorded as debt |
@@ -419,9 +480,10 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 
 `git revert` the commits, newest first: one per finding, each revertible alone. Some commits move a rule or a
 text block: a reconciled vendor file, the deferral, generic text, a long section. The revert returns the text to its
-old place. This playbook touches only `AGENTS.md`, the new `docs/` page and the long-form communication rules
-file. It also touches a vendor pointer file or the second rules file, but only where the owner agreed. A renumbering
-commit (Step 15) reverts alone and restores that section's old numbering.
+old place. This playbook touches only `AGENTS.md`, the new `docs/` page, the long-form communication rules
+file and `CONVENTIONS.md` (new, or completed in place). It also touches a vendor pointer file or the second rules
+file, but only where the owner agreed. A renumbering commit (Step 15) reverts alone and restores that section's old
+numbering. A conventions commit (Step 16) reverts alone too.
 
 ## Do-not-do
 
@@ -441,6 +503,10 @@ commit (Step 15) reverts alone and restores that section's old numbering.
   exist), and do not name a harness in the reach line that does not load the file.
 - Do not add generic prose, role-play persona text or an overview to fill a section. The reader persona of the
   AGT-12 section is not generic text.
+- Do not write a conventions rule that the code does not show, fill a missing item with generic text, or invent the
+  rule behind a `TBD` or `TODO` line. Do not write conventions text that does not come from `greenfield/templates/`.
+- Do not move or rewrite a conventions section in `AGENTS.md` or `CONTRIBUTING.md` unasked, copy a Git rule into the
+  conventions, or copy a formatter or linter setting into them.
 - Do not copy content from a private repository or workspace into an open-source one, or from any target into the
   framework.
 
@@ -464,6 +530,10 @@ python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace
   --verification-result "section names the reader, reports and decisions; AGT-12 PASS"
 python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --commit <sha> --debt "what=files that break the <rule> rule,count=<N>" --note "rule kept as target state"
+python3 implement/tools/progress.py pref set agents_md.conventions create \
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
+  --commit <sha> --debt "what=conventions items missing (testing),count=1" --note "owner declined the testing item"
 ```
 
 T7 is one theme with two playbooks: run this one and [`add-deny-rules`](add-deny-rules.md) on the same branch, and
