@@ -6,7 +6,7 @@
 Each verdict of PLAN.md 5.6.1 has a test here: a conventions file at `PASS` for the Java, Node and Python
 keyword sets, a file missing items and a file with a stub word at `PARTIAL`, a section in `AGENTS.md` or
 `CONTRIBUTING.md`, no conventions at `FAIL`, and `docs/STYLE_GUIDE.md` alone at `FAIL`. The one-defect fixture
-`agt-13-no-conventions` runs end to end in `test_agt_pack.py` and the fixture matrix.
+`agt-13-no-conventions` is not in the tree yet: a separate session adds it, with its matrix row, after hand-back.
 """
 
 from __future__ import annotations
