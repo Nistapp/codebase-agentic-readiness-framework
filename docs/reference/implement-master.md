@@ -275,7 +275,7 @@ not moved.
 
 | Check | What the playbook does |
 |---|---|
-| [`DOC-01` docs/ exists](audit-master.md#doc-01-docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home |
+| [`DOC-01` docs/ exists](audit-master.md#doc-01-docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home. A dense README section that the owner agrees to move gets a `docs/` page and an index row (Steps 10) |
 | [`DOC-02` docs/STYLE_GUIDE.md exists](audit-master.md#doc-02-docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` with the form rules and one line in the instruction file that names it. An existing guide gets the form rules only by the owner's choice (Steps 9) |
 | [`DOC-03` artefacts/ exists and is ignored](audit-master.md#doc-03-artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | [`DOC-04` ADR directory and index](audit-master.md#doc-04-adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
@@ -306,6 +306,13 @@ not moved.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
 - Do not rewrite, reorder or renumber the text of an existing style guide. Append the form rules as one section, and
   only with `docs.style_guide_update=yes`. With `no`, do not touch the file.
+- Do not move the setup command or the single-test command out of the root files `README.md`, `AGENTS.md` or
+  `CONTRIBUTING.md`. `EXEC-03` non-interactive setup path and `TST-04` fast path documented read only `README.md`,
+  `AGENTS.md`, `CLAUDE.md` and `CONTRIBUTING.md`, never `docs/`. `TST-04` reads the single-test command, not the setup
+  command.
+- Do not change a fact while moving a README section. Ask the owner about a gap.
+- Do not split a README the owner answered `no` to (`docs.split_readme=no`), and do not move two sections in one
+  commit.
 
 Full playbook: [`establish-docs-contract.md`](../../implement/playbooks/establish-docs-contract.md).
 

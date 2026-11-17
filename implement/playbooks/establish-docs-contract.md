@@ -14,7 +14,7 @@ not moved.
 
 | Check | Rubric | What this playbook does for it |
 |---|---|---|
-| DOC-01 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-01--docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home |
+| DOC-01 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-01--docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home. A dense README section that the owner agrees to move gets a `docs/` page and an index row (Steps 10) |
 | DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` with the form rules and one line in the instruction file that names it. An existing guide gets the form rules only by the owner's choice (Steps 9) |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
@@ -37,6 +37,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
   (the pages the owner named for a prose rewrite), `layout.command_runner`, `ci.edits_authorised` (needed to add the
   docs CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `docs.prose_check` and
   `docs.prose_check_licence` (Inputs 6), `docs.style_guide_update` (`ask`, `yes` or `no`; default `ask`; Inputs 8),
+  `docs.split_readme` (`ask`, `yes` or `no`; default `ask`; Inputs 9),
   `docs.language` (the language of the docs; see [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask), Inputs 7),
   `extra.*`.
 - The `DOC-05` steps run on a confirmed `DOC-05` finding. They also run when the owner asked for them by name in
@@ -107,6 +108,11 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    one section with the form rules to the owner's guide? a. `ask` (default): show the section in Steps 9, then record
    the owner's answer as `yes` or `no`; b. `yes`: append it in one commit; c. `no`: record the answer and change
    nothing. Record the answer with `pref set docs.style_guide_update`.
+9. **Split a dense README** (`docs.split_readme`). Ask only when the root `README.md` has a dense section (Steps 10).
+   One question, as a [decision request](../../audit/prompts/talking-to-the-user.md#decision-requests): move the dense
+   sections of the README into `docs/` pages, one section per commit? a. `ask` (default): list the dense sections in
+   Steps 10, then record the owner's answer as `yes` or `no`; b. `yes`: split, one section per commit; c. `no`: record
+   the answer and change nothing. Record the answer with `pref set docs.split_readme`.
 
 ## Steps
 
@@ -250,6 +256,50 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    - Keep the rule that the setup command and the single-test command stay in a root file (`EXEC-03`
      non-interactive setup path, `TST-04` fast path documented).
    - The new lines follow the plain language rules of step 3, because `DOC-05` reads this page.
+10. **Split a dense README (`docs.split_readme`).** This step is opt-in (Inputs 9). It moves text out of the root
+    `README.md` and changes no fact. Read the preference first:
+    - `ask` (default): list the dense sections, then record the owner's answer as `yes` or `no`.
+    - `yes`: split, one section per commit (Commits row 19).
+    - `no`: record the preference and change nothing. Do not ask again in this run.
+
+    A section is dense when it has a paragraph of more than three sentences, or a table cell of more than one
+    sentence. Leave the README's landing-page parts in place: what the project is, the setup command, how to start it,
+    and links into `docs/`.
+    1. **Pick the page type.** Move one section, by its content:
+       - Deployment and operations go to a how-to page, from the greenfield
+         [`how-to-template.md`](../../greenfield/templates/docs/templates/how-to-template.md).
+       - Settings go to a reference page, from the greenfield
+         [`reference-template.md`](../../greenfield/templates/docs/templates/reference-template.md).
+       - Design and behaviour go to an explanation page, from the greenfield
+         [`architecture-doc-template.md`](../../greenfield/templates/docs/templates/architecture-doc-template.md).
+
+       Place the page in the target's own docs layout and name it as the target names its pages (D18). Do not impose
+       a folder tree.
+    2. **Audit before.** On a clean tree, run the engine and keep the report path:
+       `python3 audit/tools/engine.py <worktree> --out-dir <dir outside the target> --no-user-config`. Use the same
+       command for every run in this step. The after report of one section is the before report of the next.
+    3. **Move the section.** Copy the text into the new page, in the page's own form. Leave a link table where the
+       section was, with one row for each topic that moved: the topic and a relative link to the new page. Add the page
+       to `docs/README.md` in the same commit.
+    4. **Audit after, then compare.** Commit the section and run the same engine command again. Then run
+       `python3 implement/tools/compare_reports.py <before report> <after report>`. Read the "Checks that moved"
+       table. Expected: `None.`
+    5. **Stop on a changed verdict.** Any row in that table stops the step. Revert the commit, or fix it in a new
+       commit and audit again, before the next section.
+    6. **Check the commands by hand.** The comparison cannot catch one loss. `EXEC-06` documented commands resolve reads
+       fenced commands in `README.md`, `AGENTS.md` and `CLAUDE.md` only. A command that moves to `docs/` leaves that
+       scope. The `EXEC-06` verdict does not change, so the before-and-after audit shows nothing. Before each commit,
+       list the fenced commands in the section. Tell the owner which commands now sit outside the check, in the pull
+       request under "What changed".
+
+    Rules:
+    - Keep the setup command and the single-test command in a root file: `README.md`, `AGENTS.md` or `CONTRIBUTING.md`.
+      `EXEC-03` non-interactive setup path reads fenced commands in `README.md`, `AGENTS.md`, `CLAUDE.md` and
+      `CONTRIBUTING.md`. `TST-04` fast path documented reads the single-test command in the same four files. Neither
+      reads `docs/`.
+    - A fact in the section stays as written. If the section has a gap or a doubt, ask the owner. Rewording is not
+      moving.
+    - The new page follows the style guide: form follows content, and the plain language rules of step 3.
 
 ### Gradle and Quarkus
 
@@ -292,8 +342,10 @@ Docs first, then the lint config, then the wiring. The instruction-file line wai
 | 16 | Prose ratchet: the runner command and the full-tree run (same condition as 14) | `DOC-05` | wiring |
 | 17 | Prose runs in the docs CI job (same condition as 14) | `DOC-05` | wiring |
 | 18 | Form rules section appended to an existing style guide (only with `docs.style_guide_update=yes`) | `DOC-02` | hand |
+| 19 | One dense README section moved to a `docs/` page, with a link table left behind (one commit per section; only with `docs.split_readme=yes`) | `DOC-01` | hand |
 
 Row 18 is the exception to the order: step 9 makes it right after row 3, so the lint baseline of row 11 counts it.
+Row 19 comes last, after the docs pages and the index exist, so each moved section joins `docs/README.md`.
 
 ## Continue on error
 
@@ -313,6 +365,13 @@ Row 18 is the exception to the order: step 9 makes it right after row 3, so the 
 - An ADR the owner has not reviewed: listed in the pull request under "What was not done", or in the status note,
   as waiting for the owner. The owner edits, deletes or merges it.
 - A docs job the merge gate cannot yet require: left advisory, noted for the CI theme.
+- A changed verdict after a README section moved: the step stops at that section. Revert the commit, or fix it in a
+  new commit and audit again. Sections already moved stay; the rest stay in the README. Say so in the pull request,
+  under "What was not done".
+- A dense section with a gap, a doubt or a fact that looks wrong: the section stays in the README, and the question
+  goes to the owner. Move the next section.
+- A section that holds the setup command or the single-test command: leave those commands in the root file. Move only
+  the rest, or leave the section, and tell the owner why.
 
 ## Verification
 
@@ -321,6 +380,7 @@ Row 18 is the exception to the order: step 9 makes it right after row 3, so the 
 | DOC-01 | `git ls-files 'docs/*.md' 'docs/**/*.md'` | At least one file; `docs/README.md` links every page; no second docs home |
 | DOC-02 | `test -f docs/STYLE_GUIDE.md` and `grep -n STYLE_GUIDE.md <instruction file>` | File exists; the instruction file names it |
 | DOC-02 form rules | `grep -n -i 'form follows content\|landing page' docs/STYLE_GUIDE.md`; for an existing guide, `git diff --numstat <base> -- docs/STYLE_GUIDE.md` | New guide, or `yes`: both rules present, and an existing guide shows 0 deleted lines. `no`: no output from the diff, and the preference recorded |
+| README split | After each section commit: `python3 implement/tools/compare_reports.py <before report> <after report>`; `git show --stat` | Only with `docs.split_readme=yes`. "Checks that moved" says `None.`. The commit adds one page and its `docs/README.md` row, and leaves a link table in the README. `EXEC-03` and `TST-04` still find their commands in a root file. `no`: no diff, and the preference recorded |
 | DOC-05 | `grep -n -i 'plain language\|diagram' docs/STYLE_GUIDE.md`; the engine's DOC-05 | Both sections present; no cited line on a page this theme wrote; `PASS`, or `partial` with the counts as debt |
 | DOC-03 | `git ls-files artefacts artifacts` and `git check-ignore -v artefacts/x` | No scratch directory, or nothing tracked and the rule matches |
 | DOC-04 | List `docs/adr/`; read `docs/adr/README.md`; `grep -n -i 'adr' <instruction file>` | At least one numbered file; the index links every numbered file by path, the template included; the ADR policy page exists and the instruction file names it |
@@ -336,9 +396,10 @@ Row 18 is the exception to the order: step 9 makes it right after row 3, so the 
 
 `git revert` the commits, newest first. Revert the prose CI runs and the prose ratchet before the prose check copy.
 Revert the docs CI job and the lint ratchet before the lint config. The instruction-file line goes with any docs
-commit whose page it names. The appended section of row 18 reverts alone. The other commits revert alone. This
-playbook moves, untracks and deletes nothing, except the scratch files in step 7, with owner consent. `git revert`
-returns them to the index.
+commit whose page it names. The appended section of row 18 reverts alone. Each README section of row 19 reverts alone:
+the revert restores the section and removes the page and its index row. The other commits revert alone. This
+playbook moves, untracks and deletes nothing, except the README sections of step 10 and the scratch files in step 7,
+both with owner consent. `git revert` returns them.
 
 ## Do-not-do
 
@@ -360,6 +421,13 @@ returns them to the index.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
 - Do not rewrite, reorder or renumber the text of an existing style guide. Append the form rules as one section, and
   only with `docs.style_guide_update=yes`. With `no`, do not touch the file.
+- Do not move the setup command or the single-test command out of the root files `README.md`, `AGENTS.md` or
+  `CONTRIBUTING.md`. `EXEC-03` non-interactive setup path and `TST-04` fast path documented read only `README.md`,
+  `AGENTS.md`, `CLAUDE.md` and `CONTRIBUTING.md`, never `docs/`. `TST-04` reads the single-test command, not the setup
+  command.
+- Do not change a fact while moving a README section. Ask the owner about a gap.
+- Do not split a README the owner answered `no` to (`docs.split_readme=no`), and do not move two sections in one
+  commit.
 
 ## State updates
 
@@ -381,6 +449,8 @@ python3 implement/tools/progress.py pref set docs.prose_check <skip|template> \
 python3 implement/tools/progress.py pref set docs.prose_check_licence <SPDX id> \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.style_guide_update <ask|yes|no> \
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py pref set docs.split_readme <ask|yes|no> \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
