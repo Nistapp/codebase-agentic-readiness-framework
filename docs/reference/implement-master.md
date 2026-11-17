@@ -39,7 +39,7 @@ Themes run in dependency order: the order and the dependencies are in
 | [T5 Tests and baselines](#t5-tests-and-baselines) | [`add-baselines-and-ratchet`](#add-baselines-and-ratchet) | 8 |
 | [T6 Docs and navigation](#t6-docs-and-navigation) | [`establish-docs-contract`](#establish-docs-contract) | 10 |
 | [T7 AGENTS.md and governance](#t7-agentsmd-and-governance) | [`adapt-agents-md`](#adapt-agents-md), [`add-deny-rules`](#add-deny-rules) | 18 |
-| [T8 Hygiene and index](#t8-hygiene-and-index) | [`add-repo-hygiene`](#add-repo-hygiene), [`register-index`](#register-index) | 14 |
+| [T8 Hygiene and index](#t8-hygiene-and-index) | [`add-repo-hygiene`](#add-repo-hygiene), [`register-index`](#register-index) | 15 |
 
 ## T1 Command surface and quality tools
 
@@ -416,7 +416,7 @@ CONTRIBUTING, pull-request and issue templates), how to report a vulnerability (
 live (the rules as code, and a branch-protection page that summarises them). Each file is small, true against the
 repository, and sits where the audit reads it.
 
-**The rule this playbook enforces: write only what is true, and only what the repository needs.** All eleven checks
+**The rule this playbook enforces: write only what is true, and only what the repository needs.** All twelve checks
 are cosmetic and unscored, so a long, generic template that nobody keeps true is worse than a short page that is.
 A value the playbook cannot know (a mailbox, a response time, a second reviewer) is a named placeholder plus an owner
 action in the state, never an invented contact.
@@ -434,6 +434,7 @@ action in the state, never an invented contact.
 | [`HYG-09` Dependency update automation configured](audit-master.md#hyg-09-dependency-update-automation-configured) | An update entry for each detected ecosystem, no `target-branch` beside `ignore` or `groups`, and the owner's update policy (Step 8) |
 | [`HYG-10` License present](audit-master.md#hyg-10-license-present) | Verification only; the playbook never chooses a licence |
 | [`HYG-11` Branch protection declared as code](audit-master.md#hyg-11-branch-protection-declared-as-code) | The rules declared as code (GitHub ruleset files, or the repository's Terraform), a source-branch check for a two-branch model, and a page that summarises them (Step 7) |
+| [`HYG-13` Contributing rules written](audit-master.md#hyg-13-contributing-rules-written) | Improves a `CONTRIBUTING` file that exists: for each missing item (a setup link, the gate and its CI line, the branch, commit and pull-request rules), proposes a line from the repository's facts and adds the ones the owner accepts (Step 9). The file itself is `HYG-05`'s |
 
 **What it never does:**
 
@@ -445,6 +446,10 @@ action in the state, never an invented contact.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
 - Do not copy a private runbook, another repository's page, or its values into a repository's file.
 - Do not choose a licence.
+- Do not add a contributing item the owner has not accepted, or a rule the repository does not show. Do not write
+  contributing text that does not come from `greenfield/templates/`.
+- Do not copy the setup commands into `CONTRIBUTING.md`; link them. Do not move a branch or commit rule out of
+  another file unasked, and do not move one without leaving a link.
 - Do not replace Renovate with Dependabot or the reverse, and do not turn on security updates in the settings.
 - Do not create a file in a component directory expecting it to count.
 - Do not reformat existing pages (`format.mass_reformat`).

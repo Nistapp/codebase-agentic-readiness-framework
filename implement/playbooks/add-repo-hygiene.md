@@ -12,7 +12,7 @@ CONTRIBUTING, pull-request and issue templates), how to report a vulnerability (
 live (the rules as code, and a branch-protection page that summarises them). Each file is small, true against the
 repository, and sits where the audit reads it.
 
-**The rule this playbook enforces: write only what is true, and only what the repository needs.** All eleven checks
+**The rule this playbook enforces: write only what is true, and only what the repository needs.** All twelve checks
 are cosmetic and unscored, so a long, generic template that nobody keeps true is worse than a short page that is.
 A value the playbook cannot know (a mailbox, a response time, a second reviewer) is a named placeholder plus an owner
 action in the state, never an invented contact.
@@ -32,6 +32,7 @@ action in the state, never an invented contact.
 | HYG-09 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-09--dependency-update-automation-configured) | An update entry for each detected ecosystem, no `target-branch` beside `ignore` or `groups`, and the owner's update policy (Step 8) |
 | HYG-10 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-10--license-present) | Verification only; the playbook never chooses a licence |
 | HYG-11 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-11--branch-protection-declared-as-code) | The rules declared as code (GitHub ruleset files, or the repository's Terraform), a source-branch check for a two-branch model, and a page that summarises them (Step 7) |
+| HYG-13 | [13-hygiene-informational.md](../../audit/checks/13-hygiene-informational.md#hyg-13--contributing-rules-written) | Improves a `CONTRIBUTING` file that exists: for each missing item (a setup link, the gate and its CI line, the branch, commit and pull-request rules), proposes a line from the repository's facts and adds the ones the owner accepts (Step 9). The file itself is `HYG-05`'s |
 
 **Where a file counts.** The checks read the repository root, `.github/`, `.gitlab/` and `docs/` (HYG-10 and HYG-01:
 the root only). A file inside a component's directory does not count, so a component README does not close HYG-01,
@@ -68,6 +69,7 @@ observation.
 | `agents_md.release_tags` | `never-tag-or-release` means the release page says agents never tag |
 | `format.mass_reformat` | `no`: new Markdown only, no reformatting of existing pages |
 | `deps.update_policy` | `security-only` (default), `security-and-minor` or `all`: which pull requests the dependency-update tool opens (Step 8) |
+| `contributing.content` | `suggest` (default): propose each missing contributing item. `suggest-and-move`: also offer to move Git rules that live elsewhere into `CONTRIBUTING.md`. `skip`: leave the file as it is (Inputs 5, Step 9) |
 
 ## Inputs to ask
 
@@ -109,14 +111,20 @@ the policy files, and for nothing else:
    (default: the default branch, plus the integration branch when the state or `AGENTS.md` names one), the required
    status check (default: the gate job's `name:` as the workflow writes it), and the approval count (default `0` with
    one owner). Record the answer in `ci.branch_protection`.
-5. **Everything else** is derived, not asked: the README from the repository's files, CONTRIBUTING from the gate and
+5. **Contributing content (HYG-13)** (`contributing.content`). Ask when HYG-13 is `PARTIAL` or `FAIL` and a
+   contributing file exists. One question, default first: a. Propose a line for each missing item and add the ones
+   you accept (default); b. do the same, and offer to move branch, commit and pull-request rules that live in
+   another file (for example `CONVENTIONS.md` or `AGENTS.md`) into `CONTRIBUTING.md`, with a link left behind;
+   c. skip: the file stays as it is. Without a contributing file, HYG-13 is `UNKNOWN` and HYG-05 owns the finding.
+6. **Everything else** is derived, not asked: the README from the repository's files, CONTRIBUTING from the gate and
    the PR rules in `AGENTS.md`, the templates from the PR and commit rules in the state.
 
 ## Steps
 
 ### Generic
 
-1. **Baseline.** Run the audit launcher for HYG-01 to HYG-11. Build the table "check, location found, verdict, action".
+1. **Baseline.** Run the audit launcher for HYG-01 to HYG-11 and HYG-13. Build the table "check, location found, verdict,
+   action".
    Close every present item as `done` with the file as evidence. A check that passes and has no item gets no state
    entry, only a line in the pull request body ([Stage 3](../SKILL.md#stage-3-apply), step 5). Name each new file by
    this repository's own convention: look at the neighbouring file names, the casing of existing root
@@ -301,12 +309,38 @@ the policy files, and for nothing else:
    - When HYG-09 passed and has no item, name it in the pull request body and change nothing.
    - **Licence (HYG-10).** Verify only. If a `LICENSE` is missing, do not pick one: raise it as an owner question
      and set the item `blocked` (reason: the owner chooses a licence).
+9. **Contributing content (HYG-13).** Run the engine's `HYG-13` and read which of the three items it names as
+   missing. Then follow the owner's answer (Inputs 5). The file itself is `HYG-05`'s: this step improves a file that
+   exists and never creates one. Text comes from
+   [`greenfield/templates/CONTRIBUTING.md`](../../greenfield/templates/CONTRIBUTING.md), adapted to the repository's
+   own commands, branch names and file names (D18).
+   - **a. Propose, from facts.** For each missing item, write one proposed line from what the repository shows. Cite
+     the file behind it. Three items:
+     - **Setup:** a link to the place that holds the setup command (`README.md` or `AGENTS.md`). Link the command;
+       never copy it, because a copy drifts.
+     - **Gate:** the gate command, found in `AGENTS.md`, the manifest scripts or the CI workflow, and one sentence
+       that CI runs the same command. Read the workflow to confirm that it does.
+     - **Workflow:** the rules for branches, commits and pull requests, as the repository runs them: the branch base
+       and naming, the commit or title rule and the tool that checks it, who reviews and how the pull request is
+       merged.
+   - **b. Add only what the owner accepts.** Show the proposals together. Commit each accepted item on its own. A
+     declined item stays out. A fact the repository does not show (a branch name rule nobody follows) stays out too.
+   - **c. Rules that live elsewhere.** When the branch or commit rules sit in `CONVENTIONS.md`, `AGENTS.md` or another
+     file, `CONTRIBUTING.md` is their one home. With `contributing.content=suggest-and-move`, offer the move: show
+     the lines, the file they leave and the link that replaces them. Move a rule only after the owner says yes, one
+     file per commit, and leave a link in the old place. Under `suggest`, name the rules in the pull request body
+     and move nothing.
+   - **d. Check the neighbours.** The `AGENTS.md` branch and release sentence (`AGT-09`) and the "same change set"
+     rule (`AGT-04`) must still read as they did. Run the engine's `AGT-04` and `AGT-09` after a move.
+
+   Then run the engine's `HYG-13`.
 
 ### Gradle and Quarkus
 
 Profile: [`stacks/java.md`](../../audit/stacks/java.md). The README and CONTRIBUTING name the wrapper commands (`./gradlew
-...`) and the Java version the toolchain needs. CODEOWNERS paths follow the Gradle layout (`/src/main/`, `/src/test/`,
-`/scripts/ci/`). Release tools in this stack are usually release-please (`simple` type, root) or the Gradle release
+...`) and the Java version the toolchain needs. For `HYG-13` (Step 9), the gate is usually `./gradlew check` (the
+engine reads it), and the CI sentence names that task when the workflow runs it. CODEOWNERS paths follow the Gradle
+layout (`/src/main/`, `/src/test/`, `/scripts/ci/`). Release tools in this stack are usually release-please (`simple` type, root) or the Gradle release
 plugin; the release page says which tags the tool creates.
 
 ### Node (npm, NestJS, React) with several components
@@ -315,7 +349,9 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md). I
 README links to the apps' own READMEs; it does not replace them and they do not replace it. CODEOWNERS uses one path
 rule per app only if the owner supplies different owners; otherwise the default `*` line is enough. A release tool that
 tags per package (component in the tag) is described in the release page with the tag format. Commands in the README
-and CONTRIBUTING are the root scripts, or per-app commands with the directory named.
+and CONTRIBUTING are the root scripts, or per-app commands with the directory named. For `HYG-13` (Step 9), the gate is
+the root script (`npm run check`) when one exists. With per-app gates only, name each one with its directory, and say
+which one CI runs.
 
 ## Commits
 
@@ -336,6 +372,8 @@ One commit per file or concern. A check that already passes makes no commit.
 | 11 | Source-branch job in the release branch's required checks (same condition as 10) | `HYG-11` | config |
 | 12 | Branch-protection page | `HYG-11` | hand |
 | 13 | Dependency-update file | `HYG-09` | config |
+| 14 | Contributing items the owner accepted (only at `PARTIAL` or `FAIL`; one per item) | `HYG-13` | hand |
+| 15 | Git rules moved into `CONTRIBUTING.md`, with a link left behind (only on the owner's yes; one per source file) | `HYG-13` | hand |
 
 ## Continue on error
 
@@ -349,6 +387,9 @@ One commit per file or concern. A check that already passes makes no commit.
 - **HYG-11 on GitLab without Terraform:** `partial` (the engine reads the page only as recorded), with the note
   "no repository file for GitLab protected branches; declare them in Terraform to close" and the setting as an owner
   action. It is not debt.
+- **HYG-13 with items the owner declines, or a fact the repository does not show:** the item is `partial`, and the
+  note names each missing item (`setup`, `gate`, `workflow`). It is not debt, because the check is unscored.
+- **HYG-13 with no contributing file:** the check gives `UNKNOWN`. Close the `HYG-05` item first, then run Step 9.
 - **A missing licence:** the item is `blocked` until the owner chooses one; it is not debt the playbook can fix.
 - None of this is a count of violations, so no ratchet or baseline file applies: report-only is the wiring.
 
@@ -367,6 +408,7 @@ One commit per file or concern. A check that already passes makes no commit.
 | HYG-09 | Launcher run; read each `updates:` entry | An entry per detected ecosystem, no `target-branch` beside `ignore` or `groups`; `PASS` |
 | HYG-10 | `ls LICENSE*` | Present; `PASS` (verified, not added) |
 | HYG-11 | `python3 -m json.tool` on each `.github/rulesets/*.json`; launcher run | Each file parses; the source-branch job exists for a two-branch model; the page says "recorded, not enforced" where that is true; `PASS` (`PARTIAL` on GitLab without Terraform) |
+| HYG-13 | The engine's `HYG-13`; `grep -n -i 'ci\|branch\|commit' CONTRIBUTING.md` | A setup link, the gate with its CI line, and the branch, commit and pull-request rules; `PASS`, or `partial` with the missing items named |
 
 ## Rollback
 
@@ -374,6 +416,7 @@ One commit per file or concern. A check that already passes makes no commit.
 its required-check entry first, or the release branch requires a check that never runs. Nothing outside the
 repository changes: GitHub settings (private
 vulnerability reporting, branch protection, required reviews) are never touched, so there is nothing to put back.
+A contributing item (Step 9) reverts alone. A moved rule reverts alone too, and puts the lines back in their old file.
 
 ## Do-not-do
 
@@ -385,6 +428,10 @@ vulnerability reporting, branch protection, required reviews) are never touched,
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
 - Do not copy a private runbook, another repository's page, or its values into a repository's file.
 - Do not choose a licence.
+- Do not add a contributing item the owner has not accepted, or a rule the repository does not show. Do not write
+  contributing text that does not come from `greenfield/templates/`.
+- Do not copy the setup commands into `CONTRIBUTING.md`; link them. Do not move a branch or commit rule out of
+  another file unasked, and do not move one without leaving a link.
 - Do not replace Renovate with Dependabot or the reverse, and do not turn on security updates in the settings.
 - Do not create a file in a component directory expecting it to count.
 - Do not reformat existing pages (`format.mass_reformat`).
@@ -409,6 +456,10 @@ python3 implement/tools/progress.py pref set codeowners.default owner-owns-all \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set security.disclosure <github-private-reporting|private-contact> \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py pref set contributing.content <suggest|suggest-and-move|skip> \
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
+  --commit <sha> --note "contributing items missing (gate); owner declined the line"
 ```
 
 Record a preference only when the owner answers; absent means the default above. The theme closes once, after
