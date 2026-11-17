@@ -314,7 +314,10 @@ Engine           `AGT-08`. Classifies every instruction-shaped path the variant 
                  findings at all is `PASS`. Distrust a competitor finding when
                  the vendor file is a deliberate, documented one-line pointer at the canonical file (A14
                  accepts a pointer; it is only a true competitor when it carries independent rules) —
-                 verify by reading the vendor file's content, not just its presence.
+                 verify by reading the vendor file's content, not just its presence. A path that a
+                 harness loads only through its config (Aider's `CONVENTIONS.md`, named in
+                 `.aider.conf.yml`) counts only when that config file exists; without it, the file is an
+                 ordinary document.
 Method           automated
 Look for         Every instruction-shaped path present (the variant table's classification); for each
                  vendor-only file found, whether it is a pointer or an independent rule set.

@@ -22,6 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import support  # noqa: E402
 from audit.rules.checks.agt import MIN_INSTRUCTION_CHARS, _trivial_reason  # noqa: E402
 from audit.rules.checks.agt import check_agt12 as CHECK_AGT12  # noqa: E402
+from audit.rules.checks.agt import check_agt08 as CHECK_AGT08  # noqa: E402
+from audit.rules.checks.agt import instruction_paths  # noqa: E402
 from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 from audit.stack import detect_stack  # noqa: E402
@@ -185,6 +187,51 @@ class Agt08StatedHarnessesTests(unittest.TestCase):
 
     def test_a_harness_name_without_the_phrase_does_not(self):
         self.assertEqual(self.reach_findings(FILLER + "We like Cursor.\n"), ["AGT-08:harness-reach"])
+
+
+class Agt08ConfigGatedPathTests(unittest.TestCase):
+    """Aider loads `CONVENTIONS.md` only when `.aider.conf.yml` names it, so without that config the file is a style
+    guide, not an instruction file competing with `AGENTS.md`. Run in-process, so coverage traces it."""
+
+    AGENTS = FILLER + "This file is read by Claude Code, opencode, Codex and Cursor.\n"
+
+    def run_check(self, files: dict[str, str]) -> tuple[set[str], str, list[str]]:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            inventory = build_inventory(root)
+            outcome = CHECK_AGT08(
+                spec=REGISTRY_BY_ID["AGT-08"],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+            paths = instruction_paths(inventory)
+        return paths, outcome.verdict.value, sorted(f.path for f in outcome.findings)
+
+    def test_conventions_without_aider_config_is_not_an_instruction_file(self):
+        paths, verdict, findings = self.run_check({"AGENTS.md": self.AGENTS, "CONVENTIONS.md": "# Conventions\n"})
+        self.assertEqual(paths, {"AGENTS.md"})
+        self.assertEqual((verdict, findings), ("PASS", []))
+
+    def test_conventions_in_a_subfolder_without_aider_config_is_not_one_either(self):
+        paths, verdict, _ = self.run_check({"AGENTS.md": self.AGENTS, "docs/CONVENTIONS.md": "# Conventions\n"})
+        self.assertEqual((paths, verdict), ({"AGENTS.md"}, "PASS"))
+
+    def test_conventions_with_aider_config_competes_with_agents_md(self):
+        paths, verdict, findings = self.run_check(
+            {
+                "AGENTS.md": self.AGENTS,
+                "CONVENTIONS.md": "# Conventions\n",
+                ".aider.conf.yml": "read: [CONVENTIONS.md]\n",
+            }
+        )
+        self.assertIn("CONVENTIONS.md", paths)
+        self.assertEqual(verdict, "FAIL")
+        self.assertIn("vendor-files", findings)
 
 
 class Agt07SectionTests(unittest.TestCase):
