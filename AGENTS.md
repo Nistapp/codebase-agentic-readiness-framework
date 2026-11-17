@@ -88,6 +88,21 @@ No vendor-specific instruction file exists beside it.
 - `make test` skips the positive-fixture test when `CI=true` and its scaffolder (a sibling repository) is absent.
   Locally the test fails loudly without it; set `AUDIT_BOOTSTRAP=<path to bootstrap.py>` to point at the scaffolder.
 
+## Code conventions
+
+These rules are written in full in the files linked. `audit/engine/AGENTS.md` §5 and §6 are the strictest.
+
+- Naming: modules and functions are `snake_case`, as in PEP 8; a private helper starts with `_`. A check ID keeps
+  the catalogue's `PACK-NN` form.
+- Layering: follow the Boundaries table below. The engine never imports `audit/tools/`, the audit folder never
+  imports `implement/`, and only `dev/` may import a dev package.
+- Errors and logging: a tool raises `UsageError` (exit 1) or `ValidationFailed` (exit 2), and a bug exits 3
+  (`audit/tools/README.md`). The engine raises `AuditUsageError` for bad input. No code uses the `logging` module:
+  diagnostics go to stderr, never to stdout.
+- Testing: stdlib `unittest`, never `pytest`. A new engine check has a fixture that fails exactly that check.
+- Formatting and lint: [`ruff.toml`](ruff.toml) and [`mypy.ini`](mypy.ini), through `make format` and
+  `make typecheck`.
+
 ## How to write for people
 
 Full rules: [`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md). They apply to chat replies, plans,
