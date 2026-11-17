@@ -479,6 +479,8 @@ Full playbook: [`register-index.md`](../../implement/playbooks/register-index.md
 
 ## Checks with no playbook
 
+- [`AGT-13` Coding conventions written](audit-master.md#agt-13-coding-conventions-written): the audit emits it, and a
+  playbook reads it as an input.
 - [`CON-04` Draft allow/deny emitted](audit-master.md#con-04-draft-allowdeny-emitted): the audit emits it, and a
   playbook reads it as an input.
 

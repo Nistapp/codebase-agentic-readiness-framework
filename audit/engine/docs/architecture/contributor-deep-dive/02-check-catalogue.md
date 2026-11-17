@@ -21,7 +21,7 @@
 | Group | Checks | Tier A | Tier B | Tier C |
 |---|---|---|---|---|
 | `IDX` Discovery & index | 3 | 2 | — | 1 |
-| `AGT` Agent governance | 11 | 2 | 9 | — |
+| `AGT` Agent governance | 12 | 2 | 10 | — |
 | `DOC` Documentation contract | 5 | 3 | 2 | — |
 | `CMD` Command surface | 4 | — | 4 | — |
 | `TOOL` Tooling | 7 | 3 | 4 | — |
@@ -32,17 +32,18 @@
 | `TST` Tests | 5 | 2 | 2 | 1 |
 | `NAV` Navigation | 3 | 1 | 2 | — |
 | `SEC` Security hygiene | 3 | — | 3 | — |
-| **Total catalogued** | **61** | **17** | **41** | **2** |
+| **Total catalogued** | **62** | **17** | **42** | **2** |
 
 Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
 
-Of the 61, `CON-04` is an emitter rather than a check, leaving **60 scoreable checks** in v1. (`CON-01` carried weight 0
+Of the 62, `CON-04` is an emitter rather than a check, leaving **61 scoreable checks** in v1. (`CON-01` carried weight 0
 until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
 prohibitions section now.)
 
 > [!NOTE]
-> The tier columns sum to 60, not 61: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
-> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`; v0.3.4 added `AGT-12` and `DOC-05`.
+> The tier columns sum to 61, not 62: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
+> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`; v0.3.4 added `AGT-12` and `DOC-05`; ruleset `2026-11-17.2` added
+> `AGT-13`.
 > Earlier revisions of this table carried per-group tier splits that disagreed with their own rows — `--list-checks`
 > is the executable truth, and a mismatch between it and this page is a defect in this page.
 
@@ -86,6 +87,7 @@ suspicious verdict.
 | `AGT-09` | Branch and release boundary declared | B | DEGRADER | States which branches exist and whether an agent may tag or release, and names every branch the declared branch rules protect by name | Implemented |
 | `AGT-10` | Instruction indirection resolved | B | DEGRADER | A file the entry file defers to ("first read …") is named in a harness config (`.aider.conf.yml` `read:`, `opencode.json` `instructions`, `.codex/config.toml` `model_instructions_file`, `.gemini/settings.json` `context.fileName`) or inlined | Implemented |
 | `AGT-12` | Communication rules stated | B | COSMETIC | A section of the instruction file headed for writing to people, or a linked file whose name says `communicat`, names the reader, how to report and how to ask for a decision; a named file that does not exist, or a missing element, is `PARTIAL` | Implemented |
+| `AGT-13` | Coding conventions written | B | COSMETIC | A conventions file (`CONVENTIONS*`, `*convention*`, `CODE_STYLE*`, `CODING_STANDARDS*`, `*coding-guidelines*`, at the root or under `docs/` or `.github/`) or a conventions section of `AGENTS.md` or `CONTRIBUTING.md` covers naming, layering, error handling and logging, and testing, and links the formatter or linter config; a missing item or a `TBD` or `TODO` is `PARTIAL`; `docs/STYLE_GUIDE.md` never counts | Implemented |
 
 ---
 

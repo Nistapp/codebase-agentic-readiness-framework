@@ -1,6 +1,6 @@
 {
-  "catalogue_version": "0.7.1",
-  "fingerprint": "c150d929fed634cb",
+  "catalogue_version": "0.8.0",
+  "fingerprint": "7415748db09f19d5",
   "families": [
     {
       "id": "IDX",
@@ -311,6 +311,22 @@
       "playbooks": [
         "adapt-agents-md"
       ]
+    },
+    {
+      "id": "AGT-13",
+      "family": "AGT",
+      "title": "Coding conventions written",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": true,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-062"
+      ],
+      "engine_id": "AGT-13",
+      "since_ruleset": "2026-11-17.2",
+      "playbooks": []
     },
     {
       "id": "DOC-01",

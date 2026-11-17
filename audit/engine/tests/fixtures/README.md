@@ -5,8 +5,10 @@ The catalogue's § Adding a Check makes this a merge requirement: no fixture, no
 
 Current state: the fixture matrix is complete and consolidated by `../test_fixture_matrix.py`, which
 carries one explicit expected verdict per fixture and asserts the positive fixtures collectively pass
-every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`, `12`) and
-`AGT-05` are exercised by `../packs/agt/test_agt_pack.py` and `../packs/cmd/test_cmd_pack.py`; the earlier `AGT` checks
+every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`, `12`, `13`) and
+`AGT-05` are exercised by `../packs/agt/test_agt_pack.py` and `../packs/cmd/test_cmd_pack.py`, and `AGT-13`'s other
+verdicts by `../packs/agt/test_agt13_conventions.py`. Each fixture that `test_agt_pack.py` runs, and
+`governed-minimal`, holds a short `CONVENTIONS.md`, so that it does not also fail `AGT-13`; the earlier `AGT` checks
 (`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`08`) are
 exercised by `../packs/exec/test_exec_pack.py` (and `EXEC-08` by `../packs/exec/test_exec08_inline_versions.py`); the `CMD` checks (`CMD-01`…`04`) by `../packs/cmd/test_cmd_pack.py`; and
 the `SEC` checks (`SEC-01`…`03`) by `../packs/sec/test_sec_pack.py`, against the fixtures below. The `DOC` and

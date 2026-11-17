@@ -58,6 +58,7 @@ down is invisible.
 | `AGT-08` No competing instruction files | `AGENTS.md` + `CLAUDE.md` + `.cursorrules` disagreeing is obeyed as ambiguity | Inconsistent behaviour across harnesses, untraceable |
 | `AGT-09` Branch and release boundary | Agents must know whether they may tag, release, or push | Agent triggers a release it had no authority to cut |
 | `AGT-12` Communication rules stated | An agent reports to people and asks them for decisions | Each agent picks its own layout; the reader must dig for the bottom line and the decision asked of them |
+| `AGT-13` Coding conventions written | An agent cannot infer naming, layering and error rules that no tool enforces | Agent names, layers and logs code its own way; review catches it late, or not at all |
 
 ---
 

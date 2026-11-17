@@ -157,7 +157,7 @@ They link to the formatter or linter configuration and do not copy its settings.
 - **Phase:** 1
 - **Verification:** automated
 - **Source:** [greenfield/README.md § File Tree — What Gets Created](../greenfield/README.md#file-tree--what-gets-created)
-- **Checks:** none yet
+- **Checks:** AGT-13
 
 ## Documentation contract
 
