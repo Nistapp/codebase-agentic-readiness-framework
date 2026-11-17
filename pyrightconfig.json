@@ -12,6 +12,8 @@
     "implement/playbooks/templates",
     "dev",
     "dev/eval",
-    "dev/tests"
+    "dev/tests",
+    "greenfield/bootstrap",
+    "greenfield/bootstrap/tests"
   ]
 }
