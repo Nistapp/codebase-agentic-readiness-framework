@@ -177,14 +177,14 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
   name). Keep each folder at 50 files or fewer: the self-audit's `NAV-03` reads a larger one as a catch-all.
 - **Fixtures:** one directory per check id, each a minimal repository that fails **exactly one** check.
   The catalogue's § Adding a Check makes this a merge requirement: **no fixture, no check.**
-- **Positive fixture:** a freshly generated `python-agentic-bootstrap` scaffold, **generated in the test run,
-  never vendored**. If a scaffold ever fails this audit, one of the two tools is wrong — that is a defect to
-  fix, not a false positive to tune away. Its scaffolder lives in a sibling repository, so the test fails
-  loudly without it, except when `CI=true`, where it skips and says why.
+- **Positive fixture:** a freshly generated scaffold from `greenfield/bootstrap/bootstrap.py`, **generated in
+  the test run, never vendored**. If a scaffold ever fails this audit, one of the two tools is wrong — that is a
+  defect to fix, not a false positive to tune away. The scaffolder lives in this repository, so the test runs
+  everywhere, CI included; `AUDIT_BOOTSTRAP` overrides its path, and the test fails loudly when it is absent.
 - **Load-bearing tests:** determinism (two full reports differ only by timestamp) and the zipapp
   entry-point contract (`main` callable with no arguments) must not be weakened.
 - **Pass rate:** 100% required. Never `.skip` or comment out a failing test; never relax an assertion to get
-  green. The one sanctioned skip is the positive-fixture test in CI, above.
+  green.
 - **Gate:** run `make check` (§3.1) from the repository root before proposing a change.
 
 ---
@@ -255,6 +255,6 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 10. ❌ **Do not** document a check as implemented while it is only in the catalogue.
 11. ❌ **Do not** merge a check without its one-defect fixture (no fixture, no check).
 12. ❌ **Do not** add, change or delete an ADR without following [`../docs/ADR_POLICY.md`](../../docs/ADR_POLICY.md).
-13. ❌ **Do not** weaken, `.skip`, or comment out a failing test to get green (the CI skip in §6 is the one exception).
+13. ❌ **Do not** weaken, `.skip`, or comment out a failing test to get green.
 14. ❌ **Do not** push, `git init`, or commit unless KC asks or your session's instructions say to commit.
 15. ❌ **Do not** verify work with an ad-hoc command; use the sanctioned surface in §3.1.

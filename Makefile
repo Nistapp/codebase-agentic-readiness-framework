@@ -199,8 +199,7 @@ test-part:
 #
 # Each suite runs as CI runs it, so the local number is CI's number. HOME is an empty directory, one per suite so
 # that parallel jobs cannot clear each other's: the IDX checks read the user's index store and MCP configs from
-# $HOME, which a CI runner does not have. CI=true lets the positive-fixture test skip as it does in CI (its
-# scaffolder is found through $HOME). uv's own directories are resolved from the real home first, so uvx still
+# $HOME, which a CI runner does not have. CI=true sets the rest of CI's environment. uv's own directories are resolved from the real home first, so uvx still
 # finds its cache and tools and nothing is downloaded again.
 COVERAGE_HOME := $(CURDIR)/dev/dist/coverage/home
 coverage_env = env -u AUDIT_INDEX_STORE -u XDG_CONFIG_HOME -u XDG_CACHE_HOME HOME=$(COVERAGE_HOME)/$(1) CI=true \
