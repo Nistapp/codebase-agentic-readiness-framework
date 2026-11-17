@@ -101,10 +101,10 @@ The framework's verbs are the contract. The runner is the **root `Makefile`** of
 
 | Verb | Command | What it covers here |
 |---|---|---|
-| `format` | `make format` | ruff format over `audit`, `implement` and `dev`. |
-| `format:check` | `make format:check` (alias `make format-check`) | ruff format check plus ruff lint rules, over `audit`, `implement` and `dev`, counted against `.quality-baseline.json`. |
-| `lint` | `make lint` | ruff lint rules over `audit`, `implement` and `dev`, read-only. |
-| `typecheck` | `make typecheck` | mypy strict, on `audit/tools`, `implement/tools`, `dev` and this directory's `build.py`. The rest of the engine joins later through a ratchet. |
+| `format` | `make format` | ruff format over `audit`, `implement`, `dev` and `greenfield/bootstrap`. |
+| `format:check` | `make format:check` (alias `make format-check`) | ruff format check plus ruff lint rules, over `audit`, `implement`, `dev` and `greenfield/bootstrap`, counted against `.quality-baseline.json`. |
+| `lint` | `make lint` | ruff lint rules over `audit`, `implement`, `dev` and `greenfield/bootstrap`, read-only. |
+| `typecheck` | `make typecheck` | mypy strict, on `audit/tools`, `implement/tools`, `dev`, `greenfield/bootstrap` and this directory's `build.py`. The rest of the engine joins later through a ratchet. |
 | `test` | `make test` | `python3 -m unittest discover -s tests` in this directory, then the audit tools' suite in `audit/tools/tests`, the implement tools' in `implement/tools/tests`, then the dev checks' in `dev/tests`. |
 | `check` | `make check` | `format:check`, `typecheck`, `test`, `--verify-rules`, the schema cross-check (`crosscheck`), `recipe-lint` and `adr-lint`. |
 | `security` | `make security` | Secrets scan against the committed baseline, then osv-scanner on the dev tools' lockfiles. The engine itself has no dependencies to audit. |

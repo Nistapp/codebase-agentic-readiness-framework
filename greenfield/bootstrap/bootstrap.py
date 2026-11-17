@@ -158,6 +158,7 @@ def pretty_name(name: str) -> str:
 # planning
 # ---------------------------------------------------------------------------
 
+
 def resolve_templates(explicit: str | None) -> Path:
     candidate = Path(explicit).expanduser().resolve() if explicit else None
     if candidate is None:
@@ -229,6 +230,7 @@ def build_substitutions(args: argparse.Namespace) -> dict[str, str]:
 # writing
 # ---------------------------------------------------------------------------
 
+
 def apply_substitutions(text: str, subs: dict[str, str], allow_date: bool) -> str:
     for token in sorted(subs, key=len, reverse=True):
         text = text.replace(token, subs[token])
@@ -252,9 +254,7 @@ def write_project(args: argparse.Namespace, templates: Path, plan: list[tuple[Pa
             shutil.copy2(src, dest)
             written.append(rel)
             continue
-        rendered = raw if exempt else apply_substitutions(
-            raw, subs, allow_date=rel.startswith("docs/architecture/")
-        )
+        rendered = raw if exempt else apply_substitutions(raw, subs, allow_date=rel.startswith("docs/architecture/"))
         if rel == "package.json":
             rendered = finalise_package_json(rendered, args)
         dest.write_text(rendered, encoding="utf-8")
@@ -283,6 +283,7 @@ def finalise_package_json(rendered: str, args: argparse.Namespace) -> str:
 # verification of the generated tree
 # ---------------------------------------------------------------------------
 
+
 def verify_tree(target: Path, written: list[str]) -> None:
     """Fail loudly: a scaffold that ships <your-email> is worse than one that fails."""
     missing = [rel for rel in written if not (target / rel).is_file()]
@@ -291,7 +292,8 @@ def verify_tree(target: Path, written: list[str]) -> None:
         fail("generated project is incomplete, missing: " + ", ".join(sorted(set(missing))))
 
     empty = [
-        rel for rel in written
+        rel
+        for rel in written
         if (target / rel).stat().st_size == 0
         and not rel.endswith(".gitkeep")
         and (target / rel).read_text(encoding="utf-8", errors="replace").strip() == ""
@@ -299,9 +301,20 @@ def verify_tree(target: Path, written: list[str]) -> None:
     if empty:
         fail("generated files are unexpectedly empty: " + ", ".join(sorted(set(empty))))
 
-    tokens = ("<package-name>", "<project-name>", "<project-description>", "<github-owner>",
-              "<node-version>", "<your-github-username>", "<your-email>", "<author>",
-              "<org>", "<project>", "[Project Name]", "[@github-handle]")  # noqa: RUF001
+    tokens = (
+        "<package-name>",
+        "<project-name>",
+        "<project-description>",
+        "<github-owner>",
+        "<node-version>",
+        "<your-github-username>",
+        "<your-email>",
+        "<author>",
+        "<org>",
+        "<project>",
+        "[Project Name]",
+        "[@github-handle]",
+    )
     leftovers: list[str] = []
     for path in sorted(target.rglob("*")):
         if not path.is_file() or ".git/" in path.as_posix():
@@ -329,7 +342,8 @@ def verify_tree(target: Path, written: list[str]) -> None:
 # git / npm
 # ---------------------------------------------------------------------------
 
-def run(cmd: list[str], cwd: Path, *, check: bool = True, quiet: bool = False) -> subprocess.CompletedProcess:
+
+def run(cmd: list[str], cwd: Path, *, check: bool = True, quiet: bool = False) -> subprocess.CompletedProcess[str]:
     if not quiet:
         print(f"    $ {' '.join(cmd)}")
     result = subprocess.run(cmd, cwd=str(cwd), text=True, capture_output=True)
@@ -366,7 +380,7 @@ def check_publish_payload(raw: str) -> None:
     if start == -1 or end == -1:
         print("    ! could not parse `npm pack --json` output — skipping payload check")
         return
-    payload = json.loads(raw[start:end + 1])[0]
+    payload = json.loads(raw[start : end + 1])[0]
     files = payload.get("files", [])
     print(f"    {payload.get('filename')}: {len(files)} files, {payload.get('size', 0) / 1024:.1f} kB packed")
     for entry in sorted(files, key=lambda f: f["path"]):
@@ -379,8 +393,7 @@ def check_publish_payload(raw: str) -> None:
         fail("the published tarball is missing: " + ", ".join(missing))
 
     leaked = sorted(
-        path for path in published
-        if any(hint in path for hint in SECRET_HINTS) or path.endswith(".tsbuildinfo")
+        path for path in published if any(hint in path for hint in SECRET_HINTS) or path.endswith(".tsbuildinfo")
     )
     if leaked:
         fail("the published tarball would include non-package files: " + ", ".join(leaked))
@@ -400,7 +413,9 @@ def verify_toolchain(target: Path, name: str) -> int:
     print(f"\n  npm view {name}  (name availability)")
     probe = run(["npm", "view", name, "version"], target, check=False)
     if probe.returncode == 0:
-        print(f"    ! '{name}' already exists on npm (v{probe.stdout.strip()}) — pick another name or expect a conflict")
+        print(
+            f"    ! '{name}' already exists on npm (v{probe.stdout.strip()}) — pick another name or expect a conflict"
+        )
     else:
         print(f"    ✓ '{name}' is unclaimed on npm")
     return 0
@@ -409,6 +424,7 @@ def verify_toolchain(target: Path, name: str) -> int:
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
+
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -420,22 +436,25 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("target", nargs="?", default=".", help="target directory (default: current)")
     parser.add_argument("--name", help="npm package name (default: target directory name)")
     parser.add_argument("--org", help="npm scope / GitHub org, e.g. nistapp -> @nistapp/<name>")
-    parser.add_argument("--description", default="TODO: one-line package description",
-                        help="package description")
+    parser.add_argument("--description", default="TODO: one-line package description", help="package description")
     parser.add_argument("--author", default=None, help="author name (default: git config user.name)")
     parser.add_argument("--email", default=None, help="author email (default: git config user.email)")
-    parser.add_argument("--github-owner", default=None,
-                        help="GitHub owner for CODEOWNERS/URLs (default: git config user.name)")
+    parser.add_argument(
+        "--github-owner", default=None, help="GitHub owner for CODEOWNERS/URLs (default: git config user.name)"
+    )
     parser.add_argument("--node", dest="node_version", default="24", help="target Node major (default: 24)")
-    parser.add_argument("--cli", dest="with_cli", action="store_true",
-                        help="also generate src/cli/index.ts and the package 'bin' entry")
+    parser.add_argument(
+        "--cli", dest="with_cli", action="store_true", help="also generate src/cli/index.ts and the package 'bin' entry"
+    )
     parser.add_argument("--lib", dest="with_cli", action="store_false", help="library only (default)")
-    parser.add_argument("--with-infra", action="store_true",
-                        help="also copy infra/ (LiteLLM gateway, Phase 7 — not fully implemented)")
+    parser.add_argument(
+        "--with-infra", action="store_true", help="also copy infra/ (LiteLLM gateway, Phase 7 — not fully implemented)"
+    )
     parser.add_argument("--templates", help="template source directory")
     parser.add_argument("--install", action="store_true", help="run npm install after generating")
-    parser.add_argument("--no-verify", dest="verify", action="store_false",
-                        help="skip npm run check / build / pack after installing")
+    parser.add_argument(
+        "--no-verify", dest="verify", action="store_false", help="skip npm run check / build / pack after installing"
+    )
     parser.add_argument("--no-git", dest="git", action="store_false", help="skip git init + commit")
     parser.add_argument("--dry-run", action="store_true", help="print the plan and write nothing")
     parser.add_argument("--force", action="store_true", help="write into a non-empty directory")
@@ -476,8 +495,10 @@ def main(argv: list[str]) -> int:
     print(f"  templates   {templates}")
     print(f"  target      {args.target}")
     print(f"  files       {len(plan) + 2} ({len(plan)} from templates, 2 .gitkeep)")
-    print(f"  node        {args.node_version}   cli: {'yes' if args.with_cli else 'no'}"
-          f"   infra: {'yes' if args.with_infra else 'no'}")
+    print(
+        f"  node        {args.node_version}   cli: {'yes' if args.with_cli else 'no'}"
+        f"   infra: {'yes' if args.with_infra else 'no'}"
+    )
 
     if args.dry_run:
         print("\n  plan (dry run, nothing written):")

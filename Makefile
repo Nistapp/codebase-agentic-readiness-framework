@@ -85,10 +85,10 @@ PROSE_SCOPE := git ls-files -z -- '*.md' ':(exclude,glob)**/fixtures/**' ':(excl
 
 ENGINE := audit/engine
 
-# Mypy covers the recipe tools, the dev-only checks and the engine's build script. The engine's own code joins
-# later, through a ratchet. The find picks up every Python file under audit/tools, implement/tools and
-# dev, tests included, except the toy repositories under testdata/ (eval data).
-TYPED_SOURCES := $(shell find audit/tools implement/tools implement/playbooks/templates dev -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
+# Mypy covers the recipe tools, the dev-only checks, the greenfield scaffolder and the engine's build script. The
+# engine's own code joins later, through a ratchet. The find picks up every Python file under audit/tools,
+# implement/tools, dev and greenfield/bootstrap, tests included, except the toy repositories under testdata/ (eval data).
+TYPED_SOURCES := $(shell find audit/tools implement/tools implement/playbooks/templates dev greenfield/bootstrap -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
 
 .DEFAULT_GOAL := help
 
@@ -127,17 +127,17 @@ setup:
 	@echo "setup: prerequisites present (python, uv, git, go); nothing to install"
 
 format:
-	$(RUFF) format audit implement dev
+	$(RUFF) format audit implement dev greenfield/bootstrap
 
 format-check:
-	$(RUFF) format --check audit implement dev
-	$(RUFF) check audit implement dev
-	$(QUALITY_BASELINE) ruff -- $(RUFF) check audit implement dev --output-format json
+	$(RUFF) format --check audit implement dev greenfield/bootstrap
+	$(RUFF) check audit implement dev greenfield/bootstrap
+	$(QUALITY_BASELINE) ruff -- $(RUFF) check audit implement dev greenfield/bootstrap --output-format json
 
 format\:check: format-check
 
 lint:
-	$(RUFF) check audit implement dev
+	$(RUFF) check audit implement dev greenfield/bootstrap
 
 typecheck:
 	$(MYPY) --config-file mypy.ini $(TYPED_SOURCES)

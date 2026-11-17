@@ -27,7 +27,8 @@ make setup          # check the prerequisites (Python 3.11+, uv, git, Go); nothi
 make format         # rewrite formatting in place
 make format:check   # read-only: formatting and lint rules (alias: make format-check)
 make lint           # read-only lint
-make typecheck      # mypy, strict: audit/tools, implement/tools, the playbook templates, dev, the engine build.py
+make typecheck      # mypy, strict: audit/tools, implement/tools, the playbook templates, dev, greenfield/bootstrap,
+                    # the engine build.py
 make test           # the engine's, the audit tools', the implement tools' and the dev checks' suites (at once on Linux)
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
                     # cross-check, recipe-lint, adr-lint, masters-check, eval-expected-check, workflow-lint (actionlint,
