@@ -16,11 +16,11 @@ score from falling.
 
 | Field | Value |
 | --- | --- |
-| Phase-1 score | **0.9264** |
-| Date | 2026-11-10 |
-| Engine | `python-agentic-audit` 0.3.2 |
-| Ruleset | `2026-11-10.2` (hash `9b2a2e2562a10c7a`) |
-| Applicable checks | 74 (60 scoreable) |
+| Phase-1 score | **0.9269** |
+| Date | 2026-11-17 |
+| Engine | `python-agentic-audit` 0.4.0 |
+| Ruleset | `2026-11-17.3` (hash `01fb2871bf2c9875`) |
+| Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; no user-level configuration read |
 
@@ -31,9 +31,17 @@ Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` 
 when `.mcp.json` began to register `codebase-memory-mcp`. `EXEC-01` and `EXEC-07` opened as owner exceptions.
 `EXEC-01` closed with ruleset `2026-11-09.8`, which reads the `go` directive of a nested `go.mod`
 (`dev/tools/actionlint/go.mod`). `EXEC-07` closed with ruleset `2026-11-09.11`, which reads `pyrightconfig.json` as a
-language-server mirror of the mypy gate. The checks added since, `CI-05`
-(workflow files are linted), `EXEC-08` (tool versions visible to dependency automation), `TOOL-07` (local branch
-guard), `AGT-12` (communication rules stated) and `DOC-05` (docs are readable), all pass.
+language-server mirror of the mypy gate.
+
+The checks added since all pass:
+
+- `CI-05` workflow files are linted;
+- `EXEC-08` tool versions visible to dependency automation;
+- `TOOL-07` local branch guard;
+- `AGT-12` communication rules stated;
+- `DOC-05` docs are readable;
+- `AGT-13` coding conventions written, through the "Code conventions" section of the root `AGENTS.md`;
+- `HYG-13` contributing rules written.
 
 The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 requirements it asks of others
 (see the [changelog](../../audit/CHANGELOG.md) and the engine's
@@ -41,12 +49,12 @@ The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 re
 
 | Verdict | Checks |
 | --- | --: |
-| PASS | 67 |
+| PASS | 69 |
 | PARTIAL | 3 |
 | FAIL | 0 |
 | UNKNOWN | 4 |
 | ATTEST | 0 |
-| **Total** | **74** |
+| **Total** | **76** |
 
 `UNKNOWN` and `ATTEST` earn no credit. Four checks are `UNKNOWN` because their evidence needs a Tier-C probe
 (`--run-gates`, not used here) or the user-level configuration that `--no-user-config` leaves unread, so this score
@@ -60,7 +68,7 @@ Every check that is not `PASS`, with the reason it is open.
 | --- | --- | --- | --- |
 | `BASE-02` | PARTIAL | DEGRADER | The T5 playbook was applied (D32): `.quality-baseline.json` holds the counts (ruff 0, mypy 0, Markdown lint outside the ratchet 735) and `make format-check`, `make typecheck` and `make docs-lint` fail when one goes up. The check still reads PARTIAL by design: it credits only a numeric budget flag (`--max-warnings N`), and none of these tools has one. Engine issue [#45](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/45) tracks it; the coverage floor (91) is unchanged and `BASE-04` passes |
 | `EXEC-02` | PARTIAL | BLOCKER | No finding: the lockfiles of the pinned dev tools (`dev/tools/uv.lock`, `dev/tools/package-lock.json` and the `go.sum` of each Go tool module, `dev/tools/osv/` and `dev/tools/actionlint/`) cannot be checked against their manifests without running the package managers. `dev/tests/test_tool_pins.py` checks that they agree; the engine does not read that test |
-| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 40% of public symbols documented (476 of 1188). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
+| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 41% of public symbols documented (567 of 1369). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
 | `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, the user-level index store, or `--emit-baseline`; not run here |
 
 No owner exception is open. The `IDX-01` exception (D21), the `TOOL-04` exception (D33) and the `EXEC-01` and
