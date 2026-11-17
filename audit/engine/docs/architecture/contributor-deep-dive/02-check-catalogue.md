@@ -65,7 +65,9 @@ and are reported per component when a component-level file exists.
 
 The pack is driven by **one data structure in code** — `audit/rules/variants.py` — recording every instruction-file
 variant per harness with the documentation URL it came from and a `last_verified` date, plus the config-indirection
-keys, the shadow pairs, and the globs that only *look* like instructions. A filename-only check is wrong in both
+keys, the shadow pairs, and the globs that only *look* like instructions. A harness whose own path loads only through
+its config (`paths_need_config`, Aider's `CONVENTIONS.md`) reaches that path only when the config file exists.
+A filename-only check is wrong in both
 directions: it calls a `CLAUDE.md` repository ungoverned, and an `AGENTS.override.md` repository governed. The table
 rots by design (Windsurf → Devin Desktop; Antigravity CLI replacing Gemini CLI), so every report carries a
 `ruleset_hash` over the table and the catalogue — rot shows up in provenance instead of being inferred from a

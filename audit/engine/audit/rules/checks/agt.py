@@ -83,6 +83,21 @@ def _instruction_basenames() -> set[str]:
 INSTRUCTION_BASENAMES = _instruction_basenames()
 
 
+#: Basenames that only config-gated harnesses claim, with the config files that would load them. Without one of
+#: those configs the file is an ordinary document: a `CONVENTIONS.md` with no `.aider.conf.yml` is a style guide.
+def _config_gated_basenames() -> dict[str, tuple[str, ...]]:
+    gated: dict[str, tuple[str, ...]] = {}
+    for name in INSTRUCTION_BASENAMES:
+        owners = [h for h in V.HARNESSES if name in h.paths]
+        claimed_elsewhere = name in V.CANONICAL_PATHS or name in V.NON_CANONICAL_ALIASES or name in V.OVERRIDE_PATHS
+        if owners and not claimed_elsewhere and all(h.paths_need_config for h in owners):
+            gated[name] = tuple(sorted({c for h in owners for c in h.config}))
+    return gated
+
+
+CONFIG_GATED_BASENAMES = _config_gated_basenames()
+
+
 def is_non_instruction(rel: str) -> bool:
     return any(fnmatch.fnmatch(rel, glob) for glob, _why in V.NON_INSTRUCTION_GLOBS)
 
@@ -99,7 +114,9 @@ def instruction_paths(inv: Inventory) -> set[str]:
             continue
         base = rel.rsplit("/", 1)[-1]
         if base in INSTRUCTION_BASENAMES:
-            found.add(rel)
+            configs = CONFIG_GATED_BASENAMES.get(base)
+            if configs is None or any(inv.has(config) for config in configs):
+                found.add(rel)
             continue
         for harness in V.HARNESSES:
             for pattern in harness.paths:

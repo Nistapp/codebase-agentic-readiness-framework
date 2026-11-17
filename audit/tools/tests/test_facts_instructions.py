@@ -36,6 +36,10 @@ AGT_FIXTURES: dict[str, list[tuple[str, str]]] = {
 }
 
 # A file in a directory of its own -> the pattern of the variants table that names it.
+#: The families a harness loads only through its config (the engine's `paths_need_config`), with the config that
+#: makes the engine see them. Without it the file is an ordinary document.
+CONFIG_FOR: dict[str, dict[str, str]] = {"CONVENTIONS.md": {".aider.conf.yml": "read: [CONVENTIONS.md]\n"}}
+
 FAMILIES: dict[str, str] = {
     "AGENTS.md": "AGENTS.md",
     "AGENT.md": "AGENT.md",
@@ -230,9 +234,16 @@ class FamilyTests(InstructionCase):
     def test_each_family_in_the_table_is_listed_with_the_pattern_that_names_it(self) -> None:
         for rel, pattern in FAMILIES.items():
             with self.subTest(file=rel):
-                target = self.directory({rel: "x\n"})
+                target = self.directory({rel: "x\n", **CONFIG_FOR.get(rel, {})})
                 self.assertEqual(self.listed(target), [{"path": rel, "variant": pattern, "size_bytes": 2}])
                 self.assertEqual(self.engine_sees(target), {rel})
+
+    def test_a_config_gated_family_without_its_config_is_not_listed(self) -> None:
+        for rel in CONFIG_FOR:
+            with self.subTest(file=rel):
+                target = self.directory({rel: "x\n"})
+                self.assertEqual(self.listed(target), [])
+                self.assertEqual(self.engine_sees(target), set())
 
     def test_the_cases_name_every_pattern_of_the_table_but_the_plain_names_with_a_folder(self) -> None:
         variants = facts.engine_module("audit.rules.variants")

@@ -354,6 +354,7 @@ def ruleset_hash() -> str:
     for harness in variants.HARNESSES:
         parts.append(
             f"H|{harness.tool}|{harness.agents_md}|{int(harness.nested)}|{','.join(harness.paths)}|{harness.doc_url}"
+            + (f"|gated:{','.join(harness.config)}" if harness.paths_need_config else "")
         )
     for row in variants.SHADOW_PAIRS:
         parts.append("S|" + "|".join(row))
