@@ -111,6 +111,26 @@ class TstInlineTests(unittest.TestCase):
                 )
                 self.assertEqual(support.verdicts(report)["TST-04"], "PASS")
 
+    def test_vitest_name_filter_is_a_fast_path(self):
+        for command in ("npx vitest run -t '<test name>'", "vitest --testNamePattern adds"):
+            with self.subTest(command=command):
+                report = self._scan(
+                    {
+                        "test/app.test.ts": "import { it } from 'vitest';\n",
+                        "AGENTS.md": f"# x\n\n```bash\n{command}\n```\n",
+                    }
+                )
+                self.assertEqual(support.verdicts(report)["TST-04"], "PASS")
+
+    def test_vitest_full_run_is_not_a_fast_path(self):
+        report = self._scan(
+            {
+                "test/app.test.ts": "import { it } from 'vitest';\n",
+                "AGENTS.md": "# x\n\n```bash\nnpx vitest run\n```\n",
+            }
+        )
+        self.assertEqual(support.verdicts(report)["TST-04"], "FAIL")
+
     def test_unittest_discover_alone_is_not_a_fast_path(self):
         report = self._scan(
             {

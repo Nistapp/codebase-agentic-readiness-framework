@@ -61,6 +61,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "agt-09-no-release": {"AGT-09": "PARTIAL"},
     "agt-09-ruleset-branch-unnamed": {"AGT-09": "PARTIAL"},
     "agt-12-no-rules": {"AGT-09": "PASS", "AGT-12": "FAIL"},
+    "agt-13-no-conventions": {"AGT-12": "PASS", "AGT-13": "FAIL"},
     "agt-10-deferred": {"AGT-10": "FAIL"},
     # -- DOC / NAV ----------------------------------------------------------------------------
     "doc-01-empty": {"DOC-01": "PARTIAL"},
@@ -190,7 +191,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "hyg-09-target-branch-trap": {"HYG-09": "PARTIAL"},
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
     "hyg-11-no-source-branch-check": {"HYG-11": "PARTIAL"},
-    "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN"},
+    "hyg-13-thin-contributing": {"HYG-05": "PASS", "HYG-13": "FAIL"},
+    "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN", "HYG-13": "UNKNOWN"},
     # -- the AGT-content positive fixture -----------------------------------------------------
     "governed-minimal": {
         "AGT-01": "PASS",
@@ -202,6 +204,7 @@ MATRIX: dict[str, dict[str, str]] = {
         "AGT-09": "PASS",
         "AGT-10": "PASS",
         "AGT-12": "PASS",
+        "AGT-13": "PASS",
     },
 }
 

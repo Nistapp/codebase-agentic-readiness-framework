@@ -6,7 +6,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 
 ## Checks to requirements
 
-76 checks: 74 of the audit engine and 2 that only an agent runs. 62 scored checks trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
+78 checks: 76 of the audit engine and 2 that only an agent runs. 63 scored checks trace to at least one requirement. Of the other 15, informational or an emitter, `HYG-13` traces to one requirement and the rest trace to none.
 
 | Check | Title | Severity | Scored | Requirements |
 |---|---|---|---|---|
@@ -25,6 +25,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 | `AGT-10` | Instruction indirection resolved | DEGRADER | yes | [REQ-SH-014](readiness-requirements.md#req-sh-014--instruction-indirection-resolved) |
 | `AGT-11` | Instructions are specific and not inferable | DEGRADER | yes (agent) | [REQ-SH-015](readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) |
 | `AGT-12` | Communication rules stated | COSMETIC | yes | [REQ-SH-060](readiness-requirements.md#req-sh-060--communication-rules-stated) |
+| `AGT-13` | Coding conventions written | COSMETIC | yes | [REQ-SH-062](readiness-requirements.md#req-sh-062--coding-conventions-written) |
 | `DOC-01` | docs/ exists | DEGRADER | yes | [REQ-SH-016](readiness-requirements.md#req-sh-016--documentation-directory) |
 | `DOC-02` | docs/STYLE_GUIDE.md exists | DEGRADER | yes | [REQ-SH-017](readiness-requirements.md#req-sh-017--style-guide) |
 | `DOC-03` | artefacts/ exists and is ignored | DEGRADER | yes | [REQ-SH-018](readiness-requirements.md#req-sh-018--scratch-and-tool-state-directories-ignored) |
@@ -86,6 +87,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 | `HYG-09` | Dependency update automation configured | COSMETIC | no (informational) | none: informational, reported and never scored |
 | `HYG-10` | License present | COSMETIC | no (informational) | none: informational, reported and never scored |
 | `HYG-11` | Branch protection declared as code | COSMETIC | no (informational) | none: informational, reported and never scored |
+| `HYG-13` | Contributing rules written | COSMETIC | no (informational) | [REQ-SH-063](readiness-requirements.md#req-sh-063--contributing-rules-written) |
 
 ## Requirements without a check
 
