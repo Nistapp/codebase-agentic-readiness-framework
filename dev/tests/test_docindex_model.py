@@ -277,7 +277,7 @@ class CliTest(unittest.TestCase):
         self.assertEqual(_problems(json.loads(out), SCHEMA), [])
 
     def test_the_other_commands_are_not_implemented_yet(self) -> None:
-        for argv in (["diff", "HEAD"], ["sweep"], ["query", "AGENTS.md"]):
+        for argv in (["diff", "HEAD"], ["query", "AGENTS.md"]):
             with self.subTest(argv=argv):
                 code, out, err = _run(argv)
                 self.assertEqual(code, 1)
