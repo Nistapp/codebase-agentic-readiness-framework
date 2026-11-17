@@ -1,6 +1,6 @@
 {
   "default_zone": "docs",
-  "description": "The project config of the document index (dev/doc_index.py). zones: the longest matching path prefix wins, else default_zone. ids: a regex per ID kind whose group 1 is the ID, and the paths that define such IDs. exclude.skip: never read or listed. exclude.list_only: listed as file nodes but not parsed. sweep: the bundle sources named by the constants of bundle_references.module, plus paths and every file named in file_names outside the exclusions.",
+  "description": "The project config of the document index (dev/doc_index.py). zones: the longest matching path prefix wins, else default_zone. ids: a regex per ID kind whose group 1 is the ID, and the paths that define such IDs. exclude.skip: never read or listed. exclude.list_only: listed as file nodes but not parsed. sweep: the bundle sources named by the constants of bundle_references.module, plus paths and every file named in file_names outside the exclusions. sweep.triggers: the trigger words of the sweep; --triggers group1 uses group1 only, all (the default) uses both groups.",
   "exclude": {
     "list_only": [
       "audit/engine/tests/fixtures/",
@@ -74,7 +74,33 @@
     ],
     "paths": [
       "greenfield/templates/"
-    ]
+    ],
+    "triggers": {
+      "group1": [
+        "must",
+        "never",
+        "always",
+        "only",
+        "do not",
+        "may not",
+        "required",
+        "stop",
+        "refuse",
+        "before",
+        "after",
+        "at most",
+        "at least"
+      ],
+      "group2": [
+        "requires",
+        "needs",
+        "first",
+        "each",
+        "every",
+        "except",
+        "nothing"
+      ]
+    }
   },
   "zones": {
     ".github/": "dev",
