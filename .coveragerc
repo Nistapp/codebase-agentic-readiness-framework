@@ -1,4 +1,5 @@
-# coverage.py settings for `make coverage` (the engine's suite and the recipe tools' suite, measured together).
+# coverage.py settings for `make coverage` (the engine's, the recipe tools' and the greenfield scaffolder's suites,
+# measured together).
 # The paths are wildcards because the engine's suite runs with its own directory as the working directory.
 [run]
 include =
@@ -6,6 +7,7 @@ include =
     */audit/tools/*
     */implement/tools/*
     */implement/playbooks/templates/*
+    */greenfield/bootstrap/*
 omit =
     */tests/*
 
