@@ -97,6 +97,7 @@ _FASTPATH_PATTERNS: tuple[str, ...] = (
     r"\bnpm\s+(?:run\s+)?(?:test|t)\s+--\s+\S+",
     r"\b(?:pnpm|yarn|bun)\s+(?:run\s+)?(?:test|t)\s+(?:--\s+)?\S+",
     r"\b(?:npx\s+)?vitest\s+run\s+\S*(?:test|spec)\S*",
+    r"\b(?:npx\s+)?vitest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
     r"\b(?:npx\s+)?jest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
     r"\bgo\s+test\b[^\n&|;]*\s-run\b",
     r"\bcargo\s+test\b\s+[A-Za-z_]\w*",
