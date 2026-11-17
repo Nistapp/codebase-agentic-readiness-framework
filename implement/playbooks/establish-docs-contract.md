@@ -257,9 +257,10 @@ They stay here so a repository that has one has a procedure, and so the re-audit
      non-interactive setup path, `TST-04` fast path documented).
    - The new lines follow the plain language rules of step 3, because `DOC-05` reads this page.
 10. **Split a dense README (`docs.split_readme`).** This step is opt-in (Inputs 9). It moves text out of the root
-    `README.md` and changes no fact. Read the preference first:
+    `README.md` and changes no fact. Make its commits before the lint config of step 8, so the baselines of step 1
+    count the new pages. Read the preference first:
     - `ask` (default): list the dense sections, then record the owner's answer as `yes` or `no`.
-    - `yes`: split, one section per commit (Commits row 19).
+    - `yes`: split, one section per commit (Commits row 11).
     - `no`: record the preference and change nothing. Do not ask again in this run.
 
     A section is dense when it has a paragraph of more than three sentences, or a table cell of more than one
@@ -334,19 +335,19 @@ Docs first, then the lint config, then the wiring. The instruction-file line wai
 | 8 | Instruction-file line naming the docs pages | `DOC-02`, `DOC-04` | hand |
 | 9 | Ignore rule for the scratch directory (only when one exists and lacks it) | `DOC-03` | config |
 | 10 | Untrack the scratch files, `git rm --cached` (only those the owner confirms) | `DOC-03` | bulk |
-| 11 | Markdown lint config | - | config |
-| 12 | Lint ratchet: the gating and report commands, with the baseline | - | wiring |
-| 13 | Docs CI job: lint and Mermaid render | - | wiring |
-| 14 | Link check in the docs CI job (only when the owner chose `lychee`) | - | wiring |
-| 15 | Prose check copy with the owner's licence line (only with `docs.prose_check=template`) | `DOC-05` | bulk |
-| 16 | Third-party notice entry for the copy (only where the repository keeps such a list) | `DOC-05` | hand |
-| 17 | Prose ratchet: the runner command and the full-tree run (same condition as 15) | `DOC-05` | wiring |
-| 18 | Prose runs in the docs CI job (same condition as 15) | `DOC-05` | wiring |
-| 19 | One dense README section moved to a `docs/` page, with a link table left behind (one commit per section; only with `docs.split_readme=yes`) | `DOC-01` | hand |
+| 11 | One dense README section moved to a `docs/` page, with a link table left behind (one commit per section; only with `docs.split_readme=yes`) | `DOC-01` | hand |
+| 12 | Markdown lint config | - | config |
+| 13 | Lint ratchet: the gating and report commands, with the baseline | - | wiring |
+| 14 | Docs CI job: lint and Mermaid render | - | wiring |
+| 15 | Link check in the docs CI job (only when the owner chose `lychee`) | - | wiring |
+| 16 | Prose check copy with the owner's licence line (only with `docs.prose_check=template`) | `DOC-05` | bulk |
+| 17 | Third-party notice entry for the copy (only where the repository keeps such a list) | `DOC-05` | hand |
+| 18 | Prose ratchet: the runner command and the full-tree run (same condition as 16) | `DOC-05` | wiring |
+| 19 | Prose runs in the docs CI job (same condition as 16) | `DOC-05` | wiring |
 
-Row 4 is the one row that comes before the step that would place it: step 9 makes it right after row 3, so the lint
-baseline of row 12 counts it. Row 19 comes last, after the docs pages and the index exist, so each moved section
-joins `docs/README.md`.
+Two rows come before the step that would place them. Row 4 follows row 3, because step 9 runs right after step 3.
+Row 11 follows the docs pages and the index, so each moved section joins `docs/README.md`. It comes before row 12,
+so the lint and prose baselines (rows 13 and 18) count the new pages.
 
 ## Continue on error
 
@@ -397,8 +398,9 @@ joins `docs/README.md`.
 
 `git revert` the commits, newest first. Revert the prose CI runs and the prose ratchet before the prose check copy.
 Revert the docs CI job and the lint ratchet before the lint config. The instruction-file line goes with any docs
-commit whose page it names. The appended section of row 4 reverts alone. Each README section of row 19 reverts alone:
-the revert restores the section and removes the page and its index row. The other commits revert alone. This
+commit whose page it names. The appended section of row 4 reverts alone. Each README section of row 11 reverts alone:
+the revert restores the section and removes the page and its index row. With the ratchets in place, measure the lint
+and prose baselines again after that revert. The other commits revert alone. This
 playbook moves, untracks and deletes nothing, except the README sections of step 10 and the scratch files in step 7,
 both with owner consent. `git revert` returns them.
 
