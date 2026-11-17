@@ -11,9 +11,10 @@ only.
 from __future__ import annotations
 
 import io
+import json
 import tempfile
 import unittest
-from contextlib import redirect_stderr
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from _bootstrap_support import IDENTITY, TEMPLATES, bootstrap, copy_templates, run_main
@@ -42,7 +43,7 @@ class MandatoryFilesTests(unittest.TestCase):
                 code, _, err = run_main(
                     [str(Path(tmp) / "out"), "--name", "pkg", "--no-git", "--templates", str(copy), *IDENTITY]
                 )
-                self.assertNotEqual(code, 0)
+                self.assertEqual(code, 2, "a verification failure exits 2")
                 self.assertIn("generated project is incomplete, missing:", err)
                 self.assertIn(target_rel, err)
 
@@ -64,7 +65,7 @@ class VerifyTreeTests(unittest.TestCase):
         err = io.StringIO()
         with redirect_stderr(err), self.assertRaises(SystemExit) as raised:
             bootstrap.verify_tree(self.target, self.written)
-        self.assertNotEqual(raised.exception.code, 0)
+        self.assertEqual(raised.exception.code, 2, "a verification failure exits 2")
         return err.getvalue()
 
     def test_the_unedited_scaffold_passes(self) -> None:
@@ -116,6 +117,48 @@ class VerifyTreeTests(unittest.TestCase):
     def test_an_invalid_package_json_fails(self) -> None:
         (self.target / "package.json").write_text("{not json\n", encoding="utf-8")
         self.assertIn("package.json is not valid JSON", self.fails())
+
+
+class PublishPayloadTests(unittest.TestCase):
+    """`check_publish_payload` reads `npm pack --dry-run --json` output; npm itself never runs here."""
+
+    REQUIRED = ("package.json", "README.md", "dist/core/index.js", "dist/core/index.d.ts")
+
+    def pack_json(self, *paths: str) -> str:
+        files = [{"path": path, "size": 10} for path in paths]
+        return "npm notice\n" + json.dumps([{"filename": "pkg-0.1.0.tgz", "size": 2048, "files": files}])
+
+    def check(self, raw: str) -> tuple[int | str | None, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            try:
+                bootstrap.check_publish_payload(raw)
+            except SystemExit as exc:
+                return exc.code, out.getvalue(), err.getvalue()
+        return 0, out.getvalue(), err.getvalue()
+
+    def test_a_clean_payload_passes(self) -> None:
+        code, out, _ = self.check(self.pack_json(*self.REQUIRED, "dist/cli/index.js"))
+        self.assertEqual(code, 0)
+        self.assertIn("pkg-0.1.0.tgz: 5 files, 2.0 kB packed", out)
+        self.assertIn("payload contains no secrets", out)
+
+    def test_a_missing_required_file_exits_2(self) -> None:
+        code, _, err = self.check(self.pack_json("package.json", "README.md", "dist/core/index.js"))
+        self.assertEqual(code, 2)
+        self.assertIn("the published tarball is missing: dist/core/index.d.ts", err)
+
+    def test_a_secret_or_a_build_cache_exits_2(self) -> None:
+        for leaked in (".env", "dist/.npmrc", "keys/id_rsa", "cert.pem", "dist/tsconfig.tsbuildinfo"):
+            with self.subTest(leaked=leaked):
+                code, _, err = self.check(self.pack_json(*self.REQUIRED, leaked))
+                self.assertEqual(code, 2)
+                self.assertIn(f"would include non-package files: {leaked}", err)
+
+    def test_output_without_json_is_skipped_with_a_note(self) -> None:
+        code, out, _ = self.check("npm ERR! something else")
+        self.assertEqual(code, 0)
+        self.assertIn("skipping payload check", out)
 
 
 if __name__ == "__main__":

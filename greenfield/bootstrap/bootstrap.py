@@ -325,7 +325,7 @@ def verify_tree(target: Path, written: list[str]) -> None:
     missing = [rel for rel in written if not (target / rel).is_file()]
     missing += [rel for rel in MANDATORY_FILES if not (target / rel).is_file()]
     if missing:
-        fail("generated project is incomplete, missing: " + ", ".join(sorted(set(missing))))
+        fail("generated project is incomplete, missing: " + ", ".join(sorted(set(missing))), code=2)
 
     empty = [
         rel
@@ -335,7 +335,7 @@ def verify_tree(target: Path, written: list[str]) -> None:
         and (target / rel).read_text(encoding="utf-8", errors="replace").strip() == ""
     ]
     if empty:
-        fail("generated files are unexpectedly empty: " + ", ".join(sorted(set(empty))))
+        fail("generated files are unexpectedly empty: " + ", ".join(sorted(set(empty))), code=2)
 
     leftovers: list[str] = []
     for path in sorted(target.rglob("*")):
@@ -352,12 +352,12 @@ def verify_tree(target: Path, written: list[str]) -> None:
             if token in text:
                 leftovers.append(f"{rel}: {token}")
     if leftovers:
-        fail("unsubstituted placeholders survived:\n      " + "\n      ".join(leftovers))
+        fail("unsubstituted placeholders survived:\n      " + "\n      ".join(leftovers), code=2)
 
     try:
         json.loads((target / "package.json").read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
-        fail(f"generated package.json is not valid JSON: {exc}")
+        fail(f"generated package.json is not valid JSON: {exc}", code=2)
 
 
 # ---------------------------------------------------------------------------
@@ -412,13 +412,13 @@ def check_publish_payload(raw: str) -> None:
     required = ("package.json", "README.md", "dist/core/index.js", "dist/core/index.d.ts")
     missing = [rel for rel in required if rel not in published]
     if missing:
-        fail("the published tarball is missing: " + ", ".join(missing))
+        fail("the published tarball is missing: " + ", ".join(missing), code=2)
 
     leaked = sorted(
         path for path in published if any(hint in path for hint in SECRET_HINTS) or path.endswith(".tsbuildinfo")
     )
     if leaked:
-        fail("the published tarball would include non-package files: " + ", ".join(leaked))
+        fail("the published tarball would include non-package files: " + ", ".join(leaked), code=2)
     print("    ✓ payload contains no secrets, build caches, or stray files")
 
 
