@@ -124,9 +124,9 @@ engine. The questions are about text. Ask them per finding, before the diff for 
       owner's edit. Never ask the owner to write it from nothing.
    2. **The docs language** (`docs.language`). a. English, `en` (default); b. another language: the owner supplies
       the rules in that language, and the item is `partial`, because the check reads English words.
-   3. **The long form** (`agents_md.comm_long_form`): a separate rules file, like the framework's own
-      [`docs/COMMUNICATION_RULES.md`](../../docs/COMMUNICATION_RULES.md). a. no (default): the style guide holds
-      the docs rules ([`establish-docs-contract`](establish-docs-contract.md)); b. yes.
+   3. **The long form** (`agents_md.comm_long_form`): a separate rules file. It starts from the greenfield template
+      [`COMMUNICATION_RULES.md`](../../greenfield/templates/docs/COMMUNICATION_RULES.md). a. no (default): the style
+      guide holds the docs rules ([`establish-docs-contract`](establish-docs-contract.md)); b. yes.
 8. **Owner-only values.** None is needed for this playbook. If a step seems to need one (a reviewer name, a
    contact), ask in the order `SKILL.md` Stage 2, step 6 gives (supply it, draft one for review, or skip).
 9. **No instruction file yet** (`agents_md.create`). Asked in [Stage 1](../SKILL.md#stage-1-triage), step 5,
@@ -244,8 +244,11 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     - decisions: the context, two to four options with pros and cons, a recommendation and the default.
 
     An existing section that already covers one of the three (reader, reports, decisions) gets only the missing
-    rules. With `agents_md.comm_long_form=yes`, write the long-form file under `docs/`, named in the repository's
-    convention (D18), and link it from the section. Then run the engine's AGT-12.
+    rules. With `agents_md.comm_long_form=yes`, start the long-form file from the greenfield template
+    [`docs/COMMUNICATION_RULES.md`](../../greenfield/templates/docs/COMMUNICATION_RULES.md). Adapt it to the target.
+    Put it under `docs/`, with a name and place that follow the repository's convention (D18). Set its reader to the
+    persona the owner confirmed. Link it from the section, and keep `communicat` in the file name: AGT-12 reads a
+    linked file whose name contains it. Then run the engine's AGT-12.
 12. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
     record the overage as debt. Never shorten by reflowing or deleting the owner's rules.
 13. **Numbering.** Text this playbook writes into a target comes from `greenfield/templates/`. It follows the form
