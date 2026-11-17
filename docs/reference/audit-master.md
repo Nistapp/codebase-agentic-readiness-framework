@@ -185,7 +185,7 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 #### `AGT-13` Coding conventions written
 
-`COSMETIC` · scored · engine check · no playbook (the audit emits it as an input)
+`COSMETIC` · scored · engine check · fixed by [`adapt-agents-md`](implement-master.md#adapt-agents-md)
 
 - **Passes when:** the conventions cover naming, layering, error handling and logging, and testing, and link the
   formatter or linter config.
@@ -838,7 +838,7 @@ Is the repository run like a team project? Reported for the whole picture; never
 
 #### `HYG-13` Contributing rules written
 
-`COSMETIC` · not scored · engine check · no playbook (the audit emits it as an input)
+`COSMETIC` · not scored · engine check · fixed by [`add-repo-hygiene`](implement-master.md#add-repo-hygiene)
 
 - **Passes when:** the contributing documents hold all three items, a to c.
 - **Why it matters:** A contributor should learn from one file how to set up, which gate to run and how to name a

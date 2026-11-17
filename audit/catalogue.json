@@ -326,7 +326,9 @@
       ],
       "engine_id": "AGT-13",
       "since_ruleset": "2026-11-17.2",
-      "playbooks": []
+      "playbooks": [
+        "adapt-agents-md"
+      ]
     },
     {
       "id": "DOC-01",
@@ -1354,7 +1356,9 @@
       ],
       "engine_id": "HYG-13",
       "since_ruleset": "2026-11-17.3",
-      "playbooks": []
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
     }
   ]
 }

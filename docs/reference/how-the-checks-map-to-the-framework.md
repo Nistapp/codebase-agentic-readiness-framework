@@ -31,11 +31,11 @@ To go the other way, start from a framework heading, find the requirements whose
 
 ## Every check, generated
 
-All 76 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
+All 78 catalogue checks, each with its requirement(s) and the framework heading(s) the requirement's
 `Source` field links. Generated 2026-10-19 from `catalogue.json`'s `req_ids` and
 `readiness-requirements.md`'s `Source` fields — the same two steps as the worked example above, run once
-per check rather than by hand. 14 checks are informational or an emitter and trace to no requirement
-(`none`).
+per check rather than by hand. The `AGT-13` and `HYG-13` rows were added by hand on 2026-11-17. 14 checks are
+informational or an emitter and trace to no requirement (`none`).
 
 | Check | Title | Severity | Scored | Requirement(s) | Framework anchor(s) |
 |---|---|---|---|---|---|
@@ -51,6 +51,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `AGT-10` | Instruction indirection resolved | DEGRADER | yes | [REQ-SH-014](../../spec/readiness-requirements.md#req-sh-014--instruction-indirection-resolved) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `AGT-11` | Instructions are specific and not inferable | DEGRADER | yes | [REQ-SH-015](../../spec/readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `AGT-12` | Communication rules stated | COSMETIC | yes | [REQ-SH-060](../../spec/readiness-requirements.md#req-sh-060--communication-rules-stated) | [greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides) |
+| `AGT-13` | Coding conventions written | COSMETIC | yes | [REQ-SH-062](../../spec/readiness-requirements.md#req-sh-062--coding-conventions-written) | [greenfield/README.md § File Tree — What Gets Created](../../greenfield/README.md#file-tree--what-gets-created) |
 | `BASE-01` | Baseline artifact exists | DEGRADER | yes | [REQ-BF-001](../../spec/readiness-requirements.md#req-bf-001--quality-baseline) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `BASE-02` | Current violation counts measured | DEGRADER | yes | [REQ-BF-002](../../spec/readiness-requirements.md#req-bf-002--violation-count-recorded) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `BASE-03` | No-new-violations mechanism | DEGRADER | yes | [REQ-BF-003](../../spec/readiness-requirements.md#req-bf-003--no-new-violations) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
@@ -92,6 +93,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `HYG-09` | Dependency update automation configured | COSMETIC | no | none | none |
 | `HYG-10` | License present | COSMETIC | no | none | none |
 | `HYG-11` | Branch protection declared as code | COSMETIC | no | none | none |
+| `HYG-13` | Contributing rules written | COSMETIC | no | [REQ-SH-063](../../spec/readiness-requirements.md#req-sh-063--contributing-rules-written) | [greenfield/README.md § Phase 8 — Final Polish](../../greenfield/README.md#phase-8--final-polish) |
 | `IDX-01` | codebase-memory-mcp registered for this repository | BLOCKER | yes | [REQ-SH-001](../../spec/readiness-requirements.md#req-sh-001--index-server-registered) | [greenfield/README.md § 6.4 Codebase-Memory-MCP Registration](../../greenfield/README.md#64-codebase-memory-mcp-registration) |
 | `IDX-02` | An index exists for this checkout | BLOCKER | yes | [REQ-SH-002](../../spec/readiness-requirements.md#req-sh-002--index-exists) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
 | `IDX-03` | Index freshness | DEGRADER | yes | [REQ-SH-003](../../spec/readiness-requirements.md#req-sh-003--index-current) | [Phased-Approach.md § Activities](../framework/phased-approach.md#activities) |
@@ -116,7 +118,7 @@ per check rather than by hand. 14 checks are informational or an emitter and tra
 | `TST-04` | Fast path documented | DEGRADER | yes | [REQ-SH-048](../../spec/readiness-requirements.md#req-sh-048--fast-path-documented) | [Phased-Approach.md § Phase 1: Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-) |
 | `TST-05` | Coverage configuration present | COSMETIC | yes | [REQ-SH-049](../../spec/readiness-requirements.md#req-sh-049--coverage-reporting) | [greenfield/README.md § 3.1 vitest.config.ts](../../greenfield/README.md#31-vitestconfigts--with-coverage) |
 
-76 checks total.
+78 checks total.
 
 ## Where the relation is held
 
