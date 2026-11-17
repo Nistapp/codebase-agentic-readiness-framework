@@ -1,19 +1,22 @@
 # Design — v1 Scaffolder Contract
 
+> SPDX-License-Identifier: GFDL-1.3-only
+
 This file is the reviewed contract for the v1 Python implementation. Decisions are recorded
 as **Decision → Alternatives considered → Reason**, in that order.
 
 **Status: implemented and verified end to end against the real npm registry** — see
 § Verification record.
 
-Source of truth for file content: `~/Projects/codebase-agentic-readiness-framework/greenfield/templates/**`.
+Source of truth for file content: [`greenfield/templates/**`](../templates/), beside this folder in the same
+repository.
 
 ---
 
 ## D1. Language: Python 3 (stdlib only), single file
 
 **Decision:** v1 is one Python file, no third-party dependencies, run as
-`python3 bootstrap.py <target-dir>`.
+`python3 greenfield/bootstrap/bootstrap.py <target-dir>`.
 
 **Alternatives considered:**
 1. TypeScript / Node script (`.mjs` or compiled `.ts`).
@@ -22,7 +25,7 @@ Source of truth for file content: `~/Projects/codebase-agentic-readiness-framewo
 
 **Reason:** the script must run *before* the target project's toolchain exists, and a
 TypeScript implementation needs its own `package.json`, lockfile, and either a build step or
-`tsx` to execute — in a repository that today contains nothing but Markdown. Python 3 is
+`tsx` to execute — in a repository whose own code is standard-library Python. Python 3 is
 present on this machine (3.11.15) and on macOS/Linux dev boxes by default, and the whole job
 is directory creation plus string substitution, which the standard library covers with
 `pathlib`, `shutil`, and `argparse`. The technical difference is small; the deciding factors
@@ -39,7 +42,8 @@ are distribution and maintenance home (see D2).
 1. Go straight to the TypeScript npm package.
 2. Keep it Python forever.
 
-**Reason:** destination matters more than language. `shared/Tool-Ecosystem.md` states that
+**Reason:** destination matters more than language. The
+[tool ecosystem](../../docs/framework/tool-ecosystem.md) page states that
 every tool in the framework ships as an independent npm package, so the long-term home for a
 Day-0 scaffolder is npm. But building that now costs a package repo, a publish pipeline, and
 a build step while the template set is still settling — and the template set is what the
@@ -62,7 +66,7 @@ templates, it produces byte-identical output.
 **Reason:** the scaffold must be reviewable as a diff and testable as a file set. Generation
 that varies per run cannot be regression-tested, and a hallucinated flag in `package.json`,
 a workflow, or `tsconfig.json` breaks commit #1 — the failure mode the framework's own
-[Risks and Mitigations](../../codebase-agentic-readiness-framework/shared/Risks-and-Mitigations.md)
+[Risks and Mitigations](../../docs/framework/risks-and-mitigations.md)
 records as R2 (unsupported generated claims) and R8 (false confidence). Prose is a defensible
 LLM job and stays on the roadmap; config is not.
 
@@ -75,12 +79,13 @@ target. It contains no embedded file bodies.
 
 **Alternatives considered:**
 1. Embed all templates in the script so it is a single self-contained file.
-2. Ship a copy of the templates inside this repo.
+2. Ship a second copy of the templates beside the script.
 
 **Reason:** both alternatives create a second source of truth for file content, which is the
 exact defect the framework documentation was just cleaned of (restated rules drift). Runtime
 reading also lets the framework improve a template and have every future scaffold pick it up
-for free. A `--templates <path>` flag keeps it usable from any clone or vendored copy.
+for free. The script reads the templates beside it in the same repository by default, so the two
+cannot drift; a `--templates <path>` flag or `AGENTIC_BOOTSTRAP_TEMPLATES` points it at another copy.
 
 ---
 
@@ -101,8 +106,8 @@ which is precisely what the greenfield promise forbids. Placeholder tests assert
 are filler and would be deleted on the first real change. The honest resolution is an
 explicitly deferred coverage gate plus a marked `passWithNoTests`, removed with the first test.
 
-**Consequence for the framework repo:** this requires edits to the templates themselves
-(`vitest.config.ts`, `github/workflows/ci.yml`) — fixed there, not patched by this script (D4).
+**Consequence for the templates:** this requires edits to the templates themselves
+(`vitest.config.ts`, `github/workflows/ci.yml`) — fixed in `greenfield/templates/`, not patched by this script (D4).
 
 ---
 
@@ -130,7 +135,7 @@ required flag rather than a silent default.
 | `--author`, `--email` | from `git config` | `package.json` author and `CODEOWNERS`/`SECURITY.md` substitution. |
 | `--github-owner` | from `git config user.name` | `CODEOWNERS`, workflow URLs. |
 | `--cli` / `--lib` | `--lib` | `--cli` adds `bin` + `src/cli/index.ts`; `--lib` is exports-only. |
-| `--templates <path>` | framework clone resolved relative to this repo | Template source override. |
+| `--templates <path>` | `greenfield/templates/` beside this folder, or `AGENTIC_BOOTSTRAP_TEMPLATES` | Template source override. |
 | `--install` | off | Run `npm install` after generating. |
 | `--no-git` | git on | Skip `git init` and the first commit. |
 | `--dry-run` | off | Print the full plan; write nothing. |
@@ -175,7 +180,7 @@ today's date), and — with `--cli` — `src/cli/index.ts`.
 ## Known template defects the generator must resolve
 
 Every item below was verified against the templates. Per D4, all template-content fixes
-happen in the framework repo; this list is the generator's checklist of what it must not
+happen in `greenfield/templates/`; this list is the generator's checklist of what it must not
 paper over.
 
 | # | Defect | Resolution |
@@ -188,14 +193,14 @@ paper over.
 | 6 | `enforce-dev-base.yml` assumes remote `dev` exists and is not default | Print the explicit `gh` step; the script cannot know the remote |
 | 7 | `biome.json` ignores `*.md`/`*.json`/`*.yml` ⇒ generated docs are never format-checked | Note in generated README; decide whether markdown formatting is enforced |
 | 8 | Publishable package pieces missing: `LICENSE`, `README.md`, pinned `release-please-config.json` | Generator covers README (and LICENSE once D6 is revisited) |
-| 9 | `biome.json` used Biome 1.x keys (`files.ignore`, `organizeImports`, `rules.recommended`), so a fresh scaffold failed its first gate command before doing anything | Fixed in the framework template (`6934e24`): Biome 2 schema, `files.includes` negation globs, `assist.actions.source.organizeImports`, `preset` |
-| 10 | `vitest.config.ts` violated the formatter it ships with, so `biome ci` failed | Fixed in the framework template (`6934e24`): `exclude` array inlined |
-| 11 | `tsBuildInfoFile` pointed inside `dist/`, so a 44 kB incremental build cache was being published in the tarball | Fixed in the framework template (`./tsconfig.tsbuildinfo`, already gitignored); the script additionally hard-fails when the payload contains secrets or `.tsbuildinfo` |
+| 9 | `biome.json` used Biome 1.x keys (`files.ignore`, `organizeImports`, `rules.recommended`), so a fresh scaffold failed its first gate command before doing anything | Fixed in the template (`6934e24`): Biome 2 schema, `files.includes` negation globs, `assist.actions.source.organizeImports`, `preset` |
+| 10 | `vitest.config.ts` violated the formatter it ships with, so `biome ci` failed | Fixed in the template (`6934e24`): `exclude` array inlined |
+| 11 | `tsBuildInfoFile` pointed inside `dist/`, so a 44 kB incremental build cache was being published in the tarball | Fixed in the template (`./tsconfig.tsbuildinfo`, already gitignored); the script additionally hard-fails when the payload contains secrets or `.tsbuildinfo` |
 
 > [!IMPORTANT]
-> **Every template fix lives in the framework repo, never here.** Framework commits `267de81`
+> **Every template fix lives in `greenfield/templates/`, never here.** Commits `267de81`
 > (command surface, documentation contract, new scaffold templates) and `6934e24` (Biome 2
-> config) on `codebase-agentic-readiness-framework@main`. This script absorbed all of them with
+> config) changed the templates. This script absorbed all of them with
 > **zero code changes** — the templates moved underneath it — which is D4 doing its job. The only
 > script change they triggered is the publish-payload gate in defect 11, written to catch the
 > class of problem rather than the single instance.
@@ -218,7 +223,7 @@ Run against the live templates, scaffolding into `/tmp`, against the real npm re
 | `npm view <name>` | reports the name unclaimed |
 | husky chain | `core.hooksPath=.husky/_`; a non-conventional commit message is rejected, a conventional one accepted |
 | Failure gates | non-empty target refused without `--force`; `--dry-run`, `--lib`, `--cli` behave as designed |
-| `--templates <path>` override | verified against an extracted copy of the framework branch |
+| `--templates <path>` override | verified against an extracted copy of the templates |
 
 ## Roadmap
 

@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
 """
 bootstrap.py — scaffold an agentic-ready npm package skeleton from the framework templates.
 
-Reads the template set from the Codebase Agentic Readiness Framework
-(greenfield/templates/**) and writes a new project into an empty directory:
-TypeScript strict harness, AGENTS.md governance, docs/STYLE_GUIDE.md contract, GitHub
-CI/CD + release automation, husky hooks, and the standardized six-verb command surface.
+Reads the template set beside it in this repository (greenfield/templates/**) and writes a
+new project into an empty directory: TypeScript strict harness, AGENTS.md governance,
+docs/STYLE_GUIDE.md contract, GitHub CI/CD + release automation, husky hooks, and the
+standardized seven-verb command surface.
 
 The templates own every byte of file content; this script owns structure, substitution,
 and verification only. It never carries a second copy of a template, and it never rewrites
-template content — if a template is wrong, fix it in the framework repo.
+template content — if a template is wrong, fix it in greenfield/templates/.
 
 Usage:
-    python3 bootstrap.py <target-dir> --name my-pkg --org myorg --install
-    python3 bootstrap.py --dry-run --name my-pkg
+    python3 greenfield/bootstrap/bootstrap.py <target-dir> --name my-pkg --org myorg --install
+    python3 greenfield/bootstrap/bootstrap.py --dry-run --name my-pkg
 
 Exit codes: 0 = success, 1 = usage/template problem, 2 = verification failure.
 """
@@ -30,13 +32,8 @@ import subprocess
 import sys
 from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_TEMPLATES = (
-    SCRIPT_DIR.parent.parent
-    / "codebase-agentic-readiness-framework"
-    / "greenfield"
-    / "templates"
-)
+# The templates sit beside this script in the same repository, so the two cannot drift apart.
+DEFAULT_TEMPLATES = Path(__file__).resolve().parent.parent / "templates"
 
 # Template path (relative, POSIX) -> target path (relative, POSIX). Anything not listed
 # keeps its name, except the top-level dirs handled by DIR_RENAMES below.
@@ -418,7 +415,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
         prog="bootstrap.py",
         description="Scaffold an agentic-ready npm package skeleton from the framework templates.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="Templates are read from the framework repo; override with --templates.",
+        epilog="Templates are read from greenfield/templates/ beside this script; override with --templates.",
     )
     parser.add_argument("target", nargs="?", default=".", help="target directory (default: current)")
     parser.add_argument("--name", help="npm package name (default: target directory name)")
