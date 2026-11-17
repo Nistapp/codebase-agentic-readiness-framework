@@ -35,6 +35,8 @@ it lands anywhere real.
 The script never carries a second copy of a template file, and never rewrites template
 content — if a template is wrong, it is fixed in `greenfield/templates/`, not patched here.
 The script reads the templates beside it in the same repository, so the two cannot drift.
+The decision to keep them together is
+[ADR 0010](../../docs/architecture/adrs/0010-the-scaffolder-lives-beside-its-templates.md).
 
 ---
 

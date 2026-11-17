@@ -14,6 +14,7 @@ the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they a
 | `docs/` | The framework pages (`docs/framework/`), the Diátaxis docs and the root decision records | Yes, as documents |
 | `spec/` | The numbered requirements (`REQ-...`) and the decisions about them | Yes, as documents |
 | `greenfield/` | Templates for a new repository that starts ready | Yes, as documents |
+| `greenfield/bootstrap/` | The scaffolder that renders the templates into a new project; the engine's positive fixture runs it | Yes, in a clone of this repository |
 | `audit/` | The audit recipe, its checks, prompts, catalogue, stack profiles, schemas and tools | Yes, in the audit skill bundle |
 | `audit/engine/` | The deterministic audit engine, with its own docs and decision records | Yes, in the audit skill bundle |
 | `implement/` | The implement recipe, its playbooks, prompts, state contract and tools | Yes, in the implement skill bundle |
@@ -34,7 +35,6 @@ the Makefile. The rules an agent follows are in [`AGENTS.md`](AGENTS.md); they a
 | Node 22 | `make docs-lint` | The pinned `markdownlint-cli2` runs through `npx`; not needed for `make check` |
 | Chrome, through Puppeteer | `make docs-mermaid` | Only when you add or change a Mermaid block; the pinned mermaid-cli fetches it on first use |
 | `codebase-memory-mcp` (optional) | Faster code search for your coding agent | Listed in `.mcp.json`. Your agent offers to set it up once; see [Set up the agent tools](docs/how-to/set-up-agent-tools.md). No gate needs it |
-| The sibling scaffolder | One engine test, the positive fixture | Set `AUDIT_BOOTSTRAP=<path to bootstrap.py>`. With `CI=true` and no scaffolder the test is skipped; locally it fails without it |
 
 `make setup` checks Python, `uv` and `git`, installs nothing, and names the first one that is missing.
 

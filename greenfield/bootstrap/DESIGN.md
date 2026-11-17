@@ -19,6 +19,7 @@ repository.
 `python3 greenfield/bootstrap/bootstrap.py <target-dir>`.
 
 **Alternatives considered:**
+
 1. TypeScript / Node script (`.mjs` or compiled `.ts`).
 2. Bash script.
 3. Go/Rust single binary.
@@ -39,6 +40,7 @@ are distribution and maintenance home (see D2).
 (`npx create-agentic-ready`), consuming the identical template contract and CLI surface.
 
 **Alternatives considered:**
+
 1. Go straight to the TypeScript npm package.
 2. Keep it Python forever.
 
@@ -59,6 +61,7 @@ because v2 re-wraps the same mapping rules, none of the v1 work is thrown away.
 templates, it produces byte-identical output.
 
 **Alternatives considered:**
+
 1. Opt-in `--enrich` flag writing prose only (README intro, `AGENTS.md` §1, first ADR's
    Context, `.env.example` comments).
 2. LLM-generated content by default.
@@ -78,11 +81,12 @@ LLM job and stays on the roadmap; config is not.
 target. It contains no embedded file bodies.
 
 **Alternatives considered:**
+
 1. Embed all templates in the script so it is a single self-contained file.
 2. Ship a second copy of the templates beside the script.
 
 **Reason:** both alternatives create a second source of truth for file content, which is the
-exact defect the framework documentation was just cleaned of (restated rules drift). Runtime
+exact defect the framework documentation was cleaned of (restated rules drift). Runtime
 reading also lets the framework improve a template and have every future scaffold pick it up
 for free. The script reads the templates beside it in the same repository by default, so the two
 cannot drift; a `--templates <path>` flag or `AGENTIC_BOOTSTRAP_TEMPLATES` points it at another copy.
@@ -96,15 +100,16 @@ sets `passWithNoTests: true`, and the generated CI does not run a coverage-thres
 until the first real test lands.
 
 **Alternatives considered:**
+
 1. Generate one real module + test pair so thresholds are meaningful immediately.
 2. Ship no tests and leave the 80% coverage thresholds active, accepting a red coverage gate.
 
-**Reason:** `vitest run` exits non-zero when no test files match, and the template's coverage
-thresholds (statements 80 / branches 75 / functions 80 / lines 80) cannot be satisfied by an
-empty suite — so a fresh scaffold would fail `npm run check` and its own CI at commit #1,
-which is precisely what the greenfield promise forbids. Placeholder tests asserting `1 + 1 === 2`
-are filler and would be deleted on the first real change. The honest resolution is an
-explicitly deferred coverage gate plus a marked `passWithNoTests`, removed with the first test.
+**Reason:** `vitest run` exits non-zero when no test files match. An empty suite cannot meet the
+template's coverage thresholds (statements 80 / branches 75 / functions 80 / lines 80). A fresh
+scaffold would then fail `npm run check` and its own CI at commit #1. The greenfield promise forbids that.
+Placeholder tests asserting `1 + 1 === 2` are filler and would be deleted on the first real change.
+The honest resolution is an explicitly deferred coverage gate plus a marked `passWithNoTests`,
+removed with the first test.
 
 **Consequence for the templates:** this requires edits to the templates themselves
 (`vitest.config.ts`, `github/workflows/ci.yml`) — fixed in `greenfield/templates/`, not patched by this script (D4).
@@ -240,4 +245,5 @@ Run against the live templates, scaffolding into `/tmp`, against the real npm re
 1. Node target for generated projects: 24 (current template `.nvmrc`) or 22 (this machine and agentic-tdd CI)?
 2. Should the generated `package.json` include `shx`, or drop the agent-copy script until a project needs it?
 3. Should the generated repo be scoped (`@nistapp/...`) by default, or unscoped unless `--org` is passed?
-4. Generated repo default branch: `dev` as the working branch with `main` production-only (per the recipe), or `main` until the first release?
+4. Generated repo default branch: `dev` for work and `main` for production only (the recipe), or `main`
+   until the first release?

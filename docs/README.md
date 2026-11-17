@@ -75,6 +75,7 @@ The framework is normative. If a tool disagrees with it, the tool is wrong.
 | [Framework glossary](framework/glossary.md) | The framework's own terms |
 | [`spec/`](../spec/README.md) | The numbered requirements (`REQ-...`) for a repository |
 | [`greenfield/`](../greenfield/README.md) | The recipe and templates for a new project |
+| [`greenfield/bootstrap/`](../greenfield/bootstrap/README.md) | The scaffolder that renders the templates into a new project |
 
 ## Decisions
 

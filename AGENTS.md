@@ -86,8 +86,9 @@ No vendor-specific instruction file exists beside it.
   and review the diff.
 - Never weaken a gate to get green: no `.skip`, no rule turned off, no assertion relaxed. If you cannot pass a gate,
   say so.
-- `make test` skips the positive-fixture test when `CI=true` and its scaffolder (a sibling repository) is absent.
-  Locally the test fails loudly without it; set `AUDIT_BOOTSTRAP=<path to bootstrap.py>` to point at the scaffolder.
+- The engine's positive-fixture test runs the greenfield scaffolder, `greenfield/bootstrap/bootstrap.py`, and audits
+  its output. It runs in CI too, and never skips. `AUDIT_BOOTSTRAP=<path to bootstrap.py>` points it at another copy
+  (ADR 0010 in `docs/architecture/adrs/`).
 
 ## Code conventions
 
@@ -123,6 +124,7 @@ reports, commit messages, pull request descriptions and docs.
 | Path | What it is | Rules |
 |---|---|---|
 | `README.md`, `docs/`, `greenfield/` | The framework documents (`docs/framework/`), the Diátaxis docs for everything here, and the greenfield templates. Normative. | If a tool disagrees with them, the tool is wrong. Follow `docs/STYLE_GUIDE.md`; start at `docs/README.md`. |
+| `greenfield/bootstrap/` | The greenfield scaffolder, `bootstrap.py`: it renders `greenfield/templates/` into a new project. The engine's positive-fixture test runs it. | Standard library only. It never holds a copy of a template; fix a template in `greenfield/templates/`. |
 | `spec/` | Numbered requirements (`REQ-...`) for what a repository must have. See `spec/README.md`. | Recipes link to requirement IDs; they do not restate rules. |
 | `audit/` | The audit recipe (`SKILL.md`, `checks/`, `prompts/`, `catalogue.json`, `stacks/`), the JSON Schemas (`schema/`) and the deterministic tools (`tools/`). | Standard library only. No network. Never write inside a target repository. Read `audit/AGENTS.md`. |
 | `audit/engine/` | The Python audit engine: reads a repository, never writes to it, no LLM, no network. | Standard library only. Read `audit/engine/AGENTS.md` before you change it. |
