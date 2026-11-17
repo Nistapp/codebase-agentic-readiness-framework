@@ -29,7 +29,8 @@ make format:check   # read-only: formatting and lint rules (alias: make format-c
 make lint           # read-only lint
 make typecheck      # mypy, strict: audit/tools, implement/tools, the playbook templates, dev, greenfield/bootstrap,
                     # the engine build.py
-make test           # the engine's, the audit tools', the implement tools' and the dev checks' suites (at once on Linux)
+make test           # the engine's, the audit tools', the implement tools', the greenfield scaffolder's and the dev
+                    # checks' suites (at once on Linux)
 make check          # THE gate: format:check, typecheck, test, the engine's --verify-rules, the schema
                     # cross-check, recipe-lint, adr-lint, masters-check, eval-expected-check, workflow-lint (actionlint,
                     # zizmor, check-jsonschema), spell (typos)
@@ -44,11 +45,12 @@ One test, without the whole suite. Run the engine's tests from `audit/engine/`:
 python3 -m unittest tests.packs.cmd.test_cmd_pack -k verbs
 ```
 
-Run the tools' tests from the repository root:
+Run the tools' and the greenfield scaffolder's tests from the repository root:
 
 ```bash
 python3 -m unittest discover -s audit/tools/tests -k catalogue
 python3 -m unittest discover -s implement/tools/tests
+python3 -m unittest discover -s greenfield/bootstrap/tests -k package_json
 ```
 
 This file is read by Claude Code, opencode, Codex, Gemini CLI, Cursor and any other harness that reads `AGENTS.md`.
@@ -70,7 +72,8 @@ No vendor-specific instruction file exists beside it.
   They run typos on staged files, a secrets scan, and `dev/commit_lint.py` on the commit message.
   The developer runs `lefthook install` once per clone; an agent never does.
   Hooks do not replace the gate: CI runs `make check`, `make security` and `make docs-lint`.
-- `make coverage` runs the engine's, the audit tools' and the implement tools' suites under coverage.py. It fails
+- `make coverage` runs the engine's, the audit tools', the implement tools' and the greenfield scaffolder's suites
+  under coverage.py. It fails
   below the floor in `.coveragerc` (`fail_under`). CI runs it in parts (`coverage-<suite>` per job, then
   `coverage-combine` in the `coverage` job). Each suite runs as CI does (an empty `HOME` and `CI=true`), so a local
   pass means a CI pass. The floor is debt that only goes up: raise it when coverage rises, never lower it to get green.
@@ -124,7 +127,7 @@ reports, commit messages, pull request descriptions and docs.
 | Path | What it is | Rules |
 |---|---|---|
 | `README.md`, `docs/`, `greenfield/` | The framework documents (`docs/framework/`), the Diátaxis docs for everything here, and the greenfield templates. Normative. | If a tool disagrees with them, the tool is wrong. Follow `docs/STYLE_GUIDE.md`; start at `docs/README.md`. |
-| `greenfield/bootstrap/` | The greenfield scaffolder, `bootstrap.py`: it renders `greenfield/templates/` into a new project. The engine's positive-fixture test runs it. | Standard library only. It never holds a copy of a template; fix a template in `greenfield/templates/`. |
+| `greenfield/bootstrap/` | The greenfield scaffolder, `bootstrap.py`: it renders `greenfield/templates/` into a new project. Its unit tests are in `greenfield/bootstrap/tests/`, and the engine's positive-fixture test runs it end to end. | Standard library only. It never holds a copy of a template; fix a template in `greenfield/templates/`. |
 | `spec/` | Numbered requirements (`REQ-...`) for what a repository must have. See `spec/README.md`. | Recipes link to requirement IDs; they do not restate rules. |
 | `audit/` | The audit recipe (`SKILL.md`, `checks/`, `prompts/`, `catalogue.json`, `stacks/`), the JSON Schemas (`schema/`) and the deterministic tools (`tools/`). | Standard library only. No network. Never write inside a target repository. Read `audit/AGENTS.md`. |
 | `audit/engine/` | The Python audit engine: reads a repository, never writes to it, no LLM, no network. | Standard library only. Read `audit/engine/AGENTS.md` before you change it. |
@@ -157,7 +160,8 @@ A folder with no files yet is not written yet; the docs page that describes it s
   (`--run-gates` plus `--allow-probe <verb>`).
 - Never describe a feature as working when it is only planned.
 - Never edit, skip or delete a test to make a failing test pass, in `audit/engine/tests/`, `audit/tools/tests/`,
-  `implement/tools/tests/` or `dev/tests/`. A fixture is data: change one only with the test that needs the change.
+  `implement/tools/tests/`, `greenfield/bootstrap/tests/` or `dev/tests/`. A fixture is data: change one only with
+  the test that needs the change.
 
 ## Definition of done
 

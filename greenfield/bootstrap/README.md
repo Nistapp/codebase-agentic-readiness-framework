@@ -40,6 +40,20 @@ The decision to keep them together is
 
 ---
 
+## Tests
+
+The unit tests are in [`tests/`](tests/): standard-library `unittest`, run in temporary directories,
+with no npm and no network. The git tests are skipped when git is not installed. Run them from the
+repository root:
+
+```bash
+python3 -m unittest discover -s greenfield/bootstrap/tests   # or: make test-greenfield
+```
+
+`make test`, `make check` and `make coverage` run them too, and so does CI.
+
+---
+
 ## Language and distribution
 
 | | Now (v1) | Later (v2) |

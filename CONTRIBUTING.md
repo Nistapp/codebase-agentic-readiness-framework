@@ -46,7 +46,7 @@ that run at once ([The required checks](docs/reference/branch-protection.md#the-
 | Command | What it does |
 | --- | --- |
 | `make format` | Rewrites formatting in place. Run it before the first `make check` |
-| `make check` | The gate: formatting and lint, `mypy` strict, the engine's, the tools' and the dev checks' tests, the engine's rule check, the schema cross-check, the recipe linter and the workflow lint. It takes a couple of minutes. The steps run one by one, in the order the spec fixes. On Linux, `make test` runs its four suites at once (`TEST_JOBS`; `make test TEST_JOBS=` runs them one by one) |
+| `make check` | The gate: formatting and lint, `mypy` strict, the engine's, the tools', the greenfield scaffolder's and the dev checks' tests, the engine's rule check, the schema cross-check, the recipe linter and the workflow lint. It takes a couple of minutes. The steps run one by one, in the order the spec fixes. On Linux, `make test` runs its five suites at once (`TEST_JOBS`; `make test TEST_JOBS=` runs them one by one) |
 | `make spell` | Part of `make check`. typos on the tracked text; the word list is `_typos.toml`. `make spell-fix` writes the suggested fixes |
 | `make workflow-lint` | Part of `make check`. actionlint, zizmor and check-jsonschema on `.github/`: workflow mistakes, workflow security, and `dependabot.yml` against its schema. Offline |
 | `make commit-lint` | Checks that each commit subject on your branch follows Conventional Commits (`RANGE=origin/dev..HEAD` by default). CI runs the same check on every pull request |
@@ -54,18 +54,19 @@ that run at once ([The required checks](docs/reference/branch-protection.md#the-
 | `make docs-lint` | Markdown lint over the ratchet path list in the `Makefile`. Run it when Markdown changed |
 | `make docs-prose FILES=<file.md>` | The plain-language check from [`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md). Advisory: it prints warnings and notices and never fails. Fix the warnings on the lines you changed |
 | `make docs-mermaid FILES=<file.md>` | Renders every Mermaid block in the files. Run it when you added or changed one |
-| `make coverage` | The engine's and the tools' suites under coverage.py; fails below the floor in `.coveragerc`. The floor only goes up |
+| `make coverage` | The engine's, the tools' and the greenfield scaffolder's suites under coverage.py; fails below the floor in `.coveragerc`. The floor only goes up |
 | `make self-audit` | The engine on this repository against `.audit-baseline.json`; exit 2 on a regression. See [Self-Audit](docs/reference/self-audit.md) |
 
 The seven verbs the framework asks of any repository (`format`, `format:check`, `lint`, `typecheck`, `test`,
 `check`, `security`) are defined in [`spec/command-surface.md`](spec/command-surface.md).
 
-One test, without the whole suite (the first from `audit/engine/`, the second from the
+One test, without the whole suite (the first from `audit/engine/`, the others from the
 repository root):
 
 ```bash
 python3 -m unittest tests.packs.cmd.test_cmd_pack -k verbs
 python3 -m unittest discover -s audit/tools/tests -k catalogue
+python3 -m unittest discover -s greenfield/bootstrap/tests -k package_json
 ```
 
 A change to a fixture or a test that holds a key-shaped string needs `make update-secrets-baseline`; review the
