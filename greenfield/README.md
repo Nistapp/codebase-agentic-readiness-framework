@@ -58,7 +58,8 @@ with no notice. Your project then owns its copy and picks its own licence.
 │   └── templates/
 │       ├── adr-template.md
 │       ├── architecture-doc-template.md
-│       └── how-to-template.md
+│       ├── how-to-template.md
+│       └── reference-template.md
 ├── infra/                                 # Enterprise tooling (LiteLLM, etc.)
 │   ├── docker-compose.yml
 │   └── litellm_config.yaml
