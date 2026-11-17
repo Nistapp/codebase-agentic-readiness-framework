@@ -42,6 +42,7 @@
     "dev": "tsc --watch",
     "prepublishOnly": "npm run check && npm run build:full",
     "prepare": "husky",
+    "docs:prose": "node scripts/docs-prose.mjs",
     "git:clean:dry": "node scripts/git-branch-janitor.mjs",
     "git:clean": "node scripts/git-branch-janitor.mjs --apply"
   },

@@ -66,6 +66,10 @@ with no notice. Your project then owns its copy and picks its own licence.
 │   ├── docker-compose.yml
 │   └── litellm_config.yaml
 ├── package.json
+├── scripts/
+│   ├── docs-prose.mjs                     # Warn-only prose check (npm run docs:prose)
+│   ├── docs-prose.test.mjs                # node --test tests for docs-prose.mjs
+│   └── git-branch-janitor.mjs             # Delete local branches whose upstream is gone
 ├── specs/                                 # Generated specs (.mmd, .gherkin)
 │   └── .gitkeep
 ├── src/                                   # This is the suggested structure and can change for your usecase

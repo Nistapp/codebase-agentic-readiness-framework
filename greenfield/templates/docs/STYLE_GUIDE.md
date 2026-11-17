@@ -165,6 +165,8 @@ rules 2 and 6 over every page under `docs/`.
 6. **No vague or padded words.** Do not write `simply`, `just`, `obviously`, `clearly`, `basically`, `easily`,
    `utilize`, `leverage`, `in order to`, `and/or` or `etc.`. Name the real items instead of `etc.`.
 
+Run `npm run docs:prose` on the Markdown you change, and fix its warnings. It only warns: it never fails.
+
 Example (the "before" text breaks rules 2, 4 and 6 on purpose, so the check skips it):
 
 <!-- prose-check off -->

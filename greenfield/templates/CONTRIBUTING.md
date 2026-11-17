@@ -23,6 +23,8 @@ commits and pull requests. Other files link here.
 2.3 CI runs the same script names, so a local pass means a CI pass. The full command list is in
 [`AGENTS.md`](AGENTS.md) §1.
 
+2.4 Run `npm run docs:prose` on the Markdown you change, and fix its warnings. It only warns: it never fails.
+
 ---
 
 ## 3. Branches
