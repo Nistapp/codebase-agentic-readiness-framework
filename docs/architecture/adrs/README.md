@@ -18,6 +18,7 @@ The root router is [`docs/README.md`](../../README.md).
 | [0008](0008-one-release-version-and-current-schemas-only.md) | Stamp One Release Version in Every Report and State, and Read Only the Current Schemas | Reports and state files carry the one release version; readers accept only the current schemas. |
 | [0009](0009-adrs-hold-only-the-current-decision.md) | ADRs Hold Only the Current Decision; Stale and Unnecessary Ones Are Deleted | Agents read ADRs as instructions, so an ADR states only today's decision and a stale one is deleted. |
 | [0010](0010-the-scaffolder-lives-beside-its-templates.md) | The Greenfield Scaffolder Lives in This Repository, Beside Its Templates | `greenfield/bootstrap/bootstrap.py` reads the templates beside it, and the positive fixture runs in CI. |
+| [0011](0011-index-the-documents-with-a-standard-library-tool.md) | Index the Documents With Our Own Standard-Library Tool in `dev/` | `dev/docindex/` builds a deterministic index of files, sections, IDs and links, set by `dev/docindex.config.json`. |
 
 ## Requirements: `spec/decisions/`
 
