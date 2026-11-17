@@ -167,9 +167,7 @@ class Agt13ConventionsTests(unittest.TestCase):
         text = "# Conventions\n\nClasses use PascalCase. Log through SLF4J and throw a domain exception.\n"
         check = self.check({"CONVENTIONS.md": text})
         self.assertEqual(check["verdict"], "PARTIAL")
-        self.assertIn(
-            "do not cover layering, testing, a link to the formatter or linter config", check["summary"]
-        )
+        self.assertIn("do not cover layering, testing, a link to the formatter or linter config", check["summary"])
         self.assertEqual(
             check["findings"][0]["evidence"], [{"path": "CONVENTIONS.md", "line": 1, "note": "conventions file"}]
         )
@@ -187,9 +185,7 @@ class Agt13ConventionsTests(unittest.TestCase):
         self.assertEqual(
             check["summary"], "the conventions (CONVENTIONS.md) hold the stub word TBD at CONVENTIONS.md:25"
         )
-        self.assertIn(
-            {"path": "CONVENTIONS.md", "line": 25, "note": "stub word TBD"}, check["findings"][0]["evidence"]
-        )
+        self.assertIn({"path": "CONVENTIONS.md", "line": 25, "note": "stub word TBD"}, check["findings"][0]["evidence"])
 
     def test_todo_is_a_stub_word_too(self):
         check = self.check({"CONVENTIONS.md": PYTHON + "- TODO: the API rules.\n"})
@@ -276,9 +272,7 @@ class Agt13ConventionsTests(unittest.TestCase):
         self.assertEqual(
             check["summary"], "there is no conventions file and AGENTS.md or CONTRIBUTING.md has no conventions section"
         )
-        self.assertEqual(
-            [e["path"] for e in check["findings"][0]["evidence"]], ["AGENTS.md", "CONTRIBUTING.md"]
-        )
+        self.assertEqual([e["path"] for e in check["findings"][0]["evidence"]], ["AGENTS.md", "CONTRIBUTING.md"])
 
     def test_the_docs_style_guide_alone_fails(self):
         self.assertEqual(self.check({"docs/STYLE_GUIDE.md": "# Style guide\n\n" + body(PYTHON)})["verdict"], "FAIL")
