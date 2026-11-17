@@ -167,7 +167,7 @@ runner is a local choice: `package.json` scripts (shown here, and what the
 
 > [!IMPORTANT]
 > **One command surface, three consumers — and never two definitions of it.** Write the
-> seven verbs into `AGENTS.md` §3 and CI runs the *same script names* you run locally
+> seven verbs into `AGENTS.md` §1 and CI runs the *same script names* you run locally
 > (`npm run check`, `npm run security`). Never let CI run a step that has no local
 > equivalent: a gate an agent cannot reach is a gate an agent cannot honour, and a local
 > gate weaker than its CI counterpart produces rework rather than safety.
@@ -369,7 +369,7 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 - **`AGENTS.md` MUST state the definition of done:** a change that alters a public interface, observable behaviour, architecture, or an ADR updates the affected doc pages, their anchors, and the ADR index **in the same change set**. Link to the style guide — never restate its rules in `AGENTS.md`, because restated rules drift.
 - **`AGENTS.md` SHOULD state how agents write for people:** who the reader is, the bottom line first, the layout
   of a status or done report, and how to ask for a decision (the options, a recommendation and a default). The
-  template's §8.1 is a short example.
+  template's §5 is a short example.
 - **The docs SHOULD read plainly:** few sentences over 25 words (20 in a numbered step), no vague or padded words
   (`simply`, `just`, `in order to` and the like), and a Mermaid diagram on each explanation or tutorial page.
   `docs/STYLE_GUIDE.md` is the place to state these rules.
@@ -384,7 +384,7 @@ npx husky init     # NOT needed: it overwrites .husky/pre-commit with `npm test`
 ## Phase 6 — Agent Governance
 
 ### 6.1 `AGENTS.md`
-Copy and customize the [**`AGENTS.md` Template**](templates/AGENTS.md) to govern agent behavior, strict typing, DI boundaries, commit rules, the standardized command surface (§3), and the documentation standards that point at `docs/STYLE_GUIDE.md` (§8).
+Copy and customize the [**`AGENTS.md` Template**](templates/AGENTS.md). It is a short skeleton of what an agent cannot infer from the code: the standardized command surface (§1), the architectural boundaries (§2), the documentation contract that points at `docs/STYLE_GUIDE.md` (§3), the branch and release rules (§4), how to write for people (§5) and the prohibitions (§6). Every line is true for a freshly scaffolded project; change a line when the project changes. To write one for an existing repository, use the [`adapt-agents-md`](../implement/playbooks/adapt-agents-md.md) playbook instead.
 
 ### 6.2 Agent Scratchpad — `artefacts/`
 Transient workspace for AI agents (`artefacts/*` in `.gitignore`, directory preserved via `.gitkeep`).

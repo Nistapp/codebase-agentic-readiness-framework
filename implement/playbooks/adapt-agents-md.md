@@ -12,14 +12,15 @@ what an agent may do with branches and releases, which harnesses read the file, 
 from the code. Every line is true against the repository, and the file stays within the 400-line budget.
 
 **The rule this playbook enforces: the playbook drafts, the owner edits.** `AGENTS.md` is the owner's voice. Each
-finding gets the smallest diff that closes it, proposed and reviewed one at a time. The file is never rewritten
-wholesale.
+finding gets the smallest diff that closes it, proposed and reviewed one at a time. An existing file is never
+rewritten wholesale. When no instruction file exists, the playbook creates a bare skeleton first and fills it one
+section, one commit at a time ([details](#no-instruction-file-yet)).
 
 ## Checks resolved
 
 | Check | Rubric | What this playbook does for it |
 |---|---|---|
-| AGT-01 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-01--instruction-file-present-canonical-and-non-trivial) | Verification: a canonical root `AGENTS.md`, correctly cased, no stub markers, no override file |
+| AGT-01 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-01--instruction-file-present-canonical-and-non-trivial) | Verification: a canonical root `AGENTS.md`, correctly cased, no stub markers, no override file. Creates the file from the greenfield skeleton when none exists |
 | AGT-02 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-02--component-coverage-by-instruction-files) | Verification; a component `AGENTS.md` only when the owner asks (component scoping is planned for a later framework version) |
 | AGT-03 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-03--documentation-contract-named) | One line each for `docs/`, `docs/STYLE_GUIDE.md` and the scratch directory |
 | AGT-04 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-04--definition-of-done-stated) | One definition-of-done sentence tying documentation triggers to the same change set |
@@ -70,6 +71,7 @@ before the first diff.
 | `docs.agents_line` | T6 already wrote the docs line; AGT-03 then only verifies it |
 | `layout.command_runner` | `per-app`: verbs are listed per app, not at the root |
 | `format.mass_reformat` | `no` (usual): never reflow or reformat the file to make it shorter |
+| `agents_md.create` | `yes` or `no`: create `AGENTS.md` when no instruction file exists (Inputs 9). Asked in Stage 1, because earlier themes write to the file |
 
 ## Inputs to ask
 
@@ -126,6 +128,11 @@ engine. The questions are about text. Ask them per finding, before the diff for 
       the docs rules ([`establish-docs-contract`](establish-docs-contract.md)); b. yes.
 8. **Owner-only values.** None is needed for this playbook. If a step seems to need one (a reviewer name, a
    contact), ask in the order `SKILL.md` Stage 2, step 6 gives (supply it, draft one for review, or skip).
+9. **No instruction file yet** (`agents_md.create`). Asked in [Stage 1](../SKILL.md#stage-1-triage), step 5,
+   when no instruction file of any kind exists and AGT-01 is a confirmed finding. One question: create `AGENTS.md`
+   from the skeleton? a. yes (default); b. no: earlier themes write to `CONTRIBUTING.md`, and the owner skips the
+   AGT-01 item. If a vendor file such as `CLAUDE.md` carries real rules, do not create a second file: handle it as
+   Inputs 3 says.
 
 ## Steps
 
@@ -220,7 +227,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     level and style (D18), and keep a word the check reads (`write for`, `communication`, `reporting`). Place it
     after the section `agents_md.pointer_section` names; without that preference, place it before the prohibitions
     section. Start from the template in the greenfield
-    [`AGENTS.md` § 8.1](../../greenfield/templates/AGENTS.md#81-how-to-write-for-people), five bullets:
+    [`AGENTS.md` § 5](../../greenfield/templates/AGENTS.md#5-how-to-write-for-people), five bullets:
     - the reader: the persona the owner confirmed (Inputs 7);
     - bottom line first;
     - plain language: short sentences (at most 25 words), active voice, one term per meaning;
@@ -233,6 +240,40 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     convention (D18), and link it from the section. Then run the engine's AGT-12.
 12. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
     record the overage as debt. Never shorten by reflowing or deleting the owner's rules.
+
+### No instruction file yet
+
+Use this branch only when the engine's AGT-01 finds no instruction file in any variant (`AGENTS.md`, `CLAUDE.md`,
+`GEMINI.md`, `.cursorrules` and the rest of the variant table) and `agents_md.create=yes` (Inputs 9). A stub that
+holds the owner's text is an existing file: use the Generic steps. A vendor file with real rules is AGT-08's
+(Inputs 3).
+
+1. **Skeleton.** The first theme that writes to the instruction file makes this step, often T1
+   ([Stage 3, step 11](../SKILL.md#stage-3-apply)). Create `AGENTS.md` at the repository root with the title and
+   the six section headings of the [greenfield `AGENTS.md` template](../../greenfield/templates/AGENTS.md), and
+   nothing else. The template is a filled example for one Node project: none of its body text is written into the
+   target. That theme then writes its own lines into the matching section. When T7 starts, the file exists and
+   steps 2 to 4 below fill the rest.
+2. **Fill each section with the Generic step that owns it, one commit per section.** Every fact comes from the
+   repository, never from the template. A line you cannot make true stays out, and no `<placeholder>` or `TODO`
+   remains in the file.
+
+   | Skeleton section | Generic step | Fact comes from |
+   |---|---|---|
+   | Reach line | Step 7 | The harnesses that load the file (a `CLAUDE.md` import counts) |
+   | 1. Commands | Steps 2 and 3 | The runner and the stack profile; verbs T1 made true |
+   | 2. Boundaries | Step 4 and Inputs 2 | The code index or the import lines; two or more rules, each naming a path that exists. Naming rules appear only when the owner states one a linter does not enforce |
+   | 3. Documentation | Steps 4 and 5 | The docs home, style guide and decision log T6 made true |
+   | 4. Branches and releases | Step 6 | The branches, rulesets and release tool the repository declares |
+   | 5. How to write for people | Step 11 | The persona the owner confirms (Inputs 7) |
+   | 6. Never | [`add-deny-rules`](add-deny-rules.md) | Not written here; it runs on the same branch |
+
+3. **Review.** The owner reads each section as its diff arrives (Inputs 1 sets the order). The file is a draft until
+   the owner has seen every section. Then run the engine's AGT-01, AGT-05 and AGT-12.
+4. **Budget.** The skeleton is far below 400 lines. Step 12 applies if a filled file is not.
+
+If a fact is missing (no boundary the code shows, no release tool), leave that line out and record the item
+`partial` with a note, as the Generic steps say. Do not fill a gap with generic text.
 
 ### Gradle and Quarkus
 
@@ -261,24 +302,25 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 
 | # | Commit | Checks | Kind |
 |---|---|---|---|
-| 1 | The seven verbs in a fenced block, annotated | `AGT-05` | hand |
-| 2 | Fix of the command a finding names (one per finding) | `EXEC-06` | hand |
-| 3 | Precondition lines and lines T2 deferred, beside the commands (only when missing) | - | hand |
-| 4 | Fenced single-test line (only when the item sits in T7) | `TST-04` | hand |
-| 5 | Documentation contract lines (only the missing ones) | `AGT-03` | hand |
-| 6 | Boundary rules the owner picked | `AGT-06` | hand |
-| 7 | Definition-of-done sentence | `AGT-04` | hand |
-| 8 | Release-boundary sentence | `AGT-09` | hand |
-| 9 | Reach line | `AGT-08` | hand |
-| 10 | Vendor file reconciled (one per file the owner agreed to change) | `AGT-08` | hand |
-| 11 | Deferral resolved: must-always rules moved in, link line | `AGT-10` | hand |
-| 12 | Generic text moved to a `docs/` page (one per section) | `AGT-11` | hand |
-| 13 | Contradicted rule as target state (one per rule) | `AGT-11` | hand |
-| 14 | Stale lines corrected | `AGT-11` | hand |
-| 15 | Component `AGENTS.md` (only when the owner asks) | `AGT-02` | hand |
-| 16 | "How to write for people" section | `AGT-12` | hand |
-| 17 | Long-form communication rules file and its link (only with `agents_md.comm_long_form=yes`) | `AGT-12` | hand |
-| 18 | Long section moved to `docs/` (only when over the 400-line budget) | - | hand |
+| 1 | Skeleton: title and section headings (only when no instruction file existed; made by the first theme that writes to the file) | `AGT-01` | hand |
+| 2 | The seven verbs in a fenced block, annotated | `AGT-05` | hand |
+| 3 | Fix of the command a finding names (one per finding) | `EXEC-06` | hand |
+| 4 | Precondition lines and lines T2 deferred, beside the commands (only when missing) | - | hand |
+| 5 | Fenced single-test line (only when the item sits in T7) | `TST-04` | hand |
+| 6 | Documentation contract lines (only the missing ones) | `AGT-03` | hand |
+| 7 | Boundary rules the owner picked | `AGT-06` | hand |
+| 8 | Definition-of-done sentence | `AGT-04` | hand |
+| 9 | Release-boundary sentence | `AGT-09` | hand |
+| 10 | Reach line | `AGT-08` | hand |
+| 11 | Vendor file reconciled (one per file the owner agreed to change) | `AGT-08` | hand |
+| 12 | Deferral resolved: must-always rules moved in, link line | `AGT-10` | hand |
+| 13 | Generic text moved to a `docs/` page (one per section) | `AGT-11` | hand |
+| 14 | Contradicted rule as target state (one per rule) | `AGT-11` | hand |
+| 15 | Stale lines corrected | `AGT-11` | hand |
+| 16 | Component `AGENTS.md` (only when the owner asks) | `AGT-02` | hand |
+| 17 | "How to write for people" section | `AGT-12` | hand |
+| 18 | Long-form communication rules file and its link (only with `agents_md.comm_long_form=yes`) | `AGT-12` | hand |
+| 19 | Long section moved to `docs/` (only when over the 400-line budget) | - | hand |
 
 ## Continue on error
 
@@ -322,7 +364,9 @@ file. It also touches a vendor pointer file or the second rules file, but only w
 
 ## Do-not-do
 
-- Do not rewrite `AGENTS.md` wholesale, reorder its sections, or reflow its lines.
+- Do not rewrite an existing `AGENTS.md` wholesale, reorder its sections, or reflow its lines.
+- Do not copy the template's example text, a placeholder or a generic line into a created file, and do not create
+  `AGENTS.md` beside a vendor file that holds real rules.
 - Do not reword the rest of `AGENTS.md` to meet the plain-language rules. Only the new AGT-12 section follows
   them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
