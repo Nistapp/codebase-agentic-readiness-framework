@@ -72,7 +72,7 @@ before the first diff.
 | `layout.command_runner` | `per-app`: verbs are listed per app, not at the root |
 | `format.mass_reformat` | `no` (usual): never reflow or reformat the file to make it shorter |
 | `agents_md.create` | `yes` or `no`: create `AGENTS.md` when no instruction file exists (Inputs 9). Asked in Stage 1, because earlier themes write to the file |
-| `agents_md.numbering` | `keep` (default for an existing file): its numbering stays as it is. `nested` (used for a file this playbook creates): Step 13 |
+| `agents_md.numbering` | `keep` (default for an existing file): its numbering stays. `nested` (a created file, or an existing one by opt-in): Steps 13 and 15 |
 
 ## Inputs to ask
 
@@ -134,6 +134,10 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    from the skeleton? a. yes (default); b. no: earlier themes write to `CONTRIBUTING.md`, and the owner skips the
    AGT-01 item. If a vendor file such as `CLAUDE.md` carries real rules, do not create a second file: handle it as
    Inputs 3 says.
+10. **Renumbering an existing file** (`agents_md.numbering`). Ask only when the file exists and the owner raises
+    numbering or asks for nested style. One question: a. `keep` (default): the file's numbering stays; b. `nested`:
+    Step 15 renumbers it, one top-level section per commit, with an audit before and after each commit. Never renumber
+    a file the owner did not opt in for.
 
 ## Steps
 
@@ -262,6 +266,31 @@ engine. The questions are about text. Ask them per finding, before the diff for 
       more lines that hold never, do not or must not as a prohibitions section, whatever its heading. `AGT-07`
       prohibitions cover the four areas, and the deny-list checks (`CON-01`, `CON-02`), then read that section too.
       State the rules of other sections in positive form.
+15. **Opt-in restructure of an existing file (`agents_md.numbering=nested`).** Run this step only when the owner chose
+    `nested` for a file that already exists (Inputs 10). A file this playbook creates is numbered as it is written, so
+    it skips this step. Renumber one top-level section per commit, never the whole file at once.
+    1. **Audit before.** On a clean tree, run the engine and keep the report path:
+       `python3 audit/tools/engine.py <worktree> --out-dir <dir outside the target> --no-user-config`. Use the same
+       command for every run in this step.
+    2. **Renumber one section.** Number its heading, rules and sub-rules in the style of Step 13. Change only the
+       number or marker that starts a line, and the trailing `\` of a lettered item. Never change a rule's words, never
+       move text between sections, and never reflow a line.
+    3. **Audit after, then compare.** Commit the section and run the same engine command again. Then run
+       `python3 implement/tools/compare_reports.py <before report> <after report>`. That tool reads two engine reports
+       and writes nothing. The engine's `--baseline` is not used: it flags only new findings, not a changed verdict.
+       The tool exits 0 even when checks moved, so read the "Checks that moved" table. Expected: `None.`
+    4. **Stop on a changed verdict.** Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`)
+       stops the step. Revert the commit, or fix it in a new commit and audit again, before the next section. The
+       after report is the before report of the next section.
+    5. **Read the section as rendered.** Two traps pass the engine comparison, so look at the page before each commit:
+       - A dropped trailing `\` joins two lettered lines. `make docs-lint` and the verdicts do not catch it.
+       - A lettered line that ends in `;` makes one long sentence for `DOC-05` docs are readable. Each lettered
+         item is a full sentence that ends in a full stop. If an item is not one, ask the owner: rewording a rule
+         is not renumbering.
+
+    The two traps of Step 14 still hold: the renumbering never splits a boundary path from its rule word, and never
+    moves a prohibition word into another section. This step fits the Do-not-do line on reflowing: a line keeps its
+    words, its breaks and its place, and only its number, marker or trailing `\` changes.
 
 ### No instruction file yet
 
@@ -344,6 +373,7 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 | 17 | "How to write for people" section | `AGT-12` | hand |
 | 18 | Long-form communication rules file and its link (only with `agents_md.comm_long_form=yes`) | `AGT-12` | hand |
 | 19 | Long section moved to `docs/` (only when over the 400-line budget) | - | hand |
+| 20 | One top-level section renumbered in nested style (only with `agents_md.numbering=nested` on an existing file; one per section) | - | hand |
 
 ## Continue on error
 
@@ -358,6 +388,9 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 - **Generic text the owner keeps:** the item is `partial` with the measured ratio as debt
   (`what=generic rule lines,count=N`), or `skipped` if the owner says so.
 - A verb that does not resolve is not fixed here; record it and point at T1.
+- **A changed verdict in the renumbering (Step 15):** the step stops at that section. The item is `partial` with a
+  note that names the check and the section. Sections already renumbered stay; the rest keep their old numbering.
+  Say so in the pull request, under "What was not done".
 
 ## Verification
 
@@ -377,17 +410,22 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 | EXEC-06 | The engine's EXEC-06 | Every fenced command resolves; `PASS` |
 | TST-04 | `grep -n -A2 'single test' AGENTS.md` | A fenced single-test command for the runner; `PASS` |
 | Budget | `wc -l AGENTS.md` | 400 or fewer, or the overage recorded as debt |
+| Renumbering | After each section commit: `python3 implement/tools/compare_reports.py <before report> <after report>` | "Checks that moved" says `None.`: no changed verdict. `git show --word-diff` shows only numbers, markers and `\` |
 
 ## Rollback
 
 `git revert` the commits, newest first: one per finding, each revertible alone. Some commits move a rule or a
 text block: a reconciled vendor file, the deferral, generic text, a long section. The revert returns the text to its
 old place. This playbook touches only `AGENTS.md`, the new `docs/` page and the long-form communication rules
-file. It also touches a vendor pointer file or the second rules file, but only where the owner agreed.
+file. It also touches a vendor pointer file or the second rules file, but only where the owner agreed. A renumbering
+commit (Step 15) reverts alone and restores that section's old numbering.
 
 ## Do-not-do
 
-- Do not rewrite an existing `AGENTS.md` wholesale, reorder its sections, or reflow its lines.
+- Do not rewrite an existing `AGENTS.md` wholesale, reorder its sections, or reflow its lines. The opt-in
+  renumbering (Step 15) keeps this true: it changes only the number, marker or trailing `\` of a line.
+- Do not renumber an existing file the owner did not opt in for, renumber two top-level sections in one commit, or
+  go on after a changed verdict.
 - Do not copy the template's example text, a placeholder or a generic line into a created file, and do not create
   `AGENTS.md` beside a vendor file that holds real rules.
 - Do not reword the rest of `AGENTS.md` to meet the plain-language rules. Only the new AGT-12 section follows

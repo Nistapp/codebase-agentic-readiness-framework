@@ -339,7 +339,10 @@ section, one commit at a time ([details](../../implement/playbooks/adapt-agents-
 
 **What it never does:**
 
-- Do not rewrite an existing `AGENTS.md` wholesale, reorder its sections, or reflow its lines.
+- Do not rewrite an existing `AGENTS.md` wholesale, reorder its sections, or reflow its lines. The opt-in
+  renumbering (Step 15) keeps this true: it changes only the number, marker or trailing `\` of a line.
+- Do not renumber an existing file the owner did not opt in for, renumber two top-level sections in one commit, or
+  go on after a changed verdict.
 - Do not copy the template's example text, a placeholder or a generic line into a created file, and do not create
   `AGENTS.md` beside a vendor file that holds real rules.
 - Do not reword the rest of `AGENTS.md` to meet the plain-language rules. Only the new AGT-12 section follows
