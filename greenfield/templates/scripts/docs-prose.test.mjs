@@ -44,9 +44,15 @@ describe('checkText: PL001 sentence length', () => {
         assert.deepEqual(checkText('a.md', `- ${sentence(21)}\n`), []);
     });
 
-    it('counts a code span and a link as short', () => {
-        const text = `Run \`a very long command with many words in it\` and read [the guide](https://example.com/x y).`;
-        assert.deepEqual(checkText('a.md', text), []);
+    it('counts a code span as one word and a link as its text', () => {
+        // 23 plain words, a code span of 8 words and a link: 25 words, at the limit. Counting the words
+        // inside the code span, or the URL parts after the spaces, takes the sentence over 25.
+        const plain = Array.from({ length: 23 }, (_, i) => `word${i}`).join(' ');
+        const markup = '`a b c d e f g h` [guide](https://example.com/a b c d e)';
+        assert.deepEqual(checkText('a.md', `${plain} ${markup}.`), []);
+        const issues = checkText('a.md', `${plain} more ${markup}.`);
+        assert.deepEqual(codes(issues), ['PL001:notice']);
+        assert.equal(issues[0].message, 'sentence has 26 words (limit 25)');
     });
 
     it('reports the line where the paragraph starts', () => {
