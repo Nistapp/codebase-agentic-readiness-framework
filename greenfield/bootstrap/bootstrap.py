@@ -486,6 +486,8 @@ def main(argv: list[str]) -> int:
     args.github_owner = args.github_owner or git_config("user.name") or "TODO-owner"
     args.node_version = validate_node_version(args.node_version)
 
+    if args.target.exists() and not args.target.is_dir():
+        fail(f"{args.target} exists and is not a directory. Pass a directory, or a path that does not exist yet.")
     if args.target.exists() and any(args.target.iterdir()) and not args.force:
         fail(f"{args.target} is not empty. Use an empty directory, or pass --force to overwrite files.")
 

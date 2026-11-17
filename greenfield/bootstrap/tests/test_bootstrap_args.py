@@ -160,6 +160,18 @@ class TargetTests(unittest.TestCase):
             self.assertEqual((target / "keep.txt").read_text(encoding="utf-8"), "mine\n")
             self.assertTrue((target / "package.json").is_file())
 
+    def test_a_target_that_is_a_file_is_refused_with_a_message(self) -> None:
+        # It used to crash with a NotADirectoryError traceback.
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "a-file"
+            target.write_text("mine\n", encoding="utf-8")
+            for flags in ([], ["--force"], ["--dry-run"]):
+                with self.subTest(flags=flags):
+                    code, _, err = run_main([str(target), "--name", "pkg", "--no-git", *IDENTITY, *flags])
+                    self.assertEqual(code, 1)
+                    self.assertIn("is not a directory", err)
+                    self.assertEqual(target.read_text(encoding="utf-8"), "mine\n")
+
 
 class DryRunTests(unittest.TestCase):
     def test_dry_run_into_a_missing_directory_creates_nothing(self) -> None:
