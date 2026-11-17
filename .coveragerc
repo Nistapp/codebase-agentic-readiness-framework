@@ -14,6 +14,6 @@ omit =
 [report]
 # The floor is the measured total rounded down, and it only goes up: raise it when coverage rises, never lower it
 # to get green. Subprocess-run code (the CLI entry points under test) is not measured, so the number is a floor.
-fail_under = 91
+fail_under = 92
 show_missing = false
 skip_empty = true
