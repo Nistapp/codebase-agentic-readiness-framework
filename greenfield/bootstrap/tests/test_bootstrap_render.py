@@ -13,9 +13,11 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import tempfile
 import unittest
+from pathlib import Path
 
-from _bootstrap_support import TEMPLATES, bootstrap
+from _bootstrap_support import IDENTITY, TEMPLATES, bootstrap, run_main
 
 
 def namespace(**overrides: object) -> argparse.Namespace:
@@ -112,6 +114,23 @@ class SubstitutionTests(unittest.TestCase):
     def test_the_longest_token_is_replaced_first(self) -> None:
         subs = {"<project>": "SHORT", "<project-name>": "LONG"}
         self.assertEqual(bootstrap.apply_substitutions("<project-name> <project>", subs, False), "LONG SHORT")
+
+    def test_a_value_that_holds_a_token_is_written_as_given(self) -> None:
+        # A value used to be scanned again by every shorter token, so '--description "use <project>"' lost its text.
+        subs = bootstrap.build_substitutions(namespace(description="Wraps <project> for <org> users"))
+        rendered = bootstrap.apply_substitutions('"<project-description>" by <org>', subs, False)
+        self.assertEqual(rendered, '"Wraps <project> for <org> users" by ada')
+
+    def test_main_refuses_a_value_that_holds_a_token(self) -> None:
+        # Written as given, the token would trip the post-write leftover check; refuse it up front instead.
+        for flag in ("--description", "--author", "--email", "--github-owner"):
+            with self.subTest(flag=flag), tempfile.TemporaryDirectory() as tmp:
+                target = Path(tmp) / "out"
+                argv = [str(target), "--name", "pkg", "--no-git", *IDENTITY, flag, "see <project>"]
+                code, _, err = run_main(argv)
+                self.assertEqual(code, 1)
+                self.assertIn(f"{flag} 'see <project>' contains the template placeholder <project>", err)
+                self.assertFalse(target.exists())
 
     def test_the_date_is_filled_only_where_allowed(self) -> None:
         today = dt.date.today().isoformat()

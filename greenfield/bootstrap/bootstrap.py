@@ -103,6 +103,23 @@ MANDATORY_FILES = (
 
 EXECUTABLE_FILES = (".husky/pre-commit", ".husky/commit-msg")
 
+# The placeholders the templates use. None may survive in a generated file outside the document templates, and none
+# may appear in a value given on the command line, where the post-write gate would take it for a leftover.
+PLACEHOLDER_TOKENS = (
+    "<package-name>",
+    "<project-name>",
+    "<project-description>",
+    "<github-owner>",
+    "<node-version>",
+    "<your-github-username>",
+    "<your-email>",
+    "<author>",
+    "<org>",
+    "<project>",
+    "[Project Name]",
+    "[@github-handle]",
+)
+
 
 # ---------------------------------------------------------------------------
 # input validation
@@ -145,6 +162,14 @@ def validate_package_name(name: str) -> str:
 def validate_node_version(value: str) -> str:
     if not re.fullmatch(r"\d{1,2}", value):
         fail(f"--node '{value}' must be a major version number, e.g. 24")
+    return value
+
+
+def validate_free_text(flag: str, value: str) -> str:
+    """Refuse a value that holds a template placeholder: the scaffold would fail its own leftover check."""
+    found = [token for token in PLACEHOLDER_TOKENS if token in value]
+    if found:
+        fail(f"{flag} '{value}' contains the template placeholder {found[0]}; reword it.")
     return value
 
 
@@ -232,8 +257,10 @@ def build_substitutions(args: argparse.Namespace) -> dict[str, str]:
 
 
 def apply_substitutions(text: str, subs: dict[str, str], allow_date: bool) -> str:
-    for token in sorted(subs, key=len, reverse=True):
-        text = text.replace(token, subs[token])
+    """Replace every token in one pass, the longest first where two overlap; a value is never read again."""
+    if subs:
+        pattern = re.compile("|".join(re.escape(token) for token in sorted(subs, key=len, reverse=True)))
+        text = pattern.sub(lambda match: subs[match.group(0)], text)
     if allow_date:
         text = text.replace("YYYY-MM-DD", dt.date.today().isoformat())
     return text
@@ -263,7 +290,9 @@ def write_project(args: argparse.Namespace, templates: Path, plan: list[tuple[Pa
             # The values land inside JSON strings, so a quote or a backslash in them is escaped.
             rendered = finalise_package_json(apply_substitutions(raw, json_escaped(subs), allow_date=False), args)
         else:
-            rendered = raw if exempt else apply_substitutions(raw, subs, allow_date=rel.startswith("docs/architecture/"))
+            rendered = (
+                raw if exempt else apply_substitutions(raw, subs, allow_date=rel.startswith("docs/architecture/"))
+            )
         dest.write_text(rendered, encoding="utf-8")
         if rel in EXECUTABLE_FILES:
             dest.chmod(0o755)
@@ -308,20 +337,6 @@ def verify_tree(target: Path, written: list[str]) -> None:
     if empty:
         fail("generated files are unexpectedly empty: " + ", ".join(sorted(set(empty))))
 
-    tokens = (
-        "<package-name>",
-        "<project-name>",
-        "<project-description>",
-        "<github-owner>",
-        "<node-version>",
-        "<your-github-username>",
-        "<your-email>",
-        "<author>",
-        "<org>",
-        "<project>",
-        "[Project Name]",
-        "[@github-handle]",
-    )
     leftovers: list[str] = []
     for path in sorted(target.rglob("*")):
         if not path.is_file() or ".git/" in path.as_posix():
@@ -333,7 +348,7 @@ def verify_tree(target: Path, written: list[str]) -> None:
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        for token in tokens:
+        for token in PLACEHOLDER_TOKENS:
             if token in text:
                 leftovers.append(f"{rel}: {token}")
     if leftovers:
@@ -496,6 +511,13 @@ def main(argv: list[str]) -> int:
     args.email = args.email or git_config("user.email") or ""
     args.github_owner = args.github_owner or git_config("user.name") or "TODO-owner"
     args.node_version = validate_node_version(args.node_version)
+    for flag, attr in (
+        ("--description", "description"),
+        ("--author", "author"),
+        ("--email", "email"),
+        ("--github-owner", "github_owner"),
+    ):
+        setattr(args, attr, validate_free_text(flag, getattr(args, attr)))
 
     if args.target.exists() and not args.target.is_dir():
         fail(f"{args.target} exists and is not a directory. Pass a directory, or a path that does not exist yet.")
