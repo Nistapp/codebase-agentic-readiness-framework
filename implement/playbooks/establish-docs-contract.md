@@ -134,7 +134,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    scratch lives, heading and table rules, line length (match the lint config), Mermaid in fenced blocks and
    validated before saving, relative links, "no values from env files, credentials or keystores", "cite code by
    path", "decisions go in `docs/adr/`". Link to the lint config instead of restating its rules. Add the
-   instruction-file line (Inputs 5) once the pages it names exist; [Commits](#commits) row 7 orders it. The check
+   instruction-file line (Inputs 5) once the pages it names exist; [Commits](#commits) row 8 orders it. The check
    reads the literal string `STYLE_GUIDE.md`.
 
    **Plain language and diagrams (DOC-05).** Add two sections to the style guide. The template is the greenfield
@@ -243,7 +243,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    existed before this theme, so step 3 did not write it. Make its commit right after step 3, before the lint
    baseline of step 1 is final: the new lines count there. Read the preference (Inputs 8):
    - `ask` (default): show the owner the section described below, then record the answer as `yes` or `no`.
-   - `yes`: append the section in one commit (Commits row 18).
+   - `yes`: append the section in one commit (Commits row 4).
    - `no`: record the preference and change nothing. Do not ask again in this run.
 
    The section holds the form rules and the README landing-page rule. Adapt it from the greenfield
@@ -327,25 +327,26 @@ Docs first, then the lint config, then the wiring. The instruction-file line wai
 | 1 | Docs index, `docs/README.md` (only when missing) | `DOC-01` | hand |
 | 2 | Style guide, `docs/STYLE_GUIDE.md` | `DOC-02` | hand |
 | 3 | Plain language and Diagrams sections in the style guide (only for DOC-05) | `DOC-05` | hand |
-| 4 | Decision log: `docs/adr/` index, template, ADR policy page, first records | `DOC-04` | hand |
-| 5 | Architecture overview with its diagram | `NAV-01`, `NAV-02`, `NAV-04` | hand |
-| 6 | Repository notes section: the NAV-03 census | `NAV-03` | hand |
-| 7 | Instruction-file line naming the docs pages | `DOC-02`, `DOC-04` | hand |
-| 8 | Ignore rule for the scratch directory (only when one exists and lacks it) | `DOC-03` | config |
-| 9 | Untrack the scratch files, `git rm --cached` (only those the owner confirms) | `DOC-03` | bulk |
-| 10 | Markdown lint config | - | config |
-| 11 | Lint ratchet: the gating and report commands, with the baseline | - | wiring |
-| 12 | Docs CI job: lint and Mermaid render | - | wiring |
-| 13 | Link check in the docs CI job (only when the owner chose `lychee`) | - | wiring |
-| 14 | Prose check copy with the owner's licence line (only with `docs.prose_check=template`) | `DOC-05` | bulk |
-| 15 | Third-party notice entry for the copy (only where the repository keeps such a list) | `DOC-05` | hand |
-| 16 | Prose ratchet: the runner command and the full-tree run (same condition as 14) | `DOC-05` | wiring |
-| 17 | Prose runs in the docs CI job (same condition as 14) | `DOC-05` | wiring |
-| 18 | Form rules section appended to an existing style guide (only with `docs.style_guide_update=yes`) | `DOC-02` | hand |
+| 4 | Form rules section appended to an existing style guide (only with `docs.style_guide_update=yes`) | `DOC-02` | hand |
+| 5 | Decision log: `docs/adr/` index, template, ADR policy page, first records | `DOC-04` | hand |
+| 6 | Architecture overview with its diagram | `NAV-01`, `NAV-02`, `NAV-04` | hand |
+| 7 | Repository notes section: the NAV-03 census | `NAV-03` | hand |
+| 8 | Instruction-file line naming the docs pages | `DOC-02`, `DOC-04` | hand |
+| 9 | Ignore rule for the scratch directory (only when one exists and lacks it) | `DOC-03` | config |
+| 10 | Untrack the scratch files, `git rm --cached` (only those the owner confirms) | `DOC-03` | bulk |
+| 11 | Markdown lint config | - | config |
+| 12 | Lint ratchet: the gating and report commands, with the baseline | - | wiring |
+| 13 | Docs CI job: lint and Mermaid render | - | wiring |
+| 14 | Link check in the docs CI job (only when the owner chose `lychee`) | - | wiring |
+| 15 | Prose check copy with the owner's licence line (only with `docs.prose_check=template`) | `DOC-05` | bulk |
+| 16 | Third-party notice entry for the copy (only where the repository keeps such a list) | `DOC-05` | hand |
+| 17 | Prose ratchet: the runner command and the full-tree run (same condition as 15) | `DOC-05` | wiring |
+| 18 | Prose runs in the docs CI job (same condition as 15) | `DOC-05` | wiring |
 | 19 | One dense README section moved to a `docs/` page, with a link table left behind (one commit per section; only with `docs.split_readme=yes`) | `DOC-01` | hand |
 
-Row 18 is the exception to the order: step 9 makes it right after row 3, so the lint baseline of row 11 counts it.
-Row 19 comes last, after the docs pages and the index exist, so each moved section joins `docs/README.md`.
+Row 4 is the one row that comes before the step that would place it: step 9 makes it right after row 3, so the lint
+baseline of row 12 counts it. Row 19 comes last, after the docs pages and the index exist, so each moved section
+joins `docs/README.md`.
 
 ## Continue on error
 
@@ -379,7 +380,7 @@ Row 19 comes last, after the docs pages and the index exist, so each moved secti
 |---|---|---|
 | DOC-01 | `git ls-files 'docs/*.md' 'docs/**/*.md'` | At least one file; `docs/README.md` links every page; no second docs home |
 | DOC-02 | `test -f docs/STYLE_GUIDE.md` and `grep -n STYLE_GUIDE.md <instruction file>` | File exists; the instruction file names it |
-| DOC-02 form rules | `grep -n -i 'form follows content\|landing page' docs/STYLE_GUIDE.md`; for an existing guide, `git diff --numstat <base> -- docs/STYLE_GUIDE.md` | New guide, or `yes`: both rules present, and an existing guide shows 0 deleted lines. `no`: no output from the diff, and the preference recorded |
+| DOC-02 form rules | `grep -n -i 'form follows content\|landing page' docs/STYLE_GUIDE.md`; for an existing guide, `git diff --numstat <base> -- docs/STYLE_GUIDE.md` | New guide, or `yes`: both rules present, and an existing guide shows 0 deleted lines. `no`: 0 deleted lines, no added line holds either rule, and the preference recorded. Row 3 may still add lines to an existing guide |
 | README split | After each section commit: `python3 implement/tools/compare_reports.py <before report> <after report>`; `git show --stat` | Only with `docs.split_readme=yes`. "Checks that moved" says `None.`. The commit adds one page and its `docs/README.md` row, and leaves a link table in the README. `EXEC-03` and `TST-04` still find their commands in a root file. `no`: no diff, and the preference recorded |
 | DOC-05 | `grep -n -i 'plain language\|diagram' docs/STYLE_GUIDE.md`; the engine's DOC-05 | Both sections present; no cited line on a page this theme wrote; `PASS`, or `partial` with the counts as debt |
 | DOC-03 | `git ls-files artefacts artifacts` and `git check-ignore -v artefacts/x` | No scratch directory, or nothing tracked and the rule matches |
@@ -396,7 +397,7 @@ Row 19 comes last, after the docs pages and the index exist, so each moved secti
 
 `git revert` the commits, newest first. Revert the prose CI runs and the prose ratchet before the prose check copy.
 Revert the docs CI job and the lint ratchet before the lint config. The instruction-file line goes with any docs
-commit whose page it names. The appended section of row 18 reverts alone. Each README section of row 19 reverts alone:
+commit whose page it names. The appended section of row 4 reverts alone. Each README section of row 19 reverts alone:
 the revert restores the section and removes the page and its index row. The other commits revert alone. This
 playbook moves, untracks and deletes nothing, except the README sections of step 10 and the scratch files in step 7,
 both with owner consent. `git revert` returns them.
