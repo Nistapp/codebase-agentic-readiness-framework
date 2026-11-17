@@ -9,10 +9,13 @@ A bad input exits 1 with a message on stderr and writes nothing. Standard librar
 from __future__ import annotations
 
 import io
+import json
+import os
 import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
+from unittest import mock
 
 from _bootstrap_support import IDENTITY, TEMPLATES, bootstrap, run_main
 
@@ -171,6 +174,31 @@ class TargetTests(unittest.TestCase):
                     self.assertEqual(code, 1)
                     self.assertIn("is not a directory", err)
                     self.assertEqual(target.read_text(encoding="utf-8"), "mine\n")
+
+
+class IdentityDefaultTests(unittest.TestCase):
+    """The author, email and GitHub owner default to git config, and to placeholders without it."""
+
+    def test_without_git_on_path_the_defaults_are_used(self) -> None:
+        # It used to crash with a FileNotFoundError traceback, even with --no-git.
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.dict(os.environ, {"PATH": str(Path(tmp) / "no-bin")}):
+                self.assertEqual(bootstrap.git_config("user.name"), "")
+                code, _, err = run_main([str(Path(tmp) / "out"), "--name", "pkg", "--no-git"])
+            self.assertEqual(code, 0, err)
+            data = json.loads((Path(tmp) / "out" / "package.json").read_text(encoding="utf-8"))
+        self.assertEqual(data["author"], "TODO: author")
+        self.assertEqual(data["repository"]["url"], "git+https://github.com/TODO-owner/pkg.git")
+
+    def test_git_config_values_fill_the_defaults(self) -> None:
+        values = {"user.name": "Grace", "user.email": "grace@example.com"}
+        with tempfile.TemporaryDirectory() as tmp:
+            with mock.patch.object(bootstrap, "git_config", side_effect=lambda key: values.get(key, "")):
+                code, _, err = run_main([str(Path(tmp) / "out"), "--name", "pkg", "--no-git"])
+            self.assertEqual(code, 0, err)
+            data = json.loads((Path(tmp) / "out" / "package.json").read_text(encoding="utf-8"))
+        self.assertEqual(data["author"], "Grace <grace@example.com>")
+        self.assertEqual(data["repository"]["url"], "git+https://github.com/Grace/pkg.git")
 
 
 class DryRunTests(unittest.TestCase):

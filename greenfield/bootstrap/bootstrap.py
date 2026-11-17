@@ -463,7 +463,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def git_config(key: str) -> str:
-    result = subprocess.run(["git", "config", key], text=True, capture_output=True)
+    """A git config value, or "" when it is not set or git is not installed (the caller falls back to a default)."""
+    try:
+        result = subprocess.run(["git", "config", key], text=True, capture_output=True)
+    except OSError:
+        return ""
     return result.stdout.strip() if result.returncode == 0 else ""
 
 
