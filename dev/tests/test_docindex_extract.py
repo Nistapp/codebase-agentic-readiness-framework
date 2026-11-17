@@ -10,18 +10,20 @@ read, the parser's CommonMark rules, and a tree that has grown since).
 
 from __future__ import annotations
 
+import io
 import json
 import os
 import re
 import subprocess
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from typing import Any
 
 import _dev_paths  # noqa: F401  (puts dev/ on sys.path)
 import doc_index
-from docindex import extract, model
+from docindex import cli, extract, model
 from docindex.gitread import GitError, RefTree, WorkTree
 
 SCHEMA: dict[str, Any] = json.loads((doc_index.DEV / "docindex" / "index.schema.json").read_text(encoding="utf-8"))
@@ -276,6 +278,42 @@ class AtRefTest(_Repo):
         self._commit({"a.md": "# A\n"})
         with self.assertRaises(GitError):
             RefTree(self.root, "no-such-ref")
+
+
+class BuildCommandTest(_Repo):
+    """``build`` through :func:`docindex.cli.main`, in-process, on the temporary repository."""
+
+    def _build(self, *argv: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            try:
+                code = cli.main(["build", *argv], _CONFIG, root=self.root)
+            except SystemExit as exc:
+                code = exc.code if isinstance(exc.code, int) else 1
+        return code, out.getvalue(), err.getvalue()
+
+    def test_build_writes_the_index_and_the_summary(self) -> None:
+        self._commit(_FILES)
+        code, out, err = self._build()
+        self.assertEqual(code, 0)
+        self.assertEqual(out, model.to_json(extract.extract(WorkTree(self.root), _CONFIG).index))
+        self.assertEqual(_problems(json.loads(out)), [])
+        self.assertTrue(err.startswith("doc_index.py build: 8 files, 3 Markdown files parsed, 9 sections, "), err)
+        self.assertIn("  docs: 2 Markdown files, 3 sections\n", err)
+        self.assertEqual(self._build()[1], out)
+
+    def test_build_at_an_older_commit(self) -> None:
+        old = self._commit({"a.md": "# Old\n"})
+        self._commit({"a.md": "# New\n"})
+        code, out, _err = self._build("--at", old)
+        self.assertEqual(code, 0)
+        self.assertEqual(set(_nodes(json.loads(out), "section")), {"a.md#old"})
+
+    def test_build_at_a_ref_that_names_no_commit_exits_1(self) -> None:
+        self._commit({"a.md": "# A\n"})
+        code, out, err = self._build("--at", "no-such-ref")
+        self.assertEqual((code, out), (1, ""))
+        self.assertIn("doc_index.py build: ", err)
 
 
 class ConfigRulesTest(unittest.TestCase):

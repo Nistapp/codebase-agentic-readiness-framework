@@ -5,7 +5,7 @@
 
 Five subcommands::
 
-    build                 write the index of the working tree to stdout, as JSON
+    build [--at REF]      write the index of the working tree (or of the tree at REF) to stdout, as JSON
     diff <git-ref>        compare the index at <git-ref> with the index of the working tree
     sweep [--at REF] [--format text|json] [--triggers group1|all]
                           list the normative items of the sweep scope (:mod:`docindex.sweep`)
@@ -17,7 +17,9 @@ Five subcommands::
     verify-quotes <folder> [--at REF]
                           check every quote the reports in <folder> cite (:mod:`docindex.quotes`)
 
-``build`` writes an empty index yet. ``sweep`` reads the tracked files of the working tree, or with ``--at`` the
+``build`` writes the index of :mod:`docindex.extract` (file and section nodes, ``contains`` edges) to stdout, as
+the deterministic JSON of :mod:`docindex.model`, and a summary of the counts (files, and the Markdown files and
+sections per zone) to stderr. ``sweep`` reads the tracked files of the working tree, or with ``--at`` the
 files at a git ref (``git show``, never a checkout); the scope is resolved in that tree, so a scope file that did not
 exist there is skipped. In text mode it writes one block per item to stdout and the item count of each file to
 stderr; in JSON mode the counts are in the JSON.
@@ -46,9 +48,9 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Mapping, NoReturn, Sequence
 
-from . import quotes, recall, sweep, sweep_diff
+from . import extract, quotes, recall, sweep, sweep_diff
 from .gitread import GitError, RefTree, Tree, WorkTree
-from .model import Index, to_json
+from .model import to_json
 
 PROG = "doc_index.py"
 VERIFY_QUOTES = "verify-quotes"
@@ -70,7 +72,8 @@ def _add_verify_arguments(parser: argparse.ArgumentParser) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog=PROG, description="Build, compare, sweep and query the document index.")
     commands = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
-    commands.add_parser("build", help="write the index of the working tree to stdout as JSON")
+    build = commands.add_parser("build", help="write the index of the working tree to stdout as JSON")
+    build.add_argument("--at", metavar="GIT_REF", help="index the files at this git ref, not the working tree")
     diff = commands.add_parser("diff", help="compare the index at a git ref with the working tree")
     diff.add_argument("ref", metavar="GIT_REF", help="the git ref to compare with")
     sweep_parser = commands.add_parser("sweep", help="list the normative items of the sweep scope")
@@ -112,8 +115,15 @@ def _verify_quotes(argv: Sequence[str], root: Path) -> int:
     return 0 if result.passed else 2
 
 
-def _build(config: Mapping[str, Any]) -> int:
-    sys.stdout.write(to_json(Index()))
+def _build(args: argparse.Namespace, config: Mapping[str, Any], root: Path) -> int:
+    try:
+        tree: Tree = RefTree(root, args.at) if args.at is not None else WorkTree(root)
+        result = extract.extract(tree, config)
+    except GitError as exc:
+        print(f"{PROG} build: {exc}", file=sys.stderr)
+        return 1
+    sys.stdout.write(to_json(result.index))
+    sys.stderr.write(extract.summary_text(result.summary, prog=f"{PROG} build"))
     return 0
 
 
@@ -215,7 +225,7 @@ def main(
     parser = build_parser()
     args = parser.parse_args(arguments)
     if args.command == "build":
-        return _build(config or {})
+        return _build(args, config or {}, root or Path.cwd())
     if args.command == "sweep":
         if args.paths is not None and args.diff is None:
             parser.error("sweep: --paths needs --diff")

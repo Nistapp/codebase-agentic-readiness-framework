@@ -270,11 +270,14 @@ class ConfigTest(unittest.TestCase):
 
 
 class CliTest(unittest.TestCase):
-    def test_build_writes_an_empty_valid_index(self) -> None:
+    def test_build_writes_a_valid_index_and_a_summary(self) -> None:
         code, out, err = _run(["build"])
-        self.assertEqual((code, err), (0, ""))
-        self.assertEqual(out, model.to_json(model.Index()))
-        self.assertEqual(_problems(json.loads(out), SCHEMA), [])
+        self.assertEqual(code, 0)
+        index = json.loads(out)
+        self.assertEqual(_problems(index, SCHEMA), [])
+        self.assertTrue(any(node["node"] == "file" for node in index["nodes"]))
+        self.assertTrue(err.startswith("doc_index.py build: "), err)
+        self.assertIn(" Markdown files parsed, ", err)
 
     def test_the_other_commands_are_not_implemented_yet(self) -> None:
         for argv in (["diff", "HEAD"], ["query", "AGENTS.md"]):
@@ -290,10 +293,14 @@ class CliTest(unittest.TestCase):
                 self.assertEqual(_run(argv)[0], 2)
 
     def test_cli_main_without_a_config(self) -> None:
-        out = io.StringIO()
-        with redirect_stdout(out):
-            self.assertEqual(cli.main(["build"]), 0)
-        self.assertEqual(out.getvalue(), model.to_json(model.Index()))
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            self.assertEqual(cli.main(["build"], root=doc_index.REPO), 0)
+        index = json.loads(out.getvalue())
+        self.assertEqual(_problems(index, SCHEMA), [])
+        self.assertTrue(any(node["node"] == "file" for node in index["nodes"]))
+        self.assertTrue(err.getvalue().startswith("doc_index.py build: "), err.getvalue())
+        self.assertIn(" Markdown files parsed, ", err.getvalue())
 
 
 class BoundaryTest(unittest.TestCase):
