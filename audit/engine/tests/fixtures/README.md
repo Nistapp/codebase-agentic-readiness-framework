@@ -42,6 +42,7 @@ fixtures/
   agt-09-no-release/         branches stated, no release boundary -> AGT-09 PARTIAL
   agt-09-ruleset-branch-unnamed/ a ruleset protects staging, AGENTS.md does not name it -> AGT-09 PARTIAL
   agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL
+  agt-13-no-conventions/     no conventions file or section       -> AGT-13 FAIL
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
   agt-05-ok/                 all verbs named and resolved on a runner -> AGT-05 PASS
