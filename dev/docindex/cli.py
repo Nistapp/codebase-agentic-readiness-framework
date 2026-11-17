@@ -3,7 +3,7 @@
 
 """The document index's command line. The project entry point, ``dev/doc_index.py``, calls :func:`main`.
 
-Four subcommands::
+Five subcommands::
 
     build                 write the index of the working tree to stdout, as JSON
     diff <git-ref>        compare the index at <git-ref> with the index of the working tree
@@ -14,6 +14,8 @@ Four subcommands::
     sweep --recall COMMITS_JSON [--format text|json] [--triggers group1|all]
                           measure the removed lines of commits that lie in no normative item (:mod:`docindex.recall`)
     query <address>       show one node and its edges
+    verify-quotes <folder> [--at REF]
+                          check every quote the reports in <folder> cite (:mod:`docindex.quotes`)
 
 ``build`` writes an empty index yet. ``sweep`` reads the tracked files of the working tree, or with ``--at`` the
 files at a git ref (``git show``, never a checkout); the scope is resolved in that tree, so a scope file that did not
@@ -29,6 +31,11 @@ exclude each other; ``--paths`` needs ``--diff``, and ``--recall`` takes no ``--
 ``diff`` and ``query`` print ``not implemented yet`` on stderr and exit 1. A git failure (a ref that names no commit,
 a folder that is not a repository) or an unreadable commits file exits 1. A usage error exits 2 (argparse). Output
 goes to stdout; diagnostics go to stderr.
+
+``verify-quotes`` has its own exit codes: 0 when every quote and citation passes, 2 when one fails, and 1 on a usage
+error (argparse's included, a folder that holds no ``quotes.json``, or with ``--at`` a ref that names no commit). The
+folder is relative to the current folder; the quoted paths are relative to the repository root. It writes each
+failure (id, path, reason) to stderr and a one-line count to stdout.
 """
 
 from __future__ import annotations
@@ -37,13 +44,27 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping, NoReturn, Sequence
 
-from . import recall, sweep, sweep_diff
+from . import quotes, recall, sweep, sweep_diff
 from .gitread import GitError, RefTree, Tree, WorkTree
 from .model import Index, to_json
 
 PROG = "doc_index.py"
+VERIFY_QUOTES = "verify-quotes"
+
+
+class _ExitOneParser(argparse.ArgumentParser):
+    """A parser whose usage error exits 1, not argparse's 2: the quote verifier keeps 2 for a failed quote."""
+
+    def error(self, message: str) -> NoReturn:
+        self.print_usage(sys.stderr)
+        self.exit(1, f"{self.prog}: error: {message}\n")
+
+
+def _add_verify_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument("folder", metavar="FOLDER", help="the report folder: Markdown reports and quotes.json")
+    parser.add_argument("--at", metavar="GIT_REF", help="read the quoted files at this git ref, not the working tree")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -68,7 +89,27 @@ def build_parser() -> argparse.ArgumentParser:
     )
     query = commands.add_parser("query", help="show one node and its edges")
     query.add_argument("address", metavar="ADDRESS", help="a file path, a section address or an ID")
+    verify = commands.add_parser(VERIFY_QUOTES, help="check every quote the reports of a folder cite")
+    _add_verify_arguments(verify)
     return parser
+
+
+def _verify_quotes(argv: Sequence[str], root: Path) -> int:
+    parser = _ExitOneParser(
+        prog=f"{PROG} {VERIFY_QUOTES}", description="Check every quote the reports of a folder cite."
+    )
+    _add_verify_arguments(parser)
+    args = parser.parse_args(list(argv))
+    try:
+        read = quotes.ref_reader(root, args.at) if args.at is not None else quotes.working_tree_reader(root)
+        result = quotes.verify(Path(args.folder), read)
+    except (quotes.UsageError, GitError) as exc:
+        print(f"{PROG} {VERIFY_QUOTES}: {exc}", file=sys.stderr)
+        return 1
+    for failure in result.failures:
+        print(failure.line(), file=sys.stderr)
+    print(result.summary())
+    return 0 if result.passed else 2
 
 
 def _build(config: Mapping[str, Any]) -> int:
@@ -168,8 +209,11 @@ def main(
     when ``None``). ``bundle_sources`` returns the project's bundle sources, the files and folders the sweep scope
     starts from; the entry point reads them, so that this package imports no other ``dev/`` module.
     """
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if arguments[:1] == [VERIFY_QUOTES]:
+        return _verify_quotes(arguments[1:], root or Path.cwd())
     parser = build_parser()
-    args = parser.parse_args(list(sys.argv[1:] if argv is None else argv))
+    args = parser.parse_args(arguments)
     if args.command == "build":
         return _build(config or {})
     if args.command == "sweep":
