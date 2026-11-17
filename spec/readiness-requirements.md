@@ -159,6 +159,18 @@ They link to the formatter or linter configuration and do not copy its settings.
 - **Source:** [greenfield/README.md § File Tree — What Gets Created](../greenfield/README.md#file-tree--what-gets-created)
 - **Checks:** AGT-13
 
+### REQ-SH-063 — Contributing rules written
+
+The contributing file SHOULD tell a contributor how to work on the repository. It points to the setup command and
+does not copy it. It names the gate command and says that CI runs the same command. It states the rules for
+branches, commits and pull requests, and it is the one home for those rules. The contributing file is
+`CONTRIBUTING.md` at the root or under `.github/`, `.gitlab/` or `docs/`.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [greenfield/README.md § Phase 8 — Final Polish](../greenfield/README.md#phase-8--final-polish)
+- **Checks:** none yet
+
 ## Documentation contract
 
 ### REQ-SH-016 — Documentation directory
