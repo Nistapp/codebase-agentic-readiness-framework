@@ -72,6 +72,7 @@ before the first diff.
 | `layout.command_runner` | `per-app`: verbs are listed per app, not at the root |
 | `format.mass_reformat` | `no` (usual): never reflow or reformat the file to make it shorter |
 | `agents_md.create` | `yes` or `no`: create `AGENTS.md` when no instruction file exists (Inputs 9). Asked in Stage 1, because earlier themes write to the file |
+| `agents_md.numbering` | `keep` (default for an existing file): its numbering stays as it is. `nested` (used for a file this playbook creates): Step 13 |
 
 ## Inputs to ask
 
@@ -227,19 +228,40 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     level and style (D18), and keep a word the check reads (`write for`, `communication`, `reporting`). Place it
     after the section `agents_md.pointer_section` names; without that preference, place it before the prohibitions
     section. Start from the template in the greenfield
-    [`AGENTS.md` § 5](../../greenfield/templates/AGENTS.md#5-how-to-write-for-people), five bullets:
+    [`AGENTS.md` § 5](../../greenfield/templates/AGENTS.md#5-how-to-write-for-people). It holds a scope line (5.1,
+    with the link to the long form) and six numbered rules (5.2 to 5.7):
     - the reader: the persona the owner confirmed (Inputs 7);
     - bottom line first;
     - plain language: short sentences (at most 25 words), active voice, one term per meaning;
+    - form: choose the form from the content (numbered rules, tables, diagrams or alerts), and link the style
+      guide's form rules;
     - reports: a status report (done, not done, blocked, next) and a done report (what changed, how it was checked,
       what was not done);
     - decisions: the context, two to four options with pros and cons, a recommendation and the default.
 
     An existing section that already covers one of the three (reader, reports, decisions) gets only the missing
-    bullets. With `agents_md.comm_long_form=yes`, write the long-form file under `docs/`, named in the repository's
+    rules. With `agents_md.comm_long_form=yes`, write the long-form file under `docs/`, named in the repository's
     convention (D18), and link it from the section. Then run the engine's AGT-12.
 12. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
     record the overage as debt. Never shorten by reflowing or deleting the owner's rules.
+13. **Numbering.** Text this playbook writes into a target comes from `greenfield/templates/`. It follows the form
+    rules of the greenfield [style guide](../../greenfield/templates/docs/STYLE_GUIDE.md#31-form-follows-content).
+    Read those rules there and do not copy them here. Then read `agents_md.numbering`:
+    - `keep` (default for an existing file): leave the file's own numbering as it is. Write each new line in the
+      style of the section it joins.
+    - `nested` (used for a file this playbook creates): number the sections, rules and sub-rules in the nested style
+      the style guide names (`## 1.`, `1.1`, `1.1.1`).
+
+    The fourth level follows decision 4.2. Lettered `a.` items end each line but the last with a trailing `\`.
+    Each lettered item is a full sentence that ends in a full stop. A table suits items that share columns.
+14. **Two parsing traps.** The engine reads `AGENTS.md` line by line, so a tidy edit can break a check that passed.
+    - Keep a boundary path and its rule word on one line. `AGT-06` boundaries declared counts a line only when that
+      one line holds a path that exists and a word such as must, never or only. A line break between them hides
+      the rule.
+    - Keep prohibition words out of sections that are not prohibitions. The engine reads any section with three or
+      more lines that hold never, do not or must not as a prohibitions section, whatever its heading. `AGT-07`
+      prohibitions cover the four areas, and the deny-list checks (`CON-01`, `CON-02`), then read that section too.
+      State the rules of other sections in positive form.
 
 ### No instruction file yet
 
@@ -251,9 +273,10 @@ holds the owner's text is an existing file: use the Generic steps. A vendor file
 1. **Skeleton.** The first theme that writes to the instruction file makes this step, often T1
    ([Stage 3, step 11](../SKILL.md#stage-3-apply)). Create `AGENTS.md` at the repository root with the title and
    the six section headings of the [greenfield `AGENTS.md` template](../../greenfield/templates/AGENTS.md), and
-   nothing else. The template is a filled example for one Node project: none of its body text is written into the
-   target. That theme then writes its own lines into the matching section. When T7 starts, the file exists and
-   steps 2 to 4 below fill the rest.
+   nothing else. Number the headings in nested style (`## 1.` to `## 6.`, Step 13): the file is created, so
+   `agents_md.numbering` is `nested`. The template is a filled example for one Node project: none of its body
+   text is written into the target. That theme then writes its own lines into the matching section. When T7
+   starts, the file exists and steps 2 to 4 below fill the rest.
 2. **Fill each section with the Generic step that owns it, one commit per section.** Every fact comes from the
    repository, never from the template. A line you cannot make true stays out, and no `<placeholder>` or `TODO`
    remains in the file.
