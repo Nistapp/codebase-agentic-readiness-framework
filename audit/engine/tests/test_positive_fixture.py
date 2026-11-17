@@ -106,7 +106,7 @@ class PositiveFixtureTests(unittest.TestCase):
 
         # Informational checks are still reported, not dropped from the report.
         reported = {c["id"] for c in report["checks"]}
-        informational = {"HYG-%02d" % n for n in range(1, 12)} | {"NAV-04", "NAV-05"}
+        informational = {"HYG-%02d" % n for n in range(1, 14) if n != 12} | {"NAV-04", "NAV-05"}
         self.assertTrue(informational <= reported, f"informational checks missing: {informational - reported}")
 
 

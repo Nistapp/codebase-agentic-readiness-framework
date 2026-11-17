@@ -197,6 +197,10 @@ updates, license, branch protection. These are how a *team* operates. They are r
 engagement needs the whole picture, and left numberless because an agent does not read any of them before
 deciding what to edit.
 
+| Check | Why it matters | Failure mode without it |
+|---|---|---|
+| `HYG-13` Contributing rules written | A contributor learns the setup, the gate and the Git rules from one file | Each contributor guesses the branch name, the commit form and the gate; review and CI catch it late |
+
 One exception bridges the two: where CODEOWNERS names paths that the audit would also place on a deny list,
 that consistency is reported as a note — review routing and scope lockdown should not disagree.
 

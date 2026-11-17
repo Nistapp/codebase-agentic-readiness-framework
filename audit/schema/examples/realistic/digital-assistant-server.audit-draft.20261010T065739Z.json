@@ -7,7 +7,7 @@
       "revision": "7eedf23c99c3",
       "install": "checkout"
     },
-    "catalogue_version": "0.8.0",
+    "catalogue_version": "0.9.0",
     "engine": {
       "name": "python-agentic-audit",
       "version": "0.1.0",
@@ -1573,6 +1573,18 @@
       "phase": 1,
       "severity": "DEGRADER",
       "scored": true,
+      "method": "automated",
+      "verdict": "UNKNOWN",
+      "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",
+      "evidence": [],
+      "searches": []
+    },
+    {
+      "id": "HYG-13",
+      "title": "Contributing rules written",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
       "method": "automated",
       "verdict": "UNKNOWN",
       "summary": "The engine did not run this check: its ruleset is older than the catalogue. Scan again with a newer engine.",

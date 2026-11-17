@@ -169,7 +169,7 @@ branches, commits and pull requests, and it is the one home for those rules. The
 - **Phase:** 1
 - **Verification:** automated
 - **Source:** [greenfield/README.md § Phase 8 — Final Polish](../greenfield/README.md#phase-8--final-polish)
-- **Checks:** none yet
+- **Checks:** HYG-13
 
 ## Documentation contract
 

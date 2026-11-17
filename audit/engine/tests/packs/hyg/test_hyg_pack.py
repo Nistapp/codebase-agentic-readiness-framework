@@ -29,7 +29,8 @@ from audit.evaluate import AuditResult, CheckOutcome  # noqa: E402
 from audit.findings import Severity, Verdict  # noqa: E402
 from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 
-HYG_IDS = tuple(f"HYG-{n:02d}" for n in range(1, 12))
+#: Every engine HYG check; HYG-12 is reserved for a planned release-provenance check.
+HYG_IDS = tuple(f"HYG-{n:02d}" for n in range(1, 14) if n != 12)
 
 #: fixture directory -> {check id: expected verdict}
 FIXTURES: dict[str, dict[str, str]] = {
@@ -38,6 +39,7 @@ FIXTURES: dict[str, dict[str, str]] = {
     "hyg-09-target-branch-trap": {"HYG-09": "PARTIAL"},
     "hyg-10-no-license": {"HYG-01": "PASS", "HYG-10": "FAIL"},
     "hyg-11-no-source-branch-check": {"HYG-11": "PARTIAL"},
+    "hyg-13-thin-contributing": {"HYG-05": "PASS", "HYG-13": "FAIL"},
     "hyg-minimal": {
         "HYG-01": "FAIL",
         "HYG-02": "FAIL",
@@ -50,6 +52,7 @@ FIXTURES: dict[str, dict[str, str]] = {
         "HYG-09": "FAIL",
         "HYG-10": "FAIL",
         "HYG-11": "UNKNOWN",
+        "HYG-13": "UNKNOWN",
     },
 }
 
@@ -81,7 +84,7 @@ class HygFixtureTests(unittest.TestCase):
 
 
 class HygCatalogueTests(unittest.TestCase):
-    def test_all_eleven_are_implemented_and_informational(self):
+    def test_all_twelve_are_implemented_and_informational(self):
         for check in HYG_IDS:
             with self.subTest(check=check):
                 spec = REGISTRY_BY_ID[check]
@@ -93,7 +96,7 @@ class HygCatalogueTests(unittest.TestCase):
         reported = {c["id"] for c in report["checks"]}
         for check in HYG_IDS:
             self.assertIn(check, reported)
-        # 75 catalogued, 14 informational or emitter-only ⇒ 61 scoreable (CON-01 is scored since ruleset 2026-10-11.1).
+        # 76 catalogued, 15 informational or emitter-only ⇒ 61 scoreable (CON-01 is scored since ruleset 2026-10-11.1).
         self.assertEqual(report["summary"]["checks_scoreable"], 61)
 
 

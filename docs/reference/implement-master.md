@@ -488,6 +488,8 @@ Full playbook: [`register-index.md`](../../implement/playbooks/register-index.md
   playbook reads it as an input.
 - [`CON-04` Draft allow/deny emitted](audit-master.md#con-04-draft-allowdeny-emitted): the audit emits it, and a
   playbook reads it as an input.
+- [`HYG-13` Contributing rules written](audit-master.md#hyg-13-contributing-rules-written): the audit emits it, and a
+  playbook reads it as an input.
 
 ## Read more
 

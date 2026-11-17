@@ -6,7 +6,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 
 ## Checks to requirements
 
-77 checks: 75 of the audit engine and 2 that only an agent runs. 63 scored checks trace to at least one requirement. The other 14 are informational or an emitter and trace to none.
+78 checks: 76 of the audit engine and 2 that only an agent runs. 63 scored checks trace to at least one requirement. Of the other 15, informational or an emitter, `HYG-13` traces to one requirement and the rest trace to none.
 
 | Check | Title | Severity | Scored | Requirements |
 |---|---|---|---|---|
@@ -87,6 +87,7 @@ Check IDs and severities are those of the [check catalogue](../audit/catalogue.j
 | `HYG-09` | Dependency update automation configured | COSMETIC | no (informational) | none: informational, reported and never scored |
 | `HYG-10` | License present | COSMETIC | no (informational) | none: informational, reported and never scored |
 | `HYG-11` | Branch protection declared as code | COSMETIC | no (informational) | none: informational, reported and never scored |
+| `HYG-13` | Contributing rules written | COSMETIC | no (informational) | [REQ-SH-063](readiness-requirements.md#req-sh-063--contributing-rules-written) |
 
 ## Requirements without a check
 

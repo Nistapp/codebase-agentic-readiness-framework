@@ -1,6 +1,6 @@
 {
-  "catalogue_version": "0.8.0",
-  "fingerprint": "7415748db09f19d5",
+  "catalogue_version": "0.9.0",
+  "fingerprint": "c82e8c1e72b64429",
   "families": [
     {
       "id": "IDX",
@@ -1339,6 +1339,22 @@
       "playbooks": [
         "add-repo-hygiene"
       ]
+    },
+    {
+      "id": "HYG-13",
+      "family": "HYG",
+      "title": "Contributing rules written",
+      "phase": 1,
+      "severity": "COSMETIC",
+      "scored": false,
+      "method": "automated",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-063"
+      ],
+      "engine_id": "HYG-13",
+      "since_ruleset": "2026-11-17.3",
+      "playbooks": []
     }
   ]
 }

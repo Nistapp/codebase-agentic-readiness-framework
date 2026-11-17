@@ -17,8 +17,8 @@ checks (`TOOL-01`…`06`) are exercised by `../packs/tool/test_tool_pack.py`; th
 `../packs/ci/test_ci_pack.py`; the `TST` checks (`TST-01`…`05`) by `../packs/tst/test_tst_pack.py`; the `BASE` checks
 (`BASE-01`…`04`) by `../packs/base/test_base_pack.py`, with the ratchet exercised end to end by
 `../test_ratchet.py`; the `CON` checks (`CON-02`, `CON-03`) plus the `CON-04` emitter by
-`../packs/con/test_con_pack.py`; and the informational `HYG` checks (`HYG-01`…`11`) by
-`../packs/hyg/test_hyg_pack.py`.
+`../packs/con/test_con_pack.py`; and the informational `HYG` checks (`HYG-01`…`11`, `13`) by
+`../packs/hyg/test_hyg_pack.py`, with `HYG-13`'s other verdicts in `../packs/hyg/test_hyg13_contributing.py`.
 
 A fixture is correct for the runner it names, not only for the engine. `../packs/cmd/test_make_fixtures.py` runs
 `make -n -f <fixture>/Makefile check` on every fixture that has a `Makefile`, when `make` is installed, and requires
@@ -136,7 +136,8 @@ fixtures/
   hyg-09-target-branch-trap/ the npm entry sets target-branch and ignore -> HYG-09 PARTIAL
   hyg-10-no-license/         real README, no LICENSE at the root         -> HYG-10 FAIL
   hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
-  hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 UNKNOWN
+  hyg-13-thin-contributing/  CONTRIBUTING.md with no setup pointer, gate or workflow rules -> HYG-05 PASS, HYG-13 FAIL
+  hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 and HYG-13 UNKNOWN
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test
 ```
 

@@ -65,7 +65,7 @@ class RegistryTests(unittest.TestCase):
 
     def test_there_are_sixty_one_scoreable_checks_and_con_01_is_one_of_them(self):
         self.assertEqual(len(scoreable()), 61)
-        self.assertEqual(len(REGISTRY), 75)
+        self.assertEqual(len(REGISTRY), 76)
         con_01 = REGISTRY_BY_ID["CON-01"]
         self.assertEqual(
             (con_01.scored, con_01.status, con_01.severity, con_01.tier), (True, "implemented", Severity.BLOCKER, "B")

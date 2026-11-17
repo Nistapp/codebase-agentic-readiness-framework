@@ -90,7 +90,7 @@ THEMES: tuple[tuple[str, str, tuple[str, ...]], ...] = (
     ("T5", "Tests and baselines", _span("TST", 1, 5) + _span("BASE", 1, 4)),
     ("T6", "Docs and navigation", _span("DOC", 1, 5) + _span("NAV", 1, 5)),
     ("T7", "AGENTS.md and governance", _span("AGT", 1, 13) + _span("CON", 1, 4)),
-    ("T8", "Hygiene and index", _span("HYG", 1, 11) + _span("IDX", 1, 3)),
+    ("T8", "Hygiene and index", _span("HYG", 1, 13, skip=(12,)) + _span("IDX", 1, 3)),
 )
 CHECK_THEME: dict[str, str] = {check: theme for theme, _, checks in THEMES for check in checks}
 THEME_IDS = tuple(theme for theme, _, _ in THEMES)

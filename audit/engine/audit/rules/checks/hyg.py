@@ -5,7 +5,8 @@
 
 Anchor: `docs/framework/phased-approach.md` § Phase 1: Agentic Bootstrap.
 
-Implemented here: `HYG-01` … `HYG-11`. Every check reads its artifact through
+Implemented here: `HYG-01` … `HYG-11` and `HYG-13` (`HYG-12` is reserved for a planned release-provenance
+check). Every check reads its artifact through
 :class:`audit.scan.Inventory`; none writes to the target and none runs a command in the target's
 toolchain — `HYG-07` reads git metadata, read-only, through :func:`_git_output`.
 
@@ -13,7 +14,8 @@ Verdict contract for this pack — **absent artifacts are `FAIL`**. These checks
 (`scored=False` in the registry), so a `FAIL` is a reported fact and does not move the readiness
 number. ``UNKNOWN`` is reserved for "the artifact is present but its quality cannot be settled":
 an unreadable README, an undatable changelog, or an unrecognisable CI provider for branch
-protection. It is never used merely because an artifact is absent.
+protection. It is never used merely because an artifact is absent, with one exception: `HYG-13` reads the content
+of the file whose presence `HYG-05` reports, so with no such file it is ``UNKNOWN`` and `HYG-05` owns the finding.
 
 * **HYG-01** — a root `README*` is the evidence. Present and at least
   :data:`MIN_README_CHARS` characters of body, free of a :data:`STUB_MARKERS` marker and not a bare
@@ -52,6 +54,11 @@ protection. It is never used merely because an artifact is absent.
   records the rules without declaring them: `PARTIAL`. A ruleset file that is not a ruleset is ``UNKNOWN``. None
   found is `FAIL` when the CI provider offers config-as-code (GitHub, GitLab); otherwise ``UNKNOWN``, because
   whether protection *can* be declared as code is provider-dependent. Live settings are never read (no network).
+* **HYG-13** — the content of the `CONTRIBUTING*` documents `HYG-05` finds, read for three items (P9.3.3 a to c):
+  (a) a pointer to the setup command, a Markdown link to `README.md` or `AGENTS.md` or a named setup command
+  (:data:`_SETUP_LINK_RE`, :data:`_SETUP_COMMAND_RE`); (b) the gate command (:data:`_GATE_COMMAND_RE`) and a paragraph
+  that names CI and says "same" or names the gate command; (c) the words for branches, commits and pull requests
+  (:data:`_WORKFLOW_SUBJECTS`). All three is `PASS`, one or two `PARTIAL`, none `FAIL`; no document is ``UNKNOWN``.
 
 Presence is repository-level (ADR-0008): a hygiene file counts at the root or under `.github/`, `.gitlab/` or
 `docs/` (:func:`_repository_level`), never in a component's or a template's directory. Carried data
@@ -869,6 +876,152 @@ def check_hyg11(*, spec, target, inventory, stack, components, session) -> Check
     )
 
 
+# ===========================================================================
+# HYG-13 — contributing rules written
+# ===========================================================================
+
+
+#: (a) A Markdown link to the root README or AGENTS file, where the setup command lives: `[README.md](README.md)`,
+#: `[setup](../README.md#development)`.
+_SETUP_LINK_RE = re.compile(r"(?i)\]\(\s*/?(?:\.{1,2}/)*(?:readme|agents)\.md(?:#[^)\s]*)?\s*\)")
+
+#: (a) A named setup command: `make setup`, `npm ci`, `pip install`, `uv sync`, `./scripts/bootstrap.sh`.
+_SETUP_COMMAND_RE = re.compile(
+    r"(?i)(?<![\w-])(?:"
+    r"(?:make|just|task|mise run|(?:npm|pnpm|yarn|bun) run) (?:setup|bootstrap|install|init)"
+    r"|(?:npm|pnpm|yarn|bun) (?:install|ci)"
+    r"|(?:python3? -m )?pip install|uv sync|poetry install|pipenv install|bundle install|go mod download"
+    r"|(?:\./)?(?:gradlew|mvnw) (?:build|assemble|install)|mvn install"
+    r"|(?:\./)?(?:scripts?|bin)/(?:setup|bootstrap)"
+    r")(?![\w-])"
+)
+
+#: (b) The gate command: a `check`, `verify`, `gate` or `ci` verb on a task runner: `make check`, `npm run check`,
+#: `./gradlew check`, `mvn verify`.
+_GATE_COMMAND_RE = re.compile(
+    r"(?i)(?<![\w-])(?:make|just|task|mise run|(?:npm|pnpm|yarn|bun) run|pnpm|yarn|nox -s|tox -e|hatch run|poe"
+    r"|(?:\./)?gradlew|(?:\./)?mvnw|mvn|gradle) (?:check|verify|gate|ci)(?![\w-])"
+)
+
+#: (b) A word that names CI. `CI` is upper case only, so "ci" in a command does not count.
+_CI_WORD_RE = re.compile(r"\bCI\b|(?i:\bcontinuous integration\b|\bgithub actions\b|\bgitlab ci\b|\bpipelines?\b)")
+
+#: (b) The word that says CI runs the same command as the contributor.
+_SAME_RE = re.compile(r"(?i)\bsame\b")
+
+#: (c) The three subjects whose rules the contributing file holds, each with the words that show it.
+_WORKFLOW_SUBJECTS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("branches", re.compile(r"(?i)\bbranch(?:es|ing)?\b")),
+    ("commits", re.compile(r"(?i)\bcommit(?:s|ted|ting)?\b")),
+    ("pull requests", re.compile(r"(?i:\bpull[ -]requests?\b|\bmerge requests?\b)|\bPRs?\b|\bMRs?\b")),
+)
+
+#: The three items of P9.3.3 a to c, in order, as the check names them.
+_CONTRIBUTING_ITEMS = (
+    "a pointer to the setup command",
+    "the gate command, and that CI runs the same",
+    "the rules for branches, commits and pull requests",
+)
+
+
+def _paragraphs(text: str) -> list[tuple[int, str]]:
+    """Each paragraph of ``text`` (lines between blank lines) with the number of its first line."""
+    out: list[tuple[int, str]] = []
+    start = 0
+    lines: list[str] = []
+    for number, line in enumerate(text.splitlines(), start=1):
+        if line.strip():
+            if not lines:
+                start = number
+            lines.append(line)
+        elif lines:
+            out.append((start, "\n".join(lines)))
+            lines = []
+    if lines:
+        out.append((start, "\n".join(lines)))
+    return out
+
+
+def _first_line(text: str, pattern: re.Pattern[str]) -> int | None:
+    """The 1-based line of the first match of ``pattern`` in ``text``, or ``None``."""
+    match = pattern.search(text)
+    return None if match is None else text.count("\n", 0, match.start()) + 1
+
+
+def _ci_runs_the_gate(text: str) -> int | None:
+    """The line of the first CI word in a paragraph that also says "same" or names the gate command."""
+    for start, paragraph in _paragraphs(text):
+        line = _first_line(paragraph, _CI_WORD_RE)
+        if line and (_SAME_RE.search(paragraph) or _GATE_COMMAND_RE.search(paragraph)):
+            return start + line - 1
+    return None
+
+
+def _contributing_items(rel: str, text: str) -> dict[int, list[Evidence]]:
+    """For each item of P9.3.3 a to c (0, 1, 2) that ``text`` shows, the evidence lines that show it."""
+    found: dict[int, list[Evidence]] = {}
+    setup = _first_line(text, _SETUP_LINK_RE) or _first_line(text, _SETUP_COMMAND_RE)
+    if setup:
+        found[0] = [Evidence(rel, line=setup, note="setup pointer")]
+    gate = _first_line(text, _GATE_COMMAND_RE)
+    ci_line = _ci_runs_the_gate(text)
+    if gate and ci_line:
+        found[1] = [Evidence(rel, line=gate, note="gate command"), Evidence(rel, line=ci_line, note="CI runs it")]
+    subjects = [(label, _first_line(text, pattern)) for label, pattern in _WORKFLOW_SUBJECTS]
+    if all(line for _, line in subjects):
+        found[2] = [Evidence(rel, line=line, note=label) for label, line in subjects if line]
+    return found
+
+
+def check_hyg13(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
+    found = _named_documents(inventory, ("contributing",))
+    if not found:
+        return _outcome(
+            spec,
+            Verdict.UNKNOWN,
+            "no CONTRIBUTING document to read; HYG-05 (CONTRIBUTING present) owns that finding",
+        )
+    texts = [(rel, text) for rel in found if (text := inventory.read(rel)) is not None]
+    if not texts:
+        return _outcome(
+            spec, Verdict.UNKNOWN, f"{', '.join(found)} present but not readable as text (binary or oversized)"
+        )
+
+    shown: dict[int, list[Evidence]] = {}
+    for rel, text in texts:
+        for item, evidence in _contributing_items(rel, text).items():
+            shown.setdefault(item, evidence)
+    where = ", ".join(rel for rel, _ in texts)
+    held = [_CONTRIBUTING_ITEMS[i] for i in sorted(shown)]
+    missing = [label for i, label in enumerate(_CONTRIBUTING_ITEMS) if i not in shown]
+    if not missing:
+        lines = "; ".join(f"{e.note} at {e.path}:{e.line}" for i in sorted(shown) for e in shown[i])
+        return _outcome(spec, Verdict.PASS, f"{where} holds {', '.join(held)} ({lines})")
+
+    verdict = Verdict.PARTIAL if shown else Verdict.FAIL
+    because = f"{where} does not hold {'; '.join(missing)}"
+    evidence = [e for i in sorted(shown) for e in shown[i]]
+    evidence += [Evidence(rel, line=1, note="contributing file") for rel, _ in texts]
+    return _outcome(
+        spec,
+        verdict,
+        f"{where} holds {len(shown)} of 3 contributing items; missing: {'; '.join(missing)}",
+        [
+            _finding(
+                spec,
+                verdict,
+                "learn how to set up, check and propose a change from the contributing file",
+                because,
+                evidence=evidence,
+                path=texts[0][0],
+                remediation="Complete the contributing file: link the setup command in README.md or AGENTS.md "
+                "rather than copy it, name the gate command and say that CI runs the same command, and state "
+                "the rules for branches, commits and pull requests (the greenfield CONTRIBUTING.md is a model).",
+            ),
+        ],
+    )
+
+
 IMPLEMENTATIONS = {
     "HYG-01": check_hyg01,
     "HYG-02": check_hyg02,
@@ -881,4 +1034,5 @@ IMPLEMENTATIONS = {
     "HYG-09": check_hyg09,
     "HYG-10": check_hyg10,
     "HYG-11": check_hyg11,
+    "HYG-13": check_hyg13,
 }

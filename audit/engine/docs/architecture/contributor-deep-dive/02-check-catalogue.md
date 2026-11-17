@@ -34,7 +34,8 @@
 | `SEC` Security hygiene | 3 | — | 3 | — |
 | **Total catalogued** | **62** | **17** | **42** | **2** |
 
-Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
+Plus **14 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`, `HYG-13`), reported and never scored.
+`HYG-12` is reserved for a planned release-provenance check; ruleset `2026-11-17.3` added `HYG-13`.
 
 Of the 62, `CON-04` is an emitter rather than a check, leaving **61 scoreable checks** in v1. (`CON-01` carried weight 0
 until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
@@ -231,6 +232,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `HYG-09` | Dependency update automation | A | Dependabot or Renovate configured, an entry for each detected ecosystem, and no `target-branch` beside `ignore` or `groups` | Implemented |
 | `HYG-10` | License | A | A license file exists | Implemented |
 | `HYG-11` | Branch protection | B | Protection declared by configuration-as-code where the provider allows (ruleset files, the Settings app, Terraform), plus a source-branch check for a two-branch model | Implemented |
+| `HYG-13` | Contributing rules written | B | The `CONTRIBUTING*` documents `HYG-05` finds point to the setup command (a link to `README.md` or `AGENTS.md`, or a named setup command), name the gate command with a paragraph saying CI runs the same, and name branches, commits and pull requests; one or two of the three is `PARTIAL`, none `FAIL`, no document `UNKNOWN` | Implemented |
 
 ---
 

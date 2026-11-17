@@ -249,6 +249,16 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("HYG-09", "Dependency update automation configured", "A", _S.COSMETIC, scored=False),
     _c("HYG-10", "License present", "A", _S.COSMETIC, scored=False),
     _c("HYG-11", "Branch protection declared as code", "B", _S.COSMETIC, scored=False),
+    _c(
+        "HYG-13",
+        "Contributing rules written",
+        "B",
+        _S.COSMETIC,
+        scored=False,
+        rule="The CONTRIBUTING document (root, .github/, .gitlab/ or docs/) points to the setup command, names the gate "
+        "command and says CI runs the same, and states the rules for branches, commits and pull requests; no "
+        "CONTRIBUTING document is UNKNOWN, because HYG-05 owns that finding.",
+    ),
 )
 
 
