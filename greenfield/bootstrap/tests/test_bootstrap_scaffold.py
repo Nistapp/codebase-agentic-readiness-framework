@@ -131,5 +131,31 @@ class OptionalGroupTests(unittest.TestCase):
         )
 
 
+class InputTextTests(unittest.TestCase):
+    """Free text from the command line lands in the generated files as written."""
+
+    def render(self, *flags: str) -> dict[str, object]:
+        with tempfile.TemporaryDirectory() as tmp:
+            target = Path(tmp) / "pkg"
+            code, _, err = run_main([str(target), "--no-git", "--github-owner", "ada", *flags])
+            self.assertEqual(code, 0, err)
+            data = json.loads((target / "package.json").read_text(encoding="utf-8"))
+        assert isinstance(data, dict)
+        return data
+
+    def test_quotes_and_backslashes_keep_package_json_valid(self) -> None:
+        # A double quote or a backslash used to break package.json with a JSONDecodeError traceback.
+        description = 'Parses "quoted" text and C:\\paths\\ too'
+        author = 'Bob "the Builder" O\'Neil'
+        data = self.render("--description", description, "--author", author, "--email", "bob@example.com")
+        self.assertEqual(data["description"], description)
+        self.assertEqual(data["author"], f"{author} <bob@example.com>")
+
+    def test_non_ascii_text_is_kept(self) -> None:
+        data = self.render("--description", "Café ✓ 日本", "--author", "José", "--email", "jo@example.com")
+        self.assertEqual(data["description"], "Café ✓ 日本")
+        self.assertEqual(data["author"], "José <jo@example.com>")
+
+
 if __name__ == "__main__":
     unittest.main()

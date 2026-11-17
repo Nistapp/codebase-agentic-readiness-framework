@@ -239,6 +239,11 @@ def apply_substitutions(text: str, subs: dict[str, str], allow_date: bool) -> st
     return text
 
 
+def json_escaped(subs: dict[str, str]) -> dict[str, str]:
+    """The substitutions, each value escaped for use inside a JSON string."""
+    return {token: json.dumps(value, ensure_ascii=False)[1:-1] for token, value in subs.items()}
+
+
 def write_project(args: argparse.Namespace, templates: Path, plan: list[tuple[Path, str]]) -> list[str]:
     target: Path = args.target
     written: list[str] = []
@@ -254,9 +259,11 @@ def write_project(args: argparse.Namespace, templates: Path, plan: list[tuple[Pa
             shutil.copy2(src, dest)
             written.append(rel)
             continue
-        rendered = raw if exempt else apply_substitutions(raw, subs, allow_date=rel.startswith("docs/architecture/"))
         if rel == "package.json":
-            rendered = finalise_package_json(rendered, args)
+            # The values land inside JSON strings, so a quote or a backslash in them is escaped.
+            rendered = finalise_package_json(apply_substitutions(raw, json_escaped(subs), allow_date=False), args)
+        else:
+            rendered = raw if exempt else apply_substitutions(raw, subs, allow_date=rel.startswith("docs/architecture/"))
         dest.write_text(rendered, encoding="utf-8")
         if rel in EXECUTABLE_FILES:
             dest.chmod(0o755)
