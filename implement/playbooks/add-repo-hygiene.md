@@ -340,8 +340,8 @@ the policy files, and for nothing else:
 Profile: [`stacks/java.md`](../../audit/stacks/java.md). The README and CONTRIBUTING name the wrapper commands (`./gradlew
 ...`) and the Java version the toolchain needs. For `HYG-13` (Step 9), the gate is usually `./gradlew check` (the
 engine reads it), and the CI sentence names that task when the workflow runs it. CODEOWNERS paths follow the Gradle
-layout (`/src/main/`, `/src/test/`, `/scripts/ci/`). Release tools in this stack are usually release-please (`simple` type, root) or the Gradle release
-plugin; the release page says which tags the tool creates.
+layout (`/src/main/`, `/src/test/`, `/scripts/ci/`). Release tools in this stack are usually release-please (`simple`
+type, root) or the Gradle release plugin; the release page says which tags the tool creates.
 
 ### Node (npm, NestJS, React) with several components
 
