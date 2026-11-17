@@ -3,7 +3,7 @@
 bootstrap.py — scaffold an agentic-ready npm package skeleton from the framework templates.
 
 Reads the template set from the Codebase Agentic Readiness Framework
-(greenfield-bootstrap/templates/**) and writes a new project into an empty directory:
+(greenfield/templates/**) and writes a new project into an empty directory:
 TypeScript strict harness, AGENTS.md governance, docs/STYLE_GUIDE.md contract, GitHub
 CI/CD + release automation, husky hooks, and the standardized six-verb command surface.
 
@@ -34,7 +34,7 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_TEMPLATES = (
     SCRIPT_DIR.parent.parent
     / "codebase-agentic-readiness-framework"
-    / "greenfield-bootstrap"
+    / "greenfield"
     / "templates"
 )
 
@@ -62,6 +62,7 @@ SUBSTITUTION_EXEMPT_PREFIXES = ("docs/templates/",)
 # verified after writing; this list catches silent template-set regressions.
 MANDATORY_FILES = (
     "AGENTS.md",
+    "CONVENTIONS.md",
     "README.md",
     "CONTRIBUTING.md",
     "CHANGELOG.md",
@@ -88,14 +89,17 @@ MANDATORY_FILES = (
     ".github/workflows/enforce-dev-base.yml",
     ".github/workflows/release-and-sync.yml",
     "docs/STYLE_GUIDE.md",
+    "docs/COMMUNICATION_RULES.md",
     "docs/architecture/README.md",
     "docs/architecture/glossary.md",
     "docs/architecture/adrs/0001-initial-architecture.md",
     "docs/templates/adr-template.md",
     "docs/templates/architecture-doc-template.md",
     "docs/templates/how-to-template.md",
+    "docs/templates/reference-template.md",
     "src/core/interfaces.ts",
     "src/core/index.ts",
+    "scripts/docs-prose.mjs",
     "artefacts/.gitkeep",
     "specs/.gitkeep",
 )

@@ -6,7 +6,7 @@ as **Decision → Alternatives considered → Reason**, in that order.
 **Status: implemented and verified end to end against the real npm registry** — see
 § Verification record.
 
-Source of truth for file content: `~/Projects/codebase-agentic-readiness-framework/greenfield-bootstrap/templates/**`.
+Source of truth for file content: `~/Projects/codebase-agentic-readiness-framework/greenfield/templates/**`.
 
 ---
 
@@ -70,7 +70,7 @@ LLM job and stays on the roadmap; config is not.
 
 ## D4. Template content is never duplicated in the script
 
-**Decision:** the script reads `greenfield-bootstrap/templates/**` at runtime and writes the
+**Decision:** the script reads `greenfield/templates/**` at runtime and writes the
 target. It contains no embedded file bodies.
 
 **Alternatives considered:**
