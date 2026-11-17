@@ -147,6 +147,18 @@ reports its work, and how it asks a person for a decision. They sit in a section
 - **Source:** [greenfield/README.md § 5.2 Templates & Guides](../greenfield/README.md#52-templates--guides)
 - **Checks:** AGT-12
 
+### REQ-SH-062 — Coding conventions written
+
+The repository SHOULD write down its code conventions, in a conventions file or in a conventions section of
+`AGENTS.md` or `CONTRIBUTING.md`. The conventions cover naming, layering, error handling and logging, and testing.
+They link to the formatter or linter configuration and do not copy its settings. They hold no stub word, such as
+`TBD` or `TODO`. `docs/STYLE_GUIDE.md` sets the rules for documentation, so it does not count as code conventions.
+
+- **Phase:** 1
+- **Verification:** automated
+- **Source:** [greenfield/README.md § File Tree — What Gets Created](../greenfield/README.md#file-tree--what-gets-created)
+- **Checks:** none yet
+
 ## Documentation contract
 
 ### REQ-SH-016 — Documentation directory
