@@ -15,7 +15,7 @@ not moved.
 | Check | Rubric | What this playbook does for it |
 |---|---|---|
 | DOC-01 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-01--docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home |
-| DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
+| DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` with the form rules and one line in the instruction file that names it. An existing guide gets the form rules only by the owner's choice (Steps 9) |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
 | DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner picks one of three permissive licences for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
@@ -34,10 +34,11 @@ They stay here so a repository that has one has a procedure, and so the re-audit
   worktree, one item at a time) and [Stage 4](../SKILL.md#stage-4-close-the-theme) (engine re-check, gate, ending).
 - Preferences this playbook reads, when present: `format.mass_reformat` (a `no` means every docs check is a
   baseline or ratchet, never a reformat; for prose, `yes` changes nothing, see Do-not-do), `extra.prose-rewrite`
-  (the pages the owner named for a prose rewrite), `layout.command_runner`, `ci.edits_authorised` (needed to add the docs
-  CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `docs.prose_check` and
-  `docs.prose_check_licence` (Inputs 6), `docs.language` (the language
-  of the docs; see [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask), Inputs 7), `extra.*`.
+  (the pages the owner named for a prose rewrite), `layout.command_runner`, `ci.edits_authorised` (needed to add the
+  docs CI job), `agents_md.pointer_section` (where the one instruction-file line goes), `docs.prose_check` and
+  `docs.prose_check_licence` (Inputs 6), `docs.style_guide_update` (`ask`, `yes` or `no`; default `ask`; Inputs 8),
+  `docs.language` (the language of the docs; see [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask), Inputs 7),
+  `extra.*`.
 - The `DOC-05` steps run on a confirmed `DOC-05` finding. They also run when the owner asked for them by name in
   Stage 1 (`extra.doc-05`); that change has no finding for the re-audit to confirm, so say so in the pull request,
   under "What changed".
@@ -77,6 +78,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    [`docs/STYLE_GUIDE.md`](../../greenfield/templates/docs/STYLE_GUIDE.md) (Diátaxis) to one page. The alternative
    (the owner's own house rules) is allowed only when those rules are not private to a different repository.
    Either way, the guide gains the "Plain language" and "Diagrams" sections (Steps 3) when DOC-05 is in the theme.
+   A new guide also carries the form rules and the README landing-page rule (Steps 3). A guide that already exists
+   gets them only by the owner's answer to Inputs 8.
 3. **First ADRs.** Ask which two or three existing decisions to record. With no owner preference, pick them
    from the code and the existing docs, and say why you picked them. Good candidates: a schema-migration tool, a
    search or storage engine, an authentication or tenant-selection mechanism, a branch model.
@@ -99,6 +102,11 @@ They stay here so a repository that has one has a procedure, and so the re-audit
 7. **NAV-03 findings.** The owner chooses per path: document (default), or skip as by-design. Moving or
    untracking a file is a separate owner decision and, for generated output, belongs to the
    [`untrack-generated`](untrack-generated.md) playbook.
+8. **Form rules for an existing style guide** (`docs.style_guide_update`). Ask only when `docs/STYLE_GUIDE.md` already
+   exists. One question, as a [decision request](../../audit/prompts/talking-to-the-user.md#decision-requests): append
+   one section with the form rules to the owner's guide? a. `ask` (default): show the section in Steps 9, then record
+   the owner's answer as `yes` or `no`; b. `yes`: append it in one commit; c. `no`: record the answer and change
+   nothing. Record the answer with `pref set docs.style_guide_update`.
 
 ## Steps
 
@@ -136,6 +144,14 @@ They stay here so a repository that has one has a procedure, and so the re-audit
      `UNKNOWN`; record the item `partial`.
    - Every page this theme writes follows the rules: the index, the style guide, the ADR policy page, the ADRs and
      the architecture page. Re-run the engine before the theme closes: `DOC-05` cites no line on those pages.
+
+   **Form rules and the README landing page (a new style guide).** A guide that this step writes also carries two more
+   greenfield sections:
+   [§ 3.1 Form follows content](../../greenfield/templates/docs/STYLE_GUIDE.md#31-form-follows-content) and
+   [§ 4.1 A README is a landing page](../../greenfield/templates/docs/STYLE_GUIDE.md#41-a-readme-is-a-landing-page).
+   Adapt them to the target's heading style and docs layout. Keep the rule that the setup command and the
+   single-test command stay in a root file, because `EXEC-03` and `TST-04` read them there. A guide that already
+   exists gets these sections only through step 9.
 4. **ADRs (DOC-04).** Create `docs/adr/` with four parts:
    - `README.md`, the index: a table of number, title and a one-line summary, linking every file by its path.
    - `0000-template.md`, copied from the greenfield
@@ -217,6 +233,23 @@ They stay here so a repository that has one has a procedure, and so the re-audit
         A third run with no limit and no `--min-severity` shows the notices too, as advice.
 
       Record the baseline (warnings) as debt on the `DOC-05` item, and in the `docs.prose_ratchet` preference.
+9. **Style guide that already exists (`docs.style_guide_update`).** Run this step only when `docs/STYLE_GUIDE.md`
+   existed before this theme, so step 3 did not write it. Make its commit right after step 3, before the lint
+   baseline of step 1 is final: the new lines count there. Read the preference (Inputs 8):
+   - `ask` (default): show the owner the section described below, then record the answer as `yes` or `no`.
+   - `yes`: append the section in one commit (Commits row 18).
+   - `no`: record the preference and change nothing. Do not ask again in this run.
+
+   The section holds the form rules and the README landing-page rule. Adapt it from the greenfield
+   [§ 3.1 Form follows content](../../greenfield/templates/docs/STYLE_GUIDE.md#31-form-follows-content) and
+   [§ 4.1 A README is a landing page](../../greenfield/templates/docs/STYLE_GUIDE.md#41-a-readme-is-a-landing-page).
+   Rules:
+   - Append the section at the end of the file, in the file's own heading style and numbering. Never rewrite, reorder
+     or renumber the owner's text.
+   - Leave out a rule the guide already has. A limit of the owner's own stays; tell the owner how it differs.
+   - Keep the rule that the setup command and the single-test command stay in a root file (`EXEC-03`
+     non-interactive setup path, `TST-04` fast path documented).
+   - The new lines follow the plain language rules of step 3, because `DOC-05` reads this page.
 
 ### Gradle and Quarkus
 
@@ -258,6 +291,9 @@ Docs first, then the lint config, then the wiring. The instruction-file line wai
 | 15 | Third-party notice entry for the copy (only where the repository keeps such a list) | `DOC-05` | hand |
 | 16 | Prose ratchet: the runner command and the full-tree run (same condition as 14) | `DOC-05` | wiring |
 | 17 | Prose runs in the docs CI job (same condition as 14) | `DOC-05` | wiring |
+| 18 | Form rules section appended to an existing style guide (only with `docs.style_guide_update=yes`) | `DOC-02` | hand |
+
+Row 18 is the exception to the order: step 9 makes it right after row 3, so the lint baseline of row 11 counts it.
 
 ## Continue on error
 
@@ -284,6 +320,7 @@ Docs first, then the lint config, then the wiring. The instruction-file line wai
 |---|---|---|
 | DOC-01 | `git ls-files 'docs/*.md' 'docs/**/*.md'` | At least one file; `docs/README.md` links every page; no second docs home |
 | DOC-02 | `test -f docs/STYLE_GUIDE.md` and `grep -n STYLE_GUIDE.md <instruction file>` | File exists; the instruction file names it |
+| DOC-02 form rules | `grep -n -i 'form follows content\|landing page' docs/STYLE_GUIDE.md`; for an existing guide, `git diff --numstat <base> -- docs/STYLE_GUIDE.md` | New guide, or `yes`: both rules present, and an existing guide shows 0 deleted lines. `no`: no output from the diff, and the preference recorded |
 | DOC-05 | `grep -n -i 'plain language\|diagram' docs/STYLE_GUIDE.md`; the engine's DOC-05 | Both sections present; no cited line on a page this theme wrote; `PASS`, or `partial` with the counts as debt |
 | DOC-03 | `git ls-files artefacts artifacts` and `git check-ignore -v artefacts/x` | No scratch directory, or nothing tracked and the rule matches |
 | DOC-04 | List `docs/adr/`; read `docs/adr/README.md`; `grep -n -i 'adr' <instruction file>` | At least one numbered file; the index links every numbered file by path, the template included; the ADR policy page exists and the instruction file names it |
@@ -299,8 +336,9 @@ Docs first, then the lint config, then the wiring. The instruction-file line wai
 
 `git revert` the commits, newest first. Revert the prose CI runs and the prose ratchet before the prose check copy.
 Revert the docs CI job and the lint ratchet before the lint config. The instruction-file line goes with any docs
-commit whose page it names. The other commits revert alone. This playbook moves, untracks and deletes nothing,
-except the scratch files in step 7, with owner consent. `git revert` returns them to the index.
+commit whose page it names. The appended section of row 18 reverts alone. The other commits revert alone. This
+playbook moves, untracks and deletes nothing, except the scratch files in step 7, with owner consent. `git revert`
+returns them to the index.
 
 ## Do-not-do
 
@@ -320,6 +358,8 @@ except the scratch files in step 7, with owner consent. `git revert` returns the
   Never copy it under another licence, the framework's own included, and never remove or replace its copyright
   line.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
+- Do not rewrite, reorder or renumber the text of an existing style guide. Append the form rules as one section, and
+  only with `docs.style_guide_update=yes`. With `no`, do not touch the file.
 
 ## State updates
 
@@ -339,6 +379,8 @@ python3 implement/tools/progress.py set-status F-nnn partial --workspace <worksp
 python3 implement/tools/progress.py pref set docs.prose_check <skip|template> \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.prose_check_licence <SPDX id> \
+  --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
+python3 implement/tools/progress.py pref set docs.style_guide_update <ask|yes|no> \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py pref set docs.lint_tools <markdownlint-cli2+mmdc|none> \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner

@@ -276,7 +276,7 @@ not moved.
 | Check | What the playbook does |
 |---|---|
 | [`DOC-01` docs/ exists](audit-master.md#doc-01-docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home |
-| [`DOC-02` docs/STYLE_GUIDE.md exists](audit-master.md#doc-02-docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
+| [`DOC-02` docs/STYLE_GUIDE.md exists](audit-master.md#doc-02-docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` with the form rules and one line in the instruction file that names it. An existing guide gets the form rules only by the owner's choice (Steps 9) |
 | [`DOC-03` artefacts/ exists and is ignored](audit-master.md#doc-03-artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | [`DOC-04` ADR directory and index](audit-master.md#doc-04-adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
 | [`DOC-05` Docs are readable](audit-master.md#doc-05-docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner picks one of three permissive licences for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
@@ -304,6 +304,8 @@ not moved.
   Never copy it under another licence, the framework's own included, and never remove or replace its copyright
   line.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
+- Do not rewrite, reorder or renumber the text of an existing style guide. Append the form rules as one section, and
+  only with `docs.style_guide_update=yes`. With `no`, do not touch the file.
 
 Full playbook: [`establish-docs-contract.md`](../../implement/playbooks/establish-docs-contract.md).
 
