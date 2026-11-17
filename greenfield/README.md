@@ -90,21 +90,24 @@ with no notice. Your project then owns its copy and picks its own licence.
 
 ## Automated Scaffolding
 
-This whole recipe is executable. `bootstrap.py` — in the separate `python-agentic-bootstrap`
-repo (local for now; an npm package is planned) — reads `templates/**`, substitutes your
-project's name/org/author, writes the tree below, initialises git on `dev`, installs
-dependencies, and proves the result by running `npm run check`, `npm run build`, and
-`npm pack --dry-run`, including a check that no secrets or build caches would be published.
+This whole recipe is executable. [`bootstrap/bootstrap.py`](bootstrap/README.md) sits beside
+`templates/` in this repository. It reads `templates/**`, substitutes your project's name, org
+and author, and writes the tree above. Then it initialises git on `dev`, installs dependencies,
+and proves the result: `npm run check`, `npm run build` and `npm pack --dry-run`, with a check
+that no secrets or build caches would be published. It needs only Python 3.11 or newer.
+
+Run it from the root of a clone of this repository:
 
 ```bash
-python3 bootstrap.py ~/Projects/my-new-pkg \
+python3 greenfield/bootstrap/bootstrap.py ~/Projects/my-new-pkg \
   --name my-new-pkg --org nistapp --cli --install
 ```
 
 The script owns **structure, substitution, and verification**. `templates/**` owns every byte
 of file content — so this recipe and any generated project cannot drift apart. Run
-`python3 bootstrap.py --help` for the full flag list (`--lib`/`--cli`, `--node`, `--dry-run`,
-`--no-git`, `--templates`, `--force`).
+`python3 greenfield/bootstrap/bootstrap.py --help` for the full flag list (`--lib`/`--cli`,
+`--node`, `--dry-run`, `--no-git`, `--templates`, `--force`). Why the script lives here is
+[ADR 0010](../docs/architecture/adrs/0010-the-scaffolder-lives-beside-its-templates.md).
 
 ---
 

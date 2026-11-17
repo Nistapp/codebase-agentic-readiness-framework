@@ -1,7 +1,7 @@
 {
   "pythonVersion": "3.11",
   "typeCheckingMode": "standard",
-  "include": ["audit", "implement", "dev"],
+  "include": ["audit", "implement", "dev", "greenfield/bootstrap"],
   "exclude": ["artefacts", "dist", "**/fixtures", "**/testdata", "**/__pycache__", "dev/dist", "audit/engine/dist"],
   "extraPaths": [
     "audit/engine",
@@ -12,6 +12,8 @@
     "implement/playbooks/templates",
     "dev",
     "dev/eval",
-    "dev/tests"
+    "dev/tests",
+    "greenfield/bootstrap",
+    "greenfield/bootstrap/tests"
   ]
 }

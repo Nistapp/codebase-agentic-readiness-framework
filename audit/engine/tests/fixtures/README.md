@@ -152,7 +152,8 @@ Two rules for a fixture:
 
 ## The positive fixture
 
-`python-agentic-bootstrap` is the positive fixture: a freshly scaffolded project is Phase-1-complete by
+`python-agentic-bootstrap` (`greenfield/bootstrap/bootstrap.py` in this repository) is the positive fixture: the
+test runs it in every run, CI included. A freshly scaffolded project is Phase-1-complete by
 construction, so it must score 1.0 with zero blockers. Generate it in the test run rather than vendoring a copy —
 a vendored copy stops being evidence the moment the scaffolder changes.
 

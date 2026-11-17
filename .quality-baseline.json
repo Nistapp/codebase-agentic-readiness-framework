@@ -4,8 +4,8 @@
   "counts": {
     "ruff": {
       "count": 0,
-      "what": "ruff check diagnostics over audit, implement and dev (rules in ruff.toml)",
-      "command": "uvx ruff@<pin> check audit implement dev --output-format json",
+      "what": "ruff check diagnostics over audit, implement, dev and greenfield/bootstrap (rules in ruff.toml)",
+      "command": "uvx ruff@<pin> check audit implement dev greenfield/bootstrap --output-format json",
       "verb": "make format-check"
     },
     "mypy": {

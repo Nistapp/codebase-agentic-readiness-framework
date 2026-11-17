@@ -8,6 +8,7 @@
 
 `python-agentic-audit` scans an existing repository and reports what to improve so that **AI coding agents can
 work in it effectively**. It is the brownfield half of the agentic-readiness toolchain: `python-agentic-bootstrap`
+([`greenfield/bootstrap/`](../../greenfield/bootstrap/README.md))
 proves a new project *starts* ready; this audit measures how far an existing one is from the same bar.
 
 > [!NOTE]

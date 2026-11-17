@@ -86,7 +86,7 @@ trusting.
 | Tool | Role |
 |---|---|
 | [The framework](../../../../../README.md) (the root of this repository) | The methodology. This audit implements Phase 1 of it. |
-| `python-agentic-bootstrap` | Creates a *greenfield* project that is Phase-1-complete on commit #1. Also this audit's positive fixture. |
+| `python-agentic-bootstrap` (`greenfield/bootstrap/`) | Creates a *greenfield* project that is Phase-1-complete on commit #1. Also this audit's positive fixture. |
 | `python-agentic-audit` (this) | Measures a *brownfield* project's distance from the same bar. |
 | `codebase-memory-mcp` | The index both the audit probes and the agents query. |
 
