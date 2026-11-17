@@ -102,7 +102,9 @@ commitlint on each one. The workflow for people is in `CONTRIBUTING.md`.
 
 ## 5. How to write for people
 
-5.1 These rules apply to chat replies, plans, reports, commit messages, pull request descriptions and docs.
+5.1 These rules apply to chat replies, plans, reports, commit messages, pull request descriptions and docs. The
+long form, with report layouts and decision requests, is
+[`docs/COMMUNICATION_RULES.md`](docs/COMMUNICATION_RULES.md).
 
 5.2 **Reader:** write for a new engineer who knows TypeScript and Node, but not this repository or its terms.
 

@@ -213,7 +213,7 @@ commands, the boundaries and the never-rules. It links for the rest.
 | Branches, commits, pull requests | `CONTRIBUTING.md` | `AGENTS.md` keeps what an agent may push, and links |
 | Releases | `RELEASE_PROCESS.md` | `AGENTS.md` and `CONTRIBUTING.md` link |
 | Code conventions | `CONVENTIONS.md` | `AGENTS.md` and `CONTRIBUTING.md` link |
-| Writing rules | This file (pages) and `docs/COMMUNICATION_RULES.md` (wording) | `AGENTS.md` keeps a summary |
+| Writing rules | This file (pages) and [`COMMUNICATION_RULES.md`](COMMUNICATION_RULES.md) (messages) | `AGENTS.md` keeps a summary |
 | Definition of done | `AGENTS.md` | `CONTRIBUTING.md` links |
 | Domain terms | `docs/architecture/glossary.md` | Others link |
 | Decisions | `docs/architecture/adrs/` | Others link |

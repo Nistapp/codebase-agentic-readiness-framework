@@ -46,6 +46,7 @@ with no notice. Your project then owns its copy and picks its own licence.
 ├── commitlint.config.js                   # Conventional Commits enforcement
 ├── config.default.json                    # Committed runtime config template
 ├── docs/
+│   ├── COMMUNICATION_RULES.md             # How to write for people: reports, decisions
 │   ├── STYLE_GUIDE.md                     # Documentation writing rules
 │   ├── architecture/
 │   │   ├── README.md                      # ADR index + doc router
