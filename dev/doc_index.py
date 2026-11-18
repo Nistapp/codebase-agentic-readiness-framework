@@ -26,6 +26,13 @@ For ``manifest``, :func:`build_bundles` loads the same module and calls its ``bu
 ``build_implement_bundle`` with the folder it is given: the core's fresh temporary folder, never
 ``dev/dist/skills/``. A build failure (the module's ``ToolError``) becomes :class:`docindex.manifest.BuildError`.
 
+For ``evidence run``, :func:`evidence_project` names the engine folder, ``audit/engine/``, and :func:`evidence_targets`
+gives the targets: this repository with the excludes of ``make self-audit`` (:data:`SELF_AUDIT_EXCLUDES`), or every
+engine fixture that ``dev/eval/generate_fixture_expected.py`` generates an expected file for, materialised into the
+run's temporary folder by that module's ``materialise`` (a one-commit git repository with a fixed identity and date),
+with an isolated ``HOME`` for a fixture in ``NEEDS_ISOLATED_ENV``, as that module prepares it. Loading the engine's
+fixture matrix writes no bytecode into ``audit/``.
+
 :func:`query` takes ``<address> [--at REF]`` and prints a node and its edges, or ``--report [--at REF]`` and prints
 the reports of plan 9.4 (a report only, never a gate).
 """
@@ -43,11 +50,15 @@ DEV = Path(__file__).resolve().parent
 REPO = DEV.parent
 CONFIG = DEV / "docindex.config.json"
 QUERY = "query"
+ENGINE_DIR = REPO / "audit" / "engine"
+FIXTURE_GENERATOR = DEV / "eval" / "generate_fixture_expected.py"
+#: The ``--exclude`` globs of ``SELF_AUDIT_FLAGS`` in the Makefile.
+SELF_AUDIT_EXCLUDES: tuple[str, ...] = ("artefacts/*", "dist/*")
 
 if str(DEV) not in sys.path:
     sys.path.insert(0, str(DEV))
 
-from docindex import cli, extract, ids, manifest  # noqa: E402
+from docindex import cli, evidence, extract, ids, manifest  # noqa: E402
 from docindex.gitread import RefTree, Tree, WorkTree  # noqa: E402
 from docindex.model import Index  # noqa: E402
 
@@ -148,6 +159,68 @@ def build_bundles(config: Mapping[str, Any], out_dir: Path) -> None:
         raise manifest.BuildError(f"the bundle build failed: {exc}") from exc
 
 
+def _fixture_generator() -> ModuleType:
+    """``dev/eval/generate_fixture_expected.py``, loaded once, with no bytecode written while it loads the engine."""
+    name = "_doc_index_generate_fixture_expected"
+    module = sys.modules.get(name)
+    if module is not None:
+        return module
+    spec = importlib.util.spec_from_file_location(name, FIXTURE_GENERATOR)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load {FIXTURE_GENERATOR.relative_to(REPO)}")
+    module = importlib.util.module_from_spec(spec)
+    previous = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    sys.modules[name] = module
+    try:
+        spec.loader.exec_module(module)
+    except BaseException:
+        del sys.modules[name]
+        raise
+    finally:
+        sys.dont_write_bytecode = previous
+    return module
+
+
+def fixture_targets(work: Path) -> list[evidence.Target]:
+    """Every engine fixture with a row in the engine's fixture matrix, materialised under ``work``."""
+    generator = _fixture_generator()
+    previous = sys.dont_write_bytecode
+    sys.dont_write_bytecode = True
+    try:
+        matrix = generator.engine_matrix()
+    finally:
+        sys.dont_write_bytecode = previous
+    targets: list[evidence.Target] = []
+    for name in sorted(matrix.MATRIX):
+        if not matrix.MATRIX[name]:
+            continue
+        try:
+            fixture = matrix.support.fixture(name)
+            path = generator.materialise(fixture, name, work / "targets", matrix.FORCE_ADD.get(name))
+        except (OSError, RuntimeError) as exc:
+            raise evidence.EvidenceError(f"cannot materialise the fixture {name}: {exc}") from exc
+        env: dict[str, str] = {}
+        if name in matrix.NEEDS_ISOLATED_ENV:
+            home = work / "homes" / name
+            home.mkdir(parents=True)
+            env = {"HOME": str(home), "AUDIT_INDEX_STORE": str(home / "absent-store")}
+        targets.append(evidence.Target(name=name, path=path, env=env))
+    return targets
+
+
+def evidence_targets(kind: str, work: Path) -> list[evidence.Target]:
+    """The targets of ``evidence run``: this repository (``repo``) or the engine fixtures (``fixtures``)."""
+    if kind == "repo":
+        return [evidence.Target(name="repo", path=REPO, excludes=SELF_AUDIT_EXCLUDES)]
+    return fixture_targets(work)
+
+
+def evidence_project() -> evidence.Project:
+    """The audit engine of this repository and its targets."""
+    return evidence.Project(engine_dir=ENGINE_DIR, repo=REPO, targets=evidence_targets)
+
+
 def full_config(config: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """The project config with its ``bundle_files`` key filled from the bundle module."""
     loaded = dict(load_config() if config is None else config)
@@ -182,6 +255,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         root=REPO,
         bundle_sources=lambda: bundle_sources(config),
         build_bundles=lambda out_dir: build_bundles(config, out_dir),
+        evidence_project=evidence_project(),
     )
 
 

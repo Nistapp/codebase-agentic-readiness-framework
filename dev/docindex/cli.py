@@ -22,6 +22,11 @@ The subcommands::
                           (:mod:`docindex.manifest`)
     manifest-diff OLD.json NEW.json [--format text|json]
                           list the bundle files added, removed and changed from one manifest to another
+    evidence run --out DIR [--target repo|fixtures]
+                          run the audit engine into the fresh folder DIR and write a run record
+                          (:mod:`docindex.evidence`)
+    evidence compare OLD_DIR NEW_DIR [--format text|json]
+                          list the checks whose verdict, or whose evidence under the same verdict, changed
 
 ``build`` writes the index of :mod:`docindex.extract` (file and section nodes, ``contains`` edges) to stdout, as
 the deterministic JSON of :mod:`docindex.model`, and a summary of the counts (files, and the Markdown files and
@@ -59,6 +64,14 @@ failure (id, path, reason) to stderr and a one-line count to stdout.
 ``manifest-diff`` reads two manifests (paths relative to the current folder) and writes the report of
 :func:`docindex.manifest.compare`; it is a report, so it exits 0 whatever it finds, and 1 when a manifest cannot be
 read.
+
+``evidence run`` needs the entry point's :class:`docindex.evidence.Project` (the engine folder, the repository and the
+targets). DIR is relative to the current folder; it must not exist or must be empty, and must lie outside the
+repository. The targets (``repo`` by default) are prepared in a temporary folder that is deleted afterwards. It exits
+0 when every report is written, 2 when the run is refused (DIR not fresh or inside the repository, a report missing
+or older than the run's start), and 1 when a command fails. ``evidence compare`` reads two run folders and writes the
+report of :func:`docindex.evidence.compare`; it is a report, so it exits 0 whatever it finds, and 1 when a run folder
+cannot be read or the two runs have different targets.
 """
 
 from __future__ import annotations
@@ -71,7 +84,7 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, NoReturn, Sequence
 
 from . import diff as index_diff
-from . import extract, manifest, quotes, recall, sweep, sweep_diff
+from . import evidence, extract, manifest, quotes, recall, sweep, sweep_diff
 from .gitread import GitError, RefTree, Tree, WorkTree
 from .model import to_json
 
@@ -125,6 +138,17 @@ def build_parser() -> argparse.ArgumentParser:
     manifest_diff.add_argument("old", metavar="OLD_JSON", help="the old manifest")
     manifest_diff.add_argument("new", metavar="NEW_JSON", help="the new manifest")
     manifest_diff.add_argument("--format", choices=("text", "json"), default="text", help="the output form (text)")
+    evidence_parser = commands.add_parser("evidence", help="run the audit engine, or compare two runs' evidence")
+    evidence_commands = evidence_parser.add_subparsers(dest="evidence_command", required=True, metavar="ACTION")
+    evidence_run = evidence_commands.add_parser("run", help="run the audit engine into a fresh folder")
+    evidence_run.add_argument("--out", metavar="DIR", required=True, help="the new or empty output folder")
+    evidence_run.add_argument(
+        "--target", choices=evidence.TARGET_KINDS, default="repo", help="this repository or the engine fixtures (repo)"
+    )
+    evidence_compare = evidence_commands.add_parser("compare", help="compare the verdicts and evidence of two runs")
+    evidence_compare.add_argument("old", metavar="OLD_DIR", help="the earlier run folder")
+    evidence_compare.add_argument("new", metavar="NEW_DIR", help="the later run folder")
+    evidence_compare.add_argument("--format", choices=("text", "json"), default="text", help="the output form (text)")
     return parser
 
 
@@ -164,6 +188,38 @@ def _manifest_diff(args: argparse.Namespace) -> int:
         print(f"{PROG} manifest-diff: {exc}", file=sys.stderr)
         return 1
     sys.stdout.write(manifest.diff_to_json(changes) if args.format == "json" else manifest.to_text(changes))
+    return 0
+
+
+def _evidence_run(args: argparse.Namespace, project: evidence.Project | None) -> int:
+    prog = f"{PROG} evidence run"
+    if project is None:
+        print(f"{prog}: no engine project given; run it through dev/doc_index.py", file=sys.stderr)
+        return 1
+    try:
+        with tempfile.TemporaryDirectory(prefix="doc-index-evidence-") as work:
+            record = evidence.run(Path(args.out), args.target, project, Path(work))
+    except evidence.RefusedError as exc:
+        print(f"{prog}: refused: {exc}", file=sys.stderr)
+        return 2
+    except evidence.EvidenceError as exc:
+        print(f"{prog}: {exc}", file=sys.stderr)
+        return 1
+    count = len(record["reports"])
+    print(f"{prog}: {count} report(s) and {evidence.RUN_RECORD} written to {args.out}", file=sys.stderr)
+    return 0
+
+
+def _evidence_compare(args: argparse.Namespace) -> int:
+    try:
+        old, new, comparison = evidence.compare(Path(args.old), Path(args.new))
+    except evidence.EvidenceError as exc:
+        print(f"{PROG} evidence compare: {exc}", file=sys.stderr)
+        return 1
+    if args.format == "json":
+        sys.stdout.write(evidence.diff_to_json(old, new, comparison))
+    else:
+        sys.stdout.write(evidence.to_text(old, new, comparison))
     return 0
 
 
@@ -302,14 +358,16 @@ def main(
     root: Path | None = None,
     bundle_sources: Callable[[], Sequence[str]] | None = None,
     build_bundles: Callable[[Path], None] | None = None,
+    evidence_project: evidence.Project | None = None,
 ) -> int:
     """Run one subcommand and return its exit code.
 
     ``config`` is the project config the entry point loaded. ``root`` is the repository root (the current folder
     when ``None``). ``bundle_sources`` returns the project's bundle sources, the files and folders the sweep scope
     starts from; ``build_bundles`` builds every bundle into the folder it is given, one subfolder each, and raises
-    :class:`docindex.manifest.BuildError` when the build fails. The entry point supplies both, so that this package
-    imports no other ``dev/`` module.
+    :class:`docindex.manifest.BuildError` when the build fails. ``evidence_project`` names the audit engine and the
+    targets of ``evidence run``. The entry point supplies all three, so that this package imports no other ``dev/``
+    module.
     """
     arguments = list(sys.argv[1:] if argv is None else argv)
     if arguments[:1] == [VERIFY_QUOTES]:
@@ -332,5 +390,9 @@ def main(
         return _manifest(args, build_bundles)
     if args.command == "manifest-diff":
         return _manifest_diff(args)
+    if args.command == "evidence":
+        if args.evidence_command == "run":
+            return _evidence_run(args, evidence_project)
+        return _evidence_compare(args)
     print(f"{PROG} {args.command}: not implemented here; run it through dev/doc_index.py", file=sys.stderr)
     return 1
