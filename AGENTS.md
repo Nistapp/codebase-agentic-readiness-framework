@@ -189,6 +189,7 @@ A change is done when all of this holds:
 - Documentation index, style guide and decisions of record: `docs/README.md`, `docs/STYLE_GUIDE.md`,
   `docs/architecture/adrs/README.md`. The ADR rules: `docs/ADR_POLICY.md`.
 - Requirements: `spec/README.md`, and `spec/readiness-requirements.md`.
+- What a recipe change dropped (rules, references, bundle files, evidence): `docs/how-to/check-a-recipe-change.md`.
 - What an audit checks and what an implement run changes, for a reader: `docs/reference/audit-master.md` and
   `docs/reference/implement-master.md`.
 - Terms: `docs/glossary.md` and `docs/framework/glossary.md`.
