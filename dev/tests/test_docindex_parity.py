@@ -13,6 +13,11 @@ parses.
 A difference is a bug in one of the two parsers, unless :data:`ACCEPTED` lists it with a reason. Any other
 difference fails, and so does an accepted one that no longer occurs, so the list stays exact.
 
+The ID part (leaf RF1.6) compares, for every file whose IDs ``recipe_lint`` reads (``find_markdown``, outside the
+engine's tree), the check IDs and the requirement IDs it finds (``load_catalogue``'s pattern and
+``REQUIREMENT_ID``, on every line) with the targets of the index's ``mentions`` edges from that file. Its accepted
+differences are in :data:`ACCEPTED_IDS`, under the same rules.
+
 This test, not the extractor, imports ``dev/recipe_lint.py``: the core package never does.
 """
 
@@ -27,7 +32,7 @@ from unittest import mock
 import _dev_paths  # noqa: F401  (puts dev/ on sys.path)
 import doc_index
 import recipe_lint
-from docindex import extract, links, markdown
+from docindex import extract, links, markdown, model
 from docindex.gitread import WorkTree
 
 REPO = doc_index.REPO
@@ -145,13 +150,87 @@ class IndexHoldsTheLinksTest(unittest.TestCase):
         self.assertGreater(checked, 100)
 
 
-class MentionParityTest(unittest.TestCase):
-    @unittest.skip(
-        "placeholder with no assertions yet: the ID mention parity (check, requirement and playbook IDs that "
-        "recipe_lint reads) comes with the mentions edges in the next phase"
+#: An ID as the ID parity compares it: the ID kind (``check`` or ``requirement``) and the ID.
+IdMention = tuple[str, str]
+
+#: The accepted differences of the ID parity: (file, side, kind, ID) to the reason. ``side`` names the parser that
+#: finds the ID and the other does not. None today: both read every line of a file, code fences included, and
+#: recipe_lint's patterns find no ID that the catalogue or the spec does not define (recipe-lint would fail).
+ACCEPTED_IDS: dict[tuple[str, str, str, str], str] = {}
+
+
+def _id_linted() -> list[Path]:
+    """The files whose check and requirement IDs ``recipe_lint`` reads: ``find_markdown``, tracked, outside
+    ``EXCLUDED_FROM_CATALOGUE`` (the engine's tree)."""
+    tracked = set(WorkTree(REPO).files())
+    return sorted(
+        file
+        for file in recipe_lint.find_markdown(REPO)
+        if file.relative_to(REPO).as_posix() in tracked and not recipe_lint.excluded_from_catalogue_checks(file, REPO)
     )
+
+
+def _recipe_lint_ids(lines: Sequence[str], catalogue: recipe_lint.Catalogue) -> set[IdMention]:
+    """The check and requirement IDs that ``check_catalogue_references`` and ``check_requirement_references`` find."""
+    found: set[IdMention] = set()
+    for line in lines:
+        if catalogue.check_id_pattern is not None:
+            found.update(("check", match.group(0)) for match in catalogue.check_id_pattern.finditer(line))
+        found.update(("requirement", match.group(0)) for match in recipe_lint.REQUIREMENT_ID.finditer(line))
+    return found
+
+
+class MentionParityTest(unittest.TestCase):
+    """The check and requirement IDs each file mentions: the index's ``mentions`` edges against ``recipe_lint``."""
+
+    maxDiff = None
+
     def test_both_find_the_same_id_mentions(self) -> None:
-        pass
+        catalogue = recipe_lint.load_catalogue(REPO)
+        assert catalogue is not None
+        index = extract.extract(WorkTree(REPO), doc_index.load_config()).index
+        kinds = {node.address: node.kind for node in index.nodes if isinstance(node, model.IdNode)}
+        ours_by_file: dict[str, set[IdMention]] = {}
+        for edge in index.edges:
+            kind = kinds.get(edge.target)
+            if edge.kind == "mentions" and kind is not None and kind in ("check", "requirement"):
+                ours_by_file.setdefault(edge.source.partition("#")[0], set()).add((kind, edge.target))
+        unexplained: list[str] = []
+        seen: set[tuple[str, str, str, str]] = set()
+        files = _id_linted()
+        self.assertGreater(len(files), 100)
+        compared = 0
+        for file in files:
+            relative = file.relative_to(REPO).as_posix()
+            theirs = _recipe_lint_ids(file.read_text(encoding="utf-8").splitlines(), catalogue)
+            ours = ours_by_file.get(relative, set())
+            compared += len(theirs)
+            differences = [(relative, "recipe_lint", *mention) for mention in sorted(theirs - ours)]
+            differences += [(relative, "docindex", *mention) for mention in sorted(ours - theirs)]
+            for difference in differences:
+                if difference in ACCEPTED_IDS:
+                    seen.add(difference)
+                else:
+                    unexplained.append(" | ".join(difference))
+        self.assertGreater(compared, 500)
+        self.assertEqual(unexplained, [], "ID differences between recipe_lint and docindex not in ACCEPTED_IDS")
+        self.assertEqual(sorted(set(ACCEPTED_IDS) - seen), [], "accepted ID differences that no longer occur")
+
+    def test_every_accepted_id_difference_has_a_reason(self) -> None:
+        for key, reason in ACCEPTED_IDS.items():
+            with self.subTest(key=key):
+                self.assertIn(key[1], ("recipe_lint", "docindex"))
+                self.assertIn(key[2], ("check", "requirement"))
+                self.assertGreater(len(reason.split()), 5)
+
+    def test_the_index_defines_what_recipe_lint_loads(self) -> None:
+        catalogue = recipe_lint.load_catalogue(REPO)
+        requirements = recipe_lint.load_requirement_ids(REPO)
+        assert catalogue is not None and requirements is not None
+        index = extract.extract(WorkTree(REPO), doc_index.load_config()).index
+        defined = {(node.kind, node.address) for node in index.nodes if isinstance(node, model.IdNode)}
+        self.assertLessEqual({("check", check) for check in catalogue.check_ids}, defined)
+        self.assertLessEqual({("requirement", requirement) for requirement in requirements}, defined)
 
 
 if __name__ == "__main__":
