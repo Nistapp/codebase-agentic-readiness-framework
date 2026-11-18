@@ -1,0 +1,152 @@
+{
+  "default_zone": "docs",
+  "description": "The project config of the document index (dev/doc_index.py). zones: the longest matching path prefix wins, else default_zone. ids: a regex per ID kind whose group 1 is the ID, the paths that define such IDs (in order of preference), how they define them (define: json, heading or files), the node's address template (address, {id} by default) and whether a command runs the ID (runs); dev/docindex/ids.py states the rules. exclude.skip: never read or listed. exclude.list_only: listed as file nodes but not parsed. sweep: the bundle sources named by the constants of bundle_references.module, plus paths and every file named in file_names outside the exclusions. sweep.triggers: the trigger words of the sweep; --triggers group1 uses group1 only, all (the default) uses both groups.",
+  "exclude": {
+    "list_only": [
+      "audit/engine/tests/fixtures/",
+      "dev/eval/expected/fixtures/",
+      "dev/eval/implement-fixtures/"
+    ],
+    "skip": [
+      "artefacts/"
+    ]
+  },
+  "file_kinds": {
+    ".json": "json",
+    ".md": "markdown",
+    ".py": "python",
+    ".yaml": "yaml",
+    ".yml": "yaml"
+  },
+  "ids": {
+    "adr": {
+      "address": "{folder}/ADR-{id}",
+      "define": {
+        "files": "^.*/(\\d{4})-[^/]+\\.md$"
+      },
+      "defined_in": [
+        "docs/architecture/adrs/",
+        "audit/docs/architecture/adrs/",
+        "audit/engine/docs/architecture/adrs/",
+        "implement/docs/architecture/adrs/",
+        "spec/decisions/"
+      ],
+      "pattern": "\\bADR[- ]?(\\d{4})\\b"
+    },
+    "check": {
+      "define": {
+        "json": {
+          "id": "id",
+          "list": "checks",
+          "title": "title"
+        }
+      },
+      "defined_in": [
+        "audit/catalogue.json"
+      ],
+      "pattern": "\\b([A-Z]{2,4}-\\d{2})\\b"
+    },
+    "playbook": {
+      "define": {
+        "files": "^implement/playbooks/([a-z0-9-]+)\\.md$"
+      },
+      "defined_in": [
+        "implement/playbooks/"
+      ],
+      "pattern": "\\bimplement/playbooks/([a-z0-9-]+)\\.md\\b"
+    },
+    "requirement": {
+      "define": {
+        "heading": "(REQ-[A-Z]+-\\d{3})\\b",
+        "level": 3
+      },
+      "defined_in": [
+        "spec/"
+      ],
+      "pattern": "\\b(REQ-[A-Z]+-\\d{3})\\b"
+    },
+    "schema": {
+      "define": {
+        "files": "^audit/schema/([a-z0-9-]+\\.schema\\.json)$"
+      },
+      "defined_in": [
+        "audit/schema/"
+      ],
+      "pattern": "\\b([a-z0-9-]+\\.schema\\.json)\\b"
+    },
+    "tool": {
+      "address": "tool:{id}",
+      "define": {
+        "files": "^((?:audit|implement)/tools/[a-z][a-z0-9_]*\\.py)$"
+      },
+      "defined_in": [
+        "audit/tools/",
+        "implement/tools/"
+      ],
+      "pattern": "(?<![\\w./-])((?:audit|implement)/tools/[A-Za-z_][A-Za-z0-9_]*\\.py)",
+      "runs": true
+    }
+  },
+  "sweep": {
+    "bundle_references": {
+      "constants": [
+        "AUDIT_REFERENCES",
+        "IMPLEMENT_REFERENCES"
+      ],
+      "module": "dev/build_skills.py"
+    },
+    "file_names": [
+      "AGENTS.md"
+    ],
+    "paths": [
+      "greenfield/templates/"
+    ],
+    "triggers": {
+      "group1": [
+        "must",
+        "never",
+        "always",
+        "only",
+        "do not",
+        "may not",
+        "required",
+        "stop",
+        "refuse",
+        "before",
+        "after",
+        "at most",
+        "at least"
+      ],
+      "group2": [
+        "requires",
+        "needs",
+        "first",
+        "each",
+        "every",
+        "except",
+        "nothing"
+      ]
+    }
+  },
+  "zones": {
+    ".github/": "dev",
+    "Makefile": "dev",
+    "audit/": "recipe",
+    "audit/docs/": "docs",
+    "audit/engine/": "engine",
+    "audit/engine/docs/": "docs",
+    "audit/engine/tests/fixtures/": "fixture",
+    "audit/tools/": "tools",
+    "dev/": "dev",
+    "dev/eval/expected/fixtures/": "fixture",
+    "dev/eval/implement-fixtures/": "fixture",
+    "docs/": "docs",
+    "greenfield/": "docs",
+    "greenfield/bootstrap/": "tools",
+    "implement/": "recipe",
+    "implement/docs/": "docs",
+    "implement/tools/": "tools",
+    "lefthook.yml": "dev",
+    "spec/": "spec"
+  }
+}

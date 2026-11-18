@@ -259,7 +259,7 @@ The auditor is verified the same way the framework verifies anything else: again
 | Target the user cannot read | Exit 1 with a clear message, no partial report |
 
 > [!IMPORTANT]
-> The greenfield scaffold is the natural positive fixture and the reason the two tools share a repo lineage. If a
+> The greenfield scaffold is the natural positive fixture and the reason the two tools share a repository. If a
 > scaffolded project ever fails this audit, one of the two is wrong — and that is a defect worth catching
 > immediately, not a false positive to be tuned away.
 

@@ -58,6 +58,7 @@ down is invisible.
 | `AGT-08` No competing instruction files | `AGENTS.md` + `CLAUDE.md` + `.cursorrules` disagreeing is obeyed as ambiguity | Inconsistent behaviour across harnesses, untraceable |
 | `AGT-09` Branch and release boundary | Agents must know whether they may tag, release, or push | Agent triggers a release it had no authority to cut |
 | `AGT-12` Communication rules stated | An agent reports to people and asks them for decisions | Each agent picks its own layout; the reader must dig for the bottom line and the decision asked of them |
+| `AGT-13` Coding conventions written | An agent cannot infer naming, layering and error rules that no tool enforces | Agent names, layers and logs code its own way; review catches it late, or not at all |
 
 ---
 
@@ -195,6 +196,10 @@ README, CODEOWNERS, PR and issue templates, CONTRIBUTING, SECURITY, CHANGELOG, r
 updates, license, branch protection. These are how a *team* operates. They are reported because a client
 engagement needs the whole picture, and left numberless because an agent does not read any of them before
 deciding what to edit.
+
+| Check | Why it matters | Failure mode without it |
+|---|---|---|
+| `HYG-13` Contributing rules written | A contributor learns the setup, the gate and the Git rules from one file | Each contributor guesses the branch name, the commit form and the gate; review and CI catch it late |
 
 One exception bridges the two: where CODEOWNERS names paths that the audit would also place on a deny list,
 that consistency is reported as a note — review routing and scope lockdown should not disagree.

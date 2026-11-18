@@ -88,9 +88,10 @@ this one owns the verb names and their wiring, that one owns which tool each ver
    command per component (`npm ci`; `./gradlew assemble`, which fetches Gradle and the dependencies through the
    wrapper). Do not add a new setup script in T1;
    pinning versions is `pin-execution-environment` (T2).
-8. **Write the verbs down.** The instruction file (`AGENTS.md`, else `CONTRIBUTING.md`) lists the exact command
+8. **Write the verbs down.** The instruction file lists the exact command
    for each verb per component (`spec/command-surface.md` rule 4). Fill an existing placeholder; do not
-   rewrite the file, which is T7's job.
+   rewrite the file, which is T7's job. With no instruction file, follow
+   [Stage 3, step 11](../SKILL.md#stage-3-apply): create the skeleton, or write to `CONTRIBUTING.md`.
 
 ### Gradle
 

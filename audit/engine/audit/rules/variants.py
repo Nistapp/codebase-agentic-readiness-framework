@@ -44,6 +44,9 @@ class Harness:
     paths: tuple[str, ...] = ()
     #: config files that can redirect or rename its instruction file
     config: tuple[str, ...] = ()
+    #: True when the harness loads its own paths only once one of its config files names them. Such a path,
+    #: with no config present, is an ordinary document, not an instruction file.
+    paths_need_config: bool = False
     doc_url: str = ""
     verified: bool = True
     note: str = ""
@@ -319,6 +322,7 @@ HARNESSES: tuple[Harness, ...] = (
         False,
         paths=("CONVENTIONS.md",),
         config=(".aider.conf.yml",),
+        paths_need_config=True,
         doc_url="https://aider.chat/docs/usage/conventions.html",
         note="Aider has NO fixed instruction filename — it loads whatever `read:` names. "
         "CONVENTIONS.md is documentation convention, not auto-detection.",

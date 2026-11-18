@@ -21,7 +21,7 @@
 | Group | Checks | Tier A | Tier B | Tier C |
 |---|---|---|---|---|
 | `IDX` Discovery & index | 3 | 2 | — | 1 |
-| `AGT` Agent governance | 11 | 2 | 9 | — |
+| `AGT` Agent governance | 12 | 2 | 10 | — |
 | `DOC` Documentation contract | 5 | 3 | 2 | — |
 | `CMD` Command surface | 4 | — | 4 | — |
 | `TOOL` Tooling | 7 | 3 | 4 | — |
@@ -32,17 +32,19 @@
 | `TST` Tests | 5 | 2 | 2 | 1 |
 | `NAV` Navigation | 3 | 1 | 2 | — |
 | `SEC` Security hygiene | 3 | — | 3 | — |
-| **Total catalogued** | **61** | **17** | **41** | **2** |
+| **Total catalogued** | **62** | **17** | **42** | **2** |
 
-Plus **13 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`), reported and never scored.
+Plus **14 informational checks** (`NAV-04`, `NAV-05`, `HYG-01`–`HYG-11`, `HYG-13`), reported and never scored.
+`HYG-12` is reserved for a planned release-provenance check; ruleset `2026-11-17.3` added `HYG-13`.
 
-Of the 61, `CON-04` is an emitter rather than a check, leaving **60 scoreable checks** in v1. (`CON-01` carried weight 0
+Of the 62, `CON-04` is an emitter rather than a check, leaving **61 scoreable checks** in v1. (`CON-01` carried weight 0
 until ruleset `2026-10-11.1`, because the engine did not read the artifact that the spec defines; it reads the
 prohibitions section now.)
 
 > [!NOTE]
-> The tier columns sum to 60, not 61: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
-> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`; v0.3.4 added `AGT-12` and `DOC-05`.
+> The tier columns sum to 61, not 62: `CON-04` is an emitter with no tier. The variant research added `AGT-10`;
+> v0.3.3 added `CI-05`, `EXEC-08` and `TOOL-07`; v0.3.4 added `AGT-12` and `DOC-05`; ruleset `2026-11-17.2` added
+> `AGT-13`.
 > Earlier revisions of this table carried per-group tier splits that disagreed with their own rows — `--list-checks`
 > is the executable truth, and a mismatch between it and this page is a defect in this page.
 
@@ -65,7 +67,9 @@ and are reported per component when a component-level file exists.
 
 The pack is driven by **one data structure in code** — `audit/rules/variants.py` — recording every instruction-file
 variant per harness with the documentation URL it came from and a `last_verified` date, plus the config-indirection
-keys, the shadow pairs, and the globs that only *look* like instructions. A filename-only check is wrong in both
+keys, the shadow pairs, and the globs that only *look* like instructions. A harness whose own path loads only through
+its config (`paths_need_config`, Aider's `CONVENTIONS.md`) reaches that path only when the config file exists.
+A filename-only check is wrong in both
 directions: it calls a `CLAUDE.md` repository ungoverned, and an `AGENTS.override.md` repository governed. The table
 rots by design (Windsurf → Devin Desktop; Antigravity CLI replacing Gemini CLI), so every report carries a
 `ruleset_hash` over the table and the catalogue — rot shows up in provenance instead of being inferred from a
@@ -84,6 +88,7 @@ suspicious verdict.
 | `AGT-09` | Branch and release boundary declared | B | DEGRADER | States which branches exist and whether an agent may tag or release, and names every branch the declared branch rules protect by name | Implemented |
 | `AGT-10` | Instruction indirection resolved | B | DEGRADER | A file the entry file defers to ("first read …") is named in a harness config (`.aider.conf.yml` `read:`, `opencode.json` `instructions`, `.codex/config.toml` `model_instructions_file`, `.gemini/settings.json` `context.fileName`) or inlined | Implemented |
 | `AGT-12` | Communication rules stated | B | COSMETIC | A section of the instruction file headed for writing to people, or a linked file whose name says `communicat`, names the reader, how to report and how to ask for a decision; a named file that does not exist, or a missing element, is `PARTIAL` | Implemented |
+| `AGT-13` | Coding conventions written | B | COSMETIC | A conventions file (`CONVENTIONS*`, `*convention*`, `CODE_STYLE*`, `CODING_STANDARDS*`, `*coding-guidelines*`, at the root or under `docs/` or `.github/`) or a conventions section of `AGENTS.md` or `CONTRIBUTING.md` covers naming, layering, error handling and logging, and testing, and links the formatter or linter config; a missing item or a `TBD` or `TODO` is `PARTIAL`; `docs/STYLE_GUIDE.md` never counts | Implemented |
 
 ---
 
@@ -227,6 +232,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | `HYG-09` | Dependency update automation | A | Dependabot or Renovate configured, an entry for each detected ecosystem, and no `target-branch` beside `ignore` or `groups` | Implemented |
 | `HYG-10` | License | A | A license file exists | Implemented |
 | `HYG-11` | Branch protection | B | Protection declared by configuration-as-code where the provider allows (ruleset files, the Settings app, Terraform), plus a source-branch check for a two-branch model | Implemented |
+| `HYG-13` | Contributing rules written | B | The `CONTRIBUTING*` documents `HYG-05` finds point to the setup command (a link to `README.md` or `AGENTS.md`, or a named setup command), name the gate command with a paragraph saying CI runs the same, and name branches, commits and pull requests; one or two of the three is `PARTIAL`, none `FAIL`, no document `UNKNOWN` | Implemented |
 
 ---
 

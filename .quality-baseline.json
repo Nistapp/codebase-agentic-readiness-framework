@@ -4,8 +4,8 @@
   "counts": {
     "ruff": {
       "count": 0,
-      "what": "ruff check diagnostics over audit, implement and dev (rules in ruff.toml)",
-      "command": "uvx ruff@<pin> check audit implement dev --output-format json",
+      "what": "ruff check diagnostics over audit, implement, dev and greenfield/bootstrap (rules in ruff.toml)",
+      "command": "uvx ruff@<pin> check audit implement dev greenfield/bootstrap --output-format json",
       "verb": "make format-check"
     },
     "mypy": {
@@ -15,7 +15,7 @@
       "verb": "make typecheck"
     },
     "markdownlint": {
-      "count": 645,
+      "count": 620,
       "what": "markdownlint-cli2 issues over every tracked Markdown file (the DOCS_LINT_PATHS ratchet is a subset and clean)",
       "command": "git ls-files -z '*.md' | xargs -0 npx markdownlint-cli2@<pin>",
       "verb": "make docs-lint"

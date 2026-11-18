@@ -69,6 +69,12 @@
       "acceptable_verdicts": [
         "UNKNOWN"
       ]
+    },
+    {
+      "id": "HYG-13",
+      "acceptable_verdicts": [
+        "UNKNOWN"
+      ]
     }
   ]
 }

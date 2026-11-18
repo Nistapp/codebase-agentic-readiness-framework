@@ -3,18 +3,18 @@
 
 """The positive fixture: a freshly scaffolded project must not fail the implemented checks.
 
-``python-agentic-bootstrap``'s scaffold is Phase-1-complete by construction, so it is the natural
-positive fixture for this audit. It is **generated in the test run, never vendored**: a vendored copy
+A scaffold from the greenfield scaffolder (``greenfield/bootstrap/bootstrap.py``) is Phase-1-complete by
+construction, so it is the natural positive fixture for this audit. It is **generated in the test run, never vendored**: a vendored copy
 stops being evidence the moment the scaffolder changes. If a scaffold ever fails a **scoreable**
 check, one of the two tools is wrong — that is a defect, not a false positive to tune away. The
 informational checks (`HYG`, `NAV-04`/`05`) are reported but never scored, and the scaffold
 deliberately leaves a license, branch protection and release automation to the adopter, so they are
 outside this contract.
 
-The scaffolder is located from ``AUDIT_BOOTSTRAP`` or the known sibling path. When it is absent the
-test **fails loudly** rather than skipping (AGENTS.md §10.13 forbids weakening a test to get green).
-The one exception is CI (``CI=true``): the scaffolder lives in a sibling repository that a CI checkout
-of this one does not contain, so there the test skips and says why.
+The scaffolder lives in this repository, so the test runs everywhere, CI included, and never skips.
+``AUDIT_BOOTSTRAP`` overrides its path (for example, to try another copy of the scaffolder). When the
+file is absent the test **fails loudly** (AGENTS.md §10.13 forbids weakening a test to get green). The
+scaffolder runs with ``--no-git`` and without ``--install``, so the test needs neither git nor npm.
 """
 
 from __future__ import annotations
@@ -33,37 +33,29 @@ import support  # noqa: E402
 from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 
 SCAFFOLDER_ENV = "AUDIT_BOOTSTRAP"
-KNOWN_SCAFFOLDER = (
-    Path.home()
-    / "Projects"
-    / "Nistapp-agentic-frameworks"
-    / "agentic-bootstrap"
-    / "python-agentic-bootstrap"
-    / "bootstrap.py"
-)
+REPO_ROOT = Path(__file__).resolve().parents[3]
+IN_REPO_SCAFFOLDER = REPO_ROOT / "greenfield" / "bootstrap" / "bootstrap.py"
+
+#: This checkout's greenfield templates. Passed explicitly, so a scaffolder named by ``AUDIT_BOOTSTRAP`` renders
+#: this checkout's templates, not its own default.
+TEMPLATES = REPO_ROOT / "greenfield" / "templates"
 
 #: The IDX checks assert properties of the operator's harness and index store, not repository
 #: content: a freshly generated scaffold in a temporary directory carries no project-level MCP
 #: config and no persistent index. They are exercised against constructed stores in
 #: ``packs/idx/test_idx_pack.py``, so the content fixture does not assert them.
-#: This checkout's greenfield templates. Passed explicitly, so the scaffolder's own default (a sibling checkout
-#: at a fixed path) cannot point at an older layout.
-TEMPLATES = Path(__file__).resolve().parents[3] / "greenfield" / "templates"
-
 ENVIRONMENT_SCOPED = frozenset({"IDX-01", "IDX-02", "IDX-03"})
 
 
 def locate_scaffolder() -> Path:
     override = os.environ.get(SCAFFOLDER_ENV)
-    return Path(override).expanduser() if override else KNOWN_SCAFFOLDER
+    return Path(override).expanduser() if override else IN_REPO_SCAFFOLDER
 
 
 class PositiveFixtureTests(unittest.TestCase):
     def test_generated_scaffold_fails_no_implemented_check(self):
         scaffolder = locate_scaffolder()
         if not scaffolder.is_file():
-            if os.environ.get("CI") == "true":
-                self.skipTest(f"scaffolder not found at {scaffolder}; CI does not check out its sibling repository")
             self.fail(
                 f"scaffolder not found at {scaffolder}. The positive fixture is generated, never "
                 f"vendored, and must not be skipped; set {SCAFFOLDER_ENV} to bootstrap.py."
@@ -106,7 +98,7 @@ class PositiveFixtureTests(unittest.TestCase):
 
         # Informational checks are still reported, not dropped from the report.
         reported = {c["id"] for c in report["checks"]}
-        informational = {"HYG-%02d" % n for n in range(1, 12)} | {"NAV-04", "NAV-05"}
+        informational = {"HYG-%02d" % n for n in range(1, 14) if n != 12} | {"NAV-04", "NAV-05"}
         self.assertTrue(informational <= reported, f"informational checks missing: {informational - reported}")
 
 

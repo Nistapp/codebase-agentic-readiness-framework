@@ -8,8 +8,8 @@
 
 | What | Licence |
 |---|---|
-| Scripts and code: `audit/tools/`, `implement/tools/`, the playbook templates in `implement/playbooks/templates/` (a copy in a target carries `MIT`, `Apache-2.0` or `BSD-3-Clause`, as its owner picks, and keeps the copyright line), the engine code in `audit/engine/` (the `audit/` package, its tests and `build.py`), the dev-only checks and build tools in `dev/`, and their tests | AGPL-3.0-or-later |
-| Documentation: this `docs/` tree, the engine's docs (`audit/engine/docs/`, its README and `AGENTS.md`), recipes, check files, playbooks, stack profiles, the check catalogue (`catalogue.json`) | GFDL 1.3 |
+| Scripts and code: `audit/tools/`, `implement/tools/`, the playbook templates in `implement/playbooks/templates/` (a copy in a target carries `MIT`, `Apache-2.0` or `BSD-3-Clause`, as its owner picks, and keeps the copyright line), the engine code in `audit/engine/` (the `audit/` package, its tests and `build.py`), the dev-only checks and build tools in `dev/`, the greenfield scaffolder `greenfield/bootstrap/bootstrap.py`, and their tests | AGPL-3.0-or-later |
+| Documentation: this `docs/` tree, the engine's docs (`audit/engine/docs/`, its README and `AGENTS.md`), recipes, check files, playbooks, stack profiles, the check catalogue (`catalogue.json`), the scaffolder's `README.md` and `DESIGN.md` in `greenfield/bootstrap/` | GFDL 1.3 |
 | Templates: `greenfield/templates/`, and the text an implement playbook copies or adapts from them into a target repository. A copy needs no notice | MIT-0 |
 | JSON Schemas (`audit/schema/`) and their documentation | GFDL 1.3 |
 | Example reports and other outputs published in this repository, including `audit/engine/examples/` | GFDL 1.3 |

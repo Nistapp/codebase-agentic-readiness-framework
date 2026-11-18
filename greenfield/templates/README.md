@@ -32,6 +32,16 @@ npm run check        # THE gate: format:check → typecheck → test
 
 CI runs the same script names — there is no CI-only gate.
 
+## Configuration and deployment
+
+This README stays a landing page. The details live in `docs/`, one page per topic (`docs/STYLE_GUIDE.md` §4.1).
+
+| Topic | Page |
+|---|---|
+| Settings and environment variables | [Add a page in `docs/reference/`, from `docs/templates/reference-template.md`.] |
+| Deployment and operations | [Add a how-to guide in `docs/how-to/`, from `docs/templates/how-to-template.md`.] |
+| Design and behaviour | [`docs/architecture/README.md`](docs/architecture/README.md) |
+
 ## Repository layout
 
 | Path | Purpose |
@@ -49,7 +59,8 @@ CI runs the same script names — there is no CI-only gate.
 
 - **`AGENTS.md`** — governs AI coding agents: architectural boundaries, the standardized command surface, the documentation contract, and the do-not-do list. Read it before your first change.
 - **`docs/STYLE_GUIDE.md`** — canonical rules for everything under `docs/`.
-- **`CONTRIBUTING.md`** — human contributor guide.
+- **`CONVENTIONS.md`** — code conventions that no tool enforces: naming, layering, errors, logging, tests.
+- **`CONTRIBUTING.md`** — human contributor guide: the gate, branches, commits and pull requests.
 - **`RELEASE_PROCESS.md`** — release lifecycle and the one-time npm Trusted Publishing setup.
 
 ## Before you publish

@@ -2,9 +2,10 @@
 
 ## Context
 
-The sibling scaffolder, `python-agentic-bootstrap`, has a `DESIGN.md` rule: *"a single Python file, standard
-library only"*. That rule rests on two grounds. First, the whole job is directory creation plus string
-substitution. Second, a single file needs no build step, so the tool runs before the target's toolchain exists.
+The greenfield scaffolder, `python-agentic-bootstrap` (`greenfield/bootstrap/`), has a `DESIGN.md` rule:
+*"a single Python file, standard library only"*. That rule rests on two grounds. First, the whole job is directory
+creation plus string substitution. Second, a single file needs no build step, so the tool runs before the target's
+toolchain exists.
 
 The second ground is a real requirement for the audit too. The first does not hold for this
 tool: the audit's own design is ~50 checks, four pipeline stages of traversal and classification, per-ecosystem
@@ -40,9 +41,9 @@ different in kind: a module tree can be packed into one **archive** that runs an
    class of bug and keeps the table greppable.
 6. **Determinism is preserved** by hashing the *content* of the catalogue and the variant table (`ruleset_hash`),
    not by hashing files or their paths, so the report is identical whether produced from the tree or the archive.
-7. **The scaffolder is deliberately left alone.** `bootstrap.py` stays a single file: it is ~518 lines, verified,
-   and shipping it a second convention would be churn without benefit. The shared constraint between the two
-   tools is *"standard library only, no build step to run"* — not *"one file"*.
+7. **The scaffolder is deliberately left alone.** `bootstrap.py` stays a single file of about 540 lines.
+   It is verified, and a second convention would be churn without benefit. The two tools share one
+   constraint: *"standard library only, no build step to run"*, not *"one file"*.
 
 ## Alternatives Considered
 
@@ -77,5 +78,5 @@ different in kind: a module tree can be packed into one **archive** that runs an
   Considered acceptable, and the reason tables stay in code.
 * The package name `audit` is generic; a consumer importing it must be aware of the shadowing risk if they ship
   their own `audit` module. The command interface is the supported surface, not the import path.
-* Two conventions exist across the two sibling tools. This is a deliberate, recorded divergence, not drift:
+* Two conventions exist across the two tools. This is a deliberate, recorded divergence, not drift:
   the shared rule is the constraint that matters and the file-count rule was never the point.

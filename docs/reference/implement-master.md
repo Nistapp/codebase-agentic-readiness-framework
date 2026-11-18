@@ -38,8 +38,8 @@ Themes run in dependency order: the order and the dependencies are in
 | [T4 CI parity, Git hooks and commit messages](#t4-ci-parity-git-hooks-and-commit-messages) | [`add-ci-parity`](#add-ci-parity), [`add-hooks-and-commit-rules`](#add-hooks-and-commit-rules) | 8 |
 | [T5 Tests and baselines](#t5-tests-and-baselines) | [`add-baselines-and-ratchet`](#add-baselines-and-ratchet) | 8 |
 | [T6 Docs and navigation](#t6-docs-and-navigation) | [`establish-docs-contract`](#establish-docs-contract) | 10 |
-| [T7 AGENTS.md and governance](#t7-agentsmd-and-governance) | [`adapt-agents-md`](#adapt-agents-md), [`add-deny-rules`](#add-deny-rules) | 17 |
-| [T8 Hygiene and index](#t8-hygiene-and-index) | [`add-repo-hygiene`](#add-repo-hygiene), [`register-index`](#register-index) | 14 |
+| [T7 AGENTS.md and governance](#t7-agentsmd-and-governance) | [`adapt-agents-md`](#adapt-agents-md), [`add-deny-rules`](#add-deny-rules) | 18 |
+| [T8 Hygiene and index](#t8-hygiene-and-index) | [`add-repo-hygiene`](#add-repo-hygiene), [`register-index`](#register-index) | 15 |
 
 ## T1 Command surface and quality tools
 
@@ -275,8 +275,8 @@ not moved.
 
 | Check | What the playbook does |
 |---|---|
-| [`DOC-01` docs/ exists](audit-master.md#doc-01-docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home |
-| [`DOC-02` docs/STYLE_GUIDE.md exists](audit-master.md#doc-02-docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` and one line in the instruction file that names it |
+| [`DOC-01` docs/ exists](audit-master.md#doc-01-docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home. A dense README section that the owner agrees to move gets a `docs/` page and an index row (Steps 10) |
+| [`DOC-02` docs/STYLE_GUIDE.md exists](audit-master.md#doc-02-docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` with the form rules and one line in the instruction file that names it. An existing guide gets the form rules only by the owner's choice (Steps 9) |
 | [`DOC-03` artefacts/ exists and is ignored](audit-master.md#doc-03-artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
 | [`DOC-04` ADR directory and index](audit-master.md#doc-04-adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
 | [`DOC-05` Docs are readable](audit-master.md#doc-05-docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner picks one of three permissive licences for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
@@ -304,6 +304,15 @@ not moved.
   Never copy it under another licence, the framework's own included, and never remove or replace its copyright
   line.
 - Do not add a status, date or approval line to an ADR. The owner's merge is the acceptance.
+- Do not rewrite, reorder or renumber the text of an existing style guide. Append the form rules as one section, and
+  only with `docs.style_guide_update=yes`. With `no`, do not touch the file.
+- Do not move the setup command or the single-test command out of the root files `README.md`, `AGENTS.md` or
+  `CONTRIBUTING.md`. `EXEC-03` non-interactive setup path and `TST-04` fast path documented read only `README.md`,
+  `AGENTS.md`, `CLAUDE.md` and `CONTRIBUTING.md`, never `docs/`. `TST-04` reads the single-test command, not the setup
+  command.
+- Do not change a fact while moving a README section. Ask the owner about a gap.
+- Do not split a README the owner answered `no` to (`docs.split_readme=no`), and do not move two sections in one
+  commit.
 
 Full playbook: [`establish-docs-contract.md`](../../implement/playbooks/establish-docs-contract.md).
 
@@ -317,12 +326,13 @@ what an agent may do with branches and releases, which harnesses read the file, 
 from the code. Every line is true against the repository, and the file stays within the 400-line budget.
 
 **The rule this playbook enforces: the playbook drafts, the owner edits.** `AGENTS.md` is the owner's voice. Each
-finding gets the smallest diff that closes it, proposed and reviewed one at a time. The file is never rewritten
-wholesale.
+finding gets the smallest diff that closes it, proposed and reviewed one at a time. An existing file is never
+rewritten wholesale. When no instruction file exists, the playbook creates a bare skeleton first and fills it one
+section, one commit at a time ([details](../../implement/playbooks/adapt-agents-md.md#no-instruction-file-yet)).
 
 | Check | What the playbook does |
 |---|---|
-| [`AGT-01` Instruction file present, canonical, and non-trivial](audit-master.md#agt-01-instruction-file-present-canonical-and-non-trivial) | Verification: a canonical root `AGENTS.md`, correctly cased, no stub markers, no override file |
+| [`AGT-01` Instruction file present, canonical, and non-trivial](audit-master.md#agt-01-instruction-file-present-canonical-and-non-trivial) | Verification: a canonical root `AGENTS.md`, correctly cased, no stub markers, no override file. Creates the file from the greenfield skeleton when none exists |
 | [`AGT-02` Component coverage by instruction files](audit-master.md#agt-02-component-coverage-by-instruction-files) | Verification; a component `AGENTS.md` only when the owner asks (component scoping is planned for a later framework version) |
 | [`AGT-03` Documentation contract named](audit-master.md#agt-03-documentation-contract-named) | One line each for `docs/`, `docs/STYLE_GUIDE.md` and the scratch directory |
 | [`AGT-04` Definition of done stated](audit-master.md#agt-04-definition-of-done-stated) | One definition-of-done sentence tying documentation triggers to the same change set |
@@ -333,12 +343,18 @@ wholesale.
 | [`AGT-10` Instruction indirection resolved](audit-master.md#agt-10-instruction-indirection-resolved) | A "read X first" deferral becomes an ordinary link, with the must-always rules moved into `AGENTS.md` |
 | [`AGT-11` Instructions are specific and not inferable](audit-master.md#agt-11-instructions-are-specific-and-not-inferable) | Generic text moves to `docs/`; contradicted rules become target state with the exception count; stale lines corrected |
 | [`AGT-12` Communication rules stated](audit-master.md#agt-12-communication-rules-stated) | A "How to write for people" section that names the reader, how to report and how to ask for a decision. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
+| [`AGT-13` Coding conventions written](audit-master.md#agt-13-coding-conventions-written) | Writes `CONVENTIONS.md` from the greenfield template when no conventions exist; at `PARTIAL`, suggests the missing items and adds the ones the owner accepts. Trigger: a confirmed finding |
 | [`EXEC-06` Documented commands resolve](audit-master.md#exec-06-documented-commands-resolve) | Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline |
 | [`TST-04` Fast path documented](audit-master.md#tst-04-fast-path-documented) | Verification only, when T5 wrote the fenced single-test line; written here when the item sits in T7 |
 
 **What it never does:**
 
-- Do not rewrite `AGENTS.md` wholesale, reorder its sections, or reflow its lines.
+- Do not rewrite an existing `AGENTS.md` wholesale, reorder its sections, or reflow its lines. The opt-in
+  renumbering (Step 15) keeps this true: it changes only the number, marker or trailing `\` of a line.
+- Do not renumber an existing file the owner did not opt in for, renumber two top-level sections in one commit, or
+  go on after a changed verdict.
+- Do not copy the template's example text, a placeholder or a generic line into a created file, and do not create
+  `AGENTS.md` beside a vendor file that holds real rules.
 - Do not reword the rest of `AGENTS.md` to meet the plain-language rules. Only the new AGT-12 section follows
   them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
@@ -349,6 +365,10 @@ wholesale.
   exist), and do not name a harness in the reach line that does not load the file.
 - Do not add generic prose, role-play persona text or an overview to fill a section. The reader persona of the
   AGT-12 section is not generic text.
+- Do not write a conventions rule that the code does not show, fill a missing item with generic text, or invent the
+  rule behind a `TBD` or `TODO` line. Do not write conventions text that does not come from `greenfield/templates/`.
+- Do not move or rewrite a conventions section in `AGENTS.md` or `CONTRIBUTING.md` unasked, copy a Git rule into the
+  conventions, or copy a formatter or linter setting into them.
 - Do not copy content from a private repository or workspace into an open-source one, or from any target into the
   framework.
 
@@ -396,7 +416,7 @@ CONTRIBUTING, pull-request and issue templates), how to report a vulnerability (
 live (the rules as code, and a branch-protection page that summarises them). Each file is small, true against the
 repository, and sits where the audit reads it.
 
-**The rule this playbook enforces: write only what is true, and only what the repository needs.** All eleven checks
+**The rule this playbook enforces: write only what is true, and only what the repository needs.** All twelve checks
 are cosmetic and unscored, so a long, generic template that nobody keeps true is worse than a short page that is.
 A value the playbook cannot know (a mailbox, a response time, a second reviewer) is a named placeholder plus an owner
 action in the state, never an invented contact.
@@ -414,6 +434,7 @@ action in the state, never an invented contact.
 | [`HYG-09` Dependency update automation configured](audit-master.md#hyg-09-dependency-update-automation-configured) | An update entry for each detected ecosystem, no `target-branch` beside `ignore` or `groups`, and the owner's update policy (Step 8) |
 | [`HYG-10` License present](audit-master.md#hyg-10-license-present) | Verification only; the playbook never chooses a licence |
 | [`HYG-11` Branch protection declared as code](audit-master.md#hyg-11-branch-protection-declared-as-code) | The rules declared as code (GitHub ruleset files, or the repository's Terraform), a source-branch check for a two-branch model, and a page that summarises them (Step 7) |
+| [`HYG-13` Contributing rules written](audit-master.md#hyg-13-contributing-rules-written) | Improves a `CONTRIBUTING` file that exists: for each missing item (a setup link, the gate and its CI line, the branch, commit and pull-request rules), proposes a line from the repository's facts and adds the ones the owner accepts (Step 9). The file itself is `HYG-05`'s |
 
 **What it never does:**
 
@@ -425,6 +446,10 @@ action in the state, never an invented contact.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
 - Do not copy a private runbook, another repository's page, or its values into a repository's file.
 - Do not choose a licence.
+- Do not add a contributing item the owner has not accepted, or a rule the repository does not show. Do not write
+  contributing text that does not come from `greenfield/templates/`.
+- Do not copy the setup commands into `CONTRIBUTING.md`; link them. Do not move a branch or commit rule out of
+  another file unasked, and do not move one without leaving a link.
 - Do not replace Renovate with Dependabot or the reverse, and do not turn on security updates in the settings.
 - Do not create a file in a component directory expecting it to count.
 - Do not reformat existing pages (`format.mass_reformat`).

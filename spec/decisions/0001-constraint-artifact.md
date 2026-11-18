@@ -10,11 +10,11 @@ The audit engine cannot check what no document defines. Without a defined artifa
 * `CON-02` ("Test directories protected") must accept any of about twenty root-level file names, such as `.cursorignore`, `constraints.yaml` and `denylist.txt`. Without one it falls back to ignore rules and to CI text, and never passes.
 * Two equally well-governed repositories get different verdicts depending on the file name they happen to choose.
 
-An agent reads the instruction file at the start of every session. It reads no other file unless its harness is configured to. The framework's own template already has a "Do Not Do" section in that file ([greenfield `AGENTS.md`](../../greenfield/templates/AGENTS.md), section 10).
+An agent reads the instruction file at the start of every session. It reads no other file unless its harness is configured to. The framework's own template already has a "Never" section in that file ([greenfield `AGENTS.md`](../../greenfield/templates/AGENTS.md), section 6).
 
 ## Decision
 
-1. **The deny list is the prohibitions section of the instruction file.** It is the section whose heading says what an agent must not do. "Do Not Do" is the template's heading; "Never", "Prohibited", "Forbidden" and "Deny" are accepted too. It is the only allow/deny artifact the spec requires or checks.
+1. **The deny list is the prohibitions section of the instruction file.** It is the section whose heading says what an agent must not do. "Never" is the template's heading; "Do Not Do", "Prohibited", "Forbidden" and "Deny" are accepted too. It is the only allow/deny artifact the spec requires or checks.
 2. **There is no separate allow list.** What an agent may change is stated by the architectural boundaries ([REQ-SH-010](../readiness-requirements.md#req-sh-010--architectural-boundaries-declared)) and limited by the deny list.
 3. **Harness-native enforcement is optional hardening.** Claude Code permission rules, opencode permissions, `.cursorignore` and the like are neither required nor checked, and an audit gives them no verdict. A report may mention them as a way to enforce the list. The `add-deny-rules` playbook carries a step that reports to the owner what each harness configuration in the repository allows without a prompt; it is a report, and the agent never edits a permission file unless the owner opted in (`agents_md.harness_deny=yes`), and never creates one. No requirement is added.
 4. **Scope.** This decides Phase 1. Where per-component constraints live in Phases 3 to 5 is not decided here.

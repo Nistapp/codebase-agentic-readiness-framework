@@ -1,12 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""AGT content-contract checks (AGT-03, 04, 06, 07, 09, 12) against their one-defect fixtures.
+"""AGT content-contract checks (AGT-03, 04, 06, 07, 09, 12, 13) against their one-defect fixtures.
 
 Each fixture is a minimal repository that fails exactly one check; `governed-minimal` passes all
-six. The audit is run as a subprocess through `tests/support.py`, so the fixtures exercise the real
+seven. The audit is run as a subprocess through `tests/support.py`, so the fixtures exercise the real
 end-to-end path, not the check functions in isolation. `AGT-12` is also run in-process on built repositories,
-so coverage traces it.
+so coverage traces it; `AGT-13` is run in-process in `test_agt13_conventions.py`.
 """
 
 from __future__ import annotations
@@ -22,6 +22,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import support  # noqa: E402
 from audit.rules.checks.agt import MIN_INSTRUCTION_CHARS, _trivial_reason  # noqa: E402
 from audit.rules.checks.agt import check_agt12 as CHECK_AGT12  # noqa: E402
+from audit.rules.checks.agt import check_agt08 as CHECK_AGT08  # noqa: E402
+from audit.rules.checks.agt import instruction_paths  # noqa: E402
 from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 from audit.stack import detect_stack  # noqa: E402
@@ -35,11 +37,12 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "agt-09-no-release": ("AGT-09", "PARTIAL"),
     "agt-09-ruleset-branch-unnamed": ("AGT-09", "PARTIAL"),
     "agt-12-no-rules": ("AGT-12", "FAIL"),
+    "agt-13-no-conventions": ("AGT-13", "FAIL"),
 }
 
-CONTENT_CHECKS = ("AGT-03", "AGT-04", "AGT-06", "AGT-07", "AGT-09", "AGT-12")
+CONTENT_CHECKS = ("AGT-03", "AGT-04", "AGT-06", "AGT-07", "AGT-09", "AGT-12", "AGT-13")
 #: Every engine AGT check; AGT-11 is judged by an agent and has no engine rule.
-AGT_CHECKS = tuple(f"AGT-{i:02d}" for i in range(1, 13) if i != 11)
+AGT_CHECKS = tuple(f"AGT-{i:02d}" for i in range(1, 14) if i != 11)
 
 
 class AgtFixtureTests(unittest.TestCase):
@@ -56,7 +59,7 @@ class AgtFixtureTests(unittest.TestCase):
                     failing, expected_failing, f"{name}: unexpected AGT content FAILs {failing - expected_failing}"
                 )
 
-    def test_governed_minimal_passes_all_six(self):
+    def test_governed_minimal_passes_all_seven(self):
         report = support.run_audit(support.fixture("governed-minimal"))
         verdicts = support.verdicts(report)
         for check in CONTENT_CHECKS:
@@ -185,6 +188,51 @@ class Agt08StatedHarnessesTests(unittest.TestCase):
 
     def test_a_harness_name_without_the_phrase_does_not(self):
         self.assertEqual(self.reach_findings(FILLER + "We like Cursor.\n"), ["AGT-08:harness-reach"])
+
+
+class Agt08ConfigGatedPathTests(unittest.TestCase):
+    """Aider loads `CONVENTIONS.md` only when `.aider.conf.yml` names it, so without that config the file is a style
+    guide, not an instruction file competing with `AGENTS.md`. Run in-process, so coverage traces it."""
+
+    AGENTS = FILLER + "This file is read by Claude Code, opencode, Codex and Cursor.\n"
+
+    def run_check(self, files: dict[str, str]) -> tuple[set[str], str, list[str]]:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            inventory = build_inventory(root)
+            outcome = CHECK_AGT08(
+                spec=REGISTRY_BY_ID["AGT-08"],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+            paths = instruction_paths(inventory)
+        return paths, outcome.verdict.value, sorted(f.path for f in outcome.findings)
+
+    def test_conventions_without_aider_config_is_not_an_instruction_file(self):
+        paths, verdict, findings = self.run_check({"AGENTS.md": self.AGENTS, "CONVENTIONS.md": "# Conventions\n"})
+        self.assertEqual(paths, {"AGENTS.md"})
+        self.assertEqual((verdict, findings), ("PASS", []))
+
+    def test_conventions_in_a_subfolder_without_aider_config_is_not_one_either(self):
+        paths, verdict, _ = self.run_check({"AGENTS.md": self.AGENTS, "docs/CONVENTIONS.md": "# Conventions\n"})
+        self.assertEqual((paths, verdict), ({"AGENTS.md"}, "PASS"))
+
+    def test_conventions_with_aider_config_competes_with_agents_md(self):
+        paths, verdict, findings = self.run_check(
+            {
+                "AGENTS.md": self.AGENTS,
+                "CONVENTIONS.md": "# Conventions\n",
+                ".aider.conf.yml": "read: [CONVENTIONS.md]\n",
+            }
+        )
+        self.assertIn("CONVENTIONS.md", paths)
+        self.assertEqual(verdict, "FAIL")
+        self.assertIn("vendor-files", findings)
 
 
 class Agt07SectionTests(unittest.TestCase):

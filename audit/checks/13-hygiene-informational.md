@@ -1,28 +1,31 @@
 # Hygiene (`HYG`) — informational, never scored
 
-> Follows the anatomy in [`README.md`](README.md). Eleven checks, all `method: automated`, all
-> `catalogue.json`: `scored: false` with no `req_ids` — reported like every other check, but earning no
-> credit. See
+> Follows the anatomy in [`README.md`](README.md). Twelve checks, all `method: automated`, all
+> `catalogue.json`: `scored: false`, and all but `HYG-13` with no `req_ids` — reported like every other check,
+> but earning no credit. The number between `HYG-11` and `HYG-13` is kept for a planned release-provenance
+> check. See
 > [Why These Checks §14](../engine/docs/architecture/user-overview/03-why-these-checks.md#14-hygiene-informational-never-scored)
 > for the consequence behind this family: README, CODEOWNERS, PR/issue templates, CONTRIBUTING,
 > SECURITY, CHANGELOG, release process, dependency-update automation, license and branch protection are
 > how a *team* operates, not what an agent reads before deciding what to edit. They are reported because
 > a client engagement needs the whole picture, and left numberless on purpose.
 >
-> **Where a hygiene file counts.** `HYG-02`, `HYG-03`, `HYG-05`, `HYG-06`, `HYG-07`, `HYG-08` and `HYG-09` read
-> a file at the repository root or under `.github/`, `.gitlab/` or `docs/`, never in a component's directory,
-> and never under a carried-data directory (`templates/`, `examples/`, `fixtures/`), which is not in the
-> inventory at all
+> **Where a hygiene file counts.** `HYG-02`, `HYG-03`, `HYG-05`, `HYG-06`, `HYG-07`, `HYG-08`, `HYG-09` and
+> `HYG-13` read a file at the repository root or under `.github/`, `.gitlab/` or `docs/`, never in a
+> component's directory, and never under a carried-data directory (`templates/`, `examples/`, `fixtures/`),
+> which is not in the inventory at all
 > ([ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). A
 > `CONTRIBUTING.md` that only exists under `greenfield/templates/` is a template the repository
-> ships, not the repository's own, and reads `FAIL`.
+> ships, not the repository's own, and reads `FAIL` on `HYG-05` and `UNKNOWN` on `HYG-13`.
 >
 > **Verdict contract, shared by every check in this file (from the engine's own `hyg.py` docstring):
 > an absent artifact is `FAIL`.** Because every check here is unscored, a `FAIL` is a reported fact that
 > never moves the readiness number — write it up like any other finding, just without a score
 > consequence. `UNKNOWN` is reserved for "the artifact is present but its quality cannot be settled" (an
 > unreadable README, an undatable changelog, an unrecognised CI provider for branch protection) — it is
-> never used merely because an artifact is absent. None of these checks writes to the target or runs a
+> never used merely because an artifact is absent. The one exception is `HYG-13`: it reads the content of
+> the file whose presence `HYG-05` reports, so with no such file it is `UNKNOWN` and `HYG-05` owns the
+> finding. None of these checks writes to the target or runs a
 > command in the target's own toolchain; `HYG-07` reads git history read-only for a commit date, never
 > wall-clock time (`audit/engine/AGENTS.md` §5).
 >
@@ -357,3 +360,43 @@ Pitfalls         A provider this check does not recognise as offering config-as-
                  determinable by this check". GitHub does not apply `.github/rulesets/` by itself: a file is
                  the declared intent, and only the live read shows enforcement. A source-branch token used
                  for another purpose (an `echo`, a cache key) passes the source-branch half; read the job.
+
+## HYG-13 — Contributing rules written
+
+Why it matters   A contributor should learn from one file how to set up, which gate to run and how to name a
+                  branch, write a commit and open a pull request. A file that only says "thank you" leaves
+                  them to guess
+                  ([REQ-SH-063](../../spec/readiness-requirements.md#req-sh-063--contributing-rules-written)).
+Severity         COSMETIC
+Engine           `HYG-13`, implemented. Reads every document `HYG-05` finds (basename starts with `contributing`, at the
+                 root or under `.github/`, `.gitlab/` or `docs/`) for three items. An item counts when any of
+                 these files shows it. (a) Setup pointer: a Markdown link to `README.md` or `AGENTS.md`
+                 (`](README.md)`, `](../README.md#development)`), or a named setup command: `make setup`,
+                 `make install`, `npm install`, `npm ci`, `pnpm install`, `yarn install`, `pip install`,
+                 `uv sync`, `poetry install`, `bundle install`, `./mvnw install`, `./gradlew build`,
+                 `scripts/setup`, `bin/bootstrap` and the like. (b) The gate: a gate command, a `check`,
+                 `verify`, `gate` or `ci` verb on a runner (`make check`, `npm run check`, `./gradlew check`,
+                 `mvn verify`, `tox -e check`); and a paragraph that names CI (`CI` in capitals, "continuous
+                 integration", "GitHub Actions", "GitLab CI", "pipeline") and says "same" or names a gate
+                 command. (c) Branches, commits and pull requests: the words "branch", "commit" and "pull
+                 request" (or "merge request", `PR`, `MR`), all three. The words are case-insensitive except
+                 `CI`, `PR` and `MR`. Distrust the verdict when the file is not in English or names its gate
+                 with a runner the list lacks; read the file and judge the three items by hand.
+Method           automated
+Look for         The `CONTRIBUTING*` documents at the repository level; in them, the link or setup command,
+                 the gate command and the CI paragraph, and the three workflow words.
+Rubric           PASS: the contributing documents hold all three items, a to c.
+                 PARTIAL: they hold one or two of the three items.
+                 FAIL: a contributing document exists and holds none of the three items.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: no contributing document exists (`HYG-05` owns that finding), or none can be
+                 read as text.
+Evidence to cite The file and line of each item found: the setup pointer, the gate command, the CI line,
+                 and the first line of each workflow word. A `FAIL` cites the contributing file at line 1.
+Absence proof    A PARTIAL or FAIL names each missing item and the files read for it.
+Remediation      `add-repo-hygiene`
+Pitfalls         A copy of the setup commands counts as item a, but the file should link the command, not
+                 copy it; the check does not judge the copy. The words show that a rule is there, not that
+                 it is right: "Never commit secrets" passes the commits word. Rules for branches, commits
+                 and pull requests in `AGENTS.md` alone do not count, because `CONTRIBUTING.md` is their
+                 home.

@@ -17,10 +17,10 @@
     {
       "path": "example-service.audit-report.20261010T094207Z.json",
       "git_sha": "deadbeefdead",
-      "catalogue_version": "0.7.0",
+      "catalogue_version": "0.9.0",
       "release": "0.3.2",
       "revision": "cafecafecafe",
-      "sha256": "53560c6c3c028370c9dac4b58aa5e3dc38fe56c270236b8ffcf879ed49c97c98"
+      "sha256": "cb38e909bfacb10710ef0e57be4eee254092ffc1324293778a570dd8cda2c9c9"
     }
   ],
   "preferences": [],

@@ -154,6 +154,15 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("AGT-09", "Branch and release boundary declared", "B", _S.DEGRADER),
     _c("AGT-10", "Instruction indirection resolved", "B", _S.DEGRADER),
     _c("AGT-12", "Communication rules stated", "B", _S.COSMETIC),
+    _c(
+        "AGT-13",
+        "Coding conventions written",
+        "B",
+        _S.COSMETIC,
+        rule="A conventions file (root, docs/ or .github/) or a conventions section of AGENTS.md or CONTRIBUTING.md "
+        "covers naming, layering, error handling and logging, and testing, links the formatter or linter config, "
+        "and holds no stub word; docs/STYLE_GUIDE.md never counts.",
+    ),
     # -- DOC ------------------------------------------------------------
     _c("DOC-01", "docs/ exists", "A", _S.DEGRADER),
     _c("DOC-02", "docs/STYLE_GUIDE.md exists", "A", _S.DEGRADER),
@@ -240,6 +249,16 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     _c("HYG-09", "Dependency update automation configured", "A", _S.COSMETIC, scored=False),
     _c("HYG-10", "License present", "A", _S.COSMETIC, scored=False),
     _c("HYG-11", "Branch protection declared as code", "B", _S.COSMETIC, scored=False),
+    _c(
+        "HYG-13",
+        "Contributing rules written",
+        "B",
+        _S.COSMETIC,
+        scored=False,
+        rule="The CONTRIBUTING document (root, .github/, .gitlab/ or docs/) points to the setup command, names the gate "
+        "command and says CI runs the same, and states the rules for branches, commits and pull requests; no "
+        "CONTRIBUTING document is UNKNOWN, because HYG-05 owns that finding.",
+    ),
 )
 
 
@@ -354,6 +373,7 @@ def ruleset_hash() -> str:
     for harness in variants.HARNESSES:
         parts.append(
             f"H|{harness.tool}|{harness.agents_md}|{int(harness.nested)}|{','.join(harness.paths)}|{harness.doc_url}"
+            + (f"|gated:{','.join(harness.config)}" if harness.paths_need_config else "")
         )
     for row in variants.SHADOW_PAIRS:
         parts.append("S|" + "|".join(row))

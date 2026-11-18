@@ -1,0 +1,147 @@
+{
+  "$defs": {
+    "address": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "edge": {
+      "additionalProperties": false,
+      "properties": {
+        "anchor": {
+          "description": "The link's fragment, without the '#'. Only a links edge has one.",
+          "type": "string"
+        },
+        "confidence": {
+          "enum": ["exact", "name-match"]
+        },
+        "kind": {
+          "enum": ["contains", "links", "mentions", "runs", "bundles"]
+        },
+        "source": {
+          "$ref": "#/$defs/address"
+        },
+        "target": {
+          "$ref": "#/$defs/address"
+        }
+      },
+      "required": ["confidence", "kind", "source", "target"],
+      "type": "object"
+    },
+    "file": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/repo_path"
+        },
+        "kind": {
+          "enum": ["markdown", "python", "json", "yaml", "other"]
+        },
+        "node": {
+          "const": "file"
+        },
+        "zone": {
+          "enum": ["recipe", "docs", "spec", "engine", "tools", "dev", "fixture"]
+        }
+      },
+      "required": ["address", "kind", "node", "zone"],
+      "type": "object"
+    },
+    "hash": {
+      "description": "SHA-256 of the normalised text, as 64 lowercase hex digits.",
+      "pattern": "^[0-9a-f]{64}$",
+      "type": "string"
+    },
+    "id": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/address",
+          "description": "The ID itself, such as CMD-01 or REQ-SH-060."
+        },
+        "defined_by": {
+          "$ref": "#/$defs/address",
+          "description": "The address of the node that defines the ID."
+        },
+        "kind": {
+          "enum": ["check", "requirement", "playbook", "adr", "tool", "schema"]
+        },
+        "node": {
+          "const": "id"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "required": ["address", "defined_by", "kind", "node", "title"],
+      "type": "object"
+    },
+    "repo_path": {
+      "description": "A relative POSIX path from the repository root.",
+      "pattern": "^(?!/)[^#\\\\]+$",
+      "type": "string"
+    },
+    "section": {
+      "additionalProperties": false,
+      "properties": {
+        "address": {
+          "description": "<path>#<slug>/<slug>/...: the file path and the chain of GitHub-style heading slugs.",
+          "pattern": "^(?!/)[^#\\\\]+#[^/]+(/[^/]+)*$",
+          "type": "string"
+        },
+        "level": {
+          "maximum": 6,
+          "minimum": 1,
+          "type": "integer"
+        },
+        "node": {
+          "const": "section"
+        },
+        "own_hash": {
+          "$ref": "#/$defs/hash"
+        },
+        "title": {
+          "type": "string"
+        },
+        "tree_hash": {
+          "$ref": "#/$defs/hash"
+        }
+      },
+      "required": ["address", "level", "node", "own_hash", "title", "tree_hash"],
+      "type": "object"
+    }
+  },
+  "$id": "urn:codebase-agentic-readiness-framework:docindex:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "The document index that dev/doc_index.py build writes: sorted keys, sorted nodes (by address, then node type) and sorted edges (by source, kind, target, anchor, confidence); no timestamps, absolute paths or line numbers.",
+  "properties": {
+    "edges": {
+      "items": {
+        "$ref": "#/$defs/edge"
+      },
+      "type": "array"
+    },
+    "index_format": {
+      "const": 1
+    },
+    "nodes": {
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/file"
+          },
+          {
+            "$ref": "#/$defs/section"
+          },
+          {
+            "$ref": "#/$defs/id"
+          }
+        ]
+      },
+      "type": "array"
+    }
+  },
+  "required": ["edges", "index_format", "nodes"],
+  "title": "Document index",
+  "type": "object"
+}

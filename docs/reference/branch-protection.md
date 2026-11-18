@@ -87,7 +87,7 @@ fails when a matrix misses a shard or a part misses a suite:
 | --- | --- |
 | `static` | `make format-check typecheck verify-rules recipe-lint adr-lint masters-check eval-expected-check workflow-lint spell` |
 | `crosscheck` | `make crosscheck` on Python 3.11 and 3.14 |
-| `test-coverage` | `make coverage-part`, one job per shard: a shard of the engine's and of the audit tools' suites, and the implement tools in part 1, under coverage.py on Python 3.11; each part runs its targets at once |
+| `test-coverage` | `make coverage-part`, one job per shard: a shard of the engine's and of the audit tools' suites, the implement tools in part 1 and the greenfield scaffolder in part 2, under coverage.py on Python 3.11; each part runs its targets at once |
 | `test-dev` | `make test-dev` on Python 3.11 |
 | `test-py314` | `make test-part`, one job per shard: every suite of `make test` and `verify-rules` on Python 3.14, with a shard of the engine's, the audit tools' and the dev checks' suites in each part; each part runs its targets at once |
 | `coverage` | `make coverage-combine SHARDED=1`: merges the data files (one per shard of a sharded suite) and fails below the floor in `.coveragerc` |

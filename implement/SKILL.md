@@ -203,7 +203,9 @@ changes nothing in the target.
    0003](docs/architecture/adrs/0003-push-and-pr-policy.md)). Ask here, too, for the keys most playbooks read:
    `ci.edits_authorised` (may build files and CI workflows change, and which), `format.mass_reformat` (`no` forbids
    reformatting the tree), `layout.command_runner` (one root runner, or one per component) and
-   `tests.stack_dependent` (does `test` need a live local stack). Every other key is listed, with its effect, in the
+   `tests.stack_dependent` (does `test` need a live local stack). When the AGT-01 finding says no instruction
+   file exists, ask `agents_md.create` too (`yes` or `no`): earlier themes write to that file
+   ([Stage 3, step 11](#stage-3-apply)). Every other key is listed, with its effect, in the
    Preconditions of the playbook that reads it, and is asked in that theme's Stage 2. A key that is absent when a
    step needs it is asked then, never assumed.
 6. **Placeholders the owner still owes** (a second reviewer, a security contact, a review date) are not Stage 1
@@ -366,7 +368,12 @@ only what is specific to it.
 10. **Markdown and diagrams.** Lint every changed Markdown file with the repository's own linter, and validate
    every Mermaid block before saving. When the repository has no linter, follow
    [When a needed tool is missing](tool-choice.md#when-a-needed-tool-is-missing).
-11. **Ask** before any step the playbook does not cover, and before any step that does not fit the repository.
+11. **No instruction file yet.** T1 to T6 write lines into the instruction file. When none exists, the first step
+   that needs it creates the skeleton first, as its own commit:
+   [`adapt-agents-md`, No instruction file yet, step 1](playbooks/adapt-agents-md.md#no-instruction-file-yet).
+   Do this only with `agents_md.create=yes`. With `no`, write the lines to `CONTRIBUTING.md`. Each theme writes
+   only its own lines; T7 fills the rest.
+12. **Ask** before any step the playbook does not cover, and before any step that does not fit the repository.
 
 ### What one commit holds
 

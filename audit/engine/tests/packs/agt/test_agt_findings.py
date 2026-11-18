@@ -60,8 +60,8 @@ class Agt01Tests(unittest.TestCase):
                 "FAIL",
                 "An agent cannot learn the project's conventions because no agent-instruction file exists anywhere "
                 "in the repository.",
-                "Create AGENTS.md at the repository root using the framework template "
-                "(codebase-agentic-readiness-framework templates/AGENTS.md).",
+                "Create AGENTS.md at the repository root with the adapt-agents-md playbook: the headings of the "
+                "framework's greenfield template, each section filled with this repository's facts.",
             ),
         )
         self.assertEqual(evidence_of(finding), [])
@@ -77,7 +77,8 @@ class Agt01Tests(unittest.TestCase):
                 "FAIL",
                 "An agent cannot work to this project's conventions because AGENTS.md exists but is a stub — only 37 "
                 "characters (minimum 400).",
-                "Fill AGENTS.md from the framework template: verbs, boundaries, definition of done, prohibitions.",
+                "Fill AGENTS.md with this repository's facts, using the adapt-agents-md playbook: verbs, boundaries, "
+                "definition of done, prohibitions.",
             ),
         )
         self.assertEqual(evidence_of(finding), [("AGENTS.md", None, "1 rule lines")])

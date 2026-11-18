@@ -11,15 +11,17 @@
 #                       (alias: make format-check)
 #   make lint           read-only lint
 #   make typecheck      mypy, strict, on the typed scope below
-#   make test           the four unittest suites: the engine's, the audit tools' (the catalogue checks), the
-#                       implement tools' and the dev checks'; at once on Linux (TEST_JOBS), else one by one
+#   make test           the five unittest suites: the engine's, the audit tools' (the catalogue checks), the
+#                       implement tools', the greenfield scaffolder's and the dev checks'; at once on Linux
+#                       (TEST_JOBS), else one by one
 #   make check          THE gate: format:check -> typecheck -> test, plus the engine's rule check, the schema
 #                       cross-check, the recipe linter, the master-list freshness check,
 #                       the workflow lint and the spell check
 #   make security       secrets scan against the committed baseline, then the dependency audit (osv-scanner) of
 #                       the dev tools' lockfiles; needs Go and the network
-#   make coverage       (extra) the engine's and the tools' suites under coverage.py; fails below the floor in
-#                       .coveragerc. CI runs it in parts: coverage-<suite> per job, then coverage-combine
+#   make coverage       (extra) the engine's, the tools' and the scaffolder's suites under coverage.py; fails
+#                       below the floor in .coveragerc. CI runs it in parts: coverage-<suite> per job, then
+#                       coverage-combine
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
 #
 # `format:check` has a colon, which make reads as a rule separator. The target is spelled `format\:check`
@@ -73,7 +75,8 @@ DOCS_LINT_PATHS := 'implement/SKILL.md' 'implement/state.md' 'implement/playbook
 	'docs/explanation/user-overview/03-trust-and-safety.md' 'docs/explanation/contributor-deep-dive/04-stack-profiles.md' 'docs/explanation/contributor-deep-dive/05-evaluation.md' 'docs/how-to/add-a-stack-profile.md' 'docs/reference/harness-notes.md' \
 	'audit/engine/docs/how-to/read-the-report.md' 'docs/reference/versions.md' 'docs/how-to/implement-an-audit-report.md' \
 	'docs/how-to/resume-an-interrupted-run.md' 'docs/glossary.md' 'AGENTS.md' 'audit/prompts/talking-to-the-user.md' \
-	'docs/how-to/run-the-evals.md' 'docs/explanation/user-overview/02-how-the-recipes-work.md'
+	'docs/how-to/run-the-evals.md' 'docs/explanation/user-overview/02-how-the-recipes-work.md' \
+	'greenfield/bootstrap/README.md' 'greenfield/bootstrap/DESIGN.md'
 
 # The prose check (dev/prose_check.py, the plain-language rules of docs/COMMUNICATION_RULES.md) is advisory: it
 # reports warnings and notices and never fails a target. `make docs-prose` runs it; CI annotates changed Markdown.
@@ -85,10 +88,10 @@ PROSE_SCOPE := git ls-files -z -- '*.md' ':(exclude,glob)**/fixtures/**' ':(excl
 
 ENGINE := audit/engine
 
-# Mypy covers the recipe tools, the dev-only checks and the engine's build script. The engine's own code joins
-# later, through a ratchet. The find picks up every Python file under audit/tools, implement/tools and
-# dev, tests included, except the toy repositories under testdata/ (eval data).
-TYPED_SOURCES := $(shell find audit/tools implement/tools implement/playbooks/templates dev -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
+# Mypy covers the recipe tools, the dev-only checks, the greenfield scaffolder and the engine's build script. The
+# engine's own code joins later, through a ratchet. The find picks up every Python file under audit/tools,
+# implement/tools, dev and greenfield/bootstrap, tests included, except the toy repositories under testdata/ (eval data).
+TYPED_SOURCES := $(shell find audit/tools implement/tools implement/playbooks/templates dev greenfield/bootstrap -name '*.py' -not -path '*/testdata/*' -not -path '*/dist/*' 2>/dev/null | sort) $(ENGINE)/build.py
 
 .DEFAULT_GOAL := help
 
@@ -96,7 +99,7 @@ TYPED_SOURCES := $(shell find audit/tools implement/tools implement/playbooks/te
 # TEST_JOBS: about 80 s on CI instead of 170 s, and about 200 MB of memory in all (measured 2026-11-09). Elsewhere
 # they run one by one: macOS ships GNU make 3.81, which has no --output-sync. `make test TEST_JOBS=` runs them one by
 # one on Linux too. --output-sync=target prints each suite's output in one piece, when that suite ends.
-TEST_SUITES := test-engine test-audit-tools test-implement-tools test-dev
+TEST_SUITES := test-engine test-audit-tools test-implement-tools test-greenfield test-dev
 ifeq ($(shell uname -s 2>/dev/null)-$(filter 3.%,$(MAKE_VERSION)),Linux-)
 TEST_JOBS ?= -j4 --output-sync=target
 endif
@@ -107,11 +110,11 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-combine verify-rules crosscheck recipe-lint adr-lint masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint adr-lint masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
-	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-combine"
+	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
 	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
@@ -127,17 +130,17 @@ setup:
 	@echo "setup: prerequisites present (python, uv, git, go); nothing to install"
 
 format:
-	$(RUFF) format audit implement dev
+	$(RUFF) format audit implement dev greenfield/bootstrap
 
 format-check:
-	$(RUFF) format --check audit implement dev
-	$(RUFF) check audit implement dev
-	$(QUALITY_BASELINE) ruff -- $(RUFF) check audit implement dev --output-format json
+	$(RUFF) format --check audit implement dev greenfield/bootstrap
+	$(RUFF) check audit implement dev greenfield/bootstrap
+	$(QUALITY_BASELINE) ruff -- $(RUFF) check audit implement dev greenfield/bootstrap --output-format json
 
 format\:check: format-check
 
 lint:
-	$(RUFF) check audit implement dev
+	$(RUFF) check audit implement dev greenfield/bootstrap
 
 typecheck:
 	$(MYPY) --config-file mypy.ini $(TYPED_SOURCES)
@@ -154,6 +157,9 @@ test-audit-tools:
 
 test-implement-tools:
 	$(PYTHON) -m unittest discover -s implement/tools/tests
+
+test-greenfield:
+	$(PYTHON) -m unittest discover -s greenfield/bootstrap/tests
 
 test-dev:
 	$(PYTHON) -m unittest discover -s dev/tests
@@ -187,7 +193,7 @@ test-dev-shard:
 # shard is test_implement_eval alone (about 40 s), so the small whole targets go with the second.
 # dev/tests/test_ci_parity.py fails when the parts leave out a suite of `test`.
 TEST_PART_1 :=
-TEST_PART_2 := test-implement-tools verify-rules
+TEST_PART_2 := test-implement-tools test-greenfield verify-rules
 test-part:
 	$(require_shard)
 	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SHARDED_SUITES:%=test-%-shard) $(TEST_PART_$(SHARD))
@@ -199,14 +205,13 @@ test-part:
 #
 # Each suite runs as CI runs it, so the local number is CI's number. HOME is an empty directory, one per suite so
 # that parallel jobs cannot clear each other's: the IDX checks read the user's index store and MCP configs from
-# $HOME, which a CI runner does not have. CI=true lets the positive-fixture test skip as it does in CI (its
-# scaffolder is found through $HOME). uv's own directories are resolved from the real home first, so uvx still
+# $HOME, which a CI runner does not have. CI=true sets the rest of CI's environment. uv's own directories are resolved from the real home first, so uvx still
 # finds its cache and tools and nothing is downloaded again.
 COVERAGE_HOME := $(CURDIR)/dev/dist/coverage/home
 coverage_env = env -u AUDIT_INDEX_STORE -u XDG_CONFIG_HOME -u XDG_CACHE_HOME HOME=$(COVERAGE_HOME)/$(1) CI=true \
 	UV_CACHE_DIR="$$(uv cache dir)" UV_PYTHON_INSTALL_DIR="$$(uv python dir)" UV_TOOL_DIR="$$(uv tool dir)"
-COVERAGE_SUITES := coverage-engine coverage-audit-tools coverage-implement-tools
-coverage: coverage-engine coverage-audit-tools coverage-implement-tools coverage-combine
+COVERAGE_SUITES := coverage-engine coverage-audit-tools coverage-implement-tools coverage-greenfield
+coverage: coverage-engine coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine
 
 coverage-engine:
 	mkdir -p $(dir $(COVERAGE_DATA))
@@ -225,6 +230,12 @@ coverage-implement-tools:
 	rm -f $(COVERAGE_DATA).implement-tools
 	rm -rf $(COVERAGE_HOME)/implement-tools && mkdir -p $(COVERAGE_HOME)/implement-tools
 	$(call coverage_env,implement-tools) COVERAGE_FILE=$(COVERAGE_DATA).implement-tools $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s implement/tools/tests
+
+coverage-greenfield:
+	mkdir -p $(dir $(COVERAGE_DATA))
+	rm -f $(COVERAGE_DATA).greenfield
+	rm -rf $(COVERAGE_HOME)/greenfield && mkdir -p $(COVERAGE_HOME)/greenfield
+	$(call coverage_env,greenfield) COVERAGE_FILE=$(COVERAGE_DATA).greenfield $(COVERAGE) run --rcfile=.coveragerc -m unittest discover -s greenfield/bootstrap/tests
 
 # One shard of a sharded suite under coverage.py, in the same environment as coverage-<suite>, with its own HOME and
 # data file (.coverage.<suite>-<i>).
@@ -245,14 +256,14 @@ coverage-audit-tools-shard:
 # The coverage suites in TEST_SHARDS parts, for CI's Python 3.11 jobs: part <i> is shard <i> of each sharded suite
 # plus the targets in COVERAGE_PART_<i>, run at once. Each writes its own data file for coverage-combine SHARDED=1.
 COVERAGE_PART_1 := coverage-implement-tools
-COVERAGE_PART_2 :=
+COVERAGE_PART_2 := coverage-greenfield
 coverage-part:
 	$(require_shard)
 	$(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(SHARDED_SUITES:%=coverage-%-shard) $(COVERAGE_PART_$(SHARD))
 
 # The data files coverage-combine needs: one per suite, or, with SHARDED=1 (CI), one per shard of each sharded suite
 # in place of that suite's. `coverage combine` deletes the files it merges, so a later combine cannot reuse stale data.
-COMBINE_PARTS = $(if $(SHARDED),$(foreach s,$(SHARDED_SUITES),$(foreach i,$(shell seq 1 $(TEST_SHARDS)),$(s)-$(i))) implement-tools,engine audit-tools implement-tools)
+COMBINE_PARTS = $(if $(SHARDED),$(foreach s,$(SHARDED_SUITES),$(foreach i,$(shell seq 1 $(TEST_SHARDS)),$(s)-$(i))) implement-tools greenfield,engine audit-tools implement-tools greenfield)
 coverage-combine:
 	@for part in $(COMBINE_PARTS); do \
 		test -f $(COVERAGE_DATA).$$part || { echo "coverage-combine: no data file $(COVERAGE_DATA).$$part; run its coverage target first" >&2; exit 1; }; \

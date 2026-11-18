@@ -27,6 +27,7 @@ output to `<output-path>`". To fix the findings, say "Start implementing the fix
 | [Resume an interrupted run](how-to/resume-an-interrupted-run.md) | Continue an audit or an implementation after a stop |
 | [Add a stack profile](how-to/add-a-stack-profile.md) | Add support for a new toolchain |
 | [Run the evals](how-to/run-the-evals.md) | Evaluate the recipes headlessly |
+| [Check a recipe change](how-to/check-a-recipe-change.md) | Find the rules, references, bundle files and evidence a recipe change dropped |
 
 ## Reference
 
@@ -75,6 +76,7 @@ The framework is normative. If a tool disagrees with it, the tool is wrong.
 | [Framework glossary](framework/glossary.md) | The framework's own terms |
 | [`spec/`](../spec/README.md) | The numbered requirements (`REQ-...`) for a repository |
 | [`greenfield/`](../greenfield/README.md) | The recipe and templates for a new project |
+| [`greenfield/bootstrap/`](../greenfield/bootstrap/README.md) | The scaffolder that renders the templates into a new project |
 
 ## Decisions
 

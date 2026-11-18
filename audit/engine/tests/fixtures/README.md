@@ -5,8 +5,10 @@ The catalogue's § Adding a Check makes this a merge requirement: no fixture, no
 
 Current state: the fixture matrix is complete and consolidated by `../test_fixture_matrix.py`, which
 carries one explicit expected verdict per fixture and asserts the positive fixtures collectively pass
-every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`, `12`) and
-`AGT-05` are exercised by `../packs/agt/test_agt_pack.py` and `../packs/cmd/test_cmd_pack.py`; the earlier `AGT` checks
+every scoreable check. The `AGT` content-contract checks (`AGT-03`, `04`, `06`, `07`, `09`, `12`, `13`) and
+`AGT-05` are exercised by `../packs/agt/test_agt_pack.py` and `../packs/cmd/test_cmd_pack.py`, and `AGT-13`'s other
+verdicts by `../packs/agt/test_agt13_conventions.py`. Each fixture that `test_agt_pack.py` runs, and
+`governed-minimal`, holds a short `CONVENTIONS.md`, so that it does not also fail `AGT-13`; the earlier `AGT` checks
 (`01`, `02`, `08`, `10`) now have their own fixtures below. The `EXEC` checks (`EXEC-01`…`08`) are
 exercised by `../packs/exec/test_exec_pack.py` (and `EXEC-08` by `../packs/exec/test_exec08_inline_versions.py`); the `CMD` checks (`CMD-01`…`04`) by `../packs/cmd/test_cmd_pack.py`; and
 the `SEC` checks (`SEC-01`…`03`) by `../packs/sec/test_sec_pack.py`, against the fixtures below. The `DOC` and
@@ -15,8 +17,8 @@ checks (`TOOL-01`…`06`) are exercised by `../packs/tool/test_tool_pack.py`; th
 `../packs/ci/test_ci_pack.py`; the `TST` checks (`TST-01`…`05`) by `../packs/tst/test_tst_pack.py`; the `BASE` checks
 (`BASE-01`…`04`) by `../packs/base/test_base_pack.py`, with the ratchet exercised end to end by
 `../test_ratchet.py`; the `CON` checks (`CON-02`, `CON-03`) plus the `CON-04` emitter by
-`../packs/con/test_con_pack.py`; and the informational `HYG` checks (`HYG-01`…`11`) by
-`../packs/hyg/test_hyg_pack.py`.
+`../packs/con/test_con_pack.py`; and the informational `HYG` checks (`HYG-01`…`11`, `13`) by
+`../packs/hyg/test_hyg_pack.py`, with `HYG-13`'s other verdicts in `../packs/hyg/test_hyg13_contributing.py`.
 
 A fixture is correct for the runner it names, not only for the engine. `../packs/cmd/test_make_fixtures.py` runs
 `make -n -f <fixture>/Makefile check` on every fixture that has a `Makefile`, when `make` is installed, and requires
@@ -40,6 +42,7 @@ fixtures/
   agt-09-no-release/         branches stated, no release boundary -> AGT-09 PARTIAL
   agt-09-ruleset-branch-unnamed/ a ruleset protects staging, AGENTS.md does not name it -> AGT-09 PARTIAL
   agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL
+  agt-13-no-conventions/     no conventions file or section       -> AGT-13 FAIL
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
   agt-05-ok/                 all verbs named and resolved on a runner -> AGT-05 PASS
@@ -134,7 +137,8 @@ fixtures/
   hyg-09-target-branch-trap/ the npm entry sets target-branch and ignore -> HYG-09 PARTIAL
   hyg-10-no-license/         real README, no LICENSE at the root         -> HYG-10 FAIL
   hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
-  hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 UNKNOWN
+  hyg-13-thin-contributing/  CONTRIBUTING.md with no setup pointer, gate or workflow rules -> HYG-05 PASS, HYG-13 FAIL
+  hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 and HYG-13 UNKNOWN
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test
 ```
 
@@ -148,7 +152,8 @@ Two rules for a fixture:
 
 ## The positive fixture
 
-`python-agentic-bootstrap` is the positive fixture: a freshly scaffolded project is Phase-1-complete by
+`python-agentic-bootstrap` (`greenfield/bootstrap/bootstrap.py` in this repository) is the positive fixture: the
+test runs it in every run, CI included. A freshly scaffolded project is Phase-1-complete by
 construction, so it must score 1.0 with zero blockers. Generate it in the test run rather than vendoring a copy —
 a vendored copy stops being evidence the moment the scaffolder changes.
 
