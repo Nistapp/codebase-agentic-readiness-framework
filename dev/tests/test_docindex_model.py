@@ -279,13 +279,10 @@ class CliTest(unittest.TestCase):
         self.assertTrue(err.startswith("doc_index.py build: "), err)
         self.assertIn(" Markdown files parsed, ", err)
 
-    def test_the_other_commands_are_not_implemented_yet(self) -> None:
-        for argv in ():
-            with self.subTest(argv=argv):
-                code, out, err = _run(argv)
-                self.assertEqual(code, 1)
-                self.assertEqual(out, "")
-                self.assertIn("not implemented yet", err)
+    def test_query_runs_through_the_entry_point(self) -> None:
+        code, out, err = _run(["query", "no/such/address"])
+        self.assertEqual((code, out), (1, ""))
+        self.assertIn("no node has the address", err)
 
     def test_a_usage_error_exits_2(self) -> None:
         for argv in ([], ["nothing"], ["diff"], ["query"]):

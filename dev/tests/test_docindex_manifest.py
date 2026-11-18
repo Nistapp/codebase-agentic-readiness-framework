@@ -217,7 +217,7 @@ class CompareTest(_Temp):
 
     def test_a_wrong_manifest_is_refused(self) -> None:
         good, _ = self._pair({})
-        for bad in (
+        cases: tuple[Any, ...] = (
             [],
             {"format": "other", "bundles": {}},
             {"format": manifest.MANIFEST_FORMAT},
@@ -225,7 +225,8 @@ class CompareTest(_Temp):
             {"format": manifest.MANIFEST_FORMAT, "bundles": {AUDIT: [{"path": "a"}]}},
             {"format": manifest.MANIFEST_FORMAT, "bundles": {AUDIT: [{"path": "a", "size": 1}]}},
             {"format": manifest.MANIFEST_FORMAT, "bundles": {AUDIT: [{"path": "a", "size": 1, "sha256": "x"}] * 2}},
-        ):
+        )
+        for bad in cases:
             with self.subTest(bad=bad), self.assertRaises(manifest.ManifestError):
                 manifest.compare(good, bad)
 

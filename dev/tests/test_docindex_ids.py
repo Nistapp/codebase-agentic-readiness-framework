@@ -184,7 +184,7 @@ class _Repo(unittest.TestCase):
         }
 
     def _section(self, path: str, title: str) -> str:
-        found = [
+        found: list[str] = [
             node["address"]
             for node in self.index["nodes"]
             if node["node"] == "section" and node["address"].startswith(f"{path}#") and node["title"] == title

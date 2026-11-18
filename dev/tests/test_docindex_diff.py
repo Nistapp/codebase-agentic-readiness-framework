@@ -382,9 +382,7 @@ class CompareTest(unittest.TestCase):
         old = "# Top\n\n## Parent\n\nParent body.\n\n### Child\n\nChild body.\n\n### Other\n\nOther body.\n"
         new = old.replace("## Parent", "## Elder").replace("Other body.", "Other body, edited.")
         report = _compare({"a.md": old}, {"a.md": new})
-        self.assertEqual(
-            report.renamed, (index_diff.Renamed("a.md#top/parent", "a.md#top/elder", "Parent", "Elder"),)
-        )
+        self.assertEqual(report.renamed, (index_diff.Renamed("a.md#top/parent", "a.md#top/elder", "Parent", "Elder"),))
         self.assertEqual(report.edited, (index_diff.Edited("a.md#top/elder/other", "a.md#top/parent/other"),))
         self.assertEqual((report.added, report.removed, report.moved), ((), (), ()))
 
