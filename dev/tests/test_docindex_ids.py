@@ -455,6 +455,36 @@ class ThisRepositoryTest(unittest.TestCase):
         self.assertEqual(code, 0, err.getvalue())
         self.assertEqual(json.loads(out.getvalue().splitlines()[0])["kind"], "check")
 
+    def _main(self, *argv: str) -> tuple[int, str, str]:
+        out, err = io.StringIO(), io.StringIO()
+        with redirect_stdout(out), redirect_stderr(err):
+            try:
+                code = doc_index.main(list(argv))
+            except SystemExit as exc:
+                code = exc.code if isinstance(exc.code, int) else 1
+        return code, out.getvalue(), err.getvalue()
+
+    def test_the_entry_point_routes_query_with_its_exit_codes(self) -> None:
+        code, out, err = self._main("query", "CMD-01")
+        self.assertEqual((code, err), (0, ""))
+        lines = out.splitlines()
+        self.assertEqual(json.loads(lines[0])["defined_by"], "audit/catalogue.json")
+        self.assertEqual(lines[1], "outgoing: 0")
+        self.assertNotIn("not implemented yet", err)
+        code, out, err = self._main("query", "NO-SUCH-ADDRESS")
+        self.assertEqual((code, out), (1, ""))
+        self.assertIn("no node has the address 'NO-SUCH-ADDRESS'", err)
+        for argv in (("query",), ("query", "CMD-01", "--report")):
+            with self.subTest(argv=argv):
+                self.assertEqual(self._main(*argv)[0], 2)
+
+    def test_the_entry_point_prints_the_reports(self) -> None:
+        code, out, err = self._main("query", "--report")
+        self.assertEqual((code, err), (0, ""))
+        self.assertIn("recipe sections that nothing links to and that mention no ID: ", out)
+        self.assertIn("bundled files that no file of their bundle names: ", out)
+        self.assertIn("check IDs that no recipe file mentions: ", out)
+
 
 if __name__ == "__main__":
     unittest.main()

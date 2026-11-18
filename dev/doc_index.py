@@ -6,8 +6,8 @@
 It puts ``dev/`` on ``sys.path``, loads this repository's config, ``dev/docindex.config.json``, and calls
 :func:`docindex.cli.main`. The ``docindex`` package is the generic core and imports no other ``dev/`` module; this
 file is the one place that may (ADR 0011 in ``docs/architecture/adrs/``). The subcommands are in
-:mod:`docindex.cli`. :func:`query` runs ``query`` with :func:`docindex.ids.query_main`; :func:`main` does not route
-to it yet (see there).
+:mod:`docindex.cli`, except ``query``: :func:`main` routes it to :func:`query`, which runs
+:func:`docindex.ids.query_main` on the index of the full config.
 
 For the sweep, :func:`bundle_sources` loads the module that ``sweep.bundle_references.module`` names
 (``dev/build_skills.py``) and reads the constants that ``sweep.bundle_references.constants`` names
@@ -38,6 +38,7 @@ from typing import Any, Iterable, Mapping, Sequence
 DEV = Path(__file__).resolve().parent
 REPO = DEV.parent
 CONFIG = DEV / "docindex.config.json"
+QUERY = "query"
 
 if str(DEV) not in sys.path:
     sys.path.insert(0, str(DEV))
@@ -152,11 +153,11 @@ def query(argv: Sequence[str], config: Mapping[str, Any] | None = None) -> int:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Run one subcommand: ``query`` with :func:`query`, every other one with :func:`docindex.cli.main`."""
     config = full_config()
     arguments = list(sys.argv[1:] if argv is None else argv)
-    # `query` still goes to docindex.cli, which answers "not implemented yet": the CLI test of the skeleton
-    # (dev/tests/test_docindex_model.py) expects that, and this phase may not change it. Routing
-    # `arguments[1:]` to query() here is the one step left.
+    if arguments[:1] == [QUERY]:
+        return query(arguments[1:], config)
     return cli.main(arguments, config, root=REPO, bundle_sources=lambda: bundle_sources(config))
 
 
