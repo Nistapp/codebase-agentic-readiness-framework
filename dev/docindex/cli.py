@@ -3,7 +3,7 @@
 
 """The document index's command line. The project entry point, ``dev/doc_index.py``, calls :func:`main`.
 
-Five subcommands::
+The subcommands::
 
     build [--at REF]      write the index of the working tree (or of the tree at REF) to stdout, as JSON
     diff <git-ref> [--at NEW] [--format text|json]
@@ -18,6 +18,10 @@ Five subcommands::
                           show one node and its edges, or the reports (run by the entry point, not here)
     verify-quotes <folder> [--at REF]
                           check every quote the reports in <folder> cite (:mod:`docindex.quotes`)
+    manifest [--out FILE] build the skill bundles into a temporary folder and write their manifest
+                          (:mod:`docindex.manifest`)
+    manifest-diff OLD.json NEW.json [--format text|json]
+                          list the bundle files added, removed and changed from one manifest to another
 
 ``build`` writes the index of :mod:`docindex.extract` (file and section nodes, ``contains`` edges) to stdout, as
 the deterministic JSON of :mod:`docindex.model`, and a summary of the counts (files, and the Markdown files and
@@ -48,6 +52,13 @@ stderr.
 error (argparse's included, a folder that holds no ``quotes.json``, or with ``--at`` a ref that names no commit). The
 folder is relative to the current folder; the quoted paths are relative to the repository root. It writes each
 failure (id, path, reason) to stderr and a one-line count to stdout.
+
+``manifest`` makes a fresh temporary folder, has the entry point's ``build_bundles`` build every bundle into it
+(never into the project's own build folder), and writes the manifest of :func:`docindex.manifest.manifest` to
+``--out`` (relative to the current folder) or to stdout; the folder is deleted afterwards. A failed build exits 1.
+``manifest-diff`` reads two manifests (paths relative to the current folder) and writes the report of
+:func:`docindex.manifest.compare`; it is a report, so it exits 0 whatever it finds, and 1 when a manifest cannot be
+read.
 """
 
 from __future__ import annotations
@@ -55,11 +66,12 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Callable, Mapping, NoReturn, Sequence
 
 from . import diff as index_diff
-from . import extract, quotes, recall, sweep, sweep_diff
+from . import extract, manifest, quotes, recall, sweep, sweep_diff
 from .gitread import GitError, RefTree, Tree, WorkTree
 from .model import to_json
 
@@ -107,7 +119,52 @@ def build_parser() -> argparse.ArgumentParser:
     query.add_argument("address", metavar="ADDRESS", help="a file path, a section address or an ID")
     verify = commands.add_parser(VERIFY_QUOTES, help="check every quote the reports of a folder cite")
     _add_verify_arguments(verify)
+    manifest_parser = commands.add_parser("manifest", help="build the skill bundles and write their manifest")
+    manifest_parser.add_argument("--out", metavar="FILE", help="write the manifest to this file, not stdout")
+    manifest_diff = commands.add_parser("manifest-diff", help="list the bundle files changed between two manifests")
+    manifest_diff.add_argument("old", metavar="OLD_JSON", help="the old manifest")
+    manifest_diff.add_argument("new", metavar="NEW_JSON", help="the new manifest")
+    manifest_diff.add_argument("--format", choices=("text", "json"), default="text", help="the output form (text)")
     return parser
+
+
+def _manifest(args: argparse.Namespace, build_bundles: Callable[[Path], None] | None) -> int:
+    if build_bundles is None:
+        print(f"{PROG} manifest: no bundle build given; run it through dev/doc_index.py", file=sys.stderr)
+        return 1
+    try:
+        with tempfile.TemporaryDirectory(prefix="doc-index-manifest-") as folder:
+            build_bundles(Path(folder))
+            text = manifest.to_json(manifest.manifest(Path(folder)))
+    except (manifest.BuildError, manifest.ManifestError) as exc:
+        print(f"{PROG} manifest: {exc}", file=sys.stderr)
+        return 1
+    if args.out is None:
+        sys.stdout.write(text)
+        return 0
+    try:
+        Path(args.out).write_text(text, encoding="utf-8")
+    except OSError as exc:
+        print(f"{PROG} manifest: cannot write {args.out}: {exc}", file=sys.stderr)
+        return 1
+    return 0
+
+
+def _read_manifest(path: str) -> Any:
+    try:
+        return json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise manifest.ManifestError(f"cannot read {path}: {exc}") from exc
+
+
+def _manifest_diff(args: argparse.Namespace) -> int:
+    try:
+        changes = manifest.compare(_read_manifest(args.old), _read_manifest(args.new))
+    except manifest.ManifestError as exc:
+        print(f"{PROG} manifest-diff: {exc}", file=sys.stderr)
+        return 1
+    sys.stdout.write(manifest.diff_to_json(changes) if args.format == "json" else manifest.to_text(changes))
+    return 0
 
 
 def _verify_quotes(argv: Sequence[str], root: Path) -> int:
@@ -244,12 +301,15 @@ def main(
     *,
     root: Path | None = None,
     bundle_sources: Callable[[], Sequence[str]] | None = None,
+    build_bundles: Callable[[Path], None] | None = None,
 ) -> int:
     """Run one subcommand and return its exit code.
 
     ``config`` is the project config the entry point loaded. ``root`` is the repository root (the current folder
     when ``None``). ``bundle_sources`` returns the project's bundle sources, the files and folders the sweep scope
-    starts from; the entry point reads them, so that this package imports no other ``dev/`` module.
+    starts from; ``build_bundles`` builds every bundle into the folder it is given, one subfolder each, and raises
+    :class:`docindex.manifest.BuildError` when the build fails. The entry point supplies both, so that this package
+    imports no other ``dev/`` module.
     """
     arguments = list(sys.argv[1:] if argv is None else argv)
     if arguments[:1] == [VERIFY_QUOTES]:
@@ -268,5 +328,9 @@ def main(
         return _sweep(args, config or {}, root or Path.cwd(), bundle_sources)
     if args.command == "diff":
         return _index_diff(args, config or {}, root or Path.cwd())
+    if args.command == "manifest":
+        return _manifest(args, build_bundles)
+    if args.command == "manifest-diff":
+        return _manifest_diff(args)
     print(f"{PROG} {args.command}: not implemented here; run it through dev/doc_index.py", file=sys.stderr)
     return 1

@@ -22,6 +22,10 @@ the licence and, for the audit bundle, the engine package. Each bundle is keyed 
 ``dev/dist/skills/<bundle name>``. :func:`main` puts them in the config's ``bundle_files`` key, which
 :func:`docindex.extract.extract` reads; ``dev/build_skills.py`` itself does not change.
 
+For ``manifest``, :func:`build_bundles` loads the same module and calls its ``build_bundle`` and
+``build_implement_bundle`` with the folder it is given: the core's fresh temporary folder, never
+``dev/dist/skills/``. A build failure (the module's ``ToolError``) becomes :class:`docindex.manifest.BuildError`.
+
 :func:`query` takes ``<address> [--at REF]`` and prints a node and its edges, or ``--report [--at REF]`` and prints
 the reports of plan 9.4 (a report only, never a gate).
 """
@@ -43,7 +47,7 @@ QUERY = "query"
 if str(DEV) not in sys.path:
     sys.path.insert(0, str(DEV))
 
-from docindex import cli, extract, ids  # noqa: E402
+from docindex import cli, extract, ids, manifest  # noqa: E402
 from docindex.gitread import RefTree, Tree, WorkTree  # noqa: E402
 from docindex.model import Index  # noqa: E402
 
@@ -130,6 +134,20 @@ def bundle_files(config: Mapping[str, Any]) -> dict[str, list[str]]:
     }
 
 
+def build_bundles(config: Mapping[str, Any], out_dir: Path) -> None:
+    """Build both skill bundles into ``out_dir`` with the bundle module; raise ``BuildError`` when that fails."""
+    module = _bundle_module(config)
+    if module is None:
+        raise manifest.BuildError("the config names no bundle module (sweep.bundle_references.module)")
+    if Path(out_dir).resolve() == Path(module.DEFAULT_OUT_DIR).resolve():
+        raise manifest.BuildError("refusing to build the manifest into the project's own bundle folder")
+    try:
+        module.build_bundle(out_dir)
+        module.build_implement_bundle(out_dir)
+    except module._common.ToolError as exc:
+        raise manifest.BuildError(f"the bundle build failed: {exc}") from exc
+
+
 def full_config(config: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """The project config with its ``bundle_files`` key filled from the bundle module."""
     loaded = dict(load_config() if config is None else config)
@@ -158,7 +176,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
     if arguments[:1] == [QUERY]:
         return query(arguments[1:], config)
-    return cli.main(arguments, config, root=REPO, bundle_sources=lambda: bundle_sources(config))
+    return cli.main(
+        arguments,
+        config,
+        root=REPO,
+        bundle_sources=lambda: bundle_sources(config),
+        build_bundles=lambda out_dir: build_bundles(config, out_dir),
+    )
 
 
 if __name__ == "__main__":
