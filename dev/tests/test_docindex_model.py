@@ -280,7 +280,7 @@ class CliTest(unittest.TestCase):
         self.assertIn(" Markdown files parsed, ", err)
 
     def test_the_other_commands_are_not_implemented_yet(self) -> None:
-        for argv in (["diff", "HEAD"],):
+        for argv in ():
             with self.subTest(argv=argv):
                 code, out, err = _run(argv)
                 self.assertEqual(code, 1)

@@ -6,14 +6,16 @@
 Five subcommands::
 
     build [--at REF]      write the index of the working tree (or of the tree at REF) to stdout, as JSON
-    diff <git-ref>        compare the index at <git-ref> with the index of the working tree
+    diff <git-ref> [--at NEW] [--format text|json]
+                          report what changed in the index from <git-ref> to NEW (:mod:`docindex.diff`)
     sweep [--at REF] [--format text|json] [--triggers group1|all]
                           list the normative items of the sweep scope (:mod:`docindex.sweep`)
     sweep --diff OLD [--at NEW] [--paths a,b,...] [--format text|json] [--triggers group1|all]
                           list the normative items at OLD that vanished by NEW (:mod:`docindex.sweep_diff`)
     sweep --recall COMMITS_JSON [--format text|json] [--triggers group1|all]
                           measure the removed lines of commits that lie in no normative item (:mod:`docindex.recall`)
-    query <address>       show one node and its edges
+    query <address> [--at REF] | query --report [--at REF]
+                          show one node and its edges, or the reports (run by the entry point, not here)
     verify-quotes <folder> [--at REF]
                           check every quote the reports in <folder> cite (:mod:`docindex.quotes`)
 
@@ -30,9 +32,17 @@ of the scope, so a path that exists at one side only still works. ``sweep --reca
 (``hash``, ``parent``, ``files``) from the path given, relative to the current folder. ``--diff`` and ``--recall``
 exclude each other; ``--paths`` needs ``--diff``, and ``--recall`` takes no ``--at``.
 
-``diff`` and ``query`` print ``not implemented yet`` on stderr and exit 1. A git failure (a ref that names no commit,
-a folder that is not a repository) or an unreadable commits file exits 1. A usage error exits 2 (argparse). Output
-goes to stdout; diagnostics go to stderr.
+``diff`` builds the index (:mod:`docindex.extract`) at <git-ref> and at NEW (``--at``, else the working tree), both
+read with ``git show`` or from disk, never by a checkout, and writes the report of :mod:`docindex.diff` to stdout:
+the sections added, removed, moved, renamed and edited, the edges lost and gained, and the IDs that lost their
+definition or every mention. It is a report, so it exits 0 whatever it finds.
+
+``query`` is routed by the entry point, ``dev/doc_index.py``, to :func:`docindex.ids.query_main`, which needs the
+entry point's full config; called here, it says so on stderr and exits 1.
+
+A git failure (a ref that names no commit, a folder that is not a repository) or an unreadable commits file exits 1.
+A usage error that argparse finds (a missing or unknown argument) exits 2. Output goes to stdout; diagnostics go to
+stderr.
 
 ``verify-quotes`` has its own exit codes: 0 when every quote and citation passes, 2 when one fails, and 1 on a usage
 error (argparse's included, a folder that holds no ``quotes.json``, or with ``--at`` a ref that names no commit). The
@@ -48,6 +58,7 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Mapping, NoReturn, Sequence
 
+from . import diff as index_diff
 from . import extract, quotes, recall, sweep, sweep_diff
 from .gitread import GitError, RefTree, Tree, WorkTree
 from .model import to_json
@@ -74,8 +85,10 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
     build = commands.add_parser("build", help="write the index of the working tree to stdout as JSON")
     build.add_argument("--at", metavar="GIT_REF", help="index the files at this git ref, not the working tree")
-    diff = commands.add_parser("diff", help="compare the index at a git ref with the working tree")
-    diff.add_argument("ref", metavar="GIT_REF", help="the git ref to compare with")
+    diff = commands.add_parser("diff", help="report what changed in the index from a git ref to the working tree")
+    diff.add_argument("ref", metavar="GIT_REF", help="the old side: the git ref to compare with")
+    diff.add_argument("--at", metavar="GIT_REF", help="the new side: this git ref, not the working tree")
+    diff.add_argument("--format", choices=("text", "json"), default="text", help="the output form (text)")
     sweep_parser = commands.add_parser("sweep", help="list the normative items of the sweep scope")
     sweep_parser.add_argument("--at", metavar="GIT_REF", help="sweep the files at this git ref, not the working tree")
     modes = sweep_parser.add_mutually_exclusive_group()
@@ -124,6 +137,25 @@ def _build(args: argparse.Namespace, config: Mapping[str, Any], root: Path) -> i
         return 1
     sys.stdout.write(to_json(result.index))
     sys.stderr.write(extract.summary_text(result.summary, prog=f"{PROG} build"))
+    return 0
+
+
+def _index_diff(args: argparse.Namespace, config: Mapping[str, Any], root: Path) -> int:
+    try:
+        old_tree = RefTree(root, args.ref)
+        new_tree: Tree = RefTree(root, args.at) if args.at is not None else WorkTree(root)
+        old = extract.extract(old_tree, config).index
+        new = extract.extract(new_tree, config).index
+    except GitError as exc:
+        print(f"{PROG} diff: {exc}", file=sys.stderr)
+        return 1
+    report = index_diff.compare(
+        old, new, old_body=index_diff.body_hashes(old_tree), new_body=index_diff.body_hashes(new_tree)
+    )
+    if args.format == "json":
+        sys.stdout.write(index_diff.to_json(report, old=args.ref, new=args.at))
+    else:
+        sys.stdout.write(index_diff.to_text(report, old=args.ref, new=args.at))
     return 0
 
 
@@ -234,5 +266,7 @@ def main(
         if args.recall is not None and args.at is not None:
             parser.error("sweep: --recall takes no --at")
         return _sweep(args, config or {}, root or Path.cwd(), bundle_sources)
-    print(f"{PROG} {args.command}: not implemented yet", file=sys.stderr)
+    if args.command == "diff":
+        return _index_diff(args, config or {}, root or Path.cwd())
+    print(f"{PROG} {args.command}: not implemented here; run it through dev/doc_index.py", file=sys.stderr)
     return 1
