@@ -14,7 +14,11 @@ project config, and builds:
   prefix of ``exclude.list_only`` (the fixture trees) is listed as a file node and not parsed. Python, JSON and YAML
   files get no sections;
 - a **contains** edge from each Markdown file to each of its top sections, and from each section to each of its
-  child sections.
+  child sections;
+- a **links** edge for each inline link and each bare file name of a parsed Markdown file (:mod:`docindex.links`).
+  A link's anchor resolves against the slugs of the target file's headings, so a second pass runs after every file
+  is parsed. A link whose target does not resolve keeps its edge and is flagged in :attr:`Extraction.problems` and
+  in the summary's ``broken link`` lines.
 
 A section's address is the parser's ``<path>#<slug>/<slug>/...``. A heading with no slug text (``#`` alone, or
 ``## !!!``) has the empty slug on GitHub; the index writes :data:`EMPTY_SEGMENT` in its place, since an address
@@ -52,7 +56,8 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Mapping
 
 from .gitread import Tree
-from .markdown import parse
+from .links import Link, LinkContext, link_edges
+from .markdown import Document, parse
 from .model import Edge, FileNode, Index, Node, SectionNode
 
 __all__ = ["EMPTY_SEGMENT", "Extraction", "Summary", "extract", "file_kind", "summary_text", "zone_of"]
@@ -100,6 +105,7 @@ class Summary:
     markdown_by_zone: tuple[tuple[str, int], ...]
     sections_by_zone: tuple[tuple[str, int], ...]
     unindexed: tuple[str, ...] = ()
+    broken_links: tuple[str, ...] = ()
 
     @property
     def markdown_files(self) -> int:
@@ -112,20 +118,33 @@ class Summary:
 
 @dataclass(frozen=True)
 class Extraction:
-    """The index of one tree and the counts behind it."""
+    """The index of one tree, the counts behind it, and the links whose targets do not resolve (sorted)."""
 
     index: Index
     summary: Summary
+    problems: tuple[Link, ...] = ()
 
 
-def _section_nodes(path: str, text: str) -> tuple[list[SectionNode], list[Edge]]:
-    """The section nodes of one Markdown file and the ``contains`` edges from the file and between sections."""
+@dataclass(frozen=True)
+class _Parsed:
+    """One parsed Markdown file: its document, the index address that holds each line, and slug to address."""
+
+    document: Document
+    holders: tuple[str, ...]
+    anchors: dict[str, str]
+
+
+def _section_nodes(path: str, text: str) -> tuple[list[SectionNode], list[Edge], _Parsed]:
+    """The section nodes of one Markdown file, the ``contains`` edges from the file and between sections, and the
+    parse that the links pass reads."""
     document = parse(path, text)
     # The parent chain is rebuilt from the levels, as the parser builds it, and not looked up by the parser's
     # address: a top heading with the empty slug has the file-level section's address there.
     stack: list[tuple[int, str]] = []  # (level, index address) of the open headings
     nodes: list[SectionNode] = []
     edges: list[Edge] = []
+    holders = [path] * len(document.lines)  # the frontmatter and the text before the first heading: the file
+    anchors: dict[str, str] = {}
     for section in document.sections:
         if section.parent is None:
             continue  # the file-level section: the file node stands for it
@@ -145,7 +164,11 @@ def _section_nodes(path: str, text: str) -> tuple[list[SectionNode], list[Edge]]
             )
         )
         edges.append(Edge(kind="contains", source=parent, target=address))
-    return nodes, edges
+        for number in range(section.start, section.end + 1):
+            holders[number - 1] = address
+        if section.slug:
+            anchors[section.slug] = address
+    return nodes, edges, _Parsed(document=document, holders=tuple(holders), anchors=anchors)
 
 
 def _counts(counter: Mapping[str, int]) -> tuple[tuple[str, int], ...]:
@@ -153,7 +176,8 @@ def _counts(counter: Mapping[str, int]) -> tuple[tuple[str, int], ...]:
 
 
 def extract(tree: Tree, config: Mapping[str, Any]) -> Extraction:
-    """Build the index of ``tree`` with the project ``config``: file and section nodes and ``contains`` edges."""
+    """Build the index of ``tree`` with the project ``config``: file and section nodes, ``contains`` edges and
+    ``links`` edges."""
     exclude: Mapping[str, Iterable[str]] = config.get("exclude", {})
     skip = list(exclude.get("skip", []))
     list_only = list(exclude.get("list_only", []))
@@ -162,8 +186,10 @@ def extract(tree: Tree, config: Mapping[str, Any]) -> Extraction:
     unindexed: list[str] = []
     markdown_by_zone: dict[str, int] = {}
     sections_by_zone: dict[str, int] = {}
+    parsed: list[_Parsed] = []
     listed_only = 0
-    for path in tree.files():
+    tracked = tree.files()
+    for path in tracked:
         if any(_under(path, prefix) for prefix in skip):
             continue
         kind = file_kind(path, config)
@@ -182,19 +208,37 @@ def extract(tree: Tree, config: Mapping[str, Any]) -> Extraction:
         text = tree.read(path)
         if text is None:
             continue
-        sections, contains = _section_nodes(path, text)
+        sections, contains, one = _section_nodes(path, text)
         nodes.extend(sections)
         edges.extend(contains)
+        parsed.append(one)
         markdown_by_zone[zone] = markdown_by_zone.get(zone, 0) + 1
         sections_by_zone[zone] = sections_by_zone.get(zone, 0) + len(sections)
+    context = LinkContext.build(
+        files=tracked,
+        anchors={one.document.path: one.anchors for one in parsed},
+        indexed=[node.path for node in nodes if isinstance(node, FileNode)],
+    )
+    problems: list[Link] = []
+    seen = set(edges)
+    for one in parsed:
+        found = link_edges(one.document, one.holders, context)
+        for edge in found.edges:
+            if edge not in seen:
+                seen.add(edge)
+                edges.append(edge)
+        problems.extend(found.problems)
+    problems.sort(key=lambda link: (link.source, link.target, link.problem))
     summary = Summary(
         files=sum(1 for node in nodes if isinstance(node, FileNode)),
         listed_only=listed_only,
         markdown_by_zone=_counts(markdown_by_zone),
         sections_by_zone=_counts(sections_by_zone),
         unindexed=tuple(sorted(unindexed)),
+        broken_links=tuple(link.describe() for link in problems),
     )
-    return Extraction(index=Index(nodes=tuple(nodes), edges=tuple(edges)), summary=summary)
+    index = Index(nodes=tuple(nodes), edges=tuple(edges))
+    return Extraction(index=index, summary=summary, problems=tuple(problems))
 
 
 def summary_text(summary: Summary, prog: str = "build") -> str:
@@ -208,4 +252,6 @@ def summary_text(summary: Summary, prog: str = "build") -> str:
         lines.append(f"  {zone}: {count} Markdown files, {sections.get(zone, 0)} sections")
     for path in summary.unindexed:
         lines.append(f"  not indexed (a node cannot hold the path): {path}")
+    for link in summary.broken_links:
+        lines.append(f"  broken link (kept in the index): {link}")
     return "\n".join(lines) + "\n"
