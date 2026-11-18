@@ -18,7 +18,15 @@ project config, and builds:
 - a **links** edge for each inline link and each bare file name of a parsed Markdown file (:mod:`docindex.links`).
   A link's anchor resolves against the slugs of the target file's headings, so a second pass runs after every file
   is parsed. A link whose target does not resolve keeps its edge and is flagged in :attr:`Extraction.problems` and
-  in the summary's ``broken link`` lines.
+  in the summary's ``broken link`` lines;
+- an **id** node for each ID that the config's ``ids`` kinds define, and the **mentions** edges from the sections
+  of every parsed Markdown file and from every Python, JSON and YAML file outside ``exclude.list_only``, and the
+  **runs** edges from the sections to the tools (:mod:`docindex.ids`, which states the rules);
+- a node for each bundle and a **bundles** edge from it to each file it ships. The bundles come from the caller:
+  the entry point reads them from the project's bundle module and passes them in the config's
+  :data:`BUNDLE_FILES` key (or the ``bundles`` argument). The model has no bundle node type, so a bundle's node is
+  a file node at the bundle's build folder (``dev/dist/skills/<bundle>``, git-ignored, so no tracked file holds
+  the address); its kind and zone follow the config's rules like any path.
 
 A section's address is the parser's ``<path>#<slug>/<slug>/...``. A heading with no slug text (``#`` alone, or
 ``## !!!``) has the empty slug on GitHub; the index writes :data:`EMPTY_SEGMENT` in its place, since an address
@@ -53,14 +61,32 @@ zone, and the files listed but not parsed. This module imports nothing outside t
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, Sequence
 
+from . import ids
 from .gitread import Tree
 from .links import Link, LinkContext, link_edges
 from .markdown import Document, parse
 from .model import Edge, FileNode, Index, Node, SectionNode
 
-__all__ = ["EMPTY_SEGMENT", "Extraction", "Summary", "extract", "file_kind", "summary_text", "zone_of"]
+__all__ = [
+    "BUNDLE_FILES",
+    "EMPTY_SEGMENT",
+    "MENTION_KINDS",
+    "Extraction",
+    "Summary",
+    "extract",
+    "file_kind",
+    "summary_text",
+    "zone_of",
+]
+
+#: The config key that the entry point fills with each bundle's entries (``dev/doc_index.py``). It is not part of
+#: the JSON config file: the lists come from the project's bundle module at run time.
+BUNDLE_FILES = "bundle_files"
+
+#: The file kinds, other than Markdown, that are read as plain text for ID mentions.
+MENTION_KINDS = ("python", "json", "yaml")
 
 #: The address segment that stands for a heading's empty slug.
 EMPTY_SEGMENT = "(empty)"
@@ -106,6 +132,9 @@ class Summary:
     sections_by_zone: tuple[tuple[str, int], ...]
     unindexed: tuple[str, ...] = ()
     broken_links: tuple[str, ...] = ()
+    ids_by_kind: tuple[tuple[str, int], ...] = ()
+    bundles: tuple[tuple[str, int], ...] = ()
+    id_problems: tuple[str, ...] = ()
 
     @property
     def markdown_files(self) -> int:
@@ -127,11 +156,13 @@ class Extraction:
 
 @dataclass(frozen=True)
 class _Parsed:
-    """One parsed Markdown file: its document, the index address that holds each line, and slug to address."""
+    """One parsed Markdown file: its document, the index address that holds each line, slug to address, and its
+    headings in document order."""
 
     document: Document
     holders: tuple[str, ...]
     anchors: dict[str, str]
+    headings: tuple[ids.Heading, ...] = ()
 
 
 def _section_nodes(path: str, text: str) -> tuple[list[SectionNode], list[Edge], _Parsed]:
@@ -168,16 +199,68 @@ def _section_nodes(path: str, text: str) -> tuple[list[SectionNode], list[Edge],
             holders[number - 1] = address
         if section.slug:
             anchors[section.slug] = address
-    return nodes, edges, _Parsed(document=document, holders=tuple(holders), anchors=anchors)
+    headings = tuple(ids.Heading(path=path, address=node.address, level=node.level, title=node.title) for node in nodes)
+    return nodes, edges, _Parsed(document=document, holders=tuple(holders), anchors=anchors, headings=headings)
 
 
 def _counts(counter: Mapping[str, int]) -> tuple[tuple[str, int], ...]:
     return tuple(sorted(counter.items()))
 
 
-def extract(tree: Tree, config: Mapping[str, Any]) -> Extraction:
-    """Build the index of ``tree`` with the project ``config``: file and section nodes, ``contains`` edges and
-    ``links`` edges."""
+def _id_edges(
+    tree: Tree,
+    config: Mapping[str, Any],
+    parsed: Sequence[_Parsed],
+    scanned: Sequence[str],
+    definitions: ids.Definitions,
+) -> list[Edge]:
+    """The ``mentions`` and ``runs`` edges of the parsed Markdown files and of the ``scanned`` files."""
+    kinds = ids.id_kinds(config)
+    edges: list[Edge] = []
+    for one in parsed:
+        lines = zip(one.holders, (line.text for line in one.document.lines))
+        edges.extend(ids.mention_edges(kinds, definitions, lines))
+        edges.extend(ids.run_edges(kinds, definitions, one.document, one.holders))
+    for path in scanned:
+        text = tree.read(path)
+        if text is not None:
+            edges.extend(ids.mention_edges(kinds, definitions, ((path, line) for line in text.splitlines())))
+    return edges
+
+
+def _bundles(
+    bundles: Mapping[str, Sequence[str]], indexed: Sequence[str], taken: set[str], config: Mapping[str, Any]
+) -> tuple[list[Node], list[Edge], list[tuple[str, int]], list[str]]:
+    """One node per bundle, its ``bundles`` edges, the member count of each bundle, and the problems."""
+    nodes: list[Node] = []
+    edges: list[Edge] = []
+    counts: list[tuple[str, int]] = []
+    problems: list[str] = []
+    for address, entries in sorted(bundles.items()):
+        if address in taken:
+            problems.append(f"bundle {address}: the address is taken by another node; the bundle is left out")
+            continue
+        try:
+            node = FileNode(path=address, kind=file_kind(address, config), zone=zone_of(address, config))
+        except ValueError as exc:
+            problems.append(f"bundle {address}: {exc}")
+            continue
+        members, empty = ids.bundle_members(entries, indexed)
+        nodes.append(node)
+        taken.add(address)
+        edges.extend(Edge(kind="bundles", source=address, target=path) for path in members)
+        counts.append((address, len(members)))
+        problems.extend(f"bundle {address}: the entry {entry} names no indexed file" for entry in empty)
+    return nodes, edges, counts, problems
+
+
+def extract(tree: Tree, config: Mapping[str, Any], bundles: Mapping[str, Sequence[str]] | None = None) -> Extraction:
+    """Build the index of ``tree`` with the project ``config``: file, section and ``id`` nodes, one node per bundle,
+    and the ``contains``, ``links``, ``mentions``, ``runs`` and ``bundles`` edges.
+
+    ``bundles`` maps each bundle's address to its entries (:func:`docindex.ids.bundle_members`); when it is
+    ``None``, the config's :data:`BUNDLE_FILES` key holds them, if the entry point filled it.
+    """
     exclude: Mapping[str, Iterable[str]] = config.get("exclude", {})
     skip = list(exclude.get("skip", []))
     list_only = list(exclude.get("list_only", []))
@@ -187,6 +270,7 @@ def extract(tree: Tree, config: Mapping[str, Any]) -> Extraction:
     markdown_by_zone: dict[str, int] = {}
     sections_by_zone: dict[str, int] = {}
     parsed: list[_Parsed] = []
+    scanned: list[str] = []
     listed_only = 0
     tracked = tree.files()
     for path in tracked:
@@ -203,6 +287,8 @@ def extract(tree: Tree, config: Mapping[str, Any]) -> Extraction:
         if any(_under(path, prefix) for prefix in list_only):
             listed_only += 1
             continue
+        if kind in MENTION_KINDS:
+            scanned.append(path)
         if kind != "markdown":
             continue
         text = tree.read(path)
@@ -229,13 +315,39 @@ def extract(tree: Tree, config: Mapping[str, Any]) -> Extraction:
                 edges.append(edge)
         problems.extend(found.problems)
     problems.sort(key=lambda link: (link.source, link.target, link.problem))
+    indexed = [node.path for node in nodes if isinstance(node, FileNode)]
+    taken = {node.address for node in nodes}
+    definitions = ids.define(
+        config,
+        files=indexed,
+        read=tree.read,
+        headings=[heading for one in parsed for heading in one.headings],
+        taken=taken,
+    )
+    nodes.extend(definitions.nodes)
+    taken.update(node.address for node in definitions.nodes)
+    for edge in _id_edges(tree, config, parsed, scanned, definitions):
+        if edge not in seen:
+            seen.add(edge)
+            edges.append(edge)
+    bundle_nodes, bundle_edges, bundle_counts, bundle_problems = _bundles(
+        bundles if bundles is not None else config.get(BUNDLE_FILES, {}), indexed, taken, config
+    )
+    nodes.extend(bundle_nodes)
+    edges.extend(bundle_edges)
+    ids_by_kind: dict[str, int] = {}
+    for id_node in definitions.nodes:
+        ids_by_kind[id_node.kind] = ids_by_kind.get(id_node.kind, 0) + 1
     summary = Summary(
-        files=sum(1 for node in nodes if isinstance(node, FileNode)),
+        files=len(indexed),
         listed_only=listed_only,
         markdown_by_zone=_counts(markdown_by_zone),
         sections_by_zone=_counts(sections_by_zone),
         unindexed=tuple(sorted(unindexed)),
         broken_links=tuple(link.describe() for link in problems),
+        ids_by_kind=_counts(ids_by_kind),
+        bundles=tuple(bundle_counts),
+        id_problems=tuple(sorted([*definitions.problems, *bundle_problems])),
     )
     index = Index(nodes=tuple(nodes), edges=tuple(edges))
     return Extraction(index=index, summary=summary, problems=tuple(problems))
@@ -250,6 +362,12 @@ def summary_text(summary: Summary, prog: str = "build") -> str:
     ]
     for zone, count in summary.markdown_by_zone:
         lines.append(f"  {zone}: {count} Markdown files, {sections.get(zone, 0)} sections")
+    if summary.ids_by_kind:
+        lines.append("  ids: " + ", ".join(f"{kind} {count}" for kind, count in summary.ids_by_kind))
+    for bundle, count in summary.bundles:
+        lines.append(f"  bundle {bundle}: {count} files")
+    for problem in summary.id_problems:
+        lines.append(f"  id or bundle problem: {problem}")
     for path in summary.unindexed:
         lines.append(f"  not indexed (a node cannot hold the path): {path}")
     for link in summary.broken_links:
