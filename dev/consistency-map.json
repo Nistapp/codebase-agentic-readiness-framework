@@ -1510,11 +1510,31 @@
       "status": "kept"
     },
     {
+      "check": "AGT-06",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Write the line as a plain list of pages, with no rule word such as must, never or only.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/inputs-to-ask"
+      },
+      "move": "establish-docs-contract/row-8",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-10",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Never write \"read ... first\" on it either:",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/inputs-to-ask"
+      },
+      "move": "establish-docs-contract/row-8",
+      "status": "kept"
+    },
+    {
       "check": "CON-01",
       "home": {
         "path": "implement/playbooks/establish-docs-contract.md",
-        "quote": "The instruction-file line waits until the pages it names exist.",
-        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/commits"
+        "quote": "Keep the line out of the prohibitions section, whose code spans",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/inputs-to-ask"
       },
       "move": "establish-docs-contract/row-8",
       "note": "CON-01 checks that code spans in a prohibitions section exist; the line lands only after its pages do.",
@@ -1563,6 +1583,17 @@
       "status": "kept"
     },
     {
+      "check": "EXEC-06",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Check by hand that the first word of each still resolves.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-11",
+      "note": "A fenced command moved to docs/ leaves the EXEC-06 scope by design; the step checks it by hand and reports it, and the root-file rule prefers README.md or AGENTS.md for the two commands that stay.",
+      "status": "kept"
+    },
+    {
       "check": "HYG-01",
       "home": {
         "path": "implement/playbooks/establish-docs-contract.md",
@@ -1580,6 +1611,56 @@
         "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
       },
       "move": "establish-docs-contract/row-11",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-08",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Put each pin in a manifest, such as the `devDependencies` of a root or tools `package.json`.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-08",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Put each pin in a manifest, such as the `devDependencies` of a root or tools `package.json`.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-14",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-02",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "keep both `--max-issues` numbers out of the root runner files",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-18",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-03",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "keep both `--max-issues` numbers out of the root runner files",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-18",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-08",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Put each pin in a manifest, such as the `devDependencies` of a root or tools `package.json`.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-19",
       "status": "kept"
     },
     {

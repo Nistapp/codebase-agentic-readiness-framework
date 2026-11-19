@@ -295,7 +295,8 @@ not moved.
 - Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
   fill in".
 - Do not move, resize, delete or untrack files for NAV-03.
-- Do not put values from env files, credentials, realm exports or keystores in any page.
+- Do not put values from env files, credentials, realm exports or keystores in any page. Such a value also fails
+  "`SEC-02` No key-shaped strings in tracked files".
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
 - Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
   change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one
