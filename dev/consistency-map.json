@@ -1078,6 +1078,16 @@
       "status": "kept"
     },
     {
+      "check": "TST-04",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Write a new CONTRIBUTING at the root, even when other pages live under `docs/`.",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-5",
+      "status": "kept"
+    },
+    {
       "check": "HYG-13",
       "home": {
         "path": "implement/playbooks/add-repo-hygiene.md",
@@ -1109,6 +1119,26 @@
       "status": "kept"
     },
     {
+      "check": "AGT-09",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Add the name to the `AGENTS.md` release sentence (Commits row 16).",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-9",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-07",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Add it to the local branch guard too (row 17)",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-9",
+      "status": "kept"
+    },
+    {
       "check": "DOC-05",
       "home": {
         "path": "implement/SKILL.md",
@@ -1116,6 +1146,17 @@
         "section": "implement/SKILL.md#implement/stage-3-apply"
       },
       "move": "add-repo-hygiene/row-12",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-08",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Add such an entry only for a file whose versions Renovate really updates.",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-13",
+      "note": "Dependabot files are not EXEC-08 reads; only a Renovate custom manager changes which files the check skips.",
       "status": "kept"
     },
     {
@@ -1129,10 +1170,50 @@
       "status": "kept"
     },
     {
+      "check": "AGT-07",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "A line of the prohibitions section stays in `AGENTS.md`.",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-15",
+      "status": "kept"
+    },
+    {
       "check": "AGT-09",
       "home": {
         "path": "implement/playbooks/add-repo-hygiene.md",
         "quote": "The `AGENTS.md` branch and release sentence (`AGT-09`) and the \"same change set\" rule (`AGT-04`) must still read as they did.",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-15",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-10",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "The link left behind is a reference, never \"read `CONTRIBUTING.md` first\".",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-15",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-13",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "The conventions file keeps its other items for",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-15",
+      "status": "kept"
+    },
+    {
+      "check": "CON-01",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "A line of the prohibitions section stays in `AGENTS.md`.",
         "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
       },
       "move": "add-repo-hygiene/row-15",
@@ -3275,6 +3356,41 @@
         "AGT-10",
         "AGT-13",
         "CON-01"
+      ]
+    },
+    {
+      "action": "write",
+      "content": [
+        "prose"
+      ],
+      "id": "add-repo-hygiene/row-16",
+      "note": "Adds a branch name that a new rule file of row 9 protects to the existing release sentence; no other word changes.",
+      "origin": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "row": 16,
+        "step": "Step 7"
+      },
+      "to": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "action": "write",
+      "content": [
+        "key"
+      ],
+      "id": "add-repo-hygiene/row-17",
+      "note": "Adds the branch to the guard of the hook manager already in use.",
+      "origin": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "row": 17,
+        "step": "Step 7"
+      },
+      "to": [
+        ".husky/pre-commit",
+        ".pre-commit-config.yaml",
+        "lefthook.yml",
+        ".githooks/pre-commit"
       ]
     },
     {

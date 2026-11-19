@@ -136,7 +136,8 @@ the policy files, and for nothing else:
    home), and the PR rules. At least 200 characters of body text, no `todo`, `tbd`, `placeholder`, `coming soon` or
    `fill this in` anywhere in it, more than a title. Do not copy another repository's description. A proprietary
    repository may describe itself in full; an open-source one describes only what is in it. The README is one more page
-   to keep true, so link to the docs rather than restate them.
+   to keep true, so link to the docs rather than restate them. Copy each fenced command from a verb or script that
+   exists. The check "`EXEC-06` Documented commands resolve" reads every fenced command in the root README.
 3. **CODEOWNERS (HYG-02).** Create or extend the file as Inputs 2 says. Put it where the host reads it:
    `.github/CODEOWNERS` on GitHub, `.gitlab/CODEOWNERS` on GitLab. An existing file at the root or under `docs/`
    stays where it is. Keep every existing path rule.
@@ -149,6 +150,8 @@ the policy files, and for nothing else:
 5. **CONTRIBUTING and SECURITY (HYG-05, HYG-06).** CONTRIBUTING: where the setup is (link, do not restate), the gate
    command, the branch and PR flow as the repository actually runs it (squash into the integration branch, who merges),
    the title rule, and where `AGENTS.md` fits. Write it as a diff when a generic one exists. SECURITY: as Inputs 3.
+   Write a new CONTRIBUTING at the root, even when other pages live under `docs/`. The check "`TST-04` Fast path
+   documented" reads it only there.
 6. **CHANGELOG and release process (HYG-07, HYG-08).** Find out who writes the changelog:
    - **A release tool writes it** (`release-please-config.json`, `.releaserc*`, `changesets`, a release workflow that
      mentions `CHANGELOG`): do not hand-write or seed `CHANGELOG`. The tool creates it at the first release; a seeded
@@ -271,6 +274,10 @@ the policy files, and for nothing else:
      the source of truth. If the state says the platform plan cannot enforce protection (a private repository on a
      free plan returns an error for rulesets), the page says **"recorded, not enforced"** at the top; it must not
      read as enforcement.
+   - **Name each newly protected branch.** T7 and T4 ran before this theme, so their files do not name a branch
+     that a new rule file protects. Add the name to the `AGENTS.md` release sentence (Commits row 16). The check
+     "`AGT-09` Branch and release boundary declared" reads it there. Add it to the local branch guard too (row 17),
+     for "`TOOL-07` Local guard against commits to a protected branch". Change no other word of either file.
 8. **Dependency updates (HYG-09).** Read what exists first; never replace one tool with the other.
    - **Tool.** Keep the tool the repository already uses. With none: Dependabot on GitHub, Renovate on GitLab,
      Azure DevOps or Bitbucket, where Dependabot does not run.
@@ -304,6 +311,9 @@ the policy files, and for nothing else:
      dependencies only; say so in the pull request body. Source: Renovate's docs, "Security presets"
      (`docs.renovatebot.com/presets-security/`) and the `vulnerabilityAlerts` and `osvVulnerabilityAlerts`
      options (`docs.renovatebot.com/configuration-options/`).
+   - **Custom managers.** The check "`EXEC-08` Tool versions visible to dependency automation" skips each file
+     that a Renovate `customManagers` entry matches. Add such an entry only for a file whose versions Renovate
+     really updates.
    - **Owner action.** Record "turn on Dependabot security updates in the repository settings" as a note on the
      item: an agent can neither read nor set it.
    - When HYG-09 passed and has no item, name it in the pull request body and change nothing.
@@ -331,7 +341,14 @@ the policy files, and for nothing else:
      file per commit, and leave a link in the old place. Under `suggest`, name the rules in the pull request body
      and move nothing.
    - **d. Check the neighbours.** The `AGENTS.md` branch and release sentence (`AGT-09`) and the "same change set"
-     rule (`AGT-04`) must still read as they did. Run the engine's `AGT-04` and `AGT-09` after a move.
+     rule (`AGT-04`) must still read as they did. Run the engine's `AGT-04` and `AGT-09` after a move. Three
+     more readers need care:
+     - A line of the prohibitions section stays in `AGENTS.md`. "`AGT-07` Do-not-do / deny rules present" and
+       "`CON-01` Allow/deny artifact present" read it there.
+     - The link left behind is a reference, never "read `CONTRIBUTING.md` first". That form is a deferral for
+       "`AGT-10` Instruction indirection resolved".
+     - The conventions file keeps its other items for "`AGT-13` Coding conventions written". Run these four checks
+       after the move too; a fall stops it.
 
    Then run the engine's `HYG-13`.
 
@@ -374,6 +391,8 @@ One commit per file or concern. A check that already passes makes no commit.
 | 13 | Dependency-update file | `HYG-09` | config |
 | 14 | Contributing items the owner accepted (only at `PARTIAL` or `FAIL`; one per item) | `HYG-13` | hand |
 | 15 | Git rules moved into `CONTRIBUTING.md`, with a link left behind (only on the owner's yes; one per source file) | `HYG-13` | hand |
+| 16 | A newly protected branch named in the `AGENTS.md` release sentence (after row 9, only for a branch it does not name) | - | hand |
+| 17 | A newly protected branch added to the local branch guard (after row 9, only when a guard exists and misses it) | - | wiring |
 
 ## Continue on error
 
@@ -417,6 +436,7 @@ its required-check entry first, or the release branch requires a check that neve
 repository changes: GitHub settings (private
 vulnerability reporting, branch protection, required reviews) are never touched, so there is nothing to put back.
 A contributing item (Step 9) reverts alone. A moved rule reverts alone too, and puts the lines back in their old file.
+Rows 16 and 17 name the branch that row 9 protects: revert them with row 9, before it.
 
 ## Do-not-do
 
