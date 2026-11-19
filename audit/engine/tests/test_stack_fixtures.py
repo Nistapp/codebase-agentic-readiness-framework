@@ -29,11 +29,17 @@ from audit.stack import detect_stack  # noqa: E402
 
 #: fixture -> (ecosystems, package managers) that stack detection must report.
 STACKS: dict[str, tuple[set[str], set[str]]] = {
+    "stack-dotnet": ({"dotnet"}, set()),
     "stack-rust-cargo": ({"rust"}, {"cargo"}),
 }
 
 #: fixture -> {check id: (verdict, a phrase the check's summary holds)}.
 VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
+    "stack-dotnet": {
+        "EXEC-01": ("PASS", "dotnet (global.json)"),
+        "NAV-02": ("PASS", "entry point(s): Program.cs"),
+        "TOOL-03": ("PASS", "StackDotnet.csproj:Nullable"),
+    },
     "stack-rust-cargo": {
         "EXEC-01": ("PASS", "rust (rust-toolchain.toml)"),
         "EXEC-02": ("PASS", "tracked: Cargo.lock"),
