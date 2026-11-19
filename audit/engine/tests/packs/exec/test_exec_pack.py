@@ -480,6 +480,54 @@ class Exec02MessageTests(unittest.TestCase):
             "lockfile is expected",
         )
 
+    def test_an_ecosystem_with_no_lockfile_convention_is_named(self):
+        from audit.rules.checks.execution import check_exec02
+        from audit.rules.registry import REGISTRY_BY_ID
+        from audit.scan import build_inventory
+        from audit.stack import Stack
+
+        with tempfile.TemporaryDirectory() as tmp:
+            outcome = check_exec02(
+                spec=REGISTRY_BY_ID["EXEC-02"],
+                target=None,
+                inventory=build_inventory(Path(tmp)),
+                stack=Stack(ecosystems={"elixir", "python"}, source_only={"python"}),
+                components=None,
+                session=None,
+            )
+        self.assertEqual(
+            (outcome.verdict.value, outcome.summary),
+            ("UNKNOWN", "elixir has no lockfile convention the engine reads, so no lockfile is expected"),
+        )
+
+    def test_a_fail_summary_names_each_lockfile_that_is_missing_untracked_or_out_of_step(self):
+        check, _ = self.audit({"package.json": self.NODE})
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("FAIL", "no lockfile: node (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb)"),
+        )
+        locks = {"a/package-lock.json": "{}\n", "z/package-lock.json": "{}\n"}
+        check, _ = self.audit({"package.json": self.NODE, **locks}, track=("package.json",))
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("FAIL", "not tracked: a/package-lock.json, z/package-lock.json")
+        )
+        manifest = '{"dependencies": {"left-pad": "1"}}\n'
+        check, _ = self.audit({"package.json": manifest, "package-lock.json": self.OTHER_LOCK})
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("FAIL", "out of step with the manifest: package-lock.json")
+        )
+        check, _ = self.audit(
+            {"package.json": self.NODE, "Cargo.toml": "[dependencies]\n", "Cargo.lock": self.CARGO_LOCK, "go.mod": "x"}
+        )
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "FAIL",
+                "no lockfile: go (go.sum), node (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb); "
+                "tracked: Cargo.lock",
+            ),
+        )
+
     def test_a_manifest_in_a_project_that_also_has_source_still_expects_its_lockfile(self):
         check, findings = self.audit({"pyproject.toml": "[project]\nname = 'x'\n", "src/app.py": "print(1)\n"})
         self.assertEqual(check["verdict"], "FAIL")

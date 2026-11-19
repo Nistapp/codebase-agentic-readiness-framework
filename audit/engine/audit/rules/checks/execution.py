@@ -25,7 +25,9 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   basename); the shallowest is the one read. Only a lockfile at the root is compared with the root
   manifest, so one in a subdirectory is tracked but its consistency is unverified. An ecosystem that was
   recognised only from its source files (``Stack.source_only``) has no manifest and declares no
-  dependencies, so it is not expected to have a lockfile.
+  dependencies, so it is not expected to have a lockfile. A recognised ecosystem with no lockfile convention in
+  :data:`_ECOSYSTEM_MANAGERS` is named in the ``UNKNOWN`` summary. A ``FAIL`` summary names each ecosystem with
+  no lockfile, each untracked lockfile and each lockfile out of step with its manifest.
 * **EXEC-03** — a devcontainer / compose file / Dockerfile / setup target-script, or a documented
   non-interactive install command in the fenced blocks of README/``AGENTS.md``. Present but
   undocumented ⇒ ``PARTIAL``. No recognised ecosystem ⇒ ``UNKNOWN``: with no build manifest there is
@@ -524,6 +526,12 @@ def _lock_consistency(inv: Inventory, ecosystem: str, lockfile: str) -> tuple[st
 def check_exec02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     ecosystems = sorted((stack.ecosystems - stack.source_only) & set(_ECOSYSTEM_MANAGERS))
     if not ecosystems:
+        no_convention = sorted(stack.ecosystems - stack.source_only)
+        if no_convention:
+            return _unknown(
+                spec,
+                f"{', '.join(no_convention)} has no lockfile convention the engine reads, so no lockfile is expected",
+            )
         from_source = sorted(stack.source_only & set(_ECOSYSTEM_MANAGERS))
         if from_source:
             return _unknown(
@@ -540,10 +548,14 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
     findings: list[Finding] = []
     verified: list[str] = []
     unverified: list[str] = []
+    missing: list[str] = []
+    untracked: list[str] = []
+    stale: list[str] = []
     for ecosystem in ecosystems:
         candidates = _lockfile_paths(inventory, ecosystem)
         tracked_candidates = [rel for rel in candidates if rel in tracked]
         if not candidates:
+            missing.append(f"{ecosystem} ({', '.join(_lockfiles_for(ecosystem))})")
             findings.append(
                 Finding(
                     check=spec.id,
@@ -562,6 +574,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
             )
             continue
         if not tracked_candidates:
+            untracked.extend(sorted(candidates))
             findings.append(
                 Finding(
                     check=spec.id,
@@ -583,6 +596,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
         lockfile = tracked_candidates[0]
         state, extras = _lock_consistency(inventory, ecosystem, lockfile)
         if state == "mismatch":
+            stale.append(lockfile)
             findings.append(
                 Finding(
                     check=spec.id,
@@ -613,6 +627,9 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
         filter(
             None,
             [
+                f"no lockfile: {', '.join(missing)}" if missing else "",
+                f"not tracked: {', '.join(untracked)}" if untracked else "",
+                f"out of step with the manifest: {', '.join(stale)}" if stale else "",
                 f"tracked: {', '.join(verified)}" if verified else "",
                 f"consistency unverified: {', '.join(unverified)}" if unverified else "",
             ],

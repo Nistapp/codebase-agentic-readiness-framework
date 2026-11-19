@@ -70,7 +70,8 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  (node, python, jvm, rust, go, ruby, php), finds that manager's lockfile at any depth,
                  prefers the shallowest, and requires it to be git-tracked; for node/python/rust/go it
                  then compares the lockfile's own declared packages against the root manifest's. No
-                 ecosystem with a recognised manager is detected ⇒ `UNKNOWN`; an ecosystem recognised only
+                 ecosystem with a recognised manager is detected ⇒ `UNKNOWN`, and the summary names a
+                 recognised ecosystem that has no lockfile convention the engine reads; an ecosystem recognised only
                  from its source files, with no manifest (`Stack.source_only`), is also `UNKNOWN` — it
                  declares no dependencies, so no lockfile is expected. Git unable to report tracked files
                  (no repository, or the command failed) makes the tracked half `UNKNOWN` for the whole
