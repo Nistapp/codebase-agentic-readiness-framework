@@ -201,6 +201,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "hyg-11-no-source-branch-check": {"HYG-11": "PARTIAL"},
     "hyg-13-thin-contributing": {"HYG-05": "PASS", "HYG-13": "FAIL"},
     "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN", "HYG-13": "UNKNOWN"},
+    # -- carried data (ADR-0008; tests/test_repository_scope.py) -------------------------------
+    "carried-jvm-example-package": {"NAV-02": "PASS", "TST-01": "PASS", "TST-03": "PASS"},
     # -- stacks no other fixture holds (tests/test_stack_fixtures.py) -------------------------
     "stack-dotnet": {"EXEC-01": "PASS", "NAV-01": "PASS", "NAV-02": "PASS", "TOOL-03": "PASS"},
     "stack-gradle-wrapper-readme": {"EXEC-01": "PASS", "EXEC-02": "FAIL", "EXEC-06": "PASS", "NAV-02": "PASS"},

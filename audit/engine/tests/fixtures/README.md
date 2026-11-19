@@ -55,6 +55,7 @@ fixtures/
   cmd-ok-make-prereqs/       `check` composes the verbs through its prerequisites -> CMD-01…04 PASS
   cmd-ok-make-alias/         `format-check`, the alias, in place of `format\:check` -> CMD-01…04 PASS
   cmd-ok-root-make-nested-template/ root Makefile with all seven verbs, `templates/package.json` beside it -> CMD-01…04 PASS; the templates are set aside (ADR-0008)
+  carried-jvm-example-package/ a Gradle application in package `com.example.demo`, a JUnit test, `examples/` and `src/main/resources/templates/` -> NAV-02, TST-01, TST-03 PASS; only `examples` and the resources `templates` are set aside (ADR-0008)
   cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
   cmd-01-nested-makefile-only/ the only Makefile is `tools/Makefile`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-01-nested-gradle-only/ the only Gradle build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
