@@ -362,12 +362,12 @@ class FixtureRepositoryTest(unittest.TestCase):
                 self.assertEqual(out, "")
                 self.assertIn("doc_index.py diff: ", err)
 
-    def test_an_argument_error_exits_2(self) -> None:
+    def test_an_argument_error_exits_1(self) -> None:
         for argv in (["diff"], ["diff", "HEAD", "--format", "xml"], ["diff", "HEAD", "extra"]):
             with self.subTest(argv=argv):
                 with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
                     self._run(argv)
-                self.assertEqual(caught.exception.code, 2)
+                self.assertEqual(caught.exception.code, 1)
 
 
 class CompareTest(unittest.TestCase):
