@@ -1140,6 +1140,37 @@
       "status": "kept"
     },
     {
+      "check": "EXEC-06",
+      "home": {
+        "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+        "quote": "In a fenced block of the instruction file, start each command with a word that resolves, such as `npm` or a verb.",
+        "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/generic"
+      },
+      "move": "add-hooks-and-commit-rules/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-13",
+      "home": {
+        "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+        "quote": "In the contributing doc, add the lines as a paragraph of their own.",
+        "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/generic"
+      },
+      "move": "add-hooks-and-commit-rules/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-13",
+      "home": {
+        "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+        "quote": "In the contributing doc, add the lines as a paragraph of their own.",
+        "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/generic"
+      },
+      "move": "add-hooks-and-commit-rules/row-4",
+      "note": "Step 3 says Step 4 adds its text the same way.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/playbooks/add-hooks-and-commit-rules.md",
@@ -1147,6 +1178,16 @@
         "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/rollback"
       },
       "move": "add-hooks-and-commit-rules/row-5",
+      "status": "kept"
+    },
+    {
+      "check": "NAV-05",
+      "home": {
+        "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+        "quote": "Keep the docstring of each function:",
+        "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/commit-lint-script-template"
+      },
+      "move": "add-hooks-and-commit-rules/row-7",
       "status": "kept"
     },
     {

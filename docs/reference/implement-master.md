@@ -226,7 +226,8 @@ branch, so an agent learns it is on the wrong branch before it commits, not when
 - Do not advise `--no-verify` or add a bypass variable, in the branch guard either.
 - Do not re-propose a `skipped` commit-convention finding.
 - Do not pick a manager by what looks familiar or by what this framework uses: detect, then recommend by stack.
-- Do not duplicate the secret-scanner version: reuse the CI pin.
+- Do not duplicate the secret-scanner version: reuse the CI pin. A second inline copy is one more literal for
+  "`EXEC-08` Tool versions visible to dependency automation".
 
 Full playbook: [`add-hooks-and-commit-rules.md`](../../implement/playbooks/add-hooks-and-commit-rules.md).
 

@@ -98,6 +98,12 @@ branch, so an agent learns it is on the wrong branch before it commits, not when
    That is `npm install` for Husky, `pre-commit install` or `lefthook install`. For a binary manager, add the
    binary install line too. Say that CI is the real gate.
    Never advise `--no-verify`; when a hook fails, fix the cause.
+   - In a fenced block of the instruction file, start each command with a word that resolves, such as `npm` or
+     a verb. "`EXEC-06` Documented commands resolve" reads that block. Write a platform installer line, such as
+     `brew install lefthook`, as prose or a link to the manager's install page.
+   - In the contributing doc, add the lines as a paragraph of their own. Never insert one inside the paragraph
+     that says CI runs the same gate: "`HYG-13` Contributing rules written" reads that paragraph whole. Step 4
+     adds its text the same way.
 4. **Commit rule** per the owner's option. For A: the contributing doc names the PR-title workflow and the type
    list it enforces. For B or C: add the config and the `commit-msg` stage, then the CI step for the provider
    (see [Commit rule in CI](#commit-rule-in-ci)), with the same type list as the title rule so they cannot
@@ -217,7 +223,9 @@ GitHub Actions. `BASE` covers a pull request, a merge-queue group and a push:
 ```
 
 When the step runs a Node or Python tool, set it up as the gate's other jobs do (`actions/setup-node` and
-`npm ci`, or `astral-sh/setup-uv`), at the version the repository already pins.
+`npm ci`, or `astral-sh/setup-uv`), at the version the repository already pins. Run the tool from that install,
+never as `npx <tool>@<version>`. So "`EXEC-08` Tool versions visible to dependency automation" finds its version
+in the manifest.
 
 GitLab CI. Merge-request pipelines carry the base in `CI_MERGE_REQUEST_DIFF_BASE_SHA`:
 
@@ -237,7 +245,8 @@ Another provider: the same three parts (full history, the pull request's base an
 
 For the mixed or Java route, or when the owner wants no new tool. A trimmed form of this framework's own
 `dev/commit_lint.py`; set `TYPES` to the repository's convention (`commit.convention`) and put the script where
-the repository keeps its scripts. Standard library only; needs Python 3.9 or newer.
+the repository keeps its scripts. Standard library only; needs Python 3.9 or newer. Keep the docstring of each
+function: "`NAV-05` Public-symbol documentation coverage" counts the public ones.
 
 ```python
 """Check that commit subjects follow Conventional Commits: ``type(scope)!: subject``.
@@ -259,6 +268,7 @@ SUBJECT = re.compile(r"^(?:" + "|".join(TYPES) + r")(?:\([a-z0-9._-]+\))?!?: \S.
 
 
 def subjects(revision_range):
+    """The (short sha, subject) of each non-merge commit in the range."""
     out = subprocess.run(
         ["git", "log", "--no-merges", "--format=%h%x00%s", revision_range],
         capture_output=True,
@@ -271,6 +281,7 @@ def subjects(revision_range):
 
 
 def main():
+    """Check the subjects the arguments name, and return the exit code."""
     parser = argparse.ArgumentParser()
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--range", dest="revision_range")
@@ -344,7 +355,8 @@ The engine reads `TOOL-06` from files only: option A gives `PARTIAL` (CI only) b
 
 ## Rollback
 
-`git revert` the commits, newest first. Each reverts alone, a dependency with its lockfile in one commit.
+`git revert` the commits, newest first. Each reverts alone, a dependency with its lockfile in one commit. So
+"`EXEC-02` Lockfile committed and consistent" holds after each revert.
 Revert the install docs with the hook-manager config. Developers run the manager's uninstall
 (`lefthook uninstall`, `pre-commit uninstall`; for Husky, `git config --unset core.hooksPath`).
 
@@ -355,7 +367,8 @@ Revert the install docs with the hook-manager config. Developers run the manager
 - Do not advise `--no-verify` or add a bypass variable, in the branch guard either.
 - Do not re-propose a `skipped` commit-convention finding.
 - Do not pick a manager by what looks familiar or by what this framework uses: detect, then recommend by stack.
-- Do not duplicate the secret-scanner version: reuse the CI pin.
+- Do not duplicate the secret-scanner version: reuse the CI pin. A second inline copy is one more literal for
+  "`EXEC-08` Tool versions visible to dependency automation".
 
 ## State updates
 
