@@ -88,7 +88,9 @@ recorded, and a committed record shows which CI job the platform requires before
 2. **Trigger (CI-01).** Confirm `pull_request` (or the provider's equivalent). Add it only if missing.
 3. **Parity (CI-02, CI-03).** For each local verb the gate needs (`check` composes the read-only ones), make the
    CI step run it. In a wrapper repository: edit the wrapper first so it calls the verb, run the wrapper locally,
-   then change the workflow only where a step is missing or must be renamed. Every CI command must exist
+   then change the workflow only where a step is missing or must be renamed. A wrapper uses only CI's own
+   variables or the names the example env file lists. "`EXEC-04` Env-var inventory complete" reads each
+   `${VAR}` in a shell script. Every CI command must exist
    locally; a CI-only step (an image scan, a deploy) is named so (`CI-only: ...`) and listed in the CI doc.
    - Call a verb on one `run:` line in the runner's own form (`make security`, `npm run security`). The engine
      follows such a line to the verb's command. So "`TOOL-04` Dependency / security scan verb" still finds the

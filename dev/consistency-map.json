@@ -1210,6 +1210,26 @@
       "status": "kept"
     },
     {
+      "check": "CI-01",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "| CI-01 | Read the workflow's trigger block | A pull-request trigger |",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/verification"
+      },
+      "move": "add-ci-parity/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-04",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "A wrapper uses only CI's own variables or the names the example env file lists.",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-2",
+      "status": "kept"
+    },
+    {
       "check": "TOOL-04",
       "home": {
         "path": "implement/playbooks/add-ci-parity.md",
@@ -1237,6 +1257,26 @@
         "path": "implement/playbooks/add-ci-parity.md",
         "quote": "Do not weaken a gate that already blocks.",
         "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Every verb CI runs is the local verb with the same arguments; local run is green",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/verification"
+      },
+      "move": "add-ci-parity/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Every CI-only step is named so and listed in the CI doc",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/verification"
       },
       "move": "add-ci-parity/row-3",
       "status": "kept"
@@ -1310,6 +1350,17 @@
       },
       "move": "add-ci-parity/row-6",
       "note": "Reusing the scanner keeps its one config, so no second security config sits at the root (inferred).",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-11",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Do not rename the job; a rename silently un-requires it.",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-7",
+      "note": "HYG-11 reads the job names in the required checks; the row edits the merge-gate job and never renames it.",
       "status": "kept"
     },
     {
@@ -3860,6 +3911,9 @@
       "to": [
         ".github/workflows/*.yml",
         ".github/workflows/*.yaml"
+      ],
+      "touches": [
+        "CI-01"
       ]
     },
     {
@@ -3876,6 +3930,9 @@
       },
       "to": [
         "scripts/ci/*.sh"
+      ],
+      "touches": [
+        "EXEC-04"
       ]
     },
     {
@@ -3897,7 +3954,9 @@
       "touches": [
         "TOOL-04",
         "TOOL-06",
-        "CI-04"
+        "CI-04",
+        "CI-02",
+        "CI-03"
       ]
     },
     {
@@ -3983,6 +4042,9 @@
       "to": [
         ".github/workflows/*.yml",
         ".github/workflows/*.yaml"
+      ],
+      "touches": [
+        "HYG-11"
       ]
     },
     {
