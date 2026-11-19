@@ -19,7 +19,8 @@ records a fifth kind of ask:
   ``endswith``, ``in``, ``fnmatch``), and whether the path was lower-cased first.
 
 The name probe is report-only for now: the test prints the ``name`` asks that no declared place covers and the
-declared places that no ask of any kind reaches, and fails on neither. A further test proves that the probe changes
+declared places that no ask of any kind reaches, and fails on neither. A place with ``via`` is read upstream, by
+the scan's file kinds or by component detection, so no ask needs to reach it; the report counts it apart. A further test proves that the probe changes
 no check's result. Git commands and reads outside the target (``$HOME``) are not paths of the target. The stack and the
 components are detected before the checks run, so their reads belong to no check.
 
@@ -366,14 +367,19 @@ def _seen(check: str, place: reads.Place, asks: set[Ask], names: set[NameAsk]) -
     return any(name_hits(place, ask) for ask in names)
 
 
-def unseen_places(recording: Recorded) -> dict[str, list[reads.Place]]:
-    """The declared places that no recorded ask of any kind reaches, by check."""
-    unseen: dict[str, list[reads.Place]] = {}
+def _places_by_reach(recording: Recorded) -> dict[str, dict[str, list[reads.Place]]]:
+    """The declared places that no recorded ask reaches, by check: ``upstream`` when ``via`` accounts for them."""
+    found: dict[str, dict[str, list[reads.Place]]] = {"unseen": {}, "upstream": {}}
     for check, declared in reads.READS.items():
         for place in declared.where:
             if not _seen(check, place, recording.asks[check], recording.names[check]):
-                unseen.setdefault(check, []).append(place)
-    return unseen
+                found["upstream" if place.via else "unseen"].setdefault(check, []).append(place)
+    return found
+
+
+def unseen_places(recording: Recorded) -> dict[str, list[reads.Place]]:
+    """The declared places that no recorded ask of any kind reaches and no upstream step reads, by check."""
+    return _places_by_reach(recording)["unseen"]
 
 
 def uncovered_names(recording: Recorded) -> dict[str, set[NameAsk]]:
@@ -393,15 +399,17 @@ def _tally(found: dict[str, Any]) -> str:
 
 def name_probe_summary(recording: Recorded, detail: bool = False) -> str:
     """The report the probe prints: totals and a count per check, or every item with ``detail``."""
-    unseen = unseen_places(recording)
+    reach = _places_by_reach(recording)
+    unseen = reach["unseen"]
     uncovered = uncovered_names(recording)
     places = sum(len(declared.where) for declared in reads.READS.values())
     unseen_count = sum(map(len, unseen.values()))
+    upstream_count = sum(map(len, reach["upstream"].values()))
     lines = [
         f"name probe (report-only): {sum(map(len, recording.names.values()))} name asks, "
         f"{sum(map(len, uncovered.values()))} not covered by a declaration, in {len(uncovered)} checks",
-        f"name probe: {places} declared places, {places - unseen_count} seen, {unseen_count} unseen, "
-        f"in {len(unseen)} checks",
+        f"name probe: {places} declared places, {places - unseen_count - upstream_count} seen, "
+        f"{upstream_count} read upstream (via), {unseen_count} unseen, in {len(unseen)} checks",
         f"  unseen places: {_tally(unseen)}",
         f"  uncovered name asks: {_tally(uncovered)}",
     ]
@@ -503,6 +511,7 @@ class DeclarationTest(unittest.TestCase):
             self.assertTrue(declared.where, check)
             for place in declared.where:
                 self.assertIn(place.scope, reads.SCOPES, check)
+                self.assertIn(place.via, (None, *reads.VIAS), check)
 
     def test_a_held_place_follows_its_constant(self) -> None:
         from audit.rules.checks import tst
@@ -578,6 +587,15 @@ class NameProbeTest(unittest.TestCase):
         self.assertTrue(name_hits(reads.Place("Makefile", reads.ANY_DEPTH), ("end", "/Makefile", False)))
         self.assertFalse(name_hits(reads.Place("Makefile", reads.ROOT), ("end", "/Makefile", False)))
         self.assertTrue(name_hits(reads.Place(".roo/rules/**", reads.GLOB), ("eq", ".roo/rules", False)))
+
+    def test_a_place_read_upstream_is_not_unseen(self) -> None:
+        recording = recorded()
+        nav01 = reads.READS["NAV-01"]
+        self.assertTrue(all(place.via == reads.COMPONENTS for place in nav01.where))
+        self.assertNotIn("NAV-01", unseen_places(recording))
+        plain = replace(nav01, where=tuple(replace(place, via=None) for place in nav01.where))
+        with mock.patch.dict(reads.READS, {"NAV-01": plain}):
+            self.assertIn("NAV-01", unseen_places(recording))
 
     def test_the_name_probe_reports_and_fails_on_nothing(self) -> None:
         # Report-only (RF4.9.1): no declaration is held to the name asks yet. AUDIT_NAME_PROBE=detail prints every
