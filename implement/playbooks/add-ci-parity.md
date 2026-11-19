@@ -101,9 +101,9 @@ recorded, and a committed record shows which CI job the platform requires before
 4. **Honest scans (CI-04).**
    - A placeholder that prints "skipped" and exits 0 is replaced by the real scan or deleted with the reason
      recorded. Never leave a green no-op.
-   - A step that cannot block yet because of existing debt stays non-blocking **only if** its name says so (for
-     example `Scan (report-only)`), it writes the finding count to the job summary, and the debt and a review
-     date are recorded in the state file.
+   - A step that cannot block yet because of existing debt stays non-blocking **only if** all of these hold.
+     Its job is outside the merge gate's `needs`. Its name says so (for example `Scan (report-only)`). It writes
+     the finding count to the job summary. The debt and a review date are recorded in the state file.
    - A blocking scan with debt uses an ignore list with a reason and an expiry per entry, so the gate blocks on
      new findings only.
    - Do not weaken a gate that already blocks.
