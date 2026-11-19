@@ -4,7 +4,8 @@
 """The project entry point of the document index: ``python3 dev/doc_index.py <command> ...``.
 
 It puts ``dev/`` on ``sys.path``, loads this repository's config, ``dev/docindex.config.json``, and calls
-:func:`docindex.cli.main`. The ``docindex`` package is the generic core and imports no other ``dev/`` module; this
+:func:`docindex.cli.main`. A config with a key that no rule reads (:func:`docindex.config.check_keys`) is refused
+with exit 1, before any subcommand runs. The ``docindex`` package is the generic core and imports no other ``dev/`` module; this
 file is the one place that may (ADR 0011 in ``docs/architecture/adrs/``). The subcommands are in
 :mod:`docindex.cli`, except ``query``: :func:`main` routes it to :func:`query`, which runs
 :func:`docindex.ids.query_main` on the index of the full config.
@@ -94,15 +95,27 @@ if str(DEV) not in sys.path:
     sys.path.insert(0, str(DEV))
 
 from docindex import cli, evidence, extract, ids, manifest  # noqa: E402
+from docindex.config import ConfigError, check_keys  # noqa: E402
 from docindex.gitread import RefTree, Tree, WorkTree  # noqa: E402
 from docindex.model import Index  # noqa: E402
 
 
-def load_config(path: Path = CONFIG) -> dict[str, Any]:
-    """The project config: a JSON object."""
-    data = json.loads(path.read_text(encoding="utf-8"))
+def load_config(path: Path | None = None) -> dict[str, Any]:
+    """The project config (:data:`CONFIG` by default): a JSON object whose every key a rule of the index reads.
+
+    Raise :class:`docindex.config.ConfigError` for a file that is not such an object (an unknown key, a typo).
+    """
+    path = CONFIG if path is None else path
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ConfigError(f"{path.name}: cannot read it: {exc}") from exc
     if not isinstance(data, dict):
-        raise ValueError(f"{path.name} is not a JSON object")
+        raise ConfigError(f"{path.name} is not a JSON object")
+    try:
+        check_keys(data)
+    except ConfigError as exc:
+        raise ConfigError(f"{path.name}: {exc}") from exc
     return data
 
 
@@ -338,7 +351,11 @@ def query(argv: Sequence[str], config: Mapping[str, Any] | None = None) -> int:
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Run one subcommand: ``query`` with :func:`query`, every other one with :func:`docindex.cli.main`."""
-    config = full_config()
+    try:
+        config = full_config()
+    except ConfigError as exc:
+        print(f"doc_index.py: {exc}", file=sys.stderr)
+        return 1
     arguments = list(sys.argv[1:] if argv is None else argv)
     if arguments[:1] == [QUERY]:
         return query(arguments[1:], config)

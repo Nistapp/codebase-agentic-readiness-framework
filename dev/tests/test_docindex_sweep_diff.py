@@ -241,7 +241,7 @@ class DiffModeTest(_Repo):
         self.assertEqual(first[1].encode("utf-8"), second[1].encode("utf-8"))
         self.assertNotIn(str(self.root), first[1])
 
-    def test_a_bad_ref_exits_1_and_a_bad_option_exits_2(self) -> None:
+    def test_a_bad_ref_and_a_bad_option_exit_1(self) -> None:
         code, out, err = self._run(["sweep", "--diff", "no-such-ref"])
         self.assertEqual((code, out), (1, ""))
         self.assertIn("does not name a commit", err)
@@ -254,7 +254,7 @@ class DiffModeTest(_Repo):
         for argv in usage:
             with self.subTest(argv=argv), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
                 cli.main(argv, _REPO_CONFIG, root=self.root)
-            self.assertEqual(raised.exception.code, 2)
+            self.assertEqual(raised.exception.code, 1)
 
 
 # --- The recall measure ---------------------------------------------------------------------------------------------
