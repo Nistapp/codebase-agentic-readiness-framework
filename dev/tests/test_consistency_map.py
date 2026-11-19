@@ -417,6 +417,16 @@ class GateTest(unittest.TestCase):
         move = {"action": "untrack", "from": ["artefacts/"]}
         self.assertEqual(consistency_map.touch(move, read), "artefacts/")
 
+    def test_r2_a_wildcard_base_name_does_not_overlap_a_literal_name(self) -> None:
+        overlaps = consistency_map.place_overlaps
+        self.assertFalse(overlaps(".github/workflows/*.yml", {"path": "Taskfile.yml", "scope": "any-depth"}))
+        self.assertFalse(overlaps("**/dist/**", {"path": "package.json", "scope": "any-depth"}))
+        self.assertFalse(overlaps("docs/*", {"path": "CONTRIBUTING.md", "scope": "repository-level"}))
+        self.assertTrue(overlaps("docs/*", {"path": "CONTRIBUTING*", "scope": "repository-level"}))
+        self.assertTrue(overlaps("scripts/*.sh", {"path": "*.sh", "scope": "any-depth"}))
+        self.assertTrue(overlaps("ci/Taskfile.yml", {"path": "Taskfile.yml", "scope": "any-depth"}))
+        self.assertTrue(overlaps(".github/workflows/*.yml", {"path": ".github/workflows/*.yml", "scope": "glob"}))
+
 
 REAL_PAIRS: list[dict[str, str]] = json.loads(
     (Path(__file__).parent / "fixtures" / "consistency-map-real-pairs.json").read_text(encoding="utf-8")

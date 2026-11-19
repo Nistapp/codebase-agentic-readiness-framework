@@ -304,11 +304,17 @@ def _is_folder(path: str) -> bool:
     return path.endswith("/")
 
 
+def _is_wild(name: str) -> bool:
+    return any(char in name for char in "*?[")
+
+
 def place_overlaps(path: str, where: dict[str, Any]) -> bool:
     """Whether a move path (a file, a folder ending in ``/`` or a glob) can overlap a place a read covers.
 
     A folder overlaps a root, any-depth or repository-level place only when the place is the folder itself or sits
     under it (rule R1): a move of ``artefacts/`` reaches the root place ``artefacts``, not every name the scan reads.
+    A move path whose base name holds a wildcard does not overlap a literal name read at any depth or at repository
+    level (rule R2): ``.github/workflows/*.yml`` is not ``Taskfile.yml``.
     """
     target, scope = str(where["path"]), str(where["scope"])
     if _is_folder(path):
@@ -321,6 +327,8 @@ def place_overlaps(path: str, where: dict[str, Any]) -> bool:
     if scope == "glob":
         return fnmatch.fnmatchcase(path, target) or fnmatch.fnmatchcase(target, path)
     base = posixpath.basename(path)
+    if _is_wild(base) and not _is_wild(target):
+        return False  # R2: a wildcard base name (``*.yml``, ``**``) names no one literal file a read looks for
     named = fnmatch.fnmatchcase(base, target) or fnmatch.fnmatchcase(target, base)
     if scope == "repository-level":
         return named and posixpath.dirname(path) in _REPOSITORY_LEVEL
