@@ -1006,6 +1006,12 @@
       "status": "kept"
     },
     {
+      "check": "NAV-02",
+      "move": "add-baselines-and-ratchet/row-4",
+      "reason": "The move can only remove findings or add credit: the compare script's __main__ guard can make NAV-02 pass in a repository with no real entry point. The engine is to stop counting such a script; until then the false credit is accepted.",
+      "status": "accepted"
+    },
+    {
       "check": "CMD-04",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -1017,11 +1023,71 @@
       "status": "kept"
     },
     {
+      "check": "BASE-03",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "The counts file named in a CI workflow, or a \"ratchet\" / \"no new violations\" sentence: `PASS`",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-6",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Add only the flag: the verb stays read-only, with no `--fix` or `--write`.",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-7",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-01",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Each tool with debt has a baseline; the paragraph names them",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-8",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-03",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "The counts file named in a CI workflow, or a \"ratchet\" / \"no new violations\" sentence: `PASS`",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-8",
+      "status": "kept"
+    },
+    {
+      "check": "TST-05",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "A coverage config, key or `--coverage`/`jacoco` in a script or build file: `PASS`",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-9",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-08",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
         "quote": "The verb runs it by name, never as `npx c8@<version>`.",
         "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-10",
+      "status": "kept"
+    },
+    {
+      "check": "TST-05",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "A coverage config, key or `--coverage`/`jacoco` in a script or build file: `PASS`",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
       },
       "move": "add-baselines-and-ratchet/row-10",
       "status": "kept"
@@ -1036,6 +1102,12 @@
       "move": "add-baselines-and-ratchet/row-11",
       "note": "The floor never fails today's suite, so the test verb's status holds.",
       "status": "kept"
+    },
+    {
+      "check": "TST-05",
+      "move": "add-baselines-and-ratchet/row-11",
+      "reason": "The move can only remove findings or add credit: a coverage threshold key in the runner config is one more coverage key TST-05 finds.",
+      "status": "accepted"
     },
     {
       "check": "CMD-02",
@@ -1060,6 +1132,32 @@
       "status": "kept"
     },
     {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "The floor adds no writer to `test` or `check`: no `--fix`, `--write` or install.",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-12",
+      "status": "kept"
+    },
+    {
+      "check": "TST-05",
+      "move": "add-baselines-and-ratchet/row-12",
+      "reason": "The move can only remove findings or add credit: coverage flags wired into test are one more coverage signal TST-05 finds in the resolved verbs.",
+      "status": "accepted"
+    },
+    {
+      "check": "BASE-04",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Gradle and nested `package.json`: `FAIL`, or `PARTIAL` with the `AGENTS.md` sentence",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-13",
+      "status": "kept"
+    },
+    {
       "check": "SEC-02",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -1071,6 +1169,26 @@
       "status": "kept"
     },
     {
+      "check": "NAV-05",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Never put a reason line between a `def` line and its docstring:",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-15",
+      "status": "kept"
+    },
+    {
+      "check": "TST-03",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Every marker has a reason or an owner item",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-15",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-06",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -1079,6 +1197,16 @@
       },
       "move": "add-baselines-and-ratchet/row-16",
       "note": "Inferred: the named forms start with a resolvable launcher (./gradlew, npx).",
+      "status": "kept"
+    },
+    {
+      "check": "TST-04",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "One single-test command for the runner",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-16",
       "status": "kept"
     },
     {
@@ -3068,7 +3196,8 @@
         "scripts/"
       ],
       "touches": [
-        "NAV-05"
+        "NAV-05",
+        "NAV-02"
       ]
     },
     {
@@ -3107,6 +3236,9 @@
       },
       "to": [
         ".github/workflows/ci.yml"
+      ],
+      "touches": [
+        "BASE-03"
       ]
     },
     {
@@ -3124,6 +3256,9 @@
       "to": [
         "package.json",
         "Makefile"
+      ],
+      "touches": [
+        "CMD-04"
       ]
     },
     {
@@ -3140,6 +3275,10 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "BASE-01",
+        "BASE-03"
       ]
     },
     {
@@ -3159,6 +3298,9 @@
         "vitest.config.*",
         "package.json",
         "build.gradle"
+      ],
+      "touches": [
+        "TST-05"
       ]
     },
     {
@@ -3179,7 +3321,8 @@
         "build.gradle"
       ],
       "touches": [
-        "EXEC-08"
+        "EXEC-08",
+        "TST-05"
       ]
     },
     {
@@ -3201,7 +3344,8 @@
         "build.gradle"
       ],
       "touches": [
-        "TST-02"
+        "TST-02",
+        "TST-05"
       ]
     },
     {
@@ -3224,7 +3368,9 @@
       ],
       "touches": [
         "CMD-02",
-        "TST-02"
+        "TST-02",
+        "CMD-04",
+        "TST-05"
       ]
     },
     {
@@ -3241,6 +3387,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "BASE-04"
       ]
     },
     {
@@ -3279,7 +3428,9 @@
         "**/__tests__/**"
       ],
       "touches": [
-        "SEC-02"
+        "SEC-02",
+        "NAV-05",
+        "TST-03"
       ]
     },
     {
@@ -3298,7 +3449,8 @@
         "AGENTS.md"
       ],
       "touches": [
-        "EXEC-06"
+        "EXEC-06",
+        "TST-04"
       ]
     },
     {
