@@ -18,9 +18,12 @@ the boundaries and the gate in both modes exist, with their tests.
 
 ## Decision
 
-1. The consistency map is one JSON file, `dev/consistency-map.json`.
-   [`dev/consistency-map.schema.json`](../../../dev/consistency-map.schema.json) is its JSON Schema. A
-   standard-library script in `dev/` checks it.
+1. The consistency map is JSON in two files. Each stays under the 512 KiB size that `NAV-03` flags.
+   `dev/consistency-map.json` holds every part but `names`.
+   `dev/consistency-map-names.json` holds `map_format` and `names`. The script joins them into one map. It
+   refuses `names` in both files, a missing names file, or two `map_format` values.
+   [`dev/consistency-map.schema.json`](../../../dev/consistency-map.schema.json) is the JSON Schema of the joined
+   map. A standard-library script in `dev/` checks it.
 2. The map has five parts:
    1. `reads`: one entry per check in [`audit/catalogue.json`](../../../audit/catalogue.json). It says where and
       what the check reads. It also says how close the parts must be: one line, a window, a paragraph, a section
@@ -80,6 +83,7 @@ the boundaries and the gate in both modes exist, with their tests.
 | The reads in `audit/catalogue.json` | The catalogue ships to readers and holds no code constant, so it drifts like a separate file |
 | Files and phrases only, no boundaries | The run's own promises stay unmapped, and a playbook step can contradict a hard rule unseen |
 | Fail the gate on any changed evidence | Rationale not recorded; owner to fill in |
+| One map file, or one written with less indentation | The one file passed 512 KiB, which `NAV-03` flags in this repository's own audit. Less indentation buys about 80 KB and changes every line; the names list, at 224 KB, is the largest part and changes least |
 | Infer the touches from paths and content kinds alone | On this repository the rule listed 1,772 pairs, and it found 28 of the 67 gaps a review named. A gate that noisy is not read |
 
 ## Consequences

@@ -116,7 +116,8 @@ No tool is installed. Ask:
    `.codebase-memory/`, `.opencode/`, `.agentic-tdd/`: confirm an ignore rule covers it
    (`git check-ignore -v <root>/x`) and `git ls-files <root>` prints nothing. Use
    [`establish-docs-contract`](establish-docs-contract.md#steps) step 7 for the procedure (add the rule; untrack only
-   what the owner confirms is scratch). A root that does not exist needs nothing.
+   what the owner confirms is scratch). A root that does not exist needs nothing. The same rule and untracking
+   keep "`DOC-03` artefacts/ exists and is ignored" true for `artefacts/`.
 5. **Stub files.** A vendor pointer file (`CLAUDE.md` holding `@AGENTS.md`) does not need its own prohibitions: the
    harness reads `AGENTS.md` through it. If a vendor file carries prohibitions of its own, do not edit it here; hand
    it to the "ask about stub files" rule in [`adapt-agents-md`](adapt-agents-md.md#inputs-to-ask) (Inputs 3).

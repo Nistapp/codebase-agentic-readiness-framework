@@ -49,7 +49,10 @@ recorded, and a committed record shows which CI job the platform requires before
 3. **Scanner.** Use the existing one or the `scanner.choice` preference. For a lockfile scan offer OSV-Scanner
    (v2.7.0, 2026-10-12, binary) or the ecosystem's own audit command. Currency checked 2026-10-31 (GitHub
    releases API); re-check when applied. Not a new third-party `uses:` action without owner approval: call the
-   pinned binary from the wrapper script the way the repository already runs its secret scanner.
+   pinned binary from the wrapper script the way the repository already runs its secret scanner. Keep the
+   pin in a manifest that dependency automation reads, such as a Go tool module or a `package.json`. The check
+   "`EXEC-08` Tool versions visible to dependency automation" does not read wrapper scripts. Use the scanner's
+   existing config, never a second one: "`EXEC-07` No competing configs for one concern" reads both.
 4. **Branch-protection evidence.** The owner or an orchestrator with platform access supplies: protection
    mechanism (classic rule or ruleset), required checks, the up-to-date setting, bypass actors, and whether the
    plan allows protection at all. **A session never guesses these.** If they are not supplied, stop for that part.
@@ -72,7 +75,8 @@ recorded, and a committed record shows which CI job the platform requires before
    | Make, Gradle, lefthook or mixed | a `workflow-lint` target or lefthook command that runs the linter on the workflow folder |
 
    Each developer installs the linter once. Pin its version where the repository pins its other dev tools, never
-   in the workflow alone. Record the choice as the preference `ci.workflow_linter`.
+   in the workflow alone. That place is a manifest, so "`EXEC-08` Tool versions visible to dependency automation"
+   sees the pin. Record the choice as the preference `ci.workflow_linter`.
 
 ## Steps
 
@@ -86,6 +90,14 @@ recorded, and a committed record shows which CI job the platform requires before
    CI step run it. In a wrapper repository: edit the wrapper first so it calls the verb, run the wrapper locally,
    then change the workflow only where a step is missing or must be renamed. Every CI command must exist
    locally; a CI-only step (an image scan, a deploy) is named so (`CI-only: ...`) and listed in the CI doc.
+   - Call a verb on one `run:` line in the runner's own form (`make security`, `npm run security`). The engine
+     follows such a line to the verb's command. So "`TOOL-04` Dependency / security scan verb" still finds the
+     scan in CI, and "`TOOL-06` Commit convention enforced" the commit check. A wrapper hides both: with wrappers,
+     tell the owner, as for "`CI-02` Local↔CI parity".
+   - When the CI doc is the root README, list the CI-only steps as prose or a table, not in a fenced block.
+     "`EXEC-06` Documented commands resolve" reads every fenced command in the README, and a CI-only one does not
+     resolve locally. Write no stub word such as `TODO` there: "`HYG-01` README present and non-placeholder" reads
+     the whole file.
 4. **Honest scans (CI-04).**
    - A placeholder that prints "skipped" and exits 0 is replaced by the real scan or deleted with the reason
      recorded. Never leave a green no-op.
@@ -101,12 +113,16 @@ recorded, and a committed record shows which CI job the platform requires before
 6. **Branch-protection record (CI-04).** Commit a short page in `docs/` (or the repository's CI doc): mechanism,
    required check name, up-to-date setting, bypass actors, the date the owner confirmed, and the exact read-only
    command that re-checks it. If the platform cannot enforce a required check (plan limitation), the page says
-   so and lists the mitigations; the check is then recorded `partial`, never `done`.
+   so and lists the mitigations; the check is then recorded `partial`, never `done`. Put `branch-protection` in
+   the page's path, such as `docs/branch-protection.md`, or extend that page if `add-repo-hygiene` wrote it. The
+   check "`HYG-11` Branch protection declared as code" finds the record by that name only.
 7. **Workflow lint (CI-05).** Add the chosen linter to the local surface (the route from Inputs 6). Run the same
    command in CI as a blocking step, beside the gate. Prefer calling the local command over a third-party
    `uses:` action; an action needs the owner's approval. Fix what the linter reports in the workflows you edit.
    Record older findings as debt, as for scans. Lint every workflow you changed before pushing. Edit workflows
-   only in a PR.
+   only in a PR. A fix keeps the line that reads the pull request's source branch (`github.head_ref`) outside a
+   `group:` or `ref:` key. "`HYG-11` Branch protection declared as code" reads that line for the source-branch
+   rule.
 
 ### GitHub Actions and Gradle
 
@@ -184,7 +200,8 @@ close-out comparison (`SKILL.md` Stage 5) labels the move.
 ## Rollback
 
 `git revert` the commits, newest first: the workflow-lint CI step and local command before the linter pin. The pin
-carries its lockfile. The other commits revert alone. A reverted scan returns to its prior state,
+carries its lockfile, so "`EXEC-02` Lockfile committed and consistent" holds after the revert. The other commits
+revert alone. A reverted scan returns to its prior state,
 but a reverted placeholder is a green no-op again: record that in the PR.
 
 ## Do-not-do

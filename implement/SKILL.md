@@ -367,7 +367,8 @@ only what is specific to it.
    words. Preferences from earlier sessions are already in the workspace; read them, never ask again.
 10. **Markdown and diagrams.** Lint every changed Markdown file with the repository's own linter, and validate
    every Mermaid block before saving. When the repository has no linter, follow
-   [When a needed tool is missing](tool-choice.md#when-a-needed-tool-is-missing).
+   [When a needed tool is missing](tool-choice.md#when-a-needed-tool-is-missing). The check "`DOC-05` Docs are
+   readable" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.
 11. **No instruction file yet.** T1 to T6 write lines into the instruction file. When none exists, the first step
    that needs it creates the skeleton first, as its own commit:
    [`adapt-agents-md`, No instruction file yet, step 1](playbooks/adapt-agents-md.md#no-instruction-file-yet).
@@ -390,6 +391,7 @@ Each commit follows these rules:
 - **Hand edits apart from bulk output.** A lockfile, a baseline file, generated config or a formatter run is its
   own commit, apart from the hand edits that need it. Bulk output is regenerated, not reviewed line by line. One
   exception keeps the tree working: a lockfile goes in the same commit as the manifest change that regenerates it.
+  So "`EXEC-02` Lockfile committed and consistent" holds at every commit.
 - **Config apart from wiring.** A tool's config is one commit; wiring the tool into a verb, a hook or CI is the
   next. Reverting the wiring then leaves the config usable.
 - **Only this theme's change.** No unrelated fix rides along. Note it for the owner instead.

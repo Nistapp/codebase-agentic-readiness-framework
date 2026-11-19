@@ -90,6 +90,10 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    `docs/architecture/`. It goes in the section `agents_md.pointer_section` names. Without that preference, ask
    the owner where it goes and record the answer with `pref set agents_md.pointer_section`.
    The AGENTS.md theme (T7) reorganises the file later; tell it in the status that the line exists.
+   Write the line as a plain list of pages, with no rule word such as must, never or only. With one, "`AGT-06`
+   Architectural boundaries declared" reads it as a boundary rule. Never write "read ... first" on it either:
+   "`AGT-10` Instruction indirection resolved" reads that as a deferral. Keep the line out of the prohibitions
+   section, whose code spans "`CON-01` Allow/deny artifact present" reads.
 6. **Prose check (DOC-05).** The framework has a stdlib Python template that checks the style guide's rules and can
    fail above a count: [`templates/docs_prose_check.py`](templates/docs_prose_check.py). It is code under the
    framework's own licence, and a copy never carries that licence. So flag the option, and offer two answers as a
@@ -209,7 +213,10 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       record the count in the `docs.lint_ratchet` preference and in the pull request, under "How it was checked".
    3. Add a separate CI job, path-filtered to changed Markdown, that runs the linter and renders every Mermaid
       block with `mmdc` (`--no-sandbox` in CI, cache the npm and Puppeteer directories keyed by the pinned
-      versions). Pin both versions exactly; never use an unpinned `npx`. If the repository already has Node,
+      versions). Pin both versions exactly; never use an unpinned `npx`. Put each pin in a manifest, such as the
+      `devDependencies` of a root or tools `package.json`. The runner commands and the job (item 5 too) run each
+      tool by name, never as `name@version`. So "`EXEC-08` Tool versions visible to
+      dependency automation" finds every version in a manifest. If the repository already has Node,
       reuse the pinned `setup-node` step it uses elsewhere (same SHA and major version); otherwise leave setup out
       until a verified SHA exists. In a private repository, check out with `fetch-depth: 0` and diff the two
       commits locally: a `git fetch` fails there because `persist-credentials: false` leaves no token. Run the
@@ -236,7 +243,12 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       - if the explanation pages live elsewhere (for example `docs/architecture/`), pass `--diagram-dir` once per
         folder;
       - both runs go in the docs CI job from item 3. Use `--format github` there, so issues show on the pull request.
-        A third run with no limit and no `--min-severity` shows the notices too, as advice.
+        A third run with no limit and no `--min-severity` shows the notices too, as advice;
+      - keep both `--max-issues` numbers out of the root runner files (`package.json`, `Makefile`, `pyproject.toml`,
+        `Taskfile.yml`). Put them in a small script
+        that the runner command calls, beside the copy. "`BASE-02` Current violation counts measured" reads a
+        `max-issues` number in those files as a code-quality budget. "`BASE-03` No-new-violations mechanism" then
+        builds on that budget, so both could pass for the docs alone.
 
       Record the baseline (warnings) as debt on the `DOC-05` item, and in the `docs.prose_ratchet` preference.
 9. **Style guide that already exists (`docs.style_guide_update`).** Run this step only when `docs/STYLE_GUIDE.md`
@@ -286,18 +298,23 @@ They stay here so a repository that has one has a procedure, and so the re-audit
        `python3 implement/tools/compare_reports.py <before report> <after report>`. Read the "Checks that moved"
        table. Expected: `None.`
     5. **Stop on a changed verdict.** Any row in that table stops the step. Revert the commit, or fix it in a new
-       commit and audit again, before the next section.
+       commit and audit again, before the next section. A verdict can stay while its evidence changes. So also
+       compare the `summary` of three checks in the two JSON reports. They read README prose: "`HYG-01` README
+       present and non-placeholder", "`BASE-03` No-new-violations mechanism" and "`BASE-04` Coverage floor
+       configured". A changed summary stops the step too.
     6. **Check the commands by hand.** The comparison cannot catch one loss. `EXEC-06` documented commands resolve reads
        fenced commands in `README.md`, `AGENTS.md` and `CLAUDE.md` only. A command that moves to `docs/` leaves that
        scope. The `EXEC-06` verdict does not change, so the before-and-after audit shows nothing. Before each commit,
-       list the fenced commands in the section. Tell the owner which commands now sit outside the check, in the pull
-       request under "What changed".
+       list the fenced commands in the section. Check by hand that the first word of each still resolves. It is a
+       verb, a script that exists, or a tool on the path. Tell the owner which commands now sit outside the check, in the
+       pull request under "What changed".
 
     Rules:
     - Keep the setup command and the single-test command in a root file: `README.md`, `AGENTS.md` or `CONTRIBUTING.md`.
       `EXEC-03` non-interactive setup path reads fenced commands in `README.md`, `AGENTS.md`, `CLAUDE.md` and
       `CONTRIBUTING.md`. `TST-04` fast path documented reads the single-test command in the same four files. Neither
-      reads `docs/`.
+      reads `docs/`. Prefer `README.md` or `AGENTS.md`: "`EXEC-06` Documented commands resolve" reads fenced commands
+      there, but not in `CONTRIBUTING.md`.
     - A fact in the section stays as written. If the section has a gap or a doubt, ask the owner. Rewording is not
       moving.
     - The new page follows the style guide: form follows content, and the plain language rules of step 3.
@@ -413,7 +430,8 @@ both with owner consent. `git revert` returns them.
 - Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
   fill in".
 - Do not move, resize, delete or untrack files for NAV-03.
-- Do not put values from env files, credentials, realm exports or keystores in any page.
+- Do not put values from env files, credentials, realm exports or keystores in any page. Such a value also fails
+  "`SEC-02` No key-shaped strings in tracked files".
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
 - Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
   change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one

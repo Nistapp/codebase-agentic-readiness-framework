@@ -139,7 +139,7 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 - Do not untrack a path that a deploy path reads, or may read, without the owner's recorded yes.
 - Do not untrack a secret-bearing file here; that is the secrets theme's decision (rotation, history).
 - Do not untrack a lockfile, the Gradle wrapper or any hand-written file the ignore rule matches by accident:
-  fix the rule.
+  fix the rule. "`EXEC-02` Lockfile committed and consistent" needs the lockfile tracked.
 - Do not delete working-tree files (`git rm` without `--cached`) and do not rewrite history.
 - Do not delete, merge or rename a competing config (EXEC-07).
 - Do not start containers or the local stack by hand to test a reader.
@@ -226,7 +226,8 @@ branch, so an agent learns it is on the wrong branch before it commits, not when
 - Do not advise `--no-verify` or add a bypass variable, in the branch guard either.
 - Do not re-propose a `skipped` commit-convention finding.
 - Do not pick a manager by what looks familiar or by what this framework uses: detect, then recommend by stack.
-- Do not duplicate the secret-scanner version: reuse the CI pin.
+- Do not duplicate the secret-scanner version: reuse the CI pin. A second inline copy is one more literal for
+  "`EXEC-08` Tool versions visible to dependency automation".
 
 Full playbook: [`add-hooks-and-commit-rules.md`](../../implement/playbooks/add-hooks-and-commit-rules.md).
 
@@ -295,7 +296,8 @@ not moved.
 - Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
   fill in".
 - Do not move, resize, delete or untrack files for NAV-03.
-- Do not put values from env files, credentials, realm exports or keystores in any page.
+- Do not put values from env files, credentials, realm exports or keystores in any page. Such a value also fails
+  "`SEC-02` No key-shaped strings in tracked files".
 - Do not install a docs tool the owner has not approved, and do not use an unpinned `npx` in CI.
 - Do not rewrite existing prose to lower the DOC-05 counts, even with `format.mass_reformat=yes`. Rewording can
   change meaning, unlike a reformat. A rewrite needs the owner to name the pages (`extra.prose-rewrite`), with one
@@ -359,6 +361,8 @@ section, one commit at a time ([details](../../implement/playbooks/adapt-agents-
   them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
 - Do not edit the prohibitions section; that is [`add-deny-rules`](../../implement/playbooks/add-deny-rules.md).
+  It is the section that "`AGT-07` Do-not-do / deny rules present", "`CON-01` Allow/deny artifact present" and
+  "`CON-02` Test directories protected" read.
 - Do not edit code to make a rule true, and do not drop a rule because the code breaks it.
 - Do not create a harness configuration file to point at a second rules file.
 - Do not write a fact an earlier theme has not made true (a verb that does not resolve, a docs page that does not

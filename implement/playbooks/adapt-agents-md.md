@@ -95,8 +95,10 @@ engine. The questions are about text. Ask them per finding, before the diff for 
      line to `AGENTS.md` (Steps 7). Ask before deleting anything; deletion is the owner's choice
      (`agents_md.stubs=delete-asked`) and loses that harness's reach.
    - A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move,
-     not copy) and ask whether the vendor file then becomes the one-line pointer. A rule that only makes sense for
-     that harness (a tool preference, a harness setting) may stay there; say so in the pull request, under
+     not copy) and ask whether the vendor file then becomes the one-line pointer. Move a line that names
+     `STYLE_GUIDE.md` as well: "`DOC-02` docs/STYLE_GUIDE.md exists" reads that name in `AGENTS.md`. A rule that
+     only makes sense for that harness (a tool preference, a harness setting) may stay there; say so in the pull
+     request, under
      "What changed".
    - A vendor file with independent rules and no pointer (a true competitor): reconcile its rules into `AGENTS.md`
      and offer the one-line pointer. Never delete it unasked.
@@ -215,7 +217,9 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    Releases are cut by release-please." Re-check the sentence whenever `ci.pr_by_agent` or
    `agents_md.release_tags` changes. The prohibition half also lands in the prohibitions section through
    [`add-deny-rules`](add-deny-rules.md) (default branch); keep the two consistent, do not state the rule twice in
-   different words.
+   different words. The sentence is the one line of its section that holds never, do not or must not (Step 14).
+   Keep it the only one. Three such lines make the section a prohibitions section for "`AGT-07` Do-not-do / deny
+   rules present". Then "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it too.
 7. **Reach and vendor files (AGT-08).** Add one line near the top of `AGENTS.md`: `This file is read by <harnesses>.`
    Name only harnesses that really reach it: native `AGENTS.md` readers, plus each harness whose vendor file points
    at it (a `CLAUDE.md` that imports `@AGENTS.md` makes Claude Code a reader). The engine takes the line as given; the
@@ -225,7 +229,9 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    `AGENTS.md` does not already state, propose moving them (a diff that adds them to `AGENTS.md` and, if the owner
    agrees, removes them from X, so the rule lives in one place), and turn the deferral into a reference link. Check
    the tree or layout description in X against the repository while there: a stale tree is reported, and fixed only
-   if the owner asks (X is not this playbook's file).
+   if the owner asks (X is not this playbook's file). X may be the conventions file or `CONTRIBUTING.md`. Then run
+   "`AGT-13` Coding conventions written" and "`HYG-13` Contributing rules written" after the move. If either verdict
+   falls, put the rule back in X.
 9. **Specificity (AGT-11).** Classify every rule line as the check does (specific or generic), and verify every
    specific line against the repository: the command resolves, the path exists, the convention holds in the code.
    Then, per Inputs 5:
@@ -238,7 +244,9 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 10. **Instruction file and components (AGT-01, AGT-02).** Verify: root `AGENTS.md`, exact case, no stub marker, no
     override file beside it. For a multi-component repository, a component `AGENTS.md` is written only when the owner
     asks and the component has rules the root file cannot state; otherwise record AGT-02 as the owner's choice
-    (component scoping is planned for a later framework version).
+    (component scoping is planned for a later framework version). Name a component file `AGENTS.md`, never a vendor
+    name such as `CLAUDE.md`. "`AGT-08` No competing instruction files, and the reach matrix is stated" counts only
+    vendor-named files as competitors.
 11. **Communication rules (AGT-12).** Add a section headed "How to write for people". Match the file's heading
     level and style (D18), and keep a word the check reads (`write for`, `communication`, `reporting`). Place it
     after the section `agents_md.pointer_section` names; without that preference, place it before the prohibitions
@@ -261,7 +269,17 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     persona the owner confirmed. Link it from the section, and keep `communicat` in the file name: AGT-12 reads a
     linked file whose name contains it. Then run the engine's AGT-12.
 12. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
-    record the overage as debt. Never shorten by reflowing or deleting the owner's rules.
+    record the overage as debt. Never shorten by reflowing or deleting the owner's rules. Move only a section that
+    no root-only check reads. These stay in the root `AGENTS.md`, because the checks read them there and nowhere else:
+    - the commands: "`AGT-05` Seven verbs named", "`EXEC-03` Non-interactive setup path", "`EXEC-06` Documented
+      commands resolve" and "`TST-04` Fast path documented";
+    - the documentation contract and the boundaries: "`AGT-03` Documentation contract named", "`DOC-02`
+      docs/STYLE_GUIDE.md exists" and "`AGT-06` Architectural boundaries declared";
+    - the definition of done ("`AGT-04` Definition of done stated") and the release boundary ("`AGT-09` Branch and
+      release boundary declared");
+    - the "How to write for people" section ("`AGT-12` Communication rules stated");
+    - the baseline and coverage lines: "`BASE-01` Baseline artifact exists", "`BASE-03` No-new-violations
+      mechanism" and "`BASE-04` Coverage floor configured".
 13. **Numbering.** Text this playbook writes into a target comes from `greenfield/templates/`. It follows the form
     rules of the greenfield [style guide](../../greenfield/templates/docs/STYLE_GUIDE.md#31-form-follows-content).
     Read those rules there and do not copy them here. Then read `agents_md.numbering`:
@@ -315,7 +333,9 @@ engine. The questions are about text. Ask them per finding, before the diff for 
       gets that name and place, because the engine finds any of the names the check page lists. Keep the template's
       five sections. Replace `[Project Name]` and every example with the target's own. Text comes from
       `greenfield/templates/` only: write no rule from memory or from this playbook. Add one link line to `AGENTS.md`,
-      in the section that names the documentation, and state no convention there a second time.
+      in the section that names the documentation, and state no convention there a second time. Word it as a
+      reference ("Coding conventions: `CONVENTIONS.md`"), never as "read `CONVENTIONS.md` first". The check
+      "`AGT-10` Instruction indirection resolved" reads that second form as a deferral.
     - **b. Evidence for every rule.** Every rule written comes from the code. Find it with the code index
       (`search_graph` for the types, the layers and the error classes) and cross-check it with a `grep` or `rg`. With
       no code index, a `grep` stands in; say which one you used. Evidence by item:
@@ -366,6 +386,9 @@ holds the owner's text is an existing file: use the Generic steps. A vendor file
    | 4. Branches and releases | Step 6 | The branches, rulesets and release tool the repository declares |
    | 5. How to write for people | Step 11 | The persona the owner confirms (Inputs 7) |
    | 6. Never | [`add-deny-rules`](add-deny-rules.md) | Not written here; it runs on the same branch |
+
+   Section 6 stays empty until `add-deny-rules` fills it. Then "`AGT-07` Do-not-do / deny rules present",
+   "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it.
 
 3. **Review.** The owner reads each section as its diff arrives (Inputs 1 sets the order). The file is a draft until
    the owner has seen every section. Then run the engine's AGT-01, AGT-05 and AGT-12.
@@ -497,6 +520,8 @@ numbering. A conventions commit (Step 16) reverts alone too.
   them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
 - Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).
+  It is the section that "`AGT-07` Do-not-do / deny rules present", "`CON-01` Allow/deny artifact present" and
+  "`CON-02` Test directories protected" read.
 - Do not edit code to make a rule true, and do not drop a rule because the code breaks it.
 - Do not create a harness configuration file to point at a second rules file.
 - Do not write a fact an earlier theme has not made true (a verb that does not resolve, a docs page that does not

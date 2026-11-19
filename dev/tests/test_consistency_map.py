@@ -20,8 +20,10 @@ from __future__ import annotations
 import io
 import json
 import posixpath
+import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
 from typing import Any
 from unittest import mock
 
@@ -30,7 +32,7 @@ import consistency_map
 from test_consistency_map_schema import SCHEMA, _problems
 
 PLAYBOOKS = consistency_map.PLAYBOOKS
-MAP: dict[str, Any] = json.loads((_dev_paths.DEV / "consistency-map.json").read_text(encoding="utf-8"))
+MAP: dict[str, Any] = consistency_map.load_map()
 CATALOGUE_IDS: list[str] = [
     check["id"]
     for check in json.loads((_dev_paths.REPO / "audit" / "catalogue.json").read_text(encoding="utf-8"))["checks"]
@@ -50,6 +52,57 @@ _scaffolded_paths = consistency_map.scaffolded_paths
 class MapShapeTest(unittest.TestCase):
     def test_the_map_follows_its_schema(self) -> None:
         self.assertEqual(_problems(MAP, SCHEMA), [])
+
+
+#: The size over which the audit's structural check (``NAV-03``, ``LARGE_FILE_BYTES`` in the engine's ``nav.py``)
+#: flags a file. Each map file stays under it.
+_LARGE_FILE_BYTES = 512 * 1024
+
+
+class MapFilesTest(unittest.TestCase):
+    """The map is two files, joined by ``load_map``: each part once, one format, each file under the size limit."""
+
+    def _write(self, folder: Path, cmap: dict[str, Any], names: Any) -> Path:
+        path = folder / "consistency-map.json"
+        path.write_text(json.dumps(cmap), encoding="utf-8")
+        if names is not None:
+            consistency_map.names_path(path).write_text(json.dumps(names), encoding="utf-8")
+        return path
+
+    def test_each_map_file_stays_under_the_structural_size_limit(self) -> None:
+        for path in (consistency_map.MAP_PATH, consistency_map.names_path(consistency_map.MAP_PATH)):
+            self.assertLess(path.stat().st_size, _LARGE_FILE_BYTES, path.name)
+
+    def test_the_names_file_sits_beside_the_map_file(self) -> None:
+        self.assertEqual(
+            consistency_map.names_path(Path("dev/consistency-map.json")), Path("dev/consistency-map-names.json")
+        )
+
+    def test_the_two_files_join_into_one_map(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._write(Path(folder), {"map_format": 1, "reads": []}, {"map_format": 1, "names": [{"n": 1}]})
+            self.assertEqual(consistency_map.load_map(path), {"map_format": 1, "reads": [], "names": [{"n": 1}]})
+
+    def test_files_that_do_not_join_are_refused(self) -> None:
+        cases: list[tuple[str, dict[str, Any], Any]] = [
+            ("holds names", {"map_format": 1, "names": []}, {"map_format": 1, "names": []}),
+            ("is missing", {"map_format": 1}, None),
+            ("must hold", {"map_format": 1}, {"map_format": 1, "names": [], "reads": []}),
+            ("has map_format 2", {"map_format": 1}, {"map_format": 2, "names": []}),
+        ]
+        for message, cmap, names in cases:
+            with self.subTest(message), tempfile.TemporaryDirectory() as folder:
+                path = self._write(Path(folder), cmap, names)
+                with self.assertRaisesRegex(consistency_map.MapError, message):
+                    consistency_map.load_map(path)
+
+    def test_a_map_that_does_not_join_is_a_usage_error(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._write(Path(folder), {"map_format": 1}, None)
+            with redirect_stderr(io.StringIO()) as err, self.assertRaises(SystemExit) as stop:
+                consistency_map.main(["--map", str(path)])
+        self.assertEqual(stop.exception.code, 2)
+        self.assertIn("consistency-map-names.json is missing", err.getvalue())
 
 
 class ReadsCoverageTest(unittest.TestCase):

@@ -84,13 +84,16 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
 
 1. Same worktree and branch as `define-command-surface`: T1 is one branch.
 2. Per tool, in this order: formatter, linter, type checker, scan. For each one:
-   1. Add the config file (or reuse the existing one) and the dependency, pinned to an exact version.
-   2. Point the verb at it (`define-command-surface`).
+   1. Add the config file (or reuse the existing one) and the dependency, pinned to an exact version. Keep one
+      config per concern, for "`EXEC-07` No competing configs for one concern". The pin lives in the manifest.
+   2. Point the verb at it (`define-command-surface`). The verb runs the tool by name, never as `name@version`.
+      "`EXEC-08` Tool versions visible to dependency automation" reads the verb.
    3. Run the full read-only form once, on the untouched tree, and count the violations. That count is the debt.
    4. If the count is 0, wire the full run into the verb and `check`. If not, wire the ratchet form into the
       verb used by `check`, add a report-only full run to CI (marked report-only in the step name), and record
       the debt.
-3. **Formatter (TOOL-01).** `format` writes, `format:check` reads. With debt, `format:check` checks changed
+3. **Formatter (TOOL-01).** `format` writes, `format:check` reads. "`CMD-04` Write verbs separated from read-only
+   verbs" reads that split, and the `lint` split of step 4. With debt, `format:check` checks changed
    files only (ratchet against the integration branch). Never run `format` on the whole tree.
 4. **Linter (TOOL-02).** `lint` is read-only; the auto-fix form is a separate write verb. Start with a small,
    bug-oriented ruleset rather than every rule; widening it is a later owner choice.
@@ -101,7 +104,8 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
 6. **Scan (TOOL-04).** `security` runs a dependency-vulnerability scan with a fixed severity threshold. It is the
    dependency gate only: secrets scanning (gitleaks and the like) stays in T3 and T4 hooks, not in `security`.
    Reuse a scan command the repository already runs in CI rather than adding a second scanner.
-   Then run the verb in CI as its own job, beside the `check` job. TOOL-04 reads `PARTIAL` when only one of the
+   Then run the verb in CI as its own job, beside the `check` job. "`CI-02` Local↔CI parity" maps that job to the
+   verb. TOOL-04 reads `PARTIAL` when only one of the
    two runs the scan. Use the stack profile's CI idiom line. The job may need the network; keep it out of `check`.
    A scan that is red on day one gets a report-only job, named so. On GitHub Actions use `continue-on-error: true`;
    on GitLab CI use `allow_failure: true`. Dependabot and Renovate never count as the scan.

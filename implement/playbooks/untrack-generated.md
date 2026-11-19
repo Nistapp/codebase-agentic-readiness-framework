@@ -103,7 +103,8 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 Profile: [`stacks/java.md`](../../audit/stacks/java.md#execution-determinism). Typical output: `build/`, `out/`,
 `bin/`, `.gradle/`, generated `src/**/generated`. Check `settings.gradle` and `build.gradle` for a task that
 copies from the tracked path. The wrapper (`gradle/wrapper/*`, `gradlew`) is not generated output: it is the
-Gradle pin and must stay tracked, even though a broad ignore rule can match it.
+Gradle pin and must stay tracked, even though a broad ignore rule can match it. "`EXEC-01` Toolchain pinned /
+wrapper committed" reads the tracked wrapper.
 
 ### Node (npm, pnpm, yarn)
 
@@ -159,7 +160,7 @@ Nothing else changed.
 - Do not untrack a path that a deploy path reads, or may read, without the owner's recorded yes.
 - Do not untrack a secret-bearing file here; that is the secrets theme's decision (rotation, history).
 - Do not untrack a lockfile, the Gradle wrapper or any hand-written file the ignore rule matches by accident:
-  fix the rule.
+  fix the rule. "`EXEC-02` Lockfile committed and consistent" needs the lockfile tracked.
 - Do not delete working-tree files (`git rm` without `--cached`) and do not rewrite history.
 - Do not delete, merge or rename a competing config (EXEC-07).
 - Do not start containers or the local stack by hand to test a reader.

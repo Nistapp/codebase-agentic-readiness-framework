@@ -87,7 +87,9 @@ No dependency is installed. Ask:
    widely known name and uses the common `mcpServers` format. No single file is read by every harness: Cursor reads
    `.cursor/mcp.json`, VS Code `.vscode/mcp.json`, opencode `opencode.json`, Gemini CLI `.gemini/settings.json`. So
    make `.mcp.json` the one source of truth, and have the instruction file say: "Tools that read another file copy
-   the `codebase-memory-mcp` entry from `.mcp.json`." Add a second file only when the team asks for it. The entry is
+   the `codebase-memory-mcp` entry from `.mcp.json`." That line names `.mcp.json` as a source, not as a file to
+   read first, so "`AGT-10` Instruction indirection resolved" passes it. Add a second file only when the team asks
+   for it. The entry is
    the bare command, so it works on any stack and any system where the binary is on `PATH`:
 
    ```json
@@ -124,7 +126,9 @@ No dependency is installed. Ask:
      Keep the entry minimal (a command, no secrets, no machine-specific absolute path). Do not edit an existing project
      config's other entries.
    - `document-only`: add a short section to the docs page or `AGENTS.md` that says how to register the server for each
-     harness the team uses. Mark IDX-01 `partial` with the reason.
+     harness the team uses. Mark IDX-01 `partial` with the reason. Put a registration command in a fenced block of
+     `AGENTS.md` only when its first word resolves. A harness CLI such as `agy` does not, and "`EXEC-06`
+     Documented commands resolve" reads every fenced command there. Write such a command as inline code in prose.
 3. **Offer the setup to the person running this playbook.** The index server must run in the person's own harness
    before Step 4 can build the index. Ask once, and do nothing without a yes:
    - Name the harness from your own knowledge. If you are not sure, ask. Explain the server in two sentences: what it
@@ -171,7 +175,10 @@ No dependency is installed. Ask:
    - Java: the Gradle or Maven build with its wrapper; nothing more.
 
    Report a missing input as a note, not a finding. Add it only with the owner's yes, in its own commit. Read
-   EXEC-07's rubric first: a pyright config beside mypy may count as a second type-checker config.
+   EXEC-07's rubric first: a pyright config beside mypy may count as a second type-checker config. A workspace
+   file (`go.work`, a Cargo `[workspace]`) can change the components the engine sees. So run "`AGT-02` Component
+   coverage by instruction files" and "`CMD-01` Seven verbs resolvable on one runner" after the commit. If either
+   verdict falls, revert the commit and tell the owner.
 7. **First-run offer (Inputs 5).** Only with `index.first_run_offer=yes`. Add a short section to the target's docs,
    in the docs home T6 chose, that holds the offer's steps:
    1. Name your harness.
@@ -182,8 +189,10 @@ No dependency is installed. Ask:
    6. Record the answer.
 
    The record is one git-ignored file (`.agentic-readiness/setup.json`, one key per harness). Add its folder to the
-   target's ignore file. Then add one line at the top of the instruction file: "Before your first change, read
-   `<docs page>#<section>` and make the setup offer once." Keep the line within the 400-line budget. The target has
+   target's ignore file. Then add one line at the top of the instruction file: "Setup offer, once per harness:
+   follow `<docs page>#<section>` before the first change." Keep the line within the 400-line budget. The line names
+   a one-time step, not a file to read before every change. "`AGT-10` Instruction indirection resolved" reads a
+   line such as "read X first" or "before you change anything, read X" as a deferral. The target has
    no helper script: the agent follows the section by hand.
 
 ### Gradle and Quarkus

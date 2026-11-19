@@ -34,7 +34,7 @@ import consistency_map_change as cmc
 from docindex.diff import Edited, IndexDiff, Moved, Renamed
 from docindex.gitread import GitError
 
-REAL_MAP: dict[str, Any] = json.loads((_dev_paths.DEV / "consistency-map.json").read_text(encoding="utf-8"))
+REAL_MAP: dict[str, Any] = consistency_map.load_map()
 REAL_READS = {read["check"]: read for read in REAL_MAP["reads"]}
 CONFIG: dict[str, Any] = {"default_zone": "docs"}
 GIT_ENV = {**os.environ, **cmc._GIT_ENV, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
