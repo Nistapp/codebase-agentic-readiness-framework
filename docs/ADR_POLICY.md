@@ -39,6 +39,8 @@ Every ADR folder follows it: the root `docs/architecture/adrs/`, `spec/decisions
 `make adr-lint`, part of `make check`, checks the mechanical rules in every ADR folder. An ADR has no lifecycle
 field or footer and no retired-ADR marker. It holds the four sections. The root index has its row, and so does
 the engine's index for an engine ADR. No Markdown page names an ADR number or ADR path that no folder holds.
+The lint reads only the pages git lists: tracked, or untracked and not ignored. An ignored copy of the tree, such as
+an agent's worktree, is not read.
 
 ## Where else this applies
 
