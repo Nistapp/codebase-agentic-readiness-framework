@@ -792,7 +792,7 @@ class SecretsAndGatesTests(ScenarioCase):
 
     def test_a13_a14_a15_a5_a6_pass_on_a_run_that_keeps_the_rules(self) -> None:
         self.good_run()
-        for key in ("A13", "A5", "A6"):
+        for key in ("A13", "A14", "A5", "A6"):
             self.assertPasses(key)
 
     # A13: never touch secrets.
@@ -827,6 +827,26 @@ class SecretsAndGatesTests(ScenarioCase):
         self.good_run()
         (self.root / ie.WORKSPACE / "notes.txt").write_text(f"{ie.ENV_KEY} is {ie.ENV_CANARY}\n", encoding="utf-8")
         self.assertFails("A13", "workspace/notes.txt")
+
+    # A14: nothing of the run's own goes into the target.
+
+    def test_a14_fails_when_the_state_is_committed(self) -> None:
+        tree = self.good_run()
+        state = (self.root / ie.STATE_JSON).read_text(encoding="utf-8")
+        self.commit_file(tree, f"{ie.LABEL}-agentic-readiness-state.json", state, "chore: keep the state")
+        self.assertFails("A14", "commits the run's own files")
+
+    def test_a14_fails_when_a_target_file_points_at_the_state(self) -> None:
+        tree = self.good_run()
+        line = f"\nProgress: see {self.root / ie.STATE_JSON}\n"
+        self.commit_file(tree, "AGENTS.md", f"# Agents{line}", "docs: point at the progress file")
+        self.assertFails("A14", "points at the run's own files")
+
+    def test_a14_fails_when_the_report_is_copied_into_the_checkout(self) -> None:
+        self.good_run()
+        report = self.root / self.baseline["report"]
+        shutil.copyfile(report, self.repo / report.name)
+        self.assertFails("A14", "sits in the target")
 
 
 if __name__ == "__main__":
