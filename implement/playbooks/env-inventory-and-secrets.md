@@ -190,8 +190,8 @@ A path that step 6.4 newly lists goes back to step 3: its untracking is one more
   The existing CI scan stays as the guard against new ones; a repository with no scan gets a report-only step
   noted for the CI theme.
 - A tracked secret-bearing file the owner keeps: a recorded exception (`skipped` with the owner's words, or the
-  item `partial` with the path named). It stays as it is; the check keeps reading FAIL in re-audit and the
-  note says why.
+  item `partial` with `--debt "what=tracked secret-bearing files kept,count=N"` and each path in the note). It
+  stays as it is; the check keeps reading FAIL in re-audit and the note says why.
 - A variable whose owner or requiredness cannot be told from the code: listed as `unknown` in the table, asked
   once, never guessed.
 - An ignore shape that would hide an intentional tracked file: add the named `!` exception rather than skip the

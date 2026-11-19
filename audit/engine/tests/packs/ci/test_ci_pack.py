@@ -186,6 +186,14 @@ class Ci05InlineTests(unittest.TestCase):
         }
         self.assertEqual(self._ci05(files), "FAIL")
 
+    def test_every_shared_lockfile_name_is_not_a_surface(self):
+        files = {
+            ".github/workflows/ci.yml": _GH_WORKFLOW,
+            "package.json": _PACKAGE,
+            "mix.lock": '%{"actionlint": {:hex, :actionlint, "1.0.0"}}\n',
+        }
+        self.assertEqual(self._ci05(files), "FAIL")
+
     def test_one_provider_linted_and_one_not_is_partial(self):
         files = {
             ".github/workflows/ci.yml": _GH_WORKFLOW,

@@ -1714,7 +1714,8 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "Every scanned file: over 512 KiB, a folder with more than 50 files of its own, a binary, or a "
-            "generated file with .min. in its path."
+            "generated file with .min. in its path. A file whose exact base name is a lockfile name "
+            "(stack.LOCKFILE_NAMES) is left out of the size count."
         ),
     ),
     "NAV-04": Reads(

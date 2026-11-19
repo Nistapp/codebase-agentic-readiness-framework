@@ -108,20 +108,26 @@ python3 dev/mcp_config.py record --harness opencode --answer accepted
 Use `--answer declined` when you skip. The answer goes into `.agentic-readiness/setup.json`, which git ignores.
 The agent then does not ask again for that harness.
 
+A new `git worktree` has no copy of that file. So `status` falls back to the main worktree's file for a harness
+the worktree's own file does not hold. The worktree's own answer wins. `record` writes only the current checkout's
+file, so one worktree never changes another. A worktree of a bare repository has no main worktree to read.
+
 ## Verification
 
 ```bash
 python3 dev/mcp_config.py status --harness opencode
 ```
 
-The output is `asked: accepted on <date>` or `asked: declined on <date>`. In the harness, the server shows as
+The output is `asked: accepted on <date>` or `asked: declined on <date>`. In a linked worktree it can end with
+`(from the main worktree)`. In the harness, the server shows as
 connected (for example in Claude Code's `/mcp` list).
 
 ## Undo
 
 - Remove the entry from the harness's file, or delete the git-ignored project file.
 - In Claude Code, run `claude mcp reset-project-choices` to be asked to approve again.
-- Delete `.agentic-readiness/setup.json` to get the offer again.
+- Delete `.agentic-readiness/setup.json` to get the offer again. In a linked worktree, delete the main worktree's
+  file too.
 
 ## Optional: a language server
 
