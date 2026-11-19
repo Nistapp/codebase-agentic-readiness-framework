@@ -150,8 +150,8 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    fixed is an item for the owner; a deliberate skip gets a one-line reason next to it. Never delete or un-skip in
    bulk. The count is debt with the marker list as its baseline. A reason line shifts the lines below it. The
    secrets allowlist (`.secrets.baseline`, `.gitleaksignore`) may name a line in that file. Then regenerate it with
-   the scanner's own command, in its own commit (Commits row 17). "`SEC-02` No key-shaped strings in tracked files" accepts an
-   allowlisted hit only on its listed line.
+   the scanner's own command, in its own commit (Commits row 17). "`SEC-02` No key-shaped strings in tracked
+   files" accepts an allowlisted hit only on its listed line.
 10. **Fast path (TST-04)**, when the item is in T5: add the single-test command for the repository's runner to
     `AGENTS.md` in a fenced shell block (the engine reads only fenced commands), for example
     `./gradlew test --tests '<Class>'` or `npx jest -t '<test name>'`. Jest needs `-t` or `--testNamePattern`: a

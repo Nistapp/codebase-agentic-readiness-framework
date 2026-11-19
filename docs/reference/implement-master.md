@@ -360,9 +360,9 @@ section, one commit at a time ([details](../../implement/playbooks/adapt-agents-
 - Do not reword the rest of `AGENTS.md` to meet the plain-language rules. Only the new AGT-12 section follows
   them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
-- Do not edit the prohibitions section; that is [`add-deny-rules`](../../implement/playbooks/add-deny-rules.md). It is the section that
-  "`AGT-07` Do-not-do / deny rules present", "`CON-01` Allow/deny artifact present" and "`CON-02` Test
-  directories protected" read.
+- Do not edit the prohibitions section; that is [`add-deny-rules`](../../implement/playbooks/add-deny-rules.md).
+  It is the section that "`AGT-07` Do-not-do / deny rules present", "`CON-01` Allow/deny artifact present" and
+  "`CON-02` Test directories protected" read.
 - Do not edit code to make a rule true, and do not drop a rule because the code breaks it.
 - Do not create a harness configuration file to point at a second rules file.
 - Do not write a fact an earlier theme has not made true (a verb that does not resolve, a docs page that does not

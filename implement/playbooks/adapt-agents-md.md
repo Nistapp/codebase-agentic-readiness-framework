@@ -96,8 +96,9 @@ engine. The questions are about text. Ask them per finding, before the diff for 
      (`agents_md.stubs=delete-asked`) and loses that harness's reach.
    - A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move,
      not copy) and ask whether the vendor file then becomes the one-line pointer. Move a line that names
-     `STYLE_GUIDE.md` as well: "`DOC-02` docs/STYLE_GUIDE.md exists" reads that name in `AGENTS.md`. A rule that only makes sense for
-     that harness (a tool preference, a harness setting) may stay there; say so in the pull request, under
+     `STYLE_GUIDE.md` as well: "`DOC-02` docs/STYLE_GUIDE.md exists" reads that name in `AGENTS.md`. A rule that
+     only makes sense for that harness (a tool preference, a harness setting) may stay there; say so in the pull
+     request, under
      "What changed".
    - A vendor file with independent rules and no pointer (a true competitor): reconcile its rules into `AGENTS.md`
      and offer the one-line pointer. Never delete it unasked.
@@ -518,9 +519,9 @@ numbering. A conventions commit (Step 16) reverts alone too.
 - Do not reword the rest of `AGENTS.md` to meet the plain-language rules. Only the new AGT-12 section follows
   them, and no prose debt is recorded for the file.
 - Do not delete a vendor instruction file, or re-propose a finding the owner rejected, unasked.
-- Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md). It is the section that
-  "`AGT-07` Do-not-do / deny rules present", "`CON-01` Allow/deny artifact present" and "`CON-02` Test
-  directories protected" read.
+- Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).
+  It is the section that "`AGT-07` Do-not-do / deny rules present", "`CON-01` Allow/deny artifact present" and
+  "`CON-02` Test directories protected" read.
 - Do not edit code to make a rule true, and do not drop a rule because the code breaks it.
 - Do not create a harness configuration file to point at a second rules file.
 - Do not write a fact an earlier theme has not made true (a verb that does not resolve, a docs page that does not
