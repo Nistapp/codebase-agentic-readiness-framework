@@ -298,6 +298,15 @@ class CliTest(unittest.TestCase):
                 self.assertEqual(code, 0)
                 self.assertIn("usage:", out)
 
+    def test_cli_main_takes_the_documented_query_options(self) -> None:
+        for argv in (["query", "x.md"], ["query", "--report"], ["query", "--at", "HEAD", "x.md"]):
+            with self.subTest(argv=argv):
+                err = io.StringIO()
+                with redirect_stdout(io.StringIO()), redirect_stderr(err):
+                    code = cli.main(argv, {}, root=doc_index.REPO)
+                self.assertEqual(code, 1)
+                self.assertIn("query: not implemented here; run it through dev/doc_index.py", err.getvalue())
+
     def test_cli_main_without_a_config(self) -> None:
         out, err = io.StringIO(), io.StringIO()
         with redirect_stdout(out), redirect_stderr(err):

@@ -47,7 +47,8 @@ the sections added, removed, moved, renamed and edited, the edges lost and gaine
 definition or every mention. It is a report, so it exits 0 whatever it finds.
 
 ``query`` is routed by the entry point, ``dev/doc_index.py``, to :func:`docindex.ids.query_main`, which needs the
-entry point's full config; called here, it says so on stderr and exits 1.
+entry point's full config. The parser here takes the same arguments (``ADDRESS``, ``--report``, ``--at``), so the
+top-level ``--help`` lists them; called here, ``query`` says so on stderr and exits 1.
 
 A git failure (a ref that names no commit, a folder that is not a repository) or an unreadable commits file exits 1.
 A usage error (a missing or unknown argument, or two options that exclude each other) exits 1 too, not argparse's 2
@@ -103,7 +104,9 @@ def build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
     build = commands.add_parser("build", help="write the index of the working tree to stdout as JSON")
     build.add_argument("--at", metavar="GIT_REF", help="index the files at this git ref, not the working tree")
-    diff = commands.add_parser("diff", help="report what changed in the index from a git ref to the working tree")
+    diff = commands.add_parser(
+        "diff", help="report what changed in the index from a git ref to the working tree or --at"
+    )
     diff.add_argument("ref", metavar="GIT_REF", help="the old side: the git ref to compare with")
     diff.add_argument("--at", metavar="GIT_REF", help="the new side: this git ref, not the working tree")
     diff.add_argument("--format", choices=("text", "json"), default="text", help="the output form (text)")
@@ -121,8 +124,11 @@ def build_parser() -> argparse.ArgumentParser:
     sweep_parser.add_argument(
         "--triggers", choices=sweep.SELECTIONS, default="all", help="the trigger groups to use (all)"
     )
-    query = commands.add_parser("query", help="show one node and its edges")
-    query.add_argument("address", metavar="ADDRESS", help="a file path, a section address or an ID")
+    # The entry point routes query to docindex.ids.query_main; these options mirror its parser, for --help.
+    query = commands.add_parser("query", help="show one node and its edges, or the reports")
+    query.add_argument("address", nargs="?", metavar="ADDRESS", help="a file path, a section address or an ID")
+    query.add_argument("--report", action="store_true", help="print the reports instead (never a gate)")
+    query.add_argument("--at", metavar="GIT_REF", help="query the index at this git ref, not the working tree")
     verify = commands.add_parser(VERIFY_QUOTES, help="check every quote the reports of a folder cite")
     _add_verify_arguments(verify)
     manifest_parser = commands.add_parser("manifest", help="build the skill bundles and write their manifest")

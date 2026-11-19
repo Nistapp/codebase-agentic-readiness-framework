@@ -9,7 +9,8 @@ the ID patterns, the exclusions, the sweep scope) comes from the config that the
 reads from ``dev/docindex.config.json`` and passes in.
 
 - :mod:`docindex.model`: the frozen nodes and edges and their one JSON form (``index.schema.json``).
-- :mod:`docindex.cli`: the command line, ``build``, ``diff``, ``sweep`` and ``query``.
+- :mod:`docindex.cli`: the command line, ``build``, ``diff``, ``sweep``, ``query``, ``verify-quotes``,
+  ``manifest``, ``manifest-diff`` and ``evidence``. Its module docstring lists each one's arguments.
 """
 
 from __future__ import annotations
