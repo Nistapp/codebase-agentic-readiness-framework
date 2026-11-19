@@ -235,8 +235,21 @@ Otherwise it prints one line per changed check, then the counts. Read both kinds
 - `same verdict PASS, evidence changed`: the verdict held, but its summary, data or findings changed. A
   verdict-only comparison misses this break.
 
-`(dirty)` means the tree had changes or untracked files when the run started. `--target fixtures` runs the engine on
-every engine fixture instead, 114 reports today. Two runs with different targets do not compare (exit 1).
+`(dirty)` means the tree had changes or untracked files when the run started. Two other targets exist. Two runs with
+different targets do not compare (exit 1).
+
+- `--target fixtures` runs the engine on every engine fixture, 114 reports today.
+- `--target scaffold` runs the greenfield scaffolder on `greenfield/templates/`, then runs the engine on the new
+  project. It writes one report, `scaffold`, in about a second. Use it when you change a template.
+
+The scaffold target fixes every input of the scaffold: the names, the date and the commit. So two runs of the same
+tree compare equal. The engine's positive-fixture test fails only on `FAIL`, so it misses a fall to `PARTIAL`. The
+comparison shows it. For example, moving "never restate" to the next line of the `AGENTS.md` template prints this:
+
+```text
+report scaffold:
+  AGT-06: verdict PASS -> PARTIAL: finding AGT-06 added, summary
+```
 
 ### Step 7: Check the quotes of a report
 
