@@ -7569,7 +7569,8 @@
       "where": [
         {
           "path": ".codebase-memory/graph.db.zst",
-          "scope": "root"
+          "scope": "root",
+          "unexercised": "IDX-03 looks for the store only as a Tier-C probe (--run-gates) on a git target, and the recording runs no probe"
         }
       ]
     },
@@ -9268,7 +9269,7 @@
     {
       "binding": "file",
       "check": "TOOL-05",
-      "note": "A hook-manager file at any depth, or core.hooksPath in any manifest, config, script, CI or build file (glob **), is wired; .husky/ is wired only when a root package.json script names husky.",
+      "note": "A hook-manager file at any depth, or core.hooksPath in any manifest, config, script, CI or build file (glob **), is wired; .husky/ is wired only when a root package.json script names husky. With no hook chain, the FAIL cites the runner manifests that the runner resolver finds.",
       "source": "engine",
       "what": {
         "kind": "exists"
@@ -9301,6 +9302,42 @@
         {
           "path": "package.json",
           "scope": "root"
+        },
+        {
+          "path": "Makefile",
+          "scope": "root"
+        },
+        {
+          "path": "Taskfile.yml",
+          "scope": "root"
+        },
+        {
+          "path": "Taskfile.yaml",
+          "scope": "root"
+        },
+        {
+          "path": "pyproject.toml",
+          "scope": "root"
+        },
+        {
+          "path": "build.gradle",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle.kts",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pom.xml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "gradlew",
+          "scope": "any-depth"
+        },
+        {
+          "path": "mvnw",
+          "scope": "any-depth"
         }
       ]
     },
@@ -10899,7 +10936,8 @@
         },
         {
           "path": "go.mod",
-          "scope": "root"
+          "scope": "root",
+          "unexercised": "no Go fixture: an honest module needs go.sum lines, whose hashes are key-shaped, and EXEC-02 reads a module with no dependencies, so with no go.sum, as unlocked"
         }
       ]
     },
@@ -11392,11 +11430,13 @@
         },
         {
           "path": "gradlew",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "unexercised": "EXEC-07 resolves the typecheck verb only when one pyright config stands beside one mypy config, and the resolver looks a wrapper up only for a Gradle or Maven build; no fixture is both"
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "unexercised": "EXEC-07 resolves the typecheck verb only when one pyright config stands beside one mypy config, and the resolver looks a wrapper up only for a Gradle or Maven build; no fixture is both"
         }
       ]
     },
@@ -11504,7 +11544,8 @@
         },
         {
           "path": "go.mod",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "unexercised": "no Go fixture: an honest module needs go.sum lines, whose hashes are key-shaped, and EXEC-02 reads a module with no dependencies, so with no go.sum, as unlocked"
         },
         {
           "path": "Cargo.toml",
@@ -11746,6 +11787,41 @@
         {
           "path": "CONTRIBUTING.md",
           "scope": "any-depth"
+        },
+        {
+          "path": "**/*test_*",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/*_test.*",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/*.test.*",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/*.spec.*",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/tests/**",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/test/**",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/__tests__/**",
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "*_test.go",
