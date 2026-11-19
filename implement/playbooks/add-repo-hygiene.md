@@ -407,7 +407,7 @@ One commit per file or concern. A check that already passes makes no commit.
   `--debt "what=protected branches with no repository file,count=N"`. N is the number of branches the page protects.
   The note says "declare them in Terraform to close", and the setting is an owner action.
 - **HYG-13 with items the owner declines, or a fact the repository does not show:** the item is `partial`, with
-  `--debt "what=contributing items missing (<names>),count=N"`. The names are the missing items (`setup`, `gate`,
+  `--debt "what=contributing items missing (<names>),count=N"`. The names are each missing item (`setup`, `gate`,
   `workflow`), and N is how many. `progress.py` refuses `partial` without debt, even for this unscored check.
 - **HYG-13 with no contributing file:** the check gives `UNKNOWN`. Close the `HYG-05` item first, then run Step 9.
 - **A missing licence:** the item is `blocked` until the owner chooses one; it is not debt the playbook can fix.

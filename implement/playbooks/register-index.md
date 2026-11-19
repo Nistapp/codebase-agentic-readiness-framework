@@ -229,8 +229,7 @@ One commit per concern. Building the index (Step 4) commits nothing: the index i
 - **IDX-03 engine verdict `UNKNOWN`:** the store records no revision. The item is `partial` when the freshness rule is
   written and `detect_changes` is clean, with
   `--debt "what=engine cannot verify freshness (store records no revision),count=1"`. The note quotes the tool result
-  and the engine limitation. It is never `done`
-  on the engine's word alone. This is not a bug of the repository.
+  and the engine limitation. It is never `done` on the engine's word alone. This is not a bug of the repository.
 - **An index that cannot be built** (tool error, out of memory): `blocked` with the error quoted; do not work around it.
 - None of this is a count of violations, so no ratchet or baseline file applies: report-only is the wiring.
 
