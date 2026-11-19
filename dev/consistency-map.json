@@ -145,6 +145,36 @@
       "status": "kept"
     },
     {
+      "check": "AGT-07",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "The sentence is the one line of its section that holds never, do not or must not (Step 14). Keep it the only one.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-9",
+      "status": "kept"
+    },
+    {
+      "check": "CON-01",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "The sentence is the one line of its section that holds never, do not or must not (Step 14). Keep it the only one.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-9",
+      "status": "kept"
+    },
+    {
+      "check": "CON-02",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "The sentence is the one line of its section that holds never, do not or must not (Step 14). Keep it the only one.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-9",
+      "status": "kept"
+    },
+    {
       "check": "AGT-03",
       "home": {
         "path": "implement/playbooks/adapt-agents-md.md",
@@ -271,6 +301,16 @@
       "status": "kept"
     },
     {
+      "check": "AGT-13",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "If either verdict falls, put the rule back in X.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-12",
+      "status": "kept"
+    },
+    {
       "check": "CON-01",
       "home": {
         "path": "implement/playbooks/adapt-agents-md.md",
@@ -285,6 +325,16 @@
       "home": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "quote": "Keep prohibition words out of sections that are not prohibitions.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-12",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-13",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "If either verdict falls, put the rule back in X.",
         "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
       },
       "move": "adapt-agents-md/row-12",
@@ -401,6 +451,16 @@
       "status": "kept"
     },
     {
+      "check": "AGT-08",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Name a component file `AGENTS.md`, never a vendor name such as `CLAUDE.md`.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-16",
+      "status": "kept"
+    },
+    {
       "check": "AGT-11",
       "home": {
         "path": "implement/playbooks/adapt-agents-md.md",
@@ -421,11 +481,71 @@
       "status": "kept"
     },
     {
+      "check": "AGT-03",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-04",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-05",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-06",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
       "check": "AGT-07",
       "home": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
         "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-09",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-12",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
       },
       "move": "adapt-agents-md/row-19",
       "status": "kept"
@@ -441,11 +561,51 @@
       "status": "kept"
     },
     {
+      "check": "DOC-02",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
       "check": "DOC-05",
       "home": {
         "path": "implement/SKILL.md",
         "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
         "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-01",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-03",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-04",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
       },
       "move": "adapt-agents-md/row-19",
       "status": "kept"
@@ -466,6 +626,36 @@
         "path": "implement/playbooks/adapt-agents-md.md",
         "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
         "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-03",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-06",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "TST-04",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
       },
       "move": "adapt-agents-md/row-19",
       "status": "kept"
@@ -578,6 +768,16 @@
         "section": "implement/SKILL.md#implement/stage-3-apply"
       },
       "move": "adapt-agents-md/row-21",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-10",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Word it as a reference (\"Coding conventions: `CONVENTIONS.md`\"), never as \"read `CONVENTIONS.md` first\".",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-22",
       "status": "kept"
     },
     {
