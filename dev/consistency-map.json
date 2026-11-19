@@ -1581,6 +1581,17 @@
       "status": "kept"
     },
     {
+      "check": "CI-04",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Its job is outside the merge gate's `needs`, and its name says report-only.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-5",
+      "note": "The full format:check runs as a report-only step outside the merge gate's needs, with its debt recorded, which the CI-04 rubric's report-only clause accepts.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/SKILL.md",
@@ -1623,6 +1634,17 @@
       "status": "kept"
     },
     {
+      "check": "CI-04",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Its job is outside the merge gate's `needs`, and its name says report-only.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-10",
+      "note": "The full lint runs as a report-only step outside the merge gate's needs, with its debt recorded, which the CI-04 rubric's report-only clause accepts.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-07",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -1645,6 +1667,17 @@
       "status": "kept"
     },
     {
+      "check": "CI-04",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Its job is outside the merge gate's `needs`, and its name says report-only.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-15",
+      "note": "The full type check runs as a report-only step outside the merge gate's needs, with its debt recorded, which the CI-04 rubric's report-only clause accepts.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/SKILL.md",
@@ -1663,6 +1696,17 @@
       },
       "move": "configure-quality-tools/row-18",
       "note": "The CI job runs the local security verb, so the CI verb has a definition.",
+      "status": "kept"
+    },
+    {
+      "check": "CI-04",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "A scan that is red on day one gets a report-only job outside the merge gate's `needs`, named report-only, with its debt recorded (count and review date), as CI-04 accepts.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-18",
+      "note": "A red security job is report-only outside the merge gate's needs, with its debt recorded; CI-04 reads PARTIAL, not PASS, while the verb gates nowhere else.",
       "status": "kept"
     },
     {
