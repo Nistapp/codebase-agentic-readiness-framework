@@ -311,6 +311,16 @@
       "status": "kept"
     },
     {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
       "check": "CON-01",
       "home": {
         "path": "implement/playbooks/adapt-agents-md.md",
@@ -401,6 +411,16 @@
       "status": "kept"
     },
     {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "adapt-agents-md/row-18",
+      "status": "kept"
+    },
+    {
       "check": "AGT-07",
       "home": {
         "path": "implement/playbooks/adapt-agents-md.md",
@@ -416,6 +436,16 @@
         "path": "implement/playbooks/adapt-agents-md.md",
         "quote": "A conventions section in `AGENTS.md` or `CONTRIBUTING.md` stays where it is, unless the owner asks to move it.",
         "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
       },
       "move": "adapt-agents-md/row-19",
       "status": "kept"
@@ -541,6 +571,16 @@
       "status": "kept"
     },
     {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "adapt-agents-md/row-21",
+      "status": "kept"
+    },
+    {
       "check": "AGT-06",
       "home": {
         "path": "implement/playbooks/adapt-agents-md.md",
@@ -646,6 +686,16 @@
       "status": "kept"
     },
     {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "add-ci-parity/row-4",
+      "status": "kept"
+    },
+    {
       "check": "CI-02",
       "home": {
         "path": "implement/playbooks/add-ci-parity.md",
@@ -674,6 +724,16 @@
       },
       "move": "add-ci-parity/row-6",
       "note": "Reusing the scanner keeps its one config, so no second security config sits at the root (inferred).",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "add-ci-parity/row-8",
       "status": "kept"
     },
     {
@@ -808,6 +868,16 @@
       "status": "kept"
     },
     {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "add-repo-hygiene/row-5",
+      "status": "kept"
+    },
+    {
       "check": "HYG-13",
       "home": {
         "path": "implement/playbooks/add-repo-hygiene.md",
@@ -816,6 +886,36 @@
       },
       "move": "add-repo-hygiene/row-5",
       "note": "Step 9 holds the rule; it does not say the CI word and the gate must share one paragraph.",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "add-repo-hygiene/row-6",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "add-repo-hygiene/row-8",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "add-repo-hygiene/row-12",
       "status": "kept"
     },
     {
@@ -1255,6 +1355,16 @@
       "status": "kept"
     },
     {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "register-index/row-3",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-07",
       "home": {
         "path": "implement/playbooks/register-index.md",
@@ -1262,6 +1372,16 @@
         "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
       },
       "move": "register-index/row-6",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "register-index/row-7",
       "status": "kept"
     },
     {
