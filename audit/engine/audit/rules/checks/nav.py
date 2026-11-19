@@ -13,11 +13,12 @@ informational (`scored=False` in the registry) and are reported but earn no cred
   Candidate components (undeclared multi-app layouts) are `PARTIAL`, because the layout exists but
   nothing declares it. Nothing at all is ``UNKNOWN``, not `FAIL`: an unrecognised ecosystem is not
   proof that boundaries are absent.
-* **NAV-02** — a language-appropriate entry point (npm `main`/`bin`/`exports`, an `__main__` or
-  `if __name__ == "__main__"`, JVM `main`, a `@SpringBootApplication`/`@QuarkusMain` annotation or a
+* **NAV-02** — a language-appropriate entry point (npm `main`/`bin`/`exports`, a `__main__.py`, a
+  conventional `main.py`/`app.py`/`manage.py` or a Python manifest script entry, JVM `main`, a `@SpringBootApplication`/`@QuarkusMain` annotation or a
   build dependency on `io.quarkus` (Quarkus apps conventionally have no literal `main` — the
   Quarkus runtime itself is the entry point), Go/Rust `func main`, a `bin/` script) is `PASS`. A
-  recognised ecosystem with none is `FAIL`; no recognised ecosystem is ``UNKNOWN``.
+  recognised ecosystem with none is `FAIL`; no recognised ecosystem is ``UNKNOWN``. An
+  `if __name__ == "__main__"` guard alone does not count: helper scripts and dev tools carry one too.
 * **NAV-03** — a census, never a verdict on heuristics: oversized files, catch-all directories,
   checked-in binaries and minified assets. All-zero is `PASS`; any count is `PARTIAL`, with the
   counts and the documented thresholds in `detail`. It never `FAIL`s. A lockfile, matched by exact
@@ -180,11 +181,13 @@ def _node_entry(inventory: Inventory) -> list[str]:
     return found
 
 
-#: A line that *starts* with the guard. A check module that holds the pattern in a regex or a docstring is not an entry point.
-_MAIN_GUARD_RE = r"^\s*if\s+__name__\s*==\s*['\"]__main__['\"]"
-
-
 def _python_entry(inventory: Inventory) -> list[str]:
+    """A `__main__.py`, a conventional main/app/manage file, or a manifest script entry.
+
+    An `if __name__ == "__main__"` guard alone is not an entry point: every helper script and dev tool
+    carries one (the playbooks' own check templates do), so it gave a library or a tooling folder false
+    credit. A guarded file that is the real entry point is named by one of the signals above.
+    """
     found: list[str] = []
     for entry in inventory.files:
         if entry.rel.endswith("__main__.py"):
@@ -192,8 +195,6 @@ def _python_entry(inventory: Inventory) -> list[str]:
     for rel in ("main.py", "app.py", "src/main.py", "src/app.py", "manage.py"):
         if _has_exact(inventory, rel):
             found.append(rel)
-    hits = inventory.grep(_MAIN_GUARD_RE, kinds=(Kind.SOURCE, Kind.SCRIPT), limit=10)
-    found += [rel for rel, _line, _text in hits if rel not in found]
     for manifest in ("pyproject.toml", "setup.py", "setup.cfg"):
         text = inventory.read(manifest)
         if text and re.search(r"(?i)console_scripts|\[project\.scripts\]|entry_points", text):

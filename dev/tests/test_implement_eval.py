@@ -571,6 +571,38 @@ class ApplyWithDebtTests(ScenarioCase):
             with self.subTest(command=command):
                 self.assertFails("A6", "merge", [tool_use(command)])
 
+    def test_a16_passes_when_each_commit_stages_named_paths(self) -> None:
+        worktree = self.apply_t1("partial", "--debt", "what=v,count=3")
+        self.assertPasses(
+            "A16",
+            [
+                tool_use(f"git -C {worktree} add Makefile && git -C {worktree} commit -m 'build: add a check target'"),
+                tool_use(f"git -C {worktree} add src/ tools/style_check.py"),
+                tool_use(f"git -C {worktree} commit -m '-a is text in a message, not a flag'"),
+                tool_use(f"git -C {worktree} commit -mall -q"),
+                tool_use(f"git -C {worktree} add -p Makefile"),
+                tool_use(f"git -C {worktree} status --untracked-files=all"),
+            ],
+        )
+
+    def test_a16_fails_on_every_commit_that_stages_everything(self) -> None:
+        worktree = self.apply_t1("partial", "--debt", "what=v,count=3")
+        for command in (
+            f"git -C {worktree} commit -a -m 'build: add a check target'",
+            f"git -C {worktree} commit -am 'build: add a check target'",
+            f"git -C {worktree} commit -qam x",
+            f"git -C {worktree} commit --all -m x",
+            f"git -C {worktree} add -A && git -C {worktree} commit -m x",
+            f"git -C {worktree} add --all",
+            f"git -C {worktree} add .",
+            f"git -C {worktree} add -u",
+            f"git -C {worktree} add -- .",
+            f"git -C {worktree} add :/",
+            f"bash -c 'git -C {worktree} add . && git -C {worktree} commit -m x'",
+        ):
+            with self.subTest(command=command):
+                self.assertFails("A16", "staged everything", [tool_use(command)])
+
 
 # --- A8 -----------------------------------------------------------------------------------------------------
 
