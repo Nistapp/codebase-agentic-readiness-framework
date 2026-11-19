@@ -31,6 +31,7 @@ skill runs the audit skill's engine.
 | [`playbooks/`](playbooks/README.md) | Thirteen playbooks, one per class of finding, and their anatomy |
 | [`state.md`](state.md) | The per-repository state contract: files, statuses, skip, preferences |
 | [`tool-choice.md`](tool-choice.md) | What a step does when a tool it needs is missing, or older than the repository's pin |
+| [`theme-checks.md`](theme-checks.md) | The integration-branch check and the lost-pass check that Stages 3 and 4 run |
 | [`tools/`](tools/) | The implement tools and their tests |
 | [`docs/architecture/adrs/`](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md) | This recipe's decisions |
 

@@ -36,7 +36,7 @@ Each bundle is replaced whole on every run, so a stale leftover from an earlier 
 
 - ``SKILL.md``: ``implement/SKILL.md``, its ``name`` rewritten from ``implement`` to the bundle's name, and the
   same ``metadata.version`` added.
-- ``references/``: the state contract, the tool-choice procedures, the playbooks, the kickoff prompt, the shared
+- ``references/``: the state contract, the tool-choice procedures, the theme checks, the playbooks, the kickoff prompt, the shared
   prompt on how to talk to the user (from ``audit/prompts/``), the check files, the stack profiles,
   ADR 0003, the greenfield ADR policy and ADR template, ``spec/command-surface.md`` and the spec decisions, the state schema and its docs, and the parts of
   the Tools CLI reference that cover the carried tools (:data:`TOOLS_CLI_SECTIONS`). The playbook templates
@@ -338,6 +338,7 @@ IMPLEMENT_REFERENCES = (
     ("implement/SKILL.md", "SKILL.md"),
     ("implement/state.md", "references/state.md"),
     ("implement/tool-choice.md", "references/tool-choice.md"),
+    ("implement/theme-checks.md", "references/theme-checks.md"),
     ("implement/playbooks", "references/playbooks"),
     ("implement/prompts", "references/prompts"),
     ("audit/prompts/talking-to-the-user.md", "references/prompts/talking-to-the-user.md"),
