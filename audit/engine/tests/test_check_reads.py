@@ -12,8 +12,8 @@ recording ``pathlib`` reads. The recorder keeps each path a check asks for insid
 - ``match``: a pattern or a suffix tried on every name (``Inventory.match``, ``Inventory.with_suffix``).
 
 A check that walks ``Inventory.files`` or ``Inventory.paths`` for names asks for no path; the files it then reads
-are recorded. A second run of each check hands it every ``FileEntry.rel`` as a tracking string, the name probe. It
-records a fifth kind of ask:
+are recorded. A second run of each check hands it every ``FileEntry.rel``, and every path git tracks, as a tracking
+string, the name probe. It records a fifth kind of ask:
 
 - ``name``: a name a check compares a scanned path with in its own code (``==``, ``!=``, ``startswith``,
   ``endswith``, ``in``, ``fnmatch``), and whether the path was lower-cased first.
@@ -52,7 +52,7 @@ from audit.components import detect_components  # noqa: E402
 from audit.probes import ProbeSession  # noqa: E402
 from audit import scan  # noqa: E402
 from audit.rules import checks, reads  # noqa: E402
-from audit.rules.checks import con  # noqa: E402
+from audit.rules.checks import _common, con  # noqa: E402
 from audit.rules.registry import REGISTRY, applicable_checks  # noqa: E402
 from audit.scan import CONTENT_READ_LIMIT, Inventory, build_inventory  # noqa: E402
 from audit.stack import detect_stack  # noqa: E402
@@ -301,9 +301,18 @@ class _TrackedName(str):
 
 @contextmanager
 def _recording_names(sink: set[NameAsk]) -> Iterator[None]:
-    """Record the ``name`` asks of tracked paths while the block runs, ``fnmatch`` and ``basename`` included."""
+    """Record the ``name`` asks of tracked paths while the block runs, ``fnmatch`` and ``basename`` included.
+
+    The paths git tracks are tracked names too: a check that reads the tracked set (``tracked_in_scope``) compares
+    those, not ``FileEntry.rel``.
+    """
     saved_fnmatch, saved_fnmatchcase = fnmatch.fnmatch, fnmatch.fnmatchcase
     saved_basename, saved_os_basename = posixpath.basename, os.path.basename
+    saved_tracked_files = _common.tracked_files
+
+    def tracked_files(target: Path) -> set[str] | None:
+        tracked = saved_tracked_files(target)
+        return None if tracked is None else {_TrackedName(rel) for rel in tracked}
 
     def globbed(original: Callable[[Any, str], bool]) -> Callable[[Any, str], bool]:
         def recorded(name: Any, pattern: str) -> bool:
@@ -320,6 +329,7 @@ def _recording_names(sink: set[NameAsk]) -> Iterator[None]:
     fnmatch.fnmatch, fnmatch.fnmatchcase = globbed(saved_fnmatch), globbed(saved_fnmatchcase)
     posixpath.basename = basename
     os.path.basename = basename
+    _common.tracked_files = tracked_files
     _NAME_SINK.append(sink)
     try:
         yield
@@ -327,6 +337,7 @@ def _recording_names(sink: set[NameAsk]) -> Iterator[None]:
         _NAME_SINK.pop()
         fnmatch.fnmatch, fnmatch.fnmatchcase = saved_fnmatch, saved_fnmatchcase
         posixpath.basename, os.path.basename = saved_basename, saved_os_basename
+        _common.tracked_files = saved_tracked_files
 
 
 def _probing(inventory: Inventory) -> _RecordingInventory:
@@ -584,6 +595,11 @@ class NameProbeTest(unittest.TestCase):
 
     def test_the_probe_sees_a_name_compared_after_strip(self) -> None:
         self.assertIn(("eq", "CODEOWNERS", False), recorded().names["HYG-02"])
+
+    def test_the_probe_tracks_the_paths_git_tracks(self) -> None:
+        names = recorded().names["SEC-01"]
+        self.assertIn(("eq", ".env", False), names)
+        self.assertIn(("start", ".env.", False), names)
 
     def test_a_name_ask_meets_a_place_by_its_operation(self) -> None:
         place = reads.Place("docs/README.md", reads.ROOT)
