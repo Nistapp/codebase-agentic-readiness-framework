@@ -1546,6 +1546,16 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-05",
+      "home": {
+        "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+        "quote": "The engine's wiring file exists; the install step is documented",
+        "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
+      },
+      "move": "add-hooks-and-commit-rules/row-2",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-06",
       "home": {
         "path": "implement/playbooks/add-hooks-and-commit-rules.md",
@@ -1577,6 +1587,17 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-06",
+      "home": {
+        "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+        "quote": "Option A: the contributing doc names the title check and the state records `skipped` with the owner's reason.",
+        "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
+      },
+      "move": "add-hooks-and-commit-rules/row-4",
+      "note": "A rubric target: the engine's TOOL-06 reads no doc kind, so the contributing doc itself cannot change its verdict.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/playbooks/add-hooks-and-commit-rules.md",
@@ -1595,6 +1616,12 @@
       },
       "move": "add-hooks-and-commit-rules/row-7",
       "status": "kept"
+    },
+    {
+      "check": "NAV-02",
+      "move": "add-hooks-and-commit-rules/row-7",
+      "reason": "The move can only remove findings or add credit: the commit-lint script's __main__ guard can make NAV-02 pass in a repository with no real entry point. The engine is to stop counting such a script; until then the false credit is accepted.",
+      "status": "accepted"
     },
     {
       "check": "EXEC-08",
@@ -4371,7 +4398,8 @@
         "lefthook.yml"
       ],
       "touches": [
-        "EXEC-08"
+        "EXEC-08",
+        "TOOL-05"
       ]
     },
     {
@@ -4411,7 +4439,8 @@
         "CONTRIBUTING.md"
       ],
       "touches": [
-        "HYG-13"
+        "HYG-13",
+        "TOOL-06"
       ]
     },
     {
@@ -4471,7 +4500,8 @@
         "scripts/*"
       ],
       "touches": [
-        "NAV-05"
+        "NAV-05",
+        "NAV-02"
       ]
     },
     {
