@@ -213,6 +213,8 @@ _SHORTEST_OPERAND = 3
 #: Where the name asks of the running check go, with the check's id; empty outside the probe's block.
 _NAME_SINK: list[set[NameAsk]] = []
 _NAME_CHECK: list[str | None] = []
+#: Where the asks an exempt function made go, by function, so a test can prove each exemption drops a real ask.
+_EXEMPT_SINK: list[dict[Callable[..., Any], set[NameAsk]]] = []
 
 #: Functions whose comparisons are never reads, as (check, or None for every check; function; reason). The probe
 #: records nothing that a frame of one of them asks.
@@ -221,11 +223,6 @@ _NOT_READS_IN: tuple[tuple[str | None, Callable[..., Any], str], ...] = (
     (
         None,
         variants.classify_present,
-        "it sorts the instruction files a check already chose by its declared places, and picks no new path",
-    ),
-    (
-        None,
-        variants.mis_cased_canonical_candidates,
         "it sorts the instruction files a check already chose by its declared places, and picks no new path",
     ),
     (
@@ -245,31 +242,56 @@ _NOT_READ_NAMES: tuple[tuple[str, str, frozenset[str], str], ...] = (
         "a committed template (.env.example, env.example) is left out of the tracked .env files",
     ),
     ("AGT-13", "eq", frozenset({agt._DOCS_STYLE_GUIDE}), "the docs style guide never counts as a conventions file"),
-    ("TOOL-07", "start", frozenset({".git/"}), "a hook file under .git/ is left out: git's own hooks are not shared"),
 )
 
 
+def _names_label(check: str, op: str, names: frozenset[str]) -> str:
+    return f"{check} {op} {'|'.join(sorted(names))}"
+
+
+def _not_read_label(check: str, ask: NameAsk) -> str | None:
+    """The label of the ``_NOT_READ_NAMES`` entry that drops this ask, or None."""
+    for c, op, names, _why in _NOT_READ_NAMES:
+        if check == c and ask[0] == op and ask[1] in names:
+            return _names_label(c, op, names)
+    return None
+
+
 def _not_a_read(check: str, ask: NameAsk) -> bool:
-    return any(check == c and ask[0] == op and ask[1] in names for c, op, names, _why in _NOT_READ_NAMES)
+    return _not_read_label(check, ask) is not None
+
+
+def _exemption_label(function: Callable[..., Any]) -> str:
+    return f"{function.__module__}.{function.__qualname__}"
+
+
+def _non_read_in(code: Any) -> Callable[..., Any] | None:
+    """The function of ``_NOT_READS_IN`` whose code this is, for the running check, or None."""
+    check = _NAME_CHECK[-1] if _NAME_CHECK else None
+    for owner, function, _why in _NOT_READS_IN:
+        if code is function.__code__ and owner in (None, check):
+            return function
+    return None
 
 
 def _in_a_non_read(code: Any) -> bool:
-    check = _NAME_CHECK[-1] if _NAME_CHECK else None
-    return any(code is function.__code__ and owner in (None, check) for owner, function, _why in _NOT_READS_IN)
+    return _non_read_in(code) is not None
 
 
-def _asked_by_a_check(frame: Any) -> bool:
+def _asker(frame: Any) -> bool | Callable[..., Any]:
     """Whether the comparison was made by check code, walking out from the caller's frame.
 
     ``Inventory`` methods are recorded already as ``has``, ``match`` or ``read``, and the recorder's own frames ask
     nothing, so either ends the walk. Library frames (``fnmatch``, ``audit/stack.py``) are passed through. A
     function of ``_NOT_READS_IN`` anywhere on the way out means no read, so the walk goes on past the first check
-    frame (a generator expression inside such a function is a frame of its own).
+    frame (a generator expression inside such a function is a frame of its own); that function is returned, so
+    the ask is kept apart as one it dropped.
     """
     asked = False
     while frame is not None:
-        if _in_a_non_read(frame.f_code):
-            return False
+        function = _non_read_in(frame.f_code)
+        if function is not None:
+            return function
         name = frame.f_code.co_filename
         if name in (_SCAN_FILE, _THIS_FILE):
             return asked
@@ -279,8 +301,12 @@ def _asked_by_a_check(frame: Any) -> bool:
 
 
 def _record_name(op: str, operands: object, name: _TrackedName, frame: Any) -> None:
-    if not _NAME_SINK or not _asked_by_a_check(frame):
+    if not _NAME_SINK:
         return
+    asker = _asker(frame)
+    if asker is False:
+        return
+    sink = _NAME_SINK[-1] if asker is True else _EXEMPT_SINK[-1].setdefault(asker, set())
     for operand in operands if isinstance(operands, tuple) else (operands,):
         # A tracked operand is another scanned path, not a name the check holds.
         if not isinstance(operand, str) or isinstance(operand, _TrackedName) or len(operand) < _SHORTEST_OPERAND:
@@ -289,7 +315,7 @@ def _record_name(op: str, operands: object, name: _TrackedName, frame: Any) -> N
         # that does: AGT-01 looks each base name up in a set that also holds .github/copilot-instructions.md.
         if op == "eq" and name.segment and "/" in operand:
             continue
-        _NAME_SINK[-1].add((op, str(operand), name.folded))
+        sink.add((op, str(operand), name.folded))
 
 
 class _TrackedName(str):
@@ -453,7 +479,9 @@ def _held_containers() -> list[tuple[Any, str, Any, Any]]:
 
 
 @contextmanager
-def _recording_names(sink: set[NameAsk], check: str | None = None) -> Iterator[None]:
+def _recording_names(
+    sink: set[NameAsk], check: str | None = None, exempted: dict[Callable[..., Any], set[NameAsk]] | None = None
+) -> Iterator[None]:
     """Record the ``name`` asks of tracked paths while the block runs, ``fnmatch`` and ``basename`` included.
 
     The paths git tracks are tracked names too: a check that reads the tracked set (``tracked_in_scope``) compares
@@ -487,11 +515,13 @@ def _recording_names(sink: set[NameAsk], check: str | None = None) -> Iterator[N
         setattr(module, name, copy)
     _NAME_SINK.append(sink)
     _NAME_CHECK.append(check)
+    _EXEMPT_SINK.append({} if exempted is None else exempted)
     try:
         yield
     finally:
         _NAME_SINK.pop()
         _NAME_CHECK.pop()
+        _EXEMPT_SINK.pop()
         fnmatch.fnmatch, fnmatch.fnmatchcase = saved_fnmatch, saved_fnmatchcase
         posixpath.basename, os.path.basename = saved_basename, saved_os_basename
         _common.tracked_files = saved_tracked_files
@@ -680,6 +710,9 @@ class Recorded:
         self.undeclared: dict[str, set[tuple[str, str, str]]] = {check: set() for check in self.asks}
         self.names: dict[str, set[NameAsk]] = {check: set() for check in self.asks}
         self.changed: list[tuple[str, str]] = []
+        #: The asks each exemption dropped, by exemption (a function, an "op name" of ``_NOT_READ_NAMES`` or
+        #: ``named_by_text``) and check.
+        self.exempted: dict[str, dict[str, set[NameAsk]]] = {}
         with tempfile.TemporaryDirectory() as tmp:
             # CON-04 walks the scan only when it may write its draft: beside a report outside every target, as
             # --emit-baseline --force does, and the same file each run so both runs of a check give one result.
@@ -707,20 +740,44 @@ class Recorded:
                 )
             probed = _probing(inventory)
             names: set[NameAsk] = set()
-            with _recording_disk(target.path, probed.asks), _recording_names(names, spec.id):
+            exempted: dict[Callable[..., Any], set[NameAsk]] = {}
+            with _recording_disk(target.path, probed.asks), _recording_names(names, spec.id, exempted):
                 probed_result = spec.run(
                     target=target, inventory=probed, stack=stack, components=components, session=session
                 )
             if repr(probed_result) != repr(result) or probed.asks != recording.asks:
                 self.changed.append((path.name, spec.id))
+            for function, asks in exempted.items():
+                self._exempt(_exemption_label(function), spec.id, asks)
+            for ask in names:
+                label = _not_read_label(spec.id, ask)
+                if label is not None:
+                    self._exempt(label, spec.id, {ask})
             names = {ask for ask in names if not _not_a_read(spec.id, ask)}
             if reads.READS[spec.id].named_by_text:
-                names = {ask for ask in names if not _named(target.path, probed.asks, _text_core(ask[1]))}
+                texts = {ask for ask in names if _named(target.path, probed.asks, _text_core(ask[1]))}
+                self._exempt("named_by_text", spec.id, texts)
+                names -= texts
             self.names[spec.id] |= names
             self.asks[spec.id] |= recording.asks
             self.runs[spec.id] += 1
             missing = undeclared(spec.id, target.path, recording.asks)
             self.undeclared[spec.id] |= {(path.name, kind, rel) for kind, rel in missing}
+
+    def _exempt(self, label: str, check: str, asks: set[NameAsk]) -> None:
+        if asks:
+            self.exempted.setdefault(label, {}).setdefault(check, set()).update(asks)
+
+
+def exemption_needs(recording: Recorded) -> dict[str, dict[str, set[NameAsk]]]:
+    """By exemption and check, the dropped asks that no declared place of the check meets: what each one hides."""
+    needs: dict[str, dict[str, set[NameAsk]]] = {}
+    for label, by_check in recording.exempted.items():
+        for check, asks in by_check.items():
+            needs.setdefault(label, {})[check] = {
+                ask for ask in asks if not any(name_hits(place, ask) for place in reads.READS[check].where)
+            }
+    return needs
 
 
 _RECORDED: list[Recorded] = []
@@ -887,7 +944,7 @@ class NameProbeTest(unittest.TestCase):
         self.assertTrue(base.segment and path.split("/")[0].segment and not path.split("/", 1)[-1].segment)
         self.assertTrue(_TrackedName("AGENTS.md").rsplit("/", 1)[-1].segment)
         sink_frame = sys._getframe(0)
-        with mock.patch(__name__ + "._asked_by_a_check", return_value=True), _recording_names(sink):
+        with mock.patch(__name__ + "._asker", return_value=True), _recording_names(sink):
             _record_name("eq", (".github/copilot-instructions.md", "AGENTS.md"), base, sink_frame)
             _record_name("eq", ".github/copilot-instructions.md", path, sink_frame)
         self.assertEqual(sink, {("eq", "AGENTS.md", False), ("eq", ".github/copilot-instructions.md", False)})
@@ -903,6 +960,29 @@ class NameProbeTest(unittest.TestCase):
         self.assertFalse(any(operand == ".opencode/**" for _op, operand, _folded in names["AGT-01"]))
         self.assertTrue(any(op == "glob" for op, _operand, _folded in names["AGT-01"]))
         self.assertFalse(any(op == "glob" and operand.startswith(".codex/") for op, operand, _f in names["AGT-02"]))
+
+    def test_every_exemption_hides_an_ask_no_declared_place_covers(self) -> None:
+        # An exemption that drops nothing, or only asks a declared place covers anyway, is a silent future hole.
+        needs = exemption_needs(recorded())
+        dead = []
+        for owner, function, _why in _NOT_READS_IN:
+            by_check = needs.get(_exemption_label(function), {})
+            if not any(by_check.get(check) for check in ([owner] if owner else by_check)):
+                dead.append(_exemption_label(function))
+        for check, op, names, _why in _NOT_READ_NAMES:
+            if not needs.get(_names_label(check, op, names), {}).get(check):
+                dead.append(_names_label(check, op, names))
+        self.assertEqual(dead, [])
+
+    def test_an_exemption_of_covered_asks_hides_nothing(self) -> None:
+        # TOOL-07 compares hook paths with ".git/" only to leave them out, and declares "**", which covers the ask;
+        # the mis-cased candidates are sorted from AGT-01's instruction files, whose names it declares.
+        recording = recorded()
+        self.assertIn(("start", ".git/", False), recording.names["TOOL-07"])
+        dropped = mock.Mock(exempted={"x": {"TOOL-07": {("start", ".git/", False)}}})
+        self.assertEqual(exemption_needs(dropped), {"x": {"TOOL-07": set()}})
+        self.assertNotIn(_exemption_label(variants.mis_cased_canonical_candidates), recording.exempted)
+        self.assertEqual(uncovered_names(recording), {})
 
     def test_a_name_compared_only_to_leave_a_path_out_is_dropped(self) -> None:
         self.assertTrue(_not_a_read("SEC-01", ("eq", "env.example", False)))
