@@ -4,7 +4,7 @@
 """The stack fixtures: one small, realistic project per ecosystem that no other fixture holds.
 
 Each ``stack-*`` fixture is a project in one ecosystem (Rust with Cargo, .NET, Ruby with Bundler, PHP with
-Composer) or with one command runner (``just``). The checks read names for these stacks (a pin file, a lockfile,
+Composer, a Gradle build whose README runs the wrapper) or with one command runner (``just``). The checks read names for these stacks (a pin file, a lockfile,
 an entry point, a runner file) that no other fixture holds, so without them those reads never run in a test.
 
 The test asserts what the engine detects (the ecosystems and the package managers) and the verdict and summary of
@@ -30,6 +30,7 @@ from audit.stack import detect_stack  # noqa: E402
 #: fixture -> (ecosystems, package managers) that stack detection must report.
 STACKS: dict[str, tuple[set[str], set[str]]] = {
     "stack-dotnet": ({"dotnet"}, set()),
+    "stack-gradle-wrapper-readme": ({"jvm"}, set()),
     "stack-just-inline-version": ({"rust"}, {"cargo"}),
     "stack-php-composer": ({"php"}, {"composer"}),
     "stack-ruby-bundler": ({"ruby"}, {"bundler"}),
@@ -42,6 +43,11 @@ VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
         "EXEC-01": ("PASS", "dotnet (global.json)"),
         "NAV-02": ("PASS", "entry point(s): Program.cs"),
         "TOOL-03": ("PASS", "StackDotnet.csproj:Nullable"),
+    },
+    "stack-gradle-wrapper-readme": {
+        "EXEC-01": ("PASS", "jvm (gradlew)"),
+        "EXEC-06": ("PASS", "2 documented command(s) resolve"),
+        "NAV-02": ("PASS", "entry point(s): src/main/java/app/App.java"),
     },
     "stack-just-inline-version": {
         "EXEC-01": ("PASS", "rust (rust-toolchain.toml)"),
