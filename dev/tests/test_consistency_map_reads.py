@@ -1,0 +1,108 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
+"""The map's reads part equals what ``dev/consistency_map_reads.py`` generates from the engine (ADR 0012).
+
+The engine declares each check's reads in ``audit/rules/reads.py``; the map's ``reads`` part is written from that
+table. This test fails when the two drift, so a changed declaration needs ``--write`` in the same change.
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import shutil
+import tempfile
+import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+from typing import Any
+
+import _dev_paths
+import consistency_map_reads as cmr
+
+MAP: dict[str, Any] = json.loads((_dev_paths.DEV / "consistency-map.json").read_text(encoding="utf-8"))
+CATALOGUE_IDS: list[str] = [
+    check["id"]
+    for check in json.loads((_dev_paths.REPO / "audit" / "catalogue.json").read_text(encoding="utf-8"))["checks"]
+]
+DECLARED = cmr.engine_declarations()
+
+
+def _run(*argv: str) -> tuple[int, str, str]:
+    out, err = io.StringIO(), io.StringIO()
+    with redirect_stdout(out), redirect_stderr(err):
+        code = cmr.main(list(argv))
+    return code, out.getvalue(), err.getvalue()
+
+
+class GeneratedTest(unittest.TestCase):
+    def test_the_map_reads_equal_the_engine_declarations(self) -> None:
+        generated = cmr.generated_reads(MAP["reads"], CATALOGUE_IDS, DECLARED)
+        self.assertEqual(cmr.differing_checks(MAP["reads"], generated), [])
+        self.assertEqual(MAP["reads"], generated)
+
+    def test_the_check_mode_passes_on_this_tree(self) -> None:
+        code, out, _ = _run()
+        self.assertEqual(code, 0)
+        self.assertIn("78 reads entries match the engine", out)
+
+    def test_every_engine_entry_comes_from_the_engine_and_the_agent_entries_stay(self) -> None:
+        sources = {read["check"]: read["source"] for read in MAP["reads"]}
+        self.assertEqual(sorted(check for check, source in sources.items() if source == "agent"), ["AGT-11", "CI-04"])
+        self.assertEqual(sorted(check for check, source in sources.items() if source == "engine"), sorted(DECLARED))
+
+    def test_an_entry_names_constants_only_when_they_hold_its_whole_list(self) -> None:
+        (cmd01,) = [read for read in MAP["reads"] if read["check"] == "CMD-01"]
+        (tst01,) = [read for read in MAP["reads"] if read["check"] == "TST-01"]
+        self.assertEqual(cmd01["constants"], ["audit.rules.checks._common:RUNNER_PRECEDENCE"])
+        self.assertNotIn("constants", tst01)
+
+
+class DriftTest(unittest.TestCase):
+    def _copy(self, cmap: dict[str, Any]) -> Path:
+        folder = Path(tempfile.mkdtemp(prefix="cmap-reads-"))
+        self.addCleanup(shutil.rmtree, folder, ignore_errors=True)
+        path = folder / "consistency-map.json"
+        path.write_text(cmr.render(cmap), encoding="utf-8")
+        return path
+
+    def test_a_changed_entry_fails_and_write_restores_it(self) -> None:
+        cmap = json.loads(json.dumps(MAP))
+        cmap["reads"][0]["note"] = "edited by hand"
+        path = self._copy(cmap)
+        code, _, err = _run("--map", str(path))
+        self.assertEqual(code, 1)
+        self.assertIn(cmap["reads"][0]["check"], err)
+        code, out, _ = _run("--map", str(path), "--write")
+        self.assertEqual((code, out.strip()), (0, "consistency_map_reads.py: 1 reads entries rewritten"))
+        self.assertEqual(path.read_text(encoding="utf-8"), cmr.render(MAP))
+
+    def test_write_leaves_the_other_parts_as_they_are(self) -> None:
+        cmap = json.loads(json.dumps(MAP))
+        cmap["reads"] = cmap["reads"][1:]
+        cmap["moves"] = cmap["moves"][:1]
+        path = self._copy(cmap)
+        self.assertEqual(_run("--map", str(path), "--write")[0], 0)
+        written = json.loads(path.read_text(encoding="utf-8"))
+        self.assertEqual(written["moves"], MAP["moves"][:1])
+        self.assertEqual(written["reads"], MAP["reads"])
+
+    def test_a_missing_agent_entry_is_an_error(self) -> None:
+        cmap = json.loads(json.dumps(MAP))
+        cmap["reads"] = [read for read in cmap["reads"] if read["check"] != "AGT-11"]
+        code, _, err = _run("--map", str(self._copy(cmap)))
+        self.assertEqual(code, 2)
+        self.assertIn("AGT-11", err)
+
+    def test_an_engine_declaration_the_catalogue_does_not_list_is_an_error(self) -> None:
+        with self.assertRaisesRegex(cmr.ReadsError, "TOOL-99"):
+            cmr.generated_reads(MAP["reads"], CATALOGUE_IDS, {**DECLARED, "TOOL-99": DECLARED["TOOL-01"]})
+
+    def test_an_order_change_alone_is_a_difference(self) -> None:
+        swapped = [MAP["reads"][1], MAP["reads"][0], *MAP["reads"][2:]]
+        self.assertEqual(cmr.differing_checks(swapped, MAP["reads"]), ["(order)"])
+
+
+if __name__ == "__main__":
+    unittest.main()
