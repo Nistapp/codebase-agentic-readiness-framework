@@ -34,8 +34,8 @@
 # Writes, in <out-dir>:
 #   <repo-label>.harness-run.<stamp>.json         harness, recipe, model, started_at, duration_s, cost/tokens
 #                                                  (best-effort, whatever the harness reports), and the exit code.
-#   <repo-label>.harness-transcript.<stamp>.jsonl  the harness's raw output: one JSON line (audit) or the
-#                                                  stream-json events (implement), unparsed.
+#   <repo-label>.harness-transcript.<stamp>.jsonl  the harness's raw output: the stream-json events, unparsed
+#                                                  (both recipes), so every tool call is on record.
 #   <repo-label>.harness-stderr.<stamp>.log        the harness's stderr.
 #
 # Needs: claude (Claude Code) on PATH, already logged in; git and python3. Nothing is installed. No network call
@@ -92,7 +92,8 @@ if [ "$RECIPE" = audit ]; then
   PROMPT="$PROMPT
 Use the intake file at $INTAKE. Write every output file into $OUT_DIR."
   WORKDIR="$PWD"
-  CLAUDE_ARGS=(--add-dir "$TARGET" --add-dir "$OUT_DIR" --output-format json)
+  # stream-json keeps every tool call on record, for audit_eval.py's assertions (AU1, AU2).
+  CLAUDE_ARGS=(--add-dir "$TARGET" --add-dir "$OUT_DIR" --output-format stream-json --verbose)
 else
   ROOT="$TARGET"
   TMP_BASE=$(cd "${TMPDIR:-/tmp}" && pwd -P)

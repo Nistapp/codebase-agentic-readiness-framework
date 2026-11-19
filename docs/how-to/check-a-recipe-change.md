@@ -272,7 +272,9 @@ reason.
 
 The consistency map, [`dev/consistency-map.json`](../../dev/consistency-map.json), says what each check reads. It
 also says what each playbook Commits row and template does to that text, and which sentence keeps each read true.
-[ADR 0012](../architecture/adrs/0012-keep-the-consistency-map-as-json-in-dev.md) records its design.
+[ADR 0012](../architecture/adrs/0012-keep-the-consistency-map-as-json-in-dev.md) records its design. Do not edit
+the map's `reads` part by hand: the engine declares each check's reads in `audit/engine/audit/rules/reads.py`. After
+you change a declaration, run `python3 dev/consistency_map_reads.py --write` to rewrite the part.
 
 ```bash
 make consistency-map
