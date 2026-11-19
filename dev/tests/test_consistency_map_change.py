@@ -20,6 +20,7 @@ import json
 import os
 import shutil
 import subprocess
+import tarfile
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -318,7 +319,7 @@ class ReviewTest(unittest.TestCase):
             ],
         )
 
-    def test_files_that_are_not_sections_are_listed_by_status(self) -> None:
+    def test_files_with_no_section_in_the_index_diff_are_listed_by_status(self) -> None:
         files = [
             cmc.FileChange("A", "CLAUDE.md", "CLAUDE.md"),
             cmc.FileChange("M", "AGENTS.md", "AGENTS.md"),
@@ -331,7 +332,9 @@ class ReviewTest(unittest.TestCase):
             lines,
             [
                 "added file CLAUDE.md: read by AGT-06, CON-01",
+                "changed file AGENTS.md: read by AGT-06, CON-01",
                 "deleted file CLAUDE.md: read by AGT-06, CON-01",
+                "renamed file CLAUDE.md -> docs/CLAUDE.md (leaves the scope of AGT-06, CON-01): read by AGT-06, CON-01",
             ],
         )
         renamed = [cmc.FileChange("R", "CLAUDE.json", "x.json")]
@@ -372,6 +375,88 @@ class GitTest(unittest.TestCase):
             old = cmc.materialise(root, base, Path(scratch) / "old")
             self.assertEqual((old / "src/core/a.py").read_text(encoding="utf-8"), "X = 1\n")
             self.assertEqual(_git(old, "log", "--format=%an %at"), "consistency-map 1767225600")
+
+
+class ReviewFixesTest(unittest.TestCase):
+    """The findings of the RF4.7 review: hook environments, hooks, unparsed Markdown, an unstaged move, type changes."""
+
+    def test_a_hook_environment_does_not_reach_the_copy_or_the_repository(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            root = Path(scratch) / "repo"
+            base = _fixture_repository(root)
+            hooks = Path(scratch) / "hooks"
+            hooks.mkdir()
+            (hooks / "pre-commit").write_text("#!/bin/sh\nexit 1\n", encoding="utf-8")
+            (hooks / "pre-commit").chmod(0o755)
+            env = {"GIT_DIR": str(root / ".git"), "GIT_INDEX_FILE": str(root / ".git" / "index")}
+            with mock.patch.dict(os.environ, env):
+                _git(root, "config", "core.hooksPath", str(hooks))
+                copy = cmc.materialise(root, None, Path(scratch) / "copy")
+            self.assertTrue((copy / ".git").is_dir())
+            self.assertEqual(_git(root, "rev-parse", "HEAD"), base)
+            self.assertEqual(_git(copy, "log", "--format=%s"), "consistency map side")
+
+    def test_a_failed_copy_is_an_evidence_error(self) -> None:
+        from docindex.evidence import EvidenceError
+
+        with tempfile.TemporaryDirectory() as scratch:
+            root = Path(scratch) / "repo"
+            base = _fixture_repository(root)
+            with mock.patch.object(cmc, "materialise", side_effect=GitError("boom")):
+                with self.assertRaises(EvidenceError):
+                    cmc.compare_evidence(root, base, None, consistency_map.ENGINE)
+
+    def test_an_unparsed_markdown_file_is_listed_by_file(self) -> None:
+        reads = [{"check": "X-01", "where": [{"path": "AGENTS.md", "scope": "any-depth"}]}]
+        files = [
+            cmc.FileChange("M", "fixtures/x/AGENTS.md", "fixtures/x/AGENTS.md"),
+            cmc.FileChange("M", "AGENTS.md", "AGENTS.md"),
+            cmc.FileChange("T", "y/AGENTS.md", "y/AGENTS.md"),
+            cmc.FileChange("C", "AGENTS.md", "z/AGENTS.md"),
+        ]
+        found = IndexDiff(edited=(Edited("AGENTS.md#a", "AGENTS.md#a"),))
+        self.assertEqual(
+            [r.line for r in cmc.reviews(found, files, reads, lambda path: [path])],
+            [
+                "edited AGENTS.md#a: read by X-01",
+                "changed file fixtures/x/AGENTS.md: read by X-01",
+                "changed file y/AGENTS.md: read by X-01",
+                "copied file AGENTS.md -> z/AGENTS.md: read by X-01",
+            ],
+        )
+
+    def test_an_unstaged_move_counts_as_a_rename(self) -> None:
+        with tempfile.TemporaryDirectory() as scratch:
+            root = Path(scratch) / "repo"
+            base = _fixture_repository(root)
+            (root / "AGENTS.md").rename(root / "docs" / "AGENTS.md")
+            (root / "src/core/a.py").unlink()
+            (root / "other.txt").write_text("other\n", encoding="utf-8")
+            changes = [(c.status, c.old, c.new) for c in cmc.file_changes(root, base, None)]
+            self.assertEqual(
+                changes,
+                [
+                    ("R", "AGENTS.md", "docs/AGENTS.md"),
+                    ("A", "other.txt", "other.txt"),
+                    ("D", "src/core/a.py", "src/core/a.py"),
+                ],
+            )
+            files = cmc.file_changes(root, base, None)
+            self.assertEqual(len(cmc.left_scope(files, FIXTURE_MAP["reads"], lambda path: [path])), 2)
+
+    def test_untracked_files_with_nothing_deleted_are_added(self) -> None:
+        self.assertEqual(cmc._pair_untracked(Path("."), "HEAD", [], ["a"]), [cmc.FileChange("A", "a", "a")])
+
+    def test_the_manual_tar_check_refuses_an_escaping_member(self) -> None:
+        data = io.BytesIO()
+        with tarfile.open(fileobj=data, mode="w") as archive:
+            info = tarfile.TarInfo("../escape.txt")
+            info.size = 1
+            archive.addfile(info, io.BytesIO(b"x"))
+        with tempfile.TemporaryDirectory() as scratch, mock.patch.object(tarfile, "data_filter", create=True):
+            delattr(tarfile, "data_filter")
+            with self.assertRaises(GitError):
+                cmc._safe_extract(data.getvalue(), Path(scratch))
 
 
 def _change(check: str) -> Any:

@@ -59,8 +59,27 @@ _GIT_ENV = {
 Targets = Callable[[str], list[str]]
 
 
+#: Git variables that point a git call at another repository, index or object store. A git hook sets some of them,
+#: so each call drops them and ``-C`` alone names the repository.
+_GIT_LOCATION = frozenset(
+    {
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_INDEX_FILE",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_COMMON_DIR",
+        "GIT_NAMESPACE",
+        "GIT_PREFIX",
+    }
+)
+#: For the throwaway copies: no global or system config, so no hooks path, template folder, filter or signing.
+_COPY_ENV = {**_GIT_ENV, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"}
+
+
 def _git(root: Path, *args: str, env: Mapping[str, str] | None = None) -> bytes:
-    full = {**os.environ, **(env or {})}
+    full = {key: value for key, value in os.environ.items() if key not in _GIT_LOCATION}
+    full.update(env or {})
     try:
         result = subprocess.run(["git", "-C", str(root), *args], capture_output=True, check=False, env=full)
     except OSError as exc:
@@ -107,8 +126,36 @@ class FileChange:
     new: str
 
 
+def _pair_untracked(root: Path, base: str, changes: list[FileChange], untracked: list[str]) -> list[FileChange]:
+    """Pair each deleted file with an untracked file of the same content as a rename, as a plain ``mv`` leaves them.
+
+    ``git diff`` sees only tracked files, so a move that is not staged shows as a deletion and a new file.
+    """
+    deleted = {change.old: change for change in changes if change.status == "D"}
+    if not deleted or not untracked:
+        return changes + [FileChange("A", path, path) for path in untracked]
+    blobs: dict[str, str] = {}
+    for path in deleted:
+        try:
+            blobs.setdefault(_git(root, "rev-parse", f"{base}:{path}").decode().strip(), path)
+        except GitError:
+            continue
+    hashes = _git(root, "hash-object", "--", *untracked).decode().split()
+    out = list(changes)
+    for path, blob in zip(untracked, hashes, strict=True):
+        old = blobs.pop(blob, None)
+        if old is None:
+            out.append(FileChange("A", path, path))
+        else:
+            out.remove(deleted[old])
+            out.append(FileChange("R", old, path))
+    return out
+
+
 def file_changes(root: Path, base: str, at: str | None) -> list[FileChange]:
-    """The files that differ from ``base`` to ``at`` (or the working tree, with its untracked files), renames found."""
+    """The files that differ from ``base`` to ``at`` (or the working tree, with its untracked files), renames found.
+
+    In the working tree, a deleted tracked file and an untracked file with the same content count as a rename."""
     args = ["diff", "-M", "--name-status", "-z", base] + ([at] if at is not None else [])
     fields = [part for part in _git(root, *args).decode("utf-8", errors="replace").split("\0") if part]
     changes: list[FileChange] = []
@@ -123,7 +170,7 @@ def file_changes(root: Path, base: str, at: str | None) -> list[FileChange]:
             index += 2
     if at is None:
         others = _git(root, "ls-files", "-z", "--others", "--exclude-standard").decode("utf-8", errors="replace")
-        changes += [FileChange("A", path, path) for path in others.split("\0") if path]
+        changes = _pair_untracked(root, base, changes, [path for path in others.split("\0") if path])
     return sorted(changes, key=lambda change: (change.new, change.old))
 
 
@@ -167,15 +214,29 @@ def reviews(
         add("edited", edited.old_address, edited.address)
     for removed in found.removed:
         add("removed", removed.address)
+    sectioned = {
+        _file(address)
+        for address in (
+            *(m.old for m in found.moved),
+            *(m.new for m in found.moved),
+            *(r.old for r in found.renamed),
+            *(r.new for r in found.renamed),
+            *(e.address for e in found.edited),
+            *(e.old_address for e in found.edited),
+            *(node.address for node in found.removed),
+        )
+    }
     for change in files:
-        if change.new.endswith(".md") and change.status in "MRC":
-            continue  # its sections are in the index diff above
+        if change.status in "MRCT" and change.old in sectioned and change.new in sectioned:
+            continue  # its sections are in the index diff above; a file the index does not parse is listed below
         if change.status == "A":
             add("added file", change.new)
         elif change.status == "D":
             add("deleted file", change.old)
+        elif change.status in "RC":
+            add("renamed file" if change.status == "R" else "copied file", change.old, change.new)
         else:
-            add("changed file" if change.status == "M" else "renamed file", change.old, change.new)
+            add("changed file", change.old, change.new)
     return out
 
 
@@ -280,8 +341,19 @@ def lost_mentions(
 
 
 def _safe_extract(data: bytes, dest: Path) -> None:
+    """Unpack a ``git archive`` tar into ``dest``, refusing a member that would land outside it.
+
+    Python 3.11.4 and later have the ``data`` filter; before it, each member's path is checked by hand.
+    """
     with tarfile.open(fileobj=io.BytesIO(data)) as archive:
-        archive.extractall(dest, filter="data")
+        if hasattr(tarfile, "data_filter"):
+            archive.extractall(dest, filter="data")
+            return
+        top = dest.resolve()
+        for member in archive.getmembers():
+            if not (top / member.name).resolve().is_relative_to(top) or member.islnk() or member.isdev():
+                raise GitError(f"git archive holds an unsafe member: {member.name}")
+        archive.extractall(dest)  # noqa: S202  (every member checked above)
 
 
 def materialise(root: Path, ref: str | None, dest: Path) -> Path:
@@ -297,9 +369,10 @@ def materialise(root: Path, ref: str | None, dest: Path) -> Path:
             if source.is_file() or source.is_symlink():
                 (dest / path).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source, dest / path, follow_symlinks=False)
-    _git(dest, "init", "--quiet")
-    _git(dest, "add", "-A", "-f")
-    _git(dest, "commit", "--quiet", "--no-gpg-sign", "--allow-empty", "-m", "consistency map side", env=_GIT_ENV)
+    _git(dest, "init", "--quiet", "--template=", env=_COPY_ENV)
+    _git(dest, "add", "-A", "-f", env=_COPY_ENV)
+    commit = ["commit", "--quiet", "--no-gpg-sign", "--no-verify", "--allow-empty", "-m", "consistency map side"]
+    _git(dest, *commit, env=_COPY_ENV)
     return dest
 
 
@@ -332,7 +405,10 @@ def compare_evidence(
         work = Path(scratch)
         folders: dict[str, Path] = {}
         for side, ref in (("old", base), ("new", at)):
-            copy = materialise(root, ref, work / "trees" / side)
+            try:
+                copy = materialise(root, ref, work / "trees" / side)
+            except (GitError, OSError, tarfile.TarError) as exc:
+                raise evidence.EvidenceError(f"cannot copy the {side} side: {exc}") from exc
             project = evidence.Project(engine_dir=engine_dir, repo=copy, targets=_one_target(copy), runner=runner)
             folders[side] = work / "runs" / side
             evidence.run(folders[side], "repo", project, work / "targets" / side)
