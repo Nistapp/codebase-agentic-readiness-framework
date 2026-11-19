@@ -7,7 +7,7 @@
     {
       "id": "EXEC-01",
       "acceptable_verdicts": [
-        "UNKNOWN"
+        "PASS"
       ]
     },
     {

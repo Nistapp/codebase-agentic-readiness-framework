@@ -63,7 +63,7 @@ VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
         "NAV-02": ("PASS", "entry point(s): src/main/java/app/App.java"),
     },
     "stack-php-composer": {
-        "EXEC-01": ("UNKNOWN", "no toolchain pin can be chosen"),
+        "EXEC-01": ("PASS", "php (composer.json (require.php))"),
         "EXEC-02": ("PARTIAL", "consistency unverified: composer.lock"),
         "NAV-01": ("PASS", "declares composer.json"),
         "NAV-02": ("PASS", "entry point(s): public/index.php"),
