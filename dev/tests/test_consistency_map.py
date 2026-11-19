@@ -398,9 +398,47 @@ class GateTest(unittest.TestCase):
         self.assertTrue(overlaps("AGENTS.md", {"path": "AGENTS.md", "scope": "root"}))
         self.assertFalse(overlaps("docs/AGENTS.md", {"path": "AGENTS.md", "scope": "root"}))
         self.assertTrue(overlaps("docs/AGENTS.md", {"path": "AGENTS.md", "scope": "any-depth"}))
-        self.assertTrue(overlaps("docs/", {"path": "SECURITY*", "scope": "repository-level"}))
-        self.assertFalse(overlaps("src/", {"path": "SECURITY*", "scope": "repository-level"}))
+        self.assertTrue(overlaps("docs/SECURITY.md", {"path": "SECURITY*", "scope": "repository-level"}))
+        self.assertFalse(overlaps("src/SECURITY.md", {"path": "SECURITY*", "scope": "repository-level"}))
         self.assertTrue(overlaps(".github/workflows/ci.yml", {"path": ".github/workflows/*.yml", "scope": "glob"}))
+
+    def test_r1_a_folder_overlaps_only_the_places_inside_it(self) -> None:
+        overlaps = consistency_map.place_overlaps
+        self.assertFalse(overlaps("artefacts/", {"path": "package.json", "scope": "any-depth"}))
+        self.assertFalse(overlaps("docs/", {"path": "SECURITY*", "scope": "repository-level"}))
+        self.assertFalse(overlaps("docs/", {"path": "AGENTS.md", "scope": "root"}))
+        self.assertTrue(overlaps("artefacts/", {"path": "artefacts", "scope": "root"}))
+        self.assertTrue(overlaps("docs/", {"path": "docs/README.md", "scope": "root"}))
+        self.assertTrue(overlaps(".circleci/", {"path": ".circleci/config.yml", "scope": "any-depth"}))
+        self.assertTrue(overlaps("docs/", {"path": "docs/adr/*", "scope": "glob"}))
+
+    def test_r1_an_untracked_folder_reaches_the_root_place_of_its_name(self) -> None:
+        read = {"check": "CON-03", "what": {"kind": "exists"}, "where": [{"path": "artefacts", "scope": "root"}]}
+        move = {"action": "untrack", "from": ["artefacts/"]}
+        self.assertEqual(consistency_map.touch(move, read), "artefacts/")
+
+
+REAL_PAIRS: list[dict[str, str]] = json.loads(
+    (Path(__file__).parent / "fixtures" / "consistency-map-real-pairs.json").read_text(encoding="utf-8")
+)["pairs"]
+
+
+class RealPairsTest(unittest.TestCase):
+    """The inference keeps every pair a reviewer found real (``fixtures/consistency-map-real-pairs.json``).
+
+    The pairs come from a triage of the unreviewed list. Each is tested with :func:`consistency_map.touch`, so a
+    pair the map has since declared in ``touches`` still counts.
+    """
+
+    def test_every_real_pair_is_still_inferred(self) -> None:
+        moves = {move["id"]: move for move in MAP["moves"]}
+        reads = {read["check"]: read for read in MAP["reads"]}
+        lost = [
+            (pair["move"], pair["check"])
+            for pair in REAL_PAIRS
+            if consistency_map.touch(moves[pair["move"]], reads[pair["check"]]) is None
+        ]
+        self.assertEqual(lost, [])
 
     def test_a_section_that_does_not_name_the_check_is_a_mention_problem(self) -> None:
         text = "# T\n\n## A\n\nKeep it on one line.\n\n## B\n\nAGT-06 reads it.\n"

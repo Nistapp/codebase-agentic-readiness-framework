@@ -305,17 +305,17 @@ def _is_folder(path: str) -> bool:
 
 
 def place_overlaps(path: str, where: dict[str, Any]) -> bool:
-    """Whether a move path (a file, a folder ending in ``/`` or a glob) can overlap a place a read covers."""
+    """Whether a move path (a file, a folder ending in ``/`` or a glob) can overlap a place a read covers.
+
+    A folder overlaps a root, any-depth or repository-level place only when the place is the folder itself or sits
+    under it (rule R1): a move of ``artefacts/`` reaches the root place ``artefacts``, not every name the scan reads.
+    """
     target, scope = str(where["path"]), str(where["scope"])
     if _is_folder(path):
         folder = path.rstrip("/")
-        if scope == "root":
-            return target.startswith(path)
         if scope == "glob":
             return target.startswith(path) or fnmatch.fnmatchcase(path + "x", target)
-        if scope == "repository-level":
-            return folder in _REPOSITORY_LEVEL
-        return True  # any-depth: a name can sit in any folder
+        return target == folder or target.startswith(path)
     if scope == "root":
         return path == target or fnmatch.fnmatchcase(target, path) or fnmatch.fnmatchcase(path, target)
     if scope == "glob":
