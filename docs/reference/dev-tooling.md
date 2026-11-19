@@ -159,8 +159,8 @@ For a harness that does not read `.mcp.json`, `dev/mcp_config.py` translates the
 | `python3 dev/mcp_config.py write --harness <name> [--scope project\|user]` | Adds the entry to the file. Stops if a different entry has the same name |
 | `python3 dev/mcp_config.py detect` | Names the harness from the variable it sets (`CLAUDECODE`, `ANTIGRAVITY_AGENT`, `OPENCODE`), or says to ask |
 | `python3 dev/mcp_config.py check` | Is each server's command on `PATH`? Prints its version, or the install routes |
-| `python3 dev/mcp_config.py status --harness <name>` | Has the person answered the setup offer for this harness? |
-| `python3 dev/mcp_config.py record --harness <name> --answer accepted\|declined` | Records the answer in `.agentic-readiness/setup.json` |
+| `python3 dev/mcp_config.py status --harness <name>` | Has the person answered the setup offer for this harness? A linked worktree without its own answer reads the main worktree's |
+| `python3 dev/mcp_config.py record --harness <name> --answer accepted\|declined` | Records the answer in this checkout's `.agentic-readiness/setup.json` |
 
 A language server is an optional aid beside the index. `pyrightconfig.json` gives pyright and basedpyright the same
 import paths as `mypy.ini`, and `dev/tests/test_pyright_config.py` keeps the two in step. `make typecheck` stays the
