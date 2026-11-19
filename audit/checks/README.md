@@ -69,8 +69,8 @@ data*: a path with a directory named `templates`, `template`, `examples`, `examp
 `testdata` or `scaffold`. A `package.json` under `templates/` is not the runner, a `CODEOWNERS` under
 `templates/github/` is not the repository's, and a fixture's lockfile is not its lockfile. The report lists
 what it set aside (`inventory.set_aside`), so a verdict that surprises a reader can be explained. When two
-runners compete, the shallowest manifest wins before the kind does. A `package.json`, a `Makefile` or a
-Taskfile is a runner only at the root. The rule is
+runners compete, the shallowest manifest wins before the kind does. A `package.json`, a `Makefile`, a
+Taskfile or a `pyproject.toml` is a runner only at the root. The rule is
 [ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md); a check file
 below states only where it applies. `--exclude` is still the tool for anything else (`artefacts/**`, a vendored
 tree), but a template, example or fixture directory no longer needs it. Distrust a verdict when a real

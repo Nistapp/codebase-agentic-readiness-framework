@@ -412,9 +412,8 @@ def _manifest_path(inventory: Inventory, name: str) -> str:
 def _at_root(inventory: Inventory, name: str) -> bool:
     """Whether manifest ``name`` is at the repository root, by its exact path.
 
-    A runner of this kind is the root file only: ``make``, ``npm`` and ``task`` in the root folder read
-    ``./Makefile``, ``./package.json`` and ``./Taskfile.yml``, so a nested ``tools/Makefile`` is not a runner and no
-    verb finding cites it.
+    A runner of this kind is the root file only: ``make``, ``npm``, ``task`` and the pyproject task runners in the
+    root folder read the file there, so a nested ``tools/Makefile`` is not a runner and no verb finding cites it.
     ``Inventory.has`` would match it at any depth.
     """
     return any(entry.rel == name for entry in inventory.files)
@@ -425,8 +424,9 @@ def _runner_commands(inventory: Inventory):
 
     ``runner`` is the manifest's real, actually-matched relative path (:func:`_manifest_path`), not a
     hardcoded literal basename — on a target whose only manifest of a kind is nested, the literal name
-    is a path that does not exist anywhere in the repository. The ``Makefile``, ``package.json`` and the Taskfile
-    are runners only at the root (:func:`_at_root`), where they are read.
+    is a path that does not exist anywhere in the repository. The ``Makefile``, ``package.json``, the Taskfile
+    and ``pyproject.toml`` are runners only at the root (:func:`_at_root`), where they are read; Gradle and Maven
+    builds are found at any depth.
     """
     found: list[tuple[str, dict[str, str]]] = []
     if _at_root(inventory, "package.json"):
@@ -438,11 +438,10 @@ def _runner_commands(inventory: Inventory):
             text = inventory.read(name)
             if text:
                 found.append((name, _parse_taskfile(text)))
-    if inventory.has("pyproject.toml"):
-        path = _manifest_path(inventory, "pyproject.toml")
-        text = inventory.read(path)
+    if _at_root(inventory, "pyproject.toml"):
+        text = inventory.read("pyproject.toml")
         if text:
-            found.append((path, _parse_pyproject_tasks(text)))
+            found.append(("pyproject.toml", _parse_pyproject_tasks(text)))
     for name in ("build.gradle", "build.gradle.kts"):
         if inventory.has(name):
             path = _manifest_path(inventory, name)

@@ -90,7 +90,7 @@ def _held(module: ModuleType, name: str, scope: str, scopes: dict[str, str] | No
 
 
 #: Runner manifests the engine reads at the root only (``_common._at_root``); the other kinds are found at any depth.
-_ROOT_RUNNERS: tuple[str, ...] = ("package.json", "Makefile", "Taskfile.yml", "Taskfile.yaml")
+_ROOT_RUNNERS: tuple[str, ...] = ("package.json", "Makefile", "Taskfile.yml", "Taskfile.yaml", "pyproject.toml")
 
 
 def _runners() -> tuple[Place, ...]:
@@ -555,9 +555,9 @@ READS: dict[str, Reads] = {
         binding="file",
         threshold="all seven verbs on one runner",
         note=(
-            "package.json, the Makefile and the Taskfile count only at the root, where they are read; each other "
-            "manifest kind is matched at any depth and only the shallowest is read. gradlew and mvnw only choose "
-            "the launcher. format:check is also read under the spelling its runner accepts."
+            "package.json, the Makefile, the Taskfile and pyproject.toml count only at the root, where they are "
+            "read; each Gradle or Maven build is matched at any depth and only the shallowest is read. gradlew and "
+            "mvnw only choose the launcher. format:check is also read under the spelling its runner accepts."
         ),
     ),
     "CMD-02": Reads(
@@ -632,7 +632,6 @@ READS: dict[str, Reads] = {
                 ".php-cs-fixer.php",
                 ".php-cs-fixer.dist.php",
             ),
-            *_at(ROOT, "pyproject.toml"),
             *_runners(),
         ),
         what=What("key"),
@@ -677,7 +676,6 @@ READS: dict[str, Reads] = {
                 "phpcs.xml",
                 ".phpcs.xml",
             ),
-            *_at(ROOT, "pyproject.toml"),
             *_runners(),
         ),
         what=What("key"),
@@ -692,8 +690,7 @@ READS: dict[str, Reads] = {
         where=(
             *_at(ROOT, "tsconfig.json", "jsconfig.json"),
             *_at(ANY_DEPTH, "mypy.ini", ".mypy.ini"),
-            *_at(ROOT, "pyproject.toml"),
-            *_at(ANY_DEPTH, "setup.cfg"),
+            *_at(ANY_DEPTH, "pyproject.toml", "setup.cfg"),
             *_at(ROOT, "pyrightconfig.json"),
             *_at(ANY_DEPTH, "*.csproj", "Directory.Build.props", "Directory.Build.targets", "global.json"),
             *_runners(),
@@ -913,7 +910,7 @@ READS: dict[str, Reads] = {
                 ".snyk",
                 ".gitleaksignore",
             ),
-            *_at(ROOT, "AGENTS.md", "CLAUDE.md", "pyproject.toml", "setup.cfg", "tox.ini"),
+            *_at(ROOT, "AGENTS.md", "CLAUDE.md", "setup.cfg", "tox.ini"),
             *_at(
                 ANY_DEPTH,
                 ".eslintrc*",
@@ -975,7 +972,6 @@ READS: dict[str, Reads] = {
         where=(
             *_at(
                 ROOT,
-                "pyproject.toml",
                 "setup.cfg",
                 "tox.ini",
             ),
@@ -1040,7 +1036,6 @@ READS: dict[str, Reads] = {
                 "CLAUDE.md",
                 "README.md",
                 "CONTRIBUTING.md",
-                "pyproject.toml",
             ),
             *_at(
                 ANY_DEPTH,
@@ -1487,8 +1482,8 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and "
-            "--allow-probe test. package.json, the Makefile and the Taskfile count only at the root, where they are "
-            "read; each other runner manifest is found at any depth and the shallowest is read."
+            "--allow-probe test. package.json, the Makefile, the Taskfile and pyproject.toml count only at the "
+            "root, where they are read; a Gradle or Maven build is found at any depth and the shallowest is read."
         ),
     ),
     "TST-03": Reads(
@@ -1550,7 +1545,6 @@ READS: dict[str, Reads] = {
             ),
             *_at(
                 ROOT,
-                "pyproject.toml",
                 "setup.cfg",
                 "tox.ini",
                 "pytest.ini",

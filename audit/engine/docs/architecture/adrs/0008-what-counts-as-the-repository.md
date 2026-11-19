@@ -35,9 +35,9 @@ decide how a monorepo's components are scoped.
    broken by `RUNNER_PRECEDENCE` (kind), then by path. The rank is one function in
    `audit/rules/checks/_common.py` (`runner_rank`) that the resolver (`resolve_all_verbs`), `runner_commands` and
    `CMD-03`'s choice of a primary runner all use. Precedence is applied per verb: a root `Makefile` that does not
-   define `lint` does not hide a nested manifest that does. A `package.json`, a `Makefile` or a Taskfile is a
-   runner only at the repository root, where `npm`, `make` or `task` reads it (`_at_root`): a nested
-   `tools/Makefile` is not ranked, read or cited.
+   define `lint` does not hide a nested manifest that does. A `package.json`, a `Makefile`, a Taskfile or a
+   `pyproject.toml` is a runner only at the repository root, where its runner reads it (`_at_root`): a nested
+   `tools/Makefile` is not ranked, read or cited. Depth ranks the Gradle and Maven builds, found at any depth.
 2. **Carried data is set aside.** A file whose path has a directory component named `templates`, `template`,
    `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` (compared whole and case-insensitively; the
    target's own root name is never part of the comparison) is *carried data*. It is not a runner, not a source of

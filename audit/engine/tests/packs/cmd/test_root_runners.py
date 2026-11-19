@@ -108,5 +108,23 @@ class NestedTaskfileTests(ScopeTestCase):
         self.assertNotIn("check", dict(runner_commands(inventory))["Taskfile.yml"])
 
 
+#: A pyproject.toml whose poe tasks declare ``test`` and ``lint``.
+POE = '[tool.poe.tasks]\ntest = "pytest"\nlint = "ruff check ."\n'
+
+
+class NestedPyprojectTests(ScopeTestCase):
+    def test_a_nested_only_pyproject_is_not_a_runner(self):
+        inventory = self.inventory_of({"tools/x/pyproject.toml": POE})
+        self.assertEqual(runner_commands(inventory), ())
+        self.assertEqual(resolve_all_verbs(inventory, detect_stack(inventory)), {})
+
+    def test_a_root_pyproject_is_the_runner_and_a_nested_one_beside_it_is_not(self):
+        nested = '[tool.poe.tasks]\ncheck = "poe test"\n'
+        inventory = self.inventory_of({"pyproject.toml": POE, "tools/x/pyproject.toml": nested})
+        self.assertEqual([runner for runner, _ in runner_commands(inventory)], ["pyproject.toml"])
+        self.assertEqual(dict(runner_commands(inventory))["pyproject.toml"]["test"], "pytest")
+        self.assertNotIn("check", dict(runner_commands(inventory))["pyproject.toml"])
+
+
 if __name__ == "__main__":
     unittest.main()

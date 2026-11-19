@@ -6462,7 +6462,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7089,7 +7089,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "package.json, the Makefile and the Taskfile count only at the root, where they are read; each other manifest kind is matched at any depth and only the shallowest is read. gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
+      "note": "package.json, the Makefile, the Taskfile and pyproject.toml count only at the root, where they are read; each Gradle or Maven build is matched at any depth and only the shallowest is read. gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
       "source": "engine",
       "threshold": "all seven verbs on one runner",
       "what": {
@@ -7123,7 +7123,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7181,7 +7181,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7239,7 +7239,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7302,7 +7302,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7440,10 +7440,6 @@
           "scope": "any-depth"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "package.json",
           "scope": "root"
         },
@@ -7461,7 +7457,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7611,10 +7607,6 @@
           "scope": "any-depth"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "package.json",
           "scope": "root"
         },
@@ -7632,7 +7624,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7683,7 +7675,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "setup.cfg",
@@ -7727,7 +7719,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7778,7 +7770,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7988,7 +7980,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8193,7 +8185,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8280,7 +8272,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8477,10 +8469,6 @@
           "scope": "root"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "setup.cfg",
           "scope": "root"
         },
@@ -8578,7 +8566,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8639,10 +8627,6 @@
         "kind": "phrase"
       },
       "where": [
-        {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
         {
           "path": "setup.cfg",
           "scope": "root"
@@ -8785,7 +8769,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8869,10 +8853,6 @@
         },
         {
           "path": "CONTRIBUTING.md",
-          "scope": "root"
-        },
-        {
-          "path": "pyproject.toml",
           "scope": "root"
         },
         {
@@ -9037,7 +9017,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -9725,7 +9705,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -9941,7 +9921,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10108,7 +10088,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10174,7 +10154,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. package.json, the Makefile and the Taskfile count only at the root, where they are read; each other runner manifest is found at any depth and the shallowest is read.",
+      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. package.json, the Makefile, the Taskfile and pyproject.toml count only at the root, where they are read; a Gradle or Maven build is found at any depth and the shallowest is read.",
       "source": "engine",
       "what": {
         "kind": "key"
@@ -10198,7 +10178,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10378,10 +10358,6 @@
           "scope": "any-depth"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "setup.cfg",
           "scope": "root"
         },
@@ -10439,7 +10415,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
