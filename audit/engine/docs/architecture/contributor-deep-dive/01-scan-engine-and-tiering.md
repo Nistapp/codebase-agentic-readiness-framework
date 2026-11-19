@@ -95,12 +95,13 @@ A check that cannot be certain of a tracked or ignore answer reports `UNKNOWN`, 
 |---|---|
 | Node / npm, pnpm, yarn, bun | `package.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb` |
 | Python | `pyproject.toml`, `requirements*.txt`, `setup.py`, `Pipfile`, `poetry.lock`, `uv.lock`; or, when none of them is present, a `.py` source file outside tests, generated code and vendored code. The stack then lists `python` in `source_only` and says so in its notes |
-| JVM | `pom.xml`, `build.gradle(.kts)`, `settings.gradle`, `gradlew` |
-| Go | `go.mod`, `go.sum`, `go.work` |
+| JVM | `pom.xml`, `build.gradle(.kts)` |
+| Go | `go.mod`, `go.sum` |
 | Rust | `Cargo.toml`, `Cargo.lock` |
-| .NET | `*.csproj`, `*.sln`, `global.json` |
+| .NET | `*.csproj`, `*.sln` |
 | Ruby / PHP | `Gemfile`, `composer.json` |
-| Components | `workspaces`, `pnpm-workspace.yaml`, maven `<modules>`, gradle `include(...)`, `go.work use`, Cargo `[workspace] members`, Nx `project.json` |
+| Components | `workspaces`, `pnpm-workspace.yaml`, maven `<modules>`, gradle `include(...)` in `settings.gradle(.kts)`, `go.work use`, Cargo `[workspace] members` |
+| A component's own manifest | `package.json`, `pyproject.toml`, `pom.xml`, `build.gradle(.kts)`, `Cargo.toml`, `go.mod`, `Gemfile`, `composer.json`, or a `*.sln`, `*.slnx`, `*.csproj`, `*.fsproj` or `*.vbproj` in the component's own folder |
 | CI provider | `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/`, `.buildkite/` |
 | Test framework | config files and manifest dependencies (`vitest`, `jest`, `pytest`, `junit`, `go test`) |
 | Local hooks | `.husky/`, `.pre-commit-config.yaml`, `lefthook.yml`, `core.hooksPath` |

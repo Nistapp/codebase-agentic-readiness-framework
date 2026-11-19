@@ -13,6 +13,7 @@ See ADR-0003.
 
 from __future__ import annotations
 
+import fnmatch
 import json
 import re
 from dataclasses import dataclass, field
@@ -56,19 +57,34 @@ class ComponentModel:
         return (sum(1 for c in members if predicate(c)), len(members))
 
 
+#: Build manifests with a fixed name. Each is looked up by name (``Inventory.has``).
+MANIFEST_NAMES = (
+    "package.json",
+    "pyproject.toml",
+    "pom.xml",
+    "build.gradle",
+    "build.gradle.kts",
+    "Cargo.toml",
+    "go.mod",
+    "Gemfile",
+    "composer.json",
+)
+
+#: .NET solution and project files, whose name is the project's. Each matches only in the folder itself.
+MANIFEST_PATTERNS = ("*.sln", "*.slnx", "*.csproj", "*.fsproj", "*.vbproj")
+
+
 def _manifest_in(inv: Inventory, prefix: str) -> str | None:
-    for candidate in (
-        "package.json",
-        "pyproject.toml",
-        "pom.xml",
-        "build.gradle",
-        "build.gradle.kts",
-        "Cargo.toml",
-        "go.mod",
-    ):
+    for candidate in MANIFEST_NAMES:
         rel = f"{prefix}/{candidate}".lstrip("./") if prefix != "." else candidate
         if inv.has(rel):
             return rel
+    folder = "" if prefix in (".", "") else prefix.strip("/") + "/"
+    in_folder = sorted(f.rel for f in inv.files if f.rel.startswith(folder) and "/" not in f.rel[len(folder) :])
+    for pattern in MANIFEST_PATTERNS:
+        for rel in in_folder:
+            if fnmatch.fnmatchcase(rel[len(folder) :], pattern):
+                return rel
     return None
 
 
