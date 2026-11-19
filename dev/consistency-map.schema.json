@@ -116,12 +116,13 @@
       "description": "What one playbook Commits row or one greenfield template does to text a check may read.",
       "properties": {
         "action": {
-          "description": "rewrite keeps the words and changes the line breaks, numbers or markers. none: the row touches no text a check reads.",
+          "description": "rewrite keeps the words and changes the line breaks, numbers or markers. untrack takes the from paths out of git's tracked set and leaves them on disk, so the scan no longer sees them. none: the row touches no text a check reads.",
           "enum": [
             "write",
             "move",
             "rewrite",
             "create",
+            "untrack",
             "none"
           ]
         },
