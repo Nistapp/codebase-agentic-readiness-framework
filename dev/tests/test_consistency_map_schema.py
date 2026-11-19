@@ -205,6 +205,14 @@ class InvalidMapTest(unittest.TestCase):
     def test_a_boundary_without_enforcement_fails(self) -> None:
         self._assert_invalid(lambda m: m["boundaries"][0].pop("enforcement"), "missing 'enforcement'")
 
+    def test_a_boundary_enforced_by_an_eval_assertion_is_valid(self) -> None:
+        valid = copy.deepcopy(EXAMPLE)
+        valid["boundaries"][0].update(enforcement="eval", enforced_by="dev/eval/implement_eval.py", symbol="a6")
+        self.assertEqual(_problems(valid, SCHEMA), [])
+
+    def test_a_boundary_symbol_that_is_not_a_python_name_fails(self) -> None:
+        self._assert_invalid(lambda m: m["boundaries"][0].update(symbol="a6()"), "does not match")
+
 
 if __name__ == "__main__":
     unittest.main()

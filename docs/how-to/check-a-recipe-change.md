@@ -235,8 +235,21 @@ Otherwise it prints one line per changed check, then the counts. Read both kinds
 - `same verdict PASS, evidence changed`: the verdict held, but its summary, data or findings changed. A
   verdict-only comparison misses this break.
 
-`(dirty)` means the tree had changes or untracked files when the run started. `--target fixtures` runs the engine on
-every engine fixture instead, 114 reports today. Two runs with different targets do not compare (exit 1).
+`(dirty)` means the tree had changes or untracked files when the run started. Two other targets exist. Two runs with
+different targets do not compare (exit 1).
+
+- `--target fixtures` runs the engine on every engine fixture, 114 reports today.
+- `--target scaffold` runs the greenfield scaffolder on `greenfield/templates/`, then runs the engine on the new
+  project. It writes one report, `scaffold`, in about a second. Use it when you change a template.
+
+The scaffold target fixes every input of the scaffold: the names, the date and the commit. So two runs of the same
+tree compare equal. The engine's positive-fixture test fails only on `FAIL`, so it misses a fall to `PARTIAL`. The
+comparison shows it. For example, moving "never restate" to the next line of the `AGENTS.md` template prints this:
+
+```text
+report scaffold:
+  AGT-06: verdict PASS -> PARTIAL: finding AGT-06 added, summary
+```
 
 ### Step 7: Check the quotes of a report
 
@@ -273,6 +286,8 @@ The gate prints a count for each kind of problem, then the problems. Read these 
 - `unkept`: a move names a check in `touches`, and no keeps entry covers the pair.
 - `quote`: a kept quote is no longer in its section. Your change moved or reworded the sentence.
 - `coverage`: a new Commits row or check has no entry. Add one to the map in the same change.
+- `boundary`: a hard rule of the implement run lost its home sentence, or the tool, test or eval function that
+  enforces it is gone. Restore the sentence, or update the boundary's home or enforcer in the map.
 
 `unreviewed` is advice. The gate guesses touches from paths and content kinds, and the guess is coarse.
 `--verbose` lists the pairs. The gate exits 0 whatever it finds; `CMAP_ARGS=--strict` makes it exit 1.
@@ -293,6 +308,13 @@ It prints the static report, then four groups:
 - `left-scope`: you renamed a file a check reads to a path the check does not read. This is a problem.
 - `evidence`: the checks whose verdict or evidence changed, when their reads overlap your change. It is reported,
   never a problem.
+
+Some checks read every file of a kind, for example `**` or `docs/**/*.md`. The gate calls such a place broad: a
+wildcard place whose files carry at least 5% of the tree's distinct file names. In the `review` group, each line
+names only the checks that read the place through a place of their own. The group lists the broad checks once, in
+a `broad checks` line. A line that only broad checks read is counted in an `and N more` line. `--verbose` lists
+those lines, and names the broad checks on each line. The JSON keeps every check of each entry under `checks`, and
+the broad ones under `broad`. The evidence part still compares all of them.
 
 The evidence part copies each side into a temporary repository and runs the engine on both. It takes about
 15 seconds on this repository. `--no-evidence` skips it.

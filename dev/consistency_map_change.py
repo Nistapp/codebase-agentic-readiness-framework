@@ -9,7 +9,9 @@
 - ``review`` (never a problem): each section that was moved, renamed, edited or removed in a Markdown file a reads
   entry names, and each other such file that was added, changed or deleted, with the checks that read it. A section
   that moved out of a read's scope says so. A template under ``greenfield/templates/`` is read at the path the
-  scaffolder writes it to;
+  scaffolder writes it to. The text names a check on a line only when it reads that place through a place of its
+  own; the checks that read it only through a broad place (every file of a kind, :func:`broad_places`) are named
+  once under the group, and a line with no other reader is counted. ``--verbose`` and the JSON keep them all;
 - ``lost-mention`` (a problem): a kept quote's section mentioned the check ID on the base side and no longer does,
   even when the quote still exists somewhere else. The section is followed through the index diff's moves and
   renames, whichever side the map's address names;
@@ -26,6 +28,7 @@ from __future__ import annotations
 
 import io
 import os
+import posixpath
 import re
 import shutil
 import subprocess
@@ -110,6 +113,59 @@ def readers(path: str, reads: Sequence[dict[str, Any]], targets: Targets = scaff
     )
 
 
+#: A place is broad when the tracked files it matches carry at least this share of the tree's distinct file names.
+#: On this repository the broad places match 9% or more of the names (``docs/**/*.md``: 55 of 614) and the next
+#: place 2% (``docs/architecture/**``: 13), so the line falls in the gap.
+BROAD_SHARE = 0.05
+_WILDCARDS = frozenset("*?[")
+
+#: A read place as (path, scope).
+Place = tuple[str, str]
+
+
+def broad_places(reads: Sequence[dict[str, Any]], files: Sequence[str], share: float = BROAD_SHARE) -> set[Place]:
+    """The read places that cover every file of a kind in ``files``, not one named file.
+
+    A place is broad when its scope is ``glob`` or ``any-depth``, its path holds a wildcard, and the files it
+    matches carry more than one distinct file name and at least ``share`` of all the distinct names in ``files``.
+    Names are counted, not files: a name read at any depth (``package.json``) is one file wherever it sits, however
+    many fixtures copy it.
+    """
+    names = {posixpath.basename(path) for path in files}
+    floor = share * len(names)
+    broad: set[Place] = set()
+    seen: set[Place] = set()
+    for read in reads:
+        for where in read["where"]:
+            place = (str(where["path"]), str(where["scope"]))
+            if place in seen:
+                continue
+            seen.add(place)
+            if place[1] not in ("glob", "any-depth") or not _WILDCARDS & set(place[0]):
+                continue
+            matched = {posixpath.basename(path) for path in files if cm.place_overlaps(path, where)}
+            if len(matched) > 1 and len(matched) >= floor:
+                broad.add(place)
+    return broad
+
+
+def broad_readers(
+    paths: Iterable[str], reads: Sequence[dict[str, Any]], broad: set[Place], targets: Targets = scaffold_targets
+) -> set[str]:
+    """The checks that read ``paths`` through broad places only: no place of theirs that covers a path is specific."""
+    places = [p for path in paths for p in targets(path)]
+    out: set[str] = set()
+    specific: set[str] = set()
+    for read in reads:
+        for where in read["where"]:
+            if any(cm.place_overlaps(p, where) for p in places):
+                if (str(where["path"]), str(where["scope"])) in broad:
+                    out.add(read["check"])
+                else:
+                    specific.add(read["check"])
+    return out - specific
+
+
 def _file(address: str) -> str:
     return address.partition("#")[0]
 
@@ -181,10 +237,18 @@ def _scope_note(old: str, new: str, reads: Sequence[dict[str, Any]], targets: Ta
 
 @dataclass(frozen=True)
 class Review:
-    """One change a reviewer should read: its line and the checks that read the changed place."""
+    """One change a reviewer should read: its line, the checks that read the changed place, and which of them read
+    it through broad places only (:func:`broad_places`). ``place`` is the line without its checks."""
 
     line: str
     checks: tuple[str, ...]
+    place: str = ""
+    broad: tuple[str, ...] = ()
+
+    @property
+    def specific(self) -> tuple[str, ...]:
+        """The checks that read the changed place through a place of their own, not a broad one."""
+        return tuple(check for check in self.checks if check not in self.broad)
 
 
 def reviews(
@@ -192,8 +256,11 @@ def reviews(
     files: Sequence[FileChange],
     reads: Sequence[dict[str, Any]],
     targets: Targets = scaffold_targets,
+    broad: set[Place] | None = None,
 ) -> list[Review]:
-    """The sections and files a reads entry names that the change moved, renamed, edited or removed."""
+    """The sections and files a reads entry names that the change moved, renamed, edited or removed.
+
+    ``broad`` is the set of broad places; each review marks the checks that read it through them only."""
     out: list[Review] = []
 
     def add(what: str, old: str, new: str | None = None) -> None:
@@ -204,7 +271,17 @@ def reviews(
             return
         place = old if new is None or new == old else f"{old} -> {new}"
         note = _scope_note(_file(old), _file(new), reads, targets) if new is not None else ""
-        out.append(Review(f"{what} {place}{note}: read by {', '.join(sorted(checks))}", tuple(sorted(checks))))
+        paths = {_file(old)} | ({_file(new)} if new is not None else set())
+        wide = broad_readers(paths, reads, broad, targets) if broad else set()
+        head = f"{what} {place}{note}"
+        out.append(
+            Review(
+                f"{head}: read by {', '.join(sorted(checks))}",
+                tuple(sorted(checks)),
+                head,
+                tuple(sorted(wide & checks)),
+            )
+        )
 
     for moved in found.moved:
         add("moved", moved.old, moved.new)
@@ -468,7 +545,7 @@ def change_report(
     )
     files = file_changes(root, base, at)
     report = ChangeReport(base=base, at=at)
-    report.reviews = reviews(found, files, cmap["reads"], targets)
+    report.reviews = reviews(found, files, cmap["reads"], targets, broad_places(cmap["reads"], new_tree.files()))
     scope = left_scope(files, cmap["reads"], targets)
     report.problems["left-scope"] = [line for line, _check in scope]
     report.scope_checks = {check for _line, check in scope}
@@ -498,11 +575,38 @@ def _change_line(change: evidence.CheckChange) -> str:
     return head + (f": {', '.join(change.evidence)}" if change.evidence else "")
 
 
-def format_text(report: ChangeReport) -> str:
+def _review_lines(found: Sequence[Review], verbose: bool) -> list[str]:
+    """The review group's lines: each review with its specific checks, the broad checks once.
+
+    A review whose checks are all broad says nothing a diff does not say, so it counts in one line; ``verbose``
+    lists it, and names the broad checks on each line.
+    """
+    lines: list[str] = []
+    folded = 0
+    for review in found:
+        specific = ", ".join(review.specific)
+        wide = ", ".join(review.broad)
+        if not review.broad:
+            lines.append(f"  {review.line}")
+        elif not specific:
+            folded += 1
+            if verbose:
+                lines.append(f"  {review.place}: read only by broad checks {wide}")
+        else:
+            lines.append(f"  {review.place}: read by {specific}" + (f"; and by broad checks {wide}" if verbose else ""))
+    if folded and not verbose:
+        lines.append(f"  and {folded} more read only by broad checks (--verbose lists them)")
+    broad = sorted({check for review in found for check in review.broad})
+    if broad:
+        lines.append(f"  broad checks, which read every file of a kind: {', '.join(broad)}")
+    return lines
+
+
+def format_text(report: ChangeReport, verbose: bool = False) -> str:
     target = report.at if report.at is not None else "the working tree"
     lines = [f"change mode: {report.base} -> {target}"]
     lines.append(f"review (sections and files a read covers; not a problem): {len(report.reviews)}")
-    lines += [f"  {review.line}" for review in report.reviews]
+    lines += _review_lines(report.reviews, verbose)
     for kind in CHANGE_KINDS:
         lines.append(f"{kind}: {len(report.problems[kind])}")
         lines += [f"  {item}" for item in report.problems[kind]]
@@ -533,7 +637,10 @@ def to_dict(report: ChangeReport) -> dict[str, Any]:
     data: dict[str, Any] = {
         "base": report.base,
         "at": report.at,
-        "review": [{"checks": list(review.checks), "line": review.line} for review in report.reviews],
+        "review": [
+            {"broad": list(review.broad), "checks": list(review.checks), "line": review.line}
+            for review in report.reviews
+        ],
         **report.problems,
     }
     if report.evidence is not None:
@@ -552,12 +659,15 @@ def project_config() -> dict[str, Any]:
 
 
 __all__ = [
+    "BROAD_SHARE",
     "CHANGE_KINDS",
     "DEFAULT_BASE",
     "ChangeReport",
     "EvidenceReport",
     "FileChange",
     "Review",
+    "broad_places",
+    "broad_readers",
     "change_report",
     "compare_evidence",
     "file_changes",

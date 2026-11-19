@@ -484,6 +484,112 @@ class OutputTest(unittest.TestCase):
         self.assertEqual(data["lost-mention"], [])
 
 
+#: A tree of 60 distinct names (a broad place needs 3): 20 Python files, 10 docs pages, 11 copies of package.json.
+BROAD_TREE = (
+    [f"src/m{n}.py" for n in range(20)]
+    + [f"docs/how-to/p{n}.md" for n in range(10)]
+    + [f"tests/fixtures/f{n}/package.json" for n in range(10)]
+    + ["package.json", "AGENTS.md", "Makefile"]
+    + [f".github/workflows/w{n}.yml" for n in range(2)]
+    + [f"x{n}.txt" for n in range(25)]
+)
+BROAD_READS: list[dict[str, Any]] = [
+    {"check": "ALL-01", "where": [{"path": "**", "scope": "glob"}]},
+    {"check": "PY-01", "where": [{"path": "*.py", "scope": "any-depth"}]},
+    {"check": "DOC-09", "where": [{"path": "docs/**/*.md", "scope": "glob"}]},
+    {"check": "PKG-01", "where": [{"path": "package.json", "scope": "any-depth"}]},
+    {"check": "CI-09", "where": [{"path": ".github/workflows/*.yml", "scope": "glob"}]},
+    {"check": "ROOT-01", "where": [{"path": "*.md", "scope": "root"}]},
+    {
+        "check": "MIX-01",
+        "where": [{"path": "**", "scope": "glob"}, {"path": "AGENTS.md", "scope": "root"}],
+    },
+]
+
+
+def _broad_review(paths: list[str]) -> cmc.Review:
+    files = [cmc.FileChange("M", path, path) for path in paths]
+    broad = cmc.broad_places(BROAD_READS, BROAD_TREE)
+    (review,) = cmc.reviews(IndexDiff(), files, BROAD_READS, lambda path: [path], broad)
+    return review
+
+
+class BroadReadTest(unittest.TestCase):
+    """Broad reads: a place that covers every file of a kind is named once, not on each review line."""
+
+    def test_a_wildcard_place_over_a_large_share_of_the_names_is_broad(self) -> None:
+        self.assertEqual(
+            cmc.broad_places(BROAD_READS, BROAD_TREE),
+            {("**", "glob"), ("*.py", "any-depth"), ("docs/**/*.md", "glob")},
+        )
+
+    def test_one_name_in_many_folders_a_small_glob_and_a_root_place_are_specific(self) -> None:
+        broad = cmc.broad_places(BROAD_READS, BROAD_TREE)
+        self.assertNotIn(("package.json", "any-depth"), broad)  # 11 files, one name
+        self.assertNotIn((".github/workflows/*.yml", "glob"), broad)  # 2 of 60 names
+        self.assertNotIn(("*.md", "root"), broad)  # a root place is never broad
+        self.assertEqual(cmc.broad_places(BROAD_READS, BROAD_TREE, share=0.6), {("**", "glob")})
+
+    def test_a_check_with_a_specific_place_over_the_path_is_specific(self) -> None:
+        broad = cmc.broad_places(BROAD_READS, BROAD_TREE)
+        self.assertEqual(cmc.broad_readers(["AGENTS.md"], BROAD_READS, broad, lambda path: [path]), {"ALL-01"})
+        self.assertEqual(
+            cmc.broad_readers(["src/m1.py"], BROAD_READS, broad, lambda path: [path]), {"ALL-01", "MIX-01", "PY-01"}
+        )
+
+    def test_a_review_keeps_every_check_and_marks_the_broad_ones(self) -> None:
+        review = _broad_review(["AGENTS.md"])
+        self.assertEqual(review.checks, ("ALL-01", "MIX-01", "ROOT-01"))
+        self.assertEqual(review.broad, ("ALL-01",))
+        self.assertEqual(review.specific, ("MIX-01", "ROOT-01"))
+        self.assertEqual(review.line, "changed file AGENTS.md: read by ALL-01, MIX-01, ROOT-01")
+        self.assertEqual(review.place, "changed file AGENTS.md")
+
+    def test_the_text_names_specific_checks_per_line_and_broad_checks_once(self) -> None:
+        report = cmc.ChangeReport(base="b", at="a")
+        report.reviews = [
+            _broad_review(["AGENTS.md"]),
+            _broad_review(["src/m1.py"]),
+            _broad_review(["src/m2.py"]),
+            _broad_review(["package.json"]),
+        ]
+        text = cmc.format_text(report)
+        self.assertIn("review (sections and files a read covers; not a problem): 4\n", text)
+        self.assertIn("  changed file AGENTS.md: read by MIX-01, ROOT-01\n", text)
+        self.assertIn("  changed file package.json: read by PKG-01\n", text)
+        self.assertIn("  and 2 more read only by broad checks (--verbose lists them)\n", text)
+        self.assertIn("  broad checks, which read every file of a kind: ALL-01, MIX-01, PY-01\n", text)
+        self.assertNotIn("src/m1.py", text)
+        verbose = cmc.format_text(report, verbose=True)
+        self.assertIn("  changed file AGENTS.md: read by MIX-01, ROOT-01; and by broad checks ALL-01\n", verbose)
+        self.assertIn("  changed file src/m1.py: read only by broad checks ALL-01, MIX-01, PY-01\n", verbose)
+        self.assertNotIn("more read only by broad checks", verbose)
+
+    def test_a_review_with_no_broad_reader_prints_its_full_line(self) -> None:
+        report = cmc.ChangeReport(base="b", at="a")
+        report.reviews = [cmc.Review("edited a.md#a: read by X-01", ("X-01",))]
+        text = cmc.format_text(report)
+        self.assertIn("  edited a.md#a: read by X-01\n", text)
+        self.assertNotIn("broad checks", text)
+
+    def test_the_json_and_the_evidence_overlap_keep_every_check(self) -> None:
+        report = cmc.ChangeReport(base="b", at="a")
+        report.reviews = [_broad_review(["src/m1.py"])]
+        entry = cmc.to_dict(report)["review"][0]
+        self.assertEqual(entry["checks"], ["ALL-01", "MIX-01", "PY-01"])
+        self.assertEqual(entry["broad"], ["ALL-01", "MIX-01", "PY-01"])
+        self.assertEqual(entry["line"], "changed file src/m1.py: read by ALL-01, MIX-01, PY-01")
+        self.assertEqual(report.checks(), {"ALL-01", "MIX-01", "PY-01"})
+
+    def test_this_repository_classifies_the_whole_tree_glob_as_broad_and_named_files_as_specific(self) -> None:
+        from docindex.gitread import WorkTree
+
+        broad = cmc.broad_places(REAL_MAP["reads"], WorkTree(_dev_paths.REPO).files())
+        self.assertIn(("**", "glob"), broad)
+        self.assertNotIn(("package.json", "any-depth"), broad)
+        self.assertNotIn(("AGENTS.md", "root"), broad)
+
+
 class MainTest(unittest.TestCase):
     def _main(self, argv: list[str]) -> tuple[int, str]:
         out = io.StringIO()
@@ -523,6 +629,16 @@ class MainTest(unittest.TestCase):
             code, text = self._main(["--base", "HEAD", "--at", "HEAD", "--no-evidence", "--format", "json"])
             self.assertEqual(json.loads(text)["change"]["left-scope"], report.problems["left-scope"])
             self.assertIsNone(called.call_args.kwargs["engine_dir"])
+
+    def test_verbose_reaches_the_change_report_text(self) -> None:
+        report = cmc.ChangeReport(base=cmc.DEFAULT_BASE, at=None)
+        report.reviews = [_broad_review(["src/m1.py"])]
+        with (
+            mock.patch.object(cmc, "change_report", return_value=report),
+            mock.patch.object(consistency_map, "report", return_value={kind: [] for kind in consistency_map.KINDS}),
+        ):
+            self.assertIn("and 1 more read only by broad checks", self._main(["--base"])[1])
+            self.assertIn("src/m1.py: read only by broad checks", self._main(["--base", "--verbose"])[1])
 
     def test_change_mode_on_this_repository_against_head(self) -> None:
         report = cmc.change_report(REAL_MAP, _dev_paths.REPO, "HEAD", "HEAD", cmc.project_config(), engine_dir=None)
