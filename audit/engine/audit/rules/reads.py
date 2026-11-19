@@ -92,7 +92,7 @@ def _held(module: ModuleType, name: str, scope: str, scopes: dict[str, str] | No
 #: The reads of every implemented engine check, in registry order. The agent checks have no code and no entry.
 READS: dict[str, Reads] = {
     "IDX-01": Reads(
-        where=(*_held(idx, "_PROJECT_CONFIGS", ROOT),),
+        where=(*_held(idx, "_PROJECT_CONFIGS", ANY_DEPTH),),
         what=What("phrase", ("codebase-memory-mcp",)),
         binding="file",
         note=(
@@ -241,19 +241,7 @@ READS: dict[str, Reads] = {
     "AGT-05": Reads(
         where=(
             *_at(ROOT, "AGENTS.md", "CLAUDE.md"),
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
         ),
         what=What(
             "word-list",
@@ -542,7 +530,7 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-01": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH, {"Makefile": ROOT}),),
+        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
         what=What(
             "key",
             (
@@ -564,7 +552,7 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-02": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH, {"Makefile": ROOT}),),
+        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
         what=What("key", ("check",)),
         binding="section",
         threshold="check composes format-check, typecheck and test",
@@ -574,7 +562,7 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-03": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH, {"Makefile": ROOT}),),
+        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
         what=What("key", ("check",)),
         binding="section",
         threshold="every second check delegates to the first",
@@ -584,7 +572,7 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-04": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH, {"Makefile": ROOT}),),
+        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
         what=What(
             "key",
             (
@@ -636,19 +624,7 @@ READS: dict[str, Reads] = {
                 ".php-cs-fixer.dist.php",
             ),
             *_at(ROOT, "pyproject.toml", "package.json"),
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
         ),
         what=What("key"),
         binding="file",
@@ -693,19 +669,7 @@ READS: dict[str, Reads] = {
                 ".phpcs.xml",
             ),
             *_at(ROOT, "pyproject.toml", "package.json"),
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
         ),
         what=What("key"),
         binding="file",
@@ -717,31 +681,13 @@ READS: dict[str, Reads] = {
     ),
     "TOOL-03": Reads(
         where=(
-            *_at(
-                ROOT,
-                "tsconfig.json",
-                "jsconfig.json",
-                "mypy.ini",
-                ".mypy.ini",
-                "pyproject.toml",
-                "setup.cfg",
-                "pyrightconfig.json",
-            ),
-            *_at(
-                ANY_DEPTH, "*.csproj", "Directory.Build.props", "Directory.Build.targets", "global.json", "package.json"
-            ),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_at(ROOT, "tsconfig.json", "jsconfig.json"),
+            *_at(ANY_DEPTH, "mypy.ini", ".mypy.ini"),
+            *_at(ROOT, "pyproject.toml"),
+            *_at(ANY_DEPTH, "setup.cfg"),
+            *_at(ROOT, "pyrightconfig.json"),
+            *_at(ANY_DEPTH, "*.csproj", "Directory.Build.props", "Directory.Build.targets", "global.json"),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
         ),
         what=What("key"),
         binding="file",
@@ -753,19 +699,7 @@ READS: dict[str, Reads] = {
     ),
     "TOOL-04": Reads(
         where=(
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
             *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
@@ -808,9 +742,9 @@ READS: dict[str, Reads] = {
                 ".commitlintrc.yaml",
                 ".commitlintrc.toml",
             ),
+            *_at(ROOT, "package.json"),
             *_at(
-                ROOT,
-                "package.json",
+                ANY_DEPTH,
                 ".husky/commit-msg",
                 ".githooks/commit-msg",
                 ".pre-commit-config.yaml",
@@ -821,19 +755,8 @@ READS: dict[str, Reads] = {
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/*.yml"),
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_at(GLOB, ".githooks/*", ".husky/*", "**"),
         ),
         what=What("phrase"),
         binding="line",
@@ -841,7 +764,8 @@ READS: dict[str, Reads] = {
             "Local: commitlint config names at any depth, a commitlint key in the root package.json, a "
             "commit-msg hook file (presence matched at any depth), or commit-msg/commitlint/conventional in "
             "the root hook-manager files. CI: one workflow line runs a commit-message tool, a pull-request "
-            "title action, a script the local commit-msg stage names, or a runner target that does."
+            "title action, a script the local commit-msg stage names, or a runner target that does. The FAIL "
+            "path reads the hook wiring as TOOL-05 does: hook-manager files, .githooks/, .husky/, core.hooksPath."
         ),
     ),
     "TOOL-07": Reads(
@@ -896,19 +820,7 @@ READS: dict[str, Reads] = {
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/*.yml"),
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
         ),
         what=What(
             "key",
@@ -933,19 +845,7 @@ READS: dict[str, Reads] = {
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/*.yml"),
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
         ),
         what=What(
             "key",
@@ -1026,19 +926,17 @@ READS: dict[str, Reads] = {
                 "sonar-project.properties",
                 ".semgrep.yml",
                 ".semgrep.yaml",
-                "package.json",
             ),
-            *_at(ROOT, "Makefile"),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
             *_at(
                 ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
+                "setup.py",
+                "requirements*.txt",
+                "Pipfile",
+                "go.mod",
+                "Cargo.toml",
+                "Gemfile",
+                "composer.json",
             ),
         ),
         what=What(
@@ -1062,7 +960,7 @@ READS: dict[str, Reads] = {
             "A baseline name at any depth, or a mechanism phrase in the root AGENTS.md or CLAUDE.md, passes; "
             "the phrase words are joined by \\s+ so they may span lines. The counting-tool configs, root "
             "pyproject.toml, setup.cfg and tox.ini and the lint, typecheck and security verbs only give "
-            "PARTIAL."
+            "PARTIAL. With no detected ecosystem, a project manifest at any depth still makes the check apply."
         ),
     ),
     "BASE-02": Reads(
@@ -1108,15 +1006,17 @@ READS: dict[str, Reads] = {
                 "*.baseline",
                 ".secrets.baseline",
                 ".gitleaksignore",
-                "package.json",
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
+            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_at(
+                ANY_DEPTH,
+                "setup.py",
+                "requirements*.txt",
+                "Pipfile",
+                "go.mod",
+                "Cargo.toml",
+                "Gemfile",
+                "composer.json",
             ),
         ),
         what=What("phrase"),
@@ -1124,7 +1024,8 @@ READS: dict[str, Reads] = {
         note=(
             "A numeric budget (--max-warnings N, max-warnings|max-issues|max-problems N, violation-budget N) "
             "on one line of the five root runner manifests, a counting config at any depth, or a resolved "
-            "verb command. Counting tools or baseline artifacts only give PARTIAL; the check never fails."
+            "verb command. Counting tools or baseline artifacts only give PARTIAL; the check never fails. With "
+            "no detected ecosystem, a project manifest at any depth still makes the check apply."
         ),
     ),
     "BASE-03": Reads(
@@ -1177,17 +1078,16 @@ READS: dict[str, Reads] = {
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/*.yml"),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
             *_at(
                 ANY_DEPTH,
-                "package.json",
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
+                "setup.py",
+                "requirements*.txt",
+                "Pipfile",
+                "go.mod",
+                "Cargo.toml",
+                "Gemfile",
+                "composer.json",
             ),
         ),
         what=What(
@@ -1206,7 +1106,8 @@ READS: dict[str, Reads] = {
         note=(
             "First a BASE-02 budget, then a baseline artifact whose base name appears in any CI file, then a "
             "ratchet phrase in the four root documents; compare, comparison or regression must be within 48 "
-            "characters of baseline on one line."
+            "characters of baseline on one line. With no detected ecosystem, a project manifest at any depth "
+            "still makes the check apply."
         ),
     ),
     "BASE-04": Reads(
@@ -1225,7 +1126,25 @@ READS: dict[str, Reads] = {
                 "README.md",
                 "CONTRIBUTING.md",
             ),
-            *_at(ANY_DEPTH, "vitest.config.*", "jest.config.*", "vite.config.*", "karma.conf.*"),
+            *_at(
+                ANY_DEPTH,
+                "vitest.config.*",
+                "jest.config.*",
+                "vite.config.*",
+                "karma.conf.*",
+                "package.json",
+                "pyproject.toml",
+                "setup.py",
+                "requirements*.txt",
+                "Pipfile",
+                "pom.xml",
+                "build.gradle",
+                "build.gradle.kts",
+                "go.mod",
+                "Cargo.toml",
+                "Gemfile",
+                "composer.json",
+            ),
         ),
         what=What("phrase"),
         binding="line",
@@ -1233,7 +1152,8 @@ READS: dict[str, Reads] = {
             "Config: fail_under = N or --cov-fail-under N in six root files, coverageThreshold in the root "
             "package.json, a threshold key in a runner config at any depth (whole-line // comments dropped). "
             "Prose (PARTIAL): coverage within 40 characters of threshold, minimum, fail, floor or at least, "
-            "or within 20 of a percentage, on one line of the four root documents."
+            "or within 20 of a percentage, on one line of the four root documents. With no detected ecosystem, "
+            "a project manifest at any depth still makes the check apply."
         ),
     ),
     "CON-01": Reads(
@@ -1434,19 +1354,7 @@ READS: dict[str, Reads] = {
     "EXEC-06": Reads(
         where=(
             *_at(ROOT, "README.md", "AGENTS.md", "CLAUDE.md"),
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
         ),
         what=What("fenced-command"),
         binding="line",
@@ -1501,19 +1409,7 @@ READS: dict[str, Reads] = {
                 "osv-scanner.toml",
                 ".bandit",
             ),
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
         ),
         what=What("exists"),
         binding="file",
@@ -1562,19 +1458,7 @@ READS: dict[str, Reads] = {
     ),
     "TST-01": Reads(
         where=(
-            *_at(ANY_DEPTH, "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
             *_at(
                 GLOB,
                 "**/*test_*",
@@ -1598,7 +1482,7 @@ READS: dict[str, Reads] = {
         ),
     ),
     "TST-02": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH, {"Makefile": ROOT}),),
+        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
         what=What("key"),
         binding="file",
         note=(
@@ -1631,13 +1515,17 @@ READS: dict[str, Reads] = {
         ),
     ),
     "TST-04": Reads(
-        where=(*_held(tst, "_FASTPATH_DOCS", ROOT),),
+        where=(
+            *_held(tst, "_FASTPATH_DOCS", ANY_DEPTH),
+            *_held(tst, "_FRAMEWORK_TEST_GLOBS", ANY_DEPTH, {"tests/*.rs": GLOB}),
+        ),
         what=What("fenced-command"),
         binding="line",
         note=(
             "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a "
             "plain full-suite run does not count. A file is kept when Inventory.has finds its name at any "
-            "depth but read by its exact root path, so a nested-only copy is skipped silently."
+            "depth but read by its exact root path, so a nested-only copy is skipped silently. The test files "
+            "give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs."
         ),
     ),
     "TST-05": Reads(
@@ -1671,19 +1559,8 @@ READS: dict[str, Reads] = {
                 "build.gradle",
                 "build.gradle.kts",
             ),
-            *_at(ANY_DEPTH, "vitest.config.*", "jest.config.*", "vite.config.*", "karma.conf.*", "package.json"),
-            *_at(ROOT, "Makefile"),
-            *_at(
-                ANY_DEPTH,
-                "Taskfile.yml",
-                "Taskfile.yaml",
-                "pyproject.toml",
-                "build.gradle",
-                "build.gradle.kts",
-                "pom.xml",
-                "gradlew",
-                "mvnw",
-            ),
+            *_at(ANY_DEPTH, "vitest.config.*", "jest.config.*", "vite.config.*", "karma.conf.*"),
+            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
         ),
         what=What("key"),
         binding="file",
@@ -1944,8 +1821,7 @@ READS: dict[str, Reads] = {
     "HYG-11": Reads(
         where=(
             *_at(GLOB, ".github/rulesets/*.json"),
-            *_at(ROOT, ".github/settings.yml"),
-            *_at(ANY_DEPTH, "*.tf"),
+            *_at(ANY_DEPTH, ".github/settings.yml", "*.tf"),
             *_at(
                 GLOB,
                 "**/*branch-protection*",
@@ -1961,7 +1837,8 @@ READS: dict[str, Reads] = {
             "Declared rules: ruleset JSON, the branches: list of .github/settings.yml, Terraform protection "
             "resources, and any path holding branch-protection or branch_protection (a document records, "
             "another file declares). With an integration branch and another protected branch, one GitHub or "
-            "GitLab CI line must read the pull request's source branch, outside a group: or ref: key."
+            "GitLab CI line must read the pull request's source branch, outside a group: or ref: key. "
+            ".github/settings.yml passes Inventory.has at any depth but is read at the root only."
         ),
     ),
     "HYG-13": Reads(
