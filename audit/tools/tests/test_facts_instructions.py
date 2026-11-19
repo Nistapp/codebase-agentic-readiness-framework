@@ -97,18 +97,24 @@ PLAIN_WITH_A_FOLDER = {
     ".junie/playbook.md",
 }
 
-# What the engine does not see today, though its table names it (Q36): each file, alone in its directory.
+# A file straight in a rules folder of the table, which the engine sees since its `**/` also matches no folder: each
+# file, alone in its directory, with the pattern that names it.
+FLAT_RULE_FILES = {
+    ".amazonq/rules/x.md": ".amazonq/rules/**/*.md",
+    ".augment/rules/x.md": ".augment/rules/**/*.md",
+    ".claude/rules/x.md": ".claude/rules/**/*.md",
+    ".continue/rules/x.md": ".continue/rules/**/*.md",
+    ".cursor/rules/x.mdc": ".cursor/rules/**/*.mdc",
+    ".devin/rules/x.md": ".devin/rules/**/*.md",
+    ".github/instructions/x.instructions.md": ".github/instructions/**/*.instructions.md",
+    ".kiro/steering/x.md": ".kiro/steering/**/*.md",
+    ".trae/rules/x.md": ".trae/rules/**/*.md",
+    ".windsurf/rules/x.md": ".windsurf/rules/**/*.md",
+}
+
+# What the engine does not see, though its table names it (Q36): each file, alone in its directory. A folder pattern
+# matches from the repository root only.
 NOT_SEEN = [
-    ".amazonq/rules/x.md",
-    ".augment/rules/x.md",
-    ".claude/rules/x.md",
-    ".continue/rules/x.md",
-    ".cursor/rules/x.mdc",
-    ".devin/rules/x.md",
-    ".github/instructions/x.instructions.md",
-    ".kiro/steering/x.md",
-    ".trae/rules/x.md",
-    ".windsurf/rules/x.md",
     "sub/.cursor/rules/a/x.mdc",
 ]
 
@@ -348,6 +354,13 @@ class FolderNameTests(InstructionCase):
     def test_a_plain_name_with_a_folder_below_the_root_is_not_listed(self) -> None:
         target = self.directory({"sub/.github/copilot-instructions.md": "x\n"})
         self.assertEqual((self.engine_sees(target), self.listed(target)), (set(), []))
+
+    def test_a_file_straight_in_a_rules_folder_is_listed_with_its_folder_pattern(self) -> None:
+        for rel, pattern in FLAT_RULE_FILES.items():
+            with self.subTest(file=rel):
+                target = self.directory({rel: "x\n"})
+                self.assertEqual(self.engine_sees(target), {rel})
+                self.assertEqual([entry["variant"] for entry in self.listed(target)], [pattern])
 
 
 class EngineGapTests(InstructionCase):

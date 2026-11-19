@@ -7577,7 +7577,7 @@
     {
       "binding": "file",
       "check": "AGT-01",
-      "note": "The root AGENTS.md text is read for its length, four stub phrases and the words todo, tbd and placeholder at a line start or in brackets; a root agents.md is the only mis-cased name found. A fixed harness path with a folder (.github/copilot-instructions.md) counts only from the root. A **/ glob needs a subfolder (fnmatch: .cursor/rules/a.mdc is missed).",
+      "note": "The root AGENTS.md text is read for its length, four stub phrases and the words todo, tbd and placeholder at a line start or in brackets; a root agents.md is the only mis-cased name found. A fixed harness path with a folder (.github/copilot-instructions.md) counts only from the root.",
       "source": "engine",
       "threshold": "AGENTS.md at the root, at least 400 characters, no stub marker",
       "what": {

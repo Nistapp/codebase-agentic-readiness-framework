@@ -91,5 +91,42 @@ class FolderPathTests(unittest.TestCase):
         self.assertIn("vendor-files", outcomes["AGT-08"][1])
 
 
+#: A file straight in each `**/` rules folder of the variant table.
+FLAT_RULE_FILES = (
+    ".claude/rules/a.md",
+    ".github/instructions/a.instructions.md",
+    ".cursor/rules/a.mdc",
+    ".devin/rules/a.md",
+    ".windsurf/rules/a.md",
+    ".continue/rules/a.md",
+    ".amazonq/rules/a.md",
+    ".kiro/steering/a.md",
+    ".trae/rules/a.md",
+    ".augment/rules/a.md",
+)
+
+
+class RuleFolderTests(unittest.TestCase):
+    def test_a_rule_file_straight_in_its_rules_folder_is_an_instruction_file(self):
+        for rel in FLAT_RULE_FILES:
+            with self.subTest(path=rel):
+                paths, _ = run({rel: RULES})
+                self.assertEqual(paths, {rel})
+
+    def test_a_rule_file_in_a_subfolder_is_still_one(self):
+        paths, _ = run({".cursor/rules/team/a.mdc": RULES})
+        self.assertEqual(paths, {".cursor/rules/team/a.mdc"})
+
+    def test_a_file_of_another_type_in_the_rules_folder_is_not_one(self):
+        paths, _ = run({".cursor/rules/a.md": RULES, ".github/instructions/a.md": RULES})
+        self.assertEqual(paths, set())
+
+    def test_a_flat_rule_file_alone_is_vendor_only_content_and_competes(self):
+        _, outcomes = run({".cursor/rules/a.mdc": RULES})
+        self.assertEqual(outcomes["AGT-01"], ("PARTIAL", ["vendor-only"]))
+        self.assertEqual(outcomes["AGT-08"][0], "FAIL")
+        self.assertIn("vendor-files", outcomes["AGT-08"][1])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -134,9 +134,13 @@ def instruction_paths(inv: Inventory) -> set[str]:
             if configs is None or any(inv.has(config) for config in configs):
                 found.add(rel)
             continue
+        # fnmatch reads `**/` as "any text, then a slash", so a file straight in a rules folder
+        # (`.cursor/rules/a.mdc`) also tries the pattern without it, as `variants._matches` does.
         for harness in V.HARNESSES:
             for pattern in harness.paths:
-                if "*" in pattern and fnmatch.fnmatch(rel, pattern):
+                if "*" in pattern and (
+                    fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel, pattern.replace("**/", ""))
+                ):
                     found.add(rel)
     return found
 

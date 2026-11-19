@@ -59,6 +59,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "agt-07-missing-deny": {"AGT-07": "PARTIAL"},
     "agt-08-competitor": {"AGT-08": "FAIL"},
     "agt-08-copilot-instructions": {"AGT-08": "FAIL"},
+    "agt-08-cursor-rule-flat": {"AGT-08": "FAIL"},
     "agt-09-no-release": {"AGT-09": "PARTIAL"},
     "agt-09-ruleset-branch-unnamed": {"AGT-09": "PARTIAL"},
     "agt-12-no-rules": {"AGT-09": "PASS", "AGT-12": "FAIL"},

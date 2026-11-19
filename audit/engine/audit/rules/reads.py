@@ -247,8 +247,7 @@ READS: dict[str, Reads] = {
         note=(
             "The root AGENTS.md text is read for its length, four stub phrases and the words todo, tbd and "
             "placeholder at a line start or in brackets; a root agents.md is the only mis-cased name found. A"
-            " fixed harness path with a folder (.github/copilot-instructions.md) counts only from the root. A **/"
-            " glob needs a subfolder (fnmatch: .cursor/rules/a.mdc is missed)."
+            " fixed harness path with a folder (.github/copilot-instructions.md) counts only from the root."
         ),
     ),
     "AGT-02": Reads(
