@@ -234,26 +234,28 @@ _NOT_READS_IN: tuple[tuple[str | None, Callable[..., Any], str], ...] = (
 )
 
 #: Names a check compares only to leave a path out, as (check, operation, names, reason). Such an ask reads nothing.
+#: Each name is exempt on its own merit: a name a declared place covers anyway does not belong here.
 _NOT_READ_NAMES: tuple[tuple[str, str, frozenset[str], str], ...] = (
     (
         "SEC-01",
         "eq",
-        frozenset(sec._ENV_TEMPLATE_BASENAMES),
-        "a committed template (.env.example, env.example) is left out of the tracked .env files",
+        frozenset({"env.example"}),
+        "env.example is a template, left out of the tracked .env files; the other templates start with .env., "
+        "which the declaration covers",
     ),
     ("AGT-13", "eq", frozenset({agt._DOCS_STYLE_GUIDE}), "the docs style guide never counts as a conventions file"),
 )
 
 
-def _names_label(check: str, op: str, names: frozenset[str]) -> str:
-    return f"{check} {op} {'|'.join(sorted(names))}"
+def _names_label(check: str, op: str, name: str) -> str:
+    return f"{check} {op} {name}"
 
 
 def _not_read_label(check: str, ask: NameAsk) -> str | None:
     """The label of the ``_NOT_READ_NAMES`` entry that drops this ask, or None."""
     for c, op, names, _why in _NOT_READ_NAMES:
         if check == c and ask[0] == op and ask[1] in names:
-            return _names_label(c, op, names)
+            return _names_label(c, op, ask[1])
     return None
 
 
@@ -970,8 +972,11 @@ class NameProbeTest(unittest.TestCase):
             if not any(by_check.get(check) for check in ([owner] if owner else by_check)):
                 dead.append(_exemption_label(function))
         for check, op, names, _why in _NOT_READ_NAMES:
-            if not needs.get(_names_label(check, op, names), {}).get(check):
-                dead.append(_names_label(check, op, names))
+            dead.extend(
+                _names_label(check, op, name)
+                for name in sorted(names)
+                if not needs.get(_names_label(check, op, name), {}).get(check)
+            )
         self.assertEqual(dead, [])
 
     def test_an_exemption_of_covered_asks_hides_nothing(self) -> None:
@@ -986,6 +991,10 @@ class NameProbeTest(unittest.TestCase):
 
     def test_a_name_compared_only_to_leave_a_path_out_is_dropped(self) -> None:
         self.assertTrue(_not_a_read("SEC-01", ("eq", "env.example", False)))
+        # Only env.example: the other templates start with ".env.", which SEC-01 declares, so they stay asks.
+        self.assertLessEqual({"env.example"}, sec._ENV_TEMPLATE_BASENAMES)
+        self.assertFalse(_not_a_read("SEC-01", ("eq", ".env.example", False)))
+        self.assertIn(("eq", ".env.example", False), recorded().names["SEC-01"])
         self.assertFalse(_not_a_read("SEC-01", ("eq", ".env", False)))
         self.assertFalse(_not_a_read("SEC-02", ("eq", "env.example", False)))
         self.assertNotIn(("eq", "env.example", False), recorded().names["SEC-01"])
