@@ -237,17 +237,23 @@ _NAME_CHECK: list[str | None] = []
 #: Where the asks an exempt function made go, by function, so a test can prove each exemption drops a real ask.
 _EXEMPT_SINK: list[dict[Callable[..., Any], set[NameAsk]]] = []
 
-#: Functions whose comparisons are never reads, as (check, or None for every check; function; reason). The probe
-#: records nothing that a frame of one of them asks.
-_NOT_READS_IN: tuple[tuple[str | None, Callable[..., Any], str], ...] = (
-    (None, agt.is_non_instruction, "an exclusion: a path its globs match is left out of the instruction files"),
+#: Functions whose comparisons are never reads, as (the checks it holds for; function; reason). The probe records
+#: nothing that a frame of one of them asks while one of those checks runs. Only the checks whose verdict the
+#: function's comparisons cannot change are named: AGT-01 and AGT-08 choose their instruction files in
+#: ``instruction_paths`` by recorded, declared tests, then leave paths out or sort the ones chosen.
+_NOT_READS_IN: tuple[tuple[tuple[str, ...], Callable[..., Any], str], ...] = (
     (
-        None,
+        ("AGT-01", "AGT-08"),
+        agt.is_non_instruction,
+        "an exclusion: a path its globs match is left out of the instruction files",
+    ),
+    (
+        ("AGT-01", "AGT-08"),
         variants.classify_present,
         "it sorts the instruction files a check already chose by its declared places, and picks no new path",
     ),
     (
-        "AGT-02",
+        ("AGT-02",),
         agt.instruction_paths,
         "AGT-02 keeps only the paths that end in <component>/AGENTS.md, so the other instruction names it "
         "compares on the way decide nothing",
@@ -296,8 +302,8 @@ def _exemption_label(function: Callable[..., Any]) -> str:
 def _non_read_in(code: Any) -> Callable[..., Any] | None:
     """The function of ``_NOT_READS_IN`` whose code this is, for the running check, or None."""
     check = _NAME_CHECK[-1] if _NAME_CHECK else None
-    for owner, function, _why in _NOT_READS_IN:
-        if code is function.__code__ and owner in (None, check):
+    for owners, function, _why in _NOT_READS_IN:
+        if code is function.__code__ and check in owners:
             return function
     return None
 
@@ -979,11 +985,17 @@ class NameProbeTest(unittest.TestCase):
 
     def test_a_function_that_reads_nothing_records_nothing(self) -> None:
         with _recording_names(set(), "AGT-02"):
-            self.assertTrue(_in_a_non_read(agt.is_non_instruction.__code__))
+            self.assertFalse(_in_a_non_read(agt.is_non_instruction.__code__))
             self.assertTrue(_in_a_non_read(agt.instruction_paths.__code__))
         with _recording_names(set(), "AGT-01"):
+            self.assertTrue(_in_a_non_read(agt.is_non_instruction.__code__))
             self.assertTrue(_in_a_non_read(variants.classify_present.__code__))
             self.assertFalse(_in_a_non_read(agt.instruction_paths.__code__))
+        # A function exemption holds only for the checks it names, never for every check.
+        with _recording_names(set(), "AGT-12"):
+            self.assertFalse(_in_a_non_read(agt.is_non_instruction.__code__))
+            self.assertFalse(_in_a_non_read(variants.classify_present.__code__))
+        self.assertTrue(all(owners for owners, _function, _why in _NOT_READS_IN))
         names = recorded().names
         self.assertFalse(any(operand == ".opencode/**" for _op, operand, _folded in names["AGT-01"]))
         self.assertTrue(any(op == "glob" for op, _operand, _folded in names["AGT-01"]))
@@ -993,10 +1005,9 @@ class NameProbeTest(unittest.TestCase):
         # An exemption that drops nothing, or only asks a declared place covers anyway, is a silent future hole.
         needs = exemption_needs(recorded())
         dead = []
-        for owner, function, _why in _NOT_READS_IN:
+        for owners, function, _why in _NOT_READS_IN:
             by_check = needs.get(_exemption_label(function), {})
-            if not any(by_check.get(check) for check in ([owner] if owner else by_check)):
-                dead.append(_exemption_label(function))
+            dead.extend(f"{_exemption_label(function)} {check}" for check in owners if not by_check.get(check))
         for check, op, names, _why in _NOT_READ_NAMES:
             dead.extend(
                 _names_label(check, op, name)
