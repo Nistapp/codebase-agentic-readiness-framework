@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all ten rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, and `compare_reports.py`.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all ten rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, `compare_reports.py`, and `check_regressions.py`.
 
 ---
 
@@ -20,6 +20,7 @@
 | [`progress.py`](#progresspy) | Creates, shows and renders the implement recipe's per-repository state, in the workspace beside the audit report | Live |
 | [`check_drift.py`](#check_driftpy) | Lists the audit findings whose cited files changed between the audited commit and `HEAD` | Live |
 | [`compare_reports.py`](#compare_reportspy) | Compares two audit reports: which checks and findings moved, and which moves the readiness state explains | Live |
+| [`check_regressions.py`](#check_regressionspy) | Compares two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes | Live |
 
 ## Every tool
 
@@ -1080,4 +1081,80 @@ verdict can move for that reason alone. Each is also a warning and a line in the
 | `0` | Done. A comparison with moves is not an error. |
 | `1` | A bad argument, or a missing report or state file. |
 | `2` | A report or the state is not valid; `data.errors` lists what to fix. |
+| `3` | Internal error. |
+
+## check_regressions.py
+
+Compares two engine reports of one theme worktree. The base report is taken before the theme's first change, the
+close report at theme close. It names each check that was `PASS` at the base and is not at close, so the
+implement recipe can stop the theme and ask the owner. It writes nothing. Both files are the engine's own JSON
+reports from `engine.py`, not audit reports. The source is
+[`check_regressions.py`](../../implement/tools/check_regressions.py).
+
+### Synopsis
+
+```text
+python3 implement/tools/check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA]]
+python3 implement/tools/check_regressions.py --describe
+```
+
+### How it compares
+
+Checks are matched by id. A check in the report's `not_applicable` list has the verdict `NOT_APPLICABLE`. Each check
+gets one class:
+
+| Class | When | Effect |
+|---|---|---|
+| `lost_pass` | `PASS` at the base, anything else at close, or missing at close | Stops the theme |
+| `regressed` | `PARTIAL` at the base, `FAIL` at close | Stops the theme |
+| `improved` | A move up along FAIL < PARTIAL < PASS | Reported |
+| `changed` | Any other verdict move, for example `UNKNOWN` to `FAIL` | Reported |
+| `added`, `removed` | The check is missing at the base, or missing at close and was not `PASS` | Reported |
+| `evidence` | The same verdict, but the evidence differs | Reported |
+| `unchanged` | The same verdict and the same evidence | Counted only |
+
+The evidence of a check is its `summary`, its `data` payload and its findings. A changed part is named `summary`,
+`data.<key>` (`data` when the payload is not an object), or `finding <id> added`, `removed` or `changed`. The
+comparison is the one `dev/docindex/evidence.py` makes; a parity test in `dev/tests/` holds the two in step.
+
+### Read attribution
+
+`--changed-from` names the theme worktree, which must be the reports' target. The tool lists the paths changed
+since `--base` with read-only git. The default base is the base report's `git_sha`. The list holds the tracked
+changes up to the working tree, and the untracked files that git does not ignore. Each listed row then gets
+`reads_hit`: the places of the check's read declaration that a changed path meets. The declarations come from the
+engine's `audit.rules.reads`, which the tool loads through `engine.py`. A place read by an upstream step carries
+`via`. A row with no hit has `unattributed: true`. That is reported, never a stop: it may show a gap in the
+declarations. `declared` is `false` for a check with no declaration. `named_by_text` is `true` when the check also
+reads paths that the target's own text names.
+
+A place matches a changed path as the consistency map's schema states its scope:
+
+| Scope | Matches |
+|---|---|
+| `root` | The exact path from the root; a wildcard stays inside one folder |
+| `any-depth` | The base name, in any folder |
+| `repository-level` | The base name at the root, or directly in `.github/`, `.gitlab/` or `docs/` |
+| `glob` | A glob from the root: `*`, `?` and `[...]` stay inside one folder; `**` matches any number of folders, none included |
+
+So `docs/**/*.md` matches `docs/a.md`. A place with case `fold` is matched in lower case.
+
+### Output
+
+`data.status` is `lost` when at least one check is `lost_pass` or `regressed`, and `clean` otherwise. `data.base`
+and `data.close` hold each report's file name, commit, dirty flag, scan time and engine version. `data.counts` has
+one count per class. `data.stops`, `data.moves` and `data.evidence_changes` list the rows; each row has `check`,
+`class`, `base`, `close` and `evidence`. With `--changed-from`, `data.changes` holds `base_sha`, `changed_count`,
+`changed_paths` and the number of `unattributed` rows. A warning is raised when the engine versions differ, when the
+close report was taken on a dirty tree, and when a row is unattributed. A warning is also raised when this engine's
+ruleset hash is not the reports' hash. Long lists are bounded: `data.omitted` counts what was left out, and
+`truncated` is `true`.
+
+### Exit codes
+
+| Code | When |
+|---|---|
+| `0` | Done, whatever the status. Read `data.status`. |
+| `1` | A bad argument or a missing file. With `--changed-from`: a worktree that is not the reports' target, a base commit not in its history, or git that cannot list the changes. |
+| `2` | Refused. A file is not an engine report, or the two reports differ in ruleset hash, target, phase, user-config setting, probes or allowed probe verbs. The close report may also be no newer than the base. `data.errors` has one line per reason. |
 | `3` | Internal error. |

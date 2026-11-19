@@ -31,6 +31,7 @@ skill runs the audit skill's engine.
 | [`playbooks/`](playbooks/README.md) | Thirteen playbooks, one per class of finding, and their anatomy |
 | [`state.md`](state.md) | The per-repository state contract: files, statuses, skip, preferences |
 | [`tool-choice.md`](tool-choice.md) | What a step does when a tool it needs is missing, or older than the repository's pin |
+| [`theme-checks.md`](theme-checks.md) | The integration-branch check and the lost-pass check that Stages 3 and 4 run |
 | [`tools/`](tools/) | The implement tools and their tests |
 | [`docs/architecture/adrs/`](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md) | This recipe's decisions |
 
@@ -44,6 +45,7 @@ helpers from `audit/tools/`.
 | `progress.py` | Creates, shows and renders the state beside the audit report, outside the target ([ADR 0004](docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)) |
 | `check_drift.py` | Tells which findings the repository has moved under since the audit |
 | `compare_reports.py` | Compares two audit reports of the same repository |
+| `check_regressions.py` | Compares the engine reports taken before and after a theme, and names each passing check the theme lost |
 
 The full synopsis of each tool is in the [Tools CLI reference](../docs/reference/tools-cli.md).
 
