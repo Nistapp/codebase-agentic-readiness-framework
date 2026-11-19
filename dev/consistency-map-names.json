@@ -5651,13 +5651,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "Cargo.lock"
     },
     {
@@ -5732,13 +5734,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "Gemfile.lock"
     },
     {
@@ -5812,13 +5816,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "Pipfile.lock"
     },
     {
@@ -6476,21 +6482,29 @@
     },
     {
       "checks": [
-        "CI-05"
+        "CI-05",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence.",
+      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence; 1 other listed check read it too.",
       "pattern": "bun.lock"
     },
     {
       "checks": [
-        "EXEC-02"
+        "CI-05",
+        "EXEC-02",
+        "NAV-03"
+      ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "bun.lockb"
     },
     {
@@ -6668,13 +6682,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "composer.lock"
     },
     {
@@ -7537,13 +7553,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "go.sum"
     },
     {
@@ -7557,10 +7575,16 @@
     },
     {
       "checks": [
-        "EXEC-02"
+        "CI-05",
+        "EXEC-02",
+        "NAV-03"
+      ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "gradle.lockfile"
     },
     {
@@ -7876,6 +7900,19 @@
     },
     {
       "checks": [
+        "CI-05",
+        "NAV-03"
+      ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
+      ],
+      "match": "base-name",
+      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence; 1 other listed check read it too.",
+      "pattern": "mix.lock"
+    },
+    {
+      "checks": [
         "NAV-01"
       ],
       "match": "glob",
@@ -8023,13 +8060,15 @@
     },
     {
       "checks": [
-        "CI-05"
+        "CI-05",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence.",
+      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence; 1 other listed check read it too.",
       "pattern": "npm-shrinkwrap.json"
     },
     {
@@ -8103,13 +8142,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "package-lock.json"
     },
     {
@@ -8172,6 +8213,19 @@
     },
     {
       "checks": [
+        "CI-05",
+        "NAV-03"
+      ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
+      ],
+      "match": "base-name",
+      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence; 1 other listed check read it too.",
+      "pattern": "packages.lock.json"
+    },
+    {
+      "checks": [
         "NAV-01"
       ],
       "match": "glob",
@@ -8180,13 +8234,15 @@
     },
     {
       "checks": [
-        "CI-05"
+        "CI-05",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence.",
+      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence; 1 other listed check read it too.",
       "pattern": "pdm.lock"
     },
     {
@@ -8214,13 +8270,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "pnpm-lock.yaml"
     },
     {
@@ -8235,13 +8293,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "poetry.lock"
     },
     {
@@ -8352,6 +8412,19 @@
       "match": "exact",
       "meaning": "For `NAV-02` Obvious entry points, a matching file counts as an entry point.",
       "pattern": "public/index.php"
+    },
+    {
+      "checks": [
+        "CI-05",
+        "NAV-03"
+      ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
+      ],
+      "match": "base-name",
+      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence; 1 other listed check read it too.",
+      "pattern": "pubspec.lock"
     },
     {
       "checks": [
@@ -9471,13 +9544,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "uv.lock"
     },
     {
@@ -9703,13 +9778,15 @@
     {
       "checks": [
         "CI-05",
-        "EXEC-02"
+        "EXEC-02",
+        "NAV-03"
       ],
       "constants": [
-        "audit.rules.checks.ci:_NOT_A_SURFACE"
+        "audit.rules.checks.ci:_NOT_A_SURFACE",
+        "audit.stack:LOCKFILE_NAMES"
       ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 2 other listed checks read it too.",
       "pattern": "yarn.lock"
     }
   ]

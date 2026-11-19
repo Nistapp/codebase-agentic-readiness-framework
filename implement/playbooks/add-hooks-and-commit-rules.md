@@ -338,7 +338,8 @@ Commit the local stage and the CI step of the commit rule separately, so either 
 - If the changed-files verb reveals existing debt in a staged file, the hook blocks only on files the commit
   touches and the debt is not mass-fixed; the formatter ratchet from T1 applies. Record the debt counts from T1,
   not new ones.
-- A hook that cannot be made fast: leave it out and record the reason; the item stays `partial`.
+- A hook that cannot be made fast: leave it out and record the reason in the note. The item stays `partial`, with
+  `--debt "what=hooks left out as too slow,count=N"`.
 - An unavailable binary on a machine: the hook is local convenience, CI still gates; not an error.
 
 ## Verification

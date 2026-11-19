@@ -17,6 +17,10 @@ asks for with the declaration (ADR 0012 in the repository's ``docs/architecture/
 Scopes, as the map's schema states them: ``root`` is the exact path at the root; ``any-depth`` is the
 base name in any folder; ``repository-level`` is the root, ``.github/``, ``.gitlab/`` or ``docs/``;
 ``glob`` is a glob from the root, where ``**/`` also matches no folder.
+
+A place with ``via`` is read upstream, before any check runs: ``scan-kind`` when the scan's file kinds
+(``Kind.TEST``, ``Kind.GENERATED``) match it by name, ``components`` when component detection reads it. The
+check then asks for no such path itself.
 """
 
 from __future__ import annotations
@@ -36,14 +40,24 @@ SCOPES: tuple[str, ...] = (ROOT, ANY_DEPTH, REPOSITORY_LEVEL, GLOB)
 KINDS: tuple[str, ...] = ("phrase", "word-list", "fenced-command", "code-span", "key", "exists")
 BINDINGS: tuple[str, ...] = ("line", "window", "paragraph", "section", "file")
 
+SCAN_KIND = "scan-kind"
+COMPONENTS = "components"
+
+VIAS: tuple[str, ...] = (SCAN_KIND, COMPONENTS)
+
 
 @dataclass(frozen=True)
 class Place:
-    """One path a check reads, at one scope; ``constant`` names the engine constant it comes from."""
+    """One path a check reads, at one scope.
+
+    ``constant`` names the engine constant it comes from; ``via`` names the upstream step that reads it for the
+    check, ``scan-kind`` or ``components``.
+    """
 
     path: str
     scope: str
     constant: str | None = None
+    via: str | None = None
 
 
 @dataclass(frozen=True)
@@ -78,8 +92,8 @@ class Reads:
         return tuple(dict.fromkeys(reference for reference in references if reference))
 
 
-def _at(scope: str, *paths: str) -> tuple[Place, ...]:
-    return tuple(Place(path, scope) for path in paths)
+def _at(scope: str, *paths: str, via: str | None = None) -> tuple[Place, ...]:
+    return tuple(Place(path, scope, via=via) for path in paths)
 
 
 def _held(module: ModuleType, name: str, scope: str, scopes: dict[str, str] | None = None) -> tuple[Place, ...]:
@@ -200,6 +214,7 @@ READS: dict[str, Reads] = {
                 "settings.gradle.kts",
                 "go.work",
                 "Cargo.toml",
+                via=COMPONENTS,
             ),
         ),
         what=What("exists"),
@@ -1323,6 +1338,7 @@ READS: dict[str, Reads] = {
                 "**/*.g.cs",
                 "**/*.designer.cs",
                 "**/*.lock.gen",
+                via=SCAN_KIND,
             ),
         ),
         what=What(
@@ -1463,6 +1479,7 @@ READS: dict[str, Reads] = {
                 "**/tests/**",
                 "**/test/**",
                 "**/__tests__/**",
+                via=SCAN_KIND,
             ),
             *_at(ANY_DEPTH, "*_test.go"),
             *_at(GLOB, "tests/*.rs"),
@@ -1497,6 +1514,7 @@ READS: dict[str, Reads] = {
                 "**/tests/**",
                 "**/test/**",
                 "**/__tests__/**",
+                via=SCAN_KIND,
             ),
             *_at(ANY_DEPTH, "*_test.go"),
             *_at(GLOB, "tests/*.rs"),
@@ -1574,6 +1592,7 @@ READS: dict[str, Reads] = {
                 "settings.gradle.kts",
                 "go.work",
                 "Cargo.toml",
+                via=COMPONENTS,
             ),
             *_at(
                 ANY_DEPTH,
@@ -1584,8 +1603,19 @@ READS: dict[str, Reads] = {
                 "build.gradle.kts",
                 "Cargo.toml",
                 "go.mod",
+                via=COMPONENTS,
             ),
-            *_at(GLOB, "apps/*", "services/*", "packages/*", "components/*", "modules/*", "libs/*", "workers/*"),
+            *_at(
+                GLOB,
+                "apps/*",
+                "services/*",
+                "packages/*",
+                "components/*",
+                "modules/*",
+                "libs/*",
+                "workers/*",
+                via=COMPONENTS,
+            ),
         ),
         what=What("key"),
         binding="file",
@@ -1662,7 +1692,8 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "Every scanned file: over 512 KiB, a folder with more than 50 files of its own, a binary, or a "
-            "generated file with .min. in its path."
+            "generated file with .min. in its path. A file whose exact base name is a lockfile name "
+            "(stack.LOCKFILE_NAMES) is left out of the size count."
         ),
     ),
     "NAV-04": Reads(
