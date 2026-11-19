@@ -14,7 +14,7 @@ must be able to review it in a diff. The document index
 quote verifier already checks quotes verbatim.
 
 This ADR fixes the map's format and the gate's rules. The schema, the reads, the names, the moves, the kept pairs
-and the gate exist, with their tests. The boundaries are not written yet.
+and the gate in both modes exist, with their tests. The boundaries are not written yet.
 
 ## Decision
 
@@ -45,7 +45,16 @@ and the gate exist, with their tests. The boundaries are not written yet.
 6. The gate also infers touches from the paths and the content kinds. It reports the inferred pairs that no move
    declares as unreviewed advice, and never fails on them.
 7. Evidence that changes under an unchanged verdict is reported to the reviewer. It does not fail the gate.
-8. [`dev/consistency_map.py`](../../../dev/consistency_map.py) is the gate. `make consistency-map` runs it
+8. The gate has two modes. Static mode checks the map against the working tree. Change mode runs against a base
+   ref (`--base`, default `origin/dev`) and adds:
+   1. For review only: each changed section in a file a reads entry names. The index diff lists it as moved,
+      renamed, edited or removed. A template counts at the path the scaffolder writes it to.
+   2. A failure for a kept section that no longer mentions the check ID. It counts only when the base side
+      mentioned it, and even when the quote still exists elsewhere.
+   3. A failure for a reads file renamed to a path outside its entry's scope.
+   4. The evidence comparison. Each side is copied into a one-commit repository and audited by the same engine, the
+      working tree's. A check whose verdict or evidence changed is reported when its reads overlap the change.
+9. [`dev/consistency_map.py`](../../../dev/consistency_map.py) is the gate. `make consistency-map` runs it
    report-only: it exits 0 whatever it finds. It joins `make check` once no pair is unkept and every gap is kept or
    accepted.
 
