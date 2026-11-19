@@ -18,11 +18,13 @@ string, the name probe. It records a fifth kind of ask:
 - ``name``: a name a check compares a scanned path with in its own code (``==``, ``!=``, ``startswith``,
   ``endswith``, ``in``, ``fnmatch``), and whether the path was lower-cased first.
 
-The name probe is report-only for now: the test prints the ``name`` asks that no declared place covers and the
-declared places that no ask of any kind reaches, and fails on neither. A place with ``via`` is read upstream, by
-the scan's file kinds or by component detection, so no ask needs to reach it; the report counts it apart. A further test proves that the probe changes
-no check's result. Git commands and reads outside the target (``$HOME``) are not paths of the target. The stack and the
-components are detected before the checks run, so their reads belong to no check.
+Two assertions hold the declarations to the probe: every ``name`` ask is covered by a declared place, and every
+declared place is reached by an ask of some kind, read upstream (``via``: the scan's file kinds or component
+detection) or marked ``unexercised`` with the reason no fixture can reach it. A place marked ``unexercised`` that an
+ask does reach fails too, so the mark cannot go stale. ``AUDIT_NAME_PROBE=summary`` prints the counts and
+``AUDIT_NAME_PROBE=detail`` every gap. A further test proves that the probe changes no check's result. Git commands
+and reads outside the target (``$HOME``) are not paths of the target. The stack and the components are detected
+before the checks run, so their reads belong to no check.
 
 An ask is covered when a declared place matches it at its scope. ``has`` looks at any depth, so a ``root`` place
 does not cover it. A ``match`` pattern is covered by a place with the same path, the same path under ``**/``, or the
@@ -52,8 +54,8 @@ import support  # noqa: E402
 from audit.components import detect_components  # noqa: E402
 from audit.probes import ProbeSession  # noqa: E402
 from audit import scan  # noqa: E402
-from audit.rules import checks, reads  # noqa: E402
-from audit.rules.checks import _common, con  # noqa: E402
+from audit.rules import checks, reads, variants  # noqa: E402
+from audit.rules.checks import _common, agt, con, sec  # noqa: E402
 from audit.rules.registry import REGISTRY, applicable_checks  # noqa: E402
 from audit.scan import CONTENT_READ_LIMIT, Inventory, build_inventory  # noqa: E402
 from audit.stack import detect_stack  # noqa: E402
@@ -175,6 +177,14 @@ def _named(root: Path, asks: set[Ask], path: str) -> bool:
     return False
 
 
+def _text_core(operand: str) -> str:
+    """The path a check took from the target's text, less the "*/" or "/*" it added to match below or above it."""
+    core = operand.removeprefix("*/")
+    for tail in ("/*", "/"):
+        core = core.removesuffix(tail)
+    return core
+
+
 def undeclared(check: str, root: Path, asks: set[Ask]) -> set[Ask]:
     """The asks of one run that no declared place covers.
 
@@ -200,104 +210,180 @@ _THIS_FILE = os.path.abspath(__file__)
 #: every path, so it says nothing about which place a check reads, and as an uncovered ask it would only be noise.
 _SHORTEST_OPERAND = 3
 
-#: Where the name asks of the running check go; empty outside the probe's block.
+#: Where the name asks of the running check go, with the check's id; empty outside the probe's block.
 _NAME_SINK: list[set[NameAsk]] = []
+_NAME_CHECK: list[str | None] = []
+
+#: Functions whose comparisons are never reads, as (check, or None for every check; function; reason). The probe
+#: records nothing that a frame of one of them asks.
+_NOT_READS_IN: tuple[tuple[str | None, Callable[..., Any], str], ...] = (
+    (None, agt.is_non_instruction, "an exclusion: a path its globs match is left out of the instruction files"),
+    (
+        None,
+        variants.classify_present,
+        "it sorts the instruction files a check already chose by its declared places, and picks no new path",
+    ),
+    (
+        None,
+        variants.mis_cased_canonical_candidates,
+        "it sorts the instruction files a check already chose by its declared places, and picks no new path",
+    ),
+    (
+        "AGT-02",
+        agt.instruction_paths,
+        "AGT-02 keeps only the paths that end in <component>/AGENTS.md, so the other instruction names it "
+        "compares on the way decide nothing",
+    ),
+)
+
+#: Names a check compares only to leave a path out, as (check, operation, names, reason). Such an ask reads nothing.
+_NOT_READ_NAMES: tuple[tuple[str, str, frozenset[str], str], ...] = (
+    (
+        "SEC-01",
+        "eq",
+        frozenset(sec._ENV_TEMPLATE_BASENAMES),
+        "a committed template (.env.example, env.example) is left out of the tracked .env files",
+    ),
+    ("AGT-13", "eq", frozenset({agt._DOCS_STYLE_GUIDE}), "the docs style guide never counts as a conventions file"),
+    ("TOOL-07", "start", frozenset({".git/"}), "a hook file under .git/ is left out: git's own hooks are not shared"),
+)
+
+
+def _not_a_read(check: str, ask: NameAsk) -> bool:
+    return any(check == c and ask[0] == op and ask[1] in names for c, op, names, _why in _NOT_READ_NAMES)
+
+
+def _in_a_non_read(code: Any) -> bool:
+    check = _NAME_CHECK[-1] if _NAME_CHECK else None
+    return any(code is function.__code__ and owner in (None, check) for owner, function, _why in _NOT_READS_IN)
 
 
 def _asked_by_a_check(frame: Any) -> bool:
     """Whether the comparison was made by check code, walking out from the caller's frame.
 
     ``Inventory`` methods are recorded already as ``has``, ``match`` or ``read``, and the recorder's own frames ask
-    nothing, so either ends the walk. Library frames (``fnmatch``, ``audit/stack.py``) are passed through.
+    nothing, so either ends the walk. Library frames (``fnmatch``, ``audit/stack.py``) are passed through. A
+    function of ``_NOT_READS_IN`` anywhere on the way out means no read, so the walk goes on past the first check
+    frame (a generator expression inside such a function is a frame of its own).
     """
+    asked = False
     while frame is not None:
-        name = frame.f_code.co_filename
-        if name.startswith(_CHECKS_DIR):
-            return True
-        if name in (_SCAN_FILE, _THIS_FILE):
+        if _in_a_non_read(frame.f_code):
             return False
+        name = frame.f_code.co_filename
+        if name in (_SCAN_FILE, _THIS_FILE):
+            return asked
+        asked = asked or name.startswith(_CHECKS_DIR)
         frame = frame.f_back
-    return False
+    return asked
 
 
-def _record_name(op: str, operands: object, folded: bool, frame: Any) -> None:
+def _record_name(op: str, operands: object, name: _TrackedName, frame: Any) -> None:
     if not _NAME_SINK or not _asked_by_a_check(frame):
         return
     for operand in operands if isinstance(operands, tuple) else (operands,):
         # A tracked operand is another scanned path, not a name the check holds.
-        if isinstance(operand, str) and not isinstance(operand, _TrackedName) and len(operand) >= _SHORTEST_OPERAND:
-            _NAME_SINK[-1].add((op, str(operand), folded))
+        if not isinstance(operand, str) or isinstance(operand, _TrackedName) or len(operand) < _SHORTEST_OPERAND:
+            continue
+        # One folder segment of a path, a base name above all, never holds a slash, so it never equals a name
+        # that does: AGT-01 looks each base name up in a set that also holds .github/copilot-instructions.md.
+        if op == "eq" and name.segment and "/" in operand:
+            continue
+        _NAME_SINK[-1].add((op, str(operand), name.folded))
 
 
 class _TrackedName(str):
-    """A ``FileEntry.rel`` that records what check code compares it with. It compares and hashes as ``str``."""
+    """A ``FileEntry.rel`` that records what check code compares it with. It compares and hashes as ``str``.
+
+    ``folded`` is set once the name is lower-cased; ``segment`` once it is one part of a path split on ``/``, so it
+    can hold no slash on any target.
+    """
 
     folded: bool
+    segment: bool
 
-    def __new__(cls, value: str, folded: bool = False) -> _TrackedName:
+    def __new__(cls, value: str, folded: bool = False, segment: bool = False) -> _TrackedName:
         made = super().__new__(cls, value)
         made.folded = folded
+        made.segment = segment
         return made
 
+    def _like(self, value: str, folded: bool | None = None, segment: bool | None = None) -> _TrackedName:
+        return _TrackedName(
+            value, self.folded if folded is None else folded, self.segment if segment is None else segment
+        )
+
     def __eq__(self, other: object) -> bool:
-        _record_name("eq", other, self.folded, sys._getframe(1))
+        _record_name("eq", other, self, sys._getframe(1))
         return str.__eq__(self, other)
 
     def __ne__(self, other: object) -> bool:
-        _record_name("eq", other, self.folded, sys._getframe(1))
+        _record_name("eq", other, self, sys._getframe(1))
         return str.__ne__(self, other)
 
     __hash__ = str.__hash__
 
     def startswith(self, prefix: Any, *args: Any) -> bool:
-        _record_name("start", prefix, self.folded, sys._getframe(1))
+        _record_name("start", prefix, self, sys._getframe(1))
         return str.startswith(self, prefix, *args)
 
     def endswith(self, suffix: Any, *args: Any) -> bool:
-        _record_name("end", suffix, self.folded, sys._getframe(1))
+        _record_name("end", suffix, self, sys._getframe(1))
         return str.endswith(self, suffix, *args)
 
     def __contains__(self, part: object) -> bool:
-        _record_name("sub", part, self.folded, sys._getframe(1))
+        _record_name("sub", part, self, sys._getframe(1))
         return str.__contains__(self, part)  # type: ignore[operator]
 
     def lower(self) -> _TrackedName:
-        return _TrackedName(str.lower(self), True)
+        return self._like(str.lower(self), folded=True)
 
     def casefold(self) -> _TrackedName:
-        return _TrackedName(str.casefold(self), True)
+        return self._like(str.casefold(self), folded=True)
 
     def strip(self, chars: str | None = None) -> _TrackedName:
-        return _TrackedName(str.strip(self, chars), self.folded)
+        return self._like(str.strip(self, chars))
 
     def lstrip(self, chars: str | None = None) -> _TrackedName:
-        return _TrackedName(str.lstrip(self, chars), self.folded)
+        return self._like(str.lstrip(self, chars))
 
     def rstrip(self, chars: str | None = None) -> _TrackedName:
-        return _TrackedName(str.rstrip(self, chars), self.folded)
+        return self._like(str.rstrip(self, chars))
 
-    def split(self, *args: Any, **kwargs: Any) -> list[str]:
-        return [_TrackedName(part, self.folded) for part in str.split(self, *args, **kwargs)]
+    def split(self, sep: str | None = None, maxsplit: int = -1) -> list[str]:
+        parts = str.split(self, sep, maxsplit)
+        # On "/", every part but the last is one segment; the last is one too unless the limit left slashes in it.
+        whole = maxsplit < 0 or len(parts) <= maxsplit
+        return [
+            self._like(part, segment=self.segment or (sep == "/" and (whole or i < len(parts) - 1)))
+            for i, part in enumerate(parts)
+        ]
 
-    def rsplit(self, *args: Any, **kwargs: Any) -> list[str]:
-        return [_TrackedName(part, self.folded) for part in str.rsplit(self, *args, **kwargs)]
+    def rsplit(self, sep: str | None = None, maxsplit: int = -1) -> list[str]:
+        parts = str.rsplit(self, sep, maxsplit)
+        # On "/", every part but the first is one segment, and the last always is: rsplit("/", 1)[-1] is a base name.
+        whole = maxsplit < 0 or len(parts) <= maxsplit
+        return [
+            self._like(part, segment=self.segment or (sep == "/" and (whole or i > 0 or i == len(parts) - 1)))
+            for i, part in enumerate(parts)
+        ]
 
     def partition(self, separator: str) -> tuple[str, str, str]:
         head, middle, tail = str.partition(self, separator)
-        return _TrackedName(head, self.folded), middle, _TrackedName(tail, self.folded)
+        return self._like(head, segment=self.segment or separator == "/"), middle, self._like(tail)
 
     def rpartition(self, separator: str) -> tuple[str, str, str]:
         head, middle, tail = str.rpartition(self, separator)
-        return _TrackedName(head, self.folded), middle, _TrackedName(tail, self.folded)
+        return self._like(head), middle, self._like(tail, segment=self.segment or separator == "/")
 
     def __getitem__(self, key: Any) -> _TrackedName:
-        return _TrackedName(str.__getitem__(self, key), self.folded)
+        return self._like(str.__getitem__(self, key))
 
 
 def _record_members(members: Iterable[str], key: object, frame: Any) -> None:
     """A tracked name looked up in a held set or dict asks for every member: it would match any of them."""
     if isinstance(key, _TrackedName):
-        _record_name("eq", tuple(members), key.folded, frame)
+        _record_name("eq", tuple(members), key, frame)
 
 
 class _RecordingFrozenset(frozenset[str]):
@@ -367,7 +453,7 @@ def _held_containers() -> list[tuple[Any, str, Any, Any]]:
 
 
 @contextmanager
-def _recording_names(sink: set[NameAsk]) -> Iterator[None]:
+def _recording_names(sink: set[NameAsk], check: str | None = None) -> Iterator[None]:
     """Record the ``name`` asks of tracked paths while the block runs, ``fnmatch`` and ``basename`` included.
 
     The paths git tracks are tracked names too: a check that reads the tracked set (``tracked_in_scope``) compares
@@ -384,14 +470,14 @@ def _recording_names(sink: set[NameAsk]) -> Iterator[None]:
     def globbed(original: Callable[[Any, str], bool]) -> Callable[[Any, str], bool]:
         def recorded(name: Any, pattern: str) -> bool:
             if isinstance(name, _TrackedName):
-                _record_name("glob", pattern, name.folded, sys._getframe(1))
+                _record_name("glob", pattern, name, sys._getframe(1))
             return original(name, pattern)
 
         return recorded
 
     def basename(path: Any) -> Any:
         base = saved_basename(path)
-        return _TrackedName(base, path.folded) if isinstance(path, _TrackedName) else base
+        return path._like(base, segment=True) if isinstance(path, _TrackedName) else base
 
     fnmatch.fnmatch, fnmatch.fnmatchcase = globbed(saved_fnmatch), globbed(saved_fnmatchcase)
     posixpath.basename = basename
@@ -400,10 +486,12 @@ def _recording_names(sink: set[NameAsk]) -> Iterator[None]:
     for module, name, _value, copy in _held_containers():
         setattr(module, name, copy)
     _NAME_SINK.append(sink)
+    _NAME_CHECK.append(check)
     try:
         yield
     finally:
         _NAME_SINK.pop()
+        _NAME_CHECK.pop()
         fnmatch.fnmatch, fnmatch.fnmatchcase = saved_fnmatch, saved_fnmatchcase
         posixpath.basename, os.path.basename = saved_basename, saved_os_basename
         _common.tracked_files = saved_tracked_files
@@ -422,33 +510,70 @@ def name_hits(place: reads.Place, ask: NameAsk) -> bool:
     op, operand, folded = ask
     path = place.path.lower() if folded else place.path
     base = posixpath.basename(path)
+    if path == "**":
+        # The whole tree holds every name, whatever a check compares a path with.
+        return True
     if op == "eq":
         # A whole path, a base name, a path a glob place fits, or the folder a place sits under. A repository-level
-        # place also sits under each of the folders that scope names.
+        # place also sits under each of the folders that scope names, and a base name found at any depth meets
+        # itself below a folder ("artefacts/.gitignore" meets ".gitignore").
         return (
             operand in (path, base, path.rstrip("/"))
             or fnmatch.fnmatchcase(operand, path)
             or path.startswith(operand + "/")
             or (place.scope == reads.REPOSITORY_LEVEL and operand + "/" in _REPOSITORY_LEVEL)
+            or (
+                place.scope == reads.ANY_DEPTH
+                and "/" not in path
+                and fnmatch.fnmatchcase(operand.rsplit("/")[-1], path)
+            )
         )
     if op == "end":
         # A suffix meets a place only as a file type (".md"), a whole base name or a path tail. A place found at any
-        # depth also stands for itself below a folder, so "/Makefile" meets it.
+        # depth also stands for itself below a folder, so "/Makefile" meets it. A base name that ends in a wildcard
+        # takes any file type, and a path tail meets a glob it fits.
         tails = (path,) if place.scope == reads.ROOT else (path, "any/" + path)
+        if operand.startswith(".") and "/" not in operand and base.endswith("*"):
+            return True
+        if place.scope == reads.GLOB and "/" in operand and _glob_match(operand, path):
+            return True
         return any(tail.endswith(operand) for tail in tails) and (
             operand.startswith(("/", ".")) or operand == base or "/" in operand
         )
     if op == "start":
-        return path.startswith(operand) or operand.rstrip("/") == path.rstrip("/")
+        # A prefix meets a place that starts with it, or a glob whose fixed start, from the root or after "**/",
+        # starts with the prefix or is one of its folders ("docs/explanation/" meets "docs/**/*.md").
+        if path.startswith(operand) or operand.rstrip("/") == path.rstrip("/"):
+            return True
+        return place.scope == reads.GLOB and any(
+            fixed and (operand.startswith(fixed) or fixed.startswith(operand))
+            for fixed in (_fixed_start(path), _fixed_start(path.removeprefix("**/")))
+        )
     if op == "sub":
         return operand in path
-    return fnmatch.fnmatchcase(path, operand) or fnmatch.fnmatchcase(base, operand) or operand == path
+    # A glob operand meets a place it fits, as a name or as a narrower glob ("conventions*" meets "*convention*").
+    return (
+        fnmatch.fnmatchcase(path, operand)
+        or fnmatch.fnmatchcase(base, operand)
+        or operand == path
+        or fnmatch.fnmatchcase(operand, path)
+        or ("/" not in path and fnmatch.fnmatchcase(operand, base))
+    )
+
+
+def _fixed_start(pattern: str) -> str:
+    """The part of a glob before its first wildcard."""
+    cut = min((pattern.index(mark) for mark in "*?[" if mark in pattern), default=len(pattern))
+    return pattern[:cut]
 
 
 def _seen(check: str, place: reads.Place, asks: set[Ask], names: set[NameAsk]) -> bool:
     """Whether any recorded ask reaches a declared place: a covered ask, a pattern its name fits, or a name ask."""
     for kind, path in asks:
         if place_covers(place, (kind, path)):
+            return True
+        # A name looked for at any depth is looked for at the root too, so it reaches a root place of that name.
+        if kind == "has" and place.scope == reads.ROOT and place.path == path:
             return True
         if kind == "match" and (
             fnmatch.fnmatchcase(posixpath.basename(place.path), path) or fnmatch.fnmatchcase(place.path, path)
@@ -460,12 +585,20 @@ def _seen(check: str, place: reads.Place, asks: set[Ask], names: set[NameAsk]) -
 
 
 def _places_by_reach(recording: Recorded) -> dict[str, dict[str, list[reads.Place]]]:
-    """The declared places that no recorded ask reaches, by check: ``upstream`` when ``via`` accounts for them."""
-    found: dict[str, dict[str, list[reads.Place]]] = {"unseen": {}, "upstream": {}}
+    """The declared places that no recorded ask reaches, by check, and the ``unexercised`` places one does reach.
+
+    An unreached place is ``upstream`` when ``via`` accounts for it, ``unexercised`` when the declaration says why no
+    fixture can reach it, and ``unseen`` otherwise. A reached place still marked unexercised is ``stale``.
+    """
+    found: dict[str, dict[str, list[reads.Place]]] = {"unseen": {}, "upstream": {}, "unexercised": {}, "stale": {}}
     for check, declared in reads.READS.items():
         for place in declared.where:
-            if not _seen(check, place, recording.asks[check], recording.names[check]):
-                found["upstream" if place.via else "unseen"].setdefault(check, []).append(place)
+            if _seen(check, place, recording.asks[check], recording.names[check]):
+                kind = "stale" if place.unexercised else None
+            else:
+                kind = "upstream" if place.via else "unexercised" if place.unexercised else "unseen"
+            if kind:
+                found[kind].setdefault(check, []).append(place)
     return found
 
 
@@ -497,11 +630,13 @@ def name_probe_summary(recording: Recorded, detail: bool = False) -> str:
     places = sum(len(declared.where) for declared in reads.READS.values())
     unseen_count = sum(map(len, unseen.values()))
     upstream_count = sum(map(len, reach["upstream"].values()))
+    unexercised_count = sum(map(len, reach["unexercised"].values()))
+    seen_count = places - unseen_count - upstream_count - unexercised_count
     lines = [
-        f"name probe (report-only): {sum(map(len, recording.names.values()))} name asks, "
+        f"name probe: {sum(map(len, recording.names.values()))} name asks, "
         f"{sum(map(len, uncovered.values()))} not covered by a declaration, in {len(uncovered)} checks",
-        f"name probe: {places} declared places, {places - unseen_count - upstream_count} seen, "
-        f"{upstream_count} read upstream (via), {unseen_count} unseen, in {len(unseen)} checks",
+        f"name probe: {places} declared places, {seen_count} seen, {upstream_count} read upstream (via), "
+        f"{unexercised_count} unexercised, {unseen_count} unseen, in {len(unseen)} checks",
         f"  unseen places: {_tally(unseen)}",
         f"  uncovered name asks: {_tally(uncovered)}",
     ]
@@ -545,11 +680,16 @@ class Recorded:
         self.undeclared: dict[str, set[tuple[str, str, str]]] = {check: set() for check in self.asks}
         self.names: dict[str, set[NameAsk]] = {check: set() for check in self.asks}
         self.changed: list[tuple[str, str]] = []
-        con.set_emit_target(None)
-        for path in _fixtures():
-            self._record(path)
         with tempfile.TemporaryDirectory() as tmp:
-            self._record(_scaffold(Path(tmp) / "scaffold"))
+            # CON-04 walks the scan only when it may write its draft: beside a report outside every target, as
+            # --emit-baseline --force does, and the same file each run so both runs of a check give one result.
+            con.set_emit_target(Path(tmp) / "out" / "report.json", force=True)
+            try:
+                for path in _fixtures():
+                    self._record(path)
+                self._record(_scaffold(Path(tmp) / "scaffold"))
+            finally:
+                con.set_emit_target(None)
 
     def _record(self, path: Path) -> None:
         target = resolve_target(path)
@@ -567,12 +707,15 @@ class Recorded:
                 )
             probed = _probing(inventory)
             names: set[NameAsk] = set()
-            with _recording_disk(target.path, probed.asks), _recording_names(names):
+            with _recording_disk(target.path, probed.asks), _recording_names(names, spec.id):
                 probed_result = spec.run(
                     target=target, inventory=probed, stack=stack, components=components, session=session
                 )
             if repr(probed_result) != repr(result) or probed.asks != recording.asks:
                 self.changed.append((path.name, spec.id))
+            names = {ask for ask in names if not _not_a_read(spec.id, ask)}
+            if reads.READS[spec.id].named_by_text:
+                names = {ask for ask in names if not _named(target.path, probed.asks, _text_core(ask[1]))}
             self.names[spec.id] |= names
             self.asks[spec.id] |= recording.asks
             self.runs[spec.id] += 1
@@ -722,6 +865,67 @@ class NameProbeTest(unittest.TestCase):
         self.assertTrue(name_hits(reads.Place("CODEOWNERS", reads.REPOSITORY_LEVEL), ("eq", ".gitlab", False)))
         self.assertFalse(name_hits(reads.Place("CODEOWNERS", reads.ROOT), ("eq", ".gitlab", False)))
 
+    def test_a_name_ask_meets_a_wider_place(self) -> None:
+        self.assertTrue(name_hits(reads.Place("**", reads.GLOB), ("end", ".py", False)))
+        self.assertTrue(name_hits(reads.Place("CONTRIBUTING*", reads.REPOSITORY_LEVEL), ("end", ".md", True)))
+        self.assertFalse(name_hits(reads.Place("CONTRIBUTING.md", reads.ROOT), ("end", ".rst", True)))
+        self.assertTrue(name_hits(reads.Place("**/AGENTS.md", reads.GLOB), ("end", "packages/b/AGENTS.md", False)))
+        self.assertTrue(name_hits(reads.Place("docs/**/*.md", reads.GLOB), ("start", "docs/tutorials/", False)))
+        self.assertTrue(name_hits(reads.Place("**/requirements*.txt", reads.GLOB), ("start", "requirements", False)))
+        self.assertFalse(name_hits(reads.Place("**/*.tf", reads.GLOB), ("start", "docs/", False)))
+        self.assertTrue(name_hits(reads.Place(".gitignore", reads.ANY_DEPTH), ("eq", "artefacts/.gitignore", False)))
+        self.assertFalse(name_hits(reads.Place(".gitignore", reads.ROOT), ("eq", "artefacts/.gitignore", False)))
+        self.assertTrue(name_hits(reads.Place("*convention*", reads.GLOB), ("glob", "conventions*", False)))
+        self.assertFalse(
+            name_hits(reads.Place(".claude/rules/**/*.md", reads.GLOB), ("glob", ".github/agents/*.md", False))
+        )
+
+    def test_a_segment_asks_for_no_name_with_a_slash(self) -> None:
+        sink: set[NameAsk] = set()
+        path = _TrackedName("docs/AGENTS.md")
+        base = path.rsplit("/", 1)[-1]
+        self.assertTrue(base.segment and path.split("/")[0].segment and not path.split("/", 1)[-1].segment)
+        self.assertTrue(_TrackedName("AGENTS.md").rsplit("/", 1)[-1].segment)
+        sink_frame = sys._getframe(0)
+        with mock.patch(__name__ + "._asked_by_a_check", return_value=True), _recording_names(sink):
+            _record_name("eq", (".github/copilot-instructions.md", "AGENTS.md"), base, sink_frame)
+            _record_name("eq", ".github/copilot-instructions.md", path, sink_frame)
+        self.assertEqual(sink, {("eq", "AGENTS.md", False), ("eq", ".github/copilot-instructions.md", False)})
+
+    def test_a_function_that_reads_nothing_records_nothing(self) -> None:
+        with _recording_names(set(), "AGT-02"):
+            self.assertTrue(_in_a_non_read(agt.is_non_instruction.__code__))
+            self.assertTrue(_in_a_non_read(agt.instruction_paths.__code__))
+        with _recording_names(set(), "AGT-01"):
+            self.assertTrue(_in_a_non_read(variants.classify_present.__code__))
+            self.assertFalse(_in_a_non_read(agt.instruction_paths.__code__))
+        names = recorded().names
+        self.assertFalse(any(operand == ".opencode/**" for _op, operand, _folded in names["AGT-01"]))
+        self.assertTrue(any(op == "glob" for op, _operand, _folded in names["AGT-01"]))
+        self.assertFalse(any(op == "glob" and operand.startswith(".codex/") for op, operand, _f in names["AGT-02"]))
+
+    def test_a_name_compared_only_to_leave_a_path_out_is_dropped(self) -> None:
+        self.assertTrue(_not_a_read("SEC-01", ("eq", "env.example", False)))
+        self.assertFalse(_not_a_read("SEC-01", ("eq", ".env", False)))
+        self.assertFalse(_not_a_read("SEC-02", ("eq", "env.example", False)))
+        self.assertNotIn(("eq", "env.example", False), recorded().names["SEC-01"])
+
+    def test_a_name_taken_from_the_targets_text_is_dropped(self) -> None:
+        self.assertEqual(
+            [_text_core(op) for op in ("*/docs", "docs/*", "src/cli/", "tests")], ["docs", "docs", "src/cli", "tests"]
+        )
+        self.assertFalse(any(operand.startswith("src/") for _op, operand, _f in recorded().names["AGT-06"]))
+
+    def test_a_name_looked_for_at_any_depth_reaches_its_root_place(self) -> None:
+        place = reads.Place("lefthook.yaml", reads.ROOT)
+        self.assertFalse(place_covers(place, ("has", "lefthook.yaml")))
+        self.assertTrue(_seen("TOOL-07", place, {("has", "lefthook.yaml")}, set()))
+        self.assertFalse(_seen("TOOL-07", place, {("has", "lefthook.yml")}, set()))
+
+    def test_con04_walks_the_scan_while_recorded(self) -> None:
+        self.assertIsNone(con._EMIT_TARGET)
+        self.assertTrue(recorded().names["CON-04"])
+
     def test_a_place_read_upstream_is_not_unseen(self) -> None:
         recording = recorded()
         nav01 = reads.READS["NAV-01"]
@@ -731,12 +935,34 @@ class NameProbeTest(unittest.TestCase):
         with mock.patch.dict(reads.READS, {"NAV-01": plain}):
             self.assertIn("NAV-01", unseen_places(recording))
 
-    def test_the_name_probe_reports_and_fails_on_nothing(self) -> None:
-        # Report-only (RF4.9.1): no declaration is held to the name asks yet. AUDIT_NAME_PROBE=detail prints every
-        # unseen place and every uncovered ask.
-        summary = name_probe_summary(recorded(), detail=os.environ.get("AUDIT_NAME_PROBE") == "detail")
-        sys.stderr.write("\n" + summary + "\n")
+    def test_the_name_probe_prints_its_counts_on_request(self) -> None:
+        # AUDIT_NAME_PROBE=summary prints the counts, AUDIT_NAME_PROBE=detail every unseen place and uncovered ask.
+        mode = os.environ.get("AUDIT_NAME_PROBE")
+        summary = name_probe_summary(recorded(), detail=mode == "detail")
+        if mode:
+            sys.stderr.write("\n" + summary + "\n")
         self.assertIn("declared places", summary)
+
+    def test_every_name_ask_is_covered_by_a_declared_place(self) -> None:
+        found = {check: sorted(asks) for check, asks in uncovered_names(recorded()).items()}
+        self.assertEqual(found, {})
+
+    def test_every_declared_place_is_seen_read_upstream_or_unexercised(self) -> None:
+        reach = _places_by_reach(recorded())
+        self.assertEqual({check: [p.path for p in places] for check, places in reach["unseen"].items()}, {})
+        self.assertEqual({check: [p.path for p in places] for check, places in reach["stale"].items()}, {})
+
+    def test_an_unexercised_place_says_why(self) -> None:
+        marked = {(c, p.path): p.unexercised for c, d in reads.READS.items() for p in d.where if p.unexercised}
+        self.assertTrue(marked)
+        self.assertTrue(all(reason.strip() for reason in marked.values()))
+        self.assertIn(("IDX-03", ".codebase-memory/graph.db.zst"), marked)
+        recording = recorded()
+        self.assertIn("IDX-03", _places_by_reach(recording)["unexercised"])
+        idx03 = reads.READS["IDX-03"]
+        plain = replace(idx03, where=tuple(replace(place, unexercised=None) for place in idx03.where))
+        with mock.patch.dict(reads.READS, {"IDX-03": plain}):
+            self.assertIn("IDX-03", unseen_places(recording))
 
 
 class CoverRuleTest(unittest.TestCase):
