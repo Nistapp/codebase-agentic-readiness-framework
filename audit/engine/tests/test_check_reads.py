@@ -743,9 +743,7 @@ class DeclarationTest(unittest.TestCase):
         reference = "audit.rules.checks.tst:_FASTPATH_DOCS"
         declared = [place.path for place in reads.READS["TST-04"].where if place.constant == reference]
         self.assertEqual(declared, list(tst._FASTPATH_DOCS))
-        held = "audit.rules.checks.con:_CON_ROOTS"
-        self.assertEqual([p.path for p in reads.READS["CON-03"].where if p.constant == held], list(con._CON_ROOTS))
-        self.assertIn(held, reads.READS["CON-03"].constants)
+        self.assertIn(reference, reads.READS["TST-04"].constants)
 
     def test_the_case_folded_and_text_named_checks_are_declared(self) -> None:
         folded = sorted({check for check, d in reads.READS.items() if any(p.case == reads.FOLD for p in d.where)})

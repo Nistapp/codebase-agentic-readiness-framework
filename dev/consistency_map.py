@@ -143,7 +143,10 @@ def constant_values(reference: str) -> tuple[set[str], list[str]]:
 
 
 def read_constant_problems(read: dict[str, Any]) -> list[str]:
-    """Differences between a reads entry's paths and the union of the engine constants it names."""
+    """Differences between a reads entry's paths and the union of the engine constants it names.
+
+    A place with ``via`` is read upstream, not from the check's constants, so it is left out of the comparison.
+    """
     references = read.get("constants", [])
     if not references:
         return []
@@ -153,7 +156,7 @@ def read_constant_problems(read: dict[str, Any]) -> list[str]:
         values, found = constant_values(reference)
         held |= values
         problems += found
-    declared = {where["path"] for where in read["where"]}
+    declared = {where["path"] for where in read["where"] if "via" not in where}
     check = read["check"]
     problems += [f"{check}: the engine reads {path!r}, the map does not list it" for path in sorted(held - declared)]
     problems += [f"{check}: the map lists {path!r}, the engine constants do not" for path in sorted(declared - held)]

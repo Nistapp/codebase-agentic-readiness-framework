@@ -90,12 +90,13 @@ class Reads:
 
     @property
     def constants(self) -> tuple[str, ...]:
-        """The engine constants that hold the whole list of places, in the order they first appear.
+        """The engine constants that hold the whole list of places the check reads itself, in first-seen order.
 
-        Empty when a place comes from no constant: the map names constants only when they hold every path of
-        the entry, since its test compares the two lists both ways (ADR 0012 rule 3).
+        Empty when such a place comes from no constant: the map names constants only when they hold every path of
+        the entry, since its test compares the two lists both ways (ADR 0012 rule 3). A place with ``via`` is read
+        upstream, by the scan or component detection, so it is not on the check's own list.
         """
-        references = [place.constant for place in self.where]
+        references = [place.constant for place in self.where if place.via is None]
         if not references or None in references:
             return ()
         return tuple(dict.fromkeys(reference for reference in references if reference))
@@ -752,7 +753,6 @@ READS: dict[str, Reads] = {
         where=(
             *_at(ANY_DEPTH, ".pre-commit-config.yaml", "lefthook.yml", "lefthook.yaml"),
             *_at(GLOB, ".githooks/*", ".husky/*", "**"),
-            *_at(ROOT, "package.json"),
             *_runners(),
         ),
         what=What("exists"),

@@ -7893,10 +7893,6 @@
           "scope": "root"
         },
         {
-          "path": "package.json",
-          "scope": "root"
-        },
-        {
           "path": "Makefile",
           "scope": "root"
         },
@@ -10351,6 +10347,10 @@
     {
       "binding": "line",
       "check": "TST-04",
+      "constants": [
+        "audit.rules.checks.tst:_FASTPATH_DOCS",
+        "audit.rules.checks.tst:_FRAMEWORK_TEST_GLOBS"
+      ],
       "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
       "source": "engine",
       "what": {
