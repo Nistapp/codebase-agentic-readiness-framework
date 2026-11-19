@@ -135,10 +135,17 @@ A **runner** drives a recipe without a person and records what the run cost.
   - a copy of the recipe without the eval files.
 - In both modes it records a `stream-json` transcript, so a test can assert on every tool call.
 - The implement scenarios have no ground-truth verdicts. `dev/eval/implement_eval.py` asserts the recipe's hard rules
-  (A1 to A15) instead. See [Run the Evals](../../how-to/run-the-evals.md#implement-recipe-scenarios).
+  (A1 to A16) instead. See [Run the Evals](../../how-to/run-the-evals.md#implement-recipe-scenarios).
 - An audit's verdicts are scored by `score.py`, but some of its hard rules leave no trace in the report.
-  `dev/eval/audit_eval.py` asserts two of them on the transcript and the target: target text is data (AU1), and the
-  target stays read-only (AU2). See [Run the Evals](../../how-to/run-the-evals.md#audit-recipe-hard-rules).
+  `dev/eval/audit_eval.py` asserts six of them on the transcript, the output folder and the target:
+  - target text is data (AU1);
+  - the target stays read-only (AU2);
+  - the report JSON changes only through `report.py` (AU3);
+  - an eval-mode run stops at the draft (AU4);
+  - nothing is read over the network without consent (AU5);
+  - every write lands in the output folder (AU6).
+
+  See [Run the Evals](../../how-to/run-the-evals.md#audit-recipe-hard-rules).
 
 ### `run-opencode.sh` and `run-codex.sh` (Planned)
 
