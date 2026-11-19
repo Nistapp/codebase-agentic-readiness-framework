@@ -187,6 +187,18 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#exe
 - Docker images build only through the repository's own scripts, never by hand. Align the Dockerfile `FROM`
   and any dev Dockerfile with the pin.
 
+### .NET (NuGet)
+
+- The SDK pin is `global.json` (`sdk.version`, with a `rollForward` policy the owner chooses).
+- NuGet writes `packages.lock.json` only when a project sets `RestorePackagesWithLockFile` to `true`. Set it once
+  in `Directory.Build.props` at the root, or in each project. Run `dotnet restore` and commit every
+  `packages.lock.json` it writes, one beside each project.
+- CI restores with `dotnet restore --locked-mode`, so a restore that would change a lock fails.
+- The engine compares only a root `packages.lock.json` with the project files in the root folder. A lock beside
+  each project of a solution is tracked but not compared, so "`EXEC-02` Lockfile committed and consistent" reads
+  `PARTIAL`
+  ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
+
 ## Commits
 
 Steps 1, 5, 8 and 9 make no commit.
