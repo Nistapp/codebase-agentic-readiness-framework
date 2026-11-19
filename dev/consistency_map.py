@@ -420,7 +420,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--map", type=Path, default=MAP_PATH, help="the map file (default: dev/consistency-map.json)")
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--strict", action="store_true", help="exit 1 when the gate finds a problem")
-    parser.add_argument("--verbose", action="store_true", help="also list the unreviewed pairs in text mode")
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="also list the unreviewed pairs in text mode, and the broad checks of each review line",
+    )
     parser.add_argument(
         "--base",
         nargs="?",
@@ -467,7 +471,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         sys.stdout.write(format_text(found, unreviewed, args.verbose))
         if change is not None:
-            sys.stdout.write(cmc.format_text(change))
+            sys.stdout.write(cmc.format_text(change, args.verbose))
     problems = any(found.values()) or (change is not None and any(change.problems.values()))
     return 1 if args.strict and problems else 0
 
