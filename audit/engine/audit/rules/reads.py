@@ -135,6 +135,18 @@ def _runners() -> tuple[Place, ...]:
     return _held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH, dict.fromkeys(_ROOT_RUNNERS, ROOT))
 
 
+#: The harness paths with a folder and no wildcard (``agt.INSTRUCTION_FIXED_PATHS``), matched as whole paths from
+#: the root; ``.claude/CLAUDE.md``, ``.claude/AGENTS.md`` and ``.junie/AGENTS.md`` are left out, since their base
+#: names are any-depth places already.
+_FOLDER_INSTRUCTION_PATHS: tuple[str, ...] = (
+    ".devin/global_rules.md",
+    ".gemini/styleguide.md",
+    ".github/copilot-instructions.md",
+    ".idx/airules.md",
+    ".junie/guidelines.md",
+    ".junie/playbook.md",
+)
+
 #: Why no fixture reaches a go.mod.
 _GO_FIXTURE = (
     "no Go fixture: an honest module needs go.sum lines, whose hashes are key-shaped, and EXEC-02 reads a module "
@@ -207,6 +219,7 @@ READS: dict[str, Reads] = {
                 "agents.md",
                 "replit.md",
             ),
+            *_at(ROOT, *_FOLDER_INSTRUCTION_PATHS),
             *_at(
                 GLOB,
                 ".claude/rules/**/*.md",
@@ -234,9 +247,8 @@ READS: dict[str, Reads] = {
         note=(
             "The root AGENTS.md text is read for its length, four stub phrases and the words todo, tbd and "
             "placeholder at a line start or in brackets; a root agents.md is the only mis-cased name found. A"
-            " fixed harness path with a folder (.github/copilot-instructions.md and five others) is never "
-            "matched, so it is not listed, and a **/ glob needs a subfolder (fnmatch: .cursor/rules/a.mdc is "
-            "missed)."
+            " fixed harness path with a folder (.github/copilot-instructions.md) counts only from the root. A **/"
+            " glob needs a subfolder (fnmatch: .cursor/rules/a.mdc is missed)."
         ),
     ),
     "AGT-02": Reads(
@@ -375,6 +387,7 @@ READS: dict[str, Reads] = {
                 "agents.md",
                 "replit.md",
             ),
+            *_at(ROOT, *_FOLDER_INSTRUCTION_PATHS),
             *_at(
                 GLOB,
                 ".claude/rules/**/*.md",

@@ -39,6 +39,7 @@ fixtures/
   agt-06-thin/               one boundary rule naming a real path -> AGT-06 PARTIAL
   agt-07-missing-deny/       prohibitions cover tests only        -> AGT-07 PARTIAL
   agt-08-competitor/         AGENTS.md + CLAUDE.md                -> AGT-08 FAIL
+  agt-08-copilot-instructions/ AGENTS.md + .github/copilot-instructions.md -> AGT-08 FAIL
   agt-09-no-release/         branches stated, no release boundary -> AGT-09 PARTIAL
   agt-09-ruleset-branch-unnamed/ a ruleset protects staging, AGENTS.md does not name it -> AGT-09 PARTIAL
   agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL

@@ -83,8 +83,8 @@ FAMILIES: dict[str, str] = {
     ".roo/rules-code/x": ".roo/rules-*/**",
 }
 
-# The table's names with a folder and no star. A file of one of them is found by its own name when that is a name of
-# the table too (the first three), and not found at all otherwise: the engine looks for such a name by its last part.
+# The table's names with a folder and no star. The engine finds a file of one of them as the whole path from the
+# root; the first three are also found by their last part, which is a name of the table too.
 PLAIN_WITH_A_FOLDER = {
     ".claude/CLAUDE.md",
     ".claude/AGENTS.md",
@@ -99,12 +99,6 @@ PLAIN_WITH_A_FOLDER = {
 
 # What the engine does not see today, though its table names it (Q36): each file, alone in its directory.
 NOT_SEEN = [
-    ".devin/global_rules.md",
-    ".gemini/styleguide.md",
-    ".github/copilot-instructions.md",
-    ".idx/airules.md",
-    ".junie/guidelines.md",
-    ".junie/playbook.md",
     ".amazonq/rules/x.md",
     ".augment/rules/x.md",
     ".claude/rules/x.md",
@@ -340,6 +334,20 @@ class CutTests(InstructionCase):
         self.assertEqual([entry["path"] for entry in self.listed(self.repo)], ["sub/AGENTS.md"])
         self.assertEqual(self.listed(self.repo, "--max-files", "1"), [])
         self.assertEqual(self.listed(self.repo, "--exclude", "sub/*"), [])
+
+
+class FolderNameTests(InstructionCase):
+    def test_a_plain_name_with_a_folder_at_the_root_is_listed_by_its_own_name(self) -> None:
+        for rel in sorted(PLAIN_WITH_A_FOLDER):
+            with self.subTest(file=rel):
+                target = self.directory({rel: "x\n"})
+                self.assertEqual(self.engine_sees(target), {rel})
+                expected = rel.rpartition("/")[2] if rel.endswith("/CLAUDE.md") or rel.endswith("/AGENTS.md") else rel
+                self.assertEqual([entry["variant"] for entry in self.listed(target)], [expected])
+
+    def test_a_plain_name_with_a_folder_below_the_root_is_not_listed(self) -> None:
+        target = self.directory({"sub/.github/copilot-instructions.md": "x\n"})
+        self.assertEqual((self.engine_sees(target), self.listed(target)), (set(), []))
 
 
 class EngineGapTests(InstructionCase):
