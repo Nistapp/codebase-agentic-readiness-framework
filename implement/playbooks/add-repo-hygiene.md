@@ -343,11 +343,11 @@ the policy files, and for nothing else:
    - **d. Check the neighbours.** The `AGENTS.md` branch and release sentence (`AGT-09`) and the "same change set"
      rule (`AGT-04`) must still read as they did. Run the engine's `AGT-04` and `AGT-09` after a move. Three
      more readers need care:
-     - A line of the prohibitions section stays in `AGENTS.md`. "`AGT-07` Do-not-do / deny rules present" and
-       "`CON-01` Allow/deny artifact present" read it there.
+     - A line of the prohibitions section stays in `AGENTS.md`. "`AGT-07` Do-not-do / deny rules present",
+       "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it there.
      - The link left behind is a reference, never "read `CONTRIBUTING.md` first". That form is a deferral for
        "`AGT-10` Instruction indirection resolved".
-     - The conventions file keeps its other items for "`AGT-13` Coding conventions written". Run these four checks
+     - The conventions file keeps its other items for "`AGT-13` Coding conventions written". Run these five checks
        after the move too; a fall stops it.
 
    Then run the engine's `HYG-13`.
