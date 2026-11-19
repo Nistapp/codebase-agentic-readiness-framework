@@ -13,8 +13,8 @@ must be able to review it in a diff. The document index
 ([ADR 0011](0011-index-the-documents-with-a-standard-library-tool.md)) already gives section addresses, and its
 quote verifier already checks quotes verbatim.
 
-This ADR fixes the map's format and the gate's rules. The schema exists. The map file, its tests and the gate
-script are not written yet.
+This ADR fixes the map's format and the gate's rules. The schema and the map's reads exist, with their tests. The
+moves, keeps, names, boundaries and the gate script are not written yet.
 
 ## Decision
 
