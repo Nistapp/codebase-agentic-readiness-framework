@@ -26,10 +26,14 @@ Engine           `NAV-01`. Reads `components.declared` (built by the engine's ow
                  and the like) is `PASS`. None declared, but `components.candidates` names an
                  undeclared multi-app layout, is `PARTIAL` — the layout exists, nothing declares it. A
                  single-root repository that still declares a manifest is `PASS` too: the boundary
-                 exists, it is just the root. No manifest at all, with the stack unrecognised, is
-                 `UNKNOWN`, never `FAIL` — an unrecognised ecosystem is not proof that boundaries are
-                 absent. Distrust a `PARTIAL`/`UNKNOWN` when the workspace convention used is one the
-                 engine's component detector does not yet recognise — verify by reading the manifest
+                 exists, it is just the root. The detector reads `package.json`, `pyproject.toml`,
+                 `pom.xml`, `build.gradle(.kts)`, `Cargo.toml`, `go.mod`, `Gemfile`, `composer.json`,
+                 and a .NET `*.sln`, `*.slnx`, `*.csproj`, `*.fsproj` or `*.vbproj` in the component's
+                 own folder. No manifest it reads is `UNKNOWN`, never `FAIL` — an unrecognised ecosystem
+                 is not proof that boundaries are absent. The summary names the ecosystems the engine
+                 recognised, or says the stack is not recognised. Distrust a `PARTIAL`/`UNKNOWN` when
+                 the workspace convention used is one the engine's component detector does not yet
+                 recognise — verify by reading the manifest
                  directly before treating the boundary as undeclared.
 Method           automated
 Look for         `components.declared` for any non-root member; failing that, `components.candidates`
@@ -42,13 +46,13 @@ Rubric           PASS: at least one non-root component is declared by a build ma
                  FAIL: not used by this check — an unrecognised stack with nothing declared is `UNKNOWN`,
                  never a defect to score.
                  NOT_APPLICABLE: never.
-                 UNKNOWN when: no build manifest declares a component and the stack is not recognised at
-                 all.
+                 UNKNOWN when: no build manifest the component detector reads declares a component (for
+                 example a Python project with only `requirements.txt`, or no recognised stack at all).
 Evidence to cite A `file` evidence item per declared component (up to 6 named in the summary) for PASS;
                  a `file` evidence item per candidate component (up to 12) for PARTIAL.
 Absence proof    A PARTIAL names every candidate component the engine's own layout heuristic found, so
                  "nothing declares them" is a checked list, not an assumption; the UNKNOWN case records
-                 that no manifest exists at all as its own stated reason.
+                 that no manifest the detector reads exists as its own stated reason.
 Remediation      playbook `establish-docs-contract` (`catalogue.json` lists it for `NAV-01`); point
                  at the workspace mechanism appropriate to the detected ecosystem inline.
 Pitfalls         A single-package repository with a root manifest is a legitimate `PASS`, not a weaker
