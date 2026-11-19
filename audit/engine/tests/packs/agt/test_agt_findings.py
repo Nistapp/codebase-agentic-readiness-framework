@@ -164,13 +164,13 @@ class Agt01Tests(unittest.TestCase):
         report = audit({"AGENTS.md": BODY, "GEMINI.md": BODY})
         self.assertEqual([f["id"] for f in findings_of(report, "AGT-01")], [])
 
-    def test_only_a_nested_canonical_file_is_a_nested_file_and_not_a_vendor_finding(self):
+    def test_only_a_nested_canonical_file_is_a_nested_only_finding_and_not_a_vendor_finding(self):
         report = audit({"sub/AGENTS.md": BODY})
         self.assertEqual(
             (check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]),
-            ("PASS", "1 nested instruction file(s)"),
+            ("PARTIAL", "1 nested instruction file(s)"),
         )
-        self.assertEqual(findings_of(report, "AGT-01"), [])
+        self.assertEqual([f["id"] for f in findings_of(report, "AGT-01")], ["AGT-01:nested-only"])
 
     def test_a_root_file_with_nested_files_counts_only_the_nested_ones(self):
         report = audit({"AGENTS.md": BODY, "a/AGENTS.md": BODY, "b/AGENTS.md": BODY})

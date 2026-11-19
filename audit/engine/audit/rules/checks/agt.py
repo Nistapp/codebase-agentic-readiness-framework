@@ -74,12 +74,13 @@ _STUB_WORD_RES = (
 )
 
 
-#: All basenames that could be an instruction file, derived from the variant table.
+#: All basenames that could be an instruction file in any folder, derived from the variant table: the canonical file,
+#: the aliases, the overrides and each harness path with no folder and no wildcard.
 def _instruction_basenames() -> set[str]:
     names: set[str] = set(V.CANONICAL_PATHS) | set(V.NON_CANONICAL_ALIASES) | set(V.OVERRIDE_PATHS)
     for harness in V.HARNESSES:
         for pattern in harness.paths:
-            if "*" not in pattern:
+            if "*" not in pattern and "/" not in pattern:
                 names.add(pattern)
     return names
 
@@ -87,11 +88,21 @@ def _instruction_basenames() -> set[str]:
 INSTRUCTION_BASENAMES = _instruction_basenames()
 
 
-#: Basenames that only config-gated harnesses claim, with the config files that would load them. Without one of
-#: those configs the file is an ordinary document: a `CONVENTIONS.md` with no `.aider.conf.yml` is a style guide.
-def _config_gated_basenames() -> dict[str, tuple[str, ...]]:
+#: Harness paths with a folder and no wildcard (`.github/copilot-instructions.md`). The table's paths are relative to
+#: the repository root, so each one is matched as the whole path from the root; a base name holds no folder.
+def _instruction_fixed_paths() -> set[str]:
+    return {pattern for harness in V.HARNESSES for pattern in harness.paths if "*" not in pattern and "/" in pattern}
+
+
+INSTRUCTION_FIXED_PATHS = _instruction_fixed_paths()
+
+
+#: Basenames and fixed paths that only config-gated harnesses claim, with the config files that would load them.
+#: Without one of those configs the file is an ordinary document: a `CONVENTIONS.md` with no `.aider.conf.yml` is a
+#: style guide.
+def _config_gated_names() -> dict[str, tuple[str, ...]]:
     gated: dict[str, tuple[str, ...]] = {}
-    for name in INSTRUCTION_BASENAMES:
+    for name in INSTRUCTION_BASENAMES | INSTRUCTION_FIXED_PATHS:
         owners = [h for h in V.HARNESSES if name in h.paths]
         claimed_elsewhere = name in V.CANONICAL_PATHS or name in V.NON_CANONICAL_ALIASES or name in V.OVERRIDE_PATHS
         if owners and not claimed_elsewhere and all(h.paths_need_config for h in owners):
@@ -99,7 +110,7 @@ def _config_gated_basenames() -> dict[str, tuple[str, ...]]:
     return gated
 
 
-CONFIG_GATED_BASENAMES = _config_gated_basenames()
+CONFIG_GATED_NAMES = _config_gated_names()
 
 
 def is_non_instruction(rel: str) -> bool:
@@ -117,14 +128,19 @@ def instruction_paths(inv: Inventory) -> set[str]:
         if is_non_instruction(rel):
             continue
         base = rel.rsplit("/", 1)[-1]
-        if base in INSTRUCTION_BASENAMES:
-            configs = CONFIG_GATED_BASENAMES.get(base)
+        name = rel if rel in INSTRUCTION_FIXED_PATHS else base if base in INSTRUCTION_BASENAMES else None
+        if name is not None:
+            configs = CONFIG_GATED_NAMES.get(name)
             if configs is None or any(inv.has(config) for config in configs):
                 found.add(rel)
             continue
+        # fnmatch reads `**/` as "any text, then a slash", so a file straight in a rules folder
+        # (`.cursor/rules/a.mdc`) also tries the pattern without it, as `variants._matches` does.
         for harness in V.HARNESSES:
             for pattern in harness.paths:
-                if "*" in pattern and fnmatch.fnmatch(rel, pattern):
+                if "*" in pattern and (
+                    fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel, pattern.replace("**/", ""))
+                ):
                     found.add(rel)
     return found
 
@@ -243,6 +259,25 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
                     remediation="Add AGENTS.md as the canonical file and reduce vendor files to a "
                     "one-line pointer, or a symlink where the harness supports it.",
                     path="vendor-only",
+                )
+            )
+        if not canonical_root and canonical_nested:
+            findings.append(
+                Finding(
+                    check=spec.id,
+                    severity=Severity.DEGRADER,
+                    phase=spec.phase,
+                    verdict=Verdict.PARTIAL,
+                    statement=statement(
+                        "find the project rules at the repository root",
+                        f"AGENTS.md exists only below the root ({', '.join(canonical_nested[:6])}"
+                        f"{'…' if len(canonical_nested) > 6 else ''}), so a harness that reads the root file "
+                        f"finds no instruction file",
+                    ),
+                    evidence=[Evidence(p) for p in canonical_nested[:12]],
+                    remediation="Add AGENTS.md at the repository root with the adapt-agents-md playbook, and keep "
+                    "each nested AGENTS.md for what is local to its folder.",
+                    path="nested-only",
                 )
             )
         if overrides:
@@ -403,6 +438,7 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
     findings: list[Finding] = []
 
     if competitors:
+        beside = "alongside the canonical one" if "AGENTS.md" in present else "with no canonical AGENTS.md at the root"
         findings.append(
             Finding(
                 check=spec.id,
@@ -411,8 +447,8 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
                 verdict=Verdict.FAIL,
                 statement=statement(
                     "know which instruction file is authoritative",
-                    f"{len(competitors)} vendor-specific instruction files exist alongside the "
-                    f"canonical one ({', '.join(competitors[:8])}{'…' if len(competitors) > 8 else ''})",
+                    f"{len(competitors)} vendor-specific instruction files exist {beside} "
+                    f"({', '.join(competitors[:8])}{'…' if len(competitors) > 8 else ''})",
                 ),
                 evidence=[Evidence(p) for p in competitors[:12]],
                 remediation="Keep AGENTS.md canonical; reduce each vendor file to a pointer at it, or "

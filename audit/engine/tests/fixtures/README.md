@@ -32,6 +32,7 @@ fixtures/
   agt-01-stub/               AGENTS.md present, 80 characters     -> AGT-01 FAIL (stub)
   agt-01-mis-cased/          agents.md only                       -> AGT-01 FAIL (case)
   agt-01-shadowed/           AGENTS.md + AGENTS.override.md       -> AGT-01 PARTIAL (override)
+  agt-01-nested-only/        .junie/AGENTS.md only, no root AGENTS.md -> AGT-01 PARTIAL (nested only)
   agt-01-marker-words-in-prose/ a finished AGENTS.md that says "placeholder", "TODO" and "TBD" in sentences -> AGT-01 PASS
   agt-02-uncovered/          two declared workspaces, one AGENTS.md -> AGT-02 PARTIAL
   agt-03-incomplete/         docs/ named, no style guide or scratch contract -> AGT-03 PARTIAL
@@ -39,6 +40,8 @@ fixtures/
   agt-06-thin/               one boundary rule naming a real path -> AGT-06 PARTIAL
   agt-07-missing-deny/       prohibitions cover tests only        -> AGT-07 PARTIAL
   agt-08-competitor/         AGENTS.md + CLAUDE.md                -> AGT-08 FAIL
+  agt-08-copilot-instructions/ AGENTS.md + .github/copilot-instructions.md -> AGT-08 FAIL
+  agt-08-cursor-rule-flat/   AGENTS.md + .cursor/rules/project.mdc -> AGT-08 FAIL
   agt-09-no-release/         branches stated, no release boundary -> AGT-09 PARTIAL
   agt-09-ruleset-branch-unnamed/ a ruleset protects staging, AGENTS.md does not name it -> AGT-09 PARTIAL
   agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL
