@@ -24,6 +24,7 @@ Each command answers one question:
 | Which engine checks changed verdict or evidence? | `evidence run`, then `evidence compare` | [Step 6](#step-6-compare-the-engine-evidence) |
 | Does each quote in a report exist where it says? | `verify-quotes <folder>` | [Step 7](#step-7-check-the-quotes-of-a-report) |
 | Does a playbook change still keep what each check reads? | `make consistency-map` | [Step 8](#step-8-run-the-consistency-maps-gate) |
+| What did my branch change in the text the checks read? | `make consistency-map CMAP_ARGS=--base` | [Step 8](#step-8-run-the-consistency-maps-gate) |
 
 The flow below shows the order. The manifest and the evidence run read only the working tree, so record their
 before side first.
@@ -274,6 +275,26 @@ The gate prints a count for each kind of problem, then the problems. Read these 
 `unreviewed` is advice. The gate guesses touches from paths and content kinds, and the guess is coarse.
 `--verbose` lists the pairs. The gate exits 0 whatever it finds; `CMAP_ARGS=--strict` makes it exit 1.
 
+On a work branch, add change mode. It compares your branch with a base ref, `origin/dev` by default:
+
+```bash
+make consistency-map CMAP_ARGS=--base
+make consistency-map CMAP_ARGS="--base <ref> --at HEAD"
+```
+
+It prints the static report, then four groups:
+
+- `review`: the sections your change moved, renamed, edited or removed in a file a check reads, with the checks.
+  A template counts at the path the scaffolder writes it to. Read each one; it is not a problem.
+- `lost-mention`: a kept section named the check ID before your change and does not now. This is a problem, even
+  when the kept sentence still exists somewhere else.
+- `left-scope`: you renamed a file a check reads to a path the check does not read. This is a problem.
+- `evidence`: the checks whose verdict or evidence changed, when their reads overlap your change. It is reported,
+  never a problem.
+
+The evidence part copies each side into a temporary repository and runs the engine on both. It takes about
+15 seconds on this repository. `--no-evidence` skips it.
+
 ---
 
 ## What the tools cannot see
@@ -290,6 +311,7 @@ The tools find a loss in text and structure. They do not prove that the recipes 
 | `manifest-diff` | Whether a changed bundle file still says the same thing |
 | `evidence compare` | A check whose input changed but whose verdict and evidence stayed the same |
 | `consistency-map` | A touch that no reviewer declared. It shows only as an unreviewed guess |
+| `consistency-map --base` | The evidence of a fresh greenfield scaffold. A template change shows under `review`, but the engine audits only this repository |
 | All but `consistency-map` | An engine contract bound to one line of a file |
 
 The last row needs a note. Some engine checks need two things on one physical line, for example
@@ -309,7 +331,7 @@ sentence keeps it. It checks that the rule is stated, not that an agent follows 
 | `evidence run` | Every report is written | A command failed | The run is refused: folder not fresh or inside the repository, or a report missing or stale; or a usage error |
 | `evidence compare` | A report, whatever it finds | A run folder cannot be read, or the targets differ | A usage error |
 | `verify-quotes` | Every quote and citation passes | A usage error, or a folder with no `quotes.json` | A quote or citation fails |
-| `consistency_map.py` | A report, whatever it finds | With `--strict`: a problem found | A usage error |
+| `consistency_map.py` | A report, whatever it finds | With `--strict`: a problem found; with `--base`: an engine run failed | A usage error, such as a base ref that names no commit |
 
 ---
 
@@ -322,4 +344,6 @@ You checked the change when all of this holds:
 - [ ] `manifest-diff` lists only the bundle files you meant to change.
 - [ ] `evidence compare` shows no verdict and no evidence change, or you explained each one.
 - [ ] `make consistency-map` shows no new `unkept`, `quote` or `coverage` problem.
+- [ ] `make consistency-map CMAP_ARGS=--base` shows no `lost-mention` or `left-scope` problem, and you read each
+  `review` and `evidence` line.
 - [ ] `make check` passes, as [`AGENTS.md`](../../AGENTS.md#definition-of-done) asks.

@@ -21,6 +21,12 @@ count is advice, never a problem: the inference is coarse, and a reviewer decide
 
 The gate prints a report and exits 0. With ``--strict`` it exits 1 when it found a problem. ``--format json``
 writes the report as JSON. ``make consistency-map`` runs it in report mode.
+
+``--base [REF]`` adds change mode against ``REF`` (default ``origin/dev``): the sections a branch changed in the
+files the checks read, the kept sections that lost their mention of a check, the files renamed out of a read's
+scope, and the evidence comparison (:mod:`consistency_map_change`). ``--at REF`` takes the new side from a commit,
+not the working tree; ``--no-evidence`` skips the engine runs. A ref that names no commit is a usage error (exit 2);
+a failed engine run exits 1.
 """
 
 from __future__ import annotations
@@ -45,6 +51,8 @@ BOOTSTRAP = REPO / "greenfield" / "bootstrap"
 TEMPLATES = REPO / "greenfield" / "templates"
 PLAYBOOKS = REPO / "implement" / "playbooks"
 CATALOGUE = REPO / "audit" / "catalogue.json"
+#: The base ref of change mode (`--base` with no value).
+DEFAULT_BASE = "origin/dev"
 
 if str(DEV) not in sys.path:
     sys.path.insert(0, str(DEV))
@@ -152,11 +160,16 @@ def name_matches(name: dict[str, Any], path: str) -> bool:
     return pattern in path
 
 
-def scaffolded_paths() -> dict[str, str]:
-    """Each template file (``greenfield/templates/...``) and the path the scaffolder writes it to."""
+def bootstrap_module() -> Any:
+    """The greenfield scaffolder, ``greenfield/bootstrap/bootstrap.py``, imported once."""
     if str(BOOTSTRAP) not in sys.path:
         sys.path.insert(0, str(BOOTSTRAP))
-    bootstrap = importlib.import_module("bootstrap")
+    return importlib.import_module("bootstrap")
+
+
+def scaffolded_paths() -> dict[str, str]:
+    """Each template file (``greenfield/templates/...``) and the path the scaffolder writes it to."""
+    bootstrap = bootstrap_module()
     paths: dict[str, str] = {}
     for file in sorted(TEMPLATES.rglob("*")):
         if file.is_file():
@@ -408,16 +421,55 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--strict", action="store_true", help="exit 1 when the gate finds a problem")
     parser.add_argument("--verbose", action="store_true", help="also list the unreviewed pairs in text mode")
+    parser.add_argument(
+        "--base",
+        nargs="?",
+        const=DEFAULT_BASE,
+        metavar="GIT_REF",
+        help="also run change mode against this git ref (default origin/dev)",
+    )
+    parser.add_argument(
+        "--at", metavar="GIT_REF", help="with --base: the new side is this commit, not the working tree"
+    )
+    parser.add_argument("--no-evidence", action="store_true", help="with --base: skip the evidence comparison")
     args = parser.parse_args(argv)
+    if args.base is None and (args.at is not None or args.no_evidence):
+        parser.error("--at and --no-evidence need --base")
     cmap = json.loads(args.map.read_text(encoding="utf-8"))
     catalogue_ids = [check["id"] for check in json.loads(CATALOGUE.read_text(encoding="utf-8"))["checks"]]
     found = report(cmap, catalogue_ids)
     unreviewed = [f"{move} -> {check} (through {path})" for move, check, path in unreviewed_pairs(cmap)]
+    change = None
+    if args.base is not None:
+        import consistency_map_change as cmc
+        from docindex.evidence import EvidenceError
+        from docindex.gitread import GitError
+
+        try:
+            change = cmc.change_report(
+                cmap,
+                REPO,
+                args.base,
+                args.at,
+                cmc.project_config(),
+                engine_dir=None if args.no_evidence else ENGINE,
+            )
+        except GitError as exc:
+            parser.error(str(exc))
+        except EvidenceError as exc:
+            print(f"consistency_map.py: the evidence comparison failed: {exc}", file=sys.stderr)
+            return 1
     if args.format == "json":
-        sys.stdout.write(json.dumps({**found, "unreviewed": unreviewed}, indent=2, sort_keys=True) + "\n")
+        data: dict[str, Any] = {**found, "unreviewed": unreviewed}
+        if change is not None:
+            data["change"] = cmc.to_dict(change)
+        sys.stdout.write(json.dumps(data, indent=2, sort_keys=True) + "\n")
     else:
         sys.stdout.write(format_text(found, unreviewed, args.verbose))
-    return 1 if args.strict and any(found.values()) else 0
+        if change is not None:
+            sys.stdout.write(cmc.format_text(change))
+    problems = any(found.values()) or (change is not None and any(change.problems.values()))
+    return 1 if args.strict and problems else 0
 
 
 if __name__ == "__main__":
