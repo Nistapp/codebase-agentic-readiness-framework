@@ -17,7 +17,8 @@ Each numbered ADR (``NNNN-slug.md``) in :data:`ADR_FOLDERS` must:
 An index must not link a numbered ADR that does not exist. No Markdown page may name an ADR that does not exist: a
 path such as ``adrs/0004-slug.md`` must resolve in an ADR folder, and "ADR 0004" must be a number some folder uses.
 Generated history (``CHANGELOG.md``), fixtures, scratch and the greenfield templates (whose ADR numbers belong to a
-new project) are not read. The number check cannot tell folders apart: "ADR 0001" passes while any folder has one.
+new project) are not read. In a git work tree only the files git lists are read (tracked, or untracked and not
+ignored), so an ignored copy of the tree, such as an agent's worktree, is skipped. The number check cannot tell folders apart: "ADR 0001" passes while any folder has one.
 
 Exit 0 when all hold, 1 when one fails (each failure is printed), 2 on a usage error. ``make adr-lint`` runs it
 inside ``make check``. Standard library only.
@@ -29,6 +30,7 @@ import argparse
 import importlib
 import os
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import Callable, Sequence
@@ -129,8 +131,46 @@ def lint_index(root: Path, index_rel: str, folders: tuple[str, ...], adrs: list[
     return failures
 
 
+def git_files(root: Path) -> list[str] | None:
+    """The files git sees under ``root`` (tracked, or untracked and not ignored), or None when ``root`` is not a work tree.
+
+    Only a work tree's top level counts, so a throwaway folder inside another repository is walked instead.
+    """
+    try:
+        top = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=False
+        )
+        if top.returncode != 0 or Path(top.stdout.strip()).resolve() != root.resolve():
+            return None
+        listed = subprocess.run(
+            ["git", "-C", str(root), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return sorted({name for name in listed.stdout.split("\0") if name})
+
+
 def markdown_pages(root: Path) -> list[Path]:
-    """The Markdown pages read for ADR mentions; skipped folders are pruned before the walk enters them."""
+    """The Markdown pages read for ADR mentions.
+
+    In a git work tree these are the files git lists: tracked, or untracked and not ignored. An ignored folder, such as
+    an agent's worktree under ``.claude/worktrees/``, is not read. Any other folder is walked, and skipped folders are
+    pruned before the walk enters them.
+    """
+    listed = git_files(root)
+    if listed is not None:
+        return [
+            root / rel
+            for rel in listed
+            if rel.endswith(".md")
+            and Path(rel).name not in SKIP_FILES
+            and not SKIP_DIRS.intersection(Path(rel).parent.parts)
+            and not rel.startswith(SKIP_PREFIXES)
+            and (root / rel).is_file()
+        ]
     pages: list[Path] = []
     for directory, subdirs, files in os.walk(root):
         rel_dir = Path(directory).relative_to(root).as_posix()

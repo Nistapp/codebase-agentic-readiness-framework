@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import io
+import subprocess
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -202,6 +203,61 @@ class Mentions(TreeCase):
             }
         )
         self.assertEqual(adr_lint.lint(root), [])
+
+
+class GitWorkTree(TreeCase):
+    """In a git work tree the mention check reads the files git lists, not every file on disk."""
+
+    STALE = "See ADR 0009.\n"
+
+    def repo(self, extra: dict[str, str]) -> Path:
+        files = {
+            "docs/architecture/adrs/0001-use-one-thing.md": GOOD,
+            adr_lint.INDEX: "[0001](0001-use-one-thing.md)\n",
+            ".gitignore": "ignored/\n",
+        }
+        root = self.tree({**files, **extra})
+        for args in (["init", "-q"], ["add", "-A"]):
+            subprocess.run(["git", "-C", str(root), *args], check=True, capture_output=True)
+        return root
+
+    def test_an_ignored_copy_of_the_tree_is_not_read(self) -> None:
+        root = self.repo({"ignored/agent-1/docs/page.md": self.STALE})
+        self.assertEqual(adr_lint.lint(root), [])
+
+    def test_a_tracked_page_is_read(self) -> None:
+        root = self.repo({"docs/page.md": self.STALE})
+        self.assertEqual(adr_lint.lint(root), ["docs/page.md:1: names ADR 0009, which no ADR folder holds"])
+
+    def test_an_untracked_page_that_is_not_ignored_is_read(self) -> None:
+        root = self.repo({})
+        (root / "new.md").write_text(self.STALE, encoding="utf-8")
+        self.assertEqual(adr_lint.lint(root), ["new.md:1: names ADR 0009, which no ADR folder holds"])
+
+    def test_a_tracked_page_deleted_from_disk_is_not_read(self) -> None:
+        root = self.repo({"docs/page.md": self.STALE})
+        (root / "docs/page.md").unlink()
+        self.assertEqual(adr_lint.lint(root), [])
+
+    def test_skipped_folders_stay_skipped(self) -> None:
+        root = self.repo(
+            {"CHANGELOG.md": self.STALE, "a/fixtures/x.md": self.STALE, "greenfield/templates/x.md": self.STALE}
+        )
+        self.assertEqual(adr_lint.lint(root), [])
+
+    def test_a_folder_below_a_work_tree_top_is_walked(self) -> None:
+        root = self.repo({})
+        sub = root / "sub"
+        (sub / "ignored").mkdir(parents=True)
+        (sub / adr_lint.INDEX).parent.mkdir(parents=True)
+        (sub / adr_lint.INDEX).write_text("", encoding="utf-8")
+        (sub / "ignored/page.md").write_text(self.STALE, encoding="utf-8")
+        self.assertIsNone(adr_lint.git_files(sub))
+        self.assertEqual(adr_lint.lint(sub), ["ignored/page.md:1: names ADR 0009, which no ADR folder holds"])
+
+    def test_a_plain_folder_is_walked(self) -> None:
+        root = self.tree({"ignored/page.md": self.STALE})
+        self.assertIsNone(adr_lint.git_files(root))
 
 
 class ThisRepository(unittest.TestCase):
