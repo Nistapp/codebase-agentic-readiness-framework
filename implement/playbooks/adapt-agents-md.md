@@ -479,7 +479,7 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 - **The owner declines conventions items (Step 16):** the item is `partial`, with each declined item as debt
   (`what=conventions items missing (<names>),count=N`). The count may only go down. A rule with no evidence in the code
   stays out and counts the same way.
-- **A stub word the owner has not answered:** the line stays as it is, the item is `partial` with
+- **A stub word the owner has not answered:** the line stays as it is. The item is `partial` with
   `--debt "what=stub words not answered,count=N"`, and the pull request says so under "What was not done".
 - **No boundary the code shows (AGT-06), and the owner gives none:** `partial` with
   `--debt "what=boundary rules missing,count=N"`, where N is the rules short of two.

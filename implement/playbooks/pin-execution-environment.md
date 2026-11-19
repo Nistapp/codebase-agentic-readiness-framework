@@ -211,8 +211,8 @@ Steps 1, 5, 8 and 9 make no commit.
   debt: count the mismatched places, record them with `--debt`, mark the item `partial`, and list each place
   in the note. There is nothing to ratchet; the CI theme closes it.
 - Per-component lockfiles with no root manifest, by the owner's layout choice: `partial` with
-  `--debt "what=component lockfiles the engine does not read,count=N"` and the note "lockfiles per component by owner
-  choice; engine reads the root only". Not a defect.
+  `--debt "what=component lockfiles the engine does not read,count=N"`. The note says "lockfiles per component by
+  owner choice; engine reads the root only". Not a defect.
 - A component whose build fails on the pinned major: record `blocked` with the error and the owner's options
   (a different major, an upgrade of the failing dependency). Never pin a version the build cannot use.
 
