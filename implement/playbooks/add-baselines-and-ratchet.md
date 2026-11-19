@@ -131,14 +131,16 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    read-only verbs". Give each public function in it a docstring or doc comment. "`NAV-05` Public-symbol
    documentation coverage" counts them.
 5. **Counts written down (BASE-02).** Where a tool has a budget flag, put today's count on the flag in the verb
-   (`--max-warnings <N>`) instead of a counts-file entry. Every other count lives in the counts file.
+   (`--max-warnings <N>`) instead of a counts-file entry. Every other count lives in the counts file. Add only
+   the flag: the verb stays read-only, with no `--fix` or `--write`.
 6. **Say it in `AGENTS.md`.** One short paragraph in the quality or commands section, in words an agent and the
    audit both read: name each baseline mechanism and file, say "no new violations: `format:check` compares against
    the quality baseline", and state the rule "a baseline only goes down, a coverage floor only goes up; raising
    either needs the owner".
 7. **Coverage (TST-05, BASE-04).** Configure the runner's coverage, add or reuse a coverage verb (`test:cov` or
    similar), measure, set the floor (Inputs 4) in the runner's own configuration, and wire it per
-   `tests.coverage_gate`. One floor per component in a multi-component repository. A coverage tool the verb adds
+   `tests.coverage_gate`. The floor adds no writer to `test` or `check`: no `--fix`, `--write` or install.
+   One floor per component in a multi-component repository. A coverage tool the verb adds
    (`c8`, `nyc`) is a pinned dev dependency in the manifest. The verb runs it by name, never as `npx c8@<version>`.
    So "`EXEC-08` Tool versions visible to dependency automation" finds its version in the manifest.
 8. **Suite status (TST-02).** Run `test` once (with the services it needs, through the repository's own start
@@ -148,7 +150,9 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    reads TST-02 only from a Tier-C probe; this record is for the agent, not a substitute verdict.
 9. **Skip census (TST-03).** List every skip, ignore and expected-failure marker. Judge each one: a test that can be
    fixed is an item for the owner; a deliberate skip gets a one-line reason next to it. Never delete or un-skip in
-   bulk. The count is debt with the marker list as its baseline. A reason line shifts the lines below it. The
+   bulk. The count is debt with the marker list as its baseline. Never put a reason line between a `def` line
+   and its docstring: "`NAV-05` Public-symbol documentation coverage" reads the next line. A reason line shifts
+   the lines below it. The
    secrets allowlist (`.secrets.baseline`, `.gitleaksignore`) may name a line in that file. Then regenerate it with
    the scanner's own command, in its own commit (Commits row 17). "`SEC-02` No key-shaped strings in tracked
    files" accepts an allowlisted hit only on its listed line.

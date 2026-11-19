@@ -293,6 +293,15 @@ The gate prints a count for each kind of problem, then the problems. Read these 
   enforces it is gone. Restore the sentence, or update the boundary's home or enforcer in the map.
 
 `unreviewed` is advice. The gate guesses touches from paths and content kinds, and the guess is coarse.
+Three rules keep the noise down:
+
+- A folder touches a place only when the place is that folder or sits under it.
+- A wildcard base name, such as `*.yml`, never touches a literal file name.
+- Six checks read `**` only for some file kinds. For these checks, a path of another kind does not touch `**`,
+  unless the move untracks it. The six are "`TOOL-05` Local hook chain active", "`TOOL-06` Commit convention
+  enforced", "`TOOL-07` Local guard against commits to a protected branch", "`CI-05` Workflow files are linted",
+  "`EXEC-04` Env-var inventory complete" and "`NAV-02` Obvious entry points".
+
 `--verbose` lists the pairs. The gate exits 0 whatever it finds; `CMAP_ARGS=--strict` makes it exit 1.
 
 On a work branch, add change mode. It compares your branch with a base ref, `origin/dev` by default:

@@ -1697,8 +1697,8 @@ READS: dict[str, Reads] = {
         binding="line",
         note=(
             "Fixed names are matched by exact path per detected ecosystem; source files (glob **) are grepped"
-            " for a line that starts with the __main__ guard or func main(, a JVM main method or a Spring "
-            "Boot or Quarkus marker, and build files for io.quarkus."
+            " for a line that starts with func main(, a JVM main method or a Spring Boot or Quarkus marker,"
+            " and build files for io.quarkus. A Python __main__ guard alone is not read."
         ),
     ),
     "NAV-03": Reads(

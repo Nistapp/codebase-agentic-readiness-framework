@@ -87,11 +87,15 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
    1. Add the config file (or reuse the existing one) and the dependency, pinned to an exact version. Keep one
       config per concern, for "`EXEC-07` No competing configs for one concern". The pin lives in the manifest.
    2. Point the verb at it (`define-command-surface`). The verb runs the tool by name, never as `name@version`.
-      "`EXEC-08` Tool versions visible to dependency automation" reads the verb.
+      "`EXEC-08` Tool versions visible to dependency automation" reads the verb. A read-only verb never writes:
+      no `--fix`, `--write` or `audit fix`, no `tsc` without `--noEmit`, no install. "`CMD-04` Write verbs
+      separated from read-only verbs" fails on such a form.
    3. Run the full read-only form once, on the untouched tree, and count the violations. That count is the debt.
    4. If the count is 0, wire the full run into the verb and `check`. If not, wire the ratchet form into the
       verb `check` uses. Record the debt: its count and a review date. Then add the full run to CI as a
-      report-only step. Its job is outside the merge gate's `needs`, and its name says report-only. Commit the
+      report-only step. It runs a local verb or the tool by name, never a runner target that no local runner
+      defines. "`CI-02` Local↔CI parity" and "`CI-03` CI-only steps flagged" read its command. Its job is outside
+      the merge gate's `needs`, and its name says report-only. Commit the
       count and the review date in a comment beside the step, in the CI file's own syntax. A later audit reads
       that comment; it cannot see the state file. "`CI-04` CI enforces the same gate as the local check" accepts
       that step.
