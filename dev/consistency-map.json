@@ -1106,6 +1106,12 @@
       "status": "kept"
     },
     {
+      "check": "NAV-02",
+      "move": "add-baselines-and-ratchet/row-4",
+      "reason": "The move can only remove findings or add credit: the compare script's __main__ guard can make NAV-02 pass in a repository with no real entry point. The engine is to stop counting such a script; until then the false credit is accepted.",
+      "status": "accepted"
+    },
+    {
       "check": "CMD-04",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -1117,11 +1123,71 @@
       "status": "kept"
     },
     {
+      "check": "BASE-03",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "The counts file named in a CI workflow, or a \"ratchet\" / \"no new violations\" sentence: `PASS`",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-6",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Add only the flag: the verb stays read-only, with no `--fix` or `--write`.",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-7",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-01",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Each tool with debt has a baseline; the paragraph names them",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-8",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-03",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "The counts file named in a CI workflow, or a \"ratchet\" / \"no new violations\" sentence: `PASS`",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-8",
+      "status": "kept"
+    },
+    {
+      "check": "TST-05",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "A coverage config, key or `--coverage`/`jacoco` in a script or build file: `PASS`",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-9",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-08",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
         "quote": "The verb runs it by name, never as `npx c8@<version>`.",
         "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-10",
+      "status": "kept"
+    },
+    {
+      "check": "TST-05",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "A coverage config, key or `--coverage`/`jacoco` in a script or build file: `PASS`",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
       },
       "move": "add-baselines-and-ratchet/row-10",
       "status": "kept"
@@ -1136,6 +1202,12 @@
       "move": "add-baselines-and-ratchet/row-11",
       "note": "The floor never fails today's suite, so the test verb's status holds.",
       "status": "kept"
+    },
+    {
+      "check": "TST-05",
+      "move": "add-baselines-and-ratchet/row-11",
+      "reason": "The move can only remove findings or add credit: a coverage threshold key in the runner config is one more coverage key TST-05 finds.",
+      "status": "accepted"
     },
     {
       "check": "CMD-02",
@@ -1160,6 +1232,32 @@
       "status": "kept"
     },
     {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "The floor adds no writer to `test` or `check`: no `--fix`, `--write` or install.",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-12",
+      "status": "kept"
+    },
+    {
+      "check": "TST-05",
+      "move": "add-baselines-and-ratchet/row-12",
+      "reason": "The move can only remove findings or add credit: coverage flags wired into test are one more coverage signal TST-05 finds in the resolved verbs.",
+      "status": "accepted"
+    },
+    {
+      "check": "BASE-04",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Gradle and nested `package.json`: `FAIL`, or `PARTIAL` with the `AGENTS.md` sentence",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-13",
+      "status": "kept"
+    },
+    {
       "check": "SEC-02",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -1171,6 +1269,26 @@
       "status": "kept"
     },
     {
+      "check": "NAV-05",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Never put a reason line between a `def` line and its docstring:",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-15",
+      "status": "kept"
+    },
+    {
+      "check": "TST-03",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Every marker has a reason or an owner item",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-15",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-06",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -1179,6 +1297,36 @@
       },
       "move": "add-baselines-and-ratchet/row-16",
       "note": "Inferred: the named forms start with a resolvable launcher (./gradlew, npx).",
+      "status": "kept"
+    },
+    {
+      "check": "TST-04",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "One single-test command for the runner",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+      },
+      "move": "add-baselines-and-ratchet/row-16",
+      "status": "kept"
+    },
+    {
+      "check": "CI-01",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "| CI-01 | Read the workflow's trigger block | A pull-request trigger |",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/verification"
+      },
+      "move": "add-ci-parity/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-04",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "A wrapper uses only CI's own variables or the names the example env file lists.",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-2",
       "status": "kept"
     },
     {
@@ -1209,6 +1357,26 @@
         "path": "implement/playbooks/add-ci-parity.md",
         "quote": "Do not weaken a gate that already blocks.",
         "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Every verb CI runs is the local verb with the same arguments; local run is green",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/verification"
+      },
+      "move": "add-ci-parity/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Every CI-only step is named so and listed in the CI doc",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/verification"
       },
       "move": "add-ci-parity/row-3",
       "status": "kept"
@@ -1282,6 +1450,17 @@
       },
       "move": "add-ci-parity/row-6",
       "note": "Reusing the scanner keeps its one config, so no second security config sits at the root (inferred).",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-11",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Do not rename the job; a rename silently un-requires it.",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-7",
+      "note": "HYG-11 reads the job names in the required checks; the row edits the merge-gate job and never renames it.",
       "status": "kept"
     },
     {
@@ -1375,6 +1554,36 @@
       "status": "kept"
     },
     {
+      "check": "AGT-07",
+      "home": {
+        "path": "implement/playbooks/add-deny-rules.md",
+        "quote": "Heading found; one rule each for tests, generated files, default branch, secrets",
+        "section": "implement/playbooks/add-deny-rules.md#playbook-add-deny-rules/verification"
+      },
+      "move": "add-deny-rules/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "CON-01",
+      "home": {
+        "path": "implement/playbooks/add-deny-rules.md",
+        "quote": "At least one span matches a real path (in practice all of them)",
+        "section": "implement/playbooks/add-deny-rules.md#playbook-add-deny-rules/verification"
+      },
+      "move": "add-deny-rules/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "CON-02",
+      "home": {
+        "path": "implement/playbooks/add-deny-rules.md",
+        "quote": "Every directory named or covered by a pattern",
+        "section": "implement/playbooks/add-deny-rules.md#playbook-add-deny-rules/verification"
+      },
+      "move": "add-deny-rules/row-1",
+      "status": "kept"
+    },
+    {
       "check": "DOC-03",
       "home": {
         "path": "implement/playbooks/add-deny-rules.md",
@@ -1395,6 +1604,28 @@
       "status": "kept"
     },
     {
+      "check": "CON-03",
+      "home": {
+        "path": "implement/playbooks/add-deny-rules.md",
+        "quote": "| CON-03 | `git check-ignore -v <root>/x` and `git ls-files <root>` per present root | Ignored, nothing tracked; `PASS` |",
+        "section": "implement/playbooks/add-deny-rules.md#playbook-add-deny-rules/verification"
+      },
+      "move": "add-deny-rules/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "NAV-03",
+      "move": "add-deny-rules/row-3",
+      "reason": "The move can only remove findings or add credit: untracked, ignored files leave the scan, so a binary, a file over 512 KiB or a .min. file there stops counting.",
+      "status": "accepted"
+    },
+    {
+      "check": "SEC-02",
+      "move": "add-deny-rules/row-3",
+      "reason": "The move can only remove findings or add credit: untracked files leave the tracked text files SEC-02 reads, so a hit can vanish but none can appear.",
+      "status": "accepted"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/playbooks/add-hooks-and-commit-rules.md",
@@ -1410,6 +1641,16 @@
         "path": "implement/playbooks/add-hooks-and-commit-rules.md",
         "quote": "Do not duplicate the secret-scanner version: reuse the CI pin.",
         "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/do-not-do"
+      },
+      "move": "add-hooks-and-commit-rules/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-05",
+      "home": {
+        "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+        "quote": "The engine's wiring file exists; the install step is documented",
+        "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
       },
       "move": "add-hooks-and-commit-rules/row-2",
       "status": "kept"
@@ -1446,6 +1687,17 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-06",
+      "home": {
+        "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+        "quote": "Option A: the contributing doc names the title check and the state records `skipped` with the owner's reason.",
+        "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
+      },
+      "move": "add-hooks-and-commit-rules/row-4",
+      "note": "A rubric target: the engine's TOOL-06 reads no doc kind, so the contributing doc itself cannot change its verdict.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/playbooks/add-hooks-and-commit-rules.md",
@@ -1466,6 +1718,12 @@
       "status": "kept"
     },
     {
+      "check": "NAV-02",
+      "move": "add-hooks-and-commit-rules/row-7",
+      "reason": "The move can only remove findings or add credit: the commit-lint script's __main__ guard can make NAV-02 pass in a repository with no real entry point. The engine is to stop counting such a script; until then the false credit is accepted.",
+      "status": "accepted"
+    },
+    {
       "check": "EXEC-08",
       "home": {
         "path": "implement/playbooks/add-hooks-and-commit-rules.md",
@@ -1484,6 +1742,46 @@
       },
       "move": "add-repo-hygiene/row-1",
       "note": "Commands come from the documented ones, so each fenced command resolves; the rule does not name EXEC-06.",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-01",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Root file, 200+ characters of body, no marker, not a bare title",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-02",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "File present; routing-only header when no approval is required",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-03",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "| HYG-03 | `ls .github/pull_request_template*` | Present; `PASS` |",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-04",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "| HYG-04 | `ls .github/ISSUE_TEMPLATE/` | At least one file; `PASS` |",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-4",
       "status": "kept"
     },
     {
@@ -1518,6 +1816,16 @@
       "status": "kept"
     },
     {
+      "check": "HYG-05",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Present, and its commands resolve",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-5",
+      "status": "kept"
+    },
+    {
       "check": "DOC-05",
       "home": {
         "path": "implement/SKILL.md",
@@ -1525,6 +1833,26 @@
         "section": "implement/SKILL.md#implement/stage-3-apply"
       },
       "move": "add-repo-hygiene/row-6",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-06",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "| HYG-06 | `ls SECURITY*` at the root, `.github/` or `docs/` | Present; `PASS` |",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-6",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-07",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "`PASS` once the release tool has committed the file; until then `FAIL` and the item is `partial`",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-7",
       "status": "kept"
     },
     {
@@ -1558,6 +1886,36 @@
       "status": "kept"
     },
     {
+      "check": "HYG-11",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Each file parses; the source-branch job exists for a two-branch model",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-9",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-11",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Each file parses; the source-branch job exists for a two-branch model",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-10",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-11",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Each file parses; the source-branch job exists for a two-branch model",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-11",
+      "status": "kept"
+    },
+    {
       "check": "DOC-05",
       "home": {
         "path": "implement/SKILL.md",
@@ -1576,6 +1934,26 @@
       },
       "move": "add-repo-hygiene/row-13",
       "note": "Dependabot files are not EXEC-08 reads; only a Renovate custom manager changes which files the check skips.",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-09",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "An entry per detected ecosystem, no `target-branch` beside `ignore` or `groups`",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-13",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "A setup link, the gate with its CI line, and the branch, commit and pull-request rules",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-14",
       "status": "kept"
     },
     {
@@ -1639,11 +2017,53 @@
       "status": "kept"
     },
     {
+      "check": "CON-02",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "A line of the prohibitions section stays in `AGENTS.md`.",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-15",
+      "note": "CON-02 reads the same prohibitions-section code spans as CON-01.",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-13",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "A setup link, the gate with its CI line, and the branch, commit and pull-request rules",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/verification"
+      },
+      "move": "add-repo-hygiene/row-15",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-09",
+      "home": {
+        "path": "implement/playbooks/add-repo-hygiene.md",
+        "quote": "Add the name to the `AGENTS.md` release sentence (Commits row 16).",
+        "section": "implement/playbooks/add-repo-hygiene.md#playbook-add-repo-hygiene/steps/generic"
+      },
+      "move": "add-repo-hygiene/row-16",
+      "note": "The row adds the branch name AGT-09 asks for and changes no other word, so the existing names stay whole words.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/SKILL.md",
         "quote": "One exception keeps the tree working: a lockfile goes in the same commit as the manifest change that regenerates it.",
         "section": "implement/SKILL.md#implement/stage-3-apply/what-one-commit-holds"
+      },
+      "move": "configure-quality-tools/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-01",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Config present, `format` and `format:check` resolve, `format:check` exits 0 (ratchet)",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
       },
       "move": "configure-quality-tools/row-1",
       "status": "kept"
@@ -1681,6 +2101,16 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-01",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Config present, `format` and `format:check` resolve, `format:check` exits 0 (ratchet)",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+      },
+      "move": "configure-quality-tools/row-4",
+      "status": "kept"
+    },
+    {
       "check": "CI-04",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -1692,11 +2122,41 @@
       "status": "kept"
     },
     {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-5",
+      "status": "kept"
+    },
+    {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-5",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/SKILL.md",
         "quote": "One exception keeps the tree working: a lockfile goes in the same commit as the manifest change that regenerates it.",
         "section": "implement/SKILL.md#implement/stage-3-apply/what-one-commit-holds"
+      },
+      "move": "configure-quality-tools/row-6",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Config present, `lint` resolves, read-only (`git status` clean), exits 0 under the ratchet",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
       },
       "move": "configure-quality-tools/row-6",
       "status": "kept"
@@ -1734,6 +2194,16 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Config present, `lint` resolves, read-only (`git status` clean), exits 0 under the ratchet",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+      },
+      "move": "configure-quality-tools/row-9",
+      "status": "kept"
+    },
+    {
       "check": "CI-04",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -1742,6 +2212,26 @@
       },
       "move": "configure-quality-tools/row-10",
       "note": "The full lint runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
+      "status": "kept"
+    },
+    {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-10",
+      "status": "kept"
+    },
+    {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-10",
       "status": "kept"
     },
     {
@@ -1756,6 +2246,16 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Strict flag on where the codebase allows; `typecheck` exits 0.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+      },
+      "move": "configure-quality-tools/row-11",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-08",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -1764,6 +2264,27 @@
       },
       "move": "configure-quality-tools/row-14",
       "note": "Inferred: the verb calls the dependency the manifest pins.",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "A read-only verb never writes: no `--fix`, `--write` or `audit fix`, no `tsc` without `--noEmit`, no install.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-14",
+      "note": "CMD-04 reads tsc without --noEmit in typecheck as a build writer.",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Strict flag on where the codebase allows; `typecheck` exits 0.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+      },
+      "move": "configure-quality-tools/row-14",
       "status": "kept"
     },
     {
@@ -1778,6 +2299,26 @@
       "status": "kept"
     },
     {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-15",
+      "status": "kept"
+    },
+    {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-15",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/SKILL.md",
@@ -1785,6 +2326,17 @@
         "section": "implement/SKILL.md#implement/stage-3-apply/what-one-commit-holds"
       },
       "move": "configure-quality-tools/row-16",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "A read-only verb never writes: no `--fix`, `--write` or `audit fix`, no `tsc` without `--noEmit`, no install.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-17",
+      "note": "security is a read-only verb; an audit fix or an install form would make CMD-04 fail.",
       "status": "kept"
     },
     {
@@ -1810,6 +2362,17 @@
       "status": "kept"
     },
     {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Then run the verb in CI as its own job, beside the `check` job.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-18",
+      "note": "The CI job calls the local security verb, so CI-03 finds no target without a local definition.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-08",
       "home": {
         "path": "implement/playbooks/define-command-surface.md",
@@ -1817,6 +2380,86 @@
         "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
       },
       "move": "define-command-surface/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-01",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "All seven resolve on one runner per component; each exits as its tool says, not \"command not found\"",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+      },
+      "move": "define-command-surface/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-03",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "A root `Makefile`, `Taskfile` or dispatcher script calls the authoritative runner's verb (`npm run check`, `./gradlew check`, `make -C <component> check`) and composes nothing of its own.",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+      },
+      "move": "define-command-surface/row-1",
+      "note": "A second runner's own check can differ from the new one until row 4 delegates it; the theme closes only after row 4.",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "Never leave the writer under the read-only name.",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+      },
+      "move": "define-command-surface/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-01",
+      "move": "define-command-surface/row-1",
+      "reason": "The move can only remove findings or add credit: the new format verb is what TOOL-01 resolves to find the formatter.",
+      "status": "accepted"
+    },
+    {
+      "check": "TOOL-02",
+      "move": "define-command-surface/row-1",
+      "reason": "The move can only remove findings or add credit: the new lint verb is what TOOL-02 resolves to find the linter.",
+      "status": "accepted"
+    },
+    {
+      "check": "TOOL-03",
+      "move": "define-command-surface/row-1",
+      "reason": "The move can only remove findings or add credit: the new typecheck verb is what TOOL-03 resolves to find the type checker.",
+      "status": "accepted"
+    },
+    {
+      "check": "TST-01",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "The runner executes the suite (stack-dependent suites: with the stack up, as recorded)",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+      },
+      "move": "define-command-surface/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-02",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "npm: the three verbs by name, in order.",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+      },
+      "move": "define-command-surface/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "by calling the verbs by name (indirection) rather than repeating their commands.",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+      },
+      "move": "define-command-surface/row-2",
+      "note": "check calls the read-only verbs by name, so it holds no writer of its own.",
       "status": "kept"
     },
     {
@@ -1828,6 +2471,26 @@
       },
       "move": "define-command-surface/row-3",
       "note": "The read-only verb keeps its command less the fix flag, so a budget such as --max-warnings stays on it.",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "Empty both times: no read-only verb wrote a file",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+      },
+      "move": "define-command-surface/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-03",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "Each calls the authoritative runner's `check` and nothing else",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+      },
+      "move": "define-command-surface/row-4",
       "status": "kept"
     },
     {
@@ -1851,6 +2514,32 @@
       "status": "kept"
     },
     {
+      "check": "EXEC-03",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "One non-interactive setup command per component",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+      },
+      "move": "define-command-surface/row-5",
+      "status": "kept"
+    },
+    {
+      "check": "SEC-01",
+      "home": {
+        "path": "implement/playbooks/env-inventory-and-secrets.md",
+        "quote": "None tracked, or each remaining path is a recorded owner exception",
+        "section": "implement/playbooks/env-inventory-and-secrets.md#playbook-env-inventory-and-secrets/verification"
+      },
+      "move": "env-inventory-and-secrets/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "SEC-02",
+      "move": "env-inventory-and-secrets/row-1",
+      "reason": "The move can only remove findings or add credit: untracked files leave the tracked text files SEC-02 reads, so a hit can vanish but none can appear.",
+      "status": "accepted"
+    },
+    {
       "check": "AGT-07",
       "home": {
         "path": "implement/playbooks/env-inventory-and-secrets.md",
@@ -1866,6 +2555,16 @@
         "path": "implement/playbooks/env-inventory-and-secrets.md",
         "quote": "A fenced command that named the file must still resolve",
         "section": "implement/playbooks/env-inventory-and-secrets.md#playbook-env-inventory-and-secrets/steps/generic"
+      },
+      "move": "env-inventory-and-secrets/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
       },
       "move": "env-inventory-and-secrets/row-2",
       "status": "kept"
@@ -1935,11 +2634,11 @@
     {
       "check": "DOC-05",
       "home": {
-        "path": "implement/playbooks/establish-docs-contract.md",
-        "quote": "Every page this theme writes follows the rules: the index, the style guide, the ADR policy page, the ADRs and the architecture page.",
-        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
       },
-      "move": "establish-docs-contract/row-1",
+      "move": "env-inventory-and-secrets/row-6",
       "status": "kept"
     },
     {
@@ -1948,6 +2647,37 @@
         "path": "implement/playbooks/establish-docs-contract.md",
         "quote": "Every page this theme writes follows the rules: the index, the style guide, the ADR policy page, the ADRs and the architecture page.",
         "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-04",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "`README.md`, the index: a table of number, title and a one-line summary, linking every file by its path.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-1",
+      "note": "DOC-04 reads docs/README.md only as a fallback index; row 5 writes docs/adr/README.md, which comes first in the read's index order.",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Every page this theme writes follows the rules: the index, the style guide, the ADR policy page, the ADRs and the architecture page.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-02",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "File exists; the instruction file names it",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/verification"
       },
       "move": "establish-docs-contract/row-2",
       "status": "kept"
@@ -2014,6 +2744,27 @@
       "status": "kept"
     },
     {
+      "check": "NAV-02",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Each entry point is a real path (check with `test -f`)",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/verification"
+      },
+      "move": "establish-docs-contract/row-6",
+      "note": "A rubric target: the engine's NAV-02 reads no doc kind, so the page itself cannot change its verdict.",
+      "status": "kept"
+    },
+    {
+      "check": "NAV-04",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Present, with a diagram that rendered",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/verification"
+      },
+      "move": "establish-docs-contract/row-6",
+      "status": "kept"
+    },
+    {
       "check": "DOC-05",
       "home": {
         "path": "implement/playbooks/establish-docs-contract.md",
@@ -2053,6 +2804,39 @@
       "move": "establish-docs-contract/row-8",
       "note": "CON-01 checks that code spans in a prohibitions section exist; the line lands only after its pages do.",
       "status": "kept"
+    },
+    {
+      "check": "CON-03",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "\"`CON-03` artefacts/ excluded from index and agent reads\" reads the same rule and the tracked files under it.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-10",
+      "note": "Untracking only what the owner confirms leaves nothing tracked under the scratch root, which is what CON-03 asks.",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-03",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "No scratch directory, or nothing tracked and the rule matches",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/verification"
+      },
+      "move": "establish-docs-contract/row-10",
+      "status": "kept"
+    },
+    {
+      "check": "NAV-03",
+      "move": "establish-docs-contract/row-10",
+      "reason": "The move can only remove findings or add credit: untracked, ignored files leave the scan, so a binary, a file over 512 KiB or a .min. file there stops counting.",
+      "status": "accepted"
+    },
+    {
+      "check": "SEC-02",
+      "move": "establish-docs-contract/row-10",
+      "reason": "The move can only remove findings or add credit: untracked files leave the tracked text files SEC-02 reads, so a hit can vanish but none can appear.",
+      "status": "accepted"
     },
     {
       "check": "BASE-03",
@@ -2128,10 +2912,31 @@
       "status": "kept"
     },
     {
+      "check": "AGT-13",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Any row in that table stops the step.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-11",
+      "note": "A section moved to a conventions page or docs/CONTRIBUTING.md joins what AGT-13 reads; the before-and-after audit stops the step on a changed verdict.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-08",
       "home": {
         "path": "implement/playbooks/establish-docs-contract.md",
         "quote": "Put each pin in a manifest, such as the `devDependencies` of a root or tools `package.json`.",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Neither command carries `--fix`:",
         "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
       },
       "move": "establish-docs-contract/row-13",
@@ -2146,6 +2951,12 @@
       },
       "move": "establish-docs-contract/row-14",
       "status": "kept"
+    },
+    {
+      "check": "NAV-02",
+      "move": "establish-docs-contract/row-16",
+      "reason": "The move can only remove findings or add credit: the prose check copy's __main__ guard can make NAV-02 pass in a repository with no real entry point. The engine is to stop counting such a script; until then the false credit is accepted.",
+      "status": "accepted"
     },
     {
       "check": "BASE-02",
@@ -2168,6 +2979,17 @@
       "status": "kept"
     },
     {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "quote": "Neither command carries `--fix`:",
+        "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
+      },
+      "move": "establish-docs-contract/row-18",
+      "note": "Item 5 wires the prose check as a ratchet, as for the lint, so the same rule holds for its runner command.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-08",
       "home": {
         "path": "implement/playbooks/establish-docs-contract.md",
@@ -2175,6 +2997,16 @@
         "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
       },
       "move": "establish-docs-contract/row-19",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-01",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "One pin per ecosystem and component; every other place names the same version",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/verification"
+      },
+      "move": "pin-execution-environment/row-1",
       "status": "kept"
     },
     {
@@ -2396,6 +3228,28 @@
       "status": "kept"
     },
     {
+      "check": "EXEC-05",
+      "home": {
+        "path": "implement/playbooks/untrack-generated.md",
+        "quote": "No build output listed (a secret-bearing path may remain, noted for the secrets theme).",
+        "section": "implement/playbooks/untrack-generated.md#playbook-untrack-generated/verification"
+      },
+      "move": "untrack-generated/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "NAV-03",
+      "move": "untrack-generated/row-2",
+      "reason": "The move can only remove findings or add credit: untracked, ignored files leave the scan, so a binary, a file over 512 KiB or a .min. file there stops counting.",
+      "status": "accepted"
+    },
+    {
+      "check": "SEC-02",
+      "move": "untrack-generated/row-2",
+      "reason": "The move can only remove findings or add credit: untracked files leave the tracked text files SEC-02 reads, so a hit can vanish but none can appear.",
+      "status": "accepted"
+    },
+    {
       "check": "NAV-03",
       "home": {
         "path": "implement/playbooks/pin-execution-environment.md",
@@ -2404,6 +3258,16 @@
       },
       "move": "pin-execution-environment/row-3",
       "note": "The engine leaves known lockfile names out of the NAV-03 size count (audit.stack.LOCKFILE_NAMES), so the generated lockfile keeps NAV-03 as it was.",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-02",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Gradle: identical resolved versions, lockfile tracked. Node: `npm ci` succeeds and leaves the tree clean",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/verification"
+      },
+      "move": "pin-execution-environment/row-3",
       "status": "kept"
     }
   ],
@@ -3025,7 +3889,8 @@
         "scripts/"
       ],
       "touches": [
-        "NAV-05"
+        "NAV-05",
+        "NAV-02"
       ]
     },
     {
@@ -3064,6 +3929,9 @@
       },
       "to": [
         ".github/workflows/ci.yml"
+      ],
+      "touches": [
+        "BASE-03"
       ]
     },
     {
@@ -3081,6 +3949,9 @@
       "to": [
         "package.json",
         "Makefile"
+      ],
+      "touches": [
+        "CMD-04"
       ]
     },
     {
@@ -3097,6 +3968,10 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "BASE-01",
+        "BASE-03"
       ]
     },
     {
@@ -3116,6 +3991,9 @@
         "vitest.config.*",
         "package.json",
         "build.gradle"
+      ],
+      "touches": [
+        "TST-05"
       ]
     },
     {
@@ -3136,7 +4014,8 @@
         "build.gradle"
       ],
       "touches": [
-        "EXEC-08"
+        "EXEC-08",
+        "TST-05"
       ]
     },
     {
@@ -3158,7 +4037,8 @@
         "build.gradle"
       ],
       "touches": [
-        "TST-02"
+        "TST-02",
+        "TST-05"
       ]
     },
     {
@@ -3181,7 +4061,9 @@
       ],
       "touches": [
         "CMD-02",
-        "TST-02"
+        "TST-02",
+        "CMD-04",
+        "TST-05"
       ]
     },
     {
@@ -3198,6 +4080,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "BASE-04"
       ]
     },
     {
@@ -3236,7 +4121,9 @@
         "**/__tests__/**"
       ],
       "touches": [
-        "SEC-02"
+        "SEC-02",
+        "NAV-05",
+        "TST-03"
       ]
     },
     {
@@ -3255,7 +4142,8 @@
         "AGENTS.md"
       ],
       "touches": [
-        "EXEC-06"
+        "EXEC-06",
+        "TST-04"
       ]
     },
     {
@@ -3290,6 +4178,9 @@
       "to": [
         ".github/workflows/*.yml",
         ".github/workflows/*.yaml"
+      ],
+      "touches": [
+        "CI-01"
       ]
     },
     {
@@ -3306,6 +4197,9 @@
       },
       "to": [
         "scripts/ci/*.sh"
+      ],
+      "touches": [
+        "EXEC-04"
       ]
     },
     {
@@ -3327,7 +4221,9 @@
       "touches": [
         "TOOL-04",
         "TOOL-06",
-        "CI-04"
+        "CI-04",
+        "CI-02",
+        "CI-03"
       ]
     },
     {
@@ -3413,6 +4309,9 @@
       "to": [
         ".github/workflows/*.yml",
         ".github/workflows/*.yaml"
+      ],
+      "touches": [
+        "HYG-11"
       ]
     },
     {
@@ -3544,6 +4443,11 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-07",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -3584,7 +4488,10 @@
         "step": "Step 4"
       },
       "touches": [
-        "DOC-03"
+        "DOC-03",
+        "CON-03",
+        "NAV-03",
+        "SEC-02"
       ]
     },
     {
@@ -3643,7 +4550,8 @@
         "lefthook.yml"
       ],
       "touches": [
-        "EXEC-08"
+        "EXEC-08",
+        "TOOL-05"
       ]
     },
     {
@@ -3683,7 +4591,8 @@
         "CONTRIBUTING.md"
       ],
       "touches": [
-        "HYG-13"
+        "HYG-13",
+        "TOOL-06"
       ]
     },
     {
@@ -3743,7 +4652,8 @@
         "scripts/*"
       ],
       "touches": [
-        "NAV-05"
+        "NAV-05",
+        "NAV-02"
       ]
     },
     {
@@ -3825,7 +4735,8 @@
         "README.md"
       ],
       "touches": [
-        "EXEC-06"
+        "EXEC-06",
+        "HYG-01"
       ]
     },
     {
@@ -3843,6 +4754,9 @@
       },
       "to": [
         ".github/CODEOWNERS"
+      ],
+      "touches": [
+        "HYG-02"
       ]
     },
     {
@@ -3860,6 +4774,9 @@
       },
       "to": [
         ".github/pull_request_template.md"
+      ],
+      "touches": [
+        "HYG-03"
       ]
     },
     {
@@ -3878,6 +4795,9 @@
       "to": [
         ".github/ISSUE_TEMPLATE/bug_report.md",
         ".github/ISSUE_TEMPLATE/feature_request.md"
+      ],
+      "touches": [
+        "HYG-04"
       ]
     },
     {
@@ -3901,7 +4821,8 @@
       "touches": [
         "DOC-05",
         "TST-04",
-        "HYG-13"
+        "HYG-13",
+        "HYG-05"
       ]
     },
     {
@@ -3922,7 +4843,8 @@
         "SECURITY.md"
       ],
       "touches": [
-        "DOC-05"
+        "DOC-05",
+        "HYG-06"
       ]
     },
     {
@@ -3941,6 +4863,9 @@
       },
       "to": [
         "CHANGELOG.md"
+      ],
+      "touches": [
+        "HYG-07"
       ]
     },
     {
@@ -3983,7 +4908,8 @@
       ],
       "touches": [
         "AGT-09",
-        "TOOL-07"
+        "TOOL-07",
+        "HYG-11"
       ]
     },
     {
@@ -4002,6 +4928,9 @@
       },
       "to": [
         ".github/workflows/pr-source-branch.yml"
+      ],
+      "touches": [
+        "HYG-11"
       ]
     },
     {
@@ -4018,6 +4947,9 @@
       },
       "to": [
         ".github/rulesets/*-protection.json"
+      ],
+      "touches": [
+        "HYG-11"
       ]
     },
     {
@@ -4058,7 +4990,8 @@
         ".github/dependabot.yml"
       ],
       "touches": [
-        "EXEC-08"
+        "EXEC-08",
+        "HYG-09"
       ]
     },
     {
@@ -4075,6 +5008,9 @@
       },
       "to": [
         "CONTRIBUTING.md"
+      ],
+      "touches": [
+        "HYG-13"
       ]
     },
     {
@@ -4103,7 +5039,9 @@
         "AGT-09",
         "AGT-10",
         "AGT-13",
-        "CON-01"
+        "CON-01",
+        "CON-02",
+        "HYG-13"
       ]
     },
     {
@@ -4120,6 +5058,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-09"
       ]
     },
     {
@@ -4159,7 +5100,8 @@
         "build.gradle"
       ],
       "touches": [
-        "EXEC-02"
+        "EXEC-02",
+        "TOOL-01"
       ]
     },
     {
@@ -4221,7 +5163,8 @@
       ],
       "touches": [
         "CMD-04",
-        "EXEC-08"
+        "EXEC-08",
+        "TOOL-01"
       ]
     },
     {
@@ -4240,7 +5183,9 @@
         ".github/workflows/ci.yml"
       ],
       "touches": [
-        "CI-04"
+        "CI-04",
+        "CI-02",
+        "CI-03"
       ]
     },
     {
@@ -4261,7 +5206,8 @@
         "build.gradle"
       ],
       "touches": [
-        "EXEC-02"
+        "EXEC-02",
+        "TOOL-02"
       ]
     },
     {
@@ -4322,7 +5268,8 @@
       ],
       "touches": [
         "CMD-04",
-        "EXEC-08"
+        "EXEC-08",
+        "TOOL-02"
       ]
     },
     {
@@ -4341,7 +5288,9 @@
         ".github/workflows/ci.yml"
       ],
       "touches": [
-        "CI-04"
+        "CI-04",
+        "CI-02",
+        "CI-03"
       ]
     },
     {
@@ -4363,7 +5312,8 @@
         "pyproject.toml"
       ],
       "touches": [
-        "EXEC-07"
+        "EXEC-07",
+        "TOOL-03"
       ]
     },
     {
@@ -4416,7 +5366,9 @@
         "build.gradle"
       ],
       "touches": [
-        "EXEC-08"
+        "EXEC-08",
+        "CMD-04",
+        "TOOL-03"
       ]
     },
     {
@@ -4435,7 +5387,9 @@
         ".github/workflows/ci.yml"
       ],
       "touches": [
-        "CI-04"
+        "CI-04",
+        "CI-02",
+        "CI-03"
       ]
     },
     {
@@ -4475,6 +5429,9 @@
         "package.json",
         "Makefile",
         "build.gradle"
+      ],
+      "touches": [
+        "CMD-04"
       ]
     },
     {
@@ -4494,7 +5451,8 @@
       ],
       "touches": [
         "CI-02",
-        "CI-04"
+        "CI-04",
+        "CI-03"
       ]
     },
     {
@@ -4519,7 +5477,14 @@
         "pom.xml"
       ],
       "touches": [
-        "EXEC-08"
+        "EXEC-08",
+        "CMD-01",
+        "CMD-03",
+        "CMD-04",
+        "TOOL-01",
+        "TOOL-02",
+        "TOOL-03",
+        "TST-01"
       ]
     },
     {
@@ -4541,6 +5506,10 @@
         "build.gradle",
         "build.gradle.kts",
         "pom.xml"
+      ],
+      "touches": [
+        "CMD-02",
+        "CMD-04"
       ]
     },
     {
@@ -4564,7 +5533,8 @@
         "pom.xml"
       ],
       "touches": [
-        "BASE-02"
+        "BASE-02",
+        "CMD-04"
       ]
     },
     {
@@ -4581,6 +5551,9 @@
       "to": [
         "Makefile",
         "Taskfile.yml"
+      ],
+      "touches": [
+        "CMD-03"
       ]
     },
     {
@@ -4601,7 +5574,8 @@
       ],
       "touches": [
         "AGT-05",
-        "EXEC-06"
+        "EXEC-06",
+        "EXEC-03"
       ]
     },
     {
@@ -4620,7 +5594,11 @@
         "path": "implement/playbooks/env-inventory-and-secrets.md",
         "row": 1,
         "step": "Step 3"
-      }
+      },
+      "touches": [
+        "SEC-01",
+        "SEC-02"
+      ]
     },
     {
       "action": "write",
@@ -4642,7 +5620,8 @@
       ],
       "touches": [
         "AGT-07",
-        "EXEC-06"
+        "EXEC-06",
+        "DOC-05"
       ]
     },
     {
@@ -4726,6 +5705,9 @@
         "AGENTS.md",
         "scripts/ci/README.md",
         "docs/**/*.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -4745,7 +5727,8 @@
         "docs/README.md"
       ],
       "touches": [
-        "DOC-05"
+        "DOC-05",
+        "DOC-04"
       ]
     },
     {
@@ -4766,7 +5749,8 @@
         "docs/STYLE_GUIDE.md"
       ],
       "touches": [
-        "DOC-05"
+        "DOC-05",
+        "DOC-02"
       ]
     },
     {
@@ -4853,7 +5837,9 @@
       ],
       "touches": [
         "DOC-05",
-        "SEC-02"
+        "SEC-02",
+        "NAV-02",
+        "NAV-04"
       ]
     },
     {
@@ -4921,12 +5907,18 @@
         "artefacts/"
       ],
       "id": "establish-docs-contract/row-10",
-      "note": "git rm --cached on owner-confirmed scratch files changes the scanned set only, not any text a check reads.",
+      "note": "git rm --cached on owner-confirmed scratch files takes them out of the tracked set. DOC-03 and CON-03 read the tracked files under the scratch root, and the scan that SEC-02 and NAV-03 read no longer sees them. No text a check reads changes.",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
         "row": 10,
         "step": "Step 7"
-      }
+      },
+      "touches": [
+        "CON-03",
+        "DOC-03",
+        "NAV-03",
+        "SEC-02"
+      ]
     },
     {
       "action": "move",
@@ -4957,7 +5949,8 @@
         "EXEC-03",
         "EXEC-06",
         "TST-04",
-        "HYG-01"
+        "HYG-01",
+        "AGT-13"
       ]
     },
     {
@@ -4995,7 +5988,8 @@
         "Makefile"
       ],
       "touches": [
-        "EXEC-08"
+        "EXEC-08",
+        "CMD-04"
       ]
     },
     {
@@ -5049,6 +6043,9 @@
       },
       "to": [
         "scripts/docs_prose_check.py"
+      ],
+      "touches": [
+        "NAV-02"
       ]
     },
     {
@@ -5086,7 +6083,8 @@
       ],
       "touches": [
         "BASE-02",
-        "BASE-03"
+        "BASE-03",
+        "CMD-04"
       ]
     },
     {
@@ -5127,6 +6125,9 @@
         "package.json",
         "build.gradle",
         "build.gradle.kts"
+      ],
+      "touches": [
+        "EXEC-01"
       ]
     },
     {
@@ -5165,7 +6166,8 @@
         "build.gradle"
       ],
       "touches": [
-        "NAV-03"
+        "NAV-03",
+        "EXEC-02"
       ]
     },
     {
@@ -5542,7 +6544,10 @@
       },
       "touches": [
         "EXEC-01",
-        "EXEC-02"
+        "EXEC-02",
+        "EXEC-05",
+        "NAV-03",
+        "SEC-02"
       ]
     },
     {
