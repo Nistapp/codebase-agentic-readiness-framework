@@ -9522,7 +9522,7 @@
     {
       "binding": "file",
       "check": "EXEC-02",
-      "note": "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest first, and whether git tracks them. Only a root lockfile is compared with the root manifests' dependency names.",
+      "note": "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest first, and whether git tracks them. Only a root lockfile is compared with the root manifests' dependency names; for .NET those are the PackageReference names of the project files in the root folder, and a package reference in a root Directory.* file leaves the lockfile unverified.",
       "source": "engine",
       "threshold": "a tracked lockfile that agrees with the manifest",
       "what": {
@@ -9578,6 +9578,10 @@
           "scope": "any-depth"
         },
         {
+          "path": "packages.lock.json",
+          "scope": "any-depth"
+        },
+        {
           "path": "package.json",
           "scope": "root"
         },
@@ -9600,6 +9604,30 @@
         {
           "path": "go.mod",
           "scope": "root"
+        },
+        {
+          "path": "Directory.Build.props",
+          "scope": "root"
+        },
+        {
+          "path": "Directory.Build.targets",
+          "scope": "root"
+        },
+        {
+          "path": "Directory.Packages.props",
+          "scope": "root"
+        },
+        {
+          "path": "*.csproj",
+          "scope": "glob"
+        },
+        {
+          "path": "*.fsproj",
+          "scope": "glob"
+        },
+        {
+          "path": "*.vbproj",
+          "scope": "glob"
         }
       ]
     },

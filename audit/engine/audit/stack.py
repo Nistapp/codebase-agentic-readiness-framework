@@ -51,6 +51,7 @@ PACKAGE_MANAGERS: dict[str, tuple[str, ...]] = {
     "gomod": ("go.sum",),
     "bundler": ("Gemfile.lock",),
     "composer": ("composer.lock",),
+    "nuget": ("packages.lock.json",),
 }
 
 #: The base names of the lockfiles package managers write. A closed list, matched by exact base name and never
