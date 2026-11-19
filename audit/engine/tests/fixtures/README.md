@@ -95,6 +95,7 @@ fixtures/
   doc-05-long-sentences/     two thirds of the docs' sentences over 25 words -> DOC-05 FAIL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
+  nav-02-main-guard-only/    python library, only a guarded helper script -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL
   doc-nav-ok/                the smallest repository passing every scored DOC/NAV check
   tool-01-no-formatter/      node project, no formatter config or verb -> TOOL-01 FAIL

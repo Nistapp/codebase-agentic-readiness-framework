@@ -47,6 +47,7 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "doc-05-long-sentences": ("DOC-05", "FAIL"),
     "nav-01-no-manifest": ("NAV-01", "UNKNOWN"),
     "nav-02-no-entry": ("NAV-02", "FAIL"),
+    "nav-02-main-guard-only": ("NAV-02", "FAIL"),
     "nav-03-red-flags": ("NAV-03", "PARTIAL"),
 }
 
@@ -233,7 +234,7 @@ class Nav02JvmEntryTests(unittest.TestCase):
 
 
 class Nav02PythonEntryTests(unittest.TestCase):
-    """`_python_entry` counts a line that starts with the guard, not a file that merely holds the text."""
+    """`_python_entry` reads `__main__.py`, conventional names and manifest scripts, never a guard alone."""
 
     GUARD = 'if __name__ == "__main__":\n    main()\n'
 
@@ -244,8 +245,17 @@ class Nav02PythonEntryTests(unittest.TestCase):
             support.write(Path(tmp.name), rel, text)
         return _python_entry(build_inventory(Path(tmp.name)))
 
-    def test_a_guard_line_is_an_entry_point(self):
-        self.assertEqual(self._entry({"tool.py": "def main():\n    pass\n\n" + self.GUARD}), ["tool.py"])
+    def test_a_guard_line_alone_is_not_an_entry_point(self):
+        self.assertEqual(self._entry({"scripts/tool.py": "def main():\n    pass\n\n" + self.GUARD}), [])
+
+    def test_a_guarded_file_counts_through_a_real_signal(self):
+        found = self._entry(
+            {
+                "main.py": "def main():\n    pass\n\n" + self.GUARD,
+                "pyproject.toml": '[project.scripts]\ntool = "pkg.cli:main"\n',
+            }
+        )
+        self.assertEqual(found, ["main.py", "pyproject.toml:entry point"])
 
     def test_a_regex_or_docstring_that_holds_the_guard_text_is_not(self):
         text = (
