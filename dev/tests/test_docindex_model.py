@@ -284,10 +284,19 @@ class CliTest(unittest.TestCase):
         self.assertEqual((code, out), (1, ""))
         self.assertIn("no node has the address", err)
 
-    def test_a_usage_error_exits_2(self) -> None:
-        for argv in ([], ["nothing"], ["diff"], ["query"]):
+    def test_a_usage_error_exits_1(self) -> None:
+        for argv in ([], ["nothing"], ["diff"], ["query"], ["evidence"], ["evidence", "run"], ["build", "--nope"]):
             with self.subTest(argv=argv):
-                self.assertEqual(_run(argv)[0], 2)
+                code, out, err = _run(argv)
+                self.assertEqual((code, out), (1, ""))
+                self.assertIn("error:", err)
+
+    def test_help_exits_0(self) -> None:
+        for argv in (["--help"], ["build", "--help"], ["evidence", "run", "--help"], ["query", "--help"]):
+            with self.subTest(argv=argv):
+                code, out, _err = _run(argv)
+                self.assertEqual(code, 0)
+                self.assertIn("usage:", out)
 
     def test_cli_main_without_a_config(self) -> None:
         out, err = io.StringIO(), io.StringIO()
