@@ -99,6 +99,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "cmd-ok-make-alias": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-01-make-parse-error": {"CMD-01": "FAIL", "CMD-02": "UNKNOWN", "CMD-03": "UNKNOWN", "CMD-04": "UNKNOWN"},
     "cmd-01-nested-makefile-only": {"CMD-01": "UNKNOWN", "CMD-02": "UNKNOWN", "CMD-03": "UNKNOWN", "CMD-04": "UNKNOWN"},
+    "cmd-01-nested-gradle-only": {"CMD-01": "UNKNOWN", "CMD-02": "UNKNOWN", "CMD-03": "UNKNOWN", "CMD-04": "UNKNOWN"},
+    "cmd-01-nested-maven-only": {"CMD-01": "UNKNOWN", "CMD-02": "UNKNOWN", "CMD-03": "UNKNOWN", "CMD-04": "UNKNOWN"},
     "cmd-ok-pyproject-poe": {"CMD-01": "PASS", "CMD-02": "PASS", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-ok-gradle": {"CMD-01": "PASS", "CMD-02": "UNKNOWN", "CMD-03": "PASS", "CMD-04": "PASS"},
     "cmd-ok-maven": {"CMD-01": "PASS", "CMD-02": "UNKNOWN", "CMD-03": "PASS", "CMD-04": "PASS"},
