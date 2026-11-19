@@ -13,7 +13,9 @@ An index is a graph over a repository's documents. It has three kinds of node:
   ``REQ-SH-060``), with an ID ``kind``, a ``title`` and the address of the node that defines it (``defined_by``).
 
 An edge joins two addresses. Its ``kind`` is ``contains``, ``links`` (which keeps the link's ``anchor``),
-``mentions``, ``runs`` or ``bundles``, and its ``confidence`` is ``exact`` or ``name-match``.
+``mentions``, ``runs`` or ``bundles``, and its ``confidence`` is ``exact`` or ``name-match``. ``name-match`` marks
+a weaker edge: one found by a name (a bare file name in prose, an ID defined in several places with no one
+nearest), or a link to a folder, whose address has no node because the index has no folder nodes.
 
 :func:`to_json` writes the one serialised form: sorted keys, sorted node and edge lists, no timestamps, no absolute
 paths and no line numbers, so two builds of the same tree are byte-identical. ``index.schema.json`` beside this
