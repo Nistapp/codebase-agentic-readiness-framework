@@ -328,6 +328,11 @@
           "type": "array",
           "uniqueItems": true
         },
+        "named_by_text": {
+          "description": "The check also reads paths that the target's own text names, which where cannot list: why, in one line. Such a path is allowed when a file the same run read holds it.",
+          "minLength": 1,
+          "type": "string"
+        },
         "note": {
           "minLength": 1,
           "type": "string"
@@ -397,6 +402,12 @@
     "where": {
       "additionalProperties": false,
       "properties": {
+        "case": {
+          "description": "fold: the check matches the name in lower case, so a name in any case meets the place. Absent means an exact match.",
+          "enum": [
+            "fold"
+          ]
+        },
         "path": {
           "$ref": "#/$defs/path"
         },
