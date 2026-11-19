@@ -32,6 +32,7 @@ fixtures/
   agt-01-stub/               AGENTS.md present, 80 characters     -> AGT-01 FAIL (stub)
   agt-01-mis-cased/          agents.md only                       -> AGT-01 FAIL (case)
   agt-01-shadowed/           AGENTS.md + AGENTS.override.md       -> AGT-01 PARTIAL (override)
+  agt-01-nested-only/        .junie/AGENTS.md only, no root AGENTS.md -> AGT-01 PARTIAL (nested only)
   agt-01-marker-words-in-prose/ a finished AGENTS.md that says "placeholder", "TODO" and "TBD" in sentences -> AGT-01 PASS
   agt-02-uncovered/          two declared workspaces, one AGENTS.md -> AGT-02 PARTIAL
   agt-03-incomplete/         docs/ named, no style guide or scratch contract -> AGT-03 PARTIAL

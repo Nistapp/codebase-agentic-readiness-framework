@@ -53,8 +53,9 @@ Engine           `AGT-01`. Collects every path that plausibly is an instruction 
                  `TBD`, `placeholder`, `lorem ipsum`, `<describe...>`, `coming soon`, `fill this in`), is
                  `FAIL`; a mis-cased candidate (`agents.md`, `Agents.MD`, ...) is `FAIL` (case-sensitive
                  filesystems will not find it); content that lives only in vendor-specific files with no
-                 canonical root file is `PARTIAL`; an override file beside the canonical one
-                 (makes it inert for one harness) is `PARTIAL`. Distrust a `FAIL` on length alone when the
+                 canonical root file is `PARTIAL`; `AGENTS.md` only below the root (`.junie/AGENTS.md`,
+                 `packages/api/AGENTS.md`) with none at the root is `PARTIAL`; an override file beside the
+                 canonical one (makes it inert for one harness) is `PARTIAL`. Distrust a `FAIL` on length alone when the
                  file is short but entirely non-inferable (rare, but possible for a very small repository);
                  verify by reading the file and judging the A14 rubric directly rather than the character
                  count.
@@ -65,8 +66,8 @@ Look for         The file itself: open `AGENTS.md` at the repository root (index
 Rubric           PASS: `AGENTS.md` exists at the repository root in canonical case, is not shadowed by a
                  harness override in the same directory, is at least 400 characters, and contains no stub
                  marker.
-                 PARTIAL: the file exists but is mis-cased, is shadowed by an override, or instruction
-                 content lives only in vendor-specific files with no canonical root file.
+                 PARTIAL: the file is mis-cased or shadowed by an override, or with no canonical root file the
+                 content lives only in vendor-specific files or in `AGENTS.md` files below the root.
                  FAIL: no instruction file exists anywhere in the repository, or the only candidate is a
                  stub (under 400 characters, or carrying a stub marker).
                  NOT_APPLICABLE: never — every repository can have a root instruction file.

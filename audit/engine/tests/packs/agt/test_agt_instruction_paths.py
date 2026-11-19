@@ -128,5 +128,43 @@ class RuleFolderTests(unittest.TestCase):
         self.assertIn("vendor-files", outcomes["AGT-08"][1])
 
 
+class NestedOnlyTests(unittest.TestCase):
+    """`AGT-01` passes only with `AGENTS.md` at the root; a nested one alone is content below the root."""
+
+    def test_a_nested_agents_md_alone_is_partial(self):
+        for rel in (".junie/AGENTS.md", "packages/api/AGENTS.md"):
+            with self.subTest(path=rel):
+                _, outcomes = run({rel: RULES})
+                self.assertEqual(outcomes["AGT-01"], ("PARTIAL", ["nested-only"]))
+                self.assertEqual(outcomes["AGT-08"], ("PASS", []))
+
+    def test_a_nested_agents_md_beside_a_root_one_raises_no_finding(self):
+        _, outcomes = run({"AGENTS.md": RULES, ".junie/AGENTS.md": RULES})
+        self.assertEqual(outcomes["AGT-01"], ("PASS", []))
+
+    def test_a_nested_agents_md_beside_a_vendor_file_has_both_findings(self):
+        _, outcomes = run({"CLAUDE.md": RULES, "packages/api/AGENTS.md": RULES})
+        self.assertEqual(outcomes["AGT-01"], ("PARTIAL", ["nested-only", "vendor-only"]))
+
+    def test_the_finding_names_the_nested_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for n in range(8):
+                support.write(root, f"p{n}/AGENTS.md", RULES)
+            inventory = build_inventory(root)
+            outcome = check_agt01(
+                spec=REGISTRY_BY_ID["AGT-01"],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+        (finding,) = outcome.findings
+        self.assertIn("AGENTS.md exists only below the root (p0/AGENTS.md, ", finding.statement)
+        self.assertIn("p5/AGENTS.md…)", finding.statement)
+        self.assertEqual(len(finding.evidence), 8)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -261,6 +261,25 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
                     path="vendor-only",
                 )
             )
+        if not canonical_root and canonical_nested:
+            findings.append(
+                Finding(
+                    check=spec.id,
+                    severity=Severity.DEGRADER,
+                    phase=spec.phase,
+                    verdict=Verdict.PARTIAL,
+                    statement=statement(
+                        "find the project rules at the repository root",
+                        f"AGENTS.md exists only below the root ({', '.join(canonical_nested[:6])}"
+                        f"{'…' if len(canonical_nested) > 6 else ''}), so a harness that reads the root file "
+                        f"finds no instruction file",
+                    ),
+                    evidence=[Evidence(p) for p in canonical_nested[:12]],
+                    remediation="Add AGENTS.md at the repository root with the adapt-agents-md playbook, and keep "
+                    "each nested AGENTS.md for what is local to its folder.",
+                    path="nested-only",
+                )
+            )
         if overrides:
             for override in overrides:
                 tool = V.OVERRIDE_PATHS.get(override, "some harness")
