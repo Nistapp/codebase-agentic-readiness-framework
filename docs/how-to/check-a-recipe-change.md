@@ -305,6 +305,13 @@ It prints the static report, then four groups:
 - `evidence`: the checks whose verdict or evidence changed, when their reads overlap your change. It is reported,
   never a problem.
 
+Some checks read every file of a kind, for example `**` or `docs/**/*.md`. The gate calls such a place broad: a
+wildcard place whose files carry at least 5% of the tree's distinct file names. In the `review` group, each line
+names only the checks that read the place through a place of their own. The group lists the broad checks once, in
+a `broad checks` line. A line that only broad checks read is counted in an `and N more` line. `--verbose` lists
+those lines, and names the broad checks on each line. The JSON keeps every check of each entry under `checks`, and
+the broad ones under `broad`. The evidence part still compares all of them.
+
 The evidence part copies each side into a temporary repository and runs the engine on both. It takes about
 15 seconds on this repository. `--no-evidence` skips it.
 
