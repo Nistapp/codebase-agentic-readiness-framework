@@ -209,8 +209,9 @@ bundle <name>: 1 added, 0 removed, 2 changed
   changed <path in the bundle>
 ```
 
-A removed file that a recipe still names is a break in the installed skill. The archive `audit.pyz` is compared by
-its members, so two builds of the same source compare equal.
+A removed file that a recipe still names is a break in the installed skill. An archive in a bundle, such as the
+`audit.pyz` that older audit bundles carried, is compared by its members. So two builds of the same source compare
+equal.
 
 ### Step 6: Compare the engine evidence
 

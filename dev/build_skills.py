@@ -9,7 +9,7 @@ One command::
 
 A bundle is what a harness installs and runs with no checkout of this repository: `skills-ref validate`
 (S4.5.2) and an install smoke-run (S4.5.3) both act on it, never on the source tree directly. Both are written
-under ``<repo>/dev/dist/skills/`` by default (``*.pyz`` and ``dev/dist/`` are both gitignored); ``--out-dir``
+under ``<repo>/dev/dist/skills/`` by default (``dev/dist/`` is gitignored); ``--out-dir``
 changes where ``skills/`` itself goes, for a build that is not meant to land there.
 Each bundle is replaced whole on every run, so a stale leftover from an earlier build can never survive.
 
@@ -28,9 +28,8 @@ Each bundle is replaced whole on every run, so a stale leftover from an earlier 
   ``validate_report.py``, ``render_report.py``, from ``audit/tools/``) and the private modules they import; the
   schema files and ``catalogue.json`` those tools read at a fixed path next to themselves
   (``validate_report.RECIPES``); the engine's own ``audit`` package, which ``engine.py`` imports from ``../engine``
-  relative to itself, so ``scripts/`` has the same shape as ``audit/`` in this repository (``scripts/engine/audit/``);
-  and ``audit.pyz``, the engine's single-file build, for a person who wants to run it directly with no Python path
-  setup at all.
+  relative to itself, so ``scripts/`` has the same shape as ``audit/`` in this repository (``scripts/engine/audit/``).
+  The engine's single-file build, ``audit.pyz``, is not carried: the release attaches it as a file of its own.
 
 **agentic-readiness-implement** carries the implement recipe and a ``LICENSE`` like the audit bundle's:
 
@@ -57,16 +56,12 @@ A relative link to a
 carried file is rewritten to that file's place in the bundle; a link to anything else becomes plain text naming the
 framework path, so no link leaves the bundle.
 
-``audit.pyz`` is produced by running the engine's own ``audit/engine/build.py`` as a subprocess (never imported;
-the build script is excluded from the engine's own standard-library-only boundary) and copying
-its output in. Everything else is a file copy or a deterministic text rewrite, so two builds from the same source
-tree are byte-for-byte identical apart from ``audit.pyz``, whose zip entries carry the source files' own
-modification times — which do not change between two builds in the same session.
+Every file is a file copy or a deterministic text rewrite, so two builds from the same source tree are byte-for-byte
+identical.
 
-Failure behaviour: a target problem (the engine's ``build.py`` is missing, or exits nonzero) is exit 1
-with the subprocess's stderr in ``data.errors``; so is a source file whose frontmatter ``name`` line or Tools CLI
-section is missing, or whose frontmatter already has a ``metadata`` key. Nothing else in this tool can fail the way a user-facing argument can, since it takes none
-but ``--out-dir``.
+Failure behaviour: a source file whose frontmatter ``name`` line or Tools CLI section is missing, or whose
+frontmatter already has a ``metadata`` key, is exit 1. Nothing else in this tool can fail the way a user-facing
+argument can, since it takes none but ``--out-dir``.
 """
 
 from __future__ import annotations
@@ -75,7 +70,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -245,18 +239,6 @@ def _write_references(bundle_dir: Path) -> None:
             shutil.copy2(AUDIT_SCHEMA / name, schema_dir / name)
 
 
-def _build_pyz(dest: Path) -> None:
-    build_script = ENGINE / "build.py"
-    try:
-        subprocess.run([sys.executable, str(build_script)], capture_output=True, text=True, check=True)
-    except subprocess.CalledProcessError as exc:
-        raise _common.ToolError(
-            "audit/engine/build.py failed to build audit.pyz",
-            errors=[line for line in exc.stderr.splitlines() if line],
-        ) from None
-    shutil.copy2(ENGINE / "dist" / "audit.pyz", dest)
-
-
 def _write_scripts(bundle_dir: Path) -> None:
     scripts = bundle_dir / "scripts"
     tools_dir = scripts / "tools"
@@ -270,7 +252,6 @@ def _write_scripts(bundle_dir: Path) -> None:
             shutil.copy2(AUDIT_SCHEMA / name, schema_dir / name)
     shutil.copy2(AUDIT / "catalogue.json", scripts / "catalogue.json")
     _copy_tree(ENGINE / "audit", scripts / "engine" / "audit")
-    _build_pyz(scripts / "audit.pyz")
 
 
 def build_bundle(out_dir: Path) -> Path:

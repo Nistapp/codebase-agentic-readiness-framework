@@ -802,8 +802,9 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
 - **`agentic-readiness-audit`**: `references/` holds the check files, the stack profiles and the schema docs. It
   also holds the shared prompt on how to talk to the user and the sections of this page for the tools it carries.
   `scripts/` holds the tools the recipe calls. Beside them are the schema files and the `catalogue.json` they read
-  at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. `audit.pyz` is
-  the engine's single-file build. Its Markdown files are rewritten the same way as the implement bundle's, below.
+  at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. The bundle
+  carries no `audit.pyz`: the release attaches it as a file of its own. Its Markdown files are rewritten the same
+  way as the implement bundle's, below.
 - **`agentic-readiness-implement`**: `references/` holds the state contract, the tool-choice procedures, the
   playbooks, the kickoff prompt and the shared prompt on how to talk to the user. It also holds the check files,
   the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the state schema and its docs,
@@ -846,7 +847,7 @@ python3 dev/build_skills.py [--out-dir DIR]
 | Code | When |
 |---|---|
 | `0` | The bundle was built. |
-| `1` | The engine's own `audit/engine/build.py` failed to produce `audit.pyz` (the message is `audit/engine/build.py failed to build audit.pyz`) (`data.errors` carries its stderr), or a source file lacks the frontmatter `name` line or a Tools CLI section the builder rewrites. |
+| `1` | A source file lacks the frontmatter `name` line or a Tools CLI section the builder rewrites, or its frontmatter already has a `metadata` key. |
 
 ## progress.py
 

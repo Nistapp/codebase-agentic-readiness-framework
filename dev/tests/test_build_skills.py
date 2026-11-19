@@ -8,8 +8,7 @@ the audit bundle installed beside it.
 
 Builds for real, into a temporary directory — there is no fixture to fake this against, since the whole
 point is copying this repository's own files; a build that can run only against a double would not prove the
-real one works. One pass runs `build.py` for real too (network-free, stdlib-only), so this test is slower
-than most in this suite but still seconds, not minutes.
+real one works. So this test is slower than most in this suite, but still seconds, not minutes.
 """
 
 from __future__ import annotations
@@ -88,7 +87,8 @@ class BuildSkillsTests(unittest.TestCase):
             self.assertTrue((bundle_dir / "scripts" / "catalogue.json").is_file())
             self.assertTrue((bundle_dir / "scripts" / "engine" / "audit" / "__main__.py").is_file())
             self.assertFalse((bundle_dir / "scripts" / "deterministic-audit").exists())
-            self.assertTrue((bundle_dir / "scripts" / "audit.pyz").is_file())
+            # The release attaches audit.pyz on its own; the bundle carries the engine tree only.
+            self.assertEqual(list(bundle_dir.rglob("*.pyz")), [])
 
     def test_skill_md_links_the_shared_prompt_inside_the_bundle(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
