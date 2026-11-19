@@ -1,0 +1,10 @@
+# Run `just --list` to see the recipes.
+
+check:
+    cargo fmt --check
+    cargo clippy -- -D warnings
+    cargo test
+
+security:
+    cargo install --locked cargo-deny@0.16.1
+    cargo deny check
