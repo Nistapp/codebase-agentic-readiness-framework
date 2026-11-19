@@ -6,7 +6,9 @@
   "phase": "t6",
   "assertions": [
     "A7",
-    "A6"
+    "A6",
+    "A17",
+    "A18"
   ],
   "params": {
     "check": "DOC-01",

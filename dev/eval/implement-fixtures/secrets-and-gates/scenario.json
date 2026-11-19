@@ -4,7 +4,7 @@
   "start": "triaged",
   "pr_by_agent": "no",
   "phase": "t1",
-  "assertions": ["A13", "A14", "A15", "A5", "A6"],
+  "assertions": ["A13", "A14", "A15", "A5", "A6", "A17", "A18", "A19"],
   "params": {
     "check": "TOOL-02",
     "debt_count": 3,

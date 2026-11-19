@@ -30,7 +30,7 @@ def file_tool(name: str, path: str) -> dict[str, Any]:
 
 
 class ProbeCase(ScenarioCase):
-    """Runs a probe, which is not in `ASSERTIONS`, on the scenario's outcome and the events so far."""
+    """Runs a probe (A17 to A19) on the scenario's outcome and the events so far, whatever the scenario lists."""
 
     def probe(self, function: Probe) -> ie.Verdict:
         transcript = self.tmp / "transcript.jsonl"
