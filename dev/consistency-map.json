@@ -3118,6 +3118,28 @@
       "status": "kept"
     },
     {
+      "check": "EXEC-05",
+      "home": {
+        "path": "implement/playbooks/untrack-generated.md",
+        "quote": "No build output listed (a secret-bearing path may remain, noted for the secrets theme).",
+        "section": "implement/playbooks/untrack-generated.md#playbook-untrack-generated/verification"
+      },
+      "move": "untrack-generated/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "NAV-03",
+      "move": "untrack-generated/row-2",
+      "reason": "The move can only remove findings or add credit: untracked, ignored files leave the scan, so a binary, a file over 512 KiB or a .min. file there stops counting.",
+      "status": "accepted"
+    },
+    {
+      "check": "SEC-02",
+      "move": "untrack-generated/row-2",
+      "reason": "The move can only remove findings or add credit: untracked files leave the tracked text files SEC-02 reads, so a hit can vanish but none can appear.",
+      "status": "accepted"
+    },
+    {
       "check": "NAV-03",
       "home": {
         "path": "implement/playbooks/pin-execution-environment.md",
@@ -6388,7 +6410,10 @@
       },
       "touches": [
         "EXEC-01",
-        "EXEC-02"
+        "EXEC-02",
+        "EXEC-05",
+        "NAV-03",
+        "SEC-02"
       ]
     },
     {
