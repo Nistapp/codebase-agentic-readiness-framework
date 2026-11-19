@@ -35,6 +35,7 @@ from __future__ import annotations
 
 import fnmatch
 import os
+import re
 import posixpath
 import subprocess
 import sys
@@ -165,12 +166,32 @@ def _covered(check: str, ask: Ask) -> bool:
     return any(place_covers(place, ask) or _folded_covers(place, ask) for place in reads.READS[check].where)
 
 
+#: A run of the characters a path or a glob is written with: one path token of the target's text.
+_TEXT_TOKEN = re.compile(r"[A-Za-z0-9_.*?!\[\]/-]+")
+
+
+def _text_names(text: str) -> set[str]:
+    """Every path token of the text, as a check normalises one: its core, also less a leading "./" or "/".
+
+    AGT-06 strips "./" from a token (``.github/workflows`` becomes ``github/workflows``); a token that ends a
+    sentence loses its full stop.
+    """
+    names: set[str] = set()
+    for token in _TEXT_TOKEN.findall(text):
+        for written in (token, token.rstrip(".")):
+            core = _text_core(written)
+            names.update(name for name in (core, core.lstrip("./"), core.lstrip("/")) if name)
+    return names
+
+
 def _named(root: Path, asks: set[Ask], path: str) -> bool:
+    """Whether ``path`` is, whole, one path token of a file the same run read."""
+    core = _text_core(path)
     for kind, rel in asks:
         if kind != "read":
             continue
         try:
-            if path in (root / rel).read_text(encoding="utf-8", errors="replace"):
+            if core in _text_names((root / rel).read_text(encoding="utf-8", errors="replace")):
                 return True
         except OSError:
             continue
@@ -179,8 +200,8 @@ def _named(root: Path, asks: set[Ask], path: str) -> bool:
 
 def _text_core(operand: str) -> str:
     """The path a check took from the target's text, less the "*/" or "/*" it added to match below or above it."""
-    core = operand.removeprefix("*/")
-    for tail in ("/*", "/"):
+    core = operand.removeprefix("**/").removeprefix("*/")
+    for tail in ("/**", "/*", "/"):
         core = core.removesuffix(tail)
     return core
 
@@ -188,8 +209,8 @@ def _text_core(operand: str) -> str:
 def undeclared(check: str, root: Path, asks: set[Ask]) -> set[Ask]:
     """The asks of one run that no declared place covers.
 
-    A declaration with ``named_by_text`` also allows a path that is written in a file the same run read; that file
-    itself must be declared.
+    A declaration with ``named_by_text`` also allows a path that is one whole path token of a file the same run
+    read; that file itself must be declared.
     """
     missing = {ask for ask in asks if not _covered(check, ask)}
     if reads.READS[check].named_by_text:
@@ -245,6 +266,11 @@ _NOT_READ_NAMES: tuple[tuple[str, str, frozenset[str], str], ...] = (
     ),
     ("AGT-13", "eq", frozenset({agt._DOCS_STYLE_GUIDE}), "the docs style guide never counts as a conventions file"),
 )
+
+#: The checks that compare scanned paths with paths cut from the target's text, so a name ask equal to a path
+#: token of a file the run read is a read their ``named_by_text`` declares. AGT-10 declares ``named_by_text`` for
+#: the files it looks up, but compares no scanned path with a name from the text.
+_TEXT_NAMED_CHECKS = ("AGT-06", "CON-01")
 
 
 def _names_label(check: str, op: str, name: str) -> str:
@@ -756,8 +782,8 @@ class Recorded:
                 if label is not None:
                     self._exempt(label, spec.id, {ask})
             names = {ask for ask in names if not _not_a_read(spec.id, ask)}
-            if reads.READS[spec.id].named_by_text:
-                texts = {ask for ask in names if _named(target.path, probed.asks, _text_core(ask[1]))}
+            if spec.id in _TEXT_NAMED_CHECKS:
+                texts = {ask for ask in names if _named(target.path, probed.asks, ask[1])}
                 self._exempt("named_by_text", spec.id, texts)
                 names -= texts
             self.names[spec.id] |= names
@@ -977,6 +1003,7 @@ class NameProbeTest(unittest.TestCase):
                 for name in sorted(names)
                 if not needs.get(_names_label(check, op, name), {}).get(check)
             )
+        dead.extend(f"named_by_text {check}" for check in _TEXT_NAMED_CHECKS if not needs["named_by_text"].get(check))
         self.assertEqual(dead, [])
 
     def test_an_exemption_of_covered_asks_hides_nothing(self) -> None:
@@ -1004,6 +1031,17 @@ class NameProbeTest(unittest.TestCase):
             [_text_core(op) for op in ("*/docs", "docs/*", "src/cli/", "tests")], ["docs", "docs", "src/cli", "tests"]
         )
         self.assertFalse(any(operand.startswith("src/") for _op, operand, _f in recorded().names["AGT-06"]))
+
+    def test_a_text_name_is_one_whole_path_token(self) -> None:
+        names = _text_names("Never edit `src/cli/` or ./docs/**. Keep *.pem out.")
+        self.assertLessEqual({"src/cli", "docs", "*.pem"}, names)
+        # A part of a token is not a name the text gives, as a substring test would take it to be.
+        self.assertFalse({"src", "cli", "doc", "pem", "src/c"} & names)
+
+    def test_only_the_checks_that_compare_text_names_drop_them(self) -> None:
+        declared = {check for check, d in reads.READS.items() if d.named_by_text}
+        self.assertLessEqual(set(_TEXT_NAMED_CHECKS), declared)
+        self.assertEqual(set(recorded().exempted["named_by_text"]), set(_TEXT_NAMED_CHECKS))
 
     def test_a_name_looked_for_at_any_depth_reaches_its_root_place(self) -> None:
         place = reads.Place("lefthook.yaml", reads.ROOT)
