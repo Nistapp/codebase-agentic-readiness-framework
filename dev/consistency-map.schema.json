@@ -408,6 +408,13 @@
             "repository-level",
             "glob"
           ]
+        },
+        "via": {
+          "description": "The place is read upstream, before the check runs: scan-kind when the scan's file kinds (test, generated) match it by name, components when component detection reads it. The check asks for no such path itself.",
+          "enum": [
+            "scan-kind",
+            "components"
+          ]
         }
       },
       "required": [

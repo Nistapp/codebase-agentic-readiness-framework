@@ -58,6 +58,12 @@ class GeneratedTest(unittest.TestCase):
         self.assertEqual(cmd01["constants"], ["audit.rules.checks._common:RUNNER_PRECEDENCE"])
         self.assertNotIn("constants", tst01)
 
+    def test_a_place_read_upstream_carries_its_step_and_others_carry_none(self) -> None:
+        (nav01,) = [read for read in MAP["reads"] if read["check"] == "NAV-01"]
+        (cmd01,) = [read for read in MAP["reads"] if read["check"] == "CMD-01"]
+        self.assertEqual({where.get("via") for where in nav01["where"]}, {"components"})
+        self.assertEqual([where for where in cmd01["where"] if "via" in where], [])
+
 
 class DriftTest(unittest.TestCase):
     def _copy(self, cmap: dict[str, Any]) -> Path:

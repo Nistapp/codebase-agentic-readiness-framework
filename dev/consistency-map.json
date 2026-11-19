@@ -6347,31 +6347,38 @@
         },
         {
           "path": "package.json",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "pnpm-workspace.yaml",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "pom.xml",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "settings.gradle",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "settings.gradle.kts",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "go.work",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "Cargo.toml",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         }
       ]
     },
@@ -9695,47 +9702,58 @@
       "where": [
         {
           "path": "**/dist/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/build/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/generated/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/vendor/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.min.js",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.min.css",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.map",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.pb.go",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.g.cs",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.designer.cs",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.lock.gen",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         }
       ],
       "window": 20
@@ -10187,31 +10205,38 @@
         },
         {
           "path": "**/*test_*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*_test.*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.test.*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.spec.*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/tests/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/test/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/__tests__/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "*_test.go",
@@ -10288,31 +10313,38 @@
       "where": [
         {
           "path": "**/*test_*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*_test.*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.test.*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/*.spec.*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/tests/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/test/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "**/__tests__/**",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "*_test.go",
@@ -10533,87 +10565,108 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "pnpm-workspace.yaml",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "pom.xml",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "settings.gradle",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "settings.gradle.kts",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "go.work",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "Cargo.toml",
-          "scope": "root"
+          "scope": "root",
+          "via": "components"
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "via": "components"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "via": "components"
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "via": "components"
         },
         {
           "path": "build.gradle",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "via": "components"
         },
         {
           "path": "build.gradle.kts",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "via": "components"
         },
         {
           "path": "Cargo.toml",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "via": "components"
         },
         {
           "path": "go.mod",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "via": "components"
         },
         {
           "path": "apps/*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "components"
         },
         {
           "path": "services/*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "components"
         },
         {
           "path": "packages/*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "components"
         },
         {
           "path": "components/*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "components"
         },
         {
           "path": "modules/*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "components"
         },
         {
           "path": "libs/*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "components"
         },
         {
           "path": "workers/*",
-          "scope": "glob"
+          "scope": "glob",
+          "via": "components"
         }
       ]
     },
