@@ -569,6 +569,28 @@ def _probing(inventory: Inventory) -> _RecordingInventory:
     return copy
 
 
+#: The checks that declare the whole tree (``**``), so no name ask of theirs can be uncovered, with what each one
+#: reads by the probe's record. Listed to narrow later, one check at a time; not narrowed yet.
+_WHOLE_TREE_CHECKS: dict[str, str] = {
+    "TOOL-05": "hook-manager files at any depth (.pre-commit-config.yaml, lefthook), .githooks/* and .husky/*, and the "
+    "runner manifests (Makefile, package.json, pyproject.toml, Taskfile, Gradle, Maven) searched for core.hooksPath",
+    "TOOL-06": "commitlint configs, commit-msg hooks, hook-manager files, CI files and the same runner manifests as "
+    "TOOL-05, searched for a commit-message rule",
+    "TOOL-07": "the hook-manager files, files named pre-commit or commit-msg (outside .git/), .husky/*, .githooks/*, "
+    "package.json, .github/rulesets/*.json, .github/settings.yml and *.tf",
+    "CI-05": "every file of kind manifest, build, config, script or other, less lockfiles and dependabot or renovate "
+    "configs, then the CI files",
+    "CON-04": "every scanned path, never content, sorted by suffix (.pem, .key, .tf, .min.js and others) and folder "
+    "name (dist, build, generated, migrations, tests and others)",
+    "EXEC-04": "shell files (*.sh, *.bash and others), Dockerfile, every file of kind source or script, and the four "
+    "root .env example files",
+    "NAV-02": "the fixed entry-point names per ecosystem, __main__.py, and every source and build file grepped for a "
+    "main marker",
+    "NAV-03": "every scanned path and size: large files, crowded folders, binaries and paths holding .min.",
+    "SEC-02": "every tracked text file (source suffixes, less the .env templates), and the root allowlist files",
+}
+
+
 def name_hits(place: reads.Place, ask: NameAsk, stems: Iterable[NameAsk] = ()) -> bool:
     """Whether one ``name`` ask and one declared place meet, the rule both report directions use (a heuristic).
 
@@ -709,6 +731,7 @@ def name_probe_summary(recording: Recorded, detail: bool = False) -> str:
         f"{unexercised_count} unexercised, {unseen_count} unseen, in {len(unseen)} checks",
         f"  unseen places: {_tally(unseen)}",
         f"  uncovered name asks: {_tally(uncovered)}",
+        f"  whole tree (**), never uncovered: {', '.join(_WHOLE_TREE_CHECKS)}",
     ]
     if detail:
         for check, missing_places in sorted(unseen.items()):
@@ -1104,6 +1127,13 @@ class NameProbeTest(unittest.TestCase):
         if mode:
             sys.stderr.write("\n" + summary + "\n")
         self.assertIn("declared places", summary)
+
+    def test_the_checks_that_declare_the_whole_tree_are_listed(self) -> None:
+        # A check that declares "**" passes the name assertion whatever it compares, so a new one must be listed
+        # with what it reads, and a narrowed one taken off the list.
+        whole = [check for check, d in reads.READS.items() if any(place.path == "**" for place in d.where)]
+        self.assertEqual(whole, list(_WHOLE_TREE_CHECKS))
+        self.assertTrue(all(what.strip() for what in _WHOLE_TREE_CHECKS.values()))
 
     def test_every_name_ask_is_covered_by_a_declared_place(self) -> None:
         found = {check: sorted(asks) for check, asks in uncovered_names(recorded()).items()}
