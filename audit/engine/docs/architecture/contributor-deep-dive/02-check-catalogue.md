@@ -261,8 +261,9 @@ flowchart LR
 5. Add a broken fixture that fails exactly this check and nothing else.
 6. Declare what the check reads in `audit/rules/reads.py`: the places, the text and the binding. Take the paths
    from the check's own constant with `_held` where one exists. Give a place `via` when the scan's file kinds or
-   component detection read it before the check runs. `tests/test_check_reads.py` fails on a path the
-   check asks for and the declaration does not cover. It also prints the `name` asks that no declaration covers:
+   component detection read it before the check runs. Give it `case=FOLD` when the check lower-cases the name. Set
+   `named_by_text` when the check looks up paths that the target's text names. `tests/test_check_reads.py` fails on
+   a path the check asks for and the declaration does not cover. It also prints the `name` asks that no declaration covers:
    the names a check compares paths with in its own code. It does not fail on them yet. Then run
    `python3 dev/consistency_map_reads.py --write` from the repository root. It rewrites the consistency map's reads
    (ADR 0012 in the root `docs/architecture/adrs/`).
