@@ -18,11 +18,13 @@ string, the name probe. It records a fifth kind of ask:
 - ``name``: a name a check compares a scanned path with in its own code (``==``, ``!=``, ``startswith``,
   ``endswith``, ``in``, ``fnmatch``), and whether the path was lower-cased first.
 
-The name probe is report-only for now: the test prints the ``name`` asks that no declared place covers and the
-declared places that no ask of any kind reaches, and fails on neither. A place with ``via`` is read upstream, by
-the scan's file kinds or by component detection, so no ask needs to reach it; the report counts it apart. A further test proves that the probe changes
-no check's result. Git commands and reads outside the target (``$HOME``) are not paths of the target. The stack and the
-components are detected before the checks run, so their reads belong to no check.
+Two assertions hold the declarations to the probe: every ``name`` ask is covered by a declared place, and every
+declared place is reached by an ask of some kind, read upstream (``via``: the scan's file kinds or component
+detection) or marked ``unexercised`` with the reason no fixture can reach it. A place marked ``unexercised`` that an
+ask does reach fails too, so the mark cannot go stale. ``AUDIT_NAME_PROBE=summary`` prints the counts and
+``AUDIT_NAME_PROBE=detail`` every gap. A further test proves that the probe changes no check's result. Git commands
+and reads outside the target (``$HOME``) are not paths of the target. The stack and the components are detected
+before the checks run, so their reads belong to no check.
 
 An ask is covered when a declared place matches it at its scope. ``has`` looks at any depth, so a ``root`` place
 does not cover it. A ``match`` pattern is covered by a place with the same path, the same path under ``**/``, or the
@@ -583,12 +585,20 @@ def _seen(check: str, place: reads.Place, asks: set[Ask], names: set[NameAsk]) -
 
 
 def _places_by_reach(recording: Recorded) -> dict[str, dict[str, list[reads.Place]]]:
-    """The declared places that no recorded ask reaches, by check: ``upstream`` when ``via`` accounts for them."""
-    found: dict[str, dict[str, list[reads.Place]]] = {"unseen": {}, "upstream": {}}
+    """The declared places that no recorded ask reaches, by check, and the ``unexercised`` places one does reach.
+
+    An unreached place is ``upstream`` when ``via`` accounts for it, ``unexercised`` when the declaration says why no
+    fixture can reach it, and ``unseen`` otherwise. A reached place still marked unexercised is ``stale``.
+    """
+    found: dict[str, dict[str, list[reads.Place]]] = {"unseen": {}, "upstream": {}, "unexercised": {}, "stale": {}}
     for check, declared in reads.READS.items():
         for place in declared.where:
-            if not _seen(check, place, recording.asks[check], recording.names[check]):
-                found["upstream" if place.via else "unseen"].setdefault(check, []).append(place)
+            if _seen(check, place, recording.asks[check], recording.names[check]):
+                kind = "stale" if place.unexercised else None
+            else:
+                kind = "upstream" if place.via else "unexercised" if place.unexercised else "unseen"
+            if kind:
+                found[kind].setdefault(check, []).append(place)
     return found
 
 
@@ -620,11 +630,13 @@ def name_probe_summary(recording: Recorded, detail: bool = False) -> str:
     places = sum(len(declared.where) for declared in reads.READS.values())
     unseen_count = sum(map(len, unseen.values()))
     upstream_count = sum(map(len, reach["upstream"].values()))
+    unexercised_count = sum(map(len, reach["unexercised"].values()))
+    seen_count = places - unseen_count - upstream_count - unexercised_count
     lines = [
-        f"name probe (report-only): {sum(map(len, recording.names.values()))} name asks, "
+        f"name probe: {sum(map(len, recording.names.values()))} name asks, "
         f"{sum(map(len, uncovered.values()))} not covered by a declaration, in {len(uncovered)} checks",
-        f"name probe: {places} declared places, {places - unseen_count - upstream_count} seen, "
-        f"{upstream_count} read upstream (via), {unseen_count} unseen, in {len(unseen)} checks",
+        f"name probe: {places} declared places, {seen_count} seen, {upstream_count} read upstream (via), "
+        f"{unexercised_count} unexercised, {unseen_count} unseen, in {len(unseen)} checks",
         f"  unseen places: {_tally(unseen)}",
         f"  uncovered name asks: {_tally(uncovered)}",
     ]
@@ -923,12 +935,34 @@ class NameProbeTest(unittest.TestCase):
         with mock.patch.dict(reads.READS, {"NAV-01": plain}):
             self.assertIn("NAV-01", unseen_places(recording))
 
-    def test_the_name_probe_reports_and_fails_on_nothing(self) -> None:
-        # Report-only (RF4.9.1): no declaration is held to the name asks yet. AUDIT_NAME_PROBE=detail prints every
-        # unseen place and every uncovered ask.
-        summary = name_probe_summary(recorded(), detail=os.environ.get("AUDIT_NAME_PROBE") == "detail")
-        sys.stderr.write("\n" + summary + "\n")
+    def test_the_name_probe_prints_its_counts_on_request(self) -> None:
+        # AUDIT_NAME_PROBE=summary prints the counts, AUDIT_NAME_PROBE=detail every unseen place and uncovered ask.
+        mode = os.environ.get("AUDIT_NAME_PROBE")
+        summary = name_probe_summary(recorded(), detail=mode == "detail")
+        if mode:
+            sys.stderr.write("\n" + summary + "\n")
         self.assertIn("declared places", summary)
+
+    def test_every_name_ask_is_covered_by_a_declared_place(self) -> None:
+        found = {check: sorted(asks) for check, asks in uncovered_names(recorded()).items()}
+        self.assertEqual(found, {})
+
+    def test_every_declared_place_is_seen_read_upstream_or_unexercised(self) -> None:
+        reach = _places_by_reach(recorded())
+        self.assertEqual({check: [p.path for p in places] for check, places in reach["unseen"].items()}, {})
+        self.assertEqual({check: [p.path for p in places] for check, places in reach["stale"].items()}, {})
+
+    def test_an_unexercised_place_says_why(self) -> None:
+        marked = {(c, p.path): p.unexercised for c, d in reads.READS.items() for p in d.where if p.unexercised}
+        self.assertTrue(marked)
+        self.assertTrue(all(reason.strip() for reason in marked.values()))
+        self.assertIn(("IDX-03", ".codebase-memory/graph.db.zst"), marked)
+        recording = recorded()
+        self.assertIn("IDX-03", _places_by_reach(recording)["unexercised"])
+        idx03 = reads.READS["IDX-03"]
+        plain = replace(idx03, where=tuple(replace(place, unexercised=None) for place in idx03.where))
+        with mock.patch.dict(reads.READS, {"IDX-03": plain}):
+            self.assertIn("IDX-03", unseen_places(recording))
 
 
 class CoverRuleTest(unittest.TestCase):
