@@ -22,7 +22,8 @@ and in CI, with nothing installed.
 3. Every project detail lives in [`dev/docindex.config.json`](../../../dev/docindex.config.json): the zones by path
    prefix, the ID patterns, the exclusions and the sweep scope.
 4. The index is a graph of file, section and id nodes. Its edges are contains, links, mentions, runs and bundles,
-   each with a confidence of exact or name-match. [`model.py`](../../../dev/docindex/model.py) defines it.
+   each with a confidence of exact or name-match. A link to a folder is name-match: the graph has no folder nodes.
+   [`model.py`](../../../dev/docindex/model.py) defines it.
    [`index.schema.json`](../../../dev/docindex/index.schema.json) is the JSON Schema of its one serialised form.
 5. The serialised form is deterministic: sorted keys, sorted nodes and edges, no timestamps, no absolute paths and
    no line numbers. Two builds of one tree are byte-identical, so two indexes compare with a plain diff.

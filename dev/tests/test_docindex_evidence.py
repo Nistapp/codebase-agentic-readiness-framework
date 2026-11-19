@@ -10,10 +10,15 @@ runner stands in for the engine, ``git`` and ``--version``.
 from __future__ import annotations
 
 import copy
+import dataclasses
+import datetime
 import io
 import json
 import os
 import re
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -380,6 +385,89 @@ class EntryPointTest(unittest.TestCase):
         self.assertEqual(project.engine_dir, doc_index.REPO / "audit" / "engine")
         self.assertTrue((project.engine_dir / "audit" / "__main__.py").is_file())
         self.assertEqual(project.repo, doc_index.REPO)
+
+
+def _git_out(target: Path, *args: str) -> str:
+    return subprocess.run(["git", "-C", str(target), *args], capture_output=True, text=True, check=True).stdout.strip()
+
+
+class ScaffoldTargetTest(_Temp):
+    """The ``scaffold`` target: the greenfield scaffolder runs in process into the work folder, deterministically."""
+
+    def _templates(self) -> Path:
+        """A scratch copy of the greenfield templates, which a test may change; the real files never change."""
+        copy_dir = self._folder() / "templates"
+        shutil.copytree(doc_index.TEMPLATES, copy_dir)
+        return copy_dir
+
+    def _run_scaffold(self, templates: Path = doc_index.TEMPLATES) -> Path:
+        """A real ``evidence run`` of the scaffold of ``templates``: the engine runs on it; returns the run folder."""
+        project = dataclasses.replace(
+            doc_index.evidence_project(), targets=lambda _kind, work: doc_index.scaffold_targets(work, templates)
+        )
+        out = self._folder() / "run"
+        evidence.run(out, doc_index.SCAFFOLD, project, self._folder())
+        return out
+
+    def test_scaffold_is_a_target_kind(self) -> None:
+        self.assertIn("scaffold", evidence.TARGET_KINDS)
+
+    def test_the_scaffold_is_one_committed_target_with_an_isolated_home(self) -> None:
+        work = self._folder()
+        targets = doc_index.evidence_targets("scaffold", work)
+        self.assertEqual([target.name for target in targets], ["scaffold"])
+        target = targets[0]
+        self.assertEqual(target.path, work / "targets" / "scaffold")
+        self.assertTrue((target.path / "AGENTS.md").is_file())
+        self.assertTrue((target.path / ".github").is_dir(), "the scaffolder's renames are applied")
+        self.assertEqual(target.env["HOME"], str(work / "homes" / "scaffold"))
+        self.assertTrue(Path(target.env["HOME"]).is_dir())
+        self.assertFalse(Path(target.env["AUDIT_INDEX_STORE"]).exists())
+        self.assertEqual(_git_out(target.path, "rev-parse", "--abbrev-ref", "HEAD"), "dev")
+        self.assertEqual(_git_out(target.path, "status", "--porcelain"), "")
+        self.assertEqual(
+            _git_out(target.path, "log", "--format=%an %at %ct"),
+            "agentic-readiness-eval 1767225600 1767225600",
+        )
+
+    def test_two_scaffolds_of_the_same_tree_are_the_same_commit(self) -> None:
+        first = doc_index.scaffold_targets(self._folder())[0].path
+        second = doc_index.scaffold_targets(self._folder())[0].path
+        self.assertEqual(_git_out(first, "rev-parse", "HEAD"), _git_out(second, "rev-parse", "HEAD"))
+
+    def test_the_scaffold_date_is_fixed_and_the_scaffolder_keeps_its_clock(self) -> None:
+        templates = self._templates()
+        (templates / "docs" / "architecture" / "dated.md").write_text("# Dated\n\nDate: YYYY-MM-DD\n", encoding="utf-8")
+        target = doc_index.scaffold_targets(self._folder(), templates)[0].path
+        dated = (target / "docs" / "architecture" / "dated.md").read_text(encoding="utf-8")
+        self.assertEqual(dated, f"# Dated\n\nDate: {doc_index.SCAFFOLD_DATE.isoformat()}\n")
+        self.assertIs(sys.modules["_doc_index_bootstrap"].dt, datetime)
+
+    def test_a_failed_scaffolder_is_an_evidence_error(self) -> None:
+        with self.assertRaisesRegex(evidence.EvidenceError, "the scaffolder failed .exit 1.: .*template directory"):
+            doc_index.scaffold_targets(self._folder(), self._folder() / "no-templates")
+
+    def test_a_failed_git_command_is_an_evidence_error(self) -> None:
+        with self.assertRaisesRegex(evidence.EvidenceError, "git init failed in the scaffold"):
+            doc_index._commit(self._folder() / "missing", {})
+
+    def test_two_runs_of_the_same_tree_compare_equal(self) -> None:
+        old, new, comparison = evidence.compare(self._run_scaffold(), self._run_scaffold())
+        self.assertTrue(comparison.empty, evidence.to_text(old, new, comparison))
+        self.assertEqual([entry["name"] for entry in new["reports"]], ["scaffold"])
+
+    def test_moving_never_restate_to_the_next_line_reports_the_agt_06_change(self) -> None:
+        templates = self._templates()
+        agents = templates / "AGENTS.md"
+        text = agents.read_text(encoding="utf-8")
+        line = "`docs/STYLE_GUIDE.md`; never restate its rules.\nThat covers"
+        self.assertEqual(text.count(line), 1, "the template line this replay moves has changed")
+        agents.write_text(text.replace(line, "`docs/STYLE_GUIDE.md`;\nnever restate its rules. That covers"), "utf-8")
+        old, new, comparison = evidence.compare(self._run_scaffold(), self._run_scaffold(templates))
+        changed = {change.check: change for change in comparison.changes}
+        self.assertIn("AGT-06", changed, evidence.to_text(old, new, comparison))
+        self.assertEqual(changed["AGT-06"].report, "scaffold")
+        self.assertIn("summary", changed["AGT-06"].evidence)
 
 
 if __name__ == "__main__":

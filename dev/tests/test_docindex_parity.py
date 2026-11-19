@@ -128,13 +128,15 @@ class LinkParityTest(unittest.TestCase):
 
 
 class IndexHoldsTheLinksTest(unittest.TestCase):
-    def test_each_parsed_file_has_an_exact_links_edge_per_target_found(self) -> None:
+    def test_each_parsed_file_has_a_links_edge_per_target_found(self) -> None:
         tree = WorkTree(REPO)
         config = doc_index.load_config()
         result = extract.extract(tree, config)
         by_file: dict[str, set[Target]] = {}
+        addresses = {node.address for node in result.index.nodes}
         for edge in result.index.edges:
-            if edge.kind == "links" and edge.confidence == "exact":
+            # A link is exact, or name-match to a folder (no node); a bare file name's edge is name-match to a node.
+            if edge.kind == "links" and (edge.confidence == "exact" or edge.target not in addresses):
                 source = edge.source.partition("#")[0]
                 by_file.setdefault(source, set()).add((edge.target.partition("#")[0], edge.anchor or ""))
         list_only = tuple(prefix.rstrip("/") + "/" for prefix in config.get("exclude", {}).get("list_only", []))
