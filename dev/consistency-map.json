@@ -1871,6 +1871,26 @@
       "status": "kept"
     },
     {
+      "check": "CMD-01",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Give a tool manifest no script named like a verb.",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
+      "move": "pin-execution-environment/row-9",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-01",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "A new tool manifest needs a toolchain pin that reaches it, such as `engines.node` or `requires-python`.",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
+      "move": "pin-execution-environment/row-9",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/playbooks/pin-execution-environment.md",
@@ -1888,6 +1908,60 @@
         "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
       },
       "move": "pin-execution-environment/row-9",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-04",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
+      "move": "pin-execution-environment/row-10",
+      "note": "Inferred from the reads notes: TOOL-04 follows a runner target on a CI line; CI-05 needs the linter's name on a local line.",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-06",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
+      "move": "pin-execution-environment/row-10",
+      "note": "Inferred from the reads notes: TOOL-04 follows a runner target on a CI line; CI-05 needs the linter's name on a local line.",
+      "status": "kept"
+    },
+    {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
+      "move": "pin-execution-environment/row-10",
+      "note": "Inferred from the reads notes: TOOL-04 follows a runner target on a CI line; CI-05 needs the linter's name on a local line.",
+      "status": "kept"
+    },
+    {
+      "check": "CI-05",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
+      "move": "pin-execution-environment/row-10",
+      "note": "Inferred from the reads notes: TOOL-04 follows a runner target on a CI line; CI-05 needs the linter's name on a local line.",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-09",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Copy the form of the existing update entries, with no `target-branch` beside `ignore` or `groups`.",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
+      "move": "pin-execution-environment/row-11",
       "status": "kept"
     },
     {

@@ -117,7 +117,8 @@ manifest that dependency automation reads.
    other than this playbook is recorded and left to the `AGENTS.md` theme, **except** a false claim about the
    lockfiles or the pin this playbook just made true or checked (for example "component X has no tracked
    lockfile" when it has one): correct that line in its own small commit once the owner agrees, and look the
-   line up by text, not by the finding's line number (earlier themes move lines).
+   line up by text, not by the finding's line number (earlier themes move lines). Keep a path and its rule word
+   on one line, as "`AGT-06` Architectural boundaries declared" reads them.
 8. **Tell the scanner theme.** If a scanner reads the lockfile (OSV-Scanner reads `gradle.lockfile` and
    `package-lock.json`), note in the item that the lockfile now exists, so `configure-quality-tools` can unblock
    its `security` verb.
@@ -131,6 +132,17 @@ manifest that dependency automation reads.
     Make sure `dependabot.yml` (or the Renovate config) has an entry for the manifest's ecosystem and directory
     ([`add-repo-hygiene`](add-repo-hygiene.md), HYG-09). Edit a workflow only when `ci.edits_authorised` allows;
     otherwise list its literals as debt. A repeated copy of a pin (EXEC-08 `PARTIAL`) is removed the same way.
+    Four more reads need care:
+    - A new tool manifest needs a toolchain pin that reaches it, such as `engines.node` or `requires-python`.
+      Else "`EXEC-01` Toolchain pinned / wrapper committed" reads it as an unpinned module.
+    - Give a tool manifest no script named like a verb. "`CMD-01` Seven verbs resolvable on one runner" reads
+      the scripts of the shallowest `package.json`.
+    - Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line
+      (`go tool actionlint`, `uv run zizmor`). "`TOOL-04` Dependency / security scan verb", "`TOOL-06` Commit
+      convention enforced" and "`CI-05` Workflow files are linted" find the tool by its name. "`CI-02`
+      Local↔CI parity" maps the line to a verb.
+    - Copy the form of the existing update entries, with no `target-branch` beside `ignore` or `groups`.
+      "`HYG-09` Dependency update automation configured" reads that pair as a defect.
 
 ### Gradle
 
@@ -148,7 +160,8 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#execution-determinism).
 - The engine cannot see `dependencyLocking`, so EXEC-02 reads `UNKNOWN` for an unlocked Gradle build and may not
   read the locked one as `PASS` either. Verify by reading `build.gradle` and `gradle.lockfile` directly and
   record the engine's limit in the item.
-- Invoke only through the wrapper (`./gradlew`).
+- Invoke only through the wrapper (`./gradlew`). Then "`EXEC-06` Documented commands resolve" finds the wrapper
+  for each documented Gradle command.
 
 ### Node (npm, pnpm, yarn)
 
