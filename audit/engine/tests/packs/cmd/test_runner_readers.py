@@ -245,9 +245,10 @@ class NestedManifestTests(unittest.TestCase):
         self.assertIn("apps/web/package.json", commands)
         self.assertNotIn("apps/web/deep/nested/package.json", commands)
 
-    def test_a_nested_only_makefile_is_named_by_its_real_path(self):
+    def test_a_nested_only_makefile_is_not_a_runner(self):
+        """``make`` reads the root ``Makefile`` only, so a nested one is neither read nor cited."""
         _, commands = read({"packages/app/Makefile": "check:\n\techo ok\n"})
-        self.assertIn("packages/app/Makefile", commands)
+        self.assertNotIn("packages/app/Makefile", commands)
         self.assertNotIn("Makefile", commands)
 
     def test_a_root_manifest_is_unaffected(self):

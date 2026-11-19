@@ -6450,7 +6450,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -7089,7 +7089,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "Each manifest kind is matched at any depth and only the shallowest is read; the Makefile is parsed at the root only, and gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
+      "note": "Each manifest kind is matched at any depth and only the shallowest is read; the Makefile counts and is parsed at the root only, and gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
       "source": "engine",
       "threshold": "all seven verbs on one runner",
       "what": {
@@ -7111,7 +7111,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -7169,7 +7169,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -7227,7 +7227,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -7290,7 +7290,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -7453,7 +7453,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -7628,7 +7628,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -7723,7 +7723,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -7774,7 +7774,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -7988,7 +7988,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -8193,7 +8193,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -8280,7 +8280,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -8578,7 +8578,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -8657,10 +8657,6 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
-          "path": "Makefile",
           "scope": "root"
         },
         {
@@ -8801,7 +8797,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -8905,10 +8901,6 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
-          "path": "Makefile",
           "scope": "root"
         },
         {
@@ -9069,7 +9061,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -9757,7 +9749,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -9973,7 +9965,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -10140,7 +10132,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -10218,7 +10210,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. The runner manifests are found at any depth and the shallowest is read; the Makefile is read at the root only.",
+      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. The runner manifests are found at any depth and the shallowest is read; the Makefile counts and is read at the root only.",
       "source": "engine",
       "what": {
         "kind": "key"
@@ -10230,7 +10222,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
@@ -10475,7 +10467,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
