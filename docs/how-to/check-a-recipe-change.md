@@ -338,12 +338,14 @@ The tools find a loss in text and structure. They do not prove that the recipes 
 | `evidence compare` | A check whose input changed but whose verdict and evidence stayed the same |
 | `consistency-map` | A touch that no reviewer declared. It shows only as an unreviewed guess |
 | `consistency-map --base` | The evidence of a fresh greenfield scaffold. A template change shows under `review`, but the engine audits only this repository |
-| All but `consistency-map` | An engine contract bound to one line of a file |
+| All but `consistency-map` and `evidence compare` | An engine contract bound to one line of a file |
 
 The last row needs a note. Some engine checks need two things on one physical line, for example
 "`AGT-06` Architectural boundaries declared" and "`AGT-08` No competing instruction files". Re-wrapping such a line
 can change the verdict. The consistency map records each such binding in its reads, and its gate checks that a
 sentence keeps it. It checks that the rule is stated, not that an agent follows it.
+`evidence compare` sees a broken binding when the verdict or the evidence changes. For a template, run it with
+`--target scaffold` ([Step 6](#step-6-compare-the-engine-evidence)).
 
 ---
 
