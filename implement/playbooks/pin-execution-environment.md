@@ -75,7 +75,7 @@ manifest that dependency automation reads.
    only partly met. A version catalog alone is not a lock. Record the choice as a preference.
 6. **Monorepo or several components with no root manifest.** Per-component lockfiles are accepted when the owner chose a
    per-component layout (`layout.command_runner`). The playbook then verifies each component and records the item
-   `partial` with the reason; it does not add a root workspace manifest unless the owner asks, because that changes
+   `partial` (see Continue on error). It adds no root workspace manifest unless the owner asks, because that changes
    install paths and image builds. The engine reads only the root manifest, so a nested lockfile reads `PARTIAL` by
    design ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
 7. **Where tool versions go (EXEC-08).** List each literal the audit cited (tool, version, file, line) and confirm
@@ -211,8 +211,9 @@ Steps 1, 5, 8 and 9 make no commit.
 - A mismatch in a file the owner has not authorised editing (CI, a Dockerfile in another team's folder) is
   debt: count the mismatched places, record them with `--debt`, mark the item `partial`, and list each place
   in the note. There is nothing to ratchet; the CI theme closes it.
-- Per-component lockfiles with no root manifest, by the owner's layout choice: `partial` with the reason
-  "lockfiles per component by owner choice; engine reads the root only". Not a defect.
+- Per-component lockfiles with no root manifest, by the owner's layout choice: `partial` with
+  `--debt "what=component lockfiles the engine does not read,count=N"`. The note says "lockfiles per component by
+  owner choice; engine reads the root only". Not a defect.
 - A component whose build fails on the pinned major: record `blocked` with the error and the owner's options
   (a different major, an upgrade of the failing dependency). Never pin a version the build cannot use.
 

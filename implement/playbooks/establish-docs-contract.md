@@ -151,7 +151,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    - Keep the "before" example inside `<!-- prose-check off -->` and `<!-- prose-check on -->`, or the check counts
      it.
    - With a non-English `docs.language`, the owner supplies the rules in that language. `DOC-05` then reads
-     `UNKNOWN`; record the item `partial`.
+     `UNKNOWN`; record the item `partial` with
+     `--debt "what=style rules the check cannot read (<language>),count=1"`.
    - Every page this theme writes follows the rules: the index, the style guide, the ADR policy page, the ADRs and
      the architecture page. Re-run the engine before the theme closes: `DOC-05` cites no line on those pages.
 
@@ -379,8 +380,9 @@ so the lint and prose baselines (rows 13 and 18) count the new pages.
 - A page the theme edits anyway (for example the docs index) joins the clean path list only when it passes the
   rules. Until then it stays in the debt count.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
-  because the engine counts, it does not judge. Mark the item `partial` with that reason, or `skipped` if the
-  owner calls it by design.
+  because the engine counts, it does not judge. Mark the item `partial` with
+  `--debt "what=NAV-03 census paths,count=N"` and that reason in the note, or `skipped` if the owner calls it by
+  design.
 - An ADR the owner has not reviewed: listed in the pull request under "What was not done", or in the status note,
   as waiting for the owner. The owner edits, deletes or merges it.
 - A docs job the merge gate cannot yet require: left advisory, noted for the CI theme.

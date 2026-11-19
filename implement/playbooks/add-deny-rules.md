@@ -169,8 +169,8 @@ layout name each app's directories (`app-a/test/`), not a root `test/` that does
 - **A test directory the owner does not want named** (fixtures that are data, a folder being deleted): the item is
   `partial` with `--debt "what=test directories not named in the deny list,count=N"`, or `skipped` if the owner says
   so. CON-02 keeps reading `PARTIAL`.
-- **A tracked scratch file the owner wants kept:** `partial` with the count of tracked files under the root; nothing
-  is untracked without the owner.
+- **A tracked scratch file the owner wants kept:** `partial` with
+  `--debt "what=tracked files under the scratch root,count=N"`; nothing is untracked without the owner.
 - **Harness permission gaps:** reported, not fixed (unless `agents_md.harness_deny=yes`). They are not debt on any
   check, because no check scores them; record them as a note on the AGT-07 item.
 

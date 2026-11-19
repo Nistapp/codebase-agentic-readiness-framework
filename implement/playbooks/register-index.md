@@ -126,8 +126,8 @@ No dependency is installed. Ask:
      Keep the entry minimal (a command, no secrets, no machine-specific absolute path). Do not edit an existing project
      config's other entries.
    - `document-only`: add a short section to the docs page or `AGENTS.md` that says how to register the server for each
-     harness the team uses. Mark IDX-01 `partial` with the reason. Put a registration command in a fenced block of
-     `AGENTS.md` only when its first word resolves. A harness CLI such as `agy` does not, and "`EXEC-06`
+     harness the team uses. Mark IDX-01 `partial` (see Continue on error). Put a registration command in a fenced
+     block of `AGENTS.md` only when its first word resolves. A harness CLI such as `agy` does not, and "`EXEC-06`
      Documented commands resolve" reads every fenced command there. Write such a command as inline code in prose.
 3. **Offer the setup to the person running this playbook.** The index server must run in the person's own harness
    before Step 4 can build the index. Ask once, and do nothing without a yes:
@@ -227,8 +227,9 @@ One commit per concern. Building the index (Step 4) commits nothing: the index i
 - **IDX-01 under `--no-user-config` with the `document-only` form:** `partial`, `--debt "what=no project-level
   registration,count=1"`. This is the owner's choice, not an error; the note says so.
 - **IDX-03 engine verdict `UNKNOWN`:** the store records no revision. The item is `partial` when the freshness rule is
-  written and `detect_changes` is clean; the note quotes the tool result and the engine limitation. It is never `done`
-  on the engine's word alone. This is not a bug of the repository.
+  written and `detect_changes` is clean, with
+  `--debt "what=engine cannot verify freshness (store records no revision),count=1"`. The note quotes the tool result
+  and the engine limitation. It is never `done` on the engine's word alone. This is not a bug of the repository.
 - **An index that cannot be built** (tool error, out of memory): `blocked` with the error quoted; do not work around it.
 - None of this is a count of violations, so no ratchet or baseline file applies: report-only is the wiring.
 
