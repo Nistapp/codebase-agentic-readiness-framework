@@ -1986,6 +1986,36 @@
       "status": "kept"
     },
     {
+      "check": "EXEC-06",
+      "home": {
+        "path": "implement/playbooks/register-index.md",
+        "quote": "Put a registration command in a fenced block of `AGENTS.md` only when its first word resolves.",
+        "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+      },
+      "move": "register-index/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-02",
+      "home": {
+        "path": "implement/playbooks/register-index.md",
+        "quote": "If either verdict falls, revert the commit and tell the owner.",
+        "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+      },
+      "move": "register-index/row-6",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-01",
+      "home": {
+        "path": "implement/playbooks/register-index.md",
+        "quote": "If either verdict falls, revert the commit and tell the owner.",
+        "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+      },
+      "move": "register-index/row-6",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-07",
       "home": {
         "path": "implement/playbooks/register-index.md",
@@ -2003,6 +2033,17 @@
         "section": "implement/SKILL.md#implement/stage-3-apply"
       },
       "move": "register-index/row-7",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-10",
+      "home": {
+        "path": "implement/playbooks/register-index.md",
+        "quote": "The line names a one-time step, not a file to read before every change.",
+        "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+      },
+      "move": "register-index/row-9",
+      "note": "The old example line passed only because the deferral pattern skips \"before your\"; the new one holds no deferral phrase.",
       "status": "kept"
     },
     {
