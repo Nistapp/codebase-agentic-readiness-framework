@@ -20,7 +20,8 @@ informational (`scored=False` in the registry) and are reported but earn no cred
   recognised ecosystem with none is `FAIL`; no recognised ecosystem is ``UNKNOWN``.
 * **NAV-03** — a census, never a verdict on heuristics: oversized files, catch-all directories,
   checked-in binaries and minified assets. All-zero is `PASS`; any count is `PARTIAL`, with the
-  counts and the documented thresholds in `detail`. It never `FAIL`s.
+  counts and the documented thresholds in `detail`. It never `FAIL`s. A lockfile, matched by exact
+  base name (`audit.stack.LOCKFILE_NAMES`), is left out of the size count, and `detail` names it.
 * **NAV-04** — informational: `docs/architecture/`, an ADR directory, or a diagram exists.
 * **NAV-05** — informational docstring census over public symbols. The method is stated in `detail`;
   when "public" cannot be defined for the files present the check is ``UNKNOWN``.
@@ -39,6 +40,7 @@ import re
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.scan import Inventory, Kind
+from audit.stack import LOCKFILE_NAMES
 from audit.rules.payloads import Payload, Ratio
 
 #: Files larger than this are counted as oversized (NAV-03). Documented, not tuned.
@@ -290,7 +292,9 @@ def check_nav02(*, spec, target, inventory, stack, components, session) -> Check
 
 
 def check_nav03(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    oversized = sorted(f.rel for f in inventory.files if f.size > LARGE_FILE_BYTES)
+    large = sorted(f.rel for f in inventory.files if f.size > LARGE_FILE_BYTES)
+    lockfiles = [rel for rel in large if rel.rsplit("/", 1)[-1] in LOCKFILE_NAMES]
+    oversized = [rel for rel in large if rel.rsplit("/", 1)[-1] not in LOCKFILE_NAMES]
     binaries = sorted(f.rel for f in inventory.files if f.kind is Kind.BINARY)
     minified = sorted(f.rel for f in inventory.files if f.kind is Kind.GENERATED and ".min." in f.rel.lower())
 
@@ -305,6 +309,8 @@ def check_nav03(*, spec, target, inventory, stack, components, session) -> Check
         f"catch-all dirs(>{CATCH_ALL_FILES} files): {len(catch_all)}; "
         f"binaries: {len(binaries)}; minified: {len(minified)}"
     )
+    if lockfiles:
+        detail += f"; lockfiles over the size, not counted: {len(lockfiles)} ({', '.join(lockfiles[:6])})"
     flags = oversized + catch_all + binaries + minified
     if not flags:
         return _outcome(spec, Verdict.PASS, detail)

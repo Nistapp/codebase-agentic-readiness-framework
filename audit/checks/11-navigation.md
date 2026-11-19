@@ -103,6 +103,10 @@ Engine           `NAV-03`. A census, never a verdict on a heuristic: counts file
                  (`LARGE_FILE_BYTES`), directories with more than 50 immediate files (`CATCH_ALL_FILES`),
                  files the scan classifies `Kind.BINARY`, and generated files whose name contains
                  `.min.`. Both thresholds are documented constants in `nav.py`, not tuned per repository.
+                 A lockfile is large by design, so the size count leaves it out. The match is by exact
+                 base name, never by pattern, against a closed list: `LOCKFILE_NAMES` in `stack.py`. It
+                 holds `package-lock.json`, `yarn.lock`, `uv.lock`, `Cargo.lock`, `go.sum` and others. A
+                 large file with any other name still counts. The summary names each lockfile it left out.
                  Carried-data directories (`templates/`, `fixtures/`, `examples/`) are not counted, so a
                  test corpus of a hundred fixtures is not a catch-all directory; the report's
                  `inventory.set_aside` lists them.
@@ -115,9 +119,9 @@ Engine           `NAV-03`. A census, never a verdict on a heuristic: counts file
 Method           automated
 Look for         Every file's size against the 512 KB threshold; every directory's immediate file count
                  against the 50-file threshold; every file's scan classification (`Kind.BINARY`); every
-                 generated file's name for `.min.`.
+                 generated file's name for `.min.`. Leave the lockfiles out of the size count.
 Rubric           PASS: no oversized file, no catch-all directory, no checked-in binary, and no minified
-                 asset is found.
+                 asset is found. A lockfile is never an oversized file.
                  PARTIAL: at least one of the four categories has a nonzero count.
                  FAIL: not used by this check — the engine's own outcome is never a hard failure,
                  whatever the counts.

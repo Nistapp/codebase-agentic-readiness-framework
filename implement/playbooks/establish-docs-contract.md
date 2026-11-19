@@ -151,7 +151,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    - Keep the "before" example inside `<!-- prose-check off -->` and `<!-- prose-check on -->`, or the check counts
      it.
    - With a non-English `docs.language`, the owner supplies the rules in that language. `DOC-05` then reads
-     `UNKNOWN`; record the item `partial`.
+     `UNKNOWN`; record the item `partial` with
+     `--debt "what=style rules the check cannot read (<language>),count=1"`.
    - Every page this theme writes follows the rules: the index, the style guide, the ADR policy page, the ADRs and
      the architecture page. Re-run the engine before the theme closes: `DOC-05` cites no line on those pages.
 
@@ -189,13 +190,13 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    flow. Add one Mermaid diagram, checked with the `mermaid-validator` MCP before saving. Cite files by path.
    Add `docs/architecture/README.md` only if the folder holds more than one page. For a component whose source
    is private, describe the dependency in one sentence with no path.
-6. **NAV-03 census.** Count, from the tracked file list (`git ls-files`), the four categories the check counts:
-   files over 512 KB, catch-all directories (`utils`, `misc`, `common`, `helpers` and similar with many files),
-   binary files, minified assets. The engine's counts can include on-disk or generated files that git does not
-   track, so re-measure by tracked paths and use the tracked list as the census. Write the paths in a "Repository
-   notes" section of the architecture page, each tagged: generated, by design (a lock file, public images), or
-   needs a decision. Do not move, untrack, resize or delete anything. Untracked runtime data directories are a
-   separate, owner-recorded item (an `extra.*` preference) and are mentioned, not changed.
+6. **NAV-03 census.** Count, from the tracked file list (`git ls-files`), the four categories the check counts: files
+   over 512 KB, catch-all directories (`utils`, `misc`, `common`, `helpers` and similar with many files), binary files,
+   minified assets. A lockfile is not a large file: the engine leaves it out. The engine's counts can include on-disk or
+   generated files that git does not track, so re-measure by tracked paths and use the tracked list as the census. Write
+   the paths in a "Repository notes" section of the architecture page, each tagged: generated, by design (a lock file,
+   public images), or needs a decision. Do not move, untrack, resize or delete anything. Untracked runtime data
+   directories are a separate, owner-recorded item (an `extra.*` preference) and are mentioned, not changed.
 7. **Scratch (DOC-03).** If an `artefacts/` (or `artifacts/`) directory exists, confirm it is ignored and that
    `git ls-files artefacts` prints nothing. Add the ignore rule and `git rm --cached` only what is tracked
    there, and only after the owner confirms those files are scratch. If no scratch directory exists, the check
@@ -379,8 +380,9 @@ so the lint and prose baselines (rows 13 and 18) count the new pages.
 - A page the theme edits anyway (for example the docs index) joins the clean path list only when it passes the
   rules. Until then it stays in the debt count.
 - NAV-03 census paths: recorded in the architecture page and the state note; the check keeps reading `PARTIAL`
-  because the engine counts, it does not judge. Mark the item `partial` with that reason, or `skipped` if the
-  owner calls it by design.
+  because the engine counts, it does not judge. Mark the item `partial` with
+  `--debt "what=NAV-03 census paths,count=N"` and that reason in the note, or `skipped` if the owner calls it by
+  design.
 - An ADR the owner has not reviewed: listed in the pull request under "What was not done", or in the status note,
   as waiting for the owner. The owner edits, deletes or merges it.
 - A docs job the merge gate cannot yet require: left advisory, noted for the CI theme.

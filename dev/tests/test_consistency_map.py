@@ -415,12 +415,26 @@ class GateTest(unittest.TestCase):
         for kind in ("quote", "coverage", "names", "constants", "keeps"):
             self.assertEqual(found[kind], [], kind)
 
-    def test_report_mode_exits_0_and_strict_mode_exits_1(self) -> None:
+    def test_report_mode_exits_0_and_strict_mode_exits_1_on_a_problem(self) -> None:
         with redirect_stdout(io.StringIO()) as out:
             self.assertEqual(consistency_map.main([]), 0)
         self.assertIn("consistency map:", out.getvalue())
+        # This tree's map has no problem, so strict mode passes on it.
         with redirect_stdout(io.StringIO()):
-            self.assertEqual(consistency_map.main(["--strict"]), 1)
+            self.assertEqual(consistency_map.main(["--strict"]), 0)
+        # A copy of the map with one keep removed leaves a touched pair unkept: strict mode fails, report mode not.
+        cmap = json.loads(json.dumps(MAP))
+        names = {"map_format": cmap["map_format"], "names": cmap.pop("names")}
+        cmap["keeps"] = cmap["keeps"][1:]
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "consistency-map.json"
+            path.write_text(json.dumps(cmap), encoding="utf-8")
+            consistency_map.names_path(path).write_text(json.dumps(names), encoding="utf-8")
+            with redirect_stdout(io.StringIO()) as out:
+                self.assertEqual(consistency_map.main(["--map", str(path), "--strict"]), 1)
+            self.assertIn("unkept: 1", out.getvalue())
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(consistency_map.main(["--map", str(path)]), 0)
 
     def test_json_mode_lists_every_kind(self) -> None:
         with redirect_stdout(io.StringIO()) as out:

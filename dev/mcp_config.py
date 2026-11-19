@@ -13,7 +13,9 @@
 ``.mcp.json`` is the one source (ADR 0006). Claude Code and VS Code read it as it is, so ``write`` has nothing to
 do for them. Antigravity keeps servers only at user level, through ``agy mcp add``; the tool prints that command.
 ``--harness other`` prints the plain entry for a harness this tool does not know. For the other harnesses, ``write`` merges the entry and never replaces an entry that differs: it
-stops and prints both. The answer goes into ``.agentic-readiness/setup.json``, which git ignores. Nothing here
+stops and prints both. The answer goes into ``.agentic-readiness/setup.json``, which git ignores. ``status``
+reads that file in this checkout first; for a harness it does not hold, it reads the main worktree's file, so a
+``git worktree`` does not ask again. ``record`` writes only this checkout's file. Nothing here
 installs a server or runs one, except ``check``, which runs ``<command> --version`` for a command on ``PATH``.
 
 Exit 0 on success, 1 when ``write`` refuses or ``check`` finds a missing command, 2 on a usage or file error.
@@ -260,6 +262,46 @@ def _add(path: Path, node: dict[str, Any], translated: dict[str, dict[str, Any]]
     return added
 
 
+#: Variables that would point git at another repository than ``root``; :func:`main_worktree` drops them.
+_GIT_LOCATION_VARIABLES = ("GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY")
+
+
+def main_worktree(root: Path) -> Path | None:
+    """The main worktree of the repository that holds ``root``, when ``root`` is a linked worktree of it.
+
+    ``git rev-parse --git-common-dir`` names the directory every worktree shares; for a normal repository it is the
+    main worktree's ``.git``. None when git is missing or fails, when ``root`` is not in a repository, when ``root``
+    is the main worktree, or when the common directory is not a ``.git`` folder (a bare repository has no main
+    worktree to read).
+    """
+    env = {key: value for key, value in os.environ.items() if key not in _GIT_LOCATION_VARIABLES}
+    try:
+        run = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", "--git-common-dir"],
+            capture_output=True,
+            text=True,
+            timeout=15,
+            check=False,
+            env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    common = run.stdout.strip()
+    if run.returncode != 0 or not common:
+        return None
+    common_dir = (root / common).resolve()
+    if common_dir.name != ".git" or not common_dir.is_dir():
+        return None
+    main = common_dir.parent
+    return None if main == root.resolve() else main
+
+
+def read_shared_record(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
+    """``(this checkout's answers, the main worktree's answers)``; the second is empty outside a linked worktree."""
+    main = main_worktree(root)
+    return read_record(root), (read_record(main) if main is not None else {})
+
+
 def read_record(root: Path) -> dict[str, Any]:
     """The first-run answers, keyed by harness; empty when nothing was recorded."""
     path = root / RECORD
@@ -318,9 +360,7 @@ def main(argv: Sequence[str] | None = None, *, root: Path = REPO, home: Path | N
         if args.action == "detect":
             return _print_detect(detect(os.environ))
         if args.action == "status":
-            entry = read_record(root).get(args.harness)
-            print(f"asked: {entry['answer']} on {entry['date']}" if entry else "not asked")
-            return 0
+            return _print_status(args.harness, *read_shared_record(root))
         servers = load_servers(root)
         if args.action == "check":
             return _print_check(servers)
@@ -347,6 +387,19 @@ def main(argv: Sequence[str] | None = None, *, root: Path = REPO, home: Path | N
     except (ConfigError, OSError) as exc:
         print(f"mcp_config: {exc}", file=sys.stderr)
         return 2
+
+
+def _print_status(harness: str, local: dict[str, Any], shared: dict[str, Any]) -> int:
+    """This checkout's answer wins; the main worktree's answer covers a new linked worktree."""
+    if harness in local:
+        entry, where = local[harness], ""
+    elif harness in shared:
+        entry, where = shared[harness], " (from the main worktree)"
+    else:
+        print("not asked")
+        return 0
+    print(f"asked: {entry['answer']} on {entry['date']}{where}")
+    return 0
 
 
 def _print_detect(found: list[str]) -> int:

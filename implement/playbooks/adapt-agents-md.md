@@ -86,7 +86,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    goes through `progress.py skip` by the owner.
 2. **Boundary rules (AGT-06).** Propose two or three rules from the code index (which directory may import which,
    which layer owns persistence, which folder is generated or vendored). The owner picks; never invent a boundary
-   the code does not show. If the code index shows no boundary, ask the owner for one or record the item `partial`.
+   the code does not show. If the code index shows no boundary, ask the owner for one or record the item `partial`
+   (see Continue on error).
    With no code index, a `grep` over the import lines can stand in for it to check a layer rule (which directory
    imports which); say which one you used.
 3. **Vendor pointer files (AGT-08, the "ask about stub files" rule).** Default `keep`:
@@ -127,7 +128,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
       engineer who knows Java and Gradle, but not this repository or its terms". a. the draft (default); b. the
       owner's edit. Never ask the owner to write it from nothing.
    2. **The docs language** (`docs.language`). a. English, `en` (default); b. another language: the owner supplies
-      the rules in that language, and the item is `partial`, because the check reads English words.
+      the rules in that language, and the item is `partial` (see Continue on error), because the check reads
+      English words.
    3. **The long form** (`agents_md.comm_long_form`): a separate rules file. It starts from the greenfield template
       [`COMMUNICATION_RULES.md`](../../greenfield/templates/docs/COMMUNICATION_RULES.md). a. no (default): the style
       guide holds the docs rules ([`establish-docs-contract`](establish-docs-contract.md)); b. yes.
@@ -346,7 +348,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
       - the config link: the formatter and linter config files that exist (`test -e <path>`). Link each one. Never copy
         its settings.
 
-      The owner confirms each section before its commit. A rule with no evidence stays out, and the item is `partial`.
+      The owner confirms each section before its commit. A rule with no evidence stays out, and the item is `partial`
+      with that rule counted as debt (see Continue on error).
     - **c. Conventions at `PARTIAL`.** List the missing items as suggestions, each with the evidence behind it. Add only
       the items the owner accepts. Never invent the missing rule. A stub word (`TBD`, `TODO`) goes to the owner as a
       question: "this line says `TBD`; what is the rule?" Remove the word only when the owner answers or says to drop
@@ -394,8 +397,8 @@ holds the owner's text is an existing file: use the Generic steps. A vendor file
    the owner has seen every section. Then run the engine's AGT-01, AGT-05 and AGT-12.
 4. **Budget.** The skeleton is far below 400 lines. Step 12 applies if a filled file is not.
 
-If a fact is missing (no boundary the code shows, no release tool), leave that line out and record the item
-`partial` with a note, as the Generic steps say. Do not fill a gap with generic text.
+If a fact is missing (no boundary the code shows, no release tool), leave that line out. Record the item `partial`
+with `--debt "what=facts the code does not show (<names>),count=N"` and a note. Do not fill a gap with generic text.
 
 ### Gradle and Quarkus
 
@@ -465,18 +468,24 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
   or the owner records the rule as describing the code.
 - **Stale claims the owner has not settled** (a line whose correct wording needs an owner decision not in the state):
   the line is left as it is, flagged in the pull request under "What was not done", and the item is `partial`
-  with a note.
+  with `--debt "what=stale claims waiting for the owner,count=N"`.
 - **Generic text the owner keeps:** the item is `partial` with the measured ratio as debt
   (`what=generic rule lines,count=N`), or `skipped` if the owner says so.
 - A verb that does not resolve is not fixed here; record it and point at T1.
-- **A changed verdict in the renumbering (Step 15):** the step stops at that section. The item is `partial` with a
-  note that names the check and the section. Sections already renumbered stay; the rest keep their old numbering.
+- **A changed verdict in the renumbering (Step 15):** the step stops at that section. The item is `partial` with
+  `--debt "what=sections not renumbered,count=N"` and a note that names the check and the section. Sections already
+  renumbered stay; the rest keep their old numbering.
   Say so in the pull request, under "What was not done".
 - **The owner declines conventions items (Step 16):** the item is `partial`, with each declined item as debt
   (`what=conventions items missing (<names>),count=N`). The count may only go down. A rule with no evidence in the code
   stays out and counts the same way.
-- **A stub word the owner has not answered:** the line stays as it is, the item is `partial`, and the pull request says
-  so under "What was not done".
+- **A stub word the owner has not answered:** the line stays as it is. The item is `partial` with
+  `--debt "what=stub words not answered,count=N"`, and the pull request says so under "What was not done".
+- **No boundary the code shows (AGT-06), and the owner gives none:** `partial` with
+  `--debt "what=boundary rules missing,count=N"`, where N is the rules short of two.
+- **A non-English docs language (AGT-12):** `partial` with `--debt "what=communication rules the check cannot
+  read (<language>),count=1"`.
+- `progress.py` refuses `partial` without a `--debt` entry. Every `partial` above names one.
 
 ## Verification
 
