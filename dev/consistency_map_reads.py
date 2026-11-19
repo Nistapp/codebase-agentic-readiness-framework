@@ -42,6 +42,14 @@ def engine_declarations() -> dict[str, Any]:
     return table
 
 
+def _where(place: Any) -> dict[str, Any]:
+    """One declared place as a map ``where`` item; ``via`` only when an upstream step reads the place."""
+    item: dict[str, Any] = {"path": place.path, "scope": place.scope}
+    if place.via is not None:
+        item["via"] = place.via
+    return item
+
+
 def to_entry(check: str, declared: Any) -> dict[str, Any]:
     """One engine declaration as a map reads entry."""
     entry: dict[str, Any] = {
@@ -49,7 +57,7 @@ def to_entry(check: str, declared: Any) -> dict[str, Any]:
         "check": check,
         "source": "engine",
         "what": {"kind": declared.what.kind, **({"text": list(declared.what.text)} if declared.what.text else {})},
-        "where": [{"path": place.path, "scope": place.scope} for place in declared.where],
+        "where": [_where(place) for place in declared.where],
     }
     if declared.constants:
         entry["constants"] = list(declared.constants)
