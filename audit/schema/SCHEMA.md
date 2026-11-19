@@ -314,7 +314,7 @@ Every file a run writes carries the repository's name, so that runs on several r
 The examples in this folder are documentation, not run outputs. Where one belongs to a repository it follows the same naming.
 
 > [!WARNING]
-> The engine on its own does not meet this yet. It refuses to replace a JSON report without `--force`, but it replaces the Markdown file beside the report, and the `CON-04` draft, without asking, and its default name `audit-report.json` has no label. The recipes avoid this by always going through `tools/engine.py`, which passes a full file name and asks for JSON only.
+> The engine on its own does not meet this yet. It refuses to replace the JSON report, the Markdown file beside it or the `CON-04` draft without `--force`. Still, `--force` overwrites, and its default name `audit-report.json` has no label. The recipes avoid this by always going through `tools/engine.py`, which passes a full file name and asks for JSON only.
 
 ---
 
