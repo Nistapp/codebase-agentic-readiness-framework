@@ -67,22 +67,6 @@ NameAsk = tuple[str, str, bool]
 
 _REPOSITORY_LEVEL = ("", ".github/", ".gitlab/", "docs/")
 
-#: Checks that ask for paths the target's own text names: a path token on an instruction line, a code span of a
-#: prohibitions section, a file an agent config points to. Such an ask is allowed when the path is written in a
-#: file the same run read; that file itself must be declared.
-NAMED_BY_TEXT: dict[str, str] = {
-    "AGT-06": "each path token of a boundary line is looked up with Inventory.has",
-    "AGT-10": "each file a harness config names must exist",
-    "CON-01": "each code span of the prohibitions section is looked up in the scan and on disk",
-}
-
-#: Checks that compare base names in lower case, which the map's scopes do not express: the map has no case rule
-#: for reads. Their asks are compared as asked and in lower case.
-CASE_FOLDED: dict[str, str] = {
-    "AGT-12": "a communication file name is matched with no regard to case",
-    "AGT-13": "conventions files match the globs by lower-case base name",
-}
-
 
 class _RecordingInventory(Inventory):
     """An inventory that writes each path a check asks for into ``asks``."""
@@ -169,9 +153,14 @@ def place_covers(place: reads.Place, ask: Ask) -> bool:
     return _glob_match(path, place.path)
 
 
+def _folded_covers(place: reads.Place, ask: Ask) -> bool:
+    """Whether a ``fold`` place covers the ask in lower case; an ``exact`` place never does."""
+    lowered = replace(place, path=place.path.lower())
+    return place.case == reads.FOLD and place_covers(lowered, (ask[0], ask[1].lower()))
+
+
 def _covered(check: str, ask: Ask) -> bool:
-    asks = [ask, (ask[0], ask[1].lower())] if check in CASE_FOLDED else [ask]
-    return any(place_covers(place, one) for one in asks for place in reads.READS[check].where)
+    return any(place_covers(place, ask) or _folded_covers(place, ask) for place in reads.READS[check].where)
 
 
 def _named(root: Path, asks: set[Ask], path: str) -> bool:
@@ -187,9 +176,13 @@ def _named(root: Path, asks: set[Ask], path: str) -> bool:
 
 
 def undeclared(check: str, root: Path, asks: set[Ask]) -> set[Ask]:
-    """The asks of one run that no declared place covers."""
+    """The asks of one run that no declared place covers.
+
+    A declaration with ``named_by_text`` also allows a path that is written in a file the same run read; that file
+    itself must be declared.
+    """
     missing = {ask for ask in asks if not _covered(check, ask)}
-    if check in NAMED_BY_TEXT:
+    if reads.READS[check].named_by_text:
         missing = {ask for ask in missing if not _named(root, asks, ask[1])}
     return missing
 
@@ -461,7 +454,7 @@ def _seen(check: str, place: reads.Place, asks: set[Ask], names: set[NameAsk]) -
             fnmatch.fnmatchcase(posixpath.basename(place.path), path) or fnmatch.fnmatchcase(place.path, path)
         ):
             return True
-        if check in CASE_FOLDED and place_covers(place, (kind, path.lower())):
+        if _folded_covers(place, (kind, path)):
             return True
     return any(name_hits(place, ask) for ask in names)
 
@@ -611,6 +604,7 @@ class DeclarationTest(unittest.TestCase):
             for place in declared.where:
                 self.assertIn(place.scope, reads.SCOPES, check)
                 self.assertIn(place.via, (None, *reads.VIAS), check)
+                self.assertIn(place.case, reads.CASES, check)
 
     def test_a_held_place_follows_its_constant(self) -> None:
         from audit.rules.checks import tst
@@ -619,6 +613,12 @@ class DeclarationTest(unittest.TestCase):
         declared = [place.path for place in reads.READS["TST-04"].where if place.constant == reference]
         self.assertEqual(declared, list(tst._FASTPATH_DOCS))
         self.assertIn(reference, reads.READS["TST-04"].constants)
+
+    def test_the_case_folded_and_text_named_checks_are_declared(self) -> None:
+        folded = sorted({check for check, d in reads.READS.items() if any(p.case == reads.FOLD for p in d.where)})
+        named = sorted(check for check, declared in reads.READS.items() if declared.named_by_text)
+        self.assertEqual(folded, ["AGT-12", "AGT-13"])
+        self.assertEqual(named, ["AGT-06", "AGT-10", "CON-01"])
 
     def test_constants_are_named_only_when_they_hold_every_place(self) -> None:
         self.assertIn("audit.rules.checks._common:RUNNER_PRECEDENCE", reads.READS["CMD-01"].constants)
@@ -758,6 +758,12 @@ class CoverRuleTest(unittest.TestCase):
         self.assertTrue(place_covers(reads.Place("**/*.tf", reads.GLOB), ("match", "*.tf")))
         self.assertTrue(place_covers(reads.Place("**", reads.GLOB), ("match", "*.tf")))
         self.assertFalse(place_covers(reads.Place("main.tf", reads.ROOT), ("match", "*.tf")))
+
+    def test_only_a_folded_place_covers_a_name_in_another_case(self) -> None:
+        ask = ("read", "docs/Communication.md")
+        self.assertTrue(_folded_covers(reads.Place("**/*communicat*.md", reads.GLOB, case=reads.FOLD), ask))
+        self.assertFalse(_folded_covers(reads.Place("**/*communicat*.md", reads.GLOB), ask))
+        self.assertFalse(place_covers(reads.Place("**/*communicat*.md", reads.GLOB), ask))
 
     def test_a_folder_at_the_root_covers_the_files_under_it(self) -> None:
         self.assertTrue(place_covers(reads.Place("artefacts", reads.ROOT), ("stat", "artefacts/notes.md")))
