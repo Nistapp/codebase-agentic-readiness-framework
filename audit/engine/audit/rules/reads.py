@@ -753,12 +753,14 @@ READS: dict[str, Reads] = {
             *_at(ANY_DEPTH, ".pre-commit-config.yaml", "lefthook.yml", "lefthook.yaml"),
             *_at(GLOB, ".githooks/*", ".husky/*", "**"),
             *_at(ROOT, "package.json"),
+            *_runners(),
         ),
         what=What("exists"),
         binding="file",
         note=(
             "A hook-manager file at any depth, or core.hooksPath in any manifest, config, script, CI or build"
-            " file (glob **), is wired; .husky/ is wired only when a root package.json script names husky."
+            " file (glob **), is wired; .husky/ is wired only when a root package.json script names husky. "
+            "With no hook chain, the FAIL cites the runner manifests that the runner resolver finds."
         ),
     ),
     "TOOL-06": Reads(
@@ -1545,6 +1547,17 @@ READS: dict[str, Reads] = {
     "TST-04": Reads(
         where=(
             *_held(tst, "_FASTPATH_DOCS", ANY_DEPTH),
+            *_at(
+                GLOB,
+                "**/*test_*",
+                "**/*_test.*",
+                "**/*.test.*",
+                "**/*.spec.*",
+                "**/tests/**",
+                "**/test/**",
+                "**/__tests__/**",
+                via=SCAN_KIND,
+            ),
             *_held(tst, "_FRAMEWORK_TEST_GLOBS", ANY_DEPTH, {"tests/*.rs": GLOB}),
         ),
         what=What("fenced-command"),

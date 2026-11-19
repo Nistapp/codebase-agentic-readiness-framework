@@ -7858,7 +7858,7 @@
     {
       "binding": "file",
       "check": "TOOL-05",
-      "note": "A hook-manager file at any depth, or core.hooksPath in any manifest, config, script, CI or build file (glob **), is wired; .husky/ is wired only when a root package.json script names husky.",
+      "note": "A hook-manager file at any depth, or core.hooksPath in any manifest, config, script, CI or build file (glob **), is wired; .husky/ is wired only when a root package.json script names husky. With no hook chain, the FAIL cites the runner manifests that the runner resolver finds.",
       "source": "engine",
       "what": {
         "kind": "exists"
@@ -7891,6 +7891,46 @@
         {
           "path": "package.json",
           "scope": "root"
+        },
+        {
+          "path": "package.json",
+          "scope": "root"
+        },
+        {
+          "path": "Makefile",
+          "scope": "root"
+        },
+        {
+          "path": "Taskfile.yml",
+          "scope": "root"
+        },
+        {
+          "path": "Taskfile.yaml",
+          "scope": "root"
+        },
+        {
+          "path": "pyproject.toml",
+          "scope": "root"
+        },
+        {
+          "path": "build.gradle",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle.kts",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pom.xml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "gradlew",
+          "scope": "any-depth"
+        },
+        {
+          "path": "mvnw",
+          "scope": "any-depth"
         }
       ]
     },
@@ -10311,10 +10351,6 @@
     {
       "binding": "line",
       "check": "TST-04",
-      "constants": [
-        "audit.rules.checks.tst:_FASTPATH_DOCS",
-        "audit.rules.checks.tst:_FRAMEWORK_TEST_GLOBS"
-      ],
       "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
       "source": "engine",
       "what": {
@@ -10336,6 +10372,41 @@
         {
           "path": "CONTRIBUTING.md",
           "scope": "any-depth"
+        },
+        {
+          "path": "**/*test_*",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/*_test.*",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/*.test.*",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/*.spec.*",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/tests/**",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/test/**",
+          "scope": "glob",
+          "via": "scan-kind"
+        },
+        {
+          "path": "**/__tests__/**",
+          "scope": "glob",
+          "via": "scan-kind"
         },
         {
           "path": "*_test.go",
