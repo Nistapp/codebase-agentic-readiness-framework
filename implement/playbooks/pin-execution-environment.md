@@ -104,7 +104,8 @@ manifest that dependency automation reads.
 3. **Pin the package manager** where the ecosystem has a field for it (`packageManager` in `package.json`;
    the Gradle wrapper for Gradle). Keep the version you already use.
 4. **Lock the dependencies.** Generate the lockfile with the tool's own command, from the pinned toolchain, and
-   commit it with the manifest. Never hand-edit a lockfile.
+   commit it with the manifest. Never hand-edit a lockfile. Keep the tool's own lockfile name.
+   "`NAV-03` Structural red flags" leaves only those names out of its size count.
 5. **Compare.** Re-run the step 1 reports. The resolved versions must be identical. A difference is a defect in
    this change (a wrong toolchain, a floating version, a forced version the lock did not honour): fix the cause
    before committing, never record it as debt.

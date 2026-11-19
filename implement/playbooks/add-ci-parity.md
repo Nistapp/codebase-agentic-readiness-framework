@@ -103,7 +103,9 @@ recorded, and a committed record shows which CI job the platform requires before
      recorded. Never leave a green no-op.
    - A step that cannot block yet because of existing debt stays non-blocking **only if** all of these hold.
      Its job is outside the merge gate's `needs`. Its name says so (for example `Scan (report-only)`). It writes
-     the finding count to the job summary. The debt and a review date are recorded in the state file.
+     the finding count to the job summary. The count and a review date are committed in the repository. They go
+     in the step's row of the CI doc (step 3), or stay in the comment `configure-quality-tools` wrote beside the
+     step. The state file records them too, but a later audit cannot see it.
    - A blocking scan with debt uses an ignore list with a reason and an expiry per entry, so the gate blocks on
      new findings only.
    - Do not weaken a gate that already blocks.
@@ -177,10 +179,11 @@ Lessons from the multi-app Node application (IR07.3):
 
 ## Continue on error
 
-- Existing scan findings: counted once with the real scan, recorded as debt on the item (`partial`) with count,
-  mechanism (ignore file or report-only step) and review date. The step cannot get worse: a blocking scan fails
-  on new findings; a report-only step prints the count so a rise is visible. Never mass-fix, suppress or raise
-  an ignore list without a reason and expiry per entry.
+- Existing scan findings: counted once with the real scan. They are recorded as debt on the item (`partial`) with
+  count, mechanism (ignore file or report-only step) and review date. A report-only step's count and review date
+  are also committed in the repository (step 4). The step cannot get worse: a blocking scan fails on new findings; a
+  report-only step prints the count so a rise is visible. Never mass-fix, suppress or raise an ignore list without
+  a reason and expiry per entry.
 - Local verbs that are ratchets or report-only (T1) stay so in CI.
 - A plan that cannot enforce required checks: item `partial` with
   `--debt "what=required checks the plan cannot enforce,count=N"` and that reason in the note.
@@ -192,7 +195,7 @@ Lessons from the multi-app Node application (IR07.3):
 | CI-01 | Read the workflow's trigger block | A pull-request trigger |
 | CI-02 | Read each CI step and wrapper; run the wrapper locally | Every verb CI runs is the local verb with the same arguments; local run is green |
 | CI-03 | `grep -n "continue-on-error\|\|\| true" .github/workflows/*.yml scripts/ci/*.sh` plus the step list | Every CI-only step is named so and listed in the CI doc |
-| CI-04 | The same grep; the job summary of a CI run; the branch-protection record | No swallowed gating command; every non-blocking step says report-only and has recorded debt; the record names the required check, or says protection cannot be enforced |
+| CI-04 | The same grep; the job summary of a CI run; the branch-protection record | No swallowed gating command. Every non-blocking step says report-only, and the repository holds its count and review date. The record names the required check, or says protection cannot be enforced |
 | CI-05 | Run the local workflow-lint command; read the CI step | The linter runs locally and in CI and is clean on the edited workflows; the engine reads CI-05 `PASS` |
 
 The engine reads `run:` text only. After a correct wrapper-based fix a re-audit can still read CI-02 or CI-03

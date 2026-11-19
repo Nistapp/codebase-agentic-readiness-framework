@@ -190,13 +190,13 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    flow. Add one Mermaid diagram, checked with the `mermaid-validator` MCP before saving. Cite files by path.
    Add `docs/architecture/README.md` only if the folder holds more than one page. For a component whose source
    is private, describe the dependency in one sentence with no path.
-6. **NAV-03 census.** Count, from the tracked file list (`git ls-files`), the four categories the check counts:
-   files over 512 KB, catch-all directories (`utils`, `misc`, `common`, `helpers` and similar with many files),
-   binary files, minified assets. The engine's counts can include on-disk or generated files that git does not
-   track, so re-measure by tracked paths and use the tracked list as the census. Write the paths in a "Repository
-   notes" section of the architecture page, each tagged: generated, by design (a lock file, public images), or
-   needs a decision. Do not move, untrack, resize or delete anything. Untracked runtime data directories are a
-   separate, owner-recorded item (an `extra.*` preference) and are mentioned, not changed.
+6. **NAV-03 census.** Count, from the tracked file list (`git ls-files`), the four categories the check counts: files
+   over 512 KB, catch-all directories (`utils`, `misc`, `common`, `helpers` and similar with many files), binary files,
+   minified assets. A lockfile is not a large file: the engine leaves it out. The engine's counts can include on-disk or
+   generated files that git does not track, so re-measure by tracked paths and use the tracked list as the census. Write
+   the paths in a "Repository notes" section of the architecture page, each tagged: generated, by design (a lock file,
+   public images), or needs a decision. Do not move, untrack, resize or delete anything. Untracked runtime data
+   directories are a separate, owner-recorded item (an `extra.*` preference) and are mentioned, not changed.
 7. **Scratch (DOC-03).** If an `artefacts/` (or `artifacts/`) directory exists, confirm it is ignored and that
    `git ls-files artefacts` prints nothing. Add the ignore rule and `git rm --cached` only what is tracked
    there, and only after the owner confirms those files are scratch. If no scratch directory exists, the check

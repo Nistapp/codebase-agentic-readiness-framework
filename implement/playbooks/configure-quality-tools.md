@@ -91,8 +91,10 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
    3. Run the full read-only form once, on the untouched tree, and count the violations. That count is the debt.
    4. If the count is 0, wire the full run into the verb and `check`. If not, wire the ratchet form into the
       verb `check` uses. Record the debt: its count and a review date. Then add the full run to CI as a
-      report-only step. Its job is outside the merge gate's `needs`, and its name says report-only. "`CI-04` CI
-      enforces the same gate as the local check" accepts that step.
+      report-only step. Its job is outside the merge gate's `needs`, and its name says report-only. Commit the
+      count and the review date in a comment beside the step, in the CI file's own syntax. A later audit reads
+      that comment; it cannot see the state file. "`CI-04` CI enforces the same gate as the local check" accepts
+      that step.
 3. **Formatter (TOOL-01).** `format` writes, `format:check` reads. "`CMD-04` Write verbs separated from read-only
    verbs" reads that split, and the `lint` split of step 4. With debt, `format:check` checks changed
    files only (ratchet against the integration branch). Never run `format` on the whole tree.
@@ -108,9 +110,9 @@ Dropped: `audit-ci` (7.1.0, last release 2024-07-03, older than 12 months).
    Then run the verb in CI as its own job, beside the `check` job. "`CI-02` Local↔CI parity" maps that job to the
    verb. TOOL-04 reads `PARTIAL` when only one of the
    two runs the scan. Use the stack profile's CI idiom line. The job may need the network; keep it out of `check`.
-   A scan that is red on day one gets a report-only job outside the merge gate's `needs`, named report-only, with
-   its debt recorded (count and review date), as CI-04 accepts. On GitHub Actions use `continue-on-error: true`;
-   on GitLab CI use `allow_failure: true`. Dependabot and Renovate never count as the scan.
+   A scan that is red on day one gets a report-only job outside the merge gate's `needs`, named report-only. A
+   comment beside the step holds its count and review date, as CI-04 accepts. On GitHub Actions use
+   `continue-on-error: true`; on GitLab CI use `allow_failure: true`. Dependabot and Renovate never count as the scan.
 
 ### Java (Gradle)
 
