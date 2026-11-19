@@ -86,6 +86,18 @@ _CONTENT_FOR: dict[str, frozenset[str]] = {
     "key": frozenset({"key"}),
     "exists": frozenset({"file"}),
 }
+#: The checks whose ``**`` read sees only some scan kinds, and those kinds. The engine passes them as ``kinds=`` to
+#: ``Inventory.grep``, or reads them through a named place: the hook wiring (``core.hooksPath``) in
+#: ``rules/checks/tool.py``, the local surface (``_LOCAL_SURFACE_KINDS``) and the workflow lines in ``ci.py``, the
+#: env references in ``execution.py``, and the main guard and the build markers in ``nav.py``.
+KIND_FILTERED_READS: dict[str, frozenset[str]] = {
+    "TOOL-05": frozenset({"manifest", "config", "script", "ci", "build"}),
+    "TOOL-06": frozenset({"manifest", "config", "script", "ci", "build"}),
+    "TOOL-07": frozenset({"manifest", "config", "script", "ci", "build"}),
+    "CI-05": frozenset({"manifest", "build", "config", "script", "other", "ci"}),
+    "EXEC-04": frozenset({"source", "script"}),
+    "NAV-02": frozenset({"source", "script", "build"}),
+}
 
 
 class MapError(Exception):
@@ -307,43 +319,76 @@ def _is_folder(path: str) -> bool:
     return path.endswith("/")
 
 
+def _is_wild(name: str) -> bool:
+    return any(char in name for char in "*?[")
+
+
 def place_overlaps(path: str, where: dict[str, Any]) -> bool:
-    """Whether a move path (a file, a folder ending in ``/`` or a glob) can overlap a place a read covers."""
+    """Whether a move path (a file, a folder ending in ``/`` or a glob) can overlap a place a read covers.
+
+    A folder overlaps a root, any-depth or repository-level place only when the place is the folder itself or sits
+    under it (rule R1): a move of ``artefacts/`` reaches the root place ``artefacts``, not every name the scan reads.
+    A move path whose base name holds a wildcard does not overlap a literal name read at any depth or at repository
+    level (rule R2): ``.github/workflows/*.yml`` is not ``Taskfile.yml``.
+    """
     target, scope = str(where["path"]), str(where["scope"])
     if _is_folder(path):
         folder = path.rstrip("/")
-        if scope == "root":
-            return target.startswith(path)
         if scope == "glob":
             return target.startswith(path) or fnmatch.fnmatchcase(path + "x", target)
-        if scope == "repository-level":
-            return folder in _REPOSITORY_LEVEL
-        return True  # any-depth: a name can sit in any folder
+        return target == folder or target.startswith(path)
     if scope == "root":
         return path == target or fnmatch.fnmatchcase(target, path) or fnmatch.fnmatchcase(path, target)
     if scope == "glob":
         return fnmatch.fnmatchcase(path, target) or fnmatch.fnmatchcase(target, path)
     base = posixpath.basename(path)
+    if _is_wild(base) and not _is_wild(target):
+        return False  # R2: a wildcard base name (``*.yml``, ``**``) names no one literal file a read looks for
     named = fnmatch.fnmatchcase(base, target) or fnmatch.fnmatchcase(target, base)
     if scope == "repository-level":
         return named and posixpath.dirname(path) in _REPOSITORY_LEVEL
     return named
 
 
-def _covers(paths: Sequence[str], read: dict[str, Any]) -> str | None:
+def scan_kind(path: str) -> str | None:
+    """The engine's scan kind (``audit/engine/audit/scan.py``) of a move path, or ``None`` for a folder.
+
+    A wildcard stands for a plain name: ``scripts/*.sh`` is a script, ``.github/workflows/*.yml`` a CI file.
+    """
+    if _is_folder(path):
+        return None
+    probe = path.replace("**/", "x/").replace("*", "x")
+    return str(_engine_module("audit.scan")._classify(probe).value)
+
+
+def _kind_read(path: str, where: dict[str, Any], read: dict[str, Any], action: str) -> bool:
+    """Rule R3: whether a ``**`` place of a kind-filtered read can see the move path's file kind."""
+    kinds = KIND_FILTERED_READS.get(read.get("check", ""))
+    if kinds is None or action == "untrack" or where["path"] != "**":
+        return True
+    kind = scan_kind(path)
+    return kind is None or kind in kinds
+
+
+def _covers(paths: Sequence[str], read: dict[str, Any], action: str) -> str | None:
     for path in paths:
         for where in read["where"]:
-            if place_overlaps(path, where):
+            if place_overlaps(path, where) and _kind_read(path, where, read, action):
                 return path
     return None
 
 
 def touch(move: dict[str, Any], read: dict[str, Any]) -> str | None:
-    """The move path through which ``move`` touches ``read``, or ``None``."""
+    """The move path through which ``move`` touches ``read``, or ``None``.
+
+    For a check in :data:`KIND_FILTERED_READS`, the ``**`` place counts only for a path of a kind the engine reads
+    there (rule R3). An untrack move is exempt: it takes a file of any kind out of the scan. A folder is exempt
+    too, since the kind of the files it holds is not known.
+    """
     action = move["action"]
     if action == "none":
         return None
-    hit = _covers(move.get("from", []), read)
+    hit = _covers(move.get("from", []), read, action)
     if action in ("move", "untrack") and hit:
         return hit
     kind = read["what"]["kind"]
@@ -354,7 +399,7 @@ def touch(move: dict[str, Any], read: dict[str, Any]) -> str | None:
         fits = not content or bool(content & _CONTENT_FOR[kind])
     if not fits:
         return None
-    return _covers(move.get("to", []), read) or (hit if action in ("write", "rewrite") else None)
+    return _covers(move.get("to", []), read, action) or (hit if action in ("write", "rewrite") else None)
 
 
 def unkept_pairs(cmap: dict[str, Any]) -> list[tuple[str, str]]:
