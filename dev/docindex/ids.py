@@ -61,7 +61,6 @@ This module imports nothing outside the standard library and this package.
 
 from __future__ import annotations
 
-import argparse
 import ast
 import json
 import posixpath
@@ -74,6 +73,7 @@ from .links import _code_spans
 from .markdown import Document
 from .model import Edge, FileNode, IdNode, Index, Node, SectionNode
 from .sweep import _command_block, _fence_end
+from .usage import UsageParser
 
 __all__ = [
     "Definitions",
@@ -484,9 +484,9 @@ def query_main(
     """Run ``query`` and return (exit code, stdout text, stderr text).
 
     ``build`` returns the index of the working tree (``None``) or of a git ref. Exit 0 with the node or the
-    reports, 1 when no node has the address or a git call fails; a usage error exits 2 (argparse).
+    reports, 1 when no node has the address, a git call fails or the arguments are wrong (a usage error).
     """
-    parser = argparse.ArgumentParser(prog=prog, description="Show one node and its edges, or the reports.")
+    parser = UsageParser(prog=prog, description="Show one node and its edges, or the reports.")
     parser.add_argument("address", nargs="?", metavar="ADDRESS", help="a file path, a section address or an ID")
     parser.add_argument("--report", action="store_true", help="print the reports of plan 9.4 instead (never a gate)")
     parser.add_argument("--at", metavar="GIT_REF", help="query the index at this git ref, not the working tree")

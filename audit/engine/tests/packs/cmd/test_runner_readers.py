@@ -222,32 +222,39 @@ class MavenTests(unittest.TestCase):
 
 
 class NestedManifestTests(unittest.TestCase):
-    """``Inventory.has`` matches a manifest at any depth; the runner name read must follow it there.
+    """A runner found at any depth is named by its real path; a root-only runner below the root is no runner.
 
-    A monorepo whose only ``package.json`` lives under ``packages/app`` has no manifest at the literal
-    name ``"package.json"`` — a caller that cites that literal name as a path is citing one that does not
-    exist anywhere in the repository (the defect this leaf fixes).
+    A monorepo whose only Gradle build lives under ``packages/app`` has no manifest at the literal name
+    ``"build.gradle"``: a caller that cites that literal name cites a path that does not exist anywhere in the
+    repository. A ``Makefile`` or a ``package.json`` counts only at the root, where ``make`` and ``npm`` read it.
     """
 
-    def test_a_nested_only_package_json_is_named_by_its_real_path(self):
+    def test_a_nested_only_build_is_named_by_its_real_path(self):
+        verbs, commands = read({"packages/app/build.gradle": "plugins { id 'java' }\n"})
+        self.assertEqual(verbs["test"].runner, "packages/app/build.gradle")
+        self.assertIn("packages/app/build.gradle", commands)
+        self.assertNotIn("build.gradle", commands)
+
+    def test_a_nested_only_package_json_is_not_a_runner(self):
         verbs, commands = read({"packages/app/package.json": '{"scripts": {"test": "vitest run"}}'})
-        self.assertEqual(verbs["test"].runner, "packages/app/package.json")
-        self.assertIn("packages/app/package.json", commands)
+        self.assertNotIn("test", verbs)
+        self.assertNotIn("packages/app/package.json", commands)
         self.assertNotIn("package.json", commands)
 
     def test_the_shallowest_of_two_nested_manifests_is_named(self):
         _, commands = read(
             {
-                "apps/web/package.json": '{"scripts": {"test": "jest"}}',
-                "apps/web/deep/nested/package.json": '{"scripts": {"test": "mocha"}}',
+                "apps/web/build.gradle": "plugins { id 'java' }\n",
+                "apps/web/deep/nested/build.gradle": "plugins { id 'java' }\n",
             }
         )
-        self.assertIn("apps/web/package.json", commands)
-        self.assertNotIn("apps/web/deep/nested/package.json", commands)
+        self.assertIn("apps/web/build.gradle", commands)
+        self.assertNotIn("apps/web/deep/nested/build.gradle", commands)
 
-    def test_a_nested_only_makefile_is_named_by_its_real_path(self):
+    def test_a_nested_only_makefile_is_not_a_runner(self):
+        """``make`` reads the root ``Makefile`` only, so a nested one is neither read nor cited."""
         _, commands = read({"packages/app/Makefile": "check:\n\techo ok\n"})
-        self.assertIn("packages/app/Makefile", commands)
+        self.assertNotIn("packages/app/Makefile", commands)
         self.assertNotIn("Makefile", commands)
 
     def test_a_root_manifest_is_unaffected(self):

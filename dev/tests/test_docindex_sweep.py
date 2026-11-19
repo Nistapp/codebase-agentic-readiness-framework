@@ -368,11 +368,11 @@ class GitRepoTest(unittest.TestCase):
         self.assertIn("     2  RULES.md\n", err)
         self.assertIn("4  items in 3 files", err)
 
-    def test_a_usage_error_exits_2(self) -> None:
+    def test_a_usage_error_exits_1(self) -> None:
         for argv in (["sweep", "--triggers", "group2"], ["sweep", "--format", "yaml"], ["sweep", "--at"]):
             with self.subTest(argv=argv), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as raised:
                 cli.main(argv, _REPO_CONFIG, root=self.root)
-            self.assertEqual(raised.exception.code, 2)
+            self.assertEqual(raised.exception.code, 1)
 
 
 class RepositorySweepTest(unittest.TestCase):

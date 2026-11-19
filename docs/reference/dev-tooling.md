@@ -3,9 +3,9 @@
 > **Audience:** Contributors, interns included, and AI coding agents.
 > **Status:** Live. Every tool on this page runs today.
 
-This page lists each tool that checks this repository: what it catches, which command runs it, where CI runs it,
-and where its version is pinned. The rules for the gates are in [`AGENTS.md`](../../AGENTS.md). Setup is in
-[`CONTRIBUTING.md`](../../CONTRIBUTING.md).
+This page lists each tool that checks this repository. For each tool it gives what the tool catches, which command
+runs it, where CI runs it, and where its version is pinned. The rules for the gates are in
+[`AGENTS.md`](../../AGENTS.md). Setup is in [`CONTRIBUTING.md`](../../CONTRIBUTING.md).
 
 ## The tools
 
@@ -51,13 +51,13 @@ passes only when the `check`, `security`, `coverage`, `self-audit`, `docs` and `
 
 `make spell` runs typos on every tracked file that `.gitignore` does not hide. It skips the data paths that
 [`_typos.toml`](../../_typos.toml) excludes: the fixtures, the worked examples, `CHANGELOG.md` and the lockfiles.
-typos splits code identifiers into words, so a typo inside a variable name fails too. Each finding shows the file,
+It splits code identifiers into words, so a typo inside a variable name fails too. Each finding shows the file,
 the line and the suggested word.
 
 To fix a finding, do one of these:
 
 1. Correct the word. `make spell-fix` writes every suggested fix; review the diff before you commit.
-2. If the word is correct here (a project term, a regex stem or a code token), add it to `[default.extend-words]` in
+2. If the word is a correct project term, regex stem or code token, add it to `[default.extend-words]` in
    `_typos.toml`. Add a comment that says why.
 
 ## Dependency audit
