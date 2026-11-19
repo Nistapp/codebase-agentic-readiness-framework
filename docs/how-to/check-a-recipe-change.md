@@ -360,13 +360,17 @@ sentence keeps it. It checks that the rule is stated, not that an agent follows 
 
 ## Exit codes
 
+Every `doc_index.py` command exits 1 on a usage error, such as an unknown option. `--help` exits 0.
+A key in `dev/docindex.config.json` that no rule reads, such as a misspelt one, also exits 1.
+A config path that matches no tracked file is only a warning in the `build` summary.
+
 | Command | 0 | 1 | 2 |
 | --- | --- | --- | --- |
-| `sweep`, `diff` | A report, whatever it finds | A git failure, such as a ref that names no commit | A usage error, such as `--paths` without `--diff` |
-| `manifest` | The manifest is written | The bundle build failed, or the file cannot be written | A usage error |
-| `manifest-diff` | A report, whatever it finds | A manifest cannot be read | A usage error |
-| `evidence run` | Every report is written | A command failed | The run is refused: folder not fresh or inside the repository, or a report missing or stale; or a usage error |
-| `evidence compare` | A report, whatever it finds | A run folder cannot be read, or the targets differ | A usage error |
+| `sweep`, `diff` | A report, whatever it finds | A git failure, such as a ref that names no commit; or a usage error, such as `--paths` without `--diff` | Not used |
+| `manifest` | The manifest is written | The bundle build failed, or the file cannot be written; or a usage error | Not used |
+| `manifest-diff` | A report, whatever it finds | A manifest cannot be read; or a usage error | Not used |
+| `evidence run` | Every report is written | A command failed; or a usage error | The run is refused: folder not fresh or inside the repository, or a report missing or stale |
+| `evidence compare` | A report, whatever it finds | A run folder cannot be read, or the targets differ; or a usage error | Not used |
 | `verify-quotes` | Every quote and citation passes | A usage error, or a folder with no `quotes.json` | A quote or citation fails |
 | `consistency_map.py` | A report, whatever it finds | With `--strict`: a problem found; with `--base`: an engine run failed | A usage error, such as a base ref that names no commit |
 
