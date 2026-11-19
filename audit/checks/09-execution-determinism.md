@@ -17,17 +17,18 @@ Why it matters   An agent's runtime must be the repository's, not whatever happe
                   otherwise the gate passes locally and fails in CI, or an agent reproduces nothing
                   ([greenfield/README.md § File Tree — What Gets Created](../../greenfield/README.md#file-tree--what-gets-created)).
 Severity         BLOCKER
-Engine           `EXEC-01`. For every detected ecosystem among node, python, jvm, dotnet, rust and ruby
-                 (go is pinnable too but has no dedicated pin file of its own), looks for that
-                 ecosystem's pin: a version file (`.nvmrc`, `.python-version`, `.ruby-version`,
-                 `rust-toolchain.toml`/`rust-toolchain`), a wrapper (`gradlew`, `mvnw`), `global.json`
-                 for dotnet, a matching line in a shared `.tool-versions`, `package.json`'s
-                 `engines.node`, `pyproject.toml`'s `requires-python`, or `go.mod`'s `go` directive. Pin
-                 files and these manifests count at any depth: a nested module (`tools/osv/go.mod`) pins
-                 its ecosystem, and one pinning manifest is enough (the shallowest is cited). No
-                 ecosystem from this pinnable set is detected at all ⇒ `UNKNOWN` — there is no toolchain
-                 to choose a pin for. php is a recognised ecosystem the table does not assert a pin for,
-                 so a php-only repository is also `UNKNOWN` on this check. Distrust a `FAIL` when the
+Engine           `EXEC-01`. The pinnable ecosystems are node, python, jvm, dotnet, rust, ruby, php and
+                 go (go has no pin file of its own). For each one detected, the engine looks for its pin.
+                 A version file pins: `.nvmrc`, `.python-version`, `.ruby-version`, `.php-version`,
+                 `rust-toolchain.toml` or `rust-toolchain`. So do a wrapper (`gradlew`, `mvnw`) and, for
+                 dotnet, `global.json`. A shared `.tool-versions` pins with a matching line (read for
+                 node, python, rust, go and php). A manifest pins with `package.json`'s `engines.node`,
+                 `pyproject.toml`'s `requires-python` or `go.mod`'s `go` directive. A `composer.json`
+                 pins with `config.platform.php`, then `require.php`. Pin files and these manifests
+                 count at any depth: a nested module
+                 (`tools/osv/go.mod`) pins its ecosystem, and one pinning manifest is enough (the
+                 shallowest is cited). No ecosystem from this pinnable set is detected at all ⇒
+                 `UNKNOWN` — there is no toolchain to choose a pin for. Distrust a `FAIL` when the
                  pin lives in a convention the engine's table does not yet carry (a newer per-ecosystem
                  version manager) — verify by reading the repository's own tool documentation before
                  treating the gap as real.
@@ -35,7 +36,7 @@ Method           automated
 Look for         Each detected pinnable ecosystem's own pin file or declaration, named above; absent any
                  of them, `.tool-versions` for a matching line.
 Rubric           PASS: every detected pinnable ecosystem has at least one of its own pin files, or a
-                 matching `.tool-versions` line, or (node/python/go) the manifest-level constraint, and a
+                 matching `.tool-versions` line, or (node/python/go/php) the manifest-level constraint, and a
                  pin reaches every module manifest of each pinned ecosystem.
                  PARTIAL: every ecosystem is pinned, but a module manifest of a pinned ecosystem has no pin
                  of its own and no pin in its folder or a parent folder. An ecosystem left unpinned still
@@ -43,7 +44,7 @@ Rubric           PASS: every detected pinnable ecosystem has at least one of its
                  FAIL: at least one detected pinnable ecosystem has none of its pin evidence.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no ecosystem from the pinnable set (node, python, jvm, dotnet, rust, ruby,
-                 go) is detected at all.
+                 php, go) is detected at all.
 Evidence to cite A `file` evidence item per unpinned ecosystem, citing the pin file names that were
                  searched for and not found; for PASS, cite the pin file or declaration actually found
                  for each ecosystem.
@@ -67,10 +68,15 @@ Why it matters   Every run must resolve identical dependencies; a lockfile that 
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-02`. For each detected ecosystem with a package manager the engine recognises
-                 (node, python, jvm, rust, go, ruby, php), finds that manager's lockfile at any depth,
-                 prefers the shallowest, and requires it to be git-tracked; for node/python/rust/go it
-                 then compares the lockfile's own declared packages against the root manifest's. No
-                 ecosystem with a recognised manager is detected ⇒ `UNKNOWN`; an ecosystem recognised only
+                 (node, python, jvm, rust, go, ruby, php, dotnet), finds that manager's lockfile at any depth,
+                 prefers the shallowest, and requires it to be git-tracked; for node/python/rust/go/dotnet it
+                 then compares the lockfile's own declared packages against the root manifest's. For .NET
+                 the lockfile is NuGet's `packages.lock.json`, and the manifest is the `PackageReference`
+                 names (casefolded) of the project files in the root folder. A .NET project with no
+                 `packages.lock.json` reads `FAIL`, as every other ecosystem does (owner decision); NuGet
+                 writes one only when the project sets `RestorePackagesWithLockFile`. No
+                 ecosystem with a recognised manager is detected ⇒ `UNKNOWN`, and the summary names a
+                 recognised ecosystem that has no lockfile convention the engine reads; an ecosystem recognised only
                  from its source files, with no manifest (`Stack.source_only`), is also `UNKNOWN` — it
                  declares no dependencies, so no lockfile is expected. Git unable to report tracked files
                  (no repository, or the command failed) makes the tracked half `UNKNOWN` for the whole
@@ -84,13 +90,14 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  manifest's and lockfile's declared dependency names directly before accepting the gap.
 Method           automated
 Look for         Every lockfile name for each detected package manager, at any depth; `git ls-files` (or
-                 equivalent) for whether the shallowest one is tracked; for node/python/rust/go, the
+                 equivalent) for whether the shallowest one is tracked; for node/python/rust/go/dotnet, the
                  manifest's declared dependency names against the lockfile's own.
 Rubric           PASS: every detected ecosystem's lockfile exists, is tracked, and (where parsing is
                  attempted) agrees with the manifest.
                  PARTIAL: every detected ecosystem's lockfile exists and is tracked, but consistency could
-                 not be verified for at least one (an ecosystem beyond node/python/rust/go, an unparsable
-                 manifest or lockfile, or a lockfile found only below the root).
+                 not be verified for at least one (an ecosystem beyond node/python/rust/go/dotnet, an
+                 unparsable manifest or lockfile, a lockfile found only below the root, or a .NET project
+                 whose package references come from an imported MSBuild file or a root `Directory.*` file).
                  FAIL: at least one detected ecosystem has no lockfile, has one that is not tracked, or
                  has one whose declared dependencies omit manifest dependencies.
                  NOT_APPLICABLE: never.
@@ -105,7 +112,8 @@ Absence proof    A "no lockfile" FAIL names every lockfile filename that manager
 Remediation      `pin-execution-environment`
 Pitfalls         A lockfile that exists and is tracked but lives in a subdirectory reads `PARTIAL`, not
                  `PASS` — the engine only ever compares the root manifest, so a nested lockfile's
-                 consistency is genuinely unverified, not a false negative to argue away.
+                 consistency is genuinely unverified, not a false negative to argue away. A .NET solution
+                 with a `packages.lock.json` beside each project reads `PARTIAL` for the same reason.
 
 ## EXEC-03 — Non-interactive setup path
 

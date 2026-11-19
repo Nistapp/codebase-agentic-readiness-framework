@@ -126,13 +126,9 @@ def _held(module: ModuleType, name: str, scope: str, scopes: dict[str, str] | No
     return tuple(Place(path, (scopes or {}).get(path, scope), reference) for path in values)
 
 
-#: Runner manifests the engine reads at the root only (``_common._at_root``); the other kinds are found at any depth.
-_ROOT_RUNNERS: tuple[str, ...] = ("package.json", "Makefile", "Taskfile.yml", "Taskfile.yaml", "pyproject.toml")
-
-
 def _runners() -> tuple[Place, ...]:
-    """The runner manifests (``_common.RUNNER_PRECEDENCE``), each at the scope the runner resolver reads it."""
-    return _held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH, dict.fromkeys(_ROOT_RUNNERS, ROOT))
+    """The runner manifests and wrappers (``_common.RUNNER_PRECEDENCE``), each read at the root only (``_at_root``)."""
+    return _held(_common, "RUNNER_PRECEDENCE", ROOT)
 
 
 #: The harness paths with a folder and no wildcard (``agt.INSTRUCTION_FIXED_PATHS``), matched as whole paths from
@@ -624,9 +620,9 @@ READS: dict[str, Reads] = {
         binding="file",
         threshold="all seven verbs on one runner",
         note=(
-            "package.json, the Makefile, the Taskfile and pyproject.toml count only at the root, where they are "
-            "read; each Gradle or Maven build is matched at any depth and only the shallowest is read. gradlew and "
-            "mvnw only choose the launcher. format:check is also read under the spelling its runner accepts."
+            "Every runner (package.json, the Makefile, the Taskfile, pyproject.toml, the Gradle and the Maven "
+            "build) counts only at the root, where it is read. A root gradlew or mvnw only chooses the launcher. "
+            "format:check is also read under the spelling its runner accepts."
         ),
     ),
     "CMD-02": Reads(
@@ -1282,10 +1278,12 @@ READS: dict[str, Reads] = {
                 "rust-toolchain.toml",
                 "rust-toolchain",
                 ".ruby-version",
+                ".php-version",
                 ".tool-versions",
                 "package.json",
                 "pyproject.toml",
                 "go.mod",
+                "composer.json",
             ),
         ),
         what=What("exists"),
@@ -1293,7 +1291,8 @@ READS: dict[str, Reads] = {
         threshold="every ecosystem pinned and every module reached",
         note=(
             "Pin files count by existence; .tool-versions needs a line for the ecosystem, package.json "
-            "engines.node, pyproject.toml requires-python and go.mod a go directive. A module manifest no pin"
+            "engines.node, pyproject.toml requires-python, go.mod a go directive and composer.json "
+            "config.platform.php or require.php. A module manifest no pin"
             " reaches (its folder or a parent) is PARTIAL."
         ),
     ),
@@ -1313,6 +1312,7 @@ READS: dict[str, Reads] = {
                 "go.sum",
                 "Gemfile.lock",
                 "composer.lock",
+                "packages.lock.json",
             ),
             *_at(
                 ROOT,
@@ -1321,8 +1321,12 @@ READS: dict[str, Reads] = {
                 "requirements.txt",
                 "requirements-dev.txt",
                 "Cargo.toml",
+                "Directory.Build.props",
+                "Directory.Build.targets",
+                "Directory.Packages.props",
             ),
             *_at(ROOT, "go.mod", unexercised=_GO_FIXTURE),
+            *_at(GLOB, "*.csproj", "*.fsproj", "*.vbproj"),
         ),
         what=What("exists"),
         binding="file",
@@ -1330,7 +1334,8 @@ READS: dict[str, Reads] = {
         note=(
             "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest"
             " first, and whether git tracks them. Only a root lockfile is compared with the root manifests' "
-            "dependency names."
+            "dependency names; for .NET those are the PackageReference names of the project files in the root "
+            "folder, and a package reference in a root Directory.* file leaves the lockfile unverified."
         ),
     ),
     "EXEC-03": Reads(
@@ -1422,6 +1427,7 @@ READS: dict[str, Reads] = {
         where=(
             *_at(ROOT, "README.md", "AGENTS.md", "CLAUDE.md"),
             *_runners(),
+            *_at(ANY_DEPTH, "gradlew", "mvnw"),
         ),
         what=What("fenced-command"),
         binding="line",
@@ -1563,8 +1569,7 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and "
-            "--allow-probe test. package.json, the Makefile, the Taskfile and pyproject.toml count only at the "
-            "root, where they are read; a Gradle or Maven build is found at any depth and the shallowest is read."
+            "--allow-probe test. Every runner manifest counts only at the root, where it is read."
         ),
     ),
     "TST-03": Reads(
@@ -1641,9 +1646,6 @@ READS: dict[str, Reads] = {
                 "setup.cfg",
                 "tox.ini",
                 "pytest.ini",
-                "pom.xml",
-                "build.gradle",
-                "build.gradle.kts",
             ),
             *_at(ANY_DEPTH, "vitest.config.*", "jest.config.*", "vite.config.*", "karma.conf.*"),
             *_runners(),

@@ -3,7 +3,7 @@
 
 """The stack fixtures: one small, realistic project per ecosystem that no other fixture holds.
 
-Each ``stack-*`` fixture is a project in one ecosystem (Rust with Cargo, .NET, Ruby with Bundler, PHP with
+Each ``stack-*`` fixture is a project in one ecosystem (Rust with Cargo, .NET with and without a NuGet lockfile, Ruby with Bundler, PHP with
 Composer, a Gradle or a Maven build whose README runs the wrapper, a uv project with a root lockfile) or with one command runner (``just``). The checks read names for these stacks (a pin file, a lockfile,
 an entry point, a runner file) that no other fixture holds, so without them those reads never run in a test.
 
@@ -30,6 +30,7 @@ from audit.stack import detect_stack  # noqa: E402
 #: fixture -> (ecosystems, package managers) that stack detection must report.
 STACKS: dict[str, tuple[set[str], set[str]]] = {
     "stack-dotnet": ({"dotnet"}, set()),
+    "stack-dotnet-locked": ({"dotnet"}, {"nuget"}),
     "stack-gradle-wrapper-readme": ({"jvm"}, set()),
     "stack-just-inline-version": ({"rust"}, {"cargo"}),
     "stack-maven-wrapper-readme": ({"jvm"}, {"maven"}),
@@ -43,9 +44,17 @@ STACKS: dict[str, tuple[set[str], set[str]]] = {
 VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
     "stack-dotnet": {
         "EXEC-01": ("PASS", "dotnet (global.json)"),
+        "EXEC-02": ("FAIL", "no lockfile: dotnet (packages.lock.json)"),
         "NAV-01": ("PASS", "declares StackDotnet.csproj"),
         "NAV-02": ("PASS", "entry point(s): Program.cs"),
         "TOOL-03": ("PASS", "StackDotnet.csproj:Nullable"),
+    },
+    "stack-dotnet-locked": {
+        "EXEC-01": ("PASS", "dotnet (global.json)"),
+        "EXEC-02": ("PASS", "tracked: packages.lock.json"),
+        "NAV-01": ("PASS", "declares StackDotnetLocked.csproj"),
+        "NAV-02": ("PASS", "entry point(s): Program.cs"),
+        "TOOL-03": ("PASS", "StackDotnetLocked.csproj:Nullable"),
     },
     "stack-gradle-wrapper-readme": {
         "EXEC-01": ("PASS", "jvm (gradlew)"),
@@ -63,7 +72,7 @@ VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
         "NAV-02": ("PASS", "entry point(s): src/main/java/app/App.java"),
     },
     "stack-php-composer": {
-        "EXEC-01": ("UNKNOWN", "no toolchain pin can be chosen"),
+        "EXEC-01": ("PASS", "php (composer.json (require.php))"),
         "EXEC-02": ("PARTIAL", "consistency unverified: composer.lock"),
         "NAV-01": ("PASS", "declares composer.json"),
         "NAV-02": ("PASS", "entry point(s): public/index.php"),

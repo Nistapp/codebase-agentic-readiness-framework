@@ -11,6 +11,12 @@
       ]
     },
     {
+      "id": "EXEC-02",
+      "acceptable_verdicts": [
+        "FAIL"
+      ]
+    },
+    {
       "id": "NAV-01",
       "acceptable_verdicts": [
         "PASS"

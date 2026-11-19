@@ -4496,6 +4496,14 @@
     },
     {
       "checks": [
+        "EXEC-01"
+      ],
+      "match": "base-name",
+      "meaning": "For `EXEC-01` Toolchain pinned / wrapper committed, a matching file counts as a toolchain pin.",
+      "pattern": ".php-version"
+    },
+    {
+      "checks": [
         "TOOL-02"
       ],
       "constants": [
