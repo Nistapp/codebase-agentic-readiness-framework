@@ -1549,6 +1549,16 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-01",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Config present, `format` and `format:check` resolve, `format:check` exits 0 (ratchet)",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+      },
+      "move": "configure-quality-tools/row-1",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-07",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -1581,6 +1591,16 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-01",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Config present, `format` and `format:check` resolve, `format:check` exits 0 (ratchet)",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+      },
+      "move": "configure-quality-tools/row-4",
+      "status": "kept"
+    },
+    {
       "check": "CI-04",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -1592,11 +1612,41 @@
       "status": "kept"
     },
     {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-5",
+      "status": "kept"
+    },
+    {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-5",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/SKILL.md",
         "quote": "One exception keeps the tree working: a lockfile goes in the same commit as the manifest change that regenerates it.",
         "section": "implement/SKILL.md#implement/stage-3-apply/what-one-commit-holds"
+      },
+      "move": "configure-quality-tools/row-6",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Config present, `lint` resolves, read-only (`git status` clean), exits 0 under the ratchet",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
       },
       "move": "configure-quality-tools/row-6",
       "status": "kept"
@@ -1634,6 +1684,16 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Config present, `lint` resolves, read-only (`git status` clean), exits 0 under the ratchet",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+      },
+      "move": "configure-quality-tools/row-9",
+      "status": "kept"
+    },
+    {
       "check": "CI-04",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -1642,6 +1702,26 @@
       },
       "move": "configure-quality-tools/row-10",
       "note": "The full lint runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
+      "status": "kept"
+    },
+    {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-10",
+      "status": "kept"
+    },
+    {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-10",
       "status": "kept"
     },
     {
@@ -1656,6 +1736,16 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Strict flag on where the codebase allows; `typecheck` exits 0.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+      },
+      "move": "configure-quality-tools/row-11",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-08",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -1664,6 +1754,27 @@
       },
       "move": "configure-quality-tools/row-14",
       "note": "Inferred: the verb calls the dependency the manifest pins.",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "A read-only verb never writes: no `--fix`, `--write` or `audit fix`, no `tsc` without `--noEmit`, no install.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-14",
+      "note": "CMD-04 reads tsc without --noEmit in typecheck as a build writer.",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Strict flag on where the codebase allows; `typecheck` exits 0.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+      },
+      "move": "configure-quality-tools/row-14",
       "status": "kept"
     },
     {
@@ -1678,6 +1789,26 @@
       "status": "kept"
     },
     {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-15",
+      "status": "kept"
+    },
+    {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-15",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/SKILL.md",
@@ -1685,6 +1816,17 @@
         "section": "implement/SKILL.md#implement/stage-3-apply/what-one-commit-holds"
       },
       "move": "configure-quality-tools/row-16",
+      "status": "kept"
+    },
+    {
+      "check": "CMD-04",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "A read-only verb never writes: no `--fix`, `--write` or `audit fix`, no `tsc` without `--noEmit`, no install.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-17",
+      "note": "security is a read-only verb; an audit fix or an install form would make CMD-04 fail.",
       "status": "kept"
     },
     {
@@ -1707,6 +1849,17 @@
       },
       "move": "configure-quality-tools/row-18",
       "note": "A red security job is report-only outside the merge gate's needs, with its count and review date committed beside the step; CI-04 reads PARTIAL, not PASS, while the verb gates nowhere else.",
+      "status": "kept"
+    },
+    {
+      "check": "CI-03",
+      "home": {
+        "path": "implement/playbooks/configure-quality-tools.md",
+        "quote": "Then run the verb in CI as its own job, beside the `check` job.",
+        "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+      },
+      "move": "configure-quality-tools/row-18",
+      "note": "The CI job calls the local security verb, so CI-03 finds no target without a local definition.",
       "status": "kept"
     },
     {
@@ -4049,7 +4202,8 @@
         "build.gradle"
       ],
       "touches": [
-        "EXEC-02"
+        "EXEC-02",
+        "TOOL-01"
       ]
     },
     {
@@ -4111,7 +4265,8 @@
       ],
       "touches": [
         "CMD-04",
-        "EXEC-08"
+        "EXEC-08",
+        "TOOL-01"
       ]
     },
     {
@@ -4130,7 +4285,9 @@
         ".github/workflows/ci.yml"
       ],
       "touches": [
-        "CI-04"
+        "CI-04",
+        "CI-02",
+        "CI-03"
       ]
     },
     {
@@ -4151,7 +4308,8 @@
         "build.gradle"
       ],
       "touches": [
-        "EXEC-02"
+        "EXEC-02",
+        "TOOL-02"
       ]
     },
     {
@@ -4212,7 +4370,8 @@
       ],
       "touches": [
         "CMD-04",
-        "EXEC-08"
+        "EXEC-08",
+        "TOOL-02"
       ]
     },
     {
@@ -4231,7 +4390,9 @@
         ".github/workflows/ci.yml"
       ],
       "touches": [
-        "CI-04"
+        "CI-04",
+        "CI-02",
+        "CI-03"
       ]
     },
     {
@@ -4253,7 +4414,8 @@
         "pyproject.toml"
       ],
       "touches": [
-        "EXEC-07"
+        "EXEC-07",
+        "TOOL-03"
       ]
     },
     {
@@ -4306,7 +4468,9 @@
         "build.gradle"
       ],
       "touches": [
-        "EXEC-08"
+        "EXEC-08",
+        "CMD-04",
+        "TOOL-03"
       ]
     },
     {
@@ -4325,7 +4489,9 @@
         ".github/workflows/ci.yml"
       ],
       "touches": [
-        "CI-04"
+        "CI-04",
+        "CI-02",
+        "CI-03"
       ]
     },
     {
@@ -4365,6 +4531,9 @@
         "package.json",
         "Makefile",
         "build.gradle"
+      ],
+      "touches": [
+        "CMD-04"
       ]
     },
     {
@@ -4384,7 +4553,8 @@
       ],
       "touches": [
         "CI-02",
-        "CI-04"
+        "CI-04",
+        "CI-03"
       ]
     },
     {
