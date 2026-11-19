@@ -246,7 +246,8 @@ flowchart LR
     B --> C["Failure mode in Why These Checks"]
     C --> D["summary and a typed data payload"]
     D --> E["A fixture that fails only this check"]
-    E --> F["Summary table row and framework anchor"]
+    E --> R["Its reads declared in audit/rules/reads.py"]
+    R --> F["Summary table row and framework anchor"]
     F --> G["Merge"]
 ```
 
@@ -258,7 +259,11 @@ flowchart LR
    `audit/rules/payloads.py` (ADR-0007). The renderer builds check tables from the payload `kind`, never
    from prose, and editorial wording belongs in `audit/report/presentation.py`, not in the check.
 5. Add a broken fixture that fails exactly this check and nothing else.
-6. Add the row to the summary table and to the pack's framework anchor before merging.
+6. Declare what the check reads in `audit/rules/reads.py`: the places, the text and the binding. Take the paths
+   from the check's own constant with `_held` where one exists. `tests/test_check_reads.py` fails on a path the
+   check asks for and the declaration does not cover. Then run `python3 dev/consistency_map_reads.py --write` from
+   the repository root. It rewrites the consistency map's reads (ADR 0012 in the root `docs/architecture/adrs/`).
+7. Add the row to the summary table and to the pack's framework anchor before merging.
 
 ---
 

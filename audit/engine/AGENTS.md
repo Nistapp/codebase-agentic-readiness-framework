@@ -58,6 +58,7 @@ Agents MUST respect the following structural rules.
 | `audit/rules/registry.py` | The check catalogue, framework anchors, `ruleset_hash()`. |
 | `audit/rules/variants.py` | **The** instruction-variant table — one data structure, in code. |
 | `audit/rules/payloads.py` | Typed, `kind`-discriminated structured check payloads (ADR-0007). |
+| `audit/rules/reads.py` | What each check reads (places, text, binding), keyed by check id. Data for the consistency map, never for a verdict: no check imports it and the ruleset hash leaves it out. |
 | `audit/rules/checks/` | One module per check pack; each exposes an `IMPLEMENTATIONS` dict. |
 | `audit/report/model.py` | **The** schema-v2 report model — the JSON render contract (ADR-0007). |
 | `audit/report/presentation.py` | The Markdown template (sections, columns, editorial wording), in code. |

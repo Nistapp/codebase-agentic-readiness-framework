@@ -14919,31 +14919,31 @@
       "where": [
         {
           "path": "opencode.json",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "opencode.jsonc",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".mcp.json",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".cursor/mcp.json",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".vscode/mcp.json",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".gemini/settings.json",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".codex/config.toml",
-          "scope": "root"
+          "scope": "any-depth"
         }
       ]
     },
@@ -15275,7 +15275,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -15936,7 +15936,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -15994,7 +15994,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -16052,7 +16052,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -16115,7 +16115,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -16278,7 +16278,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -16453,7 +16453,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -16508,11 +16508,11 @@
         },
         {
           "path": "mypy.ini",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".mypy.ini",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "pyproject.toml",
@@ -16520,7 +16520,7 @@
         },
         {
           "path": "setup.cfg",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "pyrightconfig.json",
@@ -16548,7 +16548,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -16599,7 +16599,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -16705,7 +16705,7 @@
     {
       "binding": "line",
       "check": "TOOL-06",
-      "note": "Local: commitlint config names at any depth, a commitlint key in the root package.json, a commit-msg hook file (presence matched at any depth), or commit-msg/commitlint/conventional in the root hook-manager files. CI: one workflow line runs a commit-message tool, a pull-request title action, a script the local commit-msg stage names, or a runner target that does.",
+      "note": "Local: commitlint config names at any depth, a commitlint key in the root package.json, a commit-msg hook file (presence matched at any depth), or commit-msg/commitlint/conventional in the root hook-manager files. CI: one workflow line runs a commit-message tool, a pull-request title action, a script the local commit-msg stage names, or a runner target that does. The FAIL path reads the hook wiring as TOOL-05 does: hook-manager files, .githooks/, .husky/, core.hooksPath.",
       "source": "engine",
       "what": {
         "kind": "phrase"
@@ -16761,23 +16761,23 @@
         },
         {
           "path": ".husky/commit-msg",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".githooks/commit-msg",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".pre-commit-config.yaml",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "lefthook.yml",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "lefthook.yaml",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".github/workflows/*.yml",
@@ -16813,7 +16813,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -16846,6 +16846,18 @@
         {
           "path": "mvnw",
           "scope": "any-depth"
+        },
+        {
+          "path": ".githooks/*",
+          "scope": "glob"
+        },
+        {
+          "path": ".husky/*",
+          "scope": "glob"
+        },
+        {
+          "path": "**",
+          "scope": "glob"
         }
       ]
     },
@@ -17006,7 +17018,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -17093,7 +17105,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -17230,7 +17242,7 @@
     {
       "binding": "file",
       "check": "BASE-01",
-      "note": "A baseline name at any depth, or a mechanism phrase in the root AGENTS.md or CLAUDE.md, passes; the phrase words are joined by \\s+ so they may span lines. The counting-tool configs, root pyproject.toml, setup.cfg and tox.ini and the lint, typecheck and security verbs only give PARTIAL.",
+      "note": "A baseline name at any depth, or a mechanism phrase in the root AGENTS.md or CLAUDE.md, passes; the phrase words are joined by \\s+ so they may span lines. The counting-tool configs, root pyproject.toml, setup.cfg and tox.ini and the lint, typecheck and security verbs only give PARTIAL. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
       "source": "engine",
       "what": {
         "kind": "phrase",
@@ -17391,7 +17403,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -17424,13 +17436,41 @@
         {
           "path": "mvnw",
           "scope": "any-depth"
+        },
+        {
+          "path": "setup.py",
+          "scope": "any-depth"
+        },
+        {
+          "path": "requirements*.txt",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Pipfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "go.mod",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Cargo.toml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Gemfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "composer.json",
+          "scope": "any-depth"
         }
       ]
     },
     {
       "binding": "line",
       "check": "BASE-02",
-      "note": "A numeric budget (--max-warnings N, max-warnings|max-issues|max-problems N, violation-budget N) on one line of the five root runner manifests, a counting config at any depth, or a resolved verb command. Counting tools or baseline artifacts only give PARTIAL; the check never fails.",
+      "note": "A numeric budget (--max-warnings N, max-warnings|max-issues|max-problems N, violation-budget N) on one line of the five root runner manifests, a counting config at any depth, or a resolved verb command. Counting tools or baseline artifacts only give PARTIAL; the check never fails. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
       "source": "engine",
       "what": {
         "kind": "phrase"
@@ -17585,6 +17625,10 @@
           "scope": "any-depth"
         },
         {
+          "path": "Makefile",
+          "scope": "any-depth"
+        },
+        {
           "path": "Taskfile.yml",
           "scope": "any-depth"
         },
@@ -17615,13 +17659,41 @@
         {
           "path": "mvnw",
           "scope": "any-depth"
+        },
+        {
+          "path": "setup.py",
+          "scope": "any-depth"
+        },
+        {
+          "path": "requirements*.txt",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Pipfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "go.mod",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Cargo.toml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Gemfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "composer.json",
+          "scope": "any-depth"
         }
       ]
     },
     {
       "binding": "line",
       "check": "BASE-03",
-      "note": "First a BASE-02 budget, then a baseline artifact whose base name appears in any CI file, then a ratchet phrase in the four root documents; compare, comparison or regression must be within 48 characters of baseline on one line.",
+      "note": "First a BASE-02 budget, then a baseline artifact whose base name appears in any CI file, then a ratchet phrase in the four root documents; compare, comparison or regression must be within 48 characters of baseline on one line. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
       "source": "engine",
       "what": {
         "kind": "phrase",
@@ -17821,6 +17893,10 @@
           "scope": "any-depth"
         },
         {
+          "path": "Makefile",
+          "scope": "any-depth"
+        },
+        {
           "path": "Taskfile.yml",
           "scope": "any-depth"
         },
@@ -17851,13 +17927,41 @@
         {
           "path": "mvnw",
           "scope": "any-depth"
+        },
+        {
+          "path": "setup.py",
+          "scope": "any-depth"
+        },
+        {
+          "path": "requirements*.txt",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Pipfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "go.mod",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Cargo.toml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Gemfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "composer.json",
+          "scope": "any-depth"
         }
       ]
     },
     {
       "binding": "line",
       "check": "BASE-04",
-      "note": "Config: fail_under = N or --cov-fail-under N in six root files, coverageThreshold in the root package.json, a threshold key in a runner config at any depth (whole-line // comments dropped). Prose (PARTIAL): coverage within 40 characters of threshold, minimum, fail, floor or at least, or within 20 of a percentage, on one line of the four root documents.",
+      "note": "Config: fail_under = N or --cov-fail-under N in six root files, coverageThreshold in the root package.json, a threshold key in a runner config at any depth (whole-line // comments dropped). Prose (PARTIAL): coverage within 40 characters of threshold, minimum, fail, floor or at least, or within 20 of a percentage, on one line of the four root documents. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
       "source": "engine",
       "what": {
         "kind": "phrase"
@@ -17921,6 +18025,54 @@
         },
         {
           "path": "karma.conf.*",
+          "scope": "any-depth"
+        },
+        {
+          "path": "package.json",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pyproject.toml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "setup.py",
+          "scope": "any-depth"
+        },
+        {
+          "path": "requirements*.txt",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Pipfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pom.xml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle.kts",
+          "scope": "any-depth"
+        },
+        {
+          "path": "go.mod",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Cargo.toml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "Gemfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "composer.json",
           "scope": "any-depth"
         }
       ]
@@ -18430,7 +18582,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -18646,7 +18798,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -18813,7 +18965,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -18903,7 +19055,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -18990,9 +19142,10 @@
       "binding": "line",
       "check": "TST-04",
       "constants": [
-        "audit.rules.checks.tst:_FASTPATH_DOCS"
+        "audit.rules.checks.tst:_FASTPATH_DOCS",
+        "audit.rules.checks.tst:_FRAMEWORK_TEST_GLOBS"
       ],
-      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently.",
+      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
       "source": "engine",
       "what": {
         "kind": "fenced-command"
@@ -19000,19 +19153,27 @@
       "where": [
         {
           "path": "README.md",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "AGENTS.md",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "CLAUDE.md",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "CONTRIBUTING.md",
-          "scope": "root"
+          "scope": "any-depth"
+        },
+        {
+          "path": "*_test.go",
+          "scope": "any-depth"
+        },
+        {
+          "path": "tests/*.rs",
+          "scope": "glob"
         }
       ]
     },
@@ -19139,7 +19300,7 @@
         },
         {
           "path": "Makefile",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Taskfile.yml",
@@ -19894,7 +20055,7 @@
     {
       "binding": "line",
       "check": "HYG-11",
-      "note": "Declared rules: ruleset JSON, the branches: list of .github/settings.yml, Terraform protection resources, and any path holding branch-protection or branch_protection (a document records, another file declares). With an integration branch and another protected branch, one GitHub or GitLab CI line must read the pull request's source branch, outside a group: or ref: key.",
+      "note": "Declared rules: ruleset JSON, the branches: list of .github/settings.yml, Terraform protection resources, and any path holding branch-protection or branch_protection (a document records, another file declares). With an integration branch and another protected branch, one GitHub or GitLab CI line must read the pull request's source branch, outside a group: or ref: key. .github/settings.yml passes Inventory.has at any depth but is read at the root only.",
       "source": "engine",
       "what": {
         "kind": "key"
@@ -19906,7 +20067,7 @@
         },
         {
           "path": ".github/settings.yml",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "*.tf",
