@@ -21,7 +21,7 @@
         "section": "implement/SKILL.md#implement/stage-5-close-out"
       },
       "id": "B-02",
-      "note": "No tool records that a run is finished, and no implement eval scenario runs a close-out.",
+      "note": "Prose is the only honest home. No tool records that a run is finished (the close-out writes no state), so no tool can tell a finished target from a live one, and a later session on it looks like a new run. No implement eval scenario runs a close-out.",
       "statement": "A target whose run is finished is not touched again: the close-out makes no branch, commit or pull request in it."
     },
     {
@@ -161,6 +161,7 @@
         "section": "implement/SKILL.md#implement/hard-rules"
       },
       "id": "B-13",
+      "note": "Prose is the only honest home. Whether a name, a path or a value is private is a judgement no pattern makes, and the moves it guards (a framework issue, a pull request, a commit to another open-source repository) happen outside the run, where no tool or eval looks. A14 covers only the run's own report and state.",
       "statement": "Nothing private crosses into an open-source repository, and nothing from a target into the framework."
     },
     {
