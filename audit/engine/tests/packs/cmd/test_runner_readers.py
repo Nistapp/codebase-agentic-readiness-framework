@@ -149,6 +149,13 @@ class GradleTests(unittest.TestCase):
         build = "tasks.register('lint') {\n}\n"
         self.assertEqual(verbs_of({"build.gradle": build}), {"lint": "build.gradle: gradle lint"})
 
+    def test_a_nested_wrapper_does_not_launch_the_root_build(self):
+        """``./gradlew`` runs from the root folder, so a ``tools/gradlew`` is not the root build's launcher."""
+        self.assertEqual(
+            verbs_of({"build.gradle": "plugins {\n    id 'java'\n}\n", "tools/gradlew": "#!/bin/sh\n"}),
+            {"test": "build.gradle: gradle test", "check": "build.gradle: gradle check"},
+        )
+
 
 class MavenTests(unittest.TestCase):
     @staticmethod
@@ -224,15 +231,22 @@ class MavenTests(unittest.TestCase):
 class NestedManifestTests(unittest.TestCase):
     """A runner found at any depth is named by its real path; a root-only runner below the root is no runner.
 
-    A monorepo whose only Gradle build lives under ``packages/app`` has no manifest at the literal name
-    ``"build.gradle"``: a caller that cites that literal name cites a path that does not exist anywhere in the
-    repository. A ``Makefile`` or a ``package.json`` counts only at the root, where ``make`` and ``npm`` read it.
+    A monorepo whose only Maven build lives under ``packages/app`` has no manifest at the literal name
+    ``"pom.xml"``: a caller that cites that literal name cites a path that does not exist anywhere in the
+    repository. A ``Makefile``, a ``package.json`` or a Gradle build counts only at the root, where ``make``,
+    ``npm`` and ``./gradlew`` read it.
     """
 
     def test_a_nested_only_build_is_named_by_its_real_path(self):
+        verbs, commands = read({"packages/app/pom.xml": "<project></project>\n"})
+        self.assertEqual(verbs["test"].runner, "packages/app/pom.xml")
+        self.assertIn("packages/app/pom.xml", commands)
+        self.assertNotIn("pom.xml", commands)
+
+    def test_a_nested_only_gradle_build_is_not_a_runner(self):
         verbs, commands = read({"packages/app/build.gradle": "plugins { id 'java' }\n"})
-        self.assertEqual(verbs["test"].runner, "packages/app/build.gradle")
-        self.assertIn("packages/app/build.gradle", commands)
+        self.assertNotIn("test", verbs)
+        self.assertNotIn("packages/app/build.gradle", commands)
         self.assertNotIn("build.gradle", commands)
 
     def test_a_nested_only_package_json_is_not_a_runner(self):
@@ -244,12 +258,12 @@ class NestedManifestTests(unittest.TestCase):
     def test_the_shallowest_of_two_nested_manifests_is_named(self):
         _, commands = read(
             {
-                "apps/web/build.gradle": "plugins { id 'java' }\n",
-                "apps/web/deep/nested/build.gradle": "plugins { id 'java' }\n",
+                "apps/web/pom.xml": "<project></project>\n",
+                "apps/web/deep/nested/pom.xml": "<project></project>\n",
             }
         )
-        self.assertIn("apps/web/build.gradle", commands)
-        self.assertNotIn("apps/web/deep/nested/build.gradle", commands)
+        self.assertIn("apps/web/pom.xml", commands)
+        self.assertNotIn("apps/web/deep/nested/pom.xml", commands)
 
     def test_a_nested_only_makefile_is_not_a_runner(self):
         """``make`` reads the root ``Makefile`` only, so a nested one is neither read nor cited."""

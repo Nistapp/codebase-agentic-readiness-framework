@@ -412,8 +412,9 @@ def _manifest_path(inventory: Inventory, name: str) -> str:
 def _at_root(inventory: Inventory, name: str) -> bool:
     """Whether manifest ``name`` is at the repository root, by its exact path.
 
-    A runner of this kind is the root file only: ``make``, ``npm``, ``task`` and the pyproject task runners in the
-    root folder read the file there, so a nested ``tools/Makefile`` is not a runner and no verb finding cites it.
+    A runner of this kind is the root file only: ``make``, ``npm``, ``task``, the pyproject task runners and
+    ``./gradlew`` in the root folder read the file there, so a nested ``tools/Makefile`` is not a runner and no verb
+    finding cites it.
     ``Inventory.has`` would match it at any depth.
     """
     return any(entry.rel == name for entry in inventory.files)
@@ -424,9 +425,9 @@ def _runner_commands(inventory: Inventory):
 
     ``runner`` is the manifest's real, actually-matched relative path (:func:`_manifest_path`), not a
     hardcoded literal basename — on a target whose only manifest of a kind is nested, the literal name
-    is a path that does not exist anywhere in the repository. The ``Makefile``, ``package.json``, the Taskfile
-    and ``pyproject.toml`` are runners only at the root (:func:`_at_root`), where they are read; Gradle and Maven
-    builds are found at any depth.
+    is a path that does not exist anywhere in the repository. The ``Makefile``, ``package.json``, the Taskfile,
+    ``pyproject.toml`` and the Gradle build are runners only at the root (:func:`_at_root`), where they are read;
+    a Maven build is found at any depth.
     """
     found: list[tuple[str, dict[str, str]]] = []
     if _at_root(inventory, "package.json"):
@@ -443,11 +444,10 @@ def _runner_commands(inventory: Inventory):
         if text:
             found.append(("pyproject.toml", _parse_pyproject_tasks(text)))
     for name in ("build.gradle", "build.gradle.kts"):
-        if inventory.has(name):
-            path = _manifest_path(inventory, name)
-            text = inventory.read(path)
+        if _at_root(inventory, name):
+            text = inventory.read(name)
             if text:
-                found.append((path, _parse_gradle_tasks(text, inventory)))
+                found.append((name, _parse_gradle_tasks(text, inventory)))
     if inventory.has("pom.xml"):
         path = _manifest_path(inventory, "pom.xml")
         text = inventory.read(path)
@@ -668,7 +668,12 @@ _MAVEN_LIFECYCLE_PHASES = (("test", "test"), ("typecheck", "compile test-compile
 
 
 def _launcher(inventory: Inventory, wrapper: str, fallback: str) -> str:
-    return f"./{wrapper}" if inventory.has(wrapper) else fallback
+    """``./<wrapper>`` when the build's wrapper is committed, else the installed ``fallback``.
+
+    ``./gradlew`` runs from the root folder, so only a root ``gradlew`` launches the root build.
+    """
+    committed = _at_root(inventory, wrapper) if wrapper == "gradlew" else inventory.has(wrapper)
+    return f"./{wrapper}" if committed else fallback
 
 
 def _parse_maven_plugins(text: str, inventory: Inventory) -> dict[str, str]:

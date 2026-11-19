@@ -157,12 +157,20 @@ class ToolInlineTests(unittest.TestCase):
             self.assertIn(verdicts[check], ("UNKNOWN", "PASS"), f"{check} guessed")
 
     def test_evidence_cites_a_nested_manifests_real_path_not_a_hardcoded_basename(self):
-        """A monorepo whose only Gradle build is nested has no manifest at the literal name
-        ``"build.gradle"``; TOOL-01's FAIL evidence must cite a path that actually exists."""
+        """A monorepo whose only Maven build is nested has no manifest at the literal name
+        ``"pom.xml"``; TOOL-01's FAIL evidence must cite a path that actually exists."""
+        report = self._scan({"packages/app/pom.xml": "<project></project>\n"})
+        self.assertEqual(support.verdicts(report)["TOOL-01"], "FAIL")
+        evidence_paths = {e["path"] for f in report["findings"] if f["check"] == "TOOL-01" for e in f["evidence"]}
+        self.assertIn("packages/app/pom.xml", evidence_paths)
+        self.assertNotIn("pom.xml", evidence_paths)
+
+    def test_a_nested_only_gradle_build_is_no_runner_and_no_evidence(self):
+        """``./gradlew`` reads the root build only, so a nested ``build.gradle`` is not cited as a runner."""
         report = self._scan({"packages/app/build.gradle": "plugins { id 'java' }\n"})
         self.assertEqual(support.verdicts(report)["TOOL-01"], "FAIL")
         evidence_paths = {e["path"] for f in report["findings"] if f["check"] == "TOOL-01" for e in f["evidence"]}
-        self.assertIn("packages/app/build.gradle", evidence_paths)
+        self.assertNotIn("packages/app/build.gradle", evidence_paths)
         self.assertNotIn("build.gradle", evidence_paths)
 
     def test_a_nested_only_package_json_is_no_runner_and_no_evidence(self):
