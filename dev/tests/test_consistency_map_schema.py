@@ -194,6 +194,26 @@ class InvalidMapTest(unittest.TestCase):
     def test_a_read_with_no_place_fails(self) -> None:
         self._assert_invalid(lambda m: m["reads"][0].update(where=[]), "fewer than minItems")
 
+    def test_an_unknown_upstream_step_fails(self) -> None:
+        self._assert_invalid(lambda m: m["reads"][0]["where"][0].update(via="probe"), "not in the enum")
+
+    def test_a_place_read_upstream_is_valid(self) -> None:
+        valid = copy.deepcopy(EXAMPLE)
+        valid["reads"][0]["where"][0]["via"] = "components"
+        self.assertEqual(_problems(valid, SCHEMA), [])
+
+    def test_an_exact_case_is_left_out_not_written(self) -> None:
+        self._assert_invalid(lambda m: m["reads"][0]["where"][0].update(case="exact"), "not in the enum")
+
+    def test_a_folded_place_and_a_text_named_read_are_valid(self) -> None:
+        valid = copy.deepcopy(EXAMPLE)
+        valid["reads"][0]["where"][0]["case"] = "fold"
+        valid["reads"][0]["named_by_text"] = "each code span names a path"
+        self.assertEqual(_problems(valid, SCHEMA), [])
+
+    def test_an_empty_named_by_text_fails(self) -> None:
+        self._assert_invalid(lambda m: m["reads"][0].update(named_by_text=""), "minLength")
+
     def test_a_non_boolean_ignore_case_fails(self) -> None:
         self._assert_invalid(lambda m: m["names"][0].update(ignore_case="yes"), "not of type boolean")
 

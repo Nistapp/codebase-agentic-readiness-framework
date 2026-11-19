@@ -42,6 +42,20 @@ def engine_declarations() -> dict[str, Any]:
     return table
 
 
+def _where(place: Any) -> dict[str, Any]:
+    """One declared place as a map ``where`` item.
+
+    ``via`` only when an upstream step reads the place, and ``case`` only when it is matched in lower case: an
+    exact match is the default, so most items stay two keys long.
+    """
+    item: dict[str, Any] = {"path": place.path, "scope": place.scope}
+    if place.via is not None:
+        item["via"] = place.via
+    if place.case != "exact":
+        item["case"] = place.case
+    return item
+
+
 def to_entry(check: str, declared: Any) -> dict[str, Any]:
     """One engine declaration as a map reads entry."""
     entry: dict[str, Any] = {
@@ -49,11 +63,11 @@ def to_entry(check: str, declared: Any) -> dict[str, Any]:
         "check": check,
         "source": "engine",
         "what": {"kind": declared.what.kind, **({"text": list(declared.what.text)} if declared.what.text else {})},
-        "where": [{"path": place.path, "scope": place.scope} for place in declared.where],
+        "where": [_where(place) for place in declared.where],
     }
     if declared.constants:
         entry["constants"] = list(declared.constants)
-    for field in ("note", "threshold", "window"):
+    for field in ("named_by_text", "note", "threshold", "window"):
         value = getattr(declared, field)
         if value is not None:
             entry[field] = value

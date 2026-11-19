@@ -17,6 +17,12 @@ asks for with the declaration (ADR 0012 in the repository's ``docs/architecture/
 Scopes, as the map's schema states them: ``root`` is the exact path at the root; ``any-depth`` is the
 base name in any folder; ``repository-level`` is the root, ``.github/``, ``.gitlab/`` or ``docs/``;
 ``glob`` is a glob from the root, where ``**/`` also matches no folder.
+
+A place with ``via`` is read upstream, before any check runs: ``scan-kind`` when the scan's file kinds
+(``Kind.TEST``, ``Kind.GENERATED``) match it by name, ``components`` when component detection reads it. The
+check then asks for no such path itself. A place with ``case`` ``fold`` is matched in lower case, so a name
+in any case meets it. A declaration with ``named_by_text`` also reads paths that the target's own text names,
+which no place can list; the field gives the reason.
 """
 
 from __future__ import annotations
@@ -36,14 +42,30 @@ SCOPES: tuple[str, ...] = (ROOT, ANY_DEPTH, REPOSITORY_LEVEL, GLOB)
 KINDS: tuple[str, ...] = ("phrase", "word-list", "fenced-command", "code-span", "key", "exists")
 BINDINGS: tuple[str, ...] = ("line", "window", "paragraph", "section", "file")
 
+SCAN_KIND = "scan-kind"
+COMPONENTS = "components"
+
+VIAS: tuple[str, ...] = (SCAN_KIND, COMPONENTS)
+
+EXACT = "exact"
+FOLD = "fold"
+
+CASES: tuple[str, ...] = (EXACT, FOLD)
+
 
 @dataclass(frozen=True)
 class Place:
-    """One path a check reads, at one scope; ``constant`` names the engine constant it comes from."""
+    """One path a check reads, at one scope.
+
+    ``constant`` names the engine constant it comes from; ``via`` names the upstream step that reads it for the
+    check, ``scan-kind`` or ``components``; ``case`` is ``fold`` when the check matches the name in lower case.
+    """
 
     path: str
     scope: str
     constant: str | None = None
+    via: str | None = None
+    case: str = EXACT
 
 
 @dataclass(frozen=True)
@@ -64,6 +86,7 @@ class Reads:
     window: int | None = None
     threshold: str | None = None
     note: str | None = None
+    named_by_text: str | None = None
 
     @property
     def constants(self) -> tuple[str, ...]:
@@ -78,8 +101,8 @@ class Reads:
         return tuple(dict.fromkeys(reference for reference in references if reference))
 
 
-def _at(scope: str, *paths: str) -> tuple[Place, ...]:
-    return tuple(Place(path, scope) for path in paths)
+def _at(scope: str, *paths: str, via: str | None = None, case: str = EXACT) -> tuple[Place, ...]:
+    return tuple(Place(path, scope, via=via, case=case) for path in paths)
 
 
 def _held(module: ModuleType, name: str, scope: str, scopes: dict[str, str] | None = None) -> tuple[Place, ...]:
@@ -87,6 +110,15 @@ def _held(module: ModuleType, name: str, scope: str, scopes: dict[str, str] | No
     values = getattr(module, name)
     reference = f"{module.__name__}:{name}"
     return tuple(Place(path, (scopes or {}).get(path, scope), reference) for path in values)
+
+
+#: Runner manifests the engine reads at the root only (``_common._at_root``); the other kinds are found at any depth.
+_ROOT_RUNNERS: tuple[str, ...] = ("package.json", "Makefile", "Taskfile.yml", "Taskfile.yaml", "pyproject.toml")
+
+
+def _runners() -> tuple[Place, ...]:
+    """The runner manifests (``_common.RUNNER_PRECEDENCE``), each at the scope the runner resolver reads it."""
+    return _held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH, dict.fromkeys(_ROOT_RUNNERS, ROOT))
 
 
 #: The reads of every implemented engine check, in registry order. The agent checks have no code and no entry.
@@ -191,6 +223,7 @@ READS: dict[str, Reads] = {
                 "settings.gradle.kts",
                 "go.work",
                 "Cargo.toml",
+                via=COMPONENTS,
             ),
         ),
         what=What("exists"),
@@ -198,7 +231,9 @@ READS: dict[str, Reads] = {
         threshold="every declared component has an AGENTS.md",
         note=(
             "The root manifests declare the components (components.py); for each one <component>/AGENTS.md "
-            "must exist, matched as a path suffix at any depth."
+            "must exist, matched as a path suffix at any depth. The suffix test runs over agt.instruction_paths,"
+            " which scans every instruction file name, but only a path ending in <component>/AGENTS.md counts,"
+            " so the other names are never read for this check."
         ),
     ),
     "AGT-03": Reads(
@@ -241,7 +276,7 @@ READS: dict[str, Reads] = {
     "AGT-05": Reads(
         where=(
             *_at(ROOT, "AGENTS.md", "CLAUDE.md"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
         ),
         what=What(
             "word-list",
@@ -272,6 +307,7 @@ READS: dict[str, Reads] = {
             "and, on the same line, a path token with a slash that names a scanned file or a folder above "
             "one."
         ),
+        named_by_text="each path token of a boundary line is looked up with Inventory.has",
     ),
     "AGT-07": Reads(
         where=(*_at(ROOT, "AGENTS.md", "CLAUDE.md"),),
@@ -397,11 +433,12 @@ READS: dict[str, Reads] = {
             "start by reading, refer to ... first) with an existing .md, .txt, .yml, .yaml, .json or .toml "
             "reference on the same line, unnamed by any config, fails."
         ),
+        named_by_text="each file a harness config names must exist",
     ),
     "AGT-12": Reads(
         where=(
             *_at(ROOT, "AGENTS.md", "CLAUDE.md"),
-            *_at(GLOB, "**/*communicat*.md"),
+            *_at(GLOB, "**/*communicat*.md", case=FOLD),
         ),
         what=What("word-list"),
         binding="section",
@@ -429,6 +466,7 @@ READS: dict[str, Reads] = {
                 ".github/**/code_style*",
                 ".github/**/coding_standards*",
                 ".github/**/*coding-guidelines*",
+                case=FOLD,
             ),
             *_at(ROOT, "AGENTS.md", "CONTRIBUTING.md", ".github/CONTRIBUTING.md", "docs/CONTRIBUTING.md"),
         ),
@@ -530,7 +568,7 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-01": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
+        where=(*_runners(),),
         what=What(
             "key",
             (
@@ -546,13 +584,13 @@ READS: dict[str, Reads] = {
         binding="file",
         threshold="all seven verbs on one runner",
         note=(
-            "Each manifest kind is matched at any depth and only the shallowest is read; the Makefile is "
-            "parsed at the root only, and gradlew and mvnw only choose the launcher. format:check is also "
-            "read under the spelling its runner accepts."
+            "package.json, the Makefile, the Taskfile and pyproject.toml count only at the root, where they are "
+            "read; each Gradle or Maven build is matched at any depth and only the shallowest is read. gradlew and "
+            "mvnw only choose the launcher. format:check is also read under the spelling its runner accepts."
         ),
     ),
     "CMD-02": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
+        where=(*_runners(),),
         what=What("key", ("check",)),
         binding="section",
         threshold="check composes format-check, typecheck and test",
@@ -562,7 +600,7 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-03": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
+        where=(*_runners(),),
         what=What("key", ("check",)),
         binding="section",
         threshold="every second check delegates to the first",
@@ -572,7 +610,7 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-04": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
+        where=(*_runners(),),
         what=What(
             "key",
             (
@@ -623,8 +661,7 @@ READS: dict[str, Reads] = {
                 ".php-cs-fixer.php",
                 ".php-cs-fixer.dist.php",
             ),
-            *_at(ROOT, "pyproject.toml", "package.json"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
         ),
         what=What("key"),
         binding="file",
@@ -668,8 +705,7 @@ READS: dict[str, Reads] = {
                 "phpcs.xml",
                 ".phpcs.xml",
             ),
-            *_at(ROOT, "pyproject.toml", "package.json"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
         ),
         what=What("key"),
         binding="file",
@@ -683,11 +719,10 @@ READS: dict[str, Reads] = {
         where=(
             *_at(ROOT, "tsconfig.json", "jsconfig.json"),
             *_at(ANY_DEPTH, "mypy.ini", ".mypy.ini"),
-            *_at(ROOT, "pyproject.toml"),
-            *_at(ANY_DEPTH, "setup.cfg"),
+            *_at(ANY_DEPTH, "pyproject.toml", "setup.cfg"),
             *_at(ROOT, "pyrightconfig.json"),
             *_at(ANY_DEPTH, "*.csproj", "Directory.Build.props", "Directory.Build.targets", "global.json"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
         ),
         what=What("key"),
         binding="file",
@@ -699,7 +734,7 @@ READS: dict[str, Reads] = {
     ),
     "TOOL-04": Reads(
         where=(
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
             *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
@@ -742,7 +777,6 @@ READS: dict[str, Reads] = {
                 ".commitlintrc.yaml",
                 ".commitlintrc.toml",
             ),
-            *_at(ROOT, "package.json"),
             *_at(
                 ANY_DEPTH,
                 ".husky/commit-msg",
@@ -755,7 +789,7 @@ READS: dict[str, Reads] = {
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/*.yml"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
             *_at(GLOB, ".githooks/*", ".husky/*", "**"),
         ),
         what=What("phrase"),
@@ -820,7 +854,7 @@ READS: dict[str, Reads] = {
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/*.yml"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
         ),
         what=What(
             "key",
@@ -845,7 +879,7 @@ READS: dict[str, Reads] = {
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/*.yml"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
         ),
         what=What(
             "key",
@@ -905,7 +939,7 @@ READS: dict[str, Reads] = {
                 ".snyk",
                 ".gitleaksignore",
             ),
-            *_at(ROOT, "AGENTS.md", "CLAUDE.md", "pyproject.toml", "setup.cfg", "tox.ini"),
+            *_at(ROOT, "AGENTS.md", "CLAUDE.md", "setup.cfg", "tox.ini"),
             *_at(
                 ANY_DEPTH,
                 ".eslintrc*",
@@ -927,7 +961,7 @@ READS: dict[str, Reads] = {
                 ".semgrep.yml",
                 ".semgrep.yaml",
             ),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
             *_at(
                 ANY_DEPTH,
                 "setup.py",
@@ -967,11 +1001,6 @@ READS: dict[str, Reads] = {
         where=(
             *_at(
                 ROOT,
-                "package.json",
-                "pyproject.toml",
-                "Makefile",
-                "Taskfile.yml",
-                "Taskfile.yaml",
                 "setup.cfg",
                 "tox.ini",
             ),
@@ -1007,7 +1036,7 @@ READS: dict[str, Reads] = {
                 ".secrets.baseline",
                 ".gitleaksignore",
             ),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
             *_at(
                 ANY_DEPTH,
                 "setup.py",
@@ -1036,11 +1065,6 @@ READS: dict[str, Reads] = {
                 "CLAUDE.md",
                 "README.md",
                 "CONTRIBUTING.md",
-                "package.json",
-                "pyproject.toml",
-                "Makefile",
-                "Taskfile.yml",
-                "Taskfile.yaml",
             ),
             *_at(
                 ANY_DEPTH,
@@ -1078,7 +1102,7 @@ READS: dict[str, Reads] = {
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/*.yml"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
             *_at(
                 ANY_DEPTH,
                 "setup.py",
@@ -1166,6 +1190,7 @@ READS: dict[str, Reads] = {
             " characters and holds a slash, a glob or a dot, or names something that exists. Existence is "
             "checked in the scan and on disk."
         ),
+        named_by_text="each code span of the prohibitions section is looked up in the scan and on disk",
     ),
     "CON-02": Reads(
         where=(
@@ -1328,6 +1353,7 @@ READS: dict[str, Reads] = {
                 "**/*.g.cs",
                 "**/*.designer.cs",
                 "**/*.lock.gen",
+                via=SCAN_KIND,
             ),
         ),
         what=What(
@@ -1354,7 +1380,7 @@ READS: dict[str, Reads] = {
     "EXEC-06": Reads(
         where=(
             *_at(ROOT, "README.md", "AGENTS.md", "CLAUDE.md"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
         ),
         what=What("fenced-command"),
         binding="line",
@@ -1409,7 +1435,7 @@ READS: dict[str, Reads] = {
                 "osv-scanner.toml",
                 ".bandit",
             ),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
         ),
         what=What("exists"),
         binding="file",
@@ -1458,7 +1484,7 @@ READS: dict[str, Reads] = {
     ),
     "TST-01": Reads(
         where=(
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
             *_at(
                 GLOB,
                 "**/*test_*",
@@ -1468,6 +1494,7 @@ READS: dict[str, Reads] = {
                 "**/tests/**",
                 "**/test/**",
                 "**/__tests__/**",
+                via=SCAN_KIND,
             ),
             *_at(ANY_DEPTH, "*_test.go"),
             *_at(GLOB, "tests/*.rs"),
@@ -1482,13 +1509,13 @@ READS: dict[str, Reads] = {
         ),
     ),
     "TST-02": Reads(
-        where=(*_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),),
+        where=(*_runners(),),
         what=What("key"),
         binding="file",
         note=(
             "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and "
-            "--allow-probe test. The runner manifests are found at any depth and the shallowest is read; the "
-            "Makefile is read at the root only."
+            "--allow-probe test. package.json, the Makefile, the Taskfile and pyproject.toml count only at the "
+            "root, where they are read; a Gradle or Maven build is found at any depth and the shallowest is read."
         ),
     ),
     "TST-03": Reads(
@@ -1502,6 +1529,7 @@ READS: dict[str, Reads] = {
                 "**/tests/**",
                 "**/test/**",
                 "**/__tests__/**",
+                via=SCAN_KIND,
             ),
             *_at(ANY_DEPTH, "*_test.go"),
             *_at(GLOB, "tests/*.rs"),
@@ -1550,8 +1578,6 @@ READS: dict[str, Reads] = {
             ),
             *_at(
                 ROOT,
-                "package.json",
-                "pyproject.toml",
                 "setup.cfg",
                 "tox.ini",
                 "pytest.ini",
@@ -1560,7 +1586,7 @@ READS: dict[str, Reads] = {
                 "build.gradle.kts",
             ),
             *_at(ANY_DEPTH, "vitest.config.*", "jest.config.*", "vite.config.*", "karma.conf.*"),
-            *_held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH),
+            *_runners(),
         ),
         what=What("key"),
         binding="file",
@@ -1581,6 +1607,7 @@ READS: dict[str, Reads] = {
                 "settings.gradle.kts",
                 "go.work",
                 "Cargo.toml",
+                via=COMPONENTS,
             ),
             *_at(
                 ANY_DEPTH,
@@ -1591,8 +1618,19 @@ READS: dict[str, Reads] = {
                 "build.gradle.kts",
                 "Cargo.toml",
                 "go.mod",
+                via=COMPONENTS,
             ),
-            *_at(GLOB, "apps/*", "services/*", "packages/*", "components/*", "modules/*", "libs/*", "workers/*"),
+            *_at(
+                GLOB,
+                "apps/*",
+                "services/*",
+                "packages/*",
+                "components/*",
+                "modules/*",
+                "libs/*",
+                "workers/*",
+                via=COMPONENTS,
+            ),
         ),
         what=What("key"),
         binding="file",
