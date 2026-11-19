@@ -138,6 +138,15 @@ registered by name anywhere in the build file beyond the OWASP plugin's own defa
 missing tasks (Spotless, Checkstyle, a `security` task that depends on `dependencyCheckAnalyze`), not to
 distrust the verdict.
 
+A package named `example`, `samples` or `fixtures` is read as code below a source root,
+`src/<source set>/<java|kotlin|scala|groovy>/`. Spring Initializr's default group, `com.example`, is one such
+package. The engine sets aside the same names everywhere else: `src/main/resources/templates/`,
+`src/test/resources/fixtures/` and a top-level `examples/` folder are carried data, and the report lists them in
+`inventory.set_aside`
+([engine ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). Code kept outside
+the standard layout is set aside by such a name; check `inventory.set_aside` before you trust a `NAV-02` or `TST`
+verdict on it.
+
 ## Maven
 
 Untested: no Maven repository is in this pack's corpus; read from the engine's own Maven reader
