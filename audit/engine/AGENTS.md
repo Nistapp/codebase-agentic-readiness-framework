@@ -90,7 +90,7 @@ Agents MUST respect the following structural rules.
 | Language | Python 3.11+ | Standard library only; `from __future__ import annotations`. |
 | Runtime | `python3` | No install step: `python3 -m audit <target>` from a fresh clone. |
 | Tests | stdlib `unittest` | `python3 -m unittest discover -s tests`. No pytest dependency. |
-| Dev tools | ruff, mypy, detect-secrets via `uvx` | Pinned in the root `Makefile` (§3.1). Never imported by `audit/` or `build.py`. |
+| Dev tools | ruff, mypy, detect-secrets via `uvx` | Pinned in `dev/tools/pyproject.toml`, never in the `Makefile` (ADR 0003). Never imported by `audit/` or `build.py`. |
 | Build | `zipapp` | `python3 build.py` → `dist/audit.pyz`; source tree is the artifact of record. |
 | Index | `codebase-memory-mcp` | Mandatory for structural queries (see §4). |
 | Docs | Diátaxis + [`../docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) | The shared style guide is canonical (see §8). |
