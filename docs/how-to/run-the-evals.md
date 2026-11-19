@@ -220,7 +220,8 @@ asserts them on what the run did. Its scenarios live in `dev/eval/audit-fixtures
 | AU6 | Every write lands in the output folder: no file tool and no Bash call writes anywhere else, except scratch in a system temp folder outside the eval's run folder (HR-0044) | file-tool writes; redirections, `tee`, `cp`, `mv`, `touch`, `mkdir`, `rm`, `sed -i` and `--out` flags, with `cd` carried over |
 
 `python3 -m unittest test_audit_eval` in `dev/tests/` runs each assertion on hand-made outcomes. One run keeps
-the rules and must pass; each run that breaks one must fail. It is part of `make check`. To run the scenario
+the rules and must pass; each run that breaks one must fail. It is part of `make check`. Both evals split a Bash
+call into simple commands with `dev/eval/shell_commands.py`, which `test_shell_commands` tests. To run the scenario
 headless (this costs money):
 
 ```bash

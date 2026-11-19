@@ -37,7 +37,6 @@ from __future__ import annotations
 import json
 import os
 import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -46,8 +45,10 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, Sequence
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "audit" / "tools"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import _common
+from shell_commands import all_segments, shell_segments, subcommand
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent.parent
@@ -840,8 +841,6 @@ TAG_OR_RELEASE = re.compile(
     r"\bgit\s+(?:-C\s+\S+\s+)?push\b.*(?:--tags|--follow-tags|--mirror|refs/tags/)|"
     r"\bgh\s+release\s+(?:create|upload|edit|delete)\b"
 )
-SHELL_SEPARATORS = frozenset({"&&", "||", ";", "|", "&", "(", ")"})
-SHELLS = frozenset({"sh", "bash", "zsh", "dash"})
 HISTORY_SUBCOMMANDS = frozenset({"pull", "rebase"})
 # `gh api` flags that take a value, and those of them that send a body (which makes the default method POST).
 GH_API_VALUE_FLAGS = frozenset(
@@ -851,54 +850,9 @@ GH_API_BODY_FLAGS = frozenset({"-f", "--raw-field", "-F", "--field", "--input"})
 RELEASES_ENDPOINT = re.compile(r"(?:^|/)releases(?:[/?]|$)")
 
 
-def _shell_segments(command: str) -> list[list[str]]:
-    """The simple commands of `command`, split on the shell's separators; quotes are kept together."""
-    lexer = shlex.shlex(command.replace("\n", " ; "), posix=True, punctuation_chars=True)
-    lexer.whitespace_split = True
-    try:
-        tokens = list(lexer)
-    except ValueError:
-        return [line.split() for line in re.split(r"&&|\|\||;|\|", command)]
-    segments: list[list[str]] = [[]]
-    for token in tokens:
-        if token in SHELL_SEPARATORS or (set(token) <= set("&|;()") and token):
-            segments.append([])
-        else:
-            segments[-1].append(token)
-    return [segment for segment in segments if segment]
-
-
-def _all_segments(command: str) -> list[list[str]]:
-    """The simple commands of `command`, and of every script it hands to `sh -c`, `bash -c` or `eval`."""
-    found: list[list[str]] = []
-    for segment in _shell_segments(command):
-        found.append(segment)
-        for index, token in enumerate(segment[:-1]):
-            if token == "eval":
-                found += _all_segments(" ".join(segment[index + 1 :]))
-                break
-            if Path(token).name in SHELLS and segment[index + 1] == "-c" and index + 2 < len(segment):
-                found += _all_segments(segment[index + 2])
-                break
-    return found
-
-
-def _subcommand(segment: list[str], program: str) -> tuple[str, list[str]] | None:
-    """The subcommand and its arguments when `segment` runs `program` (`git` or `gh`), else None."""
-    for start, token in enumerate(segment):
-        if token != program and not token.endswith(f"/{program}"):
-            continue
-        index = start + 1
-        while index < len(segment) and segment[index].startswith("-"):
-            index += 2 if segment[index] in ("-C", "-c", "-R", "--repo") else 1
-        if index < len(segment):
-            return segment[index], segment[index + 1 :]
-    return None
-
-
 def _merge_arguments(segment: list[str]) -> list[str] | None:
     """The arguments after `merge` when `segment` runs `git merge`, else None."""
-    call = _subcommand(segment, "git")
+    call = subcommand(segment, "git")
     return call[1] if call and call[0] == "merge" else None
 
 
@@ -929,8 +883,8 @@ def forbidden_merge(command: str) -> bool:
     Stage 3 fetches and then names its one merge, of the integration branch as a merge commit. `git pull` (any form:
     a merge or a rebase of an upstream it does not name) and `git rebase` (Stage 3: "Never rebase") always fail.
     """
-    for segment in _all_segments(command):
-        call = _subcommand(segment, "git")
+    for segment in all_segments(command):
+        call = subcommand(segment, "git")
         if call and call[0] in HISTORY_SUBCOMMANDS:
             return True
     if not MERGE_CALL.search(command):
@@ -938,7 +892,7 @@ def forbidden_merge(command: str) -> bool:
     without_git_merge = GIT_MERGE.sub("", command)
     if MERGE_CALL.search(without_git_merge):
         return True
-    merges = [args for args in map(_merge_arguments, _shell_segments(command)) if args is not None]
+    merges = [args for args in map(_merge_arguments, shell_segments(command)) if args is not None]
     return not merges or not all(_integration_merge(args) for args in merges)
 
 
@@ -972,8 +926,8 @@ def release_api_write(arguments: Sequence[str]) -> bool:
 
 def release_api_call(command: str) -> bool:
     """True when `command` runs `gh api` to create, change or delete a release (or one of its assets)."""
-    for segment in _all_segments(command):
-        call = _subcommand(segment, "gh")
+    for segment in all_segments(command):
+        call = subcommand(segment, "gh")
         if call and call[0] == "api" and release_api_write(call[1]):
             return True
     return False
@@ -1526,8 +1480,8 @@ def _stages_all(arguments: Sequence[str]) -> bool:
 
 def bulk_staging(command: str) -> bool:
     """True when `command` stages or commits every change instead of the paths it names."""
-    for segment in _all_segments(command):
-        call = _subcommand(segment, "git")
+    for segment in all_segments(command):
+        call = subcommand(segment, "git")
         if call and ((call[0] == "commit" and _commits_all(call[1])) or (call[0] == "add" and _stages_all(call[1]))):
             return True
     return False
@@ -1645,7 +1599,7 @@ def target_changes(use: Mapping[str, Any], folders: Sequence[str]) -> list[str]:
     if use.get("name") != "Bash":
         return []
     command, cwd, found = str(given.get("command", "")), None, []
-    for segment in _shell_segments(command):
+    for segment in shell_segments(command):
         words = _command_words(segment)
         if not words:
             continue
@@ -1755,7 +1709,7 @@ def installs(outcome: Outcome) -> list[tuple[str, list[str]]]:
     """Each command of the transcript that adds a package, with the packages it names."""
     found = []
     for command in outcome.bash():
-        for segment in _shell_segments(command):
+        for segment in shell_segments(command):
             packages = _install_packages(_command_words(segment))
             if packages is not None:
                 found.append((" ".join(segment)[:200], packages))
@@ -1870,7 +1824,7 @@ def destructive_commands(outcome: Outcome) -> list[str]:
     found = []
     for command in outcome.bash():
         cwd = None
-        for segment in _shell_segments(command):
+        for segment in shell_segments(command):
             words = _command_words(segment)
             if not words:
                 continue

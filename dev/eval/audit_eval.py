@@ -42,6 +42,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import _common
 import implement_eval as ie
+from shell_commands import shell_segments, subcommand
 
 Verdict = ie.Verdict
 HERE = Path(__file__).resolve().parent
@@ -383,7 +384,7 @@ def bash_writes(commands: Sequence[str]) -> list[tuple[str, str]]:
     harness's shell; a relative path with no `cd` before it stays relative (it lands in the harness's own folder)."""
     found, here = [], None
     for command in commands:
-        for tokens in ie._shell_segments(without_heredocs(command)):
+        for tokens in shell_segments(without_heredocs(command)):
             writes, words = _segment_writes(tokens)
             if words and os.path.basename(words[0]) in ("cd", "pushd"):
                 here = _resolve(words[1], here) if len(words) > 1 else None
@@ -431,7 +432,7 @@ def au3_report_through_tool(scenario: Scenario, outcome: ie.Outcome) -> Verdict:
         if REPORT_FILE.search(path)
     ]
     for command in outcome.bash():
-        runs_report = any(_runs(segment, "report.py") for segment in ie._shell_segments(command))
+        runs_report = any(_runs(segment, "report.py") for segment in shell_segments(command))
         if not runs_report and REPORT_NAME.search(command) and PYTHON_WRITE.search(command):
             details.append(f"a script wrote the report JSON: {command[:200]}")
     return Verdict("AU3", not details, details or ["the report JSON changed only through report.py"])
@@ -450,7 +451,7 @@ def au4_eval_mode_stops_at_draft(scenario: Scenario, outcome: ie.Outcome) -> Ver
     So no `set-disposition`, no `finalise`, no final report, and the intake (its `eval_mode`) stays as written."""
     details = []
     for command in outcome.bash():
-        for segment in ie._shell_segments(command):
+        for segment in shell_segments(command):
             if _runs(segment, "report.py") in ("set-disposition", "finalise"):
                 details.append(f"report.py {_runs(segment, 'report.py')} ran in an eval-mode run: {command[:200]}")
     finals = sorted(path.name for path in Path(outcome.baseline["out"]).glob(f"{LABEL}.audit-report.*"))
@@ -475,11 +476,11 @@ def network_calls(commands: Sequence[str]) -> list[str]:
     a git subcommand that talks to a remote."""
     found = []
     for command in commands:
-        for tokens in ie._shell_segments(without_heredocs(command)):
+        for tokens in shell_segments(without_heredocs(command)):
             words = _segment_writes(tokens)[1]
             if not words:
                 continue
-            verb, git = os.path.basename(words[0]), ie._subcommand(words, "git")
+            verb, git = os.path.basename(words[0]), subcommand(words, "git")
             remote = git is not None and git[0] == "remote" and git[1][:1] in (["update"], ["prune"], ["show"])
             if (
                 verb in ("curl", "wget")
