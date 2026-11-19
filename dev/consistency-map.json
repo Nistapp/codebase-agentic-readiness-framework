@@ -6464,23 +6464,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7122,7 +7122,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "Each manifest kind is matched at any depth and only the shallowest is read; the Makefile is parsed at the root only, and gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
+      "note": "package.json, the Makefile, the Taskfile and pyproject.toml count only at the root, where they are read; each Gradle or Maven build is matched at any depth and only the shallowest is read. gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
       "source": "engine",
       "threshold": "all seven verbs on one runner",
       "what": {
@@ -7140,23 +7140,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7198,23 +7198,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7256,23 +7256,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7319,23 +7319,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7473,32 +7473,24 @@
           "scope": "any-depth"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "package.json",
           "scope": "root"
-        },
-        {
-          "path": "package.json",
-          "scope": "any-depth"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7648,32 +7640,24 @@
           "scope": "any-depth"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "package.json",
           "scope": "root"
-        },
-        {
-          "path": "package.json",
-          "scope": "any-depth"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7724,7 +7708,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "setup.cfg",
@@ -7752,23 +7736,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7803,23 +7787,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7964,10 +7948,6 @@
           "scope": "any-depth"
         },
         {
-          "path": "package.json",
-          "scope": "root"
-        },
-        {
           "path": ".husky/commit-msg",
           "scope": "any-depth"
         },
@@ -8017,23 +7997,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8222,23 +8202,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8309,23 +8289,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8522,10 +8502,6 @@
           "scope": "root"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "setup.cfg",
           "scope": "root"
         },
@@ -8607,23 +8583,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8684,26 +8660,6 @@
         "kind": "phrase"
       },
       "where": [
-        {
-          "path": "package.json",
-          "scope": "root"
-        },
-        {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
-          "path": "Makefile",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yml",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yaml",
-          "scope": "root"
-        },
         {
           "path": "setup.cfg",
           "scope": "root"
@@ -8830,23 +8786,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8930,26 +8886,6 @@
         },
         {
           "path": "CONTRIBUTING.md",
-          "scope": "root"
-        },
-        {
-          "path": "package.json",
-          "scope": "root"
-        },
-        {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
-          "path": "Makefile",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yml",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yaml",
           "scope": "root"
         },
         {
@@ -9098,23 +9034,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -9798,23 +9734,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10014,23 +9950,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10181,23 +10117,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10270,7 +10206,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. The runner manifests are found at any depth and the shallowest is read; the Makefile is read at the root only.",
+      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. package.json, the Makefile, the Taskfile and pyproject.toml count only at the root, where they are read; a Gradle or Maven build is found at any depth and the shallowest is read.",
       "source": "engine",
       "what": {
         "kind": "key"
@@ -10278,23 +10214,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10481,14 +10417,6 @@
           "scope": "any-depth"
         },
         {
-          "path": "package.json",
-          "scope": "root"
-        },
-        {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "setup.cfg",
           "scope": "root"
         },
@@ -10530,23 +10458,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
