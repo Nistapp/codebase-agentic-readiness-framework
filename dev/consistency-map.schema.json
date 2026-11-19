@@ -377,7 +377,7 @@
           "$ref": "#/$defs/path"
         },
         "scope": {
-          "description": "root: the exact path at the root. any-depth: the base name in any folder. repository-level: the root, .github/, .gitlab/ or docs/. glob: path is a glob.",
+          "description": "root: the exact path at the root. any-depth: the base name in any folder. repository-level: the root, .github/, .gitlab/ or docs/. glob: path is a glob from the root, where **/ also matches no folder. With any-depth and repository-level, path is a base name that may hold a wildcard, such as .prettierrc*.",
           "enum": [
             "root",
             "any-depth",

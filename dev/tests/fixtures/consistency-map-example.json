@@ -33,31 +33,59 @@
   "moves": [
     {
       "action": "write",
-      "content": ["rule-line"],
+      "content": [
+        "rule-line"
+      ],
       "id": "adapt-agents-md/row-7",
-      "origin": {"path": "implement/playbooks/adapt-agents-md.md", "row": 7, "step": "Step 4"},
-      "to": ["AGENTS.md"]
+      "origin": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "row": 7,
+        "step": "Step 4"
+      },
+      "to": [
+        "AGENTS.md"
+      ]
     },
     {
       "action": "move",
-      "content": ["prose", "fenced-command"],
-      "from": ["README.md"],
+      "content": [
+        "prose",
+        "fenced-command"
+      ],
+      "from": [
+        "README.md"
+      ],
       "id": "establish-docs-contract/row-11",
-      "origin": {"path": "implement/playbooks/establish-docs-contract.md", "row": 11, "step": "Step 10"},
-      "to": ["docs/"]
+      "origin": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "row": 11,
+        "step": "Step 10"
+      },
+      "to": [
+        "docs/"
+      ]
     },
     {
       "action": "create",
-      "content": ["file"],
+      "content": [
+        "file"
+      ],
       "id": "greenfield/CONVENTIONS.md",
       "intent": "The conventions file that AGT-13 reads; not an Aider file, because no .aider.conf.yml is beside it.",
-      "origin": {"path": "greenfield/templates/CONVENTIONS.md"},
-      "to": ["CONVENTIONS.md"]
+      "origin": {
+        "path": "greenfield/templates/CONVENTIONS.md"
+      },
+      "to": [
+        "CONVENTIONS.md"
+      ]
     }
   ],
   "names": [
     {
-      "checks": ["AGT-08", "AGT-13"],
+      "checks": [
+        "AGT-08",
+        "AGT-13"
+      ],
       "match": "base-name",
       "meaning": "An Aider instruction file beside .aider.conf.yml; otherwise a conventions file.",
       "pattern": "CONVENTIONS.md"
@@ -67,23 +95,50 @@
     {
       "binding": "line",
       "check": "TST-04",
-      "constants": ["audit.rules.checks.tst:_FASTPATH_DOCS"],
+      "constants": [
+        "audit.rules.checks.tst:_FASTPATH_DOCS"
+      ],
       "source": "engine",
-      "what": {"kind": "fenced-command"},
+      "what": {
+        "kind": "fenced-command"
+      },
       "where": [
-        {"path": "README.md", "scope": "root"},
-        {"path": "AGENTS.md", "scope": "root"},
-        {"path": "CLAUDE.md", "scope": "root"},
-        {"path": "CONTRIBUTING.md", "scope": "root"}
+        {
+          "path": "README.md",
+          "scope": "root"
+        },
+        {
+          "path": "AGENTS.md",
+          "scope": "root"
+        },
+        {
+          "path": "CLAUDE.md",
+          "scope": "root"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "scope": "root"
+        }
       ]
     },
     {
       "binding": "window",
       "check": "AGT-04",
       "source": "engine",
-      "what": {"kind": "phrase", "text": ["same change set"]},
-      "where": [{"path": "AGENTS.md", "scope": "root"}],
-      "window": 2
+      "what": {
+        "kind": "phrase",
+        "text": [
+          "same change set",
+          "same changeset"
+        ]
+      },
+      "where": [
+        {
+          "path": "AGENTS.md",
+          "scope": "root"
+        }
+      ],
+      "window": 5
     }
   ]
 }
