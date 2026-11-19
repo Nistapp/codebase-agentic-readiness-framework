@@ -9,6 +9,9 @@ from a check's list in the engine fails this test until the map follows (ADR 001
 
 The names list holds the file names the engine gives a meaning to. A greenfield template whose scaffolded path
 matches one needs a ``create`` moves entry with an ``intent``, so a template cannot take such a name by accident.
+
+Every playbook Commits row has one moves entry. A ``kept`` keeps entry quotes, verbatim with whitespace collapsed,
+a sentence that sits inside the section its address names, in the working tree.
 """
 
 from __future__ import annotations
@@ -17,17 +20,21 @@ import fnmatch
 import importlib
 import json
 import posixpath
+import re
 import sys
 import unittest
 from typing import Any
 from unittest import mock
 
 import _dev_paths
+from docindex.extract import _section_nodes
 from test_consistency_map_schema import SCHEMA, _problems
 
 ENGINE = _dev_paths.REPO / "audit" / "engine"
 BOOTSTRAP = _dev_paths.REPO / "greenfield" / "bootstrap"
 TEMPLATES = _dev_paths.REPO / "greenfield" / "templates"
+PLAYBOOKS = _dev_paths.REPO / "implement" / "playbooks"
+_COMMITS_ROW = re.compile(r"^\|\s*(\d+)\s*\|")
 MAP: dict[str, Any] = json.loads((_dev_paths.DEV / "consistency-map.json").read_text(encoding="utf-8"))
 CATALOGUE_IDS: list[str] = [
     check["id"]
@@ -138,6 +145,50 @@ def names_constant_problems(names: list[dict[str, Any]]) -> list[str]:
     return problems
 
 
+def commits_rows(text: str) -> list[int]:
+    """The numbers of the rows in a playbook's ``## Commits`` table."""
+    rows: list[int] = []
+    inside = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            inside = line.strip() == "## Commits"
+            continue
+        match = _COMMITS_ROW.match(line) if inside else None
+        if match:
+            rows.append(int(match.group(1)))
+    return rows
+
+
+def _normalised(text: str) -> str:
+    return " ".join(text.split())
+
+
+def section_text(path: str, address: str, text: str) -> str | None:
+    """The lines of the section at ``address`` and its subsections, or ``None`` when the file has no such section."""
+    nodes, _, parsed = _section_nodes(path, text)
+    if address != path and address not in {node.address for node in nodes}:
+        return None
+    return "\n".join(
+        line.text
+        for line, holder in zip(parsed.document.lines, parsed.holders, strict=True)
+        if address == path or holder == address or holder.startswith(address + "/")
+    )
+
+
+def quote_problem(home: dict[str, Any], read: Any = None) -> str | None:
+    """Why a keeps home does not hold, or ``None``. ``read`` maps a path to its text (the working tree by default)."""
+    path, address = home["path"], home["section"]
+    if not (address == path or address.startswith(path + "#")):
+        return f"{address} is not a section of {path}"
+    text = read(path) if read else (_dev_paths.REPO / path).read_text(encoding="utf-8")
+    body = section_text(path, address, text)
+    if body is None:
+        return f"{path} has no section {address}"
+    if _normalised(home["quote"]) not in _normalised(body):
+        return f"{address} does not hold the quote {home['quote']!r}"
+    return None
+
+
 class MapShapeTest(unittest.TestCase):
     def test_the_map_follows_its_schema(self) -> None:
         self.assertEqual(_problems(MAP, SCHEMA), [])
@@ -221,6 +272,62 @@ class NamesTest(unittest.TestCase):
         self.assertTrue(
             name_matches({"pattern": "branch-protection", "match": "substring"}, "docs/branch-protection.md")
         )
+
+
+class MovesTest(unittest.TestCase):
+    def test_move_ids_are_unique(self) -> None:
+        ids = [move["id"] for move in MAP["moves"]]
+        self.assertEqual(sorted({i for i in ids if ids.count(i) > 1}), [])
+
+    def test_every_commits_row_has_one_moves_entry(self) -> None:
+        declared: dict[str, list[int]] = {}
+        for move in MAP["moves"]:
+            if "row" in move["origin"]:
+                declared.setdefault(move["origin"]["path"], []).append(move["origin"]["row"])
+        for playbook in sorted(PLAYBOOKS.glob("*.md")):
+            rows = commits_rows(playbook.read_text(encoding="utf-8"))
+            if not rows:
+                continue
+            path = playbook.relative_to(_dev_paths.REPO).as_posix()
+            self.assertEqual(sorted(declared.get(path, [])), sorted(rows), path)
+
+    def test_a_row_move_is_named_after_its_playbook_and_row(self) -> None:
+        for move in MAP["moves"]:
+            origin = move["origin"]
+            if "row" in origin:
+                self.assertEqual(move["id"], f"{posixpath.basename(origin['path'])[:-3]}/row-{origin['row']}")
+
+
+class KeepsTest(unittest.TestCase):
+    def test_each_keep_points_at_a_move_and_a_catalogue_check(self) -> None:
+        moves = {move["id"] for move in MAP["moves"]}
+        for keep in MAP["keeps"]:
+            self.assertIn(keep["move"], moves)
+            self.assertIn(keep["check"], CATALOGUE_IDS)
+
+    def test_each_pair_is_kept_once(self) -> None:
+        pairs = [(keep["move"], keep["check"]) for keep in MAP["keeps"]]
+        self.assertEqual(len(pairs), len(set(pairs)))
+
+    def test_every_kept_quote_sits_in_its_section(self) -> None:
+        problems = [quote_problem(keep["home"]) for keep in MAP["keeps"] if keep["status"] == "kept"]
+        self.assertEqual([problem for problem in problems if problem], [])
+
+    def test_a_quote_moved_out_of_its_section_fails(self) -> None:
+        text = "# T\n\n## A\n\nKeep it on one line.\n\n## B\n\nOther.\n"
+        home = {"path": "x.md", "section": "x.md#t/b", "quote": "Keep it on one line."}
+        self.assertIn("does not hold the quote", quote_problem(home, lambda _path: text) or "")
+        home["section"] = "x.md#t/a"
+        self.assertIsNone(quote_problem(home, lambda _path: text))
+        home["section"] = "x.md#t"
+        self.assertIsNone(quote_problem(home, lambda _path: text))
+
+    def test_a_reworded_quote_fails(self) -> None:
+        text = "# T\n\nKeep it on\none line.\n"
+        home = {"path": "x.md", "section": "x.md#t", "quote": "Keep it on one line."}
+        self.assertIsNone(quote_problem(home, lambda _path: text))
+        home["quote"] = "Keep it on a single line."
+        self.assertIn("does not hold the quote", quote_problem(home, lambda _path: text) or "")
 
 
 if __name__ == "__main__":
