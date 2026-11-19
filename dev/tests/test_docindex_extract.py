@@ -257,6 +257,21 @@ class SmallTreeTest(_Repo):
         self.assertIn("  recipe: 1 Markdown files, 6 sections\n", text)
 
 
+class UnindexedPathTest(_Repo):
+    def test_a_path_a_node_cannot_hold_is_left_out_and_named(self) -> None:
+        self._commit({"docs/a#b.md": "# A\n", "docs/back\\slash.md": "# B\n", "docs/ok.md": "# Ok\n"})
+        result = extract.extract(WorkTree(self.root), _CONFIG)
+        self.assertEqual(result.summary.unindexed, ("docs/a#b.md", "docs/back\\slash.md"))
+        self.assertEqual(result.summary.files, 1)
+        self.assertEqual(result.summary.markdown_files, 1)
+        index = model.to_dict(result.index)
+        self.assertEqual(set(_nodes(index, "file")), {"docs/ok.md"})
+        self.assertEqual(set(_nodes(index, "section")), {"docs/ok.md#ok"})
+        text = extract.summary_text(result.summary, prog="build")
+        self.assertIn("  not indexed (a node cannot hold the path): docs/a#b.md\n", text)
+        self.assertIn("  not indexed (a node cannot hold the path): docs/back\\slash.md\n", text)
+
+
 class AtRefTest(_Repo):
     def test_an_older_commit_is_indexed_as_it_was(self) -> None:
         old = self._commit({"a.md": "# Old\n", "b.md": "# Kept\n"})
