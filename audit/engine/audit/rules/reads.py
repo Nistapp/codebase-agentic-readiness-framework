@@ -1300,6 +1300,7 @@ READS: dict[str, Reads] = {
                 "go.sum",
                 "Gemfile.lock",
                 "composer.lock",
+                "packages.lock.json",
             ),
             *_at(
                 ROOT,
@@ -1308,8 +1309,12 @@ READS: dict[str, Reads] = {
                 "requirements.txt",
                 "requirements-dev.txt",
                 "Cargo.toml",
+                "Directory.Build.props",
+                "Directory.Build.targets",
+                "Directory.Packages.props",
             ),
             *_at(ROOT, "go.mod", unexercised=_GO_FIXTURE),
+            *_at(GLOB, "*.csproj", "*.fsproj", "*.vbproj"),
         ),
         what=What("exists"),
         binding="file",
@@ -1317,7 +1322,8 @@ READS: dict[str, Reads] = {
         note=(
             "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest"
             " first, and whether git tracks them. Only a root lockfile is compared with the root manifests' "
-            "dependency names."
+            "dependency names; for .NET those are the PackageReference names of the project files in the root "
+            "folder, and a package reference in a root Directory.* file leaves the lockfile unverified."
         ),
     ),
     "EXEC-03": Reads(

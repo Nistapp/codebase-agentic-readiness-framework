@@ -204,7 +204,14 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- carried data (ADR-0008; tests/test_repository_scope.py) -------------------------------
     "carried-jvm-example-package": {"NAV-02": "PASS", "TST-01": "PASS", "TST-03": "PASS"},
     # -- stacks no other fixture holds (tests/test_stack_fixtures.py) -------------------------
-    "stack-dotnet": {"EXEC-01": "PASS", "NAV-01": "PASS", "NAV-02": "PASS", "TOOL-03": "PASS"},
+    "stack-dotnet": {"EXEC-01": "PASS", "EXEC-02": "FAIL", "NAV-01": "PASS", "NAV-02": "PASS", "TOOL-03": "PASS"},
+    "stack-dotnet-locked": {
+        "EXEC-01": "PASS",
+        "EXEC-02": "PASS",
+        "NAV-01": "PASS",
+        "NAV-02": "PASS",
+        "TOOL-03": "PASS",
+    },
     "stack-gradle-wrapper-readme": {"EXEC-01": "PASS", "EXEC-02": "FAIL", "EXEC-06": "PASS", "NAV-02": "PASS"},
     "stack-just-inline-version": {"EXEC-01": "PASS", "EXEC-02": "PASS", "EXEC-08": "FAIL", "NAV-02": "PASS"},
     "stack-maven-wrapper-readme": {"EXEC-01": "PASS", "EXEC-02": "FAIL", "EXEC-06": "PASS", "NAV-02": "PASS"},
@@ -241,6 +248,8 @@ NEEDS_GIT = frozenset(
         "sec-01-excluded-env",
         "sec-02-key-shaped",
         "con-03-artefacts-not-ignored",
+        "stack-dotnet",
+        "stack-dotnet-locked",
         "stack-gradle-wrapper-readme",
         "stack-just-inline-version",
         "stack-maven-wrapper-readme",

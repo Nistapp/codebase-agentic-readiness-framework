@@ -148,7 +148,8 @@ fixtures/
   hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
   hyg-13-thin-contributing/  CONTRIBUTING.md with no setup pointer, gate or workflow rules -> HYG-05 PASS, HYG-13 FAIL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 and HYG-13 UNKNOWN
-  stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs -> EXEC-01, NAV-01, NAV-02, TOOL-03 PASS
+  stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs, no packages.lock.json (needs git) -> EXEC-01, NAV-01, NAV-02, TOOL-03 PASS; EXEC-02 FAIL
+  stack-dotnet-locked/       stack-dotnet plus one PackageReference and the tracked root packages.lock.json that records it (needs git) -> EXEC-01, EXEC-02, NAV-01, NAV-02, TOOL-03 PASS
   stack-gradle-wrapper-readme/ a Gradle application with gradlew; its README runs `./gradlew build` and `./gradlew test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (no gradle.lockfile)
   stack-just-inline-version/ a pinned and locked Cargo project whose justfile runs `cargo install cargo-deny@0.16.1`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02 PASS
   stack-maven-wrapper-readme/ a Maven application with mvnw; its README runs `./mvnw package` and `./mvnw test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (Maven has no lockfile)

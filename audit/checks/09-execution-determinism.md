@@ -68,10 +68,15 @@ Why it matters   Every run must resolve identical dependencies; a lockfile that 
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-02`. For each detected ecosystem with a package manager the engine recognises
-                 (node, python, jvm, rust, go, ruby, php), finds that manager's lockfile at any depth,
-                 prefers the shallowest, and requires it to be git-tracked; for node/python/rust/go it
-                 then compares the lockfile's own declared packages against the root manifest's. No
-                 ecosystem with a recognised manager is detected ⇒ `UNKNOWN`; an ecosystem recognised only
+                 (node, python, jvm, rust, go, ruby, php, dotnet), finds that manager's lockfile at any depth,
+                 prefers the shallowest, and requires it to be git-tracked; for node/python/rust/go/dotnet it
+                 then compares the lockfile's own declared packages against the root manifest's. For .NET
+                 the lockfile is NuGet's `packages.lock.json`, and the manifest is the `PackageReference`
+                 names (casefolded) of the project files in the root folder. A .NET project with no
+                 `packages.lock.json` reads `FAIL`, as every other ecosystem does (owner decision); NuGet
+                 writes one only when the project sets `RestorePackagesWithLockFile`. No
+                 ecosystem with a recognised manager is detected ⇒ `UNKNOWN`, and the summary names a
+                 recognised ecosystem that has no lockfile convention the engine reads; an ecosystem recognised only
                  from its source files, with no manifest (`Stack.source_only`), is also `UNKNOWN` — it
                  declares no dependencies, so no lockfile is expected. Git unable to report tracked files
                  (no repository, or the command failed) makes the tracked half `UNKNOWN` for the whole
@@ -85,13 +90,14 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  manifest's and lockfile's declared dependency names directly before accepting the gap.
 Method           automated
 Look for         Every lockfile name for each detected package manager, at any depth; `git ls-files` (or
-                 equivalent) for whether the shallowest one is tracked; for node/python/rust/go, the
+                 equivalent) for whether the shallowest one is tracked; for node/python/rust/go/dotnet, the
                  manifest's declared dependency names against the lockfile's own.
 Rubric           PASS: every detected ecosystem's lockfile exists, is tracked, and (where parsing is
                  attempted) agrees with the manifest.
                  PARTIAL: every detected ecosystem's lockfile exists and is tracked, but consistency could
-                 not be verified for at least one (an ecosystem beyond node/python/rust/go, an unparsable
-                 manifest or lockfile, or a lockfile found only below the root).
+                 not be verified for at least one (an ecosystem beyond node/python/rust/go/dotnet, an
+                 unparsable manifest or lockfile, a lockfile found only below the root, or a .NET project
+                 whose package references come from an imported MSBuild file or a root `Directory.*` file).
                  FAIL: at least one detected ecosystem has no lockfile, has one that is not tracked, or
                  has one whose declared dependencies omit manifest dependencies.
                  NOT_APPLICABLE: never.
@@ -106,7 +112,8 @@ Absence proof    A "no lockfile" FAIL names every lockfile filename that manager
 Remediation      `pin-execution-environment`
 Pitfalls         A lockfile that exists and is tracked but lives in a subdirectory reads `PARTIAL`, not
                  `PASS` — the engine only ever compares the root manifest, so a nested lockfile's
-                 consistency is genuinely unverified, not a false negative to argue away.
+                 consistency is genuinely unverified, not a false negative to argue away. A .NET solution
+                 with a `packages.lock.json` beside each project reads `PARTIAL` for the same reason.
 
 ## EXEC-03 — Non-interactive setup path
 

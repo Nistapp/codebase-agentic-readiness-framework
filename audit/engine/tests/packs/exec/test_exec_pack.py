@@ -480,6 +480,54 @@ class Exec02MessageTests(unittest.TestCase):
             "lockfile is expected",
         )
 
+    def test_an_ecosystem_with_no_lockfile_convention_is_named(self):
+        from audit.rules.checks.execution import check_exec02
+        from audit.rules.registry import REGISTRY_BY_ID
+        from audit.scan import build_inventory
+        from audit.stack import Stack
+
+        with tempfile.TemporaryDirectory() as tmp:
+            outcome = check_exec02(
+                spec=REGISTRY_BY_ID["EXEC-02"],
+                target=None,
+                inventory=build_inventory(Path(tmp)),
+                stack=Stack(ecosystems={"elixir", "python"}, source_only={"python"}),
+                components=None,
+                session=None,
+            )
+        self.assertEqual(
+            (outcome.verdict.value, outcome.summary),
+            ("UNKNOWN", "elixir has no lockfile convention the engine reads, so no lockfile is expected"),
+        )
+
+    def test_a_fail_summary_names_each_lockfile_that_is_missing_untracked_or_out_of_step(self):
+        check, _ = self.audit({"package.json": self.NODE})
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("FAIL", "no lockfile: node (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb)"),
+        )
+        locks = {"a/package-lock.json": "{}\n", "z/package-lock.json": "{}\n"}
+        check, _ = self.audit({"package.json": self.NODE, **locks}, track=("package.json",))
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("FAIL", "not tracked: a/package-lock.json, z/package-lock.json")
+        )
+        manifest = '{"dependencies": {"left-pad": "1"}}\n'
+        check, _ = self.audit({"package.json": manifest, "package-lock.json": self.OTHER_LOCK})
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("FAIL", "out of step with the manifest: package-lock.json")
+        )
+        check, _ = self.audit(
+            {"package.json": self.NODE, "Cargo.toml": "[dependencies]\n", "Cargo.lock": self.CARGO_LOCK, "go.mod": "x"}
+        )
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "FAIL",
+                "no lockfile: go (go.sum), node (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb); "
+                "tracked: Cargo.lock",
+            ),
+        )
+
     def test_a_manifest_in_a_project_that_also_has_source_still_expects_its_lockfile(self):
         check, findings = self.audit({"pyproject.toml": "[project]\nname = 'x'\n", "src/app.py": "print(1)\n"})
         self.assertEqual(check["verdict"], "FAIL")
@@ -506,6 +554,38 @@ class Exec02MessageTests(unittest.TestCase):
                     "BLOCKER",
                 )
             ],
+        )
+
+    def test_a_dotnet_project_with_no_nuget_lock_is_told_how_to_write_one(self):
+        check, findings = self.audit({"App.csproj": "<Project />\n"})
+        self.assertEqual((check["verdict"], check["summary"]), ("FAIL", "no lockfile: dotnet (packages.lock.json)"))
+        self.assertEqual(
+            [(f["id"], f["statement"], f["remediation"]) for f in findings],
+            [
+                (
+                    "EXEC-02:dotnet",
+                    f"{self.ACTION} the dotnet project has no lockfile (packages.lock.json), so a fresh restore is "
+                    "free to resolve other versions of floating and transitive dependencies.",
+                    "Set RestorePackagesWithLockFile to true in each project (or once in Directory.Build.props), "
+                    "run dotnet restore, commit every packages.lock.json, and restore with dotnet restore "
+                    "--locked-mode in CI.",
+                )
+            ],
+        )
+
+    def test_a_nuget_lock_beside_each_project_is_tracked_but_not_compared(self):
+        lock = '{"version": 1, "dependencies": {"net8.0": {}}}\n'
+        check, _ = self.audit(
+            {
+                "App.sln": "\n",
+                "src/App/App.csproj": "<Project />\n",
+                "src/App/packages.lock.json": lock,
+                "tests/App.Tests/App.Tests.csproj": "<Project />\n",
+                "tests/App.Tests/packages.lock.json": lock,
+            }
+        )
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: src/App/packages.lock.json")
         )
 
     def test_untracked_lockfiles_are_listed_in_path_order_with_their_paths_as_evidence(self):
@@ -622,6 +702,58 @@ class LockConsistencyTests(unittest.TestCase):
             self.state({"package.json": manifest, "package-lock.json": self.LOCK}, "node", "package-lock.json"),
             ("mismatch", {"up-pad"}),
         )
+
+    CSPROJ = (
+        '<Project Sdk="Microsoft.NET.Sdk">\n  <ItemGroup>\n'
+        '    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />\n'
+        "    <PackageReference Include='Serilog' Version='4.0.0' />\n"
+        "  </ItemGroup>\n</Project>\n"
+    )
+    NUGET_LOCK = (
+        '{"version": 1, "dependencies": {"net8.0": {"newtonsoft.json": {"type": "Direct"}}, '
+        '"net9.0": {"Serilog": {"type": "Direct"}}}}\n'
+    )
+
+    def test_a_nuget_lock_is_compared_casefolded_over_every_target_framework(self):
+        files = {"App.csproj": self.CSPROJ, "packages.lock.json": self.NUGET_LOCK}
+        self.assertEqual(self.state(files, "dotnet", "packages.lock.json"), ("ok", set()))
+
+    def test_a_package_reference_the_nuget_lock_omits_is_named_as_written(self):
+        lock = '{"version": 1, "dependencies": {"net8.0": {"Newtonsoft.Json": {}}}}\n'
+        files = {"App.csproj": self.CSPROJ, "packages.lock.json": lock}
+        self.assertEqual(self.state(files, "dotnet", "packages.lock.json"), ("mismatch", {"Serilog"}))
+
+    def test_a_nuget_lock_cannot_be_compared_when_references_live_elsewhere(self):
+        lock = '{"version": 1, "dependencies": {"net8.0": {}}}\n'
+        cases = {
+            "no root project": {"src/App/App.csproj": self.CSPROJ},
+            "an imported MSBuild file": {
+                "App.fsproj": '<Project>\n  <Import Project="deps.props" />\n</Project>\n',
+            },
+            "a Directory.Build.props reference": {
+                "App.vbproj": "<Project />\n",
+                "Directory.Build.props": '<Project><ItemGroup><PackageReference Include="X" /></ItemGroup></Project>\n',
+            },
+            "a central global reference": {
+                "App.csproj": "<Project />\n",
+                "Directory.Packages.props": '<Project><ItemGroup><GlobalPackageReference Include="X" />'
+                "</ItemGroup></Project>\n",
+            },
+        }
+        for label, files in cases.items():
+            with self.subTest(label):
+                self.assertEqual(
+                    self.state({**files, "packages.lock.json": lock}, "dotnet", "packages.lock.json"),
+                    ("unverified", set()),
+                )
+        for label, text in {"not json": "not json", "no dependencies": "[]", "a list": '{"dependencies": []}'}.items():
+            with self.subTest(label):
+                files = {"App.csproj": self.CSPROJ, "packages.lock.json": text + "\n"}
+                self.assertEqual(self.state(files, "dotnet", "packages.lock.json"), ("unverified", set()))
+
+    def test_a_project_with_no_package_reference_is_consistent_with_any_nuget_lock(self):
+        files = {"App.csproj": "<Project />\n", "packages.lock.json": '{"dependencies": {"net8.0": []}}\n'}
+        self.assertEqual(self.state(files, "dotnet", "packages.lock.json"), ("ok", set()))
 
     def test_a_lock_below_the_root_is_not_compared_with_the_root_manifest(self):
         manifest = '[dependencies]\nserde = "1"\n'

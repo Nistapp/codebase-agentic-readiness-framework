@@ -26,7 +26,9 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   basename); the shallowest is the one read. Only a lockfile at the root is compared with the root
   manifest, so one in a subdirectory is tracked but its consistency is unverified. An ecosystem that was
   recognised only from its source files (``Stack.source_only``) has no manifest and declares no
-  dependencies, so it is not expected to have a lockfile.
+  dependencies, so it is not expected to have a lockfile. A recognised ecosystem with no lockfile convention in
+  :data:`_ECOSYSTEM_MANAGERS` is named in the ``UNKNOWN`` summary. A ``FAIL`` summary names each ecosystem with
+  no lockfile, each untracked lockfile and each lockfile out of step with its manifest.
 * **EXEC-03** — a devcontainer / compose file / Dockerfile / setup target-script, or a documented
   non-interactive install command in the fenced blocks of README/``AGENTS.md``. Present but
   undocumented ⇒ ``PARTIAL``. No recognised ecosystem ⇒ ``UNKNOWN``: with no build manifest there is
@@ -56,8 +58,14 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   file at all ⇒ ``UNKNOWN``. Runtime versions (``node-version``) are ``EXEC-01``'s; ``uses:`` pins are visible to
   Dependabot already; a versionless ``uvx ruff`` is not a visibility defect.
 
+.NET is locked by NuGet's ``packages.lock.json``, which a project writes only when it sets
+``RestorePackagesWithLockFile``; a .NET project with none ⇒ ``FAIL``, as for every other ecosystem. A root
+``packages.lock.json`` is compared, casefolded, with the ``PackageReference`` names of the project files in the root
+folder; a project that imports another MSBuild file, or a root ``Directory.*`` file that adds package references,
+leaves the consistency unverified.
+
 Known limitation, recorded rather than hidden: manifest↔lockfile consistency parsing for ecosystems
-beyond node/python/rust/go is not attempted, so those ecosystems report the tracked fact and
+beyond node/python/rust/go/dotnet is not attempted, so those ecosystems report the tracked fact and
 ``PARTIAL`` consistency. This is deliberately conservative — a false ``PASS`` on a stale lockfile is
 worse than an honest ``PARTIAL``.
 """
@@ -326,6 +334,21 @@ _ECOSYSTEM_MANAGERS: dict[str, tuple[str, ...]] = {
     "go": ("gomod",),
     "ruby": ("bundler",),
     "php": ("composer",),
+    "dotnet": ("nuget",),
+}
+
+#: Ecosystems whose package names are case-insensitive, so the manifest and the lockfile are compared casefolded.
+_CASE_INSENSITIVE = frozenset({"dotnet"})
+
+#: Why a missing lockfile matters, where the resolver does not simply take whatever versions are current.
+_NO_LOCK_REASON: dict[str, str] = {
+    "dotnet": "a fresh restore is free to resolve other versions of floating and transitive dependencies",
+}
+
+#: How to create the lockfile, where the package manager does not write one by default.
+_NO_LOCK_REMEDIATION: dict[str, str] = {
+    "dotnet": "Set RestorePackagesWithLockFile to true in each project (or once in Directory.Build.props), run "
+    "dotnet restore, commit every packages.lock.json, and restore with dotnet restore --locked-mode in CI.",
 }
 
 
@@ -498,6 +521,53 @@ def _go_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
     return deps or None
 
 
+#: MSBuild files at the root that a root project imports implicitly; package references there are not read.
+_DOTNET_IMPORTED = ("Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props")
+_DOTNET_PROJECT_SUFFIXES = (".csproj", ".fsproj", ".vbproj")
+_PACKAGE_REFERENCE = re.compile(r"<PackageReference\b[^>]*?\bInclude\s*=\s*[\"']([^\"']+)[\"']")
+
+
+def _dotnet_manifest_deps(inv: Inventory) -> set[str] | None:
+    """The ``PackageReference`` names of the project files in the root folder.
+
+    ``None`` (cannot compare) when there is no root project file, when a project imports another MSBuild file, or
+    when a root ``Directory.*`` file adds package references: those references are not read here.
+    """
+    projects = sorted(rel for rel in inv.paths() if "/" not in rel and rel.endswith(_DOTNET_PROJECT_SUFFIXES))
+    if not projects:
+        return None
+    for imported in _DOTNET_IMPORTED:
+        text = inv.read(imported)
+        if text is not None and re.search(r"<(?:Global)?PackageReference\b", text):
+            return None
+    deps: set[str] = set()
+    for project in projects:
+        text = inv.read(project)
+        if text is None or re.search(r"<Import\b", text):
+            return None
+        deps |= set(_PACKAGE_REFERENCE.findall(text))
+    return deps
+
+
+def _dotnet_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
+    """Every package name a ``packages.lock.json`` records, over all its target frameworks."""
+    text = inv.read(lockfile)
+    if text is None:
+        return None
+    try:
+        data = json.loads(text)
+    except json.JSONDecodeError:
+        return None
+    frameworks = data.get("dependencies") if isinstance(data, dict) else None
+    if not isinstance(frameworks, dict):
+        return None
+    deps: set[str] = set()
+    for packages in frameworks.values():
+        if isinstance(packages, dict):
+            deps |= set(packages)
+    return deps
+
+
 def _manifest_deps(inv: Inventory, ecosystem: str) -> set[str] | None:
     if ecosystem == "node":
         return _node_manifest_deps(inv)
@@ -507,6 +577,8 @@ def _manifest_deps(inv: Inventory, ecosystem: str) -> set[str] | None:
         return _cargo_manifest_deps(inv)
     if ecosystem == "go":
         return _go_manifest_deps(inv)
+    if ecosystem == "dotnet":
+        return _dotnet_manifest_deps(inv)
     return None
 
 
@@ -520,6 +592,8 @@ def _lock_deps(inv: Inventory, ecosystem: str, lockfile: str) -> set[str] | None
         return (_toml_package_names(text) or None) if text is not None else None
     if ecosystem == "go":
         return _go_lock_deps(inv, lockfile)
+    if ecosystem == "dotnet":
+        return _dotnet_lock_deps(inv, lockfile)
     return None
 
 
@@ -546,13 +620,23 @@ def _lock_consistency(inv: Inventory, ecosystem: str, lockfile: str) -> tuple[st
         return "ok", set()
     if not lock:
         return "unverified", set()
-    extras = manifest - lock
+    if ecosystem in _CASE_INSENSITIVE:
+        folded = {name.casefold() for name in lock}
+        extras = {name for name in manifest if name.casefold() not in folded}
+    else:
+        extras = manifest - lock
     return ("mismatch", extras) if extras else ("ok", set())
 
 
 def check_exec02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     ecosystems = sorted((stack.ecosystems - stack.source_only) & set(_ECOSYSTEM_MANAGERS))
     if not ecosystems:
+        no_convention = sorted(stack.ecosystems - stack.source_only)
+        if no_convention:
+            return _unknown(
+                spec,
+                f"{', '.join(no_convention)} has no lockfile convention the engine reads, so no lockfile is expected",
+            )
         from_source = sorted(stack.source_only & set(_ECOSYSTEM_MANAGERS))
         if from_source:
             return _unknown(
@@ -569,10 +653,14 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
     findings: list[Finding] = []
     verified: list[str] = []
     unverified: list[str] = []
+    missing: list[str] = []
+    untracked: list[str] = []
+    stale: list[str] = []
     for ecosystem in ecosystems:
         candidates = _lockfile_paths(inventory, ecosystem)
         tracked_candidates = [rel for rel in candidates if rel in tracked]
         if not candidates:
+            missing.append(f"{ecosystem} ({', '.join(_lockfiles_for(ecosystem))})")
             findings.append(
                 Finding(
                     check=spec.id,
@@ -582,15 +670,18 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
                     statement=statement(
                         "install identical dependencies on every run",
                         f"the {ecosystem} project has no lockfile "
-                        f"({', '.join(_lockfiles_for(ecosystem))}), so a fresh install resolves "
-                        f"whatever versions are current",
+                        f"({', '.join(_lockfiles_for(ecosystem))}), so "
+                        + _NO_LOCK_REASON.get(ecosystem, "a fresh install resolves whatever versions are current"),
                     ),
-                    remediation="Generate the lockfile with the project's package manager and commit it.",
+                    remediation=_NO_LOCK_REMEDIATION.get(
+                        ecosystem, "Generate the lockfile with the project's package manager and commit it."
+                    ),
                     path=ecosystem,
                 )
             )
             continue
         if not tracked_candidates:
+            untracked.extend(sorted(candidates))
             findings.append(
                 Finding(
                     check=spec.id,
@@ -612,6 +703,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
         lockfile = tracked_candidates[0]
         state, extras = _lock_consistency(inventory, ecosystem, lockfile)
         if state == "mismatch":
+            stale.append(lockfile)
             findings.append(
                 Finding(
                     check=spec.id,
@@ -642,6 +734,9 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
         filter(
             None,
             [
+                f"no lockfile: {', '.join(missing)}" if missing else "",
+                f"not tracked: {', '.join(untracked)}" if untracked else "",
+                f"out of step with the manifest: {', '.join(stale)}" if stale else "",
                 f"tracked: {', '.join(verified)}" if verified else "",
                 f"consistency unverified: {', '.join(unverified)}" if unverified else "",
             ],
