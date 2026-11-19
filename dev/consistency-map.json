@@ -2294,6 +2294,17 @@
       },
       "move": "untrack-generated/row-2",
       "status": "kept"
+    },
+    {
+      "check": "NAV-03",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "\"`NAV-03` Structural red flags\" leaves only those names out of its size count.",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
+      "move": "pin-execution-environment/row-3",
+      "note": "The engine leaves known lockfile names out of the NAV-03 size count (audit.stack.LOCKFILE_NAMES), so the generated lockfile keeps NAV-03 as it was.",
+      "status": "kept"
     }
   ],
   "map_format": 1,
@@ -10808,7 +10819,7 @@
     {
       "binding": "file",
       "check": "NAV-03",
-      "note": "Every scanned file: over 512 KiB, a folder with more than 50 files of its own, a binary, or a generated file with .min. in its path.",
+      "note": "Every scanned file: over 512 KiB, a folder with more than 50 files of its own, a binary, or a generated file with .min. in its path. A file whose exact base name is a lockfile name (stack.LOCKFILE_NAMES) is left out of the size count.",
       "source": "engine",
       "what": {
         "kind": "exists"

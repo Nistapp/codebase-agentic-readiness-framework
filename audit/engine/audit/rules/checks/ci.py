@@ -58,7 +58,7 @@ from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.probes import MUTATING_VERBS
 from audit.rules.checks._common import resolve_verbs, runner_commands, runner_target
-from audit.stack import CI_PROVIDERS, VERBS
+from audit.stack import CI_PROVIDERS, LOCKFILE_NAMES, VERBS
 from audit.rules.payloads import Payload
 from audit.scan import Kind
 
@@ -239,21 +239,8 @@ _WORKFLOW_LINTERS: dict[str, tuple[tuple[str, re.Pattern[str]], ...]] = {
 _LOCAL_SURFACE_KINDS: tuple[Kind, ...] = (Kind.MANIFEST, Kind.BUILD, Kind.CONFIG, Kind.SCRIPT, Kind.OTHER)
 
 #: CI-05: files that name a tool without running it — lockfiles and dependency-update configs. Never local evidence.
-_NOT_A_SURFACE: frozenset[str] = frozenset(
+_NOT_A_SURFACE: frozenset[str] = LOCKFILE_NAMES | frozenset(
     {
-        "package-lock.json",
-        "npm-shrinkwrap.json",
-        "yarn.lock",
-        "pnpm-lock.yaml",
-        "bun.lock",
-        "uv.lock",
-        "poetry.lock",
-        "Pipfile.lock",
-        "pdm.lock",
-        "Cargo.lock",
-        "go.sum",
-        "Gemfile.lock",
-        "composer.lock",
         "dependabot.yml",
         "dependabot.yaml",
         "renovate.json",
