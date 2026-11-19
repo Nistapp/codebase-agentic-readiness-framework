@@ -110,13 +110,13 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint adr-lint masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint adr-lint consistency-map masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  consistency-map [CMAP_ARGS=...]  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -306,6 +306,12 @@ recipe-lint:
 # Every ADR follows docs/ADR_POLICY.md: no lifecycle fields or tombstones, the four sections, a row in the root index.
 adr-lint:
 	$(PYTHON) dev/adr_lint.py .
+
+# Reports the consistency map's gate (ADR 0012): touched reads with no keeping sentence, stale quotes, and rows,
+# checks or templates the map does not cover. Report-only: it exits 0 whatever it finds, and is not part of `check`
+# yet. CMAP_ARGS=--strict makes it fail on a problem; CMAP_ARGS=--verbose also lists the unreviewed pairs.
+consistency-map:
+	$(PYTHON) dev/consistency_map.py $(CMAP_ARGS)
 
 # The audit and implement master lists (docs/reference/*-master.md) are generated from the catalogue, the check files
 # and the playbooks. masters-check fails when either page is stale; update-masters rewrites them.

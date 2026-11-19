@@ -23,6 +23,7 @@ Each command answers one question:
 | Which files do the skill bundles ship differently? | `manifest`, then `manifest-diff` | [Step 5](#step-5-compare-the-bundles-the-manifest-diff) |
 | Which engine checks changed verdict or evidence? | `evidence run`, then `evidence compare` | [Step 6](#step-6-compare-the-engine-evidence) |
 | Does each quote in a report exist where it says? | `verify-quotes <folder>` | [Step 7](#step-7-check-the-quotes-of-a-report) |
+| Does a playbook change still keep what each check reads? | `make consistency-map` | [Step 8](#step-8-run-the-consistency-maps-gate) |
 
 The flow below shows the order. The manifest and the evidence run read only the working tree, so record their
 before side first.
@@ -253,6 +254,28 @@ reason.
 
 ---
 
+### Step 8: Run the consistency map's gate
+
+The consistency map, [`dev/consistency-map.json`](../../dev/consistency-map.json), says what each check reads. It
+also says what each playbook Commits row and template does to that text, and which sentence keeps each read true.
+[ADR 0012](../architecture/adrs/0012-keep-the-consistency-map-as-json-in-dev.md) records its design.
+
+```bash
+make consistency-map
+make consistency-map CMAP_ARGS=--verbose
+```
+
+The gate prints a count for each kind of problem, then the problems. Read these first:
+
+- `unkept`: a move names a check in `touches`, and no keeps entry covers the pair.
+- `quote`: a kept quote is no longer in its section. Your change moved or reworded the sentence.
+- `coverage`: a new Commits row or check has no entry. Add one to the map in the same change.
+
+`unreviewed` is advice. The gate guesses touches from paths and content kinds, and the guess is coarse.
+`--verbose` lists the pairs. The gate exits 0 whatever it finds; `CMAP_ARGS=--strict` makes it exit 1.
+
+---
+
 ## What the tools cannot see
 
 The tools find a loss in text and structure. They do not prove that the recipes still mean the same thing.
@@ -266,12 +289,13 @@ The tools find a loss in text and structure. They do not prove that the recipes 
 | `diff` | A link or ID form that the config does not describe |
 | `manifest-diff` | Whether a changed bundle file still says the same thing |
 | `evidence compare` | A check whose input changed but whose verdict and evidence stayed the same |
-| All | An engine contract bound to one line of a file |
+| `consistency-map` | A touch that no reviewer declared. It shows only as an unreviewed guess |
+| All but `consistency-map` | An engine contract bound to one line of a file |
 
 The last row needs a note. Some engine checks need two things on one physical line, for example
 "`AGT-06` Architectural boundaries declared" and "`AGT-08` No competing instruction files". Re-wrapping such a line
-can change the verdict, and no tool here maps a check to the lines it reads. That map, the consistency map, is
-Planned: a design proposal exists, and no code is built.
+can change the verdict. The consistency map records each such binding in its reads, and its gate checks that a
+sentence keeps it. It checks that the rule is stated, not that an agent follows it.
 
 ---
 
@@ -285,6 +309,7 @@ Planned: a design proposal exists, and no code is built.
 | `evidence run` | Every report is written | A command failed | The run is refused: folder not fresh or inside the repository, or a report missing or stale; or a usage error |
 | `evidence compare` | A report, whatever it finds | A run folder cannot be read, or the targets differ | A usage error |
 | `verify-quotes` | Every quote and citation passes | A usage error, or a folder with no `quotes.json` | A quote or citation fails |
+| `consistency_map.py` | A report, whatever it finds | With `--strict`: a problem found | A usage error |
 
 ---
 
@@ -296,4 +321,5 @@ You checked the change when all of this holds:
 - [ ] `diff <base>` shows no lost anchor and no ID that lost its definition, or you explained each one.
 - [ ] `manifest-diff` lists only the bundle files you meant to change.
 - [ ] `evidence compare` shows no verdict and no evidence change, or you explained each one.
+- [ ] `make consistency-map` shows no new `unkept`, `quote` or `coverage` problem.
 - [ ] `make check` passes, as [`AGENTS.md`](../../AGENTS.md#definition-of-done) asks.
