@@ -143,7 +143,7 @@ A **runner** drives a recipe without a person and records what the run cost.
   - the report JSON changes only through `report.py` (AU3);
   - an eval-mode run stops at the draft (AU4);
   - nothing is read over the network without consent (AU5);
-  - every write lands in the output folder (AU6).
+  - every write lands in the output folder, or is scratch in a system temp folder (AU6).
 
   See [Run the Evals](../../how-to/run-the-evals.md#audit-recipe-hard-rules).
 
