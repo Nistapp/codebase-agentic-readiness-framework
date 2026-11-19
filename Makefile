@@ -272,12 +272,12 @@ coverage-combine:
 	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) combine --rcfile=.coveragerc $(addprefix $(COVERAGE_DATA).,$(COMBINE_PARTS))
 	COVERAGE_FILE=$(COVERAGE_DATA) $(COVERAGE) report --rcfile=.coveragerc
 
-# The engine on this repository, read-only. Reports go under dist/self-audit/ (git-ignored); only artefacts/ and dist/
-# are left out. --baseline is the ratchet (ADR-0001): exit 2 when a finding appears that .audit-baseline.json did not
-# have, exit 0 otherwise. --no-user-config keeps the verdict the same on every machine. Publication:
-# docs/reference/self-audit.md.
+# The engine on this repository, read-only. Reports go under dist/self-audit/ (git-ignored); only artefacts/, dist/ and
+# the agent worktrees under .claude/worktrees/ (each a full copy of the tree) are left out. --baseline is the ratchet
+# (ADR-0001): exit 2 when a finding appears that .audit-baseline.json did not have, exit 0 otherwise. --no-user-config
+# keeps the verdict the same on every machine. Publication: docs/reference/self-audit.md.
 SELF_AUDIT_OUT := $(CURDIR)/dist/self-audit
-SELF_AUDIT_FLAGS := --out $(SELF_AUDIT_OUT)/ --force --format both --no-user-config --exclude 'artefacts/*' --exclude 'dist/*'
+SELF_AUDIT_FLAGS := --out $(SELF_AUDIT_OUT)/ --force --format both --no-user-config --exclude 'artefacts/*' --exclude 'dist/*' --exclude '.claude/worktrees/*'
 
 self-audit:
 	mkdir -p $(SELF_AUDIT_OUT)

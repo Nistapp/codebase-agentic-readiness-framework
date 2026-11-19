@@ -53,6 +53,32 @@ PACKAGE_MANAGERS: dict[str, tuple[str, ...]] = {
     "composer": ("composer.lock",),
 }
 
+#: The base names of the lockfiles package managers write. A closed list, matched by exact base name and never
+#: by pattern, so a large hand-written file is not mistaken for one. `NAV-03` leaves these out of its size count
+#: (a generated lockfile is large by design); `CI-05` never reads them as local evidence.
+LOCKFILE_NAMES: frozenset[str] = frozenset(
+    {
+        "package-lock.json",
+        "npm-shrinkwrap.json",
+        "yarn.lock",
+        "pnpm-lock.yaml",
+        "bun.lock",
+        "bun.lockb",
+        "uv.lock",
+        "poetry.lock",
+        "Pipfile.lock",
+        "pdm.lock",
+        "Cargo.lock",
+        "go.sum",
+        "Gemfile.lock",
+        "composer.lock",
+        "gradle.lockfile",
+        "packages.lock.json",
+        "mix.lock",
+        "pubspec.lock",
+    }
+)
+
 CI_PROVIDERS: dict[str, tuple[str, ...]] = {
     "github": (".github/workflows/*.yml", ".github/workflows/*.yaml"),
     "gitlab": (".gitlab-ci.yml",),

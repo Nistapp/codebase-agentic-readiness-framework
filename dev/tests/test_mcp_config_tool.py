@@ -10,6 +10,7 @@ import io
 import json
 import os
 import stat
+import subprocess
 import tempfile
 import tomllib
 import unittest
@@ -190,6 +191,102 @@ class FirstRunRecord(Workspace):
         data = json.loads((self.root / ".agentic-readiness/setup.json").read_text())
         self.assertEqual(data["harnesses"]["opencode"]["servers"], ["codebase-memory-mcp"])
         self.assertEqual(data["harnesses"]["opencode"]["scope"], "project")
+
+
+GIT_ENV = {
+    "GIT_CONFIG_GLOBAL": os.devnull,
+    "GIT_CONFIG_NOSYSTEM": "1",
+    "GIT_AUTHOR_NAME": "mcp-config",
+    "GIT_AUTHOR_EMAIL": "mcp-config@invalid",
+    "GIT_COMMITTER_NAME": "mcp-config",
+    "GIT_COMMITTER_EMAIL": "mcp-config@invalid",
+}
+
+
+class RecordAcrossWorktrees(Workspace):
+    """A linked worktree reads the main worktree's answer; it never writes there."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        patcher = mock.patch.dict(os.environ, {**GIT_ENV, "HOME": str(self.home)})
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.main = self.root
+        self.git(self.main, "init", "-q", "-b", "dev")
+        self.git(self.main, "add", ".mcp.json")
+        self.git(self.main, "commit", "-q", "-m", "init")
+        self.linked = self.main.parent / "linked"
+        self.git(self.main, "worktree", "add", "-q", "-b", "topic", str(self.linked))
+
+    def git(self, where: Path, *args: str) -> None:
+        subprocess.run(["git", "-C", str(where), *args], capture_output=True, check=True)
+
+    def status_in(self, where: Path, harness: str = "opencode") -> str:
+        self.root = where
+        return self.run_tool("status", "--harness", harness)[1].strip()
+
+    def test_a_new_worktree_reads_the_main_worktree_answer(self) -> None:
+        self.run_tool("record", "--harness", "opencode", "--answer", "declined")
+        self.assertRegex(self.status_in(self.linked), r"^asked: declined on \S+ \(from the main worktree\)$")
+        self.assertFalse((self.linked / ".agentic-readiness").exists())
+
+    def test_the_local_answer_wins(self) -> None:
+        self.run_tool("record", "--harness", "opencode", "--answer", "declined")
+        self.root = self.linked
+        self.run_tool("record", "--harness", "opencode", "--answer", "accepted")
+        self.assertRegex(self.status_in(self.linked), r"^asked: accepted on \S+$")
+        self.assertRegex(self.status_in(self.main), r"^asked: declined on \S+$")
+
+    def test_a_harness_missing_locally_falls_back_per_harness(self) -> None:
+        self.run_tool("record", "--harness", "claude-code", "--answer", "accepted")
+        self.root = self.linked
+        self.run_tool("record", "--harness", "opencode", "--answer", "declined")
+        self.assertIn("(from the main worktree)", self.status_in(self.linked, "claude-code"))
+        self.assertNotIn("(from the main worktree)", self.status_in(self.linked, "opencode"))
+
+    def test_record_writes_only_this_checkout(self) -> None:
+        self.run_tool("record", "--harness", "opencode", "--answer", "declined")
+        self.root = self.linked
+        self.run_tool("record", "--harness", "cursor", "--answer", "accepted")
+        linked = json.loads((self.linked / ".agentic-readiness/setup.json").read_text())
+        main = json.loads((self.main / ".agentic-readiness/setup.json").read_text())
+        self.assertEqual(sorted(linked["harnesses"]), ["cursor"])
+        self.assertEqual(sorted(main["harnesses"]), ["opencode"])
+
+    def test_the_main_worktree_does_not_read_itself_twice(self) -> None:
+        self.assertIsNone(mcp_config.main_worktree(self.main))
+        self.assertEqual(mcp_config.main_worktree(self.linked), self.main.resolve())
+
+    def test_a_worktree_of_a_bare_repository_has_no_main_to_read(self) -> None:
+        bare = self.main.parent / "bare.git"
+        self.git(self.main, "clone", "-q", "--bare", str(self.main), str(bare))
+        linked = self.main.parent / "from-bare"
+        self.git(bare, "worktree", "add", "-q", str(linked), "dev")
+        self.assertIsNone(mcp_config.main_worktree(linked))
+        self.assertEqual(self.status_in(linked), "not asked")
+
+    def test_git_location_variables_do_not_redirect_the_lookup(self) -> None:
+        self.run_tool("record", "--harness", "opencode", "--answer", "declined")
+        with mock.patch.dict(os.environ, {"GIT_DIR": str(self.main / ".git")}):
+            self.assertIn("(from the main worktree)", self.status_in(self.linked))
+
+
+class RecordOutsideGit(Workspace):
+    def test_not_a_repository_reads_only_the_local_file(self) -> None:
+        with mock.patch.dict(os.environ, {**GIT_ENV, "GIT_CEILING_DIRECTORIES": str(self.root.parent)}):
+            self.assertIsNone(mcp_config.main_worktree(self.root))
+            self.assertEqual(self.run_tool("status", "--harness", "opencode")[1].strip(), "not asked")
+
+    def test_git_missing_reads_only_the_local_file(self) -> None:
+        with mock.patch("mcp_config.subprocess.run", side_effect=FileNotFoundError("git")):
+            self.assertIsNone(mcp_config.main_worktree(self.root))
+            self.run_tool("record", "--harness", "opencode", "--answer", "accepted")
+            self.assertTrue(self.run_tool("status", "--harness", "opencode")[1].startswith("asked: accepted on "))
+
+    def test_git_that_hangs_reads_only_the_local_file(self) -> None:
+        timeout = subprocess.TimeoutExpired(["git"], 15)
+        with mock.patch("mcp_config.subprocess.run", side_effect=timeout):
+            self.assertIsNone(mcp_config.main_worktree(self.root))
 
 
 class CheckCommands(Workspace):

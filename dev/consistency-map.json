@@ -9,7 +9,7 @@
         "section": "implement/SKILL.md#implement/hard-rules"
       },
       "id": "B-01",
-      "note": "A6 fails when local or origin dev or main moved, a branch outside agentic-readiness/* was pushed, or a merge or force-push was attempted. It does not look for tag pushes or releases; nothing refuses them on a run.",
+      "note": "A6 fails when local or origin dev or main moved, a branch outside agentic-readiness/* was pushed, or a merge or force-push was attempted; the Stage 3 merge of origin/dev into the theme branch passes. It also fails when a tag reached origin, or a tag push or a gh release write was attempted. Nothing refuses these on a run; the eval only reports them.",
       "statement": "The run writes only on its theme branch, in its own worktree: never on the default or integration branch, never a force-push, a tag push or a release.",
       "symbol": "a6_branch_rule"
     },
@@ -1588,7 +1588,7 @@
         "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
       },
       "move": "configure-quality-tools/row-5",
-      "note": "The full format:check runs as a report-only step outside the merge gate's needs, with its debt recorded, which the CI-04 rubric's report-only clause accepts.",
+      "note": "The full format:check runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
       "status": "kept"
     },
     {
@@ -1641,7 +1641,7 @@
         "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
       },
       "move": "configure-quality-tools/row-10",
-      "note": "The full lint runs as a report-only step outside the merge gate's needs, with its debt recorded, which the CI-04 rubric's report-only clause accepts.",
+      "note": "The full lint runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
       "status": "kept"
     },
     {
@@ -1674,7 +1674,7 @@
         "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
       },
       "move": "configure-quality-tools/row-15",
-      "note": "The full type check runs as a report-only step outside the merge gate's needs, with its debt recorded, which the CI-04 rubric's report-only clause accepts.",
+      "note": "The full type check runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
       "status": "kept"
     },
     {
@@ -1702,11 +1702,11 @@
       "check": "CI-04",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
-        "quote": "A scan that is red on day one gets a report-only job outside the merge gate's `needs`, named report-only, with its debt recorded (count and review date), as CI-04 accepts.",
+        "quote": "A scan that is red on day one gets a report-only job outside the merge gate's `needs`, named report-only. A comment beside the step holds its count and review date, as CI-04 accepts.",
         "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
       },
       "move": "configure-quality-tools/row-18",
-      "note": "A red security job is report-only outside the merge gate's needs, with its debt recorded; CI-04 reads PARTIAL, not PASS, while the verb gates nowhere else.",
+      "note": "A red security job is report-only outside the merge gate's needs, with its count and review date committed beside the step; CI-04 reads PARTIAL, not PASS, while the verb gates nowhere else.",
       "status": "kept"
     },
     {
@@ -2293,6 +2293,17 @@
         "section": "implement/playbooks/untrack-generated.md#playbook-untrack-generated/do-not-do"
       },
       "move": "untrack-generated/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "NAV-03",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "\"`NAV-03` Structural red flags\" leaves only those names out of its size count.",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
+      "move": "pin-execution-environment/row-3",
+      "note": "The engine leaves known lockfile names out of the NAV-03 size count (audit.stack.LOCKFILE_NAMES), so the generated lockfile keeps NAV-03 as it was.",
       "status": "kept"
     }
   ],
@@ -10808,7 +10819,7 @@
     {
       "binding": "file",
       "check": "NAV-03",
-      "note": "Every scanned file: over 512 KiB, a folder with more than 50 files of its own, a binary, or a generated file with .min. in its path.",
+      "note": "Every scanned file: over 512 KiB, a folder with more than 50 files of its own, a binary, or a generated file with .min. in its path. A file whose exact base name is a lockfile name (stack.LOCKFILE_NAMES) is left out of the size count.",
       "source": "engine",
       "what": {
         "kind": "exists"

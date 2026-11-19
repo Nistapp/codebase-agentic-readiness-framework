@@ -75,7 +75,7 @@ manifest that dependency automation reads.
    only partly met. A version catalog alone is not a lock. Record the choice as a preference.
 6. **Monorepo or several components with no root manifest.** Per-component lockfiles are accepted when the owner chose a
    per-component layout (`layout.command_runner`). The playbook then verifies each component and records the item
-   `partial` with the reason; it does not add a root workspace manifest unless the owner asks, because that changes
+   `partial` (see Continue on error). It adds no root workspace manifest unless the owner asks, because that changes
    install paths and image builds. The engine reads only the root manifest, so a nested lockfile reads `PARTIAL` by
    design ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
 7. **Where tool versions go (EXEC-08).** List each literal the audit cited (tool, version, file, line) and confirm
@@ -104,7 +104,8 @@ manifest that dependency automation reads.
 3. **Pin the package manager** where the ecosystem has a field for it (`packageManager` in `package.json`;
    the Gradle wrapper for Gradle). Keep the version you already use.
 4. **Lock the dependencies.** Generate the lockfile with the tool's own command, from the pinned toolchain, and
-   commit it with the manifest. Never hand-edit a lockfile.
+   commit it with the manifest. Never hand-edit a lockfile. Keep the tool's own lockfile name.
+   "`NAV-03` Structural red flags" leaves only those names out of its size count.
 5. **Compare.** Re-run the step 1 reports. The resolved versions must be identical. A difference is a defect in
    this change (a wrong toolchain, a floating version, a forced version the lock did not honour): fix the cause
    before committing, never record it as debt.
@@ -210,8 +211,9 @@ Steps 1, 5, 8 and 9 make no commit.
 - A mismatch in a file the owner has not authorised editing (CI, a Dockerfile in another team's folder) is
   debt: count the mismatched places, record them with `--debt`, mark the item `partial`, and list each place
   in the note. There is nothing to ratchet; the CI theme closes it.
-- Per-component lockfiles with no root manifest, by the owner's layout choice: `partial` with the reason
-  "lockfiles per component by owner choice; engine reads the root only". Not a defect.
+- Per-component lockfiles with no root manifest, by the owner's layout choice: `partial` with
+  `--debt "what=component lockfiles the engine does not read,count=N"`. The note says "lockfiles per component by
+  owner choice; engine reads the root only". Not a defect.
 - A component whose build fails on the pinned major: record `blocked` with the error and the owner's options
   (a different major, an upgrade of the failing dependency). Never pin a version the build cannot use.
 

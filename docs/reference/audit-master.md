@@ -269,7 +269,8 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 `COSMETIC` · scored · engine check · fixed by [`establish-docs-contract`](implement-master.md#establish-docs-contract)
 
-- **Passes when:** no oversized file, no catch-all directory, no checked-in binary, and no minified asset is found.
+- **Passes when:** no oversized file, no catch-all directory, no checked-in binary, and no minified asset is found. A
+  lockfile is never an oversized file.
 - **Why it matters:** Oversized files, catch-all directories, checked-in binaries and minified assets are exactly where
   agents are drawn when they explore, and exactly where they should not be working ([Phased-Approach.md § Phase 1:
   Agentic Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-)).

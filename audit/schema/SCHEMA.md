@@ -14,7 +14,7 @@
 | [`audit-intake.schema.json`](audit-intake.schema.json) | The answers to the audit's Stage 0 questions, given in a file. `intake_version` `0.1`. |
 | [`catalogue.schema.json`](catalogue.schema.json) | The check catalogue, [`../catalogue.json`](../catalogue.json): every check in one ID namespace. |
 | [`facts.schema.json`](facts.schema.json) | The file `facts.py` writes: counts and names that describe a repository, with no verdict. `facts_version` `0.1`. See [Facts file](#facts-file). |
-| [`readiness-state.schema.json`](readiness-state.schema.json) | The implement recipe's per-repository state, which `progress.py` writes inside the target. `schema_version` `0.3`. See [Readiness state](#readiness-state). |
+| [`readiness-state.schema.json`](readiness-state.schema.json) | The implement recipe's per-repository state, which `progress.py` writes beside the final audit report, outside the target. `schema_version` `0.3`. See [Readiness state](#readiness-state). |
 | [`examples/minimal.json`](examples/minimal.json) | The smallest valid report: one agent check, no findings. |
 | [`examples/facts.minimal.json`](examples/facts.minimal.json) | A valid facts file for a small made-up service. |
 | [`examples/realistic/`](examples/realistic/) | The engine's real reports on three open-source repositories, each beside its conversion: `agentic-tdd`, `Digital-Assistant-SDK` and `Digital-Assistant-Server`. They were scanned on 2026-10-10 at the commits named in each report's `provenance.target`, with the engine at ruleset revision `2026-09-28.13`. A `*.engine-report.*.json` file is the engine's output, untouched. A `*.audit-draft.*.json` file is that report converted by the mapping below and nothing else: all 69 checks, every finding pending, no name anonymised and nothing invented, because the repositories are open source. In all three the recomputed phase-1 score equals the engine's (0.7311, 0.6513 and 0.4244). Each pair is the input and the expected output of the engine adapter: a test imports each raw report into a draft made from the golden draft's own `init` fields and requires the draft beside it, byte for byte. When the mapping changes, the drafts are regenerated from the raw reports and the raw reports are left alone. |
@@ -314,7 +314,7 @@ Every file a run writes carries the repository's name, so that runs on several r
 The examples in this folder are documentation, not run outputs. Where one belongs to a repository it follows the same naming.
 
 > [!WARNING]
-> The engine on its own does not meet this yet. It refuses to replace a JSON report without `--force`, but it replaces the Markdown file beside the report, and the `CON-04` draft, without asking, and its default name `audit-report.json` has no label. The recipes avoid this by always going through `tools/engine.py`, which passes a full file name and asks for JSON only.
+> The engine on its own does not meet this yet. It refuses to replace the JSON report, the Markdown file beside it or the `CON-04` draft without `--force`. Still, `--force` overwrites, and its default name `audit-report.json` has no label. The recipes avoid this by always going through `tools/engine.py`, which passes a full file name and asks for JSON only.
 
 ---
 
