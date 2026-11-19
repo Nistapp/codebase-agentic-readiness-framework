@@ -60,6 +60,37 @@ class SetAsideTests(ScopeTestCase):
         self.assertEqual([(s.path, s.files) for s in inventory.set_aside], [("docs/templates", 2)])
         self.assertEqual(inventory.paths(), ["Makefile", "docs/guide.md"])
 
+    def test_a_package_below_a_jvm_source_root_is_not_carried_data(self):
+        for language in ("java", "kotlin", "scala", "groovy"):
+            for source_set in ("main", "test", "androidTest", "integrationTest"):
+                with self.subTest(language=language, source_set=source_set):
+                    path = f"src/{source_set}/{language}/com/example/demo/App.x"
+                    inventory = self.inventory_of({"build.gradle": "x\n", path: "x\n"})
+                    self.assertEqual(inventory.paths(), ["build.gradle", path])
+                    self.assertEqual(inventory.set_aside, [])
+
+    def test_a_source_root_in_a_module_folder_counts_too(self):
+        path = "app/src/main/kotlin/org/acme/samples/Main.kt"
+        inventory = self.inventory_of({"settings.gradle": "x\n", path: "x\n"})
+        self.assertEqual(inventory.paths(), ["settings.gradle", path])
+
+    def test_a_carried_name_outside_a_jvm_source_root_is_still_set_aside(self):
+        inventory = self.inventory_of(
+            {
+                "pom.xml": "x\n",
+                "src/main/java/com/example/App.java": "x\n",
+                "src/main/resources/templates/index.html": "x\n",
+                "src/test/resources/fixtures/a.json": "x\n",
+                "src/example/app.py": "x\n",
+                "examples/demo/src/main/java/com/example/Demo.java": "x\n",
+            }
+        )
+        self.assertEqual(inventory.paths(), ["pom.xml", "src/main/java/com/example/App.java"])
+        self.assertEqual(
+            [s.path for s in inventory.set_aside],
+            ["examples", "src/example", "src/main/resources/templates", "src/test/resources/fixtures"],
+        )
+
     def test_the_audited_directorys_own_name_is_not_a_component(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "fixtures"
@@ -165,6 +196,19 @@ class RootMakefileNestedTemplateFixtureTests(unittest.TestCase):
     def test_the_report_says_the_template_directory_was_set_aside(self):
         report = support.run_audit(support.fixture("cmd-ok-root-make-nested-template"))
         self.assertEqual([s["path"] for s in report["inventory"]["set_aside"]], ["templates"])
+
+
+class JvmExamplePackageFixtureTests(unittest.TestCase):
+    """The fixture of the JVM exemption: code under ``com/example/``, a real ``examples/`` folder beside it."""
+
+    def test_the_package_is_read_and_the_examples_folder_is_set_aside(self):
+        report = support.run_audit(support.fixture("carried-jvm-example-package"))
+        self.assertEqual(
+            [s["path"] for s in report["inventory"]["set_aside"]], ["examples", "src/main/resources/templates"]
+        )
+        nav02 = next(c for c in report["checks"] if c["id"] == "NAV-02")
+        self.assertIn("src/main/java/com/example/demo/App.java", nav02["summary"])
+        self.assertNotIn("examples/", nav02["summary"])
 
 
 if __name__ == "__main__":

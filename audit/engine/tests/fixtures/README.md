@@ -55,6 +55,7 @@ fixtures/
   cmd-ok-make-prereqs/       `check` composes the verbs through its prerequisites -> CMD-01…04 PASS
   cmd-ok-make-alias/         `format-check`, the alias, in place of `format\:check` -> CMD-01…04 PASS
   cmd-ok-root-make-nested-template/ root Makefile with all seven verbs, `templates/package.json` beside it -> CMD-01…04 PASS; the templates are set aside (ADR-0008)
+  carried-jvm-example-package/ a Gradle application in package `com.example.demo`, a JUnit test, `examples/` and `src/main/resources/templates/` -> NAV-02, TST-01, TST-03 PASS; only `examples` and the resources `templates` are set aside (ADR-0008)
   cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
   cmd-ok-pyproject-poe/      `format-check`, the pyproject task runners' spelling -> CMD-01…04 PASS
   cmd-ok-gradle/             `formatCheck` registered, `test` and `check` built in -> CMD-01 PASS, CMD-02 UNKNOWN
