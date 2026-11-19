@@ -7,13 +7,19 @@
     {
       "id": "EXEC-01",
       "acceptable_verdicts": [
-        "UNKNOWN"
+        "PASS"
       ]
     },
     {
       "id": "EXEC-02",
       "acceptable_verdicts": [
         "PARTIAL"
+      ]
+    },
+    {
+      "id": "NAV-01",
+      "acceptable_verdicts": [
+        "PASS"
       ]
     },
     {

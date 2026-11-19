@@ -57,6 +57,9 @@ fixtures/
   cmd-ok-root-make-nested-template/ root Makefile with all seven verbs, `templates/package.json` beside it -> CMD-01…04 PASS; the templates are set aside (ADR-0008)
   carried-jvm-example-package/ a Gradle application in package `com.example.demo`, a JUnit test, `examples/` and `src/main/resources/templates/` -> NAV-02, TST-01, TST-03 PASS; only `examples` and the resources `templates` are set aside (ADR-0008)
   cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
+  cmd-01-nested-makefile-only/ the only Makefile is `tools/Makefile`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
+  cmd-01-nested-gradle-only/ the only Gradle build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
+  cmd-01-nested-maven-only/  the only Maven build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-ok-pyproject-poe/      `format-check`, the pyproject task runners' spelling -> CMD-01…04 PASS
   cmd-ok-gradle/             `formatCheck` registered, `test` and `check` built in -> CMD-01 PASS, CMD-02 UNKNOWN
   cmd-ok-maven/              Spotless, Checkstyle and dependency-check declared, the lifecycle phases -> CMD-01 PASS, CMD-02 UNKNOWN
@@ -73,6 +76,8 @@ fixtures/
   exec-01-nested-go-unpinned/ a nested go.mod with no go directive -> EXEC-01 FAIL
   exec-01-sibling-module-unpinned/ one go.mod pins Go, its sibling does not -> EXEC-01 PARTIAL
   exec-01-python-source-only/ a standard-library-only Python tool, no manifest, no pin -> EXEC-01 FAIL, EXEC-02 UNKNOWN
+  exec-01-php-version-file/  a composer.json with no php key, pinned by .php-version -> EXEC-01 PASS
+  exec-01-php-unpinned/      a composer.json with no php key, no .php-version -> EXEC-01 FAIL
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
@@ -86,13 +91,16 @@ fixtures/
   exec-ok/                   the smallest node repository passing every EXEC check (needs git)
   doc-01-empty/              docs/ present, no markdown page      -> DOC-01 PARTIAL
   doc-02-no-style-guide/     docs/ present, no STYLE_GUIDE.md     -> DOC-02 FAIL
+  doc-02-ok-claude-md-fallback/ no AGENTS.md; CLAUDE.md names docs/STYLE_GUIDE.md -> DOC-02 PASS
   doc-03-tracked-artefacts/  artefacts/ ignored but force-added (needs git) -> DOC-03 FAIL
   ignore-ok-nested-gitignore/ `artefacts/.gitignore` holds `*` and re-includes itself and its README (needs git) -> DOC-03, CON-03 PASS (ADR-0009)
   doc-04-adr-unindexed/      an ADR with no index                 -> DOC-04 PARTIAL
   doc-04-adr-tombstone/      an indexed ADR marked superseded      -> DOC-04 PARTIAL
+  doc-04-ok-parent-index/    docs/adr/ has no index; the parent docs/index.md lists the ADR -> DOC-04 PASS
   doc-05-long-sentences/     two thirds of the docs' sentences over 25 words -> DOC-05 FAIL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
+  nav-02-main-guard-only/    python library, only a guarded helper script -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL
   doc-nav-ok/                the smallest repository passing every scored DOC/NAV check
   tool-01-no-formatter/      node project, no formatter config or verb -> TOOL-01 FAIL
@@ -140,12 +148,13 @@ fixtures/
   hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
   hyg-13-thin-contributing/  CONTRIBUTING.md with no setup pointer, gate or workflow rules -> HYG-05 PASS, HYG-13 FAIL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 and HYG-13 UNKNOWN
-  stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs -> EXEC-01, NAV-02, TOOL-03 PASS
+  stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs -> EXEC-01, NAV-01, NAV-02, TOOL-03 PASS
   stack-gradle-wrapper-readme/ a Gradle application with gradlew; its README runs `./gradlew build` and `./gradlew test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (no gradle.lockfile)
   stack-just-inline-version/ a pinned and locked Cargo project whose justfile runs `cargo install cargo-deny@0.16.1`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02 PASS
-  stack-php-composer/        composer.json, a tracked composer.lock, public/index.php (needs git) -> NAV-02 PASS; EXEC-02 PARTIAL (the lock is not compared); EXEC-01 UNKNOWN (no PHP pin is known)
+  stack-maven-wrapper-readme/ a Maven application with mvnw; its README runs `./mvnw package` and `./mvnw test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (Maven has no lockfile)
+  stack-php-composer/        composer.json, a tracked composer.lock, public/index.php (needs git) -> NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the lock is not compared); EXEC-01 PASS (composer.json require.php)
   stack-python-uv-inline-version/ a uv project with a tracked root uv.lock; its Makefile runs `uvx ruff@0.6.9`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02, NAV-02 PASS
-  stack-ruby-bundler/        Gemfile, a tracked Gemfile.lock, .ruby-version, a Rack config.ru (needs git) -> EXEC-01, NAV-02 PASS; EXEC-02 PARTIAL (the engine does not compare a Gemfile.lock with its Gemfile)
+  stack-ruby-bundler/        Gemfile, a tracked Gemfile.lock, .ruby-version, a Rack config.ru (needs git) -> EXEC-01, NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the engine does not compare a Gemfile.lock with its Gemfile)
   stack-rust-cargo/          Cargo.toml, a tracked Cargo.lock, rust-toolchain.toml, src/main.rs (needs git) -> EXEC-01, EXEC-02, NAV-02 PASS
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test
 ```

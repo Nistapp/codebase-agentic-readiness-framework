@@ -237,7 +237,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
 9. **Specificity (AGT-11).** Classify every rule line as the check does (specific or generic), and verify every
    specific line against the repository: the command resolves, the path exists, the convention holds in the code.
    Then, per Inputs 5:
-   - move each generic block to the `docs/` page and leave one link line;
+   - move each generic block to the `docs/` page and leave one link line. Move only a section that no root-only
+     check reads: the sections Step 12 lists stay in the root `AGENTS.md`, and so does a conventions section;
    - reword each contradicted rule as target state with the measured exception count and the command that finds
      them (a code-index query or a `grep`); count with the code index (`search_graph`) and cross-check with `grep`;
    - correct each stale line.

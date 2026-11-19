@@ -19,7 +19,7 @@ score from falling.
 | Phase-1 score | **0.9269** |
 | Date | 2026-11-17 |
 | Engine | `python-agentic-audit` 0.4.0 |
-| Ruleset | `2026-11-19.11` (hash `01fb2871bf2c9875`) |
+| Ruleset | `2026-11-19.12` (hash `01fb2871bf2c9875`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/`, `dist/` and the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
@@ -118,13 +118,14 @@ strings), reviewing the diff.
 
 ## Neutralised path
 
-The framework repository is public, so the committed baseline and the published example are the engine's output with
-two hand edits: `provenance.target` is `.` (the engine writes the absolute local path), and the `IDX-02` summary
-quotes `<repository>/.codebase-memory/graph.db.zst` instead of the absolute index path. Nothing else is changed.
-`make update-audit-baseline` copies the raw report, so follow it with the same two edits before committing:
+The framework repository is public. The committed baseline and the published example are engine output with
+one hand edit: `provenance.target` is `.`, where the engine writes the absolute local path. Nothing else is changed. The
+"`IDX-02` An index exists for this checkout" summary needs no edit: the engine writes a path inside the target as
+`<repository>/...`. `make update-audit-baseline` copies the raw report, so follow it with the same edit before
+committing:
 
 ```bash
-sed -i 's#"target": "[^"]*"#"target": "."#; s#[^ ,"]*/\.codebase-memory#<repository>/.codebase-memory#' .audit-baseline.json
+sed -i 's#"target": "[^"]*"#"target": "."#' .audit-baseline.json
 grep -c '/home/' .audit-baseline.json   # must print 0 (a report from `make self-audit` also has a `baseline` path: use the update target's)
 ```
 

@@ -552,9 +552,9 @@ Does the pipeline run the same gate the agent runs locally, and does it block th
 
 `DEGRADER` · scored · agent judgement · fixed by [`add-ci-parity`](implement-master.md#add-ci-parity)
 
-- **Passes when:** every job running a verb (or `check`) gates on it — no `continue-on-error`, no swallowed exit code on
-  the gating command — and the workflow is a required status check for merging (confirmed, not just assumed from the
-  workflow file alone).
+- **Passes when:** every job running a verb (or `check`) gates on it, and the workflow is a required status check for
+  merging. Gating means no `continue-on-error` and no swallowed exit code on the gating command. The required check is
+  confirmed, not assumed from the workflow file alone.
 - **Why it matters:** A pipeline that runs the verbs but does not fail the build when one of them fails is theatre, not
   enforcement ([greenfield/README.md § 1.4 The standardized command
   surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
@@ -582,8 +582,8 @@ Does the same command give the same result on a fresh machine, without a human i
 [`pin-execution-environment`](implement-master.md#pin-execution-environment)
 
 - **Passes when:** every detected pinnable ecosystem has at least one of its own pin files, or a matching
-  `.tool-versions` line, or (node/python/go) the manifest-level constraint, and a pin reaches every module manifest of
-  each pinned ecosystem.
+  `.tool-versions` line, or (node/python/go/php) the manifest-level constraint, and a pin reaches every module manifest
+  of each pinned ecosystem.
 - **Why it matters:** An agent's runtime must be the repository's, not whatever happens to be on the host — otherwise
   the gate passes locally and fails in CI, or an agent reproduces nothing ([greenfield/README.md § File Tree — What Gets
   Created](../../greenfield/README.md#file-tree--what-gets-created)).

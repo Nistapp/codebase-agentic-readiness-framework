@@ -1,0 +1,57 @@
+{
+  "schema_version": "2",
+  "provenance": {
+    "tool": "python-agentic-audit",
+    "version": "0.4.1",
+    "ruleset_revision": "2026-11-17.4",
+    "ruleset_hash": "aaaabbbbccccdddd",
+    "framework_revision": null,
+    "target": "/work/example-service-theme-t1",
+    "git_sha": "1111111111111111111111111111111111111111",
+    "git_branch": "agentic-readiness/t1",
+    "git_dirty": false,
+    "scanned_at": "2026-11-19T10:00:00+00:00",
+    "phase": 1,
+    "probes_enabled": false,
+    "user_config": {"read_allowed": false, "paths_read": []}
+  },
+  "checks": [
+    {"id": "CMD-01", "verdict": "PASS", "summary": "a Makefile defines the verbs", "data": {"verbs": ["build", "test"]}},
+    {"id": "DOC-01", "verdict": "PASS", "summary": "docs/ holds 3 pages", "data": {"pages": 3}},
+    {"id": "DOC-05", "verdict": "PARTIAL", "summary": "2 of 3 pages are readable", "data": {"readable": 2}},
+    {"id": "IDX-01", "verdict": "PASS", "summary": "codebase-memory-mcp is registered in .mcp.json", "data": {}},
+    {"id": "TST-02", "verdict": "UNKNOWN", "summary": "probes disabled", "data": {}},
+    {"id": "SEC-01", "verdict": "FAIL", "summary": "no secret scanner", "data": {}}
+  ],
+  "findings": [
+    {
+      "id": "DOC-05",
+      "check": "DOC-05",
+      "verdict": "PARTIAL",
+      "severity": "DEGRADER",
+      "statement": "One docs page is too dense to read.",
+      "evidence": [{"path": "docs/design.md", "line": null, "note": null}]
+    },
+    {
+      "id": "SEC-01",
+      "check": "SEC-01",
+      "verdict": "FAIL",
+      "severity": "BLOCKER",
+      "statement": "No secret scanner runs before a commit.",
+      "evidence": [{"path": "<repository>", "line": null, "note": null}]
+    }
+  ],
+  "not_applicable": ["HYG-13"],
+  "probes": [
+    {
+      "verb": "test",
+      "command": ["make", "test"],
+      "exit_code": null,
+      "duration_s": 0.0,
+      "timed_out": false,
+      "output_tail": "",
+      "redactions": 0,
+      "refused_reason": "probes disabled (pass --run-gates)"
+    }
+  ]
+}

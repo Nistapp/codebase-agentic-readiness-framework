@@ -41,13 +41,17 @@ the boundaries and the gate in both modes exist, with their tests.
    [`audit/rules/reads.py`](../../../audit/engine/audit/rules/reads.py):
    1. A declaration takes its paths from the engine constants the check uses, where they exist.
       A place read upstream, by the scan's file kinds or component detection, names that step in `via`.
+      A place matched in lower case says `case: fold`.
+      A read that also follows paths named in the target's text gives the reason in `named_by_text`.
+      A place that no fixture can make the check ask for gives the reason in `unexercised`.
    2. [`dev/consistency_map_reads.py`](../../../dev/consistency_map_reads.py) generates the map's `reads` part from
       it. A `dev/` test fails when the two differ.
    3. The two agent checks have no code, so their entries are written in the map.
-   4. A read names its `constants` only when they hold its whole file list.
+   4. A read names its `constants` only when they hold its whole file list, less the places read upstream.
    5. An engine test runs every check on every fixture and on a greenfield scaffold. It records each path a check
       asks for, and fails on a path the declaration does not cover. It also records `name` asks: the names a
-      check compares a scanned path with in its own code. It reports the uncovered ones and does not fail on them.
+      check compares a scanned path with in its own code. It fails on a `name` ask that no place covers. It also
+      fails on a place that no ask reaches, unless the place has `via` or `unexercised`.
    6. The declaration is not in the ruleset hash and is in no report.
 4. A keeps quote is checked as the quote verifier checks it: verbatim, with whitespace collapsed. Its section
    must still mention the check ID.

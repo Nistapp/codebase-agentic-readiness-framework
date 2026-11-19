@@ -17,17 +17,18 @@ Why it matters   An agent's runtime must be the repository's, not whatever happe
                   otherwise the gate passes locally and fails in CI, or an agent reproduces nothing
                   ([greenfield/README.md § File Tree — What Gets Created](../../greenfield/README.md#file-tree--what-gets-created)).
 Severity         BLOCKER
-Engine           `EXEC-01`. For every detected ecosystem among node, python, jvm, dotnet, rust and ruby
-                 (go is pinnable too but has no dedicated pin file of its own), looks for that
-                 ecosystem's pin: a version file (`.nvmrc`, `.python-version`, `.ruby-version`,
-                 `rust-toolchain.toml`/`rust-toolchain`), a wrapper (`gradlew`, `mvnw`), `global.json`
-                 for dotnet, a matching line in a shared `.tool-versions`, `package.json`'s
-                 `engines.node`, `pyproject.toml`'s `requires-python`, or `go.mod`'s `go` directive. Pin
-                 files and these manifests count at any depth: a nested module (`tools/osv/go.mod`) pins
-                 its ecosystem, and one pinning manifest is enough (the shallowest is cited). No
-                 ecosystem from this pinnable set is detected at all ⇒ `UNKNOWN` — there is no toolchain
-                 to choose a pin for. php is a recognised ecosystem the table does not assert a pin for,
-                 so a php-only repository is also `UNKNOWN` on this check. Distrust a `FAIL` when the
+Engine           `EXEC-01`. The pinnable ecosystems are node, python, jvm, dotnet, rust, ruby, php and
+                 go (go has no pin file of its own). For each one detected, the engine looks for its pin.
+                 A version file pins: `.nvmrc`, `.python-version`, `.ruby-version`, `.php-version`,
+                 `rust-toolchain.toml` or `rust-toolchain`. So do a wrapper (`gradlew`, `mvnw`) and, for
+                 dotnet, `global.json`. A shared `.tool-versions` pins with a matching line (read for
+                 node, python, rust, go and php). A manifest pins with `package.json`'s `engines.node`,
+                 `pyproject.toml`'s `requires-python` or `go.mod`'s `go` directive. A `composer.json`
+                 pins with `config.platform.php`, then `require.php`. Pin files and these manifests
+                 count at any depth: a nested module
+                 (`tools/osv/go.mod`) pins its ecosystem, and one pinning manifest is enough (the
+                 shallowest is cited). No ecosystem from this pinnable set is detected at all ⇒
+                 `UNKNOWN` — there is no toolchain to choose a pin for. Distrust a `FAIL` when the
                  pin lives in a convention the engine's table does not yet carry (a newer per-ecosystem
                  version manager) — verify by reading the repository's own tool documentation before
                  treating the gap as real.
@@ -35,7 +36,7 @@ Method           automated
 Look for         Each detected pinnable ecosystem's own pin file or declaration, named above; absent any
                  of them, `.tool-versions` for a matching line.
 Rubric           PASS: every detected pinnable ecosystem has at least one of its own pin files, or a
-                 matching `.tool-versions` line, or (node/python/go) the manifest-level constraint, and a
+                 matching `.tool-versions` line, or (node/python/go/php) the manifest-level constraint, and a
                  pin reaches every module manifest of each pinned ecosystem.
                  PARTIAL: every ecosystem is pinned, but a module manifest of a pinned ecosystem has no pin
                  of its own and no pin in its folder or a parent folder. An ecosystem left unpinned still
@@ -43,7 +44,7 @@ Rubric           PASS: every detected pinnable ecosystem has at least one of its
                  FAIL: at least one detected pinnable ecosystem has none of its pin evidence.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no ecosystem from the pinnable set (node, python, jvm, dotnet, rust, ruby,
-                 go) is detected at all.
+                 php, go) is detected at all.
 Evidence to cite A `file` evidence item per unpinned ecosystem, citing the pin file names that were
                  searched for and not found; for PASS, cite the pin file or declaration actually found
                  for each ecosystem.

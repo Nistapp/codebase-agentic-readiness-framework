@@ -65,15 +65,14 @@ prohibitions section now.)
 Component-scoped: `AGT-02` reports a ratio over declared components; the remaining checks evaluate the root file
 and are reported per component when a component-level file exists.
 
-The pack is driven by **one data structure in code** — `audit/rules/variants.py` — recording every instruction-file
-variant per harness with the documentation URL it came from and a `last_verified` date, plus the config-indirection
+One data structure in code drives the pack: `audit/rules/variants.py`. It records every instruction-file variant per
+harness, with the documentation URL it came from and a `last_verified` date. It also records the config-indirection
 keys, the shadow pairs, and the globs that only *look* like instructions. A harness whose own path loads only through
-its config (`paths_need_config`, Aider's `CONVENTIONS.md`) reaches that path only when the config file exists.
-A filename-only check is wrong in both
-directions: it calls a `CLAUDE.md` repository ungoverned, and an `AGENTS.override.md` repository governed. The table
-rots by design (Windsurf → Devin Desktop; Antigravity CLI replacing Gemini CLI), so every report carries a
-`ruleset_hash` over the table and the catalogue — rot shows up in provenance instead of being inferred from a
-suspicious verdict.
+its config (`paths_need_config`, Aider's `CONVENTIONS.md`) reaches that path only when the config file exists. A
+filename-only check is wrong in both directions: it calls a `CLAUDE.md` repository ungoverned, and an
+`AGENTS.override.md` repository governed. The table rots by design (Windsurf → Devin Desktop; Antigravity CLI replacing
+Gemini CLI). So every report carries a `ruleset_hash` over the table and the catalogue. Rot then shows up in provenance,
+so no one has to infer it from a suspicious verdict.
 
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
@@ -252,18 +251,21 @@ flowchart LR
 ```
 
 1. Assign the next id in the appropriate group.
-2. State tier, phase anchor, severity, and a **falsifiable** evidence rule — one that a reviewer can apply to a
-   fixture and reach the same verdict.
+2. State tier, phase anchor, severity, and a **falsifiable** evidence rule. Any reviewer who applies that rule to
+   a fixture reaches the same verdict.
 3. Add the failure mode to [Why These Checks](../user-overview/03-why-these-checks.md). No failure mode, no check.
-4. Emit a short human `summary` and, where the check has table-shaped facts, a typed `data` payload from
+4. Emit a short human `summary`. Where the check has table-shaped facts, also emit a typed `data` payload from
    `audit/rules/payloads.py` (ADR-0007). The renderer builds check tables from the payload `kind`, never
-   from prose, and editorial wording belongs in `audit/report/presentation.py`, not in the check.
+   from prose. Editorial wording belongs in `audit/report/presentation.py`, not in the check.
 5. Add a broken fixture that fails exactly this check and nothing else.
 6. Declare what the check reads in `audit/rules/reads.py`: the places, the text and the binding. Take the paths
    from the check's own constant with `_held` where one exists. Give a place `via` when the scan's file kinds or
-   component detection read it before the check runs. `tests/test_check_reads.py` fails on a path the
-   check asks for and the declaration does not cover. It also prints the `name` asks that no declaration covers:
-   the names a check compares paths with in its own code. It does not fail on them yet. Then run
+   component detection read it before the check runs. Give it `case=FOLD` when the check lower-cases the name. Set
+   `named_by_text` when the check looks up paths that the target's text names. Mark a place `unexercised`, with the
+   reason, when no fixture can make the check ask for it. Prefer a small fixture that does. `tests/test_check_reads.py`
+   fails on a path the check asks for and the declaration does not cover. It also fails on an uncovered `name` ask: a
+   name a check compares paths with in its own code. And it fails on a declared place that no ask reaches, unless the
+   place has `via` or `unexercised`. Then run
    `python3 dev/consistency_map_reads.py --write` from the repository root. It rewrites the consistency map's reads
    (ADR 0012 in the root `docs/architecture/adrs/`).
 7. Add the row to the summary table and to the pack's framework anchor before merging.

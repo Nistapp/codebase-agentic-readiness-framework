@@ -9,7 +9,7 @@ One command::
 
 A bundle is what a harness installs and runs with no checkout of this repository: `skills-ref validate`
 (S4.5.2) and an install smoke-run (S4.5.3) both act on it, never on the source tree directly. Both are written
-under ``<repo>/dev/dist/skills/`` by default (``*.pyz`` and ``dev/dist/`` are both gitignored); ``--out-dir``
+under ``<repo>/dev/dist/skills/`` by default (``dev/dist/`` is gitignored); ``--out-dir``
 changes where ``skills/`` itself goes, for a build that is not meant to land there.
 Each bundle is replaced whole on every run, so a stale leftover from an earlier build can never survive.
 
@@ -22,33 +22,35 @@ Each bundle is replaced whole on every run, so a stale leftover from an earlier 
   (:func:`stamp_frontmatter`), so an installed bundle says which release it is.
 - ``references/``: the check files (``audit/checks/``), the stack profiles (``audit/stacks/``), the shared prompt
   on how to talk to the user (``audit/prompts/talking-to-the-user.md``, which the implement bundle carries too) and
-  the schema docs (``audit/schema/*.schema.json``, ``SCHEMA.md``, ``LICENSING.md``), and the parts of the Tools CLI
-  reference that cover the audit tools (:data:`AUDIT_TOOLS_CLI_SECTIONS`) — read by the model, not run.
+  the schema docs (``SCHEMA.md``, ``LICENSING.md``), and the parts of the Tools CLI reference that cover the audit
+  tools (:data:`AUDIT_TOOLS_CLI_SECTIONS`) — read by the model, not run.
 - ``scripts/``: the five tools the recipe's Tools table calls (``facts.py``, ``engine.py``, ``report.py``,
   ``validate_report.py``, ``render_report.py``, from ``audit/tools/``) and the private modules they import; the
-  schema files and ``catalogue.json`` those tools read at a fixed path next to themselves
-  (``validate_report.RECIPES``); the engine's own ``audit`` package, which ``engine.py`` imports from ``../engine``
-  relative to itself, so ``scripts/`` has the same shape as ``audit/`` in this repository (``scripts/engine/audit/``);
-  and ``audit.pyz``, the engine's single-file build, for a person who wants to run it directly with no Python path
-  setup at all.
+  schema files (:data:`SCHEMA_FILES`) and ``catalogue.json`` those tools read at a fixed path next to themselves
+  (``validate_report.RECIPES``), the one copy of each that the schema docs link to; and the engine's own ``audit``
+  package, which ``engine.py`` imports from ``../engine`` relative to itself, so ``scripts/`` has the same shape as
+  ``audit/`` in this repository (``scripts/engine/audit/``). The engine's single-file build, ``audit.pyz``, is not
+  carried: the release attaches it as a file of its own.
 
 **agentic-readiness-implement** carries the implement recipe and a ``LICENSE`` like the audit bundle's:
 
 - ``SKILL.md``: ``implement/SKILL.md``, its ``name`` rewritten from ``implement`` to the bundle's name, and the
   same ``metadata.version`` added.
-- ``references/``: the state contract, the tool-choice procedures, the playbooks, the kickoff prompt, the shared
+- ``references/``: the state contract, the tool-choice procedures, the theme checks, the playbooks, the kickoff prompt, the shared
   prompt on how to talk to the user (from ``audit/prompts/``), the check files, the stack profiles,
-  ADR 0003, the greenfield ADR policy and ADR template, ``spec/command-surface.md`` and the spec decisions, the state schema and its docs, and the parts of
-  the Tools CLI reference that cover the carried tools (:data:`TOOLS_CLI_SECTIONS`). The playbook templates
-  (:data:`IMPLEMENT_TEMPLATE_FILES`) sit beside the playbooks in ``references/playbooks/templates/``, so a playbook
+  ADR 0003, the greenfield ADR policy and ADR template, ``spec/command-surface.md`` and the spec decisions, the
+  schema docs, and the parts of the Tools CLI reference that cover the carried tools (:data:`TOOLS_CLI_SECTIONS`).
+  The playbook templates (:data:`IMPLEMENT_TEMPLATE_FILES`) sit beside the playbooks in ``references/playbooks/templates/``, so a playbook
   step can copy one into the target.
-- ``scripts/``: ``progress.py``, ``check_drift.py`` and ``compare_reports.py`` (from ``implement/tools/``), and
+- ``scripts/``: ``progress.py``, ``check_drift.py``, ``compare_reports.py`` and ``check_regressions.py`` (from
+  ``implement/tools/``), and
   ``validate_report.py`` with the private modules they import (from ``audit/tools/``), side by side in
   ``scripts/tools/``; ``_audit_tools_path.py``, which the implement tools import first and which does nothing in the
-  bundle (there is no ``../../audit/tools`` there); the schema files and ``catalogue.json``; and an ``engine.py`` shim
+  bundle (there is no ``../../audit/tools`` there); the schema files (:data:`IMPLEMENT_SCHEMA_FILES`, the one copy
+  the schema docs link to) and ``catalogue.json``; and an ``engine.py`` shim
   (:data:`ENGINE_SHIM`). The engine itself is not copied: the shim loads ``engine.py`` from the
   agentic-readiness-audit skill installed in the same skills folder, so the two skills share one engine copy
-  (``validate_report.py`` reads the engine's credential patterns).
+  (``validate_report.py`` reads the engine's credential patterns, ``check_regressions.py`` its read declarations).
 
 Both bundles resolve every link they keep. Every carried Markdown file is rewritten in two ways. A command ``python3 audit/tools/<tool>.py`` or
 ``python3 implement/tools/<tool>.py`` becomes the path from the skill's own folder
@@ -57,16 +59,12 @@ A relative link to a
 carried file is rewritten to that file's place in the bundle; a link to anything else becomes plain text naming the
 framework path, so no link leaves the bundle.
 
-``audit.pyz`` is produced by running the engine's own ``audit/engine/build.py`` as a subprocess (never imported;
-the build script is excluded from the engine's own standard-library-only boundary) and copying
-its output in. Everything else is a file copy or a deterministic text rewrite, so two builds from the same source
-tree are byte-for-byte identical apart from ``audit.pyz``, whose zip entries carry the source files' own
-modification times — which do not change between two builds in the same session.
+Every file is a file copy or a deterministic text rewrite, so two builds from the same source tree are byte-for-byte
+identical.
 
-Failure behaviour: a target problem (the engine's ``build.py`` is missing, or exits nonzero) is exit 1
-with the subprocess's stderr in ``data.errors``; so is a source file whose frontmatter ``name`` line or Tools CLI
-section is missing, or whose frontmatter already has a ``metadata`` key. Nothing else in this tool can fail the way a user-facing argument can, since it takes none
-but ``--out-dir``.
+Failure behaviour: a source file whose frontmatter ``name`` line or Tools CLI section is missing, or whose
+frontmatter already has a ``metadata`` key, is exit 1. Nothing else in this tool can fail the way a user-facing
+argument can, since it takes none but ``--out-dir``.
 """
 
 from __future__ import annotations
@@ -75,7 +73,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
@@ -126,17 +123,19 @@ TOOL_FILES = (
     "_summary.py",
 )
 
-#: Read directly by the tools above at a path fixed relative to themselves (`validate_report.RECIPES`), so
-#: these must sit beside `scripts/tools/` the same way they sit beside `audit/tools/` in this repository.
+#: The audit bundle's schema files, in `scripts/schema/` only. The tools above read three of them at a path fixed
+#: relative to themselves (`validate_report.RECIPES`), so they sit beside `scripts/tools/` the same way they sit
+#: beside `audit/tools/` in this repository; `SCHEMA.md` links all four. `eval-expected.schema.json` stays out: it
+#: describes the evals' expected files, and no carried tool reads it and no carried file links it.
 SCHEMA_FILES = (
     "audit-intake.schema.json",
     "audit-report.schema.json",
     "catalogue.schema.json",
-    "eval-expected.schema.json",
     "facts.schema.json",
-    "SCHEMA.md",
-    "LICENSING.md",
 )
+
+#: The schema docs, carried once, in `references/schema/`; their links to a schema file point into `scripts/schema/`.
+SCHEMA_DOC_FILES = ("SCHEMA.md", "LICENSING.md")
 
 #: The prompts in `audit/prompts/` the audit bundle carries, under `references/prompts/`. `kickoff.md` stays out:
 #: a person pastes it into a harness; the skill does not read it.
@@ -154,16 +153,14 @@ AUDIT_TOOLS_CLI_SECTIONS = (
 )
 
 #: The source of each carried Markdown file or folder of the audit bundle and its place in the bundle, as
-#: :data:`IMPLEMENT_REFERENCES` is for the implement bundle. The first place of a source is the one links point at;
-#: the schema docs also sit beside the schema files in `scripts/schema/`, rewritten for that place.
+#: :data:`IMPLEMENT_REFERENCES` is for the implement bundle. Each source has one place, the one links point at.
 AUDIT_REFERENCES = (
     ("audit/SKILL.md", "SKILL.md"),
     ("audit/checks", "references/checks"),
     ("audit/stacks", "references/stacks"),
     *((f"audit/prompts/{name}", f"references/prompts/{name}") for name in AUDIT_PROMPT_FILES),
-    *((f"audit/schema/{name}", f"references/schema/{name}") for name in SCHEMA_FILES if name.endswith(".md")),
+    *((f"audit/schema/{name}", f"references/schema/{name}") for name in SCHEMA_DOC_FILES),
     ("docs/reference/tools-cli.md", "references/tools-cli.md"),
-    *((f"audit/schema/{name}", f"scripts/schema/{name}") for name in SCHEMA_FILES if name.endswith(".md")),
 )
 
 #: The audit sources name a tool by its file name alone; a command written for a checkout still gets the bundle path.
@@ -213,8 +210,7 @@ def _audit_carried_other() -> dict[Path, str]:
     """The audit bundle's carried files that are not Markdown: tools, schema files, the catalogue, the licence."""
     carried = {(AUDIT_TOOLS / name).resolve(): f"scripts/tools/{name}" for name in TOOL_FILES}
     for name in SCHEMA_FILES:
-        if not name.endswith(".md"):
-            carried[(AUDIT_SCHEMA / name).resolve()] = f"references/schema/{name}"
+        carried[(AUDIT_SCHEMA / name).resolve()] = f"scripts/schema/{name}"
     carried[(AUDIT / "catalogue.json").resolve()] = "scripts/catalogue.json"
     carried[LICENSE_CODE.resolve()] = "LICENSE"
     return carried
@@ -237,26 +233,6 @@ def _write_audit_markdown(bundle_dir: Path) -> None:
     _write_rewritten(bundle_dir, texts, carried, AUDIT_COMMAND_REWRITES)
 
 
-def _write_references(bundle_dir: Path) -> None:
-    schema_dir = bundle_dir / "references" / "schema"
-    schema_dir.mkdir(parents=True)
-    for name in SCHEMA_FILES:
-        if not name.endswith(".md"):
-            shutil.copy2(AUDIT_SCHEMA / name, schema_dir / name)
-
-
-def _build_pyz(dest: Path) -> None:
-    build_script = ENGINE / "build.py"
-    try:
-        subprocess.run([sys.executable, str(build_script)], capture_output=True, text=True, check=True)
-    except subprocess.CalledProcessError as exc:
-        raise _common.ToolError(
-            "audit/engine/build.py failed to build audit.pyz",
-            errors=[line for line in exc.stderr.splitlines() if line],
-        ) from None
-    shutil.copy2(ENGINE / "dist" / "audit.pyz", dest)
-
-
 def _write_scripts(bundle_dir: Path) -> None:
     scripts = bundle_dir / "scripts"
     tools_dir = scripts / "tools"
@@ -266,11 +242,9 @@ def _write_scripts(bundle_dir: Path) -> None:
     schema_dir = scripts / "schema"
     schema_dir.mkdir()
     for name in SCHEMA_FILES:
-        if not name.endswith(".md"):
-            shutil.copy2(AUDIT_SCHEMA / name, schema_dir / name)
+        shutil.copy2(AUDIT_SCHEMA / name, schema_dir / name)
     shutil.copy2(AUDIT / "catalogue.json", scripts / "catalogue.json")
     _copy_tree(ENGINE / "audit", scripts / "engine" / "audit")
-    _build_pyz(scripts / "audit.pyz")
 
 
 def build_bundle(out_dir: Path) -> Path:
@@ -280,7 +254,6 @@ def build_bundle(out_dir: Path) -> Path:
         shutil.rmtree(bundle_dir)
     bundle_dir.mkdir(parents=True)
     _write_license(bundle_dir)
-    _write_references(bundle_dir)
     _write_scripts(bundle_dir)
     _write_audit_markdown(bundle_dir)
     return bundle_dir
@@ -294,11 +267,13 @@ IMPLEMENT_OWN_TOOL_FILES = (
     "progress.py",
     "check_drift.py",
     "compare_reports.py",
+    "check_regressions.py",
     "_audit_tools_path.py",
 )
 
-#: The shared modules the implement tools import (in `audit/tools/`): `progress`, `check_drift` and
-#: `compare_reports` import `validate_report`, which imports `_summary` and `engine`; `engine` is the shim.
+#: The shared modules the implement tools import (in `audit/tools/`): `progress`, `check_drift`,
+#: `compare_reports` and `check_regressions` import `validate_report`, which imports `_summary` and `engine`;
+#: `engine` is the shim.
 IMPLEMENT_SHARED_TOOL_FILES = (
     "validate_report.py",
     "_common.py",
@@ -312,7 +287,8 @@ IMPLEMENT_TOOL_FILES = IMPLEMENT_OWN_TOOL_FILES + IMPLEMENT_SHARED_TOOL_FILES
 #: The files a playbook copies into a target (in `implement/playbooks/templates/`), carried beside the playbooks.
 IMPLEMENT_TEMPLATE_FILES = ("docs_prose_check.py",)
 
-#: Read at a fixed path next to the tools (`validate_report.RECIPES`, `progress.STATE_SCHEMA`).
+#: Read at a fixed path next to the tools (`validate_report.RECIPES`, `progress.STATE_SCHEMA`), in `scripts/schema/`
+#: only; `catalogue.schema.json` is there because `SCHEMA.md` links it.
 IMPLEMENT_SCHEMA_FILES = (
     "audit-report.schema.json",
     "catalogue.schema.json",
@@ -320,7 +296,14 @@ IMPLEMENT_SCHEMA_FILES = (
 )
 
 #: The level-2 sections of the Tools CLI reference the implement bundle carries, in page order.
-TOOLS_CLI_SECTIONS = ("Every tool", "validate_report.py", "progress.py", "check_drift.py", "compare_reports.py")
+TOOLS_CLI_SECTIONS = (
+    "Every tool",
+    "validate_report.py",
+    "progress.py",
+    "check_drift.py",
+    "compare_reports.py",
+    "check_regressions.py",
+)
 
 #: The source of each carried Markdown file or folder (relative to the repository root) and its place in the
 #: bundle. A folder carries every Markdown file in it. Order matters only for the shown order of a listing.
@@ -328,6 +311,7 @@ IMPLEMENT_REFERENCES = (
     ("implement/SKILL.md", "SKILL.md"),
     ("implement/state.md", "references/state.md"),
     ("implement/tool-choice.md", "references/tool-choice.md"),
+    ("implement/theme-checks.md", "references/theme-checks.md"),
     ("implement/playbooks", "references/playbooks"),
     ("implement/prompts", "references/prompts"),
     ("audit/prompts/talking-to-the-user.md", "references/prompts/talking-to-the-user.md"),
@@ -449,7 +433,7 @@ def _carried_other() -> dict[Path, str]:
     for name in IMPLEMENT_SHARED_TOOL_FILES:
         carried[(AUDIT_TOOLS / name).resolve()] = f"scripts/tools/{name}"
     for name in IMPLEMENT_SCHEMA_FILES:
-        carried[(AUDIT_SCHEMA / name).resolve()] = f"references/schema/{name}"
+        carried[(AUDIT_SCHEMA / name).resolve()] = f"scripts/schema/{name}"
     for name in IMPLEMENT_TEMPLATE_FILES:
         carried[(IMPLEMENT_TEMPLATES / name).resolve()] = f"references/playbooks/templates/{name}"
     carried[(AUDIT / "catalogue.json").resolve()] = "scripts/catalogue.json"
@@ -562,8 +546,6 @@ def build_implement_bundle(out_dir: Path) -> Path:
             )
         texts[dest] = (source, text)
     _write_rewritten(bundle_dir, texts, carried, COMMAND_REWRITES)
-    for name in IMPLEMENT_SCHEMA_FILES:
-        shutil.copy2(AUDIT_SCHEMA / name, bundle_dir / "references" / "schema" / name)
     templates_dir = bundle_dir / "references" / "playbooks" / "templates"
     templates_dir.mkdir(parents=True, exist_ok=True)
     for name in IMPLEMENT_TEMPLATE_FILES:

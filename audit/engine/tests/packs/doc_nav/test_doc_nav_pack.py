@@ -29,6 +29,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import support  # noqa: E402
 from audit.rules.checks.nav import LARGE_FILE_BYTES, _jvm_entry, _python_entry  # noqa: E402
+from audit.components import detect_components  # noqa: E402
+from audit.rules.checks.nav import check_nav01 as CHECK_NAV01  # noqa: E402
 from audit.rules.checks.nav import check_nav03 as CHECK_NAV03  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 from audit.rules.checks import _prose  # noqa: E402
@@ -47,6 +49,7 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "doc-05-long-sentences": ("DOC-05", "FAIL"),
     "nav-01-no-manifest": ("NAV-01", "UNKNOWN"),
     "nav-02-no-entry": ("NAV-02", "FAIL"),
+    "nav-02-main-guard-only": ("NAV-02", "FAIL"),
     "nav-03-red-flags": ("NAV-03", "PARTIAL"),
 }
 
@@ -233,7 +236,7 @@ class Nav02JvmEntryTests(unittest.TestCase):
 
 
 class Nav02PythonEntryTests(unittest.TestCase):
-    """`_python_entry` counts a line that starts with the guard, not a file that merely holds the text."""
+    """`_python_entry` reads `__main__.py`, conventional names and manifest scripts, never a guard alone."""
 
     GUARD = 'if __name__ == "__main__":\n    main()\n'
 
@@ -244,8 +247,17 @@ class Nav02PythonEntryTests(unittest.TestCase):
             support.write(Path(tmp.name), rel, text)
         return _python_entry(build_inventory(Path(tmp.name)))
 
-    def test_a_guard_line_is_an_entry_point(self):
-        self.assertEqual(self._entry({"tool.py": "def main():\n    pass\n\n" + self.GUARD}), ["tool.py"])
+    def test_a_guard_line_alone_is_not_an_entry_point(self):
+        self.assertEqual(self._entry({"scripts/tool.py": "def main():\n    pass\n\n" + self.GUARD}), [])
+
+    def test_a_guarded_file_counts_through_a_real_signal(self):
+        found = self._entry(
+            {
+                "main.py": "def main():\n    pass\n\n" + self.GUARD,
+                "pyproject.toml": '[project.scripts]\ntool = "pkg.cli:main"\n',
+            }
+        )
+        self.assertEqual(found, ["main.py", "pyproject.toml:entry point"])
 
     def test_a_regex_or_docstring_that_holds_the_guard_text_is_not(self):
         text = (
@@ -254,6 +266,64 @@ class Nav02PythonEntryTests(unittest.TestCase):
             "# if __name__ == '__main__': in a comment\n"
         )
         self.assertEqual(self._entry({"checks.py": text}), [])
+
+
+class Nav01ComponentManifestTests(unittest.TestCase):
+    """`NAV-01` in-process on built repositories: the Ruby, PHP and .NET manifests declare the root.
+
+    A .NET solution or project file has the project's own name, so it is matched by pattern, and only in the folder
+    itself. The UNKNOWN summary names the recognised ecosystems instead of saying the stack is not recognised.
+    """
+
+    def nav01(self, files: dict[str, str]) -> tuple[dict, list[str]]:
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        for rel, text in files.items():
+            support.write(Path(tmp.name), rel, text)
+        inventory = build_inventory(Path(tmp.name))
+        components = detect_components(inventory)
+        outcome = CHECK_NAV01(
+            spec=REGISTRY_BY_ID["NAV-01"],
+            target=None,
+            inventory=inventory,
+            stack=detect_stack(inventory),
+            components=components,
+            session=None,
+        )
+        return {"verdict": outcome.verdict.value, "summary": outcome.summary}, components.candidates
+
+    def test_a_ruby_php_or_dotnet_manifest_at_the_root_passes_and_is_named(self):
+        for rel in ("Gemfile", "composer.json", "App.sln", "App.slnx", "App.csproj", "App.fsproj", "App.vbproj"):
+            with self.subTest(rel=rel):
+                check, _ = self.nav01({rel: "{}\n"})
+                self.assertEqual(check, {"verdict": "PASS", "summary": f"single-root repository declares {rel}"})
+
+    def test_a_solution_file_is_named_before_a_project_file(self):
+        check, _ = self.nav01({"App.csproj": "<Project />\n", "App.sln": "\n"})
+        self.assertEqual(check["summary"], "single-root repository declares App.sln")
+
+    def test_a_dotnet_project_file_in_a_subfolder_does_not_declare_the_root(self):
+        check, _ = self.nav01({"src/App/App.csproj": "<Project />\n"})
+        self.assertEqual(check["verdict"], "UNKNOWN")
+        self.assertIn("ecosystems: dotnet", check["summary"])
+
+    def test_a_dotnet_project_under_a_candidate_root_is_a_candidate(self):
+        check, candidates = self.nav01({"apps/web/Web.csproj": "<Project />\n", "apps/api/Gemfile": "\n"})
+        self.assertEqual(candidates, ["apps/api", "apps/web"])
+        self.assertEqual(check["verdict"], "PARTIAL")
+
+    def test_a_recognised_stack_with_no_manifest_the_detector_reads_names_its_ecosystems(self):
+        check, _ = self.nav01({"requirements.txt": "requests==2.32.3\n"})
+        self.assertEqual(check["verdict"], "UNKNOWN")
+        self.assertEqual(
+            check["summary"], "no build manifest the component detector reads declares a component; ecosystems: python"
+        )
+
+    def test_an_unrecognised_stack_says_so(self):
+        check, _ = self.nav01({"README.md": "# x\n"})
+        self.assertEqual(
+            check, {"verdict": "UNKNOWN", "summary": "no build manifest declares a component; stack not recognised"}
+        )
 
 
 class Nav03LockfileTests(unittest.TestCase):

@@ -180,7 +180,7 @@ def runner_commands(inventory: Inventory) -> tuple[tuple[str, dict[str, str]], .
 
 def makefile_errors(inventory: Inventory) -> tuple[MakeError, ...]:
     """What GNU Make refuses in the root ``Makefile``; empty when it parses or there is none."""
-    return parse_makefile(inventory).errors if inventory.has("Makefile") else ()
+    return parse_makefile(inventory).errors if _at_root(inventory, "Makefile") else ()
 
 
 #: Fenced-code languages treated as shell for command extraction.
@@ -393,57 +393,47 @@ def prohibitions_section(text: str) -> Prohibitions | None:
 # ---------------------------------------------------------------------------
 
 
-def _manifest_path(inventory: Inventory, name: str) -> str:
-    """The real, actually-matched path of manifest ``name`` — the shallowest when more than one exists.
+def _at_root(inventory: Inventory, name: str) -> bool:
+    """Whether manifest ``name`` is at the repository root, by its exact path.
 
-    ``Inventory.has(name)`` matches at any depth (``rel == name or rel.endswith("/" + name)``), so a
-    caller that already confirmed ``inventory.has(name)`` and then uses the literal ``name`` as the
-    manifest's path is citing a path that may not exist at all, on a target whose only manifest of
-    that kind is nested (mirrors :func:`audit.rules.checks.execution._lockfile_paths`, which picks
-    the shallowest lockfile first for the analogous problem).
+    A runner is the root file only: ``make``, ``npm``, ``task``, the pyproject task runners, ``./gradlew`` and
+    ``./mvnw`` in the root folder read the file there, so a nested ``tools/Makefile`` is not a runner and no verb
+    finding cites it.
+    ``Inventory.has`` would match it at any depth.
     """
-    matches = sorted(
-        (rel for rel in inventory.paths() if rel == name or rel.endswith("/" + name)),
-        key=lambda rel: (rel.count("/"), rel),
-    )
-    return matches[0] if matches else name
+    return any(entry.rel == name for entry in inventory.files)
 
 
 def _runner_commands(inventory: Inventory):
     """Yield ``(runner, {verb: command})`` for every manifest present, in :func:`runner_rank` order.
 
-    ``runner`` is the manifest's real, actually-matched relative path (:func:`_manifest_path`), not a
-    hardcoded literal basename — on a target whose only manifest of a kind is nested, the literal name
-    is a path that does not exist anywhere in the repository.
+    Every runner kind (the ``Makefile``, ``package.json``, the Taskfile, ``pyproject.toml``, the Gradle and the
+    Maven build) counts only at the root (:func:`_at_root`), where its tool reads it, so ``runner`` is the root
+    manifest's name, a path that exists.
     """
     found: list[tuple[str, dict[str, str]]] = []
-    if inventory.has("package.json"):
-        path = _manifest_path(inventory, "package.json")
-        found.append((path, extract_npm_scripts(inventory, manifest=path)))
-    if inventory.has("Makefile") and not makefile_errors(inventory):
-        found.append((_manifest_path(inventory, "Makefile"), parse_makefile_targets(inventory)))
+    if _at_root(inventory, "package.json"):
+        found.append(("package.json", extract_npm_scripts(inventory)))
+    if _at_root(inventory, "Makefile") and not makefile_errors(inventory):
+        found.append(("Makefile", parse_makefile_targets(inventory)))
     for name in ("Taskfile.yml", "Taskfile.yaml"):
-        if inventory.has(name):
-            path = _manifest_path(inventory, name)
-            text = inventory.read(path)
+        if _at_root(inventory, name):
+            text = inventory.read(name)
             if text:
-                found.append((path, _parse_taskfile(text)))
-    if inventory.has("pyproject.toml"):
-        path = _manifest_path(inventory, "pyproject.toml")
-        text = inventory.read(path)
+                found.append((name, _parse_taskfile(text)))
+    if _at_root(inventory, "pyproject.toml"):
+        text = inventory.read("pyproject.toml")
         if text:
-            found.append((path, _parse_pyproject_tasks(text)))
+            found.append(("pyproject.toml", _parse_pyproject_tasks(text)))
     for name in ("build.gradle", "build.gradle.kts"):
-        if inventory.has(name):
-            path = _manifest_path(inventory, name)
-            text = inventory.read(path)
+        if _at_root(inventory, name):
+            text = inventory.read(name)
             if text:
-                found.append((path, _parse_gradle_tasks(text, inventory)))
-    if inventory.has("pom.xml"):
-        path = _manifest_path(inventory, "pom.xml")
-        text = inventory.read(path)
+                found.append((name, _parse_gradle_tasks(text, inventory)))
+    if _at_root(inventory, "pom.xml"):
+        text = inventory.read("pom.xml")
         if text:
-            found.append((path, _parse_maven_plugins(text, inventory)))
+            found.append(("pom.xml", _parse_maven_plugins(text, inventory)))
     yield from sorted(found, key=lambda item: runner_rank(item[0]))
 
 
@@ -475,11 +465,9 @@ def _lifecycle_commands(runner: str, inventory: Inventory) -> dict[str, str]:
 def runner_kind(runner: str) -> str:
     """The manifest name a runner path was matched on, e.g. ``"packages/app/package.json"`` -> ``"package.json"``.
 
-    ``_runner_commands`` yields the real, actually-matched path (:func:`_manifest_path`) so evidence
-    cites a path that exists, but the literal manifest name is still what every precedence table,
-    alias table and delegation pattern in this module and in ``cmd.py`` is keyed on — a root-level
-    runner's kind and path are the same string, which is why those tables were never wrong for a
-    root manifest.
+    The literal manifest name is what every precedence table, alias table and delegation pattern in this
+    module and in ``cmd.py`` is keyed on. ``_runner_commands`` yields root manifests only, whose kind and path
+    are the same string; a caller may still pass a path.
     """
     return runner.rsplit("/", 1)[-1]
 
@@ -487,8 +475,9 @@ def runner_kind(runner: str) -> str:
 def runner_rank(runner: str) -> tuple[int, int, str]:
     """The sort key that orders runners: shallowest manifest first, then :data:`RUNNER_PRECEDENCE`, then path.
 
-    A root manifest of any kind outranks a nested one (ADR-0008), so a nested ``package.json`` cannot take
-    the verbs from the root ``Makefile``. Every reader that asks "which runner first" uses this key.
+    A root manifest of any kind outranks a nested one (ADR-0008). Every runner kind now counts only at the root,
+    so the kind decides among the runners ``_runner_commands`` yields. Every reader that asks "which runner first"
+    uses this key.
     """
     try:
         kind = RUNNER_PRECEDENCE.index(runner_kind(runner))
@@ -659,7 +648,11 @@ _MAVEN_LIFECYCLE_PHASES = (("test", "test"), ("typecheck", "compile test-compile
 
 
 def _launcher(inventory: Inventory, wrapper: str, fallback: str) -> str:
-    return f"./{wrapper}" if inventory.has(wrapper) else fallback
+    """``./<wrapper>`` when the build's wrapper is committed, else the installed ``fallback``.
+
+    ``./gradlew`` and ``./mvnw`` run from the root folder, so only a root wrapper launches the root build.
+    """
+    return f"./{wrapper}" if _at_root(inventory, wrapper) else fallback
 
 
 def _parse_maven_plugins(text: str, inventory: Inventory) -> dict[str, str]:

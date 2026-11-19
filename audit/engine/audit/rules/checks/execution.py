@@ -11,11 +11,12 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
 
 * **EXEC-01** — a toolchain pin appropriate to each **detected** ecosystem (``.nvmrc``, ``engines``,
   ``.python-version``/``requires-python``, ``gradlew``/``mvnw``, ``global.json``,
-  ``rust-toolchain.toml``, the ``go`` directive). Pin files and manifests count at any depth, so a nested
+  ``rust-toolchain.toml``, the ``go`` directive, ``.php-version``/``composer.json``'s ``config.platform.php`` or
+  ``require.php``). Pin files and manifests count at any depth, so a nested
   ``go.mod``'s ``go`` directive, a nested ``requires-python`` or a nested ``engines.node`` pins the ecosystem. A
   pinned ecosystem with a module manifest that no pin reaches (:func:`_unpinned_modules`: not its own manifest, nor
-  a pin file or a node/python pinning manifest in its folder or a parent) ⇒ ``PARTIAL``. No recognised ecosystem ⇒ ``UNKNOWN``; an ecosystem with no pin in the table (php) is not
-  asserted against.
+  a pin file or a node/python pinning manifest in its folder or a parent) ⇒ ``PARTIAL``. No recognised ecosystem ⇒
+  ``UNKNOWN``.
 * **EXEC-02** — the ecosystem's lockfile is **tracked** (``audit.ignore.tracked_files``) and its
   declared dependencies agree with the manifest. ``tracked_files`` returning ``None`` (not a git
   repository, git absent) makes the tracked half ``UNKNOWN`` — never a ``PASS``. Agreement is a
@@ -116,6 +117,7 @@ _PIN_FILES: dict[str, tuple[str, ...]] = {
     "dotnet": ("global.json",),
     "rust": ("rust-toolchain.toml", "rust-toolchain"),
     "ruby": (".ruby-version",),
+    "php": (".php-version",),
 }
 _PINNABLE = frozenset(_PIN_FILES) | {"go"}
 
@@ -125,7 +127,27 @@ _TOOL_VERSIONS = {
     "python": re.compile(r"(?mi)^\s*python\s+\S+"),
     "rust": re.compile(r"(?mi)^\s*rust\s+\S+"),
     "go": re.compile(r"(?mi)^\s*golang\s+\S+"),
+    "php": re.compile(r"(?mi)^\s*php\s+\S+"),
 }
+
+
+def _composer_php_pin(text: str) -> str | None:
+    """The ``composer.json`` key that pins PHP: ``config.platform.php`` (Composer resolves as if that PHP ran), then
+    ``require.php`` (Composer refuses to install outside the range, as ``requires-python`` does)."""
+    try:
+        data = json.loads(text or "{}")
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    config = data.get("config")
+    platform = config.get("platform") if isinstance(config, dict) else None
+    if isinstance(platform, dict) and isinstance(platform.get("php"), str) and platform["php"].strip():
+        return "config.platform.php"
+    require = data.get("require")
+    if isinstance(require, dict) and isinstance(require.get("php"), str) and require["php"].strip():
+        return "require.php"
+    return None
 
 
 def _manifests(inv: Inventory, name: str) -> list[str]:
@@ -164,6 +186,13 @@ def _pin_evidence(inv: Inventory, ecosystem: str) -> list[str]:
         for rel in _manifests(inv, "go.mod"):
             if re.search(r"(?m)^\s*go\s+\d", inv.read(rel) or ""):
                 evidence.append(f"{rel} (go directive)")
+                break
+
+    if ecosystem == "php":
+        for rel in _manifests(inv, "composer.json"):
+            key = _composer_php_pin(inv.read(rel) or "")
+            if key:
+                evidence.append(f"{rel} ({key})")
                 break
 
     return sorted(dict.fromkeys(evidence))

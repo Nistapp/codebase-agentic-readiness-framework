@@ -35,7 +35,10 @@ decide how a monorepo's components are scoped.
    broken by `RUNNER_PRECEDENCE` (kind), then by path. The rank is one function in
    `audit/rules/checks/_common.py` (`runner_rank`) that the resolver (`resolve_all_verbs`), `runner_commands` and
    `CMD-03`'s choice of a primary runner all use. Precedence is applied per verb: a root `Makefile` that does not
-   define `lint` does not hide a nested manifest that does.
+   define `lint` does not hide another runner that does. Only a root `package.json`, `Makefile`, Taskfile,
+   `pyproject.toml`, Gradle or Maven build is a runner (`_at_root`), since its tool reads it there; only a root
+   `gradlew` or `mvnw` launches that build. A nested `tools/Makefile` is not ranked, read or cited, so among the
+   runners the kind decides.
 2. **Carried data is set aside.** A file whose path has a directory component named `templates`, `template`,
    `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` (compared whole and case-insensitively; the
    target's own root name is never part of the comparison) is *carried data*. It is not a runner, not a source of
@@ -104,8 +107,8 @@ vendored trees). Template, example and fixture directories do not need it.
   `SEC-02`. The alternative (hazards read carried data, credits do not) would make the engine flag every fixture
   that holds a fake credential on purpose, including its own. `inventory.set_aside` shows that the directory was
   not read.
-* **Monorepo scoping is not covered.** A nested `package.json` outside the list keeps its place: it is ranked
-  below the root's manifests, and `CMD-03` sees it as a second runner. Declaring components for `DOC-01/02`,
-  `EXEC-04/07` and `NAV-01` is GitHub issue #20.
+* **Monorepo scoping is not covered.** A nested `package.json` is not a runner (rule 1). A package's own
+  scripts give the repository no verb, and `CMD-03` sees no second runner in them. Declaring components for
+  `DOC-01/02`, `EXEC-04/07` and `NAV-01` is GitHub issue #20.
 * **Hygiene presence is stricter.** A repository that keeps its only `CONTRIBUTING.md` in `packages/web/` fails
   `HYG-05`. These checks are informational and never score.

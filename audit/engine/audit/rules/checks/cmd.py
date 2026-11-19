@@ -18,6 +18,8 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   one runner ⇒ `PARTIAL` — the stray definition is `CMD-03`'s territory. With **no runner manifest
   at all** the verdict is `UNKNOWN`: an unrecognised ecosystem is not proof of absence. A verb is
   read under the spelling its runner accepts (`audit.stack.FORMAT_CHECK_ALIASES`; the spec's table).
+  A `package.json`, a `Makefile`, a Taskfile, a `pyproject.toml`, a Gradle or a Maven build is a runner only at
+  the root, where its runner reads it; a nested one is neither read nor cited.
   A `Makefile` that GNU Make refuses to parse is not a runner and is a finding of its own,
   `CMD-01:Makefile`: `FAIL` when no other runner is left, otherwise at least `PARTIAL`.
 * **CMD-02** — the `check` verb's body invokes a format-check, a typecheck and a test command.

@@ -310,7 +310,7 @@ def check_tst01(*, spec, target, inventory, stack, components, session) -> Check
                     "run the test suite",
                     "no test verb resolves and no test file exists",
                     Verdict.FAIL,
-                    [Evidence(rel) for rel in sorted(inventory.paths())[:1]] or [Evidence("<repository>")],
+                    [Evidence("<repository>")],
                     "Add a test verb and at least one test file so a change set can be verified.",
                 )
             ],

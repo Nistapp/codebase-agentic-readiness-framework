@@ -1,0 +1,635 @@
+{
+ "about": "The real (move, check) pairs of the triage of the 1,813 unreviewed pairs (origin/dev f5b7e7b, 2026-11-19): kept in substance or a real touch. The inference must keep inferring each one.",
+ "pairs": [
+  {
+   "move": "adapt-agents-md/row-1",
+   "check": "AGT-01",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-10",
+   "check": "AGT-08",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-11",
+   "check": "AGT-08",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-11",
+   "check": "AGT-13",
+   "kind": "shift"
+  },
+  {
+   "move": "adapt-agents-md/row-12",
+   "check": "AGT-10",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "AGT-03",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "AGT-04",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "AGT-05",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "AGT-09",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "AGT-13",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "BASE-01",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "BASE-03",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "BASE-04",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "DOC-02",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "EXEC-03",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-16",
+   "check": "AGT-02",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-17",
+   "check": "AGT-12",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-18",
+   "check": "AGT-12",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-19",
+   "check": "AGT-08",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "adapt-agents-md/row-19",
+   "check": "AGT-10",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "adapt-agents-md/row-20",
+   "check": "AGT-03",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "adapt-agents-md/row-20",
+   "check": "AGT-05",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "adapt-agents-md/row-20",
+   "check": "AGT-09",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "adapt-agents-md/row-20",
+   "check": "BASE-01",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "adapt-agents-md/row-20",
+   "check": "BASE-03",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "adapt-agents-md/row-20",
+   "check": "BASE-04",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "adapt-agents-md/row-22",
+   "check": "AGT-13",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-23",
+   "check": "AGT-13",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-24",
+   "check": "AGT-13",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-3",
+   "check": "EXEC-06",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-5",
+   "check": "TST-04",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-6",
+   "check": "AGT-03",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-7",
+   "check": "AGT-06",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-8",
+   "check": "AGT-04",
+   "kind": "target"
+  },
+  {
+   "move": "adapt-agents-md/row-9",
+   "check": "AGT-09",
+   "kind": "target"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-10",
+   "check": "TST-05",
+   "kind": "target"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-11",
+   "check": "TST-05",
+   "kind": "shift"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-12",
+   "check": "CMD-04",
+   "kind": "break"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-12",
+   "check": "TST-05",
+   "kind": "shift"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-13",
+   "check": "BASE-04",
+   "kind": "target"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-15",
+   "check": "NAV-05",
+   "kind": "break"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-15",
+   "check": "TST-03",
+   "kind": "target"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-16",
+   "check": "TST-04",
+   "kind": "target"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-4",
+   "check": "NAV-02",
+   "kind": "shift"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-6",
+   "check": "BASE-03",
+   "kind": "target"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-7",
+   "check": "CMD-04",
+   "kind": "break"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-8",
+   "check": "BASE-01",
+   "kind": "target"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-8",
+   "check": "BASE-03",
+   "kind": "target"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-9",
+   "check": "TST-05",
+   "kind": "target"
+  },
+  {
+   "move": "add-ci-parity/row-1",
+   "check": "CI-01",
+   "kind": "target"
+  },
+  {
+   "move": "add-ci-parity/row-2",
+   "check": "EXEC-04",
+   "kind": "break"
+  },
+  {
+   "move": "add-ci-parity/row-3",
+   "check": "CI-02",
+   "kind": "target"
+  },
+  {
+   "move": "add-ci-parity/row-3",
+   "check": "CI-03",
+   "kind": "target"
+  },
+  {
+   "move": "add-ci-parity/row-7",
+   "check": "HYG-11",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "add-deny-rules/row-1",
+   "check": "AGT-07",
+   "kind": "target"
+  },
+  {
+   "move": "add-deny-rules/row-1",
+   "check": "CON-01",
+   "kind": "target"
+  },
+  {
+   "move": "add-deny-rules/row-1",
+   "check": "CON-02",
+   "kind": "target"
+  },
+  {
+   "move": "add-deny-rules/row-3",
+   "check": "CON-03",
+   "kind": "target"
+  },
+  {
+   "move": "add-deny-rules/row-3",
+   "check": "NAV-03",
+   "kind": "shift"
+  },
+  {
+   "move": "add-deny-rules/row-3",
+   "check": "SEC-02",
+   "kind": "shift"
+  },
+  {
+   "move": "add-hooks-and-commit-rules/row-2",
+   "check": "TOOL-05",
+   "kind": "target"
+  },
+  {
+   "move": "add-hooks-and-commit-rules/row-4",
+   "check": "TOOL-06",
+   "kind": "target"
+  },
+  {
+   "move": "add-hooks-and-commit-rules/row-7",
+   "check": "NAV-02",
+   "kind": "shift"
+  },
+  {
+   "move": "add-repo-hygiene/row-1",
+   "check": "HYG-01",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-10",
+   "check": "HYG-11",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-11",
+   "check": "HYG-11",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-13",
+   "check": "HYG-09",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-14",
+   "check": "HYG-13",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-15",
+   "check": "CON-02",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "add-repo-hygiene/row-15",
+   "check": "HYG-13",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-16",
+   "check": "AGT-09",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-2",
+   "check": "HYG-02",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-3",
+   "check": "HYG-03",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-4",
+   "check": "HYG-04",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-5",
+   "check": "HYG-05",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-6",
+   "check": "HYG-06",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-7",
+   "check": "HYG-07",
+   "kind": "target"
+  },
+  {
+   "move": "add-repo-hygiene/row-9",
+   "check": "HYG-11",
+   "kind": "target"
+  },
+  {
+   "move": "configure-quality-tools/row-1",
+   "check": "TOOL-01",
+   "kind": "target"
+  },
+  {
+   "move": "configure-quality-tools/row-10",
+   "check": "CI-02",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-10",
+   "check": "CI-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-11",
+   "check": "TOOL-03",
+   "kind": "target"
+  },
+  {
+   "move": "configure-quality-tools/row-14",
+   "check": "CMD-04",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-14",
+   "check": "TOOL-03",
+   "kind": "target"
+  },
+  {
+   "move": "configure-quality-tools/row-15",
+   "check": "CI-02",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-15",
+   "check": "CI-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-17",
+   "check": "CMD-04",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-18",
+   "check": "CI-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-4",
+   "check": "TOOL-01",
+   "kind": "target"
+  },
+  {
+   "move": "configure-quality-tools/row-5",
+   "check": "CI-02",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-5",
+   "check": "CI-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-6",
+   "check": "TOOL-02",
+   "kind": "target"
+  },
+  {
+   "move": "configure-quality-tools/row-9",
+   "check": "TOOL-02",
+   "kind": "target"
+  },
+  {
+   "move": "define-command-surface/row-1",
+   "check": "CMD-01",
+   "kind": "target"
+  },
+  {
+   "move": "define-command-surface/row-1",
+   "check": "CMD-03",
+   "kind": "break"
+  },
+  {
+   "move": "define-command-surface/row-1",
+   "check": "CMD-04",
+   "kind": "break"
+  },
+  {
+   "move": "define-command-surface/row-1",
+   "check": "TOOL-01",
+   "kind": "shift"
+  },
+  {
+   "move": "define-command-surface/row-1",
+   "check": "TOOL-02",
+   "kind": "shift"
+  },
+  {
+   "move": "define-command-surface/row-1",
+   "check": "TOOL-03",
+   "kind": "shift"
+  },
+  {
+   "move": "define-command-surface/row-1",
+   "check": "TST-01",
+   "kind": "target"
+  },
+  {
+   "move": "define-command-surface/row-2",
+   "check": "CMD-02",
+   "kind": "target"
+  },
+  {
+   "move": "define-command-surface/row-2",
+   "check": "CMD-04",
+   "kind": "break"
+  },
+  {
+   "move": "define-command-surface/row-3",
+   "check": "CMD-04",
+   "kind": "target"
+  },
+  {
+   "move": "define-command-surface/row-4",
+   "check": "CMD-03",
+   "kind": "target"
+  },
+  {
+   "move": "define-command-surface/row-5",
+   "check": "EXEC-03",
+   "kind": "target"
+  },
+  {
+   "move": "env-inventory-and-secrets/row-1",
+   "check": "SEC-01",
+   "kind": "target"
+  },
+  {
+   "move": "env-inventory-and-secrets/row-1",
+   "check": "SEC-02",
+   "kind": "shift"
+  },
+  {
+   "move": "env-inventory-and-secrets/row-2",
+   "check": "DOC-05",
+   "kind": "break"
+  },
+  {
+   "move": "env-inventory-and-secrets/row-6",
+   "check": "DOC-05",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-1",
+   "check": "DOC-04",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-10",
+   "check": "CON-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-10",
+   "check": "DOC-03",
+   "kind": "target"
+  },
+  {
+   "move": "establish-docs-contract/row-10",
+   "check": "NAV-03",
+   "kind": "shift"
+  },
+  {
+   "move": "establish-docs-contract/row-10",
+   "check": "SEC-02",
+   "kind": "shift"
+  },
+  {
+   "move": "establish-docs-contract/row-11",
+   "check": "AGT-13",
+   "kind": "kept-in-substance"
+  },
+  {
+   "move": "establish-docs-contract/row-13",
+   "check": "CMD-04",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-16",
+   "check": "NAV-02",
+   "kind": "shift"
+  },
+  {
+   "move": "establish-docs-contract/row-18",
+   "check": "CMD-04",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-2",
+   "check": "DOC-02",
+   "kind": "target"
+  },
+  {
+   "move": "establish-docs-contract/row-6",
+   "check": "NAV-02",
+   "kind": "target"
+  },
+  {
+   "move": "establish-docs-contract/row-6",
+   "check": "NAV-04",
+   "kind": "target"
+  },
+  {
+   "move": "pin-execution-environment/row-1",
+   "check": "EXEC-01",
+   "kind": "target"
+  },
+  {
+   "move": "pin-execution-environment/row-3",
+   "check": "EXEC-02",
+   "kind": "target"
+  },
+  {
+   "move": "untrack-generated/row-2",
+   "check": "EXEC-05",
+   "kind": "target"
+  },
+  {
+   "move": "untrack-generated/row-2",
+   "check": "NAV-03",
+   "kind": "shift"
+  },
+  {
+   "move": "untrack-generated/row-2",
+   "check": "SEC-02",
+   "kind": "shift"
+  }
+ ]
+}
