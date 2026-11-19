@@ -33,8 +33,16 @@ and the gate in both modes exist, with their tests. The boundaries are not writt
    4. `names`: the file and folder names the engine gives a meaning to.
    5. `boundaries`: the implement run's promises that no check reads. Each has one home quote. It says what
       enforces it: a tool refusal, a test, or only the prose.
-3. The reads live in the map, not in the engine. A read can name the engine constants that hold its file list
-   (`constants`). A `dev/` test compares the two, so a changed constant fails the test.
+3. The engine declares the reads of each engine check beside the registry, in
+   [`audit/rules/reads.py`](../../../audit/engine/audit/rules/reads.py):
+   1. A declaration takes its paths from the engine constants the check uses, where they exist.
+   2. [`dev/consistency_map_reads.py`](../../../dev/consistency_map_reads.py) generates the map's `reads` part from
+      it. A `dev/` test fails when the two differ.
+   3. The two agent checks have no code, so their entries are written in the map.
+   4. A read names its `constants` only when they hold its whole file list.
+   5. An engine test runs every check on every fixture and on a greenfield scaffold. It records each path a check
+      asks for, and fails on a path the declaration does not cover.
+   6. The declaration is not in the ruleset hash and is in no report.
 4. A keeps quote is checked as the quote verifier checks it: verbatim, with whitespace collapsed. Its section
    must still mention the check ID.
 5. The gate fails in four cases:
@@ -66,7 +74,7 @@ and the gate in both modes exist, with their tests. The boundaries are not writt
 | CUE over the JSON | Adds a Go tool and a new language for three joins a short script does |
 | Datalog facts | Needs a dev-only engine and has few readers; it stays open if the queries outgrow a script |
 | LikeC4, Alloy or TLA+ models | They model architecture or states, not the text a check reads |
-| The reads beside each check in the engine registry | An engine change for 76 checks under the engine's strictest rules; the `constants` field and its test catch drift without it |
+| The reads written by hand in the map, or as a field of each registry entry | By hand, the map drifts from the code: the recording test found 24 entries whose scope or file list the code did not match. As a field, the registry's 76 entries grow by about 1,000 places; a module keyed by check ID leaves the registry, the ruleset hash and every report unchanged |
 | The reads in `audit/catalogue.json` | The catalogue ships to readers and holds no code constant, so it drifts like a separate file |
 | Files and phrases only, no boundaries | The run's own promises stay unmapped, and a playbook step can contradict a hard rule unseen |
 | Fail the gate on any changed evidence | Rationale not recorded; owner to fill in |
