@@ -1588,7 +1588,7 @@
         "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
       },
       "move": "configure-quality-tools/row-5",
-      "note": "The full format:check runs as a report-only step outside the merge gate's needs, with its debt recorded, which the CI-04 rubric's report-only clause accepts.",
+      "note": "The full format:check runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
       "status": "kept"
     },
     {
@@ -1641,7 +1641,7 @@
         "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
       },
       "move": "configure-quality-tools/row-10",
-      "note": "The full lint runs as a report-only step outside the merge gate's needs, with its debt recorded, which the CI-04 rubric's report-only clause accepts.",
+      "note": "The full lint runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
       "status": "kept"
     },
     {
@@ -1674,7 +1674,7 @@
         "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
       },
       "move": "configure-quality-tools/row-15",
-      "note": "The full type check runs as a report-only step outside the merge gate's needs, with its debt recorded, which the CI-04 rubric's report-only clause accepts.",
+      "note": "The full type check runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
       "status": "kept"
     },
     {
@@ -1702,11 +1702,11 @@
       "check": "CI-04",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
-        "quote": "A scan that is red on day one gets a report-only job outside the merge gate's `needs`, named report-only, with its debt recorded (count and review date), as CI-04 accepts.",
+        "quote": "A scan that is red on day one gets a report-only job outside the merge gate's `needs`, named report-only. A comment beside the step holds its count and review date, as CI-04 accepts.",
         "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
       },
       "move": "configure-quality-tools/row-18",
-      "note": "A red security job is report-only outside the merge gate's needs, with its debt recorded; CI-04 reads PARTIAL, not PASS, while the verb gates nowhere else.",
+      "note": "A red security job is report-only outside the merge gate's needs, with its count and review date committed beside the step; CI-04 reads PARTIAL, not PASS, while the verb gates nowhere else.",
       "status": "kept"
     },
     {
