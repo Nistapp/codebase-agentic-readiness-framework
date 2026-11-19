@@ -352,6 +352,8 @@ sentence keeps it. It checks that the rule is stated, not that an agent follows 
 ## Exit codes
 
 Every `doc_index.py` command exits 1 on a usage error, such as an unknown option. `--help` exits 0.
+A key in `dev/docindex.config.json` that no rule reads, such as a misspelt one, also exits 1.
+A config path that matches no tracked file is only a warning in the `build` summary.
 
 | Command | 0 | 1 | 2 |
 | --- | --- | --- | --- |

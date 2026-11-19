@@ -257,6 +257,35 @@ class SmallTreeTest(_Repo):
         self.assertIn("  recipe: 1 Markdown files, 6 sections\n", text)
 
 
+class ConfigProblemTest(_Repo):
+    def test_a_path_entry_that_matches_no_tracked_file_is_named(self) -> None:
+        self._commit(_FILES)
+        config = {
+            **_CONFIG,
+            "zones": {**_CONFIG["zones"], "recipes/": "recipe"},
+            "exclude": {"list_only": ["tests/fixture/"], "skip": ["artefacts/"]},
+            "ids": {"adr": {"defined_in": ["recipe/", "decisions/"], "pattern": "x"}},
+            "sweep": {"file_names": ["GUIDE.md", "AGENT.md"], "paths": ["templates/"]},
+        }
+        result = extract.extract(WorkTree(self.root), config)
+        self.assertEqual(
+            result.summary.config_problems,
+            (
+                "exclude.list_only: 'tests/fixture/' matches no tracked file",
+                "ids.adr.defined_in: 'decisions/' matches no tracked file",
+                "sweep.file_names: 'AGENT.md' names no tracked file",
+                "sweep.paths: 'templates/' matches no tracked file",
+                "zones: 'recipes/' matches no tracked file",
+            ),
+        )
+        text = extract.summary_text(result.summary, prog="build")
+        self.assertIn("  config problem (the entry has no effect): zones: 'recipes/' matches no tracked file\n", text)
+
+    def test_a_config_whose_entries_all_match_has_no_problem(self) -> None:
+        self._commit(_FILES)
+        self.assertEqual(extract.extract(WorkTree(self.root), _CONFIG).summary.config_problems, ())
+
+
 class UnindexedPathTest(_Repo):
     def test_a_path_a_node_cannot_hold_is_left_out_and_named(self) -> None:
         self._commit({"docs/a#b.md": "# A\n", "docs/back\\slash.md": "# B\n", "docs/ok.md": "# Ok\n"})
@@ -357,6 +386,7 @@ class ThisRepositoryTest(unittest.TestCase):
         self.assertGreater(summary.sections, 0)
         self.assertGreater(summary.listed_only, 0)
         self.assertEqual(summary.unindexed, ())
+        self.assertEqual(summary.config_problems, ())
         index = model.to_dict(result.index)
         self.assertEqual(_problems(index), [])
         files = _nodes(index, "file")
