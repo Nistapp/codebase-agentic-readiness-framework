@@ -402,6 +402,41 @@ class GateTest(unittest.TestCase):
         self.assertFalse(overlaps("src/SECURITY.md", {"path": "SECURITY*", "scope": "repository-level"}))
         self.assertTrue(overlaps(".github/workflows/ci.yml", {"path": ".github/workflows/*.yml", "scope": "glob"}))
 
+    def test_a_glob_place_matches_folder_by_folder(self) -> None:
+        overlaps = consistency_map.place_overlaps
+        self.assertTrue(overlaps("docs/a.md", {"path": "docs/**/*.md", "scope": "glob"}))
+        self.assertTrue(overlaps("docs/x/a.md", {"path": "docs/**/*.md", "scope": "glob"}))
+        self.assertTrue(overlaps("AGENTS.md", {"path": "**/AGENTS.md", "scope": "glob"}))
+        self.assertTrue(overlaps("src/app.py", {"path": "**", "scope": "glob"}))
+        self.assertFalse(overlaps(".github/workflows/sub/ci.yml", {"path": ".github/workflows/*.yml", "scope": "glob"}))
+        self.assertFalse(overlaps("docs/a.md", {"path": "*.md", "scope": "glob"}))
+        self.assertTrue(overlaps("docs/*.md", {"path": "docs/**/*.md", "scope": "glob"}))
+        self.assertTrue(overlaps("**/*.sh", {"path": "scripts/*.sh", "scope": "glob"}))
+
+    def test_a_glob_move_path_matches_a_root_place_folder_by_folder(self) -> None:
+        overlaps = consistency_map.place_overlaps
+        self.assertTrue(overlaps("*.md", {"path": "README.md", "scope": "root"}))
+        self.assertFalse(overlaps("*.md", {"path": "docs/README.md", "scope": "root"}))
+        self.assertTrue(overlaps("**/README.md", {"path": "README.md", "scope": "root"}))
+
+    def test_a_folder_reaches_a_glob_place_folder_by_folder(self) -> None:
+        overlaps = consistency_map.place_overlaps
+        self.assertTrue(overlaps("artefacts/", {"path": "**", "scope": "glob"}))
+        self.assertFalse(overlaps("docs/", {"path": "*", "scope": "glob"}))
+
+    def test_a_wildcard_folder_reaches_the_root_at_repository_level(self) -> None:
+        overlaps = consistency_map.place_overlaps
+        self.assertTrue(overlaps("**/SECURITY.md", {"path": "SECURITY*", "scope": "repository-level"}))
+        self.assertTrue(overlaps("*/SECURITY.md", {"path": "SECURITY*", "scope": "repository-level"}))
+        self.assertFalse(overlaps("src/*/SECURITY.md", {"path": "SECURITY*", "scope": "repository-level"}))
+
+    def test_a_folded_place_meets_a_path_in_any_case(self) -> None:
+        overlaps = consistency_map.place_overlaps
+        place = {"path": "docs/**/*convention*", "scope": "glob", "case": "fold"}
+        self.assertTrue(overlaps("docs/Conventions.md", place))
+        self.assertTrue(overlaps("DOCS/x/CONVENTIONS.md", place))
+        self.assertFalse(overlaps("docs/Conventions.md", {"path": "docs/**/*convention*", "scope": "glob"}))
+
     def test_r1_a_folder_overlaps_only_the_places_inside_it(self) -> None:
         overlaps = consistency_map.place_overlaps
         self.assertFalse(overlaps("artefacts/", {"path": "package.json", "scope": "any-depth"}))
