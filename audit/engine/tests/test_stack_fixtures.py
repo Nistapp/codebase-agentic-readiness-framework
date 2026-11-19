@@ -30,6 +30,7 @@ from audit.stack import detect_stack  # noqa: E402
 #: fixture -> (ecosystems, package managers) that stack detection must report.
 STACKS: dict[str, tuple[set[str], set[str]]] = {
     "stack-dotnet": ({"dotnet"}, set()),
+    "stack-ruby-bundler": ({"ruby"}, {"bundler"}),
     "stack-rust-cargo": ({"rust"}, {"cargo"}),
 }
 
@@ -39,6 +40,11 @@ VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
         "EXEC-01": ("PASS", "dotnet (global.json)"),
         "NAV-02": ("PASS", "entry point(s): Program.cs"),
         "TOOL-03": ("PASS", "StackDotnet.csproj:Nullable"),
+    },
+    "stack-ruby-bundler": {
+        "EXEC-01": ("PASS", "ruby (.ruby-version)"),
+        "EXEC-02": ("PARTIAL", "consistency unverified: Gemfile.lock"),
+        "NAV-02": ("PASS", "entry point(s): config.ru"),
     },
     "stack-rust-cargo": {
         "EXEC-01": ("PASS", "rust (rust-toolchain.toml)"),
