@@ -323,6 +323,32 @@ def _is_wild(name: str) -> bool:
     return any(char in name for char in "*?[")
 
 
+def _glob_matches(pattern: str, path: str) -> bool:
+    """Whether a path from the root matches a glob from the root, folder by folder, as the schema's glob scope says.
+
+    ``*``, ``?`` and ``[...]`` match inside one folder name, so ``*`` never crosses ``/``. A ``**`` folder matches
+    any number of folders, none included: ``**/AGENTS.md`` matches ``AGENTS.md`` and ``docs/**/*.md`` matches
+    ``docs/a.md``. The empty path is the root, with no folder name.
+    """
+    parts = pattern.split("/") if pattern else []
+    names = path.split("/") if path else []
+
+    @functools.lru_cache(maxsize=None)
+    def match(i: int, j: int) -> bool:
+        if i == len(parts):
+            return j == len(names)
+        if parts[i] == "**":
+            return match(i + 1, j) or (j < len(names) and match(i, j + 1))
+        return j < len(names) and fnmatch.fnmatchcase(names[j], parts[i]) and match(i + 1, j + 1)
+
+    return match(0, 0)
+
+
+def _globs_meet(one: str, other: str) -> bool:
+    """Whether either of two paths, each of which may be a glob, matches the other read as a plain path."""
+    return _glob_matches(one, other) or _glob_matches(other, one)
+
+
 def place_overlaps(path: str, where: dict[str, Any]) -> bool:
     """Whether a move path (a file, a folder ending in ``/`` or a glob) can overlap a place a read covers.
 
@@ -330,23 +356,26 @@ def place_overlaps(path: str, where: dict[str, Any]) -> bool:
     under it (rule R1): a move of ``artefacts/`` reaches the root place ``artefacts``, not every name the scan reads.
     A move path whose base name holds a wildcard does not overlap a literal name read at any depth or at repository
     level (rule R2): ``.github/workflows/*.yml`` is not ``Taskfile.yml``.
+    Root and glob places, and a glob move path, match folder by folder (:func:`_glob_matches`). A place with
+    ``case: fold`` is met by a path in any case.
     """
     target, scope = str(where["path"]), str(where["scope"])
+    if where.get("case") == "fold":
+        target, path = target.lower(), path.lower()
     if _is_folder(path):
         folder = path.rstrip("/")
         if scope == "glob":
-            return target.startswith(path) or fnmatch.fnmatchcase(path + "x", target)
+            return target.startswith(path) or _glob_matches(target, path + "x")
         return target == folder or target.startswith(path)
-    if scope == "root":
-        return path == target or fnmatch.fnmatchcase(target, path) or fnmatch.fnmatchcase(path, target)
-    if scope == "glob":
-        return fnmatch.fnmatchcase(path, target) or fnmatch.fnmatchcase(target, path)
+    if scope in ("root", "glob"):
+        return _globs_meet(path, target)
     base = posixpath.basename(path)
     if _is_wild(base) and not _is_wild(target):
         return False  # R2: a wildcard base name (``*.yml``, ``**``) names no one literal file a read looks for
     named = fnmatch.fnmatchcase(base, target) or fnmatch.fnmatchcase(target, base)
     if scope == "repository-level":
-        return named and posixpath.dirname(path) in _REPOSITORY_LEVEL
+        folder = posixpath.dirname(path)
+        return named and any(_globs_meet(folder, level) for level in _REPOSITORY_LEVEL)
     return named
 
 
