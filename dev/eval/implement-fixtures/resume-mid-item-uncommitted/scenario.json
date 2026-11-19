@@ -5,10 +5,12 @@
   "pr_by_agent": "no",
   "phase": "t6",
   "assertions": [
-    "A4",
     "A2",
+    "A4",
     "A6",
-    "A16"
+    "A16",
+    "A17",
+    "A19"
   ],
   "params": {
     "check": "DOC-01",
