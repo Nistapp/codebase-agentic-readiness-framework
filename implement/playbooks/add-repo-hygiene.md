@@ -403,11 +403,12 @@ One commit per file or concern. A check that already passes makes no commit.
   revisit trigger in the note.
 - **HYG-11 on a plan that cannot enforce protection:** `done` for the check (the files and the page exist) with the
   note "recorded, not enforced"; the unenforced setting is an owner action, not debt.
-- **HYG-11 on GitLab without Terraform:** `partial` (the engine reads the page only as recorded), with the note
-  "no repository file for GitLab protected branches; declare them in Terraform to close" and the setting as an owner
-  action. It is not debt.
-- **HYG-13 with items the owner declines, or a fact the repository does not show:** the item is `partial`, and the
-  note names each missing item (`setup`, `gate`, `workflow`). It is not debt, because the check is unscored.
+- **HYG-11 on GitLab without Terraform:** `partial` (the engine reads the page only as recorded), with
+  `--debt "what=protected branches with no repository file,count=N"`. N is the number of branches the page protects.
+  The note says "declare them in Terraform to close", and the setting is an owner action.
+- **HYG-13 with items the owner declines, or a fact the repository does not show:** the item is `partial`, with
+  `--debt "what=contributing items missing (<names>),count=N"`. The names are the missing items (`setup`, `gate`,
+  `workflow`), and N is how many. `progress.py` refuses `partial` without debt, even for this unscored check.
 - **HYG-13 with no contributing file:** the check gives `UNKNOWN`. Close the `HYG-05` item first, then run Step 9.
 - **A missing licence:** the item is `blocked` until the owner chooses one; it is not debt the playbook can fix.
 - None of this is a count of violations, so no ratchet or baseline file applies: report-only is the wiring.
@@ -479,7 +480,7 @@ python3 implement/tools/progress.py pref set security.disclosure <github-private
 python3 implement/tools/progress.py pref set contributing.content <suggest|suggest-and-move|skip> \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
-  --commit <sha> --note "contributing items missing (gate); owner declined the line"
+  --commit <sha> --debt "what=contributing items missing (gate),count=1" --note "owner declined the line"
 ```
 
 Record a preference only when the owner answers; absent means the default above. The theme closes once, after
