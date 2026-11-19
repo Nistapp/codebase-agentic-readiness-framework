@@ -22,10 +22,10 @@ Engine           `CMD-01`. Reads every runner manifest `_common` understands in 
                  directory (`templates/`, `fixtures/`, `examples/`) is not a runner at all, so a template's
                  `package.json` cannot take the verbs from the root `Makefile`
                  ([ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). A
-                 `Makefile` counts only at the root, where `make` reads it: a nested `tools/Makefile` is
-                 not a runner, and no finding cites it. All seven verbs resolving on exactly one runner is
-                 `PASS`. Any verb missing from
-                 every runner is `FAIL`. Verbs resolving but spread across more than one runner is
+                 `package.json` or a `Makefile` counts only at the root, where `npm` or `make` reads it: a
+                 nested `tools/Makefile` is not a runner, and no finding cites it. All seven verbs
+                 resolving on exactly one runner is `PASS`. Any verb missing from every runner is `FAIL`.
+                 Verbs resolving but spread across more than one runner is
                  `PARTIAL` (the stray second definition itself is `CMD-03`'s territory, not this check's).
                  A `Makefile` GNU Make refuses to parse (an unescaped `format:check:` target, a static
                  pattern rule with no `%`) is not a runner at all: `FAIL` as `CMD-01:Makefile` when no

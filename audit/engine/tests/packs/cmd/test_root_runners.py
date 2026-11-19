@@ -25,7 +25,7 @@ from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 from audit.stack import detect_stack  # noqa: E402
 from audit.target import resolve_target  # noqa: E402
-from scope_support import MAKE, ScopeTestCase  # noqa: E402
+from scope_support import MAKE, NPM, ScopeTestCase  # noqa: E402
 
 #: GNU Make refuses this file: an unescaped ``format:check:`` is a static pattern rule with no ``%``.
 BROKEN_MAKE = "format:check:\n\techo c\n"
@@ -73,6 +73,25 @@ class NestedMakefileTests(ScopeTestCase):
             "no recognised verb runner (package.json, Makefile, Taskfile, pyproject, gradle, maven), "
             "so no verb can be resolved",
         )
+
+
+class NestedPackageJsonTests(ScopeTestCase):
+    def test_a_nested_only_package_json_is_not_a_runner(self):
+        inventory = self.inventory_of({"packages/app/package.json": NPM})
+        self.assertEqual(runner_commands(inventory), ())
+        self.assertEqual(resolve_all_verbs(inventory, detect_stack(inventory)), {})
+
+    def test_a_root_package_json_is_the_runner_and_a_nested_one_beside_it_is_not(self):
+        nested = '{"scripts": {"check": "npm test"}}'
+        inventory = self.inventory_of({"package.json": NPM, "packages/app/package.json": nested})
+        self.assertEqual([runner for runner, _ in runner_commands(inventory)], ["package.json"])
+        self.assertNotIn("check", dict(runner_commands(inventory))["package.json"])
+
+    def test_cmd01_on_the_nested_lockfile_fixture_cites_no_file(self):
+        """The fixture's only manifest is ``packages/app/package.json``: no runner, so ``UNKNOWN`` and no finding."""
+        outcome = cmd01(support.fixture("exec-02-nested-lockfile"))
+        self.assertEqual(outcome.verdict.value, "UNKNOWN")
+        self.assertEqual(outcome.findings, [])
 
 
 if __name__ == "__main__":
