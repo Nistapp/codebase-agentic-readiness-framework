@@ -177,6 +177,10 @@ class MavenTests(unittest.TestCase):
     def test_without_a_wrapper_the_installed_maven_is_the_launcher(self):
         self.assertEqual(verbs_of({"pom.xml": self.pom()})["check"], "pom.xml: mvn verify")
 
+    def test_a_nested_wrapper_does_not_launch_the_root_build(self):
+        """``./mvnw`` runs from the root folder, so a ``tools/mvnw`` is not the root build's launcher."""
+        self.assertEqual(verbs_of({"pom.xml": self.pom(), "tools/mvnw": "#!/bin/sh\n"})["check"], "pom.xml: mvn verify")
+
     def test_each_default_plugin_gives_its_verbs_in_the_specs_spelling(self):
         pom = self.pom("spotless-maven-plugin", "maven-checkstyle-plugin", "dependency-check-maven")
         self.assertEqual(
@@ -229,18 +233,16 @@ class MavenTests(unittest.TestCase):
 
 
 class NestedManifestTests(unittest.TestCase):
-    """A runner found at any depth is named by its real path; a root-only runner below the root is no runner.
+    """A runner below the root is no runner, and no runner is cited by a literal name that does not exist.
 
-    A monorepo whose only Maven build lives under ``packages/app`` has no manifest at the literal name
-    ``"pom.xml"``: a caller that cites that literal name cites a path that does not exist anywhere in the
-    repository. A ``Makefile``, a ``package.json`` or a Gradle build counts only at the root, where ``make``,
-    ``npm`` and ``./gradlew`` read it.
+    A ``Makefile``, a ``package.json``, a Gradle or a Maven build counts only at the root, where ``make``,
+    ``npm``, ``./gradlew`` and ``./mvnw`` read it.
     """
 
-    def test_a_nested_only_build_is_named_by_its_real_path(self):
+    def test_a_nested_only_maven_build_is_not_a_runner(self):
         verbs, commands = read({"packages/app/pom.xml": "<project></project>\n"})
-        self.assertEqual(verbs["test"].runner, "packages/app/pom.xml")
-        self.assertIn("packages/app/pom.xml", commands)
+        self.assertNotIn("test", verbs)
+        self.assertNotIn("packages/app/pom.xml", commands)
         self.assertNotIn("pom.xml", commands)
 
     def test_a_nested_only_gradle_build_is_not_a_runner(self):
@@ -255,15 +257,15 @@ class NestedManifestTests(unittest.TestCase):
         self.assertNotIn("packages/app/package.json", commands)
         self.assertNotIn("package.json", commands)
 
-    def test_the_shallowest_of_two_nested_manifests_is_named(self):
+    def test_a_root_build_is_read_and_a_nested_one_beside_it_is_not(self):
         _, commands = read(
             {
-                "apps/web/pom.xml": "<project></project>\n",
-                "apps/web/deep/nested/pom.xml": "<project></project>\n",
+                "pom.xml": "<project></project>\n",
+                "apps/web/pom.xml": "<project><artifactId>maven-checkstyle-plugin</artifactId></project>\n",
             }
         )
-        self.assertIn("apps/web/pom.xml", commands)
-        self.assertNotIn("apps/web/deep/nested/pom.xml", commands)
+        self.assertEqual(commands["pom.xml"], {})
+        self.assertNotIn("apps/web/pom.xml", commands)
 
     def test_a_nested_only_makefile_is_not_a_runner(self):
         """``make`` reads the root ``Makefile`` only, so a nested one is neither read nor cited."""

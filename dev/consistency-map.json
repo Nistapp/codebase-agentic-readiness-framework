@@ -6492,7 +6492,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -6500,7 +6500,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -7122,7 +7122,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "package.json, the Makefile, the Taskfile, pyproject.toml and the Gradle build count only at the root, where they are read; a Maven build is matched at any depth and only the shallowest is read. gradlew (root only) and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
+      "note": "Every runner (package.json, the Makefile, the Taskfile, pyproject.toml, the Gradle and the Maven build) counts only at the root, where it is read. A root gradlew or mvnw only chooses the launcher. format:check is also read under the spelling its runner accepts.",
       "source": "engine",
       "threshold": "all seven verbs on one runner",
       "what": {
@@ -7168,7 +7168,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -7176,7 +7176,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -7226,7 +7226,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -7234,7 +7234,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -7284,7 +7284,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -7292,7 +7292,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -7347,7 +7347,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -7355,7 +7355,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -7502,7 +7502,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -7510,7 +7510,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -7669,7 +7669,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -7677,7 +7677,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -7764,7 +7764,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -7772,7 +7772,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -7815,7 +7815,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -7823,7 +7823,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": ".github/workflows/*.yml",
@@ -8025,7 +8025,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -8033,7 +8033,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": ".githooks/*",
@@ -8230,7 +8230,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -8238,7 +8238,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -8317,7 +8317,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -8325,7 +8325,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -8611,7 +8611,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -8619,7 +8619,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "setup.py",
@@ -8814,7 +8814,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -8822,7 +8822,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "setup.py",
@@ -9062,7 +9062,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -9070,7 +9070,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "setup.py",
@@ -9762,7 +9762,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -9770,10 +9770,14 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
+          "scope": "any-depth"
+        },
+        {
+          "path": "mvnw",
           "scope": "any-depth"
         }
       ]
@@ -9982,7 +9986,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -9990,7 +9994,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -10149,7 +10153,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -10157,7 +10161,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "**/*test_*",
@@ -10210,7 +10214,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. package.json, the Makefile, the Taskfile, pyproject.toml and the Gradle build count only at the root, where they are read; a Maven build is found at any depth and the shallowest is read.",
+      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. Every runner manifest counts only at the root, where it is read.",
       "source": "engine",
       "what": {
         "kind": "key"
@@ -10246,7 +10250,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -10254,7 +10258,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },
@@ -10433,10 +10437,6 @@
           "scope": "root"
         },
         {
-          "path": "pom.xml",
-          "scope": "root"
-        },
-        {
           "path": "vitest.config.*",
           "scope": "any-depth"
         },
@@ -10482,7 +10482,7 @@
         },
         {
           "path": "pom.xml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "gradlew",
@@ -10490,7 +10490,7 @@
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "root"
         }
       ]
     },

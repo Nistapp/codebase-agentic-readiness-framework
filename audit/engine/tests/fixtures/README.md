@@ -58,6 +58,7 @@ fixtures/
   cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
   cmd-01-nested-makefile-only/ the only Makefile is `tools/Makefile`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-01-nested-gradle-only/ the only Gradle build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
+  cmd-01-nested-maven-only/  the only Maven build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-ok-pyproject-poe/      `format-check`, the pyproject task runners' spelling -> CMD-01…04 PASS
   cmd-ok-gradle/             `formatCheck` registered, `test` and `check` built in -> CMD-01 PASS, CMD-02 UNKNOWN
   cmd-ok-maven/              Spotless, Checkstyle and dependency-check declared, the lifecycle phases -> CMD-01 PASS, CMD-02 UNKNOWN

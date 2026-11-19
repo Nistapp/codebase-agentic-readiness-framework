@@ -156,13 +156,12 @@ class ToolInlineTests(unittest.TestCase):
         for check in TOOL_CHECKS:
             self.assertIn(verdicts[check], ("UNKNOWN", "PASS"), f"{check} guessed")
 
-    def test_evidence_cites_a_nested_manifests_real_path_not_a_hardcoded_basename(self):
-        """A monorepo whose only Maven build is nested has no manifest at the literal name
-        ``"pom.xml"``; TOOL-01's FAIL evidence must cite a path that actually exists."""
+    def test_a_nested_only_maven_build_is_no_runner_and_no_evidence(self):
+        """``./mvnw`` reads the root build only, so a nested ``pom.xml`` is not cited, nor the literal name."""
         report = self._scan({"packages/app/pom.xml": "<project></project>\n"})
         self.assertEqual(support.verdicts(report)["TOOL-01"], "FAIL")
         evidence_paths = {e["path"] for f in report["findings"] if f["check"] == "TOOL-01" for e in f["evidence"]}
-        self.assertIn("packages/app/pom.xml", evidence_paths)
+        self.assertNotIn("packages/app/pom.xml", evidence_paths)
         self.assertNotIn("pom.xml", evidence_paths)
 
     def test_a_nested_only_gradle_build_is_no_runner_and_no_evidence(self):

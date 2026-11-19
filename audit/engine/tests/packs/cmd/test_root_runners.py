@@ -3,7 +3,8 @@
 
 """A runner manifest counts only at the repository root: a nested one is not a runner and no finding cites it.
 
-``make``, ``npm``, ``task``, the pyproject task runners and ``./gradlew`` read the file in the folder they run in. The audit asks
+``make``, ``npm``, ``task``, the pyproject task runners, ``./gradlew`` and ``./mvnw`` read the file in the folder
+they run in. The audit asks
 what an agent can run from the root, so a manifest below it (``tools/Makefile``) declares no verb there. The checks
 run in process here, so the coverage run traces them.
 """
@@ -152,6 +153,33 @@ class NestedGradleTests(ScopeTestCase):
 
     def test_cmd01_on_the_nested_only_fixture_cites_no_file(self):
         outcome = cmd01(support.fixture("cmd-01-nested-gradle-only"))
+        self.assertEqual(outcome.verdict.value, "UNKNOWN")
+        self.assertEqual(outcome.findings, [])
+
+
+#: A Maven build that declares Checkstyle, so it has ``lint`` as well as the lifecycle phases.
+POM = "<project><plugin><artifactId>maven-checkstyle-plugin</artifactId></plugin></project>\n"
+
+
+class NestedMavenTests(ScopeTestCase):
+    def test_a_nested_only_maven_build_is_not_a_runner(self):
+        inventory = self.inventory_of({"tools/app/pom.xml": POM, "tools/app/mvnw": "#!/bin/sh\n"})
+        self.assertEqual(runner_commands(inventory), ())
+        self.assertEqual(resolve_all_verbs(inventory, detect_stack(inventory)), {})
+
+    def test_a_root_maven_build_is_the_runner_and_a_nested_one_beside_it_is_not(self):
+        inventory = self.inventory_of({"pom.xml": "<project></project>\n", "tools/app/pom.xml": POM})
+        self.assertEqual([runner for runner, _ in runner_commands(inventory)], ["pom.xml"])
+        self.assertEqual(dict(runner_commands(inventory))["pom.xml"], {})
+
+    def test_only_a_root_wrapper_launches_the_root_build(self):
+        nested = self.inventory_of({"pom.xml": POM, "tools/mvnw": "#!/bin/sh\n"})
+        self.assertEqual(dict(runner_commands(nested))["pom.xml"], {"lint": "mvn checkstyle:check"})
+        root = self.inventory_of({"pom.xml": POM, "mvnw": "#!/bin/sh\n"})
+        self.assertEqual(dict(runner_commands(root))["pom.xml"], {"lint": "./mvnw checkstyle:check"})
+
+    def test_cmd01_on_the_nested_only_fixture_cites_no_file(self):
+        outcome = cmd01(support.fixture("cmd-01-nested-maven-only"))
         self.assertEqual(outcome.verdict.value, "UNKNOWN")
         self.assertEqual(outcome.findings, [])
 
