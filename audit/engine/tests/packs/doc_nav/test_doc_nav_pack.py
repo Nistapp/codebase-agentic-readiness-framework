@@ -28,7 +28,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import support  # noqa: E402
-from audit.rules.checks.nav import _jvm_entry, _python_entry  # noqa: E402
+from audit.rules.checks.nav import LARGE_FILE_BYTES, _jvm_entry, _python_entry  # noqa: E402
+from audit.rules.checks.nav import check_nav03 as CHECK_NAV03  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 from audit.rules.checks import _prose  # noqa: E402
 from audit.rules.checks.doc import _adr_tombstone  # noqa: E402
@@ -253,6 +254,55 @@ class Nav02PythonEntryTests(unittest.TestCase):
             "# if __name__ == '__main__': in a comment\n"
         )
         self.assertEqual(self._entry({"checks.py": text}), [])
+
+
+class Nav03LockfileTests(unittest.TestCase):
+    """A lockfile over 512 KiB is large by design, so `NAV-03` leaves it out of the size count.
+
+    Each case copies `doc-nav-ok` (which passes `NAV-03`) and adds one file just over the limit. A fixture this
+    large is built in the test, never vendored. The match is by exact base name: a near name still counts.
+    """
+
+    PADDING = "x" * (LARGE_FILE_BYTES + 1)
+
+    def check(self, rel: str, text: str = PADDING) -> dict:
+        """Run `NAV-03` in-process (so coverage traces it) on `doc-nav-ok` plus one file at ``rel``."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "nav-03-large-lockfile"
+            shutil.copytree(support.fixture("doc-nav-ok"), root)
+            support.write(root, rel, text)
+            inventory = build_inventory(root)
+            outcome = CHECK_NAV03(
+                spec=REGISTRY_BY_ID["NAV-03"],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+        return {"verdict": outcome.verdict.value, "summary": outcome.summary}
+
+    def test_a_large_lockfile_at_the_root_passes_and_is_named(self):
+        check = self.check("package-lock.json")
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertIn("oversized(>524288 B): 0", check["summary"])
+        self.assertIn("lockfiles over the size, not counted: 1 (package-lock.json)", check["summary"])
+
+    def test_a_large_lockfile_in_a_subfolder_passes(self):
+        self.assertEqual(self.check("services/api/uv.lock")["verdict"], "PASS")
+
+    def test_a_large_file_with_a_near_lockfile_name_still_flags(self):
+        for rel in ("data.json", "package-lock.json.orig", "notes/yarn.lock.md", "Package-Lock.json"):
+            with self.subTest(rel=rel):
+                check = self.check(rel)
+                self.assertEqual(check["verdict"], "PARTIAL")
+                self.assertIn("oversized(>524288 B): 1", check["summary"])
+                self.assertNotIn("lockfiles over the size", check["summary"])
+
+    def test_a_small_lockfile_is_not_named(self):
+        check = self.check("package-lock.json", "{}\n")
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertNotIn("lockfiles", check["summary"])
 
 
 class Doc04TemplateEntryTests(unittest.TestCase):
