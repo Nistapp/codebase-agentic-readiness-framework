@@ -427,6 +427,46 @@ class GateTest(unittest.TestCase):
         self.assertTrue(overlaps("ci/Taskfile.yml", {"path": "Taskfile.yml", "scope": "any-depth"}))
         self.assertTrue(overlaps(".github/workflows/*.yml", {"path": ".github/workflows/*.yml", "scope": "glob"}))
 
+    def test_r3_a_kind_filtered_glob_read_sees_only_its_kinds(self) -> None:
+        read = {"check": "EXEC-04", "what": {"kind": "key"}, "where": [{"path": "**", "scope": "glob"}]}
+        touch = consistency_map.touch
+        self.assertIsNone(touch({"action": "write", "content": ["key"], "to": ["docs/env.md"]}, read))
+        self.assertIsNone(touch({"action": "write", "content": ["key"], "to": [".env.example"]}, read))
+        self.assertEqual(touch({"action": "write", "to": ["scripts/ci/*.sh"]}, read), "scripts/ci/*.sh")
+        self.assertEqual(touch({"action": "write", "to": ["src/app.py"]}, read), "src/app.py")
+
+    def test_r3_untrack_moves_and_folders_are_exempt(self) -> None:
+        read = {"check": "NAV-02", "what": {"kind": "exists"}, "where": [{"path": "**", "scope": "glob"}]}
+        touch = consistency_map.touch
+        self.assertEqual(touch({"action": "untrack", "from": ["notes.md"]}, read), "notes.md")
+        self.assertEqual(touch({"action": "create", "to": ["tools/"]}, read), "tools/")
+        self.assertIsNone(touch({"action": "create", "to": ["docs/index.md"]}, read))
+
+    def test_r3_leaves_other_checks_and_places_alone(self) -> None:
+        touch = consistency_map.touch
+        any_kind = {"check": "SEC-02", "what": {"kind": "key"}, "where": [{"path": "**", "scope": "glob"}]}
+        self.assertEqual(touch({"action": "write", "to": ["docs/env.md"]}, any_kind), "docs/env.md")
+        named = {
+            "check": "TOOL-07",
+            "what": {"kind": "phrase"},
+            "where": [{"path": "pre-commit", "scope": "any-depth"}],
+        }
+        self.assertEqual(touch({"action": "write", "to": [".husky/pre-commit"]}, named), ".husky/pre-commit")
+
+    def test_r3_the_kinds_are_the_engine_scan_kinds(self) -> None:
+        scan = _engine_module("audit.scan")
+        known = {kind.value for kind in scan.Kind}
+        for check, kinds in consistency_map.KIND_FILTERED_READS.items():
+            self.assertLessEqual(kinds, known, check)
+            self.assertIn(
+                "**", {where["path"] for read in MAP["reads"] if read["check"] == check for where in read["where"]}
+            )
+        ci = _engine_module("audit.rules.checks.ci")
+        local = {kind.value for kind in ci._LOCAL_SURFACE_KINDS}
+        self.assertLessEqual(local, consistency_map.KIND_FILTERED_READS["CI-05"])
+        self.assertEqual(consistency_map.scan_kind(".github/workflows/*.yml"), "ci")
+        self.assertIsNone(consistency_map.scan_kind("scripts/"))
+
 
 REAL_PAIRS: list[dict[str, str]] = json.loads(
     (Path(__file__).parent / "fixtures" / "consistency-map-real-pairs.json").read_text(encoding="utf-8")
@@ -438,17 +478,25 @@ class RealPairsTest(unittest.TestCase):
 
     The pairs come from a triage of the unreviewed list. Each is tested with :func:`consistency_map.touch`, so a
     pair the map has since declared in ``touches`` still counts.
+
+    Two pairs are rubric targets the engine never reads: the row writes a doc file, and the check reads no doc
+    through ``**``. Rule R3 drops them on purpose.
     """
 
-    def test_every_real_pair_is_still_inferred(self) -> None:
+    NOT_READ_BY_THE_ENGINE = {
+        ("add-hooks-and-commit-rules/row-4", "TOOL-06"),  # writes CONTRIBUTING.md
+        ("establish-docs-contract/row-6", "NAV-02"),  # writes a docs page
+    }
+
+    def test_every_real_pair_the_engine_reads_is_still_inferred(self) -> None:
         moves = {move["id"]: move for move in MAP["moves"]}
         reads = {read["check"]: read for read in MAP["reads"]}
-        lost = [
+        lost = {
             (pair["move"], pair["check"])
             for pair in REAL_PAIRS
             if consistency_map.touch(moves[pair["move"]], reads[pair["check"]]) is None
-        ]
-        self.assertEqual(lost, [])
+        }
+        self.assertEqual(lost, self.NOT_READ_BY_THE_ENGINE)
 
     def test_a_section_that_does_not_name_the_check_is_a_mention_problem(self) -> None:
         text = "# T\n\n## A\n\nKeep it on one line.\n\n## B\n\nAGT-06 reads it.\n"
