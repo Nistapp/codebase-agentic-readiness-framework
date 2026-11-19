@@ -6159,7 +6159,8 @@
       "where": [
         {
           "path": ".codebase-memory/graph.db.zst",
-          "scope": "root"
+          "scope": "root",
+          "unexercised": "IDX-03 looks for the store only as a Tier-C probe (--run-gates) on a git target, and the recording runs no probe"
         }
       ]
     },
@@ -9525,7 +9526,8 @@
         },
         {
           "path": "go.mod",
-          "scope": "root"
+          "scope": "root",
+          "unexercised": "no Go fixture: an honest module needs go.sum lines, whose hashes are key-shaped, and EXEC-02 reads a module with no dependencies, so with no go.sum, as unlocked"
         }
       ]
     },
@@ -10018,11 +10020,13 @@
         },
         {
           "path": "gradlew",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "unexercised": "EXEC-07 resolves the typecheck verb only when one pyright config stands beside one mypy config, and the resolver looks a wrapper up only for a Gradle or Maven build; no fixture is both"
         },
         {
           "path": "mvnw",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "unexercised": "EXEC-07 resolves the typecheck verb only when one pyright config stands beside one mypy config, and the resolver looks a wrapper up only for a Gradle or Maven build; no fixture is both"
         }
       ]
     },
@@ -10130,7 +10134,8 @@
         },
         {
           "path": "go.mod",
-          "scope": "any-depth"
+          "scope": "any-depth",
+          "unexercised": "no Go fixture: an honest module needs go.sum lines, whose hashes are key-shaped, and EXEC-02 reads a module with no dependencies, so with no go.sum, as unlocked"
         },
         {
           "path": "Cargo.toml",

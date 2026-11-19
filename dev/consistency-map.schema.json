@@ -420,6 +420,11 @@
             "glob"
           ]
         },
+        "unexercised": {
+          "description": "Why no fixture can make the check ask for this place, which its code reads. The recording test then does not require it to be seen.",
+          "minLength": 1,
+          "type": "string"
+        },
         "via": {
           "description": "The place is read upstream, before the check runs: scan-kind when the scan's file kinds (test, generated) match it by name, components when component detection reads it. The check asks for no such path itself.",
           "enum": [
