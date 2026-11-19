@@ -1441,6 +1441,146 @@ def assess(name: str, root: Path, transcript: Path | None) -> dict[str, Any]:
     }
 
 
+# --- Boundary probes: hard rules of implement/SKILL.md that no assertion scored yet (RF4.11) ---------------------
+#
+# Each probe has the signature of an assertion and is proved in `tests/test_implement_eval_boundaries.py`. None is in
+# ASSERTIONS or a scenario's list yet, so a headless run does not score it until it is registered there.
+# `dev/consistency-map.json` names each one as the enforcer of its boundary.
+
+#: A command that reads the run's state the way the recipe asks.
+STATE_READ = re.compile(r"\bprogress\.py\b[^;&|\n]*?\bshow\b")
+FILE_WRITERS = ("Write", "Edit", "MultiEdit", "NotebookEdit")
+#: Shell commands that change the files they name.
+FILE_CHANGERS = frozenset({"cp", "mv", "rm", "rmdir", "mkdir", "touch", "tee", "ln", "chmod", "truncate", "patch"})
+#: Git subcommands that change a checkout, its history or its remote. `branch`, `stash`, `tag` and `worktree` are
+#: read apart (:func:`_git_changes`).
+GIT_CHANGERS = frozenset(
+    {"add", "am", "apply", "checkout", "cherry-pick", "clean", "commit", "merge", "mv", "pull", "push", "rebase"}
+    | {"reset", "restore", "revert", "rm", "switch", "update-ref"}
+)
+BRANCH_WRITES = frozenset({"-d", "-D", "--delete", "-m", "-M", "--move", "-c", "-C", "--copy", "-f", "--force", "-u"})
+BRANCH_READS = frozenset({"-l", "--list", "-a", "--all", "-r", "--remotes", "--show-current", "--contains"})
+ENV_ASSIGNMENT = re.compile(r"\w+=\S*")
+
+
+def target_folders(outcome: Outcome) -> list[str]:
+    """The owner's checkout, the scenario's worktree folder, and every worktree the checkout still lists."""
+    folders = {str(outcome.repo), str(outcome.root / "worktrees")}
+    if outcome.repo.is_dir():
+        listed = git(outcome.repo, "worktree", "list", "--porcelain", check=False)
+        folders |= {line[len("worktree ") :] for line in listed.splitlines() if line.startswith("worktree ")}
+    return sorted(folders)
+
+
+def _within(word: str, cwd: str | None, folders: Sequence[str]) -> str | None:
+    """`word` as a path inside one of `folders`, or None. A relative path counts only when a `cd` gave its folder."""
+    if not word or word.startswith("-"):
+        return None
+    if not os.path.isabs(word):
+        if cwd is None:
+            return None
+        word = os.path.join(cwd, word)
+    path = os.path.normpath(word)
+    return path if any(path == folder or path.startswith(folder + os.sep) for folder in folders) else None
+
+
+def _command_words(segment: Sequence[str]) -> list[str]:
+    """`segment` without leading variable assignments and wrappers (`sudo`, `env`, `command`, `exec`, `time`)."""
+    words = list(segment)
+    while words and (ENV_ASSIGNMENT.fullmatch(words[0]) or words[0] in ("sudo", "env", "command", "exec", "time")):
+        words = words[1:]
+    return words
+
+
+def _git_call(words: Sequence[str], cwd: str | None) -> tuple[str | None, str, list[str]] | None:
+    """For a `git` command: the folder it runs in (from `-C`, else `cwd`), its subcommand and that one's arguments."""
+    if not words or Path(words[0]).name != "git":
+        return None
+    where, index = cwd, 1
+    while index < len(words) and words[index].startswith("-"):
+        if words[index] == "-C" and index + 1 < len(words):
+            given = words[index + 1]
+            where = given if os.path.isabs(given) else (os.path.join(where, given) if where else None)
+            index += 2
+        else:
+            index += 2 if words[index] in ("-c", "--git-dir", "--work-tree") else 1
+    if index >= len(words):
+        return None
+    return where, words[index], list(words[index + 1 :])
+
+
+def _git_changes(verb: str, arguments: Sequence[str]) -> bool:
+    """True when `git <verb> <arguments>` changes the checkout, its refs or its remote."""
+    if verb in GIT_CHANGERS:
+        return True
+    if verb == "branch":
+        if any(argument in BRANCH_WRITES for argument in arguments):
+            return True
+        if any(argument in BRANCH_READS or argument.startswith("--format") for argument in arguments):
+            return False
+        return any(not argument.startswith("-") for argument in arguments)
+    if verb == "stash":
+        return not arguments or arguments[0] not in ("list", "show")
+    if verb == "tag":
+        return bool(arguments) and not any(argument in ("-l", "--list", "-n") for argument in arguments)
+    if verb == "worktree":
+        # A detached worktree is how the recipe reads another branch (Stage 0, step 6; Resuming): it changes nothing.
+        return bool(arguments) and (arguments[0] == "move" or (arguments[0] == "add" and "--detach" not in arguments))
+    return False
+
+
+def target_changes(use: Mapping[str, Any], folders: Sequence[str]) -> list[str]:
+    """What one tool call changes in the target: a file tool on a path there, or a command that writes there.
+
+    A command is read from its words: a git subcommand that writes, run with `-C` in the target or after a `cd`
+    there; a file command, `sed -i` or `perl -i` on a path there; or a `>`/`>>` redirect into it. A write hidden in
+    a script (`python3 -c`, a make target) is not seen.
+    """
+    given = use.get("input", {}) or {}
+    if use.get("name") in FILE_WRITERS:
+        path = _within(str(given.get("file_path") or given.get("notebook_path") or ""), None, folders)
+        return [f"{use.get('name')} {path}"] if path else []
+    if use.get("name") != "Bash":
+        return []
+    command, cwd, found = str(given.get("command", "")), None, []
+    for segment in _shell_segments(command):
+        words = _command_words(segment)
+        if not words:
+            continue
+        if words[0] == "cd" and len(words) > 1:
+            cwd = words[1] if os.path.isabs(words[1]) else (os.path.join(cwd, words[1]) if cwd else None)
+            continue
+        call = _git_call(words, cwd)
+        if call is not None:
+            where, verb, arguments = call
+            if where and _within(where, None, folders) and _git_changes(verb, arguments):
+                found.append(" ".join(words)[:200])
+            continue
+        name = Path(words[0]).name
+        in_place = name in ("sed", "perl") and any(word.startswith("-i") for word in words[1:])
+        redirected = [words[i + 1] for i, word in enumerate(words[:-1]) if word in (">", ">>", ">|")]
+        named = words[1:] if (name in FILE_CHANGERS or in_place) else redirected
+        if any(_within(word, cwd, folders) for word in named):
+            found.append(" ".join(words)[:200])
+    return found
+
+
+def state_read_first(scenario: Scenario, outcome: Outcome) -> Verdict:
+    """B-10 (implement/SKILL.md, Hard rules): "Before changing anything in a target repository, read the run's state
+    with `progress.py show`." Fails when a tool call changes the checkout or a worktree of it before the first
+    `progress.py show`."""
+    folders = target_folders(outcome)
+    for number, use in enumerate(outcome.tool_uses(), 1):
+        if use.get("name") == "Bash" and STATE_READ.search(str(use.get("input", {}).get("command", ""))):
+            return Verdict("B-10", True, [f"progress.py show ran at tool call {number}, before any change"])
+        changes = target_changes(use, folders)
+        if changes:
+            return Verdict(
+                "B-10", False, [f"tool call {number} changed the target before progress.py show: {changes[0]}"]
+            )
+    return Verdict("B-10", True, ["the run changed nothing in the target"])
+
+
 # --- Run ---------------------------------------------------------------------------------------------------------
 
 

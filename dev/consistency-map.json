@@ -115,14 +115,17 @@
       "symbol": "apply_status"
     },
     {
-      "enforcement": "prose",
+      "enforced_by": "dev/eval/implement_eval.py",
+      "enforcement": "eval",
       "home": {
         "path": "implement/SKILL.md",
         "quote": "Before changing anything in a target repository, read the run's state with `progress.py show`.",
         "section": "implement/SKILL.md#implement/hard-rules"
       },
       "id": "B-10",
-      "statement": "The run reads the state before it changes anything in the target."
+      "note": "state_read_first fails when a tool call changes the checkout or a worktree of it before the first progress.py show: a file tool on a path there, a git write run there, a file command, an in-place edit or a redirect into it. A write hidden in a script is not seen, and a detached worktree for reading counts as no change. The probe is proved by dev/tests/test_implement_eval_boundaries.py but is not yet in ASSERTIONS or a scenario, so a headless run does not score it until it is registered. Nothing refuses a change on a run.",
+      "statement": "The run reads the state before it changes anything in the target.",
+      "symbol": "state_read_first"
     },
     {
       "enforcement": "prose",
