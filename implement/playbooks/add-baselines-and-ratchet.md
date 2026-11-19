@@ -81,13 +81,15 @@ TST-04 has two playbooks: this one writes the fenced line when the repository's 
 
 3. **Coverage gate.** Ask per repository, record `pref set tests.coverage_gate check|ci`:
    - `check` (default): the floor sits in the test runner's configuration and the coverage-instrumented run is part
-     of `test`, so local `check` and CI fail on a drop. Costs instrumentation time on every `check`.
+     of `test`, so local `check` and CI fail on a drop. Costs instrumentation time on every `check`. The `check`
+     verb still composes the read-only verbs, as "`CMD-02` check composes the read-only verbs" asks.
    - `ci`: the floor sits in the same configuration, but only a CI coverage step runs it; `check` stays fast.
      Local green can then fail in CI. Suggest it when the suite is slow or needs live services and
      `check.verify_without_stack=yes`.
 
 4. **Coverage floor value.** Measure line coverage on the untouched tree; the floor is that number rounded **down**
-   to a whole percent. Never a target the repository fails today. It is raised only by a deliberate commit when the
+   to a whole percent. Never a target the repository fails today. A higher floor turns `test` red, and "`TST-02`
+   Suite status known" then reads a failing suite. It is raised only by a deliberate commit when the
    measured value is at least one point above the floor; no script rewrites it.
 
 5. **Tool choice when nothing exists.** Offer from the table, recommend, let the owner decide, record the choice.
@@ -125,6 +127,9 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    went down it prints the new number and asks for the counts file to be lowered in the same change (it does not
    rewrite the file itself). Call the script from `format:check` (spec decision 0002). Make sure the CI job that runs
    `check` reaches it; name the counts file in that workflow step or its comment so the link is visible.
+   The script writes nothing, so `format:check` stays read-only for "`CMD-04` Write verbs separated from
+   read-only verbs". Give each public function in it a docstring or doc comment. "`NAV-05` Public-symbol
+   documentation coverage" counts them.
 5. **Counts written down (BASE-02).** Where a tool has a budget flag, put today's count on the flag in the verb
    (`--max-warnings <N>`) instead of a counts-file entry. Every other count lives in the counts file.
 6. **Say it in `AGENTS.md`.** One short paragraph in the quality or commands section, in words an agent and the
@@ -133,7 +138,9 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    either needs the owner".
 7. **Coverage (TST-05, BASE-04).** Configure the runner's coverage, add or reuse a coverage verb (`test:cov` or
    similar), measure, set the floor (Inputs 4) in the runner's own configuration, and wire it per
-   `tests.coverage_gate`. One floor per component in a multi-component repository.
+   `tests.coverage_gate`. One floor per component in a multi-component repository. A coverage tool the verb adds
+   (`c8`, `nyc`) is a pinned dev dependency in the manifest. The verb runs it by name, never as `npx c8@<version>`.
+   So "`EXEC-08` Tool versions visible to dependency automation" finds its version in the manifest.
 8. **Suite status (TST-02).** Run `test` once (with the services it needs, through the repository's own start
    scripts) and record the result: green, or the failing tests by name as debt. A separate suite outside `check` (an
    end-to-end suite, for example) that fails to load counts too: record it as one failing suite with 0 tests run, in
@@ -141,10 +148,15 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    reads TST-02 only from a Tier-C probe; this record is for the agent, not a substitute verdict.
 9. **Skip census (TST-03).** List every skip, ignore and expected-failure marker. Judge each one: a test that can be
    fixed is an item for the owner; a deliberate skip gets a one-line reason next to it. Never delete or un-skip in
-   bulk. The count is debt with the marker list as its baseline.
+   bulk. The count is debt with the marker list as its baseline. A reason line shifts the lines below it. The
+   secrets allowlist (`.secrets.baseline`, `.gitleaksignore`) may name a line in that file. Then regenerate it with
+   the scanner's own command, in its own commit (Commits row 17). "`SEC-02` No key-shaped strings in tracked files" accepts an
+   allowlisted hit only on its listed line.
 10. **Fast path (TST-04)**, when the item is in T5: add the single-test command for the repository's runner to
     `AGENTS.md` in a fenced shell block (the engine reads only fenced commands), for example
-    `./gradlew test --tests '<Class>'` or `npx jest <path/to/file.spec.ts>`.
+    `./gradlew test --tests '<Class>'` or `npx jest -t '<test name>'`. Jest needs `-t` or `--testNamePattern`: a
+    path alone is not read as a single test. Start the line with a word that resolves, such as a verb or the
+    wrapper. "`EXEC-06` Documented commands resolve" reads every fenced command in `AGENTS.md`.
 
 ### Java (Gradle)
 
@@ -247,6 +259,7 @@ A commit that raises a count or lowers a floor carries the `Baseline-Exception` 
 | 14 | Failing-suite entry in the counts file (only when a suite outside `check` fails) | `TST-02` | bulk |
 | 15 | One-line reasons next to deliberate skip markers | `TST-03` | hand |
 | 16 | Fenced single-test command in `AGENTS.md` (only when the item is in T5) | `TST-04` | hand |
+| 17 | Secrets allowlist regenerated after row 15 (only when it names a line that row 15 shifted) | - | bulk |
 
 ## Continue on error
 
@@ -294,7 +307,8 @@ last column above.
 
 `git revert` the commits, newest first. The baseline paragraph in `AGENTS.md` goes together with the counts file,
 the compare script, the compare call and the CI step it names. The floor sentence goes together with the coverage
-floor and its wiring. The other commits revert alone. A shrunk exclude list can stay shrunk.
+floor and its wiring. The regenerated allowlist (row 17) goes together with the skip reasons it follows. The other
+commits revert alone. A shrunk exclude list can stay shrunk.
 
 ## Do-not-do
 

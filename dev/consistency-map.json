@@ -821,6 +821,16 @@
       "status": "kept"
     },
     {
+      "check": "NAV-05",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Give each public function in it a docstring or doc comment.",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-4",
+      "status": "kept"
+    },
+    {
       "check": "CMD-04",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -829,6 +839,16 @@
       },
       "move": "add-baselines-and-ratchet/row-5",
       "note": "format:check stays read-only: the compare script never rewrites the counts file.",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-08",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "The verb runs it by name, never as `npx c8@<version>`.",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-10",
       "status": "kept"
     },
     {
@@ -865,10 +885,21 @@
       "status": "kept"
     },
     {
+      "check": "SEC-02",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Then regenerate it with the scanner's own command, in its own commit (Commits row 17).",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-15",
+      "note": "SEC-02 binds an allowlisted hit to its line number (DESIGN 2.2 f3); the regenerated allowlist follows the shifted lines.",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-06",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
-        "quote": "add the single-test command for the repository's runner to `AGENTS.md` in a fenced shell block (the engine reads only fenced commands), for example `./gradlew test --tests '<Class>'` or `npx jest <path/to/file.spec.ts>`.",
+        "quote": "add the single-test command for the repository's runner to `AGENTS.md` in a fenced shell block (the engine reads only fenced commands)",
         "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
       },
       "move": "add-baselines-and-ratchet/row-16",
@@ -2606,6 +2637,23 @@
       ],
       "touches": [
         "EXEC-06"
+      ]
+    },
+    {
+      "action": "write",
+      "content": [
+        "key"
+      ],
+      "id": "add-baselines-and-ratchet/row-17",
+      "note": "Regenerates the secrets allowlist with the scanner's own command after the skip reasons of row 15 shift its listed lines.",
+      "origin": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "row": 17,
+        "step": "Step 9"
+      },
+      "to": [
+        ".secrets.baseline",
+        ".gitleaksignore"
       ]
     },
     {
