@@ -49,3 +49,6 @@ Thumbs.db
 /.gemini/
 /.codex/
 /.vscode/mcp.json
+
+# agent git worktrees (Claude Code puts them here); each is a full copy of the tree, never part of it
+/.claude/worktrees/
