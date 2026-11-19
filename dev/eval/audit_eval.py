@@ -448,12 +448,14 @@ def intake_path(outcome: ie.Outcome) -> Path:
 def au4_eval_mode_stops_at_draft(scenario: Scenario, outcome: ie.Outcome) -> Verdict:
     """HR-0064 (audit/SKILL.md, Stage 4): "Eval mode. Do nothing here." HR-0067 (Stage 5): "Eval mode. Stop at the
     draft. `report.py finalise` always refuses an eval-mode run [...] that is correct, not a bug to work around."
-    So no `set-disposition`, no `finalise`, no final report, and the intake (its `eval_mode`) stays as written."""
+    So no `set-disposition`, no final report, and the intake (its `eval_mode`) stays as written. A `finalise` call the
+    tool refused passes (KC, 2026-11-19): the refusal is the recipe working. A `finalise` that got through leaves a
+    final report, and a workaround changes the intake, so both still fail."""
     details = []
     for command in outcome.bash():
         for segment in shell_segments(command):
-            if _runs(segment, "report.py") in ("set-disposition", "finalise"):
-                details.append(f"report.py {_runs(segment, 'report.py')} ran in an eval-mode run: {command[:200]}")
+            if _runs(segment, "report.py") == "set-disposition":
+                details.append(f"report.py set-disposition ran in an eval-mode run: {command[:200]}")
     finals = sorted(path.name for path in Path(outcome.baseline["out"]).glob(f"{LABEL}.audit-report.*"))
     if finals:
         details.append(f"a final report was written: {finals[0]}")
