@@ -45,7 +45,8 @@ the boundaries and the gate in both modes exist, with their tests.
    3. The two agent checks have no code, so their entries are written in the map.
    4. A read names its `constants` only when they hold its whole file list.
    5. An engine test runs every check on every fixture and on a greenfield scaffold. It records each path a check
-      asks for, and fails on a path the declaration does not cover.
+      asks for, and fails on a path the declaration does not cover. It also records `name` asks: the names a
+      check compares a scanned path with in its own code. It reports the uncovered ones and does not fail on them.
    6. The declaration is not in the ruleset hash and is in no report.
 4. A keeps quote is checked as the quote verifier checks it: verbatim, with whitespace collapsed. Its section
    must still mention the check ID.

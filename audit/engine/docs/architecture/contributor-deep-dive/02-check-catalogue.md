@@ -261,8 +261,10 @@ flowchart LR
 5. Add a broken fixture that fails exactly this check and nothing else.
 6. Declare what the check reads in `audit/rules/reads.py`: the places, the text and the binding. Take the paths
    from the check's own constant with `_held` where one exists. `tests/test_check_reads.py` fails on a path the
-   check asks for and the declaration does not cover. Then run `python3 dev/consistency_map_reads.py --write` from
-   the repository root. It rewrites the consistency map's reads (ADR 0012 in the root `docs/architecture/adrs/`).
+   check asks for and the declaration does not cover. It also prints the `name` asks that no declaration covers:
+   the names a check compares paths with in its own code. It does not fail on them yet. Then run
+   `python3 dev/consistency_map_reads.py --write` from the repository root. It rewrites the consistency map's reads
+   (ADR 0012 in the root `docs/architecture/adrs/`).
 7. Add the row to the summary table and to the pack's framework anchor before merging.
 
 ---
