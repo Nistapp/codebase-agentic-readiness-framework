@@ -421,11 +421,11 @@ class _TrackedName(str):
 
     def rsplit(self, sep: str | None = None, maxsplit: int = -1) -> list[str]:
         parts = str.rsplit(self, sep, maxsplit)
-        # On "/", every part but the first is one segment, and the last always is: rsplit("/", 1)[-1] is a base name.
+        # On "/", every part but the first is one segment (rsplit("/", 1)[-1] is a base name); the first is one too
+        # unless the limit left slashes in it, as a limit of 0 leaves the whole path.
         whole = maxsplit < 0 or len(parts) <= maxsplit
         return [
-            self._like(part, segment=self.segment or (sep == "/" and (whole or i > 0 or i == len(parts) - 1)))
-            for i, part in enumerate(parts)
+            self._like(part, segment=self.segment or (sep == "/" and (whole or i > 0))) for i, part in enumerate(parts)
         ]
 
     def partition(self, separator: str) -> tuple[str, str, str]:
@@ -997,6 +997,10 @@ class NameProbeTest(unittest.TestCase):
         base = path.rsplit("/", 1)[-1]
         self.assertTrue(base.segment and path.split("/")[0].segment and not path.split("/", 1)[-1].segment)
         self.assertTrue(_TrackedName("AGENTS.md").rsplit("/", 1)[-1].segment)
+        # A limit of 0 splits nothing, so the one part is the whole path, slashes and all, never a segment.
+        self.assertFalse(path.rsplit("/", 0)[0].segment)
+        self.assertFalse(path.split("/", 0)[0].segment)
+        self.assertEqual([part.segment for part in _TrackedName("a/b/c").rsplit("/", 1)], [False, True])
         sink_frame = sys._getframe(0)
         with mock.patch(__name__ + "._asker", return_value=True), _recording_names(sink):
             _record_name("eq", (".github/copilot-instructions.md", "AGENTS.md"), base, sink_frame)
