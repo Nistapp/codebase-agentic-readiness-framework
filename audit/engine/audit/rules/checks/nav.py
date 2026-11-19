@@ -115,6 +115,12 @@ def check_nav01(*, spec, target, inventory, stack, components, session) -> Check
     if root is not None and root.manifest:
         return _outcome(spec, Verdict.PASS, f"single-root repository declares {root.manifest}")
 
+    if stack.ecosystems:
+        return _unknown(
+            spec,
+            "no build manifest the component detector reads declares a component; ecosystems: "
+            + ", ".join(sorted(stack.ecosystems)),
+        )
     return _unknown(spec, "no build manifest declares a component; stack not recognised")
 
 

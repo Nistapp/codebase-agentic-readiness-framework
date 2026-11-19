@@ -139,12 +139,12 @@ fixtures/
   hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
   hyg-13-thin-contributing/  CONTRIBUTING.md with no setup pointer, gate or workflow rules -> HYG-05 PASS, HYG-13 FAIL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 and HYG-13 UNKNOWN
-  stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs -> EXEC-01, NAV-02, TOOL-03 PASS
+  stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs -> EXEC-01, NAV-01, NAV-02, TOOL-03 PASS
   stack-gradle-wrapper-readme/ a Gradle application with gradlew; its README runs `./gradlew build` and `./gradlew test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (no gradle.lockfile)
   stack-just-inline-version/ a pinned and locked Cargo project whose justfile runs `cargo install cargo-deny@0.16.1`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02 PASS
-  stack-php-composer/        composer.json, a tracked composer.lock, public/index.php (needs git) -> NAV-02 PASS; EXEC-02 PARTIAL (the lock is not compared); EXEC-01 UNKNOWN (no PHP pin is known)
+  stack-php-composer/        composer.json, a tracked composer.lock, public/index.php (needs git) -> NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the lock is not compared); EXEC-01 UNKNOWN (no PHP pin is known)
   stack-python-uv-inline-version/ a uv project with a tracked root uv.lock; its Makefile runs `uvx ruff@0.6.9`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02, NAV-02 PASS
-  stack-ruby-bundler/        Gemfile, a tracked Gemfile.lock, .ruby-version, a Rack config.ru (needs git) -> EXEC-01, NAV-02 PASS; EXEC-02 PARTIAL (the engine does not compare a Gemfile.lock with its Gemfile)
+  stack-ruby-bundler/        Gemfile, a tracked Gemfile.lock, .ruby-version, a Rack config.ru (needs git) -> EXEC-01, NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the engine does not compare a Gemfile.lock with its Gemfile)
   stack-rust-cargo/          Cargo.toml, a tracked Cargo.lock, rust-toolchain.toml, src/main.rs (needs git) -> EXEC-01, EXEC-02, NAV-02 PASS
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test
 ```

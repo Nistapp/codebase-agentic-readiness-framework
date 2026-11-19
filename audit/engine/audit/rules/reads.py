@@ -1610,8 +1610,11 @@ READS: dict[str, Reads] = {
                 "build.gradle.kts",
                 "Cargo.toml",
                 "go.mod",
+                "Gemfile",
+                "composer.json",
                 via=COMPONENTS,
             ),
+            *_at(ROOT, "*.sln", "*.slnx", "*.csproj", "*.fsproj", "*.vbproj", via=COMPONENTS),
             *_at(
                 GLOB,
                 "apps/*",
@@ -1628,8 +1631,9 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "Workspace members are read from the root manifests (components.py); a member or candidate counts"
-            " when a build manifest is found under it. The root counts as declared when any of the seven "
-            "manifest names is found at any depth."
+            " when a build manifest is found under it. The root counts as declared when any of the nine "
+            "manifest names is found at any depth, or a .NET solution or project file is in the root folder"
+            " itself (in a member's or candidate's own folder for that member or candidate)."
         ),
     ),
     "NAV-02": Reads(
