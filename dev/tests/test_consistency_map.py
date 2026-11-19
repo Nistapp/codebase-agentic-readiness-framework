@@ -188,6 +188,88 @@ class KeepsTest(unittest.TestCase):
         self.assertIn("does not hold the quote", quote_problem(home, lambda _path: text) or "")
 
 
+_RULES = "# Implement\n\n## Hard rules\n\n- **Never weaken a gate.** Never lower a baseline.\n\n## Stages\n\nOther.\n"
+_ENFORCER = "def refuse() -> None:\n    pass\n\n\nclass GateTest:\n    def test_it(self) -> None:\n        pass\n"
+
+
+def _boundary(**fields: Any) -> dict[str, Any]:
+    home = {"path": "skill.md", "section": "skill.md#implement/hard-rules", "quote": "Never lower a baseline."}
+    return {"id": "B-01", "statement": "s", "home": home, "enforcement": "prose", **fields}
+
+
+def _scratch(path: str) -> str:
+    """A scratch reader: a recipe with one hard rule, and one Python file that defines the enforcers."""
+    files = {"skill.md": _RULES, "tool.py": _ENFORCER}
+    if path not in files:
+        raise FileNotFoundError(path)
+    return files[path]
+
+
+class BoundariesTest(unittest.TestCase):
+    def test_every_boundary_in_the_map_holds(self) -> None:
+        self.assertEqual(consistency_map.boundary_problems(MAP["boundaries"]), [])
+
+    def test_the_run_boundaries_of_the_design_are_listed(self) -> None:
+        quotes = " ".join(boundary["home"]["quote"] for boundary in MAP["boundaries"])
+        self.assertIn("Never commit to the default branch", quotes)
+        self.assertIn("The close-out changes nothing in the target", quotes)
+        self.assertIn("Never delete, skip or weaken a test", quotes)
+
+    def test_each_cited_enforcer_exists(self) -> None:
+        for boundary in MAP["boundaries"]:
+            if boundary["enforcement"] == "prose":
+                self.assertNotIn("enforced_by", boundary, boundary["id"])
+                continue
+            path = _dev_paths.REPO / boundary["enforced_by"]
+            self.assertTrue(path.is_file(), boundary["id"])
+            symbols = consistency_map.defined_symbols(path.read_text(encoding="utf-8"))
+            self.assertIn(boundary["symbol"], symbols, boundary["id"])
+
+    def test_a_removed_home_quote_fails(self) -> None:
+        self.assertEqual(consistency_map.boundary_problems([_boundary()], _scratch), [])
+
+        def removed(path: str) -> str:
+            return _scratch(path).replace(" Never lower a baseline.", "")
+
+        problems = consistency_map.boundary_problems([_boundary()], removed)
+        self.assertEqual(len(problems), 1)
+        self.assertTrue(problems[0].startswith("B-01: "), problems)
+        self.assertIn("does not hold the quote", problems[0])
+
+    def test_a_removed_home_quote_is_reported_in_the_map(self) -> None:
+        cmap = json.loads(json.dumps(MAP))
+        cmap["boundaries"][0]["home"]["quote"] = "A sentence the recipe never had."
+        found = consistency_map.report(cmap, CATALOGUE_IDS)
+        self.assertEqual(len(found["boundary"]), 1)
+        self.assertIn("B-01", found["boundary"][0])
+        self.assertIn("boundary: 1", consistency_map.format_text(found, []))
+
+    def test_a_missing_enforcer_fails(self) -> None:
+        check = consistency_map.boundary_problems
+        tool = {"enforcement": "tool-refusal", "enforced_by": "tool.py"}
+        self.assertEqual(check([_boundary(**tool, symbol="refuse")], _scratch), [])
+        test = {"enforcement": "test", "enforced_by": "tool.py", "symbol": "GateTest.test_it"}
+        self.assertEqual(check([_boundary(**test)], _scratch), [])
+        self.assertEqual(check([_boundary(**tool, symbol="gone")], _scratch), ["B-01: tool.py defines no gone"])
+        moved = {"enforcement": "eval", "enforced_by": "moved.py", "symbol": "refuse"}
+        self.assertEqual(check([_boundary(**moved)], _scratch), ["B-01: moved.py does not exist"])
+
+    def test_a_misdeclared_enforcement_fails(self) -> None:
+        check = consistency_map.boundary_problems
+        self.assertEqual(
+            check([_boundary(enforcement="eval")], _scratch),
+            ["B-01: the eval enforcement needs enforced_by and symbol"],
+        )
+        self.assertEqual(
+            check([_boundary(enforced_by="tool.py")], _scratch),
+            ["B-01: a prose boundary names no enforced_by or symbol"],
+        )
+
+    def test_a_repeated_id_fails(self) -> None:
+        problems = consistency_map.boundary_problems([_boundary(), _boundary()], _scratch)
+        self.assertEqual(problems, ["B-01: the id is used twice"])
+
+
 def _small_map() -> dict[str, Any]:
     return {
         "map_format": 1,
