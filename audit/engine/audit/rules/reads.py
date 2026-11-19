@@ -222,7 +222,9 @@ READS: dict[str, Reads] = {
         threshold="every declared component has an AGENTS.md",
         note=(
             "The root manifests declare the components (components.py); for each one <component>/AGENTS.md "
-            "must exist, matched as a path suffix at any depth."
+            "must exist, matched as a path suffix at any depth. The suffix test runs over agt.instruction_paths,"
+            " which scans every instruction file name, but only a path ending in <component>/AGENTS.md counts,"
+            " so the other names are never read for this check."
         ),
     ),
     "AGT-03": Reads(
