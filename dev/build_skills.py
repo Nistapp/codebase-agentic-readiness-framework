@@ -42,13 +42,14 @@ Each bundle is replaced whole on every run, so a stale leftover from an earlier 
   the Tools CLI reference that cover the carried tools (:data:`TOOLS_CLI_SECTIONS`). The playbook templates
   (:data:`IMPLEMENT_TEMPLATE_FILES`) sit beside the playbooks in ``references/playbooks/templates/``, so a playbook
   step can copy one into the target.
-- ``scripts/``: ``progress.py``, ``check_drift.py`` and ``compare_reports.py`` (from ``implement/tools/``), and
+- ``scripts/``: ``progress.py``, ``check_drift.py``, ``compare_reports.py`` and ``check_regressions.py`` (from
+  ``implement/tools/``), and
   ``validate_report.py`` with the private modules they import (from ``audit/tools/``), side by side in
   ``scripts/tools/``; ``_audit_tools_path.py``, which the implement tools import first and which does nothing in the
   bundle (there is no ``../../audit/tools`` there); the schema files and ``catalogue.json``; and an ``engine.py`` shim
   (:data:`ENGINE_SHIM`). The engine itself is not copied: the shim loads ``engine.py`` from the
   agentic-readiness-audit skill installed in the same skills folder, so the two skills share one engine copy
-  (``validate_report.py`` reads the engine's credential patterns).
+  (``validate_report.py`` reads the engine's credential patterns, ``check_regressions.py`` its read declarations).
 
 Both bundles resolve every link they keep. Every carried Markdown file is rewritten in two ways. A command ``python3 audit/tools/<tool>.py`` or
 ``python3 implement/tools/<tool>.py`` becomes the path from the skill's own folder
@@ -294,11 +295,13 @@ IMPLEMENT_OWN_TOOL_FILES = (
     "progress.py",
     "check_drift.py",
     "compare_reports.py",
+    "check_regressions.py",
     "_audit_tools_path.py",
 )
 
-#: The shared modules the implement tools import (in `audit/tools/`): `progress`, `check_drift` and
-#: `compare_reports` import `validate_report`, which imports `_summary` and `engine`; `engine` is the shim.
+#: The shared modules the implement tools import (in `audit/tools/`): `progress`, `check_drift`,
+#: `compare_reports` and `check_regressions` import `validate_report`, which imports `_summary` and `engine`;
+#: `engine` is the shim.
 IMPLEMENT_SHARED_TOOL_FILES = (
     "validate_report.py",
     "_common.py",
@@ -320,7 +323,14 @@ IMPLEMENT_SCHEMA_FILES = (
 )
 
 #: The level-2 sections of the Tools CLI reference the implement bundle carries, in page order.
-TOOLS_CLI_SECTIONS = ("Every tool", "validate_report.py", "progress.py", "check_drift.py", "compare_reports.py")
+TOOLS_CLI_SECTIONS = (
+    "Every tool",
+    "validate_report.py",
+    "progress.py",
+    "check_drift.py",
+    "compare_reports.py",
+    "check_regressions.py",
+)
 
 #: The source of each carried Markdown file or folder (relative to the repository root) and its place in the
 #: bundle. A folder carries every Markdown file in it. Order matters only for the shown order of a listing.
