@@ -63,10 +63,10 @@ Why it matters   Agents must find where execution begins before they can reason 
 Severity         DEGRADER
 Engine           `NAV-02`. For each detected ecosystem, checks a fixed, documented set of entry-point
                  signals: npm `main`/`bin`/`exports` plus a conventional index/server/main/app file for
-                 node; `__main__.py`, `main.py`/`app.py`/`manage.py`, a line that
-                 starts with the `if __name__ == "__main__"` guard (a file that only holds that text in a
-                 regex, a string or a comment is not an entry point), or a `console_scripts`/`[project.scripts]` entry
-                 point for python; `public static void main`/`fun main`/`@SpringBootApplication` for jvm;
+                 node; `__main__.py`, `main.py`/`app.py`/`manage.py`, or a
+                 `console_scripts`/`[project.scripts]` entry point for python (an
+                 `if __name__ == "__main__"` guard alone is not an entry point: helper scripts and dev tools
+                 carry one too); `public static void main`/`fun main`/`@SpringBootApplication` for jvm;
                  `func main` for go; `src/main.rs` or a `[[bin]]` section for rust; and fixed conventional
                  names for dotnet/ruby/php. No recognised ecosystem at all ⇒ `UNKNOWN` — there is no
                  language convention to check against. Distrust a `FAIL` when the entry point is named

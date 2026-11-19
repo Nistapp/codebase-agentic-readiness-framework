@@ -31,7 +31,9 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   `PASS`, and a readable store with no such project is `FAIL`. **If the store cannot be located, or
   its format cannot be read with the standard library (a `.zst` artifact needs `zstd`), the verdict
   is `UNKNOWN`** — no location is invented and no absence is claimed. The searched locations are
-  recorded in `detail`.
+  recorded in `detail`. A path inside the target is written as `<repository>/...`, so the summary is the
+  same wherever the checkout sits; a store under `$HOME` or the override is machine state and is written
+  as it is.
 * **IDX-03 (Tier C)** — compares the index's recorded git revision against `target.git_sha`. It is
   gated on `--run-gates`; without probes it is `UNKNOWN`. It never mutates the store. This store
   schema records a project's root and index time but no git revision, so the comparison is `UNKNOWN`
@@ -184,7 +186,7 @@ def _locate_store(target, session) -> tuple[Path | None, list[str]]:
     override = os.environ.get(INDEX_STORE_ENV)
     if override:
         path = Path(override).expanduser()
-        searched.append(f"{INDEX_STORE_ENV}={path}")
+        searched.append(f"{INDEX_STORE_ENV}={_shown(path, target)}")
         if path.exists():
             session.note_user_read(path)
             return path, searched
@@ -205,11 +207,22 @@ def _locate_store(target, session) -> tuple[Path | None, list[str]]:
         searched.append("user-level locations (not read: --no-user-config)")
 
     artifact = target.path / _TEAM_ARTIFACT
-    searched.append(str(artifact))
+    searched.append(_shown(artifact, target))
     if artifact.exists():
         return artifact, searched
 
     return None, searched
+
+
+def _shown(path: Path, target) -> str:
+    """``path`` for a summary: ``<repository>/...`` inside the target, so the text never holds its location."""
+    for base, candidate in ((target.path, path), (target.path.resolve(), path.resolve())):
+        try:
+            rel = candidate.relative_to(base)
+        except ValueError:
+            continue
+        return f"<repository>/{rel.as_posix()}" if rel.parts else "<repository>"
+    return str(path)
 
 
 def _resolve(path_str: str) -> Path | None:
@@ -316,9 +329,10 @@ def check_idx02(*, spec, target, inventory, stack, components, session) -> Check
     if store is None:
         return _unknown(spec, f"index store could not be located; {locations}")
 
+    shown = _shown(store, target)
     dbs = _candidate_dbs(store)
     if not dbs:
-        return _unknown(spec, f"index store located ({store}) but holds no readable database; {locations}")
+        return _unknown(spec, f"index store located ({shown}) but holds no readable database; {locations}")
 
     roots: list[str] = []
     readable = False
@@ -331,22 +345,22 @@ def check_idx02(*, spec, target, inventory, stack, components, session) -> Check
 
     if not readable:
         return _unknown(
-            spec, f"index store located ({store}) but no database could be read with the standard library; {locations}"
+            spec, f"index store located ({shown}) but no database could be read with the standard library; {locations}"
         )
 
     wanted = target.path.resolve()
     if any(_resolve(root) == wanted for root in roots if root):
-        return _outcome(spec, Verdict.PASS, f"index store {store} contains a project rooted at {wanted}")
+        return _outcome(spec, Verdict.PASS, f"index store {shown} contains a project rooted at <repository>")
 
     return _outcome(
         spec,
         Verdict.FAIL,
-        f"index store {store} records no project rooted at {wanted} ({len(roots)} project(s) present)",
+        f"index store {shown} records no project rooted at <repository> ({len(roots)} project(s) present)",
         [
             _finding(
                 spec,
                 "query a current index of this checkout",
-                f"the index store contains no project whose root resolves to {wanted}",
+                "the index store contains no project whose root resolves to <repository>",
                 Verdict.FAIL,
                 [Evidence(str(store))],
                 "Index this checkout with codebase-memory-mcp so agents have a graph to query.",
@@ -369,7 +383,7 @@ def _indexed_git_sha(store: Path, target) -> tuple[str | None, str]:
     dbs = _candidate_dbs(store)
     if not dbs:
         return None, (
-            f"no readable index database at {store} (a .zst artifact needs zstd, which the standard library lacks)"
+            f"no readable index database at {_shown(store, target)} (a .zst artifact needs zstd, which the standard library lacks)"
         )
 
     columns: list[str] = []

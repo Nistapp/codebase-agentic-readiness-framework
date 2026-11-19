@@ -803,17 +803,22 @@ bundle is replaced whole on every run, so a stale file from an earlier build can
 - **`agentic-readiness-audit`**: `references/` holds the check files, the stack profiles and the schema docs. It
   also holds the shared prompt on how to talk to the user and the sections of this page for the tools it carries.
   `scripts/` holds the tools the recipe calls. Beside them are the schema files and the `catalogue.json` they read
-  at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. `audit.pyz` is
-  the engine's single-file build. Its Markdown files are rewritten the same way as the implement bundle's, below.
+  at a fixed path. The engine's `audit` package sits one folder level up, as `engine.py` expects. The bundle
+  carries no `audit.pyz`: the release attaches it as a file of its own. Its Markdown files are rewritten the same
+  way as the implement bundle's, below.
 - **`agentic-readiness-implement`**: `references/` holds the state contract, the tool-choice procedures, the
   playbooks, the kickoff prompt and the shared prompt on how to talk to the user. It also holds the check files,
-  the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the state schema and its docs,
-  and the sections of this page for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`,
+  the stack profiles, ADR 0003, `spec/command-surface.md` and the spec decisions, the schema docs, and the
+  sections of this page for the tools it carries. `scripts/` holds `progress.py`, `check_drift.py`,
   `compare_reports.py` and `validate_report.py` with their private modules, the schema files, `catalogue.json`,
   and an `engine.py` shim.
   The engine is not copied. The shim loads `engine.py` from the `agentic-readiness-audit` skill installed in the
   same skills folder, so both skills run one engine. A tool that needs the engine without it exits 1 and names the
-  missing skill. In both bundles, every carried Markdown file is rewritten in three ways:
+  missing skill.
+
+  Each bundle carries one copy of each file. The schema files sit in `scripts/schema/` and the schema docs in
+  `references/schema/`, which link to them. A schema that no carried tool reads and no carried file links stays
+  out, such as `eval-expected.schema.json`. In both bundles, every carried Markdown file is rewritten in three ways:
   - a `python3 audit/tools/<tool>.py` command becomes the path from the skill's own folder
     (`python3 scripts/tools/<tool>.py`; in the implement bundle, the audit skill's path for `engine.py`);
   - a link to a carried file points at its place in the bundle;
@@ -847,7 +852,7 @@ python3 dev/build_skills.py [--out-dir DIR]
 | Code | When |
 |---|---|
 | `0` | The bundle was built. |
-| `1` | The engine's own `audit/engine/build.py` failed to produce `audit.pyz` (the message is `audit/engine/build.py failed to build audit.pyz`) (`data.errors` carries its stderr), or a source file lacks the frontmatter `name` line or a Tools CLI section the builder rewrites. |
+| `1` | A source file lacks the frontmatter `name` line or a Tools CLI section the builder rewrites, or its frontmatter already has a `metadata` key. |
 
 ## progress.py
 
