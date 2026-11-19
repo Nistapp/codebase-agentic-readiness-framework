@@ -40,6 +40,7 @@ the boundaries and the gate in both modes exist, with their tests.
 3. The engine declares the reads of each engine check beside the registry, in
    [`audit/rules/reads.py`](../../../audit/engine/audit/rules/reads.py):
    1. A declaration takes its paths from the engine constants the check uses, where they exist.
+      A place read upstream, by the scan's file kinds or component detection, names that step in `via`.
    2. [`dev/consistency_map_reads.py`](../../../dev/consistency_map_reads.py) generates the map's `reads` part from
       it. A `dev/` test fails when the two differ.
    3. The two agent checks have no code, so their entries are written in the map.
