@@ -82,7 +82,10 @@ def _problems(value: Any, schema: dict[str, Any], where: str = "$") -> list[str]
         matches = [option for option in schema["oneOf"] if not _problems(value, option, where)]
         return [] if len(matches) == 1 else [f"{where}: matches {len(matches)} of the oneOf options"]
     expected = schema.get("type")
-    if expected is not None and (not isinstance(value, _TYPES[expected]) or isinstance(value, bool)):
+    if expected == "boolean":
+        if not isinstance(value, bool):
+            return [f"{where}: not of type boolean"]
+    elif expected is not None and (not isinstance(value, _TYPES[expected]) or isinstance(value, bool)):
         return [f"{where}: not of type {expected}"]
     problems: list[str] = []
     if "const" in schema and value != schema["const"]:
@@ -190,6 +193,14 @@ class InvalidMapTest(unittest.TestCase):
 
     def test_a_read_with_no_place_fails(self) -> None:
         self._assert_invalid(lambda m: m["reads"][0].update(where=[]), "fewer than minItems")
+
+    def test_a_non_boolean_ignore_case_fails(self) -> None:
+        self._assert_invalid(lambda m: m["names"][0].update(ignore_case="yes"), "not of type boolean")
+
+    def test_a_boolean_ignore_case_is_valid(self) -> None:
+        valid = copy.deepcopy(EXAMPLE)
+        valid["names"][0]["ignore_case"] = True
+        self.assertEqual(_problems(valid, SCHEMA), [])
 
     def test_a_boundary_without_enforcement_fails(self) -> None:
         self._assert_invalid(lambda m: m["boundaries"][0].pop("enforcement"), "missing 'enforcement'")

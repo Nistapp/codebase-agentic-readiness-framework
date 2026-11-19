@@ -203,7 +203,7 @@
     },
     "name": {
       "additionalProperties": false,
-      "description": "A file or folder name the engine gives a meaning to.",
+      "description": "A file or folder name the engine gives a meaning to. A template or a created file whose path matches it needs a moves entry with an intent.",
       "properties": {
         "checks": {
           "items": {
@@ -221,6 +221,10 @@
           "minItems": 1,
           "type": "array",
           "uniqueItems": true
+        },
+        "ignore_case": {
+          "description": "true when the engine compares the name case-insensitively; the test then lower-cases both sides.",
+          "type": "boolean"
         },
         "match": {
           "enum": [
