@@ -113,7 +113,8 @@ recorded, and a committed record shows which CI job the platform requires before
 6. **Branch-protection record (CI-04).** Commit a short page in `docs/` (or the repository's CI doc): mechanism,
    required check name, up-to-date setting, bypass actors, the date the owner confirmed, and the exact read-only
    command that re-checks it. If the platform cannot enforce a required check (plan limitation), the page says
-   so and lists the mitigations; the check is then recorded `partial`, never `done`. Put `branch-protection` in
+   so and lists the mitigations; the check is then recorded `partial` (see Continue on error), never `done`.
+   Put `branch-protection` in
    the page's path, such as `docs/branch-protection.md`, or extend that page if `add-repo-hygiene` wrote it. The
    check "`HYG-11` Branch protection declared as code" finds the record by that name only.
 7. **Workflow lint (CI-05).** Add the chosen linter to the local surface (the route from Inputs 6). Run the same
@@ -181,7 +182,8 @@ Lessons from the multi-app Node application (IR07.3):
   on new findings; a report-only step prints the count so a rise is visible. Never mass-fix, suppress or raise
   an ignore list without a reason and expiry per entry.
 - Local verbs that are ratchets or report-only (T1) stay so in CI.
-- A plan that cannot enforce required checks: item `partial` with that reason.
+- A plan that cannot enforce required checks: item `partial` with
+  `--debt "what=required checks the plan cannot enforce,count=N"` and that reason in the note.
 
 ## Verification
 
