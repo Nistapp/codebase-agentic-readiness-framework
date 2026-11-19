@@ -3,7 +3,7 @@
 
 """Compare two engine reports of one theme worktree: which passing checks a theme lost, and what else moved.
 
-    check_regressions.py <base.json> <close.json>
+    check_regressions.py <base.json> <close.json> [--changed-from <worktree> [--base <sha>]]
 
 Both files are the audit engine's own JSON reports (``engine.py --out-dir``), not audit reports. ``base`` was taken
 on the theme worktree before the theme's first change, ``close`` at theme close. The tool reads both and writes
@@ -32,26 +32,47 @@ on, the verbs the ``--allow-probe`` list let through; or the close report is not
 
 ``data.status`` is ``lost`` when at least one check is ``lost_pass`` or ``regressed``, and ``clean`` otherwise. The
 tool exits 0 in both cases; the status carries the answer. It judges nothing else: the owner decides what a stop
-means. Which changed path explains an evidence change is a later step.
+means.
+
+With ``--changed-from <worktree>`` every listed row is also laid against the paths the theme changed. The paths come
+from read-only git in the worktree: ``git diff --name-only`` from ``--base`` (by default the base report's
+``git_sha``) to the working tree, plus the untracked files git does not ignore. The worktree must be the reports'
+target. Each row gets ``reads_hit``: the places of the check's read declaration (the engine's
+``audit.rules.reads``, loaded through ``engine.py``) that a changed path meets, with the paths, and ``via`` when an
+upstream step reads the place for the check. A row no changed path explains has ``unattributed: true``: report
+only, never a stop, and a possible gap in the declaration for the framework to look at. ``declared`` is false for a
+check with no declaration; ``named_by_text`` is true when the check also reads paths the target's text names,
+which no place lists.
+
+A place matches a path as the consistency map's schema states the scopes: ``root`` the exact path from the root;
+``any-depth`` the base name in any folder; ``repository-level`` the base name at the root or directly in
+``.github/``, ``.gitlab/`` or ``docs/``; ``glob`` a glob from the root, where ``*``, ``?`` and ``[...]`` stay inside
+one folder and ``**`` matches any number of folders, none included (so ``docs/**/*.md`` matches ``docs/a.md``). A
+place with case ``fold`` is matched in lower case.
 """
 
 from __future__ import annotations
 
+import fnmatch
+import importlib
 import json
+import posixpath
 import sys
 from dataclasses import dataclass
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import _audit_tools_path  # noqa: F401  (puts audit/tools on sys.path in a checkout)
 import _common
+import engine
 import validate_report
 
 INFO = _common.ToolInfo(
     name="check_regressions",
     summary="Compare two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes.",
-    synopsis=("check_regressions.py BASE CLOSE",),
+    synopsis=("check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA]]",),
     writes="nothing",
 )
 
@@ -309,6 +330,153 @@ def compare(base: Mapping[str, Any], close: Mapping[str, Any]) -> list[Row]:
     return rows
 
 
+# --- Read attribution ----------------------------------------------------------------------------------
+
+ROOT_SCOPE = "root"
+ANY_DEPTH = "any-depth"
+REPOSITORY_LEVEL = "repository-level"
+GLOB = "glob"
+#: The folders a ``repository-level`` place may sit in, besides the root (the consistency map schema).
+REPOSITORY_LEVEL_FOLDERS = ("", ".github", ".gitlab", "docs")
+FOLD = "fold"
+#: How many changed paths one hit place lists; the rest are counted.
+PATHS_PER_PLACE = 5
+COMMIT_TAIL = "^{commit}"
+
+
+@dataclass(frozen=True)
+class Place:
+    """One place a check reads, as plain data: a path or pattern, its scope, the upstream step and the case rule."""
+
+    path: str
+    scope: str
+    via: str | None = None
+    case: str = "exact"
+
+
+@dataclass(frozen=True)
+class Declaration:
+    """What one check reads: its places, and whether it also reads paths that the target's own text names."""
+
+    places: tuple[Place, ...]
+    named_by_text: bool = False
+
+
+def glob_matches(pattern: str, path: str) -> bool:
+    """Whether a path from the root matches a glob from the root, folder by folder.
+
+    ``*``, ``?`` and ``[...]`` match inside one folder name; a ``**`` folder matches any number of folders, none
+    included, so ``**/AGENTS.md`` matches ``AGENTS.md`` and ``docs/**/*.md`` matches ``docs/a.md``.
+    """
+    parts, names = pattern.split("/"), path.split("/")
+
+    @lru_cache(maxsize=None)
+    def match(i: int, j: int) -> bool:
+        if i == len(parts):
+            return j == len(names)
+        if parts[i] == "**":
+            return match(i + 1, j) or (j < len(names) and match(i, j + 1))
+        return j < len(names) and fnmatch.fnmatchcase(names[j], parts[i]) and match(i + 1, j + 1)
+
+    return match(0, 0)
+
+
+def place_matches(place: Place, path: str) -> bool:
+    """Whether a changed path, from the worktree's root, is one the place covers, as its scope says."""
+    pattern = place.path
+    if place.case == FOLD:
+        pattern, path = pattern.lower(), path.lower()
+    if place.scope in (ROOT_SCOPE, GLOB):
+        return glob_matches(pattern, path)
+    named = fnmatch.fnmatchcase(posixpath.basename(path), pattern)
+    if place.scope == REPOSITORY_LEVEL:
+        return named and posixpath.dirname(path) in REPOSITORY_LEVEL_FOLDERS
+    return named  # any-depth
+
+
+def hits(declaration: Declaration, changed: Sequence[str]) -> list[dict[str, Any]]:
+    """Each place of the declaration that at least one changed path meets, in declaration order, with the paths."""
+    out: list[dict[str, Any]] = []
+    for place in dict.fromkeys(declaration.places):
+        paths = [path for path in changed if place_matches(place, path)]
+        if not paths:
+            continue
+        hit: dict[str, Any] = {"place": place.path, "scope": place.scope}
+        if place.via:
+            hit["via"] = place.via
+        hit["paths"] = paths[:PATHS_PER_PLACE]
+        if len(paths) > PATHS_PER_PLACE:
+            hit["paths_omitted"] = len(paths) - PATHS_PER_PLACE
+        out.append(hit)
+    return out
+
+
+def attribute(row: Row, declarations: Mapping[str, Declaration], changed: Sequence[str]) -> dict[str, Any]:
+    """A listed row with the read places the changed paths hit; ``unattributed`` when none is hit."""
+    declaration = declarations.get(row.check)
+    found = hits(declaration, changed) if declaration is not None else []
+    return {
+        **row.to_json(),
+        "declared": declaration is not None,
+        "named_by_text": bool(declaration and declaration.named_by_text),
+        "reads_hit": found,
+        "unattributed": not found,
+    }
+
+
+@lru_cache(maxsize=1)
+def load_declarations() -> tuple[dict[str, Declaration], str]:
+    """The engine's read declarations as plain data, by check id, and the engine's ruleset hash.
+
+    They come from the engine's own ``audit.rules.reads``, loaded through ``engine.py`` as ``validate_report`` loads
+    the credential patterns, so they are never copied here.
+    """
+    engine.load_engine()
+    reads = importlib.import_module("audit.rules.reads")
+    registry = importlib.import_module("audit.rules.registry")
+    declarations = {
+        check_id: Declaration(
+            places=tuple(Place(item.path, item.scope, item.via, item.case) for item in entry.where),
+            named_by_text=bool(entry.named_by_text),
+        )
+        for check_id, entry in reads.READS.items()
+    }
+    return declarations, str(registry.ruleset_hash())
+
+
+def revision(worktree: Path, name: str) -> str | None:
+    done = validate_report.git_output(worktree, ["rev-parse", "--verify", "--quiet", name + COMMIT_TAIL])
+    if done is None or done.returncode != 0:
+        return None
+    return done.stdout.strip() or None
+
+
+def changed_paths(worktree: Path, base_sha: str) -> list[str]:
+    """The paths the worktree changed since `base_sha`: tracked changes to the working tree and untracked files."""
+    diff = validate_report.git_output(worktree, ["diff", "--name-only", "-z", "--no-renames", base_sha, "--"])
+    untracked = validate_report.git_output(worktree, ["ls-files", "-z", "--others", "--exclude-standard"])
+    if diff is None or diff.returncode != 0 or untracked is None or untracked.returncode != 0:
+        raise _common.UsageError(f"git could not list the paths changed in {worktree} since {base_sha}")
+    return sorted({name for name in (diff.stdout + "\0" + untracked.stdout).split("\0") if name})
+
+
+def theme_changes(
+    worktree_arg: str, base_arg: str | None, base: Mapping[str, Any], close: Mapping[str, Any]
+) -> tuple[str, list[str]]:
+    """The base commit, resolved, and the changed paths of the theme worktree; refuse a worktree that is not the target."""
+    worktree = _common.resolve_target(worktree_arg)
+    target = Path(close["provenance"]["target"]).expanduser().resolve()
+    if worktree != target:
+        raise _common.UsageError(f"--changed-from {worktree} is not the reports' target {target}")
+    wanted = base_arg or base["provenance"].get("git_sha")
+    if not isinstance(wanted, str) or not wanted:
+        raise _common.UsageError("the base report records no git_sha; give the base commit with --base")
+    resolved = revision(worktree, wanted)
+    if resolved is None:
+        raise _common.UsageError(f"the base commit {wanted} is not in the history of {worktree}")
+    return resolved, changed_paths(worktree, resolved)
+
+
 # --- The command ---------------------------------------------------------------------------------------
 
 
@@ -327,11 +495,22 @@ def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(prog="check_regressions.py", description=INFO.summary)
     parser.add_argument("base", help="the engine report taken before the theme's first change (JSON)")
     parser.add_argument("close", help="the engine report taken at theme close (JSON)")
+    parser.add_argument(
+        "--changed-from", metavar="WORKTREE", help="the theme worktree: lay each listed check on the paths it changed"
+    )
+    parser.add_argument(
+        "--base",
+        dest="base_sha",
+        metavar="SHA",
+        help="the commit the theme started from (default: the base report's git_sha)",
+    )
     return parser
 
 
 def handler(argv: Sequence[str]) -> _common.Result:
     args = build_parser().parse_args(list(argv))
+    if args.base_sha is not None and args.changed_from is None:
+        raise _common.UsageError("--base needs --changed-from")
     base = read_engine_report(args.base, "base")
     close = read_engine_report(args.close, "close")
     problems = refusals(base, close)
@@ -345,22 +524,50 @@ def handler(argv: Sequence[str]) -> _common.Result:
     rows = compare(base, close)
     counts = {kind: sum(1 for row in rows if row.kind == kind) for kind in CLASSES}
     status = "lost" if any(counts[kind] for kind in STOPS) else "clean"
-    budget = _common.ITEM_BUDGET_BYTES // 3
+    budget = _common.ITEM_BUDGET_BYTES // 4
     data: dict[str, Any] = {
         "status": status,
         "base": side(args.base, base),
         "close": side(args.close, close),
         "counts": counts,
     }
+    warnings: list[str] = []
     omitted: dict[str, int] = {}
+    listed = [row for row in rows if row.kind in (*STOPS, *MOVES, "evidence")]
+    shown: dict[str, dict[str, Any]] = {row.check: row.to_json() for row in listed}
+    if args.changed_from is not None:
+        base_sha, changed = theme_changes(args.changed_from, args.base_sha, base, close)
+        declarations, engine_hash = load_declarations()
+        shown = {row.check: attribute(row, declarations, changed) for row in listed}
+        kept_paths, omitted_paths = _common.bound_items(changed, limit_bytes=budget)
+        unattributed = sum(1 for row in shown.values() if row["unattributed"])
+        data["changes"] = {
+            "base_sha": base_sha,
+            "changed_count": len(changed),
+            "changed_paths": kept_paths,
+            "unattributed": unattributed,
+        }
+        if omitted_paths:
+            omitted["changed_paths"] = omitted_paths
+        if engine_hash != base["provenance"]["ruleset_hash"]:
+            warnings.append(
+                f"the engine here has ruleset hash {engine_hash} and the reports {base['provenance']['ruleset_hash']}: "
+                "the read declarations may not be the ones the reports' checks used"
+            )
+        if unattributed:
+            warnings.append(
+                f"{unattributed} listed check{'' if unattributed == 1 else 's'} moved with no declared read hit by a "
+                "changed path: report only, and a possible gap in the read declarations"
+            )
     for name, kinds in (("stops", STOPS), ("moves", MOVES), ("evidence_changes", ("evidence",))):
-        kept, left_out = _common.bound_items([row.to_json() for row in rows if row.kind in kinds], limit_bytes=budget)
+        kept, left_out = _common.bound_items(
+            [shown[row.check] for row in listed if row.kind in kinds], limit_bytes=budget
+        )
         data[name] = kept
         if left_out:
             omitted[name] = left_out
     if omitted:
         data["omitted"] = omitted
-    warnings: list[str] = []
     if base["provenance"].get("version") != close["provenance"].get("version"):
         warnings.append(
             f"the engine versions differ (base {base['provenance'].get('version')}, close "
@@ -373,6 +580,8 @@ def handler(argv: Sequence[str]) -> _common.Result:
         f"check_regressions: {status}; {counts['lost_pass']} lost pass, {counts['regressed']} regressed, "
         f"{sum(counts[kind] for kind in MOVES)} other verdict moves, {counts['evidence']} evidence changes"
     )
+    if "changes" in data:
+        summary += f", {data['changes']['unattributed']} unattributed"
     if stops:
         summary += "; stop the theme and ask the owner"
     return _common.Result(data=data, summary=summary, warnings=warnings, truncated=bool(omitted))

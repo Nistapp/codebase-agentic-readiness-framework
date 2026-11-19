@@ -377,7 +377,9 @@ class CheckRegressionsTests(unittest.TestCase):
         self.assertEqual(manifest["writes"], "nothing")
         self.assertFalse(manifest["network"])
         self.assertFalse(manifest["writes_inside_target"])
-        self.assertEqual(manifest["synopsis"], ["check_regressions.py BASE CLOSE"])
+        self.assertEqual(
+            manifest["synopsis"], ["check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA]]"]
+        )
 
     def test_long_lists_are_bounded_and_counted(self) -> None:
         close = self.close_report()

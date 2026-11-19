@@ -84,7 +84,7 @@ check_drift.py REPORT REPO [--json]
 Compare two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes.
 
 ```text
-check_regressions.py BASE CLOSE
+check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA]]
 ```
 
 ## compare_reports.py
