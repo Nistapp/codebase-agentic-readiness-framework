@@ -907,6 +907,28 @@
       "status": "kept"
     },
     {
+      "check": "TOOL-04",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Call a verb on one `run:` line in the runner's own form (`make security`, `npm run security`).",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-3",
+      "note": "Kept for the direct route; on the wrapper route (Inputs 1) the engine cannot follow the wrapper, and the step tells the owner.",
+      "status": "kept"
+    },
+    {
+      "check": "TOOL-06",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Call a verb on one `run:` line in the runner's own form (`make security`, `npm run security`).",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-3",
+      "note": "Kept for the direct route; on the wrapper route (Inputs 1) the engine cannot follow the wrapper, and the step tells the owner.",
+      "status": "kept"
+    },
+    {
       "check": "CI-04",
       "home": {
         "path": "implement/playbooks/add-ci-parity.md",
@@ -927,6 +949,26 @@
       "status": "kept"
     },
     {
+      "check": "EXEC-06",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "When the CI doc is the root README, list the CI-only steps as prose or a table, not in a fenced block.",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-4",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-01",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Write no stub word such as `TODO` there:",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-4",
+      "status": "kept"
+    },
+    {
       "check": "CI-02",
       "home": {
         "path": "implement/playbooks/add-ci-parity.md",
@@ -942,6 +984,16 @@
         "path": "implement/playbooks/add-ci-parity.md",
         "quote": "Every CI command must exist locally; a CI-only step (an image scan, a deploy) is named so (`CI-only: ...`) and listed in the CI doc.",
         "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-5",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-08",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Keep the pin in a manifest that dependency automation reads, such as a Go tool module or a `package.json`.",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/inputs-to-ask"
       },
       "move": "add-ci-parity/row-5",
       "status": "kept"
@@ -968,10 +1020,20 @@
       "status": "kept"
     },
     {
+      "check": "HYG-11",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "Put `branch-protection` in the page's path, such as `docs/branch-protection.md`",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-8",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-02",
       "home": {
         "path": "implement/playbooks/add-ci-parity.md",
-        "quote": "The pin carries its lockfile.",
+        "quote": "The pin carries its lockfile, so",
         "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/rollback"
       },
       "move": "add-ci-parity/row-9",
@@ -992,6 +1054,16 @@
       "home": {
         "path": "implement/playbooks/add-ci-parity.md",
         "quote": "Do not weaken a gate that already blocks.",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-10",
+      "status": "kept"
+    },
+    {
+      "check": "HYG-11",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "A fix keeps the line that reads the pull request's source branch (`github.head_ref`) outside a `group:` or `ref:` key.",
         "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
       },
       "move": "add-ci-parity/row-10",
