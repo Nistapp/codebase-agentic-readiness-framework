@@ -284,6 +284,8 @@ The gate prints a count for each kind of problem, then the problems. Read these 
 - `unkept`: a move names a check in `touches`, and no keeps entry covers the pair.
 - `quote`: a kept quote is no longer in its section. Your change moved or reworded the sentence.
 - `coverage`: a new Commits row or check has no entry. Add one to the map in the same change.
+- `boundary`: a hard rule of the implement run lost its home sentence, or the tool, test or eval function that
+  enforces it is gone. Restore the sentence, or update the boundary's home or enforcer in the map.
 
 `unreviewed` is advice. The gate guesses touches from paths and content kinds, and the guess is coarse.
 `--verbose` lists the pairs. The gate exits 0 whatever it finds; `CMAP_ARGS=--strict` makes it exit 1.

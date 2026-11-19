@@ -4,7 +4,7 @@
 """The consistency map's gate, in static mode: is every touched read kept? (ADR 0012).
 
 ``python3 dev/consistency_map.py`` reads ``dev/consistency-map.json``, the catalogue, the playbooks, the greenfield
-templates and the engine's constants in the working tree, and reports seven kinds of problem:
+templates and the engine's constants in the working tree, and reports eight kinds of problem:
 
 - ``unkept``: a move declares that it touches a check (``touches``) and no keeps entry covers the pair;
 - ``quote``: a kept quote is not in the section its address names;
@@ -13,7 +13,9 @@ templates and the engine's constants in the working tree, and reports seven kind
 - ``names``: a template's scaffolded path carries an engine name and its moves entry declares no intent;
 - ``constants``: a reads or names entry disagrees with the engine constants it names;
 - ``keeps``: a keeps entry names an unknown move or check, repeats a pair, or keeps a check its move does not
-  declare in ``touches``.
+  declare in ``touches``;
+- ``boundary``: a boundary's home quote is not in its section, its id repeats, or the file or symbol that enforces
+  it no longer exists.
 
 The touches are a reviewer's judgement, written in the map. The gate also infers touches from the paths and the
 content kinds (``touch``), and counts the inferred pairs no move declares and no keep covers as ``unreviewed``. That
@@ -32,6 +34,7 @@ a failed engine run exits 1.
 from __future__ import annotations
 
 import argparse
+import ast
 import fnmatch
 import functools
 import importlib
@@ -59,7 +62,9 @@ if str(DEV) not in sys.path:
 
 from docindex.extract import _section_nodes  # noqa: E402  (dev/ must be on sys.path first)
 
-KINDS = ("unkept", "quote", "mention", "coverage", "names", "constants", "keeps")
+KINDS = ("unkept", "quote", "mention", "coverage", "names", "constants", "keeps", "boundary")
+#: The boundary enforcements that name a file and a symbol; ``prose`` names neither.
+ENFORCERS = ("tool-refusal", "test", "eval")
 
 Reader = Callable[[str], str]
 
@@ -385,6 +390,54 @@ def keeps_problems(cmap: dict[str, Any], catalogue_ids: Sequence[str]) -> list[s
     return problems
 
 
+def defined_symbols(text: str) -> set[str]:
+    """The functions and classes a Python file defines at the top level, and each ``Class.method``."""
+    symbols: set[str] = set()
+    for node in ast.parse(text).body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            symbols.add(node.name)
+        if isinstance(node, ast.ClassDef):
+            symbols |= {
+                f"{node.name}.{child.name}"
+                for child in node.body
+                if isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef))
+            }
+    return symbols
+
+
+def enforcement_problem(boundary: dict[str, Any], read: Reader = working_tree) -> str | None:
+    """Why a boundary's enforcer is missing or misdeclared, or ``None``."""
+    path, symbol = boundary.get("enforced_by"), boundary.get("symbol")
+    if boundary["enforcement"] not in ENFORCERS:
+        return "a prose boundary names no enforced_by or symbol" if path or symbol else None
+    if not (path and symbol):
+        return f"the {boundary['enforcement']} enforcement needs enforced_by and symbol"
+    try:
+        text = read(path)
+    except FileNotFoundError:
+        return f"{path} does not exist"
+    if symbol not in defined_symbols(text):
+        return f"{path} defines no {symbol}"
+    return None
+
+
+def boundary_problems(boundaries: Sequence[dict[str, Any]], read: Reader = working_tree) -> list[str]:
+    """Boundaries whose id repeats, whose home quote is gone, or whose enforcer no longer exists."""
+    problems: list[str] = []
+    seen: set[str] = set()
+    for boundary in boundaries:
+        name = boundary["id"]
+        if name in seen:
+            problems.append(f"{name}: the id is used twice")
+        seen.add(name)
+        problems += [
+            f"{name}: {problem}"
+            for problem in (quote_problem(boundary["home"], read), enforcement_problem(boundary, read))
+            if problem
+        ]
+    return problems
+
+
 def report(cmap: dict[str, Any], catalogue_ids: Sequence[str], read: Reader = working_tree) -> dict[str, list[str]]:
     """Every problem the static gate finds, by kind."""
     kept = [keep for keep in cmap["keeps"] if keep["status"] == "kept"]
@@ -398,6 +451,7 @@ def report(cmap: dict[str, Any], catalogue_ids: Sequence[str], read: Reader = wo
         "constants": [p for entry in cmap["reads"] for p in read_constant_problems(entry)]
         + names_constant_problems(cmap["names"]),
         "keeps": keeps_problems(cmap, catalogue_ids),
+        "boundary": boundary_problems(cmap["boundaries"], read),
     }
 
 

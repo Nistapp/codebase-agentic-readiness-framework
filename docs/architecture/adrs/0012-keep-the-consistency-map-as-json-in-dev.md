@@ -13,8 +13,8 @@ must be able to review it in a diff. The document index
 ([ADR 0011](0011-index-the-documents-with-a-standard-library-tool.md)) already gives section addresses, and its
 quote verifier already checks quotes verbatim.
 
-This ADR fixes the map's format and the gate's rules. The schema, the reads, the names, the moves, the kept pairs
-and the gate in both modes exist, with their tests. The boundaries are not written yet.
+This ADR fixes the map's format and the gate's rules. The schema, the reads, the names, the moves, the kept pairs,
+the boundaries and the gate in both modes exist, with their tests.
 
 ## Decision
 
@@ -31,17 +31,19 @@ and the gate in both modes exist, with their tests. The boundaries are not writt
    3. `keeps`: one entry for each check a move touches. It cites the sentence that keeps the read true, by index
       section address and verbatim quote. Or it is `accepted`, with the maintainer's reason.
    4. `names`: the file and folder names the engine gives a meaning to.
-   5. `boundaries`: the implement run's promises that no check reads. Each has one home quote. It says what
-      enforces it: a tool refusal, a test, or only the prose.
+   5. `boundaries`: the implement run's promises that no check reads. Each has an id and one home quote. It says
+      what enforces it: a tool refusal, a test, an assertion of the paid implement eval, or prose. An enforcer
+      is named by its file and its function.
 3. The reads live in the map, not in the engine. A read can name the engine constants that hold its file list
    (`constants`). A `dev/` test compares the two, so a changed constant fails the test.
 4. A keeps quote is checked as the quote verifier checks it: verbatim, with whitespace collapsed. Its section
    must still mention the check ID.
-5. The gate fails in four cases:
+5. The gate fails in five cases:
    1. A move names a check in `touches`, and no keeps entry covers the pair.
    2. A keeps quote is gone, or its section no longer mentions the check.
    3. A catalogue check has no reads entry, or a Commits row has no moves entry.
    4. A created file matches the names list and its moves entry has no `intent`.
+   5. A boundary's home quote is gone from its section, or the file or function that enforces it no longer exists.
 6. The gate also infers touches from the paths and the content kinds. It reports the inferred pairs that no move
    declares as unreviewed advice, and never fails on them.
 7. Evidence that changes under an unchanged verdict is reported to the reviewer. It does not fail the gate.

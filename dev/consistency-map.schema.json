@@ -8,10 +8,11 @@
           "$ref": "#/$defs/path"
         },
         "enforcement": {
-          "description": "What stops a break: a tool that refuses, a test that fails, or only the prose.",
+          "description": "What stops a break: a tool that refuses (tool-refusal), a test that fails in make check (test), an assertion of the implement eval, which runs only on a paid agent run (eval), or only the prose (prose).",
           "enum": [
             "tool-refusal",
             "test",
+            "eval",
             "prose"
           ]
         },
@@ -22,8 +23,17 @@
           "pattern": "^B-[0-9]{2}$",
           "type": "string"
         },
+        "note": {
+          "minLength": 1,
+          "type": "string"
+        },
         "statement": {
           "minLength": 1,
+          "type": "string"
+        },
+        "symbol": {
+          "description": "The function in enforced_by that refuses, fails or scores the break; Class.method for a test. Given with enforced_by, unless the enforcement is prose, when both are absent. The gate checks that the file defines it.",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)?$",
           "type": "string"
         }
       },
