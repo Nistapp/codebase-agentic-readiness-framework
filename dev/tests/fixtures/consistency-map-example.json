@@ -1,0 +1,144 @@
+{
+  "boundaries": [
+    {
+      "enforcement": "prose",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "Never open, print or quote a `.env` file or any other secret store.",
+        "section": "implement/SKILL.md#implement/hard-rules"
+      },
+      "id": "B-01",
+      "statement": "The implement run never reads a secret store in the target."
+    }
+  ],
+  "keeps": [
+    {
+      "check": "AGT-06",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Keep a boundary path and its rule word on one line.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-7",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-06",
+      "move": "establish-docs-contract/row-11",
+      "reason": "Commands moved to docs/ leave the scope of EXEC-06; the step tells the agent to check them by hand.",
+      "status": "accepted"
+    }
+  ],
+  "map_format": 1,
+  "moves": [
+    {
+      "action": "write",
+      "content": [
+        "rule-line"
+      ],
+      "id": "adapt-agents-md/row-7",
+      "origin": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "row": 7,
+        "step": "Step 4"
+      },
+      "to": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "action": "move",
+      "content": [
+        "prose",
+        "fenced-command"
+      ],
+      "from": [
+        "README.md"
+      ],
+      "id": "establish-docs-contract/row-11",
+      "origin": {
+        "path": "implement/playbooks/establish-docs-contract.md",
+        "row": 11,
+        "step": "Step 10"
+      },
+      "to": [
+        "docs/"
+      ]
+    },
+    {
+      "action": "create",
+      "content": [
+        "file"
+      ],
+      "id": "greenfield/CONVENTIONS.md",
+      "intent": "The conventions file that AGT-13 reads; not an Aider file, because no .aider.conf.yml is beside it.",
+      "origin": {
+        "path": "greenfield/templates/CONVENTIONS.md"
+      },
+      "to": [
+        "CONVENTIONS.md"
+      ]
+    }
+  ],
+  "names": [
+    {
+      "checks": [
+        "AGT-08",
+        "AGT-13"
+      ],
+      "match": "base-name",
+      "meaning": "An Aider instruction file beside .aider.conf.yml; otherwise a conventions file.",
+      "pattern": "CONVENTIONS.md"
+    }
+  ],
+  "reads": [
+    {
+      "binding": "line",
+      "check": "TST-04",
+      "constants": [
+        "audit.rules.checks.tst:_FASTPATH_DOCS"
+      ],
+      "source": "engine",
+      "what": {
+        "kind": "fenced-command"
+      },
+      "where": [
+        {
+          "path": "README.md",
+          "scope": "root"
+        },
+        {
+          "path": "AGENTS.md",
+          "scope": "root"
+        },
+        {
+          "path": "CLAUDE.md",
+          "scope": "root"
+        },
+        {
+          "path": "CONTRIBUTING.md",
+          "scope": "root"
+        }
+      ]
+    },
+    {
+      "binding": "window",
+      "check": "AGT-04",
+      "source": "engine",
+      "what": {
+        "kind": "phrase",
+        "text": [
+          "same change set",
+          "same changeset"
+        ]
+      },
+      "where": [
+        {
+          "path": "AGENTS.md",
+          "scope": "root"
+        }
+      ],
+      "window": 5
+    }
+  ]
+}

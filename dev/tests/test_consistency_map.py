@@ -1,0 +1,297 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 K. C. Ramakrishna
+
+"""The consistency map, ``dev/consistency-map.json``, against its schema, the catalogue and the engine's constants.
+
+Every check in ``audit/catalogue.json`` has exactly one reads entry, in catalogue order. A reads entry that names
+engine constants (``module:NAME``) must list exactly the paths those constants hold, so a file added to or removed
+from a check's list in the engine fails this test until the map follows (ADR 0012).
+
+The names list holds the file names the engine gives a meaning to. A greenfield template whose scaffolded path
+matches one needs a ``create`` moves entry with an ``intent``, so a template cannot take such a name by accident.
+
+Every playbook Commits row has one moves entry. A ``kept`` keeps entry quotes, verbatim with whitespace collapsed,
+a sentence that sits inside the section its address names, in the working tree. The helpers are the gate's own,
+from ``dev/consistency_map.py``; the gate itself is tested at the end.
+"""
+
+from __future__ import annotations
+
+import io
+import json
+import posixpath
+import unittest
+from contextlib import redirect_stdout
+from typing import Any
+from unittest import mock
+
+import _dev_paths
+import consistency_map
+from test_consistency_map_schema import SCHEMA, _problems
+
+PLAYBOOKS = consistency_map.PLAYBOOKS
+MAP: dict[str, Any] = json.loads((_dev_paths.DEV / "consistency-map.json").read_text(encoding="utf-8"))
+CATALOGUE_IDS: list[str] = [
+    check["id"]
+    for check in json.loads((_dev_paths.REPO / "audit" / "catalogue.json").read_text(encoding="utf-8"))["checks"]
+]
+
+
+_engine_module = consistency_map._engine_module
+constant_problems = consistency_map.read_constant_problems
+names_constant_problems = consistency_map.names_constant_problems
+name_matches = consistency_map.name_matches
+undeclared_names = consistency_map.undeclared_names
+commits_rows = consistency_map.commits_rows
+quote_problem = consistency_map.quote_problem
+_scaffolded_paths = consistency_map.scaffolded_paths
+
+
+class MapShapeTest(unittest.TestCase):
+    def test_the_map_follows_its_schema(self) -> None:
+        self.assertEqual(_problems(MAP, SCHEMA), [])
+
+
+class ReadsCoverageTest(unittest.TestCase):
+    def test_every_catalogue_check_has_one_reads_entry_in_catalogue_order(self) -> None:
+        self.assertEqual([read["check"] for read in MAP["reads"]], CATALOGUE_IDS)
+
+    def test_each_place_is_listed_once_per_entry(self) -> None:
+        for read in MAP["reads"]:
+            places = [(where["path"], where["scope"]) for where in read["where"]]
+            self.assertEqual(len(places), len(set(places)), read["check"])
+
+    def test_a_window_is_given_only_with_a_window_binding(self) -> None:
+        for read in MAP["reads"]:
+            self.assertEqual("window" in read, read["binding"] == "window", read["check"])
+
+
+class ConstantsTest(unittest.TestCase):
+    def test_each_entry_matches_the_engine_constants_it_names(self) -> None:
+        problems = [problem for read in MAP["reads"] for problem in constant_problems(read)]
+        self.assertEqual(problems, [])
+
+    def test_the_fast_path_entry_names_its_constant(self) -> None:
+        (tst04,) = [read for read in MAP["reads"] if read["check"] == "TST-04"]
+        self.assertIn("audit.rules.checks.tst:_FASTPATH_DOCS", tst04.get("constants", []))
+
+    def test_a_name_removed_from_the_engine_list_fails(self) -> None:
+        (tst04,) = [read for read in MAP["reads"] if read["check"] == "TST-04"]
+        tst = _engine_module("audit.rules.checks.tst")
+        shorter = tuple(name for name in tst._FASTPATH_DOCS if name != "CONTRIBUTING.md")
+        with mock.patch.object(tst, "_FASTPATH_DOCS", shorter):
+            problems = constant_problems(tst04)
+        self.assertEqual(problems, ["TST-04: the map lists 'CONTRIBUTING.md', the engine constants do not"])
+
+    def test_a_name_added_to_the_engine_list_fails(self) -> None:
+        (tst04,) = [read for read in MAP["reads"] if read["check"] == "TST-04"]
+        tst = _engine_module("audit.rules.checks.tst")
+        with mock.patch.object(tst, "_FASTPATH_DOCS", (*tst._FASTPATH_DOCS, "docs/TESTING.md")):
+            problems = constant_problems(tst04)
+        self.assertEqual(problems, ["TST-04: the engine reads 'docs/TESTING.md', the map does not list it"])
+
+    def test_an_unknown_constant_fails(self) -> None:
+        read = {"check": "TST-04", "constants": ["audit.rules.checks.tst:_NO_SUCH_NAME"], "where": []}
+        self.assertEqual(constant_problems(read), ["audit.rules.checks.tst:_NO_SUCH_NAME: no such constant"])
+
+
+class NamesTest(unittest.TestCase):
+    def test_each_pattern_is_listed_once(self) -> None:
+        keys = [(name["pattern"], name["match"], bool(name.get("ignore_case"))) for name in MAP["names"]]
+        self.assertEqual(len(keys), len(set(keys)))
+
+    def test_names_cover_the_engine_constants_they_name(self) -> None:
+        self.assertEqual(names_constant_problems(MAP["names"]), [])
+
+    def test_every_template_with_an_engine_name_declares_its_intent(self) -> None:
+        self.assertEqual(undeclared_names(_scaffolded_paths(), MAP), [])
+
+    def test_a_template_named_docs_agents_md_fails(self) -> None:
+        paths = {"greenfield/templates/docs/agents.md": "docs/agents.md"}
+        problems = undeclared_names(paths, MAP)
+        self.assertEqual(len(problems), 1)
+        self.assertIn("AGT-08", problems[0])
+
+    def test_the_scaffolder_renames_are_followed(self) -> None:
+        paths = _scaffolded_paths()
+        self.assertEqual(paths["greenfield/templates/github/workflows/ci.yml"], ".github/workflows/ci.yml")
+        self.assertEqual(paths["greenfield/templates/core-index.ts"], "src/core/index.ts")
+
+    def test_the_match_kinds(self) -> None:
+        self.assertTrue(
+            name_matches({"pattern": "AGENTS.md", "match": "base-name", "ignore_case": True}, "a/agents.md")
+        )
+        self.assertFalse(name_matches({"pattern": "AGENTS.md", "match": "base-name"}, "a/agents.md"))
+        self.assertTrue(name_matches({"pattern": "README.md", "match": "exact"}, "README.md"))
+        self.assertFalse(name_matches({"pattern": "README.md", "match": "exact"}, "docs/README.md"))
+        self.assertTrue(
+            name_matches({"pattern": ".github/workflows/*.yml", "match": "glob"}, ".github/workflows/a/b.yml")
+        )
+        self.assertTrue(
+            name_matches({"pattern": "branch-protection", "match": "substring"}, "docs/branch-protection.md")
+        )
+
+
+class MovesTest(unittest.TestCase):
+    def test_move_ids_are_unique(self) -> None:
+        ids = [move["id"] for move in MAP["moves"]]
+        self.assertEqual(sorted({i for i in ids if ids.count(i) > 1}), [])
+
+    def test_every_commits_row_has_one_moves_entry(self) -> None:
+        declared: dict[str, list[int]] = {}
+        for move in MAP["moves"]:
+            if "row" in move["origin"]:
+                declared.setdefault(move["origin"]["path"], []).append(move["origin"]["row"])
+        for playbook in sorted(PLAYBOOKS.glob("*.md")):
+            rows = commits_rows(playbook.read_text(encoding="utf-8"))
+            if not rows:
+                continue
+            path = playbook.relative_to(_dev_paths.REPO).as_posix()
+            self.assertEqual(sorted(declared.get(path, [])), sorted(rows), path)
+
+    def test_a_row_move_is_named_after_its_playbook_and_row(self) -> None:
+        for move in MAP["moves"]:
+            origin = move["origin"]
+            if "row" in origin:
+                self.assertEqual(move["id"], f"{posixpath.basename(origin['path'])[:-3]}/row-{origin['row']}")
+
+
+class KeepsTest(unittest.TestCase):
+    def test_each_keep_points_at_a_move_and_a_catalogue_check(self) -> None:
+        moves = {move["id"] for move in MAP["moves"]}
+        for keep in MAP["keeps"]:
+            self.assertIn(keep["move"], moves)
+            self.assertIn(keep["check"], CATALOGUE_IDS)
+
+    def test_each_pair_is_kept_once(self) -> None:
+        pairs = [(keep["move"], keep["check"]) for keep in MAP["keeps"]]
+        self.assertEqual(len(pairs), len(set(pairs)))
+
+    def test_every_kept_quote_sits_in_its_section(self) -> None:
+        problems = [quote_problem(keep["home"]) for keep in MAP["keeps"] if keep["status"] == "kept"]
+        self.assertEqual([problem for problem in problems if problem], [])
+
+    def test_a_quote_moved_out_of_its_section_fails(self) -> None:
+        text = "# T\n\n## A\n\nKeep it on one line.\n\n## B\n\nOther.\n"
+        home = {"path": "x.md", "section": "x.md#t/b", "quote": "Keep it on one line."}
+        self.assertIn("does not hold the quote", quote_problem(home, lambda _path: text) or "")
+        home["section"] = "x.md#t/a"
+        self.assertIsNone(quote_problem(home, lambda _path: text))
+        home["section"] = "x.md#t"
+        self.assertIsNone(quote_problem(home, lambda _path: text))
+
+    def test_a_reworded_quote_fails(self) -> None:
+        text = "# T\n\nKeep it on\none line.\n"
+        home = {"path": "x.md", "section": "x.md#t", "quote": "Keep it on one line."}
+        self.assertIsNone(quote_problem(home, lambda _path: text))
+        home["quote"] = "Keep it on a single line."
+        self.assertIn("does not hold the quote", quote_problem(home, lambda _path: text) or "")
+
+
+def _small_map() -> dict[str, Any]:
+    return {
+        "map_format": 1,
+        "reads": [
+            {
+                "check": "AGT-06",
+                "source": "engine",
+                "where": [{"path": "AGENTS.md", "scope": "root"}],
+                "what": {"kind": "word-list"},
+                "binding": "line",
+            },
+            {
+                "check": "TST-04",
+                "source": "engine",
+                "where": [{"path": "README.md", "scope": "root"}],
+                "what": {"kind": "fenced-command"},
+                "binding": "line",
+            },
+        ],
+        "moves": [
+            {
+                "id": "p/row-1",
+                "origin": {"path": "implement/playbooks/p.md", "row": 1},
+                "action": "write",
+                "content": ["rule-line"],
+                "to": ["AGENTS.md"],
+                "touches": ["AGT-06"],
+            },
+            {
+                "id": "p/row-2",
+                "origin": {"path": "implement/playbooks/p.md", "row": 2},
+                "action": "move",
+                "from": ["README.md"],
+                "to": ["docs/"],
+            },
+        ],
+        "keeps": [],
+        "names": [],
+        "boundaries": [],
+    }
+
+
+class GateTest(unittest.TestCase):
+    def test_a_declared_touch_without_a_keep_is_unkept(self) -> None:
+        self.assertEqual(consistency_map.unkept_pairs(_small_map()), [("p/row-1", "AGT-06")])
+
+    def test_a_keep_closes_the_pair(self) -> None:
+        cmap = _small_map()
+        home = {"path": "x.md", "section": "x.md", "quote": "q"}
+        cmap["keeps"] = [{"move": "p/row-1", "check": "AGT-06", "status": "kept", "home": home}]
+        self.assertEqual(consistency_map.unkept_pairs(cmap), [])
+
+    def test_a_keep_for_an_undeclared_touch_is_a_problem(self) -> None:
+        cmap = _small_map()
+        cmap["keeps"] = [{"move": "p/row-2", "check": "TST-04", "status": "accepted", "reason": "r"}]
+        problems = consistency_map.keeps_problems(cmap, ["AGT-06", "TST-04"])
+        self.assertEqual(problems, ["p/row-2 -> TST-04: the move does not declare this check in touches"])
+
+    def test_an_undeclared_inferred_touch_is_only_unreviewed(self) -> None:
+        cmap = _small_map()
+        self.assertEqual(consistency_map.unreviewed_pairs(cmap), [("p/row-2", "TST-04", "README.md")])
+        self.assertNotIn(("p/row-2", "TST-04"), consistency_map.unkept_pairs(cmap))
+
+    def test_content_that_cannot_hold_the_read_does_not_touch(self) -> None:
+        move = {"action": "write", "content": ["prose"], "to": ["README.md"]}
+        read = _small_map()["reads"][1]
+        self.assertIsNone(consistency_map.touch(move, read))
+        move["content"] = ["fenced-command"]
+        self.assertEqual(consistency_map.touch(move, read), "README.md")
+
+    def test_place_overlaps(self) -> None:
+        overlaps = consistency_map.place_overlaps
+        self.assertTrue(overlaps("AGENTS.md", {"path": "AGENTS.md", "scope": "root"}))
+        self.assertFalse(overlaps("docs/AGENTS.md", {"path": "AGENTS.md", "scope": "root"}))
+        self.assertTrue(overlaps("docs/AGENTS.md", {"path": "AGENTS.md", "scope": "any-depth"}))
+        self.assertTrue(overlaps("docs/", {"path": "SECURITY*", "scope": "repository-level"}))
+        self.assertFalse(overlaps("src/", {"path": "SECURITY*", "scope": "repository-level"}))
+        self.assertTrue(overlaps(".github/workflows/ci.yml", {"path": ".github/workflows/*.yml", "scope": "glob"}))
+
+    def test_a_section_that_does_not_name_the_check_is_a_mention_problem(self) -> None:
+        text = "# T\n\n## A\n\nKeep it on one line.\n\n## B\n\nAGT-06 reads it.\n"
+        home = {"path": "x.md", "section": "x.md#t/a", "quote": "q"}
+        keep: dict[str, Any] = {"move": "m", "check": "AGT-06", "home": home}
+        self.assertIsNotNone(consistency_map.mention_problem(keep, lambda _path: text))
+        home["section"] = "x.md#t"
+        self.assertIsNone(consistency_map.mention_problem(keep, lambda _path: text))
+
+    def test_the_report_of_this_tree_has_no_structural_problem(self) -> None:
+        found = consistency_map.report(MAP, CATALOGUE_IDS)
+        for kind in ("quote", "coverage", "names", "constants", "keeps"):
+            self.assertEqual(found[kind], [], kind)
+
+    def test_report_mode_exits_0_and_strict_mode_exits_1(self) -> None:
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(consistency_map.main([]), 0)
+        self.assertIn("consistency map:", out.getvalue())
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(consistency_map.main(["--strict"]), 1)
+
+    def test_json_mode_lists_every_kind(self) -> None:
+        with redirect_stdout(io.StringIO()) as out:
+            consistency_map.main(["--format", "json"])
+        self.assertEqual(set(json.loads(out.getvalue())), {*consistency_map.KINDS, "unreviewed"})
+
+
+if __name__ == "__main__":
+    unittest.main()

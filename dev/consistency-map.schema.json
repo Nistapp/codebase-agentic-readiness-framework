@@ -1,0 +1,459 @@
+{
+  "$defs": {
+    "boundary": {
+      "additionalProperties": false,
+      "description": "A promise of the implement run that no engine check reads, with its one home.",
+      "properties": {
+        "enforced_by": {
+          "$ref": "#/$defs/path"
+        },
+        "enforcement": {
+          "description": "What stops a break: a tool that refuses, a test that fails, or only the prose.",
+          "enum": [
+            "tool-refusal",
+            "test",
+            "prose"
+          ]
+        },
+        "home": {
+          "$ref": "#/$defs/quote"
+        },
+        "id": {
+          "pattern": "^B-[0-9]{2}$",
+          "type": "string"
+        },
+        "statement": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "statement",
+        "home",
+        "enforcement"
+      ],
+      "type": "object"
+    },
+    "check_id": {
+      "description": "A check ID from audit/catalogue.json, in the PACK-NN form.",
+      "pattern": "^[A-Z]+-[0-9]{2}$",
+      "type": "string"
+    },
+    "keep": {
+      "description": "The rule that keeps a touched read true (kept), or the maintainer's acceptance of the gap (accepted).",
+      "oneOf": [
+        {
+          "$ref": "#/$defs/keep_kept"
+        },
+        {
+          "$ref": "#/$defs/keep_accepted"
+        }
+      ]
+    },
+    "keep_accepted": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "$ref": "#/$defs/check_id"
+        },
+        "move": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "note": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "reason": {
+          "description": "Why the maintainer accepts that the move can change what the check reads.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "status": {
+          "const": "accepted"
+        }
+      },
+      "required": [
+        "move",
+        "check",
+        "status",
+        "reason"
+      ],
+      "type": "object"
+    },
+    "keep_kept": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "$ref": "#/$defs/check_id"
+        },
+        "home": {
+          "$ref": "#/$defs/quote"
+        },
+        "move": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "note": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "status": {
+          "const": "kept"
+        }
+      },
+      "required": [
+        "move",
+        "check",
+        "status",
+        "home"
+      ],
+      "type": "object"
+    },
+    "move": {
+      "additionalProperties": false,
+      "description": "What one playbook Commits row or one greenfield template does to text a check may read.",
+      "properties": {
+        "action": {
+          "description": "rewrite keeps the words and changes the line breaks, numbers or markers. untrack takes the from paths out of git's tracked set and leaves them on disk, so the scan no longer sees them. none: the row touches no text a check reads.",
+          "enum": [
+            "write",
+            "move",
+            "rewrite",
+            "create",
+            "untrack",
+            "none"
+          ]
+        },
+        "content": {
+          "description": "The kinds of content moved or written.",
+          "items": {
+            "enum": [
+              "prose",
+              "rule-line",
+              "heading",
+              "fenced-command",
+              "code-span",
+              "table",
+              "key",
+              "file"
+            ]
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "from": {
+          "items": {
+            "$ref": "#/$defs/path"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "id": {
+          "description": "A unique id: the playbook or template folder, a slash and the row or path, such as adapt-agents-md/row-9.",
+          "pattern": "^[a-z0-9][a-z0-9-]*/[A-Za-z0-9._/-]+$",
+          "type": "string"
+        },
+        "intent": {
+          "description": "Why a created file has a name from the names list; required by the gate for such a file.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "note": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "origin": {
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "$ref": "#/$defs/path"
+            },
+            "row": {
+              "description": "The number in the playbook's Commits table; absent for a template.",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "step": {
+              "description": "The step that does the work, as the playbook names it.",
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "type": "object"
+        },
+        "to": {
+          "items": {
+            "$ref": "#/$defs/path"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "touches": {
+          "description": "The checks whose reads this move can change, as a reviewer judged them. Each needs a keeps entry, or the gate lists the pair as unkept.",
+          "items": {
+            "$ref": "#/$defs/check_id"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "id",
+        "origin",
+        "action"
+      ],
+      "type": "object"
+    },
+    "name": {
+      "additionalProperties": false,
+      "description": "A file or folder name the engine gives a meaning to. A template or a created file whose path matches it needs a moves entry with an intent.",
+      "properties": {
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/check_id"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "constants": {
+          "items": {
+            "pattern": "^[a-z_.]+:[A-Za-z_][A-Za-z0-9_]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "ignore_case": {
+          "description": "true when the engine compares the name case-insensitively; the test then lower-cases both sides.",
+          "type": "boolean"
+        },
+        "match": {
+          "enum": [
+            "exact",
+            "base-name",
+            "glob",
+            "substring"
+          ]
+        },
+        "meaning": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "pattern": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "pattern",
+        "match",
+        "checks",
+        "meaning"
+      ],
+      "type": "object"
+    },
+    "path": {
+      "description": "A path relative to the repository root, with no leading slash, ./ or ../. A glob when the scope is glob.",
+      "pattern": "^(?!/)(?!\\.\\.?/).+$",
+      "type": "string"
+    },
+    "quote": {
+      "additionalProperties": false,
+      "description": "Where a sentence lives: a file, an index section address in that file, and a verbatim quote of the sentence.",
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "quote": {
+          "description": "The sentence, verbatim. Whitespace is collapsed before the compare.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "section": {
+          "description": "The section address that dev/doc_index.py gives the section, such as implement/playbooks/adapt-agents-md.md#steps/generic.",
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "section",
+        "quote"
+      ],
+      "type": "object"
+    },
+    "read": {
+      "additionalProperties": false,
+      "description": "One check's contract with the text it reads.",
+      "properties": {
+        "binding": {
+          "description": "How close the parts must be: on one physical line, within a window of lines, in one paragraph, in one section, or anywhere in the file.",
+          "enum": [
+            "line",
+            "window",
+            "paragraph",
+            "section",
+            "file"
+          ]
+        },
+        "check": {
+          "$ref": "#/$defs/check_id"
+        },
+        "constants": {
+          "description": "Engine constants that hold the file names, as module:NAME, such as audit.rules.checks.tst:_FASTPATH_DOCS. A test compares them with where.",
+          "items": {
+            "pattern": "^[a-z_.]+:[A-Za-z_][A-Za-z0-9_]*$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "note": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "source": {
+          "description": "engine: an engine rule reads the text. agent: the check page tells an agent what to read.",
+          "enum": [
+            "engine",
+            "agent"
+          ]
+        },
+        "threshold": {
+          "description": "The pass level, in the check page's words.",
+          "minLength": 1,
+          "type": "string"
+        },
+        "what": {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "phrase",
+                "word-list",
+                "fenced-command",
+                "code-span",
+                "key",
+                "exists"
+              ]
+            },
+            "text": {
+              "description": "The phrases or words, when the kind has them.",
+              "items": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        "where": {
+          "items": {
+            "$ref": "#/$defs/where"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "window": {
+          "description": "The window size in lines; only with binding window.",
+          "minimum": 2,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "check",
+        "source",
+        "where",
+        "what",
+        "binding"
+      ],
+      "type": "object"
+    },
+    "where": {
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/path"
+        },
+        "scope": {
+          "description": "root: the exact path at the root. any-depth: the base name in any folder. repository-level: the root, .github/, .gitlab/ or docs/. glob: path is a glob from the root, where **/ also matches no folder. With any-depth and repository-level, path is a base name that may hold a wildcard, such as .prettierrc*.",
+          "enum": [
+            "root",
+            "any-depth",
+            "repository-level",
+            "glob"
+          ]
+        }
+      },
+      "required": [
+        "path",
+        "scope"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "urn:codebase-agentic-readiness-framework:consistency-map:1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "dev/consistency-map.json: what each check reads (reads), what each playbook Commits row and greenfield template writes or moves (moves), the rules that keep the two in step (keeps), the file names the engine gives a meaning to (names) and the implement run's boundaries (boundaries).",
+  "properties": {
+    "boundaries": {
+      "items": {
+        "$ref": "#/$defs/boundary"
+      },
+      "type": "array"
+    },
+    "keeps": {
+      "items": {
+        "$ref": "#/$defs/keep"
+      },
+      "type": "array"
+    },
+    "map_format": {
+      "const": 1
+    },
+    "moves": {
+      "items": {
+        "$ref": "#/$defs/move"
+      },
+      "type": "array"
+    },
+    "names": {
+      "items": {
+        "$ref": "#/$defs/name"
+      },
+      "type": "array"
+    },
+    "reads": {
+      "items": {
+        "$ref": "#/$defs/read"
+      },
+      "type": "array"
+    }
+  },
+  "required": [
+    "map_format",
+    "reads",
+    "moves",
+    "keeps",
+    "names",
+    "boundaries"
+  ],
+  "title": "Consistency map",
+  "type": "object"
+}
