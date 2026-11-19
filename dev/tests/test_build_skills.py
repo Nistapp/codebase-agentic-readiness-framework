@@ -78,7 +78,7 @@ class BuildSkillsTests(unittest.TestCase):
             self.assertEqual(prompts, set(bs.AUDIT_PROMPT_FILES))
 
             ref_schema = {p.name for p in (bundle_dir / "references" / "schema").iterdir()}
-            self.assertEqual(ref_schema, set(bs.SCHEMA_FILES))
+            self.assertEqual(ref_schema, set(bs.SCHEMA_DOC_FILES))
 
             for name in bs.TOOL_FILES:
                 self.assertTrue((bundle_dir / "scripts" / "tools" / name).is_file(), name)
@@ -225,11 +225,19 @@ class AuditBundleLinkTests(unittest.TestCase):
             for prefix in SOURCE_TOOL_PREFIXES:
                 self.assertNotIn(prefix, text, file.relative_to(self.bundle))
 
-    def test_both_schema_doc_copies_are_rewritten_for_their_place(self) -> None:
+    def test_the_one_schema_doc_copy_links_the_schema_files_the_tools_read(self) -> None:
         references = (self.bundle / "references" / "schema" / "SCHEMA.md").read_text(encoding="utf-8")
-        scripts = (self.bundle / "scripts" / "schema" / "SCHEMA.md").read_text(encoding="utf-8")
         self.assertIn("](../../scripts/tools/facts.py)", references)
-        self.assertIn("](../tools/facts.py)", scripts)
+        self.assertIn("](../../scripts/schema/audit-report.schema.json)", references)
+        self.assertIn("](../../scripts/schema/catalogue.schema.json)", references)
+        self.assertFalse((self.bundle / "scripts" / "schema" / "SCHEMA.md").exists())
+        skill = (self.bundle / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("](scripts/schema/audit-intake.schema.json)", skill)
+
+    def test_no_schema_file_is_carried_twice_or_unread(self) -> None:
+        names = [p.name for p in self.bundle.rglob("*.schema.json")]
+        self.assertEqual(sorted(names), sorted(bs.SCHEMA_FILES))
+        self.assertNotIn("eval-expected.schema.json", names)
 
 
 def links_outside_fences(text: str) -> list[str]:
@@ -280,7 +288,7 @@ class ImplementBundleTests(unittest.TestCase):
             "references/spec/command-surface.md",
             "references/spec/decisions/0002-lint-in-the-gate.md",
             "references/schema/SCHEMA.md",
-            "references/schema/readiness-state.schema.json",
+            "scripts/schema/readiness-state.schema.json",
             "references/tools-cli.md",
             "scripts/catalogue.json",
             "scripts/tools/engine.py",
@@ -292,6 +300,7 @@ class ImplementBundleTests(unittest.TestCase):
             self.assertTrue((self.bundle / "scripts" / "tools" / name).is_file(), name)
         script_schema = {p.name for p in (self.bundle / "scripts" / "schema").iterdir()}
         self.assertEqual(script_schema, set(bs.IMPLEMENT_SCHEMA_FILES))
+        self.assertEqual(sorted(p.name for p in self.bundle.rglob("*.schema.json")), sorted(bs.IMPLEMENT_SCHEMA_FILES))
         source_playbooks = {p.name for p in (bs.IMPLEMENT / "playbooks").glob("*.md")}
         bundle_playbooks = {p.name for p in (self.bundle / "references" / "playbooks").glob("*.md")}
         self.assertEqual(bundle_playbooks, source_playbooks)
