@@ -195,6 +195,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN", "HYG-13": "UNKNOWN"},
     # -- stacks no other fixture holds (tests/test_stack_fixtures.py) -------------------------
     "stack-dotnet": {"EXEC-01": "PASS", "NAV-02": "PASS", "TOOL-03": "PASS"},
+    "stack-just-inline-version": {"EXEC-01": "PASS", "EXEC-02": "PASS", "EXEC-08": "FAIL", "NAV-02": "PASS"},
     "stack-php-composer": {"EXEC-01": "UNKNOWN", "EXEC-02": "PARTIAL", "NAV-02": "PASS"},
     "stack-ruby-bundler": {"EXEC-01": "PASS", "EXEC-02": "PARTIAL", "NAV-02": "PASS"},
     "stack-rust-cargo": {"EXEC-01": "PASS", "EXEC-02": "PASS", "NAV-01": "PASS", "NAV-02": "PASS"},
@@ -227,6 +228,7 @@ NEEDS_GIT = frozenset(
         "sec-01-excluded-env",
         "sec-02-key-shaped",
         "con-03-artefacts-not-ignored",
+        "stack-just-inline-version",
         "stack-php-composer",
         "stack-ruby-bundler",
         "stack-rust-cargo",

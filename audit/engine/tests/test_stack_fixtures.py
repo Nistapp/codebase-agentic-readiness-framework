@@ -30,6 +30,7 @@ from audit.stack import detect_stack  # noqa: E402
 #: fixture -> (ecosystems, package managers) that stack detection must report.
 STACKS: dict[str, tuple[set[str], set[str]]] = {
     "stack-dotnet": ({"dotnet"}, set()),
+    "stack-just-inline-version": ({"rust"}, {"cargo"}),
     "stack-php-composer": ({"php"}, {"composer"}),
     "stack-ruby-bundler": ({"ruby"}, {"bundler"}),
     "stack-rust-cargo": ({"rust"}, {"cargo"}),
@@ -41,6 +42,11 @@ VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
         "EXEC-01": ("PASS", "dotnet (global.json)"),
         "NAV-02": ("PASS", "entry point(s): Program.cs"),
         "TOOL-03": ("PASS", "StackDotnet.csproj:Nullable"),
+    },
+    "stack-just-inline-version": {
+        "EXEC-01": ("PASS", "rust (rust-toolchain.toml)"),
+        "EXEC-02": ("PASS", "tracked: Cargo.lock"),
+        "EXEC-08": ("FAIL", "1 literal tool version(s) no manifest holds"),
     },
     "stack-php-composer": {
         "EXEC-01": ("UNKNOWN", "no toolchain pin can be chosen"),
@@ -77,6 +83,15 @@ class StackFixtureTests(unittest.TestCase):
                 for check_id, (verdict, phrase) in expected.items():
                     self.assertEqual(checks[check_id]["verdict"], verdict, f"{name}: {check_id}")
                     self.assertIn(phrase, checks[check_id]["summary"], f"{name}: {check_id}")
+
+    def test_the_justfile_recipe_that_installs_a_tool_at_a_literal_version_is_the_evidence(self):
+        report = matrix.run("stack-just-inline-version")
+        (finding,) = [finding for finding in report["findings"] if finding["check"] == "EXEC-08"]
+        self.assertEqual(finding["id"], "EXEC-08:justfile")
+        self.assertEqual(
+            [(item["path"], item.get("line"), item.get("note")) for item in finding["evidence"]],
+            [("justfile", 9, "cargo-deny 0.16.1")],
+        )
 
     def test_every_stack_fixture_has_a_row_here_and_in_the_fixture_matrix(self):
         on_disk = {path.name for path in support.FIXTURES_DIR.iterdir() if path.name.startswith("stack-")}
