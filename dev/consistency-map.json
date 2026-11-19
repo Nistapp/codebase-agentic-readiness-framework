@@ -9,7 +9,7 @@
         "section": "implement/SKILL.md#implement/hard-rules"
       },
       "id": "B-01",
-      "note": "A6 fails when local or origin dev or main moved, a branch outside agentic-readiness/* was pushed, or a merge or force-push was attempted; the Stage 3 merge of origin/dev into the theme branch passes. It also fails when a tag reached origin, or a tag push or a gh release write was attempted. Nothing refuses these on a run; the eval only reports them.",
+      "note": "A6 fails when local or origin dev or main moved, a branch outside agentic-readiness/* was pushed, or a merge, a git pull, a git rebase or a force-push was attempted; the Stage 3 merge of origin/dev into the theme branch passes. It also fails when a tag reached origin, or a tag push or a release write (gh release, or gh api on a releases endpoint with a write method or a body) was attempted; a GET stays allowed. Nothing refuses these on a run; the eval only reports them.",
       "statement": "The run writes only on its theme branch, in its own worktree: never on the default or integration branch, never a force-push, a tag push or a release.",
       "symbol": "a6_branch_rule"
     },
@@ -516,11 +516,51 @@
       "status": "kept"
     },
     {
+      "check": "AGT-03",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-04",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-05",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
       "check": "AGT-07",
       "home": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
         "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "AGT-09",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
       },
       "move": "adapt-agents-md/row-13",
       "status": "kept"
@@ -536,11 +576,61 @@
       "status": "kept"
     },
     {
+      "check": "AGT-13",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "A conventions section in `AGENTS.md` or `CONTRIBUTING.md` stays where it is, unless the owner asks to move it.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-02",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
       "check": "DOC-05",
       "home": {
         "path": "implement/SKILL.md",
         "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
         "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-01",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-03",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "BASE-04",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
       },
       "move": "adapt-agents-md/row-13",
       "status": "kept"
@@ -561,6 +651,16 @@
         "path": "implement/playbooks/adapt-agents-md.md",
         "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
         "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+      },
+      "move": "adapt-agents-md/row-13",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-03",
+      "home": {
+        "path": "implement/playbooks/adapt-agents-md.md",
+        "quote": "Move only a section that no root-only check reads.",
+        "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
       },
       "move": "adapt-agents-md/row-13",
       "status": "kept"
@@ -2587,11 +2687,21 @@
         "docs/"
       ],
       "touches": [
+        "AGT-03",
+        "AGT-04",
+        "AGT-05",
         "AGT-07",
+        "AGT-09",
         "AGT-12",
+        "AGT-13",
+        "DOC-02",
         "DOC-05",
+        "BASE-01",
+        "BASE-03",
+        "BASE-04",
         "CON-01",
-        "CON-02"
+        "CON-02",
+        "EXEC-03"
       ]
     },
     {
@@ -6334,7 +6444,7 @@
     {
       "binding": "file",
       "check": "AGT-02",
-      "note": "The root manifests declare the components (components.py); for each one <component>/AGENTS.md must exist, matched as a path suffix at any depth.",
+      "note": "The root manifests declare the components (components.py); for each one <component>/AGENTS.md must exist, matched as a path suffix at any depth. The suffix test runs over agt.instruction_paths, which scans every instruction file name, but only a path ending in <component>/AGENTS.md counts, so the other names are never read for this check.",
       "source": "engine",
       "threshold": "every declared component has an AGENTS.md",
       "what": {
@@ -6464,23 +6574,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -6507,6 +6617,7 @@
     {
       "binding": "line",
       "check": "AGT-06",
+      "named_by_text": "each path token of a boundary line is looked up with Inventory.has",
       "note": "A line with one of 18 rule words (must, never, only, module, owns, import, layer and others) and, on the same line, a path token with a slash that names a scanned file or a folder above one.",
       "source": "engine",
       "threshold": "two or more boundary rules naming real paths",
@@ -6764,6 +6875,7 @@
     {
       "binding": "line",
       "check": "AGT-10",
+      "named_by_text": "each file a harness config names must exist",
       "note": "Each file a config names (aider read:, three Codex keys, Gemini context.fileName, opencode instructions) must exist. A deferral phrase (first read, read ... first, before you ... read, start by reading, refer to ... first) with an existing .md, .txt, .yml, .yaml, .json or .toml reference on the same line, unnamed by any config, fails.",
       "source": "engine",
       "what": {
@@ -6835,6 +6947,7 @@
           "scope": "root"
         },
         {
+          "case": "fold",
           "path": "**/*communicat*.md",
           "scope": "glob"
         }
@@ -6851,50 +6964,62 @@
       },
       "where": [
         {
+          "case": "fold",
           "path": "*convention*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "code_style*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "coding_standards*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "*coding-guidelines*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "docs/**/*convention*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "docs/**/code_style*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "docs/**/coding_standards*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "docs/**/*coding-guidelines*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": ".github/**/*convention*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": ".github/**/code_style*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": ".github/**/coding_standards*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": ".github/**/*coding-guidelines*",
           "scope": "glob"
         },
@@ -7107,7 +7232,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "Each manifest kind is matched at any depth and only the shallowest is read; the Makefile is parsed at the root only, and gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
+      "note": "package.json, the Makefile, the Taskfile and pyproject.toml count only at the root, where they are read; each Gradle or Maven build is matched at any depth and only the shallowest is read. gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
       "source": "engine",
       "threshold": "all seven verbs on one runner",
       "what": {
@@ -7125,23 +7250,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7183,23 +7308,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7241,23 +7366,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7304,23 +7429,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7458,32 +7583,24 @@
           "scope": "any-depth"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "package.json",
           "scope": "root"
-        },
-        {
-          "path": "package.json",
-          "scope": "any-depth"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7633,32 +7750,24 @@
           "scope": "any-depth"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "package.json",
           "scope": "root"
-        },
-        {
-          "path": "package.json",
-          "scope": "any-depth"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7709,7 +7818,7 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "setup.cfg",
@@ -7737,23 +7846,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7788,23 +7897,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -7949,10 +8058,6 @@
           "scope": "any-depth"
         },
         {
-          "path": "package.json",
-          "scope": "root"
-        },
-        {
           "path": ".husky/commit-msg",
           "scope": "any-depth"
         },
@@ -8002,23 +8107,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8207,23 +8312,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8294,23 +8399,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8507,10 +8612,6 @@
           "scope": "root"
         },
         {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "setup.cfg",
           "scope": "root"
         },
@@ -8592,23 +8693,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8669,26 +8770,6 @@
         "kind": "phrase"
       },
       "where": [
-        {
-          "path": "package.json",
-          "scope": "root"
-        },
-        {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
-          "path": "Makefile",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yml",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yaml",
-          "scope": "root"
-        },
         {
           "path": "setup.cfg",
           "scope": "root"
@@ -8815,23 +8896,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -8915,26 +8996,6 @@
         },
         {
           "path": "CONTRIBUTING.md",
-          "scope": "root"
-        },
-        {
-          "path": "package.json",
-          "scope": "root"
-        },
-        {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
-          "path": "Makefile",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yml",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yaml",
           "scope": "root"
         },
         {
@@ -9083,23 +9144,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -9273,6 +9334,7 @@
     {
       "binding": "section",
       "check": "CON-01",
+      "named_by_text": "each code span of the prohibitions section is looked up in the scan and on disk",
       "note": "Every code span on the lines of every prohibitions section; a span counts when it has no command characters and holds a slash, a glob or a dot, or names something that exists. Existence is checked in the scan and on disk.",
       "source": "engine",
       "threshold": "a named path that exists",
@@ -9782,23 +9844,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -9998,23 +10060,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10165,23 +10227,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10254,7 +10316,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. The runner manifests are found at any depth and the shallowest is read; the Makefile is read at the root only.",
+      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. package.json, the Makefile, the Taskfile and pyproject.toml count only at the root, where they are read; a Gradle or Maven build is found at any depth and the shallowest is read.",
       "source": "engine",
       "what": {
         "kind": "key"
@@ -10262,23 +10324,23 @@
       "where": [
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",
@@ -10465,14 +10527,6 @@
           "scope": "any-depth"
         },
         {
-          "path": "package.json",
-          "scope": "root"
-        },
-        {
-          "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
           "path": "setup.cfg",
           "scope": "root"
         },
@@ -10514,23 +10568,23 @@
         },
         {
           "path": "package.json",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Makefile",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "build.gradle",

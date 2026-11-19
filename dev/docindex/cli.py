@@ -47,14 +47,15 @@ the sections added, removed, moved, renamed and edited, the edges lost and gaine
 definition or every mention. It is a report, so it exits 0 whatever it finds.
 
 ``query`` is routed by the entry point, ``dev/doc_index.py``, to :func:`docindex.ids.query_main`, which needs the
-entry point's full config; called here, it says so on stderr and exits 1.
+entry point's full config. The parser here takes the same arguments (``ADDRESS``, ``--report``, ``--at``), so the
+top-level ``--help`` lists them; called here, ``query`` says so on stderr and exits 1.
 
 A git failure (a ref that names no commit, a folder that is not a repository) or an unreadable commits file exits 1.
-A usage error that argparse finds (a missing or unknown argument) exits 2. Output goes to stdout; diagnostics go to
-stderr.
+A usage error (a missing or unknown argument, or two options that exclude each other) exits 1 too, not argparse's 2
+(:class:`docindex.usage.UsageParser`); ``--help`` exits 0. Output goes to stdout; diagnostics go to stderr.
 
 ``verify-quotes`` has its own exit codes: 0 when every quote and citation passes, 2 when one fails, and 1 on a usage
-error (argparse's included, a folder that holds no ``quotes.json``, or with ``--at`` a ref that names no commit). The
+error (a bad argument, a folder that holds no ``quotes.json``, or with ``--at`` a ref that names no commit). The
 folder is relative to the current folder; the quoted paths are relative to the repository root. It writes each
 failure (id, path, reason) to stderr and a one-line count to stdout.
 
@@ -81,23 +82,16 @@ import json
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Callable, Mapping, NoReturn, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from . import diff as index_diff
 from . import evidence, extract, manifest, quotes, recall, sweep, sweep_diff
 from .gitread import GitError, RefTree, Tree, WorkTree
 from .model import to_json
+from .usage import UsageParser
 
 PROG = "doc_index.py"
 VERIFY_QUOTES = "verify-quotes"
-
-
-class _ExitOneParser(argparse.ArgumentParser):
-    """A parser whose usage error exits 1, not argparse's 2: the quote verifier keeps 2 for a failed quote."""
-
-    def error(self, message: str) -> NoReturn:
-        self.print_usage(sys.stderr)
-        self.exit(1, f"{self.prog}: error: {message}\n")
 
 
 def _add_verify_arguments(parser: argparse.ArgumentParser) -> None:
@@ -106,11 +100,13 @@ def _add_verify_arguments(parser: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog=PROG, description="Build, compare, sweep and query the document index.")
+    parser = UsageParser(prog=PROG, description="Build, compare, sweep and query the document index.")
     commands = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
     build = commands.add_parser("build", help="write the index of the working tree to stdout as JSON")
     build.add_argument("--at", metavar="GIT_REF", help="index the files at this git ref, not the working tree")
-    diff = commands.add_parser("diff", help="report what changed in the index from a git ref to the working tree")
+    diff = commands.add_parser(
+        "diff", help="report what changed in the index from a git ref to the working tree or --at"
+    )
     diff.add_argument("ref", metavar="GIT_REF", help="the old side: the git ref to compare with")
     diff.add_argument("--at", metavar="GIT_REF", help="the new side: this git ref, not the working tree")
     diff.add_argument("--format", choices=("text", "json"), default="text", help="the output form (text)")
@@ -128,8 +124,11 @@ def build_parser() -> argparse.ArgumentParser:
     sweep_parser.add_argument(
         "--triggers", choices=sweep.SELECTIONS, default="all", help="the trigger groups to use (all)"
     )
-    query = commands.add_parser("query", help="show one node and its edges")
-    query.add_argument("address", metavar="ADDRESS", help="a file path, a section address or an ID")
+    # The entry point routes query to docindex.ids.query_main; these options mirror its parser, for --help.
+    query = commands.add_parser("query", help="show one node and its edges, or the reports")
+    query.add_argument("address", nargs="?", metavar="ADDRESS", help="a file path, a section address or an ID")
+    query.add_argument("--report", action="store_true", help="print the reports instead (never a gate)")
+    query.add_argument("--at", metavar="GIT_REF", help="query the index at this git ref, not the working tree")
     verify = commands.add_parser(VERIFY_QUOTES, help="check every quote the reports of a folder cite")
     _add_verify_arguments(verify)
     manifest_parser = commands.add_parser("manifest", help="build the skill bundles and write their manifest")
@@ -227,9 +226,7 @@ def _evidence_compare(args: argparse.Namespace) -> int:
 
 
 def _verify_quotes(argv: Sequence[str], root: Path) -> int:
-    parser = _ExitOneParser(
-        prog=f"{PROG} {VERIFY_QUOTES}", description="Check every quote the reports of a folder cite."
-    )
+    parser = UsageParser(prog=f"{PROG} {VERIFY_QUOTES}", description="Check every quote the reports of a folder cite.")
     _add_verify_arguments(parser)
     args = parser.parse_args(list(argv))
     try:
