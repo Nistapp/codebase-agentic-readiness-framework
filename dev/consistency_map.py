@@ -3,7 +3,7 @@
 
 """The consistency map's gate, in static mode: is every touched read kept? (ADR 0012).
 
-``python3 dev/consistency_map.py`` reads ``dev/consistency-map.json``, the catalogue, the playbooks, the greenfield
+``python3 dev/consistency_map.py`` reads the map (:func:`load_map`), the catalogue, the playbooks, the greenfield
 templates and the engine's constants in the working tree, and reports eight kinds of problem:
 
 - ``unkept``: a move declares that it touches a check (``touches``) and no keeps entry covers the pair;
@@ -29,6 +29,11 @@ files the checks read, the kept sections that lost their mention of a check, the
 scope, and the evidence comparison (:mod:`consistency_map_change`). ``--at REF`` takes the new side from a commit,
 not the working tree; ``--no-evidence`` skips the engine runs. A ref that names no commit is a usage error (exit 2);
 a failed engine run exits 1.
+
+The map is two files, so that each stays under the 512 KiB size the audit's structural check flags:
+``dev/consistency-map.json`` holds every part but ``names``, and ``dev/consistency-map-names.json`` holds
+``map_format`` and ``names``. :func:`load_map` joins them into the one map the schema describes. A map file that
+also holds ``names``, a missing names file, or a ``map_format`` that differs is a usage error (exit 2).
 """
 
 from __future__ import annotations
@@ -49,6 +54,8 @@ from typing import Any
 DEV = Path(__file__).resolve().parent
 REPO = DEV.parent
 MAP_PATH = DEV / "consistency-map.json"
+#: The suffix that turns the map file's name into its names file's name (``consistency-map-names.json``).
+NAMES_SUFFIX = "-names"
 ENGINE = REPO / "audit" / "engine"
 BOOTSTRAP = REPO / "greenfield" / "bootstrap"
 TEMPLATES = REPO / "greenfield" / "templates"
@@ -79,6 +86,34 @@ _CONTENT_FOR: dict[str, frozenset[str]] = {
     "key": frozenset({"key"}),
     "exists": frozenset({"file"}),
 }
+
+
+class MapError(Exception):
+    """The map's two files do not join into one map."""
+
+
+def names_path(map_path: Path) -> Path:
+    """The names file beside a map file: ``consistency-map.json`` gives ``consistency-map-names.json``."""
+    return map_path.with_name(map_path.stem + NAMES_SUFFIX + map_path.suffix)
+
+
+def load_map(map_path: Path = MAP_PATH) -> dict[str, Any]:
+    """The map file joined with its names file, as one map; raises :class:`MapError` when they do not join."""
+    cmap = json.loads(map_path.read_text(encoding="utf-8"))
+    if "names" in cmap:
+        raise MapError(f"{map_path.name} holds names; they belong in {names_path(map_path).name}")
+    try:
+        names = json.loads(names_path(map_path).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise MapError(f"{names_path(map_path).name} is missing beside {map_path.name}") from None
+    if set(names) != {"map_format", "names"}:
+        raise MapError(f"{names_path(map_path).name} must hold map_format and names only, not {sorted(names)}")
+    if names["map_format"] != cmap.get("map_format"):
+        raise MapError(
+            f"{names_path(map_path).name} has map_format {names['map_format']!r}, "
+            f"{map_path.name} has {cmap.get('map_format')!r}"
+        )
+    return {**cmap, "names": names["names"]}
 
 
 def working_tree(path: str) -> str:
@@ -471,7 +506,12 @@ def format_text(found: dict[str, list[str]], unreviewed: Sequence[str], verbose:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="consistency_map.py", description=__doc__.splitlines()[0])
-    parser.add_argument("--map", type=Path, default=MAP_PATH, help="the map file (default: dev/consistency-map.json)")
+    parser.add_argument(
+        "--map",
+        type=Path,
+        default=MAP_PATH,
+        help="the map file; its names file is beside it (default: dev/consistency-map.json)",
+    )
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--strict", action="store_true", help="exit 1 when the gate finds a problem")
     parser.add_argument(
@@ -493,7 +533,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if args.base is None and (args.at is not None or args.no_evidence):
         parser.error("--at and --no-evidence need --base")
-    cmap = json.loads(args.map.read_text(encoding="utf-8"))
+    try:
+        cmap = load_map(args.map)
+    except MapError as exc:
+        parser.error(str(exc))
     catalogue_ids = [check["id"] for check in json.loads(CATALOGUE.read_text(encoding="utf-8"))["checks"]]
     found = report(cmap, catalogue_ids)
     unreviewed = [f"{move} -> {check} (through {path})" for move, check, path in unreviewed_pairs(cmap)]
