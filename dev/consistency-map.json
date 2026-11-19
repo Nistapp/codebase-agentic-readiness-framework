@@ -2345,6 +2345,22 @@
       "status": "kept"
     },
     {
+      "check": "SEC-01",
+      "home": {
+        "path": "implement/playbooks/env-inventory-and-secrets.md",
+        "quote": "None tracked, or each remaining path is a recorded owner exception",
+        "section": "implement/playbooks/env-inventory-and-secrets.md#playbook-env-inventory-and-secrets/verification"
+      },
+      "move": "env-inventory-and-secrets/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "SEC-02",
+      "move": "env-inventory-and-secrets/row-1",
+      "reason": "The move can only remove findings or add credit: untracked files leave the tracked text files SEC-02 reads, so a hit can vanish but none can appear.",
+      "status": "accepted"
+    },
+    {
       "check": "AGT-07",
       "home": {
         "path": "implement/playbooks/env-inventory-and-secrets.md",
@@ -2360,6 +2376,16 @@
         "path": "implement/playbooks/env-inventory-and-secrets.md",
         "quote": "A fenced command that named the file must still resolve",
         "section": "implement/playbooks/env-inventory-and-secrets.md#playbook-env-inventory-and-secrets/steps/generic"
+      },
+      "move": "env-inventory-and-secrets/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
       },
       "move": "env-inventory-and-secrets/row-2",
       "status": "kept"
@@ -2424,6 +2450,16 @@
       },
       "move": "env-inventory-and-secrets/row-5",
       "note": "SEC-02 binds an allowlisted hit to its line number (DESIGN 2.2 f3); a later shift needs a regenerated allowlist.",
+      "status": "kept"
+    },
+    {
+      "check": "DOC-05",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+        "section": "implement/SKILL.md#implement/stage-3-apply"
+      },
+      "move": "env-inventory-and-secrets/row-6",
       "status": "kept"
     },
     {
@@ -5316,7 +5352,11 @@
         "path": "implement/playbooks/env-inventory-and-secrets.md",
         "row": 1,
         "step": "Step 3"
-      }
+      },
+      "touches": [
+        "SEC-01",
+        "SEC-02"
+      ]
     },
     {
       "action": "write",
@@ -5338,7 +5378,8 @@
       ],
       "touches": [
         "AGT-07",
-        "EXEC-06"
+        "EXEC-06",
+        "DOC-05"
       ]
     },
     {
@@ -5422,6 +5463,9 @@
         "AGENTS.md",
         "scripts/ci/README.md",
         "docs/**/*.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
