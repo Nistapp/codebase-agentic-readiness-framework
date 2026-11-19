@@ -23,8 +23,8 @@ Engine           `CMD-01`. Reads every runner manifest `_common` understands in 
                  `package.json` cannot take the verbs from the root `Makefile`
                  ([ADR-0008](../engine/docs/architecture/adrs/0008-what-counts-as-the-repository.md)). A
                  `package.json`, a `Makefile`, a Taskfile or a `pyproject.toml` counts only at the root,
-                 where its runner reads it: a nested `tools/Makefile` is not a runner, and no finding cites
-                 it; Gradle and Maven builds are found at any depth. All seven verbs
+                 where its runner reads it. A nested `tools/Makefile` is not a runner, and no finding
+                 cites it. Gradle and Maven builds are found at any depth. All seven verbs
                  resolving on exactly one runner is `PASS`. Any verb missing from every runner is `FAIL`.
                  Verbs resolving but spread across more than one runner is
                  `PARTIAL` (the stray second definition itself is `CMD-03`'s territory, not this check's).
