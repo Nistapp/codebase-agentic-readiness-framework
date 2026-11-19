@@ -6496,6 +6496,7 @@
     {
       "binding": "line",
       "check": "AGT-06",
+      "named_by_text": "each path token of a boundary line is looked up with Inventory.has",
       "note": "A line with one of 18 rule words (must, never, only, module, owns, import, layer and others) and, on the same line, a path token with a slash that names a scanned file or a folder above one.",
       "source": "engine",
       "threshold": "two or more boundary rules naming real paths",
@@ -6753,6 +6754,7 @@
     {
       "binding": "line",
       "check": "AGT-10",
+      "named_by_text": "each file a harness config names must exist",
       "note": "Each file a config names (aider read:, three Codex keys, Gemini context.fileName, opencode instructions) must exist. A deferral phrase (first read, read ... first, before you ... read, start by reading, refer to ... first) with an existing .md, .txt, .yml, .yaml, .json or .toml reference on the same line, unnamed by any config, fails.",
       "source": "engine",
       "what": {
@@ -6824,6 +6826,7 @@
           "scope": "root"
         },
         {
+          "case": "fold",
           "path": "**/*communicat*.md",
           "scope": "glob"
         }
@@ -6840,50 +6843,62 @@
       },
       "where": [
         {
+          "case": "fold",
           "path": "*convention*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "code_style*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "coding_standards*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "*coding-guidelines*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "docs/**/*convention*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "docs/**/code_style*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "docs/**/coding_standards*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": "docs/**/*coding-guidelines*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": ".github/**/*convention*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": ".github/**/code_style*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": ".github/**/coding_standards*",
           "scope": "glob"
         },
         {
+          "case": "fold",
           "path": ".github/**/*coding-guidelines*",
           "scope": "glob"
         },
@@ -9262,6 +9277,7 @@
     {
       "binding": "section",
       "check": "CON-01",
+      "named_by_text": "each code span of the prohibitions section is looked up in the scan and on disk",
       "note": "Every code span on the lines of every prohibitions section; a span counts when it has no command characters and holds a slash, a glob or a dot, or names something that exists. Existence is checked in the scan and on disk.",
       "source": "engine",
       "threshold": "a named path that exists",

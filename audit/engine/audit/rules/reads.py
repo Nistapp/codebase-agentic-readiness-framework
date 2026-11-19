@@ -20,7 +20,9 @@ base name in any folder; ``repository-level`` is the root, ``.github/``, ``.gitl
 
 A place with ``via`` is read upstream, before any check runs: ``scan-kind`` when the scan's file kinds
 (``Kind.TEST``, ``Kind.GENERATED``) match it by name, ``components`` when component detection reads it. The
-check then asks for no such path itself.
+check then asks for no such path itself. A place with ``case`` ``fold`` is matched in lower case, so a name
+in any case meets it. A declaration with ``named_by_text`` also reads paths that the target's own text names,
+which no place can list; the field gives the reason.
 """
 
 from __future__ import annotations
@@ -45,19 +47,25 @@ COMPONENTS = "components"
 
 VIAS: tuple[str, ...] = (SCAN_KIND, COMPONENTS)
 
+EXACT = "exact"
+FOLD = "fold"
+
+CASES: tuple[str, ...] = (EXACT, FOLD)
+
 
 @dataclass(frozen=True)
 class Place:
     """One path a check reads, at one scope.
 
     ``constant`` names the engine constant it comes from; ``via`` names the upstream step that reads it for the
-    check, ``scan-kind`` or ``components``.
+    check, ``scan-kind`` or ``components``; ``case`` is ``fold`` when the check matches the name in lower case.
     """
 
     path: str
     scope: str
     constant: str | None = None
     via: str | None = None
+    case: str = EXACT
 
 
 @dataclass(frozen=True)
@@ -78,6 +86,7 @@ class Reads:
     window: int | None = None
     threshold: str | None = None
     note: str | None = None
+    named_by_text: str | None = None
 
     @property
     def constants(self) -> tuple[str, ...]:
@@ -92,8 +101,8 @@ class Reads:
         return tuple(dict.fromkeys(reference for reference in references if reference))
 
 
-def _at(scope: str, *paths: str, via: str | None = None) -> tuple[Place, ...]:
-    return tuple(Place(path, scope, via=via) for path in paths)
+def _at(scope: str, *paths: str, via: str | None = None, case: str = EXACT) -> tuple[Place, ...]:
+    return tuple(Place(path, scope, via=via, case=case) for path in paths)
 
 
 def _held(module: ModuleType, name: str, scope: str, scopes: dict[str, str] | None = None) -> tuple[Place, ...]:
@@ -287,6 +296,7 @@ READS: dict[str, Reads] = {
             "and, on the same line, a path token with a slash that names a scanned file or a folder above "
             "one."
         ),
+        named_by_text="each path token of a boundary line is looked up with Inventory.has",
     ),
     "AGT-07": Reads(
         where=(*_at(ROOT, "AGENTS.md", "CLAUDE.md"),),
@@ -412,11 +422,12 @@ READS: dict[str, Reads] = {
             "start by reading, refer to ... first) with an existing .md, .txt, .yml, .yaml, .json or .toml "
             "reference on the same line, unnamed by any config, fails."
         ),
+        named_by_text="each file a harness config names must exist",
     ),
     "AGT-12": Reads(
         where=(
             *_at(ROOT, "AGENTS.md", "CLAUDE.md"),
-            *_at(GLOB, "**/*communicat*.md"),
+            *_at(GLOB, "**/*communicat*.md", case=FOLD),
         ),
         what=What("word-list"),
         binding="section",
@@ -444,6 +455,7 @@ READS: dict[str, Reads] = {
                 ".github/**/code_style*",
                 ".github/**/coding_standards*",
                 ".github/**/*coding-guidelines*",
+                case=FOLD,
             ),
             *_at(ROOT, "AGENTS.md", "CONTRIBUTING.md", ".github/CONTRIBUTING.md", "docs/CONTRIBUTING.md"),
         ),
@@ -1181,6 +1193,7 @@ READS: dict[str, Reads] = {
             " characters and holds a slash, a glob or a dot, or names something that exists. Existence is "
             "checked in the scan and on disk."
         ),
+        named_by_text="each code span of the prohibitions section is looked up in the scan and on disk",
     ),
     "CON-02": Reads(
         where=(
