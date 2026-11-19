@@ -12,8 +12,8 @@ recording ``pathlib`` reads. The recorder keeps each path a check asks for insid
 - ``match``: a pattern or a suffix tried on every name (``Inventory.match``, ``Inventory.with_suffix``).
 
 A check that walks ``Inventory.files`` or ``Inventory.paths`` for names asks for no path; the files it then reads
-are recorded. A second run of each check hands it every ``FileEntry.rel`` as a tracking string, the name probe. It
-records a fifth kind of ask:
+are recorded. A second run of each check hands it every ``FileEntry.rel``, and every path git tracks, as a tracking
+string, the name probe. It records a fifth kind of ask:
 
 - ``name``: a name a check compares a scanned path with in its own code (``==``, ``!=``, ``startswith``,
   ``endswith``, ``in``, ``fnmatch``), and whether the path was lower-cased first.
@@ -37,7 +37,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from contextlib import contextmanager
 from dataclasses import fields, replace
 from pathlib import Path
@@ -52,7 +52,7 @@ from audit.components import detect_components  # noqa: E402
 from audit.probes import ProbeSession  # noqa: E402
 from audit import scan  # noqa: E402
 from audit.rules import checks, reads  # noqa: E402
-from audit.rules.checks import con  # noqa: E402
+from audit.rules.checks import _common, con  # noqa: E402
 from audit.rules.registry import REGISTRY, applicable_checks  # noqa: E402
 from audit.scan import CONTENT_READ_LIMIT, Inventory, build_inventory  # noqa: E402
 from audit.stack import detect_stack  # noqa: E402
@@ -194,8 +194,9 @@ def undeclared(check: str, root: Path, asks: set[Ask]) -> set[Ask]:
 
 
 # The name probe. It leans on CPython details: a set or dict lookup calls ``__eq__`` only on a hash hit, so a name
-# held in a set is seen only when a fixture has the file. ``strip``, regular expressions and ``Path`` objects built
-# from a name return plain strings, which the probe no longer tracks.
+# held in a set is seen only when a fixture has the file, so the probe swaps the check modules' held sets and
+# dicts of names for recording copies (``_held_containers``). ``strip``, ``lstrip`` and ``rstrip`` keep a name tracked.
+# Regular expressions and ``Path`` objects built from a name return plain strings, which the probe no longer tracks.
 
 _CHECKS_DIR = os.path.dirname(os.path.abspath(checks.__file__)) + os.sep
 _SCAN_FILE = os.path.abspath(scan.__file__)
@@ -272,6 +273,15 @@ class _TrackedName(str):
     def casefold(self) -> _TrackedName:
         return _TrackedName(str.casefold(self), True)
 
+    def strip(self, chars: str | None = None) -> _TrackedName:
+        return _TrackedName(str.strip(self, chars), self.folded)
+
+    def lstrip(self, chars: str | None = None) -> _TrackedName:
+        return _TrackedName(str.lstrip(self, chars), self.folded)
+
+    def rstrip(self, chars: str | None = None) -> _TrackedName:
+        return _TrackedName(str.rstrip(self, chars), self.folded)
+
     def split(self, *args: Any, **kwargs: Any) -> list[str]:
         return [_TrackedName(part, self.folded) for part in str.split(self, *args, **kwargs)]
 
@@ -290,11 +300,92 @@ class _TrackedName(str):
         return _TrackedName(str.__getitem__(self, key), self.folded)
 
 
+def _record_members(members: Iterable[str], key: object, frame: Any) -> None:
+    """A tracked name looked up in a held set or dict asks for every member: it would match any of them."""
+    if isinstance(key, _TrackedName):
+        _record_name("eq", tuple(members), key.folded, frame)
+
+
+class _RecordingFrozenset(frozenset[str]):
+    """A check's frozenset of names that records a lookup of a tracked name, hit or miss."""
+
+    def __contains__(self, key: object) -> bool:
+        _record_members(self, key, sys._getframe(1))
+        return frozenset.__contains__(self, key)
+
+    def __repr__(self) -> str:
+        return repr(frozenset(self))
+
+
+class _RecordingSet(set[str]):
+    """A check's set of names that records a lookup of a tracked name, hit or miss."""
+
+    def __contains__(self, key: object) -> bool:
+        _record_members(self, key, sys._getframe(1))
+        return set.__contains__(self, key)
+
+    def __repr__(self) -> str:
+        return repr(set(self))
+
+
+class _RecordingDict(dict[str, Any]):
+    """A check's dict keyed by names that records a lookup of a tracked name, hit or miss."""
+
+    def __contains__(self, key: object) -> bool:
+        _record_members(self, key, sys._getframe(1))
+        return dict.__contains__(self, key)
+
+    def __getitem__(self, key: str) -> Any:
+        _record_members(self, key, sys._getframe(1))
+        return dict.__getitem__(self, key)
+
+    def get(self, key: str, default: Any = None) -> Any:
+        _record_members(self, key, sys._getframe(1))
+        return dict.get(self, key, default)
+
+
+_RECORDING_TYPES: dict[type, type] = {frozenset: _RecordingFrozenset, set: _RecordingSet, dict: _RecordingDict}
+
+#: The held containers of names in the check modules and their recording copies, built once.
+_HELD: list[tuple[Any, str, Any, Any]] = []
+
+
+def _held_containers() -> list[tuple[Any, str, Any, Any]]:
+    """Every module-level set, frozenset or dict of the check modules whose members are all strings.
+
+    A set or dict lookup calls ``__eq__`` only on a hash hit, so without a recording copy a name held there is seen
+    only when a fixture has the file. A container two modules share gets one copy.
+    """
+    if not _HELD:
+        copies: dict[int, Any] = {}
+        for module_name, module in sorted(sys.modules.items()):
+            if not module_name.startswith(checks.__name__ + ".") or module is None:
+                continue
+            for name, value in sorted(vars(module).items()):
+                recording = _RECORDING_TYPES.get(type(value))
+                if name.startswith("__") or recording is None or not value:
+                    continue
+                if not all(isinstance(member, str) for member in value):
+                    continue
+                copy = copies.setdefault(id(value), recording(value))
+                _HELD.append((module, name, value, copy))
+    return _HELD
+
+
 @contextmanager
 def _recording_names(sink: set[NameAsk]) -> Iterator[None]:
-    """Record the ``name`` asks of tracked paths while the block runs, ``fnmatch`` and ``basename`` included."""
+    """Record the ``name`` asks of tracked paths while the block runs, ``fnmatch`` and ``basename`` included.
+
+    The paths git tracks are tracked names too: a check that reads the tracked set (``tracked_in_scope``) compares
+    those, not ``FileEntry.rel``. The check modules' held sets and dicts of names are swapped for recording copies.
+    """
     saved_fnmatch, saved_fnmatchcase = fnmatch.fnmatch, fnmatch.fnmatchcase
     saved_basename, saved_os_basename = posixpath.basename, os.path.basename
+    saved_tracked_files = _common.tracked_files
+
+    def tracked_files(target: Path) -> set[str] | None:
+        tracked = saved_tracked_files(target)
+        return None if tracked is None else {_TrackedName(rel) for rel in tracked}
 
     def globbed(original: Callable[[Any, str], bool]) -> Callable[[Any, str], bool]:
         def recorded(name: Any, pattern: str) -> bool:
@@ -311,6 +402,9 @@ def _recording_names(sink: set[NameAsk]) -> Iterator[None]:
     fnmatch.fnmatch, fnmatch.fnmatchcase = globbed(saved_fnmatch), globbed(saved_fnmatchcase)
     posixpath.basename = basename
     os.path.basename = basename
+    _common.tracked_files = tracked_files
+    for module, name, _value, copy in _held_containers():
+        setattr(module, name, copy)
     _NAME_SINK.append(sink)
     try:
         yield
@@ -318,6 +412,9 @@ def _recording_names(sink: set[NameAsk]) -> Iterator[None]:
         _NAME_SINK.pop()
         fnmatch.fnmatch, fnmatch.fnmatchcase = saved_fnmatch, saved_fnmatchcase
         posixpath.basename, os.path.basename = saved_basename, saved_os_basename
+        _common.tracked_files = saved_tracked_files
+        for module, name, value, _copy in _held_containers():
+            setattr(module, name, value)
 
 
 def _probing(inventory: Inventory) -> _RecordingInventory:
@@ -332,11 +429,13 @@ def name_hits(place: reads.Place, ask: NameAsk) -> bool:
     path = place.path.lower() if folded else place.path
     base = posixpath.basename(path)
     if op == "eq":
-        # A whole path, a base name, a path a glob place fits, or the folder a place sits under.
+        # A whole path, a base name, a path a glob place fits, or the folder a place sits under. A repository-level
+        # place also sits under each of the folders that scope names.
         return (
             operand in (path, base, path.rstrip("/"))
             or fnmatch.fnmatchcase(operand, path)
             or path.startswith(operand + "/")
+            or (place.scope == reads.REPOSITORY_LEVEL and operand + "/" in _REPOSITORY_LEVEL)
         )
     if op == "end":
         # A suffix meets a place only as a file type (".md"), a whole base name or a path tail. A place found at any
@@ -566,6 +665,39 @@ class NameProbeTest(unittest.TestCase):
         self.assertFalse(name[:6].folded)
         self.assertEqual(name.lower(), "readme.md")
 
+    def test_strip_keeps_a_name_tracked(self) -> None:
+        name = _TrackedName("/CODEOWNERS/").lower()
+        for stripped in (name.strip("/"), name.lstrip("/"), name.rstrip("/")):
+            self.assertIsInstance(stripped, _TrackedName)
+            self.assertTrue(stripped.folded)
+        self.assertEqual(name.strip("/"), "codeowners")
+
+    def test_the_probe_sees_a_name_compared_after_strip(self) -> None:
+        self.assertIn(("eq", "CODEOWNERS", False), recorded().names["HYG-02"])
+
+    def test_the_probe_tracks_the_paths_git_tracks(self) -> None:
+        names = recorded().names["SEC-01"]
+        self.assertIn(("eq", ".env", False), names)
+        self.assertIn(("start", ".env.", False), names)
+
+    def test_the_probe_sees_a_name_held_in_a_set_with_no_fixture_file(self) -> None:
+        # No fixture has a GNUmakefile; EXEC-08 looks each base name up in a frozenset that holds it.
+        self.assertIn(("eq", "GNUmakefile", False), recorded().names["EXEC-08"])
+
+    def test_a_held_container_is_swapped_only_inside_the_probe(self) -> None:
+        from audit.rules.checks import execution
+
+        self.assertIs(type(execution._INLINE_SURFACE_NAMES), frozenset)
+        with _recording_names(set()):
+            self.assertIsInstance(execution._INLINE_SURFACE_NAMES, _RecordingFrozenset)
+        self.assertIs(type(execution._INLINE_SURFACE_NAMES), frozenset)
+
+    def test_a_recording_container_looks_like_its_original(self) -> None:
+        self.assertEqual(repr(_RecordingFrozenset({"a"})), repr(frozenset({"a"})))
+        self.assertEqual(repr(_RecordingSet({"a"})), repr({"a"}))
+        held = _RecordingDict({"a": 1})
+        self.assertEqual((repr(held), held.get("b", 2), held["a"], "a" in held), ("{'a': 1}", 2, 1, True))
+
     def test_a_name_ask_meets_a_place_by_its_operation(self) -> None:
         place = reads.Place("docs/README.md", reads.ROOT)
         self.assertTrue(name_hits(place, ("eq", "README.md", False)))
@@ -578,6 +710,8 @@ class NameProbeTest(unittest.TestCase):
         self.assertTrue(name_hits(reads.Place("Makefile", reads.ANY_DEPTH), ("end", "/Makefile", False)))
         self.assertFalse(name_hits(reads.Place("Makefile", reads.ROOT), ("end", "/Makefile", False)))
         self.assertTrue(name_hits(reads.Place(".roo/rules/**", reads.GLOB), ("eq", ".roo/rules", False)))
+        self.assertTrue(name_hits(reads.Place("CODEOWNERS", reads.REPOSITORY_LEVEL), ("eq", ".gitlab", False)))
+        self.assertFalse(name_hits(reads.Place("CODEOWNERS", reads.ROOT), ("eq", ".gitlab", False)))
 
     def test_the_name_probe_reports_and_fails_on_nothing(self) -> None:
         # Report-only (RF4.9.1): no declaration is held to the name asks yet. AUDIT_NAME_PROBE=detail prints every
