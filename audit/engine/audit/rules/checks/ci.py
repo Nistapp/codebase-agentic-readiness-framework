@@ -398,7 +398,7 @@ def check_ci01(*, spec, target, inventory, stack, components, session) -> CheckO
                     "rely on CI to verify a change set",
                     "no CI workflow file exists",
                     Verdict.FAIL,
-                    [Evidence(rel) for rel in sorted(inventory.paths())[:1]] or [Evidence("<repository>")],
+                    [Evidence("<repository>")],
                     "Add a PR-triggered workflow (for example .github/workflows/ci.yml) that runs the same "
                     "verbs the local command surface defines.",
                 )
