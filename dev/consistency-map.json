@@ -6454,11 +6454,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -7089,7 +7089,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "package.json and the Makefile count only at the root, where they are read; each other manifest kind is matched at any depth and only the shallowest is read. gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
+      "note": "package.json, the Makefile and the Taskfile count only at the root, where they are read; each other manifest kind is matched at any depth and only the shallowest is read. gradlew and mvnw only choose the launcher. format:check is also read under the spelling its runner accepts.",
       "source": "engine",
       "threshold": "all seven verbs on one runner",
       "what": {
@@ -7115,11 +7115,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -7173,11 +7173,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -7231,11 +7231,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -7294,11 +7294,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -7453,11 +7453,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -7624,11 +7624,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -7719,11 +7719,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -7770,11 +7770,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -7980,11 +7980,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -8185,11 +8185,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -8272,11 +8272,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -8570,11 +8570,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -8641,14 +8641,6 @@
       "where": [
         {
           "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yml",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yaml",
           "scope": "root"
         },
         {
@@ -8785,11 +8777,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -8881,14 +8873,6 @@
         },
         {
           "path": "pyproject.toml",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yml",
-          "scope": "root"
-        },
-        {
-          "path": "Taskfile.yaml",
           "scope": "root"
         },
         {
@@ -9045,11 +9029,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -9733,11 +9717,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -9949,11 +9933,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -10116,11 +10100,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -10190,7 +10174,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. package.json and the Makefile count only at the root, where they are read; each other runner manifest is found at any depth and the shallowest is read.",
+      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. package.json, the Makefile and the Taskfile count only at the root, where they are read; each other runner manifest is found at any depth and the shallowest is read.",
       "source": "engine",
       "what": {
         "kind": "key"
@@ -10206,11 +10190,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",
@@ -10447,11 +10431,11 @@
         },
         {
           "path": "Taskfile.yml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "Taskfile.yaml",
-          "scope": "any-depth"
+          "scope": "root"
         },
         {
           "path": "pyproject.toml",

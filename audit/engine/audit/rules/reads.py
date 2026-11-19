@@ -90,7 +90,7 @@ def _held(module: ModuleType, name: str, scope: str, scopes: dict[str, str] | No
 
 
 #: Runner manifests the engine reads at the root only (``_common._at_root``); the other kinds are found at any depth.
-_ROOT_RUNNERS: tuple[str, ...] = ("package.json", "Makefile")
+_ROOT_RUNNERS: tuple[str, ...] = ("package.json", "Makefile", "Taskfile.yml", "Taskfile.yaml")
 
 
 def _runners() -> tuple[Place, ...]:
@@ -555,9 +555,9 @@ READS: dict[str, Reads] = {
         binding="file",
         threshold="all seven verbs on one runner",
         note=(
-            "package.json and the Makefile count only at the root, where they are read; each other manifest kind "
-            "is matched at any depth and only the shallowest is read. gradlew and mvnw only choose the launcher. "
-            "format:check is also read under the spelling its runner accepts."
+            "package.json, the Makefile and the Taskfile count only at the root, where they are read; each other "
+            "manifest kind is matched at any depth and only the shallowest is read. gradlew and mvnw only choose "
+            "the launcher. format:check is also read under the spelling its runner accepts."
         ),
     ),
     "CMD-02": Reads(
@@ -976,8 +976,6 @@ READS: dict[str, Reads] = {
             *_at(
                 ROOT,
                 "pyproject.toml",
-                "Taskfile.yml",
-                "Taskfile.yaml",
                 "setup.cfg",
                 "tox.ini",
             ),
@@ -1043,8 +1041,6 @@ READS: dict[str, Reads] = {
                 "README.md",
                 "CONTRIBUTING.md",
                 "pyproject.toml",
-                "Taskfile.yml",
-                "Taskfile.yaml",
             ),
             *_at(
                 ANY_DEPTH,
@@ -1491,8 +1487,8 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and "
-            "--allow-probe test. package.json and the Makefile count only at the root, where they are read; "
-            "each other runner manifest is found at any depth and the shallowest is read."
+            "--allow-probe test. package.json, the Makefile and the Taskfile count only at the root, where they are "
+            "read; each other runner manifest is found at any depth and the shallowest is read."
         ),
     ),
     "TST-03": Reads(

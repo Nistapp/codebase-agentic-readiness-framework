@@ -25,7 +25,7 @@ from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 from audit.stack import detect_stack  # noqa: E402
 from audit.target import resolve_target  # noqa: E402
-from scope_support import MAKE, NPM, ScopeTestCase  # noqa: E402
+from scope_support import MAKE, NPM, TASKFILE, ScopeTestCase  # noqa: E402
 
 #: GNU Make refuses this file: an unescaped ``format:check:`` is a static pattern rule with no ``%``.
 BROKEN_MAKE = "format:check:\n\techo c\n"
@@ -92,6 +92,20 @@ class NestedPackageJsonTests(ScopeTestCase):
         outcome = cmd01(support.fixture("exec-02-nested-lockfile"))
         self.assertEqual(outcome.verdict.value, "UNKNOWN")
         self.assertEqual(outcome.findings, [])
+
+
+class NestedTaskfileTests(ScopeTestCase):
+    def test_a_nested_only_taskfile_is_not_a_runner(self):
+        for name in ("Taskfile.yml", "Taskfile.yaml"):
+            with self.subTest(name=name):
+                inventory = self.inventory_of({f"apps/web/{name}": TASKFILE})
+                self.assertEqual(runner_commands(inventory), ())
+
+    def test_a_root_taskfile_is_the_runner_and_a_nested_one_beside_it_is_not(self):
+        nested = "version: '3'\ntasks:\n  check:\n    cmd: task test\n"
+        inventory = self.inventory_of({"Taskfile.yml": TASKFILE, "apps/web/Taskfile.yml": nested})
+        self.assertEqual([runner for runner, _ in runner_commands(inventory)], ["Taskfile.yml"])
+        self.assertNotIn("check", dict(runner_commands(inventory))["Taskfile.yml"])
 
 
 if __name__ == "__main__":
