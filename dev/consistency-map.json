@@ -2900,6 +2900,16 @@
       "status": "kept"
     },
     {
+      "check": "EXEC-01",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "One pin per ecosystem and component; every other place names the same version",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/verification"
+      },
+      "move": "pin-execution-environment/row-1",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-06",
       "home": {
         "path": "implement/playbooks/pin-execution-environment.md",
@@ -3148,6 +3158,16 @@
       },
       "move": "pin-execution-environment/row-3",
       "note": "The engine leaves known lockfile names out of the NAV-03 size count (audit.stack.LOCKFILE_NAMES), so the generated lockfile keeps NAV-03 as it was.",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-02",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Gradle: identical resolved versions, lockfile tracked. Node: `npm ci` succeeds and leaves the tree clean",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/verification"
+      },
+      "move": "pin-execution-environment/row-3",
       "status": "kept"
     }
   ],
@@ -5995,6 +6015,9 @@
         "package.json",
         "build.gradle",
         "build.gradle.kts"
+      ],
+      "touches": [
+        "EXEC-01"
       ]
     },
     {
@@ -6033,7 +6056,8 @@
         "build.gradle"
       ],
       "touches": [
-        "NAV-03"
+        "NAV-03",
+        "EXEC-02"
       ]
     },
     {
