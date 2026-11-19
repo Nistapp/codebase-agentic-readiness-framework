@@ -6487,10 +6487,14 @@
     },
     {
       "checks": [
+        "CI-05",
         "EXEC-02"
       ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE"
+      ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
       "pattern": "bun.lockb"
     },
     {
@@ -7557,10 +7561,14 @@
     },
     {
       "checks": [
+        "CI-05",
         "EXEC-02"
       ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE"
+      ],
       "match": "base-name",
-      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with.",
+      "meaning": "For `EXEC-02` Lockfile committed and consistent, a matching file is a lockfile, or the root manifest a lockfile is compared with; 1 other listed check read it too.",
       "pattern": "gradle.lockfile"
     },
     {
@@ -7876,6 +7884,17 @@
     },
     {
       "checks": [
+        "CI-05"
+      ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE"
+      ],
+      "match": "base-name",
+      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence.",
+      "pattern": "mix.lock"
+    },
+    {
+      "checks": [
         "NAV-01"
       ],
       "match": "glob",
@@ -8172,6 +8191,17 @@
     },
     {
       "checks": [
+        "CI-05"
+      ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE"
+      ],
+      "match": "base-name",
+      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence.",
+      "pattern": "packages.lock.json"
+    },
+    {
+      "checks": [
         "NAV-01"
       ],
       "match": "glob",
@@ -8352,6 +8382,17 @@
       "match": "exact",
       "meaning": "For `NAV-02` Obvious entry points, a matching file counts as an entry point.",
       "pattern": "public/index.php"
+    },
+    {
+      "checks": [
+        "CI-05"
+      ],
+      "constants": [
+        "audit.rules.checks.ci:_NOT_A_SURFACE"
+      ],
+      "match": "base-name",
+      "meaning": "For `CI-05` Workflow files are linted, a matching file is never counted as local linter evidence.",
+      "pattern": "pubspec.lock"
     },
     {
       "checks": [
