@@ -1522,6 +1522,36 @@
       "status": "kept"
     },
     {
+      "check": "AGT-07",
+      "home": {
+        "path": "implement/playbooks/env-inventory-and-secrets.md",
+        "quote": "An `AGENTS.md` line that forbids committing secrets keeps its prohibition word and its concern word.",
+        "section": "implement/playbooks/env-inventory-and-secrets.md#playbook-env-inventory-and-secrets/steps/generic"
+      },
+      "move": "env-inventory-and-secrets/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-06",
+      "home": {
+        "path": "implement/playbooks/env-inventory-and-secrets.md",
+        "quote": "A fenced command that named the file must still resolve",
+        "section": "implement/playbooks/env-inventory-and-secrets.md#playbook-env-inventory-and-secrets/steps/generic"
+      },
+      "move": "env-inventory-and-secrets/row-2",
+      "status": "kept"
+    },
+    {
+      "check": "EXEC-04",
+      "home": {
+        "path": "implement/playbooks/env-inventory-and-secrets.md",
+        "quote": "A nested example file always has a root `.env.example` beside it that lists every name (Inputs 1).",
+        "section": "implement/playbooks/env-inventory-and-secrets.md#playbook-env-inventory-and-secrets/steps/generic"
+      },
+      "move": "env-inventory-and-secrets/row-3",
+      "status": "kept"
+    },
+    {
       "check": "CON-03",
       "home": {
         "path": "implement/playbooks/env-inventory-and-secrets.md",
@@ -1560,6 +1590,17 @@
       },
       "move": "env-inventory-and-secrets/row-5",
       "note": "The allowlist goes into the scanner the repository already runs, so no second security config is added.",
+      "status": "kept"
+    },
+    {
+      "check": "SEC-02",
+      "home": {
+        "path": "implement/playbooks/env-inventory-and-secrets.md",
+        "quote": "Write each entry with the scanner's own command, for the file and line as they stand at that commit.",
+        "section": "implement/playbooks/env-inventory-and-secrets.md#playbook-env-inventory-and-secrets/steps/generic"
+      },
+      "move": "env-inventory-and-secrets/row-5",
+      "note": "SEC-02 binds an allowlisted hit to its line number (DESIGN 2.2 f3); a later shift needs a regenerated allowlist.",
       "status": "kept"
     },
     {
