@@ -1241,10 +1241,12 @@ READS: dict[str, Reads] = {
                 "rust-toolchain.toml",
                 "rust-toolchain",
                 ".ruby-version",
+                ".php-version",
                 ".tool-versions",
                 "package.json",
                 "pyproject.toml",
                 "go.mod",
+                "composer.json",
             ),
         ),
         what=What("exists"),
@@ -1252,7 +1254,8 @@ READS: dict[str, Reads] = {
         threshold="every ecosystem pinned and every module reached",
         note=(
             "Pin files count by existence; .tool-versions needs a line for the ecosystem, package.json "
-            "engines.node, pyproject.toml requires-python and go.mod a go directive. A module manifest no pin"
+            "engines.node, pyproject.toml requires-python, go.mod a go directive and composer.json "
+            "config.platform.php or require.php. A module manifest no pin"
             " reaches (its folder or a parent) is PARTIAL."
         ),
     ),

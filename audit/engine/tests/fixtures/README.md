@@ -73,6 +73,8 @@ fixtures/
   exec-01-nested-go-unpinned/ a nested go.mod with no go directive -> EXEC-01 FAIL
   exec-01-sibling-module-unpinned/ one go.mod pins Go, its sibling does not -> EXEC-01 PARTIAL
   exec-01-python-source-only/ a standard-library-only Python tool, no manifest, no pin -> EXEC-01 FAIL, EXEC-02 UNKNOWN
+  exec-01-php-version-file/  a composer.json with no php key, pinned by .php-version -> EXEC-01 PASS
+  exec-01-php-unpinned/      a composer.json with no php key, no .php-version -> EXEC-01 FAIL
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
@@ -143,7 +145,7 @@ fixtures/
   stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs -> EXEC-01, NAV-01, NAV-02, TOOL-03 PASS
   stack-gradle-wrapper-readme/ a Gradle application with gradlew; its README runs `./gradlew build` and `./gradlew test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (no gradle.lockfile)
   stack-just-inline-version/ a pinned and locked Cargo project whose justfile runs `cargo install cargo-deny@0.16.1`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02 PASS
-  stack-php-composer/        composer.json, a tracked composer.lock, public/index.php (needs git) -> NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the lock is not compared); EXEC-01 UNKNOWN (no PHP pin is known)
+  stack-php-composer/        composer.json, a tracked composer.lock, public/index.php (needs git) -> NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the lock is not compared); EXEC-01 PASS (composer.json require.php)
   stack-python-uv-inline-version/ a uv project with a tracked root uv.lock; its Makefile runs `uvx ruff@0.6.9`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02, NAV-02 PASS
   stack-ruby-bundler/        Gemfile, a tracked Gemfile.lock, .ruby-version, a Rack config.ru (needs git) -> EXEC-01, NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the engine does not compare a Gemfile.lock with its Gemfile)
   stack-rust-cargo/          Cargo.toml, a tracked Cargo.lock, rust-toolchain.toml, src/main.rs (needs git) -> EXEC-01, EXEC-02, NAV-02 PASS

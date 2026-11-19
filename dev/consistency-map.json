@@ -9458,7 +9458,7 @@
     {
       "binding": "file",
       "check": "EXEC-01",
-      "note": "Pin files count by existence; .tool-versions needs a line for the ecosystem, package.json engines.node, pyproject.toml requires-python and go.mod a go directive. A module manifest no pin reaches (its folder or a parent) is PARTIAL.",
+      "note": "Pin files count by existence; .tool-versions needs a line for the ecosystem, package.json engines.node, pyproject.toml requires-python, go.mod a go directive and composer.json config.platform.php or require.php. A module manifest no pin reaches (its folder or a parent) is PARTIAL.",
       "source": "engine",
       "threshold": "every ecosystem pinned and every module reached",
       "what": {
@@ -9502,6 +9502,10 @@
           "scope": "any-depth"
         },
         {
+          "path": ".php-version",
+          "scope": "any-depth"
+        },
+        {
           "path": ".tool-versions",
           "scope": "any-depth"
         },
@@ -9515,6 +9519,10 @@
         },
         {
           "path": "go.mod",
+          "scope": "any-depth"
+        },
+        {
+          "path": "composer.json",
           "scope": "any-depth"
         }
       ]
