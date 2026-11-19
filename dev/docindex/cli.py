@@ -22,7 +22,7 @@ The subcommands::
                           (:mod:`docindex.manifest`)
     manifest-diff OLD.json NEW.json [--format text|json]
                           list the bundle files added, removed and changed from one manifest to another
-    evidence run --out DIR [--target repo|fixtures]
+    evidence run --out DIR [--target repo|fixtures|scaffold]
                           run the audit engine into the fresh folder DIR and write a run record
                           (:mod:`docindex.evidence`)
     evidence compare OLD_DIR NEW_DIR [--format text|json]
@@ -143,7 +143,10 @@ def build_parser() -> argparse.ArgumentParser:
     evidence_run = evidence_commands.add_parser("run", help="run the audit engine into a fresh folder")
     evidence_run.add_argument("--out", metavar="DIR", required=True, help="the new or empty output folder")
     evidence_run.add_argument(
-        "--target", choices=evidence.TARGET_KINDS, default="repo", help="this repository or the engine fixtures (repo)"
+        "--target",
+        choices=evidence.TARGET_KINDS,
+        default="repo",
+        help="this repository, the engine fixtures or a fresh scaffold (repo)",
     )
     evidence_compare = evidence_commands.add_parser("compare", help="compare the verdicts and evidence of two runs")
     evidence_compare.add_argument("old", metavar="OLD_DIR", help="the earlier run folder")

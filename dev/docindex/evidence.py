@@ -11,7 +11,7 @@ engine raised for it (statement, severity, verdict, and each evidence entry's pa
 :func:`run` writes one run folder:
 
 - ``reports/<name>.json``: the engine's JSON report for each target (``repo`` for this repository, the fixture's name
-  for an engine fixture);
+  for an engine fixture, ``scaffold`` for a fresh scaffold of the project's templates);
 - ``run.json``: the run record, written last: the engine version, the target kind, the commit (and whether the tree
   was dirty), and each report with the target path it was made from.
 
@@ -44,7 +44,7 @@ RUN_FORMAT = "docindex-evidence-run/1"
 COMPARE_FORMAT = "docindex-evidence-compare/1"
 RUN_RECORD = "run.json"
 REPORTS = "reports"
-TARGET_KINDS: tuple[str, ...] = ("repo", "fixtures")
+TARGET_KINDS: tuple[str, ...] = ("repo", "fixtures", "scaffold")
 TARGET_PLACEHOLDER = "<target>"
 WORK_PLACEHOLDER = "<work>"
 _STAMP = ".evidence-run-start"
