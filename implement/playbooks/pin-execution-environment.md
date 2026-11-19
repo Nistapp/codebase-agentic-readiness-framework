@@ -75,8 +75,8 @@ manifest that dependency automation reads.
    only partly met. A version catalog alone is not a lock. Record the choice as a preference.
 6. **Monorepo or several components with no root manifest.** Per-component lockfiles are accepted when the owner chose a
    per-component layout (`layout.command_runner`). The playbook then verifies each component and records the item
-   `partial` (see Continue on error). It does not add a root workspace manifest unless the owner asks, because that
-   changes install paths and image builds. The engine reads only the root manifest, so a nested lockfile reads `PARTIAL` by
+   `partial` (see Continue on error). It adds no root workspace manifest unless the owner asks, because that changes
+   install paths and image builds. The engine reads only the root manifest, so a nested lockfile reads `PARTIAL` by
    design ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
 7. **Where tool versions go (EXEC-08).** List each literal the audit cited (tool, version, file, line) and confirm
    the versions stay as they are: this step moves a version, it never upgrades one. The place follows the stack
