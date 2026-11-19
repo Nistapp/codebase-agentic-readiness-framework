@@ -76,6 +76,17 @@ List the audit findings whose cited files changed between the audited commit and
 check_drift.py REPORT REPO [--json]
 ```
 
+## check_regressions.py
+
+**Version:** 0.1.0  
+**Writes:** nothing
+
+Compare two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes.
+
+```text
+check_regressions.py BASE CLOSE
+```
+
 ## compare_reports.py
 
 **Version:** 0.1.0  
