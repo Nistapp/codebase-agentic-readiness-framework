@@ -24,7 +24,8 @@ Engine           `EXEC-01`. The pinnable ecosystems are node, python, jvm, dotne
                  dotnet, `global.json`. A shared `.tool-versions` pins with a matching line (read for
                  node, python, rust, go and php). A manifest pins with `package.json`'s `engines.node`,
                  `pyproject.toml`'s `requires-python` or `go.mod`'s `go` directive. A `composer.json`
-                 pins with `config.platform.php`, then `require.php`. Pin files and these manifests count at any depth: a nested module
+                 pins with `config.platform.php`, then `require.php`. Pin files and these manifests
+                 count at any depth: a nested module
                  (`tools/osv/go.mod`) pins its ecosystem, and one pinning manifest is enough (the
                  shallowest is cited). No ecosystem from this pinnable set is detected at all ⇒
                  `UNKNOWN` — there is no toolchain to choose a pin for. Distrust a `FAIL` when the
