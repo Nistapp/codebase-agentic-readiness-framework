@@ -12,6 +12,7 @@
           "type": "string"
         },
         "confidence": {
+          "description": "exact, or name-match for a weaker edge: one found by a name (a bare file name, an ID defined in several places with no one nearest), or a link to a folder, which has no node.",
           "enum": ["exact", "name-match"]
         },
         "kind": {

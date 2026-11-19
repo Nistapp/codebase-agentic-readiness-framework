@@ -61,6 +61,7 @@ _FILES = {
     "docs/guide.md": GUIDE,
     "docs/page.md": "# Page\n\n## Steps\n\nText.\n",
     "docs/fenced.md": "# Fenced\n",
+    "docs/folders.md": "# Folders\n\n[tools](../tools/), [dev](../dev), [here](./), [root](../) and [a file](page.md).\n",
     "docs/diagram.png": "not really a picture\n",
     "dev/recipe_lint.py": "x = 1\n",
     "dev/tool.py": "x = 1\n",
@@ -154,6 +155,21 @@ class LinkEdgesTest(_Repo):
         self.assertEqual(names, {"dev/recipe_lint.py"})  # tool.py is in two folders; guide.md is the file itself
         notes = self._links("docs/guide.md#guide/notes")
         self.assertIn(("docs/fenced.md", "name-match", None), notes)
+
+    def test_a_link_to_a_folder_is_a_name_match_edge(self) -> None:
+        self.assertEqual(
+            self._links("docs/folders.md#folders"),
+            {
+                ("tools", "name-match", None),
+                ("dev", "name-match", None),
+                ("docs", "name-match", None),
+                (".", "name-match", None),
+                ("docs/page.md", "exact", None),
+            },
+        )
+        addresses = {node.address for node in self.result.index.nodes}
+        self.assertFalse({"tools", "dev", "docs", "."} & addresses)  # the index has no folder nodes
+        self.assertFalse(any(link.source.startswith("docs/folders.md") for link in self.result.problems))
 
     def test_the_same_link_twice_is_one_edge_and_an_escaped_bracket_is_no_link(self) -> None:
         notes = self._links("docs/guide.md#guide/notes")
