@@ -569,8 +569,13 @@ def _probing(inventory: Inventory) -> _RecordingInventory:
     return copy
 
 
-def name_hits(place: reads.Place, ask: NameAsk) -> bool:
-    """Whether one ``name`` ask and one declared place meet, the rule both report directions use (a heuristic)."""
+def name_hits(place: reads.Place, ask: NameAsk, stems: Iterable[NameAsk] = ()) -> bool:
+    """Whether one ``name`` ask and one declared place meet, the rule both report directions use (a heuristic).
+
+    ``stems`` are the other name asks of the same check. A file-type suffix meets a place whose base name ends in a
+    wildcard (``README*``) only when one of them, not itself a suffix, meets the place too, or the scan's file
+    kinds (``via``) chose the files: the suffix then narrows a set the stem chose, and does not select alone.
+    """
     op, operand, folded = ask
     path = place.path.lower() if folded else place.path
     base = posixpath.basename(path)
@@ -595,10 +600,11 @@ def name_hits(place: reads.Place, ask: NameAsk) -> bool:
     if op == "end":
         # A suffix meets a place only as a file type (".md"), a whole base name or a path tail. A place found at any
         # depth also stands for itself below a folder, so "/Makefile" meets it. A base name that ends in a wildcard
-        # takes any file type, and a path tail meets a glob it fits.
+        # takes any file type once its stem was asked for, and a path tail meets a glob it fits.
         tails = (path,) if place.scope == reads.ROOT else (path, "any/" + path)
         if operand.startswith(".") and "/" not in operand and base.endswith("*"):
-            return True
+            if place.via is not None or any(other[0] != "end" and name_hits(place, other) for other in stems):
+                return True
         if place.scope == reads.GLOB and "/" in operand and _glob_match(operand, path):
             return True
         return any(tail.endswith(operand) for tail in tails) and (
@@ -645,7 +651,7 @@ def _seen(check: str, place: reads.Place, asks: set[Ask], names: set[NameAsk]) -
             return True
         if _folded_covers(place, (kind, path)):
             return True
-    return any(name_hits(place, ask) for ask in names)
+    return any(name_hits(place, ask, names) for ask in names)
 
 
 def _places_by_reach(recording: Recorded) -> dict[str, dict[str, list[reads.Place]]]:
@@ -675,7 +681,7 @@ def uncovered_names(recording: Recorded) -> dict[str, set[NameAsk]]:
     """The ``name`` asks that no declared place of their check meets, by check."""
     uncovered: dict[str, set[NameAsk]] = {}
     for check, names in recording.names.items():
-        missing = {ask for ask in names if not any(name_hits(place, ask) for place in reads.READS[check].where)}
+        missing = {ask for ask in names if not any(name_hits(place, ask, names) for place in reads.READS[check].where)}
         if missing:
             uncovered[check] = missing
     return uncovered
@@ -808,8 +814,9 @@ def exemption_needs(recording: Recorded) -> dict[str, dict[str, set[NameAsk]]]:
     needs: dict[str, dict[str, set[NameAsk]]] = {}
     for label, by_check in recording.exempted.items():
         for check, asks in by_check.items():
+            stems = recording.names.get(check, set())
             needs.setdefault(label, {})[check] = {
-                ask for ask in asks if not any(name_hits(place, ask) for place in reads.READS[check].where)
+                ask for ask in asks if not any(name_hits(place, ask, stems) for place in reads.READS[check].where)
             }
     return needs
 
@@ -958,7 +965,8 @@ class NameProbeTest(unittest.TestCase):
 
     def test_a_name_ask_meets_a_wider_place(self) -> None:
         self.assertTrue(name_hits(reads.Place("**", reads.GLOB), ("end", ".py", False)))
-        self.assertTrue(name_hits(reads.Place("CONTRIBUTING*", reads.REPOSITORY_LEVEL), ("end", ".md", True)))
+        stem = {("start", "contributing", True)}
+        self.assertTrue(name_hits(reads.Place("CONTRIBUTING*", reads.REPOSITORY_LEVEL), ("end", ".md", True), stem))
         self.assertFalse(name_hits(reads.Place("CONTRIBUTING.md", reads.ROOT), ("end", ".rst", True)))
         self.assertTrue(name_hits(reads.Place("**/AGENTS.md", reads.GLOB), ("end", "packages/b/AGENTS.md", False)))
         self.assertTrue(name_hits(reads.Place("docs/**/*.md", reads.GLOB), ("start", "docs/tutorials/", False)))
@@ -970,6 +978,18 @@ class NameProbeTest(unittest.TestCase):
         self.assertFalse(
             name_hits(reads.Place(".claude/rules/**/*.md", reads.GLOB), ("glob", ".github/agents/*.md", False))
         )
+
+    def test_a_suffix_meets_a_wildcard_base_name_only_after_its_stem(self) -> None:
+        # A suffix alone selects any file of that type, so "README*" must not cover a bare ".pem" ask.
+        readme = reads.Place("README*", reads.ROOT)
+        pem = ("end", ".pem", False)
+        self.assertFalse(name_hits(readme, pem))
+        self.assertFalse(name_hits(readme, pem, {pem, ("start", "docs/", False), ("end", "README", False)}))
+        self.assertTrue(name_hits(readme, pem, {pem, ("start", "README", False)}))
+        self.assertFalse(name_hits(reads.Place("docs/**", reads.GLOB), ("end", ".env", False)))
+        # A place the scan's file kinds chose has its stem chosen upstream.
+        tests = reads.Place("**/test_*", reads.GLOB, via=reads.SCAN_KIND)
+        self.assertTrue(name_hits(tests, ("end", ".py", False)))
 
     def test_a_segment_asks_for_no_name_with_a_slash(self) -> None:
         sink: set[NameAsk] = set()
