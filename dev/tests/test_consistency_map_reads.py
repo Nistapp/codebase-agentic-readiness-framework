@@ -74,6 +74,26 @@ class GeneratedTest(unittest.TestCase):
         )
         self.assertNotIn("case", reads["CMD-01"]["where"][0])
 
+    def test_an_unexercised_place_carries_its_reason_and_others_carry_none(self) -> None:
+        reads = {read["check"]: read for read in MAP["reads"]}
+        marked = sorted(
+            (check, where["path"])
+            for check, read in reads.items()
+            for where in read.get("where", [])
+            if where.get("unexercised")
+        )
+        self.assertEqual(
+            marked,
+            [
+                ("EXEC-02", "go.mod"),
+                ("EXEC-07", "gradlew"),
+                ("EXEC-07", "mvnw"),
+                ("EXEC-08", "go.mod"),
+                ("IDX-03", ".codebase-memory/graph.db.zst"),
+            ],
+        )
+        self.assertNotIn("unexercised", reads["CMD-01"]["where"][0])
+
 
 class DriftTest(unittest.TestCase):
     def _copy(self, cmap: dict[str, Any]) -> Path:

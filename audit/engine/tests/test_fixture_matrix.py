@@ -66,10 +66,12 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- DOC / NAV ----------------------------------------------------------------------------
     "doc-01-empty": {"DOC-01": "PARTIAL"},
     "doc-02-no-style-guide": {"DOC-02": "FAIL"},
+    "doc-02-ok-claude-md-fallback": {"DOC-02": "PASS"},
     "doc-03-tracked-artefacts": {"DOC-03": "FAIL"},
     "ignore-ok-nested-gitignore": {"DOC-03": "PASS", "CON-03": "PASS"},
     "doc-04-adr-unindexed": {"DOC-04": "PARTIAL"},
     "doc-04-adr-tombstone": {"DOC-04": "PARTIAL"},
+    "doc-04-ok-parent-index": {"DOC-04": "PASS"},
     "doc-05-long-sentences": {"DOC-01": "PASS", "DOC-02": "PASS", "DOC-04": "PASS", "DOC-05": "FAIL"},
     "doc-nav-ok": {
         "DOC-01": "PASS",
@@ -83,6 +85,7 @@ MATRIX: dict[str, dict[str, str]] = {
     },
     "nav-01-no-manifest": {"NAV-01": "UNKNOWN"},
     "nav-02-no-entry": {"NAV-02": "FAIL"},
+    "nav-02-main-guard-only": {"NAV-02": "FAIL"},
     "nav-03-red-flags": {"NAV-03": "PARTIAL"},
     # -- CMD ----------------------------------------------------------------------------------
     "cmd-01-missing-verb": {"CMD-01": "FAIL"},
@@ -197,12 +200,13 @@ MATRIX: dict[str, dict[str, str]] = {
     "hyg-13-thin-contributing": {"HYG-05": "PASS", "HYG-13": "FAIL"},
     "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN", "HYG-13": "UNKNOWN"},
     # -- stacks no other fixture holds (tests/test_stack_fixtures.py) -------------------------
-    "stack-dotnet": {"EXEC-01": "PASS", "NAV-02": "PASS", "TOOL-03": "PASS"},
+    "stack-dotnet": {"EXEC-01": "PASS", "NAV-01": "PASS", "NAV-02": "PASS", "TOOL-03": "PASS"},
     "stack-gradle-wrapper-readme": {"EXEC-01": "PASS", "EXEC-02": "FAIL", "EXEC-06": "PASS", "NAV-02": "PASS"},
     "stack-just-inline-version": {"EXEC-01": "PASS", "EXEC-02": "PASS", "EXEC-08": "FAIL", "NAV-02": "PASS"},
-    "stack-php-composer": {"EXEC-01": "UNKNOWN", "EXEC-02": "PARTIAL", "NAV-02": "PASS"},
+    "stack-maven-wrapper-readme": {"EXEC-01": "PASS", "EXEC-02": "FAIL", "EXEC-06": "PASS", "NAV-02": "PASS"},
+    "stack-php-composer": {"EXEC-01": "UNKNOWN", "EXEC-02": "PARTIAL", "NAV-01": "PASS", "NAV-02": "PASS"},
     "stack-python-uv-inline-version": {"EXEC-01": "PASS", "EXEC-02": "PASS", "EXEC-08": "FAIL", "NAV-02": "PASS"},
-    "stack-ruby-bundler": {"EXEC-01": "PASS", "EXEC-02": "PARTIAL", "NAV-02": "PASS"},
+    "stack-ruby-bundler": {"EXEC-01": "PASS", "EXEC-02": "PARTIAL", "NAV-01": "PASS", "NAV-02": "PASS"},
     "stack-rust-cargo": {"EXEC-01": "PASS", "EXEC-02": "PASS", "NAV-01": "PASS", "NAV-02": "PASS"},
     # -- the AGT-content positive fixture -----------------------------------------------------
     "governed-minimal": {
@@ -235,6 +239,7 @@ NEEDS_GIT = frozenset(
         "con-03-artefacts-not-ignored",
         "stack-gradle-wrapper-readme",
         "stack-just-inline-version",
+        "stack-maven-wrapper-readme",
         "stack-php-composer",
         "stack-python-uv-inline-version",
         "stack-ruby-bundler",

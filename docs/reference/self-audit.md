@@ -118,13 +118,14 @@ strings), reviewing the diff.
 
 ## Neutralised path
 
-The framework repository is public, so the committed baseline and the published example are the engine's output with
-two hand edits: `provenance.target` is `.` (the engine writes the absolute local path), and the `IDX-02` summary
-quotes `<repository>/.codebase-memory/graph.db.zst` instead of the absolute index path. Nothing else is changed.
-`make update-audit-baseline` copies the raw report, so follow it with the same two edits before committing:
+The framework repository is public. The committed baseline and the published example are engine output with
+one hand edit: `provenance.target` is `.`, where the engine writes the absolute local path. Nothing else is changed. The
+"`IDX-02` An index exists for this checkout" summary needs no edit: the engine writes a path inside the target as
+`<repository>/...`. `make update-audit-baseline` copies the raw report, so follow it with the same edit before
+committing:
 
 ```bash
-sed -i 's#"target": "[^"]*"#"target": "."#; s#[^ ,"]*/\.codebase-memory#<repository>/.codebase-memory#' .audit-baseline.json
+sed -i 's#"target": "[^"]*"#"target": "."#' .audit-baseline.json
 grep -c '/home/' .audit-baseline.json   # must print 0 (a report from `make self-audit` also has a `baseline` path: use the update target's)
 ```
 

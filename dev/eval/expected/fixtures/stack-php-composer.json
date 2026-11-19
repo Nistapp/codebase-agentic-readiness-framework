@@ -17,6 +17,12 @@
       ]
     },
     {
+      "id": "NAV-01",
+      "acceptable_verdicts": [
+        "PASS"
+      ]
+    },
+    {
       "id": "NAV-02",
       "acceptable_verdicts": [
         "PASS"
