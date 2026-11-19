@@ -1454,6 +1454,36 @@
       "status": "kept"
     },
     {
+      "check": "AGT-07",
+      "home": {
+        "path": "implement/playbooks/add-deny-rules.md",
+        "quote": "Heading found; one rule each for tests, generated files, default branch, secrets",
+        "section": "implement/playbooks/add-deny-rules.md#playbook-add-deny-rules/verification"
+      },
+      "move": "add-deny-rules/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "CON-01",
+      "home": {
+        "path": "implement/playbooks/add-deny-rules.md",
+        "quote": "At least one span matches a real path (in practice all of them)",
+        "section": "implement/playbooks/add-deny-rules.md#playbook-add-deny-rules/verification"
+      },
+      "move": "add-deny-rules/row-1",
+      "status": "kept"
+    },
+    {
+      "check": "CON-02",
+      "home": {
+        "path": "implement/playbooks/add-deny-rules.md",
+        "quote": "Every directory named or covered by a pattern",
+        "section": "implement/playbooks/add-deny-rules.md#playbook-add-deny-rules/verification"
+      },
+      "move": "add-deny-rules/row-1",
+      "status": "kept"
+    },
+    {
       "check": "DOC-03",
       "home": {
         "path": "implement/playbooks/add-deny-rules.md",
@@ -1472,6 +1502,28 @@
       },
       "move": "add-deny-rules/row-3",
       "status": "kept"
+    },
+    {
+      "check": "CON-03",
+      "home": {
+        "path": "implement/playbooks/add-deny-rules.md",
+        "quote": "| CON-03 | `git check-ignore -v <root>/x` and `git ls-files <root>` per present root | Ignored, nothing tracked; `PASS` |",
+        "section": "implement/playbooks/add-deny-rules.md#playbook-add-deny-rules/verification"
+      },
+      "move": "add-deny-rules/row-3",
+      "status": "kept"
+    },
+    {
+      "check": "NAV-03",
+      "move": "add-deny-rules/row-3",
+      "reason": "The move can only remove findings or add credit: untracked, ignored files leave the scan, so a binary, a file over 512 KiB or a .min. file there stops counting.",
+      "status": "accepted"
+    },
+    {
+      "check": "SEC-02",
+      "move": "add-deny-rules/row-3",
+      "reason": "The move can only remove findings or add credit: untracked files leave the tracked text files SEC-02 reads, so a hit can vanish but none can appear.",
+      "status": "accepted"
     },
     {
       "check": "EXEC-02",
@@ -4212,6 +4264,11 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-07",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -4252,7 +4309,10 @@
         "step": "Step 4"
       },
       "touches": [
-        "DOC-03"
+        "DOC-03",
+        "CON-03",
+        "NAV-03",
+        "SEC-02"
       ]
     },
     {
