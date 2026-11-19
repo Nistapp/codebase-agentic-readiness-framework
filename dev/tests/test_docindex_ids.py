@@ -376,7 +376,7 @@ class QueryTest(_Repo):
         for argv in ((), ("AB-01", "--report")):
             with self.subTest(argv=argv), redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as caught:
                 self._query(*argv)
-            self.assertEqual(caught.exception.code, 2)
+            self.assertEqual(caught.exception.code, 1)
 
 
 class ThisRepositoryTest(unittest.TestCase):
@@ -476,7 +476,7 @@ class ThisRepositoryTest(unittest.TestCase):
         self.assertIn("no node has the address 'NO-SUCH-ADDRESS'", err)
         for argv in (("query",), ("query", "CMD-01", "--report")):
             with self.subTest(argv=argv):
-                self.assertEqual(self._main(*argv)[0], 2)
+                self.assertEqual(self._main(*argv)[0], 1)
 
     def test_the_entry_point_prints_the_reports(self) -> None:
         code, out, err = self._main("query", "--report")

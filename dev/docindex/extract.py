@@ -32,6 +32,9 @@ A section's address is the parser's ``<path>#<slug>/<slug>/...``. A heading with
 ``## !!!``) has the empty slug on GitHub; the index writes :data:`EMPTY_SEGMENT` in its place, since an address
 segment cannot be empty. ``slugify`` never writes a parenthesis, so the placeholder meets no real slug.
 
+A path entry of the config that no tracked file lies at or under (a typo, or a folder the tree at an older ref
+lacks) is named in :attr:`Summary.config_problems` (:func:`docindex.config.unmatched`), as a warning.
+
 The parser's file-level section (the text before the first heading, level 0) is not a node: the file node stands for
 it. A tracked path that a node cannot hold (one with a ``#`` or a backslash) is left out and named in
 :attr:`Summary.unindexed`.
@@ -64,6 +67,7 @@ from dataclasses import dataclass
 from typing import Any, Iterable, Mapping, Sequence
 
 from . import ids
+from .config import BUNDLE_FILES, unmatched
 from .gitread import Tree
 from .links import Link, LinkContext, link_edges
 from .markdown import Document, parse
@@ -80,10 +84,6 @@ __all__ = [
     "summary_text",
     "zone_of",
 ]
-
-#: The config key that the entry point fills with each bundle's entries (``dev/doc_index.py``). It is not part of
-#: the JSON config file: the lists come from the project's bundle module at run time.
-BUNDLE_FILES = "bundle_files"
 
 #: The file kinds, other than Markdown, that are read as plain text for ID mentions.
 MENTION_KINDS = ("python", "json", "yaml")
@@ -135,6 +135,7 @@ class Summary:
     ids_by_kind: tuple[tuple[str, int], ...] = ()
     bundles: tuple[tuple[str, int], ...] = ()
     id_problems: tuple[str, ...] = ()
+    config_problems: tuple[str, ...] = ()
 
     @property
     def markdown_files(self) -> int:
@@ -348,6 +349,7 @@ def extract(tree: Tree, config: Mapping[str, Any], bundles: Mapping[str, Sequenc
         ids_by_kind=_counts(ids_by_kind),
         bundles=tuple(bundle_counts),
         id_problems=tuple(sorted([*definitions.problems, *bundle_problems])),
+        config_problems=tuple(unmatched(config, tracked)),
     )
     index = Index(nodes=tuple(nodes), edges=tuple(edges))
     return Extraction(index=index, summary=summary, problems=tuple(problems))
@@ -368,6 +370,8 @@ def summary_text(summary: Summary, prog: str = "build") -> str:
         lines.append(f"  bundle {bundle}: {count} files")
     for problem in summary.id_problems:
         lines.append(f"  id or bundle problem: {problem}")
+    for problem in summary.config_problems:
+        lines.append(f"  config problem (the entry has no effect): {problem}")
     for path in summary.unindexed:
         lines.append(f"  not indexed (a node cannot hold the path): {path}")
     for link in summary.broken_links:

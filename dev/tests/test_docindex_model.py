@@ -10,8 +10,10 @@ import io
 import json
 import re
 import sys
+import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from unittest import mock
 from pathlib import Path
 from typing import Any, Callable
 
@@ -19,6 +21,7 @@ import _dev_paths  # noqa: F401  (puts dev/ on sys.path)
 import doc_index
 import docindex
 from docindex import cli, model
+from docindex import config as index_config
 
 DEV = Path(__file__).resolve().parents[1]
 SCHEMA = json.loads((DEV / "docindex" / "index.schema.json").read_text(encoding="utf-8"))
@@ -262,6 +265,49 @@ class ConfigTest(unittest.TestCase):
         self.assertIn("artefacts/", exclude["skip"])
         self.assertIn("audit/engine/tests/fixtures/", exclude["list_only"])
 
+    def test_a_key_that_no_rule_reads_is_refused(self) -> None:
+        good = doc_index.load_config()
+        index_config.check_keys(good)
+        cases = {
+            "zone": "unknown key in the config: zone",
+            "exclude.skp": "unknown key in exclude: exclude.skp",
+            "sweep.path": "unknown key in sweep: sweep.path",
+            "sweep.bundle_references.constant": "sweep.bundle_references.constant",
+            "sweep.triggers.group3": "sweep.triggers.group3",
+            "ids.adr.patterns": "unknown key in ids.adr: ids.adr.patterns",
+            "ids.adr.define.file": "ids.adr.define.file",
+            "ids.check.define.json.lists": "ids.check.define.json.lists",
+            "ids.adrs": "unknown ID kind ids.adrs",
+        }
+        for dotted, message in cases.items():
+            with self.subTest(key=dotted):
+                data = json.loads(json.dumps(good))
+                *parents, last = dotted.split(".")
+                section = data
+                for name in parents:
+                    section = section[name]
+                section[last] = {}
+                with self.assertRaises(index_config.ConfigError) as raised:
+                    index_config.check_keys(data)
+                self.assertIn(message, str(raised.exception))
+
+    def test_a_section_that_is_no_object_is_refused(self) -> None:
+        data: Any
+        for data in ([], {"exclude": []}, {"ids": {"adr": "x"}}):
+            with self.subTest(data=data), self.assertRaises(index_config.ConfigError):
+                index_config.check_keys(data)
+
+    def test_the_entry_point_refuses_a_config_with_an_unknown_key(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "docindex.config.json"
+            path.write_text(json.dumps({**doc_index.load_config(), "zone": {}}), encoding="utf-8")
+            with self.assertRaises(index_config.ConfigError):
+                doc_index.load_config(path)
+            with mock.patch.object(doc_index, "CONFIG", path):
+                code, out, err = _run(["build"])
+        self.assertEqual((code, out), (1, ""))
+        self.assertIn("docindex.config.json: unknown key in the config: zone", err)
+
     def test_the_sweep_scope(self) -> None:
         sweep = doc_index.load_config()["sweep"]
         self.assertEqual(sweep["bundle_references"]["module"], "dev/build_skills.py")
@@ -284,10 +330,28 @@ class CliTest(unittest.TestCase):
         self.assertEqual((code, out), (1, ""))
         self.assertIn("no node has the address", err)
 
-    def test_a_usage_error_exits_2(self) -> None:
-        for argv in ([], ["nothing"], ["diff"], ["query"]):
+    def test_a_usage_error_exits_1(self) -> None:
+        for argv in ([], ["nothing"], ["diff"], ["query"], ["evidence"], ["evidence", "run"], ["build", "--nope"]):
             with self.subTest(argv=argv):
-                self.assertEqual(_run(argv)[0], 2)
+                code, out, err = _run(argv)
+                self.assertEqual((code, out), (1, ""))
+                self.assertIn("error:", err)
+
+    def test_help_exits_0(self) -> None:
+        for argv in (["--help"], ["build", "--help"], ["evidence", "run", "--help"], ["query", "--help"]):
+            with self.subTest(argv=argv):
+                code, out, _err = _run(argv)
+                self.assertEqual(code, 0)
+                self.assertIn("usage:", out)
+
+    def test_cli_main_takes_the_documented_query_options(self) -> None:
+        for argv in (["query", "x.md"], ["query", "--report"], ["query", "--at", "HEAD", "x.md"]):
+            with self.subTest(argv=argv):
+                err = io.StringIO()
+                with redirect_stdout(io.StringIO()), redirect_stderr(err):
+                    code = cli.main(argv, {}, root=doc_index.REPO)
+                self.assertEqual(code, 1)
+                self.assertIn("query: not implemented here; run it through dev/doc_index.py", err.getvalue())
 
     def test_cli_main_without_a_config(self) -> None:
         out, err = io.StringIO(), io.StringIO()
