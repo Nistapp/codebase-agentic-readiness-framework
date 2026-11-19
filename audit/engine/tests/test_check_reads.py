@@ -570,6 +570,9 @@ def _seen(check: str, place: reads.Place, asks: set[Ask], names: set[NameAsk]) -
     for kind, path in asks:
         if place_covers(place, (kind, path)):
             return True
+        # A name looked for at any depth is looked for at the root too, so it reaches a root place of that name.
+        if kind == "has" and place.scope == reads.ROOT and place.path == path:
+            return True
         if kind == "match" and (
             fnmatch.fnmatchcase(posixpath.basename(place.path), path) or fnmatch.fnmatchcase(place.path, path)
         ):
@@ -665,11 +668,16 @@ class Recorded:
         self.undeclared: dict[str, set[tuple[str, str, str]]] = {check: set() for check in self.asks}
         self.names: dict[str, set[NameAsk]] = {check: set() for check in self.asks}
         self.changed: list[tuple[str, str]] = []
-        con.set_emit_target(None)
-        for path in _fixtures():
-            self._record(path)
         with tempfile.TemporaryDirectory() as tmp:
-            self._record(_scaffold(Path(tmp) / "scaffold"))
+            # CON-04 walks the scan only when it may write its draft: beside a report outside every target, as
+            # --emit-baseline --force does, and the same file each run so both runs of a check give one result.
+            con.set_emit_target(Path(tmp) / "out" / "report.json", force=True)
+            try:
+                for path in _fixtures():
+                    self._record(path)
+                self._record(_scaffold(Path(tmp) / "scaffold"))
+            finally:
+                con.set_emit_target(None)
 
     def _record(self, path: Path) -> None:
         target = resolve_target(path)
@@ -897,6 +905,16 @@ class NameProbeTest(unittest.TestCase):
             [_text_core(op) for op in ("*/docs", "docs/*", "src/cli/", "tests")], ["docs", "docs", "src/cli", "tests"]
         )
         self.assertFalse(any(operand.startswith("src/") for _op, operand, _f in recorded().names["AGT-06"]))
+
+    def test_a_name_looked_for_at_any_depth_reaches_its_root_place(self) -> None:
+        place = reads.Place("lefthook.yaml", reads.ROOT)
+        self.assertFalse(place_covers(place, ("has", "lefthook.yaml")))
+        self.assertTrue(_seen("TOOL-07", place, {("has", "lefthook.yaml")}, set()))
+        self.assertFalse(_seen("TOOL-07", place, {("has", "lefthook.yml")}, set()))
+
+    def test_con04_walks_the_scan_while_recorded(self) -> None:
+        self.assertIsNone(con._EMIT_TARGET)
+        self.assertTrue(recorded().names["CON-04"])
 
     def test_a_place_read_upstream_is_not_unseen(self) -> None:
         recording = recorded()
