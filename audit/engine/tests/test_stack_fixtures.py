@@ -30,6 +30,7 @@ from audit.stack import detect_stack  # noqa: E402
 #: fixture -> (ecosystems, package managers) that stack detection must report.
 STACKS: dict[str, tuple[set[str], set[str]]] = {
     "stack-dotnet": ({"dotnet"}, set()),
+    "stack-php-composer": ({"php"}, {"composer"}),
     "stack-ruby-bundler": ({"ruby"}, {"bundler"}),
     "stack-rust-cargo": ({"rust"}, {"cargo"}),
 }
@@ -40,6 +41,11 @@ VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
         "EXEC-01": ("PASS", "dotnet (global.json)"),
         "NAV-02": ("PASS", "entry point(s): Program.cs"),
         "TOOL-03": ("PASS", "StackDotnet.csproj:Nullable"),
+    },
+    "stack-php-composer": {
+        "EXEC-01": ("UNKNOWN", "no toolchain pin can be chosen"),
+        "EXEC-02": ("PARTIAL", "consistency unverified: composer.lock"),
+        "NAV-02": ("PASS", "entry point(s): public/index.php"),
     },
     "stack-ruby-bundler": {
         "EXEC-01": ("PASS", "ruby (.ruby-version)"),
