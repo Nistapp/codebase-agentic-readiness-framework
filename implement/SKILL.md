@@ -98,7 +98,7 @@ you can; otherwise write from the target repository's own facts. Never invent wh
 | 1 | Triage | Walk the confirmed findings grouped by theme; the owner keeps, skips (with reason) or defers each, and states preferences; all recorded in the workspace | Decides | Live |
 | 2 | Plan a theme | Record merged themes; pick the next theme in dependency order; brief what, why and the options; propose the change list | Approves | Live |
 | 3 | Apply | Worktree and branch from the integration branch; drift first; baseline gate and commit tier; per item: re-verify, then per commit apply, test, commit; verify, record, check the integration branch; continue on error | Approves choices | Live |
-| 4 | Close the theme | Engine re-check of the theme's checks; the repository's gate against the baseline; render the state; with `ci.pr_by_agent=yes` push and open a pull request; stop | Reviews, merges | Live |
+| 4 | Close the theme | Engine re-check of the theme's checks; no passing check lost; the repository's gate against the baseline; render the state; with `ci.pr_by_agent=yes` push and open a pull request; stop | Reviews, merges | Live |
 | 5 | Close-out | After the last theme: record the last merge; full re-audit with the audit recipe; compare the two reports; list skipped, deferred and debt | Reviews | Live |
 
 At the end of each stage, and of each theme, send the owner a
@@ -321,6 +321,9 @@ only what is specific to it.
    - **Tell the owner** the baseline and the tier in one message before the first item. For example: "Baseline:
      `make check` exit 1, 3 failing tests, 6 min. Per commit I run `pytest tests/unit` (40 s); the full gate runs
      at the end of each item."
+   - **Base engine report.** Run `python3 audit/tools/engine.py <worktree> --out-dir <workspace>/engine/<theme>`,
+     with the flags of the close run, and keep the `data.report` path. Never write it inside the target. See
+     [Keep passing checks passing](theme-checks.md#keep-passing-checks-passing).
 4. **Per item**, in the playbook's order. An item is worked in one or more commits:
    1. `progress.py set-status F-nnn in_progress --phase <phase>` before touching anything.
    2. Re-verify the finding with the check's own method.
@@ -341,14 +344,8 @@ only what is specific to it.
       --verification-command "<cmd>" --verification-result "<what it showed>" --phase <phase>`. Or end it
       `partial` with `--debt "what=<text>,count=<n>[,baseline=<file>]"` (repeatable). Or end it `failed` or
       `blocked` with `--reason`. A `partial` item has debt and a `done` one has none.
-   6. **Check the integration branch.** Run `git -C <worktree> fetch origin`. Find the branch's base with
-      `git -C <worktree> merge-base HEAD origin/<integration branch>`. The integration branch moved when
-      `git -C <worktree> rev-list --count <base>..origin/<integration branch>` is above 0. Then list the files it
-      changed: `git -C <worktree> diff --name-only <base> origin/<integration branch>`.
-      - No file in common with this theme's commits or its next items: say so in the next status line and go on.
-      - A file in common: stop and ask the owner. Offer (a) go on, and resolve it at review; (b) merge the
-        integration branch into the theme branch, as a merge commit; (c) stop the theme here. Default: none.
-        Never rebase, never force-push.
+   6. **Check the integration branch**, as [Check the integration branch](theme-checks.md#check-the-integration-branch)
+      says. A file in common with this theme stops it: ask the owner. Never rebase, never force-push.
 5. **Transitions.** Only `in_progress` ends. `partial` and `failed` go back to `in_progress` before they end again;
    `blocked` goes back to `queued`. A note on an item that stays where it is: `set-status` to its own status with
    `--note "..."`. An owner who decides to skip or defer an item already `in_progress`: set it `blocked` (reason: the
@@ -403,10 +400,12 @@ when allowed, the pull request) is ready for the owner.
 
 1. **Engine re-check.** First run the drift check again: `python3 implement/tools/check_drift.py <report>
    <worktree>`. Repeat the integration-branch check of [Stage 3](#stage-3-apply), step 4.6. Then run
-   `python3 audit/tools/engine.py <worktree> --out-dir <dir outside the target>` (add `--no-user-config` when the
+   `python3 audit/tools/engine.py <worktree> --out-dir <workspace>/engine/<theme>` (add `--no-user-config` when the
    playbook asks). Compare each of the theme's checks with the audit report and explain every remaining non-`PASS`:
    a known engine limit (the playbook's Verification names them), recorded debt, or a real gap, which means the item
-   is not `done`.
+   is not `done`. Then run `python3 implement/tools/check_regressions.py <base report> <close report> --changed-from
+   <worktree>`. On `data.status` `lost`, stop and ask the owner: fix, accept with a reason, or stop the theme.
+   Default: none. See [When a pass is lost](theme-checks.md#when-a-pass-is-lost).
 2. **The repository's gate.** Run its `check` verb (and its docs lint when Markdown changed) in the worktree, with
    the same command as the baseline (Stage 3, step 3), plus any verb this theme added. Compare the two runs. A
    failure in the baseline too is debt: record it, do not stop. A failure this theme caused is fixed before the
@@ -488,12 +487,13 @@ Goal: a second audit shows what the run changed, and the owner sees every skip, 
 | `progress.py render` | `render --workspace <workspace>` | Exit 0; STATE.md rewritten from the JSON | Exit 2: the JSON is invalid; it was edited by hand, so tell the owner |
 | `check_drift.py` | Stage 0, step 5; Stage 3, step 2; Stage 4, step 1 | Exit 0 whatever it finds; `data.status`, `data.findings`, `data.dirty`, `data.report_changed` | Exit 1: a bad path or not a git repository. Exit 2: the report is invalid. Either way, re-verify every item by hand and say so |
 | `validate_report.py` | Stage 0, step 4 | Exit 0; `data.valid` true, `data.status` | Exit 2: back to the audit recipe |
-| `engine.py` | Stage 4, step 1 | Exit 0; a report under `--out-dir`, outside the target | Exit 1: fix the argument. Exit 3: the engine failed; verify with the playbook's own commands and say so |
+| `engine.py` | Stage 3, step 3; Stage 4, step 1 | Exit 0; a report under `--out-dir`, outside the target | Exit 1: fix the argument. Exit 3: the engine failed; verify with the playbook's own commands and say so |
+| `check_regressions.py` | Stage 4, step 1 | Exit 0; `data.status` `clean` or `lost`; `data.stops`, `data.moves`, `data.evidence_changes` | Exit 1: fix the argument. Exit 2: refused, the reports differ in their settings; say the lost-pass check did not run |
 | `compare_reports.py` | Stage 5, step 4 | Exit 0; moved checks and findings, each labelled from the state | Exit 1: a missing file. Exit 2: a report or the state is invalid. Compare by hand from the two Markdown reports and say so |
 
 `progress.py` is the only writer of the state; the [state contract](state.md#files-and-paths) gives its rules and
-the [tools reference](../docs/reference/tools-cli.md#progresspy) every option. `check_drift.py` and
-`compare_reports.py` are described in the same [tools reference](../docs/reference/tools-cli.md#check_driftpy).
+the [tools reference](../docs/reference/tools-cli.md#progresspy) every option. `check_drift.py`, `compare_reports.py`
+and `check_regressions.py` are described in the same [tools reference](../docs/reference/tools-cli.md#check_driftpy).
 
 Not tools of this skill: formatters, linters, coverage and hooks. Those belong to the target repository and
 are chosen per repository by the owner.

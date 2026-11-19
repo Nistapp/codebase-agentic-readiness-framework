@@ -141,6 +141,10 @@ CARRIED_DATA_DIRS: tuple[str, ...] = (
     "scaffold",
 )
 
+#: The language folders of a JVM source root, ``src/<source set>/<language>/``. A folder below one is a
+#: package (``com/example/``), never carried data (ADR-0008). Compared exactly, as the build tools do.
+_JVM_SOURCE_LANGUAGES = frozenset({"java", "kotlin", "scala", "groovy"})
+
 #: The manifests whose presence outside carried data means the repository has its own project.
 _PROJECT_MANIFESTS = frozenset(name for name, kind in _NAME_KINDS.items() if kind in (Kind.MANIFEST, Kind.BUILD))
 
@@ -325,9 +329,15 @@ def build_inventory(
 
 
 def _carried_directory(rel: str) -> str | None:
-    """The outermost directory of ``rel`` named in ``CARRIED_DATA_DIRS``, or ``None``."""
+    """The outermost directory of ``rel`` named in ``CARRIED_DATA_DIRS``, or ``None``.
+
+    A name below a JVM source root (``src/<set>/<java|kotlin|scala|groovy>/``, at any depth) is a package and
+    never counts, so ``src/main/java/com/example/`` stays while ``src/main/resources/templates/`` is set aside.
+    """
     parts = rel.split("/")[:-1]
     for index, part in enumerate(parts):
+        if index >= 2 and parts[index - 2] == "src" and part in _JVM_SOURCE_LANGUAGES:
+            return None
         if part.lower() in CARRIED_DATA_DIRS:
             return "/".join(parts[: index + 1])
     return None

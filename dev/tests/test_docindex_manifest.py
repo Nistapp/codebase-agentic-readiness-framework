@@ -296,9 +296,11 @@ class ManifestCommandTest(_Temp):
         self.assertEqual(sorted(dist.rglob("*")) if dist.exists() else [], before)
         data = json.loads(target.read_text(encoding="utf-8"))
         self.assertEqual(list(data["bundles"]), [AUDIT, IMPLEMENT])
-        pyz = [entry for entry in data["bundles"][AUDIT] if entry["path"] == "scripts/audit.pyz"]
-        self.assertEqual(len(pyz), 1)
-        self.assertIn("members_sha256", pyz[0])
+        # The audit bundle carries no archive (the release attaches audit.pyz on its own), so every file has a sha256.
+        audit_paths = [entry["path"] for entry in data["bundles"][AUDIT]]
+        self.assertNotIn("scripts/audit.pyz", audit_paths)
+        self.assertIn("scripts/engine/audit/__main__.py", audit_paths)
+        self.assertTrue(all("sha256" in entry for entry in data["bundles"][AUDIT]))
         self.assertIn("SKILL.md", [entry["path"] for entry in data["bundles"][IMPLEMENT]])
 
 

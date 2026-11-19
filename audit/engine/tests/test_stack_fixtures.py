@@ -4,7 +4,7 @@
 """The stack fixtures: one small, realistic project per ecosystem that no other fixture holds.
 
 Each ``stack-*`` fixture is a project in one ecosystem (Rust with Cargo, .NET with and without a NuGet lockfile, Ruby with Bundler, PHP with
-Composer, a Gradle build whose README runs the wrapper, a uv project with a root lockfile) or with one command runner (``just``). The checks read names for these stacks (a pin file, a lockfile,
+Composer, a Gradle or a Maven build whose README runs the wrapper, a uv project with a root lockfile) or with one command runner (``just``). The checks read names for these stacks (a pin file, a lockfile,
 an entry point, a runner file) that no other fixture holds, so without them those reads never run in a test.
 
 The test asserts what the engine detects (the ecosystems and the package managers) and the verdict and summary of
@@ -33,6 +33,7 @@ STACKS: dict[str, tuple[set[str], set[str]]] = {
     "stack-dotnet-locked": ({"dotnet"}, {"nuget"}),
     "stack-gradle-wrapper-readme": ({"jvm"}, set()),
     "stack-just-inline-version": ({"rust"}, {"cargo"}),
+    "stack-maven-wrapper-readme": ({"jvm"}, {"maven"}),
     "stack-php-composer": ({"php"}, {"composer"}),
     "stack-python-uv-inline-version": ({"python"}, {"uv"}),
     "stack-ruby-bundler": ({"ruby"}, {"bundler"}),
@@ -65,8 +66,13 @@ VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
         "EXEC-02": ("PASS", "tracked: Cargo.lock"),
         "EXEC-08": ("FAIL", "1 literal tool version(s) no manifest holds"),
     },
+    "stack-maven-wrapper-readme": {
+        "EXEC-01": ("PASS", "jvm (mvnw)"),
+        "EXEC-06": ("PASS", "2 documented command(s) resolve"),
+        "NAV-02": ("PASS", "entry point(s): src/main/java/app/App.java"),
+    },
     "stack-php-composer": {
-        "EXEC-01": ("UNKNOWN", "no toolchain pin can be chosen"),
+        "EXEC-01": ("PASS", "php (composer.json (require.php))"),
         "EXEC-02": ("PARTIAL", "consistency unverified: composer.lock"),
         "NAV-01": ("PASS", "declares composer.json"),
         "NAV-02": ("PASS", "entry point(s): public/index.php"),

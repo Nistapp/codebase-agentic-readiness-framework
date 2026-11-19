@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+}
+
+tasks.register('format') {
+    doLast { exec { commandLine 'google-java-format', '--replace' } }
+}
+
+tasks.register('formatCheck') {
+    doLast { exec { commandLine 'google-java-format', '--dry-run', '--set-exit-if-changed' } }
+}
+
+tasks.register('lint') {
+    dependsOn 'checkstyleMain'
+}
+
+tasks.register('typecheck') {
+    dependsOn 'compileJava', 'compileTestJava'
+}
+
+tasks.register('security') {
+    dependsOn 'dependencyCheckAnalyze'
+}
+
+tasks.named('check') {
+    dependsOn 'formatCheck'
+}
