@@ -139,6 +139,7 @@ fixtures/
   hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
   hyg-13-thin-contributing/  CONTRIBUTING.md with no setup pointer, gate or workflow rules -> HYG-05 PASS, HYG-13 FAIL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 and HYG-13 UNKNOWN
+  stack-rust-cargo/          Cargo.toml, a tracked Cargo.lock, rust-toolchain.toml, src/main.rs (needs git) -> EXEC-01, EXEC-02, NAV-02 PASS
   governed-minimal/          the smallest repository that passes every implemented AGT content check, plus its cross-pack neighbours exercised by the matrix test
 ```
 
