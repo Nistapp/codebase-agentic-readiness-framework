@@ -71,12 +71,15 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 1. Theme branch `agentic-readiness/<phase>-command-surface` ([Stage 3](../SKILL.md#stage-3-apply), step 1).
 2. **Name every verb** on the authoritative runner, spelled as the runner row in
    [`spec/command-surface.md`](../../spec/command-surface.md#spelling-per-runner) says. The command each verb
-   runs comes from `configure-quality-tools`.
+   runs comes from `configure-quality-tools`. A verb runs each tool by name, never as `npx <tool>@<version>`.
+   The version lives in the manifest, where "`EXEC-08` Tool versions visible to dependency automation" finds it.
 3. **Compose `check`**: `format:check`, then `typecheck`, then `test`, by calling the verbs by name (indirection)
    rather than repeating their commands. `lint` and `security` stay standalone verbs, not part of `check`.
 4. **Split writers out of read-only verbs** (CMD-04). A read-only verb that carries `--fix`, `--write` or calls
    `format` becomes two verbs: the read-only one keeps the name (`lint` without `--fix`) and the writer gets a
-   separate name (`lint:fix`, or folded into `format`). Never leave the writer under the read-only name.
+   separate name (`lint:fix`, or folded into `format`). Never leave the writer under the read-only name. Keep a
+   budget flag such as `--max-warnings 0` on the read-only verb. "`BASE-02` Current violation counts measured"
+   reads it there.
 5. **Delegate any second runner** (CMD-03). A root `Makefile`, `Taskfile` or dispatcher script calls the
    authoritative runner's verb (`npm run check`, `./gradlew check`, `make -C <component> check`) and composes
    nothing of its own.
@@ -92,6 +95,8 @@ this one owns the verb names and their wiring, that one owns which tool each ver
    for each verb per component (`spec/command-surface.md` rule 4). Fill an existing placeholder; do not
    rewrite the file, which is T7's job. With no instruction file, follow
    [Stage 3, step 11](../SKILL.md#stage-3-apply): create the skeleton, or write to `CONTRIBUTING.md`.
+   "`AGT-05` Seven verbs named" reads the list in the instruction file. Start each fenced command with a word
+   that resolves, as "`EXEC-06` Documented commands resolve" asks.
 
 ### Gradle
 

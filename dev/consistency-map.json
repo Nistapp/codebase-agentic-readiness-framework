@@ -1491,6 +1491,16 @@
       "status": "kept"
     },
     {
+      "check": "EXEC-08",
+      "home": {
+        "path": "implement/playbooks/define-command-surface.md",
+        "quote": "A verb runs each tool by name, never as `npx <tool>@<version>`.",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+      },
+      "move": "define-command-surface/row-1",
+      "status": "kept"
+    },
+    {
       "check": "BASE-02",
       "home": {
         "path": "implement/playbooks/define-command-surface.md",
@@ -1515,8 +1525,8 @@
       "check": "EXEC-06",
       "home": {
         "path": "implement/playbooks/define-command-surface.md",
-        "quote": "All seven resolve on one runner per component; each exits as its tool says, not \"command not found\"",
-        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+        "quote": "Start each fenced command with a word that resolves",
+        "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
       },
       "move": "define-command-surface/row-5",
       "status": "kept"
