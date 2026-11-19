@@ -438,6 +438,7 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
     findings: list[Finding] = []
 
     if competitors:
+        beside = "alongside the canonical one" if "AGENTS.md" in present else "with no canonical AGENTS.md at the root"
         findings.append(
             Finding(
                 check=spec.id,
@@ -446,8 +447,8 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
                 verdict=Verdict.FAIL,
                 statement=statement(
                     "know which instruction file is authoritative",
-                    f"{len(competitors)} vendor-specific instruction files exist alongside the "
-                    f"canonical one ({', '.join(competitors[:8])}{'…' if len(competitors) > 8 else ''})",
+                    f"{len(competitors)} vendor-specific instruction files exist {beside} "
+                    f"({', '.join(competitors[:8])}{'…' if len(competitors) > 8 else ''})",
                 ),
                 evidence=[Evidence(p) for p in competitors[:12]],
                 remediation="Keep AGENTS.md canonical; reduce each vendor file to a pointer at it, or "

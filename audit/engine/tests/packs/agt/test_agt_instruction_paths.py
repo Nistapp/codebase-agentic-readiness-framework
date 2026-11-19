@@ -166,5 +166,38 @@ class NestedOnlyTests(unittest.TestCase):
         self.assertEqual(len(finding.evidence), 8)
 
 
+class CompetitorWordingTests(unittest.TestCase):
+    """`AGT-08`'s competitor finding says "alongside the canonical one" only when a root `AGENTS.md` exists."""
+
+    def statement(self, files: dict[str, str]) -> str:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            inventory = build_inventory(root)
+            outcome = check_agt08(
+                spec=REGISTRY_BY_ID["AGT-08"],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=None,
+            )
+        return next(f.statement for f in outcome.findings if f.path == "vendor-files")
+
+    def test_beside_a_root_agents_md_the_files_are_alongside_the_canonical_one(self):
+        self.assertIn(
+            "1 vendor-specific instruction files exist alongside the canonical one (CLAUDE.md)",
+            self.statement({"AGENTS.md": RULES, "CLAUDE.md": RULES}),
+        )
+
+    def test_without_a_root_agents_md_the_statement_says_there_is_none(self):
+        for files in ({".claude/CLAUDE.md": RULES}, {"CLAUDE.md": RULES, ".junie/AGENTS.md": RULES}):
+            with self.subTest(files=sorted(files)):
+                statement = self.statement(files)
+                self.assertIn("exist with no canonical AGENTS.md at the root (", statement)
+                self.assertNotIn("alongside", statement)
+
+
 if __name__ == "__main__":
     unittest.main()
