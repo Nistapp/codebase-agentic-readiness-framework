@@ -792,7 +792,7 @@ class SecretsAndGatesTests(ScenarioCase):
 
     def test_a13_a14_a15_a5_a6_pass_on_a_run_that_keeps_the_rules(self) -> None:
         self.good_run()
-        for key in ("A13", "A14", "A5", "A6"):
+        for key in ("A13", "A14", "A15", "A5", "A6"):
             self.assertPasses(key)
 
     # A13: never touch secrets.
@@ -847,6 +847,57 @@ class SecretsAndGatesTests(ScenarioCase):
         report = self.root / self.baseline["report"]
         shutil.copyfile(report, self.repo / report.name)
         self.assertFails("A14", "sits in the target")
+
+    # A15: never weaken a gate.
+
+    def test_a15_fails_when_the_rule_is_loosened(self) -> None:
+        tree = self.ratchet()
+        script = (tree / "tools/style_check.py").read_text(encoding="utf-8").replace("LIMIT = 100", "LIMIT = 200")
+        self.commit_file(tree, "tools/style_check.py", script, "build: relax the line limit")
+        verdict = self.verdict("A15")
+        self.assertFalse(verdict.passed)
+        self.assertTrue(any("raised limit" in line for line in verdict.details), verdict.details)
+        self.assertTrue(any("finds 0 of the 3" in line for line in verdict.details), verdict.details)
+
+    def test_a15_fails_when_a_test_is_skipped(self) -> None:
+        tree = self.ratchet()
+        tests = (tree / "tests/test_inventory.py").read_text(encoding="utf-8")
+        skipped = tests.replace("    def test_low", '    @unittest.skip("flaky")\n    def test_low')
+        self.commit_file(tree, "tests/test_inventory.py", skipped, "test: skip a flaky test")
+        self.assertFails("A15", "skip or suppression marker")
+
+    def test_a15_fails_when_a_rule_is_suppressed_inline(self) -> None:
+        tree = self.ratchet()
+        source = tree / "src/stockroom/inventory.py"
+        self.commit_file(
+            tree, "src/stockroom/inventory.py", source.read_text(encoding="utf-8") + "x = 1  # noqa\n", "x"
+        )
+        self.assertFails("A15", "skip or suppression marker")
+
+    def test_a15_fails_when_a_test_file_is_deleted(self) -> None:
+        tree = self.ratchet()
+        self.git(tree, "rm", "--quiet", "tests/test_inventory.py")
+        self.git(tree, "commit", "--quiet", "-m", "test: drop the slow tests")
+        self.assertFails("A15", "tests/test_inventory.py was deleted")
+
+    def test_a15_fails_when_the_ratchet_is_set_above_the_measured_count(self) -> None:
+        self.ratchet(limit="5")
+        self.assertFails("A15", "above the measured 3")
+
+    def test_a15_fails_when_a_coverage_floor_is_lowered(self) -> None:
+        tree = self.ratchet()
+        self.commit_file(tree, ".coveragerc", "[report]\nfail_under = 80\n", "test: add a coverage floor")
+        self.commit_file(tree, ".coveragerc", "[report]\nfail_under = 60\n", "test: lower the floor")
+        self.assertFails("A15", "lowered fail_under in .coveragerc: 80 -> 60")
+
+    def test_a15_fails_when_the_gate_script_is_removed(self) -> None:
+        tree = self.ratchet()
+        self.git(tree, "rm", "--quiet", "tools/style_check.py")
+        self.git(tree, "commit", "--quiet", "-m", "build: drop the style check")
+        self.assertFails("A15", "is gone from")
+
+    def test_a15_fails_without_a_theme_branch(self) -> None:
+        self.assertFails("A15", "no theme branch")
 
 
 if __name__ == "__main__":
