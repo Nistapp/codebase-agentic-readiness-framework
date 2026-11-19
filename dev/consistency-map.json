@@ -11987,7 +11987,7 @@
     {
       "binding": "file",
       "check": "NAV-01",
-      "note": "Workspace members are read from the root manifests (components.py); a member or candidate counts when a build manifest is found under it. The root counts as declared when any of the seven manifest names is found at any depth.",
+      "note": "Workspace members are read from the root manifests (components.py); a member or candidate counts when a build manifest is found under it. The root counts as declared when any of the nine manifest names is found at any depth, or a .NET solution or project file is in the root folder itself (in a member's or candidate's own folder for that member or candidate).",
       "source": "engine",
       "what": {
         "kind": "key"
@@ -12061,6 +12061,41 @@
         {
           "path": "go.mod",
           "scope": "any-depth",
+          "via": "components"
+        },
+        {
+          "path": "Gemfile",
+          "scope": "any-depth",
+          "via": "components"
+        },
+        {
+          "path": "composer.json",
+          "scope": "any-depth",
+          "via": "components"
+        },
+        {
+          "path": "*.sln",
+          "scope": "root",
+          "via": "components"
+        },
+        {
+          "path": "*.slnx",
+          "scope": "root",
+          "via": "components"
+        },
+        {
+          "path": "*.csproj",
+          "scope": "root",
+          "via": "components"
+        },
+        {
+          "path": "*.fsproj",
+          "scope": "root",
+          "via": "components"
+        },
+        {
+          "path": "*.vbproj",
+          "scope": "root",
           "via": "components"
         },
         {

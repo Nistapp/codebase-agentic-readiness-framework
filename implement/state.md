@@ -21,6 +21,7 @@ committed or pushed ([ADR 0004](docs/architecture/adrs/0004-implement-state-live
 | The final report, `.json` and `.md` | Written by the audit and never edited; the state names it by file name |
 | `<label>-agentic-readiness-state.json` | The source of truth |
 | `<label>-agentic-readiness-STATE.md` | Rendered from the JSON; its header says it is generated and not to be edited |
+| `engine/<theme>/` | The engine reports of one theme's worktree, written by `engine.py`: the base report before the first change and the close report at theme close ([theme checks](theme-checks.md#keep-passing-checks-passing)) |
 
 `<label>` is the audit report's `provenance.target.label`.
 

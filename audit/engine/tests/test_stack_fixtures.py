@@ -43,6 +43,7 @@ STACKS: dict[str, tuple[set[str], set[str]]] = {
 VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
     "stack-dotnet": {
         "EXEC-01": ("PASS", "dotnet (global.json)"),
+        "NAV-01": ("PASS", "declares StackDotnet.csproj"),
         "NAV-02": ("PASS", "entry point(s): Program.cs"),
         "TOOL-03": ("PASS", "StackDotnet.csproj:Nullable"),
     },
@@ -64,6 +65,7 @@ VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
     "stack-php-composer": {
         "EXEC-01": ("UNKNOWN", "no toolchain pin can be chosen"),
         "EXEC-02": ("PARTIAL", "consistency unverified: composer.lock"),
+        "NAV-01": ("PASS", "declares composer.json"),
         "NAV-02": ("PASS", "entry point(s): public/index.php"),
     },
     "stack-python-uv-inline-version": {
@@ -74,6 +76,7 @@ VERDICTS: dict[str, dict[str, tuple[str, str]]] = {
     "stack-ruby-bundler": {
         "EXEC-01": ("PASS", "ruby (.ruby-version)"),
         "EXEC-02": ("PARTIAL", "consistency unverified: Gemfile.lock"),
+        "NAV-01": ("PASS", "declares Gemfile"),
         "NAV-02": ("PASS", "entry point(s): config.ru"),
     },
     "stack-rust-cargo": {
