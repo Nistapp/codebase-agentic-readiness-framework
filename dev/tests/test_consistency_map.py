@@ -11,30 +11,25 @@ The names list holds the file names the engine gives a meaning to. A greenfield 
 matches one needs a ``create`` moves entry with an ``intent``, so a template cannot take such a name by accident.
 
 Every playbook Commits row has one moves entry. A ``kept`` keeps entry quotes, verbatim with whitespace collapsed,
-a sentence that sits inside the section its address names, in the working tree.
+a sentence that sits inside the section its address names, in the working tree. The helpers are the gate's own,
+from ``dev/consistency_map.py``; the gate itself is tested at the end.
 """
 
 from __future__ import annotations
 
-import fnmatch
-import importlib
+import io
 import json
 import posixpath
-import re
-import sys
 import unittest
+from contextlib import redirect_stdout
 from typing import Any
 from unittest import mock
 
 import _dev_paths
-from docindex.extract import _section_nodes
+import consistency_map
 from test_consistency_map_schema import SCHEMA, _problems
 
-ENGINE = _dev_paths.REPO / "audit" / "engine"
-BOOTSTRAP = _dev_paths.REPO / "greenfield" / "bootstrap"
-TEMPLATES = _dev_paths.REPO / "greenfield" / "templates"
-PLAYBOOKS = _dev_paths.REPO / "implement" / "playbooks"
-_COMMITS_ROW = re.compile(r"^\|\s*(\d+)\s*\|")
+PLAYBOOKS = consistency_map.PLAYBOOKS
 MAP: dict[str, Any] = json.loads((_dev_paths.DEV / "consistency-map.json").read_text(encoding="utf-8"))
 CATALOGUE_IDS: list[str] = [
     check["id"]
@@ -42,151 +37,14 @@ CATALOGUE_IDS: list[str] = [
 ]
 
 
-def _engine_module(name: str) -> Any:
-    if str(ENGINE) not in sys.path:
-        sys.path.insert(0, str(ENGINE))
-    return importlib.import_module(name)
-
-
-def _constant_values(reference: str) -> tuple[set[str], list[str]]:
-    """The strings a ``module:NAME`` constant holds, and the problems found while reading it."""
-    module_name, _, attribute = reference.partition(":")
-    module = _engine_module(module_name)
-    if not hasattr(module, attribute):
-        return set(), [f"{reference}: no such constant"]
-    value = getattr(module, attribute)
-    if not isinstance(value, (tuple, list, frozenset, set)) or not all(isinstance(item, str) for item in value):
-        return set(), [f"{reference}: not a tuple, list or set of strings"]
-    return set(value), []
-
-
-def constant_problems(read: dict[str, Any]) -> list[str]:
-    """Differences between a reads entry's paths and the union of the engine constants it names."""
-    references = read.get("constants", [])
-    if not references:
-        return []
-    held: set[str] = set()
-    problems: list[str] = []
-    for reference in references:
-        values, found = _constant_values(reference)
-        held |= values
-        problems += found
-    declared = {where["path"] for where in read["where"]}
-    check = read["check"]
-    problems += [f"{check}: the engine reads {path!r}, the map does not list it" for path in sorted(held - declared)]
-    problems += [f"{check}: the map lists {path!r}, the engine constants do not" for path in sorted(declared - held)]
-    return problems
-
-
-def name_matches(name: dict[str, Any], path: str) -> bool:
-    """Whether a repository-relative path matches a names entry, as the entry's ``match`` and ``ignore_case`` say."""
-    pattern = str(name["pattern"])
-    if name.get("ignore_case"):
-        pattern, path = pattern.lower(), path.lower()
-    match = name["match"]
-    if match == "exact":
-        return path == pattern
-    if match == "base-name":
-        return fnmatch.fnmatchcase(posixpath.basename(path), pattern)
-    if match == "glob":
-        return fnmatch.fnmatchcase(path, pattern)
-    return pattern in path
-
-
-def _scaffolded_paths() -> dict[str, str]:
-    """Each template file (``greenfield/templates/...``) and the path the scaffolder writes it to."""
-    if str(BOOTSTRAP) not in sys.path:
-        sys.path.insert(0, str(BOOTSTRAP))
-    bootstrap = importlib.import_module("bootstrap")
-    paths: dict[str, str] = {}
-    for file in sorted(TEMPLATES.rglob("*")):
-        if file.is_file():
-            rel = file.relative_to(TEMPLATES).as_posix()
-            target = bootstrap.target_path_for(rel)
-            if target is not None:
-                paths[f"greenfield/templates/{rel}"] = target
-    return paths
-
-
-def undeclared_names(paths: dict[str, str], cmap: dict[str, Any]) -> list[str]:
-    """Templates whose scaffolded path matches a names entry but have no ``create`` moves entry with an intent."""
-    declared = {
-        (move["origin"]["path"], tuple(move.get("to", [])))
-        for move in cmap["moves"]
-        if move["action"] == "create" and move.get("intent")
-    }
-    problems = []
-    for origin, target in sorted(paths.items()):
-        hits = sorted({check for name in cmap["names"] if name_matches(name, target) for check in name["checks"]})
-        if hits and (origin, (target,)) not in declared:
-            problems.append(f"{origin} -> {target} has a name read by {', '.join(hits)} and no declared intent")
-    return problems
-
-
-def names_constant_problems(names: list[dict[str, Any]]) -> list[str]:
-    """Patterns that are not in the constants their entry names, and constant values no entry covers."""
-    problems: list[str] = []
-    covered: dict[str, set[str]] = {}
-    for name in names:
-        for reference in name.get("constants", []):
-            covered.setdefault(reference, set()).add(name["pattern"])
-        references = name.get("constants", [])
-        if references:
-            held: set[str] = set()
-            for reference in references:
-                values, found = _constant_values(reference)
-                held |= values
-                problems += found
-            if name["pattern"] not in held:
-                problems.append(f"{name['pattern']!r} is not a value of {', '.join(references)}")
-    for reference, patterns in sorted(covered.items()):
-        values, _ = _constant_values(reference)
-        problems += [f"{reference}: {value!r} has no names entry" for value in sorted(values - patterns)]
-    return problems
-
-
-def commits_rows(text: str) -> list[int]:
-    """The numbers of the rows in a playbook's ``## Commits`` table."""
-    rows: list[int] = []
-    inside = False
-    for line in text.splitlines():
-        if line.startswith("## "):
-            inside = line.strip() == "## Commits"
-            continue
-        match = _COMMITS_ROW.match(line) if inside else None
-        if match:
-            rows.append(int(match.group(1)))
-    return rows
-
-
-def _normalised(text: str) -> str:
-    return " ".join(text.split())
-
-
-def section_text(path: str, address: str, text: str) -> str | None:
-    """The lines of the section at ``address`` and its subsections, or ``None`` when the file has no such section."""
-    nodes, _, parsed = _section_nodes(path, text)
-    if address != path and address not in {node.address for node in nodes}:
-        return None
-    return "\n".join(
-        line.text
-        for line, holder in zip(parsed.document.lines, parsed.holders, strict=True)
-        if address == path or holder == address or holder.startswith(address + "/")
-    )
-
-
-def quote_problem(home: dict[str, Any], read: Any = None) -> str | None:
-    """Why a keeps home does not hold, or ``None``. ``read`` maps a path to its text (the working tree by default)."""
-    path, address = home["path"], home["section"]
-    if not (address == path or address.startswith(path + "#")):
-        return f"{address} is not a section of {path}"
-    text = read(path) if read else (_dev_paths.REPO / path).read_text(encoding="utf-8")
-    body = section_text(path, address, text)
-    if body is None:
-        return f"{path} has no section {address}"
-    if _normalised(home["quote"]) not in _normalised(body):
-        return f"{address} does not hold the quote {home['quote']!r}"
-    return None
+_engine_module = consistency_map._engine_module
+constant_problems = consistency_map.read_constant_problems
+names_constant_problems = consistency_map.names_constant_problems
+name_matches = consistency_map.name_matches
+undeclared_names = consistency_map.undeclared_names
+commits_rows = consistency_map.commits_rows
+quote_problem = consistency_map.quote_problem
+_scaffolded_paths = consistency_map.scaffolded_paths
 
 
 class MapShapeTest(unittest.TestCase):
@@ -328,6 +186,111 @@ class KeepsTest(unittest.TestCase):
         self.assertIsNone(quote_problem(home, lambda _path: text))
         home["quote"] = "Keep it on a single line."
         self.assertIn("does not hold the quote", quote_problem(home, lambda _path: text) or "")
+
+
+def _small_map() -> dict[str, Any]:
+    return {
+        "map_format": 1,
+        "reads": [
+            {
+                "check": "AGT-06",
+                "source": "engine",
+                "where": [{"path": "AGENTS.md", "scope": "root"}],
+                "what": {"kind": "word-list"},
+                "binding": "line",
+            },
+            {
+                "check": "TST-04",
+                "source": "engine",
+                "where": [{"path": "README.md", "scope": "root"}],
+                "what": {"kind": "fenced-command"},
+                "binding": "line",
+            },
+        ],
+        "moves": [
+            {
+                "id": "p/row-1",
+                "origin": {"path": "implement/playbooks/p.md", "row": 1},
+                "action": "write",
+                "content": ["rule-line"],
+                "to": ["AGENTS.md"],
+                "touches": ["AGT-06"],
+            },
+            {
+                "id": "p/row-2",
+                "origin": {"path": "implement/playbooks/p.md", "row": 2},
+                "action": "move",
+                "from": ["README.md"],
+                "to": ["docs/"],
+            },
+        ],
+        "keeps": [],
+        "names": [],
+        "boundaries": [],
+    }
+
+
+class GateTest(unittest.TestCase):
+    def test_a_declared_touch_without_a_keep_is_unkept(self) -> None:
+        self.assertEqual(consistency_map.unkept_pairs(_small_map()), [("p/row-1", "AGT-06")])
+
+    def test_a_keep_closes_the_pair(self) -> None:
+        cmap = _small_map()
+        home = {"path": "x.md", "section": "x.md", "quote": "q"}
+        cmap["keeps"] = [{"move": "p/row-1", "check": "AGT-06", "status": "kept", "home": home}]
+        self.assertEqual(consistency_map.unkept_pairs(cmap), [])
+
+    def test_a_keep_for_an_undeclared_touch_is_a_problem(self) -> None:
+        cmap = _small_map()
+        cmap["keeps"] = [{"move": "p/row-2", "check": "TST-04", "status": "accepted", "reason": "r"}]
+        problems = consistency_map.keeps_problems(cmap, ["AGT-06", "TST-04"])
+        self.assertEqual(problems, ["p/row-2 -> TST-04: the move does not declare this check in touches"])
+
+    def test_an_undeclared_inferred_touch_is_only_unreviewed(self) -> None:
+        cmap = _small_map()
+        self.assertEqual(consistency_map.unreviewed_pairs(cmap), [("p/row-2", "TST-04", "README.md")])
+        self.assertNotIn(("p/row-2", "TST-04"), consistency_map.unkept_pairs(cmap))
+
+    def test_content_that_cannot_hold_the_read_does_not_touch(self) -> None:
+        move = {"action": "write", "content": ["prose"], "to": ["README.md"]}
+        read = _small_map()["reads"][1]
+        self.assertIsNone(consistency_map.touch(move, read))
+        move["content"] = ["fenced-command"]
+        self.assertEqual(consistency_map.touch(move, read), "README.md")
+
+    def test_place_overlaps(self) -> None:
+        overlaps = consistency_map.place_overlaps
+        self.assertTrue(overlaps("AGENTS.md", {"path": "AGENTS.md", "scope": "root"}))
+        self.assertFalse(overlaps("docs/AGENTS.md", {"path": "AGENTS.md", "scope": "root"}))
+        self.assertTrue(overlaps("docs/AGENTS.md", {"path": "AGENTS.md", "scope": "any-depth"}))
+        self.assertTrue(overlaps("docs/", {"path": "SECURITY*", "scope": "repository-level"}))
+        self.assertFalse(overlaps("src/", {"path": "SECURITY*", "scope": "repository-level"}))
+        self.assertTrue(overlaps(".github/workflows/ci.yml", {"path": ".github/workflows/*.yml", "scope": "glob"}))
+
+    def test_a_section_that_does_not_name_the_check_is_a_mention_problem(self) -> None:
+        text = "# T\n\n## A\n\nKeep it on one line.\n\n## B\n\nAGT-06 reads it.\n"
+        home = {"path": "x.md", "section": "x.md#t/a", "quote": "q"}
+        keep: dict[str, Any] = {"move": "m", "check": "AGT-06", "home": home}
+        self.assertIsNotNone(consistency_map.mention_problem(keep, lambda _path: text))
+        home["section"] = "x.md#t"
+        self.assertIsNone(consistency_map.mention_problem(keep, lambda _path: text))
+
+    def test_the_report_of_this_tree_has_no_structural_problem(self) -> None:
+        found = consistency_map.report(MAP, CATALOGUE_IDS)
+        for kind in ("quote", "coverage", "names", "constants", "keeps"):
+            self.assertEqual(found[kind], [], kind)
+
+    def test_report_mode_exits_0_and_strict_mode_exits_1(self) -> None:
+        with redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(consistency_map.main([]), 0)
+        self.assertIn("consistency map:", out.getvalue())
+        with redirect_stdout(io.StringIO()):
+            self.assertEqual(consistency_map.main(["--strict"]), 1)
+
+    def test_json_mode_lists_every_kind(self) -> None:
+        with redirect_stdout(io.StringIO()) as out:
+            consistency_map.main(["--format", "json"])
+        self.assertEqual(set(json.loads(out.getvalue())), {*consistency_map.KINDS, "unreviewed"})
 
 
 if __name__ == "__main__":

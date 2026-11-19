@@ -193,6 +193,15 @@
           },
           "minItems": 1,
           "type": "array"
+        },
+        "touches": {
+          "description": "The checks whose reads this move can change, as a reviewer judged them. Each needs a keeps entry, or the gate lists the pair as unkept.",
+          "items": {
+            "$ref": "#/$defs/check_id"
+          },
+          "minItems": 1,
+          "type": "array",
+          "uniqueItems": true
         }
       },
       "required": [

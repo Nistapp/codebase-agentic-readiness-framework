@@ -13,8 +13,8 @@ must be able to review it in a diff. The document index
 ([ADR 0011](0011-index-the-documents-with-a-standard-library-tool.md)) already gives section addresses, and its
 quote verifier already checks quotes verbatim.
 
-This ADR fixes the map's format and the gate's rules. The schema, the reads, the names, the moves and the kept
-pairs exist, with their tests. The boundaries and the gate script are not written yet.
+This ADR fixes the map's format and the gate's rules. The schema, the reads, the names, the moves, the kept pairs
+and the gate exist, with their tests. The boundaries are not written yet.
 
 ## Decision
 
@@ -26,9 +26,10 @@ pairs exist, with their tests. The boundaries and the gate script are not writte
       what the check reads. It also says how close the parts must be: one line, a window, a paragraph, a section
       or the file.
    2. `moves`: one entry per playbook Commits row and per greenfield template. It says what the row or template
-      does to such text: `write`, `move`, `rewrite`, `create` or `none`.
-   3. `keeps`: one entry for each move that touches a read. It cites the sentence that keeps the read true, by
-      index section address and verbatim quote. Or it is `accepted`, with the maintainer's reason.
+      does to such text: `write`, `move`, `rewrite`, `create`, `untrack` or `none`. Its `touches` list names the
+      checks whose reads it can change, as a reviewer judged them.
+   3. `keeps`: one entry for each check a move touches. It cites the sentence that keeps the read true, by index
+      section address and verbatim quote. Or it is `accepted`, with the maintainer's reason.
    4. `names`: the file and folder names the engine gives a meaning to.
    5. `boundaries`: the implement run's promises that no check reads. Each has one home quote. It says what
       enforces it: a tool refusal, a test, or only the prose.
@@ -37,13 +38,16 @@ pairs exist, with their tests. The boundaries and the gate script are not writte
 4. A keeps quote is checked as the quote verifier checks it: verbatim, with whitespace collapsed. Its section
    must still mention the check ID.
 5. The gate fails in four cases:
-   1. A move touches a read, and no keeps entry covers the pair.
+   1. A move names a check in `touches`, and no keeps entry covers the pair.
    2. A keeps quote is gone, or its section no longer mentions the check.
    3. A catalogue check has no reads entry, or a Commits row has no moves entry.
    4. A created file matches the names list and its moves entry has no `intent`.
-6. Evidence that changes under an unchanged verdict is reported to the reviewer. It does not fail the gate.
-7. The gate runs first as its own report-only `make` target. It joins `make check` once every check has a reads
-   entry and every Commits row a moves entry.
+6. The gate also infers touches from the paths and the content kinds. It reports the inferred pairs that no move
+   declares as unreviewed advice, and never fails on them.
+7. Evidence that changes under an unchanged verdict is reported to the reviewer. It does not fail the gate.
+8. [`dev/consistency_map.py`](../../../dev/consistency_map.py) is the gate. `make consistency-map` runs it
+   report-only: it exits 0 whatever it finds. It joins `make check` once no pair is unkept and every gap is kept or
+   accepted.
 
 ## Alternatives Considered
 
@@ -57,6 +61,7 @@ pairs exist, with their tests. The boundaries and the gate script are not writte
 | The reads in `audit/catalogue.json` | The catalogue ships to readers and holds no code constant, so it drifts like a separate file |
 | Files and phrases only, no boundaries | The run's own promises stay unmapped, and a playbook step can contradict a hard rule unseen |
 | Fail the gate on any changed evidence | Rationale not recorded; owner to fill in |
+| Infer the touches from paths and content kinds alone | On this repository the rule listed 1,772 pairs, and it found 28 of the 67 gaps a review named. A gate that noisy is not read |
 
 ## Consequences
 

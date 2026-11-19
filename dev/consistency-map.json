@@ -1303,6 +1303,11 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-07",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -1318,6 +1323,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "EXEC-06"
       ]
     },
     {
@@ -1334,6 +1342,10 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-05",
+        "TST-04"
       ]
     },
     {
@@ -1350,6 +1362,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "EXEC-06"
       ]
     },
     {
@@ -1365,6 +1380,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "EXEC-06"
       ]
     },
     {
@@ -1382,6 +1400,11 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-07",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -1399,6 +1422,11 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-07",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -1430,6 +1458,11 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-07",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -1469,6 +1502,18 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-03",
+        "AGT-04",
+        "AGT-05",
+        "AGT-06",
+        "AGT-07",
+        "AGT-09",
+        "AGT-12",
+        "DOC-02",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -1491,6 +1536,14 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-06",
+        "AGT-07",
+        "AGT-13",
+        "CON-01",
+        "CON-02",
+        "HYG-13"
       ]
     },
     {
@@ -1510,6 +1563,13 @@
       },
       "to": [
         "docs/"
+      ],
+      "touches": [
+        "AGT-07",
+        "AGT-12",
+        "DOC-05",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -1527,6 +1587,12 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-06",
+        "AGT-07",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -1544,6 +1610,10 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-06",
+        "EXEC-06"
       ]
     },
     {
@@ -1560,6 +1630,10 @@
       },
       "to": [
         "*/AGENTS.md"
+      ],
+      "touches": [
+        "AGT-08",
+        "AGT-11"
       ]
     },
     {
@@ -1596,6 +1670,9 @@
       "to": [
         "docs/COMMUNICATION_RULES.md",
         "AGENTS.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -1618,6 +1695,26 @@
       },
       "to": [
         "docs/"
+      ],
+      "touches": [
+        "AGT-03",
+        "AGT-04",
+        "AGT-05",
+        "AGT-06",
+        "AGT-07",
+        "AGT-09",
+        "AGT-12",
+        "AGT-13",
+        "DOC-02",
+        "DOC-05",
+        "BASE-01",
+        "BASE-03",
+        "BASE-04",
+        "CON-01",
+        "CON-02",
+        "EXEC-03",
+        "EXEC-06",
+        "TST-04"
       ]
     },
     {
@@ -1635,6 +1732,17 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-04",
+        "AGT-06",
+        "AGT-07",
+        "AGT-08",
+        "AGT-10",
+        "AGT-12",
+        "AGT-13",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -1652,6 +1760,10 @@
       },
       "to": [
         "CONVENTIONS.md"
+      ],
+      "touches": [
+        "AGT-08",
+        "DOC-05"
       ]
     },
     {
@@ -1668,6 +1780,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-10"
       ]
     },
     {
@@ -1687,6 +1802,12 @@
         "CONVENTIONS.md",
         "AGENTS.md",
         "CONTRIBUTING.md"
+      ],
+      "touches": [
+        "AGT-06",
+        "AGT-07",
+        "CON-01",
+        "CON-02"
       ]
     },
     {
@@ -1770,6 +1891,9 @@
       },
       "to": [
         "scripts/"
+      ],
+      "touches": [
+        "NAV-05"
       ]
     },
     {
@@ -1788,6 +1912,9 @@
         "package.json",
         "Makefile",
         "build.gradle"
+      ],
+      "touches": [
+        "CMD-04"
       ]
     },
     {
@@ -1875,6 +2002,9 @@
         "package.json",
         "Makefile",
         "build.gradle"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -1894,6 +2024,9 @@
         "vitest.config.*",
         "package.json",
         "build.gradle"
+      ],
+      "touches": [
+        "TST-02"
       ]
     },
     {
@@ -1913,6 +2046,10 @@
         "Makefile",
         "build.gradle",
         ".github/workflows/ci.yml"
+      ],
+      "touches": [
+        "CMD-02",
+        "TST-02"
       ]
     },
     {
@@ -1965,6 +2102,9 @@
         "**/tests/**",
         "**/test/**",
         "**/__tests__/**"
+      ],
+      "touches": [
+        "SEC-02"
       ]
     },
     {
@@ -1981,6 +2121,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "EXEC-06"
       ]
     },
     {
@@ -2031,6 +2174,11 @@
       "to": [
         ".github/workflows/*.yml",
         ".github/workflows/*.yaml"
+      ],
+      "touches": [
+        "TOOL-04",
+        "TOOL-06",
+        "CI-04"
       ]
     },
     {
@@ -2049,6 +2197,11 @@
       "to": [
         "docs/**/*.md",
         "README.md"
+      ],
+      "touches": [
+        "DOC-05",
+        "EXEC-06",
+        "HYG-01"
       ]
     },
     {
@@ -2066,6 +2219,11 @@
         ".github/workflows/*.yml",
         ".github/workflows/*.yaml",
         "scripts/ci/*.sh"
+      ],
+      "touches": [
+        "CI-02",
+        "CI-03",
+        "EXEC-08"
       ]
     },
     {
@@ -2086,6 +2244,9 @@
         "osv-scanner.toml",
         ".snyk",
         ".trivyignore"
+      ],
+      "touches": [
+        "EXEC-07"
       ]
     },
     {
@@ -2121,6 +2282,10 @@
       },
       "to": [
         "docs/*branch-protection*.md"
+      ],
+      "touches": [
+        "DOC-05",
+        "HYG-11"
       ]
     },
     {
@@ -2144,6 +2309,10 @@
         "uv.lock",
         "go.mod",
         "go.sum"
+      ],
+      "touches": [
+        "EXEC-02",
+        "EXEC-08"
       ]
     },
     {
@@ -2160,6 +2329,10 @@
       "to": [
         ".github/workflows/*.yml",
         ".github/workflows/*.yaml"
+      ],
+      "touches": [
+        "CI-04",
+        "HYG-11"
       ]
     },
     {
@@ -2181,6 +2354,9 @@
         ".husky/pre-commit",
         ".pre-commit-config.yaml",
         "lefthook.yml"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -2197,6 +2373,10 @@
       "to": [
         ".github/workflows/*.yml",
         ".github/workflows/*.yaml"
+      ],
+      "touches": [
+        "CI-03",
+        "EXEC-08"
       ]
     },
     {
@@ -2230,6 +2410,9 @@
       },
       "to": [
         ".gitignore"
+      ],
+      "touches": [
+        "DOC-03"
       ]
     },
     {
@@ -2250,7 +2433,10 @@
         "path": "implement/playbooks/add-deny-rules.md",
         "row": 3,
         "step": "Step 4"
-      }
+      },
+      "touches": [
+        "DOC-03"
+      ]
     },
     {
       "action": "write",
@@ -2284,6 +2470,9 @@
       "to": [
         "package.json",
         "package-lock.json"
+      ],
+      "touches": [
+        "EXEC-02"
       ]
     },
     {
@@ -2303,6 +2492,9 @@
         ".husky/pre-commit",
         ".pre-commit-config.yaml",
         "lefthook.yml"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -2320,6 +2512,10 @@
       "to": [
         "AGENTS.md",
         "CONTRIBUTING.md"
+      ],
+      "touches": [
+        "EXEC-06",
+        "HYG-13"
       ]
     },
     {
@@ -2336,6 +2532,9 @@
       },
       "to": [
         "CONTRIBUTING.md"
+      ],
+      "touches": [
+        "HYG-13"
       ]
     },
     {
@@ -2352,6 +2551,9 @@
       "to": [
         "package.json",
         "package-lock.json"
+      ],
+      "touches": [
+        "EXEC-02"
       ]
     },
     {
@@ -2390,6 +2592,9 @@
       "to": [
         "scripts/commit_lint.py",
         "scripts/*"
+      ],
+      "touches": [
+        "NAV-05"
       ]
     },
     {
@@ -2428,6 +2633,9 @@
         ".github/workflows/*.yml",
         ".github/workflows/*.yaml",
         ".gitlab-ci.yml"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -2466,6 +2674,9 @@
       },
       "to": [
         "README.md"
+      ],
+      "touches": [
+        "EXEC-06"
       ]
     },
     {
@@ -2537,6 +2748,11 @@
       },
       "to": [
         "CONTRIBUTING.md"
+      ],
+      "touches": [
+        "DOC-05",
+        "TST-04",
+        "HYG-13"
       ]
     },
     {
@@ -2555,6 +2771,9 @@
       },
       "to": [
         "SECURITY.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -2591,6 +2810,9 @@
       },
       "to": [
         "RELEASE_PROCESS.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -2609,6 +2831,10 @@
       },
       "to": [
         ".github/rulesets/*-protection.json"
+      ],
+      "touches": [
+        "AGT-09",
+        "TOOL-07"
       ]
     },
     {
@@ -2660,6 +2886,9 @@
       },
       "to": [
         "docs/branch-protection.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -2678,6 +2907,9 @@
       },
       "to": [
         ".github/dependabot.yml"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -2715,6 +2947,14 @@
       },
       "to": [
         "CONTRIBUTING.md"
+      ],
+      "touches": [
+        "AGT-04",
+        "AGT-07",
+        "AGT-09",
+        "AGT-10",
+        "AGT-13",
+        "CON-01"
       ]
     },
     {
@@ -2733,6 +2973,9 @@
         "package.json",
         "package-lock.json",
         "build.gradle"
+      ],
+      "touches": [
+        "EXEC-02"
       ]
     },
     {
@@ -2754,6 +2997,9 @@
         "biome.json",
         "config/",
         "build.gradle"
+      ],
+      "touches": [
+        "EXEC-07"
       ]
     },
     {
@@ -2788,6 +3034,10 @@
         "package.json",
         "Makefile",
         "build.gradle"
+      ],
+      "touches": [
+        "CMD-04",
+        "EXEC-08"
       ]
     },
     {
@@ -2804,6 +3054,9 @@
       },
       "to": [
         ".github/workflows/ci.yml"
+      ],
+      "touches": [
+        "CI-04"
       ]
     },
     {
@@ -2822,6 +3075,9 @@
         "package.json",
         "package-lock.json",
         "build.gradle"
+      ],
+      "touches": [
+        "EXEC-02"
       ]
     },
     {
@@ -2842,6 +3098,9 @@
         "biome.json",
         "config/pmd/ruleset.xml",
         "build.gradle"
+      ],
+      "touches": [
+        "EXEC-07"
       ]
     },
     {
@@ -2876,6 +3135,10 @@
         "package.json",
         "Makefile",
         "build.gradle"
+      ],
+      "touches": [
+        "CMD-04",
+        "EXEC-08"
       ]
     },
     {
@@ -2892,6 +3155,9 @@
       },
       "to": [
         ".github/workflows/ci.yml"
+      ],
+      "touches": [
+        "CI-04"
       ]
     },
     {
@@ -2911,6 +3177,9 @@
         "tsconfig.strict.json",
         "mypy.ini",
         "pyproject.toml"
+      ],
+      "touches": [
+        "EXEC-07"
       ]
     },
     {
@@ -2961,6 +3230,9 @@
         "package.json",
         "Makefile",
         "build.gradle"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -2977,6 +3249,9 @@
       },
       "to": [
         ".github/workflows/ci.yml"
+      ],
+      "touches": [
+        "CI-04"
       ]
     },
     {
@@ -2995,6 +3270,9 @@
         "package.json",
         "package-lock.json",
         "build.gradle"
+      ],
+      "touches": [
+        "EXEC-02"
       ]
     },
     {
@@ -3029,6 +3307,10 @@
       },
       "to": [
         ".github/workflows/ci.yml"
+      ],
+      "touches": [
+        "CI-02",
+        "CI-04"
       ]
     },
     {
@@ -3051,6 +3333,9 @@
         "build.gradle",
         "build.gradle.kts",
         "pom.xml"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -3093,6 +3378,9 @@
         "build.gradle",
         "build.gradle.kts",
         "pom.xml"
+      ],
+      "touches": [
+        "BASE-02"
       ]
     },
     {
@@ -3126,6 +3414,10 @@
       "to": [
         "AGENTS.md",
         "CONTRIBUTING.md"
+      ],
+      "touches": [
+        "AGT-05",
+        "EXEC-06"
       ]
     },
     {
@@ -3163,6 +3455,10 @@
         "AGENTS.md",
         "CONTRIBUTING.md",
         "docs/**/*.md"
+      ],
+      "touches": [
+        "AGT-07",
+        "EXEC-06"
       ]
     },
     {
@@ -3183,6 +3479,9 @@
         "env.example",
         "scripts/ci/env.example",
         "*/.env.example"
+      ],
+      "touches": [
+        "EXEC-04"
       ]
     },
     {
@@ -3199,6 +3498,11 @@
       },
       "to": [
         ".gitignore"
+      ],
+      "touches": [
+        "DOC-03",
+        "CON-03",
+        "SEC-01"
       ]
     },
     {
@@ -3216,6 +3520,10 @@
         ".gitleaksignore",
         ".secrets.baseline",
         ".gitleaks.toml"
+      ],
+      "touches": [
+        "EXEC-07",
+        "SEC-02"
       ]
     },
     {
@@ -3251,6 +3559,9 @@
       },
       "to": [
         "docs/README.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -3269,6 +3580,9 @@
       },
       "to": [
         "docs/STYLE_GUIDE.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -3303,6 +3617,9 @@
       },
       "to": [
         "docs/STYLE_GUIDE.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -3325,6 +3642,11 @@
         "docs/adr/0000-template.md",
         "docs/adr/0001-*.md",
         "docs/ADR_POLICY.md"
+      ],
+      "touches": [
+        "DOC-04",
+        "DOC-05",
+        "SEC-02"
       ]
     },
     {
@@ -3344,6 +3666,10 @@
       },
       "to": [
         "docs/architecture/overview.md"
+      ],
+      "touches": [
+        "DOC-05",
+        "SEC-02"
       ]
     },
     {
@@ -3362,6 +3688,9 @@
       },
       "to": [
         "docs/architecture/overview.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -3379,6 +3708,11 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-06",
+        "AGT-10",
+        "CON-01"
       ]
     },
     {
@@ -3431,6 +3765,15 @@
       "to": [
         "docs/*.md",
         "docs/README.md"
+      ],
+      "touches": [
+        "DOC-05",
+        "BASE-03",
+        "BASE-04",
+        "EXEC-03",
+        "EXEC-06",
+        "TST-04",
+        "HYG-01"
       ]
     },
     {
@@ -3466,6 +3809,9 @@
       "to": [
         "package.json",
         "Makefile"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -3484,6 +3830,9 @@
       },
       "to": [
         ".github/workflows/docs.yml"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -3550,6 +3899,10 @@
       "to": [
         "package.json",
         "Makefile"
+      ],
+      "touches": [
+        "BASE-02",
+        "BASE-03"
       ]
     },
     {
@@ -3566,6 +3919,9 @@
       },
       "to": [
         ".github/workflows/docs.yml"
+      ],
+      "touches": [
+        "EXEC-08"
       ]
     },
     {
@@ -3623,6 +3979,9 @@
         "yarn.lock",
         "gradle.lockfile",
         "build.gradle"
+      ],
+      "touches": [
+        "NAV-03"
       ]
     },
     {
@@ -3640,6 +3999,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "EXEC-06"
       ]
     },
     {
@@ -3713,6 +4075,9 @@
       "to": [
         "AGENTS.md",
         ".github/dependabot.yml"
+      ],
+      "touches": [
+        "AGT-06"
       ]
     },
     {
@@ -3733,6 +4098,12 @@
         "go.mod",
         "package-lock.json",
         "uv.lock"
+      ],
+      "touches": [
+        "CMD-01",
+        "EXEC-01",
+        "EXEC-02",
+        "HYG-09"
       ]
     },
     {
@@ -3755,6 +4126,12 @@
         ".github/workflows/*.yaml",
         ".husky/*",
         "lefthook.yml"
+      ],
+      "touches": [
+        "TOOL-04",
+        "TOOL-06",
+        "CI-02",
+        "CI-05"
       ]
     },
     {
@@ -3772,6 +4149,9 @@
       "to": [
         ".github/dependabot.yml",
         "renovate.json"
+      ],
+      "touches": [
+        "HYG-09"
       ]
     },
     {
@@ -3804,6 +4184,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-10"
       ]
     },
     {
@@ -3823,6 +4206,10 @@
       "to": [
         "AGENTS.md",
         "docs/**/*.md"
+      ],
+      "touches": [
+        "DOC-05",
+        "EXEC-06"
       ]
     },
     {
@@ -3876,6 +4263,11 @@
         "go.work",
         "Cargo.toml",
         "*.sln"
+      ],
+      "touches": [
+        "AGT-02",
+        "CMD-01",
+        "EXEC-07"
       ]
     },
     {
@@ -3892,6 +4284,9 @@
       },
       "to": [
         "docs/**/*.md"
+      ],
+      "touches": [
+        "DOC-05"
       ]
     },
     {
@@ -3924,6 +4319,9 @@
       },
       "to": [
         "AGENTS.md"
+      ],
+      "touches": [
+        "AGT-10"
       ]
     },
     {
@@ -3957,7 +4355,11 @@
         "path": "implement/playbooks/untrack-generated.md",
         "row": 2,
         "step": "Step 5"
-      }
+      },
+      "touches": [
+        "EXEC-01",
+        "EXEC-02"
+      ]
     },
     {
       "action": "write",
