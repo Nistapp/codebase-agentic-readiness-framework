@@ -194,8 +194,8 @@ def undeclared(check: str, root: Path, asks: set[Ask]) -> set[Ask]:
 
 
 # The name probe. It leans on CPython details: a set or dict lookup calls ``__eq__`` only on a hash hit, so a name
-# held in a set is seen only when a fixture has the file. ``strip``, regular expressions and ``Path`` objects built
-# from a name return plain strings, which the probe no longer tracks.
+# held in a set is seen only when a fixture has the file. ``strip``, ``lstrip`` and ``rstrip`` keep a name tracked.
+# Regular expressions and ``Path`` objects built from a name return plain strings, which the probe no longer tracks.
 
 _CHECKS_DIR = os.path.dirname(os.path.abspath(checks.__file__)) + os.sep
 _SCAN_FILE = os.path.abspath(scan.__file__)
@@ -271,6 +271,15 @@ class _TrackedName(str):
 
     def casefold(self) -> _TrackedName:
         return _TrackedName(str.casefold(self), True)
+
+    def strip(self, chars: str | None = None) -> _TrackedName:
+        return _TrackedName(str.strip(self, chars), self.folded)
+
+    def lstrip(self, chars: str | None = None) -> _TrackedName:
+        return _TrackedName(str.lstrip(self, chars), self.folded)
+
+    def rstrip(self, chars: str | None = None) -> _TrackedName:
+        return _TrackedName(str.rstrip(self, chars), self.folded)
 
     def split(self, *args: Any, **kwargs: Any) -> list[str]:
         return [_TrackedName(part, self.folded) for part in str.split(self, *args, **kwargs)]
@@ -565,6 +574,16 @@ class NameProbeTest(unittest.TestCase):
         self.assertTrue(name.lower().folded)
         self.assertFalse(name[:6].folded)
         self.assertEqual(name.lower(), "readme.md")
+
+    def test_strip_keeps_a_name_tracked(self) -> None:
+        name = _TrackedName("/CODEOWNERS/").lower()
+        for stripped in (name.strip("/"), name.lstrip("/"), name.rstrip("/")):
+            self.assertIsInstance(stripped, _TrackedName)
+            self.assertTrue(stripped.folded)
+        self.assertEqual(name.strip("/"), "codeowners")
+
+    def test_the_probe_sees_a_name_compared_after_strip(self) -> None:
+        self.assertIn(("eq", "CODEOWNERS", False), recorded().names["HYG-02"])
 
     def test_a_name_ask_meets_a_place_by_its_operation(self) -> None:
         place = reads.Place("docs/README.md", reads.ROOT)
