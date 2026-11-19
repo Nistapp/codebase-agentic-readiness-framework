@@ -88,13 +88,16 @@ fixtures/
   exec-ok/                   the smallest node repository passing every EXEC check (needs git)
   doc-01-empty/              docs/ present, no markdown page      -> DOC-01 PARTIAL
   doc-02-no-style-guide/     docs/ present, no STYLE_GUIDE.md     -> DOC-02 FAIL
+  doc-02-ok-claude-md-fallback/ no AGENTS.md; CLAUDE.md names docs/STYLE_GUIDE.md -> DOC-02 PASS
   doc-03-tracked-artefacts/  artefacts/ ignored but force-added (needs git) -> DOC-03 FAIL
   ignore-ok-nested-gitignore/ `artefacts/.gitignore` holds `*` and re-includes itself and its README (needs git) -> DOC-03, CON-03 PASS (ADR-0009)
   doc-04-adr-unindexed/      an ADR with no index                 -> DOC-04 PARTIAL
   doc-04-adr-tombstone/      an indexed ADR marked superseded      -> DOC-04 PARTIAL
+  doc-04-ok-parent-index/    docs/adr/ has no index; the parent docs/index.md lists the ADR -> DOC-04 PASS
   doc-05-long-sentences/     two thirds of the docs' sentences over 25 words -> DOC-05 FAIL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
+  nav-02-main-guard-only/    python library, only a guarded helper script -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL
   doc-nav-ok/                the smallest repository passing every scored DOC/NAV check
   tool-01-no-formatter/      node project, no formatter config or verb -> TOOL-01 FAIL
@@ -145,6 +148,7 @@ fixtures/
   stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs -> EXEC-01, NAV-01, NAV-02, TOOL-03 PASS
   stack-gradle-wrapper-readme/ a Gradle application with gradlew; its README runs `./gradlew build` and `./gradlew test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (no gradle.lockfile)
   stack-just-inline-version/ a pinned and locked Cargo project whose justfile runs `cargo install cargo-deny@0.16.1`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02 PASS
+  stack-maven-wrapper-readme/ a Maven application with mvnw; its README runs `./mvnw package` and `./mvnw test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (Maven has no lockfile)
   stack-php-composer/        composer.json, a tracked composer.lock, public/index.php (needs git) -> NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the lock is not compared); EXEC-01 PASS (composer.json require.php)
   stack-python-uv-inline-version/ a uv project with a tracked root uv.lock; its Makefile runs `uvx ruff@0.6.9`, which no manifest holds (needs git) -> EXEC-08 FAIL; EXEC-01, EXEC-02, NAV-02 PASS
   stack-ruby-bundler/        Gemfile, a tracked Gemfile.lock, .ruby-version, a Rack config.ru (needs git) -> EXEC-01, NAV-01, NAV-02 PASS; EXEC-02 PARTIAL (the engine does not compare a Gemfile.lock with its Gemfile)

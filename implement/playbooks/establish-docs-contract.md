@@ -199,7 +199,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    directories are a separate, owner-recorded item (an `extra.*` preference) and are mentioned, not changed.
 7. **Scratch (DOC-03).** If an `artefacts/` (or `artifacts/`) directory exists, confirm it is ignored and that
    `git ls-files artefacts` prints nothing. Add the ignore rule and `git rm --cached` only what is tracked
-   there, and only after the owner confirms those files are scratch. If no scratch directory exists, the check
+   there, and only after the owner confirms those files are scratch. "`CON-03` artefacts/ excluded from index and
+   agent reads" reads the same rule and the tracked files under it. If no scratch directory exists, the check
    passes and nothing is created.
 8. **Docs lint (needs `ci.edits_authorised`).**
    1. Write the lint config. Tune the rules to how the repository is already written (line length, allowed
@@ -207,7 +208,9 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       key is silently ignored): where a folder needs different rules, use a nested config file in that folder.
       Template folders that must start with a non-heading line (rule MD041) are the usual case.
    2. Add the lint as a **ratchet**: the gating command lints a path list that only grows (the new docs plus any
-      file that is already clean); a second command reports on every Markdown file and never fails. Record the
+      file that is already clean); a second command reports on every Markdown file and never fails. Neither
+      command carries `--fix`: "`CMD-04` Write verbs separated from read-only verbs" fails on a writer under a
+      read-only verb. Record the
       baseline count from step 1 (final value after the last render, see step 1) on the docs item it belongs to
       (`set-status F-nnn partial --debt "what=markdown lint violations,count=N,baseline=<lint script>"`), and keep
       the script's `BASELINE` constant and a `docs.lint_ratchet` preference equal to it. When no docs item is open,
@@ -288,7 +291,8 @@ They stay here so a repository that has one has a procedure, and so the re-audit
          [`architecture-doc-template.md`](../../greenfield/templates/docs/templates/architecture-doc-template.md).
 
        Place the page in the target's own docs layout and name it as the target names its pages (D18). Do not impose
-       a folder tree.
+       a folder tree. A page named like a conventions file, or `docs/CONTRIBUTING.md`, is also read by "`AGT-13`
+       Coding conventions written"; step 5 catches a changed verdict.
     2. **Audit before.** On a clean tree, run the engine and keep the report path:
        `python3 audit/tools/engine.py <worktree> --out-dir <dir outside the target> --no-user-config`. Use the same
        command for every run in this step. The after report of one section is the before report of the next.

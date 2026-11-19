@@ -22,12 +22,13 @@ A place with ``via`` is read upstream, before any check runs: ``scan-kind`` when
 (``Kind.TEST``, ``Kind.GENERATED``) match it by name, ``components`` when component detection reads it. The
 check then asks for no such path itself. A place with ``case`` ``fold`` is matched in lower case, so a name
 in any case meets it. A declaration with ``named_by_text`` also reads paths that the target's own text names,
-which no place can list; the field gives the reason.
+which no place can list; the field gives the reason. A place with ``unexercised`` is read by the code, but no
+fixture can make the check ask for it; the field gives the reason, so the recording test does not need to see it.
 """
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from types import ModuleType
 
 from audit import ignore
@@ -58,7 +59,8 @@ class Place:
     """One path a check reads, at one scope.
 
     ``constant`` names the engine constant it comes from; ``via`` names the upstream step that reads it for the
-    check, ``scan-kind`` or ``components``; ``case`` is ``fold`` when the check matches the name in lower case.
+    check, ``scan-kind`` or ``components``; ``case`` is ``fold`` when the check matches the name in lower case;
+    ``unexercised`` says why no fixture can make the check ask for it.
     """
 
     path: str
@@ -66,6 +68,7 @@ class Place:
     constant: str | None = None
     via: str | None = None
     case: str = EXACT
+    unexercised: str | None = None
 
 
 @dataclass(frozen=True)
@@ -90,19 +93,30 @@ class Reads:
 
     @property
     def constants(self) -> tuple[str, ...]:
-        """The engine constants that hold the whole list of places, in the order they first appear.
+        """The engine constants that hold the whole list of places the check reads itself, in first-seen order.
 
-        Empty when a place comes from no constant: the map names constants only when they hold every path of
-        the entry, since its test compares the two lists both ways (ADR 0012 rule 3).
+        Empty when such a place comes from no constant: the map names constants only when they hold every path of
+        the entry, since its test compares the two lists both ways (ADR 0012 rule 3). A place with ``via`` is read
+        upstream, by the scan or component detection, so it is not on the check's own list.
         """
-        references = [place.constant for place in self.where]
+        references = [place.constant for place in self.where if place.via is None]
         if not references or None in references:
             return ()
         return tuple(dict.fromkeys(reference for reference in references if reference))
 
 
-def _at(scope: str, *paths: str, via: str | None = None, case: str = EXACT) -> tuple[Place, ...]:
-    return tuple(Place(path, scope, via=via, case=case) for path in paths)
+def _at(
+    scope: str, *paths: str, via: str | None = None, case: str = EXACT, unexercised: str | None = None
+) -> tuple[Place, ...]:
+    return tuple(Place(path, scope, via=via, case=case, unexercised=unexercised) for path in paths)
+
+
+def _unexercised(places: tuple[Place, ...], reason: str, *paths: str) -> tuple[Place, ...]:
+    """``places`` with ``paths`` marked unexercised for ``reason``; each path must be one of them."""
+    missing = set(paths) - {place.path for place in places}
+    if missing:
+        raise ValueError(f"no such place: {', '.join(sorted(missing))}")
+    return tuple(replace(place, unexercised=reason) if place.path in paths else place for place in places)
 
 
 def _held(module: ModuleType, name: str, scope: str, scopes: dict[str, str] | None = None) -> tuple[Place, ...]:
@@ -119,6 +133,13 @@ _ROOT_RUNNERS: tuple[str, ...] = ("package.json", "Makefile", "Taskfile.yml", "T
 def _runners() -> tuple[Place, ...]:
     """The runner manifests (``_common.RUNNER_PRECEDENCE``), each at the scope the runner resolver reads it."""
     return _held(_common, "RUNNER_PRECEDENCE", ANY_DEPTH, dict.fromkeys(_ROOT_RUNNERS, ROOT))
+
+
+#: Why no fixture reaches a go.mod.
+_GO_FIXTURE = (
+    "no Go fixture: an honest module needs go.sum lines, whose hashes are key-shaped, and EXEC-02 reads a module "
+    "with no dependencies, so with no go.sum, as unlocked"
+)
 
 
 #: The reads of every implemented engine check, in registry order. The agent checks have no code and no entry.
@@ -144,7 +165,14 @@ READS: dict[str, Reads] = {
         ),
     ),
     "IDX-03": Reads(
-        where=(*_at(ROOT, ".codebase-memory/graph.db.zst"),),
+        where=(
+            *_at(
+                ROOT,
+                ".codebase-memory/graph.db.zst",
+                unexercised="IDX-03 looks for the store only as a Tier-C probe (--run-gates) on a git target, and "
+                "the recording runs no probe",
+            ),
+        ),
         what=What("exists"),
         binding="file",
         note=(
@@ -752,13 +780,14 @@ READS: dict[str, Reads] = {
         where=(
             *_at(ANY_DEPTH, ".pre-commit-config.yaml", "lefthook.yml", "lefthook.yaml"),
             *_at(GLOB, ".githooks/*", ".husky/*", "**"),
-            *_at(ROOT, "package.json"),
+            *_runners(),
         ),
         what=What("exists"),
         binding="file",
         note=(
             "A hook-manager file at any depth, or core.hooksPath in any manifest, config, script, CI or build"
-            " file (glob **), is wired; .husky/ is wired only when a root package.json script names husky."
+            " file (glob **), is wired; .husky/ is wired only when a root package.json script names husky. "
+            "With no hook chain, the FAIL cites the runner manifests that the runner resolver finds."
         ),
     ),
     "TOOL-06": Reads(
@@ -1283,8 +1312,8 @@ READS: dict[str, Reads] = {
                 "requirements.txt",
                 "requirements-dev.txt",
                 "Cargo.toml",
-                "go.mod",
             ),
+            *_at(ROOT, "go.mod", unexercised=_GO_FIXTURE),
         ),
         what=What("exists"),
         binding="file",
@@ -1438,7 +1467,13 @@ READS: dict[str, Reads] = {
                 "osv-scanner.toml",
                 ".bandit",
             ),
-            *_runners(),
+            *_unexercised(
+                _runners(),
+                "EXEC-07 resolves the typecheck verb only when one pyright config stands beside one mypy config, and "
+                "the resolver looks a wrapper up only for a Gradle or Maven build; no fixture is both",
+                "gradlew",
+                "mvnw",
+            ),
         ),
         what=What("exists"),
         binding="file",
@@ -1471,7 +1506,9 @@ READS: dict[str, Reads] = {
             ),
             *_at(GLOB, "**/*.mk", ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml", ".husky/*"),
             *_at(ROOT, "renovate.json", ".renovaterc", ".renovaterc.json", ".github/renovate.json"),
-            *_at(ANY_DEPTH, "pyproject.toml", "go.mod", "Cargo.toml"),
+            *_at(ANY_DEPTH, "pyproject.toml"),
+            *_at(ANY_DEPTH, "go.mod", unexercised=_GO_FIXTURE),
+            *_at(ANY_DEPTH, "Cargo.toml"),
             *_at(GLOB, "**/requirements*.txt"),
         ),
         what=What("word-list"),
@@ -1548,6 +1585,17 @@ READS: dict[str, Reads] = {
     "TST-04": Reads(
         where=(
             *_held(tst, "_FASTPATH_DOCS", ANY_DEPTH),
+            *_at(
+                GLOB,
+                "**/*test_*",
+                "**/*_test.*",
+                "**/*.test.*",
+                "**/*.spec.*",
+                "**/tests/**",
+                "**/test/**",
+                "**/__tests__/**",
+                via=SCAN_KIND,
+            ),
             *_held(tst, "_FRAMEWORK_TEST_GLOBS", ANY_DEPTH, {"tests/*.rs": GLOB}),
         ),
         what=What("fenced-command"),
@@ -1704,8 +1752,8 @@ READS: dict[str, Reads] = {
         binding="line",
         note=(
             "Fixed names are matched by exact path per detected ecosystem; source files (glob **) are grepped"
-            " for a line that starts with the __main__ guard or func main(, a JVM main method or a Spring "
-            "Boot or Quarkus marker, and build files for io.quarkus."
+            " for a line that starts with func main(, a JVM main method or a Spring Boot or Quarkus marker,"
+            " and build files for io.quarkus. A Python __main__ guard alone is not read."
         ),
     ),
     "NAV-03": Reads(
