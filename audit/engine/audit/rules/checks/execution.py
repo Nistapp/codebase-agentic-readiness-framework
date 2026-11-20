@@ -333,7 +333,7 @@ def check_exec01(*, spec, target, inventory, stack, components, session) -> Chec
 #: Ecosystem -> package managers whose files are lockfiles (manifest-as-lock entries are excluded).
 _ECOSYSTEM_MANAGERS: dict[str, tuple[str, ...]] = {
     "node": ("npm", "pnpm", "yarn", "bun"),
-    "python": ("poetry", "uv", "pipenv"),
+    "python": ("poetry", "uv", "pipenv", "pdm"),
     "jvm": ("gradle",),
     "rust": ("cargo",),
     "go": ("gomod",),
@@ -464,7 +464,7 @@ def _python_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
     if text is None:
         return None
     name = lockfile.rsplit("/", 1)[-1]
-    if name in ("poetry.lock", "uv.lock"):
+    if name in ("poetry.lock", "uv.lock", "pdm.lock"):
         return _toml_package_names(text) or None
     if name == "Pipfile.lock":
         try:
