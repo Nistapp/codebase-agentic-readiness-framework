@@ -22,7 +22,7 @@ from typing import Any, ClassVar, Mapping
 import _dev_paths  # noqa: F401  (puts dev/ on sys.path)
 from docindex import cli, extract
 from docindex import diff as index_diff
-from docindex.model import Edge
+from docindex.model import Edge, FileNode, IdNode, Index
 
 _GIT_ENV = {
     "GIT_AUTHOR_NAME": "Diff Test",
@@ -105,10 +105,13 @@ TRAVEL = "## Travel\n\nThis part travels to the other file.\n\n"
 
 #: Every group of the report, as its count key; a case's expected counts name the groups that are not zero.
 GROUPS = (
+    "edges_confidence_changed",
     "edges_gained",
     "edges_lost",
+    "files_regenerated",
     "ids_lost_definition",
     "ids_lost_mentions",
+    "name_match_resolution",
     "sections_added",
     "sections_edited",
     "sections_moved",
@@ -138,13 +141,16 @@ class _MemoryTree:
         return self._files.get(path)
 
 
-def _compare(old: Mapping[str, str], new: Mapping[str, str]) -> index_diff.IndexDiff:
+def _compare(
+    old: Mapping[str, str], new: Mapping[str, str], generated: Mapping[str, str] | None = None
+) -> index_diff.IndexDiff:
     old_tree, new_tree = _MemoryTree(old), _MemoryTree(new)
     return index_diff.compare(
         extract.extract(old_tree, CONFIG).index,
         extract.extract(new_tree, CONFIG).index,
         old_body=index_diff.body_hashes(old_tree),
         new_body=index_diff.body_hashes(new_tree),
+        generated=generated,
     )
 
 
@@ -333,6 +339,12 @@ class FixtureRepositoryTest(unittest.TestCase):
     lost with it: mentions: mentions.md#checks/second-check -> ABC-02
 
 # IDs that lost every mention: 0
+
+# Edges whose confidence changed: 0
+
+# Name-match links that changed resolution: 0
+
+# Files regenerated: 0
 """
         self.assertEqual(out, expected)
 
@@ -437,6 +449,150 @@ class CompareTest(unittest.TestCase):
         read = index_diff.body_hashes(_MemoryTree({"a.md": "# One\n\nBody.\n", "b.md": "# Two\n\nBody.\n"}))
         self.assertEqual(read("a.md")["a.md#one"], read("b.md")["b.md#two"])
         self.assertEqual(read("missing.md"), {})
+
+
+#: A bare file name in prose that one file, then two, carry: the name-match link goes when the name turns ambiguous.
+NAMED = {"a.md": "# A\n\nSee tool.json here.\n", "x/tool.json": "{}"}
+AMBIGUOUS = {**NAMED, "y/tool.json": "{}"}
+LINK_TO_TOOL = Edge(kind="links", source="a.md#a", target="x/tool.json", confidence="name-match")
+
+
+class QuieterDiffTest(unittest.TestCase):
+    """The groups that take the bulk out of the report: regenerated files, name resolution, confidence changes."""
+
+    def test_a_regenerated_file_is_one_line_not_edited_sections(self) -> None:
+        old = {"gen.md": "# Gen\n\n## One\n\nOld words, see [a](a.md).\n", "a.md": "# A\n"}
+        new = {"gen.md": "# Gen\n\n## One\n\nNew words.\n\n## Two\n\nMore.\n", "a.md": "# A\n"}
+        for generated in ({"gen.md": "make gen"}, {"gen.md/": "make gen"}):
+            with self.subTest(generated=generated):
+                report = _compare(old, new, generated=generated)
+                self.assertEqual((report.added, report.edited, report.edges_lost), ((), (), ()))
+                regenerated = index_diff.Regenerated(
+                    "gen.md", "make gen", sections_added=1, sections_edited=1, edges_lost=1
+                )
+                self.assertEqual(report.regenerated, (regenerated,))
+                self.assertEqual(report.counts()["files_regenerated"], 1)
+        text = index_diff.to_text(_compare(old, new, generated={"gen.md": "make gen"}), old="a", new="b")
+        self.assertIn(
+            "# Files regenerated: 1\n  gen.md (by make gen): 1 sections edited, 1 added, 0 removed, 0 moved or "
+            "renamed; 1 edges lost, 0 gained\n",
+            text,
+        )
+        self.assertIn(
+            "# Sections edited: 1\n  gen.md#gen/one\n", index_diff.to_text(_compare(old, new), old="a", new="b")
+        )
+
+    def test_a_folder_prefix_covers_the_files_under_it_only(self) -> None:
+        old = {"out/gen.md": "# Gen\n\nOld.\n", "outside.md": "# Out\n\nOld.\n"}
+        new = {"out/gen.md": "# Gen\n\nNew.\n", "outside.md": "# Out\n\nNew.\n"}
+        report = _compare(old, new, generated={"out/": "the build"})
+        self.assertEqual([entry.address for entry in report.edited], ["outside.md#out"])
+        self.assertEqual([entry.path for entry in report.regenerated], ["out/gen.md"])
+
+    def test_a_link_into_a_generated_page_that_loses_its_anchor_is_still_lost(self) -> None:
+        old = {"gen.md": "# Gen\n\n## One\n\nWords.\n", "a.md": "# A\n\nSee [one](gen.md#one).\n"}
+        new = {"gen.md": "# Gen\n\n## Two\n\nOther words.\n", "a.md": "# A\n\nSee [one](gen.md#one).\n"}
+        report = _compare(old, new, generated={"gen.md": "make gen"})
+        self.assertEqual(
+            report.edges_lost, (Edge(kind="links", source="a.md#a", target="gen.md#gen/one", anchor="one"),)
+        )
+        self.assertEqual(
+            report.edges_gained,
+            (Edge(kind="links", source="a.md#a", target="gen.md", anchor="one", broken="anchor"),),
+        )
+        self.assertEqual([entry.path for entry in report.regenerated], ["gen.md"])
+        text = index_diff.to_text(report, old="a", new="b")
+        self.assertIn("  links: a.md#a -> gen.md (anchor #one) [broken: anchor]\n", text)
+
+    def test_a_name_that_becomes_ambiguous_is_grouped(self) -> None:
+        report = _compare(NAMED, AMBIGUOUS)
+        self.assertEqual((report.edges_lost, report.edges_gained), ((), ()))
+        self.assertEqual(report.name_resolution, (index_diff.NameResolution("tool.json", 1, 2, (LINK_TO_TOOL,), ()),))
+        self.assertEqual(report.counts()["name_match_resolution"], 1)
+        text = index_diff.to_text(report, old="a", new="b")
+        self.assertIn(
+            "# Name-match links that changed resolution: 1 (1 tool.json)\n  tool.json: 1 -> 2 files; 1 lost, 0 gained\n"
+            "\n",
+            text,
+        )
+        detail = index_diff.to_text(report, old="a", new="b", detail=True)
+        self.assertIn(
+            "  tool.json: 1 -> 2 files; 1 lost, 0 gained\n    lost: links: a.md#a -> x/tool.json [name-match]\n", detail
+        )
+
+    def test_a_name_that_becomes_unique_or_moves_is_grouped(self) -> None:
+        report = _compare(AMBIGUOUS, NAMED)
+        self.assertEqual(report.name_resolution, (index_diff.NameResolution("tool.json", 2, 1, (), (LINK_TO_TOOL,)),))
+        moved = {"a.md": NAMED["a.md"], "y/tool.json": "{}"}
+        report = _compare(NAMED, moved)
+        gained = Edge(kind="links", source="a.md#a", target="y/tool.json", confidence="name-match")
+        self.assertEqual(
+            report.name_resolution, (index_diff.NameResolution("tool.json", 1, 1, (LINK_TO_TOOL,), (gained,)),)
+        )
+        self.assertEqual((report.edges_lost, report.edges_gained), ((), ()))
+
+    def test_a_name_match_link_removed_from_text_stays_lost(self) -> None:
+        edited = {"a.md": "# A\n\nSee nothing here.\n"}
+        for new in ({**NAMED, **edited}, {**AMBIGUOUS, **edited}):
+            with self.subTest(files=sorted(new)):
+                report = _compare(NAMED, new)
+                self.assertEqual(report.edges_lost, (LINK_TO_TOOL,))
+                self.assertEqual(report.name_resolution, ())
+
+    def test_a_folder_link_is_not_a_name_resolution_change(self) -> None:
+        old = {"a.md": "# A\n\nSee [the folder](x/).\n", "x/one.json": "{}"}
+        new = {"a.md": "# A\n\nSee [the folder](x/).\n", "y/one.json": "{}"}
+        report = _compare(old, new)
+        self.assertEqual(report.name_resolution, ())
+        self.assertEqual(report.edges_lost, (Edge(kind="links", source="a.md#a", target="x", confidence="name-match"),))
+        self.assertEqual(report.edges_gained, (Edge(kind="links", source="a.md#a", target="x", broken="missing"),))
+
+    def test_a_confidence_flip_is_one_change(self) -> None:
+        files = (FileNode("a.md", "markdown", "docs"), FileNode("d.json", "json", "docs"))
+        ids = (IdNode("ABC-01", "check", "First", "d.json"),)
+        exact = Edge(kind="mentions", source="a.md", target="ABC-01")
+        weak = Edge(kind="mentions", source="a.md", target="ABC-01", confidence="name-match")
+        old, new = Index(nodes=files + ids, edges=(exact,)), Index(nodes=files + ids, edges=(weak,))
+        report = index_diff.compare(old, new, old_body=lambda _path: {}, new_body=lambda _path: {})
+        self.assertEqual(report.confidence_changed, (index_diff.ConfidenceChanged(exact, weak),))
+        self.assertEqual((report.edges_lost, report.edges_gained, report.changes), ((), (), 1))
+        text = index_diff.to_text(report, old="a", new="b")
+        self.assertIn("# Edges whose confidence changed: 1\n  mentions: a.md -> ABC-01: exact -> name-match\n", text)
+
+    def test_the_json_form_has_format_2_and_the_new_groups(self) -> None:
+        old = {**NAMED, "gen.md": "# Gen\n\nOld.\n"}
+        new = {**AMBIGUOUS, "gen.md": "# Gen\n\nNew.\n"}
+        data = json.loads(index_diff.to_json(_compare(old, new, generated={"gen.md": "make gen"}), old="a", new=None))
+        self.assertEqual(data["format"], 2)
+        self.assertEqual(data["edges"]["confidence_changed"], [])
+        self.assertEqual(
+            data["name_resolution"],
+            [
+                {
+                    "files_after": 2,
+                    "files_before": 1,
+                    "gained": [],
+                    "lost": [{**_edge("links", "a.md#a", "x/tool.json"), "confidence": "name-match"}],
+                    "name": "tool.json",
+                }
+            ],
+        )
+        self.assertEqual(
+            data["regenerated"],
+            [
+                {
+                    "by": "make gen",
+                    "edges_gained": 0,
+                    "edges_lost": 0,
+                    "path": "gen.md",
+                    "sections_added": 0,
+                    "sections_edited": 1,
+                    "sections_moved": 0,
+                    "sections_removed": 0,
+                }
+            ],
+        )
+        self.assertEqual(data["counts"], _counts(files_regenerated=1, name_match_resolution=1))
 
 
 if __name__ == "__main__":

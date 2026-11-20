@@ -5,10 +5,11 @@
 
 - :func:`check_keys` refuses a key that no rule of the index reads: at the top, under ``exclude`` and ``sweep``
   (and its ``bundle_references`` and ``triggers``), and in each ``ids`` kind and its ``define``. It also refuses an
-  ID kind that the model does not know, and a section that is not a JSON object. The entry point,
+  ID kind that the model does not know, a section that is not a JSON object, and a ``generated`` entry whose value
+  is not a string (the command that writes the file). The entry point,
   ``dev/doc_index.py``, runs it when it loads the config; a refused config is a usage error, exit 1.
 - :func:`unmatched` names each path entry that no tracked file of a tree lies at or under: the ``exclude.skip``,
-  ``exclude.list_only``, ``zones``, ``ids.<kind>.defined_in`` and ``sweep.paths`` prefixes, and the
+  ``exclude.list_only``, ``generated``, ``zones``, ``ids.<kind>.defined_in`` and ``sweep.paths`` prefixes, and the
   ``sweep.file_names`` names. It is a warning in the ``build`` summary, never a failure: an index of an older ref
   (``--at``, or the old side of ``diff``) can lack a folder that the config names today.
 
@@ -28,7 +29,9 @@ __all__ = ["BUNDLE_FILES", "ConfigError", "check_keys", "unmatched"]
 #: the JSON config file: the lists come from the project's bundle module at run time.
 BUNDLE_FILES = "bundle_files"
 
-_TOP = frozenset({"default_zone", "description", "exclude", "file_kinds", "ids", "sweep", "zones", BUNDLE_FILES})
+_TOP = frozenset(
+    {"default_zone", "description", "exclude", "file_kinds", "generated", "ids", "sweep", "zones", BUNDLE_FILES}
+)
 _EXCLUDE = frozenset({"list_only", "skip"})
 _SWEEP = frozenset({"bundle_references", "file_names", "paths", "triggers"})
 _BUNDLE_REFERENCES = frozenset({"constants", "module"})
@@ -68,6 +71,9 @@ def check_keys(config: Any) -> None:
             _known(sweep["bundle_references"], "sweep.bundle_references", _BUNDLE_REFERENCES)
         if "triggers" in sweep:
             _known(sweep["triggers"], "sweep.triggers", _TRIGGERS)
+    for path, by in _object(top.get("generated", {}), "generated").items():
+        if not isinstance(by, str) or not by:
+            raise ConfigError(f"generated.{path} is not a non-empty string naming the command that writes it")
     for kind, entry in _object(top.get("ids", {}), "ids").items():
         if kind not in ID_KINDS:
             raise ConfigError(f"unknown ID kind ids.{kind}; known kinds: {', '.join(ID_KINDS)}")
@@ -92,6 +98,7 @@ def unmatched(config: Mapping[str, Any], files: Iterable[str]) -> list[str]:
     prefixes: list[tuple[str, str]] = [
         *(("exclude.skip", prefix) for prefix in exclude.get("skip", [])),
         *(("exclude.list_only", prefix) for prefix in exclude.get("list_only", [])),
+        *(("generated", prefix) for prefix in config.get("generated", {})),
         *(("zones", prefix) for prefix in config.get("zones", {})),
         *(("sweep.paths", prefix) for prefix in sweep.get("paths", [])),
     ]
