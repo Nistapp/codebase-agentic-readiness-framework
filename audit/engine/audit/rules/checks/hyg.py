@@ -90,6 +90,20 @@ MIN_README_CHARS = 200
 #: Case-insensitive markers that make a README a stub rather than a description.
 STUB_MARKERS = ("todo", "tbd", "placeholder", "lorem ipsum", "coming soon", "fill this in", "<describe")
 
+#: Markers that are filler text wherever they stand, so they count anywhere in a README of any length.
+FILLER_MARKERS = ("lorem ipsum", "<describe")
+
+#: A README shorter than this many characters is short enough for any marker anywhere in it to make it a stub. The
+#: floor is the one AGT-01 sets for an instruction file. In a longer README a word marker counts only when it opens a
+#: line (issue #51): a substantive README that says "returns a placeholder answer" in a table row is not a stub.
+STUB_MARKER_ANYWHERE_CHARS = 400
+
+#: Markdown that can open a line before its text: indentation, a heading, a quote, a list item, a task box or a cell.
+_LINE_MARKUP_RE = re.compile(r"^(?:[\s#>|*+-]|\d+[.)]\s|\[[ xX]\]\s)*")
+
+#: The characters that may follow a marker that opens a line: the end of the line or punctuation, never a word.
+_MARKER_END_RE = re.compile(r"[\s*_]*(?:$|[:.!,;()\[\]—–-])")
+
 #: Suffixes treated as documents for the presence checks that accept "any name plus a doc suffix".
 _DOC_SUFFIXES = (".md", ".rst", ".txt", ".markdown", ".adoc")
 
@@ -270,14 +284,38 @@ def _commit_date(target_path: Path, *pathspec: str) -> dt.datetime | None:
 # ===========================================================================
 
 
+def _marker_line(text: str) -> tuple[int, str, str] | None:
+    """The first line that carries a placeholder marker, as ``(line number, marker, line)``, or ``None``.
+
+    In a README shorter than :data:`STUB_MARKER_ANYWHERE_CHARS` a marker anywhere counts, and a
+    :data:`FILLER_MARKERS` marker counts anywhere in a README of any length. In a longer README a word marker
+    must open the line, after any Markdown that starts it (``## TODO``, ``- TBD: install steps``,
+    ``Coming soon.``), and be followed by the line's end or punctuation, so a word that merely starts with it
+    does not count.
+    """
+    anywhere = len(text.strip()) < STUB_MARKER_ANYWHERE_CHARS
+    for number, line in enumerate(text.splitlines(), start=1):
+        lowered = line.lower()
+        for marker in STUB_MARKERS:
+            if anywhere or marker in FILLER_MARKERS:
+                if marker in lowered:
+                    return number, marker, line.strip()
+                continue
+            lead = lowered[_LINE_MARKUP_RE.match(lowered).end() :]
+            if lead.startswith(marker) and _MARKER_END_RE.match(lead, len(marker)):
+                return number, marker, line.strip()
+    return None
+
+
 def _readme_reason(text: str) -> str | None:
     stripped = text.strip()
     if len(stripped) < MIN_README_CHARS:
         return f"only {len(stripped)} characters (minimum {MIN_README_CHARS})"
-    lowered = stripped.lower()
-    for marker in STUB_MARKERS:
-        if marker in lowered:
-            return f"contains the placeholder marker {marker!r}"
+    found = _marker_line(text)
+    if found is not None:
+        number, marker, line = found
+        shown = line if len(line) <= 80 else line[:77] + "..."
+        return f"line {number} carries the placeholder marker {marker!r}: {shown}"
     body = [line.strip() for line in stripped.splitlines() if line.strip() and not line.strip().startswith("#")]
     if not body:
         return "a title with no body"

@@ -208,7 +208,7 @@ Method           automated
 Look for         The instruction file's command-surface section; `04-command-surface.md`'s own evidence for
                  whether each named verb actually resolves, since this check and `CMD-01` must agree.
 Rubric           PASS: all seven verbs (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`,
-                 `security`) are named in the instruction file and each resolves on a runner.
+                 `security`) are named in the instruction file by the verb's name, and each resolves.
                  PARTIAL: verbs are named but at least one does not resolve, or vice versa, or all are named
                  with no runner manifest present to resolve against.
                  FAIL: verbs are both incompletely named and incompletely resolved, with a runner manifest
@@ -224,10 +224,10 @@ Absence proof    A FAIL or PARTIAL names each missing or unresolved verb explici
                  exit code as a `command` evidence item.
 Remediation      `adapt-agents-md` (for naming); `define-command-surface` (for resolution; live, IR04.1) when the
                  gap is in the runner, not the instruction file.
-Pitfalls         A verb named with a different spelling than the catalogue's (`typecheck` written as
-                 `type-check`) is a real miss, not a false negative to excuse — the spec fixes the spelling
-                 per runner ([`spec/command-surface.md`](../../spec/command-surface.md)), and the
-                 instruction file must use it.
+Pitfalls         The spec fixes each verb's spelling ([`spec/command-surface.md`](../../spec/command-surface.md)).
+                 Only `format:check` has others, `format-check` and `formatCheck`, and the engine reads them.
+                 A runner script under another name (`typecheck` written as `type-check`) is a real miss,
+                 not a false negative to excuse, even when it runs the same tool.
 
 ## AGT-06 — Architectural boundaries declared
 

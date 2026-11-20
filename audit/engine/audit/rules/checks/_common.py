@@ -258,6 +258,33 @@ def extract_fenced_commands(text: str) -> list[tuple[str, int, str]]:
     return commands
 
 
+#: One inline code span: a run of one or two backticks, the text, and the same run again.
+_INLINE_SPAN_RE = re.compile(r"(?<!`)(`{1,2})(?!`)(.+?)(?<!`)\1(?!`)")
+
+
+def extract_documented_commands(text: str) -> list[tuple[str, int, str]]:
+    """The commands a document shows: :func:`extract_fenced_commands`, then each inline code span outside a fence.
+
+    An inline span is returned as ``("inline", line_no, command)``, with a leading shell prompt stripped and a
+    trailing comment cut off as in a fenced block. A document "shows" a command written either way (issue #8): a
+    bullet such as ``- Run one test: `pytest -k name` `` documents the command as plainly as a fenced block does.
+    Every span is returned; the caller's own pattern decides which spans are commands.
+    """
+    commands = extract_fenced_commands(text)
+    in_fence = False
+    for line_no, raw in enumerate(text.splitlines(), start=1):
+        if _FENCE_RE.match(raw):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        for match in _INLINE_SPAN_RE.finditer(raw):
+            command = strip_shell_comment(_PROMPT_RE.sub("", match.group(2).strip()).strip())
+            if command:
+                commands.append(("inline", line_no, command))
+    return commands
+
+
 # ---------------------------------------------------------------------------
 # the instruction file and its prohibitions section
 # ---------------------------------------------------------------------------

@@ -111,7 +111,7 @@ Can an agent find the code, the rules and the documents it needs before it edits
 `DEGRADER` · scored · engine check · fixed by [`adapt-agents-md`](implement-master.md#adapt-agents-md)
 
 - **Passes when:** all seven verbs (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`) are
-  named in the instruction file and each resolves on a runner.
+  named in the instruction file by the verb's name, and each resolves.
 - **Why it matters:** The agent needs the sanctioned verification path stated, or it invents one (`npx vitest` where the
   project uses something else), diverging from what CI actually runs ([greenfield/README.md § 1.4 The standardized
   command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
@@ -614,8 +614,9 @@ Does the same command give the same result on a fresh machine, without a human i
 `BLOCKER` · scored · engine check · fixed by
 [`env-inventory-and-secrets`](implement-master.md#env-inventory-and-secrets)
 
-- **Passes when:** every referenced key not on the allow-list is declared in an example file that covers each file
-  reading it (including the case of no references at all).
+- **Passes when:** every required referenced key not on the allow-list is declared in an example file that covers each
+  file reading it (including the case of no references at all). An optional key (a shell reference with a fallback) is
+  listed but never required.
 - **Why it matters:** A variable the code needs but nobody wrote down fails at runtime, mid-task, and the agent debugs
   an environment problem it has no way to see coming ([greenfield/README.md § File Tree — What Gets
   Created](../../greenfield/README.md#file-tree--what-gets-created)).
@@ -753,7 +754,7 @@ Is the repository run like a team project? Reported for the whole picture; never
 `COSMETIC` · not scored · engine check · fixed by [`add-repo-hygiene`](implement-master.md#add-repo-hygiene)
 
 - **Passes when:** a root README exists, reads as text, has at least 200 characters of body, carries no placeholder
-  marker, and is not a bare title.
+  marker where one counts (see Engine), and is not a bare title.
 - **Why it matters:** An agent (or a person) must be able to orient itself in this project in seconds, not by opening
   files at random.
 

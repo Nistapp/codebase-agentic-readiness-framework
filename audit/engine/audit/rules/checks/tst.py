@@ -31,9 +31,9 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   mocha, python, go, rust, jvm). Zero markers is a `PASS`; no test file, or no readable test file,
   is `UNKNOWN`. This check never invents a maximum.
 * **TST-04** — a single-test/subset invocation in a fenced shell block, read from the repository's
-  entry documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`) via
-  `_common.extract_fenced_commands`, or else in an inline code span outside a fence (`npm test -- <path>`
-  in a sentence). A fenced one is cited first. `PASS` when one is documented; `FAIL` when the documents are
+  entry documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`), or else in an inline code
+  span outside a fence (`npm test -- <path>` in a sentence), both via `_common.extract_documented_commands`.
+  A fenced one is cited first. `PASS` when one is documented; `FAIL` when the documents are
   readable but none shows one. With **no test file** there is no suite for a fast path to act on, so
   the verdict is `UNKNOWN` — a missing suite is TST-01's finding, not doubled here. The search scope is
   stated in `detail`.
@@ -58,7 +58,7 @@ import re
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
 from audit.probes import ProbePlan
-from audit.rules.checks._common import extract_fenced_commands, resolve_verbs
+from audit.rules.checks._common import extract_documented_commands, resolve_verbs
 from audit.scan import Kind
 from audit.stack import extract_npm_scripts
 from audit.rules.payloads import Counter, Payload
@@ -112,24 +112,6 @@ _FASTPATH_PATTERNS: tuple[str, ...] = (
     r"\btox\b[^\n&|;]*-e\b",
 )
 _FASTPATH_RE = re.compile("|".join(_FASTPATH_PATTERNS))
-
-_FENCE_LINE_RE = re.compile(r"^\s*(?:```|~~~)")
-_CODE_SPAN_RE = re.compile(r"(?<!`)(`+)(?!`)(.+?)(?<!`)\1(?!`)")
-
-
-def _inline_commands(text: str) -> list[tuple[int, str]]:
-    """``(line number, text)`` of every inline code span outside a fenced block, in order."""
-    spans: list[tuple[int, str]] = []
-    in_fence = False
-    for line_no, line in enumerate(text.splitlines(), start=1):
-        if _FENCE_LINE_RE.match(line):
-            in_fence = not in_fence
-            continue
-        if in_fence:
-            continue
-        spans.extend((line_no, m.group(2).strip()) for m in _CODE_SPAN_RE.finditer(line) if m.group(2).strip())
-    return spans
-
 
 #: Coverage configuration filenames. Present at any depth is evidence.
 _COVERAGE_FILES: tuple[str, ...] = (
@@ -429,14 +411,14 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
     docs = [rel for rel in _FASTPATH_DOCS if inventory.has(rel)]
     scope = ", ".join(docs) if docs else f"{', '.join(_FASTPATH_DOCS)} (none present)"
 
-    texts = [(rel, text) for rel in docs if (text := inventory.read(rel))]
-    for rel, text in texts:
-        for _language, line, command in extract_fenced_commands(text):
-            if _FASTPATH_RE.search(command):
+    commands = [(rel, extract_documented_commands(text)) for rel in docs if (text := inventory.read(rel))]
+    for rel, found in commands:
+        for language, line, command in found:
+            if language != "inline" and _FASTPATH_RE.search(command):
                 return _outcome(spec, Verdict.PASS, f"fast path documented: {rel}:{line} `{command}` (scope: {scope})")
-    for rel, text in texts:
-        for line, command in _inline_commands(text):
-            if _FASTPATH_RE.search(command):
+    for rel, found in commands:
+        for language, line, command in found:
+            if language == "inline" and _FASTPATH_RE.search(command):
                 return _outcome(
                     spec,
                     Verdict.PASS,
@@ -455,7 +437,7 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
                 Verdict.FAIL,
                 [Evidence(rel) for rel in docs] or [Evidence("<repository>")],
                 "Document a fast path (for example `pytest -k <name>`, "
-                "`npm test -- <name>`, or `go test -run <name>`) in a fenced shell block.",
+                "`npm test -- <name>`, or `go test -run <name>`) in a fenced shell block or as inline code.",
             )
         ],
     )

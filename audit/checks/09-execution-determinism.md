@@ -90,7 +90,10 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  declares no dependencies, so no lockfile is expected. Git unable to report tracked files
                  (no repository, or the command failed) makes the tracked half `UNKNOWN` for the whole
                  check, never inferred as passing. A lockfile with no manifest in its own folder is tracked
-                 but its consistency is left `PARTIAL`. Distrust a
+                 but its consistency is left `PARTIAL`. A tracked lockfile that the scan's walk skipped as
+                 ignored is found too. The walk reads an ignore file without its `!` lines. So a
+                 `package-lock.json` rule with a `!apps/web/package-lock.json` line would otherwise hide a
+                 lockfile git tracks. Distrust a
                  `FAIL` for "no lockfile" when the manager is one the engine does not recognise for that
                  ecosystem — verify against `PACKAGE_MANAGERS` in `audit/stack.py` before concluding the
                  project truly has none. Distrust a `PARTIAL` citing "consistency unverified" when the
@@ -130,9 +133,10 @@ Why it matters   An agent cannot answer an interactive prompt or provision a dat
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-03`. First looks for a documented, non-interactive install command (one whose
-                 head tool and subcommand the engine recognises, such as `npm install` or `make setup`)
-                 inside a fenced block of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md` — found ⇒
-                 `PASS` outright. Failing that, looks for a setup artifact (a devcontainer, a compose
+                 head tool and subcommand the engine recognises, such as `npm install` or `make setup`).
+                 It reads the fenced shell blocks and the inline code spans (`` - Install: `npm ci` ``)
+                 of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md`. Found ⇒ `PASS` outright.
+                 Failing that, looks for a setup artifact (a devcontainer, a compose
                  file, a Dockerfile, or a `setup`/`bootstrap`/`install`/`dev`/`dev-setup` Makefile or
                  npm-script target) and whether any doc file names it in prose. The setup files count at
                  any depth, and so does a Dockerfile with a variant in its name (`Dockerfile.*`,
@@ -142,7 +146,8 @@ Engine           `EXEC-03`. First looks for a documented, non-interactive instal
                  check reads — verify by reading whatever onboarding doc the repository actually points
                  to before treating the absence as real.
 Method           automated
-Look for         A fenced install command in README.md, AGENTS.md, CLAUDE.md or CONTRIBUTING.md first;
+Look for         An install command, fenced or as inline code, in README.md, AGENTS.md, CLAUDE.md or
+                 CONTRIBUTING.md first;
                  failing that, a devcontainer/compose/Dockerfile/setup-script/setup-target artifact, and
                  whether any of those four docs names it.
 Rubric           PASS: a documented non-interactive install command exists, or a setup artifact exists
@@ -175,11 +180,17 @@ Engine           `EXEC-04`. Collects every `${VAR}` reference in shell-family fi
                  `process.env`/`ENV[...]`-style reference in source and script files, then subtracts the
                  keys declared in committed example files (`.env.example`, `.env.sample`,
                  `.env.template`, `env.example`, at any depth) and a fixed, in-code allow-list of
-                 conventional host/CI variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like). An
-                 example file covers the files in its own folder and below it: `api/.env.example` declares
-                 the keys `api/` reads, `scripts/ci/env.example` the keys of the CI scripts, and a root
-                 file every key. A key is declared when every file that reads it is covered by an example
-                 file that names it. This check runs
+                 conventional host/CI variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like). The
+                 allow-list also holds the variables the shell sets itself (`SECONDS`, `RANDOM`, `LINENO`,
+                 `OLDPWD`, `UID`, `BASH_*`, and the like). An example file covers the files in its own folder
+                 and below it: `api/.env.example` declares the keys `api/` reads, `scripts/ci/env.example`
+                 the keys of the CI scripts, and a root file every key. A key is declared when every file
+                 that reads it is covered by an example file that names it. A shell reference with a
+                 fallback (`${VAR:-default}`, `${VAR-x}`, `${VAR:=x}`, `${VAR:+x}`) runs without the variable,
+                 so the key is optional: the summary and the payload's `optional` list name it when no
+                 covering example file declares it, and it never fails the check. `${VAR:?message}` stops the
+                 script without the variable, so it is required, as a bare `${VAR}` is. One required
+                 reference anywhere makes a key required. This check runs
                  regardless of detected ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` that
                  names a key your own reading recognises as a CI/host convention the allow-list has not
                  yet caught — verify against `_ENV_ALLOWLIST`/`_ENV_ALLOW_PREFIXES` in
@@ -188,10 +199,11 @@ Method           automated
 Look for         `${VAR}`-style references in shell/`Dockerfile` files, and language-level environment
                  reads in source and script files generally; the keys declared in each committed example
                  file, and which reading files each example file covers.
-Rubric           PASS: every referenced key not on the allow-list is declared in an example file that
-                 covers each file reading it (including the case of no references at all).
+Rubric           PASS: every required referenced key not on the allow-list is declared in an example
+                 file that covers each file reading it (including the case of no references at all). An
+                 optional key (a shell reference with a fallback) is listed but never required.
                  PARTIAL: not used by this check — any undeclared key fails the whole check.
-                 FAIL: at least one referenced, non-allow-listed key is absent from every example file
+                 FAIL: at least one required, non-allow-listed key is absent from every example file
                  that covers a file reading it.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never — the reference scan runs whether or not an ecosystem is detected.
