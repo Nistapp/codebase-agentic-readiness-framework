@@ -186,7 +186,7 @@
         "section": "implement/SKILL.md#implement/hard-rules"
       },
       "id": "B-15",
-      "note": "A12 fails when a docs/ page outside the theme was rewritten; it does not look at code.",
+      "note": "A12 (comm-agents-md, comm-docs-contract and lost-pass-stop) fails when a theme branch changes a docs/ page outside the theme, removes or changes a quarter or more of the lines of an earlier code file (a deleted file counts), or half or more of a build or config file. A small edit to a code or config file passes.",
       "statement": "The run makes the smallest reasonable diff: no unrelated refactor and no mass reformat.",
       "symbol": "a12_no_mass_rewrite"
     },

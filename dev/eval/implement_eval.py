@@ -1350,21 +1350,72 @@ def a11_prose_check_copy(scenario: Scenario, outcome: Outcome) -> Verdict:
     return Verdict("A11", not details, details or [f"{copy} under {licence}; the ratchet holds at {limit}"])
 
 
+#: The share of an earlier file's lines that a theme may remove or change before A12 calls the file rewritten, by
+#: kind (:func:`file_kind`). A `docs/` page outside the theme must stay as it was. A theme may touch a code file in
+#: passing, but not reformat or rewrite a quarter of it. A build or config file often gains a section, so only a
+#: change to half of it counts. A deleted file has lost all its lines.
+REWRITE_SHARE = {"docs": 0.0, "code": 0.25, "config": 0.5}
+CODE_SUFFIXES = frozenset(
+    {".py", ".pyi", ".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx", ".go", ".rs", ".java", ".kt", ".kts", ".scala"}
+    | {".rb", ".php", ".cs", ".c", ".h", ".cc", ".cpp", ".hpp", ".swift", ".sh", ".bash", ".ps1", ".lua", ".sql"}
+)
+CONFIG_SUFFIXES = frozenset({".toml", ".cfg", ".ini", ".json", ".yaml", ".yml", ".mk", ".gradle", ".xml"})
+CONFIG_NAMES = frozenset({"makefile", "gnumakefile", "justfile", "taskfile", "dockerfile"})
+
+
+def file_kind(path: str) -> str | None:
+    """`docs`, `code` or `config` for a file A12 guards, or None for one it does not (a root README, an image)."""
+    name = path.rsplit("/", 1)[-1]
+    suffix = name[name.rfind(".") :].lower() if "." in name else ""
+    if path.startswith("docs/") and suffix == ".md":
+        return "docs"
+    if suffix in CODE_SUFFIXES:
+        return "code"
+    if suffix in CONFIG_SUFFIXES or name.lower() in CONFIG_NAMES:
+        return "config"
+    return None
+
+
+def removed_lines(repo: Path, old: str, new: str) -> dict[str, int]:
+    """Per file, the lines `new` removes or changes against `old` (`git diff --numstat`; a binary file is skipped)."""
+    counts: dict[str, int] = {}
+    for line in git(repo, "diff", "--numstat", "--no-renames", old, new, check=False).splitlines():
+        _added, removed, path = line.split("\t", 2)
+        if removed.isdigit():
+            counts[path] = int(removed)
+    return counts
+
+
 def a12_no_mass_rewrite(scenario: Scenario, outcome: Outcome) -> Verdict:
+    """Boundary B-15 (implement/SKILL.md, Hard rules): "No unrelated refactors, no mass reformat." Fails when the theme
+    branch changes an earlier `docs/` page, or removes or changes at least the :data:`REWRITE_SHARE` of an earlier
+    code or config file, outside the files the scenario's `may_edit` names."""
     branch = theme_branch(scenario, outcome)
     if branch is None:
         return Verdict("A12", False, ["no theme branch was made"])
     snapshot_sha, allowed = outcome.baseline["snapshot"], set(scenario.params.get("may_edit", ()))
-    rewritten = [
-        page
-        for page in tracked(outcome.repo, snapshot_sha, "docs")
-        if page.endswith(".md")
-        and page not in allowed
-        and show(outcome.repo, branch, page) != show(outcome.repo, snapshot_sha, page)
-    ]
-    if rewritten:
-        return Verdict("A12", False, [f"pages outside the theme were rewritten: {rewritten}"])
-    return Verdict("A12", True, [f"every earlier docs page is unchanged, apart from {sorted(allowed) or 'none'}"])
+    removed = removed_lines(outcome.repo, snapshot_sha, branch)
+    pages, files = [], []
+    for path in tracked(outcome.repo, snapshot_sha, "."):
+        kind = file_kind(path)
+        if kind is None or path in allowed:
+            continue
+        before = show(outcome.repo, snapshot_sha, path) or ""
+        if kind == "docs":
+            if show(outcome.repo, branch, path) != before:
+                pages.append(path)
+            continue
+        lines = len(before.splitlines())
+        share = removed.get(path, 0) / lines if lines else 0.0
+        if lines and share >= REWRITE_SHARE[kind]:
+            files.append(f"{path} ({removed[path]} of {lines} lines, {kind})")
+    details = [f"pages outside the theme were rewritten: {pages}"] if pages else []
+    details += [f"files outside the theme were rewritten: {files}"] if files else []
+    if details:
+        return Verdict("A12", False, details)
+    return Verdict(
+        "A12", True, [f"every earlier docs page, code and config file is kept, apart from {sorted(allowed) or 'none'}"]
+    )
 
 
 # --- A13 to A15: hard rules of implement/SKILL.md that the earlier scenarios do not guard (RF3.4) ----------------
