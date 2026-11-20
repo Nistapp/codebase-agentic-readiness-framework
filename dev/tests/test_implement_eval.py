@@ -115,7 +115,7 @@ class ScenarioCase(unittest.TestCase):
 class FixtureTests(unittest.TestCase):
     def test_every_scenario_loads_with_known_assertions(self) -> None:
         names = ie.scenario_names()
-        self.assertEqual(len(names), 10)
+        self.assertEqual(len(names), 11)
         covered = set()
         for name in names:
             scenario = ie.load_scenario(name)
@@ -132,11 +132,15 @@ class FixtureTests(unittest.TestCase):
             key: {n for n in ie.scenario_names() if key in ie.load_scenario(n).assertions} for key in ("A18", "A19")
         }
         self.assertEqual(
-            scored["A18"], {"apply-with-debt", "secrets-and-gates", "drift-before-apply", "comm-docs-contract"}
+            scored["A18"],
+            {"apply-with-debt", "secrets-and-gates", "drift-before-apply", "comm-docs-contract", "lost-pass-stop"},
         )
         self.assertEqual(
             scored["A19"],
-            {"apply-with-debt", "secrets-and-gates", "resume-mid-item-committed", "resume-mid-item-uncommitted"},
+            {
+                *("apply-with-debt", "secrets-and-gates", "resume-mid-item-committed", "resume-mid-item-uncommitted"),
+                "lost-pass-stop",
+            },
         )
 
     def test_the_canned_reports_are_valid_and_final(self) -> None:
