@@ -114,8 +114,8 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    Names only: `NAME=` with a one-line comment (what reads it, required or optional, a placeholder format
    such as `<aws-role-arn>`; low-entropy, never a real-looking value).
    Optional variables are commented out or marked `# optional`. Do not copy a value from any real file.
-   A nested example file names every variable that the files in its folder and below read; a variable read in
-   two folders goes in an example file that covers both (Inputs 1). Each one counts for "`EXEC-04` Env-var
+   A nested example file names every variable read in its folder and below. A variable read in two folders goes
+   in an example file that covers both (Inputs 1). Each one counts for "`EXEC-04` Env-var
    inventory complete" for the files it covers.
 5. **Cross-check.** Every name in the inventory is in an example file or is on the false-positive list with a
    reason; every name in an example file is read somewhere (a stale name is removed or marked legacy). In a
