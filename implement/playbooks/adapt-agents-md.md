@@ -221,7 +221,9 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    [`add-deny-rules`](add-deny-rules.md) (default branch); keep the two consistent, do not state the rule twice in
    different words. The sentence is the one line of its section that holds never, do not or must not (Step 14).
    Keep it the only one. Three such lines make the section a prohibitions section for "`AGT-07` Do-not-do / deny
-   rules present". Then "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it too.
+   rules present"
+   ([its Engine field](../../audit/checks/02-agent-governance.md#agt-07--do-not-do--deny-rules-present)).
+   Then "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it too.
 7. **Reach and vendor files (AGT-08).** Add one line near the top of `AGENTS.md`: `This file is read by <harnesses>.`
    Name only harnesses that really reach it: native `AGENTS.md` readers, plus each harness whose vendor file points
    at it (a `CLAUDE.md` that imports `@AGENTS.md` makes Claude Code a reader). The engine takes the line as given; the

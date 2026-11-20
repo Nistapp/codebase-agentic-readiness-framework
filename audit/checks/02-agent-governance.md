@@ -268,16 +268,19 @@ Why it matters   Explicit prohibitions work; implicit ones do not — an agent t
                   weaken a test" will weaken one
                   ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
-Engine           `AGT-07`. Finds the prohibitions section by its heading (one of `never`/`do not`/`don't`/
-                 `must not`/`prohibit`/`forbidden`/`off-limits`, or `❌`; the same heading-detection logic
-                 `CON-01` and `CON-02` share, so this family and `CON` cannot drift on what counts as a
-                 heading). No such section at all is `FAIL`. Inside the section, each line carrying a
-                 prohibition word is checked against four concerns — tests, generated files (including
-                 `artefacts/`/`artifacts/` and build output), the default branch, secrets — and the first
-                 line to match each concern is recorded; covering all four is `PASS`, some is `PARTIAL`,
-                 none is `FAIL`. Distrust a `FAIL` on heading detection when the project uses a heading the
-                 pattern does not word-match (a bare "Rules" heading whose first line is a prohibition) —
-                 verify by reading for a list of explicit prohibitions regardless of its heading text.
+Engine           `AGT-07`. Finds the prohibitions section by its heading: one that says `never`, `do not`,
+                 `don't`, `prohibit`, `deny`, `forbidden` or `no-go`, or any heading whose own body (to the
+                 next heading of any level) holds at least three prohibition lines. A prohibition line says
+                 `never`, `do not`, `don't`, `must not`, `prohibit`, `forbidden` or `off-limits`, or holds
+                 `❌`. The section runs to the next heading of the same or a higher level. `CON-01` and
+                 `CON-02` share this logic, so this family and `CON` cannot drift on what counts as a
+                 heading. No such section at all is `FAIL`. Inside the section, each prohibition line is
+                 checked against four concerns — tests, generated files (including `artefacts/`/`artifacts/`
+                 and build output), the default branch, secrets — and the first line to match each concern
+                 is recorded; covering all four is `PASS`, some is `PARTIAL`, none is `FAIL`. Distrust a
+                 `FAIL` on heading detection when the project uses a heading the pattern does not word-match
+                 (a bare "Rules" heading with fewer than three prohibition lines) — verify by reading for a
+                 list of explicit prohibitions regardless of its heading text.
 Method           automated
 Look for         The prohibitions section itself; for each of the four concerns, whether the stated rule
                  is specific to this project (A14) rather than a generic restatement ("don't break things").
