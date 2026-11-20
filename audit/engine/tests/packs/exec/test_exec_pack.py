@@ -40,6 +40,7 @@ FIXTURES: dict[str, tuple[str, str, bool]] = {
     "exec-03-no-setup": ("EXEC-03", "FAIL", False),
     "exec-04-missing-env": ("EXEC-04", "FAIL", False),
     "exec-05-generated": ("EXEC-05", "FAIL", True),
+    "exec-05-committed-dist": ("EXEC-05", "FAIL", True),
     "exec-06-broken-command": ("EXEC-06", "FAIL", False),
     "exec-07-dual-lint": ("EXEC-07", "FAIL", False),
     "exec-07-dual-python-types": ("EXEC-07", "FAIL", False),
@@ -74,13 +75,33 @@ class ExecFixtureTests(unittest.TestCase):
                 self.assertEqual(failing, [check], f"{name}: unexpected EXEC FAILs {failing}")
 
     def test_tracked_state_unavailable_degrades_to_unknown_not_pass(self):
-        for name, _check in (("exec-02-no-lockfile", "EXEC-02"), ("exec-05-generated", "EXEC-05")):
+        for name, _check in (
+            ("exec-02-no-lockfile", "EXEC-02"),
+            ("exec-05-generated", "EXEC-05"),
+            ("exec-05-committed-dist", "EXEC-05"),
+        ):
             with self.subTest(fixture=name):
                 report = support.run_audit(self._prepare(name, git=False))
                 verdicts = support.verdicts(report)
                 self.assertEqual(
                     verdicts[_check], "UNKNOWN", f"{name}: without git the check must not infer a tracked set"
                 )
+
+    def test_a_lockfile_with_no_manifest_beside_it_is_partial_with_one_finding(self):
+        # Issue #21: a PARTIAL on this BLOCKER check named no finding, so the report gave nothing to act on.
+        report = support.run_audit(self._prepare("exec-02-lockfile-no-manifest", git=True))
+        check = next(c for c in report["checks"] if c["id"] == "EXEC-02")
+        findings = [f for f in report["findings"] if f["check"] == "EXEC-02"]
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertEqual(
+            [(f["id"], f["verdict"], [e["path"] for e in f["evidence"]]) for f in findings],
+            [("EXEC-02:apps/web/package-lock.json", "PARTIAL", ["apps/web/package-lock.json"])],
+        )
+
+    def test_committed_build_output_is_named_path_by_path(self):
+        report = support.run_audit(self._prepare("exec-05-committed-dist", git=True))
+        findings = [f for f in report["findings"] if f["check"] == "EXEC-05"]
+        self.assertEqual([e["path"] for f in findings for e in f["evidence"]], ["build/x.class", "dist/app.min.js"])
 
     def test_a_broken_command_lists_its_evidence(self):
         report = support.run_audit(self._prepare("exec-06-broken-command", git=False))
@@ -344,7 +365,21 @@ class Exec02LockfilePathTests(unittest.TestCase):
         self.assertEqual(
             (check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: app/package-lock.json")
         )
-        self.assertEqual(findings, [])
+        # A PARTIAL names the lockfile it could not compare in a finding of its own (issue #21).
+        self.assertEqual(
+            [(f["id"], f["verdict"], f["severity"], f["statement"], f["evidence"]) for f in findings],
+            [
+                (
+                    "EXEC-02:app/package-lock.json",
+                    "PARTIAL",
+                    "BLOCKER",
+                    "An agent cannot confirm that every run installs identical dependencies because "
+                    "app/package-lock.json is tracked, but the engine found no node manifest it can read in the "
+                    "lockfile's own folder, so its consistency with the manifest is unverified.",
+                    [{"path": "app/package-lock.json", "line": None, "note": "consistency unverified"}],
+                )
+            ],
+        )
 
     def test_a_lockfile_in_a_subdirectory_that_git_does_not_track_is_still_untracked(self):
         check, findings = self.audit(
@@ -441,7 +476,18 @@ class Exec02LockfilePathTests(unittest.TestCase):
     def test_a_tracked_text_bun_lock_is_the_node_lockfile_and_is_not_compared(self):
         check, findings = self.audit({"package.json": self.NODE, "bun.lock": "{}\n"})
         self.assertEqual((check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: bun.lock"))
-        self.assertEqual(findings, [])
+        self.assertEqual(
+            [(f["id"], f["verdict"], f["statement"]) for f in findings],
+            [
+                (
+                    "EXEC-02:bun.lock",
+                    "PARTIAL",
+                    "An agent cannot confirm that every run installs identical dependencies because bun.lock is "
+                    "tracked, but the engine cannot read the dependency names in the lockfile, so its consistency "
+                    "with the manifest is unverified.",
+                )
+            ],
+        )
 
     def test_a_tracked_npm_shrinkwrap_is_the_node_lockfile_and_is_compared(self):
         check, findings = self.audit({"package.json": self.NODE, "npm-shrinkwrap.json": self.LOCK})
@@ -694,6 +740,33 @@ class Exec02MessageTests(unittest.TestCase):
                     "dependencies.",
                 )
             ],
+        )
+
+    def test_a_lockfile_of_an_ecosystem_the_engine_does_not_compare_is_a_partial_finding(self):
+        check, findings = self.audit({"composer.json": '{"require": {"php": ">=8.2"}}\n', "composer.lock": "{}\n"})
+        self.assertEqual((check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: composer.lock"))
+        self.assertEqual(
+            [(f["id"], f["statement"], f["remediation"]) for f in findings],
+            [
+                (
+                    "EXEC-02:composer.lock",
+                    "An agent cannot confirm that every run installs identical dependencies because composer.lock "
+                    "is tracked, but the engine does not compare php lockfiles, so its consistency with the "
+                    "manifest is unverified.",
+                    "Confirm by hand that the lockfile names every dependency of the manifest beside it.",
+                )
+            ],
+        )
+
+    def test_a_fail_keeps_the_partial_finding_of_another_lockfile(self):
+        manifest = '{"dependencies": {"left-pad": "1"}}\n'
+        check, findings = self.audit(
+            {"package.json": manifest, "package-lock.json": self.OTHER_LOCK, "app/package-lock.json": "{}\n"}
+        )
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertEqual(
+            [(f["id"], f["verdict"]) for f in findings],
+            [("EXEC-02:app/package-lock.json", "PARTIAL"), ("EXEC-02:package-lock.json", "FAIL")],
         )
 
     def test_each_kind_of_finding_has_an_id_of_its_own(self):

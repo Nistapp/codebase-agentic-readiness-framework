@@ -32,8 +32,9 @@ this one owns the verb names and their wiring, that one owns which tool each ver
   `format.mass_reformat` (forbids a whole-tree rewrite), `tests.stack_dependent` (whether `test` needs a live
   local stack), `ci.edits_authorised` (whether build files and CI may be changed). A step that conflicts with
   one stops and asks.
-- No earlier theme is needed. T1 runs before T4, T5 and T7 because those themes (CI, hooks, baselines, `AGENTS.md`) name
-  these verbs.
+- No earlier theme is needed. T1 Command surface and quality tools runs before T4 CI parity, Git hooks and commit
+  messages, T5 Tests and baselines, and T7 AGENTS.md and governance ([themes](../SKILL.md#themes)), because those themes
+  name these verbs.
 - A tool choice made by `configure-quality-tools` for each verb, or a recorded decision that the verb is
   `blocked` (see the `security` lockfile rule there).
 

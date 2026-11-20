@@ -374,12 +374,15 @@ class CheckRegressionsTests(unittest.TestCase):
         self.assertEqual(code, 0)
         manifest = envelope["data"]
         self.assertEqual(manifest["name"], "check_regressions")
-        self.assertEqual(manifest["writes"], "nothing")
+        self.assertTrue(manifest["writes"].startswith("With --workspace only:"))
         self.assertFalse(manifest["network"])
         self.assertFalse(manifest["writes_inside_target"])
         self.assertEqual(
             manifest["synopsis"],
-            ["check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]]"],
+            [
+                "check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]]"
+                " [--workspace DIR --theme THEME [--label LABEL]]"
+            ],
         )
 
     def test_long_lists_are_bounded_and_counted(self) -> None:

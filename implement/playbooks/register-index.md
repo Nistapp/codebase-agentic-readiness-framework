@@ -179,8 +179,8 @@ No dependency is installed. Ask:
    file (`go.work`, a Cargo `[workspace]`) can change the components the engine sees. So run "`AGT-02` Component
    coverage by instruction files" and "`CMD-01` Seven verbs resolvable on one runner" after the commit. If either
    verdict falls, revert the commit and tell the owner.
-7. **First-run offer (Inputs 5).** Only with `index.first_run_offer=yes`. Add a short section to the target's docs,
-   in the docs home T6 chose, that holds the offer's steps:
+7. **First-run offer ([Inputs](#inputs-to-ask) 5).** Only with `index.first_run_offer=yes`. Add a short section
+   with the offer's steps to the docs home that T6 Docs and navigation chose:
    1. Name your harness.
    2. If the record file says this harness was asked, stop.
    3. Check that the binary is on `PATH`.
@@ -189,11 +189,12 @@ No dependency is installed. Ask:
    6. Record the answer.
 
    The record is one git-ignored file (`.agentic-readiness/setup.json`, one key per harness). Add its folder to the
-   target's ignore file. Then add one line at the top of the instruction file: "Setup offer, once per harness:
-   follow `<docs page>#<section>` before the first change." Keep the line within the 400-line budget. The line names
-   a one-time step, not a file to read before every change. "`AGT-10` Instruction indirection resolved" reads a
-   line such as "read X first" or "before you change anything, read X" as a deferral. The target has
-   no helper script: the agent follows the section by hand.
+   target's ignore file. Then add one line at the top of the instruction file: "Setup offer, once per harness: follow
+   `<docs page>#<section>` before the first change." Keep the line within the 400-line
+   [budget](../../audit/checks/02-agent-governance.md#the-a14-rubric-r-16-score-content-not-presence). The line names a
+   one-time step, not a file to read before every change. "`AGT-10` Instruction indirection resolved" reads a line such
+   as "read X first" or "before you change anything, read X" as a deferral. The target has no helper script: the agent
+   follows the section by hand.
 
 ### Gradle and Quarkus
 
@@ -286,6 +287,6 @@ python3 implement/tools/progress.py pref set index.first_run_offer no \
   --workspace <workspace> --phase <phase> --reason "<the owner's words>" --by owner
 ```
 
-Record a preference only when the owner answers; absent means the default above, and `index.user_config_consent` absent
-means no user-level edit. The theme closes once, after both T8 playbooks
-([Stage 4](../SKILL.md#stage-4-close-the-theme)).
+Record a preference only when the owner answers; absent means the default in [Inputs to ask](#inputs-to-ask), and
+`index.user_config_consent` absent means no user-level edit. The theme closes once, after both playbooks of the
+theme T8 Hygiene and index ([themes](../SKILL.md#themes), [Stage 4](../SKILL.md#stage-4-close-the-theme)).

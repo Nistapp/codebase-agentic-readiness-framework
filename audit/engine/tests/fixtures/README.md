@@ -72,6 +72,8 @@ fixtures/
   cmd-01-maven-no-formatter/ a plugin goal named `check`, and no formatter plugin -> CMD-01 FAIL, CMD-02 UNKNOWN
   sec-01-tracked-env/        tracked .env, comprehensive ignore (needs git) -> SEC-01 FAIL
   sec-01-excluded-env/       tracked `vendor-samples/.env`, ignored by rule (needs git) -> SEC-01 FAIL; `--exclude 'vendor-samples/*'` -> PASS
+  sec-01-tracked-ignored-env/ `config/prod.env` force-added past a `*.env` rule (needs git) -> SEC-01 FAIL, SEC-03 PASS
+  sec-03-tracked-ignored-key/ `server.key` force-added past a `*.key` rule (needs git) -> SEC-03 FAIL, SEC-01 PASS
   sec-02-key-shaped/         synthetic sk- value in a source file (needs git) -> SEC-02 FAIL
   sec-03-thin-ignore/        ignore rules cover no secret shapes   -> SEC-03 FAIL
   sec-03-ok-negated-exception/ every shape ignored, `!public.crt` re-includes one certificate -> SEC-03 PASS (ADR-0009)
@@ -89,6 +91,7 @@ fixtures/
   exec-01-tool-versions-go/  a go.mod with no go directive, pinned by a .tool-versions go line (mise) -> EXEC-01 PASS
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app` out of step with the manifest beside it (needs git) -> EXEC-02 FAIL
+  exec-02-lockfile-no-manifest/ a tracked lockfile in `apps/web` with no manifest beside it (needs git) -> EXEC-02 PARTIAL, one finding
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
   exec-03-readme-no-extension/ the root README is `README`, no extension, and fences the install -> EXEC-03, HYG-01 PASS
   exec-03-devcontainer-subfolder/ the only setup path is `.devcontainer/node/devcontainer.json`, a layout the dev container spec reads -> EXEC-03 PASS

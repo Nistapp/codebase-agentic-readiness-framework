@@ -1,0 +1,13 @@
+# Comprehensive secret-shape coverage, so SEC-01 passes and SEC-03's coverage half passes:
+# server.key is force-added past the `*.key` rule, which is the one defect.
+.env
+.env.*
+id_rsa*
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.crt
+*.cer
+.aws/*

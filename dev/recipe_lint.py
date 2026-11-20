@@ -25,7 +25,7 @@ framework pages under ``docs/framework/`` are already recipe Markdown); no other
   characters), one ``key: value`` pair per line (R-10's grammar; this is not a YAML parser).
 - **Size.** A ``SKILL.md``, and a check-family file under ``audit/checks/`` (``NN-*.md``), must be 500 lines or
   fewer (R-10's ``SKILL.md`` budget, shared by the family files for the same reason: an agent loads the whole
-  file at once, D46).
+  file at once).
 - **User prompt.** Each recipe's ``SKILL.md`` (``audit/SKILL.md`` and ``implement/SKILL.md``) must hold an inline
   link, outside a code fence, to the shared prompt ``audit/prompts/talking-to-the-user.md``: how the agent writes to
   the person who runs it. A tree without that prompt has nothing to link to, and the check is skipped.
@@ -103,7 +103,7 @@ REQUIRED_DIR = RECIPE_DIRS[0]
 TOOL_DIRS = ("audit/tools", "implement/tools")
 CATALOGUE_FILE = "audit/tools/CATALOGUE.md"
 CATALOGUE_JSON = "audit/catalogue.json"
-LINE_BUDGET = 500  # SKILL.md's own budget (R-10); check-family files share it (D46).
+LINE_BUDGET = 500  # SKILL.md's own budget (R-10); check-family files share it (an agent loads a whole file).
 MAX_NAME_CHARS = 64
 MAX_DESCRIPTION_CHARS = 1024
 DESCRIBE_TIMEOUT_S = 15.0

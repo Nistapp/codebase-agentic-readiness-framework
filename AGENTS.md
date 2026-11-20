@@ -39,6 +39,10 @@ make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin
 make update-masters # regenerate docs/reference/audit-master.md and implement-master.md (check runs masters-check)
 ```
 
+Here `make security` also runs the secrets scan. This repository has no runtime dependencies, so the verb began
+as that scan and the dependency audit joined it later. A target's `security` stays a dependency gate only
+([`configure-quality-tools`](implement/playbooks/configure-quality-tools.md)).
+
 One test, without the whole suite. Run the engine's tests from `audit/engine/`:
 
 ```bash
@@ -76,7 +80,8 @@ No vendor-specific instruction file exists beside it.
   under coverage.py. It fails
   below the floor in `.coveragerc` (`fail_under`). CI runs it in parts (`coverage-<suite>` per job, then
   `coverage-combine` in the `coverage` job). Each suite runs as CI does (an empty `HOME` and `CI=true`), so a local
-  pass means a CI pass. The floor is debt that only goes up: raise it when coverage rises, never lower it to get green.
+  pass means a CI pass. The floor is debt that only goes up: when coverage rises, ask the owner to raise it. Never
+  lower it to get green.
 - Quality baseline: existing lint debt is counted in `.quality-baseline.json` (ruff, mypy, Markdown lint outside the
   ratchet) and the secrets in `.secrets.baseline`. No new violations: `make format-check`, `make typecheck` and
   `make docs-lint` compare the live count with the baseline and fail when it went up (a ratchet). A baseline only goes
@@ -95,12 +100,14 @@ No vendor-specific instruction file exists beside it.
 
 ## Code conventions
 
-These rules are written in full in the files linked. `audit/engine/AGENTS.md` §5 and §6 are the strictest.
+These rules are written in full in the files linked. `audit/engine/AGENTS.md`
+[§5](audit/engine/AGENTS.md#5-coding-standards) and [§6](audit/engine/AGENTS.md#6-testing-standards) are the
+strictest.
 
 - Naming: modules and functions are `snake_case`, as in PEP 8; a private helper starts with `_`. A check ID keeps
   the catalogue's `PACK-NN` form.
-- Layering: follow the Boundaries table below. The engine never imports `audit/tools/`, the audit folder never
-  imports `implement/`, and only `dev/` may import a dev package.
+- Layering: follow the [Boundaries](#boundaries) table below. The engine never imports `audit/tools/`, the audit
+  folder never imports `implement/`, and only `dev/` may import a dev package.
 - Errors and logging: a tool raises `UsageError` (exit 1) or `ValidationFailed` (exit 2), and a bug exits 3
   (`audit/tools/README.md`). The engine raises `AuditUsageError` for bad input. No code uses the `logging` module:
   diagnostics go to stderr, never to stdout.

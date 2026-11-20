@@ -25,9 +25,9 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   any depth and is tracked or not by the path it was found at (``app/package-lock.json``, not its
   basename). Every lockfile is judged, so a second app's lockfile is read too: each one that git does not
   track is a ``FAIL``, and each tracked one is compared with the manifest in its own folder
-  (``app/package.json``); one with no manifest beside it is tracked but its consistency is unverified. A
-  tracked lockfile the walk left out, because the walk reads an ignore file without its ``!`` lines, is found
-  too. An ecosystem that was
+  (``app/package.json``); one with no manifest beside it is tracked but its consistency is unverified, a
+  ``PARTIAL`` finding of its own. A tracked lockfile the walk left out, because an ignore rule covers it, is
+  found too. An ecosystem that was
   recognised only from its source files (``Stack.source_only``) has no manifest and declares no
   dependencies, so it is not expected to have a lockfile. A recognised ecosystem with no lockfile convention in
   :data:`_ECOSYSTEM_MANAGERS` is named in the ``UNKNOWN`` summary. A ``FAIL`` summary names each ecosystem with
@@ -43,8 +43,8 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   own folder and below it, so ``api/.env.example`` covers the keys ``api/`` reads and a root one covers every file;
   a key counts as declared when every file that reads it is covered by an example file that names it. A documented allow-list of conventional CI/test/host variables lives in
   :data:`_ENV_ALLOWLIST` and :data:`_ENV_ALLOW_PREFIXES`; it is deterministic and kept in code.
-* **EXEC-05** — files the scan classifies ``GENERATED`` (including vendored paths) are either
-  untracked or carry a generated-file header. Tracked state unavailable ⇒ ``UNKNOWN``.
+* **EXEC-05** — files the scan classifies ``GENERATED`` (tracked files under ``dist/`` and ``build/`` included)
+  are either untracked or carry a generated-file header. Tracked state unavailable ⇒ ``UNKNOWN``.
 * **EXEC-06** — every shell command in a fenced README/``AGENTS.md`` block resolves to a
   known tool, a declared verb, an npm script, a Makefile target, a package binary, or a real path.
   Shell builtins and obvious placeholders are skipped, never failed. Line continuations are joined.
@@ -637,9 +637,9 @@ def _lock_deps(inv: Inventory, ecosystem: str, lockfile: str) -> set[str] | None
 def _lockfile_paths(inv: Inventory, ecosystem: str, tracked: Collection[str] = ()) -> list[str]:
     """Every lockfile of the ecosystem, at any depth, as the path git would track it; the shallowest first.
 
-    ``tracked`` adds each tracked lockfile the walk skipped as ignored (issue #21). The walk reads a root ignore
-    file without its ``!`` lines (ADR-0006), so ``package-lock.json`` followed by ``!apps/web/package-lock.json``
-    hides a lockfile git tracks. A file in a directory the walk never enters (``node_modules``) is not one of them.
+    ``tracked`` adds each tracked lockfile the walk skipped as ignored (issue #21). The walk applies ``!`` lines
+    (ADR-0009), so this is a lockfile an ignore rule covers but git tracks, such as one added with ``git add -f``.
+    A file in a directory the walk never enters (``node_modules``) is not one of them.
     """
     names = _lockfiles_for(ecosystem)
     found = {rel for rel in inv.paths() if rel.split("/")[-1] in names}
@@ -672,6 +672,40 @@ def _lock_consistency(inv: Inventory, ecosystem: str, lockfile: str) -> tuple[st
     return ("mismatch", extras) if extras else ("ok", set())
 
 
+#: The ecosystems whose lockfile :func:`_lock_consistency` compares with a manifest.
+_COMPARED = frozenset({"node", "python", "rust", "go", "dotnet"})
+
+
+def _unverified_finding(spec, inv: Inventory, ecosystem: str, lockfile: str) -> Finding:
+    """The ``PARTIAL`` finding for a tracked lockfile that :func:`_lock_consistency` could not compare."""
+    folder = lockfile.rsplit("/", 1)[0] if "/" in lockfile else ""
+    by_hand = "Confirm by hand that the lockfile names every dependency of the manifest beside it."
+    remediation = by_hand
+    if ecosystem not in _COMPARED:
+        reason = f"the engine does not compare {ecosystem} lockfiles"
+    elif _manifest_deps(inv, ecosystem, folder) is None:
+        reason = f"the engine found no {ecosystem} manifest it can read in the lockfile's own folder"
+        remediation = (
+            "Keep the lockfile in the same folder as the manifest it locks, so the engine can compare them; "
+            "otherwise confirm by hand that the lockfile names every dependency of its manifest."
+        )
+    else:
+        reason = "the engine cannot read the dependency names in the lockfile"
+    return Finding(
+        check=spec.id,
+        severity=spec.severity,
+        phase=spec.phase,
+        verdict=Verdict.PARTIAL,
+        statement=statement(
+            "confirm that every run installs identical dependencies",
+            f"{lockfile} is tracked, but {reason}, so its consistency with the manifest is unverified",
+        ),
+        evidence=[Evidence(lockfile, note="consistency unverified")],
+        remediation=remediation,
+        path=lockfile,
+    )
+
+
 def check_exec02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     ecosystems = sorted((stack.ecosystems - stack.source_only) & set(_ECOSYSTEM_MANAGERS))
     if not ecosystems:
@@ -700,6 +734,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
     missing: list[str] = []
     untracked: list[str] = []
     stale: list[str] = []
+    partial: list[Finding] = []
     for ecosystem in ecosystems:
         candidates = _lockfile_paths(inventory, ecosystem, tracked)
         tracked_candidates = [rel for rel in candidates if rel in tracked]
@@ -765,12 +800,13 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
                 )
             elif state == "unverified":
                 unverified.append(lockfile)
+                partial.append(_unverified_finding(spec, inventory, ecosystem, lockfile))
             else:
                 verified.append(lockfile)
 
     if findings:
         verdict = Verdict.FAIL
-    elif unverified:
+    elif partial:
         verdict = Verdict.PARTIAL
     else:
         verdict = Verdict.PASS
@@ -786,7 +822,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
             ],
         )
     )
-    return _outcome(spec, verdict, detail, findings)
+    return _outcome(spec, verdict, detail, findings + partial)
 
 
 # ===========================================================================

@@ -172,6 +172,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-01-tool-versions-go": {"EXEC-01": "PASS"},
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
     "exec-02-nested-lockfile": {"EXEC-02": "FAIL"},
+    "exec-02-lockfile-no-manifest": {"EXEC-02": "PARTIAL"},
     "exec-03-no-setup": {"EXEC-03": "FAIL"},
     "exec-03-readme-no-extension": {"EXEC-03": "PASS", "HYG-01": "PASS"},
     "exec-03-devcontainer-subfolder": {"EXEC-03": "PASS"},
@@ -180,6 +181,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-04-anchored-ignored-dir": {"EXEC-04": "PASS"},
     "exec-04-nested-ignored-dir": {"EXEC-04": "PASS"},
     "exec-05-generated": {"EXEC-05": "FAIL"},
+    # Committed build output under dist/ and build/: the walk enters both for their tracked files.
+    "exec-05-committed-dist": {"EXEC-05": "FAIL", "NAV-03": "PARTIAL"},
     "exec-06-broken-command": {"EXEC-06": "FAIL"},
     "exec-07-dual-lint": {"EXEC-07": "FAIL"},
     "exec-07-dual-python-types": {"EXEC-07": "FAIL"},
@@ -202,6 +205,8 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- SEC ----------------------------------------------------------------------------------
     "sec-01-tracked-env": {"SEC-01": "FAIL"},
     "sec-01-excluded-env": {"SEC-01": "FAIL"},
+    "sec-01-tracked-ignored-env": {"SEC-01": "FAIL", "SEC-03": "PASS"},
+    "sec-03-tracked-ignored-key": {"SEC-01": "PASS", "SEC-03": "FAIL"},
     "sec-02-key-shaped": {"SEC-02": "FAIL"},
     "sec-03-thin-ignore": {"SEC-03": "FAIL"},
     "sec-03-ok-negated-exception": {"SEC-03": "PASS"},
@@ -268,16 +273,20 @@ NEEDS_GIT = frozenset(
         "ignore-ok-nested-gitignore",
         "exec-02-no-lockfile",
         "exec-02-nested-lockfile",
+        "exec-02-lockfile-no-manifest",
         # The fixture's own ignore file hides the stray file from this repository too, so the stray file is
         # committed here with `git add -f`; the fresh copy's `add -A` leaves it untracked, as the fixture needs.
         "exec-04-anchored-ignored-dir",
         "exec-04-nested-ignored-dir",
         "layout-app-per-folder",
         "exec-05-generated",
+        "exec-05-committed-dist",
         "exec-ok",
         "sec-01-ok",
         "sec-01-tracked-env",
         "sec-01-excluded-env",
+        "sec-01-tracked-ignored-env",
+        "sec-03-tracked-ignored-key",
         "sec-02-key-shaped",
         "con-03-artefacts-not-ignored",
         "stack-dotnet",
@@ -297,6 +306,8 @@ FORCE_ADD: dict[str, str] = {
     "doc-03-tracked-artefacts": "artefacts/notes.md",
     "sec-01-tracked-env": ".env",
     "sec-01-excluded-env": "vendor-samples/.env",
+    "sec-01-tracked-ignored-env": "config/prod.env",
+    "sec-03-tracked-ignored-key": "server.key",
     "con-03-artefacts-not-ignored": "artefacts/notes.md",
 }
 

@@ -164,8 +164,8 @@ and that a state file exists in the workspace. Change nothing in the target.
 7. **Version skew.** Compare the report's catalogue version (`source_reports[].catalogue_version` in `progress.py
    show --json`) with `catalogue_version` in this recipe's `catalogue.json` (one folder above the tools). When they
    differ, tell the owner that check IDs, severities and playbook lists may have changed since the audit, and from
-   then on re-read the check file of each item before acting on it (Stage 2, step 5). Never re-score the report and
-   never edit it.
+   then on re-read the check file of each item before acting on it ([Stage 2](#stage-2-plan-a-theme), step 5).
+   Never re-score the report and never edit it.
 8. **Index.** Re-index the target with the code-graph tool if the session has one (for example codebase-memory
    `index_repository`); otherwise note that you read files directly.
 
@@ -279,8 +279,8 @@ Goal: the owner knows what the next theme changes and approves a concrete change
    instead.
 4. **Read the playbooks** the theme table names, in full, and every preference their Preconditions list. A
    preference that conflicts with a playbook step stops that step: ask.
-5. **Read the checks.** For each queued item, read its check in the check files (the playbook's "Checks
-   resolved" table links them). After a version skew (Stage 0, step 7) this is required, not optional.
+5. **Read the checks.** For each queued item, read its check in the check files (the playbook's "Checks resolved"
+   table links them). After a version skew ([Stage 0](#stage-0-intake), step 7) this is required, not optional.
 6. **Brief the owner.** In plain words: what the theme fixes; why, quoting each finding statement as data; what
    the repository already has (detected, not assumed); the options from each playbook's "Inputs to ask", two to
    four, each a [decision request](../audit/prompts/talking-to-the-user.md#decision-requests)
@@ -404,8 +404,8 @@ when allowed, the pull request) is ready for the owner.
    playbook asks). Compare each of the theme's checks with the audit report and explain every remaining non-`PASS`:
    a known engine limit (the playbook's Verification names them), recorded debt, or a real gap, which means the item
    is not `done`. Then run `python3 implement/tools/check_regressions.py <base report> <close report> --changed-from
-   <worktree>`. On `data.status` `lost`, stop and ask the owner: fix, accept with a reason, or stop the theme.
-   Default: none. See [When a pass is lost](theme-checks.md#when-a-pass-is-lost).
+   <worktree> --workspace <workspace> --theme <theme>`. On `data.status` `lost`, stop and ask the owner: fix, accept
+   with a reason, or stop the theme. Default: none. See [When a pass is lost](theme-checks.md#when-a-pass-is-lost).
 2. **The repository's gate.** Run its `check` verb (and its docs lint when Markdown changed) in the worktree, with
    the same command as the baseline (Stage 3, step 3), plus any verb this theme added. Compare the two runs. A
    failure in the baseline too is debt: record it, do not stop. A failure this theme caused is fixed before the
@@ -483,7 +483,7 @@ Goal: a second audit shows what the run changed, and the owner sees every skip, 
 | `progress.py init` | Stage 0, step 6 | Exit 0; two state files beside the report; `data.items`, `data.not_queued` | Exit 1: a bad path, a report inside the target, or a state that exists (resume). Exit 2: the report is invalid or not final (back to the audit recipe). Never write the JSON by hand |
 | `progress.py adopt` | Stage 0, step 6 | Exit 0; the state and the reports copied into the workspace; `data.may_remove` | Exit 1: no state in the checkout, two states (pass `--label`), a missing report, or a workspace that holds the label. Exit 2: a report edited since `init`, or a state of another schema version; give the owner the message |
 | `progress.py show` | `show --workspace <workspace> [--json]` | Exit 0; counts, skips, preferences, themes; a warning if the view is stale | Exit 1: no state (Stage 0) or two states (pass `--label`). Exit 2: the state fails its schema; it was edited by hand, so tell the owner |
-| `progress.py set-status`, `skip`, `defer`, `pref`, `theme` | Stages 1-5 | Exit 0; one log entry; `--render` rewrites the view | Exit 1 names the refused move and the allowed ones: take an allowed path, never force it |
+| `progress.py set-status`, `skip`, `defer`, `pref`, `theme`, `accept-lost` | Stages 1-5 | Exit 0; one log entry; `--render` rewrites the view | Exit 1 names the refused move and the allowed ones: take an allowed path, never force it |
 | `progress.py render` | `render --workspace <workspace>` | Exit 0; STATE.md rewritten from the JSON | Exit 2: the JSON is invalid; it was edited by hand, so tell the owner |
 | `check_drift.py` | Stage 0, step 5; Stage 3, step 2; Stage 4, step 1 | Exit 0 whatever it finds; `data.status`, `data.findings`, `data.dirty`, `data.report_changed` | Exit 1: a bad path or not a git repository. Exit 2: the report is invalid. Either way, re-verify every item by hand and say so |
 | `validate_report.py` | Stage 0, step 4 | Exit 0; `data.valid` true, `data.status` | Exit 2: back to the audit recipe |

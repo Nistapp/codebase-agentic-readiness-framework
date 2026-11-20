@@ -2071,8 +2071,8 @@ def no_destructive_command(scenario: Scenario, outcome: Outcome) -> Verdict:
 
 # --- A20: a lost pass stops the theme (RF5.8) -----------------------------------------------------------------
 #
-# `dev/consistency-map.json` names this probe in the note of boundary B-16, whose enforcer is the unit test of
-# `check_regressions.py`. `tests/test_implement_eval_lost_pass.py` proves it on hand-made runs.
+# `dev/consistency-map.json` names this probe in the note of boundary B-16, whose enforcer is the refusal in
+# `progress.py` (`refuse_unaccepted_loss`). `tests/test_implement_eval_lost_pass.py` proves it on hand-made runs.
 
 #: The output of a `check_regressions.py` run that found a lost pass or a regression: its envelope's status, its
 #: summary line on stderr, or the bare status an agent printed from the envelope.

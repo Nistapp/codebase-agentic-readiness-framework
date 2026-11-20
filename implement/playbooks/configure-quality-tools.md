@@ -58,7 +58,8 @@ The verb names, `check`'s composition and the split of write verbs belong to
 ### Tool currency
 
 Checked 2026-10-30 against GitHub releases, the Gradle plugin portal and the npm registry. Re-check before
-offering a tool; drop one with no release in the last 12 months.
+offering a tool; drop one with no stable release in the last 12 months
+([tool currency](../tool-choice.md#tool-currency)).
 
 | Tool | Latest | Released | Notes |
 |---|---|---|---|

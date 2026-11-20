@@ -26,7 +26,7 @@ seconds, so the close run costs little more than Stage 4 already paid.
 2. **A lost pass or a regression stops the theme.** The tool sets `data.status` to `lost` and exits 0. The agent
    stops and sends the owner a decision request with three answers:
    - (a) fix it in the theme, then take the close report and compare again;
-   - (b) accept it with the owner's reason, recorded on the item with `progress.py set-status ... --note`;
+   - (b) accept it with the owner's reason, recorded with `progress.py accept-lost <theme> --reason ... --by owner`;
    - (c) stop the theme here.
 
    There is no default; the agent waits.
@@ -40,6 +40,17 @@ seconds, so the close run costs little more than Stage 4 already paid.
    the base report. The agent says the lost-pass check did not run, and names the reasons.
 6. **Every engine check counts, not only the theme's.** The read declarations explain a change; they never choose
    which checks are compared.
+7. **The state refuses to close a theme that lost a pass.** `--workspace <dir> --theme <theme>` writes the
+   verdict to `<label>-regressions-<theme>.json` beside the state. That is the workspace of
+   [ADR 0004](0004-implement-state-lives-in-the-audit-workspace.md), never the target. Each run replaces the
+   theme's earlier verdict; a refused pair writes none. While the verdict reads `lost`, `progress.py` refuses
+   (exit 1) `set-status <item> done` for an item of the theme and `theme <theme> --status merged`. The owner's
+   acceptance lifts the refusal. `progress.py accept-lost <theme> --reason ... --by owner` records it as one log
+   entry, the way `unskip --by owner` records an owner move. The entry names the first 12 digits of the verdict's
+   SHA-256, so a new `lost` verdict needs a new acceptance.
+8. **A theme with no verdict file is not refused.** A run that took no base report, a refused pair and a state made
+   by older tools leave no verdict. The agent says the lost-pass check did not run, as in item 5. A verdict file
+   that is not one the tool wrote is refused (exit 2).
 
 ## Alternatives Considered
 
@@ -50,6 +61,9 @@ seconds, so the close run costs little more than Stage 4 already paid.
 | Compare only the checks whose declared reads a changed path meets | Some checks read every path, others read through an upstream step, and a missing declaration would hide a real break. |
 | Stop only on a lost `PASS`, not on `PARTIAL` to `FAIL` | A worse non-pass is a break too. |
 | Stop on an evidence change that a check outside the theme reads | A new docs page moves the evidence of "`DOC-05` Docs are readable" with no harm, so the theme would stop for nothing. |
+| The stop lives only in the recipe: the tool exits 0 and the agent stops | Nothing would stop an agent that reads `lost` and goes on. |
+| Record the acceptance as a field of the state | It needs a new state schema version and an `adopt` path for every older state; the log entry needs neither. |
+| Refuse `done` when a theme has no verdict file | Every state made before the verdict file, and every theme with no base report, could never close. |
 
 ## Consequences
 
@@ -65,4 +79,7 @@ seconds, so the close run costs little more than Stage 4 already paid.
 - One more engine run per theme, and one more decision request when a pass is lost.
 - A theme with no base report, or a refused pair, gets no lost-pass check. The agent says so.
 - The two agent checks in the catalogue have no engine verdict, so this check does not cover them.
-- Nothing stops an agent that reads `lost` and goes on; the rule lives in the recipe.
+- The refusal covers only the status writes. It does not stop an agent that goes on editing without `done` or
+  `merged`. An agent that never passes `--workspace` writes no verdict, so nothing is refused.
+- The acceptance lives in the log, so a hand edit of the state could forge one. The tool cannot see who is typing,
+  as for every `--by owner` move.
