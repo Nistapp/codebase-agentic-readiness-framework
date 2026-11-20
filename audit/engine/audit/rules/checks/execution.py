@@ -23,18 +23,23 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   best-effort stdlib parse; when a manifest or lockfile cannot be parsed reliably the tracked fact
   is reported and consistency is left ``PARTIAL``, never ``PASS`` by inference. A lockfile is found at
   any depth and is tracked or not by the path it was found at (``app/package-lock.json``, not its
-  basename); the shallowest is the one read. Only a lockfile at the root is compared with the root
-  manifest, so one in a subdirectory is tracked but its consistency is unverified. An ecosystem that was
+  basename). Every lockfile is judged, so a second app's lockfile is read too: each one that git does not
+  track is a ``FAIL``, and each tracked one is compared with the manifest in its own folder
+  (``app/package.json``); one with no manifest beside it is tracked but its consistency is unverified. An
+  ecosystem that was
   recognised only from its source files (``Stack.source_only``) has no manifest and declares no
   dependencies, so it is not expected to have a lockfile. A recognised ecosystem with no lockfile convention in
   :data:`_ECOSYSTEM_MANAGERS` is named in the ``UNKNOWN`` summary. A ``FAIL`` summary names each ecosystem with
   no lockfile, each untracked lockfile and each lockfile out of step with its manifest.
 * **EXEC-03** — a devcontainer / compose file / Dockerfile / setup target-script, or a documented
-  non-interactive install command in the fenced blocks of README/``AGENTS.md``. Present but
+  non-interactive install command in the fenced blocks of README/``AGENTS.md``. The setup files count at any
+  depth, and so does a Dockerfile with a variant in its name (``src/main/docker/Dockerfile.jvm``). Present but
   undocumented ⇒ ``PARTIAL``. No recognised ecosystem ⇒ ``UNKNOWN``: with no build manifest there is
   no way to say what provisioning is expected.
 * **EXEC-04** — a set difference: env keys referenced by source against keys declared in the
-  committed example file. A documented allow-list of conventional CI/test/host variables lives in
+  committed example files (``.env.example`` and its kin, at any depth). An example file documents the files in its
+  own folder and below it, so ``api/.env.example`` covers the keys ``api/`` reads and a root one covers every file;
+  a key counts as declared when every file that reads it is covered by an example file that names it. A documented allow-list of conventional CI/test/host variables lives in
   :data:`_ENV_ALLOWLIST` and :data:`_ENV_ALLOW_PREFIXES`; it is deterministic and kept in code.
 * **EXEC-05** — files the scan classifies ``GENERATED`` (including vendored paths) are either
   untracked or carry a generated-file header. Tracked state unavailable ⇒ ``UNKNOWN``.
@@ -356,13 +361,18 @@ def _lockfiles_for(ecosystem: str) -> list[str]:
     return [f for manager in _ECOSYSTEM_MANAGERS.get(ecosystem, ()) for f in PACKAGE_MANAGERS.get(manager, ())]
 
 
+def _in_folder(folder: str, name: str) -> str:
+    """``name`` in ``folder``, where the root folder is ``""``."""
+    return f"{folder}/{name}" if folder else name
+
+
 def _dependency_name(spec_text: str) -> str | None:
     match = re.match(r"^[A-Za-z0-9_.@/-]+", spec_text.strip())
     return match.group(0) if match else None
 
 
-def _node_manifest_deps(inv: Inventory) -> set[str] | None:
-    text = inv.read("package.json")
+def _node_manifest_deps(inv: Inventory, folder: str = "") -> set[str] | None:
+    text = inv.read(_in_folder(folder, "package.json"))
     if text is None:
         return None
     try:
@@ -392,7 +402,8 @@ def _node_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
     text = inv.read(lockfile)
     if text is None:
         return None
-    if lockfile in ("package-lock.json", "npm-shrinkwrap.json"):
+    name = lockfile.rsplit("/", 1)[-1]
+    if name in ("package-lock.json", "npm-shrinkwrap.json"):
         try:
             data = json.loads(text)
         except json.JSONDecodeError:
@@ -407,20 +418,20 @@ def _node_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
         if isinstance(legacy, dict):
             deps |= set(legacy)
         return deps
-    if lockfile == "pnpm-lock.yaml":
+    if name == "pnpm-lock.yaml":
         deps = set(re.findall(r"(?m)^\s{2,}'?((?:@[^/'\s]+/)?[A-Za-z0-9._-]+)@[^'\s:]+'?\s*:", text))
         deps |= set(re.findall(r"(?m)^\s{4,}'?((?:@[^/'\s]+/)?[A-Za-z0-9._-]+)'?:\s*$", text))
         return deps or None
-    if lockfile == "yarn.lock":
+    if name == "yarn.lock":
         deps = set(re.findall(r"(?m)^\"?((?:@[^/\"]+/)?[A-Za-z0-9._-]+)@", text))
         return deps or None
     return None
 
 
-def _python_manifest_deps(inv: Inventory) -> set[str] | None:
+def _python_manifest_deps(inv: Inventory, folder: str = "") -> set[str] | None:
     deps: set[str] = set()
     parsed = False
-    text = inv.read("pyproject.toml")
+    text = inv.read(_in_folder(folder, "pyproject.toml"))
     if text is not None:
         parsed = True
         for block in re.finditer(r"(?ms)^dependencies\s*=\s*\[(.*?)\]", text):
@@ -434,7 +445,7 @@ def _python_manifest_deps(inv: Inventory) -> set[str] | None:
                 if match and match.group(1).lower() != "python":
                     deps.add(match.group(1))
     for req in ("requirements.txt", "requirements-dev.txt"):
-        req_text = inv.read(req)
+        req_text = inv.read(_in_folder(folder, req))
         if req_text is None:
             continue
         parsed = True
@@ -452,9 +463,10 @@ def _python_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
     text = inv.read(lockfile)
     if text is None:
         return None
-    if lockfile in ("poetry.lock", "uv.lock"):
+    name = lockfile.rsplit("/", 1)[-1]
+    if name in ("poetry.lock", "uv.lock"):
         return _toml_package_names(text) or None
-    if lockfile == "Pipfile.lock":
+    if name == "Pipfile.lock":
         try:
             data = json.loads(text)
         except json.JSONDecodeError:
@@ -468,8 +480,8 @@ def _python_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
     return None
 
 
-def _cargo_manifest_deps(inv: Inventory) -> set[str] | None:
-    text = inv.read("Cargo.toml")
+def _cargo_manifest_deps(inv: Inventory, folder: str = "") -> set[str] | None:
+    text = inv.read(_in_folder(folder, "Cargo.toml"))
     if text is None:
         return None
     deps: set[str] = set()
@@ -487,8 +499,8 @@ def _cargo_manifest_deps(inv: Inventory) -> set[str] | None:
     return deps
 
 
-def _go_manifest_deps(inv: Inventory) -> set[str] | None:
-    text = inv.read("go.mod")
+def _go_manifest_deps(inv: Inventory, folder: str = "") -> set[str] | None:
+    text = inv.read(_in_folder(folder, "go.mod"))
     if text is None:
         return None
     deps: set[str] = set()
@@ -521,25 +533,33 @@ def _go_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
     return deps or None
 
 
-#: MSBuild files at the root that a root project imports implicitly; package references there are not read.
+#: MSBuild files that a project imports implicitly from its own folder and every folder above it; package references
+#: there are not read.
 _DOTNET_IMPORTED = ("Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props")
 _DOTNET_PROJECT_SUFFIXES = (".csproj", ".fsproj", ".vbproj")
 _PACKAGE_REFERENCE = re.compile(r"<PackageReference\b[^>]*?\bInclude\s*=\s*[\"']([^\"']+)[\"']")
 
 
-def _dotnet_manifest_deps(inv: Inventory) -> set[str] | None:
-    """The ``PackageReference`` names of the project files in the root folder.
+def _dotnet_manifest_deps(inv: Inventory, folder: str = "") -> set[str] | None:
+    """The ``PackageReference`` names of the project files in ``folder`` itself.
 
-    ``None`` (cannot compare) when there is no root project file, when a project imports another MSBuild file, or
-    when a root ``Directory.*`` file adds package references: those references are not read here.
+    ``None`` (cannot compare) when the folder holds no project file, when a project imports another MSBuild file, or
+    when a ``Directory.*`` file in the folder or above it adds package references: those references are not read here.
     """
-    projects = sorted(rel for rel in inv.paths() if "/" not in rel and rel.endswith(_DOTNET_PROJECT_SUFFIXES))
+    prefix = f"{folder}/" if folder else ""
+    projects = sorted(
+        rel
+        for rel in inv.paths()
+        if rel.startswith(prefix) and "/" not in rel[len(prefix) :] and rel.endswith(_DOTNET_PROJECT_SUFFIXES)
+    )
     if not projects:
         return None
-    for imported in _DOTNET_IMPORTED:
-        text = inv.read(imported)
-        if text is not None and re.search(r"<(?:Global)?PackageReference\b", text):
-            return None
+    parts = folder.split("/") if folder else []
+    for depth in range(len(parts), -1, -1):
+        for imported in _DOTNET_IMPORTED:
+            text = inv.read(_in_folder("/".join(parts[:depth]), imported))
+            if text is not None and re.search(r"<(?:Global)?PackageReference\b", text):
+                return None
     deps: set[str] = set()
     for project in projects:
         text = inv.read(project)
@@ -568,17 +588,17 @@ def _dotnet_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
     return deps
 
 
-def _manifest_deps(inv: Inventory, ecosystem: str) -> set[str] | None:
+def _manifest_deps(inv: Inventory, ecosystem: str, folder: str = "") -> set[str] | None:
     if ecosystem == "node":
-        return _node_manifest_deps(inv)
+        return _node_manifest_deps(inv, folder)
     if ecosystem == "python":
-        return _python_manifest_deps(inv)
+        return _python_manifest_deps(inv, folder)
     if ecosystem == "rust":
-        return _cargo_manifest_deps(inv)
+        return _cargo_manifest_deps(inv, folder)
     if ecosystem == "go":
-        return _go_manifest_deps(inv)
+        return _go_manifest_deps(inv, folder)
     if ecosystem == "dotnet":
-        return _dotnet_manifest_deps(inv)
+        return _dotnet_manifest_deps(inv, folder)
     return None
 
 
@@ -607,12 +627,11 @@ def _lockfile_paths(inv: Inventory, ecosystem: str) -> list[str]:
 def _lock_consistency(inv: Inventory, ecosystem: str, lockfile: str) -> tuple[str, set[str]]:
     """Return ``(state, extras)`` where state is ok | mismatch | unverified.
 
-    The manifest read is the root one, so only a lockfile at the root is compared with it; one in a
-    subdirectory is ``unverified``.
+    A lockfile is compared with the manifest in its own folder (``app/package-lock.json`` with
+    ``app/package.json``), never with one above it; no manifest there is ``unverified``.
     """
-    if "/" in lockfile:
-        return "unverified", set()
-    manifest = _manifest_deps(inv, ecosystem)
+    folder = lockfile.rsplit("/", 1)[0] if "/" in lockfile else ""
+    manifest = _manifest_deps(inv, ecosystem, folder)
     lock = _lock_deps(inv, ecosystem, lockfile)
     if manifest is None or lock is None:
         return "unverified", set()
@@ -680,8 +699,9 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
                 )
             )
             continue
-        if not tracked_candidates:
-            untracked.extend(sorted(candidates))
+        untracked_here = [rel for rel in candidates if rel not in tracked]
+        if untracked_here:
+            untracked.extend(untracked_here)
             findings.append(
                 Finding(
                     check=spec.id,
@@ -690,39 +710,38 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
                     verdict=Verdict.FAIL,
                     statement=statement(
                         "install identical dependencies on every run",
-                        f"{', '.join(sorted(candidates))} exists but is not tracked, so a fresh "
+                        f"{', '.join(sorted(untracked_here))} exists but is not tracked, so a fresh "
                         f"checkout does not get it",
                     ),
-                    evidence=[Evidence(p) for p in sorted(candidates)],
+                    evidence=[Evidence(p) for p in sorted(untracked_here)],
                     remediation="Commit the lockfile; add it to .gitignore only if the team has "
                     "deliberately chosen floating dependencies.",
-                    path=sorted(candidates)[0],
+                    path=sorted(untracked_here)[0],
                 )
             )
-            continue
-        lockfile = tracked_candidates[0]
-        state, extras = _lock_consistency(inventory, ecosystem, lockfile)
-        if state == "mismatch":
-            stale.append(lockfile)
-            findings.append(
-                Finding(
-                    check=spec.id,
-                    severity=spec.severity,
-                    phase=spec.phase,
-                    verdict=Verdict.FAIL,
-                    statement=statement(
-                        "install identical dependencies on every run",
-                        f"{lockfile} is tracked but omits manifest dependencies: {', '.join(sorted(extras)[:12])}",
-                    ),
-                    evidence=[Evidence(lockfile, note="lockfile out of step with the manifest")],
-                    remediation="Re-run the package manager's install/lock step and commit the updated lockfile.",
-                    path=lockfile,
+        for lockfile in tracked_candidates:
+            state, extras = _lock_consistency(inventory, ecosystem, lockfile)
+            if state == "mismatch":
+                stale.append(lockfile)
+                findings.append(
+                    Finding(
+                        check=spec.id,
+                        severity=spec.severity,
+                        phase=spec.phase,
+                        verdict=Verdict.FAIL,
+                        statement=statement(
+                            "install identical dependencies on every run",
+                            f"{lockfile} is tracked but omits manifest dependencies: {', '.join(sorted(extras)[:12])}",
+                        ),
+                        evidence=[Evidence(lockfile, note="lockfile out of step with the manifest")],
+                        remediation="Re-run the package manager's install/lock step and commit the updated lockfile.",
+                        path=lockfile,
+                    )
                 )
-            )
-        elif state == "unverified":
-            unverified.append(lockfile)
-        else:
-            verified.append(lockfile)
+            elif state == "unverified":
+                unverified.append(lockfile)
+            else:
+                verified.append(lockfile)
 
     if findings:
         verdict = Verdict.FAIL
@@ -761,6 +780,9 @@ _SETUP_FILES = (
     "bootstrap.sh",
     "dev-setup.sh",
 )
+#: Dockerfiles with a variant in the name (``Dockerfile.jvm``, ``dev.Dockerfile``), found at any depth by base name:
+#: frameworks keep them below the root (Quarkus writes ``src/main/docker/Dockerfile.jvm``).
+_DOCKERFILE_PATTERNS = ("Dockerfile.*", "*.Dockerfile", "*.dockerfile")
 _DOC_FILES = ("README.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md")
 _SETUP_TARGETS = ("setup", "bootstrap", "install", "dev", "dev-setup")
 
@@ -768,6 +790,7 @@ _SETUP_TARGETS = ("setup", "bootstrap", "install", "dev", "dev-setup")
 def _setup_signals(inv: Inventory) -> list[str]:
     signals = [name for name in _SETUP_FILES if inv.has(name)]
     signals += inv.match(".devcontainer/*.json")
+    signals += inv.match(*_DOCKERFILE_PATTERNS)
 
     make_targets = parse_makefile_targets(inv)
     signals += [f"Makefile:{t}" for t in _SETUP_TARGETS if t in make_targets]
@@ -980,8 +1003,9 @@ def _is_shell_env_file(rel: str) -> bool:
     return rel.endswith(_SHELL_ENV_SUFFIXES) or rel.rsplit("/", 1)[-1] in _SHELL_ENV_BASENAMES
 
 
-def _referenced_env_keys(inv: Inventory) -> set[str]:
-    keys: set[str] = set()
+def _referenced_env_keys(inv: Inventory) -> dict[str, set[str]]:
+    """Each referenced key, with the files that read it."""
+    keys: dict[str, set[str]] = {}
     for path in inv.paths():
         if not _is_shell_env_file(path):
             continue
@@ -989,26 +1013,45 @@ def _referenced_env_keys(inv: Inventory) -> set[str]:
         if text:
             referenced_here = {m.group(1) for m in _SHELL_ENV_PATTERN.finditer(text)}
             assigned_here = {m.group(1) for m in _SHELL_ASSIGN_PATTERN.finditer(text)}
-            keys |= referenced_here - assigned_here
+            for key in referenced_here - assigned_here:
+                keys.setdefault(key, set()).add(path)
     for pattern in _CODE_ENV_PATTERNS:
-        for _rel, _line, text in inv.grep(pattern, kinds=(Kind.SOURCE, Kind.SCRIPT), limit=2000):
-            keys |= {m.group(1) for m in pattern.finditer(text) if m.group(1)}
+        for rel, _line, text in inv.grep(pattern, kinds=(Kind.SOURCE, Kind.SCRIPT), limit=2000):
+            for match in pattern.finditer(text):
+                if match.group(1):
+                    keys.setdefault(match.group(1), set()).add(rel)
     return keys
 
 
-def _declared_env_keys(inv: Inventory) -> tuple[set[str], list[str]]:
-    keys: set[str] = set()
-    files: list[str] = []
-    for name in _ENV_EXAMPLE_FILES:
-        text = inv.read(name)
+def _declared_env_keys(inv: Inventory) -> dict[str, set[str]]:
+    """Each committed example file, at any depth, shallowest first, with the keys it declares."""
+    templates = sorted(
+        (rel for rel in inv.paths() if rel.rsplit("/", 1)[-1] in _ENV_EXAMPLE_FILES),
+        key=lambda rel: (rel.count("/"), rel),
+    )
+    declared: dict[str, set[str]] = {}
+    for rel in templates:
+        text = inv.read(rel)
         if text is None:
             continue
-        files.append(name)
+        keys = declared.setdefault(rel, set())
         for line in text.splitlines():
             match = re.match(r"^\s*(?:export\s+)?#?\s*([A-Za-z_][A-Za-z0-9_]*)\s*=", line)
             if match:
                 keys.add(match.group(1))
-    return keys, files
+    return declared
+
+
+def _reaches(template: str, rel: str) -> bool:
+    """Whether an example file documents ``rel``: it sits in ``rel``'s folder or a folder above it."""
+    folder = template.rsplit("/", 1)[0] + "/" if "/" in template else ""
+    return rel.startswith(folder)
+
+
+def _declared_for(key: str, readers: set[str], declared: dict[str, set[str]]) -> bool:
+    """Whether every file that reads ``key`` is reached by an example file that declares it."""
+    holders = [template for template, keys in declared.items() if key in keys]
+    return all(any(_reaches(template, rel) for template in holders) for rel in readers)
 
 
 def _env_allowed(key: str) -> bool:
@@ -1017,8 +1060,13 @@ def _env_allowed(key: str) -> bool:
 
 def check_exec04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     referenced = _referenced_env_keys(inventory)
-    declared, files = _declared_env_keys(inventory)
-    missing = sorted(k for k in referenced - declared if not _env_allowed(k))
+    declared = _declared_env_keys(inventory)
+    files = list(declared)
+    missing = sorted(
+        key
+        for key, readers in referenced.items()
+        if not _env_allowed(key) and not _declared_for(key, readers, declared)
+    )
     keys = EnvKeys(referenced=tuple(sorted(referenced)), missing=tuple(missing), templates=tuple(files))
 
     if not missing:
@@ -1027,8 +1075,12 @@ def check_exec04(*, spec, target, inventory, stack, components, session) -> Chec
 
     because = (
         f"{len(missing)} referenced key(s) are absent from "
-        f"{', '.join(files) if files else 'any committed example file'}: "
-        f"{', '.join(missing[:12])}"
+        + (
+            f"every example file that covers the files reading them ({', '.join(files)})"
+            if files
+            else "any committed example file"
+        )
+        + f": {', '.join(missing[:12])}"
     )
     return _outcome(
         spec,

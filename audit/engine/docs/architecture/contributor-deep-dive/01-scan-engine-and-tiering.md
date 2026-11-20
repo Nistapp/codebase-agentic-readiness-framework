@@ -113,6 +113,7 @@ The other signals:
 | Signal | Detected from |
 |---|---|
 | Components | `workspaces`, `pnpm-workspace.yaml`, maven `<modules>`, gradle `include(...)` in `settings.gradle(.kts)`, `go.work use`, Cargo `[workspace] members` |
+| Candidate components (reported, never scored) | an immediate child of `apps/`, `services/`, `packages/`, `components/`, `modules/`, `libs/` or `workers/` with a build manifest; and, when the root folder holds no build manifest, any top-level folder with one (ADR-0003) |
 | A component's own manifest | `package.json`, `pyproject.toml`, `pom.xml`, `build.gradle(.kts)`, `Cargo.toml`, `go.mod`, `Gemfile`, `composer.json`, or a `*.sln`, `*.slnx`, `*.csproj`, `*.fsproj` or `*.vbproj` in the component's own folder |
 | CI provider | `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/`, `.buildkite/` |
 | Test framework | config files and manifest dependencies (`vitest`, `jest`, `pytest`, `junit`, `go test`) |

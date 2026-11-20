@@ -161,7 +161,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-01-php-version-file": {"EXEC-01": "PASS"},
     "exec-01-php-unpinned": {"EXEC-01": "FAIL"},
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
-    "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},
+    "exec-02-nested-lockfile": {"EXEC-02": "FAIL"},
     "exec-03-no-setup": {"EXEC-03": "FAIL"},
     "exec-04-missing-env": {"EXEC-04": "FAIL"},
     "exec-05-generated": {"EXEC-05": "FAIL"},
@@ -206,6 +206,15 @@ MATRIX: dict[str, dict[str, str]] = {
     "hyg-minimal": {f"HYG-{n:02d}": "FAIL" for n in range(1, 11)} | {"HYG-11": "UNKNOWN", "HYG-13": "UNKNOWN"},
     # -- carried data (ADR-0008; tests/test_repository_scope.py) -------------------------------
     "carried-jvm-example-package": {"NAV-02": "PASS", "TST-01": "PASS", "TST-03": "PASS"},
+    # -- an app per folder, no root manifest (issues #20, #56) --------------------------------
+    "layout-app-per-folder": {
+        "AGT-02": "PASS",
+        "BASE-04": "PASS",
+        "EXEC-02": "PASS",
+        "EXEC-03": "PASS",
+        "EXEC-04": "PASS",
+        "NAV-01": "PARTIAL",
+    },
     # -- stacks no other fixture holds (tests/test_stack_fixtures.py) -------------------------
     "stack-dotnet": {"EXEC-01": "PASS", "EXEC-02": "FAIL", "NAV-01": "PASS", "NAV-02": "PASS", "TOOL-03": "PASS"},
     "stack-dotnet-locked": {
@@ -244,6 +253,7 @@ NEEDS_GIT = frozenset(
         "ignore-ok-nested-gitignore",
         "exec-02-no-lockfile",
         "exec-02-nested-lockfile",
+        "layout-app-per-folder",
         "exec-05-generated",
         "exec-ok",
         "sec-01-ok",

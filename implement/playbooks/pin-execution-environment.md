@@ -74,10 +74,10 @@ manifest that dependency automation reads.
    `compileClasspath` gives a smaller file but leaves test and plugin classpaths free to drift, so EXEC-02 reads
    only partly met. A version catalog alone is not a lock. Record the choice as a preference.
 6. **Monorepo or several components with no root manifest.** Per-component lockfiles are accepted when the owner chose a
-   per-component layout (`layout.command_runner`). The playbook then verifies each component and records the item
-   `partial` (see Continue on error). It adds no root workspace manifest unless the owner asks, because that changes
-   install paths and image builds. The engine reads only the root manifest, so a nested lockfile reads `PARTIAL` by
-   design ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
+   per-component layout (`layout.command_runner`). The playbook then verifies each component. It adds no root
+   workspace manifest unless the owner asks, because that changes install paths and image builds. The engine
+   compares each lockfile with the manifest in its own folder, so a tracked component lockfile in step with its
+   manifest reads `PASS` ([EXEC-02](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
 7. **Where tool versions go (EXEC-08).** List each literal the audit cited (tool, version, file, line) and confirm
    the versions stay as they are: this step moves a version, it never upgrades one. The place follows the stack
    profile; offer the owner the matching option:
@@ -223,9 +223,6 @@ Steps 1, 5, 8 and 9 make no commit.
 - A mismatch in a file the owner has not authorised editing (CI, a Dockerfile in another team's folder) is
   debt: count the mismatched places, record them with `--debt`, mark the item `partial`, and list each place
   in the note. There is nothing to ratchet; the CI theme closes it.
-- Per-component lockfiles with no root manifest, by the owner's layout choice: `partial` with
-  `--debt "what=component lockfiles the engine does not read,count=N"`. The note says "lockfiles per component by
-  owner choice; engine reads the root only". Not a defect.
 - A component whose build fails on the pinned major: record `blocked` with the error and the owner's options
   (a different major, an upgrade of the failing dependency). Never pin a version the build cannot use.
 
@@ -240,7 +237,7 @@ Steps 1, 5, 8 and 9 make no commit.
 
 Also run the repository's own gate (`./gradlew build`, `npm run build` per component) once on the pinned
 toolchain, and read the CI run on the branch: it must be green. The engine's re-audit can still read EXEC-02 as
-`UNKNOWN` (Gradle) or `PARTIAL` (nested lockfile): record that as an engine limit with the evidence above.
+`UNKNOWN` (Gradle): record that as an engine limit with the evidence above.
 
 ## Rollback
 

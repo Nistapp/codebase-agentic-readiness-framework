@@ -84,8 +84,8 @@ per-file `// @ts-strict-ignore`-style comments as each file is proven strict, ra
 flag repository-wide at once.
 
 Coverage: Jest's `coverageThreshold` (Vitest's `coverage.thresholds`) is the floor; Create React App passes it
-through the `jest` key in `package.json`. `BASE-04` reads the root `package.json` and `jest.config.*`/
-`vitest.config.*` at any depth, not a `jest` key in a nested component's `package.json`. ESLint 9.24 and newer
+through the `jest` key in `package.json`. `BASE-04` reads every `package.json` (a `jest` key in an app's own
+manifest included) and `jest.config.*`/`vitest.config.*` at any depth. ESLint 9.24 and newer
 have a native baseline, `eslint-suppressions.json`. The implement playbook
 `add-baselines-and-ratchet` covers both.
 
@@ -144,8 +144,9 @@ not a gap. Boundaries: Nest's own module system is the idiom — a provider a `@
 `exports` is invisible outside it — enforced by Nest's DI container at run time, not by a lint rule;
 `eslint-plugin-boundaries` is additional, not idiomatic, and was not seen in this corpus. Env files
 often live under a non-root `environments/` directory (`local.env`, `local.env.example`) rather than a
-root `.env.example` — `EXEC-04` only reads root-named files, so a root-only miss here is the engine's
-real, root-only scope, not a defect to argue around; tell the user where the real example file is.
+root `.env.example`. `EXEC-04` reads the four example names (`.env.example`, `.env.sample`, `.env.template`,
+`env.example`) at any depth, each covering its own folder and below, but not `local.env.example`; tell the user
+where the real example file is.
 
 ## Verified
 

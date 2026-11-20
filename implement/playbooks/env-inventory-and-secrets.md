@@ -42,12 +42,13 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    | Option | Pros | Cons |
    |---|---|---|
    | One `.env.example` at the root | The engine reads it with no configuration; one place | Not a dotenv the code loads when the variables are CI or repository variables: it is a documentation file |
-   | `scripts/ci/env.example` beside the scripts and their README | Sits next to the code that reads the variables | The engine reads example files at the root only, so it needs a root file too; a reader at the root does not find it |
-   | One example file per app and per service (follows a per-app `layout.command_runner`) | Matches the layout; each app's variables stay with the app | Several files to keep aligned; step 5 adds a cross-check; needs a root file too, as above |
+   | `scripts/ci/env.example` beside the scripts and their README | Sits next to the code that reads the variables | Covers only the scripts in its folder and below; a reader at the root does not find it |
+   | One example file per app and per service (follows a per-app `layout.command_runner`) | Matches the layout; each app's variables stay with the app | Several files to keep aligned; step 5 adds a cross-check |
 
-   "`EXEC-04` Env-var inventory complete" reads only four names at the repository root: `.env.example`,
-   `.env.sample`, `.env.template` and `env.example`. Recommend the first. Offer the second or the third only with a
-   root `.env.example` that also lists every name. Record the choice as a preference. Ask also whether optional
+   "`EXEC-04` Env-var inventory complete" reads four names at any depth: `.env.example`, `.env.sample`,
+   `.env.template` and `env.example`. An example file covers the files in its own folder and below it, so a root
+   file covers every name, and `api/.env.example` covers only what `api/` reads. Recommend the first. Offer the
+   second or the third when the owner wants each file beside the code that reads it. Record the choice as a preference. Ask also whether optional
    framework overrides (for example `QUARKUS_*`) are listed; the default is yes, marked optional, names only.
 2. **Tracked secret-bearing files.** For each path from step 3, show the owner the path and the reason it was
    flagged (never its content) and ask: untrack, keep as a documented exception, or skip. Only the owner can
@@ -113,8 +114,9 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    Names only: `NAME=` with a one-line comment (what reads it, required or optional, a placeholder format
    such as `<aws-role-arn>`; low-entropy, never a real-looking value).
    Optional variables are commented out or marked `# optional`. Do not copy a value from any real file.
-   A nested example file always has a root `.env.example` beside it that lists every name (Inputs 1). Only the
-   root file counts for "`EXEC-04` Env-var inventory complete".
+   A nested example file names every variable that the files in its folder and below read; a variable read in
+   two folders goes in an example file that covers both (Inputs 1). Each one counts for "`EXEC-04` Env-var
+   inventory complete" for the files it covers.
 5. **Cross-check.** Every name in the inventory is in an example file or is on the false-positive list with a
    reason; every name in an example file is read somewhere (a stale name is removed or marked legacy). In a
    per-app layout, check each app's file against its own reads.

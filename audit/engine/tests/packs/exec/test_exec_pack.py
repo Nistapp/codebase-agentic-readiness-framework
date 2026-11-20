@@ -336,8 +336,11 @@ class Exec02LockfilePathTests(unittest.TestCase):
         check = next(c for c in report["checks"] if c["id"] == "EXEC-02")
         return check, [f for f in report["findings"] if f["check"] == "EXEC-02"]
 
-    def test_a_tracked_lockfile_in_a_subdirectory_is_tracked(self):
+    def test_a_tracked_lockfile_in_a_subdirectory_is_compared_with_the_manifest_beside_it(self):
         check, findings = self.audit({"app/package.json": self.NODE, "app/package-lock.json": self.LOCK})
+        self.assertEqual((check["verdict"], check["summary"]), ("PASS", "tracked: app/package-lock.json"))
+        self.assertEqual(findings, [])
+        check, findings = self.audit({"app/package-lock.json": self.LOCK, "web/package.json": self.NODE})
         self.assertEqual(
             (check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: app/package-lock.json")
         )
@@ -366,7 +369,7 @@ class Exec02LockfilePathTests(unittest.TestCase):
         self.assertEqual(check["verdict"], "FAIL")
         self.assertIn("the node project has no lockfile", findings[0]["statement"])
 
-    def test_the_shallowest_tracked_lockfile_is_the_one_read(self):
+    def test_every_tracked_lockfile_is_read_shallowest_first(self):
         check, _ = self.audit(
             {
                 "package.json": self.NODE,
@@ -375,11 +378,55 @@ class Exec02LockfilePathTests(unittest.TestCase):
                 "app/package-lock.json": self.LOCK,
             }
         )
-        self.assertEqual((check["verdict"], check["summary"]), ("PASS", "tracked: package-lock.json"))
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("PASS", "tracked: package-lock.json, app/package-lock.json")
+        )
         check, _ = self.audit(
             {"a/b/package.json": self.NODE, "a/b/package-lock.json": self.LOCK, "z/package-lock.json": self.LOCK}
         )
-        self.assertEqual(check["summary"], "consistency unverified: z/package-lock.json")
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("PARTIAL", "tracked: a/b/package-lock.json; consistency unverified: z/package-lock.json"),
+        )
+
+    def test_a_second_app_out_of_step_with_its_own_manifest_fails(self):
+        manifest = '{"name": "x", "version": "0.1.0", "dependencies": {"left-pad": "1.3.0"}}\n'
+        check, findings = self.audit(
+            {
+                "web/package.json": self.NODE,
+                "web/package-lock.json": self.LOCK,
+                "api/package.json": manifest,
+                "api/package-lock.json": self.OTHER_LOCK,
+            }
+        )
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertEqual(
+            check["summary"],
+            "out of step with the manifest: api/package-lock.json; tracked: web/package-lock.json",
+        )
+        self.assertEqual(
+            [f["statement"] for f in findings],
+            [
+                "An agent cannot install identical dependencies on every run because api/package-lock.json is "
+                "tracked but omits manifest dependencies: left-pad."
+            ],
+        )
+
+    def test_a_second_app_whose_lockfile_is_not_tracked_fails(self):
+        check, findings = self.audit(
+            {
+                "web/package.json": self.NODE,
+                "web/package-lock.json": self.LOCK,
+                "api/package.json": self.NODE,
+                "api/package-lock.json": self.LOCK,
+            },
+            track=("web/package.json", "web/package-lock.json", "api/package.json"),
+        )
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("FAIL", "not tracked: api/package-lock.json; tracked: web/package-lock.json"),
+        )
+        self.assertEqual([f["evidence"][0]["path"] for f in findings], ["api/package-lock.json"])
 
     def test_a_root_lockfile_is_still_compared_with_the_root_manifest(self):
         manifest = '{"name": "x", "version": "0.1.0", "dependencies": {"left-pad": "1.3.0"}}\n'
@@ -418,15 +465,21 @@ class Exec02LockfilePathTests(unittest.TestCase):
             ["package-lock.json", "a/yarn.lock", "z/package-lock.json", "a/b/package-lock.json"],
         )
 
-    def test_only_a_root_lockfile_is_compared_with_the_manifest(self):
+    def test_a_lockfile_is_compared_only_with_the_manifest_in_its_own_folder(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             support.write(root, "package.json", '{"dependencies": {"left-pad": "1"}}\n')
             support.write(root, "package-lock.json", self.OTHER_LOCK)
             support.write(root, "app/package-lock.json", self.OTHER_LOCK)
+            support.write(root, "web/package.json", '{"dependencies": {"up-pad": "1"}}\n')
+            support.write(root, "web/package-lock.json", self.OTHER_LOCK)
+            support.write(root, "ok/package.json", '{"dependencies": {"right-pad": "1"}}\n')
+            support.write(root, "ok/package-lock.json", self.OTHER_LOCK)
             inventory = build_inventory(root)
             self.assertEqual(_lock_consistency(inventory, "node", "package-lock.json"), ("mismatch", {"left-pad"}))
             self.assertEqual(_lock_consistency(inventory, "node", "app/package-lock.json"), ("unverified", set()))
+            self.assertEqual(_lock_consistency(inventory, "node", "web/package-lock.json"), ("mismatch", {"up-pad"}))
+            self.assertEqual(_lock_consistency(inventory, "node", "ok/package-lock.json"), ("ok", set()))
 
 
 class Exec02MessageTests(unittest.TestCase):
@@ -589,7 +642,7 @@ class Exec02MessageTests(unittest.TestCase):
             ],
         )
 
-    def test_a_nuget_lock_beside_each_project_is_tracked_but_not_compared(self):
+    def test_a_nuget_lock_beside_each_project_is_compared_with_that_project(self):
         lock = '{"version": 1, "dependencies": {"net8.0": {}}}\n'
         check, _ = self.audit(
             {
@@ -601,7 +654,8 @@ class Exec02MessageTests(unittest.TestCase):
             }
         )
         self.assertEqual(
-            (check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: src/App/packages.lock.json")
+            (check["verdict"], check["summary"]),
+            ("PASS", "tracked: src/App/packages.lock.json, tests/App.Tests/packages.lock.json"),
         )
 
     def test_untracked_lockfiles_are_listed_in_path_order_with_their_paths_as_evidence(self):
@@ -664,7 +718,9 @@ class Exec02MessageTests(unittest.TestCase):
             ("PARTIAL", "tracked: package-lock.json; consistency unverified: crate/Cargo.lock"),
         )
         check, _ = self.audit({**files, "crate/Cargo.lock": self.CARGO_LOCK, "other/Cargo.lock": self.CARGO_LOCK})
-        self.assertEqual(check["summary"], "tracked: package-lock.json; consistency unverified: crate/Cargo.lock")
+        self.assertEqual(
+            check["summary"], "tracked: package-lock.json; consistency unverified: crate/Cargo.lock, other/Cargo.lock"
+        )
         two = {"package.json": self.NODE, "app/package-lock.json": self.OTHER_LOCK, "Cargo.toml": "[dependencies]\n"}
         check, _ = self.audit({**two, "crate/Cargo.lock": self.CARGO_LOCK})
         self.assertEqual(check["summary"], "consistency unverified: app/package-lock.json, crate/Cargo.lock")

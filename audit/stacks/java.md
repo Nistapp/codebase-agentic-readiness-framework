@@ -88,8 +88,9 @@ checked; `BASE-01` reads `FAIL` or `UNKNOWN` there, not verified further here.
 
 Coverage: the core `jacoco` plugin gives `jacocoTestReport` and `jacocoTestCoverageVerification` (a
 `violationRules` `minimum` is the floor). Quarkus `@QuarkusTest` classes need `io.quarkus:quarkus-jacoco`
-(version from the platform BOM); Gradle's agent alone reports them wrongly low. `BASE-04` reads no Gradle build
-file, so a floor configured there reads `FAIL`; verify it from the build file. The implement playbook
+(version from the platform BOM); Gradle's agent alone reports them wrongly low. `BASE-04` reads the floor from a
+`build.gradle(.kts)` with `jacocoTestCoverageVerification` and a `minimum`, or from a `pom.xml` whose
+`jacoco-maven-plugin` runs `check` with a `<minimum>`, at any depth. The implement playbook
 `add-baselines-and-ratchet` covers both.
 
 Prose (`DOC-05`): the `establish-docs-contract` prose check is a stdlib Python script, copied only under a licence
