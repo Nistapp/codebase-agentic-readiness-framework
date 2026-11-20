@@ -69,8 +69,10 @@ class GeneratedTest(unittest.TestCase):
         self.assertEqual(
             [w["path"] for w in reads["AGT-12"]["where"] if w.get("case") == "fold"], ["**/*communicat*.md"]
         )
+        self.assertEqual([w.get("case") for w in reads["HYG-08"]["where"]], ["fold"])
         self.assertEqual(
-            sorted(c for c, read in reads.items() if "named_by_text" in read), ["AGT-06", "AGT-10", "CI-02", "CON-01"]
+            sorted(c for c, read in reads.items() if "named_by_text" in read),
+            ["AGT-06", "AGT-10", "CI-02", "CON-01"],
         )
         self.assertNotIn("case", reads["CMD-01"]["where"][0])
 
