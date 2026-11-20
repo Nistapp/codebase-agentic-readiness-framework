@@ -86,7 +86,10 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  declares no dependencies, so no lockfile is expected. Git unable to report tracked files
                  (no repository, or the command failed) makes the tracked half `UNKNOWN` for the whole
                  check, never inferred as passing. A lockfile found only in a subdirectory is tracked but
-                 its consistency is left `PARTIAL`, because only the root manifest is read. Distrust a
+                 its consistency is left `PARTIAL`, because only the root manifest is read. A tracked
+                 lockfile that the scan's walk skipped as ignored is found too: the walk reads an ignore
+                 file without its `!` lines, so `package-lock.json` followed by
+                 `!apps/web/package-lock.json` would otherwise hide a lockfile git tracks. Distrust a
                  `FAIL` for "no lockfile" when the manager is one the engine does not recognise for that
                  ecosystem — verify against `PACKAGE_MANAGERS` in `audit/stack.py` before concluding the
                  project truly has none. Distrust a `PARTIAL` citing "consistency unverified" when the

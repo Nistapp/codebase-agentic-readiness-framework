@@ -312,9 +312,20 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
         spec.phase,
         verdict,
         spec.status,
-        summary=f"{len(canonical_nested)} nested instruction file(s)" if present and canonical_nested else "",
+        summary=_agt01_summary(present, canonical_nested),
         findings=findings,
     )
+
+
+def _agt01_summary(present: list[str], canonical_nested: list[str]) -> str:
+    """One sentence that names the instruction files the verdict rests on; never empty (issue #21)."""
+    if not present:
+        return "no agent-instruction file in the repository"
+    if canonical_nested:
+        return f"{len(canonical_nested)} nested instruction file(s)"
+    shown = sorted(present)
+    more = f" and {len(shown) - 6} more" if len(shown) > 6 else ""
+    return f"instruction file(s): {', '.join(shown[:6])}{more}"
 
 
 # ---------------------------------------------------------------------------
@@ -601,12 +612,10 @@ def check_agt10(*, spec, target, inventory, stack, components, session) -> Check
     for config_file, targets in configured.items():
         for name in targets:
             rel = name.strip().lstrip("./")
-            if "*" in rel:
-                if not inventory.match(rel):
-                    findings.append(_broken_pointer(spec, config_file, name))
-                continue
-            if not inventory.has(rel):
+            exists = inventory.match(rel) if "*" in rel else inventory.has(rel)
+            if not exists:
                 findings.append(_broken_pointer(spec, config_file, name))
+    broken = len(findings)
     if configured:
         detail.append(f"{len(configured)} config file(s) name instruction targets")
 
@@ -645,6 +654,16 @@ def check_agt10(*, spec, target, inventory, stack, components, session) -> Check
             )
         if not _rule_line_count(entry) > 0:
             detail.append("instruction file has no rule lines")
+        if deferred:
+            detail.append(f"defers to {', '.join(sorted(set(deferred)))}, which no harness config names")
+        else:
+            detail.append("defers to no file that a harness config leaves unloaded")
+    else:
+        detail.append("no AGENTS.md or CLAUDE.md to read for a deferral")
+    if not configured:
+        detail.insert(0, "no harness config names an instruction target")
+    if broken:
+        detail.insert(0, f"{broken} configured pointer(s) name a missing file")
 
     verdict = Verdict.FAIL if findings else Verdict.PASS
     return CheckOutcome(

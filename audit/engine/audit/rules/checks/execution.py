@@ -23,7 +23,8 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   best-effort stdlib parse; when a manifest or lockfile cannot be parsed reliably the tracked fact
   is reported and consistency is left ``PARTIAL``, never ``PASS`` by inference. A lockfile is found at
   any depth and is tracked or not by the path it was found at (``app/package-lock.json``, not its
-  basename); the shallowest is the one read. Only a lockfile at the root is compared with the root
+  basename); the shallowest is the one read. A tracked lockfile the walk left out, because the walk reads an
+  ignore file without its ``!`` lines, is found too. Only a lockfile at the root is compared with the root
   manifest, so one in a subdirectory is tracked but its consistency is unverified. An ecosystem that was
   recognised only from its source files (``Stack.source_only``) has no manifest and declares no
   dependencies, so it is not expected to have a lockfile. A recognised ecosystem with no lockfile convention in
@@ -76,6 +77,7 @@ import fnmatch
 import json
 import re
 import shlex
+from collections.abc import Collection
 from dataclasses import dataclass
 
 from audit.evaluate import CheckOutcome
@@ -598,10 +600,18 @@ def _lock_deps(inv: Inventory, ecosystem: str, lockfile: str) -> set[str] | None
     return None
 
 
-def _lockfile_paths(inv: Inventory, ecosystem: str) -> list[str]:
-    """Every lockfile of the ecosystem, at any depth, as the path git would track it; the shallowest first."""
+def _lockfile_paths(inv: Inventory, ecosystem: str, tracked: Collection[str] = ()) -> list[str]:
+    """Every lockfile of the ecosystem, at any depth, as the path git would track it; the shallowest first.
+
+    ``tracked`` adds each tracked lockfile the walk skipped as ignored (issue #21). The walk reads a root ignore
+    file without its ``!`` lines (ADR-0006), so ``package-lock.json`` followed by ``!apps/web/package-lock.json``
+    hides a lockfile git tracks. A file in a directory the walk never enters (``node_modules``) is not one of them.
+    """
     names = _lockfiles_for(ecosystem)
-    found = (rel for rel in inv.paths() if rel.split("/")[-1] in names)
+    found = {rel for rel in inv.paths() if rel.split("/")[-1] in names}
+    found |= {
+        rel for rel, reason in inv.skipped if reason == "ignored" and rel in tracked and rel.split("/")[-1] in names
+    }
     return sorted(found, key=lambda rel: (rel.count("/"), rel))
 
 
@@ -658,7 +668,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
     untracked: list[str] = []
     stale: list[str] = []
     for ecosystem in ecosystems:
-        candidates = _lockfile_paths(inventory, ecosystem)
+        candidates = _lockfile_paths(inventory, ecosystem, tracked)
         tracked_candidates = [rel for rel in candidates if rel in tracked]
         if not candidates:
             missing.append(f"{ecosystem} ({', '.join(_lockfiles_for(ecosystem))})")

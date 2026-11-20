@@ -1336,7 +1336,7 @@ READS: dict[str, Reads] = {
         threshold="a tracked lockfile that agrees with the manifest",
         note=(
             "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest"
-            " first, and whether git tracks them. Only a root lockfile is compared with the root manifests' "
+            " first, and whether git tracks them; a tracked lockfile the walk skipped as ignored counts too. Only a root lockfile is compared with the root manifests' "
             "dependency names; for .NET those are the PackageReference names of the project files in the root "
             "folder, and a package reference in a root Directory.* file leaves the lockfile unverified."
         ),
