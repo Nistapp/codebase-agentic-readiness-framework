@@ -101,6 +101,8 @@ fixtures/
   exec-04-anchored-ignored-dir/ `/scratch/` ignored; its untracked file reads an undeclared key (needs git) -> EXEC-04 PASS
   exec-04-nested-ignored-dir/ `tools/.gitignore` ignores `cache/`; its untracked file reads an undeclared key (needs git) -> EXEC-04 PASS
   exec-05-generated/         tracked generated file, no header (needs git) -> EXEC-05 FAIL
+  exec-05-committed-dist/    tracked `dist/app.min.js`, and `build/x.class` force-added past the fixture's `build/` ignore rule (needs git) -> EXEC-05 FAIL
+  exec-05-build-script/      a hand-written `build/release.sh`, tracked, not ignored (needs git) -> EXEC-05 PASS
   exec-06-broken-command/    README runs an npm script that is not declared -> EXEC-06 FAIL
   exec-07-dual-lint/         .eslintrc.json + biome.json compete  -> EXEC-07 FAIL
   exec-07-dual-python-types/ mypy.ini + pyrightconfig.json, typecheck runs pyright -> EXEC-07 FAIL

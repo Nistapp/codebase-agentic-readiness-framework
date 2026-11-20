@@ -182,8 +182,11 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-04-anchored-ignored-dir": {"EXEC-04": "PASS"},
     "exec-04-nested-ignored-dir": {"EXEC-04": "PASS"},
     "exec-05-generated": {"EXEC-05": "FAIL"},
-    # Committed build output under dist/ and build/: the walk enters both for their tracked files.
+    # Committed build output under dist/ and build/: the walk enters both for their tracked files. The build/ file
+    # counts because the fixture's own ignore rules match it (issue #260).
     "exec-05-committed-dist": {"EXEC-05": "FAIL", "NAV-03": "PARTIAL"},
+    # A hand-written script tracked in build/, no ignore rule and no generated hint: not build output.
+    "exec-05-build-script": {"EXEC-05": "PASS"},
     "exec-06-broken-command": {"EXEC-06": "FAIL"},
     "exec-07-dual-lint": {"EXEC-07": "FAIL"},
     "exec-07-dual-python-types": {"EXEC-07": "FAIL"},
@@ -282,6 +285,7 @@ NEEDS_GIT = frozenset(
         "layout-app-per-folder",
         "exec-05-generated",
         "exec-05-committed-dist",
+        "exec-05-build-script",
         "exec-ok",
         "sec-01-ok",
         "sec-01-tracked-env",
@@ -310,6 +314,7 @@ FORCE_ADD: dict[str, str] = {
     "sec-01-tracked-ignored-env": "config/prod.env",
     "sec-03-tracked-ignored-key": "server.key",
     "con-03-artefacts-not-ignored": "artefacts/notes.md",
+    "exec-05-committed-dist": "build/x.class",
 }
 
 #: Fixtures whose verdict depends on machine-local state; run with an isolated HOME and store.
