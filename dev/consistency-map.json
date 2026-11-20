@@ -1422,9 +1422,25 @@
     },
     {
       "check": "BASE-01",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "it has a native baseline or exclude list (inventory step): check it still matches the count",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
       "move": "add-baselines-and-ratchet/row-2",
-      "reason": "Not a real pair: BASE-01 credits a baseline by its name (*baseline*.json, .eslint-baseline* and the other declared names) or by a phrase in the root AGENTS.md or CLAUDE.md. eslint-suppressions.json matches none of those names, so creating it cannot change the verdict; the credit comes from row 3's counts file or the AGENTS.md paragraph.",
-      "status": "accepted"
+      "note": "BASE-01 credits .ruff-baseline*, .secrets.baseline and .gitleaksignore by name; eslint-suppressions.json only through the AGENTS.md paragraph of row 8.",
+      "status": "kept"
+    },
+    {
+      "check": "SEC-02",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "accepts an allowlisted hit only on its listed line",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-2",
+      "note": "A root .secrets.baseline or .gitleaksignore suppresses a SEC-02 hit by path and line number, so creating one can change the verdict.",
+      "status": "kept"
     },
     {
       "check": "BASE-01",
@@ -4820,17 +4836,22 @@
         "file"
       ],
       "id": "add-baselines-and-ratchet/row-2",
-      "note": "No check reads this name; BASE-01 credits it only through the AGENTS.md paragraph of row 8.",
+      "intent": "A native baseline file under the tool's own name; BASE-01 credits .ruff-baseline*, .secrets.baseline and .gitleaksignore as a baseline artifact by that name.",
+      "note": "No check reads eslint-suppressions.json; BASE-01 credits it only through the AGENTS.md paragraph of row 8.",
       "origin": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
         "row": 2,
         "step": "Step 3"
       },
       "to": [
-        "eslint-suppressions.json"
+        "eslint-suppressions.json",
+        ".ruff-baseline",
+        ".secrets.baseline",
+        ".gitleaksignore"
       ],
       "touches": [
-        "BASE-01"
+        "BASE-01",
+        "SEC-02"
       ]
     },
     {
