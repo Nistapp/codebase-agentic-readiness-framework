@@ -157,10 +157,11 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    the scanner's own command, in its own commit (Commits row 17). "`SEC-02` No key-shaped strings in tracked
    files" accepts an allowlisted hit only on its listed line.
 10. **Fast path (TST-04)**, when the item is in T5: add the single-test command for the repository's runner to
-    `AGENTS.md` in a fenced shell block (the engine reads only fenced commands), for example
-    `./gradlew test --tests '<Class>'` or `npx jest -t '<test name>'`. Jest needs `-t` or `--testNamePattern`: a
-    path alone is not read as a single test. Start the line with a word that resolves, such as a verb or the
-    wrapper. "`EXEC-06` Documented commands resolve" reads every fenced command in `AGENTS.md`.
+    `AGENTS.md` in a fenced shell block (the engine also reads an inline code span, but `EXEC-06` reads only
+    fenced commands), for example `./gradlew test --tests '<Class>'` or `npx jest -t '<test name>'`. Jest needs
+    `-t`, `--testNamePattern` or a test file path that holds `.test.` or `.spec.`: a folder alone is not read as a
+    subset. Start the line with a word that resolves, such as a verb or the wrapper. "`EXEC-06` Documented commands
+    resolve" reads every fenced command in `AGENTS.md`.
 
 ### Java (Gradle)
 
@@ -184,9 +185,9 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#baseline--ratchet).
   copy), because with the list in place PMD reports nothing for those files. A Spotless full-tree count has no usable
   output (the tool truncates its list), so run the full format task in a scratch copy and count the files that
   changed against the original. Neither goes into the working tree.
-- **Engine blind spot.** BASE-04 reads no Gradle build file, so a correct `jacocoTestCoverageVerification` floor
-  still reads `FAIL`. Add one sentence with the floor to `AGENTS.md` ("coverage floor: NN% line coverage, enforced by
-  `jacocoTestCoverageVerification`") so the audit reads at least `PARTIAL`, and verify from the build file.
+- **Engine visibility.** BASE-04 reads a `jacocoTestCoverageVerification` task with a `minimum` in a Gradle build,
+  and a `jacoco-maven-plugin` `check` goal with a `<minimum>` in a `pom.xml`, at any depth, so a configured floor
+  reads `PASS`. Verify from the build file that the verification task runs in `check`.
 - **Fast path**: `./gradlew test --tests '<package>.<Class>'`, optionally `.<method>`.
 
 ### TypeScript and Node
@@ -203,13 +204,10 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#bas
   multi-component repository. Create React App passes `coverageThreshold` through its `jest` key in
   `package.json`; check the supported keys for the repository's `react-scripts` version. Vitest:
   `test.coverage.thresholds`.
-- **Engine visibility.** BASE-04 reads the root `package.json` and `jest.config.*`/`vitest.config.*` files at any depth,
-  not a `jest` key in a nested component's `package.json`. In a multi-component repository either keep the key where it
-  is and add the floor sentence to `AGENTS.md`, or (owner choice) move that component's Jest config to a `jest.config.*`
-  file. Verify from the real config either way. BASE-02 reads only a budget flag, so a counts file alone reads
-  `PARTIAL`, and TST-04 accepts a Jest line only with `-t` or `--testNamePattern`; a path-only `npx jest <file>` reads
-  `FAIL` (framework issues #45 and #50). Write the fast-path block in the form the engine reads and keep the path-only
-  form out of the verification.
+- **Engine visibility.** BASE-04 reads every `package.json` (a `jest` key in a component's own manifest included)
+  and `jest.config.*`/`vitest.config.*` files at any depth. Verify from the real config. BASE-02 reads only a budget
+  flag, so a counts file alone reads `PARTIAL` (framework issue #45). TST-04 accepts a Jest line with `-t`,
+  `--testNamePattern` or a test file path, such as `npx jest src/app.test.ts`.
 - **Whole-tree counts in `format:check`.** ESLint older than 9.24 has no baseline file, so the compare script runs
   the linter over the whole tree with JSON output and counts errors and files with errors. That adds the linter's
   full run (15-20 s on a mid-sized app) to `format:check`; say so in the paragraph in `AGENTS.md`. The script resolves
@@ -298,7 +296,7 @@ phrases, and misses mechanisms it has no reader for.
 | BASE-01 | The counts file and each native baseline; the `AGENTS.md` paragraph | Each tool with debt has a baseline; the paragraph names them | A `*baseline*.json` name, or a "quality baseline" / "no new violations" sentence in `AGENTS.md` or `CLAUDE.md`: `PASS` |
 | BASE-02 | The counts file entries and any budget flag | One number per tool, matching a fresh full run | Only a budget flag (`--max-warnings N`, `max-issues N`) in a manifest or counting config gives `PASS`; a counts file alone reads `PARTIAL` |
 | BASE-03 | Raise one count by one in a scratch copy and run `format:check` | Exits non-zero naming the tool; the real tree exits 0 | The counts file named in a CI workflow, or a "ratchet" / "no new violations" sentence: `PASS` |
-| BASE-04 | The runner config key and its value; run the coverage verb | Floor equals today's number rounded down; the run passes | Root `package.json`, `jest.config.*`, `vitest.config.*`, Python coverage configs: `PASS`. Gradle and nested `package.json`: `FAIL`, or `PARTIAL` with the `AGENTS.md` sentence |
+| BASE-04 | The runner config key and its value; run the coverage verb | Floor equals today's number rounded down; the run passes | Any `package.json`, `jest.config.*`, `vitest.config.*`, a JaCoCo floor in a Gradle or Maven build, root Python coverage configs: `PASS` |
 | TST-02 | The recorded run | Green, or failing tests listed as debt | `UNKNOWN` without a Tier-C probe |
 | TST-03 | The marker list | Every marker has a reason or an owner item | Engine `PASS` is a census; the rubric's reading is `FAIL` when the total is above zero |
 | TST-04 | The fenced block in `AGENTS.md` | One single-test command for the runner | A fenced single-test command: `PASS` |

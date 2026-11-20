@@ -328,8 +328,9 @@ READS: dict[str, Reads] = {
         binding="file",
         threshold="all seven named and resolved",
         note=(
-            "Each verb must stand as a whole token (format inside format:check does not count). The "
-            "resolution half reads the runner manifests as CMD-01 does."
+            "Each verb must stand as a whole token (format inside format:check does not count). format:check "
+            "also counts as format-check or formatCheck, the spellings spec/command-surface.md accepts; no "
+            "other script name counts. The resolution half reads the runner manifests as CMD-01 does."
         ),
     ),
     "AGT-06": Reads(
@@ -626,13 +627,16 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-02": Reads(
-        where=(*_runners(),),
+        where=(*_runners(), *_at(ROOT, "settings.gradle", "settings.gradle.kts")),
         what=What("key", ("check",)),
         binding="section",
         threshold="check composes format-check, typecheck and test",
         note=(
             "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite "
-            "that is no verb is followed once. A Gradle or Maven lifecycle check is UNKNOWN."
+            "that is no verb is followed once, and so is a package script that is no verb. A Gradle check is read "
+            "from the build file's plugins and check dependsOn wiring; a settings file that includes subprojects, "
+            "or an unknown plugin or task, makes a check still missing a concern UNKNOWN. A Maven lifecycle check "
+            "is UNKNOWN."
         ),
     ),
     "CMD-03": Reads(
@@ -906,9 +910,12 @@ READS: dict[str, Reads] = {
         binding="line",
         threshold="no CI verb without a local definition",
         note=(
-            "Each step command (inline or each line of a block), split at shell operators, is mapped to a "
-            "verb by runner or known tool and compared with the verbs resolved on the runner manifests."
+            "Each step command (inline or each line of a block), split at shell operators outside quotes, is "
+            "mapped to a verb by runner or known tool and compared with the verbs resolved on the runner "
+            "manifests. echo and printf text and heredoc bodies are not commands. A step that runs a "
+            "repository shell script is read one script deep. No workflow, or no CI verb mapped, is UNKNOWN."
         ),
+        named_by_text="each shell script a step runs is looked up with Inventory.has and read, one level deep",
     ),
     "CI-03": Reads(
         where=(
@@ -932,7 +939,8 @@ READS: dict[str, Reads] = {
         threshold="no CI-only step",
         note=(
             "A step command that calls a runner target that is no verb, no package-manager built-in and no "
-            "target of any local runner fails."
+            "target of any local runner fails. Commands split at shell operators outside quotes; echo and "
+            "printf text and heredoc bodies are not commands."
         ),
     ),
     "CI-05": Reads(
@@ -1210,8 +1218,10 @@ READS: dict[str, Reads] = {
         what=What("phrase"),
         binding="line",
         note=(
-            "Config: fail_under = N or --cov-fail-under N in six root files, coverageThreshold in the root "
-            "package.json, a threshold key in a runner config at any depth (whole-line // comments dropped). "
+            "Config: fail_under = N or --cov-fail-under N in six root files, coverageThreshold or "
+            "--cov-fail-under in a package.json at any depth, a threshold key in a runner config at any depth "
+            "(whole-line // comments dropped), a jacocoTestCoverageVerification task with a minimum in a Gradle "
+            "build at any depth, or a jacoco-maven-plugin check goal with a <minimum> in a pom.xml at any depth. "
             "Prose (PARTIAL): coverage within 40 characters of threshold, minimum, fail, floor or at least, "
             "or within 20 of a percentage, on one line of the four root documents. With no detected ecosystem, "
             "a project manifest at any depth still makes the check apply."
@@ -1319,7 +1329,7 @@ READS: dict[str, Reads] = {
                 "packages.lock.json",
             ),
             *_at(
-                ROOT,
+                ANY_DEPTH,
                 "package.json",
                 "pyproject.toml",
                 "requirements.txt",
@@ -1329,17 +1339,19 @@ READS: dict[str, Reads] = {
                 "Directory.Build.targets",
                 "Directory.Packages.props",
             ),
-            *_at(ROOT, "go.mod", unexercised=_GO_FIXTURE),
-            *_at(GLOB, "*.csproj", "*.fsproj", "*.vbproj"),
+            *_at(ANY_DEPTH, "go.mod", unexercised=_GO_FIXTURE),
+            *_at(GLOB, "**/*.csproj", "**/*.fsproj", "**/*.vbproj"),
         ),
         what=What("exists"),
         binding="file",
-        threshold="a tracked lockfile that agrees with the manifest",
+        threshold="every lockfile tracked and in step with the manifest beside it",
         note=(
             "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest"
-            " first, and whether git tracks them. Only a root lockfile is compared with the root manifests' "
-            "dependency names; for .NET those are the PackageReference names of the project files in the root "
-            "folder, and a package reference in a root Directory.* file leaves the lockfile unverified."
+            " first, and whether git tracks each one; a tracked lockfile the walk skipped as ignored counts "
+            "too. Every tracked lockfile is compared with the dependency "
+            "names of the manifests in its own folder; for .NET those are the PackageReference names of the "
+            "project files in that folder, and a package reference in a Directory.* file in that folder or "
+            "above it leaves the lockfile unverified."
         ),
     ),
     "EXEC-03": Reads(
@@ -1357,6 +1369,9 @@ READS: dict[str, Reads] = {
                 "setup.sh",
                 "bootstrap.sh",
                 "dev-setup.sh",
+                "Dockerfile.*",
+                "*.Dockerfile",
+                "*.dockerfile",
             ),
             *_at(GLOB, ".devcontainer/*.json"),
             *_at(ROOT, "Makefile", "package.json"),
@@ -1365,10 +1380,11 @@ READS: dict[str, Reads] = {
         binding="line",
         threshold="a documented non-interactive setup command",
         note=(
-            "A fenced shell command in the four docs whose tool and first argument install or set up passes. "
-            "Else a setup file or a setup target (setup, bootstrap, install, dev, dev-setup) of the root "
-            "Makefile or package.json named anywhere in the four docs passes; present but not named is "
-            "PARTIAL."
+            "A fenced shell command or an inline code span in the four docs whose tool and first argument "
+            "install or set up passes. "
+            "Else a setup file (at any depth, a Dockerfile with a variant in its name included) or a setup "
+            "target (setup, bootstrap, install, dev, dev-setup) of the root Makefile or package.json named "
+            "anywhere in the four docs passes; present but not named is PARTIAL."
         ),
     ),
     "EXEC-04": Reads(
@@ -1376,15 +1392,18 @@ READS: dict[str, Reads] = {
             *_at(GLOB, "**/*.sh", "**/*.bash", "**/*.zsh", "**/*.fish", "**/*.ksh", "**/*.ps1"),
             *_at(ANY_DEPTH, "Dockerfile"),
             *_at(GLOB, "**"),
-            *_at(ROOT, ".env.example", ".env.sample", ".env.template", "env.example"),
+            *_at(ANY_DEPTH, ".env.example", ".env.sample", ".env.template", "env.example"),
         ),
         what=What("key"),
         binding="line",
-        threshold="every referenced key declared",
+        threshold="every referenced key declared by an example file that covers each file reading it",
         note=(
-            "References: ${VAR} in shell files and Dockerfile, less the keys the same file assigns, and "
-            "os.environ, getenv, process.env and ENV[...] in every file of kind source or script. Declared "
-            "keys are the KEY= lines of the four root example files; a fixed allow-list of host and CI names "
+            "References: ${VAR} and ${VAR:?msg} in shell files and Dockerfile, less the keys the same file "
+            "assigns, and os.environ, getenv, process.env and ENV[...] in every file of kind source or script. "
+            "A shell reference with a fallback (${VAR:-x}, ${VAR-x}, ${VAR:=x}, ${VAR:+x}) is optional: listed, "
+            "never missing. Declared keys are the KEY= lines of the four example file names at any depth; an "
+            "example file covers the files in its own folder and below it, so a key counts when every file "
+            "reading it is covered by one that names it. A fixed allow-list of host, CI and shell-set names "
             "is exempt."
         ),
     ),
@@ -1573,7 +1592,8 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and "
-            "--allow-probe test. Every runner manifest counts only at the root, where it is read."
+            "--allow-probe test. Every runner manifest counts only at the root, where it is read. A "
+            "package.json verb runs with node_modules/.bin first on PATH."
         ),
     ),
     "TST-03": Reads(
@@ -1620,7 +1640,8 @@ READS: dict[str, Reads] = {
         binding="line",
         note=(
             "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a "
-            "plain full-suite run does not count. A file is kept when Inventory.has finds its name at any "
+            "plain full-suite run does not count. With no fenced match, an inline code span outside any fence "
+            "is read with the same patterns. A file is kept when Inventory.has finds its name at any "
             "depth but read by its exact root path, so a nested-only copy is skipped silently. The test files "
             "give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs."
         ),
@@ -1702,7 +1723,8 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "Workspace members are read from the root manifests (components.py); a member or candidate counts"
-            " when a build manifest is found under it. The root counts as declared when any of the nine "
+            " when a build manifest is found under it. When the root folder itself holds no build manifest, a"
+            " top-level folder with one in it is a candidate too. The root counts as declared when any of the nine "
             "manifest names is found at any depth, or a .NET solution or project file is in the root folder"
             " itself (in a member's or candidate's own folder for that member or candidate)."
         ),
@@ -1854,7 +1876,9 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "Root files whose base name starts with readme, any case; README.md is read first. It needs 200 "
-            "trimmed characters, no stub marker as a substring anywhere, and one line that is not a heading."
+            "trimmed characters, no stub marker, and one line that is not a heading. Under 400 characters a marker "
+            "anywhere counts, and lorem ipsum or <describe counts at any length; in a longer README a word marker "
+            "counts only when it opens a line and the line's end or punctuation follows it."
         ),
     ),
     "HYG-02": Reads(

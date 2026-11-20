@@ -25,14 +25,17 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   The probe is refused unless `--run-gates` **and** `--allow-probe test`; a refusal is recorded in the
   report's `probes` array and the verdict is `UNKNOWN`, never an error (AGENTS.md §2.2, ADR-0002).
   Exit 0 is `PASS`, a non-zero exit is `FAIL`, and a timed-out or unpermitted probe is `UNKNOWN`.
-  No mutating verb is ever constructed here.
+  No mutating verb is ever constructed here. A verb read from a `package.json` runs with each
+  `node_modules/.bin` from that manifest's directory up to the root first on `PATH`, as `npm run` sets it,
+  so a script body such as `jest` resolves; nothing is installed and nothing else changes.
 * **TST-03** — a **census**, not a threshold: the count of skip, ignore and expected-failure markers in
   each readable test file, grouped by the language family that file belongs to (javascript/vitest/jest/
   mocha, python, go, rust, jvm). Zero markers is a `PASS`; no test file, or no readable test file,
   is `UNKNOWN`. This check never invents a maximum.
 * **TST-04** — a single-test/subset invocation in a fenced shell block, read from the repository's
-  entry documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`) via
-  `_common.extract_fenced_commands`. `PASS` when one is documented; `FAIL` when the documents are
+  entry documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`), or else in an inline code
+  span outside a fence (`npm test -- <path>` in a sentence), both via `_common.extract_documented_commands`.
+  A fenced one is cited first. `PASS` when one is documented; `FAIL` when the documents are
   readable but none shows one. With **no test file** there is no suite for a fast path to act on, so
   the verdict is `UNKNOWN` — a missing suite is TST-01's finding, not doubled here. The search scope is
   stated in `detail`.
@@ -57,7 +60,7 @@ import re
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
 from audit.probes import ProbePlan
-from audit.rules.checks._common import extract_fenced_commands, resolve_verbs
+from audit.rules.checks._common import extract_documented_commands, resolve_verbs, runner_kind
 from audit.scan import Kind
 from audit.stack import extract_npm_scripts
 from audit.rules.payloads import Counter, Payload
@@ -99,6 +102,8 @@ _FASTPATH_PATTERNS: tuple[str, ...] = (
     r"\b(?:npx\s+)?vitest\s+run\s+\S*(?:test|spec)\S*",
     r"\b(?:npx\s+)?vitest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
     r"\b(?:npx\s+)?jest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
+    r"\b(?:npx\s+)?jest\b[^\n&|;]*\s\S*\.(?:test|spec)\.\S*",
+    r"\breact-scripts\s+test\b[^\n&|;]*\s\S*\.(?:test|spec)\.\S*",
     r"\bgo\s+test\b[^\n&|;]*\s-run\b",
     r"\bcargo\s+test\b\s+[A-Za-z_]\w*",
     r"\b(?:\./)?(?:gradlew|gradle)\b[^\n&|;]*--tests\b",
@@ -324,12 +329,24 @@ def check_tst01(*, spec, target, inventory, stack, components, session) -> Check
 # ===========================================================================
 
 
+def _runner_path(runner: str) -> tuple[str, ...]:
+    """The directories a runner puts first on ``PATH`` for a script it runs, nearest first.
+
+    ``npm run`` adds ``node_modules/.bin`` of the manifest's directory and of each directory above it; pnpm,
+    yarn and bun do the same. Other runners add nothing.
+    """
+    if runner_kind(runner) != "package.json":
+        return ()
+    parts = runner.split("/")[:-1]
+    return tuple("/".join([*parts[:depth], "node_modules", ".bin"]) for depth in range(len(parts), -1, -1))
+
+
 def check_tst02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     binding = resolve_verbs(inventory, stack).get("test")
     if binding is None:
         return _unknown(spec, "no test verb resolves on any runner, so the suite cannot be run")
 
-    plan = ProbePlan(verb="test", command=list(binding.argv), read_only=True)
+    plan = ProbePlan(verb="test", command=list(binding.argv), read_only=True, path_prepend=_runner_path(binding.runner))
     result = session.run(plan)
 
     if result.refused_reason:
@@ -408,18 +425,24 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
     docs = [rel for rel in _FASTPATH_DOCS if inventory.has(rel)]
     scope = ", ".join(docs) if docs else f"{', '.join(_FASTPATH_DOCS)} (none present)"
 
-    for rel in docs:
-        text = inventory.read(rel)
-        if not text:
-            continue
-        for _language, line, command in extract_fenced_commands(text):
-            if _FASTPATH_RE.search(command):
+    commands = [(rel, extract_documented_commands(text)) for rel in docs if (text := inventory.read(rel))]
+    for rel, found in commands:
+        for language, line, command in found:
+            if language != "inline" and _FASTPATH_RE.search(command):
                 return _outcome(spec, Verdict.PASS, f"fast path documented: {rel}:{line} `{command}` (scope: {scope})")
+    for rel, found in commands:
+        for language, line, command in found:
+            if language == "inline" and _FASTPATH_RE.search(command):
+                return _outcome(
+                    spec,
+                    Verdict.PASS,
+                    f"fast path documented in an inline code span: {rel}:{line} `{command}` (scope: {scope})",
+                )
 
     return _outcome(
         spec,
         Verdict.FAIL,
-        f"no single-test/subset invocation in fenced shell blocks (scope: {scope})",
+        f"no single-test/subset invocation in fenced shell blocks or inline code spans (scope: {scope})",
         [
             _finding(
                 spec,
@@ -428,7 +451,7 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
                 Verdict.FAIL,
                 [Evidence(rel) for rel in docs] or [Evidence("<repository>")],
                 "Document a fast path (for example `pytest -k <name>`, "
-                "`npm test -- <name>`, or `go test -run <name>`) in a fenced shell block.",
+                "`npm test -- <name>`, or `go test -run <name>`) in a fenced shell block or as inline code.",
             )
         ],
     )

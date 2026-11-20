@@ -1,5 +1,8 @@
 {
   "name": "nested-app",
   "version": "0.1.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "left-pad": "1.3.0"
+  }
 }

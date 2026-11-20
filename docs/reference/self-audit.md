@@ -19,7 +19,7 @@ score from falling.
 | Phase-1 score | **0.9115** |
 | Date | 2026-11-20 |
 | Engine | `python-agentic-audit` 0.4.1 |
-| Ruleset | `2026-11-20.7` (hash `01fb2871bf2c9875`) |
+| Ruleset | `2026-11-20.11` (hash `01fb2871bf2c9875`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/`, `dist/` and the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
@@ -29,7 +29,7 @@ moved: "`NAV-01` declared component boundaries" went from `PASS` to `UNKNOWN`. R
 request #224) reads the root component's manifest at the repository root only. This repository has no root build
 manifest: its `package.json`, `pyproject.toml` and `go.mod` files sit under `dev/tools/`. The 2026-11-17 `PASS`
 named a root manifest that does not exist; the engine now says it cannot tell. No finding opened or closed, and the
-rulesets between `2026-11-17.3` and `2026-11-20.7` moved no other verdict here.
+rulesets between `2026-11-17.3` and `2026-11-20.11` moved no other verdict here.
 
 Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` and `HYG-06` with the security policy,
 `SECURITY.md`. On 2026-11-09, `TOOL-04` closed with the dependency audit in
@@ -127,17 +127,13 @@ strings), reviewing the diff.
 
 ## Neutralised path
 
-The framework repository is public. The committed baseline and the published example are engine output with
-one hand edit: `provenance.target` is `.`, where the engine writes the absolute local path. Nothing else is changed. The
-"`IDX-02` An index exists for this checkout" summary needs no edit: the engine writes a path inside the target as
-`<repository>/...`. `make update-audit-baseline` copies the raw report, so follow it with the same edit before
-committing:
+The framework repository is public. The committed baseline and the published example are engine output with no
+hand edit. `make self-audit` and `make update-audit-baseline` pass `--target-label .`, so the engine writes `.` as
+`provenance.target` and not the absolute local path. The "`IDX-02` An index exists for this checkout" summary writes
+a path inside the target as `<repository>/...`. Check that no local path is left before committing:
 
 ```bash
-sed -i 's#"target": "[^"]*"#"target": "."#' .audit-baseline.json
-grep -c '/home/' .audit-baseline.json   # must print 0 (a report from `make self-audit` also has a `baseline` path: use the update target's)
+grep -c '/home/' .audit-baseline.json   # must print 0
 ```
 
-The ratchet compares by finding id, so the edit does not affect it. The engine should write a neutral value itself;
-that request is [issue #49](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/49), and the edit
-goes when it is fixed.
+A report from `make self-audit` also records the `baseline` path; commit the update target's report, which has none.

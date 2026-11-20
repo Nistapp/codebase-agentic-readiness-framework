@@ -181,7 +181,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    lock regeneration command) is added here if it is missing, verified if it is present.
 3. **Single test (TST-04).** If T5 wrote the fenced single-test line, verify it is still fenced and still matches the
    runner. If the item sits in T7, add one: `./gradlew test --tests 'org.example.FooTest'`,
-   `npx jest -t '<test name>'` (Jest needs `-t` or `--testNamePattern`; a path alone is not read as a single test),
+   `npx jest -t '<test name>'` (or a `.test.` or `.spec.` file path),
    `python3 -m unittest tests.test_module -k name`. The framework's own [`AGENTS.md`](../../AGENTS.md#commands)
    is the worked example.
 4. **Documentation contract and boundaries (AGT-03, AGT-06).** Three facts, each on its own line: `docs/` is the

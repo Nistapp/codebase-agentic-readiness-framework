@@ -59,12 +59,13 @@ fixtures/
   cmd-ok-make-alias/         `format-check`, the alias, in place of `format\:check` -> CMD-01…04 PASS
   cmd-ok-root-make-nested-template/ root Makefile with all seven verbs, `templates/package.json` beside it -> CMD-01…04 PASS; the templates are set aside (ADR-0008)
   carried-jvm-example-package/ a Gradle application in package `com.example.demo`, a JUnit test, `examples/` and `src/main/resources/templates/` -> NAV-02, TST-01, TST-03 PASS; only `examples` and the resources `templates` are set aside (ADR-0008)
+  layout-app-per-folder/     two apps (`web/`, `api/`), each with its own manifest, lockfile, Jest coverage floor and `.env.example`, no root manifest; a CI script beside `scripts/ci/env.example`; `api/docker/Dockerfile.dev` (needs git) -> NAV-01 PARTIAL (two candidate components), AGT-02, BASE-04, EXEC-02, EXEC-03, EXEC-04 PASS
   cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
   cmd-01-nested-makefile-only/ the only Makefile is `tools/Makefile`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-01-nested-gradle-only/ the only Gradle build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-01-nested-maven-only/  the only Maven build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-ok-pyproject-poe/      `format-check`, the pyproject task runners' spelling -> CMD-01…04 PASS
-  cmd-ok-gradle/             `formatCheck` registered, `test` and `check` built in -> CMD-01 PASS, CMD-02 UNKNOWN
+  cmd-ok-gradle/             `formatCheck` registered and wired into the built-in `check` -> CMD-01 PASS, CMD-02 PASS
   cmd-ok-maven/              Spotless, Checkstyle and dependency-check declared, the lifecycle phases -> CMD-01 PASS, CMD-02 UNKNOWN
   cmd-01-maven-no-formatter/ a plugin goal named `check`, and no formatter plugin -> CMD-01 FAIL, CMD-02 UNKNOWN
   sec-01-tracked-env/        tracked .env, comprehensive ignore (needs git) -> SEC-01 FAIL
@@ -85,7 +86,7 @@ fixtures/
   exec-01-tool-versions-only/ ruby, dotnet and jvm pinned only by .tool-versions lines -> EXEC-01 PASS
   exec-01-tool-versions-go/  a go.mod with no go directive, pinned by a .tool-versions go line (mise) -> EXEC-01 PASS
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
-  exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
+  exec-02-nested-lockfile/   a tracked lockfile in `packages/app` out of step with the manifest beside it (needs git) -> EXEC-02 FAIL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
   exec-04-missing-env/       source reads an undeclared env var    -> EXEC-04 FAIL
   exec-05-generated/         tracked generated file, no header (needs git) -> EXEC-05 FAIL

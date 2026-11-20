@@ -72,13 +72,15 @@ Why it matters   Every run must resolve identical dependencies; a lockfile that 
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-02`. For each detected ecosystem with a package manager the engine recognises
-                 (node, python, jvm, rust, go, ruby, php, dotnet), finds that manager's lockfile at any depth,
-                 prefers the shallowest, and requires it to be git-tracked; for node/python/rust/go/dotnet it
-                 then compares the lockfile's own declared packages against the root manifest's. For .NET
-                 the lockfile is NuGet's `packages.lock.json`, and the manifest is the `PackageReference`
-                 names (casefolded) of the project files in the root folder. A .NET project with no
-                 `packages.lock.json` reads `FAIL`, as every other ecosystem does (owner decision); NuGet
-                 writes one only when the project sets `RestorePackagesWithLockFile`. For node the
+                 (node, python, jvm, rust, go, ruby, php, dotnet), finds every lockfile of that manager at any
+                 depth and requires each one to be git-tracked; for node/python/rust/go/dotnet it then
+                 compares each lockfile's own declared packages against the manifest in the lockfile's own
+                 folder (`api/package-lock.json` against `api/package.json`), so a second app's lockfile
+                 is judged too. For .NET the lockfile is NuGet's `packages.lock.json`, and the manifest is
+                 the `PackageReference` names (casefolded) of the project files in the lockfile's folder. A
+                 .NET project with no `packages.lock.json` reads `FAIL`, as every other ecosystem does
+                 (owner decision); NuGet writes one only when the project sets
+                 `RestorePackagesWithLockFile`. For node the
                  lockfiles are `package-lock.json`, `npm-shrinkwrap.json` (compared as a
                  `package-lock.json`), `pnpm-lock.yaml`, `yarn.lock`, `bun.lock` and `bun.lockb`. Neither
                  Bun file is compared, so a Bun project reads `PARTIAL` at best. For python they are
@@ -88,8 +90,11 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  from its source files, with no manifest (`Stack.source_only`), is also `UNKNOWN` — it
                  declares no dependencies, so no lockfile is expected. Git unable to report tracked files
                  (no repository, or the command failed) makes the tracked half `UNKNOWN` for the whole
-                 check, never inferred as passing. A lockfile found only in a subdirectory is tracked but
-                 its consistency is left `PARTIAL`, because only the root manifest is read. Distrust a
+                 check, never inferred as passing. A lockfile with no manifest in its own folder is tracked
+                 but its consistency is left `PARTIAL`. A tracked lockfile that the scan's walk skipped as
+                 ignored is found too. The walk reads an ignore file without its `!` lines. So a
+                 `package-lock.json` rule with a `!apps/web/package-lock.json` line would otherwise hide a
+                 lockfile git tracks. Distrust a
                  `FAIL` for "no lockfile" when the manager is one the engine does not recognise for that
                  ecosystem — verify against `PACKAGE_MANAGERS` in `audit/stack.py` before concluding the
                  project truly has none. Distrust a `PARTIAL` citing "consistency unverified" when the
@@ -98,30 +103,29 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  manifest's and lockfile's declared dependency names directly before accepting the gap.
 Method           automated
 Look for         Every lockfile name for each detected package manager, at any depth; `git ls-files` (or
-                 equivalent) for whether the shallowest one is tracked; for node/python/rust/go/dotnet, the
-                 manifest's declared dependency names against the lockfile's own.
-Rubric           PASS: every detected ecosystem's lockfile exists, is tracked, and (where parsing is
-                 attempted) agrees with the manifest.
-                 PARTIAL: every detected ecosystem's lockfile exists and is tracked, but consistency could
-                 not be verified for at least one (an ecosystem beyond node/python/rust/go/dotnet, an
-                 unparsable manifest or lockfile, a lockfile found only below the root, or a .NET project
-                 whose package references come from an imported MSBuild file or a root `Directory.*` file).
-                 FAIL: at least one detected ecosystem has no lockfile, has one that is not tracked, or
-                 has one whose declared dependencies omit manifest dependencies.
+                 equivalent) for whether each one is tracked; for node/python/rust/go/dotnet, the declared
+                 dependency names of the manifest beside each lockfile against the lockfile's own.
+Rubric           PASS: every detected ecosystem has a lockfile, every lockfile is tracked, and each one
+                 (where parsing is attempted) agrees with the manifest in its folder.
+                 PARTIAL: every lockfile is tracked, but consistency could not be verified for at least one
+                 (an ecosystem beyond node/python/rust/go/dotnet, an unparsable manifest or lockfile, a
+                 lockfile with no manifest in its own folder, or a .NET project whose package references
+                 come from an imported MSBuild file or a `Directory.*` file in its folder or above it).
+                 FAIL: at least one detected ecosystem has no lockfile, a lockfile is not tracked, or a
+                 lockfile's declared dependencies omit dependencies of the manifest beside it.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no ecosystem with a recognised package manager is detected; an ecosystem
                  is recognised only from source with no manifest; or git could not report tracked files.
 Evidence to cite A `file` evidence item citing the lockfile path for a missing/untracked finding, or the
-                 lockfile path plus the omitted dependency names for a mismatch; for PASS, the tracked
-                 lockfile path for each ecosystem.
+                 lockfile path plus the omitted dependency names for a mismatch; for PASS, every tracked
+                 lockfile path.
 Absence proof    A "no lockfile" FAIL names every lockfile filename that manager uses and that none was
                  found at any depth; an "untracked" FAIL cites the untracked path directly; a mismatch
                  FAIL lists the specific manifest dependencies the lockfile omits.
 Remediation      `pin-execution-environment`
-Pitfalls         A lockfile that exists and is tracked but lives in a subdirectory reads `PARTIAL`, not
-                 `PASS` — the engine only ever compares the root manifest, so a nested lockfile's
-                 consistency is genuinely unverified, not a false negative to argue away. A .NET solution
-                 with a `packages.lock.json` beside each project reads `PARTIAL` for the same reason.
+Pitfalls         A lockfile is compared only with the manifest in its own folder, never with one above it. A
+                 workspace lockfile at the root is compared with the root manifest only, so a dependency
+                 that only a member's manifest declares is not checked against it.
 
 ## EXEC-03 — Non-interactive setup path
 
@@ -130,17 +134,21 @@ Why it matters   An agent cannot answer an interactive prompt or provision a dat
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-03`. First looks for a documented, non-interactive install command (one whose
-                 head tool and subcommand the engine recognises, such as `npm install` or `make setup`)
-                 inside a fenced block of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md` — found ⇒
-                 `PASS` outright. Failing that, looks for a setup artifact (a devcontainer, a compose
+                 head tool and subcommand the engine recognises, such as `npm install` or `make setup`).
+                 It reads the fenced shell blocks and the inline code spans (`` - Install: `npm ci` ``)
+                 of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md`. Found ⇒ `PASS` outright.
+                 Failing that, looks for a setup artifact (a devcontainer, a compose
                  file, a Dockerfile, or a `setup`/`bootstrap`/`install`/`dev`/`dev-setup` Makefile or
-                 npm-script target) and whether any doc file names it in prose. No ecosystem detected at
-                 all ⇒ `UNKNOWN` — with no build manifest there is no provisioning to characterise.
+                 npm-script target) and whether any doc file names it in prose. The setup files count at
+                 any depth, and so does a Dockerfile with a variant in its name (`Dockerfile.*`,
+                 `*.Dockerfile`, `*.dockerfile`), such as Quarkus's `src/main/docker/Dockerfile.jvm`. No ecosystem
+                 detected at all ⇒ `UNKNOWN` — with no build manifest there is no provisioning to characterise.
                  Distrust a `FAIL` when the setup instructions live in a doc file outside the four this
                  check reads — verify by reading whatever onboarding doc the repository actually points
                  to before treating the absence as real.
 Method           automated
-Look for         A fenced install command in README.md, AGENTS.md, CLAUDE.md or CONTRIBUTING.md first;
+Look for         An install command, fenced or as inline code, in README.md, AGENTS.md, CLAUDE.md or
+                 CONTRIBUTING.md first;
                  failing that, a devcontainer/compose/Dockerfile/setup-script/setup-target artifact, and
                  whether any of those four docs names it.
 Rubric           PASS: a documented non-interactive install command exists, or a setup artifact exists
@@ -154,7 +162,8 @@ Evidence to cite A `file` evidence item citing the documented command's location
                  absence proof.
 Absence proof    A FAIL states explicitly that none of the devcontainer, compose file, Dockerfile, setup
                  target/script, or documented install command forms was found, naming the exact file
-                 names searched for (the full `_SETUP_FILES` and `_SETUP_TARGETS` lists).
+                 names searched for (the full `_SETUP_FILES`, `_DOCKERFILE_PATTERNS` and `_SETUP_TARGETS`
+                 lists).
 Remediation      `define-command-surface`
 Pitfalls         A setup script that exists but is named only by its filename inside a code block that is
                  not itself a shell command (a file tree listing, say) does not count as "documented" —
@@ -170,22 +179,33 @@ Severity         BLOCKER
 Engine           `EXEC-04`. Collects every `${VAR}` reference in shell-family files (`.sh`, `.bash`,
                  `.zsh`, `.fish`, `.ksh`, `.ps1`, `Dockerfile`) and every `os.environ`/`os.getenv`/
                  `process.env`/`ENV[...]`-style reference in source and script files, then subtracts the
-                 keys declared in a committed example file (`.env.example`, `.env.sample`,
-                 `.env.template`, `env.example`) and a fixed, in-code allow-list of conventional host/CI
-                 variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like). This check runs
+                 keys declared in committed example files (`.env.example`, `.env.sample`,
+                 `.env.template`, `env.example`, at any depth) and a fixed, in-code allow-list of
+                 conventional host/CI variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like). The
+                 allow-list also holds the variables the shell sets itself (`SECONDS`, `RANDOM`, `LINENO`,
+                 `OLDPWD`, `UID`, `BASH_*`, and the like). An example file covers the files in its own folder
+                 and below it: `api/.env.example` declares the keys `api/` reads, `scripts/ci/env.example`
+                 the keys of the CI scripts, and a root file every key. A key is declared when every file
+                 that reads it is covered by an example file that names it. A shell reference with a
+                 fallback (`${VAR:-default}`, `${VAR-x}`, `${VAR:=x}`, `${VAR:+x}`) runs without the variable,
+                 so the key is optional: the summary and the payload's `optional` list name it when no
+                 covering example file declares it, and it never fails the check. `${VAR:?message}` stops the
+                 script without the variable, so it is required, as a bare `${VAR}` is. One required
+                 reference anywhere makes a key required. This check runs
                  regardless of detected ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` that
                  names a key your own reading recognises as a CI/host convention the allow-list has not
                  yet caught — verify against `_ENV_ALLOWLIST`/`_ENV_ALLOW_PREFIXES` in
                  `audit/rules/checks/execution.py` before writing a false "missing variable" finding.
 Method           automated
 Look for         `${VAR}`-style references in shell/`Dockerfile` files, and language-level environment
-                 reads in source and script files generally; the keys declared in whichever committed
-                 example file exists.
-Rubric           PASS: every referenced key not on the allow-list is declared in a committed example
-                 file (including the case of no references at all).
+                 reads in source and script files generally; the keys declared in each committed example
+                 file, and which reading files each example file covers.
+Rubric           PASS: every required referenced key not on the allow-list is declared in an example
+                 file that covers each file reading it (including the case of no references at all). An
+                 optional key (a shell reference with a fallback) is listed but never required.
                  PARTIAL: not used by this check — any undeclared key fails the whole check.
-                 FAIL: at least one referenced, non-allow-listed key is absent from every committed
-                 example file.
+                 FAIL: at least one required, non-allow-listed key is absent from every example file
+                 that covers a file reading it.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never — the reference scan runs whether or not an ecosystem is detected.
 Evidence to cite A `file` evidence item per committed example file read (for PASS, when references
