@@ -1293,7 +1293,8 @@ READS: dict[str, Reads] = {
             "Pin files count by existence; .tool-versions needs a line for the ecosystem, package.json "
             "engines.node, pyproject.toml requires-python, go.mod a go directive and composer.json "
             "config.platform.php or require.php. A module manifest no pin"
-            " reaches (its folder or a parent) is PARTIAL."
+            " reaches (its folder or a parent) is PARTIAL; a parent go.mod or composer.json does not reach a"
+            " nested one."
         ),
     ),
     "EXEC-02": Reads(

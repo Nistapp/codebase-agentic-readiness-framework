@@ -56,10 +56,12 @@ Pitfalls         A monorepo where only one of several ecosystems is pinned still
                  the engine fails the whole check on the first unpinned ecosystem, so a `FAIL` summary
                  naming one ecosystem does not mean the others are also unpinned; read which ecosystem
                  the finding actually names before writing remediation. Within one ecosystem, each module
-                 manifest (`package.json`, `pyproject.toml`, `go.mod`) must be reached by a pin: its own
-                 manifest, or a pin file or (node, python) a pinning manifest in its folder or a parent
-                 folder; one unreached module reads `PARTIAL` and is named in the evidence. A nested
-                 `.tool-versions` is not read, and a parent `go.mod` does not pin a nested Go module.
+                 manifest (`package.json`, `pyproject.toml`, `go.mod`, `composer.json`) must be reached by
+                 a pin: its own manifest, or a pin file or (node, python) a pinning manifest in its folder
+                 or a parent folder; one unreached module reads `PARTIAL` and is named in the evidence. A
+                 nested `.tool-versions` is not read. A parent `go.mod` does not pin a nested Go module,
+                 and a parent `composer.json` does not pin a nested Composer project, which Composer
+                 installs on its own.
 
 ## EXEC-02 — Lockfile committed and consistent
 
