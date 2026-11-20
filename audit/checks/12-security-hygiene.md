@@ -79,11 +79,20 @@ Engine           `SEC-02`. Scans tracked text files (falling back to the whole i
                  reference to the environment or a secret store (`${NAME}`, `os.environ/NAME`,
                  `{{ secrets.NAME }}`), or, outside source code, a single plain unquoted token at least 12
                  characters long with a mixed charset; in source code an unquoted value is a name or an
-                 expression, never counted. Committed templates (`*.example`/`*.sample`/`*.template`) and
-                 lines matching an obvious placeholder pattern (`<...>`, `your-`, `changeme`, `xxx`, and
-                 similar) are skipped deterministically. Hits the repository's own scanner allowlist accepts
-                 are subtracted: `.secrets.baseline` (`results[<path>]` entries matched on path **and** line
-                 number, so a stale entry never hides a new hit on another line), `.gitleaksignore`
+                 expression, never counted. The keyword may end a compound name (`DB_PASSWORD`,
+                 `JWT_SECRET`, `SECRET_KEY`, `AWS_SECRET_ACCESS_KEY`), but it must be what is assigned:
+                 `TOKEN_URL=` and `password.min-length=` do not count. In a properties file and an
+                 env-style file (`.env`, `.env.*`, `*.env`) the length floor is 6 characters, because a
+                 short password there is still a password. A commented-out assignment counts like any other
+                 line. A `Bearer` token or a literal that names itself a sentinel (`invalid`, `dummy`,
+                 `fake`, `sample`, `placeholder`) does not count. A badge or shield image URL
+                 (`.../badge.svg?token=...`, `img.shields.io`) is removed from the line before the scan. Its
+                 token is a public read token for the badge. Committed templates
+                 (`*.example`/`*.sample`/`*.template`) and lines matching an obvious placeholder pattern
+                 (`<...>`, `your-`, `changeme`, `xxx`, and similar) are skipped deterministically. Hits the
+                 repository's own scanner allowlist accepts are subtracted: `.secrets.baseline`
+                 (`results[<path>]` entries matched on path **and** line number, so a stale entry never hides
+                 a new hit on another line), `.gitleaksignore`
                  (`<file>:<rule>:<line>` or `<commit>:<file>:<rule>:<line>`) and `.gitleaks.toml`
                  (`[allowlist]`/`[[allowlists]]` `paths` searched in the path, `regexes` searched in the line,
                  which is wider than the secret gitleaks matches). The summary then reads "N credential-shaped

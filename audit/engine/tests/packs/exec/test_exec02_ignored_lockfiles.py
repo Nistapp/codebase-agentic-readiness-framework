@@ -5,8 +5,8 @@
 
 A Node repository ignores `package-lock.json` at its root and re-includes each app's lockfile with `!` lines. The
 walk reads the root ignore file without its `!` lines (ADR-0006), so it left out both tracked lockfiles, and
-`EXEC-02` reported "no lockfile" (`FAIL`). The rubric says a lockfile found only below the root is tracked and its
-consistency is unverified (`PARTIAL`). The check now adds each tracked lockfile the walk left out. The check runs
+`EXEC-02` reported "no lockfile" (`FAIL`). The check adds each tracked lockfile the walk leaves out. Since ADR-0009
+the walk reads `!` lines and never skips a tracked file, so such a lockfile is read and compared like any other. The check runs
 in-process here, so coverage traces it; git builds the tracked set in a temporary repository.
 """
 
@@ -72,9 +72,12 @@ class Exec02IgnoredLockfileTests(unittest.TestCase):
         for app in ("web", "api"):
             files |= {f"apps/{app}/package.json": NODE, f"apps/{app}/package-lock.json": LOCK}
         outcome = self.exec02(files)
+        # Every lockfile is judged, not only the shallowest (issue #56), so both apps' lockfiles are listed. The walk
+        # honours the `!` lines and never skips a tracked file (ADR-0009), so each lockfile is read and compared
+        # with the manifest beside it.
         self.assertEqual(
             (outcome.verdict.value, outcome.summary, outcome.findings),
-            ("PARTIAL", "consistency unverified: apps/api/package-lock.json", []),
+            ("PASS", "tracked: apps/api/package-lock.json, apps/web/package-lock.json", []),
         )
 
     def test_a_force_tracked_lockfile_in_node_modules_is_not_read(self):

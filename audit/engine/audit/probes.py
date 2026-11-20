@@ -11,10 +11,13 @@ decision, and this module never makes it on the operator's behalf (ADR-0002):
 * one timeout per probe, and the timeout itself is recorded as evidence
 * captured output is redacted for credential shapes **at capture time**, never at render time
 * only verbs the rule pack declares read-only are eligible
+* a plan may name directories inside the target to put first on ``PATH`` (``node_modules/.bin``), the way
+  the target's own runner does; nothing else in the environment changes
 """
 
 from __future__ import annotations
 
+import os
 import re
 import subprocess
 import time
@@ -57,6 +60,18 @@ class ProbePlan:
     verb: str
     command: list[str]
     read_only: bool = True
+    #: Directories relative to the probe's ``cwd``, put first on ``PATH`` in this order.
+    path_prepend: tuple[str, ...] = ()
+
+
+def _probe_env(plan: ProbePlan, cwd: Path) -> dict[str, str] | None:
+    """The environment for ``plan``: the caller's, with ``path_prepend`` first on ``PATH``; ``None`` keeps it as is."""
+    if not plan.path_prepend:
+        return None
+    env = dict(os.environ)
+    first = [str(cwd / rel) for rel in plan.path_prepend]
+    env["PATH"] = os.pathsep.join([*first, env["PATH"]] if env.get("PATH") else first)
+    return env
 
 
 def redact(text: str) -> tuple[str, int]:
@@ -86,7 +101,9 @@ def run_plan(plan: ProbePlan, *, allow: tuple[str, ...], cwd: Path, timeout: int
 
     started = time.monotonic()
     try:
-        proc = subprocess.run(plan.command, cwd=str(cwd), text=True, capture_output=True, timeout=timeout)
+        proc = subprocess.run(
+            plan.command, cwd=str(cwd), env=_probe_env(plan, cwd), text=True, capture_output=True, timeout=timeout
+        )
     except subprocess.TimeoutExpired as exc:
         partial = (exc.stdout or "") if isinstance(exc.stdout, str) else ""
         clean, redactions = redact(partial)

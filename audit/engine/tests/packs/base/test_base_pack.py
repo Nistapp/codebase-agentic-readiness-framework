@@ -22,6 +22,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import support  # noqa: E402
+from audit.components import detect_components  # noqa: E402
+from audit.rules.checks.base import check_base04  # noqa: E402
+from audit.rules.registry import REGISTRY_BY_ID  # noqa: E402
+from audit.scan import build_inventory  # noqa: E402
+from audit.stack import detect_stack  # noqa: E402
 
 BASE_CHECKS = ("BASE-01", "BASE-02", "BASE-03", "BASE-04")
 
@@ -99,6 +104,86 @@ class BaseInlineTests(unittest.TestCase):
             }
         )
         self.assertEqual(support.verdicts(report)["BASE-01"], "PASS")
+
+
+GRADLE_GROOVY = """plugins { id 'jacoco' }
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            limit {
+                minimum = 0.80
+            }
+        }
+    }
+}
+"""
+GRADLE_KOTLIN = """plugins { jacoco }
+tasks.jacocoTestCoverageVerification {
+    violationRules {
+        rule { limit { minimum = "0.80".toBigDecimal() } }
+    }
+}
+"""
+POM_JACOCO = """<project>
+  <build><plugins><plugin>
+    <groupId>org.jacoco</groupId>
+    <artifactId>jacoco-maven-plugin</artifactId>
+    <executions><execution>
+      <id>check</id>
+      <goals><goal>check</goal></goals>
+      <configuration><rules><rule><limits><limit>
+        <counter>LINE</counter><value>COVEREDRATIO</value><minimum>0.80</minimum>
+      </limit></limits></rule></rules></configuration>
+    </execution></executions>
+  </plugin></plugins></build>
+</project>
+"""
+
+
+class Base04BuildFileFloorTests(unittest.TestCase):
+    """BASE-04 reads a JaCoCo floor in a Gradle or Maven build and a Jest floor in any package.json (issue #45)."""
+
+    def base04(self, files: dict[str, str]):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for rel, text in files.items():
+                support.write(root, rel, text)
+            inventory = build_inventory(root)
+            outcome = check_base04(
+                spec=REGISTRY_BY_ID["BASE-04"],
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=detect_components(inventory),
+                session=None,
+            )
+        return outcome.verdict.value, outcome.summary
+
+    def test_a_jacoco_floor_in_a_gradle_build_passes(self):
+        for name, text in (("build.gradle", GRADLE_GROOVY), ("build.gradle.kts", GRADLE_KOTLIN)):
+            for rel in (name, f"server/{name}"):
+                with self.subTest(rel=rel):
+                    self.assertEqual(self.base04({rel: text}), ("PASS", f"coverage threshold configured: {rel}"))
+
+    def test_a_jacoco_check_goal_in_a_maven_build_passes(self):
+        for rel in ("pom.xml", "server/pom.xml"):
+            with self.subTest(rel=rel):
+                self.assertEqual(self.base04({rel: POM_JACOCO}), ("PASS", f"coverage threshold configured: {rel}"))
+
+    def test_jacoco_without_a_minimum_is_no_floor(self):
+        gradle = "plugins { id 'jacoco' }\njacocoTestCoverageVerification {\n    // minimum = 0.80\n}\n"
+        self.assertEqual(self.base04({"build.gradle": gradle})[0], "FAIL")
+        pom = POM_JACOCO.replace("<minimum>0.80</minimum>", "<!-- <minimum>0.80</minimum> -->")
+        self.assertEqual(self.base04({"pom.xml": pom})[0], "FAIL")
+        report_only = POM_JACOCO.replace("<goal>check</goal>", "<goal>report</goal>")
+        self.assertEqual(self.base04({"pom.xml": report_only})[0], "FAIL")
+
+    def test_a_coverage_threshold_in_an_app_package_json_passes(self):
+        manifest = '{"name": "web", "jest": {"coverageThreshold": {"global": {"lines": 80}}}}\n'
+        self.assertEqual(
+            self.base04({"web/package.json": manifest, "api/package.json": '{"name": "api"}\n'}),
+            ("PASS", "coverage threshold configured: web/package.json"),
+        )
 
 
 if __name__ == "__main__":

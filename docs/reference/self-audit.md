@@ -19,10 +19,10 @@ score from falling.
 | Phase-1 score | **0.9269** |
 | Date | 2026-11-17 |
 | Engine | `python-agentic-audit` 0.4.0 |
-| Ruleset | `2026-11-20.9` (hash `01fb2871bf2c9875`) |
+| Ruleset | `2026-11-20.15` (hash `01fb2871bf2c9875`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
-| Scope | the whole repository except `artefacts/`, `dist/` and the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
+| Scope | the whole repository except `artefacts/` and `dist/`; the walk skips git-ignored folders such as the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
 
 Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` and `HYG-06` with the security policy,
 `SECURITY.md`. On 2026-11-09, `TOOL-04` closed with the dependency audit in

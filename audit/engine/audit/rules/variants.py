@@ -246,8 +246,10 @@ HARNESSES: tuple[Harness, ...] = (
         note="AGENTS.md wins; CLAUDE.md is a fallback only when no AGENTS.md exists. "
         "opencode.json `instructions` can add paths, globs and URLs.",
     ),
+    # Named "Amp", not "Sourcegraph Amp": the report's reach matrix lists this name beside the target's full
+    # commit id, and gitleaks reads any 40-hex string as a Sourcegraph token in a file that says "sourcegraph".
     Harness(
-        "Sourcegraph Amp",
+        "Amp",
         "native",
         True,
         paths=("AGENTS.md", "AGENT.md", "CLAUDE.md"),

@@ -10,7 +10,10 @@ Implemented here: `CON-01`, `CON-02`, `CON-03`, and the `CON-04` emitter.
 The framework requires initial allow/deny lists as a Phase-1 deliverable, and the spec names the artifact: the
 prohibitions section of the instruction file (decision 0001, ``spec/decisions/0001-constraint-artifact.md``).
 `CON-01` and `CON-02` read it through ``_common.prohibitions_section``; a path or a pattern is *named* when it
-stands in a code span of the section.
+stands in a code span of the section. In a section opened only by its body (no prohibition word in its heading, three
+prohibition lines under it), only a list item or paragraph that holds a prohibition line names anything: a conventions
+section that says "never" three times also names paths that are not a deny list (issue #9). A finding cites the
+heading of every part of the section.
 
 What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
 
@@ -280,7 +283,7 @@ def check_con01(*, spec, target, inventory, stack, components, session) -> Check
                 "trust the deny list to bound what an agent may change",
                 f"the prohibitions section of {name} names no path or pattern in a code span",
                 Verdict.FAIL,
-                [Evidence(name, line=section.first_line, note=section.headings[0])],
+                [Evidence(name, line=line, note=title) for line, title in section.sections],
                 "Name each path an agent must not change in a code span in the prohibitions section, for example "
                 "`dist/`, `tests/` and `.env`.",
             )
@@ -352,7 +355,7 @@ def check_con02(*, spec, target, inventory, stack, components, session) -> Check
     uncovered = [root for root in test_roots if root not in covered]
     listed = _describe(test_roots)
     paths = PathList(paths=tuple(test_roots))
-    evidence = [Evidence(name, line=section.first_line, note=section.headings[0])]
+    evidence = [Evidence(name, line=line, note=title) for line, title in section.sections]
 
     if not uncovered:
         return _outcome(
