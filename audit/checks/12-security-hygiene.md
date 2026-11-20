@@ -29,23 +29,31 @@ Engine           `SEC-01`. Two independent halves: whether `.env`/`.env.*` (excl
                  its directory, `!` negation applied in git's order, [ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)) — so a tracked `.env` that
                  is *also* git-ignored is still caught, because tracked state and ignore coverage are
                  checked independently, not inferred from one another. A tracked `.env`/`.env.*` is the
-                 blocker (`FAIL`) regardless of ignore coverage. No tracked `.env`, but the ignore rules
-                 miss the shape, is `PARTIAL`. A rule anchored to the root (`/.env`, `/.env.*`) covers the
-                 root and not a nested `a/.env`: the summary says "root-anchored only", not "missing", and the
-                 verdict is the same `PARTIAL`, with that reason. Git unable to report tracked files makes the blocker half
-                 `UNKNOWN` — never inferred as a pass — whatever the ignore coverage reads as. Distrust a
-                 `PARTIAL`/`FAIL` on ignore coverage when the repository uses an ignore mechanism beyond
-                 `.gitignore` that the engine's loader does not yet read — verify by checking
-                 `audit.ignore.IGNORE_FILE_NAMES` before treating the gap as real.
+                 blocker (`FAIL`) regardless of ignore coverage. A tracked file that an ignore rule also matches
+                 has a wider name rule (issue #12). Its name starts with `.env`, ends with `.env` or starts with
+                 `env.`, and it is not a committed template. So `config/prod.env`, force-added past `*.env`, is
+                 also the blocker. The engine's own scoped matcher decides which tracked files are ignored, never
+                 `git ls-files -ci`. The host's global excludes therefore do not change the list. A path that
+                 `--exclude` takes out, or that is set aside as carried data, is not in it. No tracked
+                 `.env`, but the ignore rules miss the shape, is `PARTIAL`. A rule anchored to the root
+                 (`/.env`, `/.env.*`) covers the root and not a nested `a/.env`: the summary says
+                 "root-anchored only", not "missing", and the verdict is the same `PARTIAL`, with that reason.
+                 Git unable to report tracked files makes the blocker half `UNKNOWN` — never inferred as a
+                 pass — whatever the ignore coverage reads as. Distrust a `PARTIAL`/`FAIL` on ignore
+                 coverage when the repository uses an ignore mechanism beyond `.gitignore` that the engine's
+                 loader does not yet read — verify by checking `audit.ignore.IGNORE_FILE_NAMES` before
+                 treating the gap as real.
 Method           automated
 Look for         `tracked_files` for any path named `.env` or `.env.*` (excluding the committed-template
-                 basenames); the loaded ignore rules for coverage of the `.env` and `.env.*` shapes. Cite
-                 only the path of any tracked `.env`-like file found — never open or quote it.
+                 basenames), and for any env-like name (`.env*`, `*.env`, `env.*`) an ignore rule also
+                 matches; the loaded ignore rules for coverage of the `.env` and `.env.*` shapes. Cite only the
+                 path of any tracked `.env`-like file found — never open or quote it.
 Rubric           PASS: no `.env`/`.env.*` file is tracked, and ignore rules cover both shapes.
                  PARTIAL: no `.env`/`.env.*` file is tracked, but ignore rules miss one or both shapes, or
                  cover them only from the root (`/.env`).
                  FAIL: a `.env`/`.env.*` file (not a committed template) is tracked, regardless of
-                 ignore coverage.
+                 ignore coverage; or a tracked file an ignore rule also matches has an env-like name
+                 (`.env*`, `*.env`, `env.*`, not a committed template).
                  NOT_APPLICABLE: never.
                  UNKNOWN when: git could not report the repository's tracked files, so a tracked `.env`
                  cannot be ruled out.
@@ -157,28 +165,36 @@ Engine           `SEC-03`. Checks ignore-rule coverage of eleven documented secr
                  `FAIL` outright — there is no coverage to measure. Every shape covered is `PASS`; some
                  covered, or covered from the root only (`/.env`, reported as "root-anchored only"), is `PARTIAL`; an ignore file exists but covers none of the eleven is `FAIL`.
                  There is no `UNKNOWN` path — the presence and coverage of ignore rules is always
-                 determinable. Distrust a `PARTIAL`/`FAIL` for a shape covered by a broader rule the
-                 engine's documented ignore-matching subset does not recognise (`.git/info/exclude`, a global
-                 excludes file, escapes beyond `\#` and `\!`) — verify by reading the ignore file's own rule
-                 directly before treating the gap as real.
+                 determinable. Tracked key material is a second half (issue #12). It is a tracked file that an
+                 ignore rule also matches, named as one of the nine non-dotenv shapes. Each shape is matched by
+                 its suggested entry at any depth (`*.key`, `*.pem`, `id_rsa*`, `.aws/*` and the rest). Such a
+                 file is `FAIL`, with its own finding: the rule existed, and the key was committed past it.
+                 The dotenv shapes are left to `SEC-01`. When git cannot report tracked files, this half is
+                 skipped, and the verdict rests on coverage alone. Distrust a `PARTIAL`/`FAIL` for a shape
+                 covered by a broader rule the engine's documented ignore-matching subset does not recognise
+                 (`.git/info/exclude`, a global excludes file, escapes beyond `\#` and `\!`) — verify by
+                 reading the ignore file's own rule directly before treating the gap as real.
 Method           automated
 Look for         The loaded ignore rules (`.gitignore` or equivalent) for coverage of each of the eleven
                  documented shapes' representative sample path.
 Rubric           PASS: ignore rules cover every one of the eleven documented secret shapes.
                  PARTIAL: ignore rules cover some of the eleven shapes but not all, and at least one
                  ignore file exists.
-                 FAIL: no ignore file exists at all, or one exists but covers none of the eleven shapes.
+                 FAIL: no ignore file exists at all, or one exists but covers none of the eleven shapes, or a
+                 tracked file an ignore rule also matches is named as key material (a non-dotenv shape).
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never — ignore-rule presence and coverage are always determinable.
 Evidence to cite A `file` evidence item per covered shape (the ignore rule's source and pattern) for
                  PASS/PARTIAL; for a FAIL with no ignore file, cite the absence of any ignore file as the
-                 evidence directly.
+                 evidence directly; for tracked key material, a `file` evidence item per path (up to 25) with
+                 the shape label as its note, never the file's contents.
 Absence proof    A FAIL or PARTIAL names every missing shape by its label (for example "PKCS#12",
                  "AWS credentials"), with the suggested `.gitignore` entry (`_SECRET_SHAPE_SUGGEST`)
                  ready to paste, so the gap is a checkable, fixable list rather than a general impression.
 Remediation      `env-inventory-and-secrets`
 Pitfalls         `SEC-01` and `SEC-03` share the dotenv shapes but read different scope — `SEC-01` is
                  `.env`/`.env.*` specifically (tracked state and ignore coverage both), `SEC-03` is eleven
-                 shapes including dotenv but never reads tracked state — a `PASS` on one does not predict
+                 shapes including dotenv, and reads tracked state only for key material past an ignore rule,
+                 never for dotenv files — a `PASS` on one does not predict
                  the other, and the dotenv shape itself can read `PASS` on `SEC-03` while `SEC-01` is
                  `FAIL` (a tracked `.env` with an otherwise-correct ignore rule added too late).

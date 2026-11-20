@@ -29,7 +29,7 @@ manifest that dependency automation reads.
   JDK toolchain block). A step that conflicts with one stops and asks.
 - No earlier theme is needed. Run it before any scanner step that reads a lockfile
   ([`configure-quality-tools`](configure-quality-tools.md) blocks `security` until the lockfile exists), and
-  before the CI theme, which copies these pins into workflows.
+  before the CI theme ([`add-ci-parity`](add-ci-parity.md)), which copies these pins into workflows.
 - The integration branch builds today. Take a baseline first (step 1): a lockfile is only safe if it changes no
   resolved version.
 
@@ -112,7 +112,8 @@ manifest that dependency automation reads.
 6. **Cross-check every other place that names a version** (found in Inputs step 1): CI workflows, `Dockerfile*`
    `FROM` lines, compose images, documented prerequisites. Make each agree with the pin, or read it from the pin
    (`node-version-file: .nvmrc`, `java-version-file`). Edit workflow files only when `ci.edits_authorised` allows;
-   otherwise list the mismatches as debt and stop short of the edit. The CI theme repeats this check.
+   otherwise list the mismatches as debt and stop short of the edit. The CI theme
+   ([`add-ci-parity`](add-ci-parity.md)) repeats this check.
 7. **Keep claims true.** A comment or document that says "versions are locked" must be true after this change or
    be corrected: `dependabot.yml` headers and `AGENTS.md` lines are typical. A claim that is stale for a reason
    other than this playbook is recorded and left to the `AGENTS.md` theme, **except** a false claim about the
@@ -254,7 +255,8 @@ Steps 1, 5, 8 and 9 make no commit.
 - A lockfile that changes a resolved version is not debt: fix the cause before committing.
 - A mismatch in a file the owner has not authorised editing (CI, a Dockerfile in another team's folder) is
   debt: count the mismatched places, record them with `--debt`, mark the item `partial`, and list each place
-  in the note. There is nothing to ratchet; the CI theme closes it.
+  in the note. There is nothing to ratchet; the CI theme
+  ([`add-ci-parity`](add-ci-parity.md)) closes it.
 - A component whose build fails on the pinned major: record `blocked` with the error and the owner's options
   (a different major, an upgrade of the failing dependency). Never pin a version the build cannot use.
 
@@ -289,7 +291,8 @@ dependency version changed, so no runtime change needs undoing.
   locking: the point is to record what resolves today.
 - Do not add a root workspace manifest to a per-component repository unless the owner asks.
 - Do not edit workflow files without `ci.edits_authorised`.
-- Do not build images or start containers by hand: use the repository's scripts.
+- Do not build images or start containers by hand: use the repository's scripts, unless the person asks for that
+  exact action ([Hard rules](../SKILL.md#hard-rules)).
 - Do not install a version manager the owner did not approve.
 - Do not upgrade a tool while moving its version into a manifest.
 

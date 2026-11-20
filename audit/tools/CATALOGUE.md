@@ -79,12 +79,12 @@ check_drift.py REPORT REPO [--json]
 ## check_regressions.py
 
 **Version:** 0.1.0  
-**Writes:** nothing
+**Writes:** With --workspace only: LABEL-regressions-THEME.json beside the state, outside the target.
 
 Compare two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes.
 
 ```text
-check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]]
+check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]] [--workspace DIR --theme THEME [--label LABEL]]
 ```
 
 ## compare_reports.py
@@ -101,7 +101,7 @@ compare_reports.py BEFORE AFTER [--state STATE] [--json]
 ## progress.py
 
 **Version:** 0.1.0  
-**Writes:** Only in the workspace, the report's folder, which must be outside the target: <label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, render, and any command given --render), each replaced atomically; adopt also copies the source reports there, never over a different file. init and adopt never replace a state; show writes nothing; every other command rewrites the JSON after validating it.
+**Writes:** Only in the workspace, the report's folder, which must be outside the target: <label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, render, and any command given --render), each replaced atomically; adopt also copies the source reports there, never over a different file. init and adopt never replace a state; show writes nothing; every other command rewrites the JSON after validating it. set-status, theme and accept-lost read the theme's LABEL-regressions-THEME.json verdict, which check_regressions.py writes.
 
 Create, show and render the implement recipe's per-repository state from a final audit report.
 
@@ -116,4 +116,5 @@ progress.py unskip|undefer FINDING --by owner --workspace DIR --phase PHASE [--r
 progress.py pref set KEY VALUE --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --workspace DIR --phase PHASE [--render]
+progress.py accept-lost THEME --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 ```

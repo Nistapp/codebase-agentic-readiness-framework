@@ -43,8 +43,8 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   own folder and below it, so ``api/.env.example`` covers the keys ``api/`` reads and a root one covers every file;
   a key counts as declared when every file that reads it is covered by an example file that names it. A documented allow-list of conventional CI/test/host variables lives in
   :data:`_ENV_ALLOWLIST` and :data:`_ENV_ALLOW_PREFIXES`; it is deterministic and kept in code.
-* **EXEC-05** — files the scan classifies ``GENERATED`` (including vendored paths) are either
-  untracked or carry a generated-file header. Tracked state unavailable ⇒ ``UNKNOWN``.
+* **EXEC-05** — files the scan classifies ``GENERATED`` (tracked files under ``dist/`` and ``build/`` included)
+  are either untracked or carry a generated-file header. Tracked state unavailable ⇒ ``UNKNOWN``.
 * **EXEC-06** — every shell command in a fenced README/``AGENTS.md`` block resolves to a
   known tool, a declared verb, an npm script, a Makefile target, a package binary, or a real path.
   Shell builtins and obvious placeholders are skipped, never failed. Line continuations are joined.

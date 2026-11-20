@@ -67,7 +67,7 @@ A requirement verified by a person (`human`) or by the owner's declaration (`att
 Every check file under [`audit/checks/`](../../../audit/checks/) follows one fixed shape, set out in that
 folder's own [`README.md`](../../../audit/checks/README.md): `Why it matters`, `Severity`, `Engine`,
 `Method`, `Look for`, `Rubric` (a verdict per outcome, including when it is `UNKNOWN`), `Evidence to cite`,
-`Absence proof`, `Remediation` and `Pitfalls`. `Engine` and `Method` are additions beyond DP §5.2: they say
+`Absence proof`, `Remediation` and `Pitfalls`. `Engine` and `Method` are this framework's additions: they say
 which engine check backs this one (or `none` for an agent-only check) and repeat the catalogue's `method`,
 so the file is readable without a second lookup. A rubric names observable thresholds, never adjectives;
 a `FAIL` that claims an absence must record the `searches[]` entries that looked for it. See

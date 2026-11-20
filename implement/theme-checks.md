@@ -98,10 +98,13 @@ At theme close (Stage 4, step 1), run the same command again, with the same flag
 path: it is the close report. Then compare the two:
 
 ```bash
-python3 implement/tools/check_regressions.py <base report> <close report> --changed-from <worktree>
+python3 implement/tools/check_regressions.py <base report> <close report> --changed-from <worktree> \
+  --workspace <workspace> --theme <theme>
 ```
 
 The tool lists the paths the theme changed since the base report's commit. It lays each moved check on them.
+`--workspace` writes the verdict beside the state. While it reads `lost`, `progress.py` refuses to mark an item of
+the theme `done` and the theme `merged`.
 Read `data.status`:
 
 - `clean`: no lost pass and no regression. Report the other moves (see below) and go on.
@@ -116,10 +119,10 @@ from `PARTIAL` to `FAIL` (class `regressed`) is a stop too. Offer:
 
 - (a) **Fix it** in the theme, in a new commit by the commit rules of Stage 3. Then take the close report again and
   run the comparison again.
-- (b) **Accept it**, with the owner's reason. Record it on the item whose commits changed the paths that
-  `reads_hit` names, or else on the theme's last ended item:
-  `progress.py set-status F-nnn <its status> --note "Lost pass <check>, accepted: <reason>" --by owner`. Name it
-  under "What was not done" in the done report or the pull request.
+- (b) **Accept it**, with the owner's reason:
+  `progress.py accept-lost <theme> --reason "<reason>" --by owner --workspace <workspace> --phase <step>`. This
+  lifts the refusal for that verdict only; a new `lost` verdict needs a new answer. Name it under "What was not
+  done" in the done report or the pull request.
 - (c) **Stop the theme** here.
 
 Default: none. Wait for the owner. The decision and its reasons are in
@@ -137,7 +140,8 @@ belongs to the framework, not to the target: change nothing in the target for it
 - **Exit 2, refused.** The two reports differ in ruleset, target path, user-config setting or probe settings. The
   close report may also be no newer than the base. A move then cannot be laid on the theme. Say so and name the
   reasons in `data.errors`. Tell the owner the lost-pass check did not run. A base report taken on a temporary
-  checkout differs in target by design: pass `--base-target`.
+  checkout differs in target by design: pass `--base-target`. A refused pair writes no verdict, and the theme's
+  earlier verdict stays.
 - **No base report.** Take it again on a temporary checkout of the base commit; see
   [Resume without a base report](#resume-without-a-base-report). When that cannot run, say so plainly: the
   lost-pass check did not run. Never take the base on the theme branch's tip; it holds the theme's changes.

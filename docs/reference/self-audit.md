@@ -19,7 +19,7 @@ score from falling.
 | Phase-1 score | **0.9231** |
 | Date | 2026-11-20 |
 | Engine | `python-agentic-audit` 0.4.1 |
-| Ruleset | `2026-11-20.20` (hash `34bba6464eac63ff`) |
+| Ruleset | `2026-11-20.22` (hash `34bba6464eac63ff`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; the walk skips git-ignored folders such as the agent worktrees under `.claude/worktrees/`; no user-level configuration read |

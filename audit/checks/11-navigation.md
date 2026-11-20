@@ -111,7 +111,9 @@ Severity         COSMETIC
 Engine           `NAV-03`. A census, never a verdict on a heuristic: counts files over 512 KB
                  (`LARGE_FILE_BYTES`), directories with more than 50 immediate files (`CATCH_ALL_FILES`),
                  files the scan classifies `Kind.BINARY`, and generated files whose name contains
-                 `.min.`. Both thresholds are documented constants in `nav.py`, not tuned per repository.
+                 `.min.`. Committed build output counts: the walk enters `dist/` and `build/` to
+                 reach the files git tracks there (an untracked build folder stays out). Both
+                 thresholds are documented constants in `nav.py`, not tuned per repository.
                  A lockfile is large by design, so the size count leaves it out. The match is by exact
                  base name, never by pattern, against a closed list: `LOCKFILE_NAMES` in `stack.py`. It
                  holds `package-lock.json`, `yarn.lock`, `uv.lock`, `Cargo.lock`, `go.sum` and others. A

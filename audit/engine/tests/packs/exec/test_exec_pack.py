@@ -40,6 +40,7 @@ FIXTURES: dict[str, tuple[str, str, bool]] = {
     "exec-03-no-setup": ("EXEC-03", "FAIL", False),
     "exec-04-missing-env": ("EXEC-04", "FAIL", False),
     "exec-05-generated": ("EXEC-05", "FAIL", True),
+    "exec-05-committed-dist": ("EXEC-05", "FAIL", True),
     "exec-06-broken-command": ("EXEC-06", "FAIL", False),
     "exec-07-dual-lint": ("EXEC-07", "FAIL", False),
     "exec-07-dual-python-types": ("EXEC-07", "FAIL", False),
@@ -74,7 +75,11 @@ class ExecFixtureTests(unittest.TestCase):
                 self.assertEqual(failing, [check], f"{name}: unexpected EXEC FAILs {failing}")
 
     def test_tracked_state_unavailable_degrades_to_unknown_not_pass(self):
-        for name, _check in (("exec-02-no-lockfile", "EXEC-02"), ("exec-05-generated", "EXEC-05")):
+        for name, _check in (
+            ("exec-02-no-lockfile", "EXEC-02"),
+            ("exec-05-generated", "EXEC-05"),
+            ("exec-05-committed-dist", "EXEC-05"),
+        ):
             with self.subTest(fixture=name):
                 report = support.run_audit(self._prepare(name, git=False))
                 verdicts = support.verdicts(report)
@@ -92,6 +97,11 @@ class ExecFixtureTests(unittest.TestCase):
             [(f["id"], f["verdict"], [e["path"] for e in f["evidence"]]) for f in findings],
             [("EXEC-02:apps/web/package-lock.json", "PARTIAL", ["apps/web/package-lock.json"])],
         )
+
+    def test_committed_build_output_is_named_path_by_path(self):
+        report = support.run_audit(self._prepare("exec-05-committed-dist", git=True))
+        findings = [f for f in report["findings"] if f["check"] == "EXEC-05"]
+        self.assertEqual([e["path"] for f in findings for e in f["evidence"]], ["build/x.class", "dist/app.min.js"])
 
     def test_a_broken_command_lists_its_evidence(self):
         report = support.run_audit(self._prepare("exec-06-broken-command", git=False))

@@ -18,6 +18,8 @@ It exists only to answer questions more than one pack asks. The ones that motiva
   (``prohibitions_section``), so heading detection cannot drift between them;
 * **"what does a Makefile verb run, through variables and prerequisites?"** — TOOL-04 looks for a dependency
   audit and EXEC-07 for the type checker the ``typecheck`` verb runs (``follow_makefile``);
+* **"which tracked files does an ignore rule also match?"** — SEC-01 reads them for env-like names and SEC-03
+  for key material (``tracked_and_ignored``), so both read one list from the scoped matcher;
 * **"which branches do the declared rules protect?"** — HYG-11 reads the branch rules declared as code, and the
   local guard and the instruction file are compared with the same list (``declared_branch_rules``).
 
@@ -140,6 +142,25 @@ def scoped_rules(target, inventory: Inventory) -> list[IgnoreRule]:
         if "/" in rel and rel.endswith(".gitignore") and not inventory.is_set_aside(rel):
             nested.add(rel)
     return load_scoped_rules(target.path, nested)
+
+
+def tracked_and_ignored(target, inventory: Inventory, rules: list[IgnoreRule] | None = None) -> list[str] | None:
+    """The in-scope paths git tracks that an ignore rule also matches, sorted; ``None`` when git cannot answer.
+
+    One answer for every check that asks "was a file committed past an ignore rule?" (`SEC-01`, `SEC-03`; issue
+    #12). The tracked set is :func:`tracked_in_scope`, so an excluded or set-aside path is out, and the ignore
+    answer is the scoped matcher (:func:`scoped_rules`, ADR-0009), never ``git ls-files -ci``: the result does not
+    depend on the host's global excludes file or ``.git/info/exclude``. A file under an ignored directory counts.
+    ``rules`` lets a caller that already holds :func:`scoped_rules` pass it in.
+    """
+    tracked = tracked_in_scope(target, inventory)
+    if tracked is None:
+        return None
+    if rules is None:
+        rules = scoped_rules(target, inventory)
+    if not rules:
+        return []
+    return sorted(rel for rel in tracked if decide(rel, rules).ignored)
 
 
 def directory_decision(root: str, rules: list[IgnoreRule]) -> IgnoreDecision:
