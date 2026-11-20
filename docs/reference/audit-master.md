@@ -111,7 +111,7 @@ Can an agent find the code, the rules and the documents it needs before it edits
 `DEGRADER` · scored · engine check · fixed by [`adapt-agents-md`](implement-master.md#adapt-agents-md)
 
 - **Passes when:** all seven verbs (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security`) are
-  named in the instruction file, by the verb's name and not by another script name, and each resolves on a runner.
+  named in the instruction file by the verb's name, and each resolves.
 - **Why it matters:** The agent needs the sanctioned verification path stated, or it invents one (`npx vitest` where the
   project uses something else), diverging from what CI actually runs ([greenfield/README.md § 1.4 The standardized
   command surface](../../greenfield/README.md#14-the-standardized-command-surface--seven-verbs)).
