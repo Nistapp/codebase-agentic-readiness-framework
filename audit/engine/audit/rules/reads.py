@@ -1855,14 +1855,15 @@ READS: dict[str, Reads] = {
     ),
     "SEC-01": Reads(
         where=(
-            *_at(ANY_DEPTH, ".env", ".env.*", ".gitignore"),
+            *_at(ANY_DEPTH, ".env", ".env.*", "*.env", "env.*", ".gitignore"),
             *_at(ROOT, ".cbmignore", ".cursorignore", ".aiderignore", ".rooignore"),
         ),
         what=What("exists"),
         binding="file",
         note=(
             "Tracked files (git) whose base name is .env or starts with .env., less six template names, fail;"
-            " the ignore rules (the five root ignore files and every nested .gitignore) are probed with .env "
+            " so does a tracked file an ignore rule also matches whose base name starts with .env, ends with .env"
+            " or starts with env., less the templates. The ignore rules (the five root ignore files and every nested .gitignore) are probed with .env "
             "and .env.local at the root and one folder down."
         ),
     ),
@@ -1886,7 +1887,8 @@ READS: dict[str, Reads] = {
         note=(
             "The ignore rules are probed with eleven sample paths (.env, .env.local, id_rsa, server.pem, "
             "server.key, server.p12, server.pfx, app.keystore, server.crt, server.cer, .aws/credentials); "
-            "nested .gitignore files come from the scan and from git ls-files."
+            "nested .gitignore files come from the scan and from git ls-files. A tracked file an ignore rule also "
+            "matches whose name is one of the nine non-dotenv shapes fails."
         ),
     ),
     "HYG-01": Reads(

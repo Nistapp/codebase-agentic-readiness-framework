@@ -52,6 +52,9 @@ from the inventory, so the rule that ignores the directory is not read.
      fails `DOC-03` and `CON-03`.
    * `SEC-01` and `SEC-03` probe each shape through `decide`, so a `!` that re-includes the probe uncovers the shape
      and a `!` for another name does not. A rule with a leading `/` still reads "root-anchored only".
+   * The tracked files a rule also matches are one list, `tracked_and_ignored`: the in-scope tracked set passed
+     through `decide`, never `git ls-files -ci`. `SEC-01` fails on an env-like name in it and `SEC-03` on key
+     material (issue #12).
 7. **The parser stays the authority.** The matcher never runs `git check-ignore`. When git cannot report the tracked
    set the checks stay `UNKNOWN`.
 
