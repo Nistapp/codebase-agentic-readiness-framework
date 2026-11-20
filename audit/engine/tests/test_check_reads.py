@@ -331,13 +331,6 @@ _NOT_READS_IN: tuple[tuple[tuple[str, ...], Callable[..., Any], str], ...] = (
 #: Names a check compares only to leave a path out, as (check, operation, names, reason). Such an ask reads nothing.
 #: Each name is exempt on its own merit: a name a declared place covers anyway does not belong here.
 _NOT_READ_NAMES: tuple[tuple[str, str, frozenset[str], str], ...] = (
-    (
-        "SEC-01",
-        "eq",
-        frozenset({"env.example"}),
-        "env.example is a template, left out of the tracked .env files; the other templates start with .env., "
-        "which the declaration covers",
-    ),
     ("AGT-13", "eq", frozenset({agt._DOCS_STYLE_GUIDE}), "the docs style guide never counts as a conventions file"),
 )
 
@@ -1152,14 +1145,16 @@ class NameProbeTest(unittest.TestCase):
         self.assertEqual(uncovered_names(recording), {})
 
     def test_a_name_compared_only_to_leave_a_path_out_is_dropped(self) -> None:
-        self.assertTrue(_not_a_read("SEC-01", ("eq", "env.example", False)))
-        # Only env.example: the other templates start with ".env.", which SEC-01 declares, so they stay asks.
-        self.assertLessEqual({"env.example"}, sec._ENV_TEMPLATE_BASENAMES)
-        self.assertFalse(_not_a_read("SEC-01", ("eq", ".env.example", False)))
+        guide = ("eq", agt._DOCS_STYLE_GUIDE, False)
+        self.assertTrue(_not_a_read("AGT-13", guide))
+        self.assertFalse(_not_a_read("AGT-12", guide))
+        self.assertNotIn(guide, recorded().names["AGT-13"])
+        # SEC-01 declares `env.*` (issue #12), so the template env.example is an ask that place covers, not an
+        # exemption; the other templates start with ".env.", which it declares too.
+        self.assertLessEqual({"env.example", ".env.example"}, sec._ENV_TEMPLATE_BASENAMES)
+        self.assertFalse(_not_a_read("SEC-01", ("eq", "env.example", False)))
+        self.assertIn(("eq", "env.example", False), recorded().names["SEC-01"])
         self.assertIn(("eq", ".env.example", False), recorded().names["SEC-01"])
-        self.assertFalse(_not_a_read("SEC-01", ("eq", ".env", False)))
-        self.assertFalse(_not_a_read("SEC-02", ("eq", "env.example", False)))
-        self.assertNotIn(("eq", "env.example", False), recorded().names["SEC-01"])
 
     def test_a_name_taken_from_the_targets_text_is_dropped(self) -> None:
         self.assertEqual(

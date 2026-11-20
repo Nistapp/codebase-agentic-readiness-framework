@@ -72,6 +72,8 @@ fixtures/
   cmd-01-maven-no-formatter/ a plugin goal named `check`, and no formatter plugin -> CMD-01 FAIL, CMD-02 UNKNOWN
   sec-01-tracked-env/        tracked .env, comprehensive ignore (needs git) -> SEC-01 FAIL
   sec-01-excluded-env/       tracked `vendor-samples/.env`, ignored by rule (needs git) -> SEC-01 FAIL; `--exclude 'vendor-samples/*'` -> PASS
+  sec-01-tracked-ignored-env/ `config/prod.env` force-added past a `*.env` rule (needs git) -> SEC-01 FAIL, SEC-03 PASS
+  sec-03-tracked-ignored-key/ `server.key` force-added past a `*.key` rule (needs git) -> SEC-03 FAIL, SEC-01 PASS
   sec-02-key-shaped/         synthetic sk- value in a source file (needs git) -> SEC-02 FAIL
   sec-03-thin-ignore/        ignore rules cover no secret shapes   -> SEC-03 FAIL
   sec-03-ok-negated-exception/ every shape ignored, `!public.crt` re-includes one certificate -> SEC-03 PASS (ADR-0009)

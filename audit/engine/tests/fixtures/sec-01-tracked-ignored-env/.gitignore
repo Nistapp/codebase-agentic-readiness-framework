@@ -1,0 +1,14 @@
+# Comprehensive secret-shape coverage plus `*.env`, so SEC-03 passes and only SEC-01 is the defect:
+# config/prod.env is force-added past the `*.env` rule.
+.env
+.env.*
+*.env
+id_rsa*
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+*.crt
+*.cer
+.aws/*

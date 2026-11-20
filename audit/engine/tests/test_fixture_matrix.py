@@ -201,6 +201,8 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- SEC ----------------------------------------------------------------------------------
     "sec-01-tracked-env": {"SEC-01": "FAIL"},
     "sec-01-excluded-env": {"SEC-01": "FAIL"},
+    "sec-01-tracked-ignored-env": {"SEC-01": "FAIL", "SEC-03": "PASS"},
+    "sec-03-tracked-ignored-key": {"SEC-01": "PASS", "SEC-03": "FAIL"},
     "sec-02-key-shaped": {"SEC-02": "FAIL"},
     "sec-03-thin-ignore": {"SEC-03": "FAIL"},
     "sec-03-ok-negated-exception": {"SEC-03": "PASS"},
@@ -277,6 +279,8 @@ NEEDS_GIT = frozenset(
         "sec-01-ok",
         "sec-01-tracked-env",
         "sec-01-excluded-env",
+        "sec-01-tracked-ignored-env",
+        "sec-03-tracked-ignored-key",
         "sec-02-key-shaped",
         "con-03-artefacts-not-ignored",
         "stack-dotnet",
@@ -296,6 +300,8 @@ FORCE_ADD: dict[str, str] = {
     "doc-03-tracked-artefacts": "artefacts/notes.md",
     "sec-01-tracked-env": ".env",
     "sec-01-excluded-env": "vendor-samples/.env",
+    "sec-01-tracked-ignored-env": "config/prod.env",
+    "sec-03-tracked-ignored-key": "server.key",
     "con-03-artefacts-not-ignored": "artefacts/notes.md",
 }
 
