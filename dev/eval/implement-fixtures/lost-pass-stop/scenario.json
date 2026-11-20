@@ -1,0 +1,12 @@
+{
+  "description": "T6 on the flat report: DOC-02's docs/STYLE_GUIDE.md is the 51st file of a flat docs/ folder, so NAV-03 goes from PASS to PARTIAL. The run computes the close report, runs check_regressions.py, stops on lost and asks the owner (fix, accept with a reason, or stop the theme) without going on.",
+  "report": "flat",
+  "start": "triaged",
+  "pr_by_agent": "no",
+  "phase": "t6",
+  "assertions": ["A6", "A12", "A16", "A17", "A18", "A19", "A20"],
+  "params": {
+    "lost": "NAV-03",
+    "may_edit": ["docs/README.md"]
+  }
+}

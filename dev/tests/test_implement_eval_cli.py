@@ -88,7 +88,7 @@ class BuildReportsTests(unittest.TestCase):
             reports = Path(tmp)
             with mock.patch.object(ie, "REPORTS", reports):
                 written = ie.build_reports()
-            self.assertEqual(len(written), 6)
+            self.assertEqual(len(written), 8)
             for variant in ie.VARIANTS:
                 documents = sorted((reports / variant).glob("*.json"))
                 self.assertEqual(len(documents), 1, variant)
