@@ -67,7 +67,7 @@ manifest that dependency automation reads.
    |---|---|---|
    | `java { toolchain { languageVersion = JavaLanguageVersion.of(N) } }` (recommended) | Built in; the build no longer depends on `JAVA_HOME`; CI and local runs use the same JDK | Gradle fails if no matching JDK is installed, unless a resolver plugin is added |
    | Toolchain block + `org.gradle.toolchains.foojay-resolver-convention` (1.0.0, 2025-05-19) in `settings.gradle` | Downloads the missing JDK automatically | Network fetch of a JDK during a build; one more plugin in `settings.gradle`; owner approves it first |
-   | `.sdkmanrc` or `.tool-versions` only | Cheap hint for developers | Not read by Gradle or the engine; does not pin CI |
+   | `.sdkmanrc` or `.tool-versions` only | Cheap hint for developers | Not read by Gradle; the engine reads a `.tool-versions` `java` line, not `.sdkmanrc`; does not pin CI |
 
 5. **Lock width (Gradle).** Recommend `dependencyLocking { lockAllConfigurations() }` and one `gradle.lockfile`:
    built into Gradle, read by Dependabot and by OSV-Scanner. Locking only `runtimeClasspath` and
