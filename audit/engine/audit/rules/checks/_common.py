@@ -868,7 +868,7 @@ def follow_makefile(inventory: Inventory, command: str, matches: Callable[[str],
 # ---------------------------------------------------------------------------
 
 #: GitHub's repository-ruleset export format, one JSON file per ruleset (the form ``gh api .../rulesets`` takes).
-RULESET_GLOBS = (".github/rulesets/*.json",)
+RULESET_GLOBS = (".github/rulesets/**/*.json",)
 
 #: The Probot Settings app's file; its ``branches:`` list declares classic branch protection.
 SETTINGS_FILE = ".github/settings.yml"

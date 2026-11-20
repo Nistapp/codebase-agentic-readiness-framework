@@ -66,6 +66,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "agt-12-no-rules": {"AGT-09": "PASS", "AGT-12": "FAIL"},
     "agt-13-no-conventions": {"AGT-12": "PASS", "AGT-13": "FAIL"},
     "agt-10-deferred": {"AGT-10": "FAIL"},
+    "agt-10-pointer-dot-folder": {"AGT-10": "PASS"},
+    "agt-10-pointer-glob-top-level": {"AGT-10": "PASS"},
     # -- DOC / NAV ----------------------------------------------------------------------------
     "doc-01-empty": {"DOC-01": "PARTIAL"},
     "doc-02-no-style-guide": {"DOC-02": "FAIL"},
@@ -117,6 +119,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "tool-04-make-security-no-audit": {"TOOL-04": "PARTIAL"},
     "tool-04-local-only-audit": {"TOOL-04": "PARTIAL"},
     "tool-05-unwired-hooks": {"TOOL-05": "PARTIAL"},
+    "tool-05-husky-helpers-only": {"TOOL-05": "FAIL"},
+    "tool-05-githooks-helpers-only": {"TOOL-05": "FAIL"},
     "tool-06-no-commit-rule": {"TOOL-06": "FAIL"},
     "tool-06-local-only-commit-rule": {"TOOL-06": "PARTIAL"},
     "tool-06-ci-only-commit-rule": {"TOOL-06": "PARTIAL"},
@@ -132,6 +136,7 @@ MATRIX: dict[str, dict[str, str]] = {
     },
     # -- CI -----------------------------------------------------------------------------------
     "ci-01-no-pr-trigger": {"CI-01": "PARTIAL"},
+    "ci-01-nested-workflow-only": {"CI-01": "FAIL"},
     "ci-02-parity-break": {"CI-02": "FAIL"},
     "ci-03-ci-only-step": {"CI-03": "FAIL"},
     "ci-05-no-workflow-lint": {"CI-05": "FAIL"},
@@ -168,6 +173,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-02-nested-lockfile": {"EXEC-02": "FAIL"},
     "exec-03-no-setup": {"EXEC-03": "FAIL"},
     "exec-03-readme-no-extension": {"EXEC-03": "PASS", "HYG-01": "PASS"},
+    "exec-03-devcontainer-subfolder": {"EXEC-03": "PASS"},
     "exec-04-missing-env": {"EXEC-04": "FAIL"},
     "exec-04-reincluded-example": {"EXEC-04": "PASS"},
     "exec-04-anchored-ignored-dir": {"EXEC-04": "PASS"},

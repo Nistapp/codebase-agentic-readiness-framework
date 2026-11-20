@@ -1,8 +1,36 @@
 # Agent Governance (`AGT`)
 
-> Follows the anatomy in [`README.md`](README.md). This is the second file of the family: the first,
-> [`02-agent-governance.md`](02-agent-governance.md), reached the 500-line budget
+> Follows the anatomy in [`README.md`](README.md). This is the second file of the family, with `AGT-12` and
+> `AGT-13`: the first, [`02-agent-governance.md`](02-agent-governance.md), reached the 500-line budget
 > ([§5 of the README](README.md#5-one-family-one-file)).
+
+## AGT-12 — Communication rules stated
+
+Why it matters   Agents report to people and ask them for decisions; without written rules each agent
+                  picks its own layout and the reader digs for the bottom line
+                  ([greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides)).
+Severity         COSMETIC
+Engine           `AGT-12`. Reads the entry instruction file for a section headed `communication`, `how to
+                 write`, `writing for people`, `reporting` or `talking to the user` (not in a fence), and
+                 for a Markdown file it links or code-spans whose name contains `communicat`. The rules
+                 must name the reader (`reader`, `audience`, `write for`, `new engineer`), how to report
+                 (`report`, `status`, `summary`, `bottom line`) and how to ask for a decision (`decision`,
+                 `recommend`, `trade-off`). Distrust a `FAIL` when the rules sit in a linked file with
+                 another name: read the link.
+Method           automated
+Look for         The instruction file's headings, then each file its documentation section links.
+Rubric           PASS: the rules exist and name the reader, how to report and how to ask for a decision.
+                 PARTIAL: one or two of the three are missing, or a named rules file does not exist.
+                 FAIL: no section and no named rules file.
+                 NOT_APPLICABLE: never.
+                 UNKNOWN when: no instruction file exists to read (`AGT-01` already owns that absence).
+Evidence to cite A `file` item for each section (its heading line) and each named rules file, with `note`.
+Absence proof    A FAIL records `grep` searches for the heading and the file-name patterns, scoped to the
+                 instruction file; a PARTIAL, one per missing element, scoped to the rules.
+Remediation      `adapt-agents-md`
+Pitfalls         Presence, not quality: rules that name the three in passing still pass; judge generic
+                 text under `AGT-11`. The rules are for English; a team writing in another language states
+                 its own.
 
 ## AGT-13 — Coding conventions written
 

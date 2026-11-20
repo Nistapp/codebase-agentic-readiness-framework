@@ -17,7 +17,7 @@ not moved.
 | DOC-01 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-01--docs-exists) | Confirms `docs/` holds Markdown, adds `docs/README.md` as the index; never creates a second docs home. A dense README section that the owner agrees to move gets a `docs/` page and an index row (Steps 10) |
 | DOC-02 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-02--docsstyle_guidemd-exists) | Adds a one-page `docs/STYLE_GUIDE.md` with the form rules and one line in the instruction file that names it. An existing guide gets the form rules only by the owner's choice (Steps 9) |
 | DOC-03 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-03--artefacts-exists-and-is-ignored) | Verifies the scratch directory rule; adds the ignore rule only if a scratch directory exists |
-| DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/adr/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
+| DOC-04 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-04--adr-directory-and-index) | Adds `docs/architecture/adrs/` with an ADR policy page, a template, an index and two or three first records for the owner to review |
 | DOC-05 | [03-documentation-contract.md](../../audit/checks/03-documentation-contract.md#doc-05--docs-are-readable) | Adds a "Plain language" and a "Diagrams" section to the style guide (Steps 3); the pages this theme writes pass the rules. Existing pages are not rewritten. A prose check with a ratchet only when the owner picks one of three permissive licences for it (Inputs 6, Steps 8). Trigger: a confirmed finding, or `extra.doc-05` (Preconditions) |
 | NAV-01 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-01--declared-component-boundaries) | Verification only: lists the declared components in the architecture page |
 | NAV-02 | [11-navigation.md](../../audit/checks/11-navigation.md#nav-02--obvious-entry-points) | Verification only: names the entry points in the architecture page |
@@ -86,9 +86,9 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    search or storage engine, an authentication or tenant-selection mechanism, a branch model.
 4. **Architecture overview scope.** Default: modules or apps, entry points, data stores, one authentication or
    request flow, from the code index of this repository only.
-5. **Instruction-file line.** One line names `docs/STYLE_GUIDE.md`, `docs/adr/`, the ADR policy page and
-   `docs/architecture/`. It goes in the section `agents_md.pointer_section` names. Without that preference, ask
-   the owner where it goes and record the answer with `pref set agents_md.pointer_section`.
+5. **Instruction-file line.** One line names `docs/STYLE_GUIDE.md`, `docs/architecture/adrs/`, the ADR policy
+   page and `docs/architecture/`. It goes in the section `agents_md.pointer_section` names. Without that
+   preference, ask the owner where it goes and record the answer with `pref set agents_md.pointer_section`.
    The AGENTS.md theme (T7) reorganises the file later; tell it in the status that the line exists.
    Write the line as a plain list of pages, with no rule word such as must, never or only. With one, "`AGT-06`
    Architectural boundaries declared" reads it as a boundary rule. Never write "read ... first" on it either:
@@ -130,16 +130,16 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    untracked data on disk, so count with `git ls-files`.
 2. **Docs index (DOC-01).** If `docs/README.md` (or `index.md`) does not exist, write it: one paragraph on what
    `docs/` holds, a list of the pages with one line each, and the places to look for decisions
-   (`docs/adr/`) and the map (`docs/architecture/`). A frozen report folder from the first audit is listed in
-   one line as "frozen first-audit report, not current"; it is not moved, edited or restructured. Use flat
-   `docs/` plus `docs/architecture/` and `docs/adr/`; do not impose a Diátaxis folder tree on a handful of
-   files.
+   (`docs/architecture/adrs/`) and the map (`docs/architecture/`). A frozen report folder from the first audit is
+   listed in one line as "frozen first-audit report, not current"; it is not moved, edited or restructured. Use
+   flat `docs/` plus `docs/architecture/` and `docs/architecture/adrs/`; do not impose a Diátaxis folder tree on a
+   handful of files.
 3. **Style guide (DOC-02).** Write `docs/STYLE_GUIDE.md`, one page: where permanent knowledge lives and where
    scratch lives, heading and table rules, line length (match the lint config), Mermaid in fenced blocks and
    validated before saving, relative links, "no values from env files, credentials or keystores", "cite code by
-   path", "decisions go in `docs/adr/`". Link to the lint config instead of restating its rules. Add the
-   instruction-file line (Inputs 5) once the pages it names exist; [Commits](#commits) row 8 orders it. The check
-   reads the literal string `STYLE_GUIDE.md`.
+   path", "decisions go in `docs/architecture/adrs/`". Link to the lint config instead of restating its rules. Add
+   the instruction-file line (Inputs 5) once the pages it names exist; [Commits](#commits) row 8 orders it. The
+   check reads the literal string `STYLE_GUIDE.md`.
 
    **Plain language and diagrams (DOC-05).** Add two sections to the style guide. The template is the greenfield
    style guide: [§ 8 Plain Language](../../greenfield/templates/docs/STYLE_GUIDE.md#8-plain-language) and
@@ -163,7 +163,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
    Adapt them to the target's heading style and docs layout. Keep the rule that the setup command and the
    single-test command stay in a root file, because `EXEC-03` and `TST-04` read them there. A guide that already
    exists gets these sections only through step 9.
-4. **ADRs (DOC-04).** Create `docs/adr/` with four parts:
+4. **ADRs (DOC-04).** Create `docs/architecture/adrs/` with four parts:
    - `README.md`, the index: a table of number, title and a one-line summary, linking every file by its path.
    - `0000-template.md`, copied from the greenfield
      [`adr-template.md`](../../greenfield/templates/docs/templates/adr-template.md):
@@ -351,7 +351,7 @@ Docs first, then the lint config, then the wiring. The instruction-file line wai
 | 2 | Style guide, `docs/STYLE_GUIDE.md` | `DOC-02` | hand |
 | 3 | Plain language and Diagrams sections in the style guide (only for DOC-05) | `DOC-05` | hand |
 | 4 | Form rules section appended to an existing style guide (only with `docs.style_guide_update=yes`) | `DOC-02` | hand |
-| 5 | Decision log: `docs/adr/` index, template, ADR policy page, first records | `DOC-04` | hand |
+| 5 | Decision log: `docs/architecture/adrs/` index, template, ADR policy page, first records | `DOC-04` | hand |
 | 6 | Architecture overview with its diagram | `NAV-01`, `NAV-02`, `NAV-04` | hand |
 | 7 | Repository notes section: the NAV-03 census | `NAV-03` | hand |
 | 8 | Instruction-file line naming the docs pages | `DOC-02`, `DOC-04` | hand |
@@ -408,7 +408,7 @@ so the lint and prose baselines (rows 13 and 18) count the new pages.
 | README split | After each section commit: `python3 implement/tools/compare_reports.py <before report> <after report>`; `git show --stat` | Only with `docs.split_readme=yes`. "Checks that moved" says `None.`. The commit adds one page and its `docs/README.md` row, and leaves a link table in the README. `EXEC-03` and `TST-04` still find their commands in a root file. `no`: no diff, and the preference recorded |
 | DOC-05 | `grep -n -i 'plain language\|diagram' docs/STYLE_GUIDE.md`; the engine's DOC-05 | Both sections present; no cited line on a page this theme wrote; `PASS`, or `partial` with the counts as debt |
 | DOC-03 | `git ls-files artefacts artifacts` and `git check-ignore -v artefacts/x` | No scratch directory, or nothing tracked and the rule matches |
-| DOC-04 | List `docs/adr/`; read `docs/adr/README.md`; `grep -n -i 'adr' <instruction file>` | At least one numbered file; the index links every numbered file by path, the template included; the ADR policy page exists and the instruction file names it |
+| DOC-04 | List `docs/architecture/adrs/`; read `docs/architecture/adrs/README.md`; `grep -n -i 'adr' <instruction file>` | At least one numbered file; the index links every numbered file by path, the template included; the ADR policy page exists and the instruction file names it |
 | NAV-01 | Read the components table in the overview | Every declared component listed with its manifest path |
 | NAV-02 | Read the entry-points list | Each entry point is a real path (check with `test -f`) |
 | NAV-03 | The "Repository notes" section | Every counted path is listed with a tag; nothing moved (`git status` shows only docs and config) |

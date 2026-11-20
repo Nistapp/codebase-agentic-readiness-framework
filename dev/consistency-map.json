@@ -186,7 +186,7 @@
         "section": "implement/SKILL.md#implement/hard-rules"
       },
       "id": "B-15",
-      "note": "A12 fails when a docs/ page outside the theme was rewritten; it does not look at code.",
+      "note": "A12 (comm-agents-md, comm-docs-contract and lost-pass-stop) fails when a theme branch changes a docs/ page outside the theme, removes or changes a quarter or more of the lines of an earlier code file (a deleted file counts), or half or more of a build or config file. A small edit to a code or config file passes.",
       "statement": "The run makes the smallest reasonable diff: no unrelated refactor and no mass reformat.",
       "symbol": "a12_no_mass_rewrite"
     },
@@ -2944,7 +2944,7 @@
         "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
       },
       "move": "establish-docs-contract/row-1",
-      "note": "DOC-04 reads docs/README.md only as a fallback index; row 5 writes docs/adr/README.md, which comes first in the read's index order.",
+      "note": "DOC-04 reads docs/README.md only as a fallback index; row 5 writes docs/architecture/adrs/README.md, which comes first in the read's index order.",
       "status": "kept"
     },
     {
@@ -6117,7 +6117,7 @@
         "table"
       ],
       "id": "establish-docs-contract/row-5",
-      "intent": "DOC-04 reads numbered records and the index in docs/adr/; the policy page is named by the instruction-file line.",
+      "intent": "DOC-04 reads numbered records and the index in docs/architecture/adrs/; the policy page is named by the instruction-file line.",
       "note": "The policy page may be docs/adr-policy.md where the docs use lower-case names.",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
@@ -6125,9 +6125,9 @@
         "step": "Step 4"
       },
       "to": [
-        "docs/adr/README.md",
-        "docs/adr/0000-template.md",
-        "docs/adr/0001-*.md",
+        "docs/architecture/adrs/README.md",
+        "docs/architecture/adrs/0000-template.md",
+        "docs/architecture/adrs/0001-*.md",
         "docs/ADR_POLICY.md"
       ],
       "touches": [
@@ -6189,7 +6189,7 @@
         "code-span"
       ],
       "id": "establish-docs-contract/row-8",
-      "note": "One line naming docs/STYLE_GUIDE.md, docs/adr/, the ADR policy page and docs/architecture/, in the section agents_md.pointer_section names (Inputs 5).",
+      "note": "One line naming docs/STYLE_GUIDE.md, docs/architecture/adrs/, the ADR policy page and docs/architecture/, in the section agents_md.pointer_section names (Inputs 5).",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
         "row": 8,
@@ -9316,11 +9316,11 @@
           "scope": "root"
         },
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9367,11 +9367,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".githooks/**",
+          "path": ".githooks/*",
           "scope": "glob"
         },
         {
-          "path": ".husky/**",
+          "path": ".husky/*",
           "scope": "glob"
         },
         {
@@ -9494,11 +9494,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9562,11 +9562,11 @@
           "scope": "root"
         },
         {
-          "path": ".githooks/**",
+          "path": ".githooks/*",
           "scope": "glob"
         },
         {
-          "path": ".husky/**",
+          "path": ".husky/*",
           "scope": "glob"
         },
         {
@@ -9605,11 +9605,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".githooks/**",
+          "path": ".githooks/*",
           "scope": "glob"
         },
         {
-          "path": ".husky/**",
+          "path": ".husky/*",
           "scope": "glob"
         },
         {
@@ -9652,11 +9652,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9700,11 +9700,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9787,11 +9787,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9921,11 +9921,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -10576,11 +10576,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -11220,7 +11220,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".devcontainer/**/*.json",
+          "path": ".devcontainer/*.json",
+          "scope": "glob"
+        },
+        {
+          "path": ".devcontainer/*/devcontainer.json",
           "scope": "glob"
         },
         {
@@ -11743,7 +11747,7 @@
           "scope": "glob"
         },
         {
-          "path": ".husky/**",
+          "path": ".husky/*",
           "scope": "glob"
         },
         {
@@ -12052,8 +12056,8 @@
           "scope": "any-depth"
         },
         {
-          "path": "tests/*.rs",
-          "scope": "glob"
+          "path": "tests/**/*.rs",
+          "scope": "any-depth"
         }
       ]
     },
@@ -12983,11 +12987,11 @@
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {

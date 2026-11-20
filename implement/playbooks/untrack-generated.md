@@ -165,7 +165,8 @@ Nothing else changed.
   fix the rule. "`EXEC-02` Lockfile committed and consistent" needs the lockfile tracked.
 - Do not delete working-tree files (`git rm` without `--cached`) and do not rewrite history.
 - Do not delete, merge or rename a competing config (EXEC-07).
-- Do not start containers or the local stack by hand to test a reader.
+- Do not start containers or the local stack by hand to test a reader, unless the person asks for that exact
+  action ([Hard rules](../SKILL.md#hard-rules)).
 
 ## State updates
 

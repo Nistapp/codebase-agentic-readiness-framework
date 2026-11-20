@@ -83,13 +83,16 @@ LOCKFILE_NAMES: frozenset[str] = frozenset(
     }
 )
 
+#: Globs from the root, matched folder by folder (``audit/globs.py``). GitHub runs only the files straight in
+#: ``.github/workflows/``, so a nested file is no workflow. A Buildkite step may upload any pipeline file below
+#: ``.buildkite/``, so every depth counts there.
 CI_PROVIDERS: dict[str, tuple[str, ...]] = {
     "github": (".github/workflows/*.yml", ".github/workflows/*.yaml"),
     "gitlab": (".gitlab-ci.yml",),
     "jenkins": ("Jenkinsfile",),
     "azure": ("azure-pipelines.yml",),
     "circleci": (".circleci/config.yml",),
-    "buildkite": (".buildkite/*.yml",),
+    "buildkite": (".buildkite/**/*.yml",),
 }
 
 TEST_FRAMEWORKS: dict[str, tuple[str, ...]] = {
@@ -99,9 +102,11 @@ TEST_FRAMEWORKS: dict[str, tuple[str, ...]] = {
     "tox": ("tox.ini",),
     "junit": ("src/test/java/**",),
     "go-test": ("*_test.go",),
-    "cargo-test": ("tests/*.rs",),
+    "cargo-test": ("tests/**/*.rs",),
 }
 
+#: Git runs only the hook files straight in the hooks folder: ``.husky/_/`` holds husky's own helpers, and a
+#: subfolder of ``.githooks/`` holds scripts a hook may call. Neither is a hook.
 HOOK_MANAGERS: dict[str, tuple[str, ...]] = {
     "husky": (".husky/*",),
     "lefthook": ("lefthook.yml", "lefthook.yaml"),

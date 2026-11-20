@@ -39,6 +39,10 @@ make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin
 make update-masters # regenerate docs/reference/audit-master.md and implement-master.md (check runs masters-check)
 ```
 
+Here `make security` also runs the secrets scan. This repository has no runtime dependencies, so the verb began
+as that scan and the dependency audit joined it later. A target's `security` stays a dependency gate only
+([`configure-quality-tools`](implement/playbooks/configure-quality-tools.md)).
+
 One test, without the whole suite. Run the engine's tests from `audit/engine/`:
 
 ```bash
@@ -76,7 +80,8 @@ No vendor-specific instruction file exists beside it.
   under coverage.py. It fails
   below the floor in `.coveragerc` (`fail_under`). CI runs it in parts (`coverage-<suite>` per job, then
   `coverage-combine` in the `coverage` job). Each suite runs as CI does (an empty `HOME` and `CI=true`), so a local
-  pass means a CI pass. The floor is debt that only goes up: raise it when coverage rises, never lower it to get green.
+  pass means a CI pass. The floor is debt that only goes up: when coverage rises, ask the owner to raise it. Never
+  lower it to get green.
 - Quality baseline: existing lint debt is counted in `.quality-baseline.json` (ruff, mypy, Markdown lint outside the
   ratchet) and the secrets in `.secrets.baseline`. No new violations: `make format-check`, `make typecheck` and
   `make docs-lint` compare the live count with the baseline and fail when it went up (a ratchet). A baseline only goes

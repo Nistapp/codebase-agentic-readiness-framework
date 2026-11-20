@@ -50,8 +50,8 @@ the boundaries and the gate in both modes exist, with their tests.
    4. A read names its `constants` only when they hold its whole file list, less the places read upstream.
    5. An engine test runs every check on every fixture and on a greenfield scaffold. It records each path a check
       asks for, and fails on a path the declaration does not cover. A pattern a check matches with asks for
-      every path it finds. The engine's `*` crosses `/`, but a `glob` place matches folder by folder. So the test
-      tries each pattern on probe paths, and the engine's `.husky/*` is declared as `.husky/**`. It also records
+      every path it finds. The engine and a `glob` place both match folder by folder (`audit/engine/audit/globs.py`).
+      The test tries each pattern on probe paths, so `.husky/**` is not declared as `.husky/*`. It also records
       `name` asks: the names a check compares a scanned path with in its own code. It fails on a `name` ask that
       no place covers. It also fails on a place that no ask reaches, unless the place has `via` or `unexercised`.
    6. The declaration is not in the ruleset hash and is in no report.
@@ -64,7 +64,8 @@ the boundaries and the gate in both modes exist, with their tests.
    4. A created file matches the names list and its moves entry has no `intent`.
    5. A boundary's home quote is gone from its section, or the file or function that enforces it no longer exists.
 6. The gate also infers touches from the paths and the content kinds. It reports the inferred pairs that no move
-   declares as unreviewed advice, and never fails on them.
+   declares as unreviewed advice, and never fails on them. A rule that narrows the inference may lose no pair a
+   reviewer found real. Tests hold those pairs, from each triage of the unreviewed list.
 7. Evidence that changes under an unchanged verdict is reported to the reviewer. It does not fail the gate.
 8. The gate has two modes. Static mode checks the map against the working tree. Change mode runs against a base
    ref (`--base`, default `origin/dev`) and adds:

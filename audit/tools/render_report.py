@@ -515,7 +515,7 @@ def bottom_line_section(report: Mapping[str, Any], summary: Mapping[str, Any]) -
     return blocks(
         ["## Bottom line"],
         [
-            f"- **{blockers_phrase(summary['blockers_remaining'])}.**",
+            f"- **{blockers_phrase(summary['blockers_remaining'], blocker_findings(report))}.**",
             "- **Not settled by this scan:**",
             *(f"  - {line}" for line in could_not),
         ],
@@ -566,9 +566,24 @@ def provenance_section(report: Mapping[str, Any]) -> list[str]:
     return blocks(["## Provenance"], table(["Field", "Value"], rows))
 
 
-def blockers_phrase(blockers: Mapping[str, int]) -> str:
+def blocker_findings(report: Mapping[str, Any]) -> int:
+    """The findings of BLOCKER severity, by their own severity, that a person has not rejected as false positives.
+
+    A deferred finding is still real, so it counts. A finding may carry a lower severity than its check, so this
+    number can differ from the blockers remaining, which counts checks (spec/readiness-summary.md).
+    """
+    return sum(
+        1 for finding in report["findings"] if finding["severity"] == "BLOCKER" and finding["disposition"] != "rejected"
+    )
+
+
+def blockers_phrase(blockers: Mapping[str, int], findings: int | None = None) -> str:
+    """The blockers remaining, by state. When the BLOCKER findings number differently, the phrase names both counts."""
     states = [f"{blockers[state]} {state.upper()}" for state in _summary.BLOCKER_STATES if blockers[state]]
-    return f"{count(blockers['total'], 'blocker')} remaining" + (f": {', '.join(states)}" if states else "")
+    by_state = f": {', '.join(states)}" if states else ""
+    if findings is None or findings == blockers["total"]:
+        return f"{count(blockers['total'], 'blocker')} remaining{by_state}"
+    return f"{count(blockers['total'], 'BLOCKER check')} unmet{by_state} ({count(findings, 'BLOCKER finding')})"
 
 
 def credit_text(verdict: str) -> str:
@@ -584,7 +599,7 @@ def summary_section(report: Mapping[str, Any], summary: Mapping[str, Any]) -> li
     unattested = report["unattested"]
     headline = [
         f"- **Phase-1 score: {score_text(summary['phase1_score'])}**, over {count(scored, 'scored check')}",
-        f"- **{blockers_phrase(summary['blockers_remaining'])}**",
+        f"- **{blockers_phrase(summary['blockers_remaining'], blocker_findings(report))}**",
         f"- **Unattested:** {count(len(unattested), 'requirement')} that no check settles, listed below",
     ]
     qualifiers = [

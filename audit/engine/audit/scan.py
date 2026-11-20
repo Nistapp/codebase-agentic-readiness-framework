@@ -26,6 +26,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from audit.globs import path_match
 from audit.ignore import decide_path, load_ignore_file, load_scoped_rules, tracked_files
 from audit.target import HARD_EXCLUDE_DIRS
 
@@ -203,11 +204,10 @@ class Inventory:
         return any(f.rel == rel or f.rel.endswith("/" + rel) for f in self.files)
 
     def match(self, *patterns: str) -> list[str]:
-        out: list[str] = []
-        for f in self.files:
-            if any(fnmatch.fnmatch(f.rel, p) or fnmatch.fnmatch(os.path.basename(f.rel), p) for p in patterns):
-                out.append(f.rel)
-        return out
+        """The paths any pattern finds: a pattern with a ``/`` is a glob from the root, matched folder by folder
+        (``audit/globs.py``: ``*`` stays inside one name, ``**`` matches any number of folders, none included), and
+        one with no ``/`` is a base name at any depth. Case folds where the platform folds it."""
+        return [f.rel for f in self.files if any(path_match(p, f.rel, fold_case=True) for p in patterns)]
 
     def with_suffix(self, *suffixes: str) -> list[str]:
         return [f.rel for f in self.files if f.rel.endswith(suffixes)]

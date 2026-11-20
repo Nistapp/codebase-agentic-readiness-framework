@@ -50,6 +50,7 @@ Agents MUST respect the following structural rules.
 | `audit/cli.py` | Argument surface and exit codes only — no scan logic. |
 | `audit/target.py` | Target guard and git provenance capture. |
 | `audit/scan.py` | Bounded traversal, file classification, bounded content reads, grep. |
+| `audit/globs.py` | The one path-glob matcher: a glob from the root, matched folder by folder (`*` stays inside a name, `**` matches any number of folders). |
 | `audit/stack.py` | Ecosystem / package manager / CI / test-framework / hook detection. |
 | `audit/components.py` | Declared components (depth 1) plus candidate components. |
 | `audit/probes.py` | Tier-C runner: allow-list, timeouts, **capture-time** redaction. |
@@ -186,7 +187,8 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
   entry-point contract (`main` callable with no arguments) must not be weakened.
 - **Pass rate:** 100% required. Never `.skip` or comment out a failing test; never relax an assertion to get
   green.
-- **Gate:** run `make check` (§3.1) from the repository root before proposing a change.
+- **Gate:** run `make check` and `make security` ([§3.1](#31-standardized-command-surface)) from the repository
+  root before proposing a change.
 
 ---
 

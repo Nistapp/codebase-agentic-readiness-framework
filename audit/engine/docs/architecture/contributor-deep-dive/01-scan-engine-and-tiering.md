@@ -69,6 +69,7 @@ bounded by construction:
 | Hard excludes | `.git`, `node_modules`, `vendor`, `dist`, `build`, `target`, `.venv`, `venv`, `__pycache__`, `.next`, `coverage`, `.gradle` |
 | Operator excludes | `--exclude GLOB`, repeatable, matched against the whole path from the target's root, where `*` crosses directories. It leaves a file out of the walk and out of the set of tracked files that `SEC-01`, `DOC-03`, `CON-03` and `EXEC-02` read (`tracked_in_scope` in `audit/rules/checks/_common.py`) |
 | Carried data | A file under a directory named `templates`, `template`, `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` (`CARRIED_DATA_DIRS` in `audit/scan.py`, compared whole and case-insensitively) is walked and then set aside, unless the name is below a JVM source root (`src/<source set>/<java\|kotlin\|scala\|groovy>/`, where a folder is a package): it leaves `Inventory.files`, so no check reads it, and `Inventory.set_aside` records each outermost directory with its file count. Nothing is set aside when the repository's only manifests are inside such directories. [ADR-0008](../adrs/0008-what-counts-as-the-repository.md) |
+| Path globs | A check names a place in the walk with a glob through `Inventory.match`, which uses the one matcher in [`audit/globs.py`](../../../audit/globs.py). A pattern with a `/` is a glob from the root, matched folder by folder: `*`, `?` and `[...]` stay inside one name, and `**` matches any number of folders, none included. So `.github/workflows/*.yml` finds no nested file, and `docs/**/*.md` finds `docs/a.md`. A pattern with no `/` is a base name at any depth. Case folds only where the platform folds it. The instruction-file globs of `AGT-01` and `AGT-08` and the consistency map's `glob` scope use the same semantics |
 | File-count cap | Configurable; on breach the scan reports `UNKNOWN` for the affected check rather than silently shrinking scope |
 | File-size cap | Files over the cap are inventoried but not read for content checks |
 | Encoding | Decode as UTF-8 with replacement; binary files are classified, never parsed |
@@ -197,8 +198,19 @@ Executing a repository's own commands is a supply-chain decision. Consequently:
 - **Never installs.** No `npm install`, `pip install`, or wrapper download, ever.
 - **No network by default.** Probes that need it (dependency CVE checks) are excluded unless explicitly permitted.
 - **Timeout per probe**, with the timeout itself recorded as the evidence.
-- **Evidence capture:** exit code, duration, and a bounded tail of output — with secret-shaped lines redacted
-  before they enter the report.
+- **Evidence capture:** exit code, duration, and a bounded tail of output — with credential-shaped text redacted
+  before it enters the report. `redact()` in `audit/probes.py` replaces each of these with `[REDACTED]` and
+  counts one redaction per secret in the probe's `redactions` field:
+  - a keyword assignment with its value. The keyword is `token`, `secret`, `password`, `passwd`, `pwd` or
+    `api_key`, alone or as one part of a name joined by `_` or `-` (`GITHUB_TOKEN=`, `client_secret=`). A quoted
+    value runs to its closing quote on the line, and `Bearer` with its token is one value. Prose is left alone:
+    `passwords must be rotated`, `token count: 5` and `max_tokens: 4096` assign no keyword. A harmless name such
+    as `TOKEN_URL=` is redacted too, because a hidden URL costs less than a shown credential;
+  - a whole PEM private key, BEGIN line to END line, or to the end of the output when the key was cut off;
+  - the shapes `sk-...`, `ghp_...` (and the other `gh*_` kinds), `AKIA...`, a `Bearer` token, and a Slack token
+    (`xoxb-...`, `xoxp-...`, `xapp-...`).
+
+  `SEC-02` and the report validator read the same patterns.
 - **No side-effect probes:** only verbs declared read-only in the rule pack are eligible.
 
 ---

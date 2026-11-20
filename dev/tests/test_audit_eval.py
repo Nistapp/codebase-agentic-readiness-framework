@@ -154,6 +154,40 @@ class ScenarioTests(PlantedNoteCase):
         self.assertEqual(result.summary, "audit_eval: planted-note passed")
 
 
+class FrameworkCopyTests(unittest.TestCase):
+    """The copy the audit agent runs from holds the recipe and nothing that states what is asserted."""
+
+    def setUp(self) -> None:
+        self.tmp = Path(tempfile.mkdtemp(prefix="audit-eval-test-")).resolve()
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+
+    def test_the_copy_holds_the_recipe_and_no_eval_file(self) -> None:
+        result = ae.handler(["framework", str(self.tmp / "framework")])
+        copy = Path(result.data["framework"])
+        self.assertTrue((copy / "audit" / "SKILL.md").is_file())
+        self.assertTrue((copy / "audit" / "prompts" / "kickoff.md").is_file())
+        self.assertTrue((copy / "audit" / "tools" / "engine.py").is_file())
+        self.assertTrue((copy / "spec" / "readiness-requirements.md").is_file())
+        files = [path.relative_to(copy).as_posix() for path in copy.rglob("*") if path.is_file()]
+        self.assertFalse((copy / "dev").exists(), "the agent could read the assertions")
+        self.assertEqual([path for path in files if "dev/eval" in path or "eval_" in path], [])
+        self.assertEqual(sorted(set(files) & ie.EVAL_PAGES), [])
+        self.assertFalse((copy / "audit" / "tools" / "tests").exists())
+        self.assertFalse((copy / "audit" / "engine" / "tests").exists())
+
+    def test_an_existing_folder_is_a_usage_error(self) -> None:
+        with self.assertRaises(_common.UsageError):
+            ae.framework(self.tmp)
+
+    def test_the_runner_runs_the_audit_from_the_copy(self) -> None:
+        """`run-claude.sh` cannot run here (it starts `claude`), so read how its audit mode sets the folder."""
+        script = ie.RUNNER.read_text(encoding="utf-8")
+        audit_mode = script.split('if [ "$RECIPE" = audit ]; then', 1)[1].split("else", 1)[0]
+        self.assertIn('audit_eval.py" framework "$COPY_ROOT/framework"', audit_mode)
+        self.assertIn('WORKDIR="$COPY_ROOT/framework"', audit_mode)
+        self.assertNotIn('WORKDIR="$PWD"', script)
+
+
 class TargetTextIsDataTests(PlantedNoteCase):
     """AU1, HR-0052."""
 

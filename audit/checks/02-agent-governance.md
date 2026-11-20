@@ -1,7 +1,8 @@
 # Agent Governance (`AGT`)
 
-> Follows the anatomy in [`README.md`](README.md). Twelve checks, split across two halves of this file:
-> `AGT-01` to `AGT-06` here, `AGT-07` to `AGT-12` in the second half. See
+> Follows the anatomy in [`README.md`](README.md). Eleven checks, split across two halves of this file:
+> `AGT-01` to `AGT-06` here, `AGT-07` to `AGT-11` in the second half. `AGT-12` and `AGT-13` are in
+> [`02-agent-governance-2.md`](02-agent-governance-2.md). See
 > [Why These Checks §3](../engine/docs/architecture/user-overview/03-why-these-checks.md#3-agent-governance-agt)
 > for the consequence behind this family: `AGENTS.md` is the only artifact an agent is guaranteed to
 > read, so everything the team knows and has not written there is invisible to it.
@@ -267,16 +268,19 @@ Why it matters   Explicit prohibitions work; implicit ones do not — an agent t
                   weaken a test" will weaken one
                   ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
-Engine           `AGT-07`. Finds the prohibitions section by its heading (one of `never`/`do not`/`don't`/
-                 `must not`/`prohibit`/`forbidden`/`off-limits`, or `❌`; the same heading-detection logic
-                 `CON-01` and `CON-02` share, so this family and `CON` cannot drift on what counts as a
-                 heading). No such section at all is `FAIL`. Inside the section, each line carrying a
-                 prohibition word is checked against four concerns — tests, generated files (including
-                 `artefacts/`/`artifacts/` and build output), the default branch, secrets — and the first
-                 line to match each concern is recorded; covering all four is `PASS`, some is `PARTIAL`,
-                 none is `FAIL`. Distrust a `FAIL` on heading detection when the project uses a heading the
-                 pattern does not word-match (a bare "Rules" heading whose first line is a prohibition) —
-                 verify by reading for a list of explicit prohibitions regardless of its heading text.
+Engine           `AGT-07`. Finds the prohibitions section by its heading: one that says `never`, `do not`,
+                 `don't`, `prohibit`, `deny`, `forbidden` or `no-go`, or any heading whose own body (to the
+                 next heading of any level) holds at least three prohibition lines. A prohibition line says
+                 `never`, `do not`, `don't`, `must not`, `prohibit`, `forbidden` or `off-limits`, or holds
+                 `❌`. The section runs to the next heading of the same or a higher level. `CON-01` and
+                 `CON-02` share this logic, so this family and `CON` cannot drift on what counts as a
+                 heading. No such section at all is `FAIL`. Inside the section, each prohibition line is
+                 checked against four concerns — tests, generated files (including `artefacts/`/`artifacts/`
+                 and build output), the default branch, secrets — and the first line to match each concern
+                 is recorded; covering all four is `PASS`, some is `PARTIAL`, none is `FAIL`. Distrust a
+                 `FAIL` on heading detection when the project uses a heading the pattern does not word-match
+                 (a bare "Rules" heading with fewer than three prohibition lines) — verify by reading for a
+                 list of explicit prohibitions regardless of its heading text.
 Method           automated
 Look for         The prohibitions section itself; for each of the four concerns, whether the stated rule
                  is specific to this project (A14) rather than a generic restatement ("don't break things").
@@ -303,21 +307,21 @@ Why it matters   `AGENTS.md`, `CLAUDE.md` and `.cursorrules` disagreeing is obey
                   flagged as a defect — inconsistent behaviour across harnesses, with no way to trace why
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
-Engine           `AGT-08`. Classifies every instruction-shaped path the variant table knows: vendor-only
-                 files with no canonical counterpart are competitors (`FAIL`); a pair where one file
-                 shadows another for the same harness (only one is ever loaded) is a shadowed pair
-                 (`PARTIAL` per pair); and, when a canonical file or a competitor exists but some known
-                 harness's own instruction path is never reached by anything present, that is a reach gap
-                 (`COSMETIC`, `PARTIAL`) unless the root `AGENTS.md` states the supported harnesses: a line
-                 holding "read by" or "supported harnesses" and the name of at least one known harness
-                 (`This file is read by Claude Code, Codex and Cursor.`). The engine takes that line as given
-                 and cites it in the summary; it does not check that each named harness loads the file. No
-                 findings at all is `PASS`. With a root `AGENTS.md`, a vendor file of at most five content
-                 lines, each naming `AGENTS.md` (`@AGENTS.md`, "See AGENTS.md"), is a pointer: not a
-                 competitor, not a shadow, and its harness is still reached. A file that imports `@AGENTS.md`
-                 beside its own rules shadows nothing but still competes; the summary names both. Distrust a
-                 competitor finding on a documented pointer this test misses (A14). A path that a harness
-                 loads only through its config (Aider's `CONVENTIONS.md`, named in `.aider.conf.yml`) counts
+Engine           `AGT-08`. Classifies every instruction-shaped path the variant table knows. A vendor-only file with no
+                 canonical counterpart is a competitor (`AGT-08:vendor-files`, `FAIL`). A pair where one file shadows
+                 another for the same harness (only one is ever loaded) is a shadowed pair (`AGT-08:<winner>>AGENTS.md`,
+                 `PARTIAL` per pair). A canonical file or a competitor may exist while some known harness's own
+                 instruction path is reached by nothing present. That is a reach gap (`AGT-08:harness-reach`,
+                 `COSMETIC`, `PARTIAL`), unless the root `AGENTS.md` states the supported harnesses: a line holding
+                 "read by" or "supported harnesses" and a known harness's name (`This file is read by Claude Code, Codex
+                 and Cursor.`). The engine takes that line as given and cites it in the summary; it does not check that
+                 each named harness loads the file. These stay three findings by design (issue #26): the baseline
+                 ratchet compares ids, and each keeps its severity. No findings at all is `PASS`. With a root
+                 `AGENTS.md`, a vendor file of at most five content lines, each naming `AGENTS.md` (`@AGENTS.md`, "See
+                 AGENTS.md"), is a pointer: not a competitor, not a shadow, and its harness is still reached. A file
+                 that imports `@AGENTS.md` beside its own rules shadows nothing but still competes; the summary names
+                 both. Distrust a competitor finding on a documented pointer this test misses (A14). A path that a
+                 harness loads only through its config (Aider's `CONVENTIONS.md`, named in `.aider.conf.yml`) counts
                  only when that config file exists; without it, the file is an ordinary document.
 Method           automated
 Look for         Every instruction-shaped path present (the variant table's classification); for each
@@ -392,15 +396,15 @@ Why it matters   A rule the agent is told to "read elsewhere first" is only as r
 Severity         DEGRADER
 Engine           `AGT-10`. Reads harness configuration this project can parse without a third-party parser
                  (`.aider.conf.yml`'s `read:`, `.codex/config.toml`'s instruction-file keys,
-                 `.gemini/settings.json`'s `contextFileName`, `opencode.json`'s `instructions`) for pointers
-                 at files that do not exist (`FAIL`, one finding per broken pointer); separately, scans the
-                 entry file for a deferral phrase ("read X first", "before you start, see Y") naming a real
-                 file that no harness configuration already names (`FAIL`: loading depends on the agent
-                 choosing to follow the pointer, not on configuration). No broken pointer and no
-                 unconfigured deferral is `PASS`. Distrust a `FAIL` on deferral when the harness in use
-                 reads the entry file in full regardless of pointers (so the deferral is redundant, not
-                 risky) — verify which harness the user actually runs before treating every deferral
-                 phrase as a gap.
+                 `.gemini/settings.json`'s `contextFileName`, `opencode.json`'s `instructions`) for pointers at
+                 files that do not exist (`FAIL`, one finding per broken pointer; a leading `./` goes, and
+                 `docs/**/*.md` finds `docs/guide.md`); separately, scans the entry file for a deferral phrase
+                 ("read X first", "before you start, see Y") naming a real file that no harness configuration
+                 already names (`FAIL`: loading depends on the agent choosing to follow the pointer, not on
+                 configuration). No broken pointer and no unconfigured deferral is `PASS`. Distrust a `FAIL` on
+                 deferral when the harness in use reads the entry file in full regardless of pointers (so the
+                 deferral is redundant, not risky) — verify which harness the user actually runs before treating
+                 every deferral phrase as a gap.
 Method           automated
 Look for         Harness configuration files for named instruction targets; the entry file's own text for
                  deferral phrasing naming another file.
@@ -470,31 +474,3 @@ Pitfalls         Counting lines is a proxy, not the goal (the rubric is the leve
                  specific-sounding but unverifiable claims (a boundary rule naming a path that was since deleted)
                  must not pass just because its language matches the specific bucket's shape. Always verify, never
                  just classify.
-
-## AGT-12 — Communication rules stated
-
-Why it matters   Agents report to people and ask them for decisions; without written rules each agent
-                  picks its own layout and the reader digs for the bottom line
-                  ([greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides)).
-Severity         COSMETIC
-Engine           `AGT-12`. Reads the entry instruction file for a section headed `communication`, `how to
-                 write`, `writing for people`, `reporting` or `talking to the user` (not in a fence), and
-                 for a Markdown file it links or code-spans whose name contains `communicat`. The rules
-                 must name the reader (`reader`, `audience`, `write for`, `new engineer`), how to report
-                 (`report`, `status`, `summary`, `bottom line`) and how to ask for a decision (`decision`,
-                 `recommend`, `trade-off`). Distrust a `FAIL` when the rules sit in a linked file with
-                 another name: read the link.
-Method           automated
-Look for         The instruction file's headings, then each file its documentation section links.
-Rubric           PASS: the rules exist and name the reader, how to report and how to ask for a decision.
-                 PARTIAL: one or two of the three are missing, or a named rules file does not exist.
-                 FAIL: no section and no named rules file.
-                 NOT_APPLICABLE: never.
-                 UNKNOWN when: no instruction file exists to read (`AGT-01` already owns that absence).
-Evidence to cite A `file` item for each section (its heading line) and each named rules file, with `note`.
-Absence proof    A FAIL records `grep` searches for the heading and the file-name patterns, scoped to the
-                 instruction file; a PARTIAL, one per missing element, scoped to the rules.
-Remediation      `adapt-agents-md`
-Pitfalls         Presence, not quality: rules that name the three in passing still pass; judge generic
-                 text under `AGT-11`. The rules are for English; a team writing in another language states
-                 its own.

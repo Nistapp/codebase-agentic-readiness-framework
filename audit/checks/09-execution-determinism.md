@@ -137,7 +137,8 @@ Engine           `EXEC-03`. First looks for a documented, non-interactive instal
                  head tool and subcommand the engine recognises, such as `npm install` or `make setup`).
                  It reads the fenced shell blocks and the inline code spans (`` - Install: `npm ci` ``)
                  of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md`. Found ⇒ `PASS` outright.
-                 Failing that, looks for a setup artifact (a devcontainer, a compose
+                 Failing that, looks for a setup artifact (a devcontainer: `.devcontainer.json`,
+                 `.devcontainer/*.json` or `.devcontainer/<name>/devcontainer.json`; a compose
                  file, a Dockerfile, or a `setup`/`bootstrap`/`install`/`dev`/`dev-setup` Makefile or
                  npm-script target) and whether any doc file names it in prose. The setup files count at
                  any depth, and so does a Dockerfile with a variant in its name (`Dockerfile.*`,
