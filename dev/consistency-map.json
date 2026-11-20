@@ -10700,7 +10700,8 @@
     {
       "binding": "section",
       "check": "CI-04",
-      "note": "The agent reads each job that runs a CI-02 verb or check for continue-on-error: true and a swallowed exit code (|| true, exit 0, set +e), then whether the branch rules require the job (audit/checks/06-ci.md, CI-04). A live read-only query needs the person's consent.",
+      "named_by_text": "A wrapper script a step runs (run: scripts/ci/test.sh), a reusable workflow a job calls and the CI doc that holds a report-only step's debt row are read at the paths the workflow or the repository's docs name.",
+      "note": "The agent reads each job that runs a CI-02 verb or check for continue-on-error: true and a swallowed exit code (|| true, exit 0, set +e), following a composite action, a reusable workflow or a wrapper script into its file, then whether the declared branch rules (the HYG-11 files) require the job (audit/checks/06-ci.md, CI-04). A report-only step needs its debt record in the repository: a comment beside the step, its row in the CI doc or an entry in a committed counts file. A live read-only query needs the person's consent.",
       "source": "agent",
       "threshold": "every verb job gates and is a required status check",
       "what": {
@@ -10716,6 +10717,14 @@
         },
         {
           "path": ".github/workflows/*.yaml",
+          "scope": "glob"
+        },
+        {
+          "path": ".github/actions/**/action.yml",
+          "scope": "glob"
+        },
+        {
+          "path": ".github/actions/**/action.yaml",
           "scope": "glob"
         },
         {
@@ -10739,8 +10748,24 @@
           "scope": "glob"
         },
         {
-          "path": ".github/rulesets/*.json",
+          "path": ".github/rulesets/**/*.json",
           "scope": "glob"
+        },
+        {
+          "path": ".github/settings.yml",
+          "scope": "root"
+        },
+        {
+          "path": "**/*branch-protection*",
+          "scope": "glob"
+        },
+        {
+          "path": "**/*branch_protection*",
+          "scope": "glob"
+        },
+        {
+          "path": "*baseline*.json",
+          "scope": "any-depth"
         }
       ]
     },
