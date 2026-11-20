@@ -8,15 +8,15 @@
 
 ## Detection signals
 
-`facts.json`'s `stack` section already read this: `ecosystems: ["node"]` from a `package.json`
-anywhere in the tree; `package_managers` from the lockfile at the repository root
-(`package-lock.json` → npm, `pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `bun.lockb` → bun);
-`test_frameworks` from `vitest.config.*` or `jest.config.*`; `ci_providers` from
-`.github/workflows/*.yml`. A multi-component repository with a `package.json` in each component but
-none at the root reads `ecosystems: ["node"]` correctly (the engine's `node` signal has no folder
-depth) but an empty `package_managers`/`ci_providers`/`test_frameworks` when the lockfile and CI config
-also live only inside a component — state that gap to the user rather than reading it as "no package
-manager."
+`facts.json`'s `stack` section already read this. `ecosystems: ["node"]` comes from a `package.json`
+anywhere in the tree. `package_managers` comes from a lockfile anywhere in the tree: `package-lock.json`
+→ npm, `pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `bun.lockb` → bun. A text `bun.lock` is not read.
+`test_frameworks` comes from `vitest.config.*` or `jest.config.*`, and `ci_providers` from
+`.github/workflows/*.yml` at the repository root. A multi-component repository with a
+`package.json` and a lockfile in each component but none at the root reads `ecosystems: ["node"]` and
+its package managers correctly (neither signal has a folder depth). Its `package_managers` can then
+list more than one manager, one per component — say which component uses which rather than reading
+the list as one project's choice.
 
 ## Command-surface map
 
