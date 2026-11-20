@@ -76,7 +76,9 @@ Engine           `CMD-02`. Resolves `check` on its one runner (the same resolver
                  by invoking another resolved verb by name (indirection: `npm run format:check`) or by a
                  documented tool equivalent (`ruff check`, `tsc`, `pytest`, and others the engine's own
                  pattern list names). In a `Makefile`, `check`'s prerequisites are its body, and a
-                 prerequisite that is not itself a verb is followed into its own recipe, once. All three
+                 prerequisite that is not itself a verb is followed into its own recipe, once. In a
+                 `package.json`, a script that is not a verb is followed into its command the same way, so
+                 `npm run test:coverage` running `jest --coverage` is the test run. All three
                  concerns present is `PASS`; some is `PARTIAL`; none is `FAIL`. A Gradle or Maven `check`
                  that is a lifecycle task is `UNKNOWN` — its dependency graph is the build's own, not a
                  command the engine reads (S2.6's own finding on this repository's dogfooding run). No

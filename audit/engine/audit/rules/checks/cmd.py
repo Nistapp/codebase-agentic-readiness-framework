@@ -25,7 +25,9 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
 * **CMD-02** — the `check` verb's body invokes a format-check, a typecheck and a test command.
   Indirection through another verb (`npm run format:check`) and documented tool equivalents
   (``prettier --check``, ``tsc --noEmit``, ``pytest``, …) both count. In a `Makefile` the prerequisites
-  of `check` are its body, and a prerequisite that is not a verb is followed into its own recipe, once.
+  of `check` are its body, and a prerequisite that is not a verb is followed into its own recipe, once. In a
+  `package.json` a script that is not a verb is followed into its command the same way, so
+  `npm run test:coverage` composes the test concern through `jest --coverage`.
   Some concerns present ⇒ `PARTIAL`; none ⇒ `FAIL`; no runner ⇒ `UNKNOWN` (so is a `Makefile` that
   does not parse, which `CMD-01` already reported, and so is a `check` that is a Gradle or Maven
   lifecycle task, whose dependencies are set by the build and not read here).
@@ -82,6 +84,13 @@ _YARN_RE = re.compile(r"\byarn\s+(?:run\s+)?([A-Za-z0-9:_-]+)")
 # A shell passes `format\:check` and `'format:check'` to make as `format:check`, so both name that target.
 _TASK_RE = re.compile(r"\b(?:make|task|just|mise)\s+(?:-\S+\s+)*['\"]?([A-Za-z0-9:_\\-]+)")
 _RUNNER_INVOCATIONS = (_NPM_RE, _YARN_RE, _TASK_RE)
+
+#: Runners whose `check` is followed into the runner's own targets, and how a segment calls that runner. In a
+#: `Makefile` a prerequisite is a target too, so every invocation form counts there.
+_FOLLOWED_RUNNERS: dict[str, tuple[re.Pattern, ...]] = {
+    "Makefile": _RUNNER_INVOCATIONS,
+    "package.json": (_NPM_RE, _YARN_RE),
+}
 
 #: Documented tool equivalents, used only when `check` calls a tool directly rather than a verb.
 _DIRECT_CONCERN_PATTERNS: tuple[tuple[str, tuple[str, ...]], ...] = (
@@ -344,13 +353,15 @@ def _composition_concerns(
     resolved: dict[str, VerbBinding],
     targets: dict[str, str] | None = None,
     followed: frozenset[str] = frozenset(),
+    invocations: tuple[re.Pattern, ...] = (),
 ) -> set[str]:
     """The concerns ``command`` covers: a verb it invokes by name, or a documented tool.
 
-    ``targets`` is the runner's own ``{name: command}`` map, given for a runner whose targets are
-    prerequisites of one another (Make). An invoked name that is not a concern of its own is followed into
-    its command, once, so ``check: lint types test`` is read through ``types``. The alias of a verb names
-    that verb: ``format-check`` is ``format:check``.
+    ``targets`` is the runner's own ``{name: command}`` map (:data:`_FOLLOWED_RUNNERS`). An invoked name that
+    is not a concern of its own is followed into its command, once, so ``check: lint types test`` is read
+    through ``types`` and ``npm run test:coverage`` through ``jest --coverage``. Only a segment that calls the
+    runner itself (``invocations``) is followed, so ``make x`` in a package script is not read as script ``x``.
+    The alias of a verb names that verb: ``format-check`` is ``format:check``.
     """
     concerns: set[str] = set()
     for segment in _segments(command):
@@ -359,8 +370,13 @@ def _composition_concerns(
         concern = _CONCERN_OF_VERB.get(verb) if verb in resolved else None
         if concern:
             concerns.add(concern)
-        elif targets and target in targets and target not in followed:
-            concerns |= _composition_concerns(targets[target], resolved, targets, followed | {target})
+        elif (
+            targets
+            and target in targets
+            and target not in followed
+            and any(pattern.search(segment) for pattern in invocations)
+        ):
+            concerns |= _composition_concerns(targets[target], resolved, targets, followed | {target}, invocations)
         for concern, patterns in _DIRECT_CONCERN_PATTERNS:
             if concern not in concerns and any(re.search(p, segment) for p in patterns):
                 concerns.add(concern)
@@ -400,8 +416,9 @@ def check_cmd02(*, spec, target, inventory, stack, components, session) -> Check
             "graph, which the engine does not read",
         )
 
-    own_targets = dict(declared).get(check.runner, {}) if runner_kind(check.runner) == "Makefile" else None
-    concerns = _composition_concerns(check.command, resolved, own_targets)
+    invocations = _FOLLOWED_RUNNERS.get(runner_kind(check.runner), ())
+    own_targets = dict(declared).get(check.runner, {}) if invocations else None
+    concerns = _composition_concerns(check.command, resolved, own_targets, invocations=invocations)
     present = [c for c in CONCERNS if c in concerns]
     missing = [c for c in CONCERNS if c not in concerns]
     detail = f"check ({check.runner}) composes: " + (", ".join(present) if present else "nothing")

@@ -632,7 +632,8 @@ READS: dict[str, Reads] = {
         threshold="check composes format-check, typecheck and test",
         note=(
             "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite "
-            "that is no verb is followed once. A Gradle or Maven lifecycle check is UNKNOWN."
+            "that is no verb is followed once, and so is a package script that is no verb. A Gradle or Maven "
+            "lifecycle check is UNKNOWN."
         ),
     ),
     "CMD-03": Reads(

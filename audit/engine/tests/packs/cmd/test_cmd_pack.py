@@ -195,6 +195,46 @@ class MakeSpellingTests(unittest.TestCase):
         self.assertEqual(support.verdicts(report)["CMD-02"], "PASS")
 
 
+class NpmCompositionTests(unittest.TestCase):
+    """A package script that is not a verb is followed into its command, once (issue #125)."""
+
+    def check_of(self, check: str, extra: str = "") -> dict:
+        npm = NPM_VERBS.replace('"npm run format:check && npm run typecheck && npm test"', f'"{check}"')
+        npm = npm.replace('"security":', f"{extra}" + '"security":')
+        report = audit_files({"package.json": npm})
+        return [c for c in report["checks"] if c["id"] == "CMD-02"][0]
+
+    def test_a_coverage_script_that_runs_the_test_runner_is_the_test_concern(self):
+        check = self.check_of(
+            "npm run format:check && npm run typecheck && npm run test:coverage",
+            extra='"test:coverage":"jest --coverage",',
+        )
+        self.assertEqual(
+            (check["verdict"], check["summary"]), ("PASS", "check (package.json) composes: format-check, typecheck, test")
+        )
+
+    def test_a_coverage_script_that_calls_the_test_verb_is_the_test_concern(self):
+        check = self.check_of(
+            "npm run format:check && npm run typecheck && npm run test:coverage",
+            extra='"test:coverage":"npm test -- --coverage",',
+        )
+        self.assertEqual(check["verdict"], "PASS")
+
+    def test_a_script_that_runs_no_test_runner_is_not_the_test_concern(self):
+        check = self.check_of(
+            "npm run format:check && npm run typecheck && npm run test:lint", extra='"test:lint":"eslint test",'
+        )
+        self.assertEqual((check["verdict"], check["summary"][-12:]), ("PARTIAL", "missing test"))
+
+    def test_a_make_call_in_a_script_is_not_read_as_a_package_script(self):
+        check = self.check_of("npm run format:check && npm test && make types", extra='"types":"tsc --noEmit",')
+        self.assertEqual((check["verdict"], check["summary"][-17:]), ("PARTIAL", "missing typecheck"))
+
+    def test_scripts_that_call_each_other_in_a_cycle_end(self):
+        check = self.check_of("npm run a", extra='"a":"npm run b","b":"npm run a",')
+        self.assertEqual(check["verdict"], "FAIL")
+
+
 class CmdMessageTests(unittest.TestCase):
     """The text a person reads for the two checks, pinned exactly."""
 
