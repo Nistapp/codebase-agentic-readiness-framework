@@ -33,9 +33,9 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   mocha, python, go, rust, jvm). Zero markers is a `PASS`; no test file, or no readable test file,
   is `UNKNOWN`. This check never invents a maximum.
 * **TST-04** — a single-test/subset invocation in a fenced shell block, read from the repository's
-  entry documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`), or else in an inline code
-  span outside a fence (`npm test -- <path>` in a sentence), both via `_common.extract_documented_commands`.
-  A fenced one is cited first. `PASS` when one is documented; `FAIL` when the documents are
+  root entry documents (the root README by any name, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`), or else in
+  an inline code span outside a fence (`npm test -- <path>` in a sentence), both via
+  `_common.extract_documented_commands`. A fenced one is cited first. `PASS` when one is documented; `FAIL` when the documents are
   readable but none shows one. With **no test file** there is no suite for a fast path to act on, so
   the verdict is `UNKNOWN` — a missing suite is TST-01's finding, not doubled here. The search scope is
   stated in `detail`.
@@ -60,7 +60,7 @@ import re
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
 from audit.probes import ProbePlan
-from audit.rules.checks._common import extract_documented_commands, resolve_verbs, runner_kind
+from audit.rules.checks._common import at_root, entry_documents, extract_documented_commands, resolve_verbs, runner_kind
 from audit.scan import Kind
 from audit.stack import extract_npm_scripts
 from audit.rules.payloads import Counter, Payload
@@ -422,7 +422,7 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
     if not files:
         return _unknown(spec, "no test file is present, so there is no suite for a fast path to act on (see TST-01)")
 
-    docs = [rel for rel in _FASTPATH_DOCS if inventory.has(rel)]
+    docs = [rel for rel in entry_documents(inventory, _FASTPATH_DOCS) if inventory.has(rel) and at_root(inventory, rel)]
     scope = ", ".join(docs) if docs else f"{', '.join(_FASTPATH_DOCS)} (none present)"
 
     commands = [(rel, extract_documented_commands(text)) for rel in docs if (text := inventory.read(rel))]

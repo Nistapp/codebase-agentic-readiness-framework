@@ -56,7 +56,7 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.rules.checks._common import resolve_verbs
+from audit.rules.checks._common import README, entry_documents, resolve_verbs
 from audit.scan import Inventory
 from audit.stack import CI_PROVIDERS
 from audit.rules.payloads import Payload
@@ -296,7 +296,7 @@ def _ratchet(inventory: Inventory, stack, budgets: list[str]) -> list[str]:
             return [f"baseline compared in CI ({rel})" for rel in referenced]
 
     documented = []
-    for rel in _DOCS + ("README.md", "CONTRIBUTING.md"):
+    for rel in entry_documents(inventory, _DOCS + (README, "CONTRIBUTING.md")):
         text = inventory.read(rel)
         if text and _DOC_RATCHET_RE.search(text):
             documented.append(rel)
@@ -340,7 +340,7 @@ def _strip_js_comments(text: str) -> str:
 
 def _coverage_prose(inventory: Inventory) -> list[str]:
     found: list[str] = []
-    for rel in _DOCS + ("README.md", "CONTRIBUTING.md"):
+    for rel in entry_documents(inventory, _DOCS + (README, "CONTRIBUTING.md")):
         text = inventory.read(rel)
         if not text:
             continue

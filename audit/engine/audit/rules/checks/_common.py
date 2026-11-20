@@ -78,6 +78,37 @@ RUNNER_PRECEDENCE: tuple[str, ...] = (
 )
 
 
+#: The name a check lists for "the root README", whatever the file is called (:func:`entry_documents`).
+README = "README.md"
+
+
+def root_readme(inventory: Inventory) -> str | None:
+    """The repository's root README, or ``None``: a root file whose name starts with ``readme``, in any case.
+
+    ``README.md`` (any case) comes first, then the others by lower-cased name, so ``README`` is found before
+    ``README.rst``. HYG-01 and every check that reads "the README" ask here, so they agree on whether it exists.
+    """
+    found = [entry.rel for entry in inventory.files if "/" not in entry.rel and entry.rel.lower().startswith("readme")]
+    if not found:
+        return None
+    return min(found, key=lambda rel: (0 if rel.lower() == "readme.md" else 1, rel.lower()))
+
+
+def entry_documents(inventory: Inventory, names: tuple[str, ...]) -> list[str]:
+    """``names`` in the order given, with :data:`README` replaced by the root README's own name.
+
+    A ``README`` with no extension or a ``README.rst`` is then read and cited by its own name. With no root README,
+    :data:`README` stays. Every name is kept, present or not: the caller reads each and skips what is missing.
+    """
+    readme = root_readme(inventory) or README
+    return [readme if name == README else name for name in names]
+
+
+def at_root(inventory: Inventory, rel: str) -> bool:
+    """Whether the inventory holds ``rel`` itself; ``Inventory.has`` also accepts a copy below the root."""
+    return any(entry.rel == rel for entry in inventory.files)
+
+
 def tracked_in_scope(target, inventory: Inventory) -> set[str] | None:
     """The paths git tracks under the target, less the ones ``--exclude`` took out of the audit and the ones
     set aside as carried data (ADR-0008).

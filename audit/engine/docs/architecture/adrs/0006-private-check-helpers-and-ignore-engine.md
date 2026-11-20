@@ -6,9 +6,8 @@ ADR-0005 fixes the package layout: one module per pipeline stage under `audit/`,
 family under `audit/rules/checks/`. That works for behaviour that belongs to a single stage or a
 single pack. Two cross-cutting concerns do not fit it:
 
-1. **Tracked-file and ignore certainty.** `SEC-01`, `SEC-03`, `DOC-03`, `EXEC-05` and `CON-03` all
-   need to know which files git tracks and whether an ignore rule covers a path. The walk's own
-   matching in `audit/scan.py` is a non-git-aware approximation. Reusing it would change what the walk skips.
+1. **Tracked-file and ignore certainty.** The walk, `SEC-01`, `SEC-03`, `DOC-03`, `EXEC-05` and `CON-03` ask
+   which files git tracks. They also ask whether an ignore rule covers a path.
 2. **Verb resolution and documented commands.** `CMD-01`, `EXEC-06`, `CI-02`, `AGT-05`,
    `TOOL-01/02/04` and `TST-01/04` all ask "what verbs exist, what does each run, and which commands
    does the documentation show?". Answering that per pack guarantees several divergent answers.
@@ -22,12 +21,10 @@ same manifest by two slightly different rules will one day disagree in the same 
 
 1. **`audit/ignore.py`** owns the git-aware tracked-file accessor and the documented-subset ignore
    matcher. `tracked_files()` returns `None` — never an empty set — when the target is not a
-   repository or git fails, so callers degrade to `UNKNOWN` rather than infer. Ignore matching keeps
-   the historical behaviour exactly, so `audit/scan.py` continues to walk precisely what it walked
-   before; the semantics are a **documented subset** (anchored patterns, negation and `**` are
-   approximated; `UNKNOWN`, never `PASS`, when certainty is unavailable). That matcher is the walk's. `DOC-03`,
-   `CON-03`, `SEC-01` and `SEC-03` use a scoped matcher that reads nested `.gitignore` files and `!` lines
-   ([ADR-0009](0009-nested-ignore-files-and-negation.md)).
+   repository or git fails, so callers degrade to `UNKNOWN` rather than infer. One scoped matcher
+   answers "is this path ignored?" for the walk and for `DOC-03`, `CON-03`, `SEC-01` and `SEC-03`
+   ([ADR-0009](0009-nested-ignore-files-and-negation.md)). Its semantics are a **documented subset**
+   (`UNKNOWN`, never `PASS`, when certainty is unavailable).
 2. **`audit/rules/checks/_common.py`** is a **private** module holding the shared verb resolver
    (`resolve_verbs`) and fenced-command extractor (`extract_fenced_commands`). It is deliberately
    **absent from `MODULE_NAMES`** in `audit/rules/checks/__init__.py`: the registry must not load it,
@@ -42,7 +39,7 @@ same manifest by two slightly different rules will one day disagree in the same 
 | Alternative | Why it is rejected |
 |---|---|
 | Duplicate the logic in each pack | Guarantees drift: two checks reading one manifest under two subtly different rules will eventually disagree in one report. |
-| Make ignore logic a new pipeline stage | It is not a stage — it is a query over traversal. A stage would couple `scan.py`'s walk to a separately-versioned semantic and risk shifting every existing verdict. |
+| Make ignore logic a new pipeline stage | It is not a stage — it is a query over traversal, which the walk and the checks both ask. |
 | Fold the helpers into `audit/stack.py` or `audit/components.py` | Wrong responsibility: stack detection classifies ecosystems, it does not resolve the verbs or read ignore files. |
 | Add `_common` to `MODULE_NAMES` so the registry loads it | The registry wires checks to implementations; a module with no `IMPLEMENTATIONS` has no place there, and listing it would imply rule-pack status it does not have. |
 | Depend on a gitignore-parsing / YAML / TOML library | Violates the stdlib-only constraint that lets the audit run before the target's toolchain exists (ADR-0005). |
@@ -52,8 +49,8 @@ same manifest by two slightly different rules will one day disagree in the same 
 
 ### Positive
 
-* One answer to "what verbs exist?" and one to "does an ignore rule cover this path?", shared by every
-  pack that asks, so the answers cannot diverge within a report.
+* One answer to "what verbs exist?" and one to "does an ignore rule cover this path?", shared by the walk
+  and every pack that asks, so the answers cannot diverge within a report.
 * `tracked_files()` returning `None` makes "git could not answer" a representable state, which keeps
   the `UNKNOWN`-never-`PASS` invariant (ADR-0004 line of reasoning) enforceable at the call site.
 * `MODULE_NAMES` keeps meaning "one entry per rule pack", and `--list-checks` is unaffected because

@@ -10,8 +10,8 @@ Implemented here: `SEC-01` … `SEC-03`.
 What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
 
 * **SEC-01** — the tracked `.env` half reads `audit.ignore.tracked_files`; the ignore half reads the
-  ignore files directly (`audit.ignore.load_ignore_rules`), so a tracked `.env` that is *also*
-  git-ignored is still seen. A tracked ``.env``/``.env.*`` (excluding committed templates such as
+  ignore files directly (the scoped matcher, `audit.rules.checks._common.scoped_rules`), so a tracked `.env`
+  that is *also* git-ignored is still seen. A tracked ``.env``/``.env.*`` (excluding committed templates such as
   ``.env.example``) is the blocker. No tracked `.env` but ignore rules that miss the shape is
   `PARTIAL`. When git cannot report the tracked set the blocker half is `UNKNOWN` — never `PASS`,
   and the tracked set is never inferred from the walk.
@@ -30,9 +30,10 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   `FAIL`. The covered labels are stated in `detail`.
 
 Deliberate limits, recorded rather than hidden. Ignore matching is the documented subset in
-``audit.ignore`` (anchoring and ``**`` are approximated), so a shape is only credited when one of the
-probes actually matches. Content reads are bounded by ``audit.scan``; a tracked file that is binary,
-oversized, or ignored out of the walk is not scanned, and SEC-02 says which set it scanned.
+``audit.ignore`` (ADR-0009), so a shape is only credited when one of the probes actually matches. Content
+reads are bounded by ``audit.scan``; a tracked file that is binary, oversized, or under a hard-excluded
+directory is not scanned, and SEC-02 says which set it scanned. A tracked file an ignore rule covers stays in
+the walk, so SEC-02 scans it.
 """
 
 from __future__ import annotations
