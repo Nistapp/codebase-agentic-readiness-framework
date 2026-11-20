@@ -882,7 +882,7 @@ class DeclarationTest(unittest.TestCase):
         folded = sorted({check for check, d in reads.READS.items() if any(p.case == reads.FOLD for p in d.where)})
         named = sorted(check for check, declared in reads.READS.items() if declared.named_by_text)
         self.assertEqual(folded, ["AGT-12", "AGT-13"])
-        self.assertEqual(named, ["AGT-06", "AGT-10", "CON-01"])
+        self.assertEqual(named, ["AGT-06", "AGT-10", "CI-02", "CON-01"])
 
     def test_constants_are_named_only_when_they_hold_every_place(self) -> None:
         self.assertIn("audit.rules.checks._common:RUNNER_PRECEDENCE", reads.READS["CMD-01"].constants)

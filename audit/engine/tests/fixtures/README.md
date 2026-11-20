@@ -59,6 +59,7 @@ fixtures/
   cmd-ok-make-alias/         `format-check`, the alias, in place of `format\:check` -> CMD-01…04 PASS
   cmd-ok-root-make-nested-template/ root Makefile with all seven verbs, `templates/package.json` beside it -> CMD-01…04 PASS; the templates are set aside (ADR-0008)
   carried-jvm-example-package/ a Gradle application in package `com.example.demo`, a JUnit test, `examples/` and `src/main/resources/templates/` -> NAV-02, TST-01, TST-03 PASS; only `examples` and the resources `templates` are set aside (ADR-0008)
+  layout-app-per-folder/     two apps (`web/`, `api/`), each with its own manifest, lockfile, Jest coverage floor and `.env.example`, no root manifest; a CI script beside `scripts/ci/env.example`; `api/docker/Dockerfile.dev` (needs git) -> NAV-01 PARTIAL (two candidate components), AGT-02, BASE-04, EXEC-02, EXEC-03, EXEC-04 PASS
   cmd-01-make-parse-error/   unescaped `format:check:`, which GNU Make refuses -> CMD-01 FAIL, CMD-02…04 UNKNOWN
   cmd-01-nested-makefile-only/ the only Makefile is `tools/Makefile`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-01-nested-gradle-only/ the only Gradle build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
@@ -84,7 +85,7 @@ fixtures/
   exec-01-nested-composer-unpinned/ the root composer.json pins PHP, a nested one does not -> EXEC-01 PARTIAL
   exec-01-tool-versions-only/ ruby, dotnet and jvm pinned only by .tool-versions lines -> EXEC-01 PASS
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
-  exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
+  exec-02-nested-lockfile/   a tracked lockfile in `packages/app` out of step with the manifest beside it (needs git) -> EXEC-02 FAIL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
   exec-03-readme-no-extension/ the root README is `README`, no extension, and fences the install -> EXEC-03, HYG-01 PASS
   exec-04-missing-env/       source reads an undeclared env var    -> EXEC-04 FAIL
