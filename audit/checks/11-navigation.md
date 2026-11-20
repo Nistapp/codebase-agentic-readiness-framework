@@ -25,6 +25,10 @@ Engine           `NAV-01`. Reads `components.declared` (built by the engine's ow
                  build manifest (npm workspaces, `pnpm-workspace.yaml`, Maven modules, Gradle includes,
                  and the like) is `PASS`. None declared, but `components.candidates` names an
                  undeclared multi-app layout, is `PARTIAL` — the layout exists, nothing declares it. A
+                 candidate is an immediate child of `apps/`, `services/`, `packages/`, `components/`,
+                 `modules/`, `libs/` or `workers/` with a build manifest; when the root folder itself
+                 holds no build manifest, any top-level folder with one is a candidate too (an app per
+                 folder, such as `web/` and `api/`). Candidates are reported, never scored (ADR-0003). A
                  single-root repository that still declares a manifest is `PASS` too: the boundary
                  exists, it is just the root. Only a manifest at the root itself declares the root; a
                  nested `tools/x/package.json` does not. The detector reads `package.json`, `pyproject.toml`,
