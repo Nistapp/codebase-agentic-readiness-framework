@@ -906,8 +906,9 @@ READS: dict[str, Reads] = {
         binding="line",
         threshold="no CI verb without a local definition",
         note=(
-            "Each step command (inline or each line of a block), split at shell operators, is mapped to a "
-            "verb by runner or known tool and compared with the verbs resolved on the runner manifests."
+            "Each step command (inline or each line of a block), split at shell operators outside quotes, is "
+            "mapped to a verb by runner or known tool and compared with the verbs resolved on the runner "
+            "manifests. echo and printf text and heredoc bodies are not commands."
         ),
     ),
     "CI-03": Reads(
@@ -932,7 +933,8 @@ READS: dict[str, Reads] = {
         threshold="no CI-only step",
         note=(
             "A step command that calls a runner target that is no verb, no package-manager built-in and no "
-            "target of any local runner fails."
+            "target of any local runner fails. Commands split at shell operators outside quotes; echo and "
+            "printf text and heredoc bodies are not commands."
         ),
     ),
     "CI-05": Reads(

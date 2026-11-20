@@ -38,6 +38,9 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   another not ⇒ `PARTIAL`; workflows exist and nothing lints them ⇒ `FAIL`. No workflow file
   (`CI-01`'s subject), or only providers with no known offline linter (Jenkins) ⇒ `UNKNOWN`.
 
+Both CI-02 and CI-03 split a step at shell operators outside quotes, and treat the arguments of
+`echo`/`printf` and the body of a heredoc (a job summary written with `cat <<EOF`) as text, not commands.
+
 Deliberate limits, recorded rather than hidden. **YAML is not parsed.** This module is a minimal,
 documented text scan: it recognises `run:` / `script:` / `command:` scalar and block-scalar steps,
 splits them on shell operators, and matches triggers by pattern. Anchors, expressions, `uses:`
@@ -57,7 +60,7 @@ import re
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.probes import MUTATING_VERBS
-from audit.rules.checks._common import resolve_verbs, runner_commands, runner_target
+from audit.rules.checks._common import resolve_verbs, runner_commands, runner_target, strip_shell_comment
 from audit.stack import CI_PROVIDERS, LOCKFILE_NAMES, VERBS
 from audit.rules.payloads import Payload
 from audit.scan import Kind
@@ -76,7 +79,11 @@ _PR_TRIGGER_PATTERNS: dict[str, tuple[re.Pattern[str], ...]] = {
 #: Step keys that carry commands, across the workflow dialects this scan understands.
 _STEP_KEY_RE = re.compile(r"^(\s*)(?:-\s+)?(run|script|command|commands|bash)\s*:\s*(.*)$")
 _BLOCK_SCALAR_VALUES = frozenset({"|", "|-", "|+", ">", ">-", ">+", ""})
-_COMMAND_SPLIT_RE = re.compile(r"\s*(?:&&|\|\||;|\|)\s*")
+_ASSIGNMENT_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
+#: Commands whose arguments are text written out (a job summary, a log line), never commands to run.
+_TEXT_COMMANDS: frozenset[str] = frozenset({"echo", "printf"})
+#: A heredoc opener (``<<EOF``, ``<<-'EOF'``), not a here-string (``<<<``); group 2 is the terminator word.
+_HEREDOC_RE = re.compile(r"(?<!<)<<-?\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\1")
 
 #: Direct tool invocations, mapped to the framework verb they satisfy. `format:check` precedes
 #: `format` and `security` precedes the rest so the more specific form wins.
@@ -314,13 +321,68 @@ def _has_pr_trigger(provider: str, text: str) -> bool:
     return any(pattern.search(text) for pattern in patterns)
 
 
+def _split_unquoted(command: str) -> list[str]:
+    """``command`` split at ``&&``, ``||``, ``;`` and ``|`` outside single and double quotes."""
+    parts: list[str] = []
+    start = 0
+    quote = ""
+    escaped = False
+    index = 0
+    while index < len(command):
+        ch = command[index]
+        if escaped:
+            escaped = False
+        elif ch == "\\" and quote != "'":
+            escaped = True
+        elif quote:
+            if ch == quote:
+                quote = ""
+        elif ch in "'\"":
+            quote = ch
+        elif ch in ";|" or command.startswith("&&", index):
+            parts.append(command[start:index])
+            width = 2 if command.startswith(("&&", "||"), index) else 1
+            index += width
+            start = index
+            continue
+        index += 1
+    parts.append(command[start:])
+    return [part.strip() for part in parts if part.strip()]
+
+
+def _first_word(command: str) -> str:
+    """The program a simple command runs: its first word after any ``NAME=value`` assignments."""
+    for word in command.split():
+        if not _ASSIGNMENT_RE.match(word):
+            return word
+    return ""
+
+
 def _split_commands(raw: str) -> list[str]:
     command = raw.strip()
     if command.startswith("- "):
         command = command[2:].strip()
+    command = strip_shell_comment(command)
     if not command or command.startswith("#"):
         return []
-    return [part for part in (p.strip() for p in _COMMAND_SPLIT_RE.split(command)) if part]
+    return [part for part in _split_unquoted(command) if _first_word(part) not in _TEXT_COMMANDS]
+
+
+def _body_commands(numbered: list[tuple[int, str]]) -> list[tuple[int, str]]:
+    """``(line_no, command)`` for each command in a block of shell lines; a heredoc's body is text, not commands."""
+    commands: list[tuple[int, str]] = []
+    terminator: str | None = None
+    for line_no, raw in numbered:
+        if terminator is not None:
+            if raw.strip() == terminator:
+                terminator = None
+            continue
+        split = _split_commands(raw)
+        commands.extend((line_no, cmd) for cmd in split)
+        heredoc = _HEREDOC_RE.search(strip_shell_comment(raw))
+        if heredoc:
+            terminator = heredoc.group(2)
+    return commands
 
 
 def _iter_run_commands(text: str) -> list[tuple[int, str]]:
@@ -352,8 +414,7 @@ def _iter_run_commands(text: str) -> list[tuple[int, str]]:
                 break
             body.append(candidate)
             cursor += 1
-        for offset, raw in enumerate(body, start=index + 2):
-            commands.extend((offset, cmd) for cmd in _split_commands(raw))
+        commands.extend(_body_commands(list(enumerate(body, start=index + 2))))
         index = cursor
     return commands
 

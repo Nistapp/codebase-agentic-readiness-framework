@@ -20,6 +20,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import support  # noqa: E402
+from audit.rules.checks import ci  # noqa: E402
+from audit.rules.registry import REGISTRY  # noqa: E402
+from audit.scan import build_inventory  # noqa: E402
+from audit.stack import detect_stack  # noqa: E402
 
 CI_CHECKS = ("CI-01", "CI-02", "CI-03", "CI-05")
 
@@ -201,6 +205,63 @@ class Ci05InlineTests(unittest.TestCase):
             "Makefile": "lint-ci:\n\tactionlint\n",
         }
         self.assertEqual(self._ci05(files), "PARTIAL")
+
+
+_PR_HEAD = "on:\n  pull_request:\njobs:\n  b:\n    steps:\n"
+
+
+def _check_in_process(check_id: str, files: dict[str, str]):
+    """Run one CI check in-process (traced by coverage) against a temporary repository."""
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        for rel, text in files.items():
+            support.write(root, rel, text)
+        inventory = build_inventory(root)
+        spec = next(s for s in REGISTRY if s.id == check_id)
+        return ci.IMPLEMENTATIONS[check_id](
+            spec=spec, target=None, inventory=inventory, stack=detect_stack(inventory), components=None, session=None
+        )
+
+
+class Ci03TextIsNotACommandTests(unittest.TestCase):
+    """Issue #122: words inside `echo`/`printf` text and heredoc bodies are not CI commands."""
+
+    def test_echo_and_printf_text_raises_no_ci_only_step(self):
+        workflow = _PR_HEAD + (
+            "      - run: |\n"
+            '          echo "| npm integrity | `$integrity` |" >> "$GITHUB_STEP_SUMMARY"\n'
+            '          echo "### Staged on npm with tag `next`"\n'
+            '          echo "3. After the TEST pass: `npm dist-tag add ...`."\n'
+            "          printf '%s\\n' 'make deploy-prod'\n"
+            "          npm run check\n"
+        )
+        outcome = _check_in_process("CI-03", {".github/workflows/ci.yml": workflow, "package.json": _PACKAGE})
+        self.assertEqual(outcome.verdict.value, "PASS", [f.statement for f in outcome.findings])
+
+    def test_heredoc_body_is_text(self):
+        workflow = _PR_HEAD + (
+            "      - run: |\n"
+            "          cat >> \"$GITHUB_STEP_SUMMARY\" <<'EOF'\n"
+            "          npm integrity checked\n"
+            "          make release-notes\n"
+            "          EOF\n"
+            "          npm run publish-docs\n"
+        )
+        outcome = _check_in_process("CI-03", {".github/workflows/ci.yml": workflow, "package.json": _PACKAGE})
+        self.assertEqual(outcome.verdict.value, "FAIL")
+        self.assertEqual(len(outcome.findings), 1)
+        self.assertIn("publish-docs", outcome.findings[0].statement)
+
+    def test_a_pipe_inside_quotes_does_not_split_a_command(self):
+        workflow = _PR_HEAD + '      - run: npm run check || echo "failed | npm rebuild-all"\n'
+        outcome = _check_in_process("CI-03", {".github/workflows/ci.yml": workflow, "package.json": _PACKAGE})
+        self.assertEqual(outcome.verdict.value, "PASS")
+
+    def test_a_real_ci_only_step_beside_an_echo_still_fails(self):
+        workflow = _PR_HEAD + '      - run: echo "start" && npm run deploy-preview\n'
+        outcome = _check_in_process("CI-03", {".github/workflows/ci.yml": workflow, "package.json": _PACKAGE})
+        self.assertEqual(outcome.verdict.value, "FAIL")
+        self.assertIn("deploy-preview", outcome.findings[0].statement)
 
 
 if __name__ == "__main__":
