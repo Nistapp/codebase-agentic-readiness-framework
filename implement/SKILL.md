@@ -469,11 +469,11 @@ Goal: a second audit shows what the run changed, and the owner sees every skip, 
 - **An item left `in_progress`.** Check `git log` on the theme branch for its commits before changing anything
   again, so nothing is committed twice. Match them to the playbook's Commits section and go on with the first commit
   not yet made. Run the commit tier's tests on the branch first: the last commit must be no worse than the baseline.
-  Re-verify, then end the item. A `partial` or `failed` item is resumed by
-  setting it `in_progress` first.
+  Re-verify, then end the item. A `partial` or `failed` item is resumed by setting it `in_progress` first.
 - **The baseline on a resume.** The state does not keep it. Run it again on the branch's base commit, in a detached
   worktree (`git -C <repo> worktree add --detach <dir> <base>`; remove it afterwards). Never take the branch's own
-  tip as the baseline: it holds this theme's changes.
+  tip as the baseline: it holds this theme's changes. With no base engine report under `<workspace>/engine/<theme>`,
+  take one there too: [Resume without a base report](theme-checks.md#resume-without-a-base-report).
 - **`report_changed` true** in the drift check (Stage 0, step 5, which runs on every resume): stop.
 
 ## Tools
