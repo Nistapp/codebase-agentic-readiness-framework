@@ -128,7 +128,8 @@ Why it matters   An agent cannot answer an interactive prompt or provision a dat
 Severity         BLOCKER
 Engine           `EXEC-03`. First looks for a documented, non-interactive install command (one whose
                  head tool and subcommand the engine recognises, such as `npm install` or `make setup`)
-                 inside a fenced block of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md` — found ⇒
+                 in a fenced shell block or an inline code span (`` - Install: `npm ci` ``) of
+                 README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md` — found ⇒
                  `PASS` outright. Failing that, looks for a setup artifact (a devcontainer, a compose
                  file, a Dockerfile, or a `setup`/`bootstrap`/`install`/`dev`/`dev-setup` Makefile or
                  npm-script target) and whether any doc file names it in prose. No ecosystem detected at
@@ -137,7 +138,8 @@ Engine           `EXEC-03`. First looks for a documented, non-interactive instal
                  check reads — verify by reading whatever onboarding doc the repository actually points
                  to before treating the absence as real.
 Method           automated
-Look for         A fenced install command in README.md, AGENTS.md, CLAUDE.md or CONTRIBUTING.md first;
+Look for         An install command, fenced or as inline code, in README.md, AGENTS.md, CLAUDE.md or
+                 CONTRIBUTING.md first;
                  failing that, a devcontainer/compose/Dockerfile/setup-script/setup-target artifact, and
                  whether any of those four docs names it.
 Rubric           PASS: a documented non-interactive install command exists, or a setup artifact exists

@@ -30,7 +30,7 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   :data:`_ECOSYSTEM_MANAGERS` is named in the ``UNKNOWN`` summary. A ``FAIL`` summary names each ecosystem with
   no lockfile, each untracked lockfile and each lockfile out of step with its manifest.
 * **EXEC-03** — a devcontainer / compose file / Dockerfile / setup target-script, or a documented
-  non-interactive install command in the fenced blocks of README/``AGENTS.md``. Present but
+  non-interactive install command in a fenced block or an inline code span of README/``AGENTS.md``. Present but
   undocumented ⇒ ``PARTIAL``. No recognised ecosystem ⇒ ``UNKNOWN``: with no build manifest there is
   no way to say what provisioning is expected.
 * **EXEC-04** — a set difference: env keys referenced by source against keys declared in the
@@ -81,6 +81,7 @@ from dataclasses import dataclass
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.rules.checks._common import (
+    extract_documented_commands,
     extract_fenced_commands,
     follow_makefile,
     resolve_all_verbs,
@@ -821,7 +822,7 @@ def _documented_setup(inv: Inventory) -> list[str]:
         text = inv.read(name)
         if not text:
             continue
-        for _lang, _line, command in extract_fenced_commands(text):
+        for _lang, _line, command in extract_documented_commands(text):
             tokens = _tokenise(command)
             if not tokens:
                 continue

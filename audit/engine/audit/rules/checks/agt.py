@@ -48,7 +48,7 @@ from audit.rules.checks._common import (
     runner_commands,
 )
 from audit.scan import Inventory
-from audit.stack import VERBS
+from audit.stack import FORMAT_CHECK_ALIASES, VERBS
 from audit.rules import variants as V
 from audit.rules.payloads import (
     HarnessMatrix,
@@ -830,17 +830,29 @@ def check_agt04(*, spec, target, inventory, stack, components, session) -> Check
 # ---------------------------------------------------------------------------
 
 
+#: Each verb's spellings the spec accepts (``spec/command-surface.md`` § Spelling per runner): its own name, and for
+#: ``format:check`` also ``format-check`` and ``formatCheck``. A runner script under any other name is not a verb.
+_VERB_SPELLINGS: dict[str, tuple[str, ...]] = {
+    verb: (verb, *sorted({alias for aliases in FORMAT_CHECK_ALIASES.values() for alias in aliases}))
+    if verb == "format:check"
+    else (verb,)
+    for verb in VERBS
+}
+
+
 def _mentioned_verbs(text: str) -> set[str]:
-    """Which framework verbs the instruction file names, as whole tokens.
+    """Which framework verbs the instruction file names, as whole tokens, in a spelling the spec accepts.
 
     The lookarounds keep ``format`` from being found inside ``format:check`` and ``test`` from being
     found inside ``tests``: a verb is named only when it stands as itself.
     """
     found: set[str] = set()
-    for verb in VERBS:
-        pattern = re.compile(r"(?<![\w:-])" + re.escape(verb) + r"(?![\w:-])")
-        if pattern.search(text):
-            found.add(verb)
+    for verb, spellings in _VERB_SPELLINGS.items():
+        for spelling in spellings:
+            pattern = re.compile(r"(?<![\w:-])" + re.escape(spelling) + r"(?![\w:-])")
+            if pattern.search(text):
+                found.add(verb)
+                break
     return found
 
 

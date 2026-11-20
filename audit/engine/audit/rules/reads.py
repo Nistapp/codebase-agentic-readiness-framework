@@ -328,8 +328,9 @@ READS: dict[str, Reads] = {
         binding="file",
         threshold="all seven named and resolved",
         note=(
-            "Each verb must stand as a whole token (format inside format:check does not count). The "
-            "resolution half reads the runner manifests as CMD-01 does."
+            "Each verb must stand as a whole token (format inside format:check does not count). format:check "
+            "also counts as format-check or formatCheck, the spellings spec/command-surface.md accepts; no "
+            "other script name counts. The resolution half reads the runner manifests as CMD-01 does."
         ),
     ),
     "AGT-06": Reads(
@@ -1363,7 +1364,8 @@ READS: dict[str, Reads] = {
         binding="line",
         threshold="a documented non-interactive setup command",
         note=(
-            "A fenced shell command in the four docs whose tool and first argument install or set up passes. "
+            "A fenced shell command or an inline code span in the four docs whose tool and first argument install "
+            "or set up passes. "
             "Else a setup file or a setup target (setup, bootstrap, install, dev, dev-setup) of the root "
             "Makefile or package.json named anywhere in the four docs passes; present but not named is "
             "PARTIAL."
@@ -1619,7 +1621,7 @@ READS: dict[str, Reads] = {
         binding="line",
         note=(
             "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a "
-            "plain full-suite run does not count. A file is kept when Inventory.has finds its name at any "
+            "plain full-suite run does not count. An inline code span outside a fence counts too. A file is kept when Inventory.has finds its name at any "
             "depth but read by its exact root path, so a nested-only copy is skipped silently. The test files "
             "give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs."
         ),

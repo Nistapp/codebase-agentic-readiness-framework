@@ -198,6 +198,9 @@ Severity         DEGRADER
 Engine           `AGT-05`. Shares its verb resolver with `CMD-01`, so the two checks never disagree:
                  `PASS` only when the instruction file names every framework verb as a whole token (not
                  `format` inside `format:check`) **and** every named verb resolves on a runner manifest.
+                 A verb is named in a spelling the spec accepts: its own name, and for `format:check`
+                 also `format-check` or `formatCheck`. A runner script under another name
+                 (`type-check`, `fmt`) does not name a verb, even when it runs the same tool.
                  Names complete but resolution incomplete, or the reverse, is `PARTIAL`. With no runner
                  manifest at all, a complete name list is `PARTIAL` (resolution evidence is unavailable, not
                  negative) and an incomplete one is the engine's `UNKNOWN`, deferring to `CMD-01`'s
@@ -208,7 +211,8 @@ Method           automated
 Look for         The instruction file's command-surface section; `04-command-surface.md`'s own evidence for
                  whether each named verb actually resolves, since this check and `CMD-01` must agree.
 Rubric           PASS: all seven verbs (`format`, `format:check`, `lint`, `typecheck`, `test`, `check`,
-                 `security`) are named in the instruction file and each resolves on a runner.
+                 `security`) are named in the instruction file, by the verb's name and not by another
+                 script name, and each resolves on a runner.
                  PARTIAL: verbs are named but at least one does not resolve, or vice versa, or all are named
                  with no runner manifest present to resolve against.
                  FAIL: verbs are both incompletely named and incompletely resolved, with a runner manifest
