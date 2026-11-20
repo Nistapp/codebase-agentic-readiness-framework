@@ -159,7 +159,8 @@ READS: dict[str, Reads] = {
         note=(
             "Each config is kept when Inventory.has finds its name at any depth but read by its exact root "
             "path, so a nested-only copy reads as unreadable (UNKNOWN). Three user configs under $HOME are "
-            "read too, unless --no-user-config."
+            "read too, unless --no-user-config, and Claude Code's ~/.claude.json is parsed: its top-level "
+            "mcpServers or the projects entry of this checkout's path."
         ),
     ),
     "IDX-02": Reads(
@@ -185,7 +186,8 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "The store of IDX-02 (no repository text); a git-revision column of the matching project row is "
-            "compared with HEAD as a probe."
+            "compared with HEAD as a probe. With no such column, its indexed_at is compared with the time HEAD "
+            "last moved (git's committer time and reflog)."
         ),
     ),
     "AGT-01": Reads(
