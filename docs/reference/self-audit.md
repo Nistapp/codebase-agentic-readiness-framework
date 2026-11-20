@@ -103,6 +103,17 @@ repository, a value waiting for the owner, planned work or open debt; none is hi
 finding appears that the baseline did not have, and 0 otherwise. Fixing a finding never fails the run. CI runs it as
 the `self-audit` job on Linux, and `CI Gate` needs it.
 
+The finding-id comparison cannot see a new skipped test. "`TST-03` skip / xfail census" passes whatever the count:
+it only reports one. So `make self-audit` then runs a second ratchet, `dev/skip_census.py check`. It counts the skip
+markers in the five test trees (`audit/engine/tests`, `audit/tools/tests`, `implement/tools/tests`,
+`greenfield/bootstrap/tests`, `dev/tests`), leaving out `fixtures/` folders. A marker is a `skip`, `skipIf`,
+`skipUnless` or `expectedFailure` decorator, a `skipTest()` call or a `raise SkipTest`. The census reads the syntax
+tree, so a marker inside a string does not count. It also sees `self.skipTest()`, which the engine's `TST-03` regex
+does not. The run exits 1 when the count is above `counts.skips` in `.quality-baseline.json`, and lists every marker.
+An equal count passes. A lower count passes and asks you to run `make update-skip-baseline` in the same change.
+That command only lowers the number; raising it needs the owner. The same comparison runs as a unit test in
+`make test`.
+
 To check that the ratchet bites, a scratch copy of the tracked files with `.python-version` removed makes the run
 exit 2 and name the regression `EXEC-01:python`.
 
@@ -130,6 +141,14 @@ Never run it to get a failing `make self-audit` green: a new finding is fixed or
 first. After updating it, copy the report to `schema/examples/self-audit/<date>.json`, update the tables above,
 and run `make update-secrets-baseline` (the report holds a ruleset hash and a git SHA that read as high-entropy
 strings), reviewing the diff.
+
+When the skip census reports a lower count, keep the gain:
+
+```bash
+make update-skip-baseline   # writes today's skip-marker count into .quality-baseline.json; refuses to raise it
+```
+
+A rising skip count is never accepted this way: remove the new skip, or ask the owner.
 
 ## Neutralised path
 
