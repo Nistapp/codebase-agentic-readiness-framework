@@ -753,7 +753,7 @@ Is the repository run like a team project? Reported for the whole picture; never
 `COSMETIC` · not scored · engine check · fixed by [`add-repo-hygiene`](implement-master.md#add-repo-hygiene)
 
 - **Passes when:** a root README exists, reads as text, has at least 200 characters of body, carries no placeholder
-  marker, and is not a bare title.
+  marker where one counts (see Engine), and is not a bare title.
 - **Why it matters:** An agent (or a person) must be able to orient itself in this project in seconds, not by opening
   files at random.
 

@@ -1855,7 +1855,9 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "Root files whose base name starts with readme, any case; README.md is read first. It needs 200 "
-            "trimmed characters, no stub marker as a substring anywhere, and one line that is not a heading."
+            "trimmed characters, no stub marker, and one line that is not a heading. Under 400 characters a marker "
+            "anywhere counts, and lorem ipsum or <describe counts at any length; in a longer README a word marker "
+            "counts only when it opens a line and the line's end or punctuation follows it."
         ),
     ),
     "HYG-02": Reads(
