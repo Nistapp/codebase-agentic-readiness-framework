@@ -830,10 +830,22 @@ validator. It is the PyPI package `skills-ref`, with the CLI entry point `agents
 through `uvx` with a pinned version, and never imported by the tools or the engine. An install smoke-run (S4.5.3)
 acts on the audit bundle.
 
+`--archive DIR --tag TAG` also zips each bundle into `DIR/<bundle name>-<TAG>.zip`, the files that `release.yml`
+attaches to a release. Each zip holds the bundle's folder at its root. The zips are byte-reproducible, like
+`audit.pyz`:
+
+- the entries are in sorted path order;
+- every entry has the timestamp 1980-01-01 00:00:00;
+- a file is mode `0644` (`0755` if executable) and a folder is `0755`, whatever the host's umask;
+- every file is compressed with Deflate at level 9;
+- no entry carries an extra field, an owner or a user ID.
+
+Two builds of the same commit with the same Python and zlib give the same bytes, so the same `SHA256SUMS`.
+
 **Synopsis**
 
 ```text
-python3 dev/build_skills.py [--out-dir DIR]
+python3 dev/build_skills.py [--out-dir DIR] [--archive DIR --tag TAG]
 ```
 
 **Inputs**
@@ -841,10 +853,13 @@ python3 dev/build_skills.py [--out-dir DIR]
 | Argument | Meaning |
 |---|---|
 | `--out-dir` | Where to build `skills/` itself (default: `dev/dist/skills`). The bundles always land at `<out-dir>/agentic-readiness-audit/` and `<out-dir>/agentic-readiness-implement/`. |
+| `--archive` | Also zip each bundle into this folder. Needs `--tag`. |
+| `--tag` | The release tag in the zip names, for example `v0.4.0`: `agentic-readiness-audit-v0.4.0.zip`. Needs `--archive`. Letters, digits, `.`, `_` and `-` only. |
 
 **Outputs**
 
 `data.bundles` lists both bundles, each with `name`, `bundle` (its path) and `files` (how many files it has).
+With `--archive`, each also has `archive`, the path of its zip.
 `data.bundle` and `data.files` repeat the audit bundle's path and count.
 
 **Exit codes**
@@ -852,7 +867,7 @@ python3 dev/build_skills.py [--out-dir DIR]
 | Code | When |
 |---|---|
 | `0` | The bundle was built. |
-| `1` | A source file lacks the frontmatter `name` line or a Tools CLI section the builder rewrites, or its frontmatter already has a `metadata` key. |
+| `1` | A source file lacks the frontmatter `name` line or a Tools CLI section the builder rewrites, or its frontmatter already has a `metadata` key. Or `--archive` and `--tag` were not given together, or the tag is not a plain file-name part. |
 
 ## progress.py
 
