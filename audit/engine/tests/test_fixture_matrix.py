@@ -87,6 +87,7 @@ MATRIX: dict[str, dict[str, str]] = {
         "NAV-03": "PASS",
     },
     "nav-01-no-manifest": {"NAV-01": "UNKNOWN"},
+    "nav-01-nested-manifest-only": {"NAV-01": "UNKNOWN"},
     "nav-02-no-entry": {"NAV-02": "FAIL"},
     "nav-02-main-guard-only": {"NAV-02": "FAIL"},
     "nav-03-red-flags": {"NAV-03": "PARTIAL"},
