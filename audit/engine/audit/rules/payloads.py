@@ -64,12 +64,17 @@ class VerbSurface(Payload):
 
 @dataclass(frozen=True)
 class EnvKeys(Payload):
-    """Referenced environment keys and which are absent from committed example files."""
+    """Referenced environment keys and which are absent from committed example files.
+
+    ``optional`` lists the keys read only with a fallback (``${VAR:-default}``) that no example file declares. They
+    never fail the check.
+    """
 
     kind: ClassVar[str] = "env_keys"
     referenced: tuple[str, ...] = ()
     missing: tuple[str, ...] = ()
     templates: tuple[str, ...] = ()
+    optional: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------
