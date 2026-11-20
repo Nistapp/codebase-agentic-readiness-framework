@@ -148,6 +148,10 @@ the note and logs "note added"; without `--note` it is refused.
   underscore, hyphen). When the owner was asked and has no preference, record the value `none` with the owner's
   words as the reason (`pref set tool.formatter none --reason "..." --by owner`), so the question is not asked
   again.
+- **Approved dependencies and accepted gate changes.** Two keys are lists that `check_gates.py` reads at theme
+  close, separated by commas or white space. `dependencies.approved` names each dependency the owner approved.
+  `gates.accepted` holds the path globs whose weakened-gate findings the owner chose. See
+  [Keep every gate and approve every dependency](theme-checks.md#keep-every-gate-and-approve-every-dependency).
 
 ## Continue on error
 

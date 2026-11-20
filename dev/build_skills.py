@@ -279,12 +279,13 @@ IMPLEMENT_OWN_TOOL_FILES = (
     "check_drift.py",
     "compare_reports.py",
     "check_regressions.py",
+    "check_gates.py",
     "_audit_tools_path.py",
 )
 
-#: The shared modules the implement tools import (in `audit/tools/`): `progress`, `check_drift`,
-#: `compare_reports` and `check_regressions` import `validate_report`, which imports `_summary` and `engine`;
-#: `engine` is the shim.
+#: The shared modules the implement tools import (in `audit/tools/`): `progress`, `check_drift`, `compare_reports`,
+#: `check_regressions` and `check_gates` import `validate_report`, which imports `_summary` and `engine`; `engine` is
+#: the shim.
 IMPLEMENT_SHARED_TOOL_FILES = (
     "validate_report.py",
     "_common.py",
@@ -314,6 +315,7 @@ TOOLS_CLI_SECTIONS = (
     "check_drift.py",
     "compare_reports.py",
     "check_regressions.py",
+    "check_gates.py",
 )
 
 #: The source of each carried Markdown file or folder (relative to the repository root) and its place in the

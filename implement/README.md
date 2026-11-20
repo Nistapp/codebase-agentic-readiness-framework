@@ -46,6 +46,7 @@ helpers from `audit/tools/`.
 | `check_drift.py` | Tells which findings the repository has moved under since the audit |
 | `compare_reports.py` | Compares two audit reports of the same repository |
 | `check_regressions.py` | Compares the engine reports taken before and after a theme, and names each passing check the theme lost |
+| `check_gates.py` | Reads a theme's diff and names each weakened gate and each dependency the owner did not approve ([ADR 0006](docs/architecture/adrs/0006-a-weakened-gate-stops-the-theme.md)) |
 
 The full synopsis of each tool is in the [Tools CLI reference](../docs/reference/tools-cli.md).
 
