@@ -165,10 +165,11 @@ class TrackedBuildOutputTests(unittest.TestCase):
         self.assertEqual([entry.rel for entry in inventory.files], ["src/a.py"])
 
     def test_the_generated_hint_matches_a_whole_folder_name(self):
-        for rel in ("dist/app.js", "pkg/build/x.class", "Build/out.txt", "lib/dist/deep/a.py"):
+        # `build/` alone is no longer a hint (issue #260): tests/packs/exec/test_exec05_build_sign.py covers it.
+        for rel in ("dist/app.js", "pkg/dist/x.class", "Dist/out.txt", "lib/dist/deep/a.py"):
             with self.subTest(rel=rel):
                 self.assertIs(_classify(rel), Kind.GENERATED)
-        for rel in ("redist/a.py", "prebuild/a.py", "build.py", "src/dist.py", "myvendor/a.py"):
+        for rel in ("redist/a.py", "prebuild/a.py", "build.py", "src/dist.py", "myvendor/a.py", "build/a.py"):
             with self.subTest(rel=rel):
                 self.assertIsNot(_classify(rel), Kind.GENERATED)
 

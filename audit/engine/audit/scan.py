@@ -128,10 +128,17 @@ _GENERATED_HINTS = (
 )
 
 #: Directory names that mark every file below them as generated. Compared with each whole folder name of the
-#: lowered path, so ``redist/`` and ``prebuild/`` do not match. The walk reaches them only for tracked files
+#: lowered path, so ``redist/`` does not match. The walk reaches them only for tracked files
 #: (``TRACKED_ONLY_DIRS``). ``vendor`` is not here: vendored code is third-party source, not build output, and
 #: the walk never enters a ``vendor/`` folder.
-_GENERATED_DIRS = frozenset({"dist", "build"})
+_GENERATED_DIRS = frozenset({"dist"})
+
+#: Directory names whose files count as generated only with a sign of it (issue #260). Repositories keep
+#: hand-written build scripts or Docker contexts in ``build/``, so the folder alone says nothing. A file here gets
+#: the kind it would get elsewhere: a generated hint or suffix still makes it ``GENERATED``, and ``EXEC-05`` adds
+#: the tracked files the target's own ignore rules also match. Compared like ``_GENERATED_DIRS``, so ``prebuild/``
+#: does not match.
+SIGNED_GENERATED_DIRS = frozenset({"build"})
 
 
 #: Directory names that mark the files under them as *carried data*: files the repository ships or tests
@@ -247,6 +254,11 @@ class Inventory:
                     if len(hits) >= limit:
                         return hits
         return hits
+
+
+def in_signed_generated_dir(rel: str) -> bool:
+    """Whether a folder of ``rel``, lower-cased, is one of ``SIGNED_GENERATED_DIRS``."""
+    return not SIGNED_GENERATED_DIRS.isdisjoint(rel.lower().split("/")[:-1])
 
 
 def _classify(rel: str) -> Kind:

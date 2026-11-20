@@ -48,6 +48,9 @@ FIXTURES: dict[str, tuple[str, str, bool]] = {
 
 EXEC_CHECKS = tuple(f"EXEC-0{i}" for i in range(1, 8))
 
+#: Fixtures where the fixture's own ignore rule hides the tracked defect; it is force-added after `add -A`.
+FORCE_ADD: dict[str, str] = {"exec-05-committed-dist": "build/x.class"}
+
 
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(["git", "-C", str(root), *args], text=True, capture_output=True)
@@ -62,6 +65,8 @@ class ExecFixtureTests(unittest.TestCase):
         if git:
             self.assertEqual(_git(target, "init").returncode, 0)
             self.assertEqual(_git(target, "add", "-A").returncode, 0)
+            if name in FORCE_ADD:
+                self.assertEqual(_git(target, "add", "-f", FORCE_ADD[name]).returncode, 0)
         return target
 
     def test_each_fixture_fails_exactly_its_check(self):
@@ -102,6 +107,12 @@ class ExecFixtureTests(unittest.TestCase):
         report = support.run_audit(self._prepare("exec-05-committed-dist", git=True))
         findings = [f for f in report["findings"] if f["check"] == "EXEC-05"]
         self.assertEqual([e["path"] for f in findings for e in f["evidence"]], ["build/x.class", "dist/app.min.js"])
+
+    def test_a_hand_written_script_tracked_in_build_passes(self):
+        report = support.run_audit(self._prepare("exec-05-build-script", git=True))
+        verdicts = support.verdicts(report)
+        self.assertEqual(verdicts["EXEC-05"], "PASS")
+        self.assertEqual([cid for cid in EXEC_CHECKS if verdicts[cid] == "FAIL"], [])
 
     def test_a_broken_command_lists_its_evidence(self):
         report = support.run_audit(self._prepare("exec-06-broken-command", git=False))

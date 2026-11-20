@@ -43,8 +43,12 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   own folder and below it, so ``api/.env.example`` covers the keys ``api/`` reads and a root one covers every file;
   a key counts as declared when every file that reads it is covered by an example file that names it. A documented allow-list of conventional CI/test/host variables lives in
   :data:`_ENV_ALLOWLIST` and :data:`_ENV_ALLOW_PREFIXES`; it is deterministic and kept in code.
-* **EXEC-05** — files the scan classifies ``GENERATED`` (tracked files under ``dist/`` and ``build/`` included)
-  are either untracked or carry a generated-file header. Tracked state unavailable ⇒ ``UNKNOWN``.
+* **EXEC-05** — generated files are either untracked or carry a generated-file header. A file is generated when
+  the scan classifies it ``GENERATED`` (a generated hint or suffix, or any tracked file under ``dist/``), or when
+  it is a tracked text file under ``build/`` that the target's own ignore rules also match
+  (:func:`tracked_and_ignored`, the list ``SEC-01`` and ``SEC-03`` read). Any other file under ``build/`` keeps the
+  kind it would have elsewhere, so a hand-written build script there passes (issue #260). Tracked state
+  unavailable ⇒ ``UNKNOWN``.
 * **EXEC-06** — every shell command in a fenced README/``AGENTS.md`` block resolves to a
   known tool, a declared verb, an npm script, a Makefile target, a package binary, or a real path.
   Shell builtins and obvious placeholders are skipped, never failed. Line continuations are joined.
@@ -97,9 +101,10 @@ from audit.rules.checks._common import (
     runner_kind,
     README,
     entry_documents,
+    tracked_and_ignored,
     tracked_in_scope,
 )
-from audit.scan import Inventory, Kind
+from audit.scan import Inventory, Kind, in_signed_generated_dir
 from audit.stack import PACKAGE_MANAGERS, extract_npm_scripts, parse_makefile_targets
 from audit.rules.payloads import EnvKeys, Payload
 
@@ -1246,12 +1251,23 @@ def _has_generated_header(text: str | None) -> bool:
     return any(marker in head for marker in _GENERATED_HEADER_MARKERS)
 
 
+def _ignored_build_files(target, inventory: Inventory) -> set[str]:
+    """The tracked text files under ``build/`` the target's own ignore rules also match.
+
+    The ignore rules are the sign that such a file is build output (issue #260): the folder name alone is not,
+    because repositories keep hand-written build scripts there.
+    """
+    ignored = set(tracked_and_ignored(target, inventory) or ())
+    return {f.rel for f in inventory.files if f.has_text and f.rel in ignored and in_signed_generated_dir(f.rel)}
+
+
 def check_exec05(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     tracked = tracked_in_scope(target, inventory)
     if tracked is None:
         return _unknown(spec, "git could not report tracked files, so generated-file state is unknown")
 
-    generated = sorted(f.rel for f in inventory.files if f.kind is Kind.GENERATED and f.rel in tracked)
+    named = {f.rel for f in inventory.files if f.kind is Kind.GENERATED and f.rel in tracked}
+    generated = sorted(named | _ignored_build_files(target, inventory))
     if not generated:
         return _outcome(spec, Verdict.PASS, "no tracked generated or vendored paths")
 

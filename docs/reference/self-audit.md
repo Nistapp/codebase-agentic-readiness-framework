@@ -19,7 +19,7 @@ score from falling.
 | Phase-1 score | **0.9231** |
 | Date | 2026-11-20 |
 | Engine | `python-agentic-audit` 0.4.1 |
-| Ruleset | `2026-11-20.23` (hash `34bba6464eac63ff`) |
+| Ruleset | `2026-11-20.24` (hash `34bba6464eac63ff`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; the walk skips git-ignored folders such as the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
@@ -36,7 +36,7 @@ verdicts moved, both from engine changes:
   `package.json`, `pyproject.toml` and `go.mod` files sit under `dev/tools/`. The 2026-11-17 `PASS` named a root
   manifest that does not exist; the engine now says it cannot tell.
 
-No finding opened or closed, and the rulesets between `2026-11-17.3` and `2026-11-20.23` moved no other verdict here.
+No finding opened or closed, and the rulesets between `2026-11-17.3` and `2026-11-20.24` moved no other verdict here.
 
 Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` and `HYG-06` with the security policy,
 `SECURITY.md`. On 2026-11-09, `TOOL-04` closed with the dependency audit in
