@@ -7,6 +7,11 @@ Before that revision PHP had no entry in the pin table, so a PHP-only repository
 repository was judged on its other ecosystems alone. Four sources pin PHP now: a `.php-version` file, a `php` line in
 `.tool-versions`, and in `composer.json` the key `config.platform.php`, then `require.php`. A `composer.json` is read
 at any depth, shallowest first, as `package.json` is for `engines.node`.
+
+Since ruleset 2026-11-20.3 each `composer.json` is also a module the pin must reach. A `.php-version` or a
+`.tool-versions` `php` line in its folder or a parent folder reaches it; a parent `composer.json` does not, because
+Composer installs each project on its own, as a parent `go.mod` does not reach a nested Go module. An unreached
+module reads `PARTIAL`.
 """
 
 from __future__ import annotations
@@ -103,8 +108,11 @@ class Exec01PhpPinTests(unittest.TestCase):
                 "packages/a/b/composer.json": _composer(require={"php": "^8.3"}),
             }
         )
-        self.assertEqual(check["verdict"], "PASS")
-        self.assertEqual(check["summary"], "pinned: php (packages/a/composer.json (require.php))")
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertEqual(
+            check["summary"],
+            "pinned: php (packages/a/composer.json (require.php)); modules no pin reaches: php (composer.json)",
+        )
 
     def test_a_composer_json_with_no_php_key_fails(self):
         check = self.check({"composer.json": _composer(require={"monolog/monolog": "^3.0"})})
@@ -132,6 +140,35 @@ class Exec01PhpPinTests(unittest.TestCase):
         )
         self.assertEqual(check["verdict"], "FAIL")
         self.assertEqual(check["summary"], "unpinned: php")
+
+    def test_a_nested_composer_project_a_parent_composer_json_pins_is_not_reached(self):
+        check = self.check(
+            {"composer.json": _composer(require={"php": ">=8.2"}), "tools/lint/composer.json": _composer()}
+        )
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertEqual(
+            check["summary"],
+            "pinned: php (composer.json (require.php)); modules no pin reaches: php (tools/lint/composer.json)",
+        )
+        (finding,) = check["findings"]
+        self.assertEqual((finding["id"], finding["verdict"]), ("EXEC-01:php", "PARTIAL"))
+        self.assertEqual([e["path"] for e in finding["evidence"]], ["tools/lint/composer.json"])
+        self.assertIn(".php-version in its folder or a parent folder", finding["remediation"])
+
+    def test_a_nested_composer_project_that_pins_php_itself_is_reached(self):
+        check = self.check(
+            {
+                "composer.json": _composer(require={"php": ">=8.2"}),
+                "tools/lint/composer.json": _composer(config={"platform": {"php": "8.3.14"}}),
+            }
+        )
+        self.assertEqual(check["verdict"], "PASS")
+
+    def test_a_php_version_file_in_a_parent_folder_reaches_every_composer_project(self):
+        for pin in ({".php-version": "8.3.14\n"}, {".tool-versions": "php 8.3.14\n"}):
+            with self.subTest(pin=pin):
+                check = self.check({**pin, "composer.json": _composer(), "tools/lint/composer.json": _composer()})
+                self.assertEqual(check["verdict"], "PASS")
 
 
 if __name__ == "__main__":

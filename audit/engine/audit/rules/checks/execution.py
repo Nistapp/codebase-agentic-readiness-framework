@@ -129,13 +129,17 @@ _PIN_FILES: dict[str, tuple[str, ...]] = {
 }
 _PINNABLE = frozenset(_PIN_FILES) | {"go"}
 
-#: A shared ``.tool-versions`` line counts for the ecosystem whose name follows it.
+#: A shared ``.tool-versions`` line counts for the ecosystem whose asdf or mise plugin name starts it. The JDK pins
+#: jvm (``java``); .NET's asdf plugin is ``dotnet-core`` and mise's is ``dotnet``.
 _TOOL_VERSIONS = {
     "node": re.compile(r"(?mi)^\s*(?:nodejs|node)\s+\S+"),
     "python": re.compile(r"(?mi)^\s*python\s+\S+"),
     "rust": re.compile(r"(?mi)^\s*rust\s+\S+"),
     "go": re.compile(r"(?mi)^\s*golang\s+\S+"),
     "php": re.compile(r"(?mi)^\s*php\s+\S+"),
+    "ruby": re.compile(r"(?mi)^\s*ruby\s+\S+"),
+    "dotnet": re.compile(r"(?mi)^\s*(?:dotnet-core|dotnet)\s+\S+"),
+    "jvm": re.compile(r"(?mi)^\s*java\s+\S+"),
 }
 
 
@@ -207,7 +211,10 @@ def _pin_evidence(inv: Inventory, ecosystem: str) -> list[str]:
 
 
 #: The manifest that makes a module of the ecosystem, and what in it pins the toolchain.
-_MODULE_MANIFESTS = {"node": "package.json", "python": "pyproject.toml", "go": "go.mod"}
+_MODULE_MANIFESTS = {"node": "package.json", "python": "pyproject.toml", "go": "go.mod", "php": "composer.json"}
+
+#: Ecosystems whose every manifest is its own toolchain unit: a parent manifest does not reach a nested one.
+_SELF_CONTAINED_MODULES = frozenset({"go", "php"})
 
 #: At most this many unpinned modules are named in a summary; the finding's evidence lists them all.
 _MODULES_NAMED = 5
@@ -227,6 +234,8 @@ def _manifest_pins(inv: Inventory, ecosystem: str, rel: str) -> bool:
         return isinstance(engines, dict) and bool(engines.get("node"))
     if ecosystem == "python":
         return re.search(r"(?m)^\s*requires-python\s*=", text) is not None
+    if ecosystem == "php":
+        return _composer_php_pin(text) is not None
     return re.search(r"(?m)^\s*go\s+\d", text) is not None
 
 
@@ -234,7 +243,8 @@ def _unpinned_modules(inv: Inventory, ecosystem: str) -> list[str]:
     """The module manifests of ``ecosystem`` that no pin reaches. A pin reaches a module when the module's own
     manifest pins, or when its folder or a parent folder holds a pin file (``.nvmrc``, ``.python-version``, a
     ``.tool-versions`` line) or, for node and python, a pinning manifest (a workspace root's ``engines.node`` or
-    ``requires-python``). A Go module is its own toolchain unit, so a parent ``go.mod`` does not reach it."""
+    ``requires-python``). A Go module is its own toolchain unit, so a parent ``go.mod`` does not reach it; nor does a
+    parent ``composer.json`` reach a nested Composer project, which Composer installs on its own."""
     name = _MODULE_MANIFESTS.get(ecosystem)
     if name is None:
         return []
@@ -249,7 +259,7 @@ def _unpinned_modules(inv: Inventory, ecosystem: str) -> list[str]:
         ):
             pin_dirs.add(_dir_of(entry.rel))
     pinning = {rel for rel in manifests if _manifest_pins(inv, ecosystem, rel)}
-    if ecosystem != "go":
+    if ecosystem not in _SELF_CONTAINED_MODULES:
         pin_dirs |= {_dir_of(rel) for rel in pinning}
 
     def reached(folder: str) -> bool:
