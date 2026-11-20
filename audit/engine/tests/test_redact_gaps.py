@@ -43,7 +43,7 @@ class KeywordInACompoundName(unittest.TestCase):
     def test_a_bare_keyword_is_still_redacted(self) -> None:
         for name in ("API_KEY", "SECRET", "token", "password", "--password"):
             with self.subTest(name=name):
-                value = _join("v4l", "ue9")
+                value = _join("v4lu", "e9")
                 clean, count = redact(f"{name}={value}")
                 self.assertNotIn(value, clean)
                 self.assertEqual(count, 1)
