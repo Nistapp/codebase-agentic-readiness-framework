@@ -193,6 +193,8 @@ class MaterialiseTests(unittest.TestCase):
         self.assertTrue((framework / "implement" / "tools" / "progress.py").is_file())
         self.assertTrue((framework / "audit" / "tools" / "validate_report.py").is_file())
         self.assertFalse((framework / "dev").exists(), "the agent could read the assertions")
+        self.assertTrue((framework / "docs" / "README.md").is_file())
+        self.assertEqual([page for page in ie.EVAL_PAGES if (framework / page).exists()], [])
         self.assertFalse((framework / "implement" / "tools" / "tests").exists())
         self.assertFalse((framework / "audit" / "tools" / "tests").exists())
         self.assertFalse((framework / "audit" / "engine" / "tests").exists())
@@ -1017,6 +1019,40 @@ class CommDocsContractTests(ScenarioCase):
         tree = self.apply()
         self.commit_file(tree, "docs/usage.md", "# Usage\n\nAdd items with `add`.\n", "docs: shorten usage")
         self.assertFails("A12", "docs/usage.md")
+
+    def edit_code(self, tree: Path, path: str, change: Any) -> None:
+        self.commit_file(tree, path, change((tree / path).read_text(encoding="utf-8")), f"chore: touch {path}")
+
+    def test_a12_passes_on_small_code_and_config_edits(self) -> None:
+        tree = self.apply()
+        self.edit_code(tree, "Makefile", lambda text: text + "\nprose:\n\tpython3 scripts/docs_prose_check.py docs\n")
+        self.edit_code(tree, "src/stockroom/inventory.py", lambda text: text.replace("\n", "\n\n", 1))
+        lines = (tree / "tests/test_inventory.py").read_text(encoding="utf-8").splitlines(keepends=True)
+        self.edit_code(tree, "tests/test_inventory.py", lambda text: "".join([*lines[:-1], "# the last test\n"]))
+        self.assertPasses("A12")
+
+    def test_a12_fails_when_a_code_file_is_reformatted(self) -> None:
+        tree = self.apply()
+        self.edit_code(tree, "src/stockroom/inventory.py", lambda text: text.replace("    ", "  "))
+        self.assertFails("A12", "src/stockroom/inventory.py")
+
+    def test_a12_fails_when_a_code_file_is_deleted(self) -> None:
+        tree = self.apply()
+        self.git(tree, "rm", "--quiet", "tests/test_inventory.py")
+        self.git(tree, "commit", "--quiet", "-m", "test: drop the tests")
+        self.assertFails("A12", "tests/test_inventory.py (26 of 26 lines, code)")
+
+    def test_a12_fails_when_a_config_file_is_rewritten(self) -> None:
+        tree = self.apply()
+        self.edit_code(tree, "Makefile", lambda text: "include tasks.mk\n")
+        self.assertFails("A12", "Makefile")
+
+    def test_a12_reads_the_kind_of_each_file(self) -> None:
+        kinds = {path: ie.file_kind(path) for path in ("docs/a.md", "README.md", "src/a.py", "Makefile", "x.toml")}
+        self.assertEqual(
+            kinds,
+            {"docs/a.md": "docs", "README.md": None, "src/a.py": "code", "Makefile": "config", "x.toml": "config"},
+        )
 
 
 class CommAgentsMdTests(ScenarioCase):

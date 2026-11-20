@@ -4,6 +4,6 @@
   "start": "handover",
   "pr_by_agent": "no",
   "phase": "s1",
-  "assertions": ["A1", "A2", "A6", "A17"],
+  "assertions": ["A1", "A2", "A6", "A17", "A21"],
   "params": {"owner_skips": ["HYG-05"]}
 }
