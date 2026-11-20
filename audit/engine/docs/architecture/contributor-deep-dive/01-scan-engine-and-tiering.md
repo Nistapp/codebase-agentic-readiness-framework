@@ -142,10 +142,10 @@ and this page does not restate them. The verb's own name is accepted on every ru
 
 Gradle's `test` and `check` and Maven's lifecycle phases resolve as verbs but are not a definition the repository
 wrote, so `CMD-03` does not count them as a second gate beside an npm project. `CMD-02` reads a Gradle `check` from the
-build file: the plugins it applies (a JVM plugin runs the compile and `test`, Spotless or ktlint the format check) and
-the tasks its `check` wiring depends on. A plugin, script, subproject or task the engine does not know may add to it,
-so a check that still misses a concern beside one is `UNKNOWN`. A Maven `check` is `UNKNOWN`: which goals a pom binds
-to `verify` is not read.
+build file. A JVM plugin runs the compile and `test`, and Spotless or ktlint runs the format check. The `check` wiring
+adds each task it depends on. A plugin, script, subproject or task the engine does not know may add more. Beside one,
+a check that still misses a concern is `UNKNOWN`. A Maven `check` is `UNKNOWN`: the engine does not read which goals a
+pom binds to `verify`.
 
 A Makefile that GNU Make refuses is not a runner, because nothing in it can run. The one refusal the engine detects
 is the one that sank its own fixture: an unescaped colon in a name (`format:check:`) is a static pattern rule whose

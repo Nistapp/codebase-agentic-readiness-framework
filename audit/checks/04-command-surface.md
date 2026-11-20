@@ -76,17 +76,17 @@ Engine           `CMD-02`. Resolves `check` on its one runner (the same resolver
                  by invoking another resolved verb by name (indirection: `npm run format:check`) or by a
                  documented tool equivalent (`ruff check`, `tsc`, `pytest`, and others the engine's own
                  pattern list names). In a `Makefile`, `check`'s prerequisites are its body, and a
-                 prerequisite that is not itself a verb is followed into its own recipe, once. In a
-                 `package.json`, a script that is not a verb is followed into its command the same way, so
-                 `npm run test:coverage` running `jest --coverage` is the test run. All three
+                 prerequisite that is not itself a verb is followed into its own recipe, once. A package
+                 script that is not a verb is followed the same way. So `npm run test:coverage` running
+                 `jest --coverage` is the test run. All three
                  concerns present is `PASS`; some is `PARTIAL`; none is `FAIL`. A Gradle `check` is read
-                 from the build file: a JVM plugin (`java`, `io.quarkus`, the Kotlin JVM plugin) gives the
-                 compile, which is the typecheck, and `test`; Spotless or ktlint gives the format check; and
+                 from the build file. A JVM plugin (`java`, `io.quarkus`, the Kotlin JVM plugin) gives the
+                 compile, which is the typecheck, and `test`. Spotless or ktlint gives the format check.
                  `check.dependsOn` or a `check { dependsOn ... }` block adds each verb or known task it
-                 names. When a check still misses a concern and something the engine does not read could
-                 add it (an unknown plugin, a version-catalog alias, `apply from`, subprojects in the
-                 settings file, an unknown task), the verdict is `UNKNOWN`. A Maven `check` (`verify`) is
-                 `UNKNOWN` — its plugin bindings are the build's own, not a command the engine reads. No
+                 names. Something the engine does not read may add a missing concern: an unknown plugin, a
+                 version-catalog alias, `apply from`, subprojects in the settings file, or an unknown task.
+                 Then the verdict is `UNKNOWN`. A Maven `check` (`verify`) is `UNKNOWN`: the engine does
+                 not read which plugin goals a pom binds to it. No
                  runner at all, or the Makefile `CMD-01` already flagged as unparseable, is also `UNKNOWN`.
                  Distrust a `FAIL` or `PARTIAL` when `check`'s tool choice is one the engine's documented-
                  equivalent list does not yet name — verify by reading the command for a tool this project

@@ -208,8 +208,8 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#bas
   not a `jest` key in a nested component's `package.json`. In a multi-component repository either keep the key where it
   is and add the floor sentence to `AGENTS.md`, or (owner choice) move that component's Jest config to a `jest.config.*`
   file. Verify from the real config either way. BASE-02 reads only a budget flag, so a counts file alone reads
-  `PARTIAL` (framework issue #45). TST-04 accepts a Jest line with `-t`, `--testNamePattern` or a test file path
-  (`npx jest src/app.test.ts`), so the path-only form is a valid fast path.
+  `PARTIAL` (framework issue #45). TST-04 accepts a Jest line with `-t`, `--testNamePattern` or a test file path,
+  such as `npx jest src/app.test.ts`.
 - **Whole-tree counts in `format:check`.** ESLint older than 9.24 has no baseline file, so the compare script runs
   the linter over the whole tree with JSON output and counts errors and files with errors. That adds the linter's
   full run (15-20 s on a mid-sized app) to `format:check`; say so in the paragraph in `AGENTS.md`. The script resolves

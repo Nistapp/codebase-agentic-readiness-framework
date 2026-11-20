@@ -144,9 +144,9 @@ Severity         DEGRADER
 Engine           `TST-04`. With no test-source file at all, this is `UNKNOWN` — there is no suite for a
                  fast path to act on, and the absence is `TST-01`'s own finding, not doubled here. With at
                  least one test file, reads the four entry documents (README.md, AGENTS.md, CLAUDE.md,
-                 CONTRIBUTING.md) for a fenced shell command, or else an inline code span outside a fence
-                 (`npm test -- <path>` in a sentence), matching a per-runner single-test/subset
-                 pattern (`pytest -k`, `pytest ... ::Name`, `python3 -m unittest <module> -k <name>`,
+                 CONTRIBUTING.md) for a fenced shell command. With no fenced match, it reads inline code
+                 spans outside a fence (`npm test -- <path>` in a sentence). The command must match a
+                 per-runner single-test/subset pattern (`pytest -k`, `pytest ... ::Name`, `python3 -m unittest <module> -k <name>`,
                  `npm test -- <name>`, `vitest -t <name>`, `jest <file>.test.ts`, `go test -run`,
                  `cargo test <name>`, `gradlew ... --tests`, `mvn -Dtest=`, and more), deliberately
                  excluding a plain full-suite invocation (`npm test`, `pytest` alone), which is `TST-01`'s
@@ -155,8 +155,7 @@ Engine           `TST-04`. With no test-source file at all, this is `UNKNOWN` �
                  actually points to.
 Method           automated
 Look for         A fenced shell command or an inline code span in README.md, AGENTS.md, CLAUDE.md or
-                 CONTRIBUTING.md matching a
-                 single-test/subset invocation pattern for the detected runner.
+                 CONTRIBUTING.md matching a single-test/subset invocation pattern for the detected runner.
 Rubric           PASS: at least one entry document shows a single-test/subset invocation.
                  PARTIAL: not used by this check — the engine's own outcome is binary once a test file
                  exists.
