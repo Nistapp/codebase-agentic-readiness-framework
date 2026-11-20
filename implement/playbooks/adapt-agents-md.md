@@ -30,7 +30,7 @@ section, one commit at a time ([details](#no-instruction-file-yet)).
 | AGT-09 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-09--branch-and-release-boundary-declared) | One release-boundary sentence built from the state and the repository |
 | AGT-10 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-10--instruction-indirection-resolved) | A "read X first" deferral becomes an ordinary link, with the must-always rules moved into `AGENTS.md` |
 | AGT-11 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-11--instructions-are-specific-and-not-inferable) | Generic text moves to `docs/`; contradicted rules become target state with the exception count; stale lines corrected |
-| AGT-12 | [02-agent-governance.md](../../audit/checks/02-agent-governance.md#agt-12--communication-rules-stated) | A "How to write for people" section that names the reader, how to report and how to ask for a decision. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
+| AGT-12 | [02-agent-governance-2.md](../../audit/checks/02-agent-governance-2.md#agt-12--communication-rules-stated) | A "How to write for people" section that names the reader, how to report and how to ask for a decision. Trigger: a confirmed finding, or `extra.agt-12` (Preconditions) |
 | AGT-13 | [02-agent-governance-2.md](../../audit/checks/02-agent-governance-2.md#agt-13--coding-conventions-written) | Writes `CONVENTIONS.md` from the greenfield template when no conventions exist; at `PARTIAL`, suggests the missing items and adds the ones the owner accepts. Trigger: a confirmed finding |
 | EXEC-06 | [09-execution-determinism.md](../../audit/checks/09-execution-determinism.md#exec-06--documented-commands-resolve) | Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline |
 | TST-04 | [10-tests.md](../../audit/checks/10-tests.md#tst-04--fast-path-documented) | Verification only, when T5 wrote the fenced single-test line; written here when the item sits in T7 |
@@ -195,7 +195,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    exists), naming the triggers and the same change set. The framework's own wording is the example:
    "When a change alters a public interface, observable behaviour, the architecture or a decision, update the
    affected documentation and the decision records in the same change set." Name this repository's decision log
-   path (`docs/adr/`) if T6 created one.
+   path (`docs/architecture/adrs/`) if T6 created one.
 6. **Release boundary (AGT-09).** Build one sentence from facts, never from a template:
    - the branches that exist: the integration branch (from the state or the branch rule already in the file) and
      the default branch (`git symbolic-ref refs/remotes/origin/HEAD`);
@@ -221,7 +221,9 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    [`add-deny-rules`](add-deny-rules.md) (default branch); keep the two consistent, do not state the rule twice in
    different words. The sentence is the one line of its section that holds never, do not or must not (Step 14).
    Keep it the only one. Three such lines make the section a prohibitions section for "`AGT-07` Do-not-do / deny
-   rules present". Then "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it too.
+   rules present"
+   ([its Engine field](../../audit/checks/02-agent-governance.md#agt-07--do-not-do--deny-rules-present)).
+   Then "`CON-01` Allow/deny artifact present" and "`CON-02` Test directories protected" read it too.
 7. **Reach and vendor files (AGT-08).** Add one line near the top of `AGENTS.md`: `This file is read by <harnesses>.`
    Name only harnesses that really reach it: native `AGENTS.md` readers, plus each harness whose vendor file points
    at it (a `CLAUDE.md` that imports `@AGENTS.md` makes Claude Code a reader). The engine takes the line as given; the
@@ -260,7 +262,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     with the link to the long form) and six numbered rules (5.2 to 5.7):
     - the reader: the persona the owner confirmed (Inputs 7);
     - bottom line first;
-    - plain language: short sentences (at most 25 words), active voice, one term per meaning;
+    - plain language: short sentences (at most 25 words; 20 in a step), active voice, one term per meaning;
     - form: choose the form from the content (numbered rules, tables, diagrams or alerts), and link the style
       guide's form rules;
     - reports: a status report (done, not done, blocked, next) and a done report (what changed, how it was checked,

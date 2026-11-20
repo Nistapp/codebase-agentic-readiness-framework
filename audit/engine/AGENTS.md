@@ -187,7 +187,8 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
   entry-point contract (`main` callable with no arguments) must not be weakened.
 - **Pass rate:** 100% required. Never `.skip` or comment out a failing test; never relax an assertion to get
   green.
-- **Gate:** run `make check` (§3.1) from the repository root before proposing a change.
+- **Gate:** run `make check` and `make security` ([§3.1](#31-standardized-command-surface)) from the repository
+  root before proposing a change.
 
 ---
 

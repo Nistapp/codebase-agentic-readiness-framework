@@ -289,7 +289,8 @@ dependency version changed, so no runtime change needs undoing.
   locking: the point is to record what resolves today.
 - Do not add a root workspace manifest to a per-component repository unless the owner asks.
 - Do not edit workflow files without `ci.edits_authorised`.
-- Do not build images or start containers by hand: use the repository's scripts.
+- Do not build images or start containers by hand: use the repository's scripts, unless the person asks for that
+  exact action ([Hard rules](../SKILL.md#hard-rules)).
 - Do not install a version manager the owner did not approve.
 - Do not upgrade a tool while moving its version into a manifest.
 

@@ -1,7 +1,8 @@
 # Agent Governance (`AGT`)
 
-> Follows the anatomy in [`README.md`](README.md). Twelve checks, split across two halves of this file:
-> `AGT-01` to `AGT-06` here, `AGT-07` to `AGT-12` in the second half. See
+> Follows the anatomy in [`README.md`](README.md). Eleven checks, split across two halves of this file:
+> `AGT-01` to `AGT-06` here, `AGT-07` to `AGT-11` in the second half. `AGT-12` and `AGT-13` are in
+> [`02-agent-governance-2.md`](02-agent-governance-2.md). See
 > [Why These Checks §3](../engine/docs/architecture/user-overview/03-why-these-checks.md#3-agent-governance-agt)
 > for the consequence behind this family: `AGENTS.md` is the only artifact an agent is guaranteed to
 > read, so everything the team knows and has not written there is invisible to it.
@@ -267,16 +268,19 @@ Why it matters   Explicit prohibitions work; implicit ones do not — an agent t
                   weaken a test" will weaken one
                   ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
-Engine           `AGT-07`. Finds the prohibitions section by its heading (one of `never`/`do not`/`don't`/
-                 `must not`/`prohibit`/`forbidden`/`off-limits`, or `❌`; the same heading-detection logic
-                 `CON-01` and `CON-02` share, so this family and `CON` cannot drift on what counts as a
-                 heading). No such section at all is `FAIL`. Inside the section, each line carrying a
-                 prohibition word is checked against four concerns — tests, generated files (including
-                 `artefacts/`/`artifacts/` and build output), the default branch, secrets — and the first
-                 line to match each concern is recorded; covering all four is `PASS`, some is `PARTIAL`,
-                 none is `FAIL`. Distrust a `FAIL` on heading detection when the project uses a heading the
-                 pattern does not word-match (a bare "Rules" heading whose first line is a prohibition) —
-                 verify by reading for a list of explicit prohibitions regardless of its heading text.
+Engine           `AGT-07`. Finds the prohibitions section by its heading: one that says `never`, `do not`,
+                 `don't`, `prohibit`, `deny`, `forbidden` or `no-go`, or any heading whose own body (to the
+                 next heading of any level) holds at least three prohibition lines. A prohibition line says
+                 `never`, `do not`, `don't`, `must not`, `prohibit`, `forbidden` or `off-limits`, or holds
+                 `❌`. The section runs to the next heading of the same or a higher level. `CON-01` and
+                 `CON-02` share this logic, so this family and `CON` cannot drift on what counts as a
+                 heading. No such section at all is `FAIL`. Inside the section, each prohibition line is
+                 checked against four concerns — tests, generated files (including `artefacts/`/`artifacts/`
+                 and build output), the default branch, secrets — and the first line to match each concern
+                 is recorded; covering all four is `PASS`, some is `PARTIAL`, none is `FAIL`. Distrust a
+                 `FAIL` on heading detection when the project uses a heading the pattern does not word-match
+                 (a bare "Rules" heading with fewer than three prohibition lines) — verify by reading for a
+                 list of explicit prohibitions regardless of its heading text.
 Method           automated
 Look for         The prohibitions section itself; for each of the four concerns, whether the stated rule
                  is specific to this project (A14) rather than a generic restatement ("don't break things").
@@ -470,31 +474,3 @@ Pitfalls         Counting lines is a proxy, not the goal (DP §5.2's own warning
                  but unverifiable claims (a boundary rule naming a path that was since deleted) must not
                  pass just because its language matches the specific bucket's shape. Always verify, never
                  just classify.
-
-## AGT-12 — Communication rules stated
-
-Why it matters   Agents report to people and ask them for decisions; without written rules each agent
-                  picks its own layout and the reader digs for the bottom line
-                  ([greenfield/README.md § 5.2 Templates & Guides](../../greenfield/README.md#52-templates--guides)).
-Severity         COSMETIC
-Engine           `AGT-12`. Reads the entry instruction file for a section headed `communication`, `how to
-                 write`, `writing for people`, `reporting` or `talking to the user` (not in a fence), and
-                 for a Markdown file it links or code-spans whose name contains `communicat`. The rules
-                 must name the reader (`reader`, `audience`, `write for`, `new engineer`), how to report
-                 (`report`, `status`, `summary`, `bottom line`) and how to ask for a decision (`decision`,
-                 `recommend`, `trade-off`). Distrust a `FAIL` when the rules sit in a linked file with
-                 another name: read the link.
-Method           automated
-Look for         The instruction file's headings, then each file its documentation section links.
-Rubric           PASS: the rules exist and name the reader, how to report and how to ask for a decision.
-                 PARTIAL: one or two of the three are missing, or a named rules file does not exist.
-                 FAIL: no section and no named rules file.
-                 NOT_APPLICABLE: never.
-                 UNKNOWN when: no instruction file exists to read (`AGT-01` already owns that absence).
-Evidence to cite A `file` item for each section (its heading line) and each named rules file, with `note`.
-Absence proof    A FAIL records `grep` searches for the heading and the file-name patterns, scoped to the
-                 instruction file; a PARTIAL, one per missing element, scoped to the rules.
-Remediation      `adapt-agents-md`
-Pitfalls         Presence, not quality: rules that name the three in passing still pass; judge generic
-                 text under `AGT-11`. The rules are for English; a team writing in another language states
-                 its own.

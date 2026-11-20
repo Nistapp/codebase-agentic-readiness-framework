@@ -20,8 +20,9 @@ Python.
 stack. A playbook keeps the tool a repository already uses. When there is none, it recommends the tool that
 matches the stack, from the profile's Tooling options, never this framework's own choice by default. The
 recommendation is offered, never installed: the owner picks, and may pick none. For
-hooks: Husky with lint-staged for Node, pre-commit for Python, lefthook for a mixed repository. A quiet
-release history alone does not rule a tool out; an archived repository or an open security advisory does.
+hooks: Husky with lint-staged for Node, pre-commit for Python, lefthook for a mixed repository. A tool with
+no stable release in the last 12 months is not offered unless the owner keeps it; an archived repository or an
+open security advisory rules a tool out ([tool currency](../../implement/tool-choice.md#tool-currency)).
 
 ## 2. Anatomy
 
