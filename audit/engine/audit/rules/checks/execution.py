@@ -23,14 +23,15 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   best-effort stdlib parse; when a manifest or lockfile cannot be parsed reliably the tracked fact
   is reported and consistency is left ``PARTIAL``, never ``PASS`` by inference. A lockfile is found at
   any depth and is tracked or not by the path it was found at (``app/package-lock.json``, not its
-  basename); the shallowest is the one read. Only a lockfile at the root is compared with the root
+  basename); the shallowest is the one read. A tracked lockfile the walk left out, because the walk reads an
+  ignore file without its ``!`` lines, is found too. Only a lockfile at the root is compared with the root
   manifest, so one in a subdirectory is tracked but its consistency is unverified. An ecosystem that was
   recognised only from its source files (``Stack.source_only``) has no manifest and declares no
   dependencies, so it is not expected to have a lockfile. A recognised ecosystem with no lockfile convention in
   :data:`_ECOSYSTEM_MANAGERS` is named in the ``UNKNOWN`` summary. A ``FAIL`` summary names each ecosystem with
   no lockfile, each untracked lockfile and each lockfile out of step with its manifest.
 * **EXEC-03** — a devcontainer / compose file / Dockerfile / setup target-script, or a documented
-  non-interactive install command in the fenced blocks of README/``AGENTS.md``. Present but
+  non-interactive install command in a fenced block or an inline code span of README/``AGENTS.md``. Present but
   undocumented ⇒ ``PARTIAL``. No recognised ecosystem ⇒ ``UNKNOWN``: with no build manifest there is
   no way to say what provisioning is expected.
 * **EXEC-04** — a set difference: env keys referenced by source against keys declared in the
@@ -76,11 +77,13 @@ import fnmatch
 import json
 import re
 import shlex
+from collections.abc import Collection
 from dataclasses import dataclass
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
 from audit.rules.checks._common import (
+    extract_documented_commands,
     extract_fenced_commands,
     follow_makefile,
     resolve_all_verbs,
@@ -129,13 +132,17 @@ _PIN_FILES: dict[str, tuple[str, ...]] = {
 }
 _PINNABLE = frozenset(_PIN_FILES) | {"go"}
 
-#: A shared ``.tool-versions`` line counts for the ecosystem whose name follows it.
+#: A shared ``.tool-versions`` line counts for the ecosystem whose asdf or mise plugin name starts it. The JDK pins
+#: jvm (``java``); .NET's asdf plugin is ``dotnet-core`` and mise's is ``dotnet``.
 _TOOL_VERSIONS = {
     "node": re.compile(r"(?mi)^\s*(?:nodejs|node)\s+\S+"),
     "python": re.compile(r"(?mi)^\s*python\s+\S+"),
     "rust": re.compile(r"(?mi)^\s*rust\s+\S+"),
     "go": re.compile(r"(?mi)^\s*golang\s+\S+"),
     "php": re.compile(r"(?mi)^\s*php\s+\S+"),
+    "ruby": re.compile(r"(?mi)^\s*ruby\s+\S+"),
+    "dotnet": re.compile(r"(?mi)^\s*(?:dotnet-core|dotnet)\s+\S+"),
+    "jvm": re.compile(r"(?mi)^\s*java\s+\S+"),
 }
 
 
@@ -207,7 +214,10 @@ def _pin_evidence(inv: Inventory, ecosystem: str) -> list[str]:
 
 
 #: The manifest that makes a module of the ecosystem, and what in it pins the toolchain.
-_MODULE_MANIFESTS = {"node": "package.json", "python": "pyproject.toml", "go": "go.mod"}
+_MODULE_MANIFESTS = {"node": "package.json", "python": "pyproject.toml", "go": "go.mod", "php": "composer.json"}
+
+#: Ecosystems whose every manifest is its own toolchain unit: a parent manifest does not reach a nested one.
+_SELF_CONTAINED_MODULES = frozenset({"go", "php"})
 
 #: At most this many unpinned modules are named in a summary; the finding's evidence lists them all.
 _MODULES_NAMED = 5
@@ -227,6 +237,8 @@ def _manifest_pins(inv: Inventory, ecosystem: str, rel: str) -> bool:
         return isinstance(engines, dict) and bool(engines.get("node"))
     if ecosystem == "python":
         return re.search(r"(?m)^\s*requires-python\s*=", text) is not None
+    if ecosystem == "php":
+        return _composer_php_pin(text) is not None
     return re.search(r"(?m)^\s*go\s+\d", text) is not None
 
 
@@ -234,7 +246,8 @@ def _unpinned_modules(inv: Inventory, ecosystem: str) -> list[str]:
     """The module manifests of ``ecosystem`` that no pin reaches. A pin reaches a module when the module's own
     manifest pins, or when its folder or a parent folder holds a pin file (``.nvmrc``, ``.python-version``, a
     ``.tool-versions`` line) or, for node and python, a pinning manifest (a workspace root's ``engines.node`` or
-    ``requires-python``). A Go module is its own toolchain unit, so a parent ``go.mod`` does not reach it."""
+    ``requires-python``). A Go module is its own toolchain unit, so a parent ``go.mod`` does not reach it; nor does a
+    parent ``composer.json`` reach a nested Composer project, which Composer installs on its own."""
     name = _MODULE_MANIFESTS.get(ecosystem)
     if name is None:
         return []
@@ -249,7 +262,7 @@ def _unpinned_modules(inv: Inventory, ecosystem: str) -> list[str]:
         ):
             pin_dirs.add(_dir_of(entry.rel))
     pinning = {rel for rel in manifests if _manifest_pins(inv, ecosystem, rel)}
-    if ecosystem != "go":
+    if ecosystem not in _SELF_CONTAINED_MODULES:
         pin_dirs |= {_dir_of(rel) for rel in pinning}
 
     def reached(folder: str) -> bool:
@@ -328,7 +341,7 @@ def check_exec01(*, spec, target, inventory, stack, components, session) -> Chec
 #: Ecosystem -> package managers whose files are lockfiles (manifest-as-lock entries are excluded).
 _ECOSYSTEM_MANAGERS: dict[str, tuple[str, ...]] = {
     "node": ("npm", "pnpm", "yarn", "bun"),
-    "python": ("poetry", "uv", "pipenv"),
+    "python": ("poetry", "uv", "pipenv", "pdm"),
     "jvm": ("gradle",),
     "rust": ("cargo",),
     "go": ("gomod",),
@@ -452,7 +465,7 @@ def _python_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
     text = inv.read(lockfile)
     if text is None:
         return None
-    if lockfile in ("poetry.lock", "uv.lock"):
+    if lockfile in ("poetry.lock", "uv.lock", "pdm.lock"):
         return _toml_package_names(text) or None
     if lockfile == "Pipfile.lock":
         try:
@@ -597,10 +610,18 @@ def _lock_deps(inv: Inventory, ecosystem: str, lockfile: str) -> set[str] | None
     return None
 
 
-def _lockfile_paths(inv: Inventory, ecosystem: str) -> list[str]:
-    """Every lockfile of the ecosystem, at any depth, as the path git would track it; the shallowest first."""
+def _lockfile_paths(inv: Inventory, ecosystem: str, tracked: Collection[str] = ()) -> list[str]:
+    """Every lockfile of the ecosystem, at any depth, as the path git would track it; the shallowest first.
+
+    ``tracked`` adds each tracked lockfile the walk skipped as ignored (issue #21). The walk reads a root ignore
+    file without its ``!`` lines (ADR-0006), so ``package-lock.json`` followed by ``!apps/web/package-lock.json``
+    hides a lockfile git tracks. A file in a directory the walk never enters (``node_modules``) is not one of them.
+    """
     names = _lockfiles_for(ecosystem)
-    found = (rel for rel in inv.paths() if rel.split("/")[-1] in names)
+    found = {rel for rel in inv.paths() if rel.split("/")[-1] in names}
+    found |= {
+        rel for rel, reason in inv.skipped if reason == "ignored" and rel in tracked and rel.split("/")[-1] in names
+    }
     return sorted(found, key=lambda rel: (rel.count("/"), rel))
 
 
@@ -657,7 +678,7 @@ def check_exec02(*, spec, target, inventory, stack, components, session) -> Chec
     untracked: list[str] = []
     stale: list[str] = []
     for ecosystem in ecosystems:
-        candidates = _lockfile_paths(inventory, ecosystem)
+        candidates = _lockfile_paths(inventory, ecosystem, tracked)
         tracked_candidates = [rel for rel in candidates if rel in tracked]
         if not candidates:
             missing.append(f"{ecosystem} ({', '.join(_lockfiles_for(ecosystem))})")
@@ -821,7 +842,7 @@ def _documented_setup(inv: Inventory) -> list[str]:
         text = inv.read(name)
         if not text:
             continue
-        for _lang, _line, command in extract_fenced_commands(text):
+        for _lang, _line, command in extract_documented_commands(text):
             tokens = _tokenise(command)
             if not tokens:
                 continue
@@ -904,7 +925,13 @@ def check_exec03(*, spec, target, inventory, stack, components, session) -> Chec
 #: The leading character anchors these on the env-var convention (upper-case first); the rest of
 #: the capture class permits lower-case and digits too, so an identifier such as
 #: ``UDA_LOG_LEVELNumber`` is captured whole rather than truncated at its first lower-case run.
-_SHELL_ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Za-z0-9_]*)\}")
+_SHELL_ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Za-z0-9_]*)(?:(:?[-=+?])[^}]*)?\}")
+
+#: The parameter-expansion operators that give a reference a fallback, so the script runs without the variable:
+#: ``${VAR:-default}``, ``${VAR-default}``, ``${VAR:=default}``, ``${VAR=default}``, ``${VAR:+alt}`` and
+#: ``${VAR+alt}`` (issue #13). ``${VAR:?message}`` and ``${VAR?message}`` stop the script without it, so they are
+#: required references, as a bare ``${VAR}`` is.
+_SHELL_OPTIONAL_OPERATORS = frozenset({":-", "-", ":=", "=", ":+", "+"})
 
 #: A shell assignment to the same identifier class the reference pattern above captures —
 #: ``GREEN='\033[0;32m'``, optionally ``export``-ed. A file that assigns ``VAR`` itself is
@@ -960,6 +987,31 @@ _ENV_ALLOWLIST: frozenset[str] = frozenset(
         "NO_COLOR",
         "COLUMNS",
         "LINES",
+        # Variables the shell itself sets (bash, and zsh where it shares the name), never read from a template.
+        "BASHPID",
+        "EPOCHREALTIME",
+        "EPOCHSECONDS",
+        "EUID",
+        "FUNCNAME",
+        "GROUPS",
+        "HOSTNAME",
+        "HOSTTYPE",
+        "IFS",
+        "LINENO",
+        "MACHTYPE",
+        "OLDPWD",
+        "OPTARG",
+        "OPTIND",
+        "OSTYPE",
+        "PIPESTATUS",
+        "PPID",
+        "RANDOM",
+        "REPLY",
+        "SECONDS",
+        "SHELLOPTS",
+        "SHLVL",
+        "SRANDOM",
+        "UID",
     }
 )
 _ENV_ALLOW_PREFIXES: tuple[str, ...] = (
@@ -972,6 +1024,7 @@ _ENV_ALLOW_PREFIXES: tuple[str, ...] = (
     "VITEST_",
     "PYTEST_",
     "COVERAGE_",
+    "BASH_",
 )
 _ENV_EXAMPLE_FILES = (".env.example", ".env.sample", ".env.template", "env.example")
 
@@ -980,20 +1033,30 @@ def _is_shell_env_file(rel: str) -> bool:
     return rel.endswith(_SHELL_ENV_SUFFIXES) or rel.rsplit("/", 1)[-1] in _SHELL_ENV_BASENAMES
 
 
-def _referenced_env_keys(inv: Inventory) -> set[str]:
-    keys: set[str] = set()
+def _referenced_env_keys(inv: Inventory) -> tuple[set[str], set[str]]:
+    """The keys the repository requires, and the keys it reads only with a fallback.
+
+    A key is optional only when every shell reference to it has a fallback operator
+    (:data:`_SHELL_OPTIONAL_OPERATORS`) and no source file reads it; one required reference anywhere makes it
+    required.
+    """
+    required: set[str] = set()
+    optional: set[str] = set()
     for path in inv.paths():
         if not _is_shell_env_file(path):
             continue
         text = inv.read(path)
         if text:
-            referenced_here = {m.group(1) for m in _SHELL_ENV_PATTERN.finditer(text)}
             assigned_here = {m.group(1) for m in _SHELL_ASSIGN_PATTERN.finditer(text)}
-            keys |= referenced_here - assigned_here
+            for match in _SHELL_ENV_PATTERN.finditer(text):
+                key = match.group(1)
+                if key in assigned_here:
+                    continue
+                (optional if match.group(2) in _SHELL_OPTIONAL_OPERATORS else required).add(key)
     for pattern in _CODE_ENV_PATTERNS:
         for _rel, _line, text in inv.grep(pattern, kinds=(Kind.SOURCE, Kind.SCRIPT), limit=2000):
-            keys |= {m.group(1) for m in pattern.finditer(text) if m.group(1)}
-    return keys
+            required |= {m.group(1) for m in pattern.finditer(text) if m.group(1)}
+    return required, optional - required
 
 
 def _declared_env_keys(inv: Inventory) -> tuple[set[str], list[str]]:
@@ -1016,14 +1079,29 @@ def _env_allowed(key: str) -> bool:
 
 
 def check_exec04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    referenced = _referenced_env_keys(inventory)
+    referenced, optional = _referenced_env_keys(inventory)
     declared, files = _declared_env_keys(inventory)
     missing = sorted(k for k in referenced - declared if not _env_allowed(k))
-    keys = EnvKeys(referenced=tuple(sorted(referenced)), missing=tuple(missing), templates=tuple(files))
+    optional_undeclared = sorted(k for k in optional - declared if not _env_allowed(k))
+    keys = EnvKeys(
+        referenced=tuple(sorted(referenced)),
+        missing=tuple(missing),
+        templates=tuple(files),
+        optional=tuple(optional_undeclared),
+    )
+    optional_note = (
+        f"; {len(optional_undeclared)} optional key(s) with a fallback, not in an example file: "
+        f"{', '.join(optional_undeclared[:12])}"
+        if optional_undeclared
+        else ""
+    )
 
     if not missing:
-        detail = f"{len(referenced)} referenced key(s) declared" if referenced else "no environment keys referenced"
-        return _outcome(spec, Verdict.PASS, detail, data=keys)
+        if referenced:
+            detail = f"{len(referenced)} referenced key(s) declared"
+        else:
+            detail = "no required environment key referenced" if optional else "no environment keys referenced"
+        return _outcome(spec, Verdict.PASS, detail + optional_note, data=keys)
 
     because = (
         f"{len(missing)} referenced key(s) are absent from "
@@ -1033,7 +1111,7 @@ def check_exec04(*, spec, target, inventory, stack, components, session) -> Chec
     return _outcome(
         spec,
         Verdict.FAIL,
-        because,
+        because + optional_note,
         [
             Finding(
                 check=spec.id,

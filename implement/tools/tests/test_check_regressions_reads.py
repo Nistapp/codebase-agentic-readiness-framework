@@ -334,6 +334,21 @@ class ChangedFromTests(unittest.TestCase):
         _git.make_repo(other)
         self.assert_usage(self.close_report(), "is not the reports' target", "--changed-from", str(other))
 
+    def test_a_report_with_a_target_label_is_refused_for_changed_paths(self) -> None:
+        base = copy.deepcopy(self.base)
+        base["provenance"]["target"] = "."
+        close = self.close_report()
+        close["provenance"]["target"] = "."
+        self.assert_usage(close, 'target is ".", a label and not a path', "--changed-from", str(self.repo), base=base)
+
+    def test_two_reports_with_the_same_target_label_still_compare(self) -> None:
+        base = copy.deepcopy(self.base)
+        base["provenance"]["target"] = "."
+        close = self.close_report()
+        close["provenance"]["target"] = "."
+        code, envelope, _ = self.run_pair(close, base=base)
+        self.assertEqual(code, 0, envelope)
+
     def test_a_base_commit_outside_the_history_is_refused(self) -> None:
         self.assert_usage(
             self.close_report(), "is not in the history", "--changed-from", str(self.repo), "--base", "f" * 40

@@ -107,9 +107,11 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      `pyproject.toml`, `pom.xml`/`build.gradle`) — a direct read, never a command run — and tell the
      person which verbs already look like they resolve to something, so they decide with that in view
      rather than guessing blind; this is informal and not a substitute for the engine's own `CMD-01`
-     reader in Stage 2. Default is none. A target's own command is arbitrary code it owns, not a
+     reader in Stage 2. Default is none: when the person allows no verb, or probes are not feasible here,
+     record `probes.allowed: []`. A target's own command is arbitrary code it owns, not a
      read-only operation this skill controls — say so, and suggest a disposable worktree or container
-     when any verb is allowed;
+     when any verb is allowed. A disposable clone on another filesystem needs `git clone --no-hardlinks`.
+     `--local` hard-links the objects and fails across filesystems;
    - paths to exclude, and component roots they already know;
    - the confirmation policy: `interactive` for a person deciding on each finding (the default),
      `defer-all` or `accept-all` only for a headless evaluation run (`eval_mode: true`);
@@ -119,13 +121,14 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      recipe keeps its state beside the final report there. Ask the person to keep the folder until the
      implement run ends, because the run's skips and preferences live only there.
 4. Write the answers as an intake file matching the schema.
-5. Call `report.py init <intake>` (see the tool table below). Read `data.draft`, `data.target` and the
-   warnings, and tell the user the draft's path before moving to Stage 1.
+5. Call `report.py init <intake>` (see the tool table below). Read `data.draft`, `data.label`, `data.target`
+   and the warnings, and tell the user the draft's path before moving to Stage 1. Pass `data.label` as
+   `--repo-label` to `facts.py` and `engine.py`, so every file of the run carries one label.
 
 ## Stage 1 — Recon
 
-1. Run `facts.py <target> --out FILE`, passing the same `--exclude` paths the intake recorded, so the
-   facts describe the inventory Stage 2's engine run will also see.
+1. Run `facts.py <target> --out FILE --repo-label <label>`, passing the same `--exclude` paths the intake
+   recorded, so the facts describe the inventory Stage 2's engine run will also see.
 2. Read `facts.json`'s `stack` section. If it names an ecosystem a shipped profile covers, load that
    profile, `../stacks/<id>.md` (listed in [`stacks/README.md`](stacks/README.md)); otherwise follow
    that same file's [§2, Anatomy](stacks/README.md#2-anatomy) to derive guidance from the check files'
@@ -140,19 +143,20 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    the order above, what is excluded, and which probes (if any) will run — to `run-plan.md` beside the
    draft in the output directory, and tell the person its path before asking them to approve or edit it.
    A plan that lives only in chat is easy to lose once Stage 2 is under way; the file is not part of the
-   report and `report.py` never reads it.
+   report and `report.py` never reads it. In an unattended session, with no one to answer, write the file,
+   name its path and go on.
 
 ## Stage 2 — Assess
 
-1. Run `engine.py <target> --out-dir <dir> --no-user-config [--run-gates --allow-probe VERB]... [--emit-baseline]`, forwarding
-   the intake's `probes.allowed` verbs as `--allow-probe` (with `--run-gates` only when at least one was
-   named), passing the same `--exclude` paths the intake recorded (as Stage 1 step 1 already did for
-   `facts.py`, so the engine scans the same inventory the facts describe), and passing `--emit-baseline`
-   — this engine run is the only one for this draft, so it is also the one chance to have the engine
-   write `do-not-do.draft.md` for CON-04 (D51). `--no-user-config` is always passed: it keeps the engine from
-   reading the machine's own `$HOME` configuration, so the verdicts describe the repository and not this host
-   (the report's `provenance.user_config` records it). Read `data.report` and `data.baseline_draft`, and tell the
-   user both paths and any warning before moving on.
+1. Run `engine.py <target> --out-dir <dir> --repo-label <label> --no-user-config`
+   `[--run-gates --allow-probe VERB]... [--emit-baseline]`, forwarding the intake's `probes.allowed` verbs as
+   `--allow-probe` (with `--run-gates` only when at least one was named), passing the same `--exclude` paths
+   the intake recorded (as Stage 1 step 1 already did for `facts.py`, so the engine scans the same inventory
+   the facts describe), and passing `--emit-baseline` — this engine run is the only one for this draft, so it
+   is also the one chance to have the engine write `do-not-do.draft.md` for CON-04 (D51). `--no-user-config`
+   is always passed: it keeps the engine from reading the machine's own `$HOME` configuration, so the verdicts
+   describe the repository and not this host (the report's `provenance.user_config` records it). Read
+   `data.report` and `data.baseline_draft`, and tell the user both paths and any warning before moving on.
 2. Call `report.py import-engine <draft> <engine report>` straight after, using the `report` path from
    step 1. This runs once per draft — see the tool table's `import-engine` row for what it fills in and
    what to do when it refuses. Read `data.checks_imported`, `findings_pending` and `evidence_not_carried`,
@@ -174,8 +178,11 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    - **A check with `method: agent`** (today `AGT-11` and `CI-04`), not yet in the draft. Gather the
      evidence its `Evidence to cite` field names and record it fresh with `report.py add-check`; there is
      no engine verdict to dispute.
-   - **Any check whose recorded verdict is not `PASS`.** Record the issue with `report.py add-finding`,
-     once per distinct scope, following the check's `Absence proof` field for what a `FAIL` must cite.
+   - **Any check whose recorded verdict is `FAIL`, `PARTIAL` or `UNKNOWN`.** It needs a finding per
+     distinct scope. The findings `import-engine` carried (pending in `report.py status`) already count;
+     an `UNKNOWN` verdict often has none. Record each scope they miss with `report.py add-finding`, and
+     every finding of a check you disputed or recorded fresh. Follow the check's `Absence proof` field for
+     what a `FAIL` must cite.
 4. After each family, `report.py status <draft>` is cheap enough (at most 40 lines) to call every time,
    not only to resume: its `families_remaining` says exactly what is left before moving to the next one.
 5. Stage 2 ends when `report.py status <draft>` shows `families_remaining` empty. Move to Stage 3 only
@@ -194,7 +201,8 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    Fix what a mismatch reveals with `add-check` or `add-finding`, then re-render.
 3. Group the findings for the person by what Stage 4 will ask about them: `BLOCKER`s, which are confirmed
    one at a time, then `DEGRADER`s and `COSMETIC`s, which are confirmed in batches. `report.py status`'s
-   `pending` list already sorts blockers first; use that order.
+   `pending` list already sorts blockers first; use that order. It shows 8 at most: add `--all` for the
+   whole list, and `--severity <s>` for one severity.
 4. Unless this is an eval-mode run, tell the person the shape of the result before asking them to decide
    on anything: the score, how many findings of each severity, and which families have no finding at all.
 
@@ -267,8 +275,8 @@ the root of a framework checkout, or this skill's own folder when it is installe
 
 | Tool | Call | Expected result | Fallback |
 |---|---|---|---|
-| [`facts.py`](../docs/reference/tools-cli.md#factspy) | `facts.py <target> --out FILE` | Exit `0`; one JSON file with inventory, stack, instruction files, components and a size class. | Exit `1` on a bad target or path: fix the argument and retry. There is no facts-free path for Stage 1; a failure here is a reason to stop and ask, not to guess the stack. |
-| [`engine.py`](../docs/reference/tools-cli.md#enginepy) | `engine.py <target> --out-dir DIR [--run-gates --allow-probe VERB]... --emit-baseline` | Exit `0`; the engine's own JSON report written under `DIR`, named with the repository's label, and `data.baseline_draft`'s path (`do-not-do.draft.md`, for `CON-04`). | Exit `1` with `data.error` naming why (bad target, bad label, name already taken this second — rerun). Exit `3` means the engine itself failed; record that as `UNKNOWN` for every automated check and tell the user, never fabricate engine verdicts. |
+| [`facts.py`](../docs/reference/tools-cli.md#factspy) | `facts.py <target> --out FILE --repo-label LABEL` | Exit `0`; one JSON file with inventory, stack, instruction files, components and a size class. | Exit `1` on a bad target or path: fix the argument and retry. There is no facts-free path for Stage 1; a failure here is a reason to stop and ask, not to guess the stack. |
+| [`engine.py`](../docs/reference/tools-cli.md#enginepy) | `engine.py <target> --out-dir DIR --repo-label LABEL [--run-gates --allow-probe VERB]... --emit-baseline` | Exit `0`; the engine's own JSON report written under `DIR`, named with the repository's label, and `data.baseline_draft`'s path (`do-not-do.draft.md`, for `CON-04`). | Exit `1` with `data.error` naming why (bad target, bad label, name already taken this second — rerun). Exit `3` means the engine itself failed; record that as `UNKNOWN` for every automated check and tell the user, never fabricate engine verdicts. |
 | [`report.py init`](../docs/reference/tools-cli.md#init) | `report.py init <intake>` | Exit `0`; a new draft report, provenance filled in from the intake and git. | Exit `2` means the intake fails its schema: `data.errors` names each field; fix the intake and retry. Exit `1` means a bad path; fix and retry. |
 | [`report.py import-engine`](../docs/reference/tools-cli.md#import-engine) | `report.py import-engine <draft> <engine report>` | Exit `0`; the engine's checks, findings, stack and components are now in the draft. Runs once per draft, straight after `engine.py` (Stage 2, step 2). | Exit `2` with `data.error` naming the mismatch (wrong target, wrong schema version, already imported). Do not retry blindly — read the message; a draft that already holds an import needs a new draft via `init`, not a second `import-engine`. |
 | [`report.py set-stack-profile`](../docs/reference/tools-cli.md#set-stack-profile) | `report.py set-stack-profile <draft> <id> [--derived] [--confirmed]` | Exit `0`; `run_context.stack_profile` holds the profile `id`, `shipped` or `derived`, and whether the user confirmed it. Stage 1, step 2. | Exit `1` with `data.error` naming the shipped ids: use one, or add `--derived` for a stack with no profile. |
