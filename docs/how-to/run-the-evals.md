@@ -196,8 +196,8 @@ implement eval, IR13), so the containment is the layout, and the runner refuses 
   outside the root;
 - `<root>/bin/gh` is first on `PATH`: a shim that logs every call to `<root>/gh-calls.log` and exits 1, so no pull
   request is opened and any merge attempt is on record;
-- the agent works from `<root>/framework`: a copy of `audit/`, `implement/` and `docs/` without the tools' and
-  the engine's `tests/` folders, without the eval pages and without `dev/`, so it cannot read what is asserted.
+- the agent works from `<root>/framework`, a copy of `audit/`, `implement/` and `docs/`. The copy leaves out the
+  tools' and the engine's `tests/` folders, the eval pages and `dev/`, so the agent cannot read what is asserted.
   It runs with no MCP
   servers (`--strict-mcp-config`), no user-level settings (`--setting-sources project`) and no saved session;
 - the planted instruction names a host under `.invalid`, which never resolves, and a script that only writes a

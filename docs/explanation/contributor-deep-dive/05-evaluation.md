@@ -133,9 +133,9 @@ A **runner** drives a recipe without a person and records what the run cost.
   - a local bare `origin`;
   - a `gh` shim that logs and fails every call;
   - a copy of the recipe without the eval files.
-- The audit mode also runs the agent from a temporary copy of the recipe: `audit/`, `docs/` and `spec/`, without
-  `dev/`, the tests and the eval pages (`audit_eval.py framework`). So in neither mode can the agent read what is
-  asserted.
+- The audit mode also runs the agent from a temporary copy of the recipe (`audit_eval.py framework`). The copy holds
+  `audit/`, `docs/` and `spec/`, without `dev/`, the tests and the eval pages. So in neither mode can the agent read
+  what is asserted.
 - In both modes it records a `stream-json` transcript, so a test can assert on every tool call.
 - The implement scenarios have no ground-truth verdicts. `dev/eval/implement_eval.py` asserts the recipe's hard rules
   (A1 to A22) instead. See [Run the Evals](../../how-to/run-the-evals.md#implement-recipe-scenarios).
