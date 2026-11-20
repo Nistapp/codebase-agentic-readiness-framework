@@ -70,5 +70,42 @@ class KeywordInACompoundName(unittest.TestCase):
         self.assertEqual(redact(text), (text, 0))
 
 
+_BEGIN = _join("-----BEGIN RSA PRIV", "ATE KEY-----")
+_END = _join("-----END RSA PRIV", "ATE KEY-----")
+_BODY = ("MIIEow" + "IBAAKCAQEA" * 6, "q3Rk" + "Zm9vYmFy" * 8, "dGVzdA" + "==")
+
+
+class PemPrivateKey(unittest.TestCase):
+    """A PEM private key is redacted whole: the BEGIN line, the base64 body and the END line."""
+
+    def test_a_whole_block_is_one_redaction(self) -> None:
+        text = "\n".join(("loading key", _BEGIN, *_BODY, _END, "done"))
+        clean, count = redact(text)
+        self.assertEqual(count, 1)
+        for line in (*_BODY, "BEGIN", "END RSA"):
+            self.assertNotIn(line, clean)
+        self.assertTrue(clean.startswith("loading key\n"))
+        self.assertTrue(clean.endswith("\ndone"))
+
+    def test_a_block_cut_off_before_its_end_is_redacted_to_the_end(self) -> None:
+        text = "\n".join(("loading key", _BEGIN, *_BODY[:2]))
+        clean, count = redact(text)
+        self.assertEqual((clean, count), ("loading key\n[REDACTED]", 1))
+
+    def test_two_blocks_are_two_redactions_and_the_text_between_stays(self) -> None:
+        block = "\n".join((_BEGIN, *_BODY, _END))
+        clean, count = redact("\n".join((block, "between", block)))
+        self.assertEqual((clean, count), ("[REDACTED]\nbetween\n[REDACTED]", 2))
+
+    def test_a_keyword_before_the_block_does_not_leave_the_body(self) -> None:
+        clean, count = redact("\n".join(("secret: " + _BEGIN, *_BODY, _END)))
+        self.assertEqual(count, 1)
+        for line in _BODY:
+            self.assertNotIn(line, clean)
+
+    def test_an_end_line_alone_is_left_alone(self) -> None:
+        self.assertEqual(redact(_END), (_END, 0))
+
+
 if __name__ == "__main__":
     unittest.main()
