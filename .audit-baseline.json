@@ -335,16 +335,16 @@
     {
       "data": {
         "breakdown": {
-          "long_sentences": 313,
+          "long_sentences": 315,
           "pages": 56,
           "pages_without_diagram": 0,
-          "sentences": 3927,
+          "sentences": 3998,
           "vague_words": 9,
-          "words": 51077
+          "words": 52071
         },
         "kind": "counter",
         "unit": "long sentences",
-        "value": 313
+        "value": 315
       },
       "id": "DOC-05",
       "pack": "DOC",
@@ -352,7 +352,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "313/3927 sentences over the limit (8.0%), 9 vague word(s) (0.18 per 1,000 words), 0 explanation or tutorial page(s) without a diagram, in 56 page(s)",
+      "summary": "315/3998 sentences over the limit (7.9%), 9 vague word(s) (0.17 per 1,000 words), 0 explanation or tutorial page(s) without a diagram, in 56 page(s)",
       "tier": "B",
       "title": "Docs are readable",
       "verdict": "PASS"
@@ -910,7 +910,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile ($(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)); 180 test file(s)",
+      "summary": "test verb on Makefile ($(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)); 184 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -931,11 +931,11 @@
     {
       "data": {
         "breakdown": {
-          "python": 9
+          "python": 10
         },
         "kind": "counter",
         "unit": "skip/xfail markers",
-        "value": 9
+        "value": 10
       },
       "id": "TST-03",
       "pack": "TST",
@@ -943,7 +943,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 180 test file(s): python 9; total 9",
+      "summary": "skip/xfail census across 184 test file(s): python 10; total 10",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -1028,10 +1028,10 @@
     },
     {
       "data": {
-        "denominator": 1209,
+        "denominator": 1251,
         "kind": "ratio",
         "method": "python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
-        "numerator": 791,
+        "numerator": 817,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -1040,7 +1040,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "791/1209 public symbols documented (65%); method: python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
+      "summary": "817/1251 public symbols documented (65%); method: python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1438,8 +1438,8 @@
     }
   ],
   "inventory": {
-    "files_inspected": 513,
-    "files_set_aside": 805,
+    "files_inspected": 520,
+    "files_set_aside": 808,
     "files_skipped": 2,
     "ignored_dirs": [],
     "set_aside": [
@@ -1448,7 +1448,7 @@
         "path": "audit/engine/examples"
       },
       {
-        "files": 534,
+        "files": 536,
         "path": "audit/engine/tests/fixtures"
       },
       {
@@ -1456,7 +1456,7 @@
         "path": "audit/schema/examples"
       },
       {
-        "files": 155,
+        "files": 156,
         "path": "dev/eval/expected/fixtures"
       },
       {
@@ -1506,15 +1506,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "8bd6d93f9836e61eae1493051301fe35957440e1",
-    "git_branch": "fix/engine-nav-05-methods",
+    "framework_revision": "4b952360e6544edc87f0e6ff8cb62cf9ee88b25a",
+    "git_branch": "fix/engine-agt-10-deferral-dot-folder",
     "git_dirty": false,
-    "git_sha": "8bd6d93f9836e61eae1493051301fe35957440e1",
+    "git_sha": "4b952360e6544edc87f0e6ff8cb62cf9ee88b25a",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "34bba6464eac63ff",
-    "ruleset_revision": "2026-11-20.23",
-    "scanned_at": "2026-11-20T10:20:16+00:00",
+    "ruleset_revision": "2026-11-20.24",
+    "scanned_at": "2026-11-20T11:36:08+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {
