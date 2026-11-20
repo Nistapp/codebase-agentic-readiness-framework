@@ -61,7 +61,8 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 `DEGRADER` · scored · engine check · fixed by [`register-index`](implement-master.md#register-index)
 
-- **Passes when:** the index's recorded revision matches `HEAD`, or a direct freshness query reports no drift.
+- **Passes when:** the index's recorded revision matches `HEAD`, the index was built at or after HEAD last moved, or a
+  direct freshness query reports no drift.
 - **Why it matters:** A stale graph is stale context: an agent edits based on symbols that have already moved or been
   deleted ([`docs/framework/phased-approach.md` § Activities](../framework/phased-approach.md#activities)).
 

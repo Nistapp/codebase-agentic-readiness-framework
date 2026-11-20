@@ -29,8 +29,8 @@ Engine           `CON-01`. Reads the prohibitions section decision 0001 names an
                  span in it. A section whose heading holds no prohibition word, opened only because its
                  body holds three prohibition lines, gives only the spans of a list item or paragraph
                  that holds a prohibition line: a conventions section names paths beside its "never"
-                 lines, and those are not a deny list. A span is a path or pattern when it has no command syntax (no shell
-                 operator, flag or quote character) and holds a slash, a glob character or a dot, or is
+                 lines, and those are not a deny list. A span is a path or pattern when it has no
+                 command syntax (no shell operator, flag or quote character) and holds a slash, a glob character or a dot, or is
                  a bare word that exists on disk — the scan also checks the literal path against the
                  filesystem directly, because the scan itself leaves out `node_modules/`-style excludes
                  that a deny list often names. At least one named path or pattern that matches something
