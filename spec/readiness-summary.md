@@ -43,6 +43,12 @@ Blockers remaining is the number of scored BLOCKER checks whose verdict is not P
 
 It counts checks, not findings. One check can raise several findings, and a check that is UNKNOWN raises none, so a count of findings would hide the checks nobody could verify.
 
+A finding may carry a lower severity than its check, for example when it shares a root cause with another finding. Its
+check is still unmet and still counts as a blocker. So the number of BLOCKER findings can differ from the blockers
+remaining. The report then shows both numbers on the line, for example "7 BLOCKER checks unmet: 5 FAIL, 1 PARTIAL, 1
+UNKNOWN (6 BLOCKER findings)". The second number counts the findings of BLOCKER severity that a person has not rejected.
+A deferred finding still counts. When the two numbers agree, the line keeps the short form.
+
 ## The unattested list
 
 The report lists every requirement verified by `human` or `attested`, by requirement ID, with its status: pending review or unattested. The list is not a number and does not enter the score. A requirement leaves the list only when a person records an outcome or the owner makes the declaration.
