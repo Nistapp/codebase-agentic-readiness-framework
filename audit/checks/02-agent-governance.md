@@ -24,7 +24,7 @@ A14 — the review's R-16 — governs every one of those rubrics:
   instructions do. No check in this family penalises a file for lacking one; `AGT-01`'s own minimum-length
   floor does not require overview prose, only that the file is not a stub.
 - **A length budget applies, so restating drifts instead of linking is a finding.** The budget is
-  **400 lines** (D50): a canonical `AGENTS.md` under that line count that still covers everything this
+  **400 lines**: a canonical `AGENTS.md` under that line count that still covers everything this
   family asks for is doing its job; one over it is answered by linking to `docs/` rather than inlining
   more text, which is the project's own style guide's own rule (never restate, link instead). Each check
   below that reads the file for content adds this as its own finding, scored `DEGRADER`, independent of
