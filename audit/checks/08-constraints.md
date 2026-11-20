@@ -25,21 +25,19 @@ Why it matters   An agent cannot respect a boundary that exists only in someone'
                   must be a concrete, written artifact, not an unstated expectation
                   ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         BLOCKER
-Engine           `CON-01`. Reads the prohibitions section decision 0001 names and collects every code
-                 span in it. A section whose heading holds no prohibition word, opened only because its
-                 body holds three prohibition lines, gives only the spans of a list item or paragraph
-                 that holds a prohibition line: a conventions section names paths beside its "never"
-                 lines, and those are not a deny list. A span is a path or pattern when it has no
-                 command syntax (no shell operator, flag or quote character) and holds a slash, a glob character or a dot, or is
-                 a bare word that exists on disk — the scan also checks the literal path against the
-                 filesystem directly, because the scan itself leaves out `node_modules/`-style excludes
-                 that a deny list often names. At least one named path or pattern that matches something
-                 in the repository is `PASS`. Paths are named but none matches anything is `PARTIAL`. No
-                 path or pattern is named at all is `FAIL`. No instruction file, or no prohibitions
-                 section, is `UNKNOWN` — `AGT-01` or `AGT-07` already owns that finding. Distrust a
-                 `FAIL` or `PARTIAL` when the section's prose clearly names a path but without
-                 backticks, so no code span exists to read — verify by reading the section's actual
-                 text, not just its code spans.
+Engine           `CON-01`. Reads the prohibitions section decision 0001 names and collects every code span in it. A
+                 section whose heading holds no prohibition word, opened only because its body holds three prohibition
+                 lines, gives only the spans of a list item or paragraph that holds a prohibition line: a conventions
+                 section names paths beside its "never" lines, and those are not a deny list. A span is a path or
+                 pattern when it has no command syntax (no shell operator, flag or quote character) and holds a slash, a
+                 glob character or a dot, or is a bare word that exists on disk — the scan also checks the literal path
+                 against the filesystem directly, because the scan itself leaves out `node_modules/`-style excludes that
+                 a deny list often names. At least one named path or pattern that matches something in the repository is
+                 `PASS`. Paths are named but none matches anything is `PARTIAL`. No path or pattern is named at all is
+                 `FAIL`. No instruction file, or no prohibitions section, is `UNKNOWN` — `AGT-01` or `AGT-07` already
+                 owns that finding. Distrust a `FAIL` or `PARTIAL` when the section's prose clearly names a path but
+                 without backticks, so no code span exists to read — verify by reading the section's actual text, not
+                 just its code spans.
 Method           automated
 Look for         Every code span inside the prohibitions section specifically, not the section's prose;
                  for each span that reads as a path or pattern, whether it matches a real file or
