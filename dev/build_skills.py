@@ -5,7 +5,7 @@
 
 One command::
 
-    build_skills.py [--out-dir DIR]
+    build_skills.py [--out-dir DIR] [--archive DIR --tag TAG]
 
 A bundle is what a harness installs and runs with no checkout of this repository: `skills-ref validate`
 (S4.5.2) and an install smoke-run (S4.5.3) both act on it, never on the source tree directly. Both are written
@@ -62,9 +62,17 @@ framework path, so no link leaves the bundle.
 Every file is a file copy or a deterministic text rewrite, so two builds from the same source tree are byte-for-byte
 identical.
 
+``--archive DIR --tag TAG`` also zips each bundle into ``DIR/<bundle name>-<TAG>.zip`` (for example
+``agentic-readiness-audit-v0.4.0.zip``): the release files that ``.github/workflows/release.yml`` attaches. Each zip
+holds the bundle's folder at its root, so it unzips straight into a skills folder. The zips are byte-reproducible too
+(:func:`write_archive`): entries in sorted path order, every timestamp fixed at :data:`ARCHIVE_DATE_TIME`, fixed Unix
+permissions (``0o644`` for a file, ``0o755`` for a folder or an executable file), Deflate at level 9 for every file,
+and no extra field, comment, owner or user ID. So nothing of the build host leaks in: not its file-system order, its
+mtimes, its umask or its user. Two builds of the same commit with the same Python and zlib give the same bytes.
+
 Failure behaviour: a source file whose frontmatter ``name`` line or Tools CLI section is missing, or whose
-frontmatter already has a ``metadata`` key, is exit 1. Nothing else in this tool can fail the way a user-facing
-argument can, since it takes none but ``--out-dir``.
+frontmatter already has a ``metadata`` key, is exit 1. So is ``--archive`` without ``--tag``, ``--tag`` without
+``--archive``, or a tag that is not one file-name part (letters, digits, ``.``, ``_`` and ``-``).
 """
 
 from __future__ import annotations
@@ -73,7 +81,9 @@ import json
 import os
 import re
 import shutil
+import stat
 import sys
+import zipfile
 from pathlib import Path
 from typing import Sequence
 
@@ -97,11 +107,12 @@ import _common  # noqa: E402
 INFO = _common.ToolInfo(
     name="build_skills",
     summary="Build the agentic-readiness-audit and agentic-readiness-implement skill bundles under dev/dist/skills/.",
-    synopsis=("build_skills.py [--out-dir DIR]",),
+    synopsis=("build_skills.py [--out-dir DIR] [--archive DIR --tag TAG]",),
     writes=(
         "dev/dist/skills/agentic-readiness-audit/ and dev/dist/skills/agentic-readiness-implement/ (SKILL.md, LICENSE, "
         "references/, scripts/), each replaced whole on each run; "
-        "--out-dir changes where skills/ itself goes."
+        "--out-dir changes where skills/ itself goes; "
+        "--archive DIR --tag TAG also writes DIR/<bundle name>-<TAG>.zip for each bundle, byte-reproducible."
     ),
 )
 
@@ -569,6 +580,57 @@ def _file_count(bundle_dir: Path) -> int:
     return sum(1 for p in bundle_dir.rglob("*") if p.is_file())
 
 
+#: The one timestamp every zip entry carries: the earliest a ZIP (DOS) date can hold, the same constant
+#: ``audit/engine/build.py`` pins on the shim it synthesises. A real mtime would make each build differ.
+ARCHIVE_DATE_TIME = (1980, 1, 1, 0, 0, 0)
+ARCHIVE_FILE_MODE = 0o644
+ARCHIVE_EXEC_MODE = 0o755
+ARCHIVE_DIR_MODE = 0o755
+ARCHIVE_COMPRESSLEVEL = 9
+#: A tag becomes part of a file name, so it may not hold a path separator or start with a dot.
+_TAG = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._-]*$")
+
+
+def archive_name(bundle_name: str, tag: str) -> str:
+    """The release file name of a bundle's zip: ``agentic-readiness-audit-v0.4.0.zip`` for tag ``v0.4.0``."""
+    return f"{bundle_name}-{tag}.zip"
+
+
+def _archive_info(name: str, mode: int, *, is_dir: bool) -> zipfile.ZipInfo:
+    info = zipfile.ZipInfo(name, date_time=ARCHIVE_DATE_TIME)
+    info.create_system = 3  # Unix, so an unzip tool reads the permission bits in external_attr
+    info.external_attr = ((stat.S_IFDIR if is_dir else stat.S_IFREG) | mode) << 16
+    if is_dir:
+        info.external_attr |= 0x10  # the MS-DOS directory flag, as `zip` sets it
+        info.compress_type = zipfile.ZIP_STORED
+    else:
+        info.compress_type = zipfile.ZIP_DEFLATED
+    return info
+
+
+def write_archive(bundle_dir: Path, archive: Path) -> Path:
+    """Zip `bundle_dir` into `archive`, with the bundle's folder at the zip's root, byte-reproducibly.
+
+    Every entry is written from a fresh `ZipInfo`, never from the file's own `stat`, so only the path, the
+    content and whether the file is executable reach the zip. Entries go in sorted path order, a folder before
+    what it holds. An existing `archive` is replaced.
+    """
+    root = bundle_dir.name
+    paths = sorted(bundle_dir.rglob("*"), key=lambda p: p.relative_to(bundle_dir).parts)
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(archive, "w") as zf:
+        zf.writestr(_archive_info(f"{root}/", ARCHIVE_DIR_MODE, is_dir=True), b"")
+        for path in paths:
+            name = f"{root}/{path.relative_to(bundle_dir).as_posix()}"
+            if path.is_dir():
+                zf.writestr(_archive_info(f"{name}/", ARCHIVE_DIR_MODE, is_dir=True), b"")
+                continue
+            mode = ARCHIVE_EXEC_MODE if path.stat().st_mode & 0o111 else ARCHIVE_FILE_MODE
+            info = _archive_info(name, mode, is_dir=False)
+            zf.writestr(info, path.read_bytes(), compresslevel=ARCHIVE_COMPRESSLEVEL)
+    return archive
+
+
 def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(prog="build_skills.py", description=INFO.summary)
     parser.add_argument(
@@ -577,18 +639,36 @@ def build_parser() -> _common.ToolParser:
         metavar="DIR",
         help=f"where to build skills/ (default: {DEFAULT_OUT_DIR.relative_to(REPO)})",
     )
+    parser.add_argument(
+        "--archive",
+        metavar="DIR",
+        help="also zip each bundle into DIR/<bundle name>-<TAG>.zip, byte-reproducibly (needs --tag)",
+    )
+    parser.add_argument("--tag", metavar="TAG", help="the release tag in the zip names, for example v0.4.0")
     return parser
 
 
 def handler(argv: Sequence[str]) -> _common.Result:
     args = build_parser().parse_args(list(argv))
+    if (args.archive is None) != (args.tag is None):
+        raise _common.UsageError("--archive and --tag go together: give both or neither")
+    if args.tag is not None and not _TAG.match(args.tag):
+        raise _common.UsageError(f"--tag {args.tag!r} is not one file-name part (letters, digits, '.', '_', '-')")
     out_dir = Path(args.out_dir).expanduser().resolve()
     bundle_dir = build_bundle(out_dir)
     implement_dir = build_implement_bundle(out_dir)
-    bundles = [{"name": d.name, "bundle": str(d), "files": _file_count(d)} for d in (bundle_dir, implement_dir)]
+    bundles: list[dict[str, object]] = [
+        {"name": d.name, "bundle": str(d), "files": _file_count(d)} for d in (bundle_dir, implement_dir)
+    ]
+    summary = "build_skills: wrote " + "; ".join(f"{b['files']} files to {b['bundle']}" for b in bundles)
+    if args.archive is not None:
+        archive_dir = Path(args.archive).expanduser().resolve()
+        for bundle, directory in zip(bundles, (bundle_dir, implement_dir), strict=True):
+            bundle["archive"] = str(write_archive(directory, archive_dir / archive_name(directory.name, args.tag)))
+        summary += f"; zipped both into {archive_dir}"
     return _common.Result(
         data={"bundle": str(bundle_dir), "files": bundles[0]["files"], "bundles": bundles},
-        summary="build_skills: wrote " + "; ".join(f"{b['files']} files to {b['bundle']}" for b in bundles),
+        summary=summary,
     )
 
 
