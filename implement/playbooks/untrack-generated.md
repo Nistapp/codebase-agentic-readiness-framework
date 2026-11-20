@@ -30,7 +30,9 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 
 ## Inputs to ask
 
-1. **Detect first** with the signal below, then the engine's own list (the EXEC-05 finding names up to 12 paths):
+1. **Detect first** with the signal below, then the engine's own list (the
+   [`EXEC-05`](../../audit/checks/09-execution-determinism.md#exec-05--no-generated-artifacts-committed-in-tree) finding
+   names up to 12 paths):
 
    ```bash
    git ls-files -ci --exclude-standard

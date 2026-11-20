@@ -93,8 +93,8 @@ Agents MUST respect the following structural rules.
 | Tests | stdlib `unittest` | `python3 -m unittest discover -s tests`. No pytest dependency. |
 | Dev tools | ruff, mypy, detect-secrets via `uvx` | Pinned in `dev/tools/pyproject.toml`, never in the `Makefile` (ADR 0003). Never imported by `audit/` or `build.py`. |
 | Build | `zipapp` | `python3 build.py` → `dist/audit.pyz`; source tree is the artifact of record. |
-| Index | `codebase-memory-mcp` | Mandatory for structural queries (see §4). |
-| Docs | Diátaxis + [`../docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) | The shared style guide is canonical (see §8). |
+| Index | `codebase-memory-mcp` | Mandatory for structural queries (see [§4](#4-codebase-memory-mcp-integration)). |
+| Docs | Diátaxis + [`../docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md) | The shared style guide is canonical (see [§8](#8-documentation-contract)). |
 
 ### 3.1 Standardized command surface
 
@@ -199,7 +199,8 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 > its original history is preserved there. Branches and commits follow the repository's own conventions; the
 > bullets below describe this tool's own conventions.
 
-- **Branching:** the repository's model applies (`RELEASE_PROCESS.md`, ADR 0002 in `docs/architecture/adrs/`).
+- **Branching:** the repository's model applies (`RELEASE_PROCESS.md`, the root
+  [ADR 0002](../../docs/architecture/adrs/0002-dev-integrates-main-releases.md)).
   `dev` is the integration branch; `main` takes pull requests from `dev` only. Work branches start from `dev` and are
   named `<type>/<topic>`, for example `feat/<slug>`, `fix/<slug>` or `refactor/<slug>`.
 - **Commits (Conventional Commits):** `<type>(<scope>): <description>` with types `feat`, `fix`, `refactor`,
@@ -213,7 +214,7 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 ## 8. Documentation Contract
 
 - **Single source of truth:** `docs/` is the sole canonical home for permanent knowledge. `artefacts/` is
-  transient scratch (see §4).
+  transient scratch (see [§4](#4-codebase-memory-mcp-integration)).
 - **Canonical rules:** the shared style guide, [`../docs/STYLE_GUIDE.md`](../../docs/STYLE_GUIDE.md), holds the
   authoring rules. Link to it; do **not** restate its rules elsewhere, because restated rules drift.
 - **Doc router:** `docs/architecture/README.md` is the entry point and the ADR index.

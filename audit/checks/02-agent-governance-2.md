@@ -1,8 +1,8 @@
 # Agent Governance (`AGT`)
 
 > Follows the anatomy in [`README.md`](README.md). This is the second file of the family, with `AGT-12` and
-> `AGT-13`: the first, [`02-agent-governance.md`](02-agent-governance.md), reached the 500-line budget (§ 5 of
-> the README).
+> `AGT-13`: the first, [`02-agent-governance.md`](02-agent-governance.md), reached the 500-line budget
+> ([§5 of the README](README.md#5-one-family-one-file)).
 
 ## AGT-12 — Communication rules stated
 

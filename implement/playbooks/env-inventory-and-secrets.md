@@ -26,7 +26,8 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 - Preferences this playbook reads, when present: `extra.t3` (what the owner already chose for a tracked key
   file), `layout.command_runner` (per-app layout means one example file per app), `ci.edits_authorised`,
   `scanner.choice` (a dependency scanner is not a secret scanner), `format.mass_reformat`.
-- No earlier theme is needed. If the command-surface theme already named the `security` verb, reuse it in the
+- No earlier theme is needed. If the command-surface theme
+  ([T1 Command surface and quality tools](../SKILL.md#themes)) already named the `security` verb, reuse it in the
   scanner step; do not create a second one.
 - **Hard rules, every step:** never print, quote, log or copy a value from any env, properties, realm,
   keystore or credentials file, not in a commit message, a status file or a summary. Count lines, list key
@@ -51,10 +52,10 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    second or the third when the owner wants each file beside the code that reads it. Record the choice as a
    preference. Ask also whether optional framework overrides (for example `QUARKUS_*`) are listed; the default is
    yes, marked optional, names only.
-2. **Tracked secret-bearing files.** For each path from step 3, show the owner the path and the reason it was
-   flagged (never its content) and ask: untrack, keep as a documented exception, or skip. Only the owner can
-   say a tracked local-development file holds throwaway values or must stay for developers' setup. A keep or a
-   skip is recorded in the owner's words; a skip is final.
+2. **Tracked secret-bearing files.** Take each path from [Steps](#generic) step 3. Show the owner the path and the
+   reason it was flagged, never its content. Ask: untrack, keep as a documented exception, or skip. Only the owner can say
+   a tracked local-development file holds throwaway values or must stay for developers' setup. A keep or a skip is
+   recorded in the owner's words; a skip is final.
 3. **Scanner.** Detect what the repository already runs (a script that CI calls, a `.gitleaks.toml`, a
    `.secrets.baseline`, a pre-commit entry). If one exists, use it and add no tool (the tool is the owner's
    choice). A second scanner config would fail "`EXEC-07` No competing configs for one concern". Only a
@@ -187,7 +188,8 @@ files. Repository variables and secrets are not in the repo: the example file is
 | 5 | Fake-token fixtures in the scanner's allowlist (only when the owner agrees) | `SEC-02` | config |
 | 6 | Pointers to the example file in the instruction file, CI README and deploy doc | `EXEC-04` | hand |
 
-A path that step 6.4 newly lists goes back to step 3: its untracking is one more commit like 1, after 4.
+A path that [Steps](#generic) step 6.4 newly lists goes back to step 3: its untracking is one more commit like
+commit 1 in the table above, after commit 4.
 
 ## Continue on error
 

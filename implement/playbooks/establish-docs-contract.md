@@ -229,7 +229,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
       new job that must be green needs adding to it, which is the owner's call.
    4. If `lychee` was chosen: relative links only, report-only at first.
    5. **Prose check (only with `docs.prose_check=template`).** Copy the template to the place and name the
-      repository uses for its scripts (D18), for example `scripts/docs_prose_check.py`. Replace its SPDX line with
+      repository uses for its scripts, for example `scripts/docs_prose_check.py`. Replace its SPDX line with
       the licence the owner picked (`docs.prose_check_licence`). Keep the copyright line: the template's author keeps
       the copyright, and the owner gets the licence. Remove nothing else. Where the repository keeps a list of
       third-party code (a `THIRD_PARTY_NOTICES` file or similar), add the copy to it.
@@ -290,7 +290,7 @@ They stay here so a repository that has one has a procedure, and so the re-audit
        - Design and behaviour go to an explanation page, from the greenfield
          [`architecture-doc-template.md`](../../greenfield/templates/docs/templates/architecture-doc-template.md).
 
-       Place the page in the target's own docs layout and name it as the target names its pages (D18). Do not impose
+       Place the page in the target's own docs layout and name it as the target names its pages. Do not impose
        a folder tree. A page named like a conventions file, or `docs/CONTRIBUTING.md`, is also read by "`AGT-13`
        Coding conventions written"; step 5 catches a changed verdict.
     2. **Audit before.** On a clean tree, run the engine and keep the report path:

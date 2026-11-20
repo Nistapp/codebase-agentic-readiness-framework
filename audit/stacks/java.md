@@ -2,7 +2,7 @@
 
 > Follows the anatomy in [`README.md`](README.md). Covers Gradle, with Quarkus notes where Quarkus
 > differs. The Maven section is untested and says so. `shipped`, per `run_context.stack_profile`
-> (DP §5.6).
+> ([§4 Shipped versus derived](README.md#4-shipped-versus-derived)).
 
 ---
 

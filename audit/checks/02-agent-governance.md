@@ -20,12 +20,12 @@ A14 — the review's R-16 — governs every one of those rubrics:
   could derive from the code itself (a generic "write tests" with no project-specific gate) earns nothing;
   a rule it could not derive (which two directories may not import each other, which branch is protected,
   which command the team actually runs) does.
-- **The overview is optional.** A project-overview section (DP §5.4 item 1) is welcome but never scored —
+- **The overview is optional.** A project-overview section is welcome but never scored —
   R-16's evidence is that repository overviews do not raise task success, while specific, non-standard
   instructions do. No check in this family penalises a file for lacking one; `AGT-01`'s own minimum-length
   floor does not require overview prose, only that the file is not a stub.
 - **A length budget applies, so restating drifts instead of linking is a finding.** The budget is
-  **400 lines** (D50): a canonical `AGENTS.md` under that line count that still covers everything this
+  **400 lines**: a canonical `AGENTS.md` under that line count that still covers everything this
   family asks for is doing its job; one over it is answered by linking to `docs/` rather than inlining
   more text, which is the project's own style guide's own rule (never restate, link instead). Each check
   below that reads the file for content adds this as its own finding, scored `DEGRADER`, independent of
@@ -186,8 +186,8 @@ Evidence to cite A `file` evidence item citing the instruction file and the line
 Absence proof    A FAIL records a `grep` search for the change-set pattern and, separately, for each
                  documentation-trigger word, each with its hit count, scoped to the instruction file.
 Remediation      `adapt-agents-md`
-Pitfalls         The engine's pattern is textual and narrow by design (DP's own calibration note on similar
-                 checks): a well-written rule using synonyms the pattern misses is a real PASS that the
+Pitfalls         The engine's pattern is textual and narrow by design, as for similar textual
+                 checks: a well-written rule using synonyms the pattern misses is a real PASS that the
                  agent must catch by reading, not a tooling gap to shrug off as UNKNOWN.
 
 ## AGT-05 — Seven verbs named
@@ -432,9 +432,9 @@ Pitfalls         The deferral pattern is deliberately narrow (calibrated against
 
 ## AGT-11 — Instructions are specific and not inferable
 
-Why it matters   This is where A14 (above) is judged directly: a file full of generic, inferable advice
-                  costs inference time for no benefit, which is R-16's own finding
-                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
+Why it matters   This is where [A14](#the-a14-rubric-r-16-score-content-not-presence) is judged directly: a
+                  file full of generic, inferable advice costs inference time for no benefit, which is R-16's
+                  own finding ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           none — no deterministic rule can tell a derivable instruction from a specific one; this is
                  the one check in the family with `method: agent` and no `engine_id`. Status in the
@@ -468,9 +468,9 @@ Absence proof    A FAIL or PARTIAL cites the count of rule lines classified gene
                  (tool `grep`, pattern "rule line", scope the instruction file, hits = the generic count),
                  so the ratio in the verdict is traceable to a number, not an impression.
 Remediation      `adapt-agents-md`
-Pitfalls         Counting lines is a proxy, not the goal (DP §5.2's own warning about the rubric being the
-                 lever for consistency): a short file that is entirely specific must not be penalised for
-                 having "too few" lines to sample confidently, and a long file padded with specific-sounding
-                 but unverifiable claims (a boundary rule naming a path that was since deleted) must not
-                 pass just because its language matches the specific bucket's shape. Always verify, never
+Pitfalls         Counting lines is a proxy, not the goal (the rubric is the lever for consistency, see the checks
+                 [README §3](README.md#3-rubric-thresholds-are-observable)): a short file that is entirely specific
+                 must not be penalised for having "too few" lines to sample confidently, and a long file padded with
+                 specific-sounding but unverifiable claims (a boundary rule naming a path that was since deleted)
+                 must not pass just because its language matches the specific bucket's shape. Always verify, never
                  just classify.
