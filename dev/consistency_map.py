@@ -224,6 +224,8 @@ def name_matches(name: dict[str, Any], path: str) -> bool:
         return fnmatch.fnmatchcase(posixpath.basename(path), pattern)
     if match == "glob":
         return fnmatch.fnmatchcase(path, pattern)
+    if match == "folder-name":
+        return pattern in path.split("/")[:-1]
     return pattern in path
 
 

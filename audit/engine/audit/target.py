@@ -44,6 +44,11 @@ HARD_EXCLUDE_DIRS = frozenset(
     }
 )
 
+#: The ``HARD_EXCLUDE_DIRS`` names the walk still enters to reach the files git tracks under them, and only
+#: those files. Build output that is committed is part of the repository, and ``EXEC-05`` and ``NAV-03`` exist
+#: to see it; an untracked build folder stays out. When git cannot report the tracked set, they stay excluded.
+TRACKED_ONLY_DIRS = frozenset({"dist", "build"})
+
 
 @dataclass(frozen=True)
 class Target:

@@ -21,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import support  # noqa: E402
 from audit.report.md_render import render_markdown  # noqa: E402
-from audit.scan import build_inventory  # noqa: E402
+from audit.scan import Kind, _classify, build_inventory  # noqa: E402
 
 
 def _git(root: Path, *args: str) -> None:
@@ -120,6 +120,57 @@ class TrackedWalkTests(unittest.TestCase):
             support.write(root, ".gitignore", "*.log\n")
             inventory = build_inventory(root, extra_excludes=("kept.log",))
         self.assertEqual([entry.rel for entry in inventory.files], [".gitignore"])
+
+
+class TrackedBuildOutputTests(unittest.TestCase):
+    """``dist/`` and ``build/`` are entered only for the files git tracks under them (issue #12, option C)."""
+
+    def test_tracked_build_output_enters_and_untracked_output_beside_it_does_not(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "dist/app.min.js", "x")
+            support.write(root, "pkg/build/deep/x.class", "x")
+            support.write(root, "vendor/lib.go", "x")
+            support.write(root, "dist/node_modules/m.js", "x")
+            _git(root, "init", "-q")
+            _git(root, "add", "-A")
+            support.write(root, "dist/fresh.js", "x")
+            support.write(root, "dist/chunks/c.js", "x")
+            support.write(root, "build/out.js", "x")
+            inventory = build_inventory(root)
+        self.assertEqual([entry.rel for entry in inventory.files], ["dist/app.min.js", "pkg/build/deep/x.class"])
+        self.assertEqual(inventory.skipped, [])
+        self.assertEqual(inventory.ignored_dirs, [])
+
+    def test_an_ignore_rule_does_not_hide_a_tracked_build_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "dist/app.js", "x")
+            _git(root, "init", "-q")
+            _git(root, "add", "-A")
+            support.write(root, ".gitignore", "dist/\n")
+            support.write(root, "dist/fresh.js", "x")
+            inventory = build_inventory(root, extra_excludes=())
+            excluded = build_inventory(root, extra_excludes=("dist/*",))
+        self.assertEqual([entry.rel for entry in inventory.files], [".gitignore", "dist/app.js"])
+        self.assertEqual([entry.rel for entry in excluded.files], [".gitignore"])
+
+    def test_without_git_the_build_folders_stay_out(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "dist/app.js", "x")
+            support.write(root, "build/x.class", "x")
+            support.write(root, "src/a.py", "x")
+            inventory = build_inventory(root)
+        self.assertEqual([entry.rel for entry in inventory.files], ["src/a.py"])
+
+    def test_the_generated_hint_matches_a_whole_folder_name(self):
+        for rel in ("dist/app.js", "pkg/build/x.class", "Build/out.txt", "lib/dist/deep/a.py"):
+            with self.subTest(rel=rel):
+                self.assertIs(_classify(rel), Kind.GENERATED)
+        for rel in ("redist/a.py", "prebuild/a.py", "build.py", "src/dist.py", "myvendor/a.py"):
+            with self.subTest(rel=rel):
+                self.assertIsNot(_classify(rel), Kind.GENERATED)
 
 
 class IgnoredDirsReportTests(unittest.TestCase):
