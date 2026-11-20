@@ -23,7 +23,8 @@ Engine           `EXEC-01`. The pinnable ecosystems are node, python, jvm, dotne
                  `rust-toolchain.toml` or `rust-toolchain`. So do a wrapper (`gradlew`, `mvnw`) and, for
                  dotnet, `global.json`. A shared `.tool-versions` pins with a line that starts with the
                  ecosystem's asdf or mise plugin name: `nodejs` or `node`, `python`, `rust`, `golang`
-                 (asdf) or `go` (mise), `php`, `ruby`, `java` (jvm), and `dotnet` or `dotnet-core`. A manifest pins with `package.json`'s `engines.node`,
+                 (asdf) or `go` (mise), `php`, `ruby`, `java` (jvm), and `dotnet` or `dotnet-core`. A
+                 manifest pins with `package.json`'s `engines.node`,
                  `pyproject.toml`'s `requires-python` or `go.mod`'s `go` directive. A `composer.json`
                  pins with `config.platform.php`, then `require.php`. Pin files and these manifests
                  count at any depth: a nested module
