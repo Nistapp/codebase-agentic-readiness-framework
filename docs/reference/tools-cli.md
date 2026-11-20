@@ -1184,6 +1184,6 @@ ruleset hash is not the reports' hash. Long lists are bounded: `data.omitted` co
 | Code | When |
 |---|---|
 | `0` | Done, whatever the status. Read `data.status`. |
-| `1` | A bad argument or a missing file. With `--changed-from`: a worktree that is not the reports' target, a base commit not in its history, or git that cannot list the changes. With `--base-target`: no `--changed-from`, a base report with no commit, or a `--base` that is not that commit. |
+| `1` | A bad argument or a missing file. With `--changed-from`: a worktree that is not the reports' target, a close report whose target is a label (the engine's `--target-label`) and not a path, a base commit not in its history, or git that cannot list the changes. With `--base-target`: no `--changed-from`, a base report with no commit, or a `--base` that is not that commit. |
 | `2` | Refused. A file is not an engine report, or the two reports differ in ruleset hash, target, phase, user-config setting, probes or allowed probe verbs. With `--base-target`, the base report's target must be `DIR` instead. The close report may also be no newer than the base. `data.errors` has one line per reason. |
 | `3` | Internal error. |
