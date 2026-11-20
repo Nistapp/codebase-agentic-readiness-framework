@@ -47,7 +47,7 @@ this one owns the verb names and their wiring, that one owns which tool each ver
 
    | Option | When | Pros | Cons |
    |---|---|---|---|
-   | Native runner (recommended) | Always the default | The spelling `spec/command-surface.md` fixes; the engine resolves it; one runner, no new tool | On Gradle and Maven, CMD-02 stays `UNKNOWN` in the engine; the agent verifies it (Verification) |
+   | Native runner (recommended) | Always the default | The spelling `spec/command-surface.md` fixes; the engine resolves it; one runner, no new tool | On Maven, and on Gradle with a plugin or task the engine does not know, CMD-02 stays `UNKNOWN`; the agent verifies it (Verification) |
    | Thin root `Makefile` on top | The owner wants the same `make <verb>` in every repository of an estate | One invocation style everywhere | A second runner: every target MUST delegate, or CMD-01 reads `PARTIAL` and CMD-03 `FAIL`; adds Make to every host |
    | Scripts folder (`scripts/verbs/*.sh`) | Only when no runner exists at all | Matches an existing `scripts/` habit | No row in the spec: the engine cannot resolve it and every spelling needs owner confirmation |
 
@@ -162,7 +162,7 @@ This playbook installs names and wiring, so its own debt is rare. What counts:
 | Check | Command or file | Expected |
 |---|---|---|
 | CMD-01 | Run each verb once (`npm run <verb>`, `./gradlew <task>`, per component); read the runner manifest | All seven resolve on one runner per component; each exits as its tool says, not "command not found" |
-| CMD-02 | npm: read the `check` script. Gradle: `./gradlew check --dry-run` | npm: the three verbs by name, in order. Gradle: the task list holds the format-check, compile and `test` tasks; the engine's `UNKNOWN` here is its documented limit, not a gap |
+| CMD-02 | npm: read the `check` script. Gradle: `./gradlew check --dry-run` | npm: the three verbs by name, in order. Gradle: the task list holds the format-check, compile and `test` tasks; the engine reads the plugins and `check.dependsOn`, and its `UNKNOWN` (an unknown plugin or task) is its documented limit, not a gap |
 | CMD-03 | Read every second runner's `check` target | Each calls the authoritative runner's `check` and nothing else |
 | CMD-04 | `git status --porcelain` before and after running every read-only verb | Empty both times: no read-only verb wrote a file |
 | EXEC-03 | Read the instruction file | One non-interactive setup command per component |

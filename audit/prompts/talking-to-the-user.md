@@ -93,7 +93,7 @@ pull request. Use these three headings, exactly, as Markdown headings:
 
 - Skipped by the owner: F-007 no CI pipeline (`CI-01` pipeline present): "CI comes next quarter".
 - Failed or blocked: none.
-- Engine limits: `CMD-02` check composes the read-only verbs stays `UNKNOWN` on Gradle; verified by hand.
+- Engine limits: `CMD-02` check composes the read-only verbs stays `UNKNOWN` on Maven; verified by hand.
 - Checks that pass with no item: `CMD-03` no divergent second definition.
 ```
 
@@ -118,7 +118,7 @@ When you ask several questions, number them and letter the options, so the perso
 
 | Option | Pros | Cons | Cost here | How hard to undo |
 |---|---|---|---|---|
-| a. Native runner | One runner; the engine reads it | `CMD-02` check composes the read-only verbs stays `UNKNOWN` | 1 file | Easy: one revert |
+| a. Native runner | One runner; the engine reads it | `CMD-02` check composes the read-only verbs is `UNKNOWN` if a convention plugin wires `check` | 1 file | Easy: one revert |
 | b. Thin root `Makefile` | Same `make check` everywhere | A second runner to keep in step | 2 files, Make on CI | Easy |
 
 **Recommendation:** a, because the repository already builds with Gradle. **Default:** a, applied only when you
