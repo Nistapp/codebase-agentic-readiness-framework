@@ -345,6 +345,79 @@ class KeywordScanTests(unittest.TestCase):
         )
 
 
+class CompoundNameAndShortValueTests(unittest.TestCase):
+    """Issue #11: env-style compound names, short values in plain configuration, and commented-out lines."""
+
+    hits = KeywordScanTests.hits
+
+    def test_a_keyword_at_the_end_of_a_compound_name_is_assigned(self):
+        for name in (
+            f"DB_{PASS.upper()}",
+            f"JWT_{KEEP.upper()}",
+            f"AUTH_{TOKEN.upper()}",
+            f"{KEEP.upper()}_KEY",
+            f"AWS_{KEEP.upper()}_ACCESS_KEY",
+            f"app.{KEEP}-key",
+            f"{KEEP}Key",
+        ):
+            with self.subTest(name=name):
+                self.assertTrue(_line_is_secret(f"{name}={LITERAL}"))
+
+    def test_a_keyword_that_is_not_what_is_assigned_is_not_a_credential(self):
+        for name in (f"{TOKEN.upper()}_URL", f"{PASS}.min-length", f"{PASS.upper()}_HASH", f"my{KEEP}"):
+            with self.subTest(name=name):
+                self.assertFalse(_line_is_secret(f"{name}={LITERAL}"))
+
+    def test_a_short_value_counts_in_a_properties_or_env_style_file_only(self):
+        line = f"db.{PASS}=Hunt2r\n"
+        for name in ("application.properties", ".env", ".env.local", "prod.env", "config/db.properties"):
+            with self.subTest(file=name):
+                self.assertEqual(self.hits({name: line}), [(name, 1)])
+        for name in ("config.yaml", "notes.md", "deploy.sh"):
+            with self.subTest(file=name):
+                self.assertEqual(self.hits({name: line}), [])
+
+    def test_a_short_value_still_needs_six_characters_and_a_mixed_charset(self):
+        self.assertEqual(self.hits({"a.properties": f"{PASS}=Hunt2\n"}), [])
+        self.assertEqual(self.hits({"a.properties": f"{PASS}=hunter\n"}), [])
+        self.assertEqual(self.hits({"a.properties": f"{PASS}=${{DB_VALUE}}\n"}), [])
+
+    def test_a_commented_out_assignment_is_still_a_credential(self):
+        files = {"a.properties": f"# db.{PASS}=Hunt2r\n", ".env.prod": f"# DB_{PASS.upper()}={LITERAL}\n"}
+        self.assertEqual(self.hits(files), [(".env.prod", 1), ("a.properties", 1)])
+
+
+class SentinelAndBadgeTests(unittest.TestCase):
+    """Issue #10: a Bearer token that names itself a sentinel, and a badge URL's public token, are not credentials."""
+
+    hits = KeywordScanTests.hits
+
+    def test_a_bearer_token_whose_body_is_a_sentinel_is_not_a_credential(self):
+        for body in ("sanity.check.invalid", "aaaabbbb.dummy.cccc", "fake-aaaabbbbcccc", "aaaabbbbcccc.sample"):
+            with self.subTest(body=body):
+                self.assertFalse(_line_is_secret(f"Authorization: Bearer {body}", in_code=True))
+
+    def test_a_real_looking_bearer_token_still_fires_even_beside_a_sentinel(self):
+        body = "aaaaBBBBccccDDDD1234"
+        self.assertTrue(_line_is_secret(f"Authorization: Bearer {body}", in_code=True))
+        self.assertTrue(_line_is_secret(f"Bearer sanity.check.invalid or Bearer {body}", in_code=True))
+
+    def test_a_sentinel_literal_assigned_to_a_keyword_is_not_a_credential(self):
+        self.assertFalse(_line_is_secret(f'{TOKEN} = "Invalid-Token-123"', in_code=True))
+
+    def test_a_badge_url_token_is_not_a_credential(self):
+        for line in (
+            f'<img src="https://codecov.io/gh/o/r/branch/main/graph/badge.svg?{TOKEN}=AAAABBBB1234"/>',
+            f"[badge]: https://img.shields.io/endpoint?url=x&{TOKEN}=AAAABBBB1234CCCC",
+        ):
+            with self.subTest(line=line):
+                self.assertEqual(self.hits({"README.md": line + "\n"}), [])
+
+    def test_a_credential_beside_a_badge_url_still_fires(self):
+        line = f"![b](https://img.shields.io/badge/x-y-blue) {TOKEN}={LITERAL}\n"
+        self.assertEqual(self.hits({"README.md": line}), [("README.md", 1)])
+
+
 class Sec02AllowlistTests(unittest.TestCase):
     """SEC-02 subtracts what the repository's own scanner allowlist accepts, and says so."""
 

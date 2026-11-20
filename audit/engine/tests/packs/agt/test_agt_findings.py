@@ -245,6 +245,7 @@ class Agt08Tests(unittest.TestCase):
                 "reached": 20,
                 "total": 28,
                 "reached_tools": [
+                    "Amp",
                     "Augment Code",
                     "Bolt (StackBlitz)",
                     "Charm Crush",
@@ -259,7 +260,6 @@ class Agt08Tests(unittest.TestCase):
                     "Kiro (AWS)",
                     "OpenAI Codex CLI",
                     "Roo Code",
-                    "Sourcegraph Amp",
                     "Trae",
                     "Warp",
                     "Windsurf / Devin Desktop",

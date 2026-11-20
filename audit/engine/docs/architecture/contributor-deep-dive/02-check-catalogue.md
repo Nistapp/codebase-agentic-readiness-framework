@@ -211,7 +211,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
 | `SEC-01` | `.env` untracked and ignored | B | BLOCKER | No tracked `.env`, and ignore rules cover `.env` shapes | Implemented |
-| `SEC-02` | No key-shaped strings in tracked files | B | BLOCKER | Pattern scan of tracked text files for credential shapes; matches reported by path and line only. A keyword such as `token` counts only when it is assigned a literal, not a name, an expression or a reference to the environment or a secret store | Implemented |
+| `SEC-02` | No key-shaped strings in tracked files | B | BLOCKER | Pattern scan of tracked text files for credential shapes; matches reported by path and line only. A keyword such as `token` counts only when it is assigned a literal, not a name, an expression or a reference to the environment or a secret store. A literal or `Bearer` token that names itself a sentinel, and a badge URL, do not count; a properties or env-style file counts a short value | Implemented |
 | `SEC-03` | Ignore patterns cover secret shapes | B | DEGRADER | Ignore rules include key, certificate, and credential extensions | Implemented |
 
 ---
