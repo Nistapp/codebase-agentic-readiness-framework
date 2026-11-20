@@ -195,7 +195,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    exists), naming the triggers and the same change set. The framework's own wording is the example:
    "When a change alters a public interface, observable behaviour, the architecture or a decision, update the
    affected documentation and the decision records in the same change set." Name this repository's decision log
-   path (`docs/adr/`) if T6 created one.
+   path (`docs/architecture/adrs/`) if T6 created one.
 6. **Release boundary (AGT-09).** Build one sentence from facts, never from a template:
    - the branches that exist: the integration branch (from the state or the branch rule already in the file) and
      the default branch (`git symbolic-ref refs/remotes/origin/HEAD`);

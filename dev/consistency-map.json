@@ -2944,7 +2944,7 @@
         "section": "implement/playbooks/establish-docs-contract.md#playbook-establish-docs-contract/steps/generic"
       },
       "move": "establish-docs-contract/row-1",
-      "note": "DOC-04 reads docs/README.md only as a fallback index; row 5 writes docs/adr/README.md, which comes first in the read's index order.",
+      "note": "DOC-04 reads docs/README.md only as a fallback index; row 5 writes docs/architecture/adrs/README.md, which comes first in the read's index order.",
       "status": "kept"
     },
     {
@@ -6117,7 +6117,7 @@
         "table"
       ],
       "id": "establish-docs-contract/row-5",
-      "intent": "DOC-04 reads numbered records and the index in docs/adr/; the policy page is named by the instruction-file line.",
+      "intent": "DOC-04 reads numbered records and the index in docs/architecture/adrs/; the policy page is named by the instruction-file line.",
       "note": "The policy page may be docs/adr-policy.md where the docs use lower-case names.",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
@@ -6125,9 +6125,9 @@
         "step": "Step 4"
       },
       "to": [
-        "docs/adr/README.md",
-        "docs/adr/0000-template.md",
-        "docs/adr/0001-*.md",
+        "docs/architecture/adrs/README.md",
+        "docs/architecture/adrs/0000-template.md",
+        "docs/architecture/adrs/0001-*.md",
         "docs/ADR_POLICY.md"
       ],
       "touches": [
@@ -6189,7 +6189,7 @@
         "code-span"
       ],
       "id": "establish-docs-contract/row-8",
-      "note": "One line naming docs/STYLE_GUIDE.md, docs/adr/, the ADR policy page and docs/architecture/, in the section agents_md.pointer_section names (Inputs 5).",
+      "note": "One line naming docs/STYLE_GUIDE.md, docs/architecture/adrs/, the ADR policy page and docs/architecture/, in the section agents_md.pointer_section names (Inputs 5).",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
         "row": 8,
