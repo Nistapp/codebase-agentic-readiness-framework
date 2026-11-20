@@ -1595,6 +1595,16 @@
       "status": "kept"
     },
     {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "In a wrapper repository: edit the wrapper first so it calls the verb, run the wrapper locally,",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-2",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-04",
       "home": {
         "path": "implement/playbooks/add-ci-parity.md",
@@ -4497,7 +4507,7 @@
         "key"
       ],
       "id": "add-ci-parity/row-2",
-      "note": "The engine reads run: text only, so it does not follow the wrapper (a known engine limit).",
+      "note": "CI-02 reads a shell script a CI step runs, one script deep, so the wrapper's verbs count; TOOL-04 and TOOL-06 read workflow lines only.",
       "origin": {
         "path": "implement/playbooks/add-ci-parity.md",
         "row": 2,
@@ -4507,6 +4517,7 @@
         "scripts/ci/*.sh"
       ],
       "touches": [
+        "CI-02",
         "EXEC-04"
       ]
     },
