@@ -95,12 +95,14 @@ No vendor-specific instruction file exists beside it.
 
 ## Code conventions
 
-These rules are written in full in the files linked. `audit/engine/AGENTS.md` §5 and §6 are the strictest.
+These rules are written in full in the files linked. `audit/engine/AGENTS.md`
+[§5](audit/engine/AGENTS.md#5-coding-standards) and [§6](audit/engine/AGENTS.md#6-testing-standards) are the
+strictest.
 
 - Naming: modules and functions are `snake_case`, as in PEP 8; a private helper starts with `_`. A check ID keeps
   the catalogue's `PACK-NN` form.
-- Layering: follow the Boundaries table below. The engine never imports `audit/tools/`, the audit folder never
-  imports `implement/`, and only `dev/` may import a dev package.
+- Layering: follow the [Boundaries](#boundaries) table below. The engine never imports `audit/tools/`, the audit
+  folder never imports `implement/`, and only `dev/` may import a dev package.
 - Errors and logging: a tool raises `UsageError` (exit 1) or `ValidationFailed` (exit 2), and a bug exits 3
   (`audit/tools/README.md`). The engine raises `AuditUsageError` for bad input. No code uses the `logging` module:
   diagnostics go to stderr, never to stdout.

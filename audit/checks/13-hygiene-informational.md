@@ -27,7 +27,7 @@
 > the file whose presence `HYG-05` reports, so with no such file it is `UNKNOWN` and `HYG-05` owns the
 > finding. None of these checks writes to the target or runs a
 > command in the target's own toolchain; `HYG-07` reads git history read-only for a commit date, never
-> wall-clock time (`audit/engine/AGENTS.md` §5).
+> wall-clock time ([`audit/engine/AGENTS.md` §5](../engine/AGENTS.md#5-coding-standards)).
 >
 > **A described cross-check this pack does not implement.** The framework overview names one exception
 > that "bridges" hygiene and scored checks: where `CODEOWNERS` names paths the audit would also place on
@@ -202,8 +202,9 @@ Engine           `HYG-07`. Any repository-level file whose basename starts with 
                  (the first match, by sort order, is read). None found is `FAIL` outright. Found: the
                  engine compares, via read-only git queries, the candidate's own last-commit date against
                  `HEAD`'s commit date — **recency is always relative to the repository's own history,
-                 never wall-clock time** (`audit/engine/AGENTS.md` §5: no `date.today()`). Within
-                 365 days (`RECENT_WINDOW`) of `HEAD` is `PASS`; older is `FAIL`, with the age stated.
+                 never wall-clock time** ([`audit/engine/AGENTS.md` §5](../engine/AGENTS.md#5-coding-standards): no
+                 `date.today()`). Within 365 days (`RECENT_WINDOW`) of `HEAD` is `PASS`; older is `FAIL`, with
+                 the age stated.
                  Git unable to supply either date (no repository, git absent, or the file untracked) is
                  `UNKNOWN` — never `FAIL`, and never today's date substituted for the missing one.
 Method           automated
