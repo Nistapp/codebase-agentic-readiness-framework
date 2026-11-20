@@ -6,8 +6,8 @@
 > - [`tools-cli.md#build_skillspy`](tools-cli.md#build_skillspy): the bundle that these harnesses install;
 > - [`run-the-evals.md`](../how-to/run-the-evals.md): the eval harness that drives a harness without a person.
 >
-> **Status:** Live for Claude Code and opencode, the two harnesses that were run (S4.1.3, S4.5.3). Codex and Cursor
-> are untested. Their row says only what applies on paper. It is not a verified result.
+> **Status:** Live for Claude Code and opencode, the two harnesses that were run (S4.1.3, S4.5.3). Codex, Gemini
+> CLI and Cursor are untested. Their rows say only what their docs state. That is not a verified result.
 
 A **harness** is the program that runs an AI coding agent, for example Claude Code or opencode. This page records how
 each harness behaved with the audit skill bundle.
@@ -20,8 +20,9 @@ each harness behaved with the audit skill bundle.
 |---|---|---|---|
 | Claude Code | Skill install and run, headless `run-claude.sh` driver | `--dangerously-skip-permissions` (`D56`) | No friction found; see below |
 | opencode | Skill install and run (DeepSeek flash) | `opencode run` | One real quirk found; see below |
-| Codex | Not tested | — | `codex exec` is the documented headless entry point; unverified here |
-| Cursor | Not tested | — | Unverified here |
+| Codex | Untested | — | `codex exec` is the documented headless entry point; unverified here |
+| Gemini CLI | Untested | — | Reads `.agents/skills/`; unverified here |
+| Cursor | Untested | — | Unverified here |
 
 ## Claude Code
 
@@ -72,13 +73,31 @@ With the fix, the run matched the Claude Code run exactly: 69 checks, 35 finding
 > To drive opencode headless, give each `opencode run` one chained shell command, not a numbered list of steps.
 > The harness keeps no memory between `opencode run` calls, so give the full context on every call.
 
-## Codex and Cursor
+## Codex, Gemini CLI and Cursor
 
-Neither harness has run this project's recipe or skill bundle.
+None of these harnesses has run this project's recipe or skill bundle.
 
 - `run-codex.sh` was drafted for the eval harness, then dropped (`D57`). `codex` was not installed in the environment
   that built the eval harness, so its flags could not be checked.
-- Public docs from Anthropic and from each vendor describe Codex's skills support, its `codex exec` entry point, and
-  Cursor's skills and rules support. Nothing here has checked them against this bundle.
+- Each vendor's docs describe where its harness finds skills (see [Vendor docs](#vendor-docs)). Nothing here has
+  checked them against this bundle.
+- Codex and Gemini CLI read `.agents/skills/`, not `.claude/skills/`. Cursor reads both.
+- Gemini CLI's docs say that Antigravity CLI replaced it on 2026-06-18. Antigravity CLI is not covered here.
 
 Treat this row as a gap, not as a negative result.
+
+## Vendor docs
+
+Each harness's own page on skills, read on 2026-11-20. The folders in
+[install the skills](../how-to/install-the-skills.md#step-3-pick-the-skills-folder) come from these pages.
+
+| Harness | Page | Project folders | User folders |
+|---|---|---|---|
+| Claude Code | [code.claude.com/docs/en/skills](https://code.claude.com/docs/en/skills) | `.claude/skills/` | `~/.claude/skills/` |
+| Codex | [learn.chatgpt.com/docs/build-skills](https://learn.chatgpt.com/docs/build-skills) | `.agents/skills/` | `~/.agents/skills/` |
+| Gemini CLI | [geminicli.com/docs/cli/skills](https://geminicli.com/docs/cli/skills/) | `.gemini/skills/`, `.agents/skills/` | `~/.gemini/skills/`, `~/.agents/skills/` |
+| Cursor | [cursor.com/docs/context/skills](https://cursor.com/docs/context/skills) | `.agents/skills/`, `.cursor/skills/`, `.claude/skills/`, `.codex/skills/` | the same folders under `~/` |
+| opencode | [opencode.ai/docs/skills](https://opencode.ai/docs/skills) | `.opencode/skills/`, `.claude/skills/`, `.agents/skills/` | `~/.config/opencode/skills/`, `~/.claude/skills/`, `~/.agents/skills/` |
+
+1. The Codex link is where `developers.openai.com/codex/skills` redirects (HTTP 308).
+2. Claude Code's page names no `.agents/skills/` folder. The whole page was read.
