@@ -323,7 +323,7 @@ the policy files, and for nothing else:
    missing. Then follow the owner's answer (Inputs 5). The file itself is `HYG-05`'s: this step improves a file that
    exists and never creates one. Text comes from
    [`greenfield/templates/CONTRIBUTING.md`](../../greenfield/templates/CONTRIBUTING.md), adapted to the repository's
-   own commands, branch names and file names (D18).
+   own commands, branch names and file names.
    - **a. Propose, from facts.** For each missing item, write one proposed line from what the repository shows. Cite
      the file behind it. Three items:
      - **Setup:** a link to the place that holds the setup command (`README.md` or `AGENTS.md`). Link the command;

@@ -251,7 +251,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     name such as `CLAUDE.md`. "`AGT-08` No competing instruction files, and the reach matrix is stated" counts only
     vendor-named files as competitors.
 11. **Communication rules (AGT-12).** Add a section headed "How to write for people". Match the file's heading
-    level and style (D18), and keep a heading word the
+    level and style, and keep a heading word the
     [`AGT-12` check](../../audit/checks/02-agent-governance.md#agt-12--communication-rules-stated) reads
     (`communication`, `how to write`, `writing for people`, `reporting`, `talking to the user`). Place it after the
     section `agents_md.pointer_section` names; without that preference, place it before the prohibitions section.
@@ -270,7 +270,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     An existing section that already covers one of the three (reader, reports, decisions) gets only the missing
     rules. With `agents_md.comm_long_form=yes`, start the long-form file from the greenfield template
     [`docs/COMMUNICATION_RULES.md`](../../greenfield/templates/docs/COMMUNICATION_RULES.md). Adapt it to the target.
-    Put it under `docs/`, with a name and place that follow the repository's convention (D18). Set its reader to the
+    Put it under `docs/`, with a name and place that follow the repository's convention. Set its reader to the
     persona the owner confirmed. Link it from the section, and keep `communicat` in the file name: AGT-12 reads a
     linked file whose name contains it. Then run the engine's AGT-12.
 12. **Budget.** Count the lines. Over 400: link instead of inlining (move a long section to `docs/` with a link) and
@@ -334,7 +334,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     reader cannot infer from the code.
     - **a. No conventions.** Write `CONVENTIONS.md` from the greenfield
       [`CONVENTIONS.md`](../../greenfield/templates/CONVENTIONS.md) template. Adapt it to the target's stack and to its
-      own naming of files (D18): a repository that already calls its docs `CODE_STYLE.md` or keeps them under `docs/`
+      own naming of files: a repository that already calls its docs `CODE_STYLE.md` or keeps them under `docs/`
       gets that name and place, because the engine finds any of the names the check page lists. Keep the template's
       five sections. Replace `[Project Name]` and every example with the target's own. Text comes from
       `greenfield/templates/` only: write no rule from memory or from this playbook. Add one link line to `AGENTS.md`,
