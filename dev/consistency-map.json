@@ -1719,6 +1719,23 @@
       "status": "kept"
     },
     {
+      "check": "BASE-01",
+      "move": "add-baselines-and-ratchet/row-17",
+      "reason": "Not a real pair: BASE-01 credits .secrets.baseline and .gitleaksignore by name only (_BASELINE_GLOBS in checks/base.py; it never reads their contents), and row 17 regenerates an allowlist that already exists, so the set of baseline names is unchanged. BASE-02 and BASE-03 match the same names the same way.",
+      "status": "accepted"
+    },
+    {
+      "check": "SEC-02",
+      "home": {
+        "path": "implement/playbooks/add-baselines-and-ratchet.md",
+        "quote": "Then regenerate it with the scanner's own command, in its own commit (Commits row 17).",
+        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+      },
+      "move": "add-baselines-and-ratchet/row-17",
+      "note": "SEC-02 suppresses a hit only on a line number the root .secrets.baseline or .gitleaksignore lists (_secret_allowlist.py), so the regenerated allowlist decides whether the shifted hits stay accepted.",
+      "status": "kept"
+    },
+    {
       "check": "CI-01",
       "home": {
         "path": "implement/playbooks/add-ci-parity.md",
@@ -5175,6 +5192,10 @@
       "to": [
         ".secrets.baseline",
         ".gitleaksignore"
+      ],
+      "touches": [
+        "BASE-01",
+        "SEC-02"
       ]
     },
     {
