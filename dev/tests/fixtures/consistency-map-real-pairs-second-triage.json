@@ -1,0 +1,305 @@
+{
+ "about": "The real (move, check) pairs of the second triage of the 1,155 unreviewed pairs (origin/dev 9d25b46, 2026-11-20): a created file that can push a folder over the NAV-03 catch-all limit, a target the row names, a CI step that can call a target no local runner defines (CI-02, CI-03), a measure shift, and one uncertain in-place correction. The inference must infer each one, or the map must declare it.",
+ "pairs": [
+  {
+   "move": "adapt-agents-md/row-1",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-13",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-16",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-18",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-19",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "adapt-agents-md/row-21",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-2",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-3",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-baselines-and-ratchet/row-4",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-ci-parity/row-10",
+   "check": "CI-02",
+   "kind": "break"
+  },
+  {
+   "move": "add-ci-parity/row-10",
+   "check": "CI-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-ci-parity/row-12",
+   "check": "CI-02",
+   "kind": "break"
+  },
+  {
+   "move": "add-ci-parity/row-6",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-ci-parity/row-8",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-hooks-and-commit-rules/row-2",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-hooks-and-commit-rules/row-6",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-hooks-and-commit-rules/row-7",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-hooks-and-commit-rules/row-8",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-hooks-and-commit-rules/row-9",
+   "check": "CI-02",
+   "kind": "break"
+  },
+  {
+   "move": "add-hooks-and-commit-rules/row-9",
+   "check": "CI-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-1",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-10",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-12",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-13",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-2",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-3",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-4",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-5",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-6",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-7",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-8",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "add-repo-hygiene/row-9",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-12",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-13",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-2",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-3",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-7",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "configure-quality-tools/row-8",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "env-inventory-and-secrets/row-1",
+   "check": "NAV-03",
+   "kind": "shift"
+  },
+  {
+   "move": "env-inventory-and-secrets/row-3",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-1",
+   "check": "DOC-01",
+   "kind": "target"
+  },
+  {
+   "move": "establish-docs-contract/row-1",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-12",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-14",
+   "check": "CI-02",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-14",
+   "check": "CI-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-14",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-15",
+   "check": "CI-02",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-15",
+   "check": "CI-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-16",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-19",
+   "check": "CI-02",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-19",
+   "check": "CI-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-2",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-3",
+   "check": "DOC-05",
+   "kind": "target"
+  },
+  {
+   "move": "establish-docs-contract/row-5",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "establish-docs-contract/row-6",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "pin-execution-environment/row-1",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "pin-execution-environment/row-8",
+   "check": "CON-01",
+   "kind": "uncertain"
+  },
+  {
+   "move": "register-index/row-1",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "register-index/row-6",
+   "check": "NAV-03",
+   "kind": "break"
+  },
+  {
+   "move": "untrack-generated/row-2",
+   "check": "NAV-05",
+   "kind": "shift"
+  }
+ ]
+}

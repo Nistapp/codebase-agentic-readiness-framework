@@ -15,7 +15,10 @@ An index is a graph over a repository's documents. It has three kinds of node:
 An edge joins two addresses. Its ``kind`` is ``contains``, ``links`` (which keeps the link's ``anchor``),
 ``mentions``, ``runs`` or ``bundles``, and its ``confidence`` is ``exact`` or ``name-match``. ``name-match`` marks
 a weaker edge: one found by a name (a bare file name in prose, an ID defined in several places with no one
-nearest), or a link to a folder, whose address has no node because the index has no folder nodes.
+nearest), or a link to a folder, whose address has no node because the index has no folder nodes. A ``links``
+edge whose target does not resolve keeps a ``broken`` flag naming why (:data:`LINK_PROBLEMS`): the path leaves the
+repository (``outside``), no tracked file or folder has it (``missing``), or the anchor names no heading of the
+target (``anchor``). A resolved edge has no ``broken`` key.
 
 :func:`to_json` writes the one serialised form: sorted keys, sorted node and edge lists, no timestamps, no absolute
 paths and no line numbers, so two builds of the same tree are byte-identical. ``index.schema.json`` beside this
@@ -37,6 +40,8 @@ ZONES = ("recipe", "docs", "spec", "engine", "tools", "dev", "fixture")
 ID_KINDS = ("check", "requirement", "playbook", "adr", "tool", "schema")
 EDGE_KINDS = ("contains", "links", "mentions", "runs", "bundles")
 CONFIDENCES = ("exact", "name-match")
+#: Why a ``links`` edge's target does not resolve: the values of its ``broken`` flag.
+LINK_PROBLEMS = ("outside", "missing", "anchor")
 
 #: The values of a serialised node's ``node`` key, in the order nodes with the same address sort.
 NODE_TYPES = ("file", "section", "id")
@@ -155,13 +160,15 @@ Node = Union[FileNode, SectionNode, IdNode]
 
 @dataclass(frozen=True)
 class Edge:
-    """A directed edge between two node addresses. Only a ``links`` edge may keep an ``anchor``."""
+    """A directed edge between two node addresses. Only a ``links`` edge may keep an ``anchor`` or a ``broken``
+    flag (one of :data:`LINK_PROBLEMS`)."""
 
     kind: str
     source: str
     target: str
     confidence: str = "exact"
     anchor: str | None = None
+    broken: str | None = None
 
     def __post_init__(self) -> None:
         _check_choice(self.kind, EDGE_KINDS, "edge kind")
@@ -170,6 +177,10 @@ class Edge:
             raise ValueError(f"{self.kind} edge has an empty end: {self.source!r} -> {self.target!r}")
         if self.anchor is not None and self.kind != "links":
             raise ValueError(f"a {self.kind} edge cannot keep an anchor")
+        if self.broken is not None:
+            _check_choice(self.broken, LINK_PROBLEMS, "broken flag")
+            if self.kind != "links":
+                raise ValueError(f"a {self.kind} edge cannot be broken")
 
     def sort_key(self) -> tuple[str, str, str, str, str]:
         return (self.source, self.kind, self.target, self.anchor or "", self.confidence)
@@ -183,6 +194,8 @@ class Edge:
         }
         if self.anchor is not None:
             out["anchor"] = self.anchor
+        if self.broken is not None:
+            out["broken"] = self.broken
         return out
 
 
@@ -259,6 +272,7 @@ def from_dict(data: Mapping[str, Any]) -> Index:
             target=item["target"],
             confidence=item["confidence"],
             anchor=item.get("anchor"),
+            broken=item.get("broken"),
         )
         for item in data["edges"]
     )

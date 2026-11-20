@@ -6,6 +6,7 @@
     audit_eval.py scenarios
     audit_eval.py materialise <scenario> <root>
     audit_eval.py assert <scenario> <root> <transcript>
+    audit_eval.py framework <dest>
 
 ``score.py`` scores an audit's verdicts and citations. This file asserts what an audit agent did: the rules of
 ``audit/SKILL.md`` that no report field shows. The scenarios live in ``audit-fixtures/<scenario>/scenario.json``. They
@@ -18,6 +19,10 @@ implement eval's fixed identity and dates), the output folder ``out/`` with an i
 status, and the intake's hash, which the assertions compare against). Run it with
 ``run-claude.sh <root>/repo <root>/out stockroom``; the transcript is ``--output-format stream-json``, so every tool
 call is on record.
+
+``framework`` copies what the audit recipe needs (``audit/``, ``docs/`` and ``spec/``, without the tests, the eval
+pages and ``dev/``) into ``<dest>``, which must not exist yet. ``run-claude.sh`` runs the audit agent from that copy,
+as the implement eval does, so the agent cannot read what is asserted.
 
 ``assert`` applies the scenario's assertions, AU1 to AU6 (``ASSERTIONS``), to the transcript, the files in ``out/``
 and the target. ``tests/test_audit_eval.py`` runs each one on hand-made good and bad outcomes, with no agent,
@@ -72,9 +77,13 @@ INFO = _common.ToolInfo(
         "audit_eval.py scenarios",
         "audit_eval.py materialise <scenario> <root>",
         "audit_eval.py assert <scenario> <root> <transcript>",
+        "audit_eval.py framework <dest>",
     ),
-    writes="materialise: a new <root> and nothing else. assert and scenarios: nothing.",
+    writes="materialise: a new <root>; framework: a new <dest>; nothing else. assert and scenarios: nothing.",
 )
+
+#: The framework folders an audit run reads: the recipe and its tools, the docs it links, and the requirements.
+FRAMEWORK_FOLDERS = ("audit", "docs", "spec")
 
 
 @dataclass(frozen=True)
@@ -157,6 +166,18 @@ def materialise(name: str, root: Path) -> dict[str, Any]:
     }
     (root / BASELINE_FILE).write_text(json.dumps(baseline, indent=2) + "\n", encoding="utf-8")
     return baseline
+
+
+def framework(dest: Path) -> Path:
+    """Copy the audit recipe into `dest`, a new folder, for the agent under test to run from (``run-claude.sh``).
+
+    The copy holds :data:`FRAMEWORK_FOLDERS` without the tests and the eval pages (``ie.copy_framework``), and no
+    ``dev/``, so the agent cannot read the assertions.
+    """
+    if dest.exists():
+        raise _common.UsageError(f"{dest} exists; framework writes only into a new directory")
+    ie.copy_framework(dest, FRAMEWORK_FOLDERS)
+    return dest.resolve()
 
 
 # --- The outcome -------------------------------------------------------------------------------------------------
@@ -611,6 +632,8 @@ def build_parser() -> _common.ToolParser:
     chk.add_argument("scenario")
     chk.add_argument("root")
     chk.add_argument("transcript")
+    copy = commands.add_parser("framework", help="copy the audit recipe, without dev/ and the tests, for a run")
+    copy.add_argument("dest")
     return parser
 
 
@@ -634,7 +657,10 @@ def handler(argv: Sequence[str]) -> _common.Result:
             data=data,
             summary=f"audit_eval: {args.scenario} " + ("passed" if not failed else f"failed {', '.join(failed)}"),
         )
-    raise _common.UsageError("give a subcommand: scenarios, materialise or assert")
+    if args.command == "framework":
+        dest = framework(Path(args.dest).expanduser())
+        return _common.Result(data={"framework": str(dest)}, summary=f"audit_eval: the recipe copied to {dest}")
+    raise _common.UsageError("give a subcommand: scenarios, materialise, assert or framework")
 
 
 if __name__ == "__main__":

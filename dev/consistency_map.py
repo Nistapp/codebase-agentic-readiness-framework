@@ -99,6 +99,17 @@ KIND_FILTERED_READS: dict[str, frozenset[str]] = {
     "EXEC-04": frozenset({"source", "script"}),
     "NAV-02": frozenset({"source", "build"}),
 }
+#: Rule R4: the checks whose verdict ignores the target's content, so no move can change it. ``check_con04``
+#: (``audit/engine/audit/rules/checks/con.py:650-664``) returns ``UNKNOWN`` without ``--emit-baseline``. With it,
+#: the check returns ``PASS`` once the draft is written outside the target, and ``UNKNOWN`` when the draft may not
+#: be written. The draft's text comes from the target; the verdict does not. A test in
+#: ``dev/tests/test_consistency_map.py`` runs the check on two different targets.
+CONTENT_INDEPENDENT_READS = frozenset({"CON-04"})
+#: Rule R6: the checks whose ``**`` place is a scan of tracked text that only an untrack move can change. No
+#: playbook or greenfield template ships a secret-shaped line (a test runs the engine's ``sec._line_is_secret`` over
+#: every such file), so a write or a create cannot add a ``SEC-02`` hit; an untrack can take one away. The check's
+#: other places, its allowlist files, still count for every move.
+UNTRACK_ONLY_SCANS = frozenset({"SEC-02"})
 
 
 class MapError(Exception):
@@ -357,6 +368,8 @@ def place_overlaps(path: str, where: dict[str, Any]) -> bool:
     under it (rule R1): a move of ``artefacts/`` reaches the root place ``artefacts``, not every name the scan reads.
     A move path whose base name holds a wildcard does not overlap a literal name read at any depth or at repository
     level (rule R2): ``.github/workflows/*.yml`` is not ``Taskfile.yml``.
+    A glob that ends in ``/**`` is not a folder here: ``**/tests/**`` can hold a ``*.py`` file a read at any depth
+    looks for (``add-baselines-and-ratchet/row-15`` and "``NAV-05`` Public-symbol documentation coverage").
     Root and glob places, and a glob move path, match folder by folder (:func:`_glob_matches`). A place with
     ``case: fold`` is met by a path in any case.
     """
@@ -391,19 +404,86 @@ def scan_kind(path: str) -> str | None:
     return str(_engine_module("audit.scan")._classify(probe).value)
 
 
-def _kind_read(path: str, where: dict[str, Any], read: dict[str, Any], action: str) -> bool:
-    """Rule R3: whether a ``**`` place of a kind-filtered read can see the move path's file kind."""
-    kinds = KIND_FILTERED_READS.get(read.get("check", ""))
-    if kinds is None or action == "untrack" or where["path"] != "**":
-        return True
+def _kind_samples() -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Stand-ins for a wildcard: a plain, a test and a generated folder for ``**/``; for a name, a plain name, a
+    test name, a name with each suffix the scan gives a kind, and each file name the scan gives a kind."""
+    scan = _engine_module("audit.scan")
+    folders = ("", "x/", "tests/", "dist/")
+    names = ("x", "test_x", *(f"x{suffix}" for suffix in scan._SUFFIX_KINDS), *scan._NAME_KINDS)
+    return folders, names
+
+
+def possible_kinds(path: str) -> frozenset[str] | None:
+    """The scan kinds the files a move path names can have, or ``None`` for a folder.
+
+    A literal path has its one kind (:func:`scan_kind`). A wildcard path has each kind a stand-in gives
+    (:func:`_kind_samples`): ``**/dist/**`` can hold ``dist/package.json``, a manifest, so it is not only
+    generated output.
+    """
+    if _is_folder(path):
+        return None
+    if not _is_wild(path):
+        return frozenset({str(scan_kind(path))})
+    classify = _engine_module("audit.scan")._classify
+    folders, names = _kind_samples()
+    pattern = re.sub(r"\[[^\]]*\]|\?", "x", path)
+    kinds: set[str] = set()
+    for folder in folders:
+        in_folder = pattern.replace("**/", folder)
+        for name in names:
+            kinds.add(str(classify(in_folder.replace("**", name).replace("*", name)).value))
+    return frozenset(kinds)
+
+
+def _moved_kinds(move: dict[str, Any]) -> frozenset[str] | None:
+    """Rule R3c: the kinds moved text keeps in its destination folder, the kinds of its sources (``None``: unknown)."""
+    kinds: set[str] = set()
+    for source in move.get("from", []):
+        found = possible_kinds(source)
+        if found is None:
+            return None
+        kinds |= found
+    return frozenset(kinds) or None
+
+
+def _path_kinds(path: str, move: dict[str, Any], side: str) -> frozenset[str] | None:
+    """The scan kinds a move path can have for rule R3, or ``None`` when they are not known.
+
+    An untracked path has every kind it can match (rule R3b), and an untracked folder is unknown. A folder that a
+    move sends text into holds the kinds of that text's sources (rule R3c). Any other folder is unknown, and any
+    other path has its one kind.
+    """
+    if move["action"] == "untrack":
+        return possible_kinds(path)
+    if _is_folder(path):
+        return _moved_kinds(move) if move["action"] == "move" and side == "to" else None
     kind = scan_kind(path)
-    return kind is None or kind in kinds
+    return None if kind is None else frozenset({kind})
 
 
-def _covers(paths: Sequence[str], read: dict[str, Any], action: str) -> str | None:
+def _kind_read(path: str, where: dict[str, Any], read: dict[str, Any], move: dict[str, Any], side: str) -> bool:
+    """Rules R3 and R6: whether a ``**`` place can see the move path.
+
+    For a kind-filtered read (R3), the path must be able to hold a kind the engine reads there. For an untrack-only
+    scan (R6), the move must untrack the path. Every other place sees every path.
+    """
+    check = read.get("check", "")
+    if where["path"] != "**":
+        return True
+    if check in UNTRACK_ONLY_SCANS and move["action"] != "untrack":
+        return False
+    kinds = KIND_FILTERED_READS.get(check)
+    if kinds is None:
+        return True
+    found = _path_kinds(path, move, side)
+    return found is None or bool(found & kinds)
+
+
+def _covers(move: dict[str, Any], side: str, read: dict[str, Any]) -> str | None:
+    paths: list[str] = move.get(side, [])
     for path in paths:
         for where in read["where"]:
-            if place_overlaps(path, where) and _kind_read(path, where, read, action):
+            if place_overlaps(path, where) and _kind_read(path, where, read, move, side):
                 return path
     return None
 
@@ -412,13 +492,15 @@ def touch(move: dict[str, Any], read: dict[str, Any]) -> str | None:
     """The move path through which ``move`` touches ``read``, or ``None``.
 
     For a check in :data:`KIND_FILTERED_READS`, the ``**`` place counts only for a path of a kind the engine reads
-    there (rule R3). An untrack move is exempt: it takes a file of any kind out of the scan. A folder is exempt
-    too, since the kind of the files it holds is not known.
+    there (rule R3). An untracked path counts for every kind it can match (R3b). A folder that receives moved text
+    counts for the kinds of its sources (R3c). Any other folder counts for every kind, since the kinds of its files
+    are not known. A check in :data:`CONTENT_INDEPENDENT_READS` is never touched (R4). The ``**`` place of a check
+    in :data:`UNTRACK_ONLY_SCANS` is touched only by an untrack (R6).
     """
     action = move["action"]
-    if action == "none":
+    if action == "none" or read.get("check") in CONTENT_INDEPENDENT_READS:
         return None
-    hit = _covers(move.get("from", []), read, action)
+    hit = _covers(move, "from", read)
     if action in ("move", "untrack") and hit:
         return hit
     kind = read["what"]["kind"]
@@ -429,7 +511,7 @@ def touch(move: dict[str, Any], read: dict[str, Any]) -> str | None:
         fits = not content or bool(content & _CONTENT_FOR[kind])
     if not fits:
         return None
-    return _covers(move.get("to", []), read, action) or (hit if action in ("write", "rewrite") else None)
+    return _covers(move, "to", read) or (hit if action in ("write", "rewrite") else None)
 
 
 def unkept_pairs(cmap: dict[str, Any]) -> list[tuple[str, str]]:
