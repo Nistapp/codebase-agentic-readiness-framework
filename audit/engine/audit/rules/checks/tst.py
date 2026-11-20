@@ -130,6 +130,7 @@ def _inline_commands(text: str) -> list[tuple[int, str]]:
         spans.extend((line_no, m.group(2).strip()) for m in _CODE_SPAN_RE.finditer(line) if m.group(2).strip())
     return spans
 
+
 #: Coverage configuration filenames. Present at any depth is evidence.
 _COVERAGE_FILES: tuple[str, ...] = (
     ".coveragerc",

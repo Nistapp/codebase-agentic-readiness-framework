@@ -210,7 +210,8 @@ class NpmCompositionTests(unittest.TestCase):
             extra='"test:coverage":"jest --coverage",',
         )
         self.assertEqual(
-            (check["verdict"], check["summary"]), ("PASS", "check (package.json) composes: format-check, typecheck, test")
+            (check["verdict"], check["summary"]),
+            ("PASS", "check (package.json) composes: format-check, typecheck, test"),
         )
 
     def test_a_coverage_script_that_calls_the_test_verb_is_the_test_concern(self):
