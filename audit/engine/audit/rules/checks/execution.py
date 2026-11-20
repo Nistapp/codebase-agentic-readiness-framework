@@ -141,12 +141,13 @@ _PIN_FILES: dict[str, tuple[str, ...]] = {
 _PINNABLE = frozenset(_PIN_FILES) | {"go"}
 
 #: A shared ``.tool-versions`` line counts for the ecosystem whose asdf or mise plugin name starts it. The JDK pins
-#: jvm (``java``); .NET's asdf plugin is ``dotnet-core`` and mise's is ``dotnet``.
+#: jvm (``java``); .NET's asdf plugin is ``dotnet-core`` and mise's is ``dotnet``; Go's asdf plugin is ``golang`` and
+#: mise's core plugin is ``go``.
 _TOOL_VERSIONS = {
     "node": re.compile(r"(?mi)^\s*(?:nodejs|node)\s+\S+"),
     "python": re.compile(r"(?mi)^\s*python\s+\S+"),
     "rust": re.compile(r"(?mi)^\s*rust\s+\S+"),
-    "go": re.compile(r"(?mi)^\s*golang\s+\S+"),
+    "go": re.compile(r"(?mi)^\s*(?:golang|go)\s+\S+"),
     "php": re.compile(r"(?mi)^\s*php\s+\S+"),
     "ruby": re.compile(r"(?mi)^\s*ruby\s+\S+"),
     "dotnet": re.compile(r"(?mi)^\s*(?:dotnet-core|dotnet)\s+\S+"),
