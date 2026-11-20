@@ -992,7 +992,7 @@ left behind is removed, with a warning.
 | `the report has findings on checks with no theme: ...` | Add the checks to `THEMES` in `progress.py`. |
 | `no state in ...` | Run `init` first. |
 | `N states in ...; pick one with --label` | Pass `--label`. |
-| `the state is not valid: N errors` | Fix each entry in `data.errors`; `schema:` errors come from the schema, `rule:` errors from the rules above. |
+| `the state is not valid: N errors` | Fix each entry in `data.errors`; `schema:` errors come from the schema, `rule:` errors from the rules of the [state contract](../../implement/state.md). |
 | `refusing a state file that is a symlink` | Replace the link with the real file. |
 
 ## check_drift.py
