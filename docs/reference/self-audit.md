@@ -16,20 +16,27 @@ score from falling.
 
 | Field | Value |
 | --- | --- |
-| Phase-1 score | **0.9115** |
+| Phase-1 score | **0.9231** |
 | Date | 2026-11-20 |
 | Engine | `python-agentic-audit` 0.4.1 |
-| Ruleset | `2026-11-20.15` (hash `01fb2871bf2c9875`) |
+| Ruleset | `2026-11-20.15` (hash `776be4fe00c7a3bb`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; the walk skips git-ignored folders such as the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
 
-Since the 2026-11-17 run (0.9269), the score fell to 0.9115 with no change to the repository's readiness. One verdict
-moved: "`NAV-01` declared component boundaries" went from `PASS` to `UNKNOWN`. Ruleset `2026-11-20.5` (pull
-request #224) reads the root component's manifest at the repository root only. This repository has no root build
-manifest: its `package.json`, `pyproject.toml` and `go.mod` files sit under `dev/tools/`. The 2026-11-17 `PASS`
-named a root manifest that does not exist; the engine now says it cannot tell. No finding opened or closed, and the
-rulesets between `2026-11-17.3` and `2026-11-20.15` moved no other verdict here.
+Since the 2026-11-17 run (0.9269), the score moved to 0.9231 with no change to the repository's readiness. Two
+verdicts moved, both from engine changes:
+
+- "`EXEC-02` lockfile committed and consistent" went from `PARTIAL` to `PASS`. Ruleset `2026-11-20.9` (pull request
+  #222) compares each tracked lockfile with the manifest in its own folder, not only the shallowest. So the dev
+  tools' `dev/tools/uv.lock`, `dev/tools/package-lock.json` and the `go.sum` of `dev/tools/osv/` and
+  `dev/tools/actionlint/` are now read beside their manifests.
+- "`NAV-01` declared component boundaries" went from `PASS` to `UNKNOWN`. Ruleset `2026-11-20.5` (pull request #224)
+  reads the root component's manifest at the repository root only. This repository has no root build manifest: its
+  `package.json`, `pyproject.toml` and `go.mod` files sit under `dev/tools/`. The 2026-11-17 `PASS` named a root
+  manifest that does not exist; the engine now says it cannot tell.
+
+No finding opened or closed, and the rulesets between `2026-11-17.3` and `2026-11-20.15` moved no other verdict here.
 
 Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` and `HYG-06` with the security policy,
 `SECURITY.md`. On 2026-11-09, `TOOL-04` closed with the dependency audit in
@@ -56,8 +63,8 @@ The score was 0.6762 on 2026-11-05, before the repository adopted the Phase 1 re
 
 | Verdict | Checks |
 | --- | --: |
-| PASS | 68 |
-| PARTIAL | 3 |
+| PASS | 69 |
+| PARTIAL | 2 |
 | FAIL | 0 |
 | UNKNOWN | 5 |
 | ATTEST | 0 |
@@ -75,9 +82,8 @@ Every check that is not `PASS`, with the reason it is open.
 | Check | Verdict | Severity | Why it is open |
 | --- | --- | --- | --- |
 | `BASE-02` | PARTIAL | DEGRADER | The T5 playbook was applied (D32): `.quality-baseline.json` holds the counts (ruff 0, mypy 0, Markdown lint outside the ratchet 735) and `make format-check`, `make typecheck` and `make docs-lint` fail when one goes up. The check still reads PARTIAL by design: it credits only a numeric budget flag (`--max-warnings N`), and none of these tools has one. Engine issue [#45](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/45) tracks it; the coverage floor (91) is unchanged and `BASE-04` passes |
-| `EXEC-02` | PARTIAL | BLOCKER | No finding: the lockfiles of the pinned dev tools (`dev/tools/uv.lock`, `dev/tools/package-lock.json` and the `go.sum` of each Go tool module, `dev/tools/osv/` and `dev/tools/actionlint/`) cannot be checked against their manifests without running the package managers. `dev/tests/test_tool_pins.py` checks that they agree; the engine does not read that test |
-| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 48% of public symbols documented (895 of 1866). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
-| `NAV-01` | UNKNOWN | DEGRADER | No finding: this repository has no root build manifest, so the component detector finds no declared component. The framework is documentation plus standard-library Python tools; its only manifests pin the dev tools under `dev/tools/`. Whether to declare components at the root is open for the owner |
+| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 48% of public symbols documented (923 of 1911). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
+| `NAV-01` | UNKNOWN | DEGRADER | No finding: this repository has no root build manifest, so the component detector finds no declared component. The framework is documentation plus standard-library Python tools; its only manifests pin the dev tools under `dev/tools/`. Owner decision (2026-11-20): it stays `UNKNOWN`. A manifest added only to pass the check would not describe a real component; the boundaries are written in the root `AGENTS.md` (Boundaries table) |
 | `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, the user-level index store, or `--emit-baseline`; not run here |
 
 No owner exception is open. The `IDX-01` exception (D21), the `TOOL-04` exception (D33) and the `EXEC-01` and

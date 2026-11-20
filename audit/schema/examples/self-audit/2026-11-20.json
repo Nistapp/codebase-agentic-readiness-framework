@@ -184,6 +184,7 @@
         "kind": "harness_matrix",
         "reached": 20,
         "reached_tools": [
+          "Amp",
           "Augment Code",
           "Bolt (StackBlitz)",
           "Charm Crush",
@@ -198,7 +199,6 @@
           "Kiro (AWS)",
           "OpenAI Codex CLI",
           "Roo Code",
-          "Sourcegraph Amp",
           "Trae",
           "Warp",
           "Windsurf / Devin Desktop",
@@ -249,7 +249,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "",
+      "summary": "no harness config names an instruction target; defers to no file that a harness config leaves unloaded",
       "tier": "B",
       "title": "Instruction indirection resolved",
       "verdict": "PASS"
@@ -335,16 +335,16 @@
     {
       "data": {
         "breakdown": {
-          "long_sentences": 311,
+          "long_sentences": 313,
           "pages": 56,
           "pages_without_diagram": 0,
-          "sentences": 3850,
+          "sentences": 3859,
           "vague_words": 9,
-          "words": 50095
+          "words": 50235
         },
         "kind": "counter",
         "unit": "long sentences",
-        "value": 311
+        "value": 313
       },
       "id": "DOC-05",
       "pack": "DOC",
@@ -352,7 +352,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "311/3850 sentences over the limit (8.1%), 9 vague word(s) (0.18 per 1,000 words), 0 explanation or tutorial page(s) without a diagram, in 56 page(s)",
+      "summary": "313/3859 sentences over the limit (8.1%), 9 vague word(s) (0.18 per 1,000 words), 0 explanation or tutorial page(s) without a diagram, in 56 page(s)",
       "tier": "B",
       "title": "Docs are readable",
       "verdict": "PASS"
@@ -517,7 +517,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "wired: dev/consistency-map.json core.hooksPath, lefthook.yml",
+      "summary": "wired: .audit-baseline.json core.hooksPath, lefthook.yml",
       "tier": "B",
       "title": "Local hook chain active",
       "verdict": "PASS"
@@ -657,9 +657,6 @@
         "kind": "path_list",
         "paths": [
           "Makefile",
-          "audit/engine/",
-          "AGENTS.md",
-          "_typos.toml",
           ".python-version",
           "dev/tools/pyproject.toml",
           "dev/tools/package.json",
@@ -670,8 +667,6 @@
           ".github/",
           "dev/commit_lint.py",
           ".coveragerc",
-          ".quality-baseline.json",
-          ".secrets.baseline",
           "docs/reference/audit-master.md",
           "docs/reference/implement-master.md",
           "audit/catalogue.json",
@@ -680,13 +675,10 @@
           ".skip",
           "greenfield/bootstrap/bootstrap.py",
           "docs/architecture/adrs/",
-          "audit/engine/AGENTS.md",
           "audit/tools/",
           "implement/",
           "dev/",
           "audit/tools/README.md",
-          "ruff.toml",
-          "mypy.ini",
           "README.md",
           "docs/",
           "greenfield/",
@@ -709,6 +701,8 @@
           "schema/",
           "tools/",
           "audit/AGENTS.md",
+          "audit/engine/",
+          "audit/engine/AGENTS.md",
           "playbooks/",
           "state.md",
           "progress.py",
@@ -739,7 +733,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, audit/engine/, AGENTS.md, _typos.toml, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod (+62 more)",
+      "summary": "the prohibitions section of AGENTS.md names paths that exist: Makefile, .python-version, dev/tools/pyproject.toml, dev/tools/package.json, dev/tools/osv/go.mod, dev/tools/actionlint/go.mod, lefthook.yml, dev (+56 more)",
       "tier": "B",
       "title": "Allow/deny artifact present",
       "verdict": "PASS"
@@ -814,10 +808,10 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "consistency unverified: dev/tools/actionlint/go.sum, dev/tools/package-lock.json, dev/tools/uv.lock",
+      "summary": "tracked: dev/tools/actionlint/go.sum, dev/tools/osv/go.sum, dev/tools/package-lock.json, dev/tools/uv.lock",
       "tier": "B",
       "title": "Lockfile committed and consistent",
-      "verdict": "PARTIAL"
+      "verdict": "PASS"
     },
     {
       "data": {},
@@ -836,12 +830,13 @@
       "data": {
         "kind": "env_keys",
         "missing": [],
+        "optional": [],
         "referenced": [
           "AGENTIC_BOOTSTRAP_TEMPLATES",
           "TMPDIR"
         ],
         "templates": [
-          "env.example"
+          ".env.example"
         ]
       },
       "id": "EXEC-04",
@@ -915,7 +910,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile ($(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)); 158 test file(s)",
+      "summary": "test verb on Makefile ($(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)); 169 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -948,7 +943,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 158 test file(s): python 2; total 2",
+      "summary": "skip/xfail census across 169 test file(s): python 2; total 2",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -1033,10 +1028,10 @@
     },
     {
       "data": {
-        "denominator": 1866,
+        "denominator": 1911,
         "kind": "ratio",
         "method": "python: module-level def/class not starting with '_'",
-        "numerator": 895,
+        "numerator": 923,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -1045,7 +1040,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "895/1866 public symbols documented (48%); method: python: module-level def/class not starting with '_'",
+      "summary": "923/1911 public symbols documented (48%); method: python: module-level def/class not starting with '_'",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1443,24 +1438,25 @@
     }
   ],
   "inventory": {
-    "files_inspected": 487,
-    "files_set_aside": 702,
-    "files_skipped": 7,
+    "files_inspected": 498,
+    "files_set_aside": 745,
+    "files_skipped": 2,
+    "ignored_dirs": [],
     "set_aside": [
       {
         "files": 3,
         "path": "audit/engine/examples"
       },
       {
-        "files": 453,
+        "files": 489,
         "path": "audit/engine/tests/fixtures"
       },
       {
-        "files": 33,
+        "files": 34,
         "path": "audit/schema/examples"
       },
       {
-        "files": 139,
+        "files": 144,
         "path": "dev/eval/expected/fixtures"
       },
       {
@@ -1476,7 +1472,7 @@
         "path": "docs/templates"
       },
       {
-        "files": 44,
+        "files": 45,
         "path": "greenfield/templates"
       },
       {
@@ -1510,15 +1506,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "199d2c07deb94aeee1a023f9d0eae4894420cec4",
+    "framework_revision": "6ce257b241fd326e7a812c8eeaa55acce550e018",
     "git_branch": "fix/engine-go-pin-and-self-audit",
     "git_dirty": false,
-    "git_sha": "199d2c07deb94aeee1a023f9d0eae4894420cec4",
+    "git_sha": "6ce257b241fd326e7a812c8eeaa55acce550e018",
     "phase": 1,
     "probes_enabled": false,
-    "ruleset_hash": "01fb2871bf2c9875",
+    "ruleset_hash": "776be4fe00c7a3bb",
     "ruleset_revision": "2026-11-20.15",
-    "scanned_at": "2026-11-20T04:35:44+00:00",
+    "scanned_at": "2026-11-20T05:42:54+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {
@@ -1553,8 +1549,8 @@
     "checks": {
       "attest": 0,
       "fail": 0,
-      "partial": 3,
-      "pass": 68,
+      "partial": 2,
+      "pass": 69,
       "unknown": 5
     },
     "checks_applicable": 76,
@@ -1563,7 +1559,7 @@
     "cosmetic": 0,
     "coverage_note": "61 of 61 scoreable checks are implemented in this ruleset revision; every other check reports UNKNOWN and earns no credit, so this report understates readiness rather than certifying it",
     "degraders": 1,
-    "phase1_score": 0.9115
+    "phase1_score": 0.9231
   },
   "unattested": [
     "index-in-use",
