@@ -1301,8 +1301,10 @@ READS: dict[str, Reads] = {
             *_at(
                 ANY_DEPTH,
                 "package-lock.json",
+                "npm-shrinkwrap.json",
                 "pnpm-lock.yaml",
                 "yarn.lock",
+                "bun.lock",
                 "bun.lockb",
                 "poetry.lock",
                 "uv.lock",

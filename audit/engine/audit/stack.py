@@ -36,15 +36,18 @@ ECOSYSTEM_SIGNALS: dict[str, tuple[str, ...]] = {
 #: counted: a test, a generated file or a fixture is not.
 SOURCE_SIGNALS: dict[str, str] = {"python": ".py"}
 
+#: package manager -> the files that name it: a base name, or a glob (with ``*``) matched against each file, as in
+#: :data:`ECOSYSTEM_SIGNALS`. `EXEC-02` reads the names of an ecosystem's managers as its lockfiles.
 PACKAGE_MANAGERS: dict[str, tuple[str, ...]] = {
-    "npm": ("package-lock.json",),
+    "npm": ("package-lock.json", "npm-shrinkwrap.json"),
     "pnpm": ("pnpm-lock.yaml",),
     "yarn": ("yarn.lock",),
-    "bun": ("bun.lockb",),
-    "pip": ("requirements.txt",),
+    "bun": ("bun.lock", "bun.lockb"),
+    "pip": ("requirements*.txt",),
     "poetry": ("poetry.lock",),
     "uv": ("uv.lock",),
     "pipenv": ("Pipfile.lock",),
+    "pdm": ("pdm.lock",),
     "gradle": ("gradle.lockfile",),
     "maven": ("pom.xml",),
     "cargo": ("Cargo.lock",),
@@ -155,19 +158,18 @@ class Stack:
         return " · ".join(parts) or "stack not recognised"
 
 
+def _named(inv: Inventory, names: set[str], signal: str) -> bool:
+    """Whether a file at any depth has the signal as its base name, or, for a glob, matches it."""
+    return bool(inv.match(signal)) if "*" in signal else signal in names
+
+
 def detect_stack(inv: Inventory) -> Stack:
     stack = Stack()
     names = {f.rel.split("/")[-1] for f in inv.files}
 
     for eco, manifests in ECOSYSTEM_SIGNALS.items():
-        for pattern in manifests:
-            if "*" in pattern:
-                if inv.match(pattern):
-                    stack.ecosystems.add(eco)
-                    break
-            elif pattern in names:
-                stack.ecosystems.add(eco)
-                break
+        if any(_named(inv, names, pattern) for pattern in manifests):
+            stack.ecosystems.add(eco)
         suffix = SOURCE_SIGNALS.get(eco)
         if (
             eco not in stack.ecosystems
@@ -179,7 +181,7 @@ def detect_stack(inv: Inventory) -> Stack:
             stack.notes.append(f"{eco} recognised from its source files: no manifest names it")
 
     for name, signals in PACKAGE_MANAGERS.items():
-        if any(inv.has(s) for s in signals):
+        if any(_named(inv, names, s) for s in signals):
             stack.package_managers.add(name)
 
     for provider, globs in CI_PROVIDERS.items():
