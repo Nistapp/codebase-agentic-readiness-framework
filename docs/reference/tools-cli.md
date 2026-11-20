@@ -2,7 +2,7 @@
 
 > **Audience:** Everyone
 > **Source of truth:** each tool's `--describe` output; generated [`tools/CATALOGUE.md`](../../audit/tools/CATALOGUE.md)
-> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all ten rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, `compare_reports.py`, and `check_regressions.py`.
+> **Status:** Live for `engine.py`, `validate_report.py`, `report.py`, `render_report.py`, `facts.py`, `recipe_lint.py` (all ten rules, including the generated catalogue) `build_skills.py`, `progress.py` (all commands), `check_drift.py`, `compare_reports.py`, `check_regressions.py`, and `check_gates.py`.
 
 ---
 
@@ -21,6 +21,7 @@
 | [`check_drift.py`](#check_driftpy) | Lists the audit findings whose cited files changed between the audited commit and `HEAD` | Live |
 | [`compare_reports.py`](#compare_reportspy) | Compares two audit reports: which checks and findings moved, and which moves the readiness state explains | Live |
 | [`check_regressions.py`](#check_regressionspy) | Compares two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes | Live |
+| [`check_gates.py`](#check_gatespy) | Reads a theme's diff for a weakened gate or a dependency the owner did not approve | Live |
 
 ## Every tool
 
@@ -1186,4 +1187,88 @@ ruleset hash is not the reports' hash. Long lists are bounded: `data.omitted` co
 | `0` | Done, whatever the status. Read `data.status`. |
 | `1` | A bad argument or a missing file. With `--changed-from`: a worktree that is not the reports' target, a close report whose target is a label (the engine's `--target-label`) and not a path, a base commit not in its history, or git that cannot list the changes. With `--base-target`: no `--changed-from`, a base report with no commit, or a `--base` that is not that commit. |
 | `2` | Refused. A file is not an engine report, or the two reports differ in ruleset hash, target, phase, user-config setting, probes or allowed probe verbs. With `--base-target`, the base report's target must be `DIR` instead. The close report may also be no newer than the base. `data.errors` has one line per reason. |
+| `3` | Internal error. |
+
+## check_gates.py
+
+Reads the diff of a theme branch and names each weakened gate and each dependency the owner did not approve. It
+checks two hard rules of the implement recipe at theme close. One is "Never weaken a gate" (boundary B-03). The
+other is "Never install a dependency the owner did not approve" (boundary B-11). It reads the worktree with
+read-only git and writes nothing. The source is [`check_gates.py`](../../implement/tools/check_gates.py); the
+decision is [ADR 0006](../../implement/docs/architecture/adrs/0006-a-weakened-gate-stops-the-theme.md).
+
+### Synopsis
+
+```text
+python3 implement/tools/check_gates.py WORKTREE --base SHA [--theme REF] [--state FILE]
+python3 implement/tools/check_gates.py --describe
+```
+
+`--base` is the commit the theme started from. `--theme` is its last commit, `HEAD` by default; uncommitted changes
+are not read, and a dirty worktree gets a warning. `--state` is the implement state, the
+`<label>-agentic-readiness-state.json` file in the workspace.
+
+### What it reports
+
+The tool lists the changed paths with `git diff --name-status -M <base> <theme>`, so a renamed file is one change.
+It reads both sides of each changed file with `git cat-file`. A binary file, or one over 2 MiB, is not read.
+
+| Finding | Boundary | When |
+|---|---|---|
+| `test-deleted` | B-03 gates | A test file is deleted, or renamed to a path that is not a test file. A test file is one the engine's `TST-03` census counts. |
+| `skip-added` | B-03 gates | A test file holds more skip, ignore or expected-failure markers than at the base. The markers are the engine's `TST-03` table, loaded through `engine.py`. A JavaScript file is counted with each runner's table, and the largest count is used. |
+| `suppression-added` | B-03 gates | A source file holds more inline suppressions than at the base: `# noqa`, `# type: ignore`, `# pragma: no cover`, `eslint-disable`, `@ts-ignore`, `//nolint`, `#[allow(`, `@SuppressWarnings` and the like. Markdown is not read. |
+| `floor-lowered`, `floor-removed` | B-03 gates | A coverage floor (`fail_under`, `--cov-fail-under`, a Jest, Vitest, nyc or c8 threshold) is lower than at the base, or gone. Floors are pooled over the changed files, so a floor moved to another file is still compared. |
+| `limit-raised` | B-03 gates | A `--max-warnings` number, or a number in a `*baseline*.json` or `*ratchet*.json` file, is higher than at the base. |
+| `gate-removed` | B-03 gates | A gate command (`pytest`, `mypy`, `ruff`, `eslint`, `go test` and others) that a gate file ran at the base is in no gate file now. Or a gate target of a Makefile (`check`, `test`, `lint`...) or a gate script of a `package.json` is gone. |
+| `gate-loosened` | B-03 gates | More lines of a gate file run a gate command and then `\|\| true`, `\|\| :` or `\|\| exit 0`. |
+| `dependency-added` | B-11 installs | A dependency name is declared at the theme and not at the base, and `dependencies.approved` does not list it. |
+| `lockfile-changed` | B-11 installs | A lockfile changed, and no approved dependency was added in its ecosystem. |
+
+A gate file is one of these:
+
+- a command runner (`Makefile`, `justfile`, `Taskfile.yml`, `*.mk`) or a shell script;
+- a `package.json`, of which only the scripts are read;
+- a hook (`.husky/`, `.githooks/`, `lefthook.yml`, `.pre-commit-config.yaml`);
+- a CI file (`.github/workflows/`, `.gitlab-ci.yml` and the like).
+
+The manifests read are `package.json`, `pyproject.toml` (PEP 621, dependency groups, Poetry, uv and PDM),
+`requirements*.txt`, `Pipfile`, `go.mod`, `Cargo.toml`, `Gemfile` and `composer.json`. Names are compared in
+lower case, with each run of `-`, `_` and `.` as one `-`.
+
+### The owner's choices
+
+Two preferences in the state record what the owner chose. Their values are lists, separated by commas or white
+space; the value `none` is an empty list.
+
+| Key | Holds | Effect |
+|---|---|---|
+| `dependencies.approved` | Dependency names | An added name on the list passes, and so does a lockfile change in its ecosystem. |
+| `gates.accepted` | Path globs (`fnmatch`; `*` crosses `/`) | A gate finding (B-03) on a matching path moves to `data.accepted` and does not stop the theme. It never approves a dependency. |
+
+Without `--state`, no name is approved and no finding is accepted; a warning says so.
+
+### Output
+
+With no finding left, `data.status` is `clean`. `data.base` and `data.theme` are the two commits, and
+`data.changed_count` is the number of changed paths. `data.accepted` lists the findings the owner accepted, each
+with `boundary`, `kind`, `path` and `detail`. `data.approved_added` lists the approved names the theme added.
+A manifest that does not parse gets a warning, and its dependencies are not compared.
+
+On a finding the tool exits 2, and `data.errors` has one line per finding: `<boundary> <kind>: <path>: <detail>`.
+
+### What it does not see
+
+A weakened assertion inside a kept test, or a test removed from a kept file. A rule turned off in a config file, and
+a config format it does not parse. A gate command removed from one file but still run in another, and a step made
+report-only with `continue-on-error`. A version bump of a declared dependency. A global or one-off install (`npm -g`,
+`npx`, `uvx`) that leaves no trace in the branch.
+
+### Exit codes
+
+| Code | When |
+|---|---|
+| `0` | No finding, or only findings the owner accepted. |
+| `1` | A bad argument: a worktree that is not a folder, a base or theme that is not a commit, git that cannot list the changes, or a missing state file. |
+| `2` | One finding or more; `data.errors` has one line each. The state may also be invalid. |
 | `3` | Internal error. |

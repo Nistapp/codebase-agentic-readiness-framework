@@ -1,8 +1,9 @@
 # Theme checks
 
-Two checks of the [implement recipe](SKILL.md) guard a theme against changes it did not mean to make. The first
+Three checks of the [implement recipe](SKILL.md) guard a theme against changes it did not mean to make. The first
 watches the integration branch move under the theme. The second finds an engine check that passed before the theme
-and fails after it. Stages 3 and 4 run both. The page also says when a theme may branch from an unmerged theme.
+and fails after it. The third finds a weakened gate or an unapproved dependency in the theme's diff. Stages 3 and 4
+run them. The page also says when a theme may branch from an unmerged theme.
 
 ## Check the integration branch
 
@@ -144,3 +145,58 @@ belongs to the framework, not to the target: change nothing in the target for it
 - **Exit 1.** Fix the argument: a missing file, or a worktree that is not the reports' target.
 
 In every case the theme's own checks are still compared with the audit report (Stage 4, step 1).
+
+## Keep every gate and approve every dependency
+
+A theme's diff shows whether it kept two hard rules: "Never weaken a gate" and "Never install a dependency the
+owner did not approve". At theme close (Stage 4, step 1), after the lost-pass comparison, run:
+
+```bash
+python3 implement/tools/check_gates.py <worktree> --base <base commit> --state <state file>
+```
+
+- `<base commit>` is the commit the theme started from: the base report's `provenance.git_sha`, or
+  `git -C <worktree> merge-base HEAD origin/<integration branch>`.
+- `<state file>` is `<label>-agentic-readiness-state.json` in the workspace. The tool reads two preferences from it.
+- The tool reads the commits from `<base commit>` to `HEAD` with read-only git. Commit every change first.
+
+For the gate rule, it reports:
+
+- a deleted test file, or more skip markers in a test file (the engine's own `TST-03` table);
+- more inline suppressions in a source file;
+- a lowered or removed coverage floor, or a raised warning limit or baseline count;
+- a gate command, make target or package script that is gone, or a gate command whose failure is thrown away.
+
+For the dependency rule, it reports a dependency name added to a manifest and a changed lockfile. The full list is in
+the [Tools CLI reference](../docs/reference/tools-cli.md#check_gatespy).
+
+### When a gate is weakened
+
+Exit 2 means a finding: `data.errors` has one line per finding. Stop the theme and send the owner a
+[decision request](../audit/prompts/talking-to-the-user.md#decision-requests). Name each line. Offer:
+
+- (a) **Fix it** in the theme, in a new commit, and run the tool again.
+- (b) **Record the owner's choice.** The owner approves a dependency with
+  `progress.py pref set dependencies.approved "<name>, <name>" --reason "<why>" --by owner`. The owner accepts a
+  gate change with `progress.py pref set gates.accepted "<path glob>" --reason "<why>" --by owner`. Run the tool
+  again: an approved name passes, and an accepted finding moves to `data.accepted`. Name it in the done report
+  under "What was not done".
+- (c) **Stop the theme** here.
+
+Default: none. Wait for the owner. Exit 0 with `data.status` `clean` means no finding is left. Exit 1 is a bad
+argument: a base that is not a commit, or a missing state file.
+
+### What it does not see
+
+The tool reads text, so a clean result does not prove that every gate holds. It does not see:
+
+- a weakened assertion inside a kept test, or a test function removed from a kept file;
+- a rule turned off in a config file, such as a new `ignore` entry in `ruff.toml`;
+- a config format it does not parse;
+- a gate command removed from one file but still run in another;
+- a CI step made report-only with `continue-on-error`, which a playbook may do on purpose;
+- a version bump of a dependency already declared, or a dependency added outside the manifests it reads;
+- a global or one-off install (`npm -g`, `pip install --user`, `npx`, `uvx`) that leaves no trace in the branch.
+
+The rules still hold there; the agent keeps them by hand. The decision is in
+[ADR 0006](docs/architecture/adrs/0006-a-weakened-gate-stops-the-theme.md).

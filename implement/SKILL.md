@@ -405,7 +405,8 @@ when allowed, the pull request) is ready for the owner.
    a known engine limit (the playbook's Verification names them), recorded debt, or a real gap, which means the item
    is not `done`. Then run `python3 implement/tools/check_regressions.py <base report> <close report> --changed-from
    <worktree>`. On `data.status` `lost`, stop and ask the owner: fix, accept with a reason, or stop the theme.
-   Default: none. See [When a pass is lost](theme-checks.md#when-a-pass-is-lost).
+   Default: none. See [When a pass is lost](theme-checks.md#when-a-pass-is-lost). Then run
+   `python3 implement/tools/check_gates.py`; exit 2 is the same stop ([gates](theme-checks.md#when-a-gate-is-weakened)).
 2. **The repository's gate.** Run its `check` verb (and its docs lint when Markdown changed) in the worktree, with
    the same command as the baseline (Stage 3, step 3), plus any verb this theme added. Compare the two runs. A
    failure in the baseline too is debt: record it, do not stop. A failure this theme caused is fixed before the
