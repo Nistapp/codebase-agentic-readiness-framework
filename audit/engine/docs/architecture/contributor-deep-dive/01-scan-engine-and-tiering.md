@@ -198,8 +198,19 @@ Executing a repository's own commands is a supply-chain decision. Consequently:
 - **Never installs.** No `npm install`, `pip install`, or wrapper download, ever.
 - **No network by default.** Probes that need it (dependency CVE checks) are excluded unless explicitly permitted.
 - **Timeout per probe**, with the timeout itself recorded as the evidence.
-- **Evidence capture:** exit code, duration, and a bounded tail of output — with secret-shaped lines redacted
-  before they enter the report.
+- **Evidence capture:** exit code, duration, and a bounded tail of output — with credential-shaped text redacted
+  before it enters the report. `redact()` in `audit/probes.py` replaces each of these with `[REDACTED]` and
+  counts one redaction per secret in the probe's `redactions` field:
+  - a keyword assignment with its value. The keyword is `token`, `secret`, `password`, `passwd`, `pwd` or
+    `api_key`, alone or as one part of a name joined by `_` or `-` (`GITHUB_TOKEN=`, `client_secret=`). A quoted
+    value runs to its closing quote on the line, and `Bearer` with its token is one value. Prose is left alone:
+    `passwords must be rotated`, `token count: 5` and `max_tokens: 4096` assign no keyword. A harmless name such
+    as `TOKEN_URL=` is redacted too, because a hidden URL costs less than a shown credential;
+  - a whole PEM private key, BEGIN line to END line, or to the end of the output when the key was cut off;
+  - the shapes `sk-...`, `ghp_...` (and the other `gh*_` kinds), `AKIA...`, a `Bearer` token, and a Slack token
+    (`xoxb-...`, `xoxp-...`, `xapp-...`).
+
+  `SEC-02` and the report validator read the same patterns.
 - **No side-effect probes:** only verbs declared read-only in the rule pack are eligible.
 
 ---
