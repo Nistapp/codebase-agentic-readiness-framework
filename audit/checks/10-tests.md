@@ -146,9 +146,10 @@ Engine           `TST-04`. With no test-source file at all, this is `UNKNOWN` â€
                  least one test file, reads the four entry documents (README.md, AGENTS.md, CLAUDE.md,
                  CONTRIBUTING.md) for a fenced shell command. With no fenced match, it reads inline code
                  spans outside a fence (`npm test -- <path>` in a sentence). The command must match a
-                 per-runner single-test/subset pattern (`pytest -k`, `pytest ... ::Name`, `python3 -m unittest <module> -k <name>`,
-                 `npm test -- <name>`, `vitest -t <name>`, `jest <file>.test.ts`, `go test -run`,
-                 `cargo test <name>`, `gradlew ... --tests`, `mvn -Dtest=`, and more), deliberately
+                 per-runner single-test/subset pattern (`pytest -k`, `pytest ... ::Name`,
+                 `python3 -m unittest <module> -k <name>`, `npm test -- <name>`, `vitest -t <name>`,
+                 `jest <file>.test.ts`, `go test -run`, `cargo test <name>`, `gradlew ... --tests`,
+                 `mvn -Dtest=`, and more), deliberately
                  excluding a plain full-suite invocation (`npm test`, `pytest` alone), which is `TST-01`'s
                  concern, not this one's. Distrust a `FAIL` when the fast path is documented in a doc file
                  outside the fixed four â€” verify by reading whichever onboarding doc the repository

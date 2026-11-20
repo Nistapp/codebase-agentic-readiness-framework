@@ -159,8 +159,9 @@ richer than Gradle's test/check-only pair — invoked through the wrapper (`./mv
 `format`, `format:check`, `lint` and `security` still need a named plugin, but the engine recognises
 three directly by `artifactId`: `spotless-maven-plugin`, `maven-checkstyle-plugin`,
 `dependency-check-maven`. `CMD-02` is `UNKNOWN` for a `check` resolved only through `verify`: unlike a
-Gradle build, the engine does not read which plugin goals a pom binds to that phase. A real engine gap, found by reading the check rather than a repository
-(issue #29): `EXEC-02`'s lockfile table recognises only `gradle.lockfile` for `jvm` (`_lockfiles_for` in
+Gradle build, the engine does not read which plugin goals a pom binds to that phase. A real engine gap,
+found by reading the check rather than a repository (issue #29): `EXEC-02`'s lockfile table recognises
+only `gradle.lockfile` for `jvm` (`_lockfiles_for` in
 `audit/rules/checks/execution.py`, fed by `PACKAGE_MANAGERS` in `audit/stack.py`), never a Maven convention,
 so a pure-Maven project is still told it is missing `gradle.lockfile` — read the finding's own evidence
 before repeating that name.

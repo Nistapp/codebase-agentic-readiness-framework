@@ -158,10 +158,10 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    files" accepts an allowlisted hit only on its listed line.
 10. **Fast path (TST-04)**, when the item is in T5: add the single-test command for the repository's runner to
     `AGENTS.md` in a fenced shell block (the engine also reads an inline code span, but `EXEC-06` reads only
-    fenced commands), for example
-    `./gradlew test --tests '<Class>'` or `npx jest -t '<test name>'`. Jest needs `-t`, `--testNamePattern` or a
-    test file path that holds `.test.` or `.spec.`: a folder alone is not read as a subset. Start the line with a word that resolves, such as a verb or the
-    wrapper. "`EXEC-06` Documented commands resolve" reads every fenced command in `AGENTS.md`.
+    fenced commands), for example `./gradlew test --tests '<Class>'` or `npx jest -t '<test name>'`. Jest needs
+    `-t`, `--testNamePattern` or a test file path that holds `.test.` or `.spec.`: a folder alone is not read as a
+    subset. Start the line with a word that resolves, such as a verb or the wrapper. "`EXEC-06` Documented commands
+    resolve" reads every fenced command in `AGENTS.md`.
 
 ### Java (Gradle)
 
