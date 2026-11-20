@@ -971,6 +971,15 @@ class AddFindingTests(BuilderCase):
         found: list[dict[str, Any]] = read_json(self.draft)["findings"]
         return found
 
+    def test_cited_lines_past_the_end_of_the_file_are_a_warning(self) -> None:
+        (self.target / "AGENTS.md").write_text("# Rules\nOne rule.\n", encoding="utf-8")
+        code, envelope, _ = self.add_finding(self.draft, agent_finding())
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(
+            envelope["warnings"],
+            ["/findings/0/evidence/0: lines 1-3 are past the end of AGENTS.md in the target, which has 2 lines"],
+        )
+
     def test_it_records_a_finding_and_computes_its_id_key_and_disposition(self) -> None:
         code, envelope, stderr = self.add_finding(self.draft, agent_finding())
         self.assertEqual(code, 0, envelope)

@@ -428,7 +428,7 @@ def update_draft(argument: str, change: Callable[[dict[str, Any]], Change]) -> _
         refuse_inside_target(target, path)
         made = change(working)
         working["summary"] = _summary.compute_summary(working)
-        outcome = vr.validate_document(working, target=target)
+        outcome = vr.validate_document(working, target=target, check_lines=True)
         if outcome.errors:
             count = len(outcome.errors)
             raise _common.ValidationFailed(
@@ -1273,7 +1273,7 @@ def run_finalise(args: argparse.Namespace) -> _common.Result:
             )
         final["status"] = "final"
         final["provenance"]["finalised_at"] = moment.isoformat()
-        outcome = vr.validate_document(final, target=target)
+        outcome = vr.validate_document(final, target=target, check_lines=True)
         if outcome.errors:
             count = len(outcome.errors)
             raise _common.ValidationFailed(

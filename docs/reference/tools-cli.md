@@ -121,7 +121,7 @@ python3 audit/tools/validate_report.py --describe
 | Argument | Meaning |
 |---|---|
 | `<report>` | The report to check: a JSON file of at most 32 MiB. |
-| `--target <repo>` | The audited repository. With it the tool also looks for each cited `file` path and warns about the ones that are missing (rule 12). It asks git whether the commit in `provenance.target.git_sha` holds the path, or looks in the working tree when no commit is recorded. It never writes to the target. |
+| `--target <repo>` | The audited repository. With it the tool also looks for each cited `file` path and warns about the ones that are missing (rule 12). It asks git whether the commit in `provenance.target.git_sha` holds the path, or looks in the working tree when no commit is recorded. For each `lines` range the agent cited, it also warns when the range runs past the end of the file, or when the `quote` is not in those lines. It never writes to the target. |
 
 **Outputs**
 
