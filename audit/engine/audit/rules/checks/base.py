@@ -32,7 +32,10 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   the debt is measured but not guarded. A repository with no measurement surface at all is
   `PARTIAL`: there is nothing yet for a ratchet to compare, so absence is not proof of the policy.
 * **BASE-04** — a coverage threshold in test-runner configuration (`coverage.fail_under`,
-  `--cov-fail-under`, `coverageThreshold`, vitest/jest `thresholds`). A threshold stated only in
+  `--cov-fail-under`, `coverageThreshold`, vitest/jest `thresholds`), or a JaCoCo floor in a build file: a Gradle
+  `jacocoTestCoverageVerification` task with a `minimum`, or a Maven `jacoco-maven-plugin` `check` goal with a
+  `<minimum>`. Runner configs, every `package.json` and the Gradle and Maven build files count at any depth, so
+  an app's own build counts in a repository with an app per folder. A threshold stated only in
   prose is `PARTIAL`. No threshold and no prose, in a recognised repository, is `FAIL`.
 
 No recognised ecosystem and no configuration at all ⇒ every check returns `UNKNOWN`, never `PASS`.
@@ -53,7 +56,7 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.rules.checks._common import resolve_verbs
+from audit.rules.checks._common import README, entry_documents, resolve_verbs
 from audit.scan import Inventory
 from audit.stack import CI_PROVIDERS
 from audit.rules.payloads import Payload
@@ -153,6 +156,22 @@ _COVERAGE_CONFIG_RE = re.compile(
     r"(?i)coverageThreshold|\bthresholds\b\s*[:=]|fail_under\s*[:=]\s*\d+"
     r"|--cov-fail-under(?:=|\s+)\d+"
 )
+
+#: A ``coverageThreshold`` (Jest) or ``--cov-fail-under`` in a ``package.json`` at any depth, so an app's own manifest
+#: counts in a repository with an app per folder.
+_PACKAGE_FLOOR_RE = re.compile(r"coverageThreshold|--cov-fail-under")
+
+#: A JaCoCo floor in a Gradle build: the ``jacocoTestCoverageVerification`` task with a ``minimum`` in a limit
+#: (``minimum = 0.80``, ``minimum = "0.80".toBigDecimal()``, ``minimum.set(...)``).
+_GRADLE_BUILDS: tuple[str, ...] = ("build.gradle", "build.gradle.kts")
+_GRADLE_JACOCO_RE = re.compile(r"\bjacocoTestCoverageVerification\b")
+_GRADLE_MINIMUM_RE = re.compile(r"\bminimum\s*(?:=|\.set\s*\()")
+
+#: A JaCoCo floor in a Maven build: ``jacoco-maven-plugin`` running its ``check`` goal with a ``<minimum>``.
+_MAVEN_JACOCO_RE = re.compile(r"<artifactId>\s*jacoco-maven-plugin\s*</artifactId>")
+_MAVEN_CHECK_RE = re.compile(r"<goal>\s*check\s*</goal>")
+_MAVEN_MINIMUM_RE = re.compile(r"<minimum>\s*[\d.]+\s*</minimum>")
+_XML_COMMENT_RE = re.compile(r"<!--.*?-->", re.DOTALL)
 
 _COVERAGE_PROSE_RE = re.compile(
     r"(?i)(?:coverage|covered)[^\n]{0,40}(?:threshold|minimum|fail|floor|at least|>=?)"
@@ -277,7 +296,7 @@ def _ratchet(inventory: Inventory, stack, budgets: list[str]) -> list[str]:
             return [f"baseline compared in CI ({rel})" for rel in referenced]
 
     documented = []
-    for rel in _DOCS + ("README.md", "CONTRIBUTING.md"):
+    for rel in entry_documents(inventory, _DOCS + (README, "CONTRIBUTING.md")):
         text = inventory.read(rel)
         if text and _DOC_RATCHET_RE.search(text):
             documented.append(rel)
@@ -290,13 +309,26 @@ def _coverage_floor_config(inventory: Inventory, stack) -> list[str]:
         text = inventory.read(rel)
         if text and _FLOOR_FILE_RE.search(text):
             found.add(rel)
-    package = inventory.read("package.json")
-    if package and re.search(r"coverageThreshold|--cov-fail-under", package):
-        found.add("package.json")
+    for rel in inventory.match("package.json"):
+        text = inventory.read(rel)
+        if text and _PACKAGE_FLOOR_RE.search(text):
+            found.add(rel)
     for pattern in _COVERAGE_CONFIG_GLOBS:
         for rel in inventory.match(pattern):
             text = inventory.read(rel)
             if text and _COVERAGE_CONFIG_RE.search(_strip_js_comments(text)):
+                found.add(rel)
+    for rel in inventory.match(*_GRADLE_BUILDS):
+        text = inventory.read(rel)
+        if text:
+            code = _strip_js_comments(text)
+            if _GRADLE_JACOCO_RE.search(code) and _GRADLE_MINIMUM_RE.search(code):
+                found.add(rel)
+    for rel in inventory.match("pom.xml"):
+        text = inventory.read(rel)
+        if text:
+            xml = _XML_COMMENT_RE.sub("", text)
+            if all(rx.search(xml) for rx in (_MAVEN_JACOCO_RE, _MAVEN_CHECK_RE, _MAVEN_MINIMUM_RE)):
                 found.add(rel)
     return sorted(found)
 
@@ -308,7 +340,7 @@ def _strip_js_comments(text: str) -> str:
 
 def _coverage_prose(inventory: Inventory) -> list[str]:
     found: list[str] = []
-    for rel in _DOCS + ("README.md", "CONTRIBUTING.md"):
+    for rel in entry_documents(inventory, _DOCS + (README, "CONTRIBUTING.md")):
         text = inventory.read(rel)
         if not text:
             continue

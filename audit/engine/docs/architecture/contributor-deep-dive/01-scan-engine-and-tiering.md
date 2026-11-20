@@ -65,7 +65,7 @@ bounded by construction:
 
 | Rule | Behaviour |
 |---|---|
-| Ignore semantics | `.gitignore` respected; `.cbmignore` respected when present; both lifted from the target, not invented. Matching is a **documented subset** owned by [`audit/ignore.py`](../../../audit/ignore.py) — see § 3.1 |
+| Ignore semantics | The root ignore files (`.gitignore`, `.cbmignore`, `.cursorignore`, `.aiderignore`, `.rooignore`) and each nested `.gitignore` are respected, lifted from the target, not invented. A file git tracks is never skipped by an ignore rule. An ignored directory is not entered unless git tracks a file in it, and `Inventory.ignored_dirs` names it. Matching is a **documented subset** owned by [`audit/ignore.py`](../../../audit/ignore.py) — see § 3.1 |
 | Hard excludes | `.git`, `node_modules`, `vendor`, `dist`, `build`, `target`, `.venv`, `venv`, `__pycache__`, `.next`, `coverage`, `.gradle` |
 | Operator excludes | `--exclude GLOB`, repeatable, matched against the whole path from the target's root, where `*` crosses directories. It leaves a file out of the walk and out of the set of tracked files that `SEC-01`, `DOC-03`, `CON-03` and `EXEC-02` read (`tracked_in_scope` in `audit/rules/checks/_common.py`) |
 | Carried data | A file under a directory named `templates`, `template`, `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` (`CARRIED_DATA_DIRS` in `audit/scan.py`, compared whole and case-insensitively) is walked and then set aside, unless the name is below a JVM source root (`src/<source set>/<java\|kotlin\|scala\|groovy>/`, where a folder is a package): it leaves `Inventory.files`, so no check reads it, and `Inventory.set_aside` records each outermost directory with its file count. Nothing is set aside when the repository's only manifests are inside such directories. [ADR-0008](../adrs/0008-what-counts-as-the-repository.md) |
@@ -81,10 +81,16 @@ binary, secret-shaped.
 ### 3.1 Ignore semantics — the documented subset
 
 Ignore matching is implemented by [`audit/ignore.py`](../../../audit/ignore.py) and deliberately overclaims
-nothing. A rule is matched with `fnmatch` against both the repository-relative path and the basename;
-**anchored** patterns (`/dist`) are not treated as anchored, **negation** lines (`!keep`) are dropped rather
-than honoured, and `**` is a plain glob. The same module answers "which files does git track?" through
-`tracked_files()`, returning `None` — never an empty set — when the target is not a repository or git fails.
+nothing. The walk and the checks that ask "is this path ignored?" use one scoped matcher
+([ADR-0009](../adrs/0009-nested-ignore-files-and-negation.md)). Each nested `.gitignore` applies to its own
+directory, read as the walk enters it. A leading or inner `/` anchors a rule, a trailing `/` makes it match
+directories only, and `**` crosses directories. A `!` line re-includes a path, but never out of an ignored
+directory. The last matching rule wins.
+
+The same module answers "which files does git track?" through `tracked_files()`, returning `None` — never an
+empty set — when the target is not a repository or git fails. When git answers, a tracked file stays in the
+walk whatever the ignore rules say, as it does in git. When git cannot answer, the parser alone decides. The
+matcher is a parser, not `git check-ignore`: it reads neither `.git/info/exclude` nor a global excludes file.
 A check that cannot be certain of a tracked or ignore answer reports `UNKNOWN`, never `PASS`.
 
 ---
@@ -113,6 +119,7 @@ The other signals:
 | Signal | Detected from |
 |---|---|
 | Components | `workspaces`, `pnpm-workspace.yaml`, maven `<modules>`, gradle `include(...)` in `settings.gradle(.kts)`, `go.work use`, Cargo `[workspace] members` |
+| Candidate components (reported, never scored) | an immediate child of `apps/`, `services/`, `packages/`, `components/`, `modules/`, `libs/` or `workers/` with a build manifest; and, when the root folder holds no build manifest, any top-level folder with one (ADR-0003) |
 | A component's own manifest | `package.json`, `pyproject.toml`, `pom.xml`, `build.gradle(.kts)`, `Cargo.toml`, `go.mod`, `Gemfile`, `composer.json`, or a `*.sln`, `*.slnx`, `*.csproj`, `*.fsproj` or `*.vbproj` in the component's own folder |
 | CI provider | `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/`, `.buildkite/` |
 | Test framework | config files and manifest dependencies (`vitest`, `jest`, `pytest`, `junit`, `go test`) |
@@ -236,7 +243,8 @@ Schema v2. The JSON is the **render contract**: the Markdown report is a pure fu
   "stack": { "ecosystems": [], "package_managers": [], "ci_providers": [],
              "test_frameworks": [], "hook_managers": [], "notes": [] },
   "inventory": { "files_inspected": 0, "files_skipped": 0, "truncated": false,
-                 "files_set_aside": 0, "set_aside": [ { "path": "templates", "files": 0 } ] },
+                 "files_set_aside": 0, "set_aside": [ { "path": "templates", "files": 0 } ],
+                 "ignored_dirs": [ "dist-local" ] },
   "findings": [ { "id": "EXEC-02:packages/api", "check": "EXEC-02", "phase": 1,
                   "severity": "BLOCKER", "verdict": "FAIL",
                   "evidence": [ { "path": "packages/api/package.json", "line": 1, "note": null } ],

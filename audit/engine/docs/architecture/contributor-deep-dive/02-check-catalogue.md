@@ -146,7 +146,7 @@ so no one has to infer it from a suspicious verdict.
 | `BASE-01` | Baseline artifact exists | A | DEGRADER | A committed baseline or suppression file, or an equivalent documented mechanism | Implemented |
 | `BASE-02` | Current violation counts measured | B | DEGRADER | The audit counts violations with the repository's own configured tooling where possible, and records the method used | Implemented |
 | `BASE-03` | No-new-violations mechanism | B | DEGRADER | A committed ratchet — violation budget, suppression count, or comparison step | Implemented |
-| `BASE-04` | Coverage floor configured | A | DEGRADER | A coverage threshold exists in test-runner configuration | Implemented |
+| `BASE-04` | Coverage floor configured | A | DEGRADER | A coverage threshold exists in test-runner configuration, any `package.json`, or a JaCoCo floor in a Gradle or Maven build | Implemented |
 
 ---
 
@@ -172,9 +172,9 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
 | `EXEC-01` | Toolchain pinned / wrapper committed | A | BLOCKER | `.nvmrc`/`engines`, `.tool-versions`, `requires-python`, `global.json`, `gradlew`, `mvnw` — at least one appropriate to the detected stack | Implemented |
-| `EXEC-02` | Lockfile committed and consistent | B | BLOCKER | Lockfile tracked (at any depth, by its path), and, for the root lockfile, its declared dependencies agree with the manifest | Implemented |
-| `EXEC-03` | Non-interactive setup path | A | BLOCKER | A devcontainer, compose file, or setup target/script exists and is documented | Implemented |
-| `EXEC-04` | Env-var inventory complete | B | BLOCKER | Set difference of env keys referenced in source against keys in the committed example file | Implemented |
+| `EXEC-02` | Lockfile committed and consistent | B | BLOCKER | Every lockfile tracked (at any depth, by its path), and each one's declared dependencies agree with the manifest in its own folder | Implemented |
+| `EXEC-03` | Non-interactive setup path | A | BLOCKER | A devcontainer, compose file, Dockerfile (a variant such as `Dockerfile.jvm` too, at any depth), or setup target/script exists and is documented | Implemented |
+| `EXEC-04` | Env-var inventory complete | B | BLOCKER | Set difference of env keys referenced in source against keys in the committed example files that cover each reading file (an example file covers its folder and below) | Implemented |
 | `EXEC-05` | No generated artifacts committed in-tree | B | DEGRADER | Generated or vendored paths are either untracked or carry a generated-file header | Implemented |
 | `EXEC-06` | Documented commands resolve | B | DEGRADER | Every fenced command in README and `AGENTS.md` resolves to a real script, verb, or file | Implemented |
 | `EXEC-07` | No competing configs for one concern | B | DEGRADER | At most one authoritative config per concern (lint, format, test, types per language, security); a pyright config that mirrors the mypy gate is not a competitor | Implemented |
@@ -211,7 +211,7 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
 | `SEC-01` | `.env` untracked and ignored | B | BLOCKER | No tracked `.env`, and ignore rules cover `.env` shapes | Implemented |
-| `SEC-02` | No key-shaped strings in tracked files | B | BLOCKER | Pattern scan of tracked text files for credential shapes; matches reported by path and line only. A keyword such as `token` counts only when it is assigned a literal, not a name, an expression or a reference to the environment or a secret store | Implemented |
+| `SEC-02` | No key-shaped strings in tracked files | B | BLOCKER | Pattern scan of tracked text files for credential shapes; matches reported by path and line only. A keyword such as `token` counts only when it is assigned a literal, not a name, an expression or a reference to the environment or a secret store. A literal or `Bearer` token that names itself a sentinel, and a badge URL, do not count; a properties or env-style file counts a short value | Implemented |
 | `SEC-03` | Ignore patterns cover secret shapes | B | DEGRADER | Ignore rules include key, certificate, and credential extensions | Implemented |
 
 ---

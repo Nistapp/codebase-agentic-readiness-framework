@@ -53,6 +53,14 @@ class CatalogueContractTests(unittest.TestCase):
 
 
 class VariantTableTests(unittest.TestCase):
+    def test_no_harness_name_turns_a_commit_id_into_a_secret_scanner_hit(self):
+        # Issue #28: gitleaks' `sourcegraph-access-token` rule reads any 40-hex string as a token once the file
+        # holds the word "sourcegraph", and a report holds the target's full commit id. A harness name lands in
+        # the report's reach matrix, so no name may carry such a keyword.
+        for harness in V.HARNESSES:
+            with self.subTest(tool=harness.tool):
+                self.assertNotIn("sourcegraph", harness.tool.lower())
+
     def test_every_harness_carries_a_doc_url(self):
         for harness in V.HARNESSES:
             self.assertTrue(harness.doc_url.startswith("http"), f"{harness.tool} has no doc URL")

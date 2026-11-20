@@ -76,8 +76,11 @@ a root manifest outranks a nested one, and files under a directory named `templa
 `inventory.set_aside`. `--exclude` is therefore no longer needed for template, example or fixture directories; it
 stays for anything else you want left out (`artefacts/**`, a vendored tree).
 
-The checks that ask whether a path is ignored (`DOC-03`, `CON-03`, `SEC-01`, `SEC-03`) read every nested `.gitignore`,
-scoped to its directory, and honour `!` negation ([ADR-0009](docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)).
+The walk reads every nested `.gitignore`, scoped to its directory, as do `DOC-03`, `CON-03`, `SEC-01` and `SEC-03`.
+All of them honour anchoring, `**` and `!` negation
+([ADR-0009](docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)). A git-ignored, untracked folder (build
+output, a cache, an agent worktree) is not read, and the report names it in `inventory.ignored_dirs`. A file git
+tracks is read even when an ignore rule covers it.
 
 ---
 

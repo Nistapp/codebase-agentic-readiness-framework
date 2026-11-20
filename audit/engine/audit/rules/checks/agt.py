@@ -344,7 +344,12 @@ def check_agt02(*, spec, target, inventory, stack, components, session) -> Check
             spec.phase,
             Verdict.PASS,
             spec.status,
-            summary="single-root repository: no component-level instruction files required",
+            summary=(
+                f"no declared components; {len(components.candidates)} candidate component(s) are not scored "
+                f"(ADR-0003): {', '.join(components.candidates[:6])}"
+                if components.candidates
+                else "single-root repository: no component-level instruction files required"
+            ),
         )
 
     covered: list[str] = []
@@ -439,11 +444,65 @@ def stated_harnesses(text: str) -> tuple[int, list[str]]:
     return 0, []
 
 
+#: Claude Code's import syntax for the canonical file: `@AGENTS.md`, `@./AGENTS.md` or `@../AGENTS.md`, alone on a line
+#: or inside a sentence. A file that imports `AGENTS.md` loads it, so it never shadows it.
+_AGENTS_IMPORT_RE = re.compile(r"(?<![\w`])@(?:\.{1,2}/)*AGENTS\.md\b")
+
+#: The most content lines a pointer file may hold. A pointer says where the rules are; it does not hold them.
+_POINTER_MAX_LINES = 5
+
+
+def _content_lines(text: str) -> list[str]:
+    """The lines of ``text`` that say something: not blank, not a heading, not inside an HTML comment."""
+    text = re.sub(r"(?s)<!--.*?-->", "", text)
+    return [line.strip() for line in text.splitlines() if line.strip() and not line.lstrip().startswith("#")]
+
+
+def imports_agents_md(text: str) -> bool:
+    """True when ``text`` imports the canonical file with Claude Code's ``@AGENTS.md`` syntax."""
+    return bool(_AGENTS_IMPORT_RE.search(text))
+
+
+def is_agents_md_pointer(text: str) -> bool:
+    """True when every content line of ``text`` names ``AGENTS.md`` (``@AGENTS.md``, "See AGENTS.md") and there are few.
+
+    Such a vendor file holds no rules of its own: it sends its harness to the canonical file, so it neither competes
+    with nor shadows it (issue #26).
+    """
+    lines = _content_lines(text)
+    return 0 < len(lines) <= _POINTER_MAX_LINES and all("AGENTS.md" in line for line in lines)
+
+
+def _pointer_files(inventory: Inventory, vendor: list[str]) -> tuple[set[str], set[str]]:
+    """The vendor files that only point at ``AGENTS.md``, and those that import it beside rules of their own."""
+    pointers: set[str] = set()
+    importers: set[str] = set()
+    for rel in vendor:
+        text = inventory.read(rel)
+        if text is None:
+            continue
+        if is_agents_md_pointer(text):
+            pointers.add(rel)
+        elif imports_agents_md(text):
+            importers.add(rel)
+    return pointers, importers
+
+
 def check_agt08(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     present = instruction_paths(inventory)
     classified = V.classify_present(present)
-    competitors = list(classified["vendor_only"])
-    shadowed = classified["shadowed"]
+    # A vendor file that only points at the root AGENTS.md is a pointer, not a competitor; one that imports it loads
+    # it, so it shadows nothing. Both still give their harness its reach. With no root AGENTS.md a pointer points at
+    # nothing, and AGT-01 and AGT-10 own that gap.
+    pointers, importers = (
+        _pointer_files(inventory, list(classified["vendor_only"])) if "AGENTS.md" in present else (set(), set())
+    )
+    competitors = [p for p in classified["vendor_only"] if p not in pointers]
+    shadowed = (
+        V.classify_present(present - pointers - importers)["shadowed"]
+        if pointers or importers
+        else classified["shadowed"]
+    )
     reached = classified["harnesses_reached"]
     missed = classified["harnesses_missed"]
     findings: list[Finding] = []
@@ -519,7 +578,9 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
         verdict,
         spec.status,
         summary=f"{len(reached)}/{len(reached) + len(missed)} harnesses reached"
-        + (f"; AGENTS.md:{stated_at} states the supported harnesses ({', '.join(stated)})" if stated else ""),
+        + (f"; AGENTS.md:{stated_at} states the supported harnesses ({', '.join(stated)})" if stated else "")
+        + (f"; pointer files at AGENTS.md, not competitors: {', '.join(sorted(pointers))}" if pointers else "")
+        + (f"; files that import @AGENTS.md, so shadow nothing: {', '.join(sorted(importers))}" if importers else ""),
         data=HarnessMatrix(
             reached=len(reached),
             total=len(reached) + len(missed),

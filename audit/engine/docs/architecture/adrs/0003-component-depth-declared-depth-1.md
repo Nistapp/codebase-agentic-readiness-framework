@@ -29,7 +29,8 @@ grows faster than its usefulness, and a per-component ratio whose denominator th
    reported as `PARTIAL` with the ratio, never as a boolean.
 4. **Undeclared multi-app layouts are reported, not scored** — a repository with `apps/` and `services/`
    directories and no workspace declaration appears in an informational "candidate components (not declared)"
-   list. The undeclared layout is itself a useful finding.
+   list. With no build manifest at the root, each top-level folder with its own manifest (`web/`, `api/`) is a
+   candidate too. The undeclared layout is itself a useful finding.
 5. **No declarations at all** yields a single root component, which is correct for a monolith rather than a
    degenerate case to be worked around.
 
