@@ -21,6 +21,7 @@ import importlib.util
 import io
 import json
 import posixpath
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -532,16 +533,130 @@ class GateTest(unittest.TestCase):
         self.assertEqual(touch({"action": "write", "to": ["scripts/ci/*.sh"]}, read), "scripts/ci/*.sh")
         self.assertEqual(touch({"action": "write", "to": ["src/app.py"]}, read), "src/app.py")
 
-    def test_r3_untrack_moves_and_folders_are_exempt(self) -> None:
+    def test_r3_folders_and_untracked_folders_are_exempt(self) -> None:
         read = {"check": "NAV-02", "what": {"kind": "exists"}, "where": [{"path": "**", "scope": "glob"}]}
         touch = consistency_map.touch
-        self.assertEqual(touch({"action": "untrack", "from": ["notes.md"]}, read), "notes.md")
+        self.assertEqual(touch({"action": "untrack", "from": ["notes/"]}, read), "notes/")
         self.assertEqual(touch({"action": "create", "to": ["tools/"]}, read), "tools/")
         self.assertIsNone(touch({"action": "create", "to": ["docs/index.md"]}, read))
 
+    def test_r3b_an_untracked_path_counts_for_every_kind_it_can_match(self) -> None:
+        read = {"check": "NAV-02", "what": {"kind": "exists"}, "where": [{"path": "**", "scope": "glob"}]}
+        touch = consistency_map.touch
+        self.assertIsNone(touch({"action": "untrack", "from": ["notes.md"]}, read))
+        self.assertIsNone(touch({"action": "untrack", "from": [".env"]}, read))
+        self.assertEqual(touch({"action": "untrack", "from": ["src/app.py"]}, read), "src/app.py")
+        # A generated folder can still hold a file the scan names by itself: dist/Makefile is a build file.
+        self.assertEqual(touch({"action": "untrack", "from": ["**/dist/**"]}, read), "**/dist/**")
+        self.assertIsNone(touch({"action": "untrack", "from": ["**/*.log"]}, read))
+
+    def test_r3b_possible_kinds(self) -> None:
+        kinds = consistency_map.possible_kinds
+        self.assertEqual(kinds(".env"), {"other"})
+        self.assertEqual(kinds("**/*.md"), {"doc", "test", "generated"})
+        self.assertLessEqual({"generated", "manifest", "build"}, kinds("**/dist/**") or set())
+        self.assertIn("config", kinds(".env.*") or set())  # .env.example is a config file
+        self.assertIsNone(kinds("dist/"))
+
+    def test_r3c_a_folder_that_receives_moved_text_has_the_kinds_of_its_sources(self) -> None:
+        read = {"check": "TOOL-06", "what": {"kind": "phrase"}, "where": [{"path": "**", "scope": "glob"}]}
+        touch = consistency_map.touch
+        self.assertIsNone(touch({"action": "move", "from": ["AGENTS.md"], "to": ["docs/"]}, read))
+        self.assertEqual(touch({"action": "move", "from": ["ci.sh"], "to": ["scripts/"]}, read), "ci.sh")
+        self.assertEqual(touch({"action": "move", "from": ["old/"], "to": ["scripts/"]}, read), "old/")
+        self.assertEqual(consistency_map._path_kinds("scripts/", {"action": "move", "from": ["old/"]}, "to"), None)
+        self.assertEqual(touch({"action": "write", "to": ["docs/"]}, read), "docs/")
+
+    def test_r4_a_content_independent_read_is_never_touched(self) -> None:
+        read = {"check": "CON-04", "what": {"kind": "exists"}, "where": [{"path": "**", "scope": "glob"}]}
+        touch = consistency_map.touch
+        for action in ("create", "write", "move", "untrack"):
+            move = {"action": action, "from": ["a.py"], "to": ["b.py"]}
+            self.assertIsNone(touch(move, read), action)
+        self.assertEqual(consistency_map.CONTENT_INDEPENDENT_READS, {"CON-04"})
+
+    def test_r4_the_con04_verdict_does_not_follow_the_target(self) -> None:
+        """``check_con04`` gives one verdict on an empty target and on a full one, with and without the emitter."""
+        scan = _engine_module("audit.scan")
+        con = _engine_module("audit.rules.checks.con")
+        target_module = _engine_module("audit.target")
+        spec = next(s for s in _engine_module("audit.rules.registry").REGISTRY if s.id == "CON-04")
+        self.addCleanup(con.set_emit_target, None)
+        verdicts: dict[str, set[str]] = {"off": set(), "on": set()}
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            empty, full = root / "empty", root / "full"
+            empty.mkdir()
+            for rel, text in {
+                "AGENTS.md": "# Rules\n\nNever push to main.\n",
+                "package.json": '{"scripts": {"test": "node test.js"}}\n',
+                "src/app.py": "print(1)\n",
+                "dist/app.js": "x\n",
+            }.items():
+                (full / rel).parent.mkdir(parents=True, exist_ok=True)
+                (full / rel).write_text(text, encoding="utf-8")
+            for name, path in (("empty", empty), ("full", full)):
+                target = target_module.resolve_target(path)
+                inventory = scan.build_inventory(target.path)
+                for mode in ("off", "on"):
+                    out = root / f"out-{name}-{mode}" / "report.json"
+                    con.set_emit_target(out if mode == "on" else None)
+                    outcome = con.check_con04(
+                        spec=spec, target=target, inventory=inventory, stack=None, components=None, session=None
+                    )
+                    verdicts[mode].add(outcome.verdict.value)
+        self.assertEqual(verdicts, {"off": {"UNKNOWN"}, "on": {"PASS"}})
+
+    def test_r6_only_an_untrack_touches_the_text_scan_of_sec02(self) -> None:
+        read = {
+            "check": "SEC-02",
+            "what": {"kind": "phrase"},
+            "where": [{"path": "**", "scope": "glob"}, {"path": ".secrets.baseline", "scope": "root"}],
+        }
+        touch = consistency_map.touch
+        self.assertIsNone(touch({"action": "write", "to": ["src/app.py"]}, read))
+        self.assertIsNone(touch({"action": "create", "to": ["docs/env.md"]}, read))
+        self.assertEqual(touch({"action": "untrack", "from": [".env"]}, read), ".env")
+        # The allowlist is not the text scan: writing it can still hide or show a hit.
+        self.assertEqual(touch({"action": "write", "to": [".secrets.baseline"]}, read), ".secrets.baseline")
+
+    def test_r6_no_playbook_or_template_ships_a_secret_shaped_line(self) -> None:
+        """Rule R6's premise: a playbook copies no text SEC-02 would flag into a target.
+
+        Every line of every tracked file under ``implement/playbooks/`` and ``greenfield/templates/`` is read with
+        the engine's own line test (``_scan_secrets_allowlisted`` in ``audit/engine/audit/rules/checks/sec.py``), at
+        its strictest: as code and as configuration, with the short minimum length of an env-style file. The scan's
+        placeholder rule still applies, so ``KEY=your_key_here`` in a template is not a hit; its file skip for
+        ``.example`` files does not, so every file counts.
+        """
+        sec = _engine_module("audit.rules.checks.sec")
+
+        def flagged(line: str) -> bool:
+            shaped = any(
+                sec._line_is_secret(line, in_code=in_code, min_len=sec._MIN_SECRET_LEN_CONFIG)
+                for in_code in (False, True)
+            )
+            return shaped and not sec._PLACEHOLDER_RE.search(line)
+
+        tracked = subprocess.run(
+            ["git", "-C", str(_dev_paths.REPO), "ls-files", "-z", "--", "implement/playbooks", "greenfield/templates"],
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.split("\0")
+        files = [rel for rel in tracked if rel]
+        hits: list[str] = []
+        for rel in files:
+            text = (_dev_paths.REPO / rel).read_text(encoding="utf-8")
+            hits += [f"{rel}:{number}" for number, line in enumerate(text.splitlines(), start=1) if flagged(line)]
+        self.assertGreater(len(files), 15)
+        self.assertEqual(hits, [])
+        # The test is live: a line built here, so that no key-shaped string sits in this file, is flagged.
+        self.assertTrue(flagged('api_token = "' + "Zq7" * 8 + '"'))
+
     def test_r3_leaves_other_checks_and_places_alone(self) -> None:
         touch = consistency_map.touch
-        any_kind = {"check": "SEC-02", "what": {"kind": "key"}, "where": [{"path": "**", "scope": "glob"}]}
+        any_kind = {"check": "NAV-03", "what": {"kind": "key"}, "where": [{"path": "**", "scope": "glob"}]}
         self.assertEqual(touch({"action": "write", "to": ["docs/env.md"]}, any_kind), "docs/env.md")
         named = {
             "check": "TOOL-07",
@@ -627,6 +742,28 @@ class RealPairsTest(unittest.TestCase):
             if consistency_map.touch(moves[pair["move"]], reads[pair["check"]]) is None
         }
         self.assertEqual(lost, self.NOT_READ_BY_THE_ENGINE)
+
+    def test_every_real_pair_of_the_second_triage_is_inferred_or_declared(self) -> None:
+        """The pairs a second triage found real (``fixtures/consistency-map-real-pairs-second-triage.json``).
+
+        They were still unreviewed at origin/dev 9d25b46. A pair counts when :func:`consistency_map.touch` infers it
+        or the move declares the check in ``touches``, since declaring it is how a reviewer closes it.
+        """
+        pairs = json.loads(
+            (Path(__file__).parent / "fixtures" / "consistency-map-real-pairs-second-triage.json").read_text(
+                encoding="utf-8"
+            )
+        )["pairs"]
+        moves = {move["id"]: move for move in MAP["moves"]}
+        reads = {read["check"]: read for read in MAP["reads"]}
+        lost = [
+            (pair["move"], pair["check"])
+            for pair in pairs
+            if consistency_map.touch(moves[pair["move"]], reads[pair["check"]]) is None
+            and pair["check"] not in moves[pair["move"]].get("touches", [])
+        ]
+        self.assertGreaterEqual(len(pairs), 60)
+        self.assertEqual(lost, [])
 
     def test_a_section_that_does_not_name_the_check_is_a_mention_problem(self) -> None:
         text = "# T\n\n## A\n\nKeep it on one line.\n\n## B\n\nAGT-06 reads it.\n"

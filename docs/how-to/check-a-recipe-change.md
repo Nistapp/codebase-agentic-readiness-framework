@@ -158,23 +158,30 @@ tools.
 ```bash
 python3 dev/doc_index.py diff <base>
 python3 dev/doc_index.py diff 7545276~1 --at 7545276
+python3 dev/doc_index.py diff 96efb49~1 --at 96efb49 --detail
 ```
 
-The text output has one group per kind of change, each with its count:
+The text output has one group per kind of change, each with its count. This is the output for pull request #173,
+abridged:
 
 ```text
-# Index diff from 7545276~1 to 7545276: 36 changes
+# Index diff from 96efb49^1 to 96efb49: 64 changes
 
-# Sections added: 6
-# Sections removed: 17
+# Sections added: 0
+# Sections removed: 0
 # Sections moved: 0
 # Sections renamed: 0
-# Sections edited: 9
-# Edges lost: 2
-  links: implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic -> greenfield/templates/AGENTS.md#agentsmd/8-documentation-standards-diátaxis/81-how-to-write-for-people (anchor #81-how-to-write-for-people)
-# Edges gained: 2
+# Sections edited: 0
+# Edges lost: 0
+# Edges gained: 7
+  mentions: audit/engine/tests/test_stack_fixtures.py -> EXEC-01
 # IDs that lost their definition: 0
 # IDs that lost every mention: 0
+# Edges whose confidence changed: 0
+# Name-match links that changed resolution: 56 (40 build.gradle, 10 uv.lock, 4 global.json, 1 __main__.py, 1 composer.json)
+  build.gradle: 1 -> 2 files; 40 lost, 0 gained
+# Files regenerated: 1
+  CHANGELOG.md (by release-please): 0 sections edited, 0 added, 0 removed, 0 moved or renamed; 1 edges lost, 0 gained
 ```
 
 How to read each group:
@@ -188,6 +195,14 @@ How to read each group:
 | Edges lost | A link, mention, run or bundle edge that is gone | A lost anchor is a broken reference |
 | IDs that lost their definition | A check or requirement no longer defined | Restore it, or remove every use |
 | IDs that lost every mention | Defined, but no file names it any more | Check that no recipe step still needs it |
+| Edges whose confidence changed | The same edge, now `exact` or `name-match` | Usually nothing: an ID is now defined in more places, or fewer |
+| Name-match links that changed resolution | A bare file name in unchanged text now selects another file, or none, because a file of that name was added, removed or moved | Usually nothing. Run with `--detail` to list the links |
+| Files regenerated | A file that a command writes (the `generated` key of `dev/docindex.config.json`) changed | Run its command instead of reading its sections. A link *into* it that lost its anchor still shows under Edges lost |
+
+An edge whose target does not resolve carries a flag, such as `[broken: missing]`. The other values are `anchor`
+(no heading has that anchor) and `outside` (the path leaves the repository). The index's JSON keeps the same value
+in the edge's `broken` key. `--format json` writes the report as JSON, format 2. It always lists every edge of a
+name-resolution change.
 
 To see who depends on a section or an ID, query it. For example, `python3 dev/doc_index.py query AGT-04` lists the 57
 places that mention "`AGT-04` Definition of done stated". `diff` exits 0 whatever it finds.
@@ -293,14 +308,23 @@ The gate prints a count for each kind of problem, then the problems. Read these 
   enforces it is gone. Restore the sentence, or update the boundary's home or enforcer in the map.
 
 `unreviewed` is advice. The gate guesses touches from paths and content kinds, and the guess is coarse.
-Three rules keep the noise down:
+Five rules keep the noise down:
 
 - A folder touches a place only when the place is that folder or sits under it.
 - A wildcard base name, such as `*.yml`, never touches a literal file name.
-- Six checks read `**` only for some file kinds. For these checks, a path of another kind does not touch `**`,
-  unless the move untracks it. The six are "`TOOL-05` Local hook chain active", "`TOOL-06` Commit convention
-  enforced", "`TOOL-07` Local guard against commits to a protected branch", "`CI-05` Workflow files are linted",
-  "`EXEC-04` Env-var inventory complete" and "`NAV-02` Obvious entry points".
+- Six checks read `**` only for some file kinds. For these checks, a path of another kind does not touch `**`.
+  Three are hook checks: "`TOOL-05` Local hook chain active", "`TOOL-06` Commit convention enforced" and
+  "`TOOL-07` Local guard against commits to a protected branch". The others are "`CI-05` Workflow files are
+  linted", "`EXEC-04` Env-var inventory complete" and "`NAV-02` Obvious entry points".
+  - An untracked path counts for every kind its files can have. `**/dist/**` can hold a `package.json`, so it
+    still counts as a manifest.
+  - A folder that a move sends text into has the kinds of the text's sources. A move from `AGENTS.md` into
+    `docs/` stays a doc.
+  - Any other folder counts for every kind.
+- "`CON-04` Draft allow/deny emitted" is never touched. Its verdict does not depend on what the target holds.
+- For "`SEC-02` No key-shaped strings", only a move that untracks a file touches its scan of every tracked text
+  file. No playbook or greenfield template holds a key-shaped line, and a test checks that. A write to the
+  check's allowlist files still counts.
 
 `--verbose` lists the pairs. The gate exits 0 whatever it finds; `CMAP_ARGS=--strict` makes it exit 1.
 

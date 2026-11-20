@@ -23,6 +23,7 @@
 #                       below the floor in .coveragerc. CI runs it in parts: coverage-<suite> per job, then
 #                       coverage-combine
 #   make self-audit     (extra) the engine on this repository, read-only, against .audit-baseline.json; exit 2 on a regression
+#                       or exit 1 when the test trees hold more skip markers than .quality-baseline.json allows
 #
 # `format:check` has a colon, which make reads as a rule separator. The target is spelled `format\:check`
 # and `format-check` is the alias; the unescaped form `format:check:` would define a different rule.
@@ -110,13 +111,13 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint adr-lint consistency-map masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint adr-lint consistency-map masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  consistency-map [CMAP_ARGS=...]  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  consistency-map [CMAP_ARGS=...]  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -275,7 +276,9 @@ coverage-combine:
 # The engine on this repository, read-only. Reports go under dist/self-audit/ (git-ignored); only artefacts/ and dist/
 # are left out. The walk skips git-ignored folders itself, such as the agent worktrees under .claude/worktrees/ (ADR-0009
 # in audit/engine/docs/architecture/adrs/). --baseline is the ratchet
-# (ADR-0001): exit 2 when a finding appears that .audit-baseline.json did not have, exit 0 otherwise. --no-user-config
+# (ADR-0001): exit 2 when a finding appears that .audit-baseline.json did not have, exit 0 otherwise. The skip census
+# then fails (exit 1) when the test trees hold more skip markers than counts.skips in .quality-baseline.json; the
+# engine compares finding ids only, so its own "TST-03 skip / xfail census" count cannot fail. --no-user-config
 # keeps the verdict the same on every machine, and --target-label . keeps the local path out of the committed report.
 # Publication: docs/reference/self-audit.md.
 SELF_AUDIT_OUT := $(CURDIR)/dist/self-audit
@@ -284,6 +287,7 @@ SELF_AUDIT_FLAGS := --out $(SELF_AUDIT_OUT)/ --force --format both --no-user-con
 self-audit:
 	mkdir -p $(SELF_AUDIT_OUT)
 	cd $(ENGINE) && $(PYTHON) -m audit $(CURDIR) $(SELF_AUDIT_FLAGS) --baseline $(CURDIR)/.audit-baseline.json
+	$(PYTHON) dev/skip_census.py check
 
 # Accepts today's findings as the new baseline: a deliberate act, never run to get green. Review the diff; the
 # baseline only shrinks.
@@ -291,6 +295,11 @@ update-audit-baseline:
 	mkdir -p $(SELF_AUDIT_OUT)
 	cd $(ENGINE) && $(PYTHON) -m audit $(CURDIR) $(SELF_AUDIT_FLAGS)
 	cp $(SELF_AUDIT_OUT)/audit-report.json .audit-baseline.json
+
+# Writes today's skip-marker count (dev/skip_census.py) into .quality-baseline.json. It only lowers the count: a rise
+# is refused, and raising it needs the owner.
+update-skip-baseline:
+	$(PYTHON) dev/skip_census.py record
 
 # Every framework anchor the engine cites must still resolve in this repository.
 verify-rules:

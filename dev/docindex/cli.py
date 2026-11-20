@@ -6,7 +6,7 @@
 The subcommands::
 
     build [--at REF]      write the index of the working tree (or of the tree at REF) to stdout, as JSON
-    diff <git-ref> [--at NEW] [--format text|json]
+    diff <git-ref> [--at NEW] [--format text|json] [--detail]
                           report what changed in the index from <git-ref> to NEW (:mod:`docindex.diff`)
     sweep [--at REF] [--format text|json] [--triggers group1|all]
                           list the normative items of the sweep scope (:mod:`docindex.sweep`)
@@ -44,7 +44,9 @@ exclude each other; ``--paths`` needs ``--diff``, and ``--recall`` takes no ``--
 ``diff`` builds the index (:mod:`docindex.extract`) at <git-ref> and at NEW (``--at``, else the working tree), both
 read with ``git show`` or from disk, never by a checkout, and writes the report of :mod:`docindex.diff` to stdout:
 the sections added, removed, moved, renamed and edited, the edges lost and gained, and the IDs that lost their
-definition or every mention. It is a report, so it exits 0 whatever it finds.
+definition or every mention. Three groups keep the bulk out of those: the edges whose confidence changed, the
+name-match links that changed resolution (one line per bare file name; ``--detail`` lists their edges), and the files
+regenerated (the config's ``generated`` key, one line per file). It is a report, so it exits 0 whatever it finds.
 
 ``query`` is routed by the entry point, ``dev/doc_index.py``, to :func:`docindex.ids.query_main`, which needs the
 entry point's full config. The parser here takes the same arguments (``ADDRESS``, ``--report``, ``--at``), so the
@@ -110,6 +112,11 @@ def build_parser() -> argparse.ArgumentParser:
     diff.add_argument("ref", metavar="GIT_REF", help="the old side: the git ref to compare with")
     diff.add_argument("--at", metavar="GIT_REF", help="the new side: this git ref, not the working tree")
     diff.add_argument("--format", choices=("text", "json"), default="text", help="the output form (text)")
+    diff.add_argument(
+        "--detail",
+        action="store_true",
+        help="list each name-match link that changed resolution, not one line per name (text form)",
+    )
     sweep_parser = commands.add_parser("sweep", help="list the normative items of the sweep scope")
     sweep_parser.add_argument("--at", metavar="GIT_REF", help="sweep the files at this git ref, not the working tree")
     modes = sweep_parser.add_mutually_exclusive_group()
@@ -263,12 +270,16 @@ def _index_diff(args: argparse.Namespace, config: Mapping[str, Any], root: Path)
         print(f"{PROG} diff: {exc}", file=sys.stderr)
         return 1
     report = index_diff.compare(
-        old, new, old_body=index_diff.body_hashes(old_tree), new_body=index_diff.body_hashes(new_tree)
+        old,
+        new,
+        old_body=index_diff.body_hashes(old_tree),
+        new_body=index_diff.body_hashes(new_tree),
+        generated=config.get("generated", {}),
     )
     if args.format == "json":
         sys.stdout.write(index_diff.to_json(report, old=args.ref, new=args.at))
     else:
-        sys.stdout.write(index_diff.to_text(report, old=args.ref, new=args.at))
+        sys.stdout.write(index_diff.to_text(report, old=args.ref, new=args.at, detail=args.detail))
     return 0
 
 
