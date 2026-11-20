@@ -4715,7 +4715,7 @@
       ],
       "id": "adapt-agents-md/row-21",
       "intent": "The conventions file AGT-13 reads; it must not count as an Aider instruction file for AGT-01 and AGT-08, so no .aider.conf.yml may stand beside it unread.",
-      "note": "The target's own name and place win (D18), for example CODE_STYLE.md or a page under docs/.",
+      "note": "The target's own name and place win, for example CODE_STYLE.md or a page under docs/.",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "row": 21,
@@ -7097,7 +7097,7 @@
         "file"
       ],
       "id": "establish-docs-contract/row-16",
-      "note": "Item 5: the template copy under the owner's licence, named and placed as the repository names its scripts (D18).",
+      "note": "Item 5: the template copy under the owner's licence, named and placed as the repository names its scripts.",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
         "row": 16,

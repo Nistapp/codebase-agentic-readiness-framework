@@ -163,9 +163,14 @@ the policy files, and for nothing else:
 
    The release-process page ("`HYG-08` Release process documented") is a short document, not the long
    [`RELEASE_PROCESS.md`](../../greenfield/templates/RELEASE_PROCESS.md) template. A workflow file named
-   `release.yml` does not count; the check wants prose. It states: which tool opens release pull requests and tags,
-   what a merge to the release branch triggers, how versions are decided (the commit or title convention), who
-   merges the release pull request, and that agents never tag or release (when `agents_md.release_tags` says so).
+   `release.yml` does not count; the check wants prose. It states:
+
+   - which tool opens release pull requests and tags;
+   - what a merge to the release branch triggers;
+   - how versions are decided (the commit or title convention);
+   - who merges the release pull request;
+   - that agents never tag or release (when `agents_md.release_tags` says so).
+
    Name it with `release` in the file name, at the root or `docs/`. It needs no CI edit; if the page would need a
    workflow change to become true, say so as a finding instead of editing CI.
 

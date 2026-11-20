@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""Generate one eval-expected file per engine fixture (S4.2.1, DP §11, review R-07).
+"""Generate one eval-expected file per engine fixture (S4.2.1).
+
+The evaluation design is in ``docs/explanation/contributor-deep-dive/05-evaluation.md``.
 
     generate_fixture_expected.py [--check]
 

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:codebase-agentic-readiness-framework:eval-expected:0.1",
   "title": "Eval expected results",
-  "description": "Ground truth for one repository in the eval corpus: the acceptable verdict(s) for each check the scorer (tools/eval/score.py) checks a headless audit run against. Hand-written, or derived from the deterministic engine's own report and then corrected by a person (DP S11, review R-07). Pinned to one commit so repeat runs are comparable. Rules a schema cannot express are in SCHEMA.md.",
+  "description": "Ground truth for one repository in the eval corpus: the acceptable verdict(s) for each check the scorer (tools/eval/score.py) checks a headless audit run against. Hand-written, or derived from the deterministic engine's own report and then corrected by a person (docs/explanation/contributor-deep-dive/05-evaluation.md, section 2). Pinned to one commit so repeat runs are comparable. Rules a schema cannot express are in SCHEMA.md.",
   "type": "object",
   "required": ["expected_version", "repo_label", "repo_sha", "checks"],
   "additionalProperties": false,

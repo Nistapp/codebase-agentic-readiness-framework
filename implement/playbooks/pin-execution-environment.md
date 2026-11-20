@@ -187,8 +187,9 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#exe
   (`cache-dependency-path` for the component's lockfile).
 - A second Dockerfile for the same app (a dev image) may already name the target major while the finding text
   still says an old one: copy every value from the files and list only the places that really differ.
-- Docker images build only through the repository's own scripts, never by hand. Align the Dockerfile `FROM`
-  and any dev Dockerfile with the pin.
+- Docker images build only through the repository's own scripts, never by hand, unless the person asks for that
+  exact action ([Hard rules](../SKILL.md#hard-rules)). Align the Dockerfile `FROM` and any dev Dockerfile with
+  the pin.
 
 ### .NET (NuGet)
 

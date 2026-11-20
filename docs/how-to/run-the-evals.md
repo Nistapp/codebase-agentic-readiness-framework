@@ -27,7 +27,8 @@
 
 ### Step 1: Choose the corpus, and write its expected results
 
-The corpus is two kinds of repository (DP §11, review R-07):
+The corpus is two kinds of repository
+([Evaluation, §2 Corpus](../explanation/contributor-deep-dive/05-evaluation.md#2-corpus)):
 
 - **The engine's own one-defect fixtures** (`audit/engine/tests/fixtures/`), 109
   of them — each fails exactly one catalogue check by construction, so the expected verdict is known
@@ -35,7 +36,7 @@ The corpus is two kinds of repository (DP §11, review R-07):
   `dev/eval/expected/fixtures/<fixture>.json`; regenerate with
   `dev/eval/generate_fixture_expected.py` after a matrix change (S4.2.1). `make check` fails when one is stale
   (`make eval-expected-check`).
-- **Real repositories**, hand-picked for stack coverage and for the properties DP §11 asks the corpus to
+- **Real repositories**, hand-picked for stack coverage and for the properties the evaluation plan asks the corpus to
   exercise. The set holds a repository that already passes, a monorepo and a tiny repository. It also holds one
   with no tests or CI, and one with a planted hostile file (an injection test).
 

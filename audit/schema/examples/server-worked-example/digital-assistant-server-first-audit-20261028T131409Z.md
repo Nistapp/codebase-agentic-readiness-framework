@@ -5,18 +5,18 @@
 
 ## Bottom line
 
-- **6 blockers remaining: 5 FAIL, 1 PARTIAL.**
+- **6 BLOCKER checks unmet: 5 FAIL, 1 PARTIAL (5 BLOCKER findings).**
 - **Not settled by this scan:**
-  - 3 checks are UNKNOWN: `TOOL-03`, `TST-02`, `NAV-05`.
+  - 3 checks are UNKNOWN: `TOOL-03` Type checker configured; `TST-02` Suite status known; `NAV-05` Public-symbol documentation coverage.
   - 5 requirements are unattested: no check settles them.
 
 **First actions** (3 of 40 open findings):
 
 | # | Finding | Severity | Effort | What it blocks | Fix |
 |---:|---|---|:---:|---|---|
-| 1 | `EXEC-04` (F-005) | BLOCKER | S | An agent cannot know the CI variables the scripts need because AWS_ROLE_ARN, INSTANCE_ID, SSM_DOCUMENT (repository variables), IMAGE_TAR and CACHE_DIR (optional script inputs) are documented only in scripts/ci/README.md and script headers, not in a committed example file (SECONDS, also reported by the engine, is a bash builtin and is not a gap). | Add a committed example file (for example scripts/ci/env.example) listing the CI variables and the QUARKUS\_\* overrides the README documents. |
-| 2 | `CMD-01` (F-001) | BLOCKER | — | An agent cannot run the standardized command surface literally because 5 of 7 framework verbs are not defined on any runner (format, format:check, lint, typecheck, security). | Define every verb (format, format:check, lint, typecheck, test, check, security) as a script/target so an agent never has to invent a command. |
-| 3 | `CON-02` (F-002) | BLOCKER | — | An agent cannot trust that a failing test is not rewritten to pass because the prohibitions section of AGENTS.md does not name any test directory. | Name src/test/ in a code span in the prohibitions section of AGENTS.md, so test edits are bounded and reviewed. |
+| 1 | F-005: `EXEC-04` Env-var inventory complete | BLOCKER | S | An agent cannot know the CI variables the scripts need because AWS_ROLE_ARN, INSTANCE_ID, SSM_DOCUMENT (repository variables), IMAGE_TAR and CACHE_DIR (optional script inputs) are documented only in scripts/ci/README.md and script headers, not in a committed example file (SECONDS, also reported by the engine, is a bash builtin and is not a gap). | Add a committed example file (for example scripts/ci/env.example) listing the CI variables and the QUARKUS\_\* overrides the README documents. |
+| 2 | F-001: `CMD-01` Seven verbs resolvable on one runner | BLOCKER | — | An agent cannot run the standardized command surface literally because 5 of 7 framework verbs are not defined on any runner (format, format:check, lint, typecheck, security). | Define every verb (format, format:check, lint, typecheck, test, check, security) as a script/target so an agent never has to invent a command. |
+| 3 | F-002: `CON-02` Test directories protected | BLOCKER | — | An agent cannot trust that a failing test is not rewritten to pass because the prohibitions section of AGENTS.md does not name any test directory. | Name src/test/ in a code span in the prohibitions section of AGENTS.md, so test edits are bounded and reviewed. |
 
 ## Provenance
 
@@ -37,7 +37,7 @@
 ## Readiness summary
 
 - **Phase-1 score: 0.54**, over 57 scored checks
-- **6 blockers remaining: 5 FAIL, 1 PARTIAL**
+- **6 BLOCKER checks unmet: 5 FAIL, 1 PARTIAL (5 BLOCKER findings)**
 - **Unattested:** 5 requirements that no check settles, listed below
 
 2 of the 57 scored checks are UNKNOWN. An UNKNOWN check earns no credit, so the score understates what is true of the repository and does not certify it. No agent finding is waiting for a person's decision.
@@ -287,7 +287,7 @@ No scope was skipped.
 
 All 71 checks, grouped by family. The command surface, the credential-shaped-lines total and the missing secret-shape ignore rules above are rendered from the engine's structured payloads; other payloads (env-key inventories, harness-reach matrices, and so on) are in the JSON report only, for now.
 
-### IDX
+### Discovery and Index (`IDX`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -295,7 +295,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `IDX-02` | An index exists for this checkout | BLOCKER | automated | yes | PASS | PASS | index store \<home>/.cache/codebase-memory-mcp contains a project rooted at \<target> |
 | `IDX-03` | Index freshness | DEGRADER | automated | yes | PARTIAL | UNKNOWN | Index built 2026-10-28T09:43:48Z; HEAD 4a48e19 (committed 11:27Z) is the one later commit, touching only a workflow, a CI script and a CI README. |
 
-### AGT
+### Agent Governance (`AGT`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -311,7 +311,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `AGT-10` | Instruction indirection resolved | DEGRADER | automated | yes | FAIL | FAIL | — |
 | `AGT-11` | Instructions are specific and not inferable | DEGRADER | agent | yes | FAIL | — | About 29 of 77 rule lines (38%) in AGENTS.md are specific; section 6 (31 lines of generic role-play prompts and profile tables) and section 1 persona lines are generic, and the EntityManager rule does not hold in the code. |
 
-### DOC
+### Documentation Contract (`DOC`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -320,7 +320,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `DOC-03` | artefacts/ exists and is ignored | DEGRADER | automated | yes | PASS | PASS | no scratch directory in use |
 | `DOC-04` | ADR directory and index | COSMETIC | automated | yes | FAIL | FAIL | no ADR directory |
 
-### CMD
+### Command Surface (`CMD`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -329,7 +329,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `CMD-03` | No divergent second definition | DEGRADER | automated | yes | PASS | PASS | no runner defines check, so there is nothing to diverge |
 | `CMD-04` | Write verbs separated from read-only verbs | DEGRADER | automated | yes | PASS | PASS | no read-only verb invokes a write verb |
 
-### TOOL
+### Tooling (`TOOL`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -340,7 +340,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `TOOL-05` | Local hook chain active | DEGRADER | automated | yes | FAIL | FAIL | no hook chain configured |
 | `TOOL-06` | Commit convention enforced | COSMETIC | automated | yes | FAIL | FAIL | no commit-message rule |
 
-### CI
+### Continuous Integration (`CI`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -349,7 +349,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `CI-03` | CI-only steps flagged | DEGRADER | automated | yes | PASS | PASS | no CI-only steps |
 | `CI-04` | CI enforces the same gate as the local check | DEGRADER | agent | yes | PARTIAL | — | Jobs build-test, secrets, codeql, workflow-lint gate the PR (no continue-on-error or swallowed exit); the scan job is a no-op that always passes; the image scan is continue-on-error; branch-protection wiring of the CI Gate cannot be confirmed from the repo. |
 
-### BASE
+### Baselines and the Ratchet (`BASE`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -358,7 +358,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `BASE-03` | No-new-violations mechanism | DEGRADER | automated | yes | PARTIAL | PARTIAL | no ratchet and no baseline yet, so there is nothing to compare against |
 | `BASE-04` | Coverage floor configured | DEGRADER | automated | yes | FAIL | FAIL | no coverage threshold configured |
 
-### CON
+### Constraints (`CON`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -367,7 +367,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `CON-03` | artefacts/ excluded from index and agent reads | DEGRADER | automated | yes | PASS | PASS | no scratch or agent-state directory in use |
 | `CON-04` | Draft allow/deny emitted | COSMETIC | automated | no | PASS | PASS | draft deny list written: do-not-do.draft.md |
 
-### EXEC
+### Execution determinism (`EXEC`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -379,7 +379,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `EXEC-06` | Documented commands resolve | DEGRADER | automated | yes | PASS | PASS | no fenced shell commands documented |
 | `EXEC-07` | No competing configs for one concern | DEGRADER | automated | yes | PASS | PASS | no concern configs found |
 
-### TST
+### Tests (`TST`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -389,7 +389,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `TST-04` | Fast path documented | DEGRADER | automated | yes | PASS | FAIL | AGENTS.md shows a single-test invocation as inline code: ./gradlew test --tests with a class name. |
 | `TST-05` | Coverage configuration present | COSMETIC | automated | yes | FAIL | FAIL | no coverage configuration |
 
-### NAV
+### Navigation (`NAV`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -399,7 +399,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `NAV-04` | Architecture orientation artifact | COSMETIC | automated | no | FAIL | FAIL | no architecture orientation artifact |
 | `NAV-05` | Public-symbol documentation coverage | COSMETIC | automated | no | UNKNOWN | UNKNOWN | no recognised source language, so 'public' cannot be defined |
 
-### SEC
+### Security hygiene (`SEC`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
@@ -407,7 +407,7 @@ All 71 checks, grouped by family. The command surface, the credential-shaped-lin
 | `SEC-02` | No key-shaped strings in tracked files | BLOCKER | automated | yes | PASS | FAIL | The flagged line is a deliberately invalid sentinel token in a 401 smoke test; no real credential is tracked. |
 | `SEC-03` | Ignore patterns cover secret shapes | DEGRADER | automated | yes | PARTIAL | PARTIAL | covered: dotenv, dotenv variant, PEM, key, PKCS#12; missing: ssh private key, PFX, keystore, certificate (.crt), certificate (.cer), AWS credentials |
 
-### HYG
+### Hygiene (`HYG`)
 
 | Check | Title | Severity | Method | Scored | Verdict | Engine | Summary |
 |---|---|---|---|---|---|---|---|
