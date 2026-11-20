@@ -53,6 +53,30 @@ python3 audit/tools/engine.py <worktree> --out-dir <workspace>/engine/<theme>
   `--run-gates` to one run only.
 - Keep the path that `data.report` names. It is the base report.
 
+### Resume without a base report
+
+A theme may have no base report. It started before the recipe took one, or the report was lost. Take the base
+report again, at the theme's base commit, in a temporary checkout. Do it on the resume, before the close report:
+
+1. Find the base commit. Run `git -C <worktree> fetch origin`, then
+   `git -C <worktree> merge-base HEAD origin/<integration branch>`. Call the result `<base>`.
+2. Make a new empty folder outside the repository and outside the workspace, for example with `mktemp -d`. Call it
+   `<dir>`. Add a detached worktree there: `git -C <repo> worktree add --detach <dir> <base>`. This is the same
+   kind of worktree as the [baseline on a resume](SKILL.md#resuming).
+3. Run the engine on it, with the flags the close run uses:
+   `python3 audit/tools/engine.py <dir> --out-dir <workspace>/engine/<theme> --repo-label <name of the worktree
+   folder>`. The label gives the report the theme worktree's file name. Keep the `data.report` path: it is the base
+   report.
+4. Remove the temporary worktree: `git -C <repo> worktree remove <dir>`. Keep `<dir>` as text for the comparison.
+
+At theme close, add `--base-target <dir>` to the comparison. The base report's target is then `<dir>`, not the
+theme worktree; without the option the tool refuses the pair. The changed paths are listed from the base report's
+own commit, `<base>`.
+
+Use a git worktree, not an export such as `git archive <base> | tar -x`. An export has no git metadata. The
+report then records no commit, and the checks that read git can give other verdicts than on the theme worktree.
+A real export of this repository moved six verdicts, so it would report lost passes the theme did not cause.
+
 ### The close report and the comparison
 
 At theme close (Stage 4, step 1), run the same command again, with the same flags. Keep the new `data.report`
@@ -96,9 +120,11 @@ belongs to the framework, not to the target: change nothing in the target for it
 
 - **Exit 2, refused.** The two reports differ in ruleset, target path, user-config setting or probe settings. The
   close report may also be no newer than the base. A move then cannot be laid on the theme. Say so and name the
-  reasons in `data.errors`. Tell the owner the lost-pass check did not run.
-- **No base report.** The theme started before its base report was taken, or the report is lost. Say so plainly:
-  the lost-pass check did not run. Never take the base on the theme branch's tip; it holds the theme's changes.
+  reasons in `data.errors`. Tell the owner the lost-pass check did not run. A base report taken on a temporary
+  checkout differs in target by design: pass `--base-target`.
+- **No base report.** Take it again on a temporary checkout of the base commit; see
+  [Resume without a base report](#resume-without-a-base-report). When that cannot run, say so plainly: the
+  lost-pass check did not run. Never take the base on the theme branch's tip; it holds the theme's changes.
 - **Exit 1.** Fix the argument: a missing file, or a worktree that is not the reports' target.
 
 In every case the theme's own checks are still compared with the audit report (Stage 4, step 1).

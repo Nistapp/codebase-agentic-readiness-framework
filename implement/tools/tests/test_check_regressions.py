@@ -378,7 +378,8 @@ class CheckRegressionsTests(unittest.TestCase):
         self.assertFalse(manifest["network"])
         self.assertFalse(manifest["writes_inside_target"])
         self.assertEqual(
-            manifest["synopsis"], ["check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA]]"]
+            manifest["synopsis"],
+            ["check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]]"],
         )
 
     def test_long_lists_are_bounded_and_counted(self) -> None:

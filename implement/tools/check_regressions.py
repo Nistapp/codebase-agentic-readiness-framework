@@ -3,7 +3,7 @@
 
 """Compare two engine reports of one theme worktree: which passing checks a theme lost, and what else moved.
 
-    check_regressions.py <base.json> <close.json> [--changed-from <worktree> [--base <sha>]]
+    check_regressions.py <base.json> <close.json> [--changed-from <worktree> [--base <sha>] [--base-target <dir>]]
 
 Both files are the audit engine's own JSON reports (``engine.py --out-dir``), not audit reports. ``base`` was taken
 on the theme worktree before the theme's first change, ``close`` at theme close. The tool reads both and writes
@@ -29,6 +29,12 @@ The tool refuses (exit 2) to compare two reports when a move could not be laid o
 ``provenance.ruleset_hash``, ``target``, ``phase``, ``user_config.read_allowed``, ``probes_enabled`` or, with probes
 on, the verbs the ``--allow-probe`` list let through; or the close report is not newer than the base report
 (``scanned_at``). Each difference is one line of ``data.errors``.
+
+``--base-target <dir>`` (with ``--changed-from``) accepts a base report taken on another checkout of the theme's base
+commit: the temporary detached worktree the recipe makes when a resumed theme has no base report. The base report's
+``target`` must then be ``<dir>`` (the folder may be gone by now) instead of the close report's target. The base
+report must record its commit, and the changed paths are listed from that commit: a ``--base`` that names another
+commit is a usage error.
 
 ``data.status`` is ``lost`` when at least one check is ``lost_pass`` or ``regressed``, and ``clean`` otherwise. The
 tool exits 0 in both cases; the status carries the answer. It judges nothing else: the owner decides what a stop
@@ -72,7 +78,7 @@ import validate_report
 INFO = _common.ToolInfo(
     name="check_regressions",
     summary="Compare two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes.",
-    synopsis=("check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA]]",),
+    synopsis=("check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]]",),
     writes="nothing",
 )
 
@@ -234,10 +240,26 @@ def settings(report: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def refusals(base: Mapping[str, Any], close: Mapping[str, Any]) -> list[str]:
-    """Why the two reports cannot be compared, one line each; empty when they can."""
+def same_path(left: str, right: str) -> bool:
+    """Whether two paths name the same folder, resolved without requiring that it still exists."""
+    return Path(left).expanduser().resolve() == Path(right).expanduser().resolve()
+
+
+def refusals(base: Mapping[str, Any], close: Mapping[str, Any], base_target: str | None = None) -> list[str]:
+    """Why the two reports cannot be compared, one line each; empty when they can.
+
+    With `base_target`, the base report was taken on that other checkout of the base commit: its target is held to
+    `base_target` instead of to the close report's target.
+    """
     old, new = settings(base), settings(close)
-    problems = [
+    problems: list[str] = []
+    if base_target is not None:
+        if not same_path(old["target"], base_target):
+            problems.append(
+                f"target differs: base {json.dumps(old['target'])}, --base-target {json.dumps(base_target)}"
+            )
+        old["target"] = new["target"]
+    problems += [
         f"{name} differs: base {json.dumps(old[name])}, close {json.dumps(new[name])}"
         for name in old
         if old[name] != new[name]
@@ -461,19 +483,35 @@ def changed_paths(worktree: Path, base_sha: str) -> list[str]:
 
 
 def theme_changes(
-    worktree_arg: str, base_arg: str | None, base: Mapping[str, Any], close: Mapping[str, Any]
+    worktree_arg: str,
+    base_arg: str | None,
+    base: Mapping[str, Any],
+    close: Mapping[str, Any],
+    other_checkout: bool = False,
 ) -> tuple[str, list[str]]:
-    """The base commit, resolved, and the changed paths of the theme worktree; refuse a worktree that is not the target."""
+    """The base commit, resolved, and the changed paths of the theme worktree; refuse a worktree that is not the target.
+
+    `other_checkout` is true when the base report was taken on another checkout (``--base-target``): its own commit
+    is then the only base the changed paths may be listed from.
+    """
     worktree = _common.resolve_target(worktree_arg)
     target = Path(close["provenance"]["target"]).expanduser().resolve()
     if worktree != target:
         raise _common.UsageError(f"--changed-from {worktree} is not the reports' target {target}")
-    wanted = base_arg or base["provenance"].get("git_sha")
+    recorded = base["provenance"].get("git_sha")
+    if other_checkout and (not isinstance(recorded, str) or not recorded):
+        raise _common.UsageError("a base report taken with --base-target must record its git_sha")
+    wanted = base_arg or recorded
     if not isinstance(wanted, str) or not wanted:
         raise _common.UsageError("the base report records no git_sha; give the base commit with --base")
     resolved = revision(worktree, wanted)
     if resolved is None:
         raise _common.UsageError(f"the base commit {wanted} is not in the history of {worktree}")
+    if other_checkout and base_arg is not None and revision(worktree, str(recorded)) != resolved:
+        raise _common.UsageError(
+            f"--base {base_arg} is not the commit the base report was taken on ({recorded}); with --base-target, "
+            "leave --base out"
+        )
     return resolved, changed_paths(worktree, resolved)
 
 
@@ -504,6 +542,11 @@ def build_parser() -> _common.ToolParser:
         metavar="SHA",
         help="the commit the theme started from (default: the base report's git_sha)",
     )
+    parser.add_argument(
+        "--base-target",
+        metavar="DIR",
+        help="the other checkout of the base commit the base report was taken on, such as a temporary detached worktree",
+    )
     return parser
 
 
@@ -511,9 +554,11 @@ def handler(argv: Sequence[str]) -> _common.Result:
     args = build_parser().parse_args(list(argv))
     if args.base_sha is not None and args.changed_from is None:
         raise _common.UsageError("--base needs --changed-from")
+    if args.base_target is not None and args.changed_from is None:
+        raise _common.UsageError("--base-target needs --changed-from")
     base = read_engine_report(args.base, "base")
     close = read_engine_report(args.close, "close")
-    problems = refusals(base, close)
+    problems = refusals(base, close, args.base_target)
     if problems:
         count = len(problems)
         raise _common.ValidationFailed(
@@ -536,7 +581,9 @@ def handler(argv: Sequence[str]) -> _common.Result:
     listed = [row for row in rows if row.kind in (*STOPS, *MOVES, "evidence")]
     shown: dict[str, dict[str, Any]] = {row.check: row.to_json() for row in listed}
     if args.changed_from is not None:
-        base_sha, changed = theme_changes(args.changed_from, args.base_sha, base, close)
+        base_sha, changed = theme_changes(
+            args.changed_from, args.base_sha, base, close, other_checkout=args.base_target is not None
+        )
         declarations, engine_hash = load_declarations()
         shown = {row.check: attribute(row, declarations, changed) for row in listed}
         kept_paths, omitted_paths = _common.bound_items(changed, limit_bytes=budget)

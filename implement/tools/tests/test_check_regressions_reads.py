@@ -232,6 +232,74 @@ class ChangedFromTests(unittest.TestCase):
         self.assertEqual(envelope["data"]["changes"]["base_sha"], middle)
         self.assertEqual(envelope["data"]["changes"]["changed_paths"], ["docs/a.md"])
 
+    # --- a base report taken on another checkout (--base-target) -----------------------------------------
+
+    def other_checkout_base(self) -> tuple[dict[str, Any], str]:
+        """A base report taken on a temporary checkout of the start commit that has been removed since."""
+        checkout = str(self.folder / "removed-base-checkout")
+        base = copy.deepcopy(self.base)
+        base["provenance"]["target"] = checkout
+        return base, checkout
+
+    def test_a_base_taken_on_another_checkout_compares_with_base_target(self) -> None:
+        (self.repo / "README.md").write_text("changed\n", encoding="utf-8")
+        self.commit("one")
+        base, checkout = self.other_checkout_base()
+        code, envelope, _ = self.run_pair(self.close_report(), "--changed-from", str(self.repo), base=base)
+        self.assertEqual(code, _common.EXIT_INVALID, envelope)
+        self.assertTrue(any(error.startswith("target differs") for error in envelope["data"]["errors"]))
+        code, envelope, _ = self.run_pair(
+            self.close_report(), "--changed-from", str(self.repo), "--base-target", checkout, base=base
+        )
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(envelope["data"]["status"], "clean")
+        self.assertEqual(envelope["data"]["changes"]["base_sha"], self.start)
+        self.assertEqual(envelope["data"]["changes"]["changed_paths"], ["README.md"])
+        code, envelope, _ = self.run_pair(
+            self.close_report(),
+            *("--changed-from", str(self.repo), "--base-target", checkout, "--base", self.start[:12]),
+            base=base,
+        )
+        self.assertEqual(code, 0, envelope)
+
+    def test_a_base_target_that_is_not_the_base_reports_target_is_refused(self) -> None:
+        base, _ = self.other_checkout_base()
+        elsewhere = str(self.folder / "elsewhere")
+        code, envelope, _ = self.run_pair(
+            self.close_report(), "--changed-from", str(self.repo), "--base-target", elsewhere, base=base
+        )
+        self.assertEqual(code, _common.EXIT_INVALID, envelope)
+        self.assertEqual(len(envelope["data"]["errors"]), 1)
+        self.assertIn("--base-target", envelope["data"]["errors"][0])
+
+    def test_base_target_needs_changed_from(self) -> None:
+        base, checkout = self.other_checkout_base()
+        self.assert_usage(
+            self.close_report(), "--base-target needs --changed-from", "--base-target", checkout, base=base
+        )
+
+    def test_a_base_target_report_without_a_commit_is_a_usage_error(self) -> None:
+        base, checkout = self.other_checkout_base()
+        base["provenance"]["git_sha"] = None
+        self.assert_usage(
+            self.close_report(),
+            "must record its git_sha",
+            *("--changed-from", str(self.repo), "--base-target", checkout, "--base", self.start),
+            base=base,
+        )
+
+    def test_a_base_target_with_another_base_commit_is_a_usage_error(self) -> None:
+        (self.repo / "README.md").write_text("changed\n", encoding="utf-8")
+        self.commit("one")
+        later = _git.run_git(self.repo, "rev-parse", "HEAD")
+        base, checkout = self.other_checkout_base()
+        self.assert_usage(
+            self.close_report(),
+            "is not the commit the base report was taken on",
+            *("--changed-from", str(self.repo), "--base-target", checkout, "--base", later),
+            base=base,
+        )
+
     def test_another_engine_ruleset_is_a_warning_and_the_same_one_is_not(self) -> None:
         code, envelope, _ = self.run_pair(self.close_report(), "--changed-from", str(self.repo))
         self.assertEqual(code, 0)
