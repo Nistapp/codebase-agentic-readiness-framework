@@ -15,6 +15,7 @@ target's real test runner is never invoked outside a temp fixture.
 from __future__ import annotations
 
 import json
+import os
 import sys
 import tempfile
 import unittest
@@ -24,6 +25,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 import support  # noqa: E402
+from audit.probes import ProbePlan, ProbeSession, run_plan  # noqa: E402
+from audit.rules.checks import tst  # noqa: E402
+from audit.rules.registry import REGISTRY  # noqa: E402
+from audit.scan import build_inventory  # noqa: E402
+from audit.stack import detect_stack  # noqa: E402
 
 TST_CHECKS = ("TST-01", "TST-02", "TST-03", "TST-04", "TST-05")
 
@@ -160,6 +166,59 @@ class TstInlineTests(unittest.TestCase):
         self.assertTrue(probes)
         self.assertEqual(probes[0]["exit_code"], 0)
         self.assertIsNone(probes[0]["refused_reason"])
+
+
+#: A command name no machine has on its PATH; only the target's own node_modules/.bin provides it.
+_LOCAL_BIN = "agentic-audit-fake-suite"
+
+
+def _write_local_bin(root: Path, rel_dir: str, exit_code: int) -> None:
+    script = support.write(root, f"{rel_dir}/{_LOCAL_BIN}", f"#!/bin/sh\nexit {exit_code}\n")
+    script.chmod(0o755)
+
+
+class Tst02RunnerPathTests(unittest.TestCase):
+    """Issue #121: a package.json script body runs with node_modules/.bin on PATH, as `npm run` sets it."""
+
+    def test_runner_path_lists_each_node_modules_bin_nearest_first(self):
+        self.assertEqual(tst._runner_path("package.json"), ("node_modules/.bin",))
+        self.assertEqual(
+            tst._runner_path("packages/app/package.json"),
+            ("packages/app/node_modules/.bin", "packages/node_modules/.bin", "node_modules/.bin"),
+        )
+        self.assertEqual(tst._runner_path("Makefile"), ())
+
+    def test_run_plan_puts_the_prepended_directory_first(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            _write_local_bin(root, "node_modules/.bin", 0)
+            bare = run_plan(ProbePlan("test", [_LOCAL_BIN]), allow=("test",), cwd=root)
+            self.assertIsNotNone(bare.refused_reason, "the bare command must not resolve without the prepend")
+            found = run_plan(
+                ProbePlan("test", [_LOCAL_BIN], path_prepend=("node_modules/.bin",)), allow=("test",), cwd=root
+            )
+            self.assertIsNone(found.refused_reason)
+            self.assertEqual(found.exit_code, 0)
+
+    def test_permitted_probe_resolves_a_package_bin_in_process(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            support.write(root, "package.json", json.dumps({"scripts": {"test": f"{_LOCAL_BIN} --ci"}}))
+            _write_local_bin(root, "node_modules/.bin", 3)
+            inventory = build_inventory(root)
+            spec = next(s for s in REGISTRY if s.id == "TST-02")
+            session = ProbeSession(cwd=root, allow=("test",), enabled=True)
+            outcome = tst.check_tst02(
+                spec=spec,
+                target=None,
+                inventory=inventory,
+                stack=detect_stack(inventory),
+                components=None,
+                session=session,
+            )
+            self.assertEqual(outcome.verdict.value, "FAIL", outcome.summary)
+            self.assertEqual(session.results[0].exit_code, 3)
+            self.assertNotIn(str(root), os.environ.get("PATH", ""), "the probe must not change the caller's PATH")
 
 
 if __name__ == "__main__":

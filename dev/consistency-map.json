@@ -11770,7 +11770,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. Every runner manifest counts only at the root, where it is read.",
+      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. Every runner manifest counts only at the root, where it is read. A package.json verb runs with node_modules/.bin first on PATH.",
       "source": "engine",
       "what": {
         "kind": "key"

@@ -1571,7 +1571,8 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and "
-            "--allow-probe test. Every runner manifest counts only at the root, where it is read."
+            "--allow-probe test. Every runner manifest counts only at the root, where it is read. A "
+            "package.json verb runs with node_modules/.bin first on PATH."
         ),
     ),
     "TST-03": Reads(
