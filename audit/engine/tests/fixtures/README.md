@@ -81,6 +81,8 @@ fixtures/
   exec-01-python-source-only/ a standard-library-only Python tool, no manifest, no pin -> EXEC-01 FAIL, EXEC-02 UNKNOWN
   exec-01-php-version-file/  a composer.json with no php key, pinned by .php-version -> EXEC-01 PASS
   exec-01-php-unpinned/      a composer.json with no php key, no .php-version -> EXEC-01 FAIL
+  exec-01-nested-composer-unpinned/ the root composer.json pins PHP, a nested one does not -> EXEC-01 PARTIAL
+  exec-01-tool-versions-only/ ruby, dotnet and jvm pinned only by .tool-versions lines -> EXEC-01 PASS
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
