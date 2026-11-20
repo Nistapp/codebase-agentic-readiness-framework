@@ -239,7 +239,7 @@ Steps 1, 5, 8 and 9 make no commit.
 | # | Commit | Checks | Kind |
 |---|---|---|---|
 | 1 | Toolchain pin: `.nvmrc` and `engines.node`, or the Gradle toolchain block | `EXEC-01` | config |
-| 2 | Package-manager pin, `packageManager` (Node only) | `EXEC-01` | config |
+| 2 | Package-manager pin, `packageManager` (Node only) | `EXEC-08` | config |
 | 3 | Lockfile from the tool's own command, with the `dependencyLocking` block on Gradle (only when none is tracked, or by owner choice) | `EXEC-02` | bulk |
 | 4 | Instruction-file line: a dependency bump regenerates the lockfile (Gradle only) | `EXEC-02` | hand |
 | 5 | Stack start-up script installs with `npm ci` (only when it runs a bare install) | `EXEC-02` | hand |

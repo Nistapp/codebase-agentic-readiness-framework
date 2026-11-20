@@ -200,7 +200,7 @@ has skips its dependency row, and its config row when the config stays as it is.
 | 5 | Report-only full `format:check` in CI (only with debt) | `TOOL-01` | wiring |
 | 6 | Linter dependency, pinned exact, with its lockfile change | `TOOL-02` | bulk |
 | 7 | Linter config: the ruleset, with the PMD exclude list when there is debt | `TOOL-02` | config |
-| 8 | ESLint suppressions file (only when the owner chose it as the baseline) | `TOOL-02` | bulk |
+| 8 | ESLint suppressions file (only when the owner chose it as the baseline) | - | bulk |
 | 9 | `lint` runs the linter read-only, in ratchet form with debt | `TOOL-02` | wiring |
 | 10 | Report-only full lint in CI (only with debt) | `TOOL-02` | wiring |
 | 11 | Type-check config in its strictest passing mode (not on the JVM) | `TOOL-03` | config |

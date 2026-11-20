@@ -2804,12 +2804,6 @@
       "status": "kept"
     },
     {
-      "check": "TOOL-02",
-      "move": "configure-quality-tools/row-8",
-      "reason": "Not a real pair: TOOL-02 credits a linter config name and a resolved lint verb. eslint-suppressions.json is neither, so creating it cannot change the verdict.",
-      "status": "accepted"
-    },
-    {
       "check": "CMD-04",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -3215,12 +3209,6 @@
       "status": "kept"
     },
     {
-      "check": "CMD-01",
-      "move": "define-command-surface/row-5",
-      "reason": "Not a real pair: CMD-01 resolves the verbs from the root runner manifests only. The verb commands written into AGENTS.md or CONTRIBUTING.md are not read by it (AGT-05 and EXEC-06 read them), so this row cannot change the CMD-01 verdict.",
-      "status": "accepted"
-    },
-    {
       "check": "SEC-01",
       "home": {
         "path": "implement/playbooks/env-inventory-and-secrets.md",
@@ -3512,12 +3500,6 @@
       },
       "move": "establish-docs-contract/row-6",
       "status": "kept"
-    },
-    {
-      "check": "NAV-01",
-      "move": "establish-docs-contract/row-6",
-      "reason": "Not a real pair: the engine's NAV-01 reads the workspace members from the root manifests and the build manifests under candidate folders. An architecture overview page is not read, so creating it cannot change the verdict.",
-      "status": "accepted"
     },
     {
       "check": "DOC-05",
@@ -3835,10 +3817,15 @@
       "status": "kept"
     },
     {
-      "check": "EXEC-01",
+      "check": "EXEC-08",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Keep the version you already use.",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
       "move": "pin-execution-environment/row-2",
-      "reason": "Not a real pair: EXEC-01 reads the pin files and engines.node in package.json (_pin_evidence), never packageManager; only EXEC-08 reads that field. Adding packageManager cannot change the EXEC-01 verdict.",
-      "status": "accepted"
+      "note": "EXEC-08 counts a command's tool version as held when packageManager names the same tool at the same version, so the pin can only raise its verdict.",
+      "status": "kept"
     },
     {
       "check": "EXEC-06",
@@ -6286,7 +6273,7 @@
         "file"
       ],
       "id": "configure-quality-tools/row-8",
-      "note": "No check reads this name; BASE-01 credits it only through the AGENTS.md paragraph of T5.",
+      "note": "No check reads this name; BASE-01 credits it only through the AGENTS.md paragraph of T5, so the row names no check.",
       "origin": {
         "path": "implement/playbooks/configure-quality-tools.md",
         "row": 8,
@@ -6294,9 +6281,6 @@
       },
       "to": [
         "eslint-suppressions.json"
-      ],
-      "touches": [
-        "TOOL-02"
       ]
     },
     {
@@ -6636,8 +6620,7 @@
       "touches": [
         "AGT-05",
         "EXEC-06",
-        "EXEC-03",
-        "CMD-01"
+        "EXEC-03"
       ]
     },
     {
@@ -6896,7 +6879,7 @@
         "table"
       ],
       "id": "establish-docs-contract/row-6",
-      "intent": "NAV-04 reads any file under docs/architecture/; the page also lists components and entry points for NAV-01 and NAV-02.",
+      "intent": "NAV-04 reads any file under docs/architecture/; the page also lists the components and the entry points the NAV-02 rubric asks for.",
       "note": "docs/architecture/README.md is added only when the folder holds more than one page.",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
@@ -6910,8 +6893,7 @@
         "DOC-05",
         "SEC-02",
         "NAV-02",
-        "NAV-04",
-        "NAV-01"
+        "NAV-04"
       ]
     },
     {
@@ -7232,7 +7214,7 @@
         "package.json"
       ],
       "touches": [
-        "EXEC-01"
+        "EXEC-08"
       ]
     },
     {
