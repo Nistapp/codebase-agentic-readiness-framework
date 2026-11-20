@@ -58,9 +58,10 @@ distinguishable from a verdict reached by not looking, so the absence proof is n
 
 Each file is this folder's single source for its family: `04-command-surface.md` holds every `CMD-*`
 check, nothing is duplicated across two files, and a check that moves families is a rename of its section,
-not a copy. The recipe linter's size rule (500 lines, shared with `SKILL.md`, D46) applies to each file, so
-a family that outgrows the budget splits by check number into two files (S3.3.5 does this for `HYG`), each
-still following this anatomy.
+not a copy. The recipe linter's size rule ([`LINE_BUDGET`](../../dev/recipe_lint.py), 500 lines, shared with
+`SKILL.md`, because an agent loads the whole file at once) applies to each file, so a family that outgrows the
+budget splits by check number into two files (`AGT` does this: `02-agent-governance.md` and
+`02-agent-governance-2.md`), each still following this anatomy.
 
 ## 6. What counts as the repository
 
