@@ -9,8 +9,9 @@
 ## Detection signals
 
 `facts.json`'s `stack` section already read this. `ecosystems: ["node"]` comes from a `package.json`
-anywhere in the tree. `package_managers` comes from a lockfile anywhere in the tree: `package-lock.json`
-→ npm, `pnpm-lock.yaml` → pnpm, `yarn.lock` → yarn, `bun.lockb` → bun. A text `bun.lock` is not read.
+anywhere in the tree. `package_managers` comes from a lockfile anywhere in the tree. `package-lock.json`
+or `npm-shrinkwrap.json` names npm, `pnpm-lock.yaml` pnpm and `yarn.lock` yarn. `bun.lock` (text, Bun's
+default since 1.2) or `bun.lockb` (binary) names bun.
 `test_frameworks` comes from `vitest.config.*` or `jest.config.*`, and `ci_providers` from
 `.github/workflows/*.yml` at the repository root. A multi-component repository with a
 `package.json` and a lockfile in each component but none at the root reads `ecosystems: ["node"]` and
@@ -105,7 +106,8 @@ nothing — an alias without a matching lint rule is not a boundary, only a conv
 Reliable as the engine reads it: `CMD-01`/`CMD-02` (the npm-scripts runner resolver, `_common`, reads
 `package.json` scripts directly and completely); `TOOL-01`–`TOOL-03` (Prettier/ESLint/`tsconfig.json`
 strict are all in the engine's fixed filename and key lists); `EXEC-01`/`EXEC-02` (`engines.node` and
-the three lockfile names are read directly). Needs independent agent verification: `TOOL-02` when the
+its lockfile names are read directly). A Bun lockfile is found but not compared with the manifest, so a Bun
+project reads `EXEC-02` `PARTIAL` at best. Needs independent agent verification: `TOOL-02` when the
 "linter" verb is actually a `tsc`/formatter re-run under another name (the engine credits only a real
 linter config, but a human-readable script name can still mislead a quick read); `EXEC-02` on a
 multi-component repository, where a lockfile that exists only inside one component reads correctly as
