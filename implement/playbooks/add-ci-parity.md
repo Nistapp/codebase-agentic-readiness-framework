@@ -39,7 +39,7 @@ recorded, and a committed record shows which CI job the platform requires before
 
    | Option | Pros | Cons |
    |---|---|---|
-   | Keep wrappers, make them call the verbs (recommended where wrappers exist) | Keeps the repository's CI convention, the required job names and the docs-only skip; the same command runs locally | The engine reads `run:` text only, so it cannot follow a wrapper (known engine defects); CI-02 may still read UNKNOWN or FAIL after a correct fix |
+   | Keep wrappers, make them call the verbs (recommended where wrappers exist) | Keeps the repository's CI convention, the required job names and the docs-only skip; the same command runs locally | "`CI-02` Local↔CI parity" reads a shell script a step runs, one script deep, so a wrapper's verbs count. "`TOOL-04` Dependency / security scan verb" and "`TOOL-06` Commit convention enforced" read workflow lines only, so they miss a scan or commit check inside a wrapper |
    | Call the verbs directly in `run:` | Visible to the engine | Reverses the wrapper convention and moves logic back into YAML |
 
    Say the engine blind spot to the owner before choosing. Record the answer as a preference.
@@ -94,8 +94,8 @@ recorded, and a committed record shows which CI job the platform requires before
    locally; a CI-only step (an image scan, a deploy) is named so (`CI-only: ...`) and listed in the CI doc.
    - Call a verb on one `run:` line in the runner's own form (`make security`, `npm run security`). The engine
      follows such a line to the verb's command. So "`TOOL-04` Dependency / security scan verb" still finds the
-     scan in CI, and "`TOOL-06` Commit convention enforced" the commit check. A wrapper hides both: with wrappers,
-     tell the owner, as for "`CI-02` Local↔CI parity".
+     scan in CI, and "`TOOL-06` Commit convention enforced" the commit check. Neither reads a wrapper script, so
+     a wrapper hides both: with wrappers, tell the owner. "`CI-02` Local↔CI parity" reads a wrapper, one script deep.
    - When the CI doc is the root README, list the CI-only steps as prose or a table, not in a fenced block.
      "`EXEC-06` Documented commands resolve" reads every fenced command in the README, and a CI-only one does not
      resolve locally. Write no stub word such as `TODO` there: "`HYG-01` README present and non-placeholder" reads
@@ -200,9 +200,10 @@ Lessons from the multi-app Node application (IR07.3):
 | CI-04 | The same grep; the job summary of a CI run; the branch-protection record | No swallowed gating command. Every non-blocking step says report-only, and the repository holds its count and review date. The record names the required check, or says protection cannot be enforced |
 | CI-05 | Run the local workflow-lint command; read the CI step | The linter runs locally and in CI and is clean on the edited workflows; the engine reads CI-05 `PASS` |
 
-The engine reads `run:` text only. After a correct wrapper-based fix a re-audit can still read CI-02 or CI-03
-wrongly (known engine defects), and CI-04 needs the platform confirmation: say so in the pull request body; the
-close-out comparison (`SKILL.md` Stage 5) labels the move.
+"`CI-02` Local↔CI parity" reads a wrapper script one script deep. "`CI-03` CI-only steps flagged" reads `run:`
+text only. After a correct wrapper-based fix a re-audit can still read CI-03 wrongly (a known engine defect). It can
+read CI-02 wrongly when a wrapper reaches the verb through a second script. CI-04 needs the platform confirmation.
+Say so in the pull request body; the close-out comparison (`SKILL.md` Stage 5) labels the move.
 
 ## Rollback
 
