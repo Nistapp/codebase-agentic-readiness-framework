@@ -117,9 +117,9 @@ which reads a Gradle `check` from the build file: a JVM plugin gives the compile
 `test`, Spotless or ktlint the format check, and `check.dependsOn` adds the verbs and known tasks it names.
 An unknown plugin, a version-catalog alias, `apply from`, subprojects in `settings.gradle` or an unknown
 task make a check that still misses a concern `UNKNOWN`; read what those wire into `check` yourself;
-`EXEC-02`, which recognises no Gradle lockfile convention at all, so `UNKNOWN` here means
-"the engine cannot see dependency locking," not "there is none" — confirm by reading the build file for a
-`dependencyLocking` block.
+`EXEC-02`, which reads only whether a `gradle.lockfile` exists and is tracked. It cannot compare
+the lock with the build file, so a tracked lock reads `PARTIAL` at best, never `PASS` — confirm by reading the
+build file for a `dependencyLocking` block and the lockfile itself.
 
 ## Pitfalls
 

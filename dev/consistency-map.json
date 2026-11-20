@@ -10977,6 +10977,10 @@
           "scope": "any-depth"
         },
         {
+          "path": "pdm.lock",
+          "scope": "any-depth"
+        },
+        {
           "path": "gradle.lockfile",
           "scope": "any-depth"
         },
