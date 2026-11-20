@@ -155,7 +155,8 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    `--allow-probe` (with `--run-gates` only when at least one was named), passing the same `--exclude` paths
    the intake recorded (as Stage 1 step 1 already did for `facts.py`, so the engine scans the same inventory
    the facts describe), and passing `--emit-baseline` — this engine run is the only one for this draft, so it
-   is also the one chance to have the engine write `do-not-do.draft.md` for CON-04 (D51). `--no-user-config`
+   is also the one chance to have the engine write `do-not-do.draft.md` for "`CON-04` Draft allow/deny emitted"
+   ([its Pitfalls](checks/08-constraints.md#con-04--draft-allowdeny-emitted)). `--no-user-config`
    is always passed: it keeps the engine from reading the machine's own `$HOME` configuration, so the verdicts
    describe the repository and not this host (the report's `provenance.user_config` records it). Read
    `data.report` and `data.baseline_draft`, and tell the user both paths and any warning before moving on.

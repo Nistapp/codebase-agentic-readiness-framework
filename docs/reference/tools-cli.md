@@ -65,7 +65,7 @@ python3 audit/tools/engine.py --describe
 | `--exclude GLOB` | An extra path pattern to leave out of the audit, matched against the whole path from the target's root, so `vendor-samples/*` covers every file under that directory. It applies to the checks that read git's tracked files as well as to the walk. May be repeated. |
 | `--max-files N` | A hard cap on the files the engine inspects. |
 | `--run-gates`, `--allow-probe VERB`, `--timeout SECONDS` | Let the engine run the target's own commands. Nothing runs unless `--run-gates` is given and every verb is named in an `--allow-probe`. `--timeout` is the limit per command. |
-| `--emit-baseline` | Forwarded to the engine's own `--emit-baseline` (D51): also writes `do-not-do.draft.md` beside the report, the CON-04 remediation draft. |
+| `--emit-baseline` | Forwarded to the engine's own `--emit-baseline` (why: the [`CON-04` Pitfalls](../../audit/checks/08-constraints.md#con-04--draft-allowdeny-emitted)): also writes `do-not-do.draft.md` beside the report, the CON-04 remediation draft. |
 | `--no-user-config` | Forwarded to the engine: read no user-level configuration (`$HOME`, XDG), so the `IDX` verdicts do not depend on the machine. The report's `provenance.user_config` says what was read. |
 | `--list-checks` | Print the engine's checks and exit. It takes no other argument. |
 
