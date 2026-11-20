@@ -72,9 +72,10 @@ class Exec02IgnoredLockfileTests(unittest.TestCase):
         for app in ("web", "api"):
             files |= {f"apps/{app}/package.json": NODE, f"apps/{app}/package-lock.json": LOCK}
         outcome = self.exec02(files)
+        # Every lockfile is judged, not only the shallowest (issue #56), so both apps' lockfiles are listed.
         self.assertEqual(
             (outcome.verdict.value, outcome.summary, outcome.findings),
-            ("PARTIAL", "consistency unverified: apps/api/package-lock.json", []),
+            ("PARTIAL", "consistency unverified: apps/api/package-lock.json, apps/web/package-lock.json", []),
         )
 
     def test_a_force_tracked_lockfile_in_node_modules_is_not_read(self):
