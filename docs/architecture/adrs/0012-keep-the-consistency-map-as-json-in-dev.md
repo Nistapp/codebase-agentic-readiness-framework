@@ -62,7 +62,8 @@ the boundaries and the gate in both modes exist, with their tests.
    4. A created file matches the names list and its moves entry has no `intent`.
    5. A boundary's home quote is gone from its section, or the file or function that enforces it no longer exists.
 6. The gate also infers touches from the paths and the content kinds. It reports the inferred pairs that no move
-   declares as unreviewed advice, and never fails on them.
+   declares as unreviewed advice, and never fails on them. A rule that narrows the inference may lose no pair a
+   reviewer found real. Tests hold those pairs, from each triage of the unreviewed list.
 7. Evidence that changes under an unchanged verdict is reported to the reviewer. It does not fail the gate.
 8. The gate has two modes. Static mode checks the map against the working tree. Change mode runs against a base
    ref (`--base`, default `origin/dev`) and adds:
