@@ -69,7 +69,8 @@ Engine           `TST-02`, the pack's only Tier-C probe. No `test` verb resolves
                  Exit 0 is `PASS`; any other exit is `FAIL`. A `package.json` verb runs with
                  `node_modules/.bin` first on `PATH`, as `npm run` sets it. So a script body such as `jest`
                  resolves once the person has installed the dependencies. The engine installs nothing.
-                 Without `node_modules`, the probe records "could not execute" and the verdict is `UNKNOWN`. **When probes are off** (the default for the
+                 Without `node_modules`, the probe records "could not execute" and the verdict is `UNKNOWN`.
+                 **When probes are off** (the default for the
                  audit recipe, which never requests `--run-gates`), this check is `UNKNOWN` on every run,
                  and the agent does not attempt its own run of the suite as a substitute — running the
                  target's own tools outside the engine's Tier-C runner is the one thing this recipe never
