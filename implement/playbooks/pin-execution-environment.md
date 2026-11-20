@@ -67,7 +67,7 @@ manifest that dependency automation reads.
    |---|---|---|
    | `java { toolchain { languageVersion = JavaLanguageVersion.of(N) } }` (recommended) | Built in; the build no longer depends on `JAVA_HOME`; CI and local runs use the same JDK | Gradle fails if no matching JDK is installed, unless a resolver plugin is added |
    | Toolchain block + `org.gradle.toolchains.foojay-resolver-convention` (1.0.0, 2025-05-19) in `settings.gradle` | Downloads the missing JDK automatically | Network fetch of a JDK during a build; one more plugin in `settings.gradle`; owner approves it first |
-   | `.sdkmanrc` or `.tool-versions` only | Cheap hint for developers | Not read by Gradle or the engine; does not pin CI |
+   | `.sdkmanrc` or `.tool-versions` only | Cheap hint for developers | Not read by Gradle; the engine reads a `.tool-versions` `java` line, not `.sdkmanrc`; does not pin CI |
 
 5. **Lock width (Gradle).** Recommend `dependencyLocking { lockAllConfigurations() }` and one `gradle.lockfile`:
    built into Gradle, read by Dependabot and by OSV-Scanner. Locking only `runtimeClasspath` and
@@ -158,9 +158,11 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#execution-determinism).
   a rule moved.
 - Every dependency bump from now on regenerates the lockfile (`--write-locks`, or `--update-locks <group:name>`).
   Say so in the instruction file next to the build verbs.
-- The engine cannot see `dependencyLocking`, so EXEC-02 reads `UNKNOWN` for an unlocked Gradle build and may not
-  read the locked one as `PASS` either. Verify by reading `build.gradle` and `gradle.lockfile` directly and
-  record the engine's limit in the item.
+- The engine reads only whether a `gradle.lockfile` exists and is tracked. It does not read `dependencyLocking`,
+  and it cannot compare the lock with `build.gradle`. So "`EXEC-02` Lockfile committed and consistent" reads
+  `FAIL` for an unlocked Gradle build, which has no lockfile. A tracked root `gradle.lockfile` reads `PARTIAL`
+  at best (consistency unverified), never `PASS`. Verify by reading `build.gradle` and `gradle.lockfile`
+  directly and record the engine's limit in the item.
 - Invoke only through the wrapper (`./gradlew`). Then "`EXEC-06` Documented commands resolve" finds the wrapper
   for each documented Gradle command.
 
@@ -239,8 +241,8 @@ Steps 1, 5, 8 and 9 make no commit.
 | EXEC-08 | Launcher run; `grep` each cited line | No literal tool version in a command, workflow or hook; each tool is in a manifest with a lockfile; `PASS` |
 
 Also run the repository's own gate (`./gradlew build`, `npm run build` per component) once on the pinned
-toolchain, and read the CI run on the branch: it must be green. The engine's re-audit can still read EXEC-02 as
-`UNKNOWN` (Gradle) or `PARTIAL` (nested lockfile): record that as an engine limit with the evidence above.
+toolchain. Read the CI run on the branch too: it must be green. The engine's re-audit can still read EXEC-02 as
+`PARTIAL`, for a Gradle lockfile or a nested one. Record that as an engine limit with the evidence above.
 
 ## Rollback
 

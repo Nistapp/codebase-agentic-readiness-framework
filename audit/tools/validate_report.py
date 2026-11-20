@@ -15,7 +15,8 @@ missing or too large is exit 1. A file that is not JSON, or that repeats a key o
 validation, so exit 2.
 
 With ``--target`` the tool also looks for the cited files and warns about each one that is not in the target at the
-recorded commit (rule 12). It reads the target with ``git cat-file`` and never writes to it.
+recorded commit (rule 12). It also warns when a cited ``lines`` range runs past the end of its file, and when a
+``quote`` is not in the lines it cites. It reads the target with ``git cat-file`` and never writes to it.
 
 An error never repeats the value it found, so a credential in a quote does not travel into the error list (rule 11).
 """
@@ -55,6 +56,8 @@ MAX_REPORT_BYTES = 32 * 1024 * 1024
 MAX_SCHEMA_ERRORS = 500
 GIT_TIMEOUT_S = 30
 CLIP_CHARS = 80
+#: A cited file larger than this is not read to check its `lines` and `quote`.
+MAX_CITED_BYTES = 4 * 1024 * 1024
 
 SEVERITY_RANK = {"COSMETIC": 0, "DEGRADER": 1, "BLOCKER": 2}
 CATALOGUE_FIELDS = ("title", "phase", "severity", "scored", "method")
@@ -309,6 +312,12 @@ def dependency_cycles(findings: Sequence[Mapping[str, Any]]) -> Iterator[list[st
                 stack.pop()
 
 
+def line_range(lines: str) -> tuple[int, int]:
+    """The first and last line of a `lines` value the schema allows, `12` or `12-30`."""
+    first, _, last = lines.partition("-")
+    return int(first), int(last or first)
+
+
 def leaves_target(path: str) -> str | None:
     """Why `path` is not a path inside the target, or None when it is one."""
     if "\x00" in path:
@@ -404,6 +413,12 @@ def rule_3_evidence_by_kind(report: Mapping[str, Any], context: Context, out: Ou
                 out.error(3, pointer, f"{evidence['kind']} evidence needs {name!r}")
         if "lines" in evidence and "path" not in evidence:
             out.error(3, pointer, "'lines' is given without a 'path'")
+        if "lines" in evidence:
+            first, last = line_range(evidence["lines"])
+            if first < 1:
+                out.error(3, f"{pointer}/lines", "line numbers start at 1")
+            elif last < first:
+                out.error(3, f"{pointer}/lines", "the range ends before it starts")
         if "path" in evidence:
             reason = leaves_target(evidence["path"])
             if reason is not None:
@@ -702,7 +717,116 @@ def missing_in_tree(target: Path, paths: Sequence[str]) -> list[str]:
     return missing
 
 
-def rule_12_cited_files(report: Mapping[str, Any], target: Path, out: Outcome) -> None:
+def text_in_commit(target: Path, sha: str, paths: Sequence[str]) -> dict[str, str]:
+    """The text of each path that is a file in the commit `sha` and not larger than `MAX_CITED_BYTES`."""
+    askable = [path for path in paths if "\n" not in path]
+    if not askable:
+        return {}
+    environment = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
+    environment.update({"GIT_TERMINAL_PROMPT": "0", "GIT_OPTIONAL_LOCKS": "0"})
+    try:
+        done = subprocess.run(
+            ["git", "-C", str(target), "cat-file", "--batch"],
+            input="".join(f"{sha}:{path}\n" for path in askable).encode("utf-8"),
+            capture_output=True,
+            timeout=GIT_TIMEOUT_S,
+            check=False,
+            env=environment,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if done.returncode != 0:
+        return {}
+    return batch_texts(done.stdout, askable)
+
+
+def batch_texts(stream: bytes, paths: Sequence[str]) -> dict[str, str]:
+    """The blobs in the output of `git cat-file --batch`, one per path asked, by path; none larger than the limit."""
+    texts: dict[str, str] = {}
+    at = 0
+    for path in paths:
+        end = stream.find(b"\n", at)
+        if end < 0:
+            break
+        header = stream[at:end].split()
+        at = end + 1
+        if len(header) != 3 or not header[2].isdigit():
+            continue  # "<object> missing" or "<object> ambiguous"
+        size = int(header[2])
+        if header[1] == b"blob" and size <= MAX_CITED_BYTES:
+            texts[path] = stream[at : at + size].decode("utf-8", errors="replace")
+        at += size + 1
+    return texts
+
+
+def text_in_tree(target: Path, paths: Sequence[str]) -> dict[str, str]:
+    """The text of each path that is a regular file in the target's working tree, up to `MAX_CITED_BYTES`."""
+    texts: dict[str, str] = {}
+    for path in paths:
+        try:
+            place = _common.resolve_within(target, path)
+            if place.is_file() and place.stat().st_size <= MAX_CITED_BYTES:
+                texts[path] = place.read_bytes().decode("utf-8", errors="replace")
+        except (_common.PathNotAllowed, OSError):
+            continue
+    return texts
+
+
+def spaced(text: str) -> str:
+    """`text` with each run of white space one space, and no space at either end."""
+    return " ".join(text.split())
+
+
+def quoted_text(quote: str) -> str:
+    """The words of a quote, without the ellipsis that marks a cut at either end."""
+    text = spaced(quote)
+    for mark in ("...", "\u2026"):
+        if text.startswith(mark):
+            text = text[len(mark) :]
+        if text.endswith(mark):
+            text = text[: -len(mark)]
+    return text.strip()
+
+
+def cited_lines(report: Mapping[str, Any]) -> Iterator[tuple[str, str, Mapping[str, Any]]]:
+    """Each `file` evidence item the agent recorded inside the target with `lines`: pointer, path and item.
+
+    A tool read the file it cites at the scanned commit, so only what a model typed is checked here.
+    """
+    for pointer, evidence in evidence_items(report):
+        path = evidence.get("path")
+        if (
+            evidence["kind"] == "file"
+            and evidence.get("captured_by") == "agent"
+            and "lines" in evidence
+            and path is not None
+            and leaves_target(path) is None
+        ):
+            yield pointer, path, evidence
+
+
+def check_cited_lines(report: Mapping[str, Any], texts: Mapping[str, str], where: str, out: Outcome) -> None:
+    """Warn about a range past the end of its file, and about a quote that is not in the lines it cites."""
+    for pointer, path, evidence in cited_lines(report):
+        text = texts.get(path)
+        if text is None:
+            continue
+        lines = text.splitlines()
+        first, last = line_range(evidence["lines"])
+        if first < 1 or last < first:
+            continue  # rule 3 says so
+        if last > len(lines):
+            out.warnings.append(
+                f"{pointer}: lines {evidence['lines']} are past the end of {clip(path)} {where}, "
+                f"which has {len(lines)} line{'' if len(lines) == 1 else 's'}"
+            )
+            continue
+        quote = quoted_text(evidence.get("quote", ""))
+        if quote and quote not in spaced("\n".join(lines[first - 1 : last])):
+            out.warnings.append(f"{pointer}: the quote is not in lines {evidence['lines']} of {clip(path)} {where}")
+
+
+def rule_12_cited_files(report: Mapping[str, Any], target: Path, out: Outcome, *, check_lines: bool = False) -> None:
     paths = cited_paths(report)
     if not paths:
         return
@@ -719,6 +843,10 @@ def rule_12_cited_files(report: Mapping[str, Any], target: Path, out: Outcome) -
         where = f"in the target at {sha[:12]}"
     for path in missing:
         out.warnings.append(f"{paths[path]}: the file {clip(path)} is not {where}")
+    with_lines = sorted({path for _, path, _ in cited_lines(report)} - set(missing)) if check_lines else []
+    if with_lines:
+        texts = text_in_tree(target, with_lines) if sha is None else text_in_commit(target, sha, with_lines)
+        check_cited_lines(report, texts, where, out)
 
 
 # --- Putting it together ------------------------------------------------------------------------------
@@ -730,8 +858,13 @@ def validate_document(
     target: Path | None = None,
     catalogue: Mapping[str, Any] | None = None,
     patterns: Sequence[re.Pattern[str]] | None = None,
+    check_lines: bool = False,
 ) -> Outcome:
-    """Validate a parsed report. The target, the catalogue and the credential patterns default to the real ones."""
+    """Validate a parsed report. The target, the catalogue and the credential patterns default to the real ones.
+
+    With a target and `check_lines`, rule 12 also reads each file the agent cites with `lines`, and warns when the
+    range runs past its end or the quote is not in those lines. The command line and `report.py` turn it on.
+    """
     out = Outcome()
     version_error = schema_version_error(document)
     if version_error is not None:
@@ -755,7 +888,7 @@ def validate_document(
         return out
     warn_about_catalogue_version(document, context, out)
     if target is not None:
-        rule_12_cited_files(document, target, out)
+        rule_12_cited_files(document, target, out, check_lines=check_lines)
     return out
 
 
@@ -771,7 +904,7 @@ def handler(argv: Sequence[str]) -> _common.Result:
     target = _common.resolve_target(args.target) if args.target is not None else None
     path = Path(args.report).expanduser()
     document = read_report(path)
-    outcome = validate_document(document, target=target)
+    outcome = validate_document(document, target=target, check_lines=True)
     refuse_unknown_schema(outcome)
     if outcome.errors:
         count = len(outcome.errors)

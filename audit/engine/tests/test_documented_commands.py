@@ -80,12 +80,14 @@ class InlineCommandCheckTests(unittest.TestCase):
     def test_tst04_accepts_a_single_test_command_in_a_bullet(self):
         verdict, summary = _run(check_tst04, "TST-04", "# Rules\n\n- Run one test: `pytest -k test_x`.\n")
         self.assertEqual(verdict, "PASS")
-        self.assertEqual(summary, "fast path documented: AGENTS.md:3 `pytest -k test_x` (scope: AGENTS.md)")
+        self.assertEqual(
+            summary, "fast path documented in an inline code span: AGENTS.md:3 `pytest -k test_x` (scope: AGENTS.md)"
+        )
 
     def test_tst04_still_fails_on_a_full_suite_span(self):
         verdict, summary = _run(check_tst04, "TST-04", "# Rules\n\n- Run the suite: `pytest`.\n")
         self.assertEqual(verdict, "FAIL")
-        self.assertIn("in a fenced shell block or an inline code span", summary)
+        self.assertIn("in fenced shell blocks or inline code spans", summary)
 
     def test_exec03_accepts_an_install_command_in_a_bullet(self):
         verdict, summary = _run(check_exec03, "EXEC-03", "# Setup\n\n- Install: `pip install -e .`\n")

@@ -60,7 +60,7 @@ python3 audit/tools/engine.py --describe
 |---|---|
 | `<target>` | The repository to scan. It must exist and be a directory. The engine only reads it. |
 | `--out-dir DIR` | Where the report goes. It is created if it does not exist, and it must be outside the target. Default: the current directory, which is refused when it is inside the target. |
-| `--repo-label LABEL` | The label in the file name: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). |
+| `--repo-label LABEL` | The label in the file name: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). The audit recipe passes the label `report.py init` chose, so the engine report and the draft share one label. |
 | `--phase N` | The phase recorded in the report's provenance. The engine implements phase 1 only, so a higher value changes nothing else; the engine's default is 1. |
 | `--exclude GLOB` | An extra path pattern to leave out of the audit, matched against the whole path from the target's root, so `vendor-samples/*` covers every file under that directory. It applies to the checks that read git's tracked files as well as to the walk. May be repeated. |
 | `--max-files N` | A hard cap on the files the engine inspects. |
@@ -121,7 +121,7 @@ python3 audit/tools/validate_report.py --describe
 | Argument | Meaning |
 |---|---|
 | `<report>` | The report to check: a JSON file of at most 32 MiB. |
-| `--target <repo>` | The audited repository. With it the tool also looks for each cited `file` path and warns about the ones that are missing (rule 12). It asks git whether the commit in `provenance.target.git_sha` holds the path, or looks in the working tree when no commit is recorded. It never writes to the target. |
+| `--target <repo>` | The audited repository. With it the tool also looks for each cited `file` path and warns about the ones that are missing (rule 12). It asks git whether the commit in `provenance.target.git_sha` holds the path, or looks in the working tree when no commit is recorded. For each `lines` range the agent cited, it also warns when the range runs past the end of the file, or when the `quote` is not in those lines. It never writes to the target. |
 
 **Outputs**
 
@@ -510,12 +510,19 @@ eval-mode run records it the same way.
 Says where an audit stands: which families of checks are done, which are not, and which findings still wait for a decision. It is what to run first when a session resumes after a crash or after the agent's context ran out, because the draft holds everything and the tool reads it. It reads the draft and writes nothing, and it does not wait for the lock.
 
 ```text
-python3 audit/tools/report.py status <draft>
+python3 audit/tools/report.py status <draft> [--all] [--severity BLOCKER|DEGRADER|COSMETIC]
 ```
+
+| Option | Meaning |
+|---|---|
+| `--all` | List every pending finding, not the first 8. The 40-line limit then does not hold. The list is still cut at the byte budget of every tool's output, and `pending_omitted` says how many were left out. |
+| `--severity S` | List only the pending findings of severity `S`. The counts still cover every finding. |
+
+The output is a JSON envelope already, so there is no `--json` option.
 
 The draft may be final: `status` then reports it and says it is already final. A draft that fails validation is exit 2, with the errors.
 
-**Outputs.** The envelope is at most **40 lines** on stdout, so a report of 70 checks costs a few hundred tokens and not a page. `data` holds:
+**Outputs.** Without `--all`, the envelope has at most **40 lines**, so a report of 70 checks costs a few hundred tokens and not a page. `data` holds:
 
 | Key | Meaning |
 |---|---|
@@ -526,7 +533,8 @@ The draft may be final: `status` then reports it and says it is already final. A
 | `families_remaining` | For each family with a check not yet recorded, the IDs of those checks. |
 | `findings`, `findings_pending`, `blockers_pending` | The findings, those waiting for a decision, and the `BLOCKER` ones among them. |
 | `ready_to_finalise`, `blocking` | Whether `finalise` has nothing to stop it, and if not, why in a sentence: an eval-mode run, checks not recorded, findings pending, a `BLOCKER` not decided interactively, or a report that is already final. `finalise` has the last word: it validates the final report. |
-| `pending` | The findings waiting for a decision, one line each as `<id> <severity> <key>`, blockers first, as many as fit in the line budget (at most 8). |
+| `pending` | The findings waiting for a decision, one line each as `<id> <severity> <key>`, blockers first, as many as fit in the line budget (at most 8). With `--all`, every one that fits the byte budget. |
+| `pending_severity` | The severity given with `--severity`, when one was given. |
 | `pending_omitted` | How many pending findings are not listed, when some are left out. The envelope then has `truncated: true`. |
 
 **Exit codes**
@@ -683,7 +691,7 @@ python3 audit/tools/facts.py --describe
 |---|---|
 | `<target>` | The repository to describe. It must exist and be a directory. The tool only reads it. |
 | `--out FILE` | The file to create. It must not exist, its folder must, and the folder must be outside the target. The tool never replaces a file. |
-| `--repo-label LABEL` | The label in the file: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). |
+| `--repo-label LABEL` | The label in the file: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). The audit recipe passes the label `report.py init` chose. |
 | `--exclude GLOB` | An extra path pattern to leave out of the inventory, spelled as `engine.py`'s is, so the facts describe the inventory the engine sees. Up to 10 are named in the file; the rest still apply. May be repeated. |
 | `--max-files N` | A cap on the files the walk inspects. Default: the engine's own cap. A walk the cap stops is `truncated`, which pushes the size class to `huge` whatever the count. |
 
@@ -1176,6 +1184,6 @@ ruleset hash is not the reports' hash. Long lists are bounded: `data.omitted` co
 | Code | When |
 |---|---|
 | `0` | Done, whatever the status. Read `data.status`. |
-| `1` | A bad argument or a missing file. With `--changed-from`: a worktree that is not the reports' target, a base commit not in its history, or git that cannot list the changes. With `--base-target`: no `--changed-from`, a base report with no commit, or a `--base` that is not that commit. |
+| `1` | A bad argument or a missing file. With `--changed-from`: a worktree that is not the reports' target, a close report whose target is a label (the engine's `--target-label`) and not a path, a base commit not in its history, or git that cannot list the changes. With `--base-target`: no `--changed-from`, a base report with no commit, or a `--base` that is not that commit. |
 | `2` | Refused. A file is not an engine report, or the two reports differ in ruleset hash, target, phase, user-config setting, probes or allowed probe verbs. With `--base-target`, the base report's target must be `DIR` instead. The close report may also be no newer than the base. `data.errors` has one line per reason. |
 | `3` | Internal error. |

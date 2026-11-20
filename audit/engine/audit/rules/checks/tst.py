@@ -30,9 +30,10 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   each readable test file, grouped by the language family that file belongs to (javascript/vitest/jest/
   mocha, python, go, rust, jvm). Zero markers is a `PASS`; no test file, or no readable test file,
   is `UNKNOWN`. This check never invents a maximum.
-* **TST-04** — a single-test/subset invocation in a fenced shell block or an inline code span, read from
-  the repository's entry documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`) via
-  `_common.extract_documented_commands`. `PASS` when one is documented; `FAIL` when the documents are
+* **TST-04** — a single-test/subset invocation in a fenced shell block, read from the repository's
+  entry documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`), or else in an inline code
+  span outside a fence (`npm test -- <path>` in a sentence), both via `_common.extract_documented_commands`.
+  A fenced one is cited first. `PASS` when one is documented; `FAIL` when the documents are
   readable but none shows one. With **no test file** there is no suite for a fast path to act on, so
   the verdict is `UNKNOWN` — a missing suite is TST-01's finding, not doubled here. The search scope is
   stated in `detail`.
@@ -99,6 +100,8 @@ _FASTPATH_PATTERNS: tuple[str, ...] = (
     r"\b(?:npx\s+)?vitest\s+run\s+\S*(?:test|spec)\S*",
     r"\b(?:npx\s+)?vitest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
     r"\b(?:npx\s+)?jest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
+    r"\b(?:npx\s+)?jest\b[^\n&|;]*\s\S*\.(?:test|spec)\.\S*",
+    r"\breact-scripts\s+test\b[^\n&|;]*\s\S*\.(?:test|spec)\.\S*",
     r"\bgo\s+test\b[^\n&|;]*\s-run\b",
     r"\bcargo\s+test\b\s+[A-Za-z_]\w*",
     r"\b(?:\./)?(?:gradlew|gradle)\b[^\n&|;]*--tests\b",
@@ -408,18 +411,24 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
     docs = [rel for rel in _FASTPATH_DOCS if inventory.has(rel)]
     scope = ", ".join(docs) if docs else f"{', '.join(_FASTPATH_DOCS)} (none present)"
 
-    for rel in docs:
-        text = inventory.read(rel)
-        if not text:
-            continue
-        for _language, line, command in extract_documented_commands(text):
-            if _FASTPATH_RE.search(command):
+    commands = [(rel, extract_documented_commands(text)) for rel in docs if (text := inventory.read(rel))]
+    for rel, found in commands:
+        for language, line, command in found:
+            if language != "inline" and _FASTPATH_RE.search(command):
                 return _outcome(spec, Verdict.PASS, f"fast path documented: {rel}:{line} `{command}` (scope: {scope})")
+    for rel, found in commands:
+        for language, line, command in found:
+            if language == "inline" and _FASTPATH_RE.search(command):
+                return _outcome(
+                    spec,
+                    Verdict.PASS,
+                    f"fast path documented in an inline code span: {rel}:{line} `{command}` (scope: {scope})",
+                )
 
     return _outcome(
         spec,
         Verdict.FAIL,
-        f"no single-test/subset invocation in a fenced shell block or an inline code span (scope: {scope})",
+        f"no single-test/subset invocation in fenced shell blocks or inline code spans (scope: {scope})",
         [
             _finding(
                 spec,
