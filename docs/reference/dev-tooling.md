@@ -94,6 +94,7 @@ fails its gate. When a count goes down, lower the baseline in the same change.
 | Known key-shaped strings | `.secrets.baseline` | `make security` |
 | Coverage floor | `.coveragerc` (`fail_under`) | `make coverage` (runs as CI does: an empty `HOME` and `CI=true`) |
 | Readiness findings | `.audit-baseline.json` | `make self-audit` |
+| Skip markers in the five test trees | `.quality-baseline.json` (`counts.skips`) | `make self-audit`, and the `dev/tests/test_skip_census.py` test in `make test` |
 
 ## Local hooks
 
