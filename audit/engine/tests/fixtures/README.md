@@ -47,6 +47,7 @@ fixtures/
   agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL
   agt-13-no-conventions/     no conventions file or section       -> AGT-13 FAIL
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
+  agt-10-deferred-dot-folder/ AGENTS.md defers to `.agents/rules.md`, which no config names -> AGT-10 FAIL
   agt-10-pointer-dot-folder/ opencode.json points at `./.rules/agent-rules.md`, which exists -> AGT-10 PASS
   agt-10-pointer-glob-top-level/ opencode.json points at `guides/**/*.md`; the only match is `guides/agent-rules.md` -> AGT-10 PASS
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
