@@ -201,6 +201,36 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#exe
   `PARTIAL`
   ([check pitfall](../../audit/checks/09-execution-determinism.md#exec-02--lockfile-committed-and-consistent)).
 
+### PHP (Composer)
+
+- The PHP pin is a `.php-version` file, a `php` line in `.tool-versions`, or a key in `composer.json`.
+  "`EXEC-01` Toolchain pinned / wrapper committed" reads `config.platform.php` first, then `require.php`.
+  `config.platform.php` makes Composer resolve as if that PHP ran; `require.php` only refuses an install outside
+  the range.
+- Each `composer.json` is its own unit: a parent `composer.json` does not pin a nested Composer project. Pin
+  each one in its own `composer.json`, or put a `.php-version` in its folder or a parent folder. A project no
+  pin reaches reads `PARTIAL`.
+- The lockfile is `composer.lock`. Keep a tracked one if `composer install` passes. With none, run
+  `composer install` once, and commit each `composer.lock` it writes, one beside each `composer.json`.
+- CI installs with `composer install`, never `composer update`, so it installs what the lock records.
+- The engine reads only whether each `composer.lock` exists and is tracked. It does not compare the lock with
+  `composer.json`, so "`EXEC-02` Lockfile committed and consistent" reads `PARTIAL` at best (consistency
+  unverified). Verify by running `composer install`, then `git status --porcelain`, and record the engine's
+  limit in the item.
+
+### Ruby (Bundler)
+
+- The Ruby pin is a `.ruby-version` file or a `ruby` line in `.tool-versions`. "`EXEC-01` Toolchain pinned /
+  wrapper committed" does not read the `ruby` line of a `Gemfile` or the `RUBY VERSION` of `Gemfile.lock`.
+  Commit one of the two pin files.
+- The lockfile is `Gemfile.lock`. Keep a tracked one if `bundle install` passes. With none, run
+  `bundle install` once and commit the `Gemfile.lock` it writes.
+- CI installs with Bundler's `frozen` setting (`BUNDLE_FROZEN=true`), so an install that would change the lock
+  fails.
+- The engine reads only whether each `Gemfile.lock` exists and is tracked. It does not compare the lock with the
+  `Gemfile`, so "`EXEC-02` Lockfile committed and consistent" reads `PARTIAL` at best (consistency unverified).
+  Verify by running `bundle install`, then `git status --porcelain`, and record the engine's limit in the item.
+
 ## Commits
 
 Steps 1, 5, 8 and 9 make no commit.
