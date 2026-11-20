@@ -1,7 +1,7 @@
 # Java
 
-> Follows the anatomy in [`README.md`](README.md). Covers Gradle, with a Quarkus section under its own
-> heading (§1 there). The Maven section is untested and says so. `shipped`, per `run_context.stack_profile`
+> Follows the anatomy in [`README.md`](README.md). Covers Gradle, with Quarkus notes where Quarkus
+> differs. The Maven section is untested and says so. `shipped`, per `run_context.stack_profile`
 > (DP §5.6).
 
 ---
@@ -18,23 +18,22 @@ both read; a `gradlew`/`gradlew.bat` pair signals the wrapper.
 
 ## Command-surface map
 
-Gradle has no verb table (unlike npm scripts): a verb resolves only when the build file registers a task
-of that exact name (`tasks.register('format', …)`, `task format { … }`), always invoked through the
-committed wrapper (`./gradlew <task>`), never a bare `gradle`. Two verbs are the exception: `test` and
-`check` resolve for free when the build applies a plugin that registers them (`java`, `java-library`,
-`application`, `groovy`, `scala`, `war`, the Kotlin JVM plugin, or `io.quarkus`, which applies `java`
-itself) — but that lifecycle `check` is not read as this pack's `check` (`CMD-03`'s point: a build tool's
-own gate is not a second definition of the seven-verb `check`). `format`, `format:check`, `lint`,
-`typecheck` and `security` have no Gradle lifecycle equivalent at all and must be registered as named
-tasks, usually by a plugin (Spotless for `format`/`format:check`, Checkstyle or PMD for `lint`, the OWASP
-Dependency-Check plugin for `security` — none of these were seen in the one repository checked; see
-Pitfalls). `typecheck` has no idiom in Java: the compiler's own type checking runs inside `compileJava`,
-which no verb name surfaces on its own.
+Gradle has no verb table (unlike npm scripts): a verb resolves only when the build file registers a task of that
+exact name (`tasks.register('format', …)`, `task format { … }`), always invoked through the committed wrapper
+(`./gradlew <task>`), never a bare `gradle`. Two verbs are the exception: `test` and `check` resolve for free when
+the build applies a plugin that registers them (`java`, `java-library`, `application`, `groovy`, `scala`, `war`, the
+Kotlin JVM plugin, or `io.quarkus`, which applies `java` itself) — but that lifecycle `check` is not read as this
+pack's `check` (`CMD-03`'s point: a build tool's own gate is not a second definition of the seven-verb `check`).
+`format`, `format:check`, `lint`, `typecheck` and `security` have no Gradle lifecycle equivalent at all and must be
+registered as named tasks, usually by a plugin (Spotless for `format`/`format:check`, Checkstyle or PMD for `lint`,
+the OWASP Dependency-Check plugin for `security`; the reference repository registers all five, see Verified).
+`typecheck` has no idiom in Java: the compiler's own type checking runs inside `compileJava`, which no verb name
+surfaces on its own.
 
 ## Tooling options
 
 Formatter: Spotless (`com.diffplug.spotless`), with Google Java Format or an Eclipse config as its
-backing formatter — not seen in the one repository checked. Linter: Checkstyle or PMD, run through their
+backing formatter — the reference repository uses an Eclipse config. Linter: Checkstyle or PMD, run through their
 own Gradle tasks (`checkstyleMain`, `pmdMain`) — again a named-task registration, not a lifecycle verb;
 SpotBugs is a static-analysis alternative. Type checker: none separate from the compiler; `javac`'s own
 `-Xlint` flags are the closest analogue and are not a distinct verb. Test runner: JUnit 5 through
@@ -61,7 +60,8 @@ version read by the build itself; its absence leaves the JDK to whatever `JAVA_H
 `package-lock.json` by default: dependency locking is an opt-in feature
 (`dependencyLocking { lockAllConfigurations() }`, writing `gradle.lockfile` files). `EXEC-02` recognises
 `gradle.lockfile`, at any depth, as the one lockfile name for `jvm`, so a Gradle build without it reads
-`FAIL` for that check (see Pitfalls).
+`FAIL` for that check. With it, the check reads `PARTIAL`: the engine does not compare a `gradle.lockfile` with
+the build file.
 Tool versions (`EXEC-08`) are usually Gradle or Maven plugins in the build file, which Dependabot reads, so the
 check fires here only on an `npx` or `uvx` call with a typed version in a runner file or workflow.
 
@@ -83,13 +83,14 @@ Checkstyle and PMD both support a suppressions file (`config/checkstyle/suppress
 `config/pmd/exclude.xml`) that silences existing violations while a repository migrates; SpotBugs has an
 equivalent exclude filter. None of these establish a true "no new violations" ratchet on their own — each
 needs an incremental, changed-files-only invocation wired into CI to behave like one, mirroring the
-pattern described in `typescript-node.md`'s own Baseline / ratchet section. Not seen in the one repository
-checked; `BASE-01` reads `FAIL` or `UNKNOWN` there, not verified further here.
+pattern described in `typescript-node.md`'s own Baseline / ratchet section. The reference repository keeps
+its counts in a committed JSON file that an `Exec` task (`baselineCheck`) compares; `BASE-01` reads that file.
 
 Coverage: the core `jacoco` plugin gives `jacocoTestReport` and `jacocoTestCoverageVerification` (a
 `violationRules` `minimum` is the floor). Quarkus `@QuarkusTest` classes need `io.quarkus:quarkus-jacoco`
 (version from the platform BOM); Gradle's agent alone reports them wrongly low. `BASE-04` reads no Gradle build
-file, so a floor configured there reads `FAIL`; verify it from the build file. The implement playbook
+file, so a floor configured there reads `FAIL`, or `PARTIAL` when a document states the floor in prose (seen on
+the reference repository); verify it from the build file. The implement playbook
 `add-baselines-and-ratchet` covers both.
 
 Prose (`DOC-05`): the `establish-docs-contract` prose check is a stdlib Python script, copied only under a licence
@@ -101,7 +102,7 @@ change. Run it from the docs CI job, or wrap it in a Gradle `Exec` task (`docsPr
 A multi-module Gradle build (`settings.gradle`'s `include()` calls) expresses boundaries through each
 module's own dependency declarations (`implementation project(':core')`); a module that is not listed as a
 dependency cannot see another's `api`-visible classes at compile time, which is Gradle's own enforcement,
-not a lint rule. The one repository checked is single-module (`rootProject.name` alone, no `include()`),
+not a lint rule. The reference repository is single-module (`rootProject.name` alone, no `include()`),
 so module boundaries are untested here.
 
 ## Engine coverage
@@ -116,27 +117,22 @@ a human read of the build file to see the gap the engine's literal-name match ca
 which is `UNKNOWN` outright whenever `check` resolves only through the Gradle/Maven lifecycle path, by the
 engine's own documented rule, so this pack's check-composition question is never answered for an
 unmodified Gradle build and needs the agent's own read of what plugins (and their tasks) `check` actually
-depends on; `EXEC-02`, which recognises no Gradle lockfile convention at all, so `UNKNOWN` here means
-"the engine cannot see dependency locking," not "there is none" — confirm by reading the build file for a
-`dependencyLocking` block.
+depends on; `EXEC-02`, which finds `gradle.lockfile` but never compares it with the build file, so its
+`PARTIAL` means "consistency not read" — confirm by reading the build file for a `dependencyLocking` block.
+`TOOL-01` and `TOOL-02` look for a formatter or linter config file by name; `checkstyle.xml` is the one JVM name.
+A Spotless block in the build file or a PMD ruleset under `config/pmd/` therefore reads `PARTIAL` (seen on the
+reference repository): read the build file. `TOOL-04` reads `PARTIAL` when `security` is an `Exec` task that calls
+a script, because the engine does not follow the script: read the script.
 
 ## Pitfalls
 
-The one repository checked ships four GitHub Actions workflows, all of which run a Gemini Code Assist
-action (PR review, CLI, issue triage) and none of which runs `./gradlew check`, `./gradlew test`, or any
-other build verb — `ci_providers` reads `github_actions` correctly from file presence, but a human read
-confirms there is no build-verifying CI gate at all, a real finding this pack's CI checks must surface
-rather than credit on file presence alone. The repository's own `AGENTS.md` documents a command surface
-(`mvn verify`, `mvn test`, subdirectories `quarkus-app` and `embedding-service`) that does not match the
-actual repository layout at all (a single-module Gradle/Quarkus build at the root, no `pom.xml`, no
-`quarkus-app` or `embedding-service` directory) — a genuine `DOC`-family defect (stale, contradicted
-instructions), not an engine false positive, and a sharp illustration of why `DOC`'s checks read the
-instruction file's content, not just its presence. No formatter, linter or dependency-scanner task is
-registered by name anywhere in the build file beyond the OWASP plugin's own default task name
-(`dependencyCheckAnalyze`), so `CMD-01` correctly reads `FAIL` for `format`, `format:check`, `lint` and
-`security` — this is the stack's own gap, not a detection miss, and the remediation is to register the
-missing tasks (Spotless, Checkstyle, a `security` task that depends on `dependencyCheckAnalyze`), not to
-distrust the verdict.
+A workflow file is not a build gate. `ci_providers` reads `github_actions` from file presence alone, and the
+reference repository once shipped four workflows that ran only AI review and triage, never a Gradle verb. Read
+what each job runs before you credit a `CI` check. Its `AGENTS.md` then described a Maven, multi-service layout
+the repository did not have: a `DOC`-family defect (stale instructions), not an engine false positive. A build
+that applies the OWASP plugin but registers no `security` task reads `CMD-01` `FAIL` for that verb, as it does
+for `format`, `format:check` and `lint` without a named task. That is the stack's own gap, not a detection miss:
+register the tasks (Spotless, Checkstyle or PMD, a `security` task), do not distrust the verdict.
 
 A package named `example`, `samples` or `fixtures` is read as code below a source root,
 `src/<source set>/<java|kotlin|scala|groovy>/`. Spring Initializr's default group, `com.example`, is one such
@@ -158,24 +154,36 @@ richer than Gradle's test/check-only pair — invoked through the wrapper (`./mv
 `format`, `format:check`, `lint` and `security` still need a named plugin, but the engine recognises
 three directly by `artifactId`: `spotless-maven-plugin`, `maven-checkstyle-plugin`,
 `dependency-check-maven`. `CMD-02` is `UNKNOWN` for a `check` resolved only through `verify`, the same
-rule as Gradle. A real engine gap, found by reading the check rather than a repository
-(issue #29): `EXEC-02`'s lockfile table recognises only `gradle.lockfile` for `jvm` (`_lockfiles_for` in
+rule as Gradle. A real engine gap, found by reading the check rather than a repository:
+`EXEC-02`'s lockfile table recognises only `gradle.lockfile` for `jvm` (`_lockfiles_for` in
 `audit/rules/checks/execution.py`, fed by `PACKAGE_MANAGERS` in `audit/stack.py`), never a Maven convention,
 so a pure-Maven project is still told it is missing `gradle.lockfile` — read the finding's own evidence
 before repeating that name.
 
 ## Verified
 
-2026-10-13, against the Digital-Assistant-Server (`/home/kc/Projects/UDAN/Digital-Assistant-Server`,
-`dev` at `7f351b0`): Gradle 8.12.1 via the committed wrapper, Groovy DSL `build.gradle`, plugins `java`,
-`io.quarkus` (3.2.10.Final) and `org.owasp.dependencycheck` (9.0.9), no Checkstyle/PMD/Spotless, no Java
-toolchain block, no `dependencyLocking` block, single-module (`settings.gradle` sets only
-`rootProject.name`), four GitHub Actions workflows (all Gemini AI review/triage, none running a Gradle
-verb), `AGENTS.md` and `CONVENTIONS.md` present at the root but describing a Maven/multi-service layout
-the repository does not have. Read via `tools/facts.py` and direct inspection of `build.gradle`,
-`settings.gradle`, `gradle.properties`, `gradle/wrapper/gradle-wrapper.properties`, `.github/workflows/`
-and `AGENTS.md`; no target command was run. Tooling options checked against current docs the same day:
-dependency locking is opt-in, through a `dependencyLocking { lockAllConfigurations() }` block and
+2026-11-20, against the reference repository, `Nistapp/Digital-Assistant-Server` (`dev` at `c1fdcce`), after its
+implement runs. It is still a single-module Groovy DSL `build.gradle` on Gradle 8.12.1 through the committed wrapper,
+with `io.quarkus` 3.2.10.Final. It now has a Java 21 toolchain block and `dependencyLocking { lockAllConfigurations() }`
+with a tracked `gradle.lockfile`. It adds Spotless 8.10.4 (Eclipse config, ratchet from `origin/dev`), PMD 7.29.0
+and JaCoCo with `quarkus-jacoco`. It has named tasks for all seven verbs (`format`, `formatCheck`, `lint`, `typecheck`,
+`security` as an `Exec` task, and the lifecycle `test` and `check`). Its CI workflow runs Gradle through
+`scripts/ci/` with `actions/setup-java` and `cache: gradle`, beside secret, CodeQL, workflow-lint and docs-lint jobs;
+hooks are lefthook. Today's engine (ruleset `2026-11-20.1`) gives `CMD-01`, `EXEC-01`, `CI-01`, `CI-05`,
+`BASE-01` and `BASE-03` `PASS`; `CMD-02` `UNKNOWN`; and `EXEC-02`, `TOOL-01`, `TOOL-02`, `TOOL-04` and `BASE-04`
+`PARTIAL` for the reasons in Engine coverage. Read via the engine on a clean clone of `dev` and by reading
+`build.gradle`, `settings.gradle`, `gradle/wrapper/gradle-wrapper.properties` and `.github/workflows/ci.yml`; no
+target command was run.
+
+2026-10-13, the first check, against the same repository (`dev` at `7f351b0`), before any implement run: Gradle
+8.12.1 via the committed wrapper, Groovy DSL `build.gradle`, plugins `java`, `io.quarkus` (3.2.10.Final) and
+`org.owasp.dependencycheck` (9.0.9), no Checkstyle/PMD/Spotless, no Java toolchain block, no `dependencyLocking`
+block, single-module (`settings.gradle` sets only `rootProject.name`), four GitHub Actions workflows (all Gemini AI
+review/triage, none running a Gradle verb), `AGENTS.md` and `CONVENTIONS.md` present at the root but describing a
+Maven/multi-service layout the repository did not have. Read via `tools/facts.py` and direct inspection of
+`build.gradle`, `settings.gradle`, `gradle.properties`, `gradle/wrapper/gradle-wrapper.properties`,
+`.github/workflows/` and `AGENTS.md`; no target command was run. Tooling options checked against current docs the
+same day: dependency locking is opt-in, through a `dependencyLocking { lockAllConfigurations() }` block and
 `--write-locks`, per [Gradle's own user guide](https://docs.gradle.org/current/userguide/dependency_locking.html);
 the OWASP Dependency-Check Gradle plugin's own task is named `dependencyCheckAnalyze`, not `security`, confirmed
 against [the plugin's configuration page](https://github.com/jeremylong/DependencyCheck/blob/main/src/site/markdown/dependency-check-gradle/configuration.md).
