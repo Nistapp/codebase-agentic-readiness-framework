@@ -122,6 +122,33 @@ class TstInlineTests(unittest.TestCase):
                 )
                 self.assertEqual(support.verdicts(report)["TST-04"], "PASS")
 
+    def test_a_jest_run_narrowed_by_a_test_file_path_is_a_fast_path(self):
+        # Issue #50: a path-only run is the documented form when the test verb carries a coverage floor.
+        for command in (
+            "npx jest src/path/to/file.spec.ts",
+            "jest src/app.test.tsx --coverage=false",
+            "npx react-scripts test --watchAll=false src/path/to/file.test.tsx",
+        ):
+            with self.subTest(command=command):
+                report = self._scan(
+                    {
+                        "src/app.test.tsx": "it('adds', () => {});\n",
+                        "AGENTS.md": f"# x\n\n```bash\n{command}\n```\n",
+                    }
+                )
+                self.assertEqual(support.verdicts(report)["TST-04"], "PASS")
+
+    def test_a_jest_or_react_scripts_run_without_a_test_file_path_is_not_a_fast_path(self):
+        for command in ("npx jest --coverage", "npx react-scripts test --watchAll=false", "jest src/"):
+            with self.subTest(command=command):
+                report = self._scan(
+                    {
+                        "src/app.test.tsx": "it('adds', () => {});\n",
+                        "AGENTS.md": f"# x\n\n```bash\n{command}\n```\n",
+                    }
+                )
+                self.assertEqual(support.verdicts(report)["TST-04"], "FAIL")
+
     def test_vitest_full_run_is_not_a_fast_path(self):
         report = self._scan(
             {

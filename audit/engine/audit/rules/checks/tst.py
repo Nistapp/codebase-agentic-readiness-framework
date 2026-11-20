@@ -99,6 +99,8 @@ _FASTPATH_PATTERNS: tuple[str, ...] = (
     r"\b(?:npx\s+)?vitest\s+run\s+\S*(?:test|spec)\S*",
     r"\b(?:npx\s+)?vitest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
     r"\b(?:npx\s+)?jest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
+    r"\b(?:npx\s+)?jest\b[^\n&|;]*\s\S*\.(?:test|spec)\.\S*",
+    r"\breact-scripts\s+test\b[^\n&|;]*\s\S*\.(?:test|spec)\.\S*",
     r"\bgo\s+test\b[^\n&|;]*\s-run\b",
     r"\bcargo\s+test\b\s+[A-Za-z_]\w*",
     r"\b(?:\./)?(?:gradlew|gradle)\b[^\n&|;]*--tests\b",
