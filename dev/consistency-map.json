@@ -9316,11 +9316,11 @@
           "scope": "root"
         },
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9367,11 +9367,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".githooks/**",
+          "path": ".githooks/*",
           "scope": "glob"
         },
         {
-          "path": ".husky/**",
+          "path": ".husky/*",
           "scope": "glob"
         },
         {
@@ -9494,11 +9494,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9562,11 +9562,11 @@
           "scope": "root"
         },
         {
-          "path": ".githooks/**",
+          "path": ".githooks/*",
           "scope": "glob"
         },
         {
-          "path": ".husky/**",
+          "path": ".husky/*",
           "scope": "glob"
         },
         {
@@ -9605,11 +9605,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".githooks/**",
+          "path": ".githooks/*",
           "scope": "glob"
         },
         {
-          "path": ".husky/**",
+          "path": ".husky/*",
           "scope": "glob"
         },
         {
@@ -9652,11 +9652,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9700,11 +9700,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9787,11 +9787,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -9921,11 +9921,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -10576,11 +10576,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {
@@ -11220,7 +11220,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".devcontainer/**/*.json",
+          "path": ".devcontainer/*.json",
+          "scope": "glob"
+        },
+        {
+          "path": ".devcontainer/*/devcontainer.json",
           "scope": "glob"
         },
         {
@@ -11743,7 +11747,7 @@
           "scope": "glob"
         },
         {
-          "path": ".husky/**",
+          "path": ".husky/*",
           "scope": "glob"
         },
         {
@@ -12052,8 +12056,8 @@
           "scope": "any-depth"
         },
         {
-          "path": "tests/*.rs",
-          "scope": "glob"
+          "path": "tests/**/*.rs",
+          "scope": "any-depth"
         }
       ]
     },
@@ -12983,11 +12987,11 @@
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yml",
+          "path": ".github/workflows/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/**/*.yaml",
+          "path": ".github/workflows/*.yaml",
           "scope": "glob"
         },
         {

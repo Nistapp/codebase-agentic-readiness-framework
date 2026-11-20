@@ -41,7 +41,6 @@ is exit 3, because it can only be a bug in this tool; nothing is written then.
 
 from __future__ import annotations
 
-import fnmatch
 import importlib
 import inspect
 import json
@@ -168,15 +167,17 @@ def variant_of(rel: str) -> str:
     """The pattern of the engine's variants table that names the instruction file `rel`.
 
     A plain name counts at any depth, as the engine counts it; a pattern with a folder in it is tried in the table's
-    order, once as written and once without its `**/`, so that a file straight in the folder has a name too.
+    order with the engine's own glob matcher (`audit/globs.py`), where `**/` also matches no folder, so that a file
+    straight in the folder has a name too.
     """
     names = engine_module("audit.rules.checks.agt").INSTRUCTION_BASENAMES
     base = rel.rpartition("/")[2]
     if base in names:
         return str(base)
+    glob_match = engine_module("audit.globs").glob_match
     for harness in engine_module("audit.rules.variants").HARNESSES:
         for pattern in harness.paths:
-            if fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel, pattern.replace("**/", "")):
+            if glob_match(pattern, rel, fold_case=True):
                 return str(pattern)
     raise _common.ToolError(f"the engine sees {rel} as an instruction file and its variants table has no name for it")
 
