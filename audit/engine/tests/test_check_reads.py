@@ -65,7 +65,7 @@ from audit.components import detect_components  # noqa: E402
 from audit.probes import ProbeSession  # noqa: E402
 from audit import globs, scan  # noqa: E402
 from audit.rules import checks, reads, variants  # noqa: E402
-from audit.rules.checks import _common, agt, con, sec  # noqa: E402
+from audit.rules.checks import _common, agt, con, nav, sec  # noqa: E402
 from audit.rules.registry import REGISTRY, applicable_checks  # noqa: E402
 from audit.scan import CONTENT_READ_LIMIT, Inventory, build_inventory  # noqa: E402
 from audit.stack import detect_stack  # noqa: E402
@@ -325,6 +325,11 @@ _NOT_READS_IN: tuple[tuple[tuple[str, ...], Callable[..., Any], str], ...] = (
         agt.instruction_paths,
         "AGT-02 keeps only the paths that end in <component>/AGENTS.md, so the other instruction names it "
         "compares on the way decide nothing",
+    ),
+    (
+        ("NAV-05",),
+        nav._python_test_file,
+        "an exclusion: a Python test file it matches is left out of the docstring census",
     ),
 )
 

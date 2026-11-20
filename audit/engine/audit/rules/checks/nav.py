@@ -29,14 +29,21 @@ informational (`scored=False` in the registry) and are reported but earn no cred
 
 Deliberate limits, recorded rather than hidden. NAV-02 reads a fixed, documented set of entry-point
 signals per ecosystem rather than resolving one semantically. NAV-05 is a best-effort static
-approximation of "public": module-level names not starting with an underscore (Python) or exported
-declarations (TypeScript/JavaScript); it never executes or reflects.
+approximation of "public"; it never executes or reflects. Python is parsed with the stdlib `ast`:
+module-level functions and classes plus the methods of public classes (nested public classes too, never a
+function inside a function), names not starting with an underscore (so no dunder method), and documented
+means `ast.get_docstring` finds one. A test file (a `tests` or `test` directory in its path, or a
+`test_*.py` or `*_test.py` name) is left out. A file `ast` cannot parse falls back to column-0
+`def`/`class` lines with a docstring on the next code line. TypeScript/JavaScript counts exported
+declarations only, preceded by a `/** */` block; class members are not counted.
 """
 
 from __future__ import annotations
 
+import ast
 import json
 import re
+import warnings
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
@@ -398,6 +405,9 @@ _TS_EXPORT_RE = re.compile(
 )
 _TS_SUFFIXES = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
 
+#: A `.py` file under a directory with one of these names is a test file, left out of the census (NAV-05).
+_PY_TEST_DIRS = frozenset({"tests", "test"})
+
 
 def _language(inventory: Inventory, stack) -> str | None:
     counts = {"python": 0, "typescript": 0}
@@ -424,24 +434,64 @@ def _next_code_line(lines: list[str], start: int) -> str | None:
     return lines[index] if index < len(lines) else None
 
 
-def _python_census(inventory: Inventory) -> tuple[int, int]:
+def _python_test_file(rel: str) -> bool:
+    parts = rel.split("/")
+    name = parts[-1]
+    return any(part in _PY_TEST_DIRS for part in parts[:-1]) or name.startswith("test_") or name.endswith("_test.py")
+
+
+def _python_line_census(text: str) -> tuple[int, int]:
+    """The fallback for a file `ast` cannot parse: column-0 `def`/`class`, docstring on the next code line."""
     total = documented = 0
-    for entry in inventory.files:
-        if not entry.rel.endswith(".py") or not entry.has_text:
+    lines = text.splitlines()
+    for index, line in enumerate(lines):
+        match = _PY_PUBLIC_RE.match(line)
+        if not match:
             continue
-        lines = (inventory.read(entry.rel) or "").splitlines()
-        for index, line in enumerate(lines):
-            match = _PY_PUBLIC_RE.match(line)
-            if not match:
-                continue
-            name = match.group(1) or match.group(2)
-            if name.startswith("_"):
-                continue
-            total += 1
-            following = _next_code_line(lines, index + 1)
-            if following is not None and following.lstrip().startswith(('"""', "'''")):
-                documented += 1
+        name = match.group(1) or match.group(2)
+        if name.startswith("_"):
+            continue
+        total += 1
+        following = _next_code_line(lines, index + 1)
+        if following is not None and following.lstrip().startswith(('"""', "'''")):
+            documented += 1
     return total, documented
+
+
+def _python_ast_census(body: list[ast.stmt]) -> tuple[int, int]:
+    total = documented = 0
+    for node in body:
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) or node.name.startswith("_"):
+            continue
+        total += 1
+        if ast.get_docstring(node) is not None:
+            documented += 1
+        if isinstance(node, ast.ClassDef):
+            inner_total, inner_documented = _python_ast_census(node.body)
+            total += inner_total
+            documented += inner_documented
+    return total, documented
+
+
+def _python_census(inventory: Inventory) -> tuple[int, int, int]:
+    """Count (public symbols, documented ones, files read by the line fallback) over non-test `.py` files."""
+    total = documented = fallback = 0
+    for entry in inventory.files:
+        if not entry.rel.endswith(".py") or not entry.has_text or _python_test_file(entry.rel):
+            continue
+        text = inventory.read(entry.rel) or ""
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                tree = ast.parse(text, filename=entry.rel)
+        except (SyntaxError, ValueError):
+            fallback += 1
+            file_total, file_documented = _python_line_census(text)
+        else:
+            file_total, file_documented = _python_ast_census(tree.body)
+        total += file_total
+        documented += file_documented
+    return total, documented, fallback
 
 
 def _ts_census(inventory: Inventory) -> tuple[int, int]:
@@ -470,17 +520,23 @@ def check_nav05(*, spec, target, inventory, stack, components, session) -> Check
     if language is None:
         return _unknown(spec, "no recognised source language, so 'public' cannot be defined")
 
-    total, documented = _python_census(inventory) if language == "python" else _ts_census(inventory)
-    method = (
-        "python: module-level def/class not starting with '_'"
-        if language == "python"
-        else "typescript: exported declarations"
-    )
+    fallback = 0
+    if language == "python":
+        total, documented, fallback = _python_census(inventory)
+        method = (
+            "python: module-level def/class and the methods of public classes, names not starting with '_', "
+            "test files left out (ast; a file that does not parse falls back to column-0 def/class)"
+        )
+    else:
+        total, documented = _ts_census(inventory)
+        method = "typescript: exported declarations (class members not counted)"
     if total == 0:
         return _unknown(spec, f"{language}: no public symbols detected ({method})")
 
     ratio = documented / total
     detail = f"{documented}/{total} public symbols documented ({ratio:.0%}); method: {method}"
+    if fallback:
+        detail += f"; {fallback} file(s) did not parse and were read by the column-0 rule"
     verdict = Verdict.PASS if documented == total else Verdict.PARTIAL
     return _outcome(
         spec, verdict, detail, data=Ratio(numerator=documented, denominator=total, unit="public symbols", method=method)

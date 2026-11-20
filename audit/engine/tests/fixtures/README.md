@@ -117,6 +117,7 @@ fixtures/
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
   nav-02-main-guard-only/    python library, only a guarded helper script -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL
+  nav-05-methods/            python methods, a multi-line signature, a file that does not parse, a test file -> NAV-05 PARTIAL (6 of 8)
   doc-nav-ok/                the smallest repository passing every scored DOC/NAV check
   tool-01-no-formatter/      node project, no formatter config or verb -> TOOL-01 FAIL
   tool-02-no-linter/         node project, no linter config or verb  -> TOOL-02 FAIL

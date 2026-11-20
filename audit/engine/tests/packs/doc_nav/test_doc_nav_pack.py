@@ -33,6 +33,8 @@ from audit.components import detect_components  # noqa: E402
 from audit.rules.checks.agt import check_agt02 as CHECK_AGT02  # noqa: E402
 from audit.rules.checks.nav import check_nav01 as CHECK_NAV01  # noqa: E402
 from audit.rules.checks.nav import check_nav03 as CHECK_NAV03  # noqa: E402
+from audit.rules.checks.nav import check_nav05 as CHECK_NAV05  # noqa: E402
+from audit.rules.checks.nav import _python_census, _python_test_file  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
 from audit.rules.checks import _prose  # noqa: E402
 from audit.rules.checks.doc import _adr_tombstone  # noqa: E402
@@ -53,6 +55,7 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "nav-02-no-entry": ("NAV-02", "FAIL"),
     "nav-02-main-guard-only": ("NAV-02", "FAIL"),
     "nav-03-red-flags": ("NAV-03", "PARTIAL"),
+    "nav-05-methods": ("NAV-05", "PARTIAL"),
 }
 
 DOC_CHECKS = ("DOC-01", "DOC-02", "DOC-03", "DOC-04", "DOC-05")
@@ -451,6 +454,101 @@ class Nav03LockfileTests(unittest.TestCase):
         check = self.check("package-lock.json", "{}\n")
         self.assertEqual(check["verdict"], "PASS")
         self.assertNotIn("lockfiles", check["summary"])
+
+
+class Nav05PythonCensusTests(unittest.TestCase):
+    """`NAV-05` parses Python with `ast`, so it counts methods and reads a docstring after a multi-line signature.
+
+    The `nav-05-methods` fixture holds 8 public symbols, 6 of them documented:
+
+    * `geometry.py` (parsed): `Shape`, `area`, `scale` (a multi-line signature), `Unit` (a nested public class)
+      and `make_shape` (a multi-line signature) are documented; `perimeter` and `Unit.label` are not. The private
+      method `_cache_key`, the dunder `__repr__`, the private class `_Registry` (and its public method) and the
+      function `helper` inside `make_shape` are not counted.
+    * `legacy.py` does not parse (Python 2 `print`), so the column-0 rule reads it: `legacy_area`, documented.
+    * `tests/test_geometry.py` is a test file and is left out.
+
+    The column-0 rule alone gives 2 of 5 on this tree: it counts the test file and misses every method.
+    """
+
+    def _inventory(self, files: dict[str, str]):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        for rel, text in files.items():
+            support.write(root, rel, text)
+        return build_inventory(root)
+
+    def _run(self, inventory) -> dict:
+        outcome = CHECK_NAV05(
+            spec=REGISTRY_BY_ID["NAV-05"],
+            target=None,
+            inventory=inventory,
+            stack=detect_stack(inventory),
+            components=None,
+            session=None,
+        )
+        return {"verdict": outcome.verdict.value, "summary": outcome.summary, "data": outcome.data}
+
+    def test_fixture_census_counts_methods_and_skips_tests(self):
+        inventory = build_inventory(support.fixture("nav-05-methods"))
+        self.assertEqual(_python_census(inventory), (8, 6, 1))
+
+    def test_fixture_outcome_states_the_ratio_and_the_fallback(self):
+        check = self._run(build_inventory(support.fixture("nav-05-methods")))
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertTrue(check["summary"].startswith("6/8 public symbols documented (75%)"))
+        self.assertIn("methods of public classes", check["summary"])
+        self.assertIn("1 file(s) did not parse", check["summary"])
+        self.assertEqual((check["data"].numerator, check["data"].denominator), (6, 8))
+
+    def test_fixture_end_to_end_reports_the_same_numbers(self):
+        report = support.run_audit(support.fixture("nav-05-methods"))
+        check = next(c for c in report["checks"] if c["id"] == "NAV-05")
+        self.assertEqual(check["verdict"], "PARTIAL")
+        self.assertEqual((check["data"]["numerator"], check["data"]["denominator"]), (6, 8))
+
+    def test_documented_methods_pass_and_name_no_fallback(self):
+        inventory = self._inventory(
+            {
+                "pyproject.toml": '[project]\nname = "p"\n',
+                "src/p/core.py": (
+                    'class Box:\n    """A box."""\n\n    async def open(\n        self,\n    ) -> None:\n'
+                    '        """Open it."""\n'
+                ),
+            }
+        )
+        self.assertEqual(_python_census(inventory), (2, 2, 0))
+        check = self._run(inventory)
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertNotIn("did not parse", check["summary"])
+
+    def test_only_test_files_is_unknown(self):
+        inventory = self._inventory(
+            {"pyproject.toml": '[project]\nname = "p"\n', "tests/test_core.py": "def test_one():\n    pass\n"}
+        )
+        self.assertEqual(_python_census(inventory), (0, 0, 0))
+        self.assertEqual(self._run(inventory)["verdict"], "UNKNOWN")
+
+    def test_test_file_rule(self):
+        for rel in ("tests/test_a.py", "pkg/test/helpers.py", "a/b/tests/conftest.py", "test_a.py", "pkg/a_test.py"):
+            with self.subTest(rel=rel):
+                self.assertTrue(_python_test_file(rel))
+        for rel in ("src/testing.py", "src/contest.py", "latest/a.py", "src/attest_x.py", "tests.py"):
+            with self.subTest(rel=rel):
+                self.assertFalse(_python_test_file(rel))
+
+    def test_typescript_method_names_class_members_not_counted(self):
+        inventory = self._inventory(
+            {
+                "package.json": '{"name": "p"}\n',
+                "src/a.ts": "/** A box. */\nexport class Box {\n  open(): void {}\n}\n",
+            }
+        )
+        check = self._run(inventory)
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertEqual(check["data"].denominator, 1)
+        self.assertIn("class members not counted", check["summary"])
 
 
 class Doc04TemplateEntryTests(unittest.TestCase):
