@@ -61,7 +61,8 @@ Can an agent find the code, the rules and the documents it needs before it edits
 
 `DEGRADER` · scored · engine check · fixed by [`register-index`](implement-master.md#register-index)
 
-- **Passes when:** the index's recorded revision matches `HEAD`, or a direct freshness query reports no drift.
+- **Passes when:** the index's recorded revision matches `HEAD`, the index was built at or after HEAD last moved, or a
+  direct freshness query reports no drift.
 - **Why it matters:** A stale graph is stale context: an agent edits based on symbols that have already moved or been
   deleted ([`docs/framework/phased-approach.md` § Activities](../framework/phased-approach.md#activities)).
 
@@ -593,8 +594,8 @@ Does the same command give the same result on a fresh machine, without a human i
 `BLOCKER` · scored · engine check · fixed by
 [`pin-execution-environment`](implement-master.md#pin-execution-environment)
 
-- **Passes when:** every detected ecosystem's lockfile exists, is tracked, and (where parsing is attempted) agrees with
-  the manifest.
+- **Passes when:** every detected ecosystem has a lockfile, every lockfile is tracked, and each one (where parsing is
+  attempted) agrees with the manifest in its folder.
 - **Why it matters:** Every run must resolve identical dependencies; a lockfile that is missing, untracked, or stale
   turns "works on my machine" into a problem the agent inherits too ([Phased-Approach.md § Phase 1: Agentic
   Bootstrap](../framework/phased-approach.md#phase-1-agentic-bootstrap-)).
@@ -614,9 +615,9 @@ Does the same command give the same result on a fresh machine, without a human i
 `BLOCKER` · scored · engine check · fixed by
 [`env-inventory-and-secrets`](implement-master.md#env-inventory-and-secrets)
 
-- **Passes when:** every required referenced key not on the allow-list is declared in a committed example file
-  (including the case of no references at all). An optional key (a shell reference with a fallback) is listed but never
-  required.
+- **Passes when:** every required referenced key not on the allow-list is declared in an example file that covers each
+  file reading it (including the case of no references at all). An optional key (a shell reference with a fallback) is
+  listed but never required.
 - **Why it matters:** A variable the code needs but nobody wrote down fails at runtime, mid-task, and the agent debugs
   an environment problem it has no way to see coming ([greenfield/README.md § File Tree — What Gets
   Created](../../greenfield/README.md#file-tree--what-gets-created)).

@@ -30,6 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 import support  # noqa: E402
 from audit.rules.checks.nav import LARGE_FILE_BYTES, _jvm_entry, _python_entry  # noqa: E402
 from audit.components import detect_components  # noqa: E402
+from audit.rules.checks.agt import check_agt02 as CHECK_AGT02  # noqa: E402
 from audit.rules.checks.nav import check_nav01 as CHECK_NAV01  # noqa: E402
 from audit.rules.checks.nav import check_nav03 as CHECK_NAV03  # noqa: E402
 from audit.scan import build_inventory  # noqa: E402
@@ -357,6 +358,49 @@ class Nav01ComponentManifestTests(unittest.TestCase):
         check, _ = self.nav01({"README.md": "# x\n"})
         self.assertEqual(
             check, {"verdict": "UNKNOWN", "summary": "no build manifest declares a component; stack not recognised"}
+        )
+
+    def test_with_no_root_manifest_each_top_level_app_folder_is_a_candidate(self):
+        """An app per folder and nothing at the root (issue #20): each app is a candidate, so NAV-01 is PARTIAL."""
+        files = {
+            "web/package.json": "{}\n",
+            "api/pom.xml": "<project />\n",
+            "docs/guide.md": "# Guide\n",
+            "tools/scripts/package.json": "{}\n",
+            ".github/package.json": "{}\n",
+        }
+        check, candidates = self.nav01(files)
+        self.assertEqual(candidates, ["api", "web"])
+        self.assertEqual(check, {"verdict": "PARTIAL", "summary": "2 candidate component(s), none declared"})
+
+    def test_a_root_manifest_keeps_top_level_folders_out_of_the_candidates(self):
+        check, candidates = self.nav01({"package.json": "{}\n", "web/package.json": "{}\n"})
+        self.assertEqual(candidates, [])
+        self.assertEqual(check, {"verdict": "PASS", "summary": "single-root repository declares package.json"})
+        _, candidates = self.nav01({"App.sln": "\n", "web/package.json": "{}\n"})
+        self.assertEqual(candidates, [])
+
+    def test_a_conventional_candidate_is_listed_once_before_the_top_level_ones(self):
+        _, candidates = self.nav01({"apps/web/package.json": "{}\n", "api/go.mod": "module x\n"})
+        self.assertEqual(candidates, ["apps/web", "api"])
+
+    def test_agt02_names_the_candidates_it_does_not_score(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        for rel in ("web/package.json", "api/package.json"):
+            support.write(Path(tmp.name), rel, "{}\n")
+        inventory = build_inventory(Path(tmp.name))
+        outcome = CHECK_AGT02(
+            spec=REGISTRY_BY_ID["AGT-02"],
+            target=None,
+            inventory=inventory,
+            stack=detect_stack(inventory),
+            components=detect_components(inventory),
+            session=None,
+        )
+        self.assertEqual(
+            (outcome.verdict.value, outcome.summary),
+            ("PASS", "no declared components; 2 candidate component(s) are not scored (ADR-0003): api, web"),
         )
 
 

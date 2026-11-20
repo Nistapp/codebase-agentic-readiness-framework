@@ -121,6 +121,7 @@ def build_report(result: AuditResult, args: argparse.Namespace) -> dict[str, Any
             "truncated": result.inventory.truncated,
             "files_set_aside": result.inventory.files_set_aside,
             "set_aside": [{"path": entry.path, "files": entry.files} for entry in result.inventory.set_aside],
+            "ignored_dirs": list(result.inventory.ignored_dirs),
         },
         "components": [
             {

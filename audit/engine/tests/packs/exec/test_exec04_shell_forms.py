@@ -87,6 +87,22 @@ class Exec04ShellFormTests(unittest.TestCase):
         self.assertEqual((outcome.verdict.value, outcome.data.optional), ("PASS", ()))
         self.assertEqual(outcome.summary, "no required environment key referenced")
 
+    def test_an_optional_key_is_declared_only_by_an_example_file_that_covers_its_reader(self):
+        # Optional keys follow the same folder rule as required ones: `api/.env.example` covers `api/`, not `web/`.
+        outcome = _exec04(
+            {
+                "api/.env.example": "CACHE_DIR=\n",
+                "api/run.sh": 'mkdir -p "${CACHE_DIR:-/tmp/a}"\n',
+                "web/run.sh": 'mkdir -p "${CACHE_DIR:-/tmp/w}" "${LOG_DIR:-/tmp/l}"\n',
+            }
+        )
+        self.assertEqual(
+            (outcome.verdict.value, outcome.data.missing, outcome.data.optional),
+            ("PASS", (), ("CACHE_DIR", "LOG_DIR")),
+        )
+        declared = _exec04({"api/.env.example": "CACHE_DIR=\n", "api/run.sh": 'echo "${CACHE_DIR:-/tmp/a}"\n'})
+        self.assertEqual(declared.data.optional, ())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1526,7 +1526,7 @@
       "check": "BASE-04",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
-        "quote": "Gradle and nested `package.json`: `FAIL`, or `PARTIAL` with the `AGENTS.md` sentence",
+        "quote": "a JaCoCo floor in a Gradle or Maven build, root Python coverage configs: `PASS`",
         "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
       },
       "move": "add-baselines-and-ratchet/row-13",
@@ -2848,7 +2848,7 @@
       "check": "EXEC-04",
       "home": {
         "path": "implement/playbooks/env-inventory-and-secrets.md",
-        "quote": "A nested example file always has a root `.env.example` beside it that lists every name (Inputs 1).",
+        "quote": "Each one counts for \"`EXEC-04` Env-var inventory complete\" for the files it covers.",
         "section": "implement/playbooks/env-inventory-and-secrets.md#playbook-env-inventory-and-secrets/steps/generic"
       },
       "move": "env-inventory-and-secrets/row-3",
@@ -7517,7 +7517,7 @@
       "constants": [
         "audit.rules.checks.idx:_PROJECT_CONFIGS"
       ],
-      "note": "Each config is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy reads as unreadable (UNKNOWN). Three user configs under $HOME are read too, unless --no-user-config.",
+      "note": "Each config is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy reads as unreadable (UNKNOWN). Three user configs under $HOME are read too, unless --no-user-config, and Claude Code's ~/.claude.json is parsed: its top-level mcpServers or the projects entry of this checkout's path.",
       "source": "engine",
       "what": {
         "kind": "phrase",
@@ -7574,7 +7574,7 @@
     {
       "binding": "file",
       "check": "IDX-03",
-      "note": "The store of IDX-02 (no repository text); a git-revision column of the matching project row is compared with HEAD as a probe.",
+      "note": "The store of IDX-02 (no repository text); a git-revision column of the matching project row is compared with HEAD as a probe. With no such column, its indexed_at is compared with the time HEAD last moved (git's committer time and reflog).",
       "source": "engine",
       "what": {
         "kind": "exists"
@@ -7996,14 +7996,16 @@
     {
       "binding": "line",
       "check": "AGT-08",
-      "note": "The instruction-file set of AGT-01 gives the competitors and the reach. The statement is read in the root AGENTS.md only, never CLAUDE.md, and needs a known harness name on the same line.",
+      "note": "The instruction-file set of AGT-01 gives the competitors and the reach. The statement is read in the root AGENTS.md only, never CLAUDE.md, and needs a known harness name on the same line. With a root AGENTS.md, each vendor file is read too: one whose few content lines all name AGENTS.md is a pointer, not a competitor, and one that imports @AGENTS.md shadows nothing.",
       "source": "engine",
       "what": {
         "kind": "phrase",
         "text": [
           "read by",
           "supported harness",
-          "supported harnesses"
+          "supported harnesses",
+          "AGENTS.md",
+          "@AGENTS.md"
         ]
       },
       "where": [
@@ -9671,7 +9673,8 @@
     {
       "binding": "line",
       "check": "CI-02",
-      "note": "Each step command (inline or each line of a block), split at shell operators, is mapped to a verb by runner or known tool and compared with the verbs resolved on the runner manifests.",
+      "named_by_text": "each shell script a step runs is looked up with Inventory.has and read, one level deep",
+      "note": "Each step command (inline or each line of a block), split at shell operators outside quotes, is mapped to a verb by runner or known tool and compared with the verbs resolved on the runner manifests. echo and printf text and heredoc bodies are not commands. A step that runs a repository shell script is read one script deep. No workflow, or no CI verb mapped, is UNKNOWN.",
       "source": "engine",
       "threshold": "no CI verb without a local definition",
       "what": {
@@ -9758,7 +9761,7 @@
     {
       "binding": "line",
       "check": "CI-03",
-      "note": "A step command that calls a runner target that is no verb, no package-manager built-in and no target of any local runner fails.",
+      "note": "A step command that calls a runner target that is no verb, no package-manager built-in and no target of any local runner fails. Commands split at shell operators outside quotes; echo and printf text and heredoc bodies are not commands.",
       "source": "engine",
       "threshold": "no CI-only step",
       "what": {
@@ -10402,6 +10405,10 @@
           "scope": "root"
         },
         {
+          "path": "README*",
+          "scope": "glob"
+        },
+        {
           "path": ".eslintrc*",
           "scope": "any-depth"
         },
@@ -10618,7 +10625,7 @@
     {
       "binding": "line",
       "check": "BASE-04",
-      "note": "Config: fail_under = N or --cov-fail-under N in six root files, coverageThreshold in the root package.json, a threshold key in a runner config at any depth (whole-line // comments dropped). Prose (PARTIAL): coverage within 40 characters of threshold, minimum, fail, floor or at least, or within 20 of a percentage, on one line of the four root documents. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
+      "note": "Config: fail_under = N or --cov-fail-under N in six root files, coverageThreshold or --cov-fail-under in a package.json at any depth, a threshold key in a runner config at any depth (whole-line // comments dropped), a jacocoTestCoverageVerification task with a minimum in a Gradle build at any depth, or a jacoco-maven-plugin check goal with a <minimum> in a pom.xml at any depth. Prose (PARTIAL): coverage within 40 characters of threshold, minimum, fail, floor or at least, or within 20 of a percentage, on one line of the four root documents. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
       "source": "engine",
       "what": {
         "kind": "phrase"
@@ -10667,6 +10674,10 @@
         {
           "path": "CONTRIBUTING.md",
           "scope": "root"
+        },
+        {
+          "path": "README*",
+          "scope": "glob"
         },
         {
           "path": "vitest.config.*",
@@ -10738,7 +10749,7 @@
       "binding": "section",
       "check": "CON-01",
       "named_by_text": "each code span of the prohibitions section is looked up in the scan and on disk",
-      "note": "Every code span on the lines of every prohibitions section; a span counts when it has no command characters and holds a slash, a glob or a dot, or names something that exists. Existence is checked in the scan and on disk.",
+      "note": "Every code span on the lines of every prohibitions section; a span counts when it has no command characters and holds a slash, a glob or a dot, or names something that exists. Existence is checked in the scan and on disk. In a section opened by its body alone, only the spans of a list item or paragraph that holds a prohibition line count.",
       "source": "engine",
       "threshold": "a named path that exists",
       "what": {
@@ -10933,9 +10944,9 @@
     {
       "binding": "file",
       "check": "EXEC-02",
-      "note": "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest first, and whether git tracks them; a tracked lockfile the walk skipped as ignored counts too. Only a root lockfile is compared with the root manifests' dependency names; for .NET those are the PackageReference names of the project files in the root folder, and a package reference in a root Directory.* file leaves the lockfile unverified.",
+      "note": "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest first, and whether git tracks each one; a tracked lockfile the walk skipped as ignored counts too. Every tracked lockfile is compared with the dependency names of the manifests in its own folder; for .NET those are the PackageReference names of the project files in that folder, and a package reference in a Directory.* file in that folder or above it leaves the lockfile unverified.",
       "source": "engine",
-      "threshold": "a tracked lockfile that agrees with the manifest",
+      "threshold": "every lockfile tracked and in step with the manifest beside it",
       "what": {
         "kind": "exists"
       },
@@ -11006,51 +11017,51 @@
         },
         {
           "path": "package.json",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "pyproject.toml",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "requirements.txt",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "requirements-dev.txt",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Cargo.toml",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Directory.Build.props",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Directory.Build.targets",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "Directory.Packages.props",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "go.mod",
-          "scope": "root",
+          "scope": "any-depth",
           "unexercised": "no Go fixture: an honest module needs go.sum lines, whose hashes are key-shaped, and EXEC-02 reads a module with no dependencies, so with no go.sum, as unlocked"
         },
         {
-          "path": "*.csproj",
+          "path": "**/*.csproj",
           "scope": "glob"
         },
         {
-          "path": "*.fsproj",
+          "path": "**/*.fsproj",
           "scope": "glob"
         },
         {
-          "path": "*.vbproj",
+          "path": "**/*.vbproj",
           "scope": "glob"
         }
       ]
@@ -11058,7 +11069,7 @@
     {
       "binding": "line",
       "check": "EXEC-03",
-      "note": "A fenced shell command or an inline code span in the four docs whose tool and first argument install or set up passes. Else a setup file or a setup target (setup, bootstrap, install, dev, dev-setup) of the root Makefile or package.json named anywhere in the four docs passes; present but not named is PARTIAL.",
+      "note": "A fenced shell command or an inline code span in the four docs whose tool and first argument install or set up passes. Else a setup file (at any depth, a Dockerfile with a variant in its name included) or a setup target (setup, bootstrap, install, dev, dev-setup) of the root Makefile or package.json named anywhere in the four docs passes; present but not named is PARTIAL.",
       "source": "engine",
       "threshold": "a documented non-interactive setup command",
       "what": {
@@ -11080,6 +11091,10 @@
         {
           "path": "CONTRIBUTING.md",
           "scope": "root"
+        },
+        {
+          "path": "README*",
+          "scope": "glob"
         },
         {
           "path": ".devcontainer/devcontainer.json",
@@ -11122,6 +11137,18 @@
           "scope": "any-depth"
         },
         {
+          "path": "Dockerfile.*",
+          "scope": "any-depth"
+        },
+        {
+          "path": "*.Dockerfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "*.dockerfile",
+          "scope": "any-depth"
+        },
+        {
           "path": ".devcontainer/*.json",
           "scope": "glob"
         },
@@ -11138,9 +11165,9 @@
     {
       "binding": "line",
       "check": "EXEC-04",
-      "note": "References: ${VAR} and ${VAR:?msg} in shell files and Dockerfile, less the keys the same file assigns, and os.environ, getenv, process.env and ENV[...] in every file of kind source or script. A shell reference with a fallback (${VAR:-x}, ${VAR-x}, ${VAR:=x}, ${VAR:+x}) is optional: listed, never missing. Declared keys are the KEY= lines of the four root example files; a fixed allow-list of host, CI and shell-set names is exempt.",
+      "note": "References: ${VAR} and ${VAR:?msg} in shell files and Dockerfile, less the keys the same file assigns, and os.environ, getenv, process.env and ENV[...] in every file of kind source or script. A shell reference with a fallback (${VAR:-x}, ${VAR-x}, ${VAR:=x}, ${VAR:+x}) is optional: listed, never missing. Declared keys are the KEY= lines of the four example file names at any depth; an example file covers the files in its own folder and below it, so a key counts when every file reading it is covered by one that names it. A fixed allow-list of host, CI and shell-set names is exempt.",
       "source": "engine",
-      "threshold": "every referenced key declared",
+      "threshold": "every referenced key declared by an example file that covers each file reading it",
       "what": {
         "kind": "key"
       },
@@ -11179,19 +11206,19 @@
         },
         {
           "path": ".env.example",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".env.sample",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": ".env.template",
-          "scope": "root"
+          "scope": "any-depth"
         },
         {
           "path": "env.example",
-          "scope": "root"
+          "scope": "any-depth"
         }
       ]
     },
@@ -11293,6 +11320,10 @@
         {
           "path": "CLAUDE.md",
           "scope": "root"
+        },
+        {
+          "path": "README*",
+          "scope": "glob"
         },
         {
           "path": "package.json",
@@ -11779,7 +11810,7 @@
       "constants": [
         "audit.rules.checks._common:RUNNER_PRECEDENCE"
       ],
-      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. Every runner manifest counts only at the root, where it is read.",
+      "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. Every runner manifest counts only at the root, where it is read. A package.json verb runs with node_modules/.bin first on PATH.",
       "source": "engine",
       "what": {
         "kind": "key"
@@ -11888,7 +11919,7 @@
         "audit.rules.checks.tst:_FASTPATH_DOCS",
         "audit.rules.checks.tst:_FRAMEWORK_TEST_GLOBS"
       ],
-      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. With no fenced match, an inline code span outside any fence is read with the same patterns. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
+      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. With no fenced match, an inline code span outside any fence is read with the same patterns. A file is kept only at the root, so a nested-only copy is skipped. README.md stands for the root README: the root file whose name starts with readme, any case, README.md first, as for HYG-01. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
       "source": "engine",
       "what": {
         "kind": "fenced-command"
@@ -12097,7 +12128,7 @@
     {
       "binding": "file",
       "check": "NAV-01",
-      "note": "Workspace members are read from the root manifests (components.py); a member or candidate counts when a build manifest is found under it. The root counts as declared when any of the nine manifest names is found at any depth, or a .NET solution or project file is in the root folder itself (in a member's or candidate's own folder for that member or candidate).",
+      "note": "Workspace members are read from the root manifests (components.py); a member or candidate counts when a build manifest is found under it. When the root folder itself holds no build manifest, a top-level folder with one in it is a candidate too. The root counts as declared when any of the nine manifest names is found at any depth, or a .NET solution or project file is in the root folder itself (in a member's or candidate's own folder for that member or candidate).",
       "source": "engine",
       "what": {
         "kind": "key"
