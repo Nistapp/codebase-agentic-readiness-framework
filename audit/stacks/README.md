@@ -44,8 +44,7 @@ CI idiom               how to run the verbs in the common CI providers for this 
 Baseline / ratchet     how to adopt "no new violations" for this stack
 Boundaries             how component boundaries are expressed, and how to enforce them
 Engine coverage        which engine checks are reliable for this stack as they stand, and which need
-                       independent agent verification for it (DP §5.6 names six sections; this one is
-                       the roadmap's addition, S3.4)
+                       independent agent verification for it
 Pitfalls               stack-specific false positives and false negatives
 Verified               date, tool versions the profile was last checked against, and the repository
                        (or repositories) used
@@ -59,8 +58,8 @@ example, a framework) into its own `###`-level block rather than a new file, fol
 
 ## 3. Detected, not guessed
 
-The audit and implementation recipes run `tools/facts.py` before loading a profile (DP §5.6's Stage 0/1
-flow): the agent states what `facts.json` found, the user confirms or corrects it, and only then does the
+The audit and implementation recipes run `tools/facts.py` before loading a profile (the audit recipe's
+[Stage 0](../SKILL.md#stage-0--intake) and [Stage 1](../SKILL.md#stage-1--recon) flow): the agent states what `facts.json` found, the user confirms or corrects it, and only then does the
 agent load `stacks/<id>.md` if one ships, or derive equivalent guidance from the check files and the
 greenfield TS/Node reference if it does not — telling the user which it is doing either way. A profile's
 Detection signals section exists so a reader can sanity-check that mapping, not so an agent re-scans the

@@ -1,7 +1,7 @@
 # Python
 
 > Follows the anatomy in [`README.md`](README.md). Covers pip, uv and poetry. `shipped`, per
-> `run_context.stack_profile` (DP §5.6).
+> `run_context.stack_profile` ([§4 Shipped versus derived](README.md#4-shipped-versus-derived)).
 
 ---
 
