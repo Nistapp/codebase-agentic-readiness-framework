@@ -42,9 +42,12 @@ Prettier and ESLint rows; its ecosystem does not run ESLint's own plugins, so a 
 plugin-dependent rules keeps a minimal ESLint config alongside it rather than switching outright. Type
 checker: `tsc` reading `tsconfig.json`'s `compilerOptions.strict`. Test runner: Vitest or Jest, both
 seen across the corpus (§Verified) — a third option, Node's own built-in test runner, is untested here.
-Dependency scanner: the package manager's own `audit` command; `audit-ci` or Snyk are alternatives that
-pin a fixed severity threshold in config rather than a CLI flag. Hook manager: Husky + lint-staged
-(`prepare: husky`), or simple-git-hooks; lefthook when there is no root `package.json`. Commit rule:
+Dependency scanner: the package manager's own `audit` command; Snyk is an alternative that pins a fixed
+severity threshold in config rather than a CLI flag. `audit-ci` is not offered: it has had no stable release
+since 2024-07-03 ([tool currency](../../implement/tool-choice.md#tool-currency)). Hook manager: Husky +
+lint-staged (`prepare: husky`), or simple-git-hooks; lefthook when there is no root `package.json`. Husky has
+had no stable release since 2024-11-18, so the tool currency rule applies. A repository that runs Husky keeps
+it. A new setup offers it only with the owner's recorded reason. Commit rule:
 commitlint in `.husky/commit-msg`, and `npx commitlint --from <base> --to <head>` in CI
 (`TOOL-06`). Branch guard (`TOOL-07`): a `git branch --show-current` check at the top of
 `.husky/pre-commit`. Dependency updates: Dependabot `package-ecosystem: npm` (npm, Yarn and
