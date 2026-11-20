@@ -50,9 +50,9 @@ Engine           `HYG-01`. A root file whose name starts with `readme` (case-ins
                  bare heading with no body text, is `PASS`. Where a marker counts depends on the
                  README's length. Under 400 trimmed characters, a marker anywhere counts. `lorem ipsum`
                  and `<describe` count anywhere at any length. In a longer README, a word marker counts
-                 only when it opens a line (after any heading, list or quote markup) and the line's end
-                 or punctuation follows it: `## TODO` and `TBD: install steps` count, a table row that
-                 says "returns a placeholder answer" does not. Present but under the bar, carrying a
+                 only when it opens a line (after any heading, list or quote markup). The line's end or
+                 punctuation must follow it. So `## TODO` and `TBD: install steps` count. A table row
+                 that says "returns a placeholder answer" does not. Present but under the bar, carrying a
                  placeholder marker, or a bare title, is `FAIL` with the reason stated; a marker
                  reason names the line and quotes it. Present but unreadable (binary or oversized) is
                  `UNKNOWN`. Absent is `FAIL`.

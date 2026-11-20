@@ -87,9 +87,9 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  (no repository, or the command failed) makes the tracked half `UNKNOWN` for the whole
                  check, never inferred as passing. A lockfile found only in a subdirectory is tracked but
                  its consistency is left `PARTIAL`, because only the root manifest is read. A tracked
-                 lockfile that the scan's walk skipped as ignored is found too: the walk reads an ignore
-                 file without its `!` lines, so `package-lock.json` followed by
-                 `!apps/web/package-lock.json` would otherwise hide a lockfile git tracks. Distrust a
+                 lockfile that the scan's walk skipped as ignored is found too. The walk reads an ignore
+                 file without its `!` lines. So a `package-lock.json` rule with a
+                 `!apps/web/package-lock.json` line would otherwise hide a lockfile git tracks. Distrust a
                  `FAIL` for "no lockfile" when the manager is one the engine does not recognise for that
                  ecosystem — verify against `PACKAGE_MANAGERS` in `audit/stack.py` before concluding the
                  project truly has none. Distrust a `PARTIAL` citing "consistency unverified" when the
@@ -130,10 +130,9 @@ Why it matters   An agent cannot answer an interactive prompt or provision a dat
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         BLOCKER
 Engine           `EXEC-03`. First looks for a documented, non-interactive install command (one whose
-                 head tool and subcommand the engine recognises, such as `npm install` or `make setup`)
-                 in a fenced shell block or an inline code span (`` - Install: `npm ci` ``) of
-                 README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md` — found ⇒
-                 `PASS` outright. Failing that, looks for a setup artifact (a devcontainer, a compose
+                 head tool and subcommand the engine recognises, such as `npm install` or `make setup`).
+                 It reads the fenced shell blocks and the inline code spans (`` - Install: `npm ci` ``)
+                 of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md`. Found ⇒ `PASS` outright. Failing that, looks for a setup artifact (a devcontainer, a compose
                  file, a Dockerfile, or a `setup`/`bootstrap`/`install`/`dev`/`dev-setup` Makefile or
                  npm-script target) and whether any doc file names it in prose. No ecosystem detected at
                  all ⇒ `UNKNOWN` — with no build manifest there is no provisioning to characterise.
@@ -174,9 +173,9 @@ Engine           `EXEC-04`. Collects every `${VAR}` reference in shell-family fi
                  `process.env`/`ENV[...]`-style reference in source and script files, then subtracts the
                  keys declared in a committed example file (`.env.example`, `.env.sample`,
                  `.env.template`, `env.example`) and a fixed, in-code allow-list of conventional host/CI
-                 variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like) and of variables the
-                 shell sets itself (`SECONDS`, `RANDOM`, `LINENO`, `OLDPWD`, `UID`, `BASH_*`, and the
-                 like). A shell reference with a fallback (`${VAR:-default}`, `${VAR-x}`, `${VAR:=x}`,
+                 variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like). The allow-list also
+                 holds the variables the shell sets itself (`SECONDS`, `RANDOM`, `LINENO`, `OLDPWD`,
+                 `UID`, `BASH_*`, and the like). A shell reference with a fallback (`${VAR:-default}`, `${VAR-x}`, `${VAR:=x}`,
                  `${VAR:+x}`) runs without the variable, so the key is optional: the summary and the
                  payload's `optional` list name it when no example file declares it, and it never fails
                  the check. `${VAR:?message}` stops the script without the variable, so it is required,
