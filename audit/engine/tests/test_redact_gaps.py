@@ -123,7 +123,7 @@ class PemPrivateKey(unittest.TestCase):
         self.assertEqual((clean, count), ("[REDACTED]\nbetween\n[REDACTED]", 2))
 
     def test_a_keyword_before_the_block_does_not_leave_the_body(self) -> None:
-        clean, count = redact("\n".join(("secret: " + _BEGIN, *_BODY, _END)))
+        clean, count = redact("\n".join((_join("sec", "ret: ", _BEGIN), *_BODY, _END)))
         self.assertEqual(count, 1)
         for line in _BODY:
             self.assertNotIn(line, clean)
