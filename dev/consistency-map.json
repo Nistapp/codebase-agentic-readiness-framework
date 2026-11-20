@@ -4295,6 +4295,7 @@
         "fenced-command"
       ],
       "id": "adapt-agents-md/row-4",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "row": 4,
@@ -4313,6 +4314,7 @@
         "fenced-command"
       ],
       "id": "adapt-agents-md/row-5",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "row": 5,
@@ -4333,6 +4335,7 @@
         "code-span"
       ],
       "id": "adapt-agents-md/row-6",
+      "mode": "add",
       "note": "The scratch line can carry a prohibition word (off-limits, never a source of truth) outside the prohibitions section.",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
@@ -4356,6 +4359,7 @@
         "code-span"
       ],
       "id": "adapt-agents-md/row-7",
+      "mode": "add",
       "note": "Boundary rules often use never (one app never imports another), so three of them make the section a prohibitions section.",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
@@ -4378,6 +4382,7 @@
         "prose"
       ],
       "id": "adapt-agents-md/row-8",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "row": 8,
@@ -4418,6 +4423,7 @@
         "prose"
       ],
       "id": "adapt-agents-md/row-10",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "row": 10,
@@ -4611,6 +4617,7 @@
         "rule-line"
       ],
       "id": "adapt-agents-md/row-17",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "row": 17,
@@ -4753,6 +4760,7 @@
         "code-span"
       ],
       "id": "adapt-agents-md/row-22",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "row": 22,
@@ -4959,6 +4967,7 @@
         "prose"
       ],
       "id": "add-baselines-and-ratchet/row-8",
+      "mode": "add",
       "note": "Writes the baseline paragraph with the fixed phrases in the quality or commands section.",
       "origin": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -5001,6 +5010,7 @@
         "key"
       ],
       "id": "add-baselines-and-ratchet/row-10",
+      "mode": "add",
       "note": "Adds a coverage verb such as test:cov when none exists.",
       "origin": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -5023,6 +5033,7 @@
         "key"
       ],
       "id": "add-baselines-and-ratchet/row-11",
+      "mode": "add",
       "note": "Sets the floor at today's measured number, rounded down, in the runner's configuration.",
       "origin": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -5073,6 +5084,7 @@
         "prose"
       ],
       "id": "add-baselines-and-ratchet/row-13",
+      "mode": "add",
       "note": "Writes one coverage-floor sentence where the engine cannot read the floor.",
       "origin": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -5136,6 +5148,7 @@
         "fenced-command"
       ],
       "id": "add-baselines-and-ratchet/row-16",
+      "mode": "add",
       "note": "Writes the single-test command in a fenced shell block.",
       "origin": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -5238,6 +5251,7 @@
         "table"
       ],
       "id": "add-ci-parity/row-4",
+      "mode": "add",
       "note": "The CI doc is the repository's own; README.md when no docs page exists.",
       "origin": {
         "path": "implement/playbooks/add-ci-parity.md",
@@ -5580,6 +5594,7 @@
         "fenced-command"
       ],
       "id": "add-hooks-and-commit-rules/row-3",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/add-hooks-and-commit-rules.md",
         "row": 3,
@@ -5601,6 +5616,7 @@
         "prose"
       ],
       "id": "add-hooks-and-commit-rules/row-4",
+      "mode": "add",
       "note": "Option A only.",
       "origin": {
         "path": "implement/playbooks/add-hooks-and-commit-rules.md",
@@ -6034,6 +6050,7 @@
         "prose"
       ],
       "id": "add-repo-hygiene/row-14",
+      "mode": "add",
       "note": "One accepted item per commit: a setup link, the gate with its CI sentence, or the branch, commit and pull-request rules.",
       "origin": {
         "path": "implement/playbooks/add-repo-hygiene.md",
@@ -6753,6 +6770,7 @@
         "prose"
       ],
       "id": "env-inventory-and-secrets/row-6",
+      "mode": "add",
       "note": "One pointer line per doc, not a second copy of the names.",
       "origin": {
         "path": "implement/playbooks/env-inventory-and-secrets.md",
@@ -6936,6 +6954,7 @@
         "code-span"
       ],
       "id": "establish-docs-contract/row-8",
+      "mode": "add",
       "note": "One line naming docs/STYLE_GUIDE.md, docs/architecture/adrs/, the ADR policy page and docs/architecture/, in the section agents_md.pointer_section names (Inputs 5).",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
@@ -7214,6 +7233,7 @@
         "key"
       ],
       "id": "pin-execution-environment/row-2",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/pin-execution-environment.md",
         "row": 2,
@@ -7258,6 +7278,7 @@
         "fenced-command"
       ],
       "id": "pin-execution-environment/row-4",
+      "mode": "add",
       "note": "Goes next to the build verbs; CONTRIBUTING.md when no instruction file may be created (implement/SKILL.md Stage 3 step 11).",
       "origin": {
         "path": "implement/playbooks/pin-execution-environment.md",
@@ -7460,6 +7481,7 @@
         "rule-line"
       ],
       "id": "register-index/row-2",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/register-index.md",
         "row": 2,
@@ -7481,6 +7503,7 @@
         "heading"
       ],
       "id": "register-index/row-3",
+      "mode": "add",
       "note": "Only with document-only.",
       "origin": {
         "path": "implement/playbooks/register-index.md",
@@ -7522,6 +7545,7 @@
         "rule-line"
       ],
       "id": "register-index/row-5",
+      "mode": "add",
       "note": "In the section that already keeps tool guidance.",
       "origin": {
         "path": "implement/playbooks/register-index.md",
@@ -7602,6 +7626,7 @@
         "rule-line"
       ],
       "id": "register-index/row-9",
+      "mode": "add",
       "note": "One line at the top of the instruction file.",
       "origin": {
         "path": "implement/playbooks/register-index.md",
@@ -7680,6 +7705,7 @@
         "prose"
       ],
       "id": "untrack-generated/row-4",
+      "mode": "add",
       "origin": {
         "path": "implement/playbooks/untrack-generated.md",
         "row": 4,
