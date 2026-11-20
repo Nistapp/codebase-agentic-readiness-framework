@@ -17,9 +17,12 @@ Engine           `IDX-01`. Reads project-level MCP configs inside the target (`o
                  `.mcp.json`, `.cursor/mcp.json`, `.vscode/mcp.json`, `.gemini/settings.json`,
                  `.codex/config.toml`) and user-level configs under `$HOME` (not read under `--no-user-config`; the report's
                  `provenance.user_config` lists what was read), for the literal
-                 `codebase-memory-mcp`. Distrust a `FAIL` when the harness in use names a config file the
-                 engine's list does not cover yet — ask the user which harness and config they use, then
-                 look there directly. A config present but unreadable is `UNKNOWN`, not `FAIL`.
+                 `codebase-memory-mcp`. Claude Code's `.mcp.json` is a project config. Its
+                 `~/.claude.json` is parsed, not searched: the server counts in its top-level
+                 `mcpServers` (user scope) or in the `projects` entry of this checkout's path (local
+                 scope), never in another checkout's entry. Distrust a `FAIL` when the harness in use
+                 names a config file the engine's list does not cover yet — ask the user which harness
+                 and config they use, then look there directly. A config present but unreadable is `UNKNOWN`, not `FAIL`.
 Method           automated
 Look for         Ask the user which harness they run (Stage 0 intake) and which MCP config it reads; open
                  that file directly rather than re-deriving the engine's search order. For a project-level
@@ -89,22 +92,34 @@ Why it matters   A stale graph is stale context: an agent edits based on symbols
 Severity         DEGRADER
 Engine           `IDX-03`, Tier C only (`--run-gates`); without probes the engine reports `UNKNOWN` by
                  construction. Compares the store's recorded git revision against `target.git_sha` when the
-                 store schema exposes one; this schema today records a project's root and index time but no
-                 revision, so the engine's own verdict is `UNKNOWN` with that limitation stated. Distrust a
-                 engine `PASS` only if the index tool itself reports a different freshness signal (for
-                 example a `detect_changes` call naming files touched since the index last ran).
+                 store schema exposes one: equal is `PASS`, different is `FAIL`. Today's store records a
+                 project's root and index time (`indexed_at`, the value `index_status` shows) but no
+                 revision. The engine then compares `indexed_at` with the time HEAD last moved: the later
+                 of HEAD's committer time and the newest entry of HEAD's reflog. An index built at or
+                 after that time is `PASS`. One built before it is `PARTIAL`, never `FAIL`: committing
+                 files that were indexed before the commit moves HEAD without changing the tree. A
+                 time-based `PASS` does not cover uncommitted edits made after the index ran. The summary
+                 names both times. Distrust an engine `PASS` only if the index tool itself reports a
+                 different freshness signal (for example a `detect_changes` call naming files touched
+                 since the index last ran).
 Method           automated
 Look for         If Tier C was not allowed this run, ask the index tool directly: `detect_changes` or an
                  equivalent freshness query against the current `HEAD`. Treat a tool-reported freshness
-                 check as stronger than the engine's own, which this store cannot currently perform.
-Rubric           PASS: the index's recorded revision matches `HEAD`, or a direct freshness query reports no
-                 drift.
+                 check as stronger than the engine's own, which compares only times when the store
+                 records no revision. When `detect_changes` fails (for example "base_branch or HEAD is not
+                 a commit"), compare the `indexed_at` that `index_status` reports with
+                 `git log -1 --format=%cI HEAD` and the newest `git reflog` entry, as the engine does.
+Rubric           PASS: the index's recorded revision matches `HEAD`, the index was built at or after HEAD
+                 last moved, or a direct freshness query reports no drift.
                  PARTIAL: the index predates `HEAD` by a small, named set of commits with no change to
-                 indexed symbols (confirmed by `git diff --stat` against the commit range).
+                 indexed symbols (confirmed by `git diff --stat` against the commit range), or the index
+                 time predates the time HEAD last moved and no revision is recorded. A time comparison
+                 alone never gives `FAIL`.
                  FAIL: the index predates `HEAD` and the drift touches files the agent is about to rely on.
                  NOT_APPLICABLE: the target is not a git repository (there is no `HEAD` to compare against).
                  UNKNOWN when: Tier C was not allowed and no direct freshness query is available; the store
-                 schema exposes no revision and no tool-level freshness signal exists either.
+                 exposes neither a revision nor a readable index time, and no tool-level freshness signal
+                 exists either.
 Evidence to cite A `command` evidence item for the engine's Tier-C comparison (`command`, `exit_code`,
                  `output_tail`), or an `index_query` item for a direct freshness query, each with
                  `captured_by` set to who ran it.

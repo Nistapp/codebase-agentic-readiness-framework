@@ -167,7 +167,11 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
     "exec-02-nested-lockfile": {"EXEC-02": "FAIL"},
     "exec-03-no-setup": {"EXEC-03": "FAIL"},
+    "exec-03-readme-no-extension": {"EXEC-03": "PASS", "HYG-01": "PASS"},
     "exec-04-missing-env": {"EXEC-04": "FAIL"},
+    "exec-04-reincluded-example": {"EXEC-04": "PASS"},
+    "exec-04-anchored-ignored-dir": {"EXEC-04": "PASS"},
+    "exec-04-nested-ignored-dir": {"EXEC-04": "PASS"},
     "exec-05-generated": {"EXEC-05": "FAIL"},
     "exec-06-broken-command": {"EXEC-06": "FAIL"},
     "exec-07-dual-lint": {"EXEC-07": "FAIL"},
@@ -257,6 +261,10 @@ NEEDS_GIT = frozenset(
         "ignore-ok-nested-gitignore",
         "exec-02-no-lockfile",
         "exec-02-nested-lockfile",
+        # The fixture's own ignore file hides the stray file from this repository too, so the stray file is
+        # committed here with `git add -f`; the fresh copy's `add -A` leaves it untracked, as the fixture needs.
+        "exec-04-anchored-ignored-dir",
+        "exec-04-nested-ignored-dir",
         "layout-app-per-folder",
         "exec-05-generated",
         "exec-ok",

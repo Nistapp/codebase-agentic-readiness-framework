@@ -67,7 +67,7 @@ QUERY = "query"
 ENGINE_DIR = REPO / "audit" / "engine"
 FIXTURE_GENERATOR = DEV / "eval" / "generate_fixture_expected.py"
 #: The ``--exclude`` globs of ``SELF_AUDIT_FLAGS`` in the Makefile.
-SELF_AUDIT_EXCLUDES: tuple[str, ...] = ("artefacts/*", "dist/*", ".claude/worktrees/*")
+SELF_AUDIT_EXCLUDES: tuple[str, ...] = ("artefacts/*", "dist/*")
 SCAFFOLDER = REPO / "greenfield" / "bootstrap" / "bootstrap.py"
 TEMPLATES = REPO / "greenfield" / "templates"
 #: The report name and folder name of the ``scaffold`` target.

@@ -95,6 +95,8 @@ from audit.rules.checks._common import (
     resolve_all_verbs,
     resolve_verbs,
     runner_kind,
+    README,
+    entry_documents,
     tracked_in_scope,
 )
 from audit.scan import Inventory, Kind
@@ -806,7 +808,7 @@ _SETUP_FILES = (
 #: Dockerfiles with a variant in the name (``Dockerfile.jvm``, ``dev.Dockerfile``), found at any depth by base name:
 #: frameworks keep them below the root (Quarkus writes ``src/main/docker/Dockerfile.jvm``).
 _DOCKERFILE_PATTERNS = ("Dockerfile.*", "*.Dockerfile", "*.dockerfile")
-_DOC_FILES = ("README.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md")
+_DOC_FILES = (README, "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md")
 _SETUP_TARGETS = ("setup", "bootstrap", "install", "dev", "dev-setup")
 
 
@@ -863,7 +865,7 @@ def _tokenise(command: str) -> list[str]:
 
 def _documented_setup(inv: Inventory) -> list[str]:
     found: set[str] = set()
-    for name in _DOC_FILES:
+    for name in entry_documents(inv, _DOC_FILES):
         text = inv.read(name)
         if not text:
             continue
@@ -890,7 +892,7 @@ def check_exec03(*, spec, target, inventory, stack, components, session) -> Chec
     if not stack.ecosystems:
         return _unknown(spec, "no recognised ecosystem, so no setup path can be characterised")
 
-    doc_text = "\n".join(filter(None, (inventory.read(n) for n in _DOC_FILES)))
+    doc_text = "\n".join(filter(None, (inventory.read(n) for n in entry_documents(inventory, _DOC_FILES))))
     documented_commands = _documented_setup(inventory)
     if documented_commands:
         return _outcome(spec, Verdict.PASS, f"documented setup command: {documented_commands[0]}")
@@ -1527,7 +1529,7 @@ def check_exec06(*, spec, target, inventory, stack, components, session) -> Chec
     # The catalogue's evidence rule names README and AGENTS.md; docs/** fences routinely mix
     # languages (a Python snippet in a ```bash block), which is a documentation defect EXEC-06 is
     # not chartered to police.
-    doc_paths = ["README.md", "AGENTS.md", "CLAUDE.md"]
+    doc_paths = entry_documents(inventory, (README, "AGENTS.md", "CLAUDE.md"))
 
     raw: list[tuple[str, int, str]] = []
     for name in doc_paths:

@@ -1,0 +1,10 @@
+# exec-03-readme-no-extension
+
+A python project whose only README is a root file named `README`, with no extension. It documents the
+install command in a fenced block, so `EXEC-03` finds the setup path there and passes.
+
+## Development
+
+```bash
+pip install -e .
+```

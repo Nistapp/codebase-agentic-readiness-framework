@@ -78,6 +78,37 @@ RUNNER_PRECEDENCE: tuple[str, ...] = (
 )
 
 
+#: The name a check lists for "the root README", whatever the file is called (:func:`entry_documents`).
+README = "README.md"
+
+
+def root_readme(inventory: Inventory) -> str | None:
+    """The repository's root README, or ``None``: a root file whose name starts with ``readme``, in any case.
+
+    ``README.md`` (any case) comes first, then the others by lower-cased name, so ``README`` is found before
+    ``README.rst``. HYG-01 and every check that reads "the README" ask here, so they agree on whether it exists.
+    """
+    found = [entry.rel for entry in inventory.files if "/" not in entry.rel and entry.rel.lower().startswith("readme")]
+    if not found:
+        return None
+    return min(found, key=lambda rel: (0 if rel.lower() == "readme.md" else 1, rel.lower()))
+
+
+def entry_documents(inventory: Inventory, names: tuple[str, ...]) -> list[str]:
+    """``names`` in the order given, with :data:`README` replaced by the root README's own name.
+
+    A ``README`` with no extension or a ``README.rst`` is then read and cited by its own name. With no root README,
+    :data:`README` stays. Every name is kept, present or not: the caller reads each and skips what is missing.
+    """
+    readme = root_readme(inventory) or README
+    return [readme if name == README else name for name in names]
+
+
+def at_root(inventory: Inventory, rel: str) -> bool:
+    """Whether the inventory holds ``rel`` itself; ``Inventory.has`` also accepts a copy below the root."""
+    return any(entry.rel == rel for entry in inventory.files)
+
+
 def tracked_in_scope(target, inventory: Inventory) -> set[str] | None:
     """The paths git tracks under the target, less the ones ``--exclude`` took out of the audit and the ones
     set aside as carried data (ADR-0008).
@@ -327,23 +358,64 @@ _FENCE_LINE_RE = re.compile(r"^\s*(?:```|~~~)")
 _CODE_SPAN_RE = re.compile(r"(?<!`)(`{1,3})(?!`)(.+?)(?<!`)\1(?!`)")
 
 
+#: A line that opens a list item: a bullet or a number. Its indented continuation lines belong to it.
+_LIST_ITEM_RE = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s")
+
+
 @dataclass(frozen=True)
 class Prohibitions:
-    """The prohibitions section of an instruction file: where it is and every line in it."""
+    """The prohibitions section of an instruction file: where it is and every line in it.
+
+    ``sections`` holds the line and the title of each heading that opens a part of it. ``quiet`` holds the lines of a
+    section opened by its body alone (no prohibition word in its heading) that stand in no prohibition: a list item
+    or a paragraph with no prohibition line. Such a heading is often a conventions or architecture section that also
+    says "never" three times, and the paths it names beside the prohibitions are not a deny list (issue #9).
+    """
 
     headings: tuple[str, ...]
     first_line: int
     lines: tuple[tuple[int, str], ...]
+    sections: tuple[tuple[int, str], ...] = ()
+    quiet: frozenset[int] = frozenset()
 
     def code_spans(self) -> tuple[tuple[int, str], ...]:
-        """``(line number, text)`` of every code span in the section, in order. A path or a pattern is *named*
-        when it stands in a code span."""
+        """``(line number, text)`` of every code span in the section that a prohibition holds, in order. A path or a
+        pattern is *named* when it stands in such a code span."""
         return tuple(
             (number, match.group(2).strip())
             for number, line in self.lines
+            if number not in self.quiet
             for match in _CODE_SPAN_RE.finditer(line)
             if match.group(2).strip()
         )
+
+
+def _quiet_lines(lines: list[tuple[int, str]]) -> set[int]:
+    """The lines of a body-opened section that belong to no prohibition block.
+
+    A block is a list item with its continuation lines, or a paragraph; a heading or a blank line ends one. A block
+    with a line that matches ``PROHIBITION_LINE_RE`` is a prohibition; the lines of every other block are quiet.
+    """
+    quiet: set[int] = set()
+    block: list[tuple[int, str]] = []
+
+    def close() -> None:
+        if block and not any(PROHIBITION_LINE_RE.search(text) for _n, text in block):
+            quiet.update(number for number, _text in block)
+        block.clear()
+
+    for number, line in lines:
+        if not line.strip() or _HEADING_RE.match(line):
+            close()
+            if line.strip():
+                block.append((number, line))
+                close()
+            continue
+        if _LIST_ITEM_RE.match(line):
+            close()
+        block.append((number, line))
+    close()
+    return quiet
 
 
 def _heading_qualifies(lines: list[str], raw_headings: list[tuple[int, int, str]], idx: int) -> bool:
@@ -392,9 +464,13 @@ def prohibitions_section(text: str) -> Prohibitions | None:
     }
 
     headings: list[str] = []
+    sections: list[tuple[int, str]] = []
     first_line = 0
     kept: list[tuple[int, str]] = []
+    by_body: list[tuple[int, str]] = []
+    quiet: set[int] = set()
     open_level: int | None = None
+    open_by_body = False
     in_fence = False
     for number, line in enumerate(lines, start=1):
         if _FENCE_LINE_RE.match(line):
@@ -404,15 +480,28 @@ def prohibitions_section(text: str) -> Prohibitions | None:
             level = len(heading.group(1))
             if open_level is not None and level <= open_level:
                 open_level = None
+                quiet |= _quiet_lines(by_body)
+                by_body = []
             if open_level is None and qualifies.get(number, False):
                 open_level = level
+                open_by_body = not PROHIBITION_HEADING_RE.search(heading.group(2))
                 headings.append(heading.group(2))
+                sections.append((number, heading.group(2)))
                 first_line = first_line or number
         if open_level is not None:
             kept.append((number, line))
+            if open_by_body:
+                by_body.append((number, line))
+    quiet |= _quiet_lines(by_body)
     if not headings:
         return None
-    return Prohibitions(headings=tuple(headings), first_line=first_line, lines=tuple(kept))
+    return Prohibitions(
+        headings=tuple(headings),
+        first_line=first_line,
+        lines=tuple(kept),
+        sections=tuple(sections),
+        quiet=frozenset(quiet),
+    )
 
 
 # ---------------------------------------------------------------------------

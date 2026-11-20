@@ -19,17 +19,17 @@ score from falling.
 | Phase-1 score | **0.9115** |
 | Date | 2026-11-20 |
 | Engine | `python-agentic-audit` 0.4.1 |
-| Ruleset | `2026-11-20.11` (hash `01fb2871bf2c9875`) |
+| Ruleset | `2026-11-20.15` (hash `01fb2871bf2c9875`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
-| Scope | the whole repository except `artefacts/`, `dist/` and the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
+| Scope | the whole repository except `artefacts/` and `dist/`; the walk skips git-ignored folders such as the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
 
 Since the 2026-11-17 run (0.9269), the score fell to 0.9115 with no change to the repository's readiness. One verdict
 moved: "`NAV-01` declared component boundaries" went from `PASS` to `UNKNOWN`. Ruleset `2026-11-20.5` (pull
 request #224) reads the root component's manifest at the repository root only. This repository has no root build
 manifest: its `package.json`, `pyproject.toml` and `go.mod` files sit under `dev/tools/`. The 2026-11-17 `PASS`
 named a root manifest that does not exist; the engine now says it cannot tell. No finding opened or closed, and the
-rulesets between `2026-11-17.3` and `2026-11-20.11` moved no other verdict here.
+rulesets between `2026-11-17.3` and `2026-11-20.15` moved no other verdict here.
 
 Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` and `HYG-06` with the security policy,
 `SECURITY.md`. On 2026-11-09, `TOOL-04` closed with the dependency audit in

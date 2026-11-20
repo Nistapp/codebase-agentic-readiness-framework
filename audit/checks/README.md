@@ -77,6 +77,16 @@ below states only where it applies. `--exclude` is still the tool for anything e
 tree), but a template, example or fixture directory no longer needs it. Distrust a verdict when a real
 directory has one of these names (a Python package `samples`): `inventory.set_aside` names it.
 
+The inventory also leaves out what the target's ignore files ignore and git does not track: build output, caches,
+local data and agent worktrees. The report names each such folder in `inventory.ignored_dirs`. A file git tracks
+stays in, even when an ignore rule covers it
+([ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)).
+
+A check page that names `README.md` among its root documents means the root README by any name. That is the root
+file whose name starts with `readme`, in any case, with `README.md` first. A `README` with no extension or a
+`README.rst` is read and cited by its own name, and every check agrees with `HYG-01` on whether it exists. A README
+below the root is not the root README.
+
 ## 7. How a verdict is recorded
 
 The anatomy's `Evidence to cite` and `Absence proof` fields describe what goes into the report, not how:

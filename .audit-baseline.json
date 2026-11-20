@@ -1517,7 +1517,7 @@
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "01fb2871bf2c9875",
-    "ruleset_revision": "2026-11-20.11",
+    "ruleset_revision": "2026-11-20.15",
     "scanned_at": "2026-11-20T04:35:44+00:00",
     "target": ".",
     "tool": "python-agentic-audit",

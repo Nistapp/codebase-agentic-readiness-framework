@@ -7517,7 +7517,7 @@
       "constants": [
         "audit.rules.checks.idx:_PROJECT_CONFIGS"
       ],
-      "note": "Each config is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy reads as unreadable (UNKNOWN). Three user configs under $HOME are read too, unless --no-user-config.",
+      "note": "Each config is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy reads as unreadable (UNKNOWN). Three user configs under $HOME are read too, unless --no-user-config, and Claude Code's ~/.claude.json is parsed: its top-level mcpServers or the projects entry of this checkout's path.",
       "source": "engine",
       "what": {
         "kind": "phrase",
@@ -7574,7 +7574,7 @@
     {
       "binding": "file",
       "check": "IDX-03",
-      "note": "The store of IDX-02 (no repository text); a git-revision column of the matching project row is compared with HEAD as a probe.",
+      "note": "The store of IDX-02 (no repository text); a git-revision column of the matching project row is compared with HEAD as a probe. With no such column, its indexed_at is compared with the time HEAD last moved (git's committer time and reflog).",
       "source": "engine",
       "what": {
         "kind": "exists"
@@ -7996,14 +7996,16 @@
     {
       "binding": "line",
       "check": "AGT-08",
-      "note": "The instruction-file set of AGT-01 gives the competitors and the reach. The statement is read in the root AGENTS.md only, never CLAUDE.md, and needs a known harness name on the same line.",
+      "note": "The instruction-file set of AGT-01 gives the competitors and the reach. The statement is read in the root AGENTS.md only, never CLAUDE.md, and needs a known harness name on the same line. With a root AGENTS.md, each vendor file is read too: one whose few content lines all name AGENTS.md is a pointer, not a competitor, and one that imports @AGENTS.md shadows nothing.",
       "source": "engine",
       "what": {
         "kind": "phrase",
         "text": [
           "read by",
           "supported harness",
-          "supported harnesses"
+          "supported harnesses",
+          "AGENTS.md",
+          "@AGENTS.md"
         ]
       },
       "where": [
@@ -10403,6 +10405,10 @@
           "scope": "root"
         },
         {
+          "path": "README*",
+          "scope": "glob"
+        },
+        {
           "path": ".eslintrc*",
           "scope": "any-depth"
         },
@@ -10670,6 +10676,10 @@
           "scope": "root"
         },
         {
+          "path": "README*",
+          "scope": "glob"
+        },
+        {
           "path": "vitest.config.*",
           "scope": "any-depth"
         },
@@ -10739,7 +10749,7 @@
       "binding": "section",
       "check": "CON-01",
       "named_by_text": "each code span of the prohibitions section is looked up in the scan and on disk",
-      "note": "Every code span on the lines of every prohibitions section; a span counts when it has no command characters and holds a slash, a glob or a dot, or names something that exists. Existence is checked in the scan and on disk.",
+      "note": "Every code span on the lines of every prohibitions section; a span counts when it has no command characters and holds a slash, a glob or a dot, or names something that exists. Existence is checked in the scan and on disk. In a section opened by its body alone, only the spans of a list item or paragraph that holds a prohibition line count.",
       "source": "engine",
       "threshold": "a named path that exists",
       "what": {
@@ -11083,6 +11093,10 @@
           "scope": "root"
         },
         {
+          "path": "README*",
+          "scope": "glob"
+        },
+        {
           "path": ".devcontainer/devcontainer.json",
           "scope": "any-depth"
         },
@@ -11306,6 +11320,10 @@
         {
           "path": "CLAUDE.md",
           "scope": "root"
+        },
+        {
+          "path": "README*",
+          "scope": "glob"
         },
         {
           "path": "package.json",
@@ -11901,7 +11919,7 @@
         "audit.rules.checks.tst:_FASTPATH_DOCS",
         "audit.rules.checks.tst:_FRAMEWORK_TEST_GLOBS"
       ],
-      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. With no fenced match, an inline code span outside any fence is read with the same patterns. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
+      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. With no fenced match, an inline code span outside any fence is read with the same patterns. A file is kept only at the root, so a nested-only copy is skipped. README.md stands for the root README: the root file whose name starts with readme, any case, README.md first, as for HYG-01. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
       "source": "engine",
       "what": {
         "kind": "fenced-command"
