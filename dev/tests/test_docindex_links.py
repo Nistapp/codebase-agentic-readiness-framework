@@ -147,6 +147,15 @@ class LinkEdgesTest(_Repo):
         )
         text = extract.summary_text(self.result.summary)
         self.assertIn("  broken link (kept in the index): docs/guide.md#guide -> missing.md (missing)\n", text)
+        broken = {
+            (edge.target, edge.broken)
+            for edge in self.result.index.edges
+            if edge.kind == "links" and edge.source == "docs/guide.md#guide" and edge.broken is not None
+        }
+        self.assertEqual(
+            broken, {("docs/missing.md", "missing"), ("docs/page.md", "anchor"), ("../outside.md", "outside")}
+        )
+        self.assertTrue(all(edge.broken is None for edge in self.result.index.edges if edge.kind != "links"))
 
     def test_a_bare_file_name_gets_a_name_match_edge(self) -> None:
         guide = self._links("docs/guide.md#guide")

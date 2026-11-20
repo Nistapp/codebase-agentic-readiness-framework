@@ -27,6 +27,24 @@ differences into these groups:
 - **IDs that lost every mention**: an ``id`` node on both sides that the old side mentions and the new side does
   not. Its lost ``mentions`` edges are among the edges lost too.
 
+Three rules then take the bulk out of the section and edge groups, so that a reviewer reads the changes a person
+made:
+
+- **edges whose confidence changed**: an edge lost and gained with the same kind, ends, anchor and ``broken`` flag
+  but another confidence (an ID mention that turned ``exact`` or ``name-match``). It is one change, not two;
+- **name-match links that changed resolution**: a ``links`` edge with confidence ``name-match`` and no anchor (a
+  bare file name in prose) to a file node, lost or gained only because the name now selects another file or none.
+  That holds when the number of file nodes with the target's base name differs between the two sides, or the target
+  file exists on one side only, *and* the text that holds the name did not change: the source is a section that is
+  not added, removed, renamed or edited (a file-level source, the text before the first heading, has no hash of its
+  own, so the count rule alone decides). These edges are grouped by base name (:class:`NameResolution`). A
+  name-match link lost from edited text, or with the same count on both sides, stays among the edges lost;
+- **files regenerated**: a file that ``generated`` names (the config's ``generated`` key: a path or folder prefix,
+  as in ``zones``, and the command that writes it). Its sections leave the added, removed, moved, renamed and
+  edited groups, and the edges whose *source* lies in it leave the lost and gained groups; a :class:`Regenerated`
+  counts them, one per file. Edges *into* a generated file stay listed: a link elsewhere that lost its anchor in a
+  generated page is a real break. A move or rename stays listed unless both of its ends lie in generated files.
+
 Files are not compared as nodes: a file's change shows in its sections and its edges.
 
 The removed sections are paired parents first (by the depth of the address, then by address), so a child sees the
@@ -38,22 +56,26 @@ nothing outside the standard library and this package.
 from __future__ import annotations
 
 import json
+import posixpath
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Collection, Mapping, Sequence
 
 from . import extract
 from .gitread import Tree
 from .markdown import normalise
-from .model import Edge, IdNode, Index, SectionNode, content_hash
+from .model import Edge, FileNode, IdNode, Index, SectionNode, content_hash
 
 __all__ = [
     "DIFF_FORMAT",
     "EDGE_KINDS",
     "BodyHashes",
+    "ConfidenceChanged",
     "Edited",
     "IdLost",
     "IndexDiff",
     "Moved",
+    "NameResolution",
+    "Regenerated",
     "Renamed",
     "body_hashes",
     "compare",
@@ -61,8 +83,9 @@ __all__ = [
     "to_text",
 ]
 
-#: The version of the JSON form of the report.
-DIFF_FORMAT = 1
+#: The version of the JSON form of the report. Format 2 added ``regenerated``, ``name_resolution`` and
+#: ``edges.confidence_changed``, and their counts.
+DIFF_FORMAT = 2
 
 #: The edge kinds the diff compares.
 EDGE_KINDS = ("links", "mentions", "runs", "bundles")
@@ -112,6 +135,42 @@ class IdLost:
 
 
 @dataclass(frozen=True)
+class ConfidenceChanged:
+    """One edge, lost with the ``old`` confidence and gained with the ``new`` one."""
+
+    old: Edge
+    new: Edge
+
+
+@dataclass(frozen=True)
+class NameResolution:
+    """The name-match links of one bare file name that changed only because the name selects another file.
+
+    ``files_before`` and ``files_after`` count the file nodes with that base name on each side.
+    """
+
+    name: str
+    files_before: int
+    files_after: int
+    lost: tuple[Edge, ...] = ()
+    gained: tuple[Edge, ...] = ()
+
+
+@dataclass(frozen=True)
+class Regenerated:
+    """A generated file's changes, as counts: its sections and the edges whose source lies in it."""
+
+    path: str
+    by: str
+    sections_added: int = 0
+    sections_removed: int = 0
+    sections_moved: int = 0
+    sections_edited: int = 0
+    edges_lost: int = 0
+    edges_gained: int = 0
+
+
+@dataclass(frozen=True)
 class IndexDiff:
     """The differences between two indexes. Each tuple is sorted."""
 
@@ -124,14 +183,21 @@ class IndexDiff:
     edges_gained: tuple[Edge, ...] = ()
     ids_undefined: tuple[IdLost, ...] = ()
     ids_unmentioned: tuple[IdLost, ...] = ()
+    confidence_changed: tuple[ConfidenceChanged, ...] = ()
+    name_resolution: tuple[NameResolution, ...] = ()
+    regenerated: tuple[Regenerated, ...] = ()
 
     def counts(self) -> dict[str, int]:
-        """The size of each group, keyed as in the JSON form."""
+        """The size of each group, keyed as in the JSON form. A name-resolution change counts each of its edges; a
+        regenerated file counts once."""
         return {
+            "edges_confidence_changed": len(self.confidence_changed),
             "edges_gained": len(self.edges_gained),
             "edges_lost": len(self.edges_lost),
+            "files_regenerated": len(self.regenerated),
             "ids_lost_definition": len(self.ids_undefined),
             "ids_lost_mentions": len(self.ids_unmentioned),
+            "name_match_resolution": sum(len(entry.lost) + len(entry.gained) for entry in self.name_resolution),
             "sections_added": len(self.added),
             "sections_edited": len(self.edited),
             "sections_moved": len(self.moved),
@@ -203,8 +269,8 @@ def _ids(index: Index) -> dict[str, IdNode]:
     return {node.address: node for node in index.nodes if isinstance(node, IdNode)}
 
 
-def _edge_key(edge: Edge) -> tuple[str, str, str, str, str]:
-    return (edge.kind, edge.source, edge.target, edge.anchor or "", edge.confidence)
+def _edge_key(edge: Edge) -> tuple[str, str, str, str, str, str]:
+    return (edge.kind, edge.source, edge.target, edge.anchor or "", edge.confidence, edge.broken or "")
 
 
 def _remap(edge: Edge, mapping: Mapping[str, str]) -> Edge:
@@ -214,7 +280,41 @@ def _remap(edge: Edge, mapping: Mapping[str, str]) -> Edge:
         target=mapping.get(edge.target, edge.target),
         confidence=edge.confidence,
         anchor=edge.anchor,
+        broken=edge.broken,
     )
+
+
+def _path(address: str) -> str:
+    return address.partition("#")[0]
+
+
+def _under(path: str, prefix: str) -> bool:
+    prefix = prefix.rstrip("/")
+    return path == prefix or path.startswith(prefix + "/")
+
+
+def _generator(generated: Mapping[str, str]) -> Callable[[str], str | None]:
+    """A function from an address to the command that writes its file (the longest matching ``generated`` path
+    or folder prefix), or ``None``."""
+
+    def by(address: str) -> str | None:
+        path = _path(address)
+        matches = [prefix for prefix in generated if _under(path, prefix)]
+        if not matches:
+            return None
+        return generated[max(matches, key=lambda prefix: (len(prefix.rstrip("/")), prefix))]
+
+    return by
+
+
+def _file_names(index: Index) -> tuple[frozenset[str], dict[str, int]]:
+    """The file node paths of ``index``, and the number of file nodes per base name."""
+    paths = frozenset(node.path for node in index.nodes if isinstance(node, FileNode))
+    names: dict[str, int] = {}
+    for path in paths:
+        name = posixpath.basename(path)
+        names[name] = names.get(name, 0) + 1
+    return paths, names
 
 
 @dataclass
@@ -278,9 +378,17 @@ def _pair(
     return result
 
 
-def compare(old: Index, new: Index, *, old_body: BodyHashes, new_body: BodyHashes) -> IndexDiff:
+def compare(
+    old: Index,
+    new: Index,
+    *,
+    old_body: BodyHashes,
+    new_body: BodyHashes,
+    generated: Mapping[str, str] | None = None,
+) -> IndexDiff:
     """The differences from the ``old`` index to the ``new`` one; ``old_body`` and ``new_body`` give the body
-    hashes of each side's sections (:func:`body_hashes`)."""
+    hashes of each side's sections (:func:`body_hashes`). ``generated`` maps a path or folder prefix to the command
+    that writes the files under it (the config's ``generated`` key); none by default."""
     old_sections, new_sections = _sections(old), _sections(new)
     pairing = _pair(old_sections, new_sections, old_body, new_body)
     edited = list(pairing.edited)
@@ -322,17 +430,110 @@ def compare(old: Index, new: Index, *, old_body: BodyHashes, new_body: BodyHashe
         for address in sorted(new_ids)
         if address in old_ids and address in old_mentions and address not in new_mentioned
     ]
+    changed_text = {
+        *pairing.added,
+        *(node.address for node in pairing.removed),
+        *(entry.old for entry in pairing.renamed),
+        *(entry.new for entry in pairing.renamed),
+        *(entry.address for entry in edited),
+        *(entry.old_address for entry in edited),
+    }
+    by = _generator(generated or {})
+    regenerated: dict[str, dict[str, int]] = {}
+
+    def collapse(address: str, group: str) -> bool:
+        if by(address) is None:
+            return False
+        counts = regenerated.setdefault(_path(address), {})
+        counts[group] = counts.get(group, 0) + 1
+        return True
+
+    def collapse_pair(old_address: str, new_address: str) -> bool:
+        return by(old_address) is not None and collapse(new_address, "sections_moved")
+
+    added = [node for node in pairing.added.values() if not collapse(node.address, "sections_added")]
+    removed = [node for node in pairing.removed if not collapse(node.address, "sections_removed")]
+    moved = [entry for entry in pairing.moved if not collapse_pair(entry.old, entry.new)]
+    renamed = [entry for entry in pairing.renamed if not collapse_pair(entry.old, entry.new)]
+    edited = [entry for entry in edited if not collapse(entry.address, "sections_edited")]
+    lost = [edge for edge in lost if not collapse(edge.source, "edges_lost")]
+    gained = [edge for edge in new_edges - old_edges if not collapse(edge.source, "edges_gained")]
+    confidence_changed, lost, gained = _confidence_changes(lost, gained)
+    name_resolution, lost, gained = _name_resolution(old, new, lost, gained, changed_text)
     return IndexDiff(
-        added=tuple(sorted(pairing.added.values(), key=lambda node: node.address)),
-        removed=tuple(sorted(pairing.removed, key=lambda node: node.address)),
-        moved=tuple(sorted(pairing.moved, key=lambda entry: (entry.old, entry.new))),
-        renamed=tuple(sorted(pairing.renamed, key=lambda entry: (entry.old, entry.new))),
+        added=tuple(sorted(added, key=lambda node: node.address)),
+        removed=tuple(sorted(removed, key=lambda node: node.address)),
+        moved=tuple(sorted(moved, key=lambda entry: (entry.old, entry.new))),
+        renamed=tuple(sorted(renamed, key=lambda entry: (entry.old, entry.new))),
         edited=tuple(sorted(edited, key=lambda entry: (entry.address, entry.old_address))),
         edges_lost=tuple(sorted(lost, key=_edge_key)),
-        edges_gained=tuple(sorted(new_edges - old_edges, key=_edge_key)),
+        edges_gained=tuple(sorted(gained, key=_edge_key)),
         ids_undefined=tuple(ids_undefined),
         ids_unmentioned=tuple(ids_unmentioned),
+        confidence_changed=tuple(confidence_changed),
+        name_resolution=tuple(name_resolution),
+        regenerated=tuple(
+            Regenerated(path=path, by=by(path) or "", **counts) for path, counts in sorted(regenerated.items())
+        ),
     )
+
+
+def _same_but_confidence(edge: Edge) -> tuple[str, str, str, str, str]:
+    return (edge.kind, edge.source, edge.target, edge.anchor or "", edge.broken or "")
+
+
+def _confidence_changes(
+    lost: Sequence[Edge], gained: Sequence[Edge]
+) -> tuple[list[ConfidenceChanged], list[Edge], list[Edge]]:
+    """Pair each lost edge with the gained edge that differs from it in confidence only."""
+    gained_by_key = {_same_but_confidence(edge): edge for edge in gained}
+    pairs: list[ConfidenceChanged] = []
+    paired: set[Edge] = set()
+    for edge in sorted(lost, key=_edge_key):
+        other = gained_by_key.get(_same_but_confidence(edge))
+        if other is not None and other.confidence != edge.confidence:
+            pairs.append(ConfidenceChanged(old=edge, new=other))
+            paired.update((edge, other))
+    return pairs, [edge for edge in lost if edge not in paired], [edge for edge in gained if edge not in paired]
+
+
+def _name_resolution(
+    old: Index, new: Index, lost: Sequence[Edge], gained: Sequence[Edge], changed_text: Collection[str]
+) -> tuple[list[NameResolution], list[Edge], list[Edge]]:
+    """Take out the bare-name links that changed only because their name selects another file or none."""
+    old_files, old_names = _file_names(old)
+    new_files, new_names = _file_names(new)
+
+    def resolution(edge: Edge, here: frozenset[str], there: frozenset[str]) -> str | None:
+        if edge.kind != "links" or edge.confidence != "name-match" or edge.anchor is not None:
+            return None
+        if edge.target not in here or edge.source in changed_text:
+            return None
+        name = posixpath.basename(edge.target)
+        if old_names.get(name, 0) == new_names.get(name, 0) and edge.target in there:
+            return None
+        return name
+
+    groups: dict[str, tuple[list[Edge], list[Edge]]] = {}
+    kept: tuple[list[Edge], list[Edge]] = ([], [])
+    for side, edges, here, there in ((0, lost, old_files, new_files), (1, gained, new_files, old_files)):
+        for edge in edges:
+            name = resolution(edge, here, there)
+            if name is None:
+                kept[side].append(edge)
+            else:
+                groups.setdefault(name, ([], []))[side].append(edge)
+    entries = [
+        NameResolution(
+            name=name,
+            files_before=old_names.get(name, 0),
+            files_after=new_names.get(name, 0),
+            lost=tuple(sorted(group[0], key=_edge_key)),
+            gained=tuple(sorted(group[1], key=_edge_key)),
+        )
+        for name, group in sorted(groups.items())
+    ]
+    return entries, kept[0], kept[1]
 
 
 # --- Output ---------------------------------------------------------------------------------------------------------
@@ -342,6 +543,29 @@ def _edge_dict(edge: Edge) -> dict[str, Any]:
     out = edge.to_dict()
     out.setdefault("anchor", None)
     return out
+
+
+def _regenerated_dict(entry: Regenerated) -> dict[str, Any]:
+    return {
+        "by": entry.by,
+        "edges_gained": entry.edges_gained,
+        "edges_lost": entry.edges_lost,
+        "path": entry.path,
+        "sections_added": entry.sections_added,
+        "sections_edited": entry.sections_edited,
+        "sections_moved": entry.sections_moved,
+        "sections_removed": entry.sections_removed,
+    }
+
+
+def _resolution_dict(entry: NameResolution) -> dict[str, Any]:
+    return {
+        "files_after": entry.files_after,
+        "files_before": entry.files_before,
+        "gained": [_edge_dict(edge) for edge in entry.gained],
+        "lost": [_edge_dict(edge) for edge in entry.lost],
+        "name": entry.name,
+    }
 
 
 def _id_dict(entry: IdLost) -> dict[str, Any]:
@@ -361,11 +585,15 @@ def to_json(report: IndexDiff, *, old: str, new: str | None) -> str:
     """The report as deterministic JSON: sorted keys, two-space indent, a final newline.
 
     ``old`` is the old git ref; ``new`` the new one, ``None`` for the working tree. Every edge has an ``anchor`` key,
-    ``null`` when the edge keeps none.
+    ``null`` when the edge keeps none, and a ``broken`` key only when its target does not resolve. The JSON form
+    always lists every edge of a name-resolution change; ``--detail`` changes the text form only.
     """
     data = {
         "counts": report.counts(),
         "edges": {
+            "confidence_changed": [
+                {"new": _edge_dict(entry.new), "old": _edge_dict(entry.old)} for entry in report.confidence_changed
+            ],
             "gained": [_edge_dict(edge) for edge in report.edges_gained],
             "lost": [_edge_dict(edge) for edge in report.edges_lost],
         },
@@ -374,8 +602,10 @@ def to_json(report: IndexDiff, *, old: str, new: str | None) -> str:
             "lost_definition": [_id_dict(entry) for entry in report.ids_undefined],
             "lost_mentions": [_id_dict(entry) for entry in report.ids_unmentioned],
         },
+        "name_resolution": [_resolution_dict(entry) for entry in report.name_resolution],
         "new": new,
         "old": old,
+        "regenerated": [_regenerated_dict(entry) for entry in report.regenerated],
         "sections": {
             "added": [_section_dict(node) for node in report.added],
             "edited": [{"address": entry.address, "old_address": entry.old_address} for entry in report.edited],
@@ -390,13 +620,44 @@ def to_json(report: IndexDiff, *, old: str, new: str | None) -> str:
     return json.dumps(data, indent=2, sort_keys=True, ensure_ascii=False) + "\n"
 
 
-def _edge_line(edge: Edge) -> str:
+def _edge_line(edge: Edge, *, confidence: bool = True) -> str:
     anchor = f" (anchor #{edge.anchor})" if edge.anchor is not None else ""
-    confidence = f" [{edge.confidence}]" if edge.confidence != "exact" else ""
-    return f"{edge.kind}: {edge.source} -> {edge.target}{anchor}{confidence}"
+    flag = f" [{edge.confidence}]" if confidence and edge.confidence != "exact" else ""
+    broken = f" [broken: {edge.broken}]" if edge.broken is not None else ""
+    return f"{edge.kind}: {edge.source} -> {edge.target}{anchor}{flag}{broken}"
 
 
-def _group(title: str, count: int, lines: Sequence[str]) -> str:
+def _confidence_line(entry: ConfidenceChanged) -> str:
+    return f"{_edge_line(entry.new, confidence=False)}: {entry.old.confidence} -> {entry.new.confidence}"
+
+
+def _resolution_lines(entries: Sequence[NameResolution], detail: bool) -> list[str]:
+    lines: list[str] = []
+    for entry in entries:
+        files = f"{entry.files_before} -> {entry.files_after} files"
+        lines.append(f"{entry.name}: {files}; {len(entry.lost)} lost, {len(entry.gained)} gained")
+        if detail:
+            lines.extend(f"  lost: {_edge_line(edge)}" for edge in entry.lost)
+            lines.extend(f"  gained: {_edge_line(edge)}" for edge in entry.gained)
+    return lines
+
+
+def _resolution_count(entries: Sequence[NameResolution]) -> str:
+    """The group's edge count, then the count per name, largest first: ``57 (40 build.gradle, 11 uv.lock)``."""
+    sizes = sorted(((len(e.lost) + len(e.gained), e.name) for e in entries), key=lambda item: (-item[0], item[1]))
+    total = sum(size for size, _name in sizes)
+    return f"{total} ({', '.join(f'{size} {name}' for size, name in sizes)})" if sizes else "0"
+
+
+def _regenerated_line(entry: Regenerated) -> str:
+    sections = (
+        f"{entry.sections_edited} sections edited, {entry.sections_added} added, {entry.sections_removed} removed, "
+        f"{entry.sections_moved} moved or renamed"
+    )
+    return f"{entry.path} (by {entry.by}): {sections}; {entry.edges_lost} edges lost, {entry.edges_gained} gained"
+
+
+def _group(title: str, count: int | str, lines: Sequence[str]) -> str:
     return f"# {title}: {count}\n" + "".join(f"  {line}\n" for line in lines)
 
 
@@ -418,13 +679,15 @@ def _edited_line(entry: Edited) -> str:
     return f"{entry.address} (was {entry.old_address})"
 
 
-def to_text(report: IndexDiff, *, old: str, new: str | None) -> str:
+def to_text(report: IndexDiff, *, old: str, new: str | None, detail: bool = False) -> str:
     """The report as text: a heading line, then one group per kind of change, each sorted, empty groups included.
 
-    Under an ID, the indented lines list its old edges that went; they are not counted in the group's size.
+    Under an ID, the indented lines list its old edges that went; they are not counted in the group's size. The
+    name-resolution group has one line per base name, and its heading names the edge count per name; with
+    ``detail``, each name's edges follow it. A regenerated file is one line of counts.
     """
     target = new if new is not None else "the working tree"
-    rows: list[tuple[str, int, list[str]]] = [
+    rows: list[tuple[str, int | str, list[str]]] = [
         ("Sections added", len(report.added), [f"{node.address} {_quoted(node.title)}" for node in report.added]),
         ("Sections removed", len(report.removed), [f"{node.address} {_quoted(node.title)}" for node in report.removed]),
         ("Sections moved", len(report.moved), [f"{entry.old} -> {entry.new}" for entry in report.moved]),
@@ -445,6 +708,17 @@ def to_text(report: IndexDiff, *, old: str, new: str | None) -> str:
             _id_lines(report.ids_undefined, "lost with it"),
         ),
         ("IDs that lost every mention", len(report.ids_unmentioned), _id_lines(report.ids_unmentioned, "was")),
+        (
+            "Edges whose confidence changed",
+            len(report.confidence_changed),
+            [_confidence_line(entry) for entry in report.confidence_changed],
+        ),
+        (
+            "Name-match links that changed resolution",
+            _resolution_count(report.name_resolution),
+            _resolution_lines(report.name_resolution, detail),
+        ),
+        ("Files regenerated", len(report.regenerated), [_regenerated_line(entry) for entry in report.regenerated]),
     ]
     head = f"# Index diff from {old} to {target}: {report.changes} changes\n"
     return "\n".join([head, *(_group(title, count, lines) for title, count, lines in rows)])
