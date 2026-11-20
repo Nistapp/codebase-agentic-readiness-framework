@@ -102,6 +102,7 @@ fixtures/
   doc-04-ok-parent-index/    docs/adr/ has no index; the parent docs/index.md lists the ADR -> DOC-04 PASS
   doc-05-long-sentences/     two thirds of the docs' sentences over 25 words -> DOC-05 FAIL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
+  nav-01-nested-manifest-only/ no root manifest, only `tools/lint/package.json` -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
   nav-02-main-guard-only/    python library, only a guarded helper script -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL

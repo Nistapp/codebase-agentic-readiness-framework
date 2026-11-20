@@ -48,6 +48,7 @@ FIXTURES: dict[str, tuple[str, str]] = {
     "doc-04-adr-tombstone": ("DOC-04", "PARTIAL"),
     "doc-05-long-sentences": ("DOC-05", "FAIL"),
     "nav-01-no-manifest": ("NAV-01", "UNKNOWN"),
+    "nav-01-nested-manifest-only": ("NAV-01", "UNKNOWN"),
     "nav-02-no-entry": ("NAV-02", "FAIL"),
     "nav-02-main-guard-only": ("NAV-02", "FAIL"),
     "nav-03-red-flags": ("NAV-03", "PARTIAL"),
@@ -272,7 +273,8 @@ class Nav01ComponentManifestTests(unittest.TestCase):
     """`NAV-01` in-process on built repositories: the Ruby, PHP and .NET manifests declare the root.
 
     A .NET solution or project file has the project's own name, so it is matched by pattern, and only in the folder
-    itself. The UNKNOWN summary names the recognised ecosystems instead of saying the stack is not recognised.
+    itself. A named manifest declares the root only when it sits at the root: a nested `tools/x/package.json` does
+    not. The UNKNOWN summary names the recognised ecosystems instead of saying the stack is not recognised.
     """
 
     def nav01(self, files: dict[str, str]) -> tuple[dict, list[str]]:
@@ -306,6 +308,17 @@ class Nav01ComponentManifestTests(unittest.TestCase):
         check, _ = self.nav01({"src/App/App.csproj": "<Project />\n"})
         self.assertEqual(check["verdict"], "UNKNOWN")
         self.assertIn("ecosystems: dotnet", check["summary"])
+
+    def test_a_named_manifest_below_the_root_does_not_declare_the_root(self):
+        for rel in ("tools/x/package.json", "tools/x/go.mod", "tools/x/Gemfile", "tools/x/composer.json"):
+            with self.subTest(rel=rel):
+                check, _ = self.nav01({"README.md": "# x\n", rel: "{}\n"})
+                self.assertEqual(check["verdict"], "UNKNOWN")
+                self.assertTrue(check["summary"].startswith("no build manifest"), check["summary"])
+
+    def test_a_root_manifest_beside_a_nested_one_names_the_root_file(self):
+        check, _ = self.nav01({"tools/x/package.json": "{}\n", "Gemfile": "\n"})
+        self.assertEqual(check, {"verdict": "PASS", "summary": "single-root repository declares Gemfile"})
 
     def test_a_dotnet_project_under_a_candidate_root_is_a_candidate(self):
         check, candidates = self.nav01({"apps/web/Web.csproj": "<Project />\n", "apps/api/Gemfile": "\n"})

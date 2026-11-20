@@ -75,8 +75,14 @@ MANIFEST_PATTERNS = ("*.sln", "*.slnx", "*.csproj", "*.fsproj", "*.vbproj")
 
 
 def _manifest_in(inv: Inventory, prefix: str) -> str | None:
+    root_files = {f.rel for f in inv.files if "/" not in f.rel} if prefix == "." else set()
     for candidate in MANIFEST_NAMES:
-        rel = f"{prefix}/{candidate}".lstrip("./") if prefix != "." else candidate
+        if prefix == ".":
+            # ``Inventory.has`` matches a name at any depth; the root's manifest must sit at the root itself.
+            if candidate in root_files:
+                return candidate
+            continue
+        rel = f"{prefix}/{candidate}".lstrip("./")
         if inv.has(rel):
             return rel
     folder = "" if prefix in (".", "") else prefix.strip("/") + "/"
