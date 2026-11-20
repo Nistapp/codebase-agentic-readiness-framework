@@ -82,8 +82,8 @@ local data and agent worktrees. The report names each such folder in `inventory.
 stays in, even when an ignore rule covers it
 ([ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)).
 
-Where a check page names `README.md` among the root documents it reads, it means the root README by any name: the
-root file whose name starts with `readme`, in any case, with `README.md` first. A `README` with no extension or a
+A check page that names `README.md` among its root documents means the root README by any name. That is the root
+file whose name starts with `readme`, in any case, with `README.md` first. A `README` with no extension or a
 `README.rst` is read and cited by its own name, and every check agrees with `HYG-01` on whether it exists. A README
 below the root is not the root README.
 

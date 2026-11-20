@@ -6,8 +6,8 @@ ADR-0005 fixes the package layout: one module per pipeline stage under `audit/`,
 family under `audit/rules/checks/`. That works for behaviour that belongs to a single stage or a
 single pack. Two cross-cutting concerns do not fit it:
 
-1. **Tracked-file and ignore certainty.** The walk, `SEC-01`, `SEC-03`, `DOC-03`, `EXEC-05` and `CON-03` all
-   need to know which files git tracks and whether an ignore rule covers a path.
+1. **Tracked-file and ignore certainty.** The walk, `SEC-01`, `SEC-03`, `DOC-03`, `EXEC-05` and `CON-03` ask
+   which files git tracks. They also ask whether an ignore rule covers a path.
 2. **Verb resolution and documented commands.** `CMD-01`, `EXEC-06`, `CI-02`, `AGT-05`,
    `TOOL-01/02/04` and `TST-01/04` all ask "what verbs exist, what does each run, and which commands
    does the documentation show?". Answering that per pack guarantees several divergent answers.

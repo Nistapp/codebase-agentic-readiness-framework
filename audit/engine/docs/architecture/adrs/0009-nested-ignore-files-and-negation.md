@@ -32,10 +32,10 @@ from the inventory, so the rule that ignores the directory is not read.
    rule overrode an earlier ignore rule for that path.
 3. **The glob subset** is interpreted: a leading `/` or an inner `/` anchors the rule to its file's directory, a
    trailing `/` makes it directory-only, `*` and `?` stop at `/`, `**` crosses it, `[...]` is a class.
-4. **The walk** (`build_inventory` in `audit/scan.py`) starts from the root files and adds each nested `.gitignore`
-   as it enters that file's directory (`load_ignore_file`). It asks `decide_path` for each directory and file, since
-   their parents are already decided. A file git tracks is never skipped by a rule. The walk enters an ignored
-   directory only when git tracks a file in it, and reads only the tracked files there. `Inventory.ignored_dirs`
+4. **The walk** (`build_inventory` in `audit/scan.py`) starts from the root files. It adds each nested
+   `.gitignore` as it enters that directory (`load_ignore_file`). It asks `decide_path` for each path, since the
+   parents are already decided. A file git tracks is never skipped by a rule. The walk enters an ignored
+   directory only when git tracks a file in it. There it reads only the tracked files. `Inventory.ignored_dirs`
    names each directory it did not enter, and the report lists them. `HARD_EXCLUDE_DIRS` and `--exclude` still
    apply to tracked files. When git cannot report the tracked set, the rules alone decide.
 5. **Which nested files the checks read.** `scoped_rules` (`audit/rules/checks/_common.py`) takes the nested
