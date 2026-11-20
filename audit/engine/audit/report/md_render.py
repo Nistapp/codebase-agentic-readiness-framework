@@ -17,6 +17,10 @@ from typing import Any, Callable
 from audit.report import presentation as P
 
 
+#: How many ignored directories the scan-coverage section names before it says how many more there are.
+_IGNORED_DIRS_LISTED = 20
+
+
 def _esc(text: Any) -> str:
     return str(text).replace("|", "\\|").replace("\n", " ").strip()
 
@@ -449,6 +453,13 @@ def _structural(report: dict) -> list[str]:
     if set_aside:
         listed = ", ".join(f"`{entry['path']}` ({entry['files']})" for entry in set_aside)
         out.append(f"Set aside as carried data, not read by any check: {listed}")
+        out.append("")
+    ignored_dirs = inv.get("ignored_dirs") or []
+    if ignored_dirs:
+        listed = ", ".join(f"`{path}`" for path in ignored_dirs[:_IGNORED_DIRS_LISTED])
+        more = len(ignored_dirs) - _IGNORED_DIRS_LISTED
+        tail = f", and {more} more" if more > 0 else ""
+        out.append(f"Not walked, because an ignore file covers them and git tracks nothing in them: {listed}{tail}")
         out.append("")
 
     out.append("### Probes")

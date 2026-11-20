@@ -77,6 +77,11 @@ below states only where it applies. `--exclude` is still the tool for anything e
 tree), but a template, example or fixture directory no longer needs it. Distrust a verdict when a real
 directory has one of these names (a Python package `samples`): `inventory.set_aside` names it.
 
+The inventory also leaves out what the target's ignore files ignore and git does not track: build output, caches,
+local data and agent worktrees. The report names each such folder in `inventory.ignored_dirs`. A file git tracks
+stays in, even when an ignore rule covers it
+([ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)).
+
 ## 7. How a verdict is recorded
 
 The anatomy's `Evidence to cite` and `Absence proof` fields describe what goes into the report, not how:

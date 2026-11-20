@@ -85,6 +85,9 @@ fixtures/
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
   exec-04-missing-env/       source reads an undeclared env var    -> EXEC-04 FAIL
+  exec-04-reincluded-example/ `.env.*` ignored, `!.env.example` re-includes the template -> EXEC-04 PASS
+  exec-04-anchored-ignored-dir/ `/scratch/` ignored; its untracked file reads an undeclared key (needs git) -> EXEC-04 PASS
+  exec-04-nested-ignored-dir/ `tools/.gitignore` ignores `cache/`; its untracked file reads an undeclared key (needs git) -> EXEC-04 PASS
   exec-05-generated/         tracked generated file, no header (needs git) -> EXEC-05 FAIL
   exec-06-broken-command/    README runs an npm script that is not declared -> EXEC-06 FAIL
   exec-07-dual-lint/         .eslintrc.json + biome.json compete  -> EXEC-07 FAIL
