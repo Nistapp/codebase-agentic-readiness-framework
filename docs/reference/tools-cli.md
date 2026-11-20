@@ -906,6 +906,7 @@ python3 implement/tools/progress.py unskip|undefer FINDING --by owner --workspac
 python3 implement/tools/progress.py pref set KEY VALUE --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --workspace DIR --phase PHASE [--render]
+python3 implement/tools/progress.py accept-lost THEME --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py --describe
 ```
 
@@ -925,13 +926,14 @@ python3 implement/tools/progress.py --describe
 | `--commit` | `set-status`: a commit SHA to add to the item (repeatable), 7 to 40 digits, stored cut to 12. |
 | `--verification-command`, `--verification-result` | `set-status`: the verification and what it gave; given together. `done` needs one. |
 | `--debt`, `--clear-debt` | `set-status`: record debt (repeatable; same `what` replaces) or drop it. `partial` needs debt; `done` needs none. |
-| `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer` and `pref`. |
+| `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer`, `pref` and `accept-lost`. |
 | `KEY VALUE` | `pref set`: a lower-case key (letters, digits, dot, underscore, hyphen; at most 64) and its value. The value `none` records that the owner was asked and has no preference. |
 | `--note` | `set-status`: text appended to the item's notes. When the item already has the given status, this is the only effect (the note and any `--commit` are added and the log says "note added"); without `--note` that case is refused. |
-| `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer` and `pref` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
+| `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer`, `pref` and `accept-lost` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
 | `--phase` | Every write: the step recorded in the log entry and on the item or preference. |
 | `--render` | Every write: also replace the Markdown view. Without it the tool warns that the view is out of date. |
 | `--status`, `--branch`, `--pr`, `--merged-sha` | `theme`: the theme's new status (it only moves forward) and the data that status needs: a branch, then a PR, then the merge SHA (stored cut to 12 digits). |
+| `THEME` | `accept-lost`: the theme whose latest `lost` verdict the owner accepts, `T1` to `T8`. |
 | `--json` | `show`: print the state itself instead of the summary. Long lists are cut to fit the output and `truncated` is set; the log keeps its newest entries. |
 
 **Outputs**
@@ -960,13 +962,24 @@ the full text of a cut preference cell. A preference's value or reason longer th
 table row, and given in full in a list below the table. Each write is atomic. A temporary file that a killed write
 left behind is removed, with a warning.
 
+**A lost pass stops the theme**
+([ADR 0005](../../implement/docs/architecture/adrs/0005-a-lost-pass-stops-the-theme.md)).
+`check_regressions.py --workspace DIR --theme THEME` writes the theme's verdict,
+`<label>-regressions-<theme>.json`, beside the state. While that verdict reads `lost`, two commands are refused
+(exit 1): `set-status FINDING done` for an item of that theme, and `theme THEME --status merged`. The owner's
+acceptance lifts the refusal: `accept-lost THEME --reason TEXT --by owner` appends the log entry
+`theme Tn lost verdict <sha> accepted by owner (<checks>): <reason>`. `<sha>` is the first 12 digits of the
+verdict file's SHA-256, so a new `lost` verdict needs a new acceptance. A `clean` verdict passes. So does a theme
+with no verdict file: a run that took no base report, or older tools, wrote none. `progress.py` reads the verdict
+and never writes it.
+
 **Exit codes**
 
 | Code | When |
 |---|---|
 | `0` | Done. |
 | `1` | A bad argument, a missing report or target, a workspace inside the target, a missing workspace, an existing state for `init` or `adopt`, no state for `show` or `render`, a state file that is a symlink, or, for `adopt`, a listed report missing from the target. |
-| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules; or, for `adopt`, a report no longer matches its recorded SHA-256. `data.errors` lists what to fix. |
+| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules; or, for `adopt`, a report no longer matches its recorded SHA-256; or a theme's verdict file is not one `check_regressions.py` wrote. `data.errors` lists what to fix. |
 | `3` | Internal error, including a write the system refused. The old file is left whole. |
 
 **Errors**
@@ -989,6 +1002,9 @@ left behind is removed, with a warning.
 | `... is an owner decision` | Ask the owner and pass `--by owner`. |
 | `F-nnn cannot be done without a verification` / `... still has N debt entries` / `... cannot be partial without debt` | Give the verification, use `partial`, or record the debt. |
 | `theme Tn is ... and a theme only moves forward` | Themes go `not_started`, `branch_open`, `pr_open`, `merged`. |
+| `... is refused: theme Tn lost a pass (...) and the owner has not decided` | Ask the owner: fix it and compare again, accept it with `accept-lost Tn --reason TEXT --by owner`, or stop the theme. |
+| `theme Tn has no verdict to accept` / `... there is no lost pass to accept` | Nothing waits for the owner; go on. |
+| `<label>-regressions-Tn.json is not a check_regressions.py verdict for theme Tn` | The file was edited by hand. Run `check_regressions.py` again with `--workspace` and `--theme`. |
 | `the report has findings on checks with no theme: ...` | Add the checks to `THEMES` in `progress.py`. |
 | `no state in ...` | Run `init` first. |
 | `N states in ...; pick one with --label` | Pass `--label`. |
@@ -1110,14 +1126,15 @@ verdict can move for that reason alone. Each is also a warning and a line in the
 
 Compares two engine reports of one theme worktree. The base report is taken before the theme's first change, the
 close report at theme close. It names each check that was `PASS` at the base and is not at close, so the
-implement recipe can stop the theme and ask the owner. It writes nothing. Both files are the engine's own JSON
-reports from `engine.py`, not audit reports. The source is
+implement recipe can stop the theme and ask the owner. It writes nothing, unless `--workspace` is given (see
+[The verdict file](#the-verdict-file)). Both files are the engine's own JSON reports from `engine.py`, not audit
+reports. The source is
 [`check_regressions.py`](../../implement/tools/check_regressions.py).
 
 ### Synopsis
 
 ```text
-python3 implement/tools/check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]]
+python3 implement/tools/check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]] [--workspace DIR --theme THEME [--label LABEL]]
 python3 implement/tools/check_regressions.py --describe
 ```
 
@@ -1168,6 +1185,17 @@ A place matches a changed path as the consistency map's schema states its scope:
 
 So `docs/**/*.md` matches `docs/a.md`. A place with case `fold` is matched in lower case.
 
+### The verdict file
+
+`--workspace DIR --theme THEME` (always together) also writes the verdict to `<label>-regressions-<theme>.json` in
+`DIR`. `DIR` is the implement workspace: the folder that holds the state `progress.py` keeps
+([ADR 0004](../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md)). It
+must hold that state, and lie outside the reports' target. `--label` picks the state when `DIR` holds more than one.
+The file holds `tool`, `theme`, `status`, `base`, `close`, `counts` and every row of `stops`, unbounded. It replaces
+the theme's earlier verdict atomically, and `data.verdict` gives its path. A refused pair (exit 2) writes nothing
+and leaves the earlier verdict. [`progress.py`](#progresspy) reads the file: it refuses `done` and `merged` for the
+theme while the verdict reads `lost` and the owner has not accepted it.
+
 ### Output
 
 `data.status` is `lost` when at least one check is `lost_pass` or `regressed`, and `clean` otherwise. `data.base`
@@ -1184,6 +1212,6 @@ ruleset hash is not the reports' hash. Long lists are bounded: `data.omitted` co
 | Code | When |
 |---|---|
 | `0` | Done, whatever the status. Read `data.status`. |
-| `1` | A bad argument or a missing file. With `--changed-from`: a worktree that is not the reports' target, a close report whose target is a label (the engine's `--target-label`) and not a path, a base commit not in its history, or git that cannot list the changes. With `--base-target`: no `--changed-from`, a base report with no commit, or a `--base` that is not that commit. |
+| `1` | A bad argument or a missing file. With `--workspace`: no `--theme`, a missing workspace, a workspace with no state, or a workspace inside the target. With `--changed-from`: a worktree that is not the reports' target, a close report whose target is a label (the engine's `--target-label`) and not a path, a base commit not in its history, or git that cannot list the changes. With `--base-target`: no `--changed-from`, a base report with no commit, or a `--base` that is not that commit. |
 | `2` | Refused. A file is not an engine report, or the two reports differ in ruleset hash, target, phase, user-config setting, probes or allowed probe verbs. With `--base-target`, the base report's target must be `DIR` instead. The close report may also be no newer than the base. `data.errors` has one line per reason. |
 | `3` | Internal error. |

@@ -9,6 +9,7 @@
     progress.py show --workspace <dir> [--label LABEL] [--json]
     progress.py render --workspace <dir> [--label LABEL]
     progress.py set-status|skip|unskip|defer|undefer|pref|theme ... --workspace <dir>   (the transitions; see --help)
+    progress.py accept-lost <theme> --reason <text> --by owner --workspace <dir> --phase P
 
 The state lives in the workspace: the folder of the final report given to ``init``, normally the audit run's output
 folder (ADR 0004). It is ``<label>-agentic-readiness-state.json``, the source of truth, and
@@ -30,6 +31,13 @@ The transition commands change one thing, check the whole state again, append a 
 atomically; ``--render`` replaces the Markdown too. They enforce the state diagram in :data:`LEGAL` and refuse every
 other move with a message of its own. Only the owner skips, defers, unskips, undefers and sets preferences, which the
 caller states with ``--by owner`` (the agent relays what the owner said; the tool cannot see who is typing).
+
+A lost pass stops the theme (ADR 0005). ``check_regressions.py --workspace`` writes its verdict for a theme to
+``<label>-regressions-<theme>.json`` in the workspace. While that verdict reads ``lost``, ``set-status <item> done``
+for an item of the theme and ``theme <theme> --status merged`` are refused (exit 1), until the owner accepts that
+verdict: ``accept-lost <theme> --reason TEXT --by owner`` logs the acceptance with the verdict's SHA-256, so a new
+``lost`` verdict needs a new acceptance. A theme with no verdict file is not refused: a run that took no base report,
+or a state from older tools, has none. The tool reads the verdict file and never writes it.
 
 ``adopt`` moves a state that older tools kept in ``<target>/docs/agentic-readiness/`` into a workspace. It reads
 the target and never writes or deletes there. It refuses a state of another schema version and a report whose
@@ -74,6 +82,8 @@ STATE_DIR = Path("docs") / "agentic-readiness"
 STATE_JSON_SUFFIX = "-agentic-readiness-state.json"
 STATE_MD_SUFFIX = "-agentic-readiness-STATE.md"
 MAX_STATE_BYTES = 8 * 1024 * 1024
+VERDICT_INFIX = "-regressions-"
+VERDICT_STATUSES = ("lost", "clean")
 
 
 def _span(prefix: str, first: int, last: int, *, skip: Sequence[int] = ()) -> tuple[str, ...]:
@@ -117,13 +127,15 @@ INFO = _common.ToolInfo(
         "progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
         "progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA]"
         " --workspace DIR --phase PHASE [--render]",
+        "progress.py accept-lost THEME --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
     ),
     writes=(
         "Only in the workspace, the report's folder, which must be outside the target: "
         "<label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, "
         "render, and any command given --render), each replaced atomically; adopt also copies the source reports "
         "there, never over a different file. init and adopt never replace a state; show writes nothing; every other "
-        "command rewrites the JSON after validating it."
+        "command rewrites the JSON after validating it. set-status, theme and accept-lost read the theme's "
+        "LABEL-regressions-THEME.json verdict, which check_regressions.py writes."
     ),
 )
 
@@ -176,6 +188,14 @@ def find_state(directory: Path, label: str | None) -> tuple[str, Path]:
     if not path.exists():
         raise _common.UsageError(f"no state for {label!r} in {directory}")
     return label, path
+
+
+def verdict_name(label: str, theme: str) -> str:
+    """The file name of the lost-pass verdict `check_regressions.py --workspace` writes for one theme of a state."""
+    state_names(label)  # refuses a label that is not a file name
+    if theme not in THEME_IDS:
+        raise _common.UsageError(f"no theme {theme!r}; the themes are {', '.join(THEME_IDS)}")
+    return f"{label}{VERDICT_INFIX}{theme}.json"
 
 
 def sweep_temporaries(directory: Path, names: Sequence[str]) -> int:
@@ -1141,11 +1161,84 @@ def stamp(item: dict[str, Any], args: Any) -> None:
     item["date"] = args.date
 
 
+def read_verdict(directory: Path, label: str, theme: str) -> tuple[dict[str, Any], str] | None:
+    """The theme's lost-pass verdict in the workspace and the first 12 hex digits of its SHA-256; None when absent.
+
+    A verdict that is not what ``check_regressions.py --workspace`` writes is refused (exit 2): it was edited by hand.
+    """
+    path = state_file(directory, verdict_name(label, theme))
+    if not path.exists():
+        return None
+    raw = path.read_bytes()
+    try:
+        verdict = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        verdict = None
+    if (
+        not isinstance(verdict, dict)
+        or verdict.get("theme") != theme
+        or verdict.get("status") not in VERDICT_STATUSES
+        or not isinstance(verdict.get("stops"), list)
+    ):
+        raise _common.ValidationFailed(
+            f"{path.name} is not a check_regressions.py verdict for theme {theme}",
+            hint="run check_regressions.py again with --workspace and --theme, or tell the owner it was edited",
+        )
+    return verdict, hashlib.sha256(raw).hexdigest()[:12]
+
+
+def acceptance_prefix(theme: str, digest: str) -> str:
+    """How the log entry of an owner's acceptance of one lost verdict starts; :func:`run_accept_lost` writes it."""
+    return f"theme {theme} lost verdict {digest} accepted by owner"
+
+
+def lost_checks(verdict: Mapping[str, Any]) -> str:
+    return ", ".join(str(row.get("check")) for row in verdict["stops"] if isinstance(row, dict)) or "none listed"
+
+
+def refuse_unaccepted_loss(state: dict[str, Any], directory: Path, label: str, theme: str, action: str) -> None:
+    """Refuse `action` while the theme's latest verdict reads ``lost`` and the owner has not accepted that verdict.
+
+    A theme with no verdict file passes: a run without a base report, or older tools, wrote none (ADR 0005).
+    """
+    found = read_verdict(directory, label, theme)
+    if found is None or found[0]["status"] != "lost":
+        return
+    verdict, digest = found
+    prefix = acceptance_prefix(theme, digest)
+    if any(str(entry.get("event", "")).startswith(prefix) for entry in state["log"]):
+        return
+    raise _refuse(
+        f"{action} is refused: theme {theme} lost a pass ({lost_checks(verdict)}) and the owner has not decided",
+        "ask the owner: fix it and run check_regressions.py again, accept it with "
+        f"accept-lost {theme} --reason TEXT --by owner, or stop the theme",
+    )
+
+
+def run_accept_lost(args: Any) -> _common.Result:
+    """`accept-lost`: the owner accepts the theme's latest ``lost`` verdict, with a reason, in one log entry."""
+    require_owner(args, "accept-lost")
+    label, path, state = open_state(args)
+    found = read_verdict(path.parent, label, args.theme)
+    if found is None:
+        raise _refuse(f"theme {args.theme} has no verdict to accept", "run check_regressions.py with --workspace")
+    verdict, digest = found
+    if verdict["status"] != "lost":
+        raise _refuse(f"theme {args.theme}'s verdict is {verdict['status']}; there is no lost pass to accept")
+    prefix = acceptance_prefix(args.theme, digest)
+    if any(str(entry.get("event", "")).startswith(prefix) for entry in state["log"]):
+        raise _refuse(f"the owner already accepted theme {args.theme}'s verdict {digest}")
+    record(state, args, f"{prefix} ({short(lost_checks(verdict))}): {short(args.reason)}")
+    return commit_change(args, label, path, state, f"theme {args.theme} lost verdict {digest} accepted by owner")
+
+
 def run_set_status(args: Any) -> _common.Result:
     label, path, state = open_state(args)
     item = find_item(state, args.finding)
     old = item["status"]
     apply_status(item, args.status, args)
+    if args.status == "done" and old != "done":
+        refuse_unaccepted_loss(state, path.parent, label, item["theme"], f"{args.finding} to done")
     stamp(item, args)
     if old == args.status:
         record(state, args, f"{args.finding} note added by {args.by}: {short(args.note)}")
@@ -1237,6 +1330,8 @@ def run_theme(args: Any) -> _common.Result:
         raise _refuse(f"theme {args.theme} to merged needs --merged-sha")
     if new != "merged" and args.merged_sha:
         raise _refuse("--merged-sha belongs to the merged status")
+    if new == "merged":
+        refuse_unaccepted_loss(state, path.parent, label, args.theme, f"theme {args.theme} to merged")
     theme.update(status=new, phase=args.phase, branch=branch, pr=pr, merged_sha=merged_sha if new == "merged" else None)
     detail = ", ".join(
         part
@@ -1326,6 +1421,12 @@ def build_parser() -> _common.ToolParser:
     theme.add_argument("--pr", type=int)
     theme.add_argument("--merged-sha", type=_sha_option)
     write_options(theme)
+    accept = commands.add_parser(
+        "accept-lost", help="record the owner's acceptance of a theme's lost-pass verdict (needs --by owner)"
+    )
+    accept.add_argument("theme", choices=THEME_IDS)
+    accept.add_argument("--reason", required=True, help="the owner's reason")
+    write_options(accept)
     return parser
 
 
@@ -1345,6 +1446,8 @@ def handler(argv: Sequence[str]) -> _common.Result:
         return run_pref(args)
     if args.command == "theme":
         return run_theme(args)
+    if args.command == "accept-lost":
+        return run_accept_lost(args)
     return run_render(args)
 
 

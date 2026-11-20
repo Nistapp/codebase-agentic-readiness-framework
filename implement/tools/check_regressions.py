@@ -4,10 +4,18 @@
 """Compare two engine reports of one theme worktree: which passing checks a theme lost, and what else moved.
 
     check_regressions.py <base.json> <close.json> [--changed-from <worktree> [--base <sha>] [--base-target <dir>]]
+                         [--workspace <dir> --theme <theme> [--label <label>]]
 
 Both files are the audit engine's own JSON reports (``engine.py --out-dir``), not audit reports. ``base`` was taken
-on the theme worktree before the theme's first change, ``close`` at theme close. The tool reads both and writes
-nothing.
+on the theme worktree before the theme's first change, ``close`` at theme close. The tool reads both. Without
+``--workspace`` it writes nothing.
+
+With ``--workspace <dir> --theme <theme>`` it also writes its verdict to ``<label>-regressions-<theme>.json`` in the
+implement workspace, the folder that holds the state ``progress.py`` keeps (ADR 0004), replacing the theme's earlier
+verdict atomically. The workspace must hold that state and lie outside the reports' target. The verdict holds the
+theme, ``status``, both sides, the counts and every stop. ``progress.py`` refuses ``set-status <item> done`` for an
+item of the theme and ``theme <theme> --status merged`` while it reads ``lost``, until the owner accepts it with
+``progress.py accept-lost`` (ADR 0005). A refused pair (exit 2) writes no verdict and leaves the earlier one.
 
 Checks are matched by id. A check in the report's ``not_applicable`` list has the verdict ``NOT_APPLICABLE``; a check
 in neither list is missing. Each check gets one class:
@@ -73,13 +81,17 @@ from typing import Any, Mapping, Sequence
 import _audit_tools_path  # noqa: F401  (puts audit/tools on sys.path in a checkout)
 import _common
 import engine
+import progress
 import validate_report
 
 INFO = _common.ToolInfo(
     name="check_regressions",
     summary="Compare two engine reports of one theme worktree: lost passes, regressions, other moves and evidence changes.",
-    synopsis=("check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]]",),
-    writes="nothing",
+    synopsis=(
+        "check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]]"
+        " [--workspace DIR --theme THEME [--label LABEL]]",
+    ),
+    writes="With --workspace only: LABEL-regressions-THEME.json beside the state, outside the target.",
 )
 
 ENGINE_SCHEMA_VERSION = "2"
@@ -535,6 +547,31 @@ def side(path: str, report: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def verdict_document(theme: str, data: Mapping[str, Any], rows: Sequence[Row]) -> dict[str, Any]:
+    """The verdict ``progress.py`` reads: the theme, the status, both sides, the counts and every stop, unbounded."""
+    return {
+        "tool": INFO.name,
+        "theme": theme,
+        "status": data["status"],
+        "base": data["base"],
+        "close": data["close"],
+        "counts": data["counts"],
+        "stops": [row.to_json() for row in rows if row.kind in STOPS],
+    }
+
+
+def write_verdict(args: Any, close: Mapping[str, Any], document: Mapping[str, Any]) -> Path:
+    """Write the verdict into the workspace beside the state, refusing a workspace inside the reports' target."""
+    workspace = progress.workspace_directory(args.workspace)
+    label, _ = progress.find_state(workspace, args.label)
+    recorded = Path(close["provenance"]["target"]).expanduser()
+    if recorded.is_absolute() and _common.is_within(recorded.resolve(), workspace):
+        raise _common.PathNotAllowed(f"refusing to write the verdict inside the target: {workspace}")
+    path = progress.state_file(workspace, progress.verdict_name(label, args.theme))
+    _common.atomic_write_text(path, json.dumps(document, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
+    return path
+
+
 def build_parser() -> _common.ToolParser:
     parser = _common.ToolParser(prog="check_regressions.py", description=INFO.summary)
     parser.add_argument("base", help="the engine report taken before the theme's first change (JSON)")
@@ -553,6 +590,13 @@ def build_parser() -> _common.ToolParser:
         metavar="DIR",
         help="the other checkout of the base commit the base report was taken on, such as a temporary detached worktree",
     )
+    parser.add_argument(
+        "--workspace", metavar="DIR", help="the implement workspace (the state's folder): write the verdict there"
+    )
+    parser.add_argument(
+        "--theme", choices=progress.THEME_IDS, help="the theme the reports belong to (with --workspace)"
+    )
+    parser.add_argument("--label", help="the state in the workspace, when it holds more than one")
     return parser
 
 
@@ -562,6 +606,10 @@ def handler(argv: Sequence[str]) -> _common.Result:
         raise _common.UsageError("--base needs --changed-from")
     if args.base_target is not None and args.changed_from is None:
         raise _common.UsageError("--base-target needs --changed-from")
+    if (args.workspace is None) != (args.theme is None):
+        raise _common.UsageError("--workspace and --theme go together")
+    if args.label is not None and args.workspace is None:
+        raise _common.UsageError("--label needs --workspace")
     base = read_engine_report(args.base, "base")
     close = read_engine_report(args.close, "close")
     problems = refusals(base, close, args.base_target)
@@ -635,6 +683,8 @@ def handler(argv: Sequence[str]) -> _common.Result:
     )
     if "changes" in data:
         summary += f", {data['changes']['unattributed']} unattributed"
+    if args.workspace is not None:
+        data["verdict"] = str(write_verdict(args, close, verdict_document(args.theme, data, rows)))
     if stops:
         summary += "; stop the theme and ask the owner"
     return _common.Result(data=data, summary=summary, warnings=warnings, truncated=bool(omitted))
