@@ -118,7 +118,8 @@ manifest that dependency automation reads.
   locking: the point is to record what resolves today.
 - Do not add a root workspace manifest to a per-component repository unless the owner asks.
 - Do not edit workflow files without `ci.edits_authorised`.
-- Do not build images or start containers by hand: use the repository's scripts.
+- Do not build images or start containers by hand: use the repository's scripts, unless the person asks for that
+  exact action ([Hard rules](../../implement/SKILL.md#hard-rules)).
 - Do not install a version manager the owner did not approve.
 - Do not upgrade a tool while moving its version into a manifest.
 
@@ -142,7 +143,8 @@ lines, and every concern (lint, format, test, types, security) has one authorita
   fix the rule. "`EXEC-02` Lockfile committed and consistent" needs the lockfile tracked.
 - Do not delete working-tree files (`git rm` without `--cached`) and do not rewrite history.
 - Do not delete, merge or rename a competing config (EXEC-07).
-- Do not start containers or the local stack by hand to test a reader.
+- Do not start containers or the local stack by hand to test a reader, unless the person asks for that exact
+  action ([Hard rules](../../implement/SKILL.md#hard-rules)).
 
 Full playbook: [`untrack-generated.md`](../../implement/playbooks/untrack-generated.md).
 
@@ -171,7 +173,8 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 - Do not template, edit or "clean" realm or identity-provider exports.
 - Do not install a scanner the owner has not approved.
 - Do not put shell builtins or script-internal names in the example file.
-- Do not start containers or the local stack by hand to test a change; use the repository's scripts.
+- Do not start containers or the local stack by hand to test a change; use the repository's scripts, unless the
+  person asks for that exact action ([Hard rules](../../implement/SKILL.md#hard-rules)).
 
 Full playbook: [`env-inventory-and-secrets.md`](../../implement/playbooks/env-inventory-and-secrets.md).
 
@@ -261,7 +264,8 @@ floor needs the owner, and is recorded as described in [Continue on error](../..
 - No upgrade of a tool or runner only to get its native baseline format, without the owner.
 - No agent edit that raises a count or lowers a floor; no script that rewrites a baseline or floor by itself.
 - No new member of `check` for a ratchet; it goes in `format:check`.
-- Do not start or stop services outside the repository's own scripts.
+- Do not start or stop services outside the repository's own scripts, unless the person asks for that exact
+  action ([Hard rules](../../implement/SKILL.md#hard-rules)).
 
 Full playbook: [`add-baselines-and-ratchet.md`](../../implement/playbooks/add-baselines-and-ratchet.md).
 

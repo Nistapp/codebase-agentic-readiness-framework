@@ -320,7 +320,8 @@ commits revert alone. A shrunk exclude list can stay shrunk.
 - No upgrade of a tool or runner only to get its native baseline format, without the owner.
 - No agent edit that raises a count or lowers a floor; no script that rewrites a baseline or floor by itself.
 - No new member of `check` for a ratchet; it goes in `format:check`.
-- Do not start or stop services outside the repository's own scripts.
+- Do not start or stop services outside the repository's own scripts, unless the person asks for that exact
+  action ([Hard rules](../SKILL.md#hard-rules)).
 
 ## State updates
 

@@ -229,7 +229,8 @@ undoing.
 - Do not template, edit or "clean" realm or identity-provider exports.
 - Do not install a scanner the owner has not approved.
 - Do not put shell builtins or script-internal names in the example file.
-- Do not start containers or the local stack by hand to test a change; use the repository's scripts.
+- Do not start containers or the local stack by hand to test a change; use the repository's scripts, unless the
+  person asks for that exact action ([Hard rules](../SKILL.md#hard-rules)).
 
 ## State updates
 
