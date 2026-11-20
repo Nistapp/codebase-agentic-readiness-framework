@@ -15,8 +15,8 @@ which leaves no trace in the verdict.
 
 A flat list causes three defects:
 
-1. **Precedence by kind, not by depth.** A kind order puts `package.json` above `Makefile` whatever their paths.
-   With the shallowest file of each kind picked alone, a nested `package.json` outranks a root `Makefile`.
+1. **A runner at any depth.** A manifest at any depth counts as a runner. A kind order puts `package.json`
+   above `Makefile` whatever their paths, so a nested `package.json` outranks a root `Makefile`.
 2. **Presence at any depth.** A name matched at any depth credits a misplaced hygiene file
    (`HYG-02/03/05/06/08/09`). `HYG-02`'s own text places the file at the root, under `.github/` or under `docs/`.
 3. **Carried data is indistinguishable from the project.** Nothing records that `tests/fixtures/`,
@@ -30,15 +30,14 @@ decide how a monorepo's components are scoped.
 
 **Three rules, applied once, in the inventory and the runner resolver, so that every check gets the same answer.**
 
-1. **Runner precedence is depth first.** A runner is ranked by `(depth of its manifest, kind rank, path)`. A root
-   manifest of any kind beats a nested one; among nested manifests the shallowest wins; a tie at equal depth is
-   broken by `RUNNER_PRECEDENCE` (kind), then by path. The rank is one function in
-   `audit/rules/checks/_common.py` (`runner_rank`) that the resolver (`resolve_all_verbs`), `runner_commands` and
-   `CMD-03`'s choice of a primary runner all use. Precedence is applied per verb: a root `Makefile` that does not
-   define `lint` does not hide another runner that does. Only a root `package.json`, `Makefile`, Taskfile,
-   `pyproject.toml`, Gradle or Maven build is a runner (`_at_root`), since its tool reads it there; only a root
-   `gradlew` or `mvnw` launches that build. A nested `tools/Makefile` is not ranked, read or cited, so among the
-   runners the kind decides.
+1. **Only a root manifest is a runner.** A `package.json`, `Makefile`, Taskfile, `pyproject.toml`, Gradle or
+   Maven build counts only at the repository root. Its tool reads it there (`_at_root` in
+   `audit/rules/checks/_common.py`). Only a root `gradlew` or `mvnw` launches that build. A nested manifest, such
+   as `tools/Makefile` or `packages/web/package.json`, is not a runner: no check reads its verbs or cites it.
+   Among the root runners, `RUNNER_PRECEDENCE` (kind) decides. One sort key, `runner_rank`, holds this order.
+   The resolver (`resolve_all_verbs`), `runner_commands` and `CMD-03`'s choice of a primary runner all use it.
+   Precedence is applied per verb: a root `Makefile` that does not define `lint` does not hide another runner
+   that does.
 2. **Carried data is set aside.** A file whose path has a directory component named `templates`, `template`,
    `examples`, `example`, `fixtures`, `samples`, `testdata` or `scaffold` (compared whole and case-insensitively; the
    target's own root name is never part of the comparison) is *carried data*. It is not a runner, not a source of
@@ -78,6 +77,7 @@ vendored trees). Template, example and fixture directories do not need it.
 | Detect "a nested project" structurally (a directory with its own manifest and no parent link is not the project) | In a monorepo that directory is a component. The rule would set aside exactly the directories ADR-0003 and issue #20 want scoped, not hidden. |
 | Consider only the repository root for every presence check | `docs/`, `.github/` and `.gitlab/` are conventional homes for repository-level files, and monorepo tooling lives in subdirectories. |
 | Read `.gitattributes` (`linguist-vendored`, `export-ignore`) to find carried data | Needs git and an attribute almost no repository sets; the engine must work on a bare directory (ADR-0006: `None`, never an inference, when git cannot answer). |
+| Count nested manifests as runners, ranked below the root ones by depth | A nested manifest's tool does not read it from the root: `make` at the root ignores `tools/Makefile`. Ranking it still lets it supply a verb the root lacks, or count as a second gate for `CMD-03`, and a finding then cites a file the repository's commands never run. |
 | Let nested manifests outrank the root when they declare more verbs | Rewards the wrong file: the repository's gate is the one at its root, and a template generated into a new project will always declare more than the framework that generates it. |
 | Apply the names everywhere, with no JVM exception | Spring Initializr's default group is `com.example`, so a generated project's code and tests under `src/main/java/com/example/` would vanish from every check, and `NAV-02` and the `TST` checks would report a repository with no entry point and no tests. |
 | Drop the singular names `example` and `template` from the list | Fixes `com.example` but lets a real `example/` sample folder with its own manifest rejoin the project, where it becomes a second runner for `CMD-03`. It leaves a package such as `com.acme.samples` set aside. |
