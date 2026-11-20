@@ -28,9 +28,13 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   of `check` are its body, and a prerequisite that is not a verb is followed into its own recipe, once. In a
   `package.json` a script that is not a verb is followed into its command the same way, so
   `npm run test:coverage` composes the test concern through `jest --coverage`.
+  A Gradle `check` is read from the build file: a JVM plugin wires the compile (the typecheck) and
+  `test`, Spotless or ktlint wires the format check, and `check.dependsOn` or a `check { dependsOn ... }`
+  block adds the verbs and known tasks it names. A plugin, script, subproject or task the engine does not
+  know may add more, so with one of those present a check that is still missing a concern is `UNKNOWN`.
   Some concerns present ⇒ `PARTIAL`; none ⇒ `FAIL`; no runner ⇒ `UNKNOWN` (so is a `Makefile` that
-  does not parse, which `CMD-01` already reported, and so is a `check` that is a Gradle or Maven
-  lifecycle task, whose dependencies are set by the build and not read here).
+  does not parse, which `CMD-01` already reported, and so is a `check` that is a Maven lifecycle phase,
+  whose plugin bindings are set by the build and not read here).
 * **CMD-03** — a second runner may define `check` only as a delegation to the first; a second runner
   that composes the gate itself is a finding. Detection is textual and deterministic: a delegating
   `check` invokes ``check`` through another runner. No runner ⇒ `UNKNOWN`.
@@ -53,7 +57,9 @@ from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
 from audit.probes import MUTATING_VERBS
 from audit.rules.checks._common import (
+    GRADLE_LIFECYCLE_PLUGINS,
     VerbBinding,
+    gradle_plugins,
     makefile_errors,
     resolve_all_verbs,
     resolve_verbs,
@@ -383,6 +389,150 @@ def _composition_concerns(
     return concerns
 
 
+#: What a plugin wires into Gradle's `check`, by concern. A JVM plugin's `check` runs `test`, which compiles the main
+#: and test sources first; that compile is the typecheck, as Maven's `typecheck` verb is `compile test-compile`.
+_GRADLE_PLUGIN_CONCERNS: dict[str, frozenset[str]] = {
+    **{plugin: frozenset({"typecheck", "test"}) for plugin in GRADLE_LIFECYCLE_PLUGINS},
+    "com.diffplug.spotless": frozenset({"format-check"}),
+    "org.jlleitschuh.gradle.ktlint": frozenset({"format-check"}),
+}
+
+#: Plugins known to wire no format-check, typecheck or test into `check`. A linter's own task (Checkstyle, PMD,
+#: SpotBugs) is not one of the three concerns. Any other plugin may wire one, so the engine does not guess.
+_GRADLE_INERT_PLUGINS = frozenset(
+    {
+        "base",
+        "checkstyle",
+        "codenarc",
+        "com.github.ben-manes.versions",
+        "com.github.johnrengelman.shadow",
+        "com.github.spotbugs",
+        "com.google.cloud.tools.jib",
+        "com.gradleup.shadow",
+        "distribution",
+        "eclipse",
+        "idea",
+        "io.freefair.lombok",
+        "io.spring.dependency-management",
+        "jacoco",
+        "java-platform",
+        "java-test-fixtures",
+        "maven-publish",
+        "org.cyclonedx.bom",
+        "org.graalvm.buildtools.native",
+        "org.owasp.dependencycheck",
+        "org.sonarqube",
+        "org.springframework.boot",
+        "pmd",
+        "signing",
+        "version-catalog",
+    }
+)
+
+#: Tasks a known plugin registers, by the concern they cover, for a `dependsOn` that names one.
+_GRADLE_TASK_CONCERNS = {
+    "spotlessCheck": "format-check",
+    "ktlintCheck": "format-check",
+    "compileJava": "typecheck",
+    "compileTestJava": "typecheck",
+    "compileKotlin": "typecheck",
+    "compileTestKotlin": "typecheck",
+}
+
+_GRADLE_COMMENT_RE = re.compile(r"/\*.*?\*/|//[^\n]*", re.DOTALL)
+_GRADLE_CHECK_DEPENDS_RE = re.compile(r"(?<![\w.])(?:tasks\s*\.\s*)?check\s*\.\s*dependsOn\b([^\n]*)")
+_GRADLE_CHECK_BLOCK_RE = re.compile(
+    r"""(?:\btasks\s*\.\s*(?:named|getByName)\s*(?:<[^>\n]*>)?\s*\(\s*['"]check['"]\s*\)"""
+    r"""|(?<![\w.])(?:tasks\s*\.\s*)?check)\s*\{"""
+)
+_GRADLE_DEPENDS_RE = re.compile(r"\bdependsOn\b([^\n]*)")
+_GRADLE_OPAQUE_RE = re.compile(r"\bsetDependsOn\b|\benabled\b|\bonlyIf\b|\.clear\s*\(")
+_GRADLE_CHECK_MENTION_RE = re.compile(r"""(?<![\w.:-])check(?![\w-])|['"]check['"]""")
+_GRADLE_QUOTED_RE = re.compile(r"""['"]([^'"\n]*)['"]""")
+_GRADLE_IDENT_RE = re.compile(r"[A-Za-z_]\w*")
+_GRADLE_ACCESSORS = frozenset({"tasks", "named", "getByName", "project", "provider", "map", "get", "dependsOn"})
+_GRADLE_SPOTLESS_OFF_RE = re.compile(r"\b(?:is)?[eE]nforceCheck\s*(?:=\s*)?false\b")
+_GRADLE_ALIAS_RE = re.compile(r"\balias\s*\(")
+_GRADLE_APPLY_FROM_RE = re.compile(r"\bapply\s*\(?\s*from\b")
+_GRADLE_INCLUDE_RE = re.compile(r"^\s*include(?:Build)?\b", re.MULTILINE)
+
+#: The settings files that make a Gradle build multi-project, read at the root.
+_GRADLE_SETTINGS = ("settings.gradle", "settings.gradle.kts")
+
+
+def _block_at(text: str, open_brace: int) -> str:
+    """The text inside the brace block that opens at ``open_brace``, up to its matching close or the end."""
+    depth = 0
+    for index in range(open_brace, len(text)):
+        if text[index] == "{":
+            depth += 1
+        elif text[index] == "}":
+            depth -= 1
+            if depth == 0:
+                return text[open_brace + 1 : index]
+    return text[open_brace + 1 :]
+
+
+def _depends_names(argument: str) -> list[str]:
+    """The task names a ``dependsOn`` argument gives: quoted names, then bare task references."""
+    names = [name for name in _GRADLE_QUOTED_RE.findall(argument)]
+    bare = _GRADLE_QUOTED_RE.sub(" ", argument)
+    names += [name for name in _GRADLE_IDENT_RE.findall(bare) if name not in _GRADLE_ACCESSORS]
+    return names
+
+
+def _gradle_check(text: str, settings: str, resolved: dict[str, VerbBinding]) -> tuple[set[str], list[str]]:
+    """The concerns a Gradle build's `check` runs, and what else may add to it that the engine does not read.
+
+    The concerns come from the plugins the build applies and from the tasks its own `check` wiring depends on
+    (``check.dependsOn``, ``tasks.named('check') { dependsOn ... }``). A plugin, a script, a subproject or a task the
+    engine does not know may add a concern, so each is named rather than read as adding nothing.
+    """
+    code = _GRADLE_COMMENT_RE.sub("", text)
+    concerns: set[str] = set()
+    unread: list[str] = []
+    for plugin in sorted(gradle_plugins(code)):
+        if plugin == "com.diffplug.spotless" and _GRADLE_SPOTLESS_OFF_RE.search(code):
+            continue
+        if plugin in _GRADLE_PLUGIN_CONCERNS:
+            concerns |= _GRADLE_PLUGIN_CONCERNS[plugin]
+        elif plugin not in _GRADLE_INERT_PLUGINS:
+            unread.append(f"the plugin {plugin}")
+    if _GRADLE_ALIAS_RE.search(code):
+        unread.append("a plugin applied through a version-catalog alias")
+    if _GRADLE_APPLY_FROM_RE.search(code):
+        unread.append("a script applied with apply from")
+    if _GRADLE_INCLUDE_RE.search(settings):
+        unread.append("the subprojects the settings file includes")
+
+    names: list[str] = []
+    read_spans: list[tuple[int, int]] = []
+    for match in _GRADLE_CHECK_DEPENDS_RE.finditer(code):
+        names += _depends_names(match.group(1))
+        read_spans.append(match.span())
+    for match in _GRADLE_CHECK_BLOCK_RE.finditer(code):
+        block = _block_at(code, match.end() - 1)
+        read_spans.append((match.start(), match.end() + len(block) + 1))
+        if _GRADLE_OPAQUE_RE.search(block):
+            unread.append("a check configuration the engine does not read")
+        for depends in _GRADLE_DEPENDS_RE.finditer(block):
+            names += _depends_names(depends.group(1))
+    if any(
+        not any(start <= mention.start() < end for start, end in read_spans)
+        for mention in _GRADLE_CHECK_MENTION_RE.finditer(code)
+    ):
+        unread.append("a check configuration the engine does not read")
+
+    for name in names:
+        verb = canonical_verb(name)
+        concern = _CONCERN_OF_VERB.get(verb) if verb in resolved else _GRADLE_TASK_CONCERNS.get(name)
+        if concern:
+            concerns.add(concern)
+        else:
+            unread.append(f"the task {name}")
+    return concerns, list(dict.fromkeys(unread))
+
+
 def check_cmd02(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     declared = runner_commands(inventory)
     if not declared:
@@ -409,19 +559,31 @@ def check_cmd02(*, spec, target, inventory, stack, components, session) -> Check
             ],
         )
 
-    if runner_kind(check.runner) in _LIFECYCLE_RUNNERS:
+    gradle = runner_kind(check.runner) in ("build.gradle", "build.gradle.kts")
+    if runner_kind(check.runner) in _LIFECYCLE_RUNNERS and not gradle:
         return _unknown(
             spec,
             f"the {check.runner} check is a build lifecycle task, and what it composes is set by the build's task "
             "graph, which the engine does not read",
         )
 
-    invocations = _FOLLOWED_RUNNERS.get(runner_kind(check.runner), ())
-    own_targets = dict(declared).get(check.runner, {}) if invocations else None
-    concerns = _composition_concerns(check.command, resolved, own_targets, invocations=invocations)
+    unread: list[str] = []
+    if gradle:
+        settings = next((text for name in _GRADLE_SETTINGS if (text := inventory.read(name))), "")
+        concerns, unread = _gradle_check(inventory.read(check.runner) or "", settings, resolved)
+    else:
+        invocations = _FOLLOWED_RUNNERS.get(runner_kind(check.runner), ())
+        own_targets = dict(declared).get(check.runner, {}) if invocations else None
+        concerns = _composition_concerns(check.command, resolved, own_targets, invocations=invocations)
     present = [c for c in CONCERNS if c in concerns]
     missing = [c for c in CONCERNS if c not in concerns]
     detail = f"check ({check.runner}) composes: " + (", ".join(present) if present else "nothing")
+    if missing and unread:
+        return _unknown(
+            spec,
+            f"{detail} — {', '.join(unread)} may add {', '.join(missing)}, and the engine does not read what they "
+            "wire into check",
+        )
 
     if not missing:
         return _outcome(spec, Verdict.PASS, detail)
@@ -442,8 +604,13 @@ def check_cmd02(*, spec, target, inventory, stack, components, session) -> Check
                     f"the {check.runner} check verb does not invoke {', '.join(missing)}",
                 ),
                 evidence=[Evidence(check.runner, note=check.command)],
-                remediation="Make check invoke a format-check, a typecheck and the test suite, in that "
-                "order, so one command is the gate.",
+                remediation=(
+                    f"Wire check to depend on {', '.join(missing)} (for example "
+                    "`tasks.named('check') { dependsOn 'formatCheck' }`), so one command is the gate."
+                    if gradle
+                    else "Make check invoke a format-check, a typecheck and the test suite, in that order, so one "
+                    "command is the gate."
+                ),
             )
         ],
     )

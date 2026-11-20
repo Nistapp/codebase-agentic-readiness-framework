@@ -626,14 +626,16 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-02": Reads(
-        where=(*_runners(),),
+        where=(*_runners(), *_at(ROOT, "settings.gradle", "settings.gradle.kts")),
         what=What("key", ("check",)),
         binding="section",
         threshold="check composes format-check, typecheck and test",
         note=(
             "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite "
-            "that is no verb is followed once, and so is a package script that is no verb. A Gradle or Maven "
-            "lifecycle check is UNKNOWN."
+            "that is no verb is followed once, and so is a package script that is no verb. A Gradle check is read "
+            "from the build file's plugins and check dependsOn wiring; a settings file that includes subprojects, "
+            "or an unknown plugin or task, makes a check still missing a concern UNKNOWN. A Maven lifecycle check "
+            "is UNKNOWN."
         ),
     ),
     "CMD-03": Reads(

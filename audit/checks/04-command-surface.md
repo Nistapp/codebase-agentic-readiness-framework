@@ -79,9 +79,14 @@ Engine           `CMD-02`. Resolves `check` on its one runner (the same resolver
                  prerequisite that is not itself a verb is followed into its own recipe, once. In a
                  `package.json`, a script that is not a verb is followed into its command the same way, so
                  `npm run test:coverage` running `jest --coverage` is the test run. All three
-                 concerns present is `PASS`; some is `PARTIAL`; none is `FAIL`. A Gradle or Maven `check`
-                 that is a lifecycle task is `UNKNOWN` — its dependency graph is the build's own, not a
-                 command the engine reads (S2.6's own finding on this repository's dogfooding run). No
+                 concerns present is `PASS`; some is `PARTIAL`; none is `FAIL`. A Gradle `check` is read
+                 from the build file: a JVM plugin (`java`, `io.quarkus`, the Kotlin JVM plugin) gives the
+                 compile, which is the typecheck, and `test`; Spotless or ktlint gives the format check; and
+                 `check.dependsOn` or a `check { dependsOn ... }` block adds each verb or known task it
+                 names. When a check still misses a concern and something the engine does not read could
+                 add it (an unknown plugin, a version-catalog alias, `apply from`, subprojects in the
+                 settings file, an unknown task), the verdict is `UNKNOWN`. A Maven `check` (`verify`) is
+                 `UNKNOWN` — its plugin bindings are the build's own, not a command the engine reads. No
                  runner at all, or the Makefile `CMD-01` already flagged as unparseable, is also `UNKNOWN`.
                  Distrust a `FAIL` or `PARTIAL` when `check`'s tool choice is one the engine's documented-
                  equivalent list does not yet name — verify by reading the command for a tool this project
@@ -95,8 +100,9 @@ Rubric           PASS: `check`'s body invokes, directly or by a resolved verb, a
                  FAIL: a `check` verb is defined but invokes none of the three.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no runner exists to read, the only runner is a `Makefile` `CMD-01` already
-                 reports as unparseable, or `check` is a Gradle/Maven lifecycle task whose composition is
-                 set by the build graph rather than a readable command.
+                 reports as unparseable, `check` is a Maven lifecycle phase whose plugin bindings the
+                 engine does not read, or a Gradle `check` misses a concern that an unread plugin, script,
+                 subproject or task could add.
 Evidence to cite A `command` evidence item citing the runner and `check`'s resolved command text, with
                  `note` listing the concerns it was found to compose.
 Absence proof    A FAIL or PARTIAL names each missing concern (`format-check`, `typecheck`, `test`)

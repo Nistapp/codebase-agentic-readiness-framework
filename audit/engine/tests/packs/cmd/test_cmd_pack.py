@@ -235,6 +235,90 @@ class NpmCompositionTests(unittest.TestCase):
         self.assertEqual(check["verdict"], "FAIL")
 
 
+class GradleCompositionTests(unittest.TestCase):
+    """A Gradle check is read from the build's plugins and its own check wiring (issue #15)."""
+
+    def check_of(self, build: str, name: str = "build.gradle", extra: dict[str, str] | None = None) -> dict:
+        report = audit_files({name: build, **(extra or {})})
+        return [c for c in report["checks"] if c["id"] == "CMD-02"][0]
+
+    def test_a_jvm_plugin_check_compiles_and_tests_and_misses_the_format_check(self):
+        for name, build in (
+            ("build.gradle", "plugins {\n    id 'java'\n    id 'io.quarkus'\n    id 'org.owasp.dependencycheck'\n}\n"),
+            ("build.gradle.kts", 'plugins {\n    id("java")\n}\n'),
+        ):
+            with self.subTest(runner=name):
+                report = audit_files({name: build})
+                check = [c for c in report["checks"] if c["id"] == "CMD-02"][0]
+                self.assertEqual(
+                    (check["verdict"], check["summary"]),
+                    ("PARTIAL", f"check ({name}) composes: typecheck, test — missing format-check"),
+                )
+                self.assertEqual(
+                    findings_of(report, "CMD-02")[0]["remediation"],
+                    "Wire check to depend on format-check (for example "
+                    "`tasks.named('check') { dependsOn 'formatCheck' }`), so one command is the gate.",
+                )
+
+    def test_spotless_wires_the_format_check(self):
+        check = self.check_of("plugins {\n    id 'java'\n    id 'com.diffplug.spotless' version '6.25.0'\n}\n")
+        self.assertEqual(check["verdict"], "PASS")
+
+    def test_spotless_with_its_check_turned_off_wires_nothing(self):
+        check = self.check_of(
+            "plugins {\n    id 'java'\n    id 'com.diffplug.spotless'\n}\nspotless {\n    enforceCheck false\n}\n"
+        )
+        self.assertEqual(check["verdict"], "PARTIAL")
+
+    def test_check_wired_to_the_format_check_verb_composes_it(self):
+        for wiring in (
+            "check.dependsOn formatCheck\n",
+            "tasks.named('check') {\n    dependsOn 'formatCheck'\n}\n",
+            'tasks.check {\n    dependsOn("formatCheck")\n}\n',
+            "check {\n    dependsOn tasks.named('spotlessCheck')\n}\n",
+        ):
+            with self.subTest(wiring=wiring):
+                build = (
+                    "plugins {\n    id 'java'\n}\n"
+                    "tasks.register('formatCheck') {\n    dependsOn 'spotlessCheck'\n}\n" + wiring
+                )
+                self.assertEqual(self.check_of(build)["verdict"], "PASS")
+
+    def test_check_wired_to_an_unknown_task_is_unknown(self):
+        check = self.check_of("plugins {\n    id 'java'\n}\ncheck.dependsOn 'myLint'\n")
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "UNKNOWN",
+                "check (build.gradle) composes: typecheck, test — the task myLint may add format-check, and the engine "
+                "does not read what they wire into check",
+            ),
+        )
+
+    def test_what_the_engine_does_not_read_makes_an_incomplete_check_unknown(self):
+        for case, build, extra in (
+            ("unknown plugin", "plugins {\n    id 'java'\n    id 'org.example.conventions'\n}\n", None),
+            ("catalog alias", "plugins {\n    id 'java'\n    alias(libs.plugins.fmt)\n}\n", None),
+            ("script plugin", "plugins {\n    id 'java'\n}\napply from: 'gradle/fmt.gradle'\n", None),
+            ("subprojects", "plugins {\n    id 'java'\n}\n", {"settings.gradle": "include 'app'\n"}),
+            ("other wiring", "plugins {\n    id 'java'\n}\ntasks.named('check').configure { }\n", None),
+            ("opaque block", "plugins {\n    id 'java'\n}\ncheck {\n    enabled = false\n}\n", None),
+        ):
+            with self.subTest(case=case):
+                self.assertEqual(self.check_of(build, extra=extra)["verdict"], "UNKNOWN")
+
+    def test_a_complete_check_passes_whatever_else_may_add_to_it(self):
+        build = "plugins {\n    id 'java'\n    id 'com.diffplug.spotless'\n    id 'org.example.conventions'\n}\n"
+        self.assertEqual(self.check_of(build)["verdict"], "PASS")
+
+    def test_check_in_a_comment_or_a_dependency_name_is_not_wiring(self):
+        build = (
+            "plugins {\n    id 'java'\n}\n// run gradle check before a push\n"
+            "dependencies {\n    classpath 'org.owasp:dependency-check-gradle:9.0'\n}\n"
+        )
+        self.assertEqual(self.check_of(build)["verdict"], "PARTIAL")
+
+
 class CmdMessageTests(unittest.TestCase):
     """The text a person reads for the two checks, pinned exactly."""
 
@@ -360,24 +444,18 @@ class CmdMessageTests(unittest.TestCase):
         check = [c for c in report["checks"] if c["id"] == "CMD-02"][0]
         self.assertEqual(check["summary"], "check (package.json) composes: format-check, typecheck, test")
 
-    def test_a_lifecycle_check_says_why_its_composition_is_not_read(self):
-        for runner, files in (
-            ("build.gradle", {"build.gradle": "plugins {\n    id 'java'\n}\n"}),
-            ("build.gradle.kts", {"build.gradle.kts": 'plugins {\n    id("java")\n}\n'}),
-            ("pom.xml", {"pom.xml": "<project/>"}),
-        ):
-            with self.subTest(runner=runner):
-                report = audit_files(files)
-                check = [c for c in report["checks"] if c["id"] == "CMD-02"][0]
-                self.assertEqual(
-                    (check["verdict"], check["summary"]),
-                    (
-                        "UNKNOWN",
-                        f"the {runner} check is a build lifecycle task, and what it composes is set by the build's "
-                        "task graph, which the engine does not read",
-                    ),
-                )
-                self.assertEqual(findings_of(report, "CMD-02"), [])
+    def test_a_maven_lifecycle_check_says_why_its_composition_is_not_read(self):
+        report = audit_files({"pom.xml": "<project/>"})
+        check = [c for c in report["checks"] if c["id"] == "CMD-02"][0]
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "UNKNOWN",
+                "the pom.xml check is a build lifecycle task, and what it composes is set by the build's "
+                "task graph, which the engine does not read",
+            ),
+        )
+        self.assertEqual(findings_of(report, "CMD-02"), [])
 
     def test_a_check_in_package_json_is_read_even_beside_a_gradle_build(self):
         report = audit_files({"package.json": NPM_VERBS, "build.gradle": "plugins {\n    id 'java'\n}\n"})
