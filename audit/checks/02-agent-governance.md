@@ -393,7 +393,10 @@ Severity         DEGRADER
 Engine           `AGT-10`. Reads harness configuration this project can parse without a third-party parser
                  (`.aider.conf.yml`'s `read:`, `.codex/config.toml`'s instruction-file keys,
                  `.gemini/settings.json`'s `contextFileName`, `opencode.json`'s `instructions`) for pointers
-                 at files that do not exist (`FAIL`, one finding per broken pointer); separately, scans the
+                 at files that do not exist (`FAIL`, one finding per broken pointer). A pointer is a path
+                 from the root, less a leading `./` (`./.cursor/rules/a.mdc` names `.cursor/rules/a.mdc`);
+                 a glob pointer matches folder by folder, so `docs/**/*.md` finds `docs/guide.md`.
+                 Separately, the check scans the
                  entry file for a deferral phrase ("read X first", "before you start, see Y") naming a real
                  file that no harness configuration already names (`FAIL`: loading depends on the agent
                  choosing to follow the pointer, not on configuration). No broken pointer and no

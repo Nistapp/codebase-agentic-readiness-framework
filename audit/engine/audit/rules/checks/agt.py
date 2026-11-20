@@ -663,6 +663,14 @@ def _configured_targets(inventory: Inventory) -> dict[str, list[str]]:
     return configured
 
 
+def _from_root(name: str) -> str:
+    """A configured target as a path from the root: each leading ``./`` goes, and a dot folder keeps its dot."""
+    rel = name.strip()
+    while rel.startswith("./"):
+        rel = rel[2:]
+    return rel
+
+
 def check_agt10(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     findings: list[Finding] = []
     configured = _configured_targets(inventory)
@@ -671,7 +679,7 @@ def check_agt10(*, spec, target, inventory, stack, components, session) -> Check
     # 1. a configured pointer that names a file which does not exist
     for config_file, targets in configured.items():
         for name in targets:
-            rel = name.strip().lstrip("./")
+            rel = _from_root(name)
             exists = inventory.match(rel) if "*" in rel else inventory.has(rel)
             if not exists:
                 findings.append(_broken_pointer(spec, config_file, name))

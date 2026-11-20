@@ -236,14 +236,17 @@ _TEXT_TOKEN = re.compile(r"[A-Za-z0-9_.*?!\[\]/-]+")
 def _text_names(text: str) -> set[str]:
     """Every path token of the text, as a check normalises one: its core, also less a leading "./" or "/".
 
-    AGT-06 strips "./" from a token (``.github/workflows`` becomes ``github/workflows``); a token that ends a
-    sentence loses its full stop.
+    AGT-06 strips "./" from a token (``.github/workflows`` becomes ``github/workflows``), and AGT-10 removes each
+    leading "./" only (``./.rules/a.md`` becomes ``.rules/a.md``); a token that ends a sentence loses its full stop.
     """
     names: set[str] = set()
     for token in _TEXT_TOKEN.findall(text):
         for written in (token, token.rstrip(".")):
             core = _text_core(written)
-            names.update(name for name in (core, core.lstrip("./"), core.lstrip("/")) if name)
+            relative = core
+            while relative.startswith("./"):
+                relative = relative[2:]
+            names.update(name for name in (core, core.lstrip("./"), core.lstrip("/"), relative) if name)
     return names
 
 
