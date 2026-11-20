@@ -7577,7 +7577,7 @@
     {
       "binding": "file",
       "check": "AGT-01",
-      "note": "The root AGENTS.md text is read for its length, four stub phrases and the words todo, tbd and placeholder at a line start or in brackets; a root agents.md is the only mis-cased name found. A fixed harness path with a folder (.github/copilot-instructions.md and five others) is never matched, so it is not listed, and a **/ glob needs a subfolder (fnmatch: .cursor/rules/a.mdc is missed).",
+      "note": "The root AGENTS.md text is read for its length, four stub phrases and the words todo, tbd and placeholder at a line start or in brackets; a root agents.md is the only mis-cased name found. A fixed harness path with a folder (.github/copilot-instructions.md) counts only from the root.",
       "source": "engine",
       "threshold": "AGENTS.md at the root, at least 400 characters, no stub marker",
       "what": {
@@ -7671,6 +7671,30 @@
         {
           "path": "replit.md",
           "scope": "any-depth"
+        },
+        {
+          "path": ".devin/global_rules.md",
+          "scope": "root"
+        },
+        {
+          "path": ".gemini/styleguide.md",
+          "scope": "root"
+        },
+        {
+          "path": ".github/copilot-instructions.md",
+          "scope": "root"
+        },
+        {
+          "path": ".idx/airules.md",
+          "scope": "root"
+        },
+        {
+          "path": ".junie/guidelines.md",
+          "scope": "root"
+        },
+        {
+          "path": ".junie/playbook.md",
+          "scope": "root"
         },
         {
           "path": ".claude/rules/**/*.md",
@@ -8057,6 +8081,30 @@
         {
           "path": "replit.md",
           "scope": "any-depth"
+        },
+        {
+          "path": ".devin/global_rules.md",
+          "scope": "root"
+        },
+        {
+          "path": ".gemini/styleguide.md",
+          "scope": "root"
+        },
+        {
+          "path": ".github/copilot-instructions.md",
+          "scope": "root"
+        },
+        {
+          "path": ".idx/airules.md",
+          "scope": "root"
+        },
+        {
+          "path": ".junie/guidelines.md",
+          "scope": "root"
+        },
+        {
+          "path": ".junie/playbook.md",
+          "scope": "root"
         },
         {
           "path": ".claude/rules/**/*.md",
