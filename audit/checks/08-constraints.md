@@ -25,18 +25,19 @@ Why it matters   An agent cannot respect a boundary that exists only in someone'
                   must be a concrete, written artifact, not an unstated expectation
                   ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         BLOCKER
-Engine           `CON-01`. Reads the prohibitions section decision 0001 names and collects every code
-                 span in it. A span is a path or pattern when it has no command syntax (no shell
-                 operator, flag or quote character) and holds a slash, a glob character or a dot, or is
-                 a bare word that exists on disk — the scan also checks the literal path against the
-                 filesystem directly, because the scan itself leaves out `node_modules/`-style excludes
-                 that a deny list often names. At least one named path or pattern that matches something
-                 in the repository is `PASS`. Paths are named but none matches anything is `PARTIAL`. No
-                 path or pattern is named at all is `FAIL`. No instruction file, or no prohibitions
-                 section, is `UNKNOWN` — `AGT-01` or `AGT-07` already owns that finding. Distrust a
-                 `FAIL` or `PARTIAL` when the section's prose clearly names a path but without
-                 backticks, so no code span exists to read — verify by reading the section's actual
-                 text, not just its code spans.
+Engine           `CON-01`. Reads the prohibitions section decision 0001 names and collects every code span in it. A
+                 section whose heading holds no prohibition word, opened only because its body holds three prohibition
+                 lines, gives only the spans of a list item or paragraph that holds a prohibition line: a conventions
+                 section names paths beside its "never" lines, and those are not a deny list. A span is a path or
+                 pattern when it has no command syntax (no shell operator, flag or quote character) and holds a slash, a
+                 glob character or a dot, or is a bare word that exists on disk — the scan also checks the literal path
+                 against the filesystem directly, because the scan itself leaves out `node_modules/`-style excludes that
+                 a deny list often names. At least one named path or pattern that matches something in the repository is
+                 `PASS`. Paths are named but none matches anything is `PARTIAL`. No path or pattern is named at all is
+                 `FAIL`. No instruction file, or no prohibitions section, is `UNKNOWN` — `AGT-01` or `AGT-07` already
+                 owns that finding. Distrust a `FAIL` or `PARTIAL` when the section's prose clearly names a path but
+                 without backticks, so no code span exists to read — verify by reading the section's actual text, not
+                 just its code spans.
 Method           automated
 Look for         Every code span inside the prohibitions section specifically, not the section's prose;
                  for each span that reads as a path or pattern, whether it matches a real file or
@@ -51,8 +52,8 @@ Rubric           PASS: the prohibitions section names, in a code span, at least 
                  either absence is `AGT-01`'s or `AGT-07`'s own finding, not this check's.
 Evidence to cite A `file` evidence item per named code span, citing the instruction file, line and the
                  span's text; for `PASS`, cite only the spans that matched something real.
-Absence proof    A FAIL cites the prohibitions section's own heading line as the evidence that it was
-                 read in full and found to name no code span at all.
+Absence proof    A FAIL cites the heading line of each part of the prohibitions section as the evidence
+                 that it was read in full and found to name no code span at all.
 Remediation      `add-deny-rules`
 Pitfalls         A path written in prose without backticks ("do not touch the migrations folder") is
                  invisible to this check even though a human reader would understand it perfectly — the
@@ -71,7 +72,9 @@ Engine           `CON-02`. Locates every test directory (a path segment named `t
                  counted), then checks whether the prohibitions section's code spans name each one, or
                  a pattern that covers it, read as an ignore entry (a leading `/` anchors to the root, a
                  leading `**/` means any depth, a bare name with no inner slash covers that name at any
-                 depth). Every test directory named is `PASS`; some is `PARTIAL`; none is `FAIL`. No
+                 depth). A section opened only by its body reads only the spans of its prohibition
+                 items, as `CON-01` does. Every test directory named is `PASS`; some is `PARTIAL`; none
+                 is `FAIL`. No
                  instruction file or no prohibitions section is `UNKNOWN` (owned by `AGT-01`/`AGT-07`),
                  and so is a repository with no test directory at all — there is nothing to protect.
                  Constraint files, `.gitignore` rules and CI text are never read as evidence here; they
@@ -89,7 +92,7 @@ Rubric           PASS: the prohibitions section names, in code spans, every test
                  NOT_APPLICABLE: never.
                  UNKNOWN when: no instruction file or no prohibitions section exists (owned elsewhere),
                  or no test directory exists in the repository at all.
-Evidence to cite A `file` evidence item citing the prohibitions section's heading line and, for a FAIL
+Evidence to cite A `file` evidence item citing each heading line of the prohibitions section and, for a FAIL
                  or PARTIAL, the full list of test directories found but not named.
 Absence proof    A FAIL or PARTIAL names every uncovered test directory explicitly in the finding
                  statement, citing the prohibitions section as the evidence it was read in full and

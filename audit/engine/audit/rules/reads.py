@@ -159,7 +159,8 @@ READS: dict[str, Reads] = {
         note=(
             "Each config is kept when Inventory.has finds its name at any depth but read by its exact root "
             "path, so a nested-only copy reads as unreadable (UNKNOWN). Three user configs under $HOME are "
-            "read too, unless --no-user-config."
+            "read too, unless --no-user-config, and Claude Code's ~/.claude.json is parsed: its top-level "
+            "mcpServers or the projects entry of this checkout's path."
         ),
     ),
     "IDX-02": Reads(
@@ -185,7 +186,8 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "The store of IDX-02 (no repository text); a git-revision column of the matching project row is "
-            "compared with HEAD as a probe."
+            "compared with HEAD as a probe. With no such column, its indexed_at is compared with the time HEAD "
+            "last moved (git's committer time and reflog)."
         ),
     ),
     "AGT-01": Reads(
@@ -411,12 +413,16 @@ READS: dict[str, Reads] = {
                 "read by",
                 "supported harness",
                 "supported harnesses",
+                "AGENTS.md",
+                "@AGENTS.md",
             ),
         ),
         binding="line",
         note=(
             "The instruction-file set of AGT-01 gives the competitors and the reach. The statement is read in"
-            " the root AGENTS.md only, never CLAUDE.md, and needs a known harness name on the same line."
+            " the root AGENTS.md only, never CLAUDE.md, and needs a known harness name on the same line. With a root"
+            " AGENTS.md, each vendor file is read too: one whose few content lines all name AGENTS.md is a pointer,"
+            " not a competitor, and one that imports @AGENTS.md shadows nothing."
         ),
     ),
     "AGT-09": Reads(
@@ -1235,7 +1241,8 @@ READS: dict[str, Reads] = {
         note=(
             "Every code span on the lines of every prohibitions section; a span counts when it has no command"
             " characters and holds a slash, a glob or a dot, or names something that exists. Existence is "
-            "checked in the scan and on disk."
+            "checked in the scan and on disk. In a section opened by its body alone, only the spans of a list"
+            " item or paragraph that holds a prohibition line count."
         ),
         named_by_text="each code span of the prohibitions section is looked up in the scan and on disk",
     ),
