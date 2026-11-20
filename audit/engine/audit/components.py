@@ -75,18 +75,14 @@ MANIFEST_PATTERNS = ("*.sln", "*.slnx", "*.csproj", "*.fsproj", "*.vbproj")
 
 
 def _manifest_in(inv: Inventory, prefix: str) -> str | None:
-    root_files = {f.rel for f in inv.files if "/" not in f.rel} if prefix == "." else set()
-    for candidate in MANIFEST_NAMES:
-        if prefix == ".":
-            # ``Inventory.has`` matches a name at any depth; the root's manifest must sit at the root itself.
-            if candidate in root_files:
-                return candidate
-            continue
-        rel = f"{prefix}/{candidate}".lstrip("./")
-        if inv.has(rel):
-            return rel
+    # Only the folder's own files: ``Inventory.has`` matches by suffix, so ``web/package.json`` would also match
+    # ``apps/web/package.json`` and name a file that does not exist.
     folder = "" if prefix in (".", "") else prefix.strip("/") + "/"
     in_folder = sorted(f.rel for f in inv.files if f.rel.startswith(folder) and "/" not in f.rel[len(folder) :])
+    present = set(in_folder)
+    for candidate in MANIFEST_NAMES:
+        if folder + candidate in present:
+            return folder + candidate
     for pattern in MANIFEST_PATTERNS:
         for rel in in_folder:
             if fnmatch.fnmatchcase(rel[len(folder) :], pattern):

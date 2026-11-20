@@ -19,7 +19,7 @@ score from falling.
 | Phase-1 score | **0.9269** |
 | Date | 2026-11-17 |
 | Engine | `python-agentic-audit` 0.4.0 |
-| Ruleset | `2026-11-20.2` (hash `01fb2871bf2c9875`) |
+| Ruleset | `2026-11-20.3` (hash `01fb2871bf2c9875`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/`, `dist/` and the agent worktrees under `.claude/worktrees/`; no user-level configuration read |

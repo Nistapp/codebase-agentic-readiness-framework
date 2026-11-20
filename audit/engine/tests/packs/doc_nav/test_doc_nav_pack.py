@@ -320,6 +320,27 @@ class Nav01ComponentManifestTests(unittest.TestCase):
         check, _ = self.nav01({"tools/x/package.json": "{}\n", "Gemfile": "\n"})
         self.assertEqual(check, {"verdict": "PASS", "summary": "single-root repository declares Gemfile"})
 
+    def test_a_member_manifest_is_read_from_the_member_folder_only(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        files = {
+            "settings.gradle": "include 'web'\n",
+            "web/README.md": "# web\n",
+            "apps/web/build.gradle": "\n",
+            "pnpm-workspace.yaml": "packages:\n  - '.tools/*'\n",
+            ".tools/lint/package.json": "{}\n",
+        }
+        for rel, text in files.items():
+            support.write(Path(tmp.name), rel, text)
+        manifests = {c.path: c.manifest for c in detect_components(build_inventory(Path(tmp.name))).components}
+        self.assertIsNone(manifests["web"])
+        self.assertEqual(manifests[".tools/lint"], ".tools/lint/package.json")
+
+    def test_a_manifest_that_only_ends_with_a_candidate_path_makes_no_candidate(self):
+        check, candidates = self.nav01({"apps/web/README.md": "# web\n", "mirror/apps/web/package.json": "{}\n"})
+        self.assertEqual(candidates, [])
+        self.assertEqual(check["verdict"], "UNKNOWN")
+
     def test_a_dotnet_project_under_a_candidate_root_is_a_candidate(self):
         check, candidates = self.nav01({"apps/web/Web.csproj": "<Project />\n", "apps/api/Gemfile": "\n"})
         self.assertEqual(candidates, ["apps/api", "apps/web"])
