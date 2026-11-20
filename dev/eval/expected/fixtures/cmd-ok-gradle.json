@@ -13,7 +13,7 @@
     {
       "id": "CMD-02",
       "acceptable_verdicts": [
-        "UNKNOWN"
+        "PASS"
       ]
     },
     {

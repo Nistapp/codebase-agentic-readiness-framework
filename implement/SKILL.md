@@ -264,8 +264,8 @@ Goal: the owner knows what the next theme changes and approves a concrete change
    number and the merge commit. Record each merged theme at once:
    `progress.py theme Tn --status merged --pr N --merged-sha SHA --phase <phase>`. A theme whose pull request is
    still open blocks the themes that depend on it. Say so and stop, unless the owner agrees to branch from the
-   unmerged theme branch. `progress.py` records a merge only with a pull request number. For a branch merged
-   without one, ask the owner how to record it.
+   unmerged theme branch. Then read [Stack on an unmerged theme](theme-checks.md#stack-on-an-unmerged-theme).
+   `progress.py` records a merge only with a pull request number. Ask the owner how to record any other merge.
 2. **Pick the next theme.** The first theme, in an order the diagram allows, that still has `queued` items its own
    playbooks work and whose predecessors are `merged`. A predecessor with nothing left for its own playbooks (no
    item, or every such item ended, skipped or deferred) counts as satisfied, and is not started. A playbook

@@ -50,7 +50,10 @@ def evidence_of(finding: dict) -> list[tuple]:
 class Agt01Tests(unittest.TestCase):
     def test_no_instruction_file_is_one_finding_with_the_plain_id(self):
         report = audit({"README.md": "# x\n"})
-        self.assertEqual((check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]), ("FAIL", ""))
+        self.assertEqual(
+            (check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]),
+            ("FAIL", "no agent-instruction file in the repository"),
+        )
         (finding,) = findings_of(report, "AGT-01")
         self.assertEqual(
             summary_of(finding),
@@ -176,9 +179,13 @@ class Agt01Tests(unittest.TestCase):
         report = audit({"AGENTS.md": BODY, "a/AGENTS.md": BODY, "b/AGENTS.md": BODY})
         self.assertEqual(check_of(report, "AGT-01")["summary"], "2 nested instruction file(s)")
 
-    def test_a_governed_root_file_alone_says_nothing(self):
+    def test_a_governed_root_file_alone_is_named_in_the_summary(self):
+        # A summary is never empty (issue #21): the PASS names the file it rests on.
         report = audit({"AGENTS.md": BODY})
-        self.assertEqual((check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]), ("PASS", ""))
+        self.assertEqual(
+            (check_of(report, "AGT-01")["verdict"], check_of(report, "AGT-01")["summary"]),
+            ("PASS", "instruction file(s): AGENTS.md"),
+        )
 
     def test_an_override_is_named_by_its_own_path_and_its_harness_when_it_is_at_the_root(self):
         report = audit({"AGENTS.md": BODY, "AGENTS.override.md": BODY})

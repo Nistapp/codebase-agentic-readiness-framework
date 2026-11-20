@@ -19,7 +19,7 @@ score from falling.
 | Phase-1 score | **0.9269** |
 | Date | 2026-11-17 |
 | Engine | `python-agentic-audit` 0.4.0 |
-| Ruleset | `2026-11-20.2` (hash `01fb2871bf2c9875`) |
+| Ruleset | `2026-11-20.9` (hash `01fb2871bf2c9875`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/`, `dist/` and the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
@@ -118,17 +118,13 @@ strings), reviewing the diff.
 
 ## Neutralised path
 
-The framework repository is public. The committed baseline and the published example are engine output with
-one hand edit: `provenance.target` is `.`, where the engine writes the absolute local path. Nothing else is changed. The
-"`IDX-02` An index exists for this checkout" summary needs no edit: the engine writes a path inside the target as
-`<repository>/...`. `make update-audit-baseline` copies the raw report, so follow it with the same edit before
-committing:
+The framework repository is public. The committed baseline and the published example are engine output with no
+hand edit. `make self-audit` and `make update-audit-baseline` pass `--target-label .`, so the engine writes `.` as
+`provenance.target` and not the absolute local path. The "`IDX-02` An index exists for this checkout" summary writes
+a path inside the target as `<repository>/...`. Check that no local path is left before committing:
 
 ```bash
-sed -i 's#"target": "[^"]*"#"target": "."#' .audit-baseline.json
-grep -c '/home/' .audit-baseline.json   # must print 0 (a report from `make self-audit` also has a `baseline` path: use the update target's)
+grep -c '/home/' .audit-baseline.json   # must print 0
 ```
 
-The ratchet compares by finding id, so the edit does not affect it. The engine should write a neutral value itself;
-that request is [issue #49](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/49), and the edit
-goes when it is fixed.
+A report from `make self-audit` also records the `baseline` path; commit the update target's report, which has none.
