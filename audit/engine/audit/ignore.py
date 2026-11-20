@@ -20,10 +20,6 @@ and ``**`` interpreted. :func:`decide_path` answers for one path whose parents a
 a parser: it never runs ``git check-ignore`` and reads neither ``.git/info/exclude`` nor a global excludes file, so a
 negative answer is still a parser answer.
 
-:func:`load_ignore_rules`, :func:`ignore_patterns`, :func:`matching_rules` and :func:`is_ignored` are the earlier
-simple matcher (``fnmatch`` on the path and the base name, ``!`` lines dropped, no anchoring). No engine code calls
-them; ADR-0009 records why the walk left them.
-
 Callers that need certainty must treat a negative or ambiguous answer as ``UNKNOWN`` — never as
 ``PASS``. When git is unavailable, the target is not a repository, or the command fails,
 :func:`tracked_files` returns ``None`` so callers degrade to ``UNKNOWN`` rather than infer.
@@ -31,9 +27,7 @@ Callers that need certainty must treat a negative or ambiguous answer as ``UNKNO
 
 from __future__ import annotations
 
-import fnmatch
 import functools
-import os
 import re
 import subprocess
 from collections.abc import Iterable
@@ -54,9 +48,8 @@ IGNORE_FILE_NAMES: tuple[str, ...] = (
 class IgnoreRule:
     """One ignore line and the file it came from.
 
-    The walk loader only yields non-negated root rules, so ``base`` is ``""`` and ``negated`` is false there.
-    The scoped loader also yields ``!`` lines (``negated``), trailing-slash rules (``dir_only``) and the
-    directory the ignore file sits in (``base``, repository-relative, no trailing slash).
+    ``negated`` marks a ``!`` line, ``dir_only`` a trailing-slash rule, and ``base`` is the directory the ignore
+    file sits in (repository-relative, no trailing slash; ``""`` for a root file).
     """
 
     pattern: str
@@ -94,48 +87,6 @@ def tracked_files(target: Path) -> set[str] | None:
     if proc.returncode != 0:
         return None
     return {entry for entry in proc.stdout.split("\0") if entry}
-
-
-def load_ignore_rules(root: Path) -> list[IgnoreRule]:
-    """Load the documented-subset rules from every ignore file present in ``root``.
-
-    Behaviour is preserved from ``audit.scan``: blank lines and comments are skipped, and a leading
-    ``!`` drops the line rather than being interpreted as negation.
-    """
-    rules: list[IgnoreRule] = []
-    for name in IGNORE_FILE_NAMES:
-        path = root / name
-        if not path.is_file():
-            continue
-        try:
-            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
-        except OSError:
-            continue
-        for raw in lines:
-            line = raw.strip()
-            if line and not line.startswith("#") and not line.startswith("!"):
-                rules.append(IgnoreRule(pattern=line.rstrip("/"), source=name))
-    return rules
-
-
-def ignore_patterns(root: Path) -> list[str]:
-    """The bare patterns, for callers that only need the historical list shape."""
-    return [rule.pattern for rule in load_ignore_rules(root)]
-
-
-def matching_rules(rel: str, rules: list[IgnoreRule]) -> list[IgnoreRule]:
-    """Every rule that covers ``rel``, carrying the ignore file each one came from.
-
-    This is the "does any ignore file cover this path?" answer DOC-03 and CON-03 need.
-    """
-    base = os.path.basename(rel)
-    return [rule for rule in rules if fnmatch.fnmatch(rel, rule.pattern) or fnmatch.fnmatch(base, rule.pattern)]
-
-
-def is_ignored(rel: str, patterns: list[str]) -> bool:
-    """The earlier simple matcher: ``fnmatch`` on the path or the base name. The walk uses :func:`decide_path`."""
-    base = os.path.basename(rel)
-    return any(fnmatch.fnmatch(rel, p) or fnmatch.fnmatch(base, p) for p in patterns)
 
 
 # ---------------------------------------------------------------------------
