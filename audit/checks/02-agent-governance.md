@@ -392,18 +392,15 @@ Why it matters   A rule the agent is told to "read elsewhere first" is only as r
 Severity         DEGRADER
 Engine           `AGT-10`. Reads harness configuration this project can parse without a third-party parser
                  (`.aider.conf.yml`'s `read:`, `.codex/config.toml`'s instruction-file keys,
-                 `.gemini/settings.json`'s `contextFileName`, `opencode.json`'s `instructions`) for pointers
-                 at files that do not exist (`FAIL`, one finding per broken pointer). A pointer is a path
-                 from the root, less a leading `./` (`./.cursor/rules/a.mdc` names `.cursor/rules/a.mdc`);
-                 a glob pointer matches folder by folder, so `docs/**/*.md` finds `docs/guide.md`.
-                 Separately, the check scans the
-                 entry file for a deferral phrase ("read X first", "before you start, see Y") naming a real
-                 file that no harness configuration already names (`FAIL`: loading depends on the agent
-                 choosing to follow the pointer, not on configuration). No broken pointer and no
-                 unconfigured deferral is `PASS`. Distrust a `FAIL` on deferral when the harness in use
-                 reads the entry file in full regardless of pointers (so the deferral is redundant, not
-                 risky) — verify which harness the user actually runs before treating every deferral
-                 phrase as a gap.
+                 `.gemini/settings.json`'s `contextFileName`, `opencode.json`'s `instructions`) for pointers at
+                 files that do not exist (`FAIL`, one finding per broken pointer; a leading `./` goes, and
+                 `docs/**/*.md` finds `docs/guide.md`); separately, scans the entry file for a deferral phrase
+                 ("read X first", "before you start, see Y") naming a real file that no harness configuration
+                 already names (`FAIL`: loading depends on the agent choosing to follow the pointer, not on
+                 configuration). No broken pointer and no unconfigured deferral is `PASS`. Distrust a `FAIL` on
+                 deferral when the harness in use reads the entry file in full regardless of pointers (so the
+                 deferral is redundant, not risky) — verify which harness the user actually runs before treating
+                 every deferral phrase as a gap.
 Method           automated
 Look for         Harness configuration files for named instruction targets; the entry file's own text for
                  deferral phrasing naming another file.
