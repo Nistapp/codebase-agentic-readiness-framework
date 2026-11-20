@@ -186,11 +186,13 @@ def evaluate(*, target: Target, inventory: Inventory, stack: Stack, args: argpar
 
 
 def provenance(target: Target, args: argparse.Namespace) -> dict:
+    # --target-label replaces the absolute path, so a report that is committed or published names no local folder.
+    label = getattr(args, "target_label", None)
     return {
         "tool": "python-agentic-audit",
         "version": __version__,
         "ruleset_revision": __ruleset_revision__,
-        "target": str(target.path),
+        "target": str(target.path) if label is None else label,
         "git_sha": target.git_sha,
         "git_branch": target.git_branch,
         "git_dirty": target.git_dirty,

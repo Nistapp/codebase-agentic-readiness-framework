@@ -1567,7 +1567,7 @@
       "check": "EXEC-06",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
-        "quote": "add the single-test command for the repository's runner to `AGENTS.md` in a fenced shell block (the engine reads only fenced commands)",
+        "quote": "add the single-test command for the repository's runner to `AGENTS.md` in a fenced shell block (the engine also reads an inline code span, but `EXEC-06` reads only fenced commands)",
         "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
       },
       "move": "add-baselines-and-ratchet/row-16",
@@ -7886,7 +7886,7 @@
     {
       "binding": "file",
       "check": "AGT-05",
-      "note": "Each verb must stand as a whole token (format inside format:check does not count). The resolution half reads the runner manifests as CMD-01 does.",
+      "note": "Each verb must stand as a whole token (format inside format:check does not count). format:check also counts as format-check or formatCheck, the spellings spec/command-surface.md accepts; no other script name counts. The resolution half reads the runner manifests as CMD-01 does.",
       "source": "engine",
       "threshold": "all seven named and resolved",
       "what": {
@@ -8657,10 +8657,7 @@
     {
       "binding": "section",
       "check": "CMD-02",
-      "constants": [
-        "audit.rules.checks._common:RUNNER_PRECEDENCE"
-      ],
-      "note": "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite that is no verb is followed once. A Gradle or Maven lifecycle check is UNKNOWN.",
+      "note": "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite that is no verb is followed once, and so is a package script that is no verb. A Gradle check is read from the build file's plugins and check dependsOn wiring; a settings file that includes subprojects, or an unknown plugin or task, makes a check still missing a concern UNKNOWN. A Maven lifecycle check is UNKNOWN.",
       "source": "engine",
       "threshold": "check composes format-check, typecheck and test",
       "what": {
@@ -8708,6 +8705,14 @@
         },
         {
           "path": "mvnw",
+          "scope": "root"
+        },
+        {
+          "path": "settings.gradle",
+          "scope": "root"
+        },
+        {
+          "path": "settings.gradle.kts",
           "scope": "root"
         }
       ]
@@ -10930,7 +10935,7 @@
     {
       "binding": "file",
       "check": "EXEC-02",
-      "note": "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest first, and whether git tracks them. Only a root lockfile is compared with the root manifests' dependency names; for .NET those are the PackageReference names of the project files in the root folder, and a package reference in a root Directory.* file leaves the lockfile unverified.",
+      "note": "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest first, and whether git tracks them; a tracked lockfile the walk skipped as ignored counts too. Only a root lockfile is compared with the root manifests' dependency names; for .NET those are the PackageReference names of the project files in the root folder, and a package reference in a root Directory.* file leaves the lockfile unverified.",
       "source": "engine",
       "threshold": "a tracked lockfile that agrees with the manifest",
       "what": {
@@ -11055,7 +11060,7 @@
     {
       "binding": "line",
       "check": "EXEC-03",
-      "note": "A fenced shell command in the four docs whose tool and first argument install or set up passes. Else a setup file or a setup target (setup, bootstrap, install, dev, dev-setup) of the root Makefile or package.json named anywhere in the four docs passes; present but not named is PARTIAL.",
+      "note": "A fenced shell command or an inline code span in the four docs whose tool and first argument install or set up passes. Else a setup file or a setup target (setup, bootstrap, install, dev, dev-setup) of the root Makefile or package.json named anywhere in the four docs passes; present but not named is PARTIAL.",
       "source": "engine",
       "threshold": "a documented non-interactive setup command",
       "what": {
@@ -11135,7 +11140,7 @@
     {
       "binding": "line",
       "check": "EXEC-04",
-      "note": "References: ${VAR} in shell files and Dockerfile, less the keys the same file assigns, and os.environ, getenv, process.env and ENV[...] in every file of kind source or script. Declared keys are the KEY= lines of the four root example files; a fixed allow-list of host and CI names is exempt.",
+      "note": "References: ${VAR} and ${VAR:?msg} in shell files and Dockerfile, less the keys the same file assigns, and os.environ, getenv, process.env and ENV[...] in every file of kind source or script. A shell reference with a fallback (${VAR:-x}, ${VAR-x}, ${VAR:=x}, ${VAR:+x}) is optional: listed, never missing. Declared keys are the KEY= lines of the four root example files; a fixed allow-list of host, CI and shell-set names is exempt.",
       "source": "engine",
       "threshold": "every referenced key declared",
       "what": {
@@ -11885,7 +11890,7 @@
         "audit.rules.checks.tst:_FASTPATH_DOCS",
         "audit.rules.checks.tst:_FRAMEWORK_TEST_GLOBS"
       ],
-      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
+      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. With no fenced match, an inline code span outside any fence is read with the same patterns. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
       "source": "engine",
       "what": {
         "kind": "fenced-command"
@@ -12136,48 +12141,33 @@
           "via": "components"
         },
         {
-          "path": "package.json",
-          "scope": "any-depth",
-          "via": "components"
-        },
-        {
           "path": "pyproject.toml",
-          "scope": "any-depth",
-          "via": "components"
-        },
-        {
-          "path": "pom.xml",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "build.gradle",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "build.gradle.kts",
-          "scope": "any-depth",
-          "via": "components"
-        },
-        {
-          "path": "Cargo.toml",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "go.mod",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "Gemfile",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "composer.json",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
@@ -12642,7 +12632,7 @@
     {
       "binding": "file",
       "check": "HYG-01",
-      "note": "Root files whose base name starts with readme, any case; README.md is read first. It needs 200 trimmed characters, no stub marker as a substring anywhere, and one line that is not a heading.",
+      "note": "Root files whose base name starts with readme, any case; README.md is read first. It needs 200 trimmed characters, no stub marker, and one line that is not a heading. Under 400 characters a marker anywhere counts, and lorem ipsum or <describe counts at any length; in a longer README a word marker counts only when it opens a line and the line's end or punctuation follows it.",
       "source": "engine",
       "what": {
         "kind": "word-list",

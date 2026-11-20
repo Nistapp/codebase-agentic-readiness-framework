@@ -48,7 +48,7 @@ from audit.rules.checks._common import (
     runner_commands,
 )
 from audit.scan import Inventory
-from audit.stack import VERBS
+from audit.stack import FORMAT_CHECK_ALIASES, VERBS
 from audit.rules import variants as V
 from audit.rules.payloads import (
     HarnessMatrix,
@@ -312,9 +312,20 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
         spec.phase,
         verdict,
         spec.status,
-        summary=f"{len(canonical_nested)} nested instruction file(s)" if present and canonical_nested else "",
+        summary=_agt01_summary(present, canonical_nested),
         findings=findings,
     )
+
+
+def _agt01_summary(present: list[str], canonical_nested: list[str]) -> str:
+    """One sentence that names the instruction files the verdict rests on; never empty (issue #21)."""
+    if not present:
+        return "no agent-instruction file in the repository"
+    if canonical_nested:
+        return f"{len(canonical_nested)} nested instruction file(s)"
+    shown = sorted(present)
+    more = f" and {len(shown) - 6} more" if len(shown) > 6 else ""
+    return f"instruction file(s): {', '.join(shown[:6])}{more}"
 
 
 # ---------------------------------------------------------------------------
@@ -657,12 +668,10 @@ def check_agt10(*, spec, target, inventory, stack, components, session) -> Check
     for config_file, targets in configured.items():
         for name in targets:
             rel = name.strip().lstrip("./")
-            if "*" in rel:
-                if not inventory.match(rel):
-                    findings.append(_broken_pointer(spec, config_file, name))
-                continue
-            if not inventory.has(rel):
+            exists = inventory.match(rel) if "*" in rel else inventory.has(rel)
+            if not exists:
                 findings.append(_broken_pointer(spec, config_file, name))
+    broken = len(findings)
     if configured:
         detail.append(f"{len(configured)} config file(s) name instruction targets")
 
@@ -701,6 +710,16 @@ def check_agt10(*, spec, target, inventory, stack, components, session) -> Check
             )
         if not _rule_line_count(entry) > 0:
             detail.append("instruction file has no rule lines")
+        if deferred:
+            detail.append(f"defers to {', '.join(sorted(set(deferred)))}, which no harness config names")
+        else:
+            detail.append("defers to no file that a harness config leaves unloaded")
+    else:
+        detail.append("no AGENTS.md or CLAUDE.md to read for a deferral")
+    if not configured:
+        detail.insert(0, "no harness config names an instruction target")
+    if broken:
+        detail.insert(0, f"{broken} configured pointer(s) name a missing file")
 
     verdict = Verdict.FAIL if findings else Verdict.PASS
     return CheckOutcome(
@@ -886,17 +905,29 @@ def check_agt04(*, spec, target, inventory, stack, components, session) -> Check
 # ---------------------------------------------------------------------------
 
 
+#: Each verb's spellings the spec accepts (``spec/command-surface.md`` § Spelling per runner): its own name, and for
+#: ``format:check`` also ``format-check`` and ``formatCheck``. A runner script under any other name is not a verb.
+_VERB_SPELLINGS: dict[str, tuple[str, ...]] = {
+    verb: (verb, *sorted({alias for aliases in FORMAT_CHECK_ALIASES.values() for alias in aliases}))
+    if verb == "format:check"
+    else (verb,)
+    for verb in VERBS
+}
+
+
 def _mentioned_verbs(text: str) -> set[str]:
-    """Which framework verbs the instruction file names, as whole tokens.
+    """Which framework verbs the instruction file names, as whole tokens, in a spelling the spec accepts.
 
     The lookarounds keep ``format`` from being found inside ``format:check`` and ``test`` from being
     found inside ``tests``: a verb is named only when it stands as itself.
     """
     found: set[str] = set()
-    for verb in VERBS:
-        pattern = re.compile(r"(?<![\w:-])" + re.escape(verb) + r"(?![\w:-])")
-        if pattern.search(text):
-            found.add(verb)
+    for verb, spellings in _VERB_SPELLINGS.items():
+        for spelling in spellings:
+            pattern = re.compile(r"(?<![\w:-])" + re.escape(spelling) + r"(?![\w:-])")
+            if pattern.search(text):
+                found.add(verb)
+                break
     return found
 
 
