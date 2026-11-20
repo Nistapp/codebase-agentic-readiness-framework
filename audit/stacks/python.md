@@ -48,8 +48,9 @@ that mirrors the type-check gate's import paths.
 `.python-version` or `pyproject.toml`'s `requires-python` pins the interpreter (`EXEC-01`); uv and
 poetry both honour `.python-version` directly, pip does not read it at all — say which the project
 actually acts on, not just which file exists. The matching lockfile (`poetry.lock`/`uv.lock`/
-`Pipfile.lock`) must be git-tracked at the root; `uv sync --frozen`/`poetry install --no-update`/
-`pipenv sync` is the non-interactive install path, never a bare `install` that can resolve new versions.
+`Pipfile.lock`/`pdm.lock`) must be git-tracked at the root; `uv sync --frozen`/`poetry install --no-update`/
+`pipenv sync`/`pdm sync` is the non-interactive install path, never a bare `install` that can resolve new
+versions.
 Tool versions (`EXEC-08`) go in a dependency group of a `pyproject.toml`, locked in `uv.lock`, never inline in
 `uvx ruff@0.5.0` or `pip install black==24.1.0`; the runner reads the pin or runs `uv run`.
 
@@ -88,10 +89,10 @@ verification: `CMD-01` on a Makefile-less, poe/taskipy-less pip/uv/poetry projec
 `UNKNOWN` rather than `FAIL` for lack of a recognised runner — confirm by reading whether the project
 documents its commands in prose (a README) instead, which the engine cannot credit; `EXEC-02`, whose
 `python` lockfile table omits `pip` entirely (the same "manifest-as-lock" exclusion as Detection signals)
-— a plain `requirements.txt` project reads `FAIL` naming `poetry.lock`/`uv.lock`/`Pipfile.lock` as the
+— a plain `requirements.txt` project reads `FAIL` naming `poetry.lock`/`uv.lock`/`Pipfile.lock`/`pdm.lock` as the
 missing file, accurate ("no lockfile exists") but worth explaining to a user expecting its own manifest
-to count. The table omits `pdm` too. A pdm project with a tracked `pdm.lock` reads the same `FAIL`, so
-confirm the `pdm.lock` and say that the engine does not read it. A `source_only` repository (D29 item 9:
+to count. A tracked `pdm.lock` counts, and its package names are compared with the manifest, as for
+`poetry.lock` and `uv.lock`. A `source_only` repository (D29 item 9:
 Python recognised from a bare `.py` file, no manifest at all) reads `EXEC-02` `UNKNOWN`, correctly, since no
 dependency is declared to lock.
 
