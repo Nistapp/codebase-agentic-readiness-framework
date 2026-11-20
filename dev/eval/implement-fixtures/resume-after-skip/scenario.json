@@ -4,6 +4,6 @@
   "start": "triaged",
   "pr_by_agent": "no",
   "phase": "t6",
-  "assertions": ["A2", "A6", "A16", "A17", "A21"],
+  "assertions": ["A2", "A6", "A16", "A17", "A21", "A22"],
   "params": {"skipped_paths": ["docs/STYLE_GUIDE.md"]}
 }
