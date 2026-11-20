@@ -132,7 +132,8 @@ Severity         BLOCKER
 Engine           `EXEC-03`. First looks for a documented, non-interactive install command (one whose
                  head tool and subcommand the engine recognises, such as `npm install` or `make setup`).
                  It reads the fenced shell blocks and the inline code spans (`` - Install: `npm ci` ``)
-                 of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md`. Found ⇒ `PASS` outright. Failing that, looks for a setup artifact (a devcontainer, a compose
+                 of README/`AGENTS.md`/`CLAUDE.md`/`CONTRIBUTING.md`. Found ⇒ `PASS` outright.
+                 Failing that, looks for a setup artifact (a devcontainer, a compose
                  file, a Dockerfile, or a `setup`/`bootstrap`/`install`/`dev`/`dev-setup` Makefile or
                  npm-script target) and whether any doc file names it in prose. No ecosystem detected at
                  all ⇒ `UNKNOWN` — with no build manifest there is no provisioning to characterise.
