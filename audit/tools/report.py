@@ -8,7 +8,7 @@
     report.py add-check <draft> --from FILE|-
     report.py add-finding <draft> --from FILE|-
     report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
-    report.py status <draft>
+    report.py status <draft> [--all] [--severity BLOCKER|DEGRADER|COSMETIC]
     report.py finalise <draft>
 
 ``init`` reads the intake file, captures the target's provenance (commit, branch, whether the working tree is
@@ -71,7 +71,7 @@ INFO = _common.ToolInfo(
         "report.py add-finding <draft> --from FILE|-",
         "report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)",
         "report.py set-stack-profile <draft> <id> [--derived] [--confirmed]",
-        "report.py status <draft>",
+        "report.py status <draft> [--all] [--severity BLOCKER|DEGRADER|COSMETIC]",
         "report.py finalise <draft>",
     ),
     writes=(
@@ -1161,18 +1161,26 @@ def envelope_lines(data: Mapping[str, Any]) -> int:
     return len(text.splitlines())
 
 
-def status_data(path: Path, document: Mapping[str, Any]) -> dict[str, Any]:
+def status_data(
+    path: Path, document: Mapping[str, Any], *, show_all: bool = False, severity: str | None = None
+) -> dict[str, Any]:
     """The state of a draft, in at most `STATUS_LINE_BUDGET` lines of envelope.
 
     The families come in the catalogue's order, which is the order the audit works in, and in one map, so their
     number is bounded by the catalogue's. The pending findings are what is
     left to fit: as many as the budget allows, up to `PENDING_SHOWN`, blockers first, and the rest are counted.
+    `severity` keeps only the pending findings of that severity in the list. `show_all` lifts the line budget and
+    `PENDING_SHOWN`: the list then holds every pending finding that fits the output budget (`bound_items`).
     """
     missing = missing_checks(document)
     families = list(dict.fromkeys(family_of(check["id"]) for check in expected_checks()))
     counts = decision_counts(document)
     reasons = blocking_reasons(document)
-    waiting = [f"{f['id']} {f['severity']} {f['key']}" for f in pending_findings(document)]
+    waiting = [
+        f"{f['id']} {f['severity']} {f['key']}"
+        for f in pending_findings(document)
+        if severity is None or f["severity"] == severity
+    ]
     data: dict[str, Any] = {
         "draft": str(path),
         "status": document["status"],
@@ -1185,6 +1193,13 @@ def status_data(path: Path, document: Mapping[str, Any]) -> dict[str, Any]:
         "ready_to_finalise": not reasons,
         "blocking": "; ".join(reasons),
     }
+    if severity is not None:
+        data["pending_severity"] = severity
+    if show_all:
+        data["pending"], omitted = _common.bound_items(waiting)
+        if omitted:
+            data["pending_omitted"] = omitted
+        return data
     for shown in range(min(len(waiting), PENDING_SHOWN), -1, -1):
         data["pending"] = waiting[:shown]
         if shown < len(waiting):
@@ -1197,7 +1212,7 @@ def status_data(path: Path, document: Mapping[str, Any]) -> dict[str, Any]:
 def run_status(args: argparse.Namespace) -> _common.Result:
     path = Path(args.draft).expanduser()
     document = read_valid_report(path, when="to report on")
-    data = status_data(path, document)
+    data = status_data(path, document, show_all=args.all, severity=args.severity)
     counts = check_counts(document)
     state = "ready to finalise" if data["ready_to_finalise"] else f"not ready to finalise: {data['blocking']}"
     return _common.Result(
@@ -1343,6 +1358,12 @@ def build_parser() -> _common.ToolParser:
         "status", help="say what is done, what remains and what awaits a decision", allow_abbrev=False
     )
     describe.add_argument("draft", help="the draft to describe")
+    describe.add_argument(
+        "--all", action="store_true", help="list every pending finding that fits the output, not the first 8"
+    )
+    describe.add_argument(
+        "--severity", choices=tuple(SEVERITY_ORDER), help="list only the pending findings of this severity"
+    )
     finish = commands.add_parser("finalise", help="write the final report from a finished draft", allow_abbrev=False)
     finish.add_argument("draft", help="the draft to finalise; it is left as it is")
     return parser

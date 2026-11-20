@@ -510,12 +510,19 @@ eval-mode run records it the same way.
 Says where an audit stands: which families of checks are done, which are not, and which findings still wait for a decision. It is what to run first when a session resumes after a crash or after the agent's context ran out, because the draft holds everything and the tool reads it. It reads the draft and writes nothing, and it does not wait for the lock.
 
 ```text
-python3 audit/tools/report.py status <draft>
+python3 audit/tools/report.py status <draft> [--all] [--severity BLOCKER|DEGRADER|COSMETIC]
 ```
+
+| Option | Meaning |
+|---|---|
+| `--all` | List every pending finding, not the first 8. The 40-line limit then does not hold. The list is still cut at the byte budget of every tool's output, and `pending_omitted` says how many were left out. |
+| `--severity S` | List only the pending findings of severity `S`. The counts still cover every finding. |
+
+The output is a JSON envelope already, so there is no `--json` option.
 
 The draft may be final: `status` then reports it and says it is already final. A draft that fails validation is exit 2, with the errors.
 
-**Outputs.** The envelope is at most **40 lines** on stdout, so a report of 70 checks costs a few hundred tokens and not a page. `data` holds:
+**Outputs.** Without `--all`, the envelope has at most **40 lines**, so a report of 70 checks costs a few hundred tokens and not a page. `data` holds:
 
 | Key | Meaning |
 |---|---|
@@ -526,7 +533,8 @@ The draft may be final: `status` then reports it and says it is already final. A
 | `families_remaining` | For each family with a check not yet recorded, the IDs of those checks. |
 | `findings`, `findings_pending`, `blockers_pending` | The findings, those waiting for a decision, and the `BLOCKER` ones among them. |
 | `ready_to_finalise`, `blocking` | Whether `finalise` has nothing to stop it, and if not, why in a sentence: an eval-mode run, checks not recorded, findings pending, a `BLOCKER` not decided interactively, or a report that is already final. `finalise` has the last word: it validates the final report. |
-| `pending` | The findings waiting for a decision, one line each as `<id> <severity> <key>`, blockers first, as many as fit in the line budget (at most 8). |
+| `pending` | The findings waiting for a decision, one line each as `<id> <severity> <key>`, blockers first, as many as fit in the line budget (at most 8). With `--all`, every one that fits the byte budget. |
+| `pending_severity` | The severity given with `--severity`, when one was given. |
 | `pending_omitted` | How many pending findings are not listed, when some are left out. The envelope then has `truncated: true`. |
 
 **Exit codes**

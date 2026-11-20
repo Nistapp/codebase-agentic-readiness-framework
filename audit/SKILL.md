@@ -194,7 +194,8 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    Fix what a mismatch reveals with `add-check` or `add-finding`, then re-render.
 3. Group the findings for the person by what Stage 4 will ask about them: `BLOCKER`s, which are confirmed
    one at a time, then `DEGRADER`s and `COSMETIC`s, which are confirmed in batches. `report.py status`'s
-   `pending` list already sorts blockers first; use that order.
+   `pending` list already sorts blockers first; use that order. It shows 8 at most: add `--all` for the
+   whole list, and `--severity <s>` for one severity.
 4. Unless this is an eval-mode run, tell the person the shape of the result before asking them to decide
    on anything: the score, how many findings of each severity, and which families have no finding at all.
 
