@@ -391,6 +391,16 @@ class Exec02LockfilePathTests(unittest.TestCase):
             "but omits manifest dependencies: left-pad.",
         )
 
+    def test_a_tracked_text_bun_lock_is_the_node_lockfile_and_is_not_compared(self):
+        check, findings = self.audit({"package.json": self.NODE, "bun.lock": "{}\n"})
+        self.assertEqual((check["verdict"], check["summary"]), ("PARTIAL", "consistency unverified: bun.lock"))
+        self.assertEqual(findings, [])
+
+    def test_a_tracked_npm_shrinkwrap_is_the_node_lockfile_and_is_compared(self):
+        check, findings = self.audit({"package.json": self.NODE, "npm-shrinkwrap.json": self.LOCK})
+        self.assertEqual(check["verdict"], "PASS")
+        self.assertEqual(findings, [])
+
     def test_the_lockfiles_of_an_ecosystem_are_listed_shallowest_first_then_by_name(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -504,7 +514,11 @@ class Exec02MessageTests(unittest.TestCase):
         check, _ = self.audit({"package.json": self.NODE})
         self.assertEqual(
             (check["verdict"], check["summary"]),
-            ("FAIL", "no lockfile: node (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb)"),
+            (
+                "FAIL",
+                "no lockfile: node (package-lock.json, npm-shrinkwrap.json, pnpm-lock.yaml, yarn.lock, bun.lock, "
+                "bun.lockb)",
+            ),
         )
         locks = {"a/package-lock.json": "{}\n", "z/package-lock.json": "{}\n"}
         check, _ = self.audit({"package.json": self.NODE, **locks}, track=("package.json",))
@@ -523,7 +537,8 @@ class Exec02MessageTests(unittest.TestCase):
             (check["verdict"], check["summary"]),
             (
                 "FAIL",
-                "no lockfile: go (go.sum), node (package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lockb); "
+                "no lockfile: go (go.sum), node (package-lock.json, npm-shrinkwrap.json, pnpm-lock.yaml, yarn.lock, "
+                "bun.lock, bun.lockb); "
                 "tracked: Cargo.lock",
             ),
         )
@@ -547,8 +562,9 @@ class Exec02MessageTests(unittest.TestCase):
             [(f["statement"], f["evidence"], f["remediation"], f["severity"]) for f in findings],
             [
                 (
-                    f"{self.ACTION} the node project has no lockfile (package-lock.json, pnpm-lock.yaml, yarn.lock, "
-                    "bun.lockb), so a fresh install resolves whatever versions are current.",
+                    f"{self.ACTION} the node project has no lockfile (package-lock.json, npm-shrinkwrap.json, "
+                    "pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb), so a fresh install resolves whatever versions "
+                    "are current.",
                     [],
                     "Generate the lockfile with the project's package manager and commit it.",
                     "BLOCKER",
@@ -695,6 +711,11 @@ class LockConsistencyTests(unittest.TestCase):
             ("unverified", set()),
         )
         self.assertEqual(self.state({"package.json": manifest}, "node", "package-lock.json"), ("unverified", set()))
+
+    def test_an_npm_shrinkwrap_is_read_as_a_package_lock(self):
+        manifest = '{"dependencies": {"left-pad": "1", "up-pad": "1"}}\n'
+        files = {"package.json": manifest, "npm-shrinkwrap.json": self.LOCK}
+        self.assertEqual(self.state(files, "node", "npm-shrinkwrap.json"), ("mismatch", {"up-pad"}))
 
     def test_a_dependency_the_lock_omits_is_named(self):
         manifest = '{"dependencies": {"left-pad": "1", "up-pad": "1"}}\n'

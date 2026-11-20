@@ -19,16 +19,16 @@ from dataclasses import dataclass, field
 
 from audit.scan import Inventory, Kind
 
-#: ecosystem -> (manifest globs, verb-runner hints)
-ECOSYSTEM_SIGNALS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
-    "node": (("package.json",), ("package.json",)),
-    "python": (("pyproject.toml", "setup.py", "requirements*.txt", "Pipfile"), ("pyproject.toml", "Makefile")),
-    "jvm": (("pom.xml", "build.gradle", "build.gradle.kts"), ("pom.xml", "build.gradle", "Makefile")),
-    "go": (("go.mod",), ("Makefile",)),
-    "rust": (("Cargo.toml",), ("Makefile",)),
-    "dotnet": (("*.csproj", "*.sln"), ("*.sln",)),
-    "ruby": (("Gemfile",), ("Rakefile", "Makefile")),
-    "php": (("composer.json",), ("composer.json",)),
+#: ecosystem -> the manifests that name it: a base name, or a glob (with ``*``) matched against each file.
+ECOSYSTEM_SIGNALS: dict[str, tuple[str, ...]] = {
+    "node": ("package.json",),
+    "python": ("pyproject.toml", "setup.py", "requirements*.txt", "Pipfile"),
+    "jvm": ("pom.xml", "build.gradle", "build.gradle.kts"),
+    "go": ("go.mod",),
+    "rust": ("Cargo.toml",),
+    "dotnet": ("*.csproj", "*.sln"),
+    "ruby": ("Gemfile",),
+    "php": ("composer.json",),
 }
 
 #: ecosystem -> source suffix. An ecosystem that is also recognised from its own source files, so that a project
@@ -36,15 +36,18 @@ ECOSYSTEM_SIGNALS: dict[str, tuple[tuple[str, ...], tuple[str, ...]]] = {
 #: counted: a test, a generated file or a fixture is not.
 SOURCE_SIGNALS: dict[str, str] = {"python": ".py"}
 
+#: package manager -> the files that name it: a base name, or a glob (with ``*``) matched against each file, as in
+#: :data:`ECOSYSTEM_SIGNALS`. `EXEC-02` reads the names of an ecosystem's managers as its lockfiles.
 PACKAGE_MANAGERS: dict[str, tuple[str, ...]] = {
-    "npm": ("package-lock.json",),
+    "npm": ("package-lock.json", "npm-shrinkwrap.json"),
     "pnpm": ("pnpm-lock.yaml",),
     "yarn": ("yarn.lock",),
-    "bun": ("bun.lockb",),
-    "pip": ("requirements.txt",),
+    "bun": ("bun.lock", "bun.lockb"),
+    "pip": ("requirements*.txt",),
     "poetry": ("poetry.lock",),
     "uv": ("uv.lock",),
     "pipenv": ("Pipfile.lock",),
+    "pdm": ("pdm.lock",),
     "gradle": ("gradle.lockfile",),
     "maven": ("pom.xml",),
     "cargo": ("Cargo.lock",),
@@ -106,17 +109,6 @@ HOOK_MANAGERS: dict[str, tuple[str, ...]] = {
     "gradle-hooks": (".githooks/*",),
 }
 
-VERB_RUNNERS = (
-    "package.json",
-    "Taskfile.yml",
-    "Taskfile.yaml",
-    "Makefile",
-    "pyproject.toml",
-    "build.gradle",
-    "build.gradle.kts",
-    "pom.xml",
-)
-
 #: The seven verbs of the framework's standardized command surface.
 VERBS = ("format", "format:check", "lint", "typecheck", "test", "check", "security")
 
@@ -154,7 +146,6 @@ class Stack:
     ci_providers: set[str] = field(default_factory=set)
     test_frameworks: set[str] = field(default_factory=set)
     hook_managers: set[str] = field(default_factory=set)
-    verb_runners: list[str] = field(default_factory=list)
     component_manifest_hint: str | None = None
     notes: list[str] = field(default_factory=list)
 
@@ -167,19 +158,18 @@ class Stack:
         return " · ".join(parts) or "stack not recognised"
 
 
+def _named(inv: Inventory, names: set[str], signal: str) -> bool:
+    """Whether a file at any depth has the signal as its base name, or, for a glob, matches it."""
+    return bool(inv.match(signal)) if "*" in signal else signal in names
+
+
 def detect_stack(inv: Inventory) -> Stack:
     stack = Stack()
     names = {f.rel.split("/")[-1] for f in inv.files}
 
-    for eco, (manifests, runners) in ECOSYSTEM_SIGNALS.items():
-        for pattern in manifests:
-            if "*" in pattern:
-                if inv.match(pattern):
-                    stack.ecosystems.add(eco)
-                    break
-            elif pattern in names:
-                stack.ecosystems.add(eco)
-                break
+    for eco, manifests in ECOSYSTEM_SIGNALS.items():
+        if any(_named(inv, names, pattern) for pattern in manifests):
+            stack.ecosystems.add(eco)
         suffix = SOURCE_SIGNALS.get(eco)
         if (
             eco not in stack.ecosystems
@@ -189,12 +179,9 @@ def detect_stack(inv: Inventory) -> Stack:
             stack.ecosystems.add(eco)
             stack.source_only.add(eco)
             stack.notes.append(f"{eco} recognised from its source files: no manifest names it")
-        for runner in runners:
-            if runner in names and runner in VERB_RUNNERS and runner not in stack.verb_runners:
-                stack.verb_runners.append(runner)
 
     for name, signals in PACKAGE_MANAGERS.items():
-        if any(inv.has(s) for s in signals):
+        if any(_named(inv, names, s) for s in signals):
             stack.package_managers.add(name)
 
     for provider, globs in CI_PROVIDERS.items():

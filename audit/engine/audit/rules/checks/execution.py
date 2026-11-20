@@ -392,7 +392,7 @@ def _node_lock_deps(inv: Inventory, lockfile: str) -> set[str] | None:
     text = inv.read(lockfile)
     if text is None:
         return None
-    if lockfile == "package-lock.json":
+    if lockfile in ("package-lock.json", "npm-shrinkwrap.json"):
         try:
             data = json.loads(text)
         except json.JSONDecodeError:

@@ -93,12 +93,14 @@ A check that cannot be certain of a tracked or ignore answer reports `UNKNOWN`, 
 
 An ecosystem is named by its manifest alone (`ECOSYSTEM_SIGNALS` in `audit/stack.py`). A package manager is named
 by its own file (`PACKAGE_MANAGERS`), and that file never names an ecosystem. A `uv.lock` with no Python
-manifest does not make a Python project. Both are matched by file name anywhere in the tree, at any depth.
+manifest does not make a Python project. Both are matched anywhere in the tree, at any depth: by base name, or by a
+glob such as `requirements*.txt`. `EXEC-02` reads an ecosystem's package-manager files as its lockfiles; pip and pdm
+are not among them.
 
 | Ecosystem (id) | Manifest that names it | Package manager, from its file |
 |---|---|---|
-| Node (`node`) | `package.json` | npm (`package-lock.json`), pnpm (`pnpm-lock.yaml`), yarn (`yarn.lock`), bun (`bun.lockb`) |
-| Python (`python`) | `pyproject.toml`, `setup.py`, `requirements*.txt`, `Pipfile`; or, when none of them is present, a `.py` source file (not a test or a generated file). The stack then lists `python` in `source_only` and says so in its notes | pip (`requirements.txt`), poetry (`poetry.lock`), uv (`uv.lock`), pipenv (`Pipfile.lock`) |
+| Node (`node`) | `package.json` | npm (`package-lock.json`, `npm-shrinkwrap.json`), pnpm (`pnpm-lock.yaml`), yarn (`yarn.lock`), bun (`bun.lock`, `bun.lockb`) |
+| Python (`python`) | `pyproject.toml`, `setup.py`, `requirements*.txt`, `Pipfile`; or, when none of them is present, a `.py` source file (not a test or a generated file). The stack then lists `python` in `source_only` and says so in its notes | pip (`requirements*.txt`), poetry (`poetry.lock`), uv (`uv.lock`), pipenv (`Pipfile.lock`), pdm (`pdm.lock`) |
 | JVM (`jvm`) | `pom.xml`, `build.gradle`, `build.gradle.kts` | maven (`pom.xml`), gradle (`gradle.lockfile`) |
 | Go (`go`) | `go.mod` | gomod (`go.sum`) |
 | Rust (`rust`) | `Cargo.toml` | cargo (`Cargo.lock`) |

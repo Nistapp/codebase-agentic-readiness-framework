@@ -11,9 +11,10 @@
 `requirements*.txt` or `Pipfile` anywhere in the tree. With none of those present, it reads it from a
 bare `.py` source file alone (D29 item 9). That case is `source_only`, and several checks below treat it
 differently from a manifest-bearing project, never as a false `PASS`. `package_managers` reads each
-tool's own file anywhere in the tree: `requirements.txt` → pip, `poetry.lock` → poetry, `uv.lock` → uv,
-`Pipfile.lock` → pipenv. A lockfile alone does not name the ecosystem. A plain `pip` project pinned only
-by `requirements.txt` still has no lockfile (`requirements.txt` is a manifest, not a lock, by the
+tool's own file anywhere in the tree: `requirements*.txt` (the same glob that names the ecosystem) → pip,
+`poetry.lock` → poetry, `uv.lock` → uv, `Pipfile.lock` → pipenv, `pdm.lock` → pdm. A lockfile alone
+does not name the ecosystem. A plain `pip` project pinned only by `requirements.txt` still has no lockfile
+(`requirements.txt` is a manifest, not a lock, by the
 engine's own "manifest-as-lock" exclusion — see Pitfalls).
 
 ## Command-surface map
@@ -89,8 +90,10 @@ documents its commands in prose (a README) instead, which the engine cannot cred
 `python` lockfile table omits `pip` entirely (the same "manifest-as-lock" exclusion as Detection signals)
 — a plain `requirements.txt` project reads `FAIL` naming `poetry.lock`/`uv.lock`/`Pipfile.lock` as the
 missing file, accurate ("no lockfile exists") but worth explaining to a user expecting its own manifest
-to count; a `source_only` repository (D29 item 9: Python recognised from a bare `.py` file, no manifest
-at all) reads `EXEC-02` `UNKNOWN`, correctly, since no dependency is declared to lock.
+to count. The table omits `pdm` too. A pdm project with a tracked `pdm.lock` reads the same `FAIL`, so
+confirm the `pdm.lock` and say that the engine does not read it. A `source_only` repository (D29 item 9:
+Python recognised from a bare `.py` file, no manifest at all) reads `EXEC-02` `UNKNOWN`, correctly, since no
+dependency is declared to lock.
 
 ## Pitfalls
 

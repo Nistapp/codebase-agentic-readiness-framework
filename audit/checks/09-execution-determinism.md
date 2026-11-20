@@ -74,7 +74,12 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  the lockfile is NuGet's `packages.lock.json`, and the manifest is the `PackageReference`
                  names (casefolded) of the project files in the root folder. A .NET project with no
                  `packages.lock.json` reads `FAIL`, as every other ecosystem does (owner decision); NuGet
-                 writes one only when the project sets `RestorePackagesWithLockFile`. No
+                 writes one only when the project sets `RestorePackagesWithLockFile`. For node the
+                 lockfiles are `package-lock.json`, `npm-shrinkwrap.json` (compared as a
+                 `package-lock.json`), `pnpm-lock.yaml`, `yarn.lock`, `bun.lock` and `bun.lockb`. Neither
+                 Bun file is compared, so a Bun project reads `PARTIAL` at best. For python they are
+                 `poetry.lock`, `uv.lock` and `Pipfile.lock`. A `pdm.lock` names pdm in the stack but is
+                 not one of them. No
                  ecosystem with a recognised manager is detected ⇒ `UNKNOWN`, and the summary names a
                  recognised ecosystem that has no lockfile convention the engine reads; an ecosystem recognised only
                  from its source files, with no manifest (`Stack.source_only`), is also `UNKNOWN` — it

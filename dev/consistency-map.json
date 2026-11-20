@@ -10940,11 +10940,19 @@
           "scope": "any-depth"
         },
         {
+          "path": "npm-shrinkwrap.json",
+          "scope": "any-depth"
+        },
+        {
           "path": "pnpm-lock.yaml",
           "scope": "any-depth"
         },
         {
           "path": "yarn.lock",
+          "scope": "any-depth"
+        },
+        {
+          "path": "bun.lock",
           "scope": "any-depth"
         },
         {
