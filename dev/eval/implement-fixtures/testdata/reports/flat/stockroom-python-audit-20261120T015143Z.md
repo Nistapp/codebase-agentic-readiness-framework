@@ -5,7 +5,7 @@
 
 ## Bottom line
 
-- **11 blockers remaining: 5 FAIL, 2 PARTIAL, 4 UNKNOWN.**
+- **11 BLOCKER checks unmet: 5 FAIL, 2 PARTIAL, 4 UNKNOWN (0 BLOCKER findings).**
 - **Not settled by this scan:**
   - 14 checks are UNKNOWN: `IDX-02` An index exists for this checkout; `IDX-03` Index freshness; `TOOL-07` Local guard against commits to a protected branch; `CI-05` Workflow files are linted; `CON-01` Allow/deny artifact present and 9 more.
   - 5 requirements are unattested: no check settles them.
@@ -35,7 +35,7 @@
 ## Readiness summary
 
 - **Phase-1 score: 0.40**, over 63 scored checks
-- **11 blockers remaining: 5 FAIL, 2 PARTIAL, 4 UNKNOWN**
+- **11 BLOCKER checks unmet: 5 FAIL, 2 PARTIAL, 4 UNKNOWN (0 BLOCKER findings)**
 - **Unattested:** 5 requirements that no check settles, listed below
 
 11 of the 63 scored checks are UNKNOWN. An UNKNOWN check earns no credit, so the score understates what is true of the repository and does not certify it. No agent finding is waiting for a person's decision.
