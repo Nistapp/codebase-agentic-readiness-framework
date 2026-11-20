@@ -27,8 +27,18 @@ from pathlib import Path
 #: Verbs that mutate the working tree or the environment. Never probe-eligible.
 MUTATING_VERBS = frozenset({"format", "install", "clean", "build"})
 
+#: The keyword-assignment pattern. The keyword may sit inside a compound name joined by ``_`` or ``-``
+#: (``GITHUB_TOKEN``, ``DB_PASSWORD``, ``AWS_SECRET_ACCESS_KEY``, ``client_secret``, ``x-api-key``), but it must be
+#: a whole segment and the name must be assigned with ``:`` or ``=`` (a JSON key's closing quote may come between):
+#: prose such as ``passwords must be rotated``, ``token count: 5``, ``tokens: 5`` and ``max_tokens: 5`` is left
+#: alone. A name such as ``TOKEN_URL=`` is redacted too: hiding a harmless value costs less than showing a credential.
+_KEYWORD_ASSIGNMENT = (
+    r"(?i)(?<![A-Za-z0-9])(?:[A-Za-z0-9]+[_-])*(?:api[_-]?key|secret|token|password|passwd|pwd)"
+    r"(?:[_-][A-Za-z0-9]+)*(?![A-Za-z0-9])[\"']?[ \t]*[:=][ \t]*\S+"
+)
+
 REDACTION_PATTERNS = (
-    re.compile(r"(?i)\b(api[_-]?key|secret|token|password|passwd|pwd)\b\s*[:=]\s*\S+"),
+    re.compile(_KEYWORD_ASSIGNMENT),
     re.compile(r"\bsk-[A-Za-z0-9_\-]{16,}\b"),
     re.compile(r"\bgh[pousr]_[A-Za-z0-9]{16,}\b"),
     re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
