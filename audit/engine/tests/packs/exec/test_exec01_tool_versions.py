@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""`EXEC-01` reads a `.tool-versions` line for ruby, dotnet and jvm (ruleset 2026-11-20.3).
+"""`EXEC-01` reads a `.tool-versions` line for ruby, dotnet and jvm (ruleset 2026-11-20.4).
 
 Before that revision a shared `.tool-versions` counted only for node, python, rust, go and php, although the check
 page said a matching line pins every ecosystem. The asdf and mise plugin names are `ruby`, `java` for the JDK (jvm),

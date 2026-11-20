@@ -1310,6 +1310,7 @@ READS: dict[str, Reads] = {
                 "poetry.lock",
                 "uv.lock",
                 "Pipfile.lock",
+                "pdm.lock",
                 "gradle.lockfile",
                 "Cargo.lock",
                 "go.sum",

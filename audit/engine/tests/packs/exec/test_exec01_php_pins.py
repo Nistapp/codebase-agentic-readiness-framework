@@ -8,7 +8,7 @@ repository was judged on its other ecosystems alone. Four sources pin PHP now: a
 `.tool-versions`, and in `composer.json` the key `config.platform.php`, then `require.php`. A `composer.json` is read
 at any depth, shallowest first, as `package.json` is for `engines.node`.
 
-Since ruleset 2026-11-20.2 each `composer.json` is also a module the pin must reach. A `.php-version` or a
+Since ruleset 2026-11-20.3 each `composer.json` is also a module the pin must reach. A `.php-version` or a
 `.tool-versions` `php` line in its folder or a parent folder reaches it; a parent `composer.json` does not, because
 Composer installs each project on its own, as a parent `go.mod` does not reach a nested Go module. An unreached
 module reads `PARTIAL`.
