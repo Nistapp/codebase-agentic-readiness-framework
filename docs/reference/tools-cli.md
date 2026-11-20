@@ -60,7 +60,7 @@ python3 audit/tools/engine.py --describe
 |---|---|
 | `<target>` | The repository to scan. It must exist and be a directory. The engine only reads it. |
 | `--out-dir DIR` | Where the report goes. It is created if it does not exist, and it must be outside the target. Default: the current directory, which is refused when it is inside the target. |
-| `--repo-label LABEL` | The label in the file name: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). |
+| `--repo-label LABEL` | The label in the file name: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). The audit recipe passes the label `report.py init` chose, so the engine report and the draft share one label. |
 | `--phase N` | The phase recorded in the report's provenance. The engine implements phase 1 only, so a higher value changes nothing else; the engine's default is 1. |
 | `--exclude GLOB` | An extra path pattern to leave out of the audit, matched against the whole path from the target's root, so `vendor-samples/*` covers every file under that directory. It applies to the checks that read git's tracked files as well as to the walk. May be repeated. |
 | `--max-files N` | A hard cap on the files the engine inspects. |
@@ -691,7 +691,7 @@ python3 audit/tools/facts.py --describe
 |---|---|
 | `<target>` | The repository to describe. It must exist and be a directory. The tool only reads it. |
 | `--out FILE` | The file to create. It must not exist, its folder must, and the folder must be outside the target. The tool never replaces a file. |
-| `--repo-label LABEL` | The label in the file: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). |
+| `--repo-label LABEL` | The label in the file: up to 32 of `a` to `z`, `0` to `9`, dot, underscore and hyphen, starting with a letter or digit. Default: derived from the target's directory name, as in [Output files](../../audit/schema/SCHEMA.md#output-files). The audit recipe passes the label `report.py init` chose. |
 | `--exclude GLOB` | An extra path pattern to leave out of the inventory, spelled as `engine.py`'s is, so the facts describe the inventory the engine sees. Up to 10 are named in the file; the rest still apply. May be repeated. |
 | `--max-files N` | A cap on the files the walk inspects. Default: the engine's own cap. A walk the cap stops is `truncated`, which pushes the size class to `huge` whatever the count. |
 
