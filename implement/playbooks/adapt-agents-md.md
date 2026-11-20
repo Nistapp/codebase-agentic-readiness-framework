@@ -258,7 +258,7 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     with the link to the long form) and six numbered rules (5.2 to 5.7):
     - the reader: the persona the owner confirmed (Inputs 7);
     - bottom line first;
-    - plain language: short sentences (at most 25 words), active voice, one term per meaning;
+    - plain language: short sentences (at most 25 words; 20 in a step), active voice, one term per meaning;
     - form: choose the form from the content (numbered rules, tables, diagrams or alerts), and link the style
       guide's form rules;
     - reports: a status report (done, not done, blocked, next) and a done report (what changed, how it was checked,

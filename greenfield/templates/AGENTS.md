@@ -112,7 +112,7 @@ long form, with report layouts and decision requests, is
 
 5.3 **Bottom line first:** put the answer, the result or the decision you need in the first two lines.
 
-5.4 **Plain language:** short sentences (at most 25 words), active voice, one term per meaning.
+5.4 **Plain language:** short sentences (at most 25 words; 20 in a step), active voice, one term per meaning.
 
 5.5 **Form:** choose the form from the content: numbered rules, tables, diagrams or alerts
 (`docs/STYLE_GUIDE.md` §3.1).
