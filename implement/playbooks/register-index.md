@@ -180,7 +180,7 @@ No dependency is installed. Ask:
    coverage by instruction files" and "`CMD-01` Seven verbs resolvable on one runner" after the commit. If either
    verdict falls, revert the commit and tell the owner.
 7. **First-run offer ([Inputs](#inputs-to-ask) 5).** Only with `index.first_run_offer=yes`. Add a short section
-   to the target's docs, in the docs home T6 Docs and navigation chose, that holds the offer's steps:
+   with the offer's steps to the docs home that T6 Docs and navigation chose:
    1. Name your harness.
    2. If the record file says this harness was asked, stop.
    3. Check that the binary is on `PATH`.

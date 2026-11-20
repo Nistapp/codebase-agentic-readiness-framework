@@ -70,8 +70,8 @@ No tool is installed. Ask:
    its body falls out of the check if a later edit trims it below three lines, so when the heading has no trigger
    word, propose adding one (`## Security and safety: never`); the owner decides.
 2. **Which test directories.** Show the list from [Steps](#generic) step 2. Default: name each directory in its own code
-   span. For many nested test folders, offer one ignore-style pattern that covers them (a bare name such as `__tests__/`
-   covers that name at any depth); the owner picks.
+   span. For many nested test folders, offer one ignore-style pattern that covers them; the owner picks. A bare name
+   such as `__tests__/` covers that name at any depth.
 3. **Generated paths.** From the CON-04 draft and the build files: build output, generated clients, vendored code,
    lock files a tool regenerates. Ask which the owner wants named; a lock file is usually "regenerate with the tool,
    never edit by hand", not "never touch".

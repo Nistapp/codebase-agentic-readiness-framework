@@ -59,11 +59,11 @@ example, a framework) into its own `###`-level block rather than a new file, fol
 ## 3. Detected, not guessed
 
 The audit and implementation recipes run `tools/facts.py` before loading a profile (the audit recipe's
-[Stage 0](../SKILL.md#stage-0--intake) and [Stage 1](../SKILL.md#stage-1--recon) flow): the agent states what `facts.json` found, the user confirms or corrects it, and only then does the
-agent load `stacks/<id>.md` if one ships, or derive equivalent guidance from the check files and the
-greenfield TS/Node reference if it does not — telling the user which it is doing either way. A profile's
-Detection signals section exists so a reader can sanity-check that mapping, not so an agent re-scans the
-repository by hand.
+[Stage 0](../SKILL.md#stage-0--intake) and [Stage 1](../SKILL.md#stage-1--recon) flow). The agent states what
+`facts.json` found, and the user confirms or corrects it. Only then does the agent load `stacks/<id>.md` if one ships,
+or derive equivalent guidance from the check files and the greenfield TS/Node reference if it does not — telling the
+user which it is doing either way. A profile's Detection signals section exists so a reader can sanity-check that
+mapping, not so an agent re-scans the repository by hand.
 
 `facts.json`'s `stack.ecosystems` entries are the engine's own ids (`audit/stack.py`'s `ECOSYSTEM_SIGNALS`),
 which do not always spell a profile's filename:

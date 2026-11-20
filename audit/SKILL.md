@@ -186,9 +186,9 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      an `UNKNOWN` verdict often has none. Record each scope they miss with `report.py add-finding`, and
      every finding of a check you disputed or recorded fresh. Follow the check's `Absence proof` field for
      what a `FAIL` must cite.
-4. After each family, `report.py status <draft>` is cheap enough (at most 40 lines, per its
-   [reference](../docs/reference/tools-cli.md#status)) to call every time, not only to resume: its
-   `families_remaining` says exactly what is left before moving to the next one.
+4. After each family, call `report.py status <draft>`, not only to resume. It is cheap: at most 40 lines, per its
+   [reference](../docs/reference/tools-cli.md#status). Its `families_remaining` says what is left before the next
+   family.
 5. Stage 2 ends when `report.py status <draft>` shows `families_remaining` empty. Move to Stage 3 only
    then; do not synthesize over a draft that still has unrecorded checks.
 

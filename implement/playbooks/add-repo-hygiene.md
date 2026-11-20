@@ -161,7 +161,7 @@ the policy files, and for nothing else:
    - **No tool:** offer the keep-a-changelog skeleton from the template, one entry per release, and let the owner
      decide.
 
-   The release-process page (HYG-08) is a short document, not the long
+   The release-process page ("`HYG-08` Release process documented") is a short document, not the long
    [`RELEASE_PROCESS.md`](../../greenfield/templates/RELEASE_PROCESS.md) template. A workflow file named
    `release.yml` does not count; the check wants prose. It states: which tool opens release pull requests and tags,
    what a merge to the release branch triggers, how versions are decided (the commit or title convention), who

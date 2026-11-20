@@ -52,8 +52,8 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    second or the third when the owner wants each file beside the code that reads it. Record the choice as a
    preference. Ask also whether optional framework overrides (for example `QUARKUS_*`) are listed; the default is
    yes, marked optional, names only.
-2. **Tracked secret-bearing files.** For each path from [Steps](#generic) step 3, show the owner the path and the reason
-   it was flagged (never its content) and ask: untrack, keep as a documented exception, or skip. Only the owner can say
+2. **Tracked secret-bearing files.** Take each path from [Steps](#generic) step 3. Show the owner the path and the
+   reason it was flagged, never its content. Ask: untrack, keep as a documented exception, or skip. Only the owner can say
    a tracked local-development file holds throwaway values or must stay for developers' setup. A keep or a skip is
    recorded in the owner's words; a skip is final.
 3. **Scanner.** Detect what the repository already runs (a script that CI calls, a `.gitleaks.toml`, a
