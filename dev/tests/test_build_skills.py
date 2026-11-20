@@ -17,10 +17,13 @@ import io
 import json
 import os
 import re
+import shutil
+import stat
 import subprocess
 import sys
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from typing import Any, Sequence
 
@@ -413,6 +416,134 @@ class ImplementBundleRunsTests(unittest.TestCase):
             for bundle in envelope["data"]["bundles"]:
                 on_disk = sum(1 for p in Path(bundle["bundle"]).rglob("*") if p.is_file())
                 self.assertEqual(bundle["files"], on_disk)
+
+
+def tree_bytes(root: Path) -> dict[str, bytes]:
+    """Every file under `root`, by its POSIX path relative to `root`, with its bytes."""
+    return {p.relative_to(root).as_posix(): p.read_bytes() for p in root.rglob("*") if p.is_file()}
+
+
+class ArchiveTests(unittest.TestCase):
+    """`--archive DIR --tag TAG`: the release zips are byte-reproducible and unpack to the bundle folders."""
+
+    TAG = "v9.8.7"
+    _tmp: tempfile.TemporaryDirectory[str]
+    tmp: Path
+    envelope: dict[str, Any]
+    zips: dict[str, bytes]
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._tmp = tempfile.TemporaryDirectory()
+        cls.tmp = Path(cls._tmp.name)
+        code, envelope, err = call(
+            ["--out-dir", str(cls.tmp / "skills"), "--archive", str(cls.tmp / "first"), "--tag", cls.TAG]
+        )
+        assert code == 0, err
+        cls.envelope = envelope
+        cls.zips = {
+            name: (cls.tmp / "first" / bs.archive_name(name, cls.TAG)).read_bytes()
+            for name in (bs.BUNDLE_NAME, bs.IMPLEMENT_BUNDLE_NAME)
+        }
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._tmp.cleanup()
+
+    def test_handler_reports_each_archive_under_its_release_name(self) -> None:
+        archives = [Path(b["archive"]).name for b in self.envelope["data"]["bundles"]]
+        self.assertEqual(
+            archives, [f"agentic-readiness-audit-{self.TAG}.zip", f"agentic-readiness-implement-{self.TAG}.zip"]
+        )
+
+    def test_a_second_build_gives_the_same_bytes(self) -> None:
+        argv = ["--out-dir", str(self.tmp / "skills2"), "--archive", str(self.tmp / "second"), "--tag", self.TAG]
+        code, _, err = call(argv)
+        self.assertEqual(code, 0, err)
+        for name, first in self.zips.items():
+            second = (self.tmp / "second" / bs.archive_name(name, self.TAG)).read_bytes()
+            self.assertEqual(first, second, name)
+
+    def test_touching_every_mtime_and_mode_in_a_bundle_changes_no_byte(self) -> None:
+        # A copy of each bundle with every mtime moved and every file's mode narrowed, as another host or umask would
+        # leave it: the zip of it is still the first build's, byte for byte.
+        later = 2_000_000_000
+        for name, first in self.zips.items():
+            bundle = self.tmp / "touched" / name
+            shutil.copytree(self.tmp / "skills" / name, bundle)
+            for path in [*bundle.rglob("*"), bundle]:
+                if path.is_file():
+                    path.chmod(0o600)
+                os.utime(path, (later, later))
+            again = bs.write_archive(bundle, self.tmp / "touched" / bs.archive_name(name, self.TAG)).read_bytes()
+            self.assertEqual(first, again, name)
+
+    def test_entries_are_sorted_with_fixed_timestamp_and_permissions(self) -> None:
+        for name, data in self.zips.items():
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                infos = zf.infolist()
+            names = [i.filename for i in infos]
+            self.assertEqual(names[0], f"{name}/")
+            self.assertEqual(names, sorted(names, key=lambda n: n.rstrip("/").split("/")), name)
+            self.assertTrue(all(n.startswith(f"{name}/") for n in names), name)
+            for info in infos:
+                self.assertEqual(info.date_time, bs.ARCHIVE_DATE_TIME, info.filename)
+                self.assertEqual(info.create_system, 3, info.filename)
+                self.assertEqual(info.extra, b"", info.filename)
+                mode = info.external_attr >> 16
+                if info.is_dir():
+                    self.assertEqual(mode, stat.S_IFDIR | 0o755, info.filename)
+                    self.assertEqual(info.compress_type, zipfile.ZIP_STORED, info.filename)
+                else:
+                    self.assertEqual(mode, stat.S_IFREG | 0o644, info.filename)
+                    self.assertEqual(info.compress_type, zipfile.ZIP_DEFLATED, info.filename)
+
+    def test_each_zip_unpacks_to_the_bundle_folder(self) -> None:
+        for name, data in self.zips.items():
+            out = self.tmp / "unpacked" / name
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                zf.extractall(out)
+            self.assertEqual(tree_bytes(out / name), tree_bytes(self.tmp / "skills" / name), name)
+
+    def test_archive_ignores_creation_order_mtimes_and_permissions_but_keeps_the_exec_bit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            built = []
+            variants = (
+                ("a", ("b.txt", "a.txt"), 1_000_000_000, 0o600),
+                ("b", ("a.txt", "b.txt"), 1_700_000_000, 0o664),
+            )
+            for label, order, when, file_mode in variants:
+                bundle = Path(tmp) / label / "bundle"
+                (bundle / "sub").mkdir(parents=True)
+                for file in order:
+                    (bundle / file).write_text(file, encoding="utf-8")
+                    (bundle / file).chmod(file_mode)
+                tool = bundle / "sub" / "run.sh"
+                tool.write_text("#!/bin/sh\n", encoding="utf-8")
+                tool.chmod(0o700)
+                for path in [*bundle.rglob("*"), bundle]:
+                    os.utime(path, (when, when))
+                built.append(bs.write_archive(bundle, Path(tmp) / label / "bundle.zip").read_bytes())
+            self.assertEqual(built[0], built[1])
+            with zipfile.ZipFile(io.BytesIO(built[0])) as zf:
+                self.assertEqual(
+                    [i.filename for i in zf.infolist()],
+                    ["bundle/", "bundle/a.txt", "bundle/b.txt", "bundle/sub/", "bundle/sub/run.sh"],
+                )
+                self.assertEqual(zf.getinfo("bundle/sub/run.sh").external_attr >> 16, stat.S_IFREG | 0o755)
+                self.assertEqual(zf.getinfo("bundle/a.txt").external_attr >> 16, stat.S_IFREG | 0o644)
+
+    def test_archive_and_tag_go_together(self) -> None:
+        for argv in (["--archive", str(self.tmp / "x")], ["--tag", self.TAG]):
+            code, envelope, _ = call(argv)
+            self.assertEqual(code, 1, argv)
+            self.assertFalse(envelope["ok"])
+
+    def test_a_tag_that_is_not_one_file_name_part_is_refused(self) -> None:
+        for tag in ("../v1", "v1/x", ".hidden", ""):
+            code, _, _ = call(["--archive", str(self.tmp / "x"), "--tag", tag])
+            self.assertEqual(code, 1, tag)
+        self.assertFalse((self.tmp / "x").exists())
 
 
 if __name__ == "__main__":
