@@ -312,10 +312,15 @@ Engine           `AGT-08`. Classifies every instruction-shaped path the variant 
                  holding "read by" or "supported harnesses" and the name of at least one known harness
                  (`This file is read by Claude Code, Codex and Cursor.`). The engine takes that line as given
                  and cites it in the summary; it does not check that each named harness loads the file. No
-                 findings at all is `PASS`. Distrust a competitor finding when
-                 the vendor file is a deliberate, documented one-line pointer at the canonical file (A14
-                 accepts a pointer; it is only a true competitor when it carries independent rules) —
-                 verify by reading the vendor file's content, not just its presence. A path that a
+                 findings at all is `PASS`. With a root `AGENTS.md`, the engine reads each vendor file. A
+                 pointer is a file of at most five content lines (headings, blank lines and HTML comments
+                 left out), each naming `AGENTS.md` (`@AGENTS.md`, "See AGENTS.md"). A pointer is neither
+                 a competitor nor the winner of a shadowed pair, and still gives its harness its reach. A
+                 file that imports `@AGENTS.md` beside rules of its own shadows nothing, but is still a
+                 competitor. The summary names both kinds. Distrust a competitor finding when the vendor
+                 file is a deliberate, documented pointer the engine's test misses (A14 accepts a pointer;
+                 it is only a true competitor when it carries independent rules). Verify by reading the
+                 vendor file's content, not just its presence. A path that a
                  harness loads only through its config (Aider's `CONVENTIONS.md`, named in
                  `.aider.conf.yml`) counts only when that config file exists; without it, the file is an
                  ordinary document.

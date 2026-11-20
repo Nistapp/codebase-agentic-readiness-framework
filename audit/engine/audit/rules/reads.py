@@ -410,12 +410,16 @@ READS: dict[str, Reads] = {
                 "read by",
                 "supported harness",
                 "supported harnesses",
+                "AGENTS.md",
+                "@AGENTS.md",
             ),
         ),
         binding="line",
         note=(
             "The instruction-file set of AGT-01 gives the competitors and the reach. The statement is read in"
-            " the root AGENTS.md only, never CLAUDE.md, and needs a known harness name on the same line."
+            " the root AGENTS.md only, never CLAUDE.md, and needs a known harness name on the same line. With a root"
+            " AGENTS.md, each vendor file is read too: one whose few content lines all name AGENTS.md is a pointer,"
+            " not a competitor, and one that imports @AGENTS.md shadows nothing."
         ),
     ),
     "AGT-09": Reads(

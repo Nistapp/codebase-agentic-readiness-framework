@@ -390,6 +390,40 @@ class Agt08Tests(unittest.TestCase):
                     finding.statement,
                 )
 
+    def test_a_claude_md_that_only_imports_agents_md_is_a_pointer_not_a_competitor_or_a_shadow(self):
+        stated = BODY + "This file is read by Claude Code, Codex and Cursor.\n"
+        for stub in ("@AGENTS.md\n", "# CLAUDE.md\n\nSee AGENTS.md.\n", "<!-- note -->\n@./AGENTS.md\n"):
+            with self.subTest(stub=stub):
+                report = audit({"AGENTS.md": stated, "CLAUDE.md": stub})
+                check = check_of(report, "AGT-08")
+                self.assertEqual(findings_of(report, "AGT-08"), [])
+                self.assertEqual(check["verdict"], "PASS")
+                self.assertIn("pointer files at AGENTS.md, not competitors: CLAUDE.md", check["summary"])
+                self.assertIn("Anthropic Claude Code", check["data"]["reached_tools"])
+
+    def test_a_claude_md_that_imports_agents_md_beside_its_own_rules_competes_but_shadows_nothing(self):
+        report = audit({"AGENTS.md": BODY, "CLAUDE.md": "@AGENTS.md\n\n" + BODY})
+        ids = [f["id"] for f in findings_of(report, "AGT-08")]
+        self.assertIn("AGT-08:vendor-files", ids)
+        self.assertNotIn("AGT-08:CLAUDE.md>AGENTS.md", ids)
+        self.assertIn("files that import @AGENTS.md, so shadow nothing: CLAUDE.md", check_of(report, "AGT-08")["summary"])
+
+    def test_a_pointer_with_no_root_agents_md_is_still_a_vendor_file(self):
+        report = audit({"CLAUDE.md": "@AGENTS.md\n"})
+        self.assertIn("AGT-08:vendor-files", [f["id"] for f in findings_of(report, "AGT-08")])
+
+    def test_a_pointer_is_short_and_names_agents_md_on_every_line(self):
+        from audit.rules.checks.agt import imports_agents_md, is_agents_md_pointer
+
+        self.assertTrue(is_agents_md_pointer("@AGENTS.md"))
+        self.assertTrue(is_agents_md_pointer("Read ../AGENTS.md first.\n"))
+        self.assertFalse(is_agents_md_pointer(""))
+        self.assertFalse(is_agents_md_pointer("See AGENTS.md.\nAlways run the tests.\n"))
+        self.assertFalse(is_agents_md_pointer("AGENTS.md\n" * 6))
+        self.assertTrue(imports_agents_md("Rules: see @AGENTS.md and more."))
+        self.assertFalse(imports_agents_md("mail me@AGENTS.md"))
+        self.assertFalse(imports_agents_md("`@AGENTS.md` is the import syntax"))
+
     def test_a_verdict_is_pass_with_no_finding_fail_with_a_fail_and_partial_otherwise(self):
         self.assertEqual(check_of(audit({"README.md": "x\n"}), "AGT-08")["verdict"], "PASS")
         self.assertEqual(check_of(audit({"AGENTS.md": BODY}), "AGT-08")["verdict"], "PARTIAL")

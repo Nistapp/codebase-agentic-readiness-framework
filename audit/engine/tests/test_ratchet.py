@@ -81,7 +81,8 @@ class RatchetTests(unittest.TestCase):
             agt_08 = {f["id"] for f in json.loads(baseline.read_text())["findings"] if f["check"] == "AGT-08"}
             self.assertEqual(agt_08, {"AGT-08:harness-reach"})
 
-            support.write(target, "CLAUDE.md", "# Claude\n\nSee AGENTS.md.\n")
+            # A CLAUDE.md with rules of its own: a bare pointer at AGENTS.md is neither a competitor nor a shadow.
+            support.write(target, "CLAUDE.md", "# Claude\n\nSee AGENTS.md.\n\nAlways run the linter before you commit.\n")
             current = out_dir / "current.json"
             proc, _ = support.run_audit_process(target, out=current, extra_args=("--baseline", str(baseline)))
             self.assertEqual(proc.returncode, 2, proc.stderr)
