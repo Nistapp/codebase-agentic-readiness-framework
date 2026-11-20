@@ -24,7 +24,9 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   ``api_key``) counts only when what it is assigned is a literal: a quoted string that is not a reference
   to the environment or a secret store (``os.environ/NAME``, ``${NAME}``, ``{{ secrets.NAME }}``), or,
   outside source code, a single plain unquoted token. In source code an unquoted value is a name or an
-  expression (``token = match.group(1) or x``), never a literal.
+  expression (``token = match.group(1) or x``), never a literal. The keyword may end a compound name
+  (``DB_PASSWORD``); a properties or env-style file counts a short value (6 characters, not 12); a token that
+  names itself a sentinel (``Bearer sanity.check.invalid``) and a badge URL's public token do not count.
 * **SEC-03** — ignore rules must cover a documented set of key/certificate/credential shapes
   (:data:`_SECRET_SHAPES`). Every required shape covered is `PASS`; some is `PARTIAL`; none is
   `FAIL`. The covered labels are stated in `detail`.
@@ -291,8 +293,28 @@ def check_sec01(*, spec, target, inventory, stack, components, session) -> Check
 #: The keyword-assignment redaction pattern is the one that can over-fire: `id-token: write` in a CI
 #: workflow is a permission, not a credential. The purely shape-based patterns (sk-, ghp_, AKIA,
 #: BEGIN PRIVATE KEY, Bearer) are unambiguous and always fire.
-_KEYWORD_PATTERN = next(p for p in REDACTION_PATTERNS if "api" in p.pattern)
-_SHAPE_PATTERNS = tuple(p for p in REDACTION_PATTERNS if p is not _KEYWORD_PATTERN)
+_REDACTION_KEYWORD = next(p for p in REDACTION_PATTERNS if "api" in p.pattern)
+_SHAPE_PATTERNS = tuple(p for p in REDACTION_PATTERNS if p is not _REDACTION_KEYWORD)
+#: SEC-02's keyword pattern reads the redaction keywords as the last part of a compound name too:
+#: ``DB_PASSWORD``, ``JWT_SECRET``, ``AUTH_TOKEN``, ``SECRET_KEY`` and ``AWS_SECRET_ACCESS_KEY``, which env-style
+#: files and properties files use. ``\b`` alone missed them, because ``_`` is a word character. The keyword
+#: must still be what is assigned, so ``TOKEN_URL=`` and ``password.min-length=`` are not credentials.
+_KEYWORD_PATTERN = re.compile(
+    r"(?i)(?:\b|(?<=_))(api[_-]?key|secret|token|password|passwd|pwd)(?:[_-]?(?:access[_-]?)?key)?\s*[:=]"
+)
+#: A token body that says it is not a credential: ``Bearer sanity.check.invalid`` in a test that asserts a 401.
+_SENTINEL_RE = re.compile(r"(?i)invalid|example|dummy|placeholder|changeme|fake|sample|bogus|redacted|notreal")
+#: A badge or shield image URL. Its ``?token=`` is a public read token for the badge, not a credential.
+_BADGE_URL_RE = re.compile(r"""(?i)https?://[^\s"'<>()]*(?:badge|shields\.io)[^\s"'<>()]*""")
+#: The redaction Bearer shape, and the same shape with its body captured so the body can be tested for a sentinel.
+_BEARER_SHAPE = next(p for p in _SHAPE_PATTERNS if "Bearer" in p.pattern)
+_BEARER_RE = re.compile(r"(?i)\bBearer\s+([A-Za-z0-9._\-]{16,})")
+#: Files whose values are plain configuration (``key=value``): a properties file and an env-style file. A short
+#: password there is still a password, so the length floor drops from 12 to 6. Commented-out lines count too:
+#: ``# DB_PASSWORD=...`` is a credential kept in the file.
+_SHORT_VALUE_SUFFIXES = (".properties", ".env")
+_MIN_SECRET_LEN = 12
+_MIN_SECRET_LEN_CONFIG = 6
 
 #: What a keyword assignment assigns: the rest of the line after ``:``, ``=`` or ``:=``.
 _ASSIGNED_VALUE_RE = re.compile(r"(?::=|[:=])\s*(.*)$")
@@ -331,14 +353,15 @@ _CODE_SUFFIXES = (
 )
 
 
-def _looks_secret_value(raw: str, *, in_code: bool = False) -> bool:
+def _looks_secret_value(raw: str, *, in_code: bool = False, min_len: int = _MIN_SECRET_LEN) -> bool:
     """A deterministic guard for the keyword pattern: is what the keyword is assigned a credential?
 
     A credential is a literal. A quoted string is one unless it is a reference to a secret store or the
     environment. An unquoted value is one only in configuration, a script or a document, where it is a single
     plain token: in source code it is a name or an expression (``token = match.group(1) or x``), never a
-    literal. A literal is long (12 characters or more) and mixes in a capital, a digit or a symbol, which a
-    CI permission such as ``id-token: write`` and a bare word are not.
+    literal. A literal is long (``min_len`` characters or more: 12, or 6 in a properties or env-style file) and
+    mixes in a capital, a digit or a symbol, which a CI permission such as ``id-token: write`` and a bare word
+    are not. A literal that names itself a sentinel (``invalid``, ``dummy``, ``fake``) is not a credential.
     """
     value = raw.strip()
     prefix = _STRING_PREFIX_RE.match(value)
@@ -360,19 +383,33 @@ def _looks_secret_value(raw: str, *, in_code: bool = False) -> bool:
         if any(char in literal for char in "()[]"):
             return False
     literal = literal.strip()
-    if _REFERENCE_RE.match(literal) or len(literal) < 12:
+    if _REFERENCE_RE.match(literal) or len(literal) < min_len or _SENTINEL_RE.search(literal):
         return False
     return bool(_SECRET_VALUE_CHARSET_RE.search(literal))
 
 
-def _line_is_secret(line: str, *, in_code: bool = False) -> bool:
-    if any(pattern.search(line) for pattern in _SHAPE_PATTERNS):
+def _is_short_value_file(rel: str) -> bool:
+    """A properties file or an env-style file (``.env``, ``.env.local``, ``prod.env``): plain ``key=value``."""
+    base = rel.rsplit("/", 1)[-1]
+    return base.endswith(_SHORT_VALUE_SUFFIXES) or base == ".env" or base.startswith(".env.")
+
+
+def _shape_hit(line: str) -> bool:
+    """An unambiguous credential shape. A Bearer token whose body names itself a sentinel is not one."""
+    if any(pattern.search(line) for pattern in _SHAPE_PATTERNS if pattern is not _BEARER_SHAPE):
         return True
-    match = _KEYWORD_PATTERN.search(line)
-    if not match:
-        return False
-    assignment = _ASSIGNED_VALUE_RE.search(line, match.start(1))
-    return bool(assignment) and _looks_secret_value(assignment.group(1), in_code=in_code)
+    return any(not _SENTINEL_RE.search(match.group(1)) for match in _BEARER_RE.finditer(line))
+
+
+def _line_is_secret(line: str, *, in_code: bool = False, min_len: int = _MIN_SECRET_LEN) -> bool:
+    line = _BADGE_URL_RE.sub(" ", line)
+    if _shape_hit(line):
+        return True
+    for match in _KEYWORD_PATTERN.finditer(line):
+        assignment = _ASSIGNED_VALUE_RE.search(line, match.start(1))
+        if assignment and _looks_secret_value(assignment.group(1), in_code=in_code, min_len=min_len):
+            return True
+    return False
 
 
 def _scan_secrets_allowlisted(
@@ -395,8 +432,9 @@ def _scan_secrets_allowlisted(
         if not text:
             continue
         in_code = rel.endswith(_CODE_SUFFIXES)
+        min_len = _MIN_SECRET_LEN_CONFIG if _is_short_value_file(rel) else _MIN_SECRET_LEN
         for line_no, line in enumerate(text.splitlines(), start=1):
-            if not _line_is_secret(line, in_code=in_code):
+            if not _line_is_secret(line, in_code=in_code, min_len=min_len):
                 continue
             if _PLACEHOLDER_RE.search(line):
                 continue
