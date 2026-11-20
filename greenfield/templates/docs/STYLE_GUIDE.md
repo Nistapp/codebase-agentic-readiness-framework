@@ -154,8 +154,8 @@ delete one: [`ADR_POLICY.md`](ADR_POLICY.md).
 ## 8. Plain Language
 
 Write for the reader that [`AGENTS.md`](../AGENTS.md) §5 names. These rules come from ASD-STE100 (Simplified
-Technical English), without its fixed word list: technical names are fine. The audit check `DOC-05` measures
-rules 2 and 6 over every page under `docs/`.
+Technical English), without its fixed word list: technical names are fine. The audit check `DOC-05` docs are
+readable measures rules 2 and 6 over every page under `docs/`.
 
 1. **Bottom line first.** Put the answer, the result or the decision in the first two lines.
 2. **Short sentences.** At most 20 words in a step of a procedure. At most 25 words in other text.

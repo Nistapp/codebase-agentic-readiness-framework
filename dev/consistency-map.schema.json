@@ -251,6 +251,7 @@
             "exact",
             "base-name",
             "glob",
+            "folder-name",
             "substring"
           ]
         },

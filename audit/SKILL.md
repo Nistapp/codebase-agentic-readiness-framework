@@ -21,7 +21,7 @@ implementation recipe's job (`implement/SKILL.md`).
 These apply through every stage, without exception:
 
 - **Read-only against the target.** The audit never writes inside the repository it is assessing. Every
-  tool below refuses an output path inside the target on its own, but say so to the user too.
+  [tool below](#tools) refuses an output path inside the target on its own, but say so to the user too.
 - **Writes go only to the output directory** the intake names, outside the target.
 - **Cite evidence for every verdict.** A check or finding with nothing in `evidence[]` or `searches[]` is
   not a verdict, it is a guess.
@@ -74,8 +74,10 @@ Stage 2 works through the catalogue's thirteen families in order: `IDX`, `AGT`, 
 listed in [`audit/checks/README.md`](checks/README.md). Read that file's anatomy once, before the first
 family: a check file's `Evidence to cite` and `Absence proof` fields describe what belongs in the report,
 not the exact JSON shape — `Absence proof`'s "glob search" or "grep search" wording names a `searches[]`
-entry (`search.tool`), not `evidence[]` (whose `kind` is only `file`, `command` or `index_query`); the
-README's §6 spells this out, and `add-check`/`add-finding` refuse the wrong shape at exit `2`.
+entry (`search.tool`), not `evidence[]` (whose `kind` is only `file`, `command` or `index_query`). The
+README's [§4](checks/README.md#4-a-fail-lists-its-absence-searches) and
+[§7](checks/README.md#7-how-a-verdict-is-recorded) spell this out, and `add-check`/`add-finding` refuse the wrong
+shape at exit `2`.
 
 At the end of each stage, send the person a [status report](prompts/talking-to-the-user.md#status-report).
 The last message of the run is a [done report](prompts/talking-to-the-user.md#done-report-and-pull-request-description).
@@ -121,7 +123,7 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      recipe keeps its state beside the final report there. Ask the person to keep the folder until the
      implement run ends, because the run's skips and preferences live only there.
 4. Write the answers as an intake file matching the schema.
-5. Call `report.py init <intake>` (see the tool table below). Read `data.draft`, `data.label`, `data.target`
+5. Call `report.py init <intake>` (see the [tool table](#tools) below). Read `data.draft`, `data.label`, `data.target`
    and the warnings, and tell the user the draft's path before moving to Stage 1. Pass `data.label` as
    `--repo-label` to `facts.py` and `engine.py`, so every file of the run carries one label.
 
@@ -140,7 +142,7 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    `list_projects`) to corroborate the facts — index first, grep second — and never let an unverified
    grep outrank `facts.json`'s own counts, which a tool produced.
 4. Unless this is an eval-mode run, write the plan — the stack profile chosen, the thirteen families in
-   the order above, what is excluded, and which probes (if any) will run — to `run-plan.md` beside the
+   the [order above](#stages), what is excluded, and which probes (if any) will run — to `run-plan.md` beside the
    draft in the output directory, and tell the person its path before asking them to approve or edit it.
    A plan that lives only in chat is easy to lose once Stage 2 is under way; the file is not part of the
    report and `report.py` never reads it. In an unattended session, with no one to answer, write the file,
@@ -153,7 +155,8 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    `--allow-probe` (with `--run-gates` only when at least one was named), passing the same `--exclude` paths
    the intake recorded (as Stage 1 step 1 already did for `facts.py`, so the engine scans the same inventory
    the facts describe), and passing `--emit-baseline` — this engine run is the only one for this draft, so it
-   is also the one chance to have the engine write `do-not-do.draft.md` for CON-04 (D51). `--no-user-config`
+   is also the one chance to have the engine write `do-not-do.draft.md` for "`CON-04` Draft allow/deny emitted"
+   ([its Pitfalls](checks/08-constraints.md#con-04--draft-allowdeny-emitted)). `--no-user-config`
    is always passed: it keeps the engine from reading the machine's own `$HOME` configuration, so the verdicts
    describe the repository and not this host (the report's `provenance.user_config` records it). Read
    `data.report` and `data.baseline_draft`, and tell the user both paths and any warning before moving on.
@@ -162,7 +165,7 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    what to do when it refuses. Read `data.checks_imported`, `findings_pending` and `evidence_not_carried`,
    and tell the user, in plain words, what the import carried over and what it cut or dropped; the tool
    reports the counts, the model explains what they mean.
-3. Work through the thirteen families in the order above. For each, load its check file
+3. Work through the thirteen families in the [order above](#stages). For each, load its check file
    (`audit/checks/NN-*.md`) and go check by check, in catalogue order:
    - **An automated check already in the draft** (every check `import-engine` carried). Read its
      `Engine` field. Verify independently whenever the severity is `BLOCKER`, or whenever the field's
@@ -183,8 +186,9 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      an `UNKNOWN` verdict often has none. Record each scope they miss with `report.py add-finding`, and
      every finding of a check you disputed or recorded fresh. Follow the check's `Absence proof` field for
      what a `FAIL` must cite.
-4. After each family, `report.py status <draft>` is cheap enough (at most 40 lines) to call every time,
-   not only to resume: its `families_remaining` says exactly what is left before moving to the next one.
+4. After each family, call `report.py status <draft>`, not only to resume. It is cheap: at most 40 lines, per its
+   [reference](../docs/reference/tools-cli.md#status). Its `families_remaining` says what is left before the next
+   family.
 5. Stage 2 ends when `report.py status <draft>` shows `families_remaining` empty. Move to Stage 3 only
    then; do not synthesize over a draft that still has unrecorded checks.
 

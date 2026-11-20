@@ -1,7 +1,7 @@
 # Python
 
 > Follows the anatomy in [`README.md`](README.md). Covers pip, uv and poetry. `shipped`, per
-> `run_context.stack_profile` (DP §5.6).
+> `run_context.stack_profile` ([§4 Shipped versus derived](README.md#4-shipped-versus-derived)).
 
 ---
 
@@ -9,13 +9,14 @@
 
 `facts.json`'s `stack` section reads `ecosystems: ["python"]` from `pyproject.toml`, `setup.py`,
 `requirements*.txt` or `Pipfile` anywhere in the tree. With none of those present, it reads it from a
-bare `.py` source file alone (D29 item 9). That case is `source_only`, and several checks below treat it
-differently from a manifest-bearing project, never as a false `PASS`. `package_managers` reads each
-tool's own file anywhere in the tree: `requirements*.txt` (the same glob that names the ecosystem) → pip,
-`poetry.lock` → poetry, `uv.lock` → uv, `Pipfile.lock` → pipenv, `pdm.lock` → pdm. A lockfile alone
-does not name the ecosystem. A plain `pip` project pinned only by `requirements.txt` still has no lockfile
-(`requirements.txt` is a manifest, not a lock, by the
-engine's own "manifest-as-lock" exclusion — see Pitfalls).
+bare `.py` source file alone (the engine's
+[stack detection](../engine/docs/architecture/contributor-deep-dive/01-scan-engine-and-tiering.md#4-stack--layout-detection)
+table). That case is `source_only`, and several checks below treat it differently from a manifest-bearing
+project, never as a false `PASS`. `package_managers` reads each tool's own file anywhere in the tree:
+`requirements*.txt` (the same glob that names the ecosystem) → pip, `poetry.lock` → poetry, `uv.lock` → uv,
+`Pipfile.lock` → pipenv, `pdm.lock` → pdm. A lockfile alone does not name the ecosystem. A plain `pip`
+project pinned only by `requirements.txt` still has no lockfile (`requirements.txt` is a manifest, not a lock,
+by the engine's own "manifest-as-lock" exclusion — see Pitfalls).
 
 ## Command-surface map
 
@@ -92,8 +93,8 @@ documents its commands in prose (a README) instead, which the engine cannot cred
 — a plain `requirements.txt` project reads `FAIL` naming `poetry.lock`/`uv.lock`/`Pipfile.lock`/`pdm.lock` as the
 missing file, accurate ("no lockfile exists") but worth explaining to a user expecting its own manifest
 to count. A tracked `pdm.lock` counts, and its package names are compared with the manifest, as for
-`poetry.lock` and `uv.lock`. A `source_only` repository (D29 item 9:
-Python recognised from a bare `.py` file, no manifest at all) reads `EXEC-02` `UNKNOWN`, correctly, since no
+`poetry.lock` and `uv.lock`. A `source_only` repository
+(Python recognised from a bare `.py` file, no manifest at all) reads `EXEC-02` `UNKNOWN`, correctly, since no
 dependency is declared to lock.
 
 ## Pitfalls
@@ -114,6 +115,6 @@ via `git ls-files` only, never opened, per the root `AGENTS.md` rule — and is 
 §10 pin): no `pyproject.toml`/`setup.py`/`requirements*.txt`/`Pipfile`/`Makefile`/CI workflow anywhere in
 the tree — a genuine `source_only` Python project, not a pip/uv/poetry one, so the pip/uv/poetry
 conventions above are read from the engine's own source (`audit/rules/checks/tool.py`, `execution.py`,
-`_common.py`) and D29 item 9's changelog entry, not exercised against a manifest-bearing repository —
+`_common.py`) and its rule for a bare `.py` file, not exercised against a manifest-bearing repository —
 that remains to do once one joins the corpus. Read via direct inspection of the checkout (`git ls-files`,
 the root listing, `README.md`); no target command was run and `.env` was not opened.

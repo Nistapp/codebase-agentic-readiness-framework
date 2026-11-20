@@ -30,7 +30,7 @@ Pitfalls         known false positives / false negatives
 value the catalogue does not already carry, so the recipe linter's check, requirement and playbook
 references stay meaningful.
 
-## 2. Two fields beyond DP §5.2
+## 2. The Engine and Method fields
 
 - **Engine.** Every engine check (`method: automated`) names its engine ID, what that check reads inside
   the target, the condition under which its verdict should be distrusted (stale index, a tool the engine
@@ -44,7 +44,7 @@ references stay meaningful.
 
 A rubric names what is counted, measured or matched — a file that exists, a pattern that is present, a
 number compared against a stated limit — never an adjective ("reasonable", "sufficient", "clear"). This is
-the rubric's job as the lever for consistency across models (DP §5.2): two readings of the same repository
+the rubric's job as the lever for consistency across models: two readings of the same repository
 against the same rubric text should reach the same verdict.
 
 ## 4. A FAIL lists its absence searches
@@ -58,9 +58,10 @@ distinguishable from a verdict reached by not looking, so the absence proof is n
 
 Each file is this folder's single source for its family: `04-command-surface.md` holds every `CMD-*`
 check, nothing is duplicated across two files, and a check that moves families is a rename of its section,
-not a copy. The recipe linter's size rule (500 lines, shared with `SKILL.md`, D46) applies to each file, so
-a family that outgrows the budget splits by check number into two files (S3.3.5 does this for `HYG`), each
-still following this anatomy.
+not a copy. The recipe linter's size rule ([`LINE_BUDGET`](../../dev/recipe_lint.py), 500 lines, shared with
+`SKILL.md`, because an agent loads the whole file at once) applies to each file, so a family that outgrows the
+budget splits by check number into two files (`AGT` does this: `02-agent-governance.md` and
+`02-agent-governance-2.md`), each still following this anatomy.
 
 ## 6. What counts as the repository
 

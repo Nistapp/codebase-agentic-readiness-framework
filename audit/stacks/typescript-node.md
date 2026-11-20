@@ -1,8 +1,9 @@
 # TypeScript and Node
 
 > Follows the anatomy in [`README.md`](README.md). Covers npm, pnpm and Yarn on Node; a framework
-> section (NestJS) is added under its own heading, not a separate file (§1 there). `shipped`, per
-> `run_context.stack_profile` (DP §5.6).
+> section (NestJS) is added under its own heading, not a separate file (the README's
+> [scope note](README.md#stack-profiles)). `shipped`, per `run_context.stack_profile`
+> ([§4 Shipped versus derived](README.md#4-shipped-versus-derived)).
 
 ---
 

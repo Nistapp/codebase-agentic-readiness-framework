@@ -246,6 +246,10 @@ class NamesTest(unittest.TestCase):
         self.assertTrue(
             name_matches({"pattern": "branch-protection", "match": "substring"}, "docs/branch-protection.md")
         )
+        folder = {"pattern": "dist", "match": "folder-name", "ignore_case": True}
+        self.assertTrue(name_matches(folder, "pkg/Dist/app.js"))
+        self.assertFalse(name_matches(folder, "redist/app.js"))
+        self.assertFalse(name_matches(folder, "src/dist"))
 
 
 class MovesTest(unittest.TestCase):

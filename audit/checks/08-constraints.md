@@ -195,9 +195,9 @@ Absence proof    Not applicable — this check never records a FAIL, so no absen
 Remediation      none — `CON-04` is itself a remediation input, not a defect with a fix. Its draft is
                  `add-deny-rules`'s deterministic starting point, not something `add-deny-rules` fixes
                  on this check's behalf.
-Pitfalls         **Settled as D51.** The recipe's own launcher, `tools/engine.py`, accepts
+Pitfalls         **Settled.** The recipe's own launcher, `tools/engine.py`, accepts
                  `--emit-baseline` and forwards it to the engine, so a run that asks for it writes
-                 `do-not-do.draft.md` for `add-deny-rules` (drafted in IR10.1) to read; without the flag
+                 `do-not-do.draft.md` for the `add-deny-rules` playbook to read; without the flag
                  `CON-04` reports `UNKNOWN` ("draft not emitted"). Rejected: the facts tool (`facts.py`
                  never runs the engine, and the draft needs the engine's own category scan, not a second one) and
                  having the model write the candidate list itself (decision 0001's own "Alternatives

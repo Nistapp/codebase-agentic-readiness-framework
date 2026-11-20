@@ -37,7 +37,9 @@ from the inventory, so the rule that ignores the directory is not read.
    parents are already decided. A file git tracks is never skipped by a rule. The walk enters an ignored
    directory only when git tracks a file in it. There it reads only the tracked files. `Inventory.ignored_dirs`
    names each directory it did not enter, and the report lists them. `HARD_EXCLUDE_DIRS` and `--exclude` still
-   apply to tracked files. When git cannot report the tracked set, the rules alone decide.
+   apply to tracked files, except `dist/` and `build/` (`TRACKED_ONLY_DIRS`): the walk enters them to reach the
+   files git tracks, and only those, so `EXEC-05` and `NAV-03` see committed build output. When git cannot report
+   the tracked set, the rules alone decide and every `HARD_EXCLUDE_DIRS` folder stays out.
 5. **Which nested files the checks read.** `scoped_rules` (`audit/rules/checks/_common.py`) takes the nested
    `.gitignore` files in the inventory and the ones git tracks. The tracked ones are read even under `--exclude`: the
    operator took a directory's files out of the evidence, not the rule that decides whether the directory is
@@ -83,5 +85,5 @@ from the inventory, so the rule that ignores the directory is not read.
   that change carried its own ruleset revision.
 * Only the documented subset is interpreted: no `\` escapes beyond `\#` and `\!`, no character-class ranges beyond
   what `re` reads, no core.excludesFile or `.git/info/exclude`. A rule outside the subset reads as no match.
-* A tracked file under a `HARD_EXCLUDE_DIRS` name (`dist/`, `vendor/`) is still not walked, so `EXEC-05` does not
-  see committed build output there.
+* A tracked file under another `HARD_EXCLUDE_DIRS` name (`vendor/`, `node_modules/`, `target/`) is not walked.
+  `EXEC-05` does not see a committed `target/` or a vendored tree.
