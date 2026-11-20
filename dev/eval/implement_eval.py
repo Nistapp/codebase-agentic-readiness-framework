@@ -417,17 +417,31 @@ def snapshot(dest: Path, variant: str = "base") -> str:
     return commit_all(dest, SNAPSHOT_MESSAGE, DATES["snapshot"])
 
 
-def copy_framework(dest: Path) -> None:
-    """The recipe the agent runs, without the eval files and the tests, so it cannot read what is asserted."""
+#: The framework's pages on the evals. They describe the assertions, so no copy for an agent under test holds them.
+EVAL_PAGES = frozenset(
+    {
+        "docs/how-to/run-the-evals.md",
+        "docs/explanation/contributor-deep-dive/05-evaluation.md",
+        "docs/reference/eval-results.md",
+    }
+)
+
+
+def copy_framework(dest: Path, folders: Sequence[str] = COPIED) -> None:
+    """The recipe the agent runs, without `dev/`, the tests and the eval pages, so it cannot read what is asserted.
+
+    `folders` are the top-level folders to copy: :data:`COPIED` for the implement eval, its own list for the audit eval.
+    """
 
     def ignore(folder: str, names: list[str]) -> set[str]:
         skipped = {"__pycache__", ".mypy_cache", ".ruff_cache", "dist"}
         here = Path(folder)
         if here in (AUDIT_TOOLS, IMPLEMENT_TOOLS, REPO / "audit" / "engine"):
             skipped |= {"tests"}
-        return {name for name in names if name in skipped}
+        relative = here.relative_to(REPO).as_posix()
+        return {name for name in names if name in skipped or f"{relative}/{name}" in EVAL_PAGES}
 
-    for folder in COPIED:
+    for folder in folders:
         shutil.copytree(REPO / folder, dest / folder, ignore=ignore)
 
 

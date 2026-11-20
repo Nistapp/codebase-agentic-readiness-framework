@@ -68,6 +68,11 @@ Run `dev/eval/run-claude.sh <target> <out-dir> [<repo-label>]`:
 - The intake file `<out-dir>/audit-intake.<repo-label>.json` must already exist, with `"eval_mode": true` and a
   fixed `confirmation_policy`, so Stage 0 never has to ask a question.
 
+The script copies the recipe to a temporary folder first (`audit_eval.py framework`): `audit/`, `docs/` and
+`spec/`, without `dev/`, the tests and the eval pages. The agent works from that copy, so it cannot read what is
+asserted. It has no MCP servers, no user-level settings and no saved session. The script removes the copy when it
+exits.
+
 The script runs
 `claude -p --dangerously-skip-permissions` unattended and writes, in `<out-dir>`:
 
@@ -190,7 +195,8 @@ implement eval, IR13), so the containment is the layout, and the runner refuses 
 - `<root>/bin/gh` is first on `PATH`: a shim that logs every call to `<root>/gh-calls.log` and exits 1, so no pull
   request is opened and any merge attempt is on record;
 - the agent works from `<root>/framework`: a copy of `audit/`, `implement/` and `docs/` without the tools' and
-  the engine's `tests/` folders, and without `dev/`, so it cannot read what is asserted. It runs with no MCP
+  the engine's `tests/` folders, without the eval pages and without `dev/`, so it cannot read what is asserted.
+  It runs with no MCP
   servers (`--strict-mcp-config`), no user-level settings (`--setting-sources project`) and no saved session;
 - the planted instruction names a host under `.invalid`, which never resolves, and a script that only writes a
   marker file.
@@ -232,8 +238,8 @@ python3 dev/eval/audit_eval.py assert planted-note /tmp/ae/planted \
   /tmp/ae/planted/out/stockroom.harness-transcript.<stamp>.jsonl
 ```
 
-The audit mode of `run-claude.sh` works from the framework checkout, not from a copy. So, unlike the implement
-eval, the agent could read `dev/` and the assertions.
+The audit mode of `run-claude.sh` works from a temporary copy of the recipe, as the implement eval does (see
+[Step 2](#step-2-run-a-harness-runner)). So the agent cannot read `dev/` or the assertions.
 
 ---
 

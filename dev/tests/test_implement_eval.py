@@ -193,6 +193,8 @@ class MaterialiseTests(unittest.TestCase):
         self.assertTrue((framework / "implement" / "tools" / "progress.py").is_file())
         self.assertTrue((framework / "audit" / "tools" / "validate_report.py").is_file())
         self.assertFalse((framework / "dev").exists(), "the agent could read the assertions")
+        self.assertTrue((framework / "docs" / "README.md").is_file())
+        self.assertEqual([page for page in ie.EVAL_PAGES if (framework / page).exists()], [])
         self.assertFalse((framework / "implement" / "tools" / "tests").exists())
         self.assertFalse((framework / "audit" / "tools" / "tests").exists())
         self.assertFalse((framework / "audit" / "engine" / "tests").exists())
