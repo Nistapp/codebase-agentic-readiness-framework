@@ -7,8 +7,9 @@ Components are *declared* by build manifests, at depth 1. Directory nesting is n
 component: in a Java monolith ``src/main/java/com/acme/...`` is a package, and demanding
 governance files for packages produces noise in exactly the repositories this tool targets.
 
-Undeclared multi-app layouts are reported as *candidate* components — informational, never scored.
-See ADR-0003.
+Undeclared multi-app layouts are reported as *candidate* components — informational, never scored: an immediate
+child of a conventional folder (``apps/``, ``services/`` ...) with a build manifest, and, when the root itself has no
+build manifest, any top-level folder with one (an app per folder). See ADR-0003.
 """
 
 from __future__ import annotations
@@ -87,6 +88,22 @@ def _manifest_in(inv: Inventory, prefix: str) -> str | None:
         for rel in in_folder:
             if fnmatch.fnmatchcase(rel[len(folder) :], pattern):
                 return rel
+    return None
+
+
+def _exact_manifest(inv: Inventory, folder: str) -> str | None:
+    """A build manifest in ``folder`` itself, matched by exact path (``""`` is the root); never one below it."""
+    prefix = f"{folder}/" if folder else ""
+    in_folder = sorted(
+        f.rel[len(prefix) :] for f in inv.files if f.rel.startswith(prefix) and "/" not in f.rel[len(prefix) :]
+    )
+    for candidate in MANIFEST_NAMES:
+        if candidate in in_folder:
+            return prefix + candidate
+    for pattern in MANIFEST_PATTERNS:
+        for name in in_folder:
+            if fnmatch.fnmatchcase(name, pattern):
+                return prefix + name
     return None
 
 
@@ -215,6 +232,14 @@ def detect_components(inv: Inventory) -> ComponentModel:
                 if candidate not in declared_paths and candidate not in model.candidates:
                     if _manifest_in(inv, candidate):
                         model.candidates.append(candidate)
+
+    if _exact_manifest(inv, "") is None:
+        top_level = sorted({rel.split("/", 1)[0] for rel in inv.paths() if "/" in rel})
+        for folder in top_level:
+            if folder.startswith(".") or folder in declared_paths or folder in model.candidates:
+                continue
+            if _exact_manifest(inv, folder):
+                model.candidates.append(folder)
 
     if not model.candidates and len(model.components) == 1:
         model.notes.append("single-root repository: no component declarations found")

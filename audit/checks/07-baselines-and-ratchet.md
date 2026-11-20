@@ -162,10 +162,14 @@ Why it matters   Coverage is the most common form of the ratchet, and without a 
 Severity         DEGRADER
 Engine           `BASE-04`. Reads test-runner configuration directly for a coverage threshold:
                  `.coveragerc`/`setup.cfg`/`tox.ini`/`pytest.ini`/`pyproject.toml`'s `fail_under` or
-                 `--cov-fail-under`, `package.json`'s `coverageThreshold`/`--cov-fail-under`, or
-                 vitest/jest/vite/karma config's `coverageThreshold`/`thresholds`/`fail_under`
-                 (JavaScript `//` comments are stripped first, so a commented-out threshold is not
-                 read as configuration). A configured threshold is `PASS`. A threshold stated only in
+                 `--cov-fail-under`, the `coverageThreshold`/`--cov-fail-under` of a `package.json` at
+                 any depth, vitest/jest/vite/karma config's `coverageThreshold`/`thresholds`/`fail_under`
+                 at any depth (JavaScript `//` comments are stripped first, so a commented-out threshold
+                 is not read as configuration), or a JaCoCo floor at any depth: a Gradle build's
+                 `jacocoTestCoverageVerification` task with a `minimum`, or a Maven `pom.xml` whose
+                 `jacoco-maven-plugin` runs the `check` goal with a `<minimum>` (Gradle `//` comments and
+                 XML comments are stripped first). An app's own build or manifest therefore counts in a
+                 repository with an app per folder. A configured threshold is `PASS`. A threshold stated only in
                  prose (`AGENTS.md`/`CLAUDE.md`/`README.md`/`CONTRIBUTING.md`, matched by a pattern
                  for "coverage ... threshold/minimum/floor" or a bare percentage near the word
                  "coverage") is `PARTIAL`. Neither, with a recognised ecosystem, is `FAIL`. Distrust a
@@ -185,13 +189,14 @@ Rubric           PASS: a coverage threshold is configured in test-runner configu
                  UNKNOWN when: no recognised ecosystem or test-runner configuration exists at all, so a
                  coverage floor cannot be ruled out.
 Evidence to cite A `file` evidence item citing the config file and the matched key (`pyproject.toml:
-                 fail_under`, `vitest.config.ts: thresholds`), or, for `PARTIAL`, the entry document and
+                 fail_under`, `vitest.config.ts: thresholds`, `build.gradle:
+                 jacocoTestCoverageVerification`), or, for `PARTIAL`, the entry document and
                  the matched line of prose.
 Absence proof    A FAIL cites `<repository>` as the evidence that no threshold-bearing config key, and no
                  prose statement in any of the four entry documents, was found.
 Remediation      `add-baselines-and-ratchet`. Configure a coverage floor
-                 for the test runner (`coverage.fail_under`, `--cov-fail-under`, `coverageThreshold`, or
-                 a vitest/jest `thresholds` block) so a drop fails the gate.
+                 for the test runner (`coverage.fail_under`, `--cov-fail-under`, `coverageThreshold`,
+                 a vitest/jest `thresholds` block, or a JaCoCo `minimum`) so a drop fails the gate.
 Pitfalls         A coverage percentage mentioned in prose as a historical fact ("we're at 80% today") is
                  not the same as a stated floor ("coverage must stay above 80%") — the prose pattern this
                  engine matches is deliberately loose, so read the surrounding sentence before trusting a

@@ -344,7 +344,12 @@ def check_agt02(*, spec, target, inventory, stack, components, session) -> Check
             spec.phase,
             Verdict.PASS,
             spec.status,
-            summary="single-root repository: no component-level instruction files required",
+            summary=(
+                f"no declared components; {len(components.candidates)} candidate component(s) are not scored "
+                f"(ADR-0003): {', '.join(components.candidates[:6])}"
+                if components.candidates
+                else "single-root repository: no component-level instruction files required"
+            ),
         )
 
     covered: list[str] = []
