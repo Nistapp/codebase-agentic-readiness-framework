@@ -378,6 +378,50 @@ class SummaryTests(RenderCase):
             rr.blockers_phrase({"total": 0, "fail": 0, "partial": 0, "unknown": 0}), "0 blockers remaining"
         )
 
+    def test_the_blockers_sentence_keeps_its_short_form_when_the_blocker_findings_agree(self) -> None:
+        self.assertEqual(
+            rr.blockers_phrase({"total": 7, "fail": 5, "partial": 1, "unknown": 1}, 7),
+            "7 blockers remaining: 5 FAIL, 1 PARTIAL, 1 UNKNOWN",
+        )
+
+    def test_the_blockers_sentence_names_both_counts_when_the_blocker_findings_differ(self) -> None:
+        self.assertEqual(
+            rr.blockers_phrase({"total": 7, "fail": 5, "partial": 1, "unknown": 1}, 6),
+            "7 BLOCKER checks unmet: 5 FAIL, 1 PARTIAL, 1 UNKNOWN (6 BLOCKER findings)",
+        )
+        self.assertEqual(
+            rr.blockers_phrase({"total": 1, "fail": 1, "partial": 0, "unknown": 0}, 0),
+            "1 BLOCKER check unmet: 1 FAIL (0 BLOCKER findings)",
+        )
+
+    def test_zero_blockers_with_no_blocker_finding_is_the_short_form(self) -> None:
+        self.assertEqual(
+            rr.blockers_phrase({"total": 0, "fail": 0, "partial": 0, "unknown": 0}, 0), "0 blockers remaining"
+        )
+        self.assertEqual(
+            rr.blockers_phrase({"total": 0, "fail": 0, "partial": 0, "unknown": 0}, 1),
+            "0 BLOCKER checks unmet (1 BLOCKER finding)",
+        )
+
+    def test_blocker_findings_count_by_their_own_severity_and_leave_out_the_rejected(self) -> None:
+        report = service()
+        self.assertEqual(finding_of(report, "F-005")["disposition"], "rejected")
+        self.assertEqual(rr.blocker_findings(report), 4)
+        finding_of(report, "F-005")["disposition"] = "deferred"
+        self.assertEqual(rr.blocker_findings(report), 5)
+        finding_of(report, "F-002")["severity"] = "DEGRADER"
+        self.assertEqual(rr.blocker_findings(report), 4)
+
+    def test_a_finding_lowered_below_its_check_shows_both_numbers_in_the_summary_and_the_bottom_line(self) -> None:
+        report = service()
+        finding_of(report, "F-002")["severity"] = "DEGRADER"
+        markdown = self.render(report)
+        self.assertIn(
+            "- **4 BLOCKER checks unmet: 4 FAIL (3 BLOCKER findings)**", section(markdown, "Readiness summary")
+        )
+        self.assertIn("- **4 BLOCKER checks unmet: 4 FAIL (3 BLOCKER findings).**", section(markdown, "Bottom line"))
+        self.assertNotIn("blockers remaining", markdown)
+
     def test_the_summary_is_computed_from_the_checks_and_never_taken_from_the_file(self) -> None:
         report = service()
         report["summary"]["phase1_score"] = 0.9999
