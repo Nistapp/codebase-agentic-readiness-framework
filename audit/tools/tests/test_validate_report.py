@@ -374,6 +374,19 @@ class Rule3Tests(unittest.TestCase):
         done = {"kind": "index_query", "captured_by": "agent", "index_tool": "search_graph", "query": "x"}
         self.assertEqual(self.evidence_errors(done), [])
 
+    def test_a_line_zero_is_an_error(self) -> None:
+        errors = self.evidence_errors({"kind": "file", "captured_by": "agent", "path": "a.py", "lines": "0-3"})
+        self.assertEqual(len(errors), 1)
+        self.assertIn("/lines: line numbers start at 1", errors[0])
+
+    def test_a_range_that_ends_before_it_starts_is_an_error(self) -> None:
+        errors = self.evidence_errors({"kind": "file", "captured_by": "agent", "path": "a.py", "lines": "30-12"})
+        self.assertEqual(len(errors), 1)
+        self.assertIn("/lines: the range ends before it starts", errors[0])
+        self.assertEqual(
+            self.evidence_errors({"kind": "file", "captured_by": "agent", "path": "a.py", "lines": "7"}), []
+        )
+
     def test_lines_need_a_path(self) -> None:
         errors = self.evidence_errors({"kind": "command", "captured_by": "agent", "command": "ls", "lines": "1-2"})
         self.assertEqual(len(errors), 1)
@@ -1085,3 +1098,115 @@ class HelperTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CitedLinesTests(unittest.TestCase):
+    """Rule 12 with `check_lines`: an agent's `lines` must be inside the file, and its quote in those lines."""
+
+    TEXT = "one\ntwo\n  three   four\nfive\n"
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.target = Path(self.temp.name).resolve() / "target"
+        self.target.mkdir()
+        (self.target / "src").mkdir()
+        (self.target / "src" / "a.py").write_text(self.TEXT, encoding="utf-8")
+
+    def commit(self) -> str:
+        run_git(self.target, "init", "-q")
+        run_git(self.target, "add", "-A")
+        run_git(self.target, "commit", "-q", "-m", "x")
+        return run_git(self.target, "rev-parse", "HEAD")
+
+    def report(self, sha: str | None, **evidence: Any) -> dict[str, Any]:
+        report = base()
+        report["provenance"]["target"]["git_sha"] = sha
+        check_of(report, "IDX-01")["evidence"].append(
+            {"kind": "file", "captured_by": "agent", "path": "src/a.py", **evidence}
+        )
+        return report
+
+    def warnings(self, report: dict[str, Any], check_lines: bool = True) -> list[str]:
+        outcome = vr.validate_document(report, target=self.target, check_lines=check_lines)
+        self.assertEqual(outcome.errors, [])
+        index = report["checks"].index(check_of(report, "IDX-01"))
+        mine = f"/checks/{index}/evidence/{len(check_of(report, 'IDX-01')['evidence']) - 1}:"
+        return [warning for warning in outcome.warnings if warning.startswith(mine)]
+
+    def test_a_range_inside_the_file_with_its_quote_gives_no_warning(self) -> None:
+        sha = self.commit()
+        self.assertEqual(self.warnings(self.report(sha, lines="2-3", quote="two three four")), [])
+        self.assertEqual(self.warnings(self.report(sha, lines="4", quote="five")), [])
+
+    def test_a_range_past_the_end_of_the_file_is_a_warning(self) -> None:
+        sha = self.commit()
+        warnings = self.warnings(self.report(sha, lines="3-9"))
+        self.assertEqual(len(warnings), 1)
+        self.assertRegex(
+            warnings[0],
+            rf"^/checks/0/evidence/\d+: lines 3-9 are past the end of src/a.py in the target at {sha[:12]}, "
+            "which has 4 lines$",
+        )
+
+    def test_the_file_is_read_at_the_commit_and_not_in_the_working_tree(self) -> None:
+        sha = self.commit()
+        (self.target / "src" / "a.py").write_text("one\n", encoding="utf-8")
+        self.assertEqual(self.warnings(self.report(sha, lines="4", quote="five")), [])
+
+    def test_with_no_commit_the_working_tree_is_read(self) -> None:
+        warnings = self.warnings(self.report(None, lines="5"))
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("lines 5 are past the end of src/a.py in the target, which has 4 lines", warnings[0])
+
+    def test_a_quote_that_is_not_in_the_cited_lines_is_a_warning(self) -> None:
+        sha = self.commit()
+        warnings = self.warnings(self.report(sha, lines="1-2", quote="five"))
+        self.assertEqual(len(warnings), 1)
+        self.assertRegex(
+            warnings[0], r"^/checks/0/evidence/\d+: the quote is not in lines 1-2 of src/a.py in the target"
+        )
+
+    def test_an_ellipsis_at_either_end_of_a_quote_marks_a_cut(self) -> None:
+        sha = self.commit()
+        self.assertEqual(self.warnings(self.report(sha, lines="3", quote="...three four...")), [])
+        self.assertEqual(self.warnings(self.report(sha, lines="3", quote="\u2026three")), [])
+
+    def test_tool_evidence_is_not_read(self) -> None:
+        sha = self.commit()
+        report = self.report(sha, lines="99")
+        evidence = check_of(report, "IDX-01")["evidence"][-1]
+        evidence.update({"captured_by": "tool", "tool": "python-agentic-audit", "tool_version": "1.0.0"})
+        self.assertEqual(self.warnings(report), [])
+
+    def test_lines_are_not_read_unless_asked(self) -> None:
+        sha = self.commit()
+        self.assertEqual(self.warnings(self.report(sha, lines="99"), check_lines=False), [])
+
+    def test_a_missing_file_is_said_once_and_its_lines_are_not_read(self) -> None:
+        sha = self.commit()
+        report = self.report(sha, lines="99")
+        check_of(report, "IDX-01")["evidence"][-1]["path"] = "src/gone.py"
+        warnings = self.warnings(report)
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("the file src/gone.py is not in the target", warnings[0])
+
+    def test_the_command_line_checks_the_lines(self) -> None:
+        sha = self.commit()
+        path = Path(self.temp.name) / "report.json"
+        path.write_text(json.dumps(self.report(sha, lines="3-9")), encoding="utf-8")
+        result = vr.handler([str(path), "--target", str(self.target)])
+        self.assertEqual(sum("past the end of src/a.py" in warning for warning in result.warnings), 1)
+
+
+class BatchTextsTests(unittest.TestCase):
+    def test_a_missing_object_and_a_tree_are_skipped_and_the_rest_read(self) -> None:
+        stream = b"abc missing\n" + b"def tree 3\nxyz\n" + b"123 blob 4\na\nb\n\n"
+        self.assertEqual(vr.batch_texts(stream, ["gone", "dir", "f"]), {"f": "a\nb\n"})
+
+    def test_a_blob_over_the_limit_is_not_kept(self) -> None:
+        with mock.patch.object(vr, "MAX_CITED_BYTES", 2):
+            self.assertEqual(vr.batch_texts(b"1 blob 3\nabc\n", ["f"]), {})
+
+    def test_a_cut_stream_stops_the_reading(self) -> None:
+        self.assertEqual(vr.batch_texts(b"", ["f"]), {})

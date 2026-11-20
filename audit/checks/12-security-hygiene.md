@@ -127,7 +127,8 @@ Pitfalls         An allowlist entry is the repository's own acceptance, not proo
                  report, even to argue a false positive** — if a flagged line needs discussion, describe
                  its shape or context ("a 32-character hex string assigned to API_KEY"), not its literal
                  content; this applies whether the agent is confirming the engine's `FAIL` or arguing it
-                 should be downgraded.
+                 should be downgraded. Whether a flagged value is live or a placeholder is the owner's
+                 call: ask them. Never print the value, its length or any part of it to judge it yourself.
 
 ## SEC-03 — Ignore patterns cover secret shapes
 

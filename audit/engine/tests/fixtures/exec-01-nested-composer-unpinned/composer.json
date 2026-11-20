@@ -1,0 +1,8 @@
+{
+    "name": "example/exec-01-nested-composer-unpinned",
+    "type": "project",
+    "require": {
+        "php": ">=8.2",
+        "monolog/monolog": "^3.0"
+    }
+}

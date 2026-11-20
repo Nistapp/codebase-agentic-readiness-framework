@@ -971,6 +971,15 @@ class AddFindingTests(BuilderCase):
         found: list[dict[str, Any]] = read_json(self.draft)["findings"]
         return found
 
+    def test_cited_lines_past_the_end_of_the_file_are_a_warning(self) -> None:
+        (self.target / "AGENTS.md").write_text("# Rules\nOne rule.\n", encoding="utf-8")
+        code, envelope, _ = self.add_finding(self.draft, agent_finding())
+        self.assertEqual(code, 0, envelope)
+        self.assertEqual(
+            envelope["warnings"],
+            ["/findings/0/evidence/0: lines 1-3 are past the end of AGENTS.md in the target, which has 2 lines"],
+        )
+
     def test_it_records_a_finding_and_computes_its_id_key_and_disposition(self) -> None:
         code, envelope, stderr = self.add_finding(self.draft, agent_finding())
         self.assertEqual(code, 0, envelope)
@@ -1663,6 +1672,53 @@ class StatusTests(BuilderCase):
         self.assertEqual(len(data["pending"]) + data["pending_omitted"], 30)
         self.assertGreater(data["pending_omitted"], 0)
         self.assertEqual(len(data["families_remaining"]), 13)
+
+    def test_all_lists_every_pending_finding_and_omits_none(self) -> None:
+        draft = self.engine_draft()
+        code, envelope, stderr = call(["status", str(draft), "--all"])
+        self.assertEqual(code, 0, stderr)
+        data = envelope["data"]
+        self.assertEqual(len(data["pending"]), 24)
+        self.assertNotIn("pending_omitted", data)
+        self.assertIs(envelope["truncated"], False)
+        order = [line.split()[1] for line in data["pending"]]
+        self.assertEqual(order, sorted(order, key=["BLOCKER", "DEGRADER", "COSMETIC"].index))
+
+    def test_severity_keeps_only_the_pending_findings_of_that_severity(self) -> None:
+        draft = self.engine_draft()
+        code, envelope, stderr = call(["status", str(draft), "--severity", "DEGRADER", "--all"])
+        self.assertEqual(code, 0, stderr)
+        data = envelope["data"]
+        degraders = [f for f in read_json(draft)["findings"] if f["severity"] == "DEGRADER"]
+        self.assertEqual(data["pending"], [f"{f['id']} DEGRADER {f['key']}" for f in degraders])
+        self.assertEqual(data["pending_severity"], "DEGRADER")
+        self.assertEqual(data["findings_pending"], 24)
+
+    def test_severity_alone_keeps_the_line_budget(self) -> None:
+        draft = self.engine_draft()
+        data = call(["status", str(draft), "--severity", "BLOCKER"])[1]["data"]
+        self.assertEqual([line.split()[1] for line in data["pending"]], ["BLOCKER"] * 4)
+        self.assertNotIn("pending_omitted", data)
+
+    def test_all_still_bounds_the_list_by_the_output_budget(self) -> None:
+        busy = self.failing_draft()
+        for number in range(30):
+            code, envelope, _ = self.add_finding(busy, agent_finding(scope=f"module-{number}"))
+            self.assertEqual(code, 0, envelope)
+        document = read_json(busy)
+
+        def first_five(items: Sequence[Any]) -> tuple[list[Any], int]:
+            return list(items[:5]), len(items) - 5
+
+        with mock.patch.object(_common, "bound_items", first_five):
+            data = rb.status_data(busy, document, show_all=True)
+        self.assertGreater(data["pending_omitted"], 0)
+        self.assertEqual(len(data["pending"]) + data["pending_omitted"], 30)
+
+    def test_an_unknown_severity_is_a_usage_error(self) -> None:
+        code, envelope, _ = call(["status", str(self.start()), "--severity", "MINOR"])
+        self.assertEqual(code, 1)
+        self.assertFalse(envelope["ok"])
 
     def test_it_is_ready_when_every_check_is_recorded_and_every_finding_decided(self) -> None:
         draft = self.complete_engine_draft()

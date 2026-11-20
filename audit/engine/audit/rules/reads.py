@@ -328,8 +328,9 @@ READS: dict[str, Reads] = {
         binding="file",
         threshold="all seven named and resolved",
         note=(
-            "Each verb must stand as a whole token (format inside format:check does not count). The "
-            "resolution half reads the runner manifests as CMD-01 does."
+            "Each verb must stand as a whole token (format inside format:check does not count). format:check "
+            "also counts as format-check or formatCheck, the spellings spec/command-surface.md accepts; no "
+            "other script name counts. The resolution half reads the runner manifests as CMD-01 does."
         ),
     ),
     "AGT-06": Reads(
@@ -626,13 +627,16 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-02": Reads(
-        where=(*_runners(),),
+        where=(*_runners(), *_at(ROOT, "settings.gradle", "settings.gradle.kts")),
         what=What("key", ("check",)),
         binding="section",
         threshold="check composes format-check, typecheck and test",
         note=(
             "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite "
-            "that is no verb is followed once. A Gradle or Maven lifecycle check is UNKNOWN."
+            "that is no verb is followed once, and so is a package script that is no verb. A Gradle check is read "
+            "from the build file's plugins and check dependsOn wiring; a settings file that includes subprojects, "
+            "or an unknown plugin or task, makes a check still missing a concern UNKNOWN. A Maven lifecycle check "
+            "is UNKNOWN."
         ),
     ),
     "CMD-03": Reads(
@@ -1294,10 +1298,11 @@ READS: dict[str, Reads] = {
         binding="file",
         threshold="every ecosystem pinned and every module reached",
         note=(
-            "Pin files count by existence; .tool-versions needs a line for the ecosystem, package.json "
+            "Pin files count by existence; .tool-versions needs a line for the ecosystem (java for jvm), package.json "
             "engines.node, pyproject.toml requires-python, go.mod a go directive and composer.json "
             "config.platform.php or require.php. A module manifest no pin"
-            " reaches (its folder or a parent) is PARTIAL."
+            " reaches (its folder or a parent) is PARTIAL; a parent go.mod or composer.json does not reach a"
+            " nested one."
         ),
     ),
     "EXEC-02": Reads(
@@ -1313,6 +1318,7 @@ READS: dict[str, Reads] = {
                 "poetry.lock",
                 "uv.lock",
                 "Pipfile.lock",
+                "pdm.lock",
                 "gradle.lockfile",
                 "Cargo.lock",
                 "go.sum",
@@ -1339,7 +1345,7 @@ READS: dict[str, Reads] = {
         threshold="a tracked lockfile that agrees with the manifest",
         note=(
             "Lockfiles of each ecosystem's package managers (stack.PACKAGE_MANAGERS) at any depth, shallowest"
-            " first, and whether git tracks them. Only a root lockfile is compared with the root manifests' "
+            " first, and whether git tracks them; a tracked lockfile the walk skipped as ignored counts too. Only a root lockfile is compared with the root manifests' "
             "dependency names; for .NET those are the PackageReference names of the project files in the root "
             "folder, and a package reference in a root Directory.* file leaves the lockfile unverified."
         ),
@@ -1367,7 +1373,8 @@ READS: dict[str, Reads] = {
         binding="line",
         threshold="a documented non-interactive setup command",
         note=(
-            "A fenced shell command in the four docs whose tool and first argument install or set up passes. "
+            "A fenced shell command or an inline code span in the four docs whose tool and first argument install "
+            "or set up passes. "
             "Else a setup file or a setup target (setup, bootstrap, install, dev, dev-setup) of the root "
             "Makefile or package.json named anywhere in the four docs passes; present but not named is "
             "PARTIAL."
@@ -1384,10 +1391,11 @@ READS: dict[str, Reads] = {
         binding="line",
         threshold="every referenced key declared",
         note=(
-            "References: ${VAR} in shell files and Dockerfile, less the keys the same file assigns, and "
-            "os.environ, getenv, process.env and ENV[...] in every file of kind source or script. Declared "
-            "keys are the KEY= lines of the four root example files; a fixed allow-list of host and CI names "
-            "is exempt."
+            "References: ${VAR} and ${VAR:?msg} in shell files and Dockerfile, less the keys the same file assigns, "
+            "and os.environ, getenv, process.env and ENV[...] in every file of kind source or script. A shell "
+            "reference with a fallback (${VAR:-x}, ${VAR-x}, ${VAR:=x}, ${VAR:+x}) is optional: listed, never "
+            "missing. Declared keys are the KEY= lines of the four root example files; a fixed allow-list of host, "
+            "CI and shell-set names is exempt."
         ),
     ),
     "EXEC-05": Reads(
@@ -1623,7 +1631,8 @@ READS: dict[str, Reads] = {
         binding="line",
         note=(
             "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a "
-            "plain full-suite run does not count. A file is kept when Inventory.has finds its name at any "
+            "plain full-suite run does not count. With no fenced match, an inline code span outside any fence "
+            "is read with the same patterns. A file is kept when Inventory.has finds its name at any "
             "depth but read by its exact root path, so a nested-only copy is skipped silently. The test files "
             "give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs."
         ),
@@ -1679,13 +1688,10 @@ READS: dict[str, Reads] = {
                 via=COMPONENTS,
             ),
             *_at(
-                ANY_DEPTH,
-                "package.json",
+                ROOT,
                 "pyproject.toml",
-                "pom.xml",
                 "build.gradle",
                 "build.gradle.kts",
-                "Cargo.toml",
                 "go.mod",
                 "Gemfile",
                 "composer.json",
@@ -1860,7 +1866,9 @@ READS: dict[str, Reads] = {
         binding="file",
         note=(
             "Root files whose base name starts with readme, any case; README.md is read first. It needs 200 "
-            "trimmed characters, no stub marker as a substring anywhere, and one line that is not a heading."
+            "trimmed characters, no stub marker, and one line that is not a heading. Under 400 characters a marker "
+            "anywhere counts, and lorem ipsum or <describe counts at any length; in a longer README a word marker "
+            "counts only when it opens a line and the line's end or punctuation follows it."
         ),
     ),
     "HYG-02": Reads(

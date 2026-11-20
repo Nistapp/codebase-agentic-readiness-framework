@@ -401,6 +401,18 @@ class Exec02LockfilePathTests(unittest.TestCase):
         self.assertEqual(check["verdict"], "PASS")
         self.assertEqual(findings, [])
 
+    PYPROJECT = '[project]\nname = "x"\nversion = "0.1.0"\ndependencies = ["requests>=2"]\n'
+
+    def test_a_tracked_pdm_lock_is_the_python_lockfile_and_is_compared(self):
+        check, findings = self.audit({"pyproject.toml": self.PYPROJECT, "pdm.lock": '[[package]]\nname = "requests"\n'})
+        self.assertEqual((check["verdict"], check["summary"]), ("PASS", "tracked: pdm.lock"))
+        self.assertEqual(findings, [])
+
+    def test_a_pdm_lock_that_omits_a_manifest_dependency_is_out_of_step(self):
+        check, findings = self.audit({"pyproject.toml": self.PYPROJECT, "pdm.lock": '[[package]]\nname = "idna"\n'})
+        self.assertEqual(check["verdict"], "FAIL")
+        self.assertIn("pdm.lock is tracked but omits manifest dependencies: requests", findings[0]["statement"])
+
     def test_the_lockfiles_of_an_ecosystem_are_listed_shallowest_first_then_by_name(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -547,6 +559,13 @@ class Exec02MessageTests(unittest.TestCase):
         check, findings = self.audit({"pyproject.toml": "[project]\nname = 'x'\n", "src/app.py": "print(1)\n"})
         self.assertEqual(check["verdict"], "FAIL")
         self.assertIn("the python project has no lockfile", findings[0]["statement"])
+
+    def test_a_python_project_with_no_lockfile_names_the_pdm_lock_too(self):
+        check, _ = self.audit({"pyproject.toml": "[project]\nname = 'x'\n"})
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            ("FAIL", "no lockfile: python (poetry.lock, uv.lock, Pipfile.lock, pdm.lock)"),
+        )
 
     def test_without_git_the_tracked_state_is_unknown(self):
         check, _ = self.audit({"package.json": self.NODE}, git=False)
