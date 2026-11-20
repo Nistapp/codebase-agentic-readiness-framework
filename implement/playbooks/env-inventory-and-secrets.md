@@ -64,11 +64,13 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    |---|---|---|---|
    | gitleaks (MIT) | v8.30.1, 2026-03-21; repo active 2026-10 | Single binary; fast; history and working-tree scans; config file; large user base | Pattern based, so entropy-only secrets are missed; false positives need an allowlist |
    | trufflehog (AGPL-3.0) | v3.99.7, 2026-10-24 | Verifies some hits against the live service; many detectors | AGPL licence; verification makes network calls with a found credential, which an owner may not want |
-   | detect-secrets (Apache-2.0) | v1.5.0, 2024-05-06; repo last pushed 2026-04 | Baseline file ratchets existing debt; plugin model | Python dependency; no release in over two years; slower on large trees |
+
+   Dropped: detect-secrets (v1.5.0, 2024-05-06; no stable release in over two years). A repository that already
+   runs it keeps it.
 
    Currency checked 2026-10-30 (GitHub releases API, PyPI). Re-check it when the playbook is applied: it
-   dates. Adding a local scanner step to the command surface belongs to the command-surface and CI themes:
-   note it, do not do it here.
+   dates. The [tool currency](../tool-choice.md#tool-currency) rule applies. Adding a local scanner step to the
+   command surface belongs to the command-surface and CI themes: note it, do not do it here.
 4. **Realm, vault or identity-provider exports** that contain a secret field (for example a Keycloak realm
    JSON). These are owner-review only: list the paths and the count of secret-field keys per file; ask nothing
    about values; do not edit or template them.

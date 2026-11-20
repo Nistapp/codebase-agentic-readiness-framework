@@ -97,7 +97,7 @@ TST-04 has two playbooks: this one writes the fenced line when the repository's 
 ### Tool currency
 
 Checked 2026-11-05 against the release pages and registries. Re-check before offering a tool; drop one with no
-stable release in the last 12 months.
+stable release in the last 12 months ([tool currency](../tool-choice.md#tool-currency)).
 
 | Tool | Latest | Released | Notes |
 |---|---|---|---|
