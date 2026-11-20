@@ -18,6 +18,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 import _dev_paths  # noqa: F401  (puts dev/ on sys.path)
+import build_masters
 import doc_index
 import docindex
 from docindex import cli, model
@@ -325,6 +326,29 @@ class ConfigTest(unittest.TestCase):
                 code, out, err = _run(["build"])
         self.assertEqual((code, out), (1, ""))
         self.assertIn("docindex.config.json: unknown key in the config: zone", err)
+
+    def test_the_generated_files_hold_the_master_pages_of_build_masters(self) -> None:
+        generated = doc_index.load_config()["generated"]
+        for page in (build_masters.AUDIT_PAGE, build_masters.IMPLEMENT_PAGE):
+            with self.subTest(page=page):
+                self.assertEqual(generated.get(page.as_posix()), "dev/build_masters.py")
+        self.assertEqual(generated.get("CHANGELOG.md"), "release-please")
+        for path in generated:
+            with self.subTest(path=path):
+                self.assertTrue((doc_index.REPO / path).exists(), path)
+
+    def test_a_generated_entry_must_name_its_command(self) -> None:
+        for value in ("", 1, None, ["make"]):
+            with self.subTest(value=value), self.assertRaises(index_config.ConfigError) as raised:
+                index_config.check_keys({"generated": {"x.md": value}})
+            self.assertIn("generated.x.md", str(raised.exception))
+        with self.assertRaises(index_config.ConfigError):
+            index_config.check_keys({"generated": ["x.md"]})
+        index_config.check_keys({"generated": {"x.md": "make x"}})
+
+    def test_a_generated_entry_that_matches_no_file_is_named(self) -> None:
+        problems = index_config.unmatched({"generated": {"gone.md": "make", "out/": "make"}}, ["out/a.md"])
+        self.assertEqual(problems, ["generated: 'gone.md' matches no tracked file"])
 
     def test_the_sweep_scope(self) -> None:
         sweep = doc_index.load_config()["sweep"]
