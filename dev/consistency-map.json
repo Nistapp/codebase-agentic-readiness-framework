@@ -12139,48 +12139,33 @@
           "via": "components"
         },
         {
-          "path": "package.json",
-          "scope": "any-depth",
-          "via": "components"
-        },
-        {
           "path": "pyproject.toml",
-          "scope": "any-depth",
-          "via": "components"
-        },
-        {
-          "path": "pom.xml",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "build.gradle",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "build.gradle.kts",
-          "scope": "any-depth",
-          "via": "components"
-        },
-        {
-          "path": "Cargo.toml",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "go.mod",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "Gemfile",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
           "path": "composer.json",
-          "scope": "any-depth",
+          "scope": "root",
           "via": "components"
         },
         {
