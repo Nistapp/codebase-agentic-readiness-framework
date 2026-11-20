@@ -50,7 +50,7 @@ report.py add-check <draft> --from FILE|-
 report.py add-finding <draft> --from FILE|-
 report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
 report.py set-stack-profile <draft> <id> [--derived] [--confirmed]
-report.py status <draft>
+report.py status <draft> [--all] [--severity BLOCKER|DEGRADER|COSMETIC]
 report.py finalise <draft>
 ```
 
