@@ -73,9 +73,10 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  compares each lockfile's own declared packages against the manifest in the lockfile's own
                  folder (`api/package-lock.json` against `api/package.json`), so a second app's lockfile
                  is judged too. For .NET the lockfile is NuGet's `packages.lock.json`, and the manifest is
-                 the `PackageReference` names (casefolded) of the project files in the lockfile's folder. A .NET project with no
-                 `packages.lock.json` reads `FAIL`, as every other ecosystem does (owner decision); NuGet
-                 writes one only when the project sets `RestorePackagesWithLockFile`. For node the
+                 the `PackageReference` names (casefolded) of the project files in the lockfile's folder. A
+                 .NET project with no `packages.lock.json` reads `FAIL`, as every other ecosystem does
+                 (owner decision); NuGet writes one only when the project sets
+                 `RestorePackagesWithLockFile`. For node the
                  lockfiles are `package-lock.json`, `npm-shrinkwrap.json` (compared as a
                  `package-lock.json`), `pnpm-lock.yaml`, `yarn.lock`, `bun.lock` and `bun.lockb`. Neither
                  Bun file is compared, so a Bun project reads `PARTIAL` at best. For python they are
@@ -133,8 +134,8 @@ Engine           `EXEC-03`. First looks for a documented, non-interactive instal
                  file, a Dockerfile, or a `setup`/`bootstrap`/`install`/`dev`/`dev-setup` Makefile or
                  npm-script target) and whether any doc file names it in prose. The setup files count at
                  any depth, and so does a Dockerfile with a variant in its name (`Dockerfile.*`,
-                 `*.Dockerfile`, `*.dockerfile`), such as Quarkus's `src/main/docker/Dockerfile.jvm`. No ecosystem detected at
-                 all ⇒ `UNKNOWN` — with no build manifest there is no provisioning to characterise.
+                 `*.Dockerfile`, `*.dockerfile`), such as Quarkus's `src/main/docker/Dockerfile.jvm`. No ecosystem
+                 detected at all ⇒ `UNKNOWN` — with no build manifest there is no provisioning to characterise.
                  Distrust a `FAIL` when the setup instructions live in a doc file outside the four this
                  check reads — verify by reading whatever onboarding doc the repository actually points
                  to before treating the absence as real.

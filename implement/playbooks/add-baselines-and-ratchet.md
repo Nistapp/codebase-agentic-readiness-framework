@@ -204,10 +204,10 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#bas
   `package.json`; check the supported keys for the repository's `react-scripts` version. Vitest:
   `test.coverage.thresholds`.
 - **Engine visibility.** BASE-04 reads every `package.json` (a `jest` key in a component's own manifest included)
-  and `jest.config.*`/`vitest.config.*` files at any depth. Verify from the real config. BASE-02 reads only a budget flag, so a counts file alone reads
-  `PARTIAL`, and TST-04 accepts a Jest line only with `-t` or `--testNamePattern`; a path-only `npx jest <file>` reads
-  `FAIL` (framework issues #45 and #50). Write the fast-path block in the form the engine reads and keep the path-only
-  form out of the verification.
+  and `jest.config.*`/`vitest.config.*` files at any depth. Verify from the real config. BASE-02 reads only a budget
+  flag, so a counts file alone reads `PARTIAL`, and TST-04 accepts a Jest line only with `-t` or `--testNamePattern`;
+  a path-only `npx jest <file>` reads `FAIL` (framework issue #50). Write the fast-path block in the form the engine
+  reads and keep the path-only form out of the verification.
 - **Whole-tree counts in `format:check`.** ESLint older than 9.24 has no baseline file, so the compare script runs
   the linter over the whole tree with JSON output and counts errors and files with errors. That adds the linter's
   full run (15-20 s on a mid-sized app) to `format:check`; say so in the paragraph in `AGENTS.md`. The script resolves

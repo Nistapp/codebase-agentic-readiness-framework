@@ -48,8 +48,9 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    "`EXEC-04` Env-var inventory complete" reads four names at any depth: `.env.example`, `.env.sample`,
    `.env.template` and `env.example`. An example file covers the files in its own folder and below it, so a root
    file covers every name, and `api/.env.example` covers only what `api/` reads. Recommend the first. Offer the
-   second or the third when the owner wants each file beside the code that reads it. Record the choice as a preference. Ask also whether optional
-   framework overrides (for example `QUARKUS_*`) are listed; the default is yes, marked optional, names only.
+   second or the third when the owner wants each file beside the code that reads it. Record the choice as a
+   preference. Ask also whether optional framework overrides (for example `QUARKUS_*`) are listed; the default is
+   yes, marked optional, names only.
 2. **Tracked secret-bearing files.** For each path from step 3, show the owner the path and the reason it was
    flagged (never its content) and ask: untrack, keep as a documented exception, or skip. Only the owner can
    say a tracked local-development file holds throwaway values or must stay for developers' setup. A keep or a
