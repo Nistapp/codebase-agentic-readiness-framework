@@ -86,19 +86,8 @@ class PythonFromSourceTests(unittest.TestCase):
         self.assertEqual(stack_of({"src/app.py": "print(1)\n"}).describe(), "ecosystems: python")
 
 
-class VerbRunnerTests(unittest.TestCase):
-    """The runner manifests a stack lists, each once, in the order of the ecosystems that hint at them."""
-
-    def test_a_makefile_at_any_depth_is_listed_once_though_five_ecosystems_hint_at_it(self):
-        self.assertEqual(stack_of({"Makefile": "all:\n"}).verb_runners, ["Makefile"])
-        self.assertEqual(stack_of({"tools/Makefile": "all:\n"}).verb_runners, ["Makefile"])
-
-    def test_the_runners_follow_the_order_of_the_ecosystem_table(self):
-        files = {"Makefile": "all:\n", "package.json": "{}\n"}
-        self.assertEqual(stack_of(files).verb_runners, ["package.json", "Makefile"])
-
-    def test_a_manifest_that_is_not_a_verb_runner_is_not_listed(self):
-        self.assertEqual(stack_of({"Rakefile": "task :x\n", "Gemfile": "\n"}).verb_runners, [])
+class ManifestTests(unittest.TestCase):
+    """A manifest names its ecosystem by its base name, or by a glob, at any depth."""
 
     def test_a_manifest_names_its_ecosystem_at_any_depth_and_by_its_basename(self):
         self.assertEqual(stack_of({"deep/er/package.json": "{}\n"}).ecosystems, {"node"})
