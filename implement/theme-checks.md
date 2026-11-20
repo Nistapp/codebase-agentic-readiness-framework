@@ -1,8 +1,9 @@
 # Theme checks
 
-Two checks of the [implement recipe](SKILL.md) guard a theme against changes it did not mean to make. The first
-watches the integration branch move under the theme. The second finds an engine check that passed before the theme
-and fails after it. Stages 3 and 4 run both. The page also says when a theme may branch from an unmerged theme.
+Three checks of the [implement recipe](SKILL.md) guard a theme against changes it did not mean to make. The first
+watches the integration branch move under the theme; at theme close it also checks that the target's history is
+whole. The second finds an engine check that passed before the theme and fails after it. Stages 3 and 4 run them.
+The page also says when a theme may branch from an unmerged theme.
 
 ## Check the integration branch
 
@@ -17,6 +18,8 @@ changed: `git -C <worktree> diff --name-only <base> origin/<integration branch>`
 - A file in common: stop and ask the owner. Offer (a) go on, and resolve it at review; (b) merge the
   integration branch into the theme branch, as a merge commit; (c) stop the theme here. Default: none.
   Never rebase, never force-push.
+
+At theme close, also run the history check: [Keep the target's history](#keep-the-targets-history).
 
 ### Stack on an unmerged theme
 
@@ -148,3 +151,51 @@ belongs to the framework, not to the target: change nothing in the target for it
 - **Exit 1.** Fix the argument: a missing file, or a worktree that is not the reports' target.
 
 In every case the theme's own checks are still compared with the audit report (Stage 4, step 1).
+
+## Keep the target's history
+
+A hard rule says: no history rewrites and no deleted branches, unless the person asks for that exact action.
+`progress.py init` recorded the tips of the target's branches, tags and `origin/*` branches beside the state. At
+theme close (Stage 4, step 1), after the integration-branch check, run:
+
+```bash
+python3 implement/tools/progress.py verify-refs --target <repo> --workspace <workspace>
+```
+
+- Exit 0, `data.status` `clean`: every recorded ref keeps its history. A branch that moved forward passes. So does
+  a branch the run created, such as the theme branch: it was never recorded.
+- Exit 2: a recorded ref lost history. Each line of `data.errors` names one ref and what happened to it. The ref
+  is gone, or a tag moved. Or a branch no longer contains its recorded tip: a rebase, an amend, a reset or a forced
+  push.
+- Exit 1 with "the history check did not run": the state has no record. Older tools made it, or the target was not
+  a git work tree at `init`. Say so in the status report. Then record the tips from now on:
+  `progress.py record-refs --target <repo> --workspace <workspace> --phase <step>`.
+
+### When a ref lost history
+
+Stop the theme and send the owner a
+[decision request](../audit/prompts/talking-to-the-user.md#decision-requests). Name each ref and what happened to
+it. Offer:
+
+- (a) **Restore it**, when the old tip is still in the repository. A deleted branch comes back with
+  `git -C <repo> branch <name> <old tip>`, a deleted tag with `git -C <repo> tag <name> <old tip>`. For a rewritten
+  branch, the owner says how. Then run `verify-refs` again.
+- (b) **Accept it**, when the owner made or asked for the change:
+  `progress.py accept-ref <ref> --reason "<reason>" --by owner --workspace <workspace> --target <repo> --phase <step>`.
+  The ref's current tip becomes its recorded tip, so a later rewrite is reported again.
+- (c) **Stop the theme** here.
+
+Default: none. Wait for the owner. The decision is in
+[ADR 0007](docs/architecture/adrs/0007-recorded-ref-tips-guard-the-target-history.md).
+
+### What it does not see
+
+The check reads refs, so a clean result does not prove that no data was lost. It does not see:
+
+- an `rm -rf` of untracked or ignored files;
+- a `git stash drop` or `git stash clear`;
+- a `docker` volume or stack wiped (`docker compose down -v`, `docker system prune`);
+- a change on the remote that was not fetched;
+- whether the person asked for a command. A rewrite the person asked for is reported too; the owner accepts it.
+
+The rule still holds there; the agent keeps it by hand.

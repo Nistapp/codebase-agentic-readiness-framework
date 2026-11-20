@@ -44,6 +44,13 @@ the target and never writes or deletes there. It refuses a state of another sche
 SHA-256 differs from the one recorded; it copies each report (and the Markdown beside it) into the workspace,
 rewrites the report paths to the file names, logs one entry and lists the in-repo files the owner may now remove.
 
+The target's history is guarded (ADR 0007). ``init`` and ``adopt`` record the tips of the target's branches, tags and
+``origin/*`` branches in ``<label>-ref-tips.json`` beside the state, with read-only git; ``record-refs`` records them
+for a state that has none. ``verify-refs``, run at each theme close, exits 2 for a recorded ref that is gone, a branch
+whose tip no longer contains its recorded tip, or a tag that points elsewhere. A ref the run created is not recorded,
+so it passes. ``accept-ref REF --reason TEXT --by owner`` takes the ref's current tip as its new recorded tip (or drops
+a ref that is gone) and logs the owner's reason.
+
 ``render`` is a pure function of the JSON: the same state, in any key order, gives the same bytes.
 """
 
@@ -84,6 +91,10 @@ STATE_MD_SUFFIX = "-agentic-readiness-STATE.md"
 MAX_STATE_BYTES = 8 * 1024 * 1024
 VERDICT_INFIX = "-regressions-"
 VERDICT_STATUSES = ("lost", "clean")
+REF_TIPS_SUFFIX = "-ref-tips.json"
+#: The refs whose tips `init` records and `verify-refs` checks (ADR 0007): branches, tags and the origin's branches.
+REF_NAMESPACES = ("refs/heads", "refs/tags", "refs/remotes/origin")
+MAX_REF_TIPS_BYTES = 8 * 1024 * 1024
 
 
 def _span(prefix: str, first: int, last: int, *, skip: Sequence[int] = ()) -> tuple[str, ...]:
@@ -128,6 +139,9 @@ INFO = _common.ToolInfo(
         "progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA]"
         " --workspace DIR --phase PHASE [--render]",
         "progress.py accept-lost THEME --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
+        "progress.py record-refs --target REPO --workspace DIR --phase PHASE [--label LABEL] [--render]",
+        "progress.py verify-refs --target REPO --workspace DIR [--label LABEL]",
+        "progress.py accept-ref REF --target REPO --reason TEXT --by owner --workspace DIR --phase PHASE [--render]",
     ),
     writes=(
         "Only in the workspace, the report's folder, which must be outside the target: "
@@ -135,7 +149,9 @@ INFO = _common.ToolInfo(
         "render, and any command given --render), each replaced atomically; adopt also copies the source reports "
         "there, never over a different file. init and adopt never replace a state; show writes nothing; every other "
         "command rewrites the JSON after validating it. set-status, theme and accept-lost read the theme's "
-        "LABEL-regressions-THEME.json verdict, which check_regressions.py writes."
+        "LABEL-regressions-THEME.json verdict, which check_regressions.py writes. init, adopt and record-refs also "
+        "write LABEL-ref-tips.json, the target's ref tips read with read-only git, and never replace it; accept-ref "
+        "replaces one tip in it; verify-refs writes nothing."
     ),
 )
 
@@ -453,6 +469,14 @@ def _sha_option(text: str) -> str:
     return short_sha(text) or text
 
 
+def try_ref_tips(target: Path) -> tuple[dict[str, str] | None, list[str]]:
+    """The target's ref tips for `init` and `adopt`, or None and a warning when git cannot list them."""
+    try:
+        return target_ref_tips(target), []
+    except _common.UsageError as exc:
+        return None, [f"no ref tips recorded, so verify-refs cannot guard the history: {exc}"]
+
+
 def run_init(args: Any) -> _common.Result:
     target = _common.resolve_target(args.target)
     try:
@@ -486,13 +510,16 @@ def run_init(args: Any) -> _common.Result:
     json_path, md_path = state_file(workspace, json_name), state_file(workspace, md_name)
     if json_path.exists():
         raise _common.UsageError(f"a state already exists: {json_path}; init never replaces one")
+    ref_path = refuse_existing_ref_tips(workspace, label)
     default_branch = args.default_branch or report["provenance"]["target"]["branch"] or "main"
+    date = _date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    tips, history_warning = try_ref_tips(target)
     state = build_state(
         report,
         report_path=report_file.name,
         default_branch=default_branch,
         phase=args.phase,
-        date=_date(args.date) if args.date else datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        date=date,
         framework=framework,
         report_sha256=file_sha256(report_file),
     )
@@ -504,8 +531,10 @@ def run_init(args: Any) -> _common.Result:
     swept = sweep_temporaries(workspace, (json_name, md_name))
     _common.atomic_write_text(json_path, encode_state(state))
     _common.atomic_write_text(md_path, render(state))
+    if tips is not None:
+        write_ref_tips(ref_path, label, date, tips)
     counts = status_counts(state)
-    warnings = [*version_warnings]
+    warnings = [*version_warnings, *history_warning]
     if swept:
         warnings.append(f"removed {swept} temporary files an interrupted write left in {workspace}")
     return _common.Result(
@@ -517,6 +546,7 @@ def run_init(args: Any) -> _common.Result:
             "items": len(state["items"]),
             "statuses": counts,
             "not_queued": len(state["not_queued"]),
+            "ref_tips": str(ref_path) if tips is not None else None,
         },
         summary=(
             f"progress: created the state for {label}: {counts['queued']} queued, {counts['deferred']} deferred, "
@@ -570,6 +600,8 @@ def run_adopt(args: Any) -> _common.Result:
         raise _common.UsageError(
             f"the workspace already holds a state for {label}: {json_path}; adopt never replaces one"
         )
+    ref_path = refuse_existing_ref_tips(workspace, label)
+    tips, history_warning = try_ref_tips(target)
     copies: list[tuple[Path, Path]] = []
     report_folders: list[str] = []
     for entry in state["source_reports"]:
@@ -603,17 +635,21 @@ def run_adopt(args: Any) -> _common.Result:
     swept = sweep_temporaries(workspace, (json_name, md_name))
     _common.atomic_write_text(json_path, encode_state(state))
     _common.atomic_write_text(md_path, render(state))
+    if tips is not None:
+        write_ref_tips(ref_path, label, args.date, tips)
     removable = [STATE_DIR.as_posix() + "/", *report_folders]
     agents = target / "AGENTS.md"
     if agents.is_file() and not agents.is_symlink() and STATE_DIR.as_posix() in agents.read_text(encoding="utf-8"):
         removable.append(f"the line in AGENTS.md that points at {STATE_DIR.as_posix()}/")
     warnings = [f"removed {swept} temporary files an interrupted write left in {workspace}"] if swept else []
+    warnings += history_warning
     return _common.Result(
         data={
             "state": str(json_path),
             "markdown": str(md_path),
             "label": label,
             "adopted_from": source_rel,
+            "ref_tips": str(ref_path) if tips is not None else None,
             "copied": copied,
             "may_remove": removable,
         },
@@ -1232,6 +1268,225 @@ def run_accept_lost(args: Any) -> _common.Result:
     return commit_change(args, label, path, state, f"theme {args.theme} lost verdict {digest} accepted by owner")
 
 
+# --- Ref tips (ADR 0007) ----------------------------------------------------------------------------------
+
+REF_TIP = re.compile(r"^[0-9a-f]{12}\Z")
+REF_NAME = re.compile(r"^refs/(heads|tags|remotes/origin)/[^\x00-\x1f\x7f]+\Z")
+
+
+def ref_tips_name(label: str) -> str:
+    """The file name of the ref tips recorded for one state, beside it in the workspace."""
+    state_names(label)  # refuses a label that is not a file name
+    return label + REF_TIPS_SUFFIX
+
+
+def target_ref_tips(target: Path) -> dict[str, str]:
+    """Each branch, tag and origin branch of `target`, with the first 12 digits of the object it names.
+
+    Read-only git. A symbolic ref such as ``origin/HEAD`` is left out. A target that is not the top folder of a git
+    work tree is refused (exit 1): its refs would be another repository's.
+    """
+    top = validate_report.git_toplevel(target)
+    if top != target:
+        raise _refuse(
+            f"the target is not the top folder of a git work tree: {target}",
+            "pass the repository's root folder to --target",
+        )
+    done = validate_report.git_output(
+        target, ["for-each-ref", "--format=%(refname)%00%(objectname)%00%(symref)", *REF_NAMESPACES]
+    )
+    if done is None or done.returncode != 0:
+        why = done.stderr.strip() if done is not None else "git did not run"
+        raise _refuse(f"git could not list the refs of {target}: {why}")
+    tips: dict[str, str] = {}
+    for line in done.stdout.splitlines():
+        name, _, rest = line.partition("\0")
+        objectname, _, symref = rest.partition("\0")
+        if name and objectname and not symref:
+            tips[name] = objectname[: validate_report.SHORT_SHA_CHARS]
+    return tips
+
+
+def encode_ref_tips(label: str, recorded: str, tips: Mapping[str, str]) -> str:
+    document = {
+        "tool": "progress",
+        "kind": "ref-tips",
+        "label": label,
+        "recorded": recorded,
+        "refs": [{"ref": ref, "tip": tips[ref]} for ref in sorted(tips)],
+    }
+    return json.dumps(document, indent=2, ensure_ascii=False) + "\n"
+
+
+def read_ref_tips(directory: Path, label: str) -> dict[str, Any] | None:
+    """The ref tips recorded beside the state: ``{"recorded": date, "refs": {ref: tip}}``. None when there is no file.
+
+    A file that is not one this tool writes is refused (exit 2): it was edited by hand.
+    """
+    path = state_file(directory, ref_tips_name(label))
+    if not path.exists():
+        return None
+    if path.stat().st_size > MAX_REF_TIPS_BYTES:
+        raise _common.ValidationFailed(f"{path.name} is larger than {MAX_REF_TIPS_BYTES} bytes")
+    try:
+        document = json.loads(path.read_bytes().decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        document = None
+    entries = document.get("refs") if isinstance(document, dict) else None
+    if not (
+        isinstance(document, dict)
+        and (document.get("tool"), document.get("kind"), document.get("label")) == ("progress", "ref-tips", label)
+        and isinstance(document.get("recorded"), str)
+        and isinstance(entries, list)
+        and all(
+            isinstance(entry, dict)
+            and isinstance(entry.get("ref"), str)
+            and REF_NAME.match(entry["ref"])
+            and isinstance(entry.get("tip"), str)
+            and REF_TIP.match(entry["tip"])
+            for entry in entries
+        )
+    ):
+        raise _common.ValidationFailed(
+            f"{path.name} is not a ref record that progress.py wrote",
+            hint="tell the owner it was edited; record-refs records new tips only when the file is gone",
+        )
+    refs = {entry["ref"]: entry["tip"] for entry in entries}
+    if len(refs) != len(entries):
+        raise _common.ValidationFailed(f"{path.name} lists a ref twice")
+    return {"recorded": document["recorded"], "refs": refs}
+
+
+def refuse_existing_ref_tips(directory: Path, label: str) -> Path:
+    """The path of the ref record for `label`, refusing one that exists: it is never replaced by a new recording."""
+    path = state_file(directory, ref_tips_name(label))
+    if path.exists():
+        raise _refuse(
+            f"a ref record already exists: {path}; it is never replaced",
+            "move it aside with the old state files to start a new run",
+        )
+    return path
+
+
+def write_ref_tips(path: Path, label: str, recorded: str, tips: Mapping[str, str]) -> None:
+    sweep_temporaries(path.parent, (path.name,))
+    _common.atomic_write_text(path, encode_ref_tips(label, recorded, tips))
+
+
+def ref_problems(target: Path, recorded: Mapping[str, str], current: Mapping[str, str]) -> list[dict[str, Any]]:
+    """Each recorded ref that lost history: gone, a branch that no longer contains its recorded tip, or a moved tag."""
+    problems: list[dict[str, Any]] = []
+    for ref, tip in sorted(recorded.items()):
+        now = current.get(ref)
+        if now == tip:
+            continue
+        if now is None:
+            what, line = "gone", f"{ref} is gone; it pointed at {tip}"
+        elif ref.startswith("refs/tags/"):
+            what, line = "moved", f"{ref} pointed at {tip} and now points at {now}"
+        else:
+            done = validate_report.git_output(target, ["merge-base", "--is-ancestor", tip, now])
+            if done is not None and done.returncode == 0:
+                continue  # it moved forward: the recorded tip is still in its history
+            gone = done is None or done.returncode != 1
+            what = "rewritten"
+            line = (
+                f"{ref} no longer contains its recorded tip {tip}; it is now {now}"
+                + (" (the recorded tip is no longer in the repository)" if gone else "")
+                + ": a rebase, an amend, a reset or a forced push"
+            )
+        problems.append({"ref": ref, "what": what, "recorded": tip, "now": now, "line": line})
+    return problems
+
+
+def recorded_ref_tips(directory: Path, label: str) -> dict[str, Any]:
+    found = read_ref_tips(directory, label)
+    if found is None:
+        raise _refuse(
+            f"no ref tips are recorded for {label} in {directory}, so the history check did not run",
+            "record them now with: progress.py record-refs --target REPO --workspace DIR --phase P; "
+            "refs are checked from then on",
+        )
+    return found
+
+
+def target_outside_workspace(args: Any, workspace: Path) -> Path:
+    target = _common.resolve_target(args.target)
+    if _common.is_within(target, workspace):
+        raise _common.PathNotAllowed(f"the workspace is inside the target: {workspace}")
+    return target
+
+
+def run_record_refs(args: Any) -> _common.Result:
+    """`record-refs`: record the target's ref tips for a state that has none, such as one made by older tools."""
+    label, path, state = open_state(args)
+    target = target_outside_workspace(args, path.parent)
+    ref_path = refuse_existing_ref_tips(path.parent, label)
+    tips = target_ref_tips(target)
+    write_ref_tips(ref_path, label, args.date, tips)
+    record(state, args, f"ref tips recorded for {len(tips)} refs of the target")
+    result = commit_change(args, label, path, state, f"recorded the tips of {len(tips)} refs")
+    result.data["ref_tips"] = str(ref_path)
+    return result
+
+
+def run_verify_refs(args: Any) -> _common.Result:
+    """`verify-refs`: exit 2 when a recorded ref lost history. Reads the target with read-only git; writes nothing."""
+    label, path = find_state(workspace_directory(args.workspace), args.label)
+    read_state(path)
+    target = _common.resolve_target(args.target)
+    recorded = recorded_ref_tips(path.parent, label)
+    current = target_ref_tips(target)
+    problems = ref_problems(target, recorded["refs"], current)
+    if problems:
+        refs = ", ".join(problem["ref"] for problem in problems)
+        raise _common.ValidationFailed(
+            short(f"{len(problems)} recorded refs lost history since {recorded['recorded']}: {refs}"),
+            errors=[problem["line"] for problem in problems],
+            hint="stop and ask the owner: restore the ref, accept it with "
+            "accept-ref REF --reason TEXT --by owner, or stop the theme",
+        )
+    new = sorted(set(current) - set(recorded["refs"]))
+    return _common.Result(
+        data={"status": "clean", "label": label, "checked": len(recorded["refs"]), "new": len(new)},
+        summary=(
+            f"progress: {len(recorded['refs'])} recorded refs keep their history; {len(new)} refs are new since "
+            f"{recorded['recorded']}"
+        ),
+    )
+
+
+def run_accept_ref(args: Any) -> _common.Result:
+    """`accept-ref`: the owner accepts one ref's lost history; its current tip becomes the recorded one."""
+    require_owner(args, "accept-ref")
+    label, path, state = open_state(args)
+    target = target_outside_workspace(args, path.parent)
+    recorded = recorded_ref_tips(path.parent, label)
+    tips: dict[str, str] = recorded["refs"]
+    if args.ref not in tips:
+        raise _refuse(
+            f"{args.ref} is not a recorded ref; a ref the run created needs no acceptance",
+            "name the ref as verify-refs prints it, for example refs/heads/main",
+        )
+    problem = next(iter(ref_problems(target, {args.ref: tips[args.ref]}, target_ref_tips(target))), None)
+    if problem is None:
+        raise _refuse(f"{args.ref} still holds its recorded tip {tips[args.ref]}; there is nothing to accept")
+    if problem["now"] is None:
+        del tips[args.ref]
+    else:
+        tips[args.ref] = problem["now"]
+    now = problem["now"] or "gone"
+    record(
+        state,
+        args,
+        f"ref {args.ref} {problem['what']} accepted by owner (recorded {problem['recorded']}, now {now}): "
+        f"{short(args.reason)}",
+    )
+    result = commit_change(args, label, path, state, f"ref {args.ref} {problem['what']} accepted by owner")
+    write_ref_tips(state_file(path.parent, ref_tips_name(label)), label, recorded["recorded"], tips)
+    return result
+
+
 def run_set_status(args: Any) -> _common.Result:
     label, path, state = open_state(args)
     item = find_item(state, args.finding)
@@ -1350,6 +1605,7 @@ def run_theme(args: Any) -> _common.Result:
 
 
 WORKSPACE_HELP = "the folder that holds the state files"
+TARGET_HELP = "the repository the state is for (read only)"
 
 
 def build_parser() -> _common.ToolParser:
@@ -1427,6 +1683,24 @@ def build_parser() -> _common.ToolParser:
     accept.add_argument("theme", choices=THEME_IDS)
     accept.add_argument("--reason", required=True, help="the owner's reason")
     write_options(accept)
+    record_refs = commands.add_parser(
+        "record-refs", help="record the target's ref tips for a state that has none (read-only git)"
+    )
+    record_refs.add_argument("--target", required=True, help=TARGET_HELP)
+    write_options(record_refs)
+    verify = commands.add_parser(
+        "verify-refs", help="exit 2 when a recorded branch, tag or origin branch lost history (read-only git)"
+    )
+    verify.add_argument("--target", required=True, help=TARGET_HELP)
+    verify.add_argument("--workspace", required=True, help=WORKSPACE_HELP)
+    verify.add_argument("--label", help="the state to check when the workspace holds more than one")
+    accept_ref = commands.add_parser(
+        "accept-ref", help="record the owner's acceptance of a ref that lost history (needs --by owner)"
+    )
+    accept_ref.add_argument("ref", help="the full ref name verify-refs printed, for example refs/heads/main")
+    accept_ref.add_argument("--target", required=True, help=TARGET_HELP)
+    accept_ref.add_argument("--reason", required=True, help="the owner's reason")
+    write_options(accept_ref)
     return parser
 
 
@@ -1448,6 +1722,12 @@ def handler(argv: Sequence[str]) -> _common.Result:
         return run_theme(args)
     if args.command == "accept-lost":
         return run_accept_lost(args)
+    if args.command == "record-refs":
+        return run_record_refs(args)
+    if args.command == "verify-refs":
+        return run_verify_refs(args)
+    if args.command == "accept-ref":
+        return run_accept_ref(args)
     return run_render(args)
 
 

@@ -907,6 +907,9 @@ python3 implement/tools/progress.py pref set KEY VALUE --reason TEXT --by owner 
 python3 implement/tools/progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py accept-lost THEME --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+python3 implement/tools/progress.py record-refs --target REPO --workspace DIR --phase PHASE [--label LABEL] [--render]
+python3 implement/tools/progress.py verify-refs --target REPO --workspace DIR [--label LABEL]
+python3 implement/tools/progress.py accept-ref REF --target REPO --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 python3 implement/tools/progress.py --describe
 ```
 
@@ -915,7 +918,7 @@ python3 implement/tools/progress.py --describe
 | Argument | Meaning |
 |---|---|
 | `--report` | `init`: the final audit report (JSON). Its folder becomes the workspace, so it must be outside the target, and `validate_report.py` must accept it. |
-| `--target` | `init`: the audited repository. `adopt`: the checkout whose `docs/agentic-readiness/` holds a state an earlier release wrote; read only. No other command takes it. |
+| `--target` | `init`: the audited repository. `adopt`: the checkout whose `docs/agentic-readiness/` holds a state an earlier release wrote; read only. `record-refs`, `verify-refs` and `accept-ref`: the repository whose refs are read, with read-only git. No other command takes it. |
 | `--workspace` | Every command but `init`: the folder that holds the state, `<label>-agentic-readiness-state.json`, and its view `<label>-agentic-readiness-STATE.md`. It must be outside the target. `adopt` creates it when it is missing. |
 | `--default-branch` | `init`: the branch the theme PRs go into. Default: the report's `provenance.target.branch`, else `main`. |
 | `--phase` | `init`: the step recorded in the first log entry. Default: `init`. `adopt` requires it. |
@@ -926,14 +929,15 @@ python3 implement/tools/progress.py --describe
 | `--commit` | `set-status`: a commit SHA to add to the item (repeatable), 7 to 40 digits, stored cut to 12. |
 | `--verification-command`, `--verification-result` | `set-status`: the verification and what it gave; given together. `done` needs one. |
 | `--debt`, `--clear-debt` | `set-status`: record debt (repeatable; same `what` replaces) or drop it. `partial` needs debt; `done` needs none. |
-| `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer`, `pref` and `accept-lost`. |
+| `--reason` | The reason. Required by `failed`, `blocked`, `skip`, `defer`, `pref`, `accept-lost` and `accept-ref`. |
 | `KEY VALUE` | `pref set`: a lower-case key (letters, digits, dot, underscore, hyphen; at most 64) and its value. The value `none` records that the owner was asked and has no preference. |
 | `--note` | `set-status`: text appended to the item's notes. When the item already has the given status, this is the only effect (the note and any `--commit` are added and the log says "note added"); without `--note` that case is refused. |
-| `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer`, `pref` and `accept-lost` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
+| `--by` | Who decided, `owner` or `agent` (default `agent`). `skip`, `unskip`, `defer`, `undefer`, `pref`, `accept-lost` and `accept-ref` refuse anything but `owner`: the agent relays the owner's answer; the tool cannot see who is typing. |
 | `--phase` | Every write: the step recorded in the log entry and on the item or preference. |
 | `--render` | Every write: also replace the Markdown view. Without it the tool warns that the view is out of date. |
 | `--status`, `--branch`, `--pr`, `--merged-sha` | `theme`: the theme's new status (it only moves forward) and the data that status needs: a branch, then a PR, then the merge SHA (stored cut to 12 digits). |
 | `THEME` | `accept-lost`: the theme whose latest `lost` verdict the owner accepts, `T1` to `T8`. |
+| `REF` | `accept-ref`: the full ref name `verify-refs` printed, for example `refs/heads/main`. |
 | `--json` | `show`: print the state itself instead of the summary. Long lists are cut to fit the output and `truncated` is set; the log keeps its newest entries. |
 
 **Outputs**
@@ -973,13 +977,42 @@ verdict file's SHA-256, so a new `lost` verdict needs a new acceptance. A `clean
 with no verdict file: a run that took no base report, or older tools, wrote none. `progress.py` reads the verdict
 and never writes it.
 
+**The target's history is guarded**
+([ADR 0007](../../implement/docs/architecture/adrs/0007-recorded-ref-tips-guard-the-target-history.md)).
+`init` and `adopt` record the target's ref tips in `<label>-ref-tips.json` beside the state, and give its path in
+`data.ref_tips`. They read `git for-each-ref` over `refs/heads`, `refs/tags` and `refs/remotes/origin`, leave out a
+symbolic ref such as `origin/HEAD`, and keep 12 digits of each tip. A target that is not the top folder of a git
+work tree gets no record: `data.ref_tips` is null and a warning says so. `record-refs` records the tips for a state
+that has none, and logs `ref tips recorded for N refs of the target`. No command replaces a record.
+
+`verify-refs` runs at each theme close and writes nothing. It exits 2 when a recorded ref lost history, with one
+line per ref in `data.errors` and on stderr:
+
+- `<ref> is gone; it pointed at <tip>`: a deleted branch or tag, or a pruned `origin/*` branch;
+- `<ref> no longer contains its recorded tip <tip>; it is now <tip>: ...`: a rebase, an amend, a reset or a forced
+  push of a branch (`git merge-base --is-ancestor` fails);
+- `<ref> pointed at <tip> and now points at <tip>`: a tag that moved, even forward.
+
+A branch that moved forward passes, and so does a ref the run created, since it was never recorded. Exit 0 gives
+`data.status` `clean`, `data.checked` (the recorded refs) and `data.new` (the refs not recorded). With no record,
+`verify-refs` exits 1: the history check did not run.
+
+`accept-ref REF --reason TEXT --by owner` takes the ref's current tip as its recorded tip, or drops a ref that is
+gone. It appends the log entry `ref <ref> <gone|rewritten|moved> accepted by owner (recorded <tip>, now <tip>):
+<reason>`. A later rewrite of the same ref is reported again. It refuses a ref that is not recorded, and one that
+still holds its recorded tip.
+
+The check sees refs only. It does not see an `rm -rf` of untracked data, a `git stash drop`, a `docker` stack wipe,
+or a remote that was not fetched. It cannot tell a command the person asked for from one they did not; the owner
+says so with `accept-ref`.
+
 **Exit codes**
 
 | Code | When |
 |---|---|
 | `0` | Done. |
-| `1` | A bad argument, a missing report or target, a workspace inside the target, a missing workspace, an existing state for `init` or `adopt`, no state for `show` or `render`, a state file that is a symlink, or, for `adopt`, a listed report missing from the target. |
-| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules; or, for `adopt`, a report no longer matches its recorded SHA-256; or a theme's verdict file is not one `check_regressions.py` wrote. `data.errors` lists what to fix. |
+| `1` | A bad argument, a missing report or target, a workspace inside the target, a missing workspace, an existing state or ref record for `init` or `adopt`, no state for `show` or `render`, a state file that is a symlink, or, for `adopt`, a listed report missing from the target. For `verify-refs`, `record-refs` and `accept-ref`: no ref record (the history check did not run), an existing one for `record-refs`, or a target that is not the top folder of a git work tree. |
+| `2` | The report is invalid, not final, from a newer framework release, or has a finding on a check with no theme; or the state fails the schema or its rules; or, for `adopt`, a report no longer matches its recorded SHA-256; or a theme's verdict file is not one `check_regressions.py` wrote; or the ref record is not one `progress.py` wrote; or, for `verify-refs`, a recorded ref lost history. `data.errors` lists what to fix. |
 | `3` | Internal error, including a write the system refused. The old file is left whole. |
 
 **Errors**
@@ -1005,6 +1038,11 @@ and never writes it.
 | `... is refused: theme Tn lost a pass (...) and the owner has not decided` | Ask the owner: fix it and compare again, accept it with `accept-lost Tn --reason TEXT --by owner`, or stop the theme. |
 | `theme Tn has no verdict to accept` / `... there is no lost pass to accept` | Nothing waits for the owner; go on. |
 | `<label>-regressions-Tn.json is not a check_regressions.py verdict for theme Tn` | The file was edited by hand. Run `check_regressions.py` again with `--workspace` and `--theme`. |
+| `N recorded refs lost history since <date>: ...` | Stop and ask the owner: restore the ref, accept it with `accept-ref REF --reason TEXT --by owner`, or stop the theme. |
+| `no ref tips are recorded for L in ..., so the history check did not run` | Say so. Record them now with `record-refs`; refs are checked from then on. |
+| `a ref record already exists: ...; it is never replaced` | Use `verify-refs`. To start a new run, move it aside with the old state files. |
+| `REF is not a recorded ref; ...` / `REF still holds its recorded tip ...` | Nothing waits for the owner; go on. |
+| `the target is not the top folder of a git work tree: ...` | Pass the repository's root folder to `--target`. |
 | `the report has findings on checks with no theme: ...` | Add the checks to `THEMES` in `progress.py`. |
 | `no state in ...` | Run `init` first. |
 | `N states in ...; pick one with --label` | Pass `--label`. |

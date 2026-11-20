@@ -44,6 +44,7 @@ Number 0001 is retired in this group.
 | [0003](../../../implement/docs/architecture/adrs/0003-push-and-pr-policy.md) | The Implement Recipe Pushes and Opens a Pull Request Only When the Owner Opted In | The recipe stops at a local branch unless the owner opted in to a push and one pull request. |
 | [0004](../../../implement/docs/architecture/adrs/0004-implement-state-lives-in-the-audit-workspace.md) | The Implement State Lives in the Audit Workspace, Outside the Target | `progress.py` keeps the state beside the final report, outside the target; no tool writes inside a target. |
 | [0005](../../../implement/docs/architecture/adrs/0005-a-lost-pass-stops-the-theme.md) | A Lost Pass Stops the Theme Until the Owner Decides | An engine check that passed before the theme and not after it stops the theme; the owner fixes, accepts or stops. |
+| [0007](../../../implement/docs/architecture/adrs/0007-recorded-ref-tips-guard-the-target-history.md) | Recorded Ref Tips Guard the Target's History | `progress.py init` records the target's ref tips beside the state; `verify-refs` exits 2 at theme close for a ref that is gone or rewritten. |
 
 ## Audit engine: `audit/engine/docs/architecture/adrs/`
 

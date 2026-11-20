@@ -26,9 +26,11 @@ the target; this decision keeps that rule without exception.
 2. **The state lives in the workspace**, under the same two names:
    `<label>-agentic-readiness-state.json` and `<label>-agentic-readiness-STATE.md`. `<label>` is the report's
    `provenance.target.label`.
-3. **Every other `progress.py` command finds the state with `--workspace DIR`.** They take no `--target` and no
-   alias for it ([ADR 0008](../../../../docs/architecture/adrs/0008-one-release-version-and-current-schemas-only.md):
-   no backward compatibility before 1.0.0). `check_drift.py` reads the state from the report's folder.
+3. **Every other `progress.py` command finds the state with `--workspace DIR`.** They take no alias for it
+   ([ADR 0008](../../../../docs/architecture/adrs/0008-one-release-version-and-current-schemas-only.md): no
+   backward compatibility before 1.0.0). Only the commands that read the target's refs also take `--target`, read
+   only ([ADR 0007](0007-recorded-ref-tips-guard-the-target-history.md)). `check_drift.py` reads the state from the
+   report's folder.
 4. **No tool writes inside a target.** `ToolInfo.writes_inside_target` stays in the manifest and is `false` for every
    tool, so the [tool catalogue](../../../../audit/tools/CATALOGUE.md) states the guarantee.
 5. **The write rules guard the workspace.** Every write validates the whole state against
