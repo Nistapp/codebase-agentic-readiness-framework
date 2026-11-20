@@ -2,7 +2,7 @@
 
 Two checks of the [implement recipe](SKILL.md) guard a theme against changes it did not mean to make. The first
 watches the integration branch move under the theme. The second finds an engine check that passed before the theme
-and fails after it. Stages 3 and 4 run both.
+and fails after it. Stages 3 and 4 run both. The page also says when a theme may branch from an unmerged theme.
 
 ## Check the integration branch
 
@@ -17,6 +17,21 @@ changed: `git -C <worktree> diff --name-only <base> origin/<integration branch>`
 - A file in common: stop and ask the owner. Offer (a) go on, and resolve it at review; (b) merge the
   integration branch into the theme branch, as a merge commit; (c) stop the theme here. Default: none.
   Never rebase, never force-push.
+
+### Stack on an unmerged theme
+
+Stage 2, step 1 lets the owner branch a theme from a theme branch that is not merged yet. Ask first how the
+repository merges pull requests (`gh repo view --json mergeCommitAllowed,squashMergeAllowed,rebaseMergeAllowed`,
+or ask the owner).
+
+- **Merge commits.** Stacking works. Each pull request targets the integration branch, and the upper branch keeps
+  the lower branch's commits.
+- **Squash or rebase merges.** The merge writes new commits, so the upper branch still holds the originals. Every
+  file both themes change (`AGENTS.md`, a CI workflow, the command runner) then conflicts after each merge, once
+  per layer. Default: do not stack. Wait for the lower theme to merge, then branch from the integration branch.
+- **The owner stacks anyway.** After each lower merge, merge the integration branch into the upper branch, as a
+  merge commit, and resolve the conflicts there. Never rebase, never force-push
+  ([ADR 0003](docs/architecture/adrs/0003-push-and-pr-policy.md)).
 
 ## Keep passing checks passing
 
