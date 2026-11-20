@@ -614,8 +614,9 @@ Does the same command give the same result on a fresh machine, without a human i
 `BLOCKER` · scored · engine check · fixed by
 [`env-inventory-and-secrets`](implement-master.md#env-inventory-and-secrets)
 
-- **Passes when:** every referenced key not on the allow-list is declared in a committed example file (including the
-  case of no references at all).
+- **Passes when:** every required referenced key not on the allow-list is declared in a committed example file
+  (including the case of no references at all). An optional key (a shell reference with a fallback) is listed but never
+  required.
 - **Why it matters:** A variable the code needs but nobody wrote down fails at runtime, mid-task, and the agent debugs
   an environment problem it has no way to see coming ([greenfield/README.md § File Tree — What Gets
   Created](../../greenfield/README.md#file-tree--what-gets-created)).

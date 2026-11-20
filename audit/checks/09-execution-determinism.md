@@ -169,7 +169,13 @@ Engine           `EXEC-04`. Collects every `${VAR}` reference in shell-family fi
                  `process.env`/`ENV[...]`-style reference in source and script files, then subtracts the
                  keys declared in a committed example file (`.env.example`, `.env.sample`,
                  `.env.template`, `env.example`) and a fixed, in-code allow-list of conventional host/CI
-                 variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like). This check runs
+                 variables (`CI`, `HOME`, `GITHUB_*`, `VITEST_*`, and the like) and of variables the
+                 shell sets itself (`SECONDS`, `RANDOM`, `LINENO`, `OLDPWD`, `UID`, `BASH_*`, and the
+                 like). A shell reference with a fallback (`${VAR:-default}`, `${VAR-x}`, `${VAR:=x}`,
+                 `${VAR:+x}`) runs without the variable, so the key is optional: the summary and the
+                 payload's `optional` list name it when no example file declares it, and it never fails
+                 the check. `${VAR:?message}` stops the script without the variable, so it is required,
+                 as a bare `${VAR}` is. One required reference anywhere makes a key required. This check runs
                  regardless of detected ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` that
                  names a key your own reading recognises as a CI/host convention the allow-list has not
                  yet caught — verify against `_ENV_ALLOWLIST`/`_ENV_ALLOW_PREFIXES` in
@@ -178,10 +184,11 @@ Method           automated
 Look for         `${VAR}`-style references in shell/`Dockerfile` files, and language-level environment
                  reads in source and script files generally; the keys declared in whichever committed
                  example file exists.
-Rubric           PASS: every referenced key not on the allow-list is declared in a committed example
-                 file (including the case of no references at all).
+Rubric           PASS: every required referenced key not on the allow-list is declared in a committed
+                 example file (including the case of no references at all). An optional key (a shell
+                 reference with a fallback) is listed but never required.
                  PARTIAL: not used by this check — any undeclared key fails the whole check.
-                 FAIL: at least one referenced, non-allow-listed key is absent from every committed
+                 FAIL: at least one required, non-allow-listed key is absent from every committed
                  example file.
                  NOT_APPLICABLE: never.
                  UNKNOWN when: never — the reference scan runs whether or not an ecosystem is detected.

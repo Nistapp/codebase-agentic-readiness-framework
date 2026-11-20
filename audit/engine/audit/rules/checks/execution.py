@@ -904,7 +904,13 @@ def check_exec03(*, spec, target, inventory, stack, components, session) -> Chec
 #: The leading character anchors these on the env-var convention (upper-case first); the rest of
 #: the capture class permits lower-case and digits too, so an identifier such as
 #: ``UDA_LOG_LEVELNumber`` is captured whole rather than truncated at its first lower-case run.
-_SHELL_ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Za-z0-9_]*)\}")
+_SHELL_ENV_PATTERN = re.compile(r"\$\{([A-Z][A-Za-z0-9_]*)(?:(:?[-=+?])[^}]*)?\}")
+
+#: The parameter-expansion operators that give a reference a fallback, so the script runs without the variable:
+#: ``${VAR:-default}``, ``${VAR-default}``, ``${VAR:=default}``, ``${VAR=default}``, ``${VAR:+alt}`` and
+#: ``${VAR+alt}`` (issue #13). ``${VAR:?message}`` and ``${VAR?message}`` stop the script without it, so they are
+#: required references, as a bare ``${VAR}`` is.
+_SHELL_OPTIONAL_OPERATORS = frozenset({":-", "-", ":=", "=", ":+", "+"})
 
 #: A shell assignment to the same identifier class the reference pattern above captures —
 #: ``GREEN='\033[0;32m'``, optionally ``export``-ed. A file that assigns ``VAR`` itself is
@@ -960,6 +966,31 @@ _ENV_ALLOWLIST: frozenset[str] = frozenset(
         "NO_COLOR",
         "COLUMNS",
         "LINES",
+        # Variables the shell itself sets (bash, and zsh where it shares the name), never read from a template.
+        "BASHPID",
+        "EPOCHREALTIME",
+        "EPOCHSECONDS",
+        "EUID",
+        "FUNCNAME",
+        "GROUPS",
+        "HOSTNAME",
+        "HOSTTYPE",
+        "IFS",
+        "LINENO",
+        "MACHTYPE",
+        "OLDPWD",
+        "OPTARG",
+        "OPTIND",
+        "OSTYPE",
+        "PIPESTATUS",
+        "PPID",
+        "RANDOM",
+        "REPLY",
+        "SECONDS",
+        "SHELLOPTS",
+        "SHLVL",
+        "SRANDOM",
+        "UID",
     }
 )
 _ENV_ALLOW_PREFIXES: tuple[str, ...] = (
@@ -972,6 +1003,7 @@ _ENV_ALLOW_PREFIXES: tuple[str, ...] = (
     "VITEST_",
     "PYTEST_",
     "COVERAGE_",
+    "BASH_",
 )
 _ENV_EXAMPLE_FILES = (".env.example", ".env.sample", ".env.template", "env.example")
 
@@ -980,20 +1012,30 @@ def _is_shell_env_file(rel: str) -> bool:
     return rel.endswith(_SHELL_ENV_SUFFIXES) or rel.rsplit("/", 1)[-1] in _SHELL_ENV_BASENAMES
 
 
-def _referenced_env_keys(inv: Inventory) -> set[str]:
-    keys: set[str] = set()
+def _referenced_env_keys(inv: Inventory) -> tuple[set[str], set[str]]:
+    """The keys the repository requires, and the keys it reads only with a fallback.
+
+    A key is optional only when every shell reference to it has a fallback operator
+    (:data:`_SHELL_OPTIONAL_OPERATORS`) and no source file reads it; one required reference anywhere makes it
+    required.
+    """
+    required: set[str] = set()
+    optional: set[str] = set()
     for path in inv.paths():
         if not _is_shell_env_file(path):
             continue
         text = inv.read(path)
         if text:
-            referenced_here = {m.group(1) for m in _SHELL_ENV_PATTERN.finditer(text)}
             assigned_here = {m.group(1) for m in _SHELL_ASSIGN_PATTERN.finditer(text)}
-            keys |= referenced_here - assigned_here
+            for match in _SHELL_ENV_PATTERN.finditer(text):
+                key = match.group(1)
+                if key in assigned_here:
+                    continue
+                (optional if match.group(2) in _SHELL_OPTIONAL_OPERATORS else required).add(key)
     for pattern in _CODE_ENV_PATTERNS:
         for _rel, _line, text in inv.grep(pattern, kinds=(Kind.SOURCE, Kind.SCRIPT), limit=2000):
-            keys |= {m.group(1) for m in pattern.finditer(text) if m.group(1)}
-    return keys
+            required |= {m.group(1) for m in pattern.finditer(text) if m.group(1)}
+    return required, optional - required
 
 
 def _declared_env_keys(inv: Inventory) -> tuple[set[str], list[str]]:
@@ -1016,14 +1058,29 @@ def _env_allowed(key: str) -> bool:
 
 
 def check_exec04(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    referenced = _referenced_env_keys(inventory)
+    referenced, optional = _referenced_env_keys(inventory)
     declared, files = _declared_env_keys(inventory)
     missing = sorted(k for k in referenced - declared if not _env_allowed(k))
-    keys = EnvKeys(referenced=tuple(sorted(referenced)), missing=tuple(missing), templates=tuple(files))
+    optional_undeclared = sorted(k for k in optional - declared if not _env_allowed(k))
+    keys = EnvKeys(
+        referenced=tuple(sorted(referenced)),
+        missing=tuple(missing),
+        templates=tuple(files),
+        optional=tuple(optional_undeclared),
+    )
+    optional_note = (
+        f"; {len(optional_undeclared)} optional key(s) with a fallback, not in an example file: "
+        f"{', '.join(optional_undeclared[:12])}"
+        if optional_undeclared
+        else ""
+    )
 
     if not missing:
-        detail = f"{len(referenced)} referenced key(s) declared" if referenced else "no environment keys referenced"
-        return _outcome(spec, Verdict.PASS, detail, data=keys)
+        if referenced:
+            detail = f"{len(referenced)} referenced key(s) declared"
+        else:
+            detail = "no required environment key referenced" if optional else "no environment keys referenced"
+        return _outcome(spec, Verdict.PASS, detail + optional_note, data=keys)
 
     because = (
         f"{len(missing)} referenced key(s) are absent from "
@@ -1033,7 +1090,7 @@ def check_exec04(*, spec, target, inventory, stack, components, session) -> Chec
     return _outcome(
         spec,
         Verdict.FAIL,
-        because,
+        because + optional_note,
         [
             Finding(
                 check=spec.id,

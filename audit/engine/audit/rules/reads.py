@@ -1380,10 +1380,11 @@ READS: dict[str, Reads] = {
         binding="line",
         threshold="every referenced key declared",
         note=(
-            "References: ${VAR} in shell files and Dockerfile, less the keys the same file assigns, and "
-            "os.environ, getenv, process.env and ENV[...] in every file of kind source or script. Declared "
-            "keys are the KEY= lines of the four root example files; a fixed allow-list of host and CI names "
-            "is exempt."
+            "References: ${VAR} and ${VAR:?msg} in shell files and Dockerfile, less the keys the same file assigns, "
+            "and os.environ, getenv, process.env and ENV[...] in every file of kind source or script. A shell "
+            "reference with a fallback (${VAR:-x}, ${VAR-x}, ${VAR:=x}, ${VAR:+x}) is optional: listed, never "
+            "missing. Declared keys are the KEY= lines of the four root example files; a fixed allow-list of host, "
+            "CI and shell-set names is exempt."
         ),
     ),
     "EXEC-05": Reads(
