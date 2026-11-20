@@ -50,6 +50,7 @@ Agents MUST respect the following structural rules.
 | `audit/cli.py` | Argument surface and exit codes only — no scan logic. |
 | `audit/target.py` | Target guard and git provenance capture. |
 | `audit/scan.py` | Bounded traversal, file classification, bounded content reads, grep. |
+| `audit/globs.py` | The one path-glob matcher: a glob from the root, matched folder by folder (`*` stays inside a name, `**` matches any number of folders). |
 | `audit/stack.py` | Ecosystem / package manager / CI / test-framework / hook detection. |
 | `audit/components.py` | Declared components (depth 1) plus candidate components. |
 | `audit/probes.py` | Tier-C runner: allow-list, timeouts, **capture-time** redaction. |

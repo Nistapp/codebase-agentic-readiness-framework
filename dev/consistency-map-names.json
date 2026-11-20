@@ -3619,7 +3619,7 @@
       ],
       "match": "glob",
       "meaning": "A GitHub ruleset export is read as declared branch rules by `HYG-11` Branch protection declared as code, `AGT-09` and `TOOL-07`.",
-      "pattern": ".github/rulesets/*.json"
+      "pattern": ".github/rulesets/**/*.json"
     },
     {
       "checks": [
@@ -9514,7 +9514,7 @@
       ],
       "match": "glob",
       "meaning": "For `TST-01` Test verb exists, suite non-empty, a matching file counts toward the test suite; 1 other listed check read it too.",
-      "pattern": "tests/*.rs"
+      "pattern": "tests/**/*.rs"
     },
     {
       "checks": [

@@ -808,13 +808,16 @@ _SETUP_FILES = (
 #: Dockerfiles with a variant in the name (``Dockerfile.jvm``, ``dev.Dockerfile``), found at any depth by base name:
 #: frameworks keep them below the root (Quarkus writes ``src/main/docker/Dockerfile.jvm``).
 _DOCKERFILE_PATTERNS = ("Dockerfile.*", "*.Dockerfile", "*.dockerfile")
+#: The dev container spec reads ``.devcontainer/devcontainer.json`` and one configuration per subfolder,
+#: ``.devcontainer/<name>/devcontainer.json``.
+_DEVCONTAINER_PATTERNS = (".devcontainer/*.json", ".devcontainer/*/devcontainer.json")
 _DOC_FILES = (README, "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md")
 _SETUP_TARGETS = ("setup", "bootstrap", "install", "dev", "dev-setup")
 
 
 def _setup_signals(inv: Inventory) -> list[str]:
     signals = [name for name in _SETUP_FILES if inv.has(name)]
-    signals += inv.match(".devcontainer/*.json")
+    signals += inv.match(*_DEVCONTAINER_PATTERNS)
     signals += inv.match(*_DOCKERFILE_PATTERNS)
 
     make_targets = parse_makefile_targets(inv)

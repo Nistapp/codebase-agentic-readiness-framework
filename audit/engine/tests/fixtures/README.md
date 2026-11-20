@@ -47,6 +47,8 @@ fixtures/
   agt-12-no-rules/           no rules for writing to people       -> AGT-12 FAIL
   agt-13-no-conventions/     no conventions file or section       -> AGT-13 FAIL
   agt-10-deferred/           AGENTS.md defers to CONVENTIONS.md   -> AGT-10 FAIL
+  agt-10-pointer-dot-folder/ opencode.json points at `./.rules/agent-rules.md`, which exists -> AGT-10 PASS
+  agt-10-pointer-glob-top-level/ opencode.json points at `guides/**/*.md`; the only match is `guides/agent-rules.md` -> AGT-10 PASS
   agt-05-verbs-named-not-resolved/ AGENTS.md names all verbs, no runner -> AGT-05 PARTIAL
   agt-05-ok/                 all verbs named and resolved on a runner -> AGT-05 PASS
   cmd-01-missing-verb/       six of seven verbs, security missing -> CMD-01 FAIL
@@ -89,6 +91,7 @@ fixtures/
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app` out of step with the manifest beside it (needs git) -> EXEC-02 FAIL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
   exec-03-readme-no-extension/ the root README is `README`, no extension, and fences the install -> EXEC-03, HYG-01 PASS
+  exec-03-devcontainer-subfolder/ the only setup path is `.devcontainer/node/devcontainer.json`, a layout the dev container spec reads -> EXEC-03 PASS
   exec-04-missing-env/       source reads an undeclared env var    -> EXEC-04 FAIL
   exec-04-reincluded-example/ `.env.*` ignored, `!.env.example` re-includes the template -> EXEC-04 PASS
   exec-04-anchored-ignored-dir/ `/scratch/` ignored; its untracked file reads an undeclared key (needs git) -> EXEC-04 PASS
@@ -122,6 +125,8 @@ fixtures/
   tool-04-local-only-audit/  npm run security runs npm audit, no CI step runs it -> TOOL-04 PARTIAL
   tool-04-make-security-no-audit/ make security runs a prerequisite that expands to a secrets scan, no dependency audit -> TOOL-04 PARTIAL
   tool-05-unwired-hooks/     .husky/ present but never referenced   -> TOOL-05 PARTIAL
+  tool-05-husky-helpers-only/ only husky's own `.husky/_/husky.sh`, no hook -> TOOL-05 FAIL
+  tool-05-githooks-helpers-only/ only `.githooks/lib/common.sh`, which git never runs as a hook -> TOOL-05 FAIL
   tool-06-no-commit-rule/    wired hooks, no commit-message rule    -> TOOL-06 FAIL
   tool-06-local-only-commit-rule/  commit-msg hook, no CI step     -> TOOL-06 PARTIAL
   tool-06-ci-only-commit-rule/     PR-title check in CI, no hook   -> TOOL-06 PARTIAL
@@ -129,6 +134,7 @@ fixtures/
   tool-07-guard-no-exit/     wired lefthook guard reads the branch but only warns, no non-zero exit -> TOOL-07 PARTIAL
   tool-ok-node/              the smallest node repository passing every TOOL check (hook and CI step)
   ci-01-no-pr-trigger/       workflow without a pull-request trigger -> CI-01 PARTIAL
+  ci-01-nested-workflow-only/ the only workflow is `.github/workflows/reusable/ci.yml`, which GitHub never runs -> CI-01 FAIL
   ci-02-parity-break/        CI runs a framework verb with no local script -> CI-02 FAIL
   ci-03-ci-only-step/        CI runs `npm run deploy` with no local script -> CI-03 FAIL
   ci-05-no-workflow-lint/    workflows exist and no linter checks them -> CI-05 FAIL

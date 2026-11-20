@@ -39,6 +39,7 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit import globs
 from audit.rules.checks._common import (
     PROHIBITION_LINE_RE,
     declared_branch_rules,
@@ -114,7 +115,7 @@ CONFIG_GATED_NAMES = _config_gated_names()
 
 
 def is_non_instruction(rel: str) -> bool:
-    return any(fnmatch.fnmatch(rel, glob) for glob, _why in V.NON_INSTRUCTION_GLOBS)
+    return any(globs.glob_match(glob, rel, fold_case=True) for glob, _why in V.NON_INSTRUCTION_GLOBS)
 
 
 def instruction_paths(inv: Inventory) -> set[str]:
@@ -134,13 +135,11 @@ def instruction_paths(inv: Inventory) -> set[str]:
             if configs is None or any(inv.has(config) for config in configs):
                 found.add(rel)
             continue
-        # fnmatch reads `**/` as "any text, then a slash", so a file straight in a rules folder
-        # (`.cursor/rules/a.mdc`) also tries the pattern without it, as `variants._matches` does.
+        # A glob from the root, folder by folder: `**/` also matches no folder, so a file straight in a rules
+        # folder (`.cursor/rules/a.mdc`) counts, as in `variants._matches`.
         for harness in V.HARNESSES:
             for pattern in harness.paths:
-                if "*" in pattern and (
-                    fnmatch.fnmatch(rel, pattern) or fnmatch.fnmatch(rel, pattern.replace("**/", ""))
-                ):
+                if "*" in pattern and globs.glob_match(pattern, rel, fold_case=True):
                     found.add(rel)
     return found
 
@@ -664,6 +663,14 @@ def _configured_targets(inventory: Inventory) -> dict[str, list[str]]:
     return configured
 
 
+def _from_root(name: str) -> str:
+    """A configured target as a path from the root: each leading ``./`` goes, and a dot folder keeps its dot."""
+    rel = name.strip()
+    while rel.startswith("./"):
+        rel = rel[2:]
+    return rel
+
+
 def check_agt10(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
     findings: list[Finding] = []
     configured = _configured_targets(inventory)
@@ -672,7 +679,7 @@ def check_agt10(*, spec, target, inventory, stack, components, session) -> Check
     # 1. a configured pointer that names a file which does not exist
     for config_file, targets in configured.items():
         for name in targets:
-            rel = name.strip().lstrip("./")
+            rel = _from_root(name)
             exists = inventory.match(rel) if "*" in rel else inventory.has(rel)
             if not exists:
                 findings.append(_broken_pointer(spec, config_file, name))
