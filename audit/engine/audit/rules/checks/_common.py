@@ -61,9 +61,9 @@ class VerbBinding:
     argv: tuple[str, ...]
 
 
-#: Runner precedence among manifests at the same depth when more than one defines the same verb. A shallower
-#: manifest outranks a deeper one first (:func:`runner_rank`, ADR-0008). Fixed and documented so a target
-#: with both a Makefile and package.json resolves deterministically.
+#: Runner precedence among the root manifests when more than one defines the same verb (:func:`runner_rank`,
+#: ADR-0008). Every runner is a root manifest (:func:`_at_root`), so this order alone decides among them. Fixed
+#: and documented so a target with both a Makefile and package.json resolves deterministically.
 RUNNER_PRECEDENCE: tuple[str, ...] = (
     "package.json",
     "Makefile",
@@ -196,7 +196,7 @@ def resolve_verbs(inventory: Inventory, stack: Stack) -> dict[str, VerbBinding]:
 
 def runner_commands(inventory: Inventory) -> tuple[tuple[str, dict[str, str]], ...]:
     """Every present verb runner and its declared ``{verb: command}`` map, in precedence order
-    (:func:`runner_rank`: shallowest first, then by kind).
+    (:func:`runner_rank`). Every runner is a root manifest, so the order is :data:`RUNNER_PRECEDENCE`.
 
     A runner is present when its manifest is present, whether or not it declares any framework verb;
     callers that care about verb coverage read the map, callers that care about runners read the name.
@@ -589,11 +589,11 @@ def runner_kind(runner: str) -> str:
 
 
 def runner_rank(runner: str) -> tuple[int, int, str]:
-    """The sort key that orders runners: shallowest manifest first, then :data:`RUNNER_PRECEDENCE`, then path.
+    """The sort key that orders runners: :data:`RUNNER_PRECEDENCE`, then path, after a depth term.
 
-    A root manifest of any kind outranks a nested one (ADR-0008). Every runner kind now counts only at the root,
-    so the kind decides among the runners ``_runner_commands`` yields. Every reader that asks "which runner first"
-    uses this key.
+    Every runner ``_runner_commands`` yields is a root manifest (:func:`_at_root`), so its depth is 0 and the kind
+    decides. The depth term keeps a root path ahead of a nested one for a caller that passes a path (ADR-0008).
+    Every reader that asks "which runner first" uses this key.
     """
     try:
         kind = RUNNER_PRECEDENCE.index(runner_kind(runner))
