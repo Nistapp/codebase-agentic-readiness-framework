@@ -956,7 +956,7 @@ class DeclarationTest(unittest.TestCase):
     def test_the_case_folded_and_text_named_checks_are_declared(self) -> None:
         folded = sorted({check for check, d in reads.READS.items() if any(p.case == reads.FOLD for p in d.where)})
         named = sorted(check for check, declared in reads.READS.items() if declared.named_by_text)
-        self.assertEqual(folded, ["AGT-12", "AGT-13"])
+        self.assertEqual(folded, ["AGT-12", "AGT-13", "HYG-08"])
         self.assertEqual(named, ["AGT-06", "AGT-10", "CI-02", "CON-01"])
 
     def test_constants_are_named_only_when_they_hold_every_place(self) -> None:
@@ -1308,6 +1308,14 @@ class CoverRuleTest(unittest.TestCase):
         self.assertTrue(_folded_covers(reads.Place("**/*communicat*.md", reads.GLOB, case=reads.FOLD), ask))
         self.assertFalse(_folded_covers(reads.Place("**/*communicat*.md", reads.GLOB), ask))
         self.assertFalse(place_covers(reads.Place("**/*communicat*.md", reads.GLOB), ask))
+
+    def test_the_release_document_place_covers_an_upper_case_name(self) -> None:
+        # check_hyg08 lower-cases the base name, so RELEASE_PROCESS.md at the root or in docs/ passes it.
+        (place,) = reads.READS["HYG-08"].where
+        for path in ("RELEASE_PROCESS.md", "docs/Release-Guide.md", "release.md"):
+            self.assertTrue(_covered("HYG-08", ("read", path)), path)
+        self.assertFalse(place_covers(place, ("read", "RELEASE_PROCESS.md")))
+        self.assertFalse(_covered("HYG-08", ("read", "src/RELEASE_PROCESS.md")))
 
     def test_a_folder_at_the_root_covers_the_files_under_it(self) -> None:
         self.assertTrue(place_covers(reads.Place("artefacts", reads.ROOT), ("stat", "artefacts/notes.md")))
