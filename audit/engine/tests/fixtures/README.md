@@ -65,7 +65,7 @@ fixtures/
   cmd-01-nested-gradle-only/ the only Gradle build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-01-nested-maven-only/  the only Maven build and wrapper are under `tools/app/`, which is no runner (root only) -> CMD-01…04 UNKNOWN, no finding cites it
   cmd-ok-pyproject-poe/      `format-check`, the pyproject task runners' spelling -> CMD-01…04 PASS
-  cmd-ok-gradle/             `formatCheck` registered, `test` and `check` built in -> CMD-01 PASS, CMD-02 UNKNOWN
+  cmd-ok-gradle/             `formatCheck` registered and wired into the built-in `check` -> CMD-01 PASS, CMD-02 PASS
   cmd-ok-maven/              Spotless, Checkstyle and dependency-check declared, the lifecycle phases -> CMD-01 PASS, CMD-02 UNKNOWN
   cmd-01-maven-no-formatter/ a plugin goal named `check`, and no formatter plugin -> CMD-01 FAIL, CMD-02 UNKNOWN
   sec-01-tracked-env/        tracked .env, comprehensive ignore (needs git) -> SEC-01 FAIL
@@ -82,6 +82,8 @@ fixtures/
   exec-01-python-source-only/ a standard-library-only Python tool, no manifest, no pin -> EXEC-01 FAIL, EXEC-02 UNKNOWN
   exec-01-php-version-file/  a composer.json with no php key, pinned by .php-version -> EXEC-01 PASS
   exec-01-php-unpinned/      a composer.json with no php key, no .php-version -> EXEC-01 FAIL
+  exec-01-nested-composer-unpinned/ the root composer.json pins PHP, a nested one does not -> EXEC-01 PARTIAL
+  exec-01-tool-versions-only/ ruby, dotnet and jvm pinned only by .tool-versions lines -> EXEC-01 PASS
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app` out of step with the manifest beside it (needs git) -> EXEC-02 FAIL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
@@ -103,6 +105,7 @@ fixtures/
   doc-04-ok-parent-index/    docs/adr/ has no index; the parent docs/index.md lists the ADR -> DOC-04 PASS
   doc-05-long-sentences/     two thirds of the docs' sentences over 25 words -> DOC-05 FAIL
   nav-01-no-manifest/        source but no build manifest         -> NAV-01 UNKNOWN
+  nav-01-nested-manifest-only/ no root manifest, only `tools/lint/package.json` -> NAV-01 UNKNOWN
   nav-02-no-entry/           node manifest with no entry point    -> NAV-02 FAIL
   nav-02-main-guard-only/    python library, only a guarded helper script -> NAV-02 FAIL
   nav-03-red-flags/          a checked-in binary and a minified asset -> NAV-03 PARTIAL

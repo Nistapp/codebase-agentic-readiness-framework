@@ -157,10 +157,11 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    the scanner's own command, in its own commit (Commits row 17). "`SEC-02` No key-shaped strings in tracked
    files" accepts an allowlisted hit only on its listed line.
 10. **Fast path (TST-04)**, when the item is in T5: add the single-test command for the repository's runner to
-    `AGENTS.md` in a fenced shell block (the engine reads only fenced commands), for example
-    `./gradlew test --tests '<Class>'` or `npx jest -t '<test name>'`. Jest needs `-t` or `--testNamePattern`: a
-    path alone is not read as a single test. Start the line with a word that resolves, such as a verb or the
-    wrapper. "`EXEC-06` Documented commands resolve" reads every fenced command in `AGENTS.md`.
+    `AGENTS.md` in a fenced shell block (the engine also reads an inline code span, but `EXEC-06` reads only
+    fenced commands), for example `./gradlew test --tests '<Class>'` or `npx jest -t '<test name>'`. Jest needs
+    `-t`, `--testNamePattern` or a test file path that holds `.test.` or `.spec.`: a folder alone is not read as a
+    subset. Start the line with a word that resolves, such as a verb or the wrapper. "`EXEC-06` Documented commands
+    resolve" reads every fenced command in `AGENTS.md`.
 
 ### Java (Gradle)
 
@@ -205,9 +206,8 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#bas
   `test.coverage.thresholds`.
 - **Engine visibility.** BASE-04 reads every `package.json` (a `jest` key in a component's own manifest included)
   and `jest.config.*`/`vitest.config.*` files at any depth. Verify from the real config. BASE-02 reads only a budget
-  flag, so a counts file alone reads `PARTIAL`, and TST-04 accepts a Jest line only with `-t` or `--testNamePattern`;
-  a path-only `npx jest <file>` reads `FAIL` (framework issue #50). Write the fast-path block in the form the engine
-  reads and keep the path-only form out of the verification.
+  flag, so a counts file alone reads `PARTIAL` (framework issue #45). TST-04 accepts a Jest line with `-t`,
+  `--testNamePattern` or a test file path, such as `npx jest src/app.test.ts`.
 - **Whole-tree counts in `format:check`.** ESLint older than 9.24 has no baseline file, so the compare script runs
   the linter over the whole tree with JSON output and counts errors and files with errors. That adds the linter's
   full run (15-20 s on a mid-sized app) to `format:check`; say so in the paragraph in `AGENTS.md`. The script resolves

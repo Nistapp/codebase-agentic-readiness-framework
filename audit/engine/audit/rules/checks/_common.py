@@ -596,7 +596,7 @@ _GRADLE_PLUGINS_BLOCK_RE = re.compile(r"\bplugins\s*\{([^}]*)\}")
 _GRADLE_BARE_PLUGIN_RE = re.compile(r"^\s*`?([\w\-]+)`?\s*$")
 
 #: Plugins that register ``test`` and ``check`` on a build (Quarkus applies the ``java`` plugin itself).
-_GRADLE_LIFECYCLE_PLUGINS = frozenset(
+GRADLE_LIFECYCLE_PLUGINS = frozenset(
     {"java", "java-library", "application", "groovy", "scala", "war", "org.jetbrains.kotlin.jvm", "io.quarkus"}
 )
 
@@ -617,7 +617,8 @@ def _parse_gradle_tasks(text: str, inventory: Inventory) -> dict[str, str]:
     return {name: f"{launcher} {name}" for name in sorted(names)}
 
 
-def _gradle_plugins(text: str) -> set[str]:
+def gradle_plugins(text: str) -> set[str]:
+    """The plugin ids a Gradle build file applies, by id, by ``apply plugin``, or bare in its ``plugins`` block."""
     plugins = {match for pattern in _GRADLE_PLUGIN_ID_RES for match in pattern.findall(text)}
     if _GRADLE_KOTLIN_JVM_RE.search(text):
         plugins.add("org.jetbrains.kotlin.jvm")
@@ -631,7 +632,7 @@ def _gradle_plugins(text: str) -> set[str]:
 
 def _gradle_lifecycle(text: str, inventory: Inventory) -> dict[str, str]:
     """``test`` and ``check`` for a build that applies a plugin which registers them."""
-    if not _gradle_plugins(text) & _GRADLE_LIFECYCLE_PLUGINS:
+    if not gradle_plugins(text) & GRADLE_LIFECYCLE_PLUGINS:
         return {}
     launcher = _launcher(inventory, "gradlew", "gradle")
     return {"test": f"{launcher} test", "check": f"{launcher} check"}

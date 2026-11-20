@@ -495,7 +495,13 @@ def theme_changes(
     is then the only base the changed paths may be listed from.
     """
     worktree = _common.resolve_target(worktree_arg)
-    target = Path(close["provenance"]["target"]).expanduser().resolve()
+    recorded_target = close["provenance"]["target"]
+    if not Path(recorded_target).expanduser().is_absolute():
+        raise _common.UsageError(
+            f"the close report's target is {json.dumps(recorded_target)}, a label and not a path (the engine's "
+            "--target-label); --changed-from needs reports taken without --target-label"
+        )
+    target = Path(recorded_target).expanduser().resolve()
     if worktree != target:
         raise _common.UsageError(f"--changed-from {worktree} is not the reports' target {target}")
     recorded = base["provenance"].get("git_sha")

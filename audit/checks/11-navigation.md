@@ -30,7 +30,8 @@ Engine           `NAV-01`. Reads `components.declared` (built by the engine's ow
                  holds no build manifest, any top-level folder with one is a candidate too (an app per
                  folder, such as `web/` and `api/`). Candidates are reported, never scored (ADR-0003). A
                  single-root repository that still declares a manifest is `PASS` too: the boundary
-                 exists, it is just the root. The detector reads `package.json`, `pyproject.toml`,
+                 exists, it is just the root. Only a manifest at the root itself declares the root; a
+                 nested `tools/x/package.json` does not. The detector reads `package.json`, `pyproject.toml`,
                  `pom.xml`, `build.gradle(.kts)`, `Cargo.toml`, `go.mod`, `Gemfile`, `composer.json`,
                  and a .NET `*.sln`, `*.slnx`, `*.csproj`, `*.fsproj` or `*.vbproj` in the component's
                  own folder. No manifest it reads is `UNKNOWN`, never `FAIL` — an unrecognised ecosystem
