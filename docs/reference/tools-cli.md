@@ -1094,7 +1094,7 @@ reports from `engine.py`, not audit reports. The source is
 ### Synopsis
 
 ```text
-python3 implement/tools/check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA]]
+python3 implement/tools/check_regressions.py BASE CLOSE [--changed-from WORKTREE [--base SHA] [--base-target DIR]]
 python3 implement/tools/check_regressions.py --describe
 ```
 
@@ -1128,6 +1128,12 @@ engine's `audit.rules.reads`, which the tool loads through `engine.py`. A place 
 declarations. `declared` is `false` for a check with no declaration. `named_by_text` is `true` when the check also
 reads paths that the target's own text names.
 
+`--base-target DIR` (with `--changed-from`) accepts a base report taken on another checkout of the theme's base
+commit. The implement recipe makes one, a temporary detached worktree, when a resumed theme has no base report
+([Resume without a base report](../../implement/theme-checks.md#resume-without-a-base-report)). The base report's
+target must then be `DIR`, and the folder may be gone. The base report must record its commit, and the changed
+paths are listed from it; a `--base` that names another commit is a usage error.
+
 A place matches a changed path as the consistency map's schema states its scope:
 
 | Scope | Matches |
@@ -1155,6 +1161,6 @@ ruleset hash is not the reports' hash. Long lists are bounded: `data.omitted` co
 | Code | When |
 |---|---|
 | `0` | Done, whatever the status. Read `data.status`. |
-| `1` | A bad argument or a missing file. With `--changed-from`: a worktree that is not the reports' target, a base commit not in its history, or git that cannot list the changes. |
-| `2` | Refused. A file is not an engine report, or the two reports differ in ruleset hash, target, phase, user-config setting, probes or allowed probe verbs. The close report may also be no newer than the base. `data.errors` has one line per reason. |
+| `1` | A bad argument or a missing file. With `--changed-from`: a worktree that is not the reports' target, a base commit not in its history, or git that cannot list the changes. With `--base-target`: no `--changed-from`, a base report with no commit, or a `--base` that is not that commit. |
+| `2` | Refused. A file is not an engine report, or the two reports differ in ruleset hash, target, phase, user-config setting, probes or allowed probe verbs. With `--base-target`, the base report's target must be `DIR` instead. The close report may also be no newer than the base. `data.errors` has one line per reason. |
 | `3` | Internal error. |
