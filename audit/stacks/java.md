@@ -117,8 +117,9 @@ a human read of the build file to see the gap the engine's literal-name match ca
 which is `UNKNOWN` outright whenever `check` resolves only through the Gradle/Maven lifecycle path, by the
 engine's own documented rule, so this pack's check-composition question is never answered for an
 unmodified Gradle build and needs the agent's own read of what plugins (and their tasks) `check` actually
-depends on; `EXEC-02`, which finds `gradle.lockfile` but never compares it with the build file, so its
-`PARTIAL` means "consistency not read" — confirm by reading the build file for a `dependencyLocking` block.
+depends on; `EXEC-02`, which reads only whether a `gradle.lockfile` exists and is tracked. It cannot compare
+the lock with the build file, so a tracked lock reads `PARTIAL` at best, never `PASS` — confirm by reading the
+build file for a `dependencyLocking` block and the lockfile itself.
 `TOOL-01` and `TOOL-02` look for a formatter or linter config file by name; `checkstyle.xml` is the one JVM name.
 A Spotless block in the build file or a PMD ruleset under `config/pmd/` therefore reads `PARTIAL` (seen on the
 reference repository): read the build file. `TOOL-04` reads `PARTIAL` when `security` is an `Exec` task that calls

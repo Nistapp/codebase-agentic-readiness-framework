@@ -24,6 +24,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any
 from unittest import mock
 
@@ -501,6 +502,39 @@ class GateTest(unittest.TestCase):
         self.assertLessEqual(local, consistency_map.KIND_FILTERED_READS["CI-05"])
         self.assertEqual(consistency_map.scan_kind(".github/workflows/*.yml"), "ci")
         self.assertIsNone(consistency_map.scan_kind("scripts/"))
+
+    def test_r3_the_kinds_are_the_kinds_the_engine_greps(self) -> None:
+        """Each set but CI-05's is exactly the kinds the check's helpers pass to ``Inventory.grep``.
+
+        The kinds are written inline in the engine, not in a constant, so the test runs the helpers on an empty
+        inventory and records the ``kinds=`` of every grep. Each helper greps on every run, hit or not.
+        """
+        scan = _engine_module("audit.scan")
+        tool = _engine_module("audit.rules.checks.tool")
+        execution = _engine_module("audit.rules.checks.execution")
+        nav = _engine_module("audit.rules.checks.nav")
+        helpers: dict[str, list[Callable[[Any], object]]] = {
+            "TOOL-05": [tool._hook_wiring],
+            "TOOL-06": [tool._hook_wiring],
+            "TOOL-07": [tool._local_guards, tool._hook_wiring],
+            "EXEC-04": [execution._referenced_env_keys],
+            "NAV-02": [lambda inventory: nav._entry_points(inventory, set(nav._DETECTORS))],
+        }
+        self.assertEqual(set(helpers) | {"CI-05"}, set(consistency_map.KIND_FILTERED_READS))
+        with tempfile.TemporaryDirectory() as folder:
+            for check, calls in helpers.items():
+                inventory = scan.Inventory(root=Path(folder))
+                recorded: set[str] = set()
+
+                def grep(_pattern: object, *, kinds: Any = None, limit: int = 200) -> list[Any]:
+                    self.assertIsNotNone(kinds, check)
+                    recorded.update(kind.value for kind in kinds)
+                    return []
+
+                with mock.patch.object(inventory, "grep", side_effect=grep):
+                    for call in calls:
+                        call(inventory)
+                self.assertEqual(recorded, consistency_map.KIND_FILTERED_READS[check], check)
 
 
 REAL_PAIRS: list[dict[str, str]] = json.loads(
