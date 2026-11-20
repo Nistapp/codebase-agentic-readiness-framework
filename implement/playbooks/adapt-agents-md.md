@@ -251,9 +251,11 @@ engine. The questions are about text. Ask them per finding, before the diff for 
     name such as `CLAUDE.md`. "`AGT-08` No competing instruction files, and the reach matrix is stated" counts only
     vendor-named files as competitors.
 11. **Communication rules (AGT-12).** Add a section headed "How to write for people". Match the file's heading
-    level and style (D18), and keep a word the check reads (`write for`, `communication`, `reporting`). Place it
-    after the section `agents_md.pointer_section` names; without that preference, place it before the prohibitions
-    section. Start from the template in the greenfield
+    level and style (D18), and keep a heading word the
+    [`AGT-12` check](../../audit/checks/02-agent-governance.md#agt-12--communication-rules-stated) reads
+    (`communication`, `how to write`, `writing for people`, `reporting`, `talking to the user`). Place it after the
+    section `agents_md.pointer_section` names; without that preference, place it before the prohibitions section.
+    Start from the template in the greenfield
     [`AGENTS.md` § 5](../../greenfield/templates/AGENTS.md#5-how-to-write-for-people). It holds a scope line (5.1,
     with the link to the long form) and six numbered rules (5.2 to 5.7):
     - the reader: the persona the owner confirmed (Inputs 7);

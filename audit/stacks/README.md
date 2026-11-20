@@ -54,7 +54,8 @@ Verified               date, tool versions the profile was last checked against,
 A profile is documentation (`GFDL-1.3-only`, see
 [`docs/reference/licensing.md`](../../docs/reference/licensing.md)), capped at 150 lines so an agent can hold
 the whole thing in mind at once. A profile that would outgrow the budget splits a crowded section (for
-example, a framework) into its own `###`-level block rather than a new file, following §1 above.
+example, a framework) into its own `###`-level block rather than a new file, following the
+[scope note](#stack-profiles) at the top of this page.
 
 ## 3. Detected, not guessed
 

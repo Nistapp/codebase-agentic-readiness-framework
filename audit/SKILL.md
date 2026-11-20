@@ -74,8 +74,10 @@ Stage 2 works through the catalogue's thirteen families in order: `IDX`, `AGT`, 
 listed in [`audit/checks/README.md`](checks/README.md). Read that file's anatomy once, before the first
 family: a check file's `Evidence to cite` and `Absence proof` fields describe what belongs in the report,
 not the exact JSON shape — `Absence proof`'s "glob search" or "grep search" wording names a `searches[]`
-entry (`search.tool`), not `evidence[]` (whose `kind` is only `file`, `command` or `index_query`); the
-README's §6 spells this out, and `add-check`/`add-finding` refuse the wrong shape at exit `2`.
+entry (`search.tool`), not `evidence[]` (whose `kind` is only `file`, `command` or `index_query`). The
+README's [§4](checks/README.md#4-a-fail-lists-its-absence-searches) and
+[§7](checks/README.md#7-how-a-verdict-is-recorded) spell this out, and `add-check`/`add-finding` refuse the wrong
+shape at exit `2`.
 
 At the end of each stage, send the person a [status report](prompts/talking-to-the-user.md#status-report).
 The last message of the run is a [done report](prompts/talking-to-the-user.md#done-report-and-pull-request-description).
