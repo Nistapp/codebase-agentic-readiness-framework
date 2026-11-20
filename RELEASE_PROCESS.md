@@ -276,7 +276,9 @@ After the next promotion, the release pull request uses that version.
 4. It runs `python3 audit/engine/build.py`. This builds the reproducible single-file engine, `audit.pyz`.
 5. It runs `make validate-skills`. This builds the `agentic-readiness-audit` and `agentic-readiness-implement` skill
    bundles and validates both against the Agent Skills specification.
-6. It zips the two bundles from `dev/dist/skills/` and writes `SHA256SUMS` for `audit.pyz` and the two zips.
+6. It runs `python3 dev/build_skills.py --archive <folder> --tag vX.Y.Z`. This zips the two bundles. The zips are
+   byte-reproducible: sorted entries, one fixed timestamp and fixed permissions. Then it writes `SHA256SUMS` for
+   `audit.pyz` and the two zips.
 7. It signs build provenance for the three files in `SHA256SUMS` (`actions/attest`, public Sigstore). GitHub stores
    the attestation. The signed bundle is written to `vX.Y.Z.sigstore.json`.
 8. It attaches the five files to the GitHub release. If the tag has no release (a run started by hand), it creates

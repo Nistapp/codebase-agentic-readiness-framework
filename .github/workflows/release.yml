@@ -115,8 +115,8 @@ jobs:
           out="$RUNNER_TEMP/release"
           mkdir -p "$out"
           cp audit/engine/dist/audit.pyz "$out/audit.pyz"
-          (cd dev/dist/skills && zip -qr "$out/agentic-readiness-audit-$TAG.zip" agentic-readiness-audit)
-          (cd dev/dist/skills && zip -qr "$out/agentic-readiness-implement-$TAG.zip" agentic-readiness-implement)
+          # Byte-reproducible zips: sorted entries, one fixed timestamp, fixed permissions (dev/build_skills.py).
+          python3 dev/build_skills.py --archive "$out" --tag "$TAG"
           (cd "$out" && sha256sum audit.pyz "agentic-readiness-audit-$TAG.zip" "agentic-readiness-implement-$TAG.zip" > SHA256SUMS)
           cat "$out/SHA256SUMS"
           echo "RELEASE_DIR=$out" >> "$GITHUB_ENV"
