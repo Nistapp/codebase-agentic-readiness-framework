@@ -32,9 +32,12 @@ MUTATING_VERBS = frozenset({"format", "install", "clean", "build"})
 #: a whole segment and the name must be assigned with ``:`` or ``=`` (a JSON key's closing quote may come between):
 #: prose such as ``passwords must be rotated``, ``token count: 5``, ``tokens: 5`` and ``max_tokens: 5`` is left
 #: alone. A name such as ``TOKEN_URL=`` is redacted too: hiding a harmless value costs less than showing a credential.
+#: The value is a quoted string up to its closing quote on that line (``password = "two words"``), or to the end of
+#: the line when it has none, or else one run of non-space characters; ``Bearer`` before it is part of the value.
 _KEYWORD_ASSIGNMENT = (
     r"(?i)(?<![A-Za-z0-9])(?:[A-Za-z0-9]+[_-])*(?:api[_-]?key|secret|token|password|passwd|pwd)"
-    r"(?:[_-][A-Za-z0-9]+)*(?![A-Za-z0-9])[\"']?[ \t]*[:=][ \t]*(?!\[REDACTED\])\S+"
+    r"(?:[_-][A-Za-z0-9]+)*(?![A-Za-z0-9])[\"']?[ \t]*[:=][ \t]*(?!\[REDACTED\])"
+    r"(?:Bearer[ \t]+)?(?:\"[^\"\n]*\"?|'[^'\n]*'?|\S+)"
 )
 
 #: A whole PEM private key, from its BEGIN line through its END line. A key cut off by the end of the output (a

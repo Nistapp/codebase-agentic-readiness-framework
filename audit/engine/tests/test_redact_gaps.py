@@ -70,6 +70,30 @@ class KeywordInACompoundName(unittest.TestCase):
         self.assertEqual(redact(text), (text, 0))
 
 
+class QuotedValue(unittest.TestCase):
+    """A quoted value is redacted up to its closing quote, spaces and all."""
+
+    def test_a_quoted_value_with_spaces_is_redacted_whole(self) -> None:
+        for quote in ('"', "'"):
+            for name, sep in (("password", " = "), ("DB_PASSWORD", "="), ('"secret"', ": ")):
+                with self.subTest(quote=quote, name=name):
+                    value = _join("x", "y ", "z", "w")
+                    clean, count = redact(f"{name}{sep}{quote}{value}{quote}, next")
+                    self.assertEqual(count, 1)
+                    self.assertNotIn("y z", clean)
+                    self.assertNotIn("zw", clean)
+                    self.assertTrue(clean.endswith("[REDACTED], next"))
+
+    def test_an_unclosed_quote_is_redacted_to_the_end_of_its_line(self) -> None:
+        clean, count = redact('password = "' + _join("open ", "ended") + "\nnext line")
+        self.assertEqual((clean, count), ("[REDACTED]\nnext line", 1))
+
+    def test_a_bearer_value_is_redacted_with_its_token(self) -> None:
+        body = _join("abc", "defghij", "klmnop")
+        clean, count = redact(f"token: Bearer {body}")
+        self.assertEqual((clean, count), ("[REDACTED]", 1))
+
+
 _BEGIN = _join("-----BEGIN RSA PRIV", "ATE KEY-----")
 _END = _join("-----END RSA PRIV", "ATE KEY-----")
 _BODY = ("MIIEow" + "IBAAKCAQEA" * 6, "q3Rk" + "Zm9vYmFy" * 8, "dGVzdA" + "==")
