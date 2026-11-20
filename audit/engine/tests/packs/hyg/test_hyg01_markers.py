@@ -88,7 +88,9 @@ class Hyg01MarkerTests(unittest.TestCase):
         self.assertIn("'lorem ipsum'", summary)
 
     def test_a_marker_anywhere_in_a_short_readme_still_fails(self):
-        text = "# App\n\n" + "This service answers widget queries for the shop front end. " * 4 + "It is a placeholder.\n"
+        text = (
+            "# App\n\n" + "This service answers widget queries for the shop front end. " * 4 + "It is a placeholder.\n"
+        )
         self.assertLess(len(text.strip()), 400)
         verdict, summary = _hyg01(text)
         self.assertEqual(verdict, "FAIL")
