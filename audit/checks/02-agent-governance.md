@@ -303,21 +303,21 @@ Why it matters   `AGENTS.md`, `CLAUDE.md` and `.cursorrules` disagreeing is obey
                   flagged as a defect — inconsistent behaviour across harnesses, with no way to trace why
                   ([Phased-Approach.md § Phase 1: Agentic Bootstrap](../../docs/framework/phased-approach.md#phase-1-agentic-bootstrap-)).
 Severity         DEGRADER
-Engine           `AGT-08`. Classifies every instruction-shaped path the variant table knows: vendor-only
-                 files with no canonical counterpart are competitors (`FAIL`); a pair where one file
-                 shadows another for the same harness (only one is ever loaded) is a shadowed pair
-                 (`PARTIAL` per pair); and, when a canonical file or a competitor exists but some known
-                 harness's own instruction path is never reached by anything present, that is a reach gap
-                 (`COSMETIC`, `PARTIAL`) unless the root `AGENTS.md` states the supported harnesses: a line
-                 holding "read by" or "supported harnesses" and the name of at least one known harness
-                 (`This file is read by Claude Code, Codex and Cursor.`). The engine takes that line as given
-                 and cites it in the summary; it does not check that each named harness loads the file. No
-                 findings at all is `PASS`. With a root `AGENTS.md`, a vendor file of at most five content
-                 lines, each naming `AGENTS.md` (`@AGENTS.md`, "See AGENTS.md"), is a pointer: not a
-                 competitor, not a shadow, and its harness is still reached. A file that imports `@AGENTS.md`
-                 beside its own rules shadows nothing but still competes; the summary names both. Distrust a
-                 competitor finding on a documented pointer this test misses (A14). A path that a harness
-                 loads only through its config (Aider's `CONVENTIONS.md`, named in `.aider.conf.yml`) counts
+Engine           `AGT-08`. Classifies every instruction-shaped path the variant table knows. A vendor-only file with no
+                 canonical counterpart is a competitor (`AGT-08:vendor-files`, `FAIL`). A pair where one file shadows
+                 another for the same harness (only one is ever loaded) is a shadowed pair (`AGT-08:<winner>>AGENTS.md`,
+                 `PARTIAL` per pair). A canonical file or a competitor may exist while some known harness's own
+                 instruction path is reached by nothing present. That is a reach gap (`AGT-08:harness-reach`,
+                 `COSMETIC`, `PARTIAL`), unless the root `AGENTS.md` states the supported harnesses: a line holding
+                 "read by" or "supported harnesses" and a known harness's name (`This file is read by Claude Code, Codex
+                 and Cursor.`). The engine takes that line as given and cites it in the summary; it does not check that
+                 each named harness loads the file. These stay three findings by design (issue #26): the baseline
+                 ratchet compares ids, and each keeps its severity. No findings at all is `PASS`. With a root
+                 `AGENTS.md`, a vendor file of at most five content lines, each naming `AGENTS.md` (`@AGENTS.md`, "See
+                 AGENTS.md"), is a pointer: not a competitor, not a shadow, and its harness is still reached. A file
+                 that imports `@AGENTS.md` beside its own rules shadows nothing but still competes; the summary names
+                 both. Distrust a competitor finding on a documented pointer this test misses (A14). A path that a
+                 harness loads only through its config (Aider's `CONVENTIONS.md`, named in `.aider.conf.yml`) counts
                  only when that config file exists; without it, the file is an ordinary document.
 Method           automated
 Look for         Every instruction-shaped path present (the variant table's classification); for each

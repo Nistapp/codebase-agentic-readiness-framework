@@ -227,6 +227,8 @@ engine. The questions are about text. Ask them per finding, before the diff for 
    at it (a `CLAUDE.md` that imports `@AGENTS.md` makes Claude Code a reader). The engine takes the line as given; the
    line must be true. Then handle each vendor file per Inputs 3. A shadowed pair or an override file is reported to
    the owner with the harness it affects; do not delete either side unasked.
+   Close all `AGT-08` findings here as one item. The audit may list up to three: vendor files, a shadowed pair
+   and harness reach.
 8. **Deferral (AGT-10).** Find the "read X first" line. Per Inputs 4: list the must-always rules in X that
    `AGENTS.md` does not already state, propose moving them (a diff that adds them to `AGENTS.md` and, if the owner
    agrees, removes them from X, so the rule lives in one place), and turn the deferral into a reference link. Check
