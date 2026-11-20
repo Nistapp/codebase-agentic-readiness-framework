@@ -144,7 +144,7 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#com
 | 2 | `check` calls `format:check`, `typecheck` and `test`, in that order | `CMD-02` | wiring |
 | 3 | The writer split out of a read-only verb (only when a read-only verb writes) | `CMD-04` | wiring |
 | 4 | The second runner delegates to the authoritative one (only with a second runner) | `CMD-03` | wiring |
-| 5 | The verb commands and the setup command in the instruction file | `CMD-01`, `EXEC-03` | hand |
+| 5 | The verb commands and the setup command in the instruction file | `EXEC-03` | hand |
 
 ## Continue on error
 
