@@ -150,9 +150,7 @@ Dropped: `betterer` (latest tag 6.0.0-alpha.1, 2024-12; no stable release in abo
    reads TST-02 only from a Tier-C probe; this record is for the agent, not a substitute verdict.
 9. **Skip census (TST-03).** List every skip, ignore and expected-failure marker. Judge each one: a test that can be
    fixed is an item for the owner; a deliberate skip gets a one-line reason next to it. Never delete or un-skip in
-   bulk. The count is debt with the marker list as its baseline. Never put a reason line between a `def` line
-   and its docstring: "`NAV-05` Public-symbol documentation coverage" reads the next line. A reason line shifts
-   the lines below it. The
+   bulk. The count is debt with the marker list as its baseline. A reason line shifts the lines below it. The
    secrets allowlist (`.secrets.baseline`, `.gitleaksignore`) may name a line in that file. Then regenerate it with
    the scanner's own command, in its own commit (Commits row 17). "`SEC-02` No key-shaped strings in tracked
    files" accepts an allowlisted hit only on its listed line.

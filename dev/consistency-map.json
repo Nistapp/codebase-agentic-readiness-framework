@@ -1544,16 +1544,6 @@
       "status": "kept"
     },
     {
-      "check": "NAV-05",
-      "home": {
-        "path": "implement/playbooks/add-baselines-and-ratchet.md",
-        "quote": "Never put a reason line between a `def` line and its docstring:",
-        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
-      },
-      "move": "add-baselines-and-ratchet/row-15",
-      "status": "kept"
-    },
-    {
       "check": "TST-03",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -4440,7 +4430,6 @@
       ],
       "touches": [
         "SEC-02",
-        "NAV-05",
         "TST-03"
       ]
     },

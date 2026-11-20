@@ -9,8 +9,9 @@
 > check reads the engine's `NAV` pack (`audit/engine/audit/rules/checks/nav.py`), whose module
 > docstring names each check's deliberate limits (`NAV-02` reads a fixed, documented entry-point signal
 > set per ecosystem rather than resolving one semantically; `NAV-05`'s "public" is a best-effort static
-> approximation — module-level names not starting with `_` for Python, exported declarations for
-> TypeScript/JavaScript — that never executes or reflects).
+> approximation — for Python, module-level functions and classes and the methods of public classes whose
+> names do not start with `_`, read with the standard library `ast`; for TypeScript/JavaScript, exported
+> declarations only — that never executes or reflects).
 
 ---
 
@@ -191,10 +192,19 @@ Severity         COSMETIC
 Engine           `NAV-05`. Not a scored check (`catalogue.json`: `scored: false`, no `req_ids`). Picks one
                  language to census — python if the stack recognises python and python files exist, else
                  typescript/javascript under the same condition, else whichever of the two has more files
-                 present — then counts "public" symbols for that language only (python: module-level
-                 `def`/`class` not starting with `_`; typescript/javascript: `export`-prefixed
-                 declarations) against how many are immediately preceded (python: followed) by a
-                 docstring or `/** */` block comment. No recognised source language at all, or the chosen
+                 present — then counts "public" symbols for that language only, against how many
+                 carry a docstring or a `/** */` block comment.
+                 Python: the engine parses each file with the standard library `ast`. It counts
+                 module-level functions and classes, plus the methods of public classes (nested public
+                 classes too, never a function inside a function). A name starting with `_` is private,
+                 so dunder methods such as `__init__` are not counted. A symbol is documented when
+                 `ast.get_docstring` finds a docstring, so a multi-line signature is read correctly.
+                 A test file is left out: a `tests` or `test` folder in its path, or a `test_*.py` or
+                 `*_test.py` name. A file that does not parse (Python 2, a template) falls back to
+                 column-0 `def`/`class` lines with a docstring on the next code line; the summary
+                 counts such files.
+                 TypeScript/JavaScript: `export`-prefixed declarations immediately preceded by a
+                 `/** */` block. Class members are not counted. No recognised source language at all, or the chosen
                  language finds zero public symbols, is `UNKNOWN` — "public" cannot be defined, or there
                  is nothing to measure. A repository with both python and typescript files censuses only
                  the one language chosen; the other's documentation coverage is not reported by this run
