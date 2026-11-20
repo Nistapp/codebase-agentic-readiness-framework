@@ -19,7 +19,7 @@ score from falling.
 | Phase-1 score | **0.9231** |
 | Date | 2026-11-20 |
 | Engine | `python-agentic-audit` 0.4.1 |
-| Ruleset | `2026-11-20.15` (hash `776be4fe00c7a3bb`) |
+| Ruleset | `2026-11-20.16` (hash `776be4fe00c7a3bb`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; the walk skips git-ignored folders such as the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
@@ -82,7 +82,7 @@ Every check that is not `PASS`, with the reason it is open.
 | Check | Verdict | Severity | Why it is open |
 | --- | --- | --- | --- |
 | `BASE-02` | PARTIAL | DEGRADER | The T5 playbook was applied (D32): `.quality-baseline.json` holds the counts (ruff 0, mypy 0, Markdown lint outside the ratchet 735) and `make format-check`, `make typecheck` and `make docs-lint` fail when one goes up. The check still reads PARTIAL by design: it credits only a numeric budget flag (`--max-warnings N`), and none of these tools has one. Engine issue [#45](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/45) tracks it; the coverage floor (91) is unchanged and `BASE-04` passes |
-| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 48% of public symbols documented (923 of 1911). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
+| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 48% of public symbols documented (928 of 1920). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
 | `NAV-01` | UNKNOWN | DEGRADER | No finding: this repository has no root build manifest, so the component detector finds no declared component. The framework is documentation plus standard-library Python tools; its only manifests pin the dev tools under `dev/tools/`. Owner decision (2026-11-20): it stays `UNKNOWN`. A manifest added only to pass the check would not describe a real component; the boundaries are written in the root `AGENTS.md` (Boundaries table) |
 | `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, the user-level index store, or `--emit-baseline`; not run here |
 

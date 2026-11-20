@@ -47,7 +47,7 @@ MATRIX: dict[str, dict[str, str]] = {
     # -- AGT (content contract + competing files + indirection) -------------------------------
     "agt-01-missing": {"AGT-01": "FAIL", "AGT-08": "PASS", "CON-01": "UNKNOWN", "CON-02": "UNKNOWN"},
     "agt-01-stub": {"AGT-01": "FAIL"},
-    "agt-01-mis-cased": {"AGT-01": "FAIL"},
+    "agt-01-mis-cased": {"AGT-01": "PARTIAL"},
     "agt-01-shadowed": {"AGT-01": "PARTIAL"},
     "agt-01-nested-only": {"AGT-01": "PARTIAL", "AGT-08": "PASS"},
     "agt-01-marker-words-in-prose": {"AGT-01": "PASS"},

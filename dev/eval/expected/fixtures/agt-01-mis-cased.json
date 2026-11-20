@@ -7,7 +7,7 @@
     {
       "id": "AGT-01",
       "acceptable_verdicts": [
-        "FAIL"
+        "PARTIAL"
       ]
     }
   ]
