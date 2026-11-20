@@ -262,6 +262,9 @@ Full detail, including every input, error message and exit code, is in the
 [Tools CLI reference](../docs/reference/tools-cli.md). This table is what each call expects to happen and
 what to do when it does not.
 
+Each tool runs as `python3 audit/tools/<tool>.py`, a path from the folder that holds this recipe. That folder is
+the root of a framework checkout, or this skill's own folder when it is installed. Run the tool commands from there.
+
 | Tool | Call | Expected result | Fallback |
 |---|---|---|---|
 | [`facts.py`](../docs/reference/tools-cli.md#factspy) | `facts.py <target> --out FILE` | Exit `0`; one JSON file with inventory, stack, instruction files, components and a size class. | Exit `1` on a bad target or path: fix the argument and retry. There is no facts-free path for Stage 1; a failure here is a reason to stop and ask, not to guess the stack. |

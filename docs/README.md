@@ -37,7 +37,7 @@ output to `<output-path>`". To fix the findings, say "Start implementing the fix
 | [Implement master list](reference/implement-master.md) | Every playbook by theme: its goal, what it changes per check, what it never does |
 | [Tools CLI](reference/tools-cli.md) | Each tool's synopsis, inputs, outputs and exit codes |
 | [Versions](reference/versions.md) | What each version number means, where it is written, and which reports and states the tools read |
-| [Harness notes](reference/harness-notes.md) | What differs between Claude Code, opencode, Codex and Cursor |
+| [Harness notes](reference/harness-notes.md) | What differs between Claude Code, opencode, Codex, Gemini CLI and Cursor |
 | [Checks to framework map](reference/how-the-checks-map-to-the-framework.md) | Each check, its requirement and its framework section |
 | [Evaluation results](reference/eval-results.md) | Fixture-sweep and real-repository results |
 | [Self-audit](reference/self-audit.md) | This repository's own Phase 1 score and the CI ratchet |
