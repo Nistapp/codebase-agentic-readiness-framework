@@ -308,14 +308,23 @@ The gate prints a count for each kind of problem, then the problems. Read these 
   enforces it is gone. Restore the sentence, or update the boundary's home or enforcer in the map.
 
 `unreviewed` is advice. The gate guesses touches from paths and content kinds, and the guess is coarse.
-Three rules keep the noise down:
+Five rules keep the noise down:
 
 - A folder touches a place only when the place is that folder or sits under it.
 - A wildcard base name, such as `*.yml`, never touches a literal file name.
-- Six checks read `**` only for some file kinds. For these checks, a path of another kind does not touch `**`,
-  unless the move untracks it. The six are "`TOOL-05` Local hook chain active", "`TOOL-06` Commit convention
-  enforced", "`TOOL-07` Local guard against commits to a protected branch", "`CI-05` Workflow files are linted",
-  "`EXEC-04` Env-var inventory complete" and "`NAV-02` Obvious entry points".
+- Six checks read `**` only for some file kinds. For these checks, a path of another kind does not touch `**`.
+  Three are hook checks: "`TOOL-05` Local hook chain active", "`TOOL-06` Commit convention enforced" and
+  "`TOOL-07` Local guard against commits to a protected branch". The others are "`CI-05` Workflow files are
+  linted", "`EXEC-04` Env-var inventory complete" and "`NAV-02` Obvious entry points".
+  - An untracked path counts for every kind its files can have. `**/dist/**` can hold a `package.json`, so it
+    still counts as a manifest.
+  - A folder that a move sends text into has the kinds of the text's sources. A move from `AGENTS.md` into
+    `docs/` stays a doc.
+  - Any other folder counts for every kind.
+- "`CON-04` Draft allow/deny emitted" is never touched. Its verdict does not depend on what the target holds.
+- For "`SEC-02` No key-shaped strings", only a move that untracks a file touches its scan of every tracked text
+  file. No playbook or greenfield template holds a key-shaped line, and a test checks that. A write to the
+  check's allowlist files still counts.
 
 `--verbose` lists the pairs. The gate exits 0 whatever it finds; `CMAP_ARGS=--strict` makes it exit 1.
 
