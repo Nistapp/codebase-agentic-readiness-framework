@@ -8,12 +8,13 @@
 ## Detection signals
 
 `facts.json`'s `stack` section reads `ecosystems: ["python"]` from `pyproject.toml`, `setup.py`,
-`requirements*.txt` or `Pipfile` anywhere in the tree, or, with none of those present, from a bare `.py`
-source file alone (D29 item 9) — the latter is `source_only`, and several checks below treat it
-differently from a manifest-bearing project, never as a false `PASS`. `package_managers` reads the
-lockfile at the repository root: `poetry.lock` → poetry, `uv.lock` → uv, `Pipfile.lock` → pipenv; a
-plain `pip` project pinned only by `requirements.txt` has no lockfile signal at all (`requirements.txt`
-is a manifest, not a lock, by the engine's own "manifest-as-lock" exclusion — see Pitfalls).
+`requirements*.txt` or `Pipfile` anywhere in the tree. With none of those present, it reads it from a
+bare `.py` source file alone (D29 item 9). That case is `source_only`, and several checks below treat it
+differently from a manifest-bearing project, never as a false `PASS`. `package_managers` reads each
+tool's own file anywhere in the tree: `requirements.txt` → pip, `poetry.lock` → poetry, `uv.lock` → uv,
+`Pipfile.lock` → pipenv. A lockfile alone does not name the ecosystem. A plain `pip` project pinned only
+by `requirements.txt` still has no lockfile (`requirements.txt` is a manifest, not a lock, by the
+engine's own "manifest-as-lock" exclusion — see Pitfalls).
 
 ## Command-surface map
 

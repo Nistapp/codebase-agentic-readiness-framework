@@ -91,15 +91,25 @@ A check that cannot be certain of a tracked or ignore answer reports `UNKNOWN`, 
 
 ## 4. Stack & Layout Detection
 
+An ecosystem is named by its manifest alone (`ECOSYSTEM_SIGNALS` in `audit/stack.py`). A package manager is named
+by its own file (`PACKAGE_MANAGERS`), and that file never names an ecosystem. A `uv.lock` with no Python
+manifest does not make a Python project. Both are matched by file name anywhere in the tree, at any depth.
+
+| Ecosystem (id) | Manifest that names it | Package manager, from its file |
+|---|---|---|
+| Node (`node`) | `package.json` | npm (`package-lock.json`), pnpm (`pnpm-lock.yaml`), yarn (`yarn.lock`), bun (`bun.lockb`) |
+| Python (`python`) | `pyproject.toml`, `setup.py`, `requirements*.txt`, `Pipfile`; or, when none of them is present, a `.py` source file (not a test or a generated file). The stack then lists `python` in `source_only` and says so in its notes | pip (`requirements.txt`), poetry (`poetry.lock`), uv (`uv.lock`), pipenv (`Pipfile.lock`) |
+| JVM (`jvm`) | `pom.xml`, `build.gradle`, `build.gradle.kts` | maven (`pom.xml`), gradle (`gradle.lockfile`) |
+| Go (`go`) | `go.mod` | gomod (`go.sum`) |
+| Rust (`rust`) | `Cargo.toml` | cargo (`Cargo.lock`) |
+| .NET (`dotnet`) | `*.csproj`, `*.sln` | nuget (`packages.lock.json`) |
+| Ruby (`ruby`) | `Gemfile` | bundler (`Gemfile.lock`) |
+| PHP (`php`) | `composer.json` | composer (`composer.lock`) |
+
+The other signals:
+
 | Signal | Detected from |
 |---|---|
-| Node / npm, pnpm, yarn, bun | `package.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lockb` |
-| Python | `pyproject.toml`, `requirements*.txt`, `setup.py`, `Pipfile`, `poetry.lock`, `uv.lock`; or, when none of them is present, a `.py` source file outside tests, generated code and vendored code. The stack then lists `python` in `source_only` and says so in its notes |
-| JVM | `pom.xml`, `build.gradle(.kts)` |
-| Go | `go.mod`, `go.sum` |
-| Rust | `Cargo.toml`, `Cargo.lock` |
-| .NET | `*.csproj`, `*.sln` |
-| Ruby / PHP | `Gemfile`, `composer.json` |
 | Components | `workspaces`, `pnpm-workspace.yaml`, maven `<modules>`, gradle `include(...)` in `settings.gradle(.kts)`, `go.work use`, Cargo `[workspace] members` |
 | A component's own manifest | `package.json`, `pyproject.toml`, `pom.xml`, `build.gradle(.kts)`, `Cargo.toml`, `go.mod`, `Gemfile`, `composer.json`, or a `*.sln`, `*.slnx`, `*.csproj`, `*.fsproj` or `*.vbproj` in the component's own folder |
 | CI provider | `.github/workflows/`, `.gitlab-ci.yml`, `Jenkinsfile`, `azure-pipelines.yml`, `.circleci/`, `.buildkite/` |

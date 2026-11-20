@@ -9,8 +9,8 @@
 ## Detection signals
 
 `facts.json`'s `stack` section already read this: `ecosystems: ["jvm"]` from a `build.gradle`,
-`build.gradle.kts` or `pom.xml` anywhere in the tree; the engine has no `package_managers` signal for
-Gradle or Maven, so that field is empty for this stack regardless of the build tool used —
+`build.gradle.kts` or `pom.xml` anywhere in the tree. `package_managers` reads `maven` from a `pom.xml`
+and `gradle` from a `gradle.lockfile` only, so a Gradle build without dependency locking leaves it empty —
 state that plainly rather than reading an empty value as "no build tool." `ci_providers` reads
 `.github/workflows/*.yml` whether or not a workflow actually runs a Gradle or Maven verb (see Pitfalls).
 Gradle has no single manifest name: `build.gradle` (Groovy DSL) and `build.gradle.kts` (Kotlin DSL) are
