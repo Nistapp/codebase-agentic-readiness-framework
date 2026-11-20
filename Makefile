@@ -351,8 +351,9 @@ commit-lint:
 
 check: format-check typecheck test verify-rules crosscheck recipe-lint adr-lint masters-check eval-expected-check workflow-lint spell
 
-# No third-party runtime dependencies exist to audit, so the gate is a secrets scan. The baseline
-# lists the deliberate key-shaped strings in the fixtures and tests; a new hit fails the scan.
+# The gate has two parts. The secrets scan: the baseline lists the deliberate key-shaped strings in the fixtures
+# and tests; a new hit fails the scan. It stays in `security` here, and root AGENTS.md ("Commands") says why; the
+# configure-quality-tools playbook keeps a target's `security` to the dependency audit.
 # The dependency audit: osv-scanner, pinned in dev/tools/osv/go.mod (a Go `tool` directive, so Dependabot sees it),
 # reads the dev tools' lockfiles and fails on a known vulnerability that no osv-scanner.toml accepts. Without
 # --config, osv-scanner reads the osv-scanner.toml next to each lockfile, the same file OpenSSF Scorecard reads.

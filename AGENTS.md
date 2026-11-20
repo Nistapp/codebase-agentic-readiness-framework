@@ -39,6 +39,10 @@ make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin
 make update-masters # regenerate docs/reference/audit-master.md and implement-master.md (check runs masters-check)
 ```
 
+Here `make security` also runs the secrets scan. This repository has no runtime dependencies, so the verb began
+as that scan and the dependency audit joined it later. A target's `security` stays a dependency gate only
+([`configure-quality-tools`](implement/playbooks/configure-quality-tools.md)).
+
 One test, without the whole suite. Run the engine's tests from `audit/engine/`:
 
 ```bash
