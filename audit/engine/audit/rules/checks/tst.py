@@ -32,7 +32,8 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   is `UNKNOWN`. This check never invents a maximum.
 * **TST-04** — a single-test/subset invocation in a fenced shell block, read from the repository's
   entry documents (`README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`) via
-  `_common.extract_fenced_commands`. `PASS` when one is documented; `FAIL` when the documents are
+  `_common.extract_fenced_commands`, or else in an inline code span outside a fence (`npm test -- <path>`
+  in a sentence). A fenced one is cited first. `PASS` when one is documented; `FAIL` when the documents are
   readable but none shows one. With **no test file** there is no suite for a fast path to act on, so
   the verdict is `UNKNOWN` — a missing suite is TST-01's finding, not doubled here. The search scope is
   stated in `detail`.
@@ -111,6 +112,23 @@ _FASTPATH_PATTERNS: tuple[str, ...] = (
     r"\btox\b[^\n&|;]*-e\b",
 )
 _FASTPATH_RE = re.compile("|".join(_FASTPATH_PATTERNS))
+
+_FENCE_LINE_RE = re.compile(r"^\s*(?:```|~~~)")
+_CODE_SPAN_RE = re.compile(r"(?<!`)(`+)(?!`)(.+?)(?<!`)\1(?!`)")
+
+
+def _inline_commands(text: str) -> list[tuple[int, str]]:
+    """``(line number, text)`` of every inline code span outside a fenced block, in order."""
+    spans: list[tuple[int, str]] = []
+    in_fence = False
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        if _FENCE_LINE_RE.match(line):
+            in_fence = not in_fence
+            continue
+        if in_fence:
+            continue
+        spans.extend((line_no, m.group(2).strip()) for m in _CODE_SPAN_RE.finditer(line) if m.group(2).strip())
+    return spans
 
 #: Coverage configuration filenames. Present at any depth is evidence.
 _COVERAGE_FILES: tuple[str, ...] = (
@@ -410,18 +428,24 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
     docs = [rel for rel in _FASTPATH_DOCS if inventory.has(rel)]
     scope = ", ".join(docs) if docs else f"{', '.join(_FASTPATH_DOCS)} (none present)"
 
-    for rel in docs:
-        text = inventory.read(rel)
-        if not text:
-            continue
+    texts = [(rel, text) for rel in docs if (text := inventory.read(rel))]
+    for rel, text in texts:
         for _language, line, command in extract_fenced_commands(text):
             if _FASTPATH_RE.search(command):
                 return _outcome(spec, Verdict.PASS, f"fast path documented: {rel}:{line} `{command}` (scope: {scope})")
+    for rel, text in texts:
+        for line, command in _inline_commands(text):
+            if _FASTPATH_RE.search(command):
+                return _outcome(
+                    spec,
+                    Verdict.PASS,
+                    f"fast path documented in an inline code span: {rel}:{line} `{command}` (scope: {scope})",
+                )
 
     return _outcome(
         spec,
         Verdict.FAIL,
-        f"no single-test/subset invocation in fenced shell blocks (scope: {scope})",
+        f"no single-test/subset invocation in fenced shell blocks or inline code spans (scope: {scope})",
         [
             _finding(
                 spec,

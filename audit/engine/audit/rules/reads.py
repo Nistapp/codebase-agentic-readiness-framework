@@ -1619,7 +1619,8 @@ READS: dict[str, Reads] = {
         binding="line",
         note=(
             "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a "
-            "plain full-suite run does not count. A file is kept when Inventory.has finds its name at any "
+            "plain full-suite run does not count. With no fenced match, an inline code span outside any fence "
+            "is read with the same patterns. A file is kept when Inventory.has finds its name at any "
             "depth but read by its exact root path, so a nested-only copy is skipped silently. The test files "
             "give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs."
         ),

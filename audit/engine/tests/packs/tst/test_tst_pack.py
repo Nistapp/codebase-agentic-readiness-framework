@@ -149,6 +149,51 @@ class TstInlineTests(unittest.TestCase):
                 )
                 self.assertEqual(support.verdicts(report)["TST-04"], "FAIL")
 
+    def test_a_subset_run_in_an_inline_code_span_is_a_fast_path(self):
+        # Issue #123: the instruction file names the targeted run in prose, not in a fenced block.
+        report = self._scan(
+            {
+                "src/app.test.ts": "it('adds', () => {});\n",
+                "AGENTS.md": "# x\n\n4. Add tests; run `npm test` (targeted: `npm test -- path/to/__tests__`).\n",
+            }
+        )
+        check = [c for c in report["checks"] if c["id"] == "TST-04"][0]
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "PASS",
+                "fast path documented in an inline code span: AGENTS.md:3 `npm test -- path/to/__tests__` "
+                "(scope: AGENTS.md)",
+            ),
+        )
+
+    def test_a_fenced_fast_path_is_cited_before_an_inline_one(self):
+        report = self._scan(
+            {
+                "src/app.test.ts": "it('adds', () => {});\n",
+                "README.md": "# x\n\nRun `npm test -- one`.\n",
+                "AGENTS.md": "# x\n\n```bash\nnpm test -- two\n```\n",
+            }
+        )
+        summary = [c for c in report["checks"] if c["id"] == "TST-04"][0]["summary"]
+        self.assertTrue(summary.startswith("fast path documented: AGENTS.md:4 `npm test -- two`"), summary)
+
+    def test_an_inline_full_suite_run_or_a_span_inside_a_fence_is_not_a_fast_path(self):
+        report = self._scan(
+            {
+                "src/app.test.ts": "it('adds', () => {});\n",
+                "AGENTS.md": "# x\n\nRun `npm test`.\n\n```text\nsee `npm test -- foo`\n```\n",
+            }
+        )
+        check = [c for c in report["checks"] if c["id"] == "TST-04"][0]
+        self.assertEqual(
+            (check["verdict"], check["summary"]),
+            (
+                "FAIL",
+                "no single-test/subset invocation in fenced shell blocks or inline code spans (scope: AGENTS.md)",
+            ),
+        )
+
     def test_vitest_full_run_is_not_a_fast_path(self):
         report = self._scan(
             {
