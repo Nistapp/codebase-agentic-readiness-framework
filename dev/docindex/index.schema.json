@@ -11,6 +11,10 @@
           "description": "The link's fragment, without the '#'. Only a links edge has one.",
           "type": "string"
         },
+        "broken": {
+          "description": "Why a links edge's target does not resolve: the path leaves the repository (outside), no tracked file or folder has it (missing), or the anchor names no heading of the target (anchor). Only a links edge has one; a resolved edge has none.",
+          "enum": ["outside", "missing", "anchor"]
+        },
         "confidence": {
           "description": "exact, or name-match for a weaker edge: one found by a name (a bare file name, an ID defined in several places with no one nearest), or a link to a folder, which has no node.",
           "enum": ["exact", "name-match"]

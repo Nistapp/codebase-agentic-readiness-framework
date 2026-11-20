@@ -172,6 +172,8 @@ class ValidationTest(unittest.TestCase):
             lambda: model.Edge(kind="cites", source="a", target="b"),
             lambda: model.Edge(kind="links", source="a", target="b", confidence="maybe"),
             lambda: model.Edge(kind="mentions", source="a", target="b", anchor="x"),
+            lambda: model.Edge(kind="mentions", source="a", target="b", broken="missing"),
+            lambda: model.Edge(kind="links", source="a", target="b", broken="gone"),
             lambda: model.Index(nodes=(model.FileNode("a.md", "markdown", "docs"),) * 2),
             lambda: model.Index(edges=(model.Edge("contains", "a", "b"),) * 2),
         ]
@@ -204,6 +206,16 @@ class SchemaTest(unittest.TestCase):
             with self.subTest(node=node.address):
                 self.assertEqual(set(node.to_dict()), set(definition["required"]))
 
+    def test_a_broken_link_edge_keeps_its_flag_validates_and_round_trips(self) -> None:
+        edge = model.Edge(kind="links", source="docs/README.md", target="docs/gone.md", broken="missing")
+        self.assertEqual(edge.to_dict()["broken"], "missing")
+        self.assertNotIn("broken", model.Edge(kind="links", source="a.md", target="b.md").to_dict())
+        index = model.Index(nodes=tuple(_sample_nodes()), edges=(*_sample_edges(), edge))
+        data = json.loads(model.to_json(index))
+        self.assertEqual(_problems(data, SCHEMA), [])
+        self.assertEqual(model.from_json(model.to_json(index)), model.from_dict(data))
+        self.assertIn(edge, model.from_json(model.to_json(index)).edges)
+
     def test_the_schema_enums_match_the_model(self) -> None:
         defs = SCHEMA["$defs"]
         self.assertEqual(tuple(defs["file"]["properties"]["kind"]["enum"]), model.FILE_KINDS)
@@ -211,6 +223,7 @@ class SchemaTest(unittest.TestCase):
         self.assertEqual(tuple(defs["id"]["properties"]["kind"]["enum"]), model.ID_KINDS)
         self.assertEqual(tuple(defs["edge"]["properties"]["kind"]["enum"]), model.EDGE_KINDS)
         self.assertEqual(tuple(defs["edge"]["properties"]["confidence"]["enum"]), model.CONFIDENCES)
+        self.assertEqual(tuple(defs["edge"]["properties"]["broken"]["enum"]), model.LINK_PROBLEMS)
         self.assertEqual(SCHEMA["properties"]["index_format"]["const"], model.INDEX_FORMAT)
 
     def test_a_broken_index_does_not_validate(self) -> None:
@@ -219,6 +232,11 @@ class SchemaTest(unittest.TestCase):
             {"edges": [], "index_format": 1, "nodes": [], "built_at": "today"},
             {"edges": [], "index_format": 1, "nodes": [{"address": "x.md", "node": "file", "kind": "markdown"}]},
             {"edges": [{"kind": "links", "source": "a", "target": "b"}], "index_format": 1, "nodes": []},
+            {
+                "edges": [{"broken": "gone", "confidence": "exact", "kind": "links", "source": "a", "target": "b"}],
+                "index_format": 1,
+                "nodes": [],
+            },
             {
                 "edges": [],
                 "index_format": 1,

@@ -203,8 +203,8 @@ def _ids(index: Index) -> dict[str, IdNode]:
     return {node.address: node for node in index.nodes if isinstance(node, IdNode)}
 
 
-def _edge_key(edge: Edge) -> tuple[str, str, str, str, str]:
-    return (edge.kind, edge.source, edge.target, edge.anchor or "", edge.confidence)
+def _edge_key(edge: Edge) -> tuple[str, str, str, str, str, str]:
+    return (edge.kind, edge.source, edge.target, edge.anchor or "", edge.confidence, edge.broken or "")
 
 
 def _remap(edge: Edge, mapping: Mapping[str, str]) -> Edge:
@@ -214,6 +214,7 @@ def _remap(edge: Edge, mapping: Mapping[str, str]) -> Edge:
         target=mapping.get(edge.target, edge.target),
         confidence=edge.confidence,
         anchor=edge.anchor,
+        broken=edge.broken,
     )
 
 
@@ -361,7 +362,7 @@ def to_json(report: IndexDiff, *, old: str, new: str | None) -> str:
     """The report as deterministic JSON: sorted keys, two-space indent, a final newline.
 
     ``old`` is the old git ref; ``new`` the new one, ``None`` for the working tree. Every edge has an ``anchor`` key,
-    ``null`` when the edge keeps none.
+    ``null`` when the edge keeps none, and a ``broken`` key only when its target does not resolve.
     """
     data = {
         "counts": report.counts(),
@@ -393,7 +394,8 @@ def to_json(report: IndexDiff, *, old: str, new: str | None) -> str:
 def _edge_line(edge: Edge) -> str:
     anchor = f" (anchor #{edge.anchor})" if edge.anchor is not None else ""
     confidence = f" [{edge.confidence}]" if edge.confidence != "exact" else ""
-    return f"{edge.kind}: {edge.source} -> {edge.target}{anchor}{confidence}"
+    broken = f" [broken: {edge.broken}]" if edge.broken is not None else ""
+    return f"{edge.kind}: {edge.source} -> {edge.target}{anchor}{confidence}{broken}"
 
 
 def _group(title: str, count: int, lines: Sequence[str]) -> str:
