@@ -189,6 +189,19 @@
       "note": "A12 fails when a docs/ page outside the theme was rewritten; it does not look at code.",
       "statement": "The run makes the smallest reasonable diff: no unrelated refactor and no mass reformat.",
       "symbol": "a12_no_mass_rewrite"
+    },
+    {
+      "enforced_by": "implement/tools/check_regressions.py",
+      "enforcement": "tool-refusal",
+      "home": {
+        "path": "implement/SKILL.md",
+        "quote": "On `data.status` `lost`, stop and ask the owner: fix, accept with a reason, or stop the theme.",
+        "section": "implement/SKILL.md#implement/stage-4-close-the-theme"
+      },
+      "id": "B-16",
+      "note": "classify marks a check that was PASS at the base report and is anything else at close lost_pass, and PARTIAL to FAIL regressed; the handler then sets data.status to lost and its summary says to stop the theme and ask the owner. refusals makes the tool exit 2 when the two reports differ in ruleset hash, target, phase, user-config reading or probe settings, or the close report is not newer, so no move is laid on the wrong theme. Nothing refuses a run that reads lost and goes on, and no implement eval scenario breaks a passing check. ADR 0005 in implement/docs/architecture/adrs/ records the decision.",
+      "statement": "A theme that loses a passing engine check, or turns a PARTIAL into a FAIL, stops until the owner fixes it, accepts it with a reason or stops the theme.",
+      "symbol": "classify"
     }
   ],
   "keeps": [

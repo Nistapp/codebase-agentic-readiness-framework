@@ -18,7 +18,7 @@ folder.
 | `tool-choice.md` | What a step does when a tool it needs is missing, or older than the repository's pin |
 | `theme-checks.md` | The integration-branch check and the lost-pass check that Stages 3 and 4 run |
 | `tools/` | `progress.py`, `check_drift.py`, `compare_reports.py`, `check_regressions.py`, and their tests in `tools/tests/` |
-| `docs/architecture/adrs/` | Decisions for this folder (ADR 0003 and ADR 0004) |
+| `docs/architecture/adrs/` | Decisions for this folder (ADR 0003, ADR 0004 and ADR 0005) |
 
 ## Rules
 

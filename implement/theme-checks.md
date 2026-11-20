@@ -107,7 +107,8 @@ from `PARTIAL` to `FAIL` (class `regressed`) is a stop too. Offer:
   under "What was not done" in the done report or the pull request.
 - (c) **Stop the theme** here.
 
-Default: none. Wait for the owner.
+Default: none. Wait for the owner. The decision and its reasons are in
+[ADR 0005](docs/architecture/adrs/0005-a-lost-pass-stops-the-theme.md).
 
 ### Moves that do not stop
 
