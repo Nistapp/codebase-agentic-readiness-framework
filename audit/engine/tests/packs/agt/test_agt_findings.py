@@ -97,15 +97,15 @@ class Agt01Tests(unittest.TestCase):
         (finding,) = findings_of(report, "AGT-01")
         self.assertIn("exists but is a stub — contains the placeholder marker 'todo'.", finding["statement"])
 
-    def test_a_file_that_differs_only_by_case_is_a_blocker_named_by_its_path(self):
+    def test_a_file_that_differs_only_by_case_is_a_partial_degrader_named_by_its_path(self):
         report = audit({"agents.md": BODY})
-        (finding,) = [f for f in findings_of(report, "AGT-01") if f["severity"] == "BLOCKER"]
+        (finding,) = [f for f in findings_of(report, "AGT-01") if f["id"] == "AGT-01:agents.md"]
         self.assertEqual(
             summary_of(finding),
             (
                 "AGT-01:agents.md",
-                "BLOCKER",
-                "FAIL",
+                "DEGRADER",
+                "PARTIAL",
                 "An agent cannot rely on the instruction file being found because agents.md differs from AGENTS.md "
                 "only by case, and case-sensitive filesystems will not find it.",
                 "Rename to AGENTS.md exactly (Warp also requires ALL CAPS).",

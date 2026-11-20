@@ -51,11 +51,11 @@ Engine           `AGT-01`. Collects every path that plausibly is an instruction 
                  canonical paths, aliases, overrides and harness patterns), then: no file at all is `FAIL`;
                  a canonical root `AGENTS.md` under 400 characters, or containing a stub marker (`TODO`,
                  `TBD`, `placeholder`, `lorem ipsum`, `<describe...>`, `coming soon`, `fill this in`), is
-                 `FAIL`; a mis-cased candidate (`agents.md`, `Agents.MD`, ...) is `FAIL` (case-sensitive
-                 filesystems will not find it); content that lives only in vendor-specific files with no
-                 canonical root file is `PARTIAL`; `AGENTS.md` only below the root (`.junie/AGENTS.md`,
-                 `packages/api/AGENTS.md`) with none at the root is `PARTIAL`; an override file beside the
-                 canonical one (makes it inert for one harness) is `PARTIAL`. Distrust a `FAIL` on length alone when the
+                 `FAIL`; a mis-cased root candidate (`agents.md`, `Agents.MD`, ...) is `PARTIAL` (case-insensitive
+                 filesystems find it, case-sensitive ones do not); content that lives only in vendor-specific files
+                 with no canonical root file is `PARTIAL`; `AGENTS.md` only below the root (`.junie/AGENTS.md`,
+                 `packages/api/AGENTS.md`) with none at the root is `PARTIAL`; an override file beside the canonical
+                 one (makes it inert for one harness) is `PARTIAL`. Distrust a `FAIL` on length alone when the
                  file is short but entirely non-inferable (rare, but possible for a very small repository);
                  verify by reading the file and judging the A14 rubric directly rather than the character
                  count.

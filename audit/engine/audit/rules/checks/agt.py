@@ -227,9 +227,9 @@ def check_agt01(*, spec, target, inventory, stack, components, session) -> Check
             findings.append(
                 Finding(
                     check=spec.id,
-                    severity=Severity.BLOCKER,
+                    severity=Severity.DEGRADER,
                     phase=spec.phase,
-                    verdict=Verdict.FAIL,
+                    verdict=Verdict.PARTIAL,
                     statement=statement(
                         "rely on the instruction file being found",
                         f"{', '.join(mis_cased)} differs from AGENTS.md only by case, and "
