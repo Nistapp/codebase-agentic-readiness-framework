@@ -90,7 +90,7 @@ _CONTENT_FOR: dict[str, frozenset[str]] = {
 #: ``Inventory.grep``, or reads them through a named place: the hook wiring (``core.hooksPath``) in
 #: ``rules/checks/tool.py``, the local surface (``_LOCAL_SURFACE_KINDS``) and the workflow lines in ``ci.py``, the
 #: env references in ``execution.py``, and the entry-point markers in source and the Quarkus marker in build files in
-#: ``nav.py``.
+#: ``nav.py``. A test in ``dev/tests/test_consistency_map.py`` records the kinds the engine passes and compares them.
 KIND_FILTERED_READS: dict[str, frozenset[str]] = {
     "TOOL-05": frozenset({"manifest", "config", "script", "ci", "build"}),
     "TOOL-06": frozenset({"manifest", "config", "script", "ci", "build"}),
