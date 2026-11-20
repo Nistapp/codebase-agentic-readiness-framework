@@ -112,7 +112,7 @@ compare_reports.py BEFORE AFTER [--state STATE] [--json]
 ## progress.py
 
 **Version:** 0.1.0  
-**Writes:** Only in the workspace, the report's folder, which must be outside the target: <label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, render, and any command given --render), each replaced atomically; adopt also copies the source reports there, never over a different file. init and adopt never replace a state; show writes nothing; every other command rewrites the JSON after validating it. set-status, theme and accept-lost read the theme's LABEL-regressions-THEME.json verdict, which check_regressions.py writes.
+**Writes:** Only in the workspace, the report's folder, which must be outside the target: <label>-agentic-readiness-state.json (init, adopt) and <label>-agentic-readiness-STATE.md (init, adopt, render, and any command given --render), each replaced atomically; adopt also copies the source reports there, never over a different file. init and adopt never replace a state; show writes nothing; every other command rewrites the JSON after validating it. set-status, theme and accept-lost read the theme's LABEL-regressions-THEME.json verdict, which check_regressions.py writes. init, adopt and record-refs also write LABEL-ref-tips.json, the target's ref tips read with read-only git, and never replace it; accept-ref replaces one tip in it; verify-refs writes nothing.
 
 Create, show and render the implement recipe's per-repository state from a final audit report.
 
@@ -128,4 +128,7 @@ progress.py pref set KEY VALUE --reason TEXT --by owner --workspace DIR --phase 
 progress.py pref unset KEY --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 progress.py theme THEME --status branch_open|pr_open|merged [--branch B] [--pr N] [--merged-sha SHA] --workspace DIR --phase PHASE [--render]
 progress.py accept-lost THEME --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
+progress.py record-refs --target REPO --workspace DIR --phase PHASE [--label LABEL] [--render]
+progress.py verify-refs --target REPO --workspace DIR [--label LABEL]
+progress.py accept-ref REF --target REPO --reason TEXT --by owner --workspace DIR --phase PHASE [--render]
 ```

@@ -1702,7 +1702,8 @@ def a16_named_paths(scenario: Scenario, outcome: Outcome) -> Verdict:
 
 # --- A17 to A19: the boundaries of dev/consistency-map.json that no assertion scored before (RF4.11) ----------
 #
-# `dev/consistency-map.json` names each one as the enforcer of its boundary: B-10 (A17), B-11 (A18), B-14 (A19).
+# `dev/consistency-map.json` names A17 as the enforcer of B-10. B-14's enforcer is the refusal `ref_problems` of
+# `implement/tools/progress.py verify-refs` (ADR 0007); A19 still scores what that refusal cannot see.
 # `tests/test_implement_eval_boundaries.py` proves each on hand-made runs.
 
 #: A command that reads the run's state the way the recipe asks.

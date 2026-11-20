@@ -23,6 +23,7 @@ committed or pushed ([ADR 0004](docs/architecture/adrs/0004-implement-state-live
 | `<label>-agentic-readiness-STATE.md` | Rendered from the JSON; its header says it is generated and not to be edited |
 | `engine/<theme>/` | The engine reports of one theme's worktree, written by `engine.py`: the base report before the first change and the close report at theme close ([theme checks](theme-checks.md#keep-passing-checks-passing)) |
 | `<label>-regressions-<theme>.json` | The theme's latest lost-pass verdict, written by `check_regressions.py --workspace`; while it reads `lost`, `progress.py` refuses `done` and `merged` for the theme until the owner runs `accept-lost` ([theme checks](theme-checks.md#when-a-pass-is-lost)) |
+| `<label>-ref-tips.json` | The tips of the target's branches, tags and `origin/*` branches when the run began, written by `init`, `adopt` or `record-refs`; `verify-refs` checks them at each theme close, and only `accept-ref --by owner` changes one ([theme checks](theme-checks.md#keep-the-targets-history)) |
 
 `<label>` is the audit report's `provenance.target.label`.
 
@@ -56,7 +57,10 @@ Pass `--framework-rev <commit>` with the framework release's commit when you kno
 digits.
 
 `init` refuses a report that is not final or that `validate_report.py` rejects, and a report from a newer framework
-release than the tools. It also refuses a report whose folder is inside the target, and an existing state. A report
+release than the tools. It also refuses a report whose folder is inside the target, an existing state and an
+existing ref record. When the target is not the top folder of a git work tree, `init` records no ref tips and
+warns; `verify-refs` then says the history check did not run
+([ADR 0007](docs/architecture/adrs/0007-recorded-ref-tips-guard-the-target-history.md)). A report
 from an older release gives a warning; `data.versions` holds both releases and commits. It queues confirmed and
 edited findings (an edited finding's note goes into `notes`), imports a finding the owner deferred during the audit
 as `deferred` with the owner's note as its reason, and lists rejected findings as `not_queued`. Each item gets the

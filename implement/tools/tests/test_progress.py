@@ -523,6 +523,29 @@ class AdoptTests(TargetCase):
         self.adopt_ok()
         self.assertEqual(tree_bytes(self.target), before)
 
+    def test_adopt_records_the_ref_tips_of_a_git_target(self) -> None:
+        _git.make_repo(self.target, files=())
+        envelope = self.adopt_ok()
+        ref_path = self.workspace / progress.ref_tips_name("example-service")
+        self.assertEqual(Path(envelope["data"]["ref_tips"]), ref_path)
+        document = json.loads(ref_path.read_text(encoding="utf-8"))
+        self.assertEqual([entry["ref"] for entry in document["refs"]], ["refs/heads/main"])
+        code, verified, err = call(["verify-refs", "--target", str(self.target), "--workspace", str(self.workspace)])
+        self.assertEqual(code, 0, (verified, err))
+
+    def test_adopt_of_a_target_without_git_warns_and_records_nothing(self) -> None:
+        envelope = self.adopt_ok()
+        self.assertIsNone(envelope["data"]["ref_tips"])
+        self.assertTrue(any("verify-refs cannot guard the history" in w for w in envelope["warnings"]))
+
+    def test_adopt_refuses_a_ref_record_the_workspace_already_holds(self) -> None:
+        self.workspace.mkdir()
+        (self.workspace / progress.ref_tips_name("example-service")).write_text("{}", encoding="utf-8")
+        code, envelope, _ = self.adopt()
+        self.assertEqual(code, 1, envelope)
+        self.assertIn("a ref record already exists", envelope["data"]["error"])
+        self.assertFalse(self.json_path.exists())
+
     def test_the_envelope_lists_what_the_owner_may_remove(self) -> None:
         code, envelope, err = self.adopt()
         self.assertEqual(code, 0, envelope)
