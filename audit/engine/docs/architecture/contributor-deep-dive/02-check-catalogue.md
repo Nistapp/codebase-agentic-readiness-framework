@@ -262,7 +262,9 @@ flowchart LR
    from the check's own constant with `_held` where one exists. Give a place `via` when the scan's file kinds or
    component detection read it before the check runs. Give it `case=FOLD` when the check lower-cases the name. Set
    `named_by_text` when the check looks up paths that the target's text names. Mark a place `unexercised`, with the
-   reason, when no fixture can make the check ask for it. Prefer a small fixture that does. `tests/test_check_reads.py`
+   reason, when no fixture can make the check ask for it. Prefer a small fixture that does. Add a place to
+   `MONOTONE` only when the code shows that added text can only raise the verdict there.
+   `tests/test_reads_monotone.py` adds text to it in every fixture and fails when a verdict falls. `tests/test_check_reads.py`
    fails on a path the check asks for and the declaration does not cover. A pattern passed to `Inventory.match`
    counts as every path it finds there. The engine and a `glob` place both match folder by folder
    (`audit/globs.py`), so the engine's `.husky/**` is not declared as `.husky/*`. It also fails on an uncovered

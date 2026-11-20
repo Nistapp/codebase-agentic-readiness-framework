@@ -30,7 +30,8 @@ the boundaries and the gate in both modes exist, with their tests.
       or the file.
    2. `moves`: one entry per playbook Commits row and per greenfield template. It says what the row or template
       does to such text: `write`, `move`, `rewrite`, `create`, `untrack` or `none`. Its `touches` list names the
-      checks whose reads it can change, as a reviewer judged them.
+      checks whose reads it can change, as a reviewer judged them. Its `mode` is `add` when the step only adds,
+      and `replace`, the default, when it may change or remove text (rule 6).
    3. `keeps`: one entry for each check a move touches. It cites the sentence that keeps the read true, by index
       section address and verbatim quote. Or it is `accepted`, with the maintainer's reason.
    4. `names`: the file and folder names the engine gives a meaning to.
@@ -44,6 +45,8 @@ the boundaries and the gate in both modes exist, with their tests.
       A place matched in lower case says `case: fold`.
       A read that also follows paths named in the target's text gives the reason in `named_by_text`.
       A place that no fixture can make the check ask for gives the reason in `unexercised`.
+      A place where added text can only raise the check's verdict says `monotone` (rule 6). An engine test adds
+      text to each such place in every fixture and a scaffold, and fails when a verdict falls.
    2. [`dev/consistency_map_reads.py`](../../../dev/consistency_map_reads.py) generates the map's `reads` part from
       it. A `dev/` test fails when the two differ.
    3. The two agent checks have no code, so their entries are written in the map.
@@ -57,15 +60,26 @@ the boundaries and the gate in both modes exist, with their tests.
    6. The declaration is not in the ruleset hash and is in no report.
 4. A keeps quote is checked as the quote verifier checks it: verbatim, with whitespace collapsed. Its section
    must still mention the check ID.
-5. The gate fails in five cases:
+5. The gate fails in six cases:
    1. A move names a check in `touches`, and no keeps entry covers the pair.
    2. A keeps quote is gone, or its section no longer mentions the check.
    3. A catalogue check has no reads entry, or a Commits row has no moves entry.
    4. A created file matches the names list and its moves entry has no `intent`.
    5. A boundary's home quote is gone from its section, or the file or function that enforces it no longer exists.
+   6. A move has `mode: add`, but it is not a `write` of a Commits row. Or the commit text of its row holds an
+      edit word. The gate's `EDIT_WORDS` lists the word stems, such as edit, replace, remove, fix, correct and
+      settle. The list is a floor: a row without one is `add` only when its step says that it only adds.
 6. The gate also infers touches from the paths and the content kinds. It reports the inferred pairs that no move
    declares as unreviewed advice, and never fails on them. A rule that narrows the inference may lose no pair a
-   reviewer found real. Tests hold those pairs, from each triage of the unreviewed list.
+   reviewer found real. Tests hold those pairs, from each triage of the unreviewed list. Rule R5 leaves out a pair
+   when the move has `mode: add` and every place it reaches is `monotone`:
+   1. `add` means the step adds whole lines or keys to each `to` path, in a file it does not create. It puts them
+      at a block boundary, between paragraphs, list items or sections. It adds a heading only where a section
+      ends, and it changes or removes nothing.
+   2. `monotone` means such an addition can only raise the check's verdict at that place. The engine's
+      `MONOTONE` table lists the places, and its comment gives the reason for each, from the check's code.
+   3. Such a pair can still raise a verdict, so the map's touch test still reports it. A declared touch and its
+      keep stay: the rule changes only the unreviewed count.
 7. Evidence that changes under an unchanged verdict is reported to the reviewer. It does not fail the gate.
 8. The gate has two modes. Static mode checks the map against the working tree. Change mode runs against a base
    ref (`--base`, default `origin/dev`) and adds:
@@ -108,4 +122,6 @@ the boundaries and the gate in both modes exist, with their tests.
 
 - The map is kept by hand beside the code, and its reads can drift from a check's phrases until a test covers them.
 - A script checks that a rule is stated, not that an agent follows it.
+- A `mode: add` mark is a reviewer's reading of the step. The gate checks only its action and its row's words, so
+  an agent that edits in place where the step says add is not seen.
 - About 200 moves entries (153 Commits rows and 45 templates) must be written before the gate can join `make check`.
