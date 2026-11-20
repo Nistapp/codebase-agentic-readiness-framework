@@ -16,9 +16,9 @@ folder.
 | `playbooks/templates/` | Code a playbook copies into a target, with tests in `tools/tests/`. A copy carries `MIT`, `Apache-2.0` or `BSD-3-Clause`, never this repository's licence |
 | `state.md` | The state contract: the per-repository state that `progress.py` keeps |
 | `tool-choice.md` | What a step does when a tool it needs is missing, or older than the repository's pin |
-| `theme-checks.md` | The integration-branch check, the history check and the lost-pass check that Stages 3 and 4 run, and when to stack a theme on an unmerged one |
-| `tools/` | `progress.py`, `check_drift.py`, `compare_reports.py`, `check_regressions.py`, and their tests in `tools/tests/` |
-| `docs/architecture/adrs/` | Decisions for this folder (ADR 0003, ADR 0004, ADR 0005 and ADR 0007) |
+| `theme-checks.md` | The integration-branch check, the history check, the lost-pass check and the gates check that Stages 3 and 4 run, and when to stack a theme on an unmerged one |
+| `tools/` | `progress.py`, `check_drift.py`, `compare_reports.py`, `check_regressions.py`, `check_gates.py`, and their tests in `tools/tests/` |
+| `docs/architecture/adrs/` | Decisions for this folder (ADR 0003, ADR 0004, ADR 0005, ADR 0006 and ADR 0007) |
 
 ## Rules
 

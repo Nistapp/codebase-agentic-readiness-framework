@@ -76,6 +76,17 @@ List the audit findings whose cited files changed between the audited commit and
 check_drift.py REPORT REPO [--json]
 ```
 
+## check_gates.py
+
+**Version:** 0.1.0  
+**Writes:** nothing
+
+Check a theme branch's diff for a weakened gate (B-03) or a dependency the owner did not approve (B-11).
+
+```text
+check_gates.py WORKTREE --base SHA [--theme REF] [--state FILE]
+```
+
 ## check_regressions.py
 
 **Version:** 0.1.0  

@@ -390,6 +390,21 @@ class BoundariesTest(unittest.TestCase):
         self.assertEqual(problems, ["B-01: the id is used twice"])
 
 
+def _r5_map(*, mode: str | None, monotone: bool) -> dict[str, Any]:
+    """One move that writes a line to ``AGENTS.md`` and one read of it, for rule R5."""
+    where: dict[str, Any] = {"path": "AGENTS.md", "scope": "root", **({"monotone": True} if monotone else {})}
+    move: dict[str, Any] = {
+        "id": "p/row-1",
+        "origin": {"path": "implement/playbooks/p.md", "row": 1},
+        "action": "write",
+        "content": ["prose"],
+        "to": ["AGENTS.md"],
+        **({"mode": mode} if mode else {}),
+    }
+    read = {"check": "AGT-03", "source": "engine", "where": [where], "what": {"kind": "word-list"}, "binding": "file"}
+    return {"map_format": 1, "reads": [read], "moves": [move], "keeps": [], "names": [], "boundaries": []}
+
+
 def _small_map() -> dict[str, Any]:
     return {
         "map_format": 1,
@@ -658,6 +673,90 @@ class GateTest(unittest.TestCase):
         # The test is live: a line built here, so that no key-shaped string sits in this file, is flagged.
         self.assertTrue(flagged('api_token = "' + "Zq7" * 8 + '"'))
 
+    def test_r5_an_add_move_infers_no_pair_through_a_monotone_place(self) -> None:
+        cmap = _r5_map(mode="add", monotone=True)
+        self.assertEqual(consistency_map.unreviewed_pairs(cmap), [])
+        # The touch can still raise the verdict, so touch() reports it; only the unreviewed count leaves it out.
+        self.assertEqual(consistency_map.touch(cmap["moves"][0], cmap["reads"][0]), "AGENTS.md")
+        self.assertIsNone(consistency_map.lowering_touch(cmap["moves"][0], cmap["reads"][0]))
+
+    def test_r5_a_replace_move_or_a_plain_place_keeps_the_pair(self) -> None:
+        pair = [("p/row-1", "AGT-03", "AGENTS.md")]
+        self.assertEqual(consistency_map.unreviewed_pairs(_r5_map(mode="replace", monotone=True)), pair)
+        self.assertEqual(consistency_map.unreviewed_pairs(_r5_map(mode=None, monotone=True)), pair)
+        self.assertEqual(consistency_map.unreviewed_pairs(_r5_map(mode="add", monotone=False)), pair)
+
+    def test_r5_an_add_move_still_touches_the_other_places_of_the_read(self) -> None:
+        cmap = _r5_map(mode="add", monotone=True)
+        cmap["reads"][0]["where"].append({"path": "package.json", "scope": "root"})
+        cmap["moves"][0]["to"].append("package.json")
+        self.assertEqual(consistency_map.unreviewed_pairs(cmap), [("p/row-1", "AGT-03", "package.json")])
+
+    def test_r5_a_declared_pair_and_its_keep_are_never_dropped(self) -> None:
+        cmap = _r5_map(mode="add", monotone=True)
+        cmap["moves"][0]["touches"] = ["AGT-03"]
+        self.assertEqual(consistency_map.unkept_pairs(cmap), [("p/row-1", "AGT-03")])
+        home = {"path": "x.md", "section": "x.md", "quote": "q"}
+        cmap["keeps"] = [{"move": "p/row-1", "check": "AGT-03", "status": "kept", "home": home}]
+        self.assertEqual(consistency_map.unkept_pairs(cmap), [])
+        self.assertEqual(consistency_map.keeps_problems(cmap, ["AGT-03"]), [])
+
+    def test_r5_every_keep_of_the_map_stays_a_declared_pair(self) -> None:
+        """No keep of this map leans on the inference: with the keeps gone, each kept pair is unkept again."""
+        cmap = json.loads(json.dumps(MAP))
+        pairs = {(keep["move"], keep["check"]) for keep in cmap["keeps"]}
+        cmap["keeps"] = []
+        self.assertEqual(pairs - set(consistency_map.unkept_pairs(cmap)), set())
+
+    def test_r5_a_planted_add_move_whose_row_edits_fails(self) -> None:
+        """The guard: ``adapt-agents-md`` row 15 reads "Stale lines corrected", so it may not be ``mode: add``."""
+        cmap = json.loads(json.dumps(MAP))
+        moves = {move["id"]: move for move in cmap["moves"]}
+        moves["adapt-agents-md/row-15"]["mode"] = "add"
+        problems = consistency_map.report(cmap, CATALOGUE_IDS)["mode"]
+        self.assertEqual(len(problems), 1)
+        self.assertIn("adapt-agents-md/row-15: mode add, but its Commits row says 'corrected'", problems[0])
+
+    def test_r5_mode_add_needs_a_write_of_a_commits_row(self) -> None:
+        text = "# P\n\n## Commits\n\n| # | Commit | Checks | Kind |\n|---|---|---|---|\n| 1 | Reach line | - | hand |\n"
+        read = {"implement/playbooks/p.md": text}.__getitem__
+        origin = {"path": "implement/playbooks/p.md", "row": 1}
+        problems = consistency_map.mode_problems
+        self.assertEqual(problems([{"id": "p/row-1", "origin": origin, "action": "write", "mode": "add"}], read), [])
+        self.assertEqual(
+            problems([{"id": "p/row-1", "origin": origin, "action": "create", "mode": "add"}], read),
+            ["p/row-1: mode add needs the action write, not create"],
+        )
+        missing = {"path": "implement/playbooks/p.md", "row": 2}
+        self.assertEqual(
+            problems([{"id": "p/row-2", "origin": missing, "action": "write", "mode": "add"}], read),
+            ["p/row-2: mode add needs a Commits row, and implement/playbooks/p.md has none for it"],
+        )
+        template = {"id": "t/AGENTS.md", "origin": {"path": "greenfield/templates/AGENTS.md"}, "action": "write"}
+        self.assertEqual(len(problems([{**template, "mode": "add"}], read)), 1)
+        self.assertEqual(problems([{**template, "mode": "replace"}], read), [])
+
+    def test_r5_the_edit_words(self) -> None:
+        edits = ("Stale lines corrected", "Fix the docs", "Stub word settled", "Dockerfile matches the pin", "Moved")
+        for text in edits:
+            self.assertIsNotNone(consistency_map.EDIT_WORDS.search(text), text)
+        for text in ("Reach line", "Boundary rules the owner picked", "Freshness line in the instruction file"):
+            self.assertIsNone(consistency_map.EDIT_WORDS.search(text), text)
+
+    def test_r5_the_in_place_edits_stay_replace(self) -> None:
+        moves = {move["id"]: move for move in MAP["moves"]}
+        in_place = (
+            "adapt-agents-md/row-3",
+            "adapt-agents-md/row-14",
+            "adapt-agents-md/row-23",
+            "pin-execution-environment/row-6",
+            "pin-execution-environment/row-8",
+        )
+        self.assertEqual(
+            {move: moves[move].get("mode", "replace") for move in in_place}, dict.fromkeys(in_place, "replace")
+        )
+        self.assertTrue(all(move["action"] == "write" for move in MAP["moves"] if move.get("mode") == "add"))
+
     def test_r3_leaves_other_checks_and_places_alone(self) -> None:
         touch = consistency_map.touch
         any_kind = {"check": "NAV-03", "what": {"kind": "key"}, "where": [{"path": "**", "scope": "glob"}]}
@@ -779,7 +878,7 @@ class RealPairsTest(unittest.TestCase):
 
     def test_the_report_of_this_tree_has_no_structural_problem(self) -> None:
         found = consistency_map.report(MAP, CATALOGUE_IDS)
-        for kind in ("quote", "coverage", "names", "constants", "keeps"):
+        for kind in ("quote", "coverage", "names", "constants", "keeps", "mode"):
             self.assertEqual(found[kind], [], kind)
 
     def test_report_mode_exits_0_and_strict_mode_exits_1_on_a_problem(self) -> None:

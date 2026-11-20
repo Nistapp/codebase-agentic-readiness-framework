@@ -26,6 +26,8 @@ check then asks for no such path itself. A place with ``case`` ``fold`` is match
 in any case meets it. A declaration with ``named_by_text`` also reads paths that the target's own text names,
 which no place can list; the field gives the reason. A place with ``unexercised`` is read by the code, but no
 fixture can make the check ask for it; the field gives the reason, so the recording test does not need to see it.
+A place with ``monotone`` can only gain from added text: whole lines or keys added to the file, at a block
+boundary, never lower the check's verdict there (:data:`MONOTONE`, rule R5 of ADR 0012).
 """
 
 from __future__ import annotations
@@ -62,7 +64,8 @@ class Place:
 
     ``constant`` names the engine constant it comes from; ``via`` names the upstream step that reads it for the
     check, ``scan-kind`` or ``components``; ``case`` is ``fold`` when the check matches the name in lower case;
-    ``unexercised`` says why no fixture can make the check ask for it.
+    ``unexercised`` says why no fixture can make the check ask for it; ``monotone`` is true when text added to the
+    place can only raise the check's verdict (:data:`MONOTONE`).
     """
 
     path: str
@@ -71,6 +74,7 @@ class Place:
     via: str | None = None
     case: str = EXACT
     unexercised: str | None = None
+    monotone: bool = False
 
 
 @dataclass(frozen=True)
@@ -1845,24 +1849,27 @@ READS: dict[str, Reads] = {
     "NAV-05": Reads(
         where=(*_at(ANY_DEPTH, "*.py", "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs"),),
         what=What("phrase"),
-        binding="window",
-        window=2,
+        binding="file",
         note=(
-            "Python: a def, async def or class at column 0 with a public name is documented when the next "
-            "non-blank line opens a docstring; TypeScript or JavaScript: an export declaration is documented "
-            "when the line before (blank lines skipped) ends a /** */ block. Only the main language is read."
+            "Python, parsed with ast: a module-level def, async def or class and a method of a public class, "
+            "each with a public name, is documented when ast finds its docstring; a test file (a tests or test "
+            "folder, a test_*.py or *_test.py name) is not read, and a file that does not parse falls back to "
+            "column-0 lines with the docstring on the next non-blank line. TypeScript or JavaScript: an export "
+            "declaration is documented when the line before (blank lines skipped) ends a /** */ block. Only the "
+            "main language is read."
         ),
     ),
     "SEC-01": Reads(
         where=(
-            *_at(ANY_DEPTH, ".env", ".env.*", ".gitignore"),
+            *_at(ANY_DEPTH, ".env", ".env.*", "*.env", "env.*", ".gitignore"),
             *_at(ROOT, ".cbmignore", ".cursorignore", ".aiderignore", ".rooignore"),
         ),
         what=What("exists"),
         binding="file",
         note=(
             "Tracked files (git) whose base name is .env or starts with .env., less six template names, fail;"
-            " the ignore rules (the five root ignore files and every nested .gitignore) are probed with .env "
+            " so does a tracked file an ignore rule also matches whose base name starts with .env, ends with .env"
+            " or starts with env., less the templates. The ignore rules (the five root ignore files and every nested .gitignore) are probed with .env "
             "and .env.local at the root and one folder down."
         ),
     ),
@@ -1886,7 +1893,8 @@ READS: dict[str, Reads] = {
         note=(
             "The ignore rules are probed with eleven sample paths (.env, .env.local, id_rsa, server.pem, "
             "server.key, server.p12, server.pfx, app.keystore, server.crt, server.cer, .aws/credentials); "
-            "nested .gitignore files come from the scan and from git ls-files."
+            "nested .gitignore files come from the scan and from git ls-files. A tracked file an ignore rule also "
+            "matches whose name is one of the nine non-dotenv shapes fails."
         ),
     ),
     "HYG-01": Reads(
@@ -2012,3 +2020,64 @@ READS: dict[str, Reads] = {
         ),
     ),
 }
+
+#: Rule R5 of ADR 0012: the places where text added to a file can only raise the check's verdict, by check. "Added"
+#: means whole lines or keys, put in at a block boundary (between paragraphs, list items or sections; a new heading
+#: only where a section ends), in a file that already exists, with nothing changed or removed, and the file still
+#: well formed (balanced fences, a manifest its tool still parses). The consistency map then infers no touch from such
+#: a place for a move marked ``mode: add``. Each set was confirmed against the check's code:
+#:
+#: - ``AGT-03``, ``AGT-06``, ``AGT-09``: a pattern found on any line, or a branch named anywhere, in the entry file;
+#:   another line only adds matches. The other ``AGT-09`` places declare branches, so a line there can add an
+#:   unnamed one.
+#: - ``AGT-05``: the names half (``_mentioned_verbs``). A runner manifest is the resolution half, and stays out.
+#: - ``AGT-07``: the concerns are found on any prohibition line of the file. A section opened by its heading word
+#:   stays open; one opened by three prohibition lines keeps them, since a new heading goes only where a section ends.
+#: - ``AGT-08``: only the root ``AGENTS.md`` text is read, for the statement of harnesses. A vendor file is not
+#:   monotone: a line added to a pointer file makes it a competitor (``is_agents_md_pointer``).
+#: - ``BASE-01``, ``BASE-03``, ``BASE-04``: a baseline, ratchet or coverage phrase found in a document adds evidence;
+#:   no document line takes any away.
+#: - ``CON-01``, ``CON-02``: more code spans in the prohibitions sections. ``CON-01`` passes on any span that exists,
+#:   ``CON-02`` when every test folder is covered. A new block is quiet or not by its own lines (``_quiet_lines``).
+#: - ``EXEC-03``, ``TST-04``: the first documented setup or single-test command passes; another cannot remove it.
+#: - ``HYG-13``: each item is file-wide or, for the gate item, one paragraph; a new paragraph splits no other.
+#: - ``CI-02``, ``CI-03``, ``TST-01`` on the runner manifests: a local verb, target or test verb that exists keeps
+#:   existing, and ``CI-02`` fails only on a CI verb with no local definition. A key added where no local verb
+#:   resolved yet can turn ``CI-02`` from ``UNKNOWN`` into ``FAIL``; a move that can do so stays ``replace``.
+#:
+#: Left out after the same review: ``CMD-01``, since a verb added on a second runner turns ``PASS`` into ``PARTIAL``
+#: (``check_cmd01``), and the ``CLAUDE.md`` place of ``AGT-08``.
+_ENTRY_FILES: tuple[str, ...] = ("AGENTS.md", "CLAUDE.md")
+_ROOT_DOCUMENTS: tuple[str, ...] = (*_ENTRY_FILES, "README.md", "CONTRIBUTING.md")
+_RUNNER_PATHS: tuple[str, ...] = tuple(place.path for place in _runners())
+MONOTONE: dict[str, tuple[str, ...]] = {
+    "AGT-03": _ENTRY_FILES,
+    "AGT-05": _ENTRY_FILES,
+    "AGT-06": _ENTRY_FILES,
+    "AGT-07": _ENTRY_FILES,
+    "AGT-08": ("AGENTS.md",),
+    "AGT-09": _ENTRY_FILES,
+    "CI-02": _RUNNER_PATHS,
+    "CI-03": _RUNNER_PATHS,
+    "BASE-01": _ENTRY_FILES,
+    "BASE-03": (*_ROOT_DOCUMENTS, "README*"),
+    "BASE-04": (*_ROOT_DOCUMENTS, "README*"),
+    "CON-01": _ENTRY_FILES,
+    "CON-02": _ENTRY_FILES,
+    "EXEC-03": (*_ROOT_DOCUMENTS, "README*"),
+    "TST-01": _RUNNER_PATHS,
+    "TST-04": _ROOT_DOCUMENTS,
+    "HYG-13": ("CONTRIBUTING*",),
+}
+
+
+def _with_monotone(check: str, declared: Reads) -> Reads:
+    """``declared`` with the places :data:`MONOTONE` names for ``check`` marked; each named path must be a place."""
+    paths = set(MONOTONE.get(check, ()))
+    missing = paths - {place.path for place in declared.where}
+    if missing:
+        raise ValueError(f"{check}: no such place: {', '.join(sorted(missing))}")
+    return replace(declared, where=tuple(replace(place, monotone=place.path in paths) for place in declared.where))
+
+
+READS = {check: _with_monotone(check, declared) for check, declared in READS.items()}

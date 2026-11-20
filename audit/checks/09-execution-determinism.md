@@ -91,10 +91,13 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  declares no dependencies, so no lockfile is expected. Git unable to report tracked files
                  (no repository, or the command failed) makes the tracked half `UNKNOWN` for the whole
                  check, never inferred as passing. A lockfile with no manifest in its own folder is tracked
-                 but its consistency is left `PARTIAL`. A tracked lockfile that the scan's walk skipped as
-                 ignored is found too. The walk reads an ignore file without its `!` lines. So a
-                 `package-lock.json` rule with a `!apps/web/package-lock.json` line would otherwise hide a
-                 lockfile git tracks. Distrust a
+                 but its consistency is left `PARTIAL`. Each tracked lockfile the engine could not compare is a
+                 `PARTIAL` finding of its own, keyed by the lockfile's path. A tracked lockfile that the
+                 scan's walk skipped as ignored is found too. The walk applies `!` lines (the scoped ignore matcher,
+                 [ADR-0009](../engine/docs/architecture/adrs/0009-nested-ignore-files-and-negation.md)), so a
+                 `!apps/web/package-lock.json` line already brings that lockfile back. The tracked list still
+                 finds a lockfile that an ignore rule covers but git tracks, such as one added with
+                 `git add -f`. Distrust a
                  `FAIL` for "no lockfile" when the manager is one the engine does not recognise for that
                  ecosystem — verify against `PACKAGE_MANAGERS` in `audit/stack.py` before concluding the
                  project truly has none. Distrust a `PARTIAL` citing "consistency unverified" when the
@@ -117,8 +120,10 @@ Rubric           PASS: every detected ecosystem has a lockfile, every lockfile i
                  UNKNOWN when: no ecosystem with a recognised package manager is detected; an ecosystem
                  is recognised only from source with no manifest; or git could not report tracked files.
 Evidence to cite A `file` evidence item citing the lockfile path for a missing/untracked finding, or the
-                 lockfile path plus the omitted dependency names for a mismatch; for PASS, every tracked
-                 lockfile path.
+                 lockfile path plus the omitted dependency names for a mismatch. A `PARTIAL` finding cites the
+                 lockfile whose consistency is unverified. For PASS, the engine's
+                 recorded output is the evidence (`audit/schema/SCHEMA.md`, rule 5 Methods); its summary
+                 names every tracked lockfile path.
 Absence proof    A "no lockfile" FAIL names every lockfile filename that manager uses and that none was
                  found at any depth; an "untracked" FAIL cites the untracked path directly; a mismatch
                  FAIL lists the specific manifest dependencies the lockfile omits.

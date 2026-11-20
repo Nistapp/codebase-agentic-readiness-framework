@@ -12,7 +12,9 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
 * **SEC-01** — the tracked `.env` half reads `audit.ignore.tracked_files`; the ignore half reads the
   ignore files directly (the scoped matcher, `audit.rules.checks._common.scoped_rules`), so a tracked `.env`
   that is *also* git-ignored is still seen. A tracked ``.env``/``.env.*`` (excluding committed templates such as
-  ``.env.example``) is the blocker. No tracked `.env` but ignore rules that miss the shape is
+  ``.env.example``) is the blocker. So is a tracked file an ignore rule also matches
+  (`audit.rules.checks._common.tracked_and_ignored`) with an env-like name: ``.env*``, ``*.env`` or ``env.*``,
+  templates excepted (``config/prod.env`` force-added past ``*.env``). No tracked `.env` but ignore rules that miss the shape is
   `PARTIAL`. When git cannot report the tracked set the blocker half is `UNKNOWN` — never `PASS`,
   and the tracked set is never inferred from the walk.
 * **SEC-02** — a pattern scan of **tracked text files** for the credential shapes in
@@ -29,7 +31,9 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   names itself a sentinel (``Bearer sanity.check.invalid``) and a badge URL's public token do not count.
 * **SEC-03** — ignore rules must cover a documented set of key/certificate/credential shapes
   (:data:`_SECRET_SHAPES`). Every required shape covered is `PASS`; some is `PARTIAL`; none is
-  `FAIL`. The covered labels are stated in `detail`.
+  `FAIL`. The covered labels are stated in `detail`. A tracked file an ignore rule also matches whose name is
+  one of the non-dotenv shapes (``server.key`` force-added past ``*.key``) is a `FAIL` with its own finding;
+  when git cannot report the tracked set, that half is skipped and the coverage half stands alone.
 
 Deliberate limits, recorded rather than hidden. Ignore matching is the documented subset in
 ``audit.ignore`` (ADR-0009), so a shape is only credited when one of the probes actually matches. Content
@@ -44,8 +48,8 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.ignore import IgnoreRule, decide
-from audit.rules.checks._common import scoped_rules, tracked_in_scope
+from audit.ignore import IgnoreRule, decide, decide_path
+from audit.rules.checks._common import scoped_rules, tracked_and_ignored, tracked_in_scope
 from audit.rules.checks._secret_allowlist import SecretAllowlist, load_secret_allowlist
 from audit.probes import REDACTION_PATTERNS
 from audit.scan import Inventory
@@ -111,6 +115,15 @@ _SECRET_SHAPE_SUGGEST: dict[str, str] = {
     "AWS credentials": ".aws/*",
 }
 
+#: The shapes SEC-03 calls key material when a tracked file matches one past an ignore rule: every shape of
+#: :data:`_SECRET_SHAPES` but the dotenv ones, which are SEC-01's. Each is matched by its suggested ignore entry, at
+#: any depth (``.aws/*`` is read as ``**/.aws/*``), so the two lists cannot drift apart.
+_KEY_MATERIAL_RULES: tuple[tuple[str, IgnoreRule], ...] = tuple(
+    (label, IgnoreRule(pattern=("**/" + glob) if "/" in glob else glob, source="SEC-03"))
+    for label, glob in _SECRET_SHAPE_SUGGEST.items()
+    if label not in {"dotenv", "dotenv variant"}
+)
+
 _ENV_SHAPE_SUGGEST: dict[str, str] = {
     "dotenv": ".env",
     "dotenv variant": ".env.*",
@@ -145,6 +158,28 @@ def _is_env_name(rel: str) -> bool:
     if base in _ENV_TEMPLATE_BASENAMES:
         return False
     return base == ".env" or base.startswith(".env.")
+
+
+def _is_env_like_name(rel: str) -> bool:
+    """Whether a tracked file an ignore rule also matches has an environment-file name (issue #12).
+
+    The basename starts with ``.env`` (``.env``, ``.env.prod``, ``.envrc``), ends with ``.env`` (``prod.env``) or
+    starts with ``env.`` (``env.prod``), and is not a committed template (:func:`_is_template_file`). This wider
+    name rule applies only to a tracked file past an ignore rule; any other tracked file counts only by
+    :func:`_is_env_name`.
+    """
+    if _is_template_file(rel):
+        return False
+    base = rel.rsplit("/", 1)[-1]
+    return base.startswith(".env") or base.endswith(".env") or base.startswith("env.")
+
+
+def _key_material(rel: str) -> str | None:
+    """The key shape (:data:`_KEY_MATERIAL_RULES`) a path's name matches, or ``None``."""
+    for label, rule in _KEY_MATERIAL_RULES:
+        if decide_path(rel, [rule]).ignored:
+            return label
+    return None
 
 
 def _is_template_file(rel: str) -> bool:
@@ -237,7 +272,8 @@ def check_sec01(*, spec, target, inventory, stack, components, session) -> Check
             spec, f"git could not report tracked files, so a tracked .env cannot be ruled out ({ignore_note})"
         )
 
-    tracked_env = sorted(rel for rel in tracked if _is_env_name(rel))
+    ignored = tracked_and_ignored(target, inventory, rules) or []
+    tracked_env = sorted({rel for rel in tracked if _is_env_name(rel)} | {r for r in ignored if _is_env_like_name(r)})
     if tracked_env:
         return _outcome(
             spec,
@@ -566,15 +602,17 @@ def check_sec03(*, spec, target, inventory, stack, components, session) -> Check
     covered, root_only, missing = _shape_coverage(rules, _SECRET_SHAPES)
     shapes = _shapes_payload(rules, _SECRET_SHAPES, _SECRET_SHAPE_SUGGEST)
     detail = f"covered: {', '.join(covered)}" if covered else "no secret shapes covered"
-    if not missing and not root_only:
+    committed = _committed_key_material(target, inventory, rules)
+    if not missing and not root_only and not committed:
         return _outcome(spec, Verdict.PASS, detail, data=shapes)
 
-    verdict = Verdict.PARTIAL if covered or root_only else Verdict.FAIL
-    return _outcome(
-        spec,
-        verdict,
-        f"{detail}; {_gaps(root_only, missing)}",
-        [
+    findings: list[Finding] = []
+    summary = [detail]
+    verdict = Verdict.PASS
+    if missing or root_only:
+        verdict = Verdict.PARTIAL if covered or root_only else Verdict.FAIL
+        summary.append(_gaps(root_only, missing))
+        findings.append(
             Finding(
                 check=spec.id,
                 severity=spec.severity,
@@ -588,10 +626,41 @@ def check_sec03(*, spec, target, inventory, stack, components, session) -> Check
                 remediation="Add the missing shapes to .gitignore — for example `.env.*`, `*.pem`, "
                 "`*.key`, `*.p12`, `*.pfx`, `*.keystore`, `id_rsa*`, `*.crt`, `*.cer`, "
                 "`.aws/*`.",
-            ),
-        ],
-        data=shapes,
-    )
+            )
+        )
+    if committed:
+        verdict = Verdict.FAIL
+        paths = [rel for rel, _label in committed]
+        summary.append(f"tracked although ignored: {', '.join(paths[:_MAX_SECRET_FILES])}")
+        findings.append(
+            Finding(
+                check=spec.id,
+                severity=spec.severity,
+                phase=spec.phase,
+                verdict=Verdict.FAIL,
+                statement=statement(
+                    "trust that the ignore rules kept key material out of history",
+                    f"{len(paths)} key file(s) an ignore rule matches are tracked by git",
+                ),
+                evidence=[Evidence(rel, note=label) for rel, label in committed[:_MAX_SECRET_FILES]],
+                path=paths[0],
+                remediation="Untrack the key file (git rm --cached), keep its ignore rule, and rotate the key "
+                "or certificate it held.",
+            )
+        )
+    return _outcome(spec, verdict, "; ".join(summary), findings, data=shapes)
+
+
+def _committed_key_material(target, inventory, rules: list[IgnoreRule]) -> list[tuple[str, str]]:
+    """``(path, shape)`` for each tracked file an ignore rule matches whose name is a key shape (issue #12).
+
+    Empty when git cannot report the tracked set: the coverage half of SEC-03 still stands on its own.
+    """
+    return [
+        (rel, label)
+        for rel in tracked_and_ignored(target, inventory, rules) or []
+        if (label := _key_material(rel)) is not None
+    ]
 
 
 IMPLEMENTATIONS = {

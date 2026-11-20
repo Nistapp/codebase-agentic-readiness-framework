@@ -30,7 +30,8 @@ recommendation or a playbook's recommendation is not the owner's pick.
 5. **A blanket go-ahead is not a choice.** "Install whatever is needed" lets you ask; it picks no tool. Ask
    several tools' questions in one numbered message if you like, but each tool needs its own answer.
 6. **Record at once.** `progress.py pref set <key> <tool> --reason "<owner's words>; scope <one-off|adopt>" --by
-   owner --phase <phase>`.
+   owner --phase <phase>`. An adopted tool is a new dependency. Add its name to `dependencies.approved` too.
+   Otherwise [the gates check](theme-checks.md#when-a-gate-is-weakened) stops the theme.
 7. **When the owner picks none.** Record `none` with the owner's words, so the question is not asked again. Then:
    - Say plainly which check cannot run, and what that leaves unchecked.
    - The item's own Verification needs the tool: the item is not `done`. End it `blocked` with the reason "owner
