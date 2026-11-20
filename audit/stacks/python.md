@@ -48,9 +48,9 @@ that mirrors the type-check gate's import paths.
 `.python-version` or `pyproject.toml`'s `requires-python` pins the interpreter (`EXEC-01`); uv and
 poetry both honour `.python-version` directly, pip does not read it at all — say which the project
 actually acts on, not just which file exists. The matching lockfile (`poetry.lock`/`uv.lock`/
-`Pipfile.lock`/`pdm.lock`) must be git-tracked at the root; `uv sync --frozen`/`poetry install --no-update`/
-`pipenv sync`/`pdm sync` is the non-interactive install path, never a bare `install` that can resolve new
-versions.
+`Pipfile.lock`/`pdm.lock`) must be git-tracked at the root. The non-interactive install path is
+`uv sync --frozen`/`poetry install --no-update`/`pipenv sync`/`pdm sync`. Never accept a bare `install`, which
+can resolve new versions.
 Tool versions (`EXEC-08`) go in a dependency group of a `pyproject.toml`, locked in `uv.lock`, never inline in
 `uvx ruff@0.5.0` or `pip install black==24.1.0`; the runner reads the pin or runs `uv run`.
 
