@@ -32,7 +32,7 @@ flowchart LR
 
 The audit recipe needs a person twice. Stage 0 is an interview, and Stage 4 asks the person to confirm each finding.
 An unattended run cannot do either. The plan calls for three runs across eight to ten repositories and several
-models (DP §11). Review R-07 is the reason the harness exists: a person cannot re-run the recipe by hand each time.
+models. A person cannot re-run the recipe by hand each time, so the harness runs it headless and unattended.
 
 Two inputs replace the person:
 
@@ -46,7 +46,7 @@ otherwise. `report.py finalise` always refuses an eval-mode draft (`audit/SKILL.
 
 ## 2. Corpus
 
-The corpus has two kinds of repository (DP §11).
+The corpus has two kinds of repository.
 
 - **The engine's one-defect fixtures** (`audit/engine/tests/fixtures/`).
   - Each fixture fails exactly one catalogue check, by design. The `MATRIX` in `test_fixture_matrix.py` lists them.
@@ -55,7 +55,7 @@ The corpus has two kinds of repository (DP §11).
     files into `dev/eval/expected/fixtures/<fixture>.json` (S4.2.1). There are 92 today. The published sweep ran on
     89.
   - The plan: run them all for the strongest model, and a sample for the other models (S4.2.2 to S4.2.5).
-- **Real repositories**, picked by hand for stack coverage. DP §11 asks the corpus to include:
+- **Real repositories**, picked by hand for stack coverage. The plan asks the corpus to include:
   - a repository that already passes;
   - a monorepo;
   - a tiny repository;
@@ -98,7 +98,7 @@ Two rules for edge cases:
 - **Nothing to score.** A ratio is `null`, not `0`, when there is nothing of that kind to score. Examples: no expected
   blockers, or no overrides.
 
-DP §11 also names two more measures:
+The plan also names two more measures:
 
 - **Run-to-run variance:** three runs per repository, to describe the non-determinism, not to remove it.
 - **Cost and time:** the runners (§4) record both for each run. The results for the fixture sweep and the real-repo
@@ -107,11 +107,11 @@ DP §11 also names two more measures:
 Run-to-run agreement on blockers is not measured, by choice. `D61` chose one run per repository (Claude Code on
 Sonnet), not three, to get real-repo numbers faster. KC accepted this gap when `S4.4.3` closed (`D63`).
 
-DP §11 also means a false-positive *rate*: the findings that a person rejects. That rate is in the triage section of
+The plan also asks for a false-positive *rate*: the findings that a person rejects. That rate is in the triage section of
 [Evaluation Results](../../reference/eval-results.md). It is not the same as `false_positive_candidates`, which is
 scored against written ground truth.
 
-Review R-27: cost and time have metrics but no targets yet. The targets are set after the first baseline runs.
+Cost and time have metrics but no targets yet. The targets are set after the first baseline runs.
 
 ## 4. Headless runs
 
@@ -171,7 +171,7 @@ tracking that this item still lacks.
 
 ## 5. Models
 
-DP §11 asks for a model matrix:
+The plan asks for a model matrix:
 
 - at least one top-tier model;
 - one mid-tier model;

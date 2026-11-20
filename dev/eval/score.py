@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""Score a headless audit report against its ground truth (DP §11, review R-07).
+"""Score a headless audit report against its ground truth.
+
+The evaluation design is in ``docs/explanation/contributor-deep-dive/05-evaluation.md``.
 
     score.py <report> <expected> [--target <repo>]
 
