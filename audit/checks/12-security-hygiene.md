@@ -89,9 +89,10 @@ Engine           `SEC-02`. Scans tracked text files (falling back to the whole i
                  (`.../badge.svg?token=...`, `img.shields.io`) is removed from the line before the scan. Its
                  token is a public read token for the badge. Committed templates
                  (`*.example`/`*.sample`/`*.template`) and lines matching an obvious placeholder pattern
-                 (`<...>`, `your-`, `changeme`, `xxx`, and similar) are skipped deterministically. Hits the repository's own scanner allowlist accepts
-                 are subtracted: `.secrets.baseline` (`results[<path>]` entries matched on path **and** line
-                 number, so a stale entry never hides a new hit on another line), `.gitleaksignore`
+                 (`<...>`, `your-`, `changeme`, `xxx`, and similar) are skipped deterministically. Hits the
+                 repository's own scanner allowlist accepts are subtracted: `.secrets.baseline`
+                 (`results[<path>]` entries matched on path **and** line number, so a stale entry never hides
+                 a new hit on another line), `.gitleaksignore`
                  (`<file>:<rule>:<line>` or `<commit>:<file>:<rule>:<line>`) and `.gitleaks.toml`
                  (`[allowlist]`/`[[allowlists]]` `paths` searched in the path, `regexes` searched in the line,
                  which is wider than the secret gitleaks matches). The summary then reads "N credential-shaped
