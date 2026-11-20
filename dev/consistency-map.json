@@ -1595,6 +1595,16 @@
       "status": "kept"
     },
     {
+      "check": "CI-02",
+      "home": {
+        "path": "implement/playbooks/add-ci-parity.md",
+        "quote": "In a wrapper repository: edit the wrapper first so it calls the verb, run the wrapper locally,",
+        "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+      },
+      "move": "add-ci-parity/row-2",
+      "status": "kept"
+    },
+    {
       "check": "EXEC-04",
       "home": {
         "path": "implement/playbooks/add-ci-parity.md",
@@ -4497,7 +4507,7 @@
         "key"
       ],
       "id": "add-ci-parity/row-2",
-      "note": "The engine reads run: text only, so it does not follow the wrapper (a known engine limit).",
+      "note": "CI-02 reads a shell script a CI step runs, one script deep, so the wrapper's verbs count; TOOL-04 and TOOL-06 read workflow lines only.",
       "origin": {
         "path": "implement/playbooks/add-ci-parity.md",
         "row": 2,
@@ -4507,6 +4517,7 @@
         "scripts/ci/*.sh"
       ],
       "touches": [
+        "CI-02",
         "EXEC-04"
       ]
     },
@@ -7754,7 +7765,7 @@
           "scope": "glob"
         },
         {
-          "path": ".junie/rules/*.md",
+          "path": ".junie/rules/**/*.md",
           "scope": "glob"
         },
         {
@@ -7782,7 +7793,7 @@
     {
       "binding": "file",
       "check": "AGT-02",
-      "note": "The root manifests declare the components (components.py); for each one <component>/AGENTS.md must exist, matched as a path suffix at any depth. The suffix test runs over agt.instruction_paths, which scans every instruction file name, but only a path ending in <component>/AGENTS.md counts, so the other names are never read for this check.",
+      "note": "The root manifests declare the components (components.py); for each one <component>/AGENTS.md must exist, matched as a path suffix at any depth. The root component is left out, so the root AGENTS.md never counts. The suffix test runs over agt.instruction_paths, which scans every instruction file name, but only a path ending in <component>/AGENTS.md counts, so the other names are never read for this check.",
       "source": "engine",
       "threshold": "every declared component has an AGENTS.md",
       "what": {
@@ -7790,7 +7801,7 @@
       },
       "where": [
         {
-          "path": "**/AGENTS.md",
+          "path": "*/**/AGENTS.md",
           "scope": "glob"
         },
         {
@@ -8166,7 +8177,7 @@
           "scope": "glob"
         },
         {
-          "path": ".junie/rules/*.md",
+          "path": ".junie/rules/**/*.md",
           "scope": "glob"
         },
         {
@@ -8223,7 +8234,7 @@
           "scope": "root"
         },
         {
-          "path": ".github/rulesets/*.json",
+          "path": ".github/rulesets/**/*.json",
           "scope": "glob"
         },
         {
@@ -9305,11 +9316,11 @@
           "scope": "root"
         },
         {
-          "path": ".github/workflows/*.yml",
+          "path": ".github/workflows/**/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/*.yaml",
+          "path": ".github/workflows/**/*.yaml",
           "scope": "glob"
         },
         {
@@ -9329,7 +9340,7 @@
           "scope": "root"
         },
         {
-          "path": ".buildkite/*.yml",
+          "path": ".buildkite/**/*.yml",
           "scope": "glob"
         }
       ]
@@ -9356,11 +9367,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".githooks/*",
+          "path": ".githooks/**",
           "scope": "glob"
         },
         {
-          "path": ".husky/*",
+          "path": ".husky/**",
           "scope": "glob"
         },
         {
@@ -9483,11 +9494,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".github/workflows/*.yml",
+          "path": ".github/workflows/**/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/*.yaml",
+          "path": ".github/workflows/**/*.yaml",
           "scope": "glob"
         },
         {
@@ -9507,7 +9518,7 @@
           "scope": "root"
         },
         {
-          "path": ".buildkite/*.yml",
+          "path": ".buildkite/**/*.yml",
           "scope": "glob"
         },
         {
@@ -9551,11 +9562,11 @@
           "scope": "root"
         },
         {
-          "path": ".githooks/*",
+          "path": ".githooks/**",
           "scope": "glob"
         },
         {
-          "path": ".husky/*",
+          "path": ".husky/**",
           "scope": "glob"
         },
         {
@@ -9594,11 +9605,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".githooks/*",
+          "path": ".githooks/**",
           "scope": "glob"
         },
         {
-          "path": ".husky/*",
+          "path": ".husky/**",
           "scope": "glob"
         },
         {
@@ -9610,7 +9621,7 @@
           "scope": "root"
         },
         {
-          "path": ".github/rulesets/*.json",
+          "path": ".github/rulesets/**/*.json",
           "scope": "glob"
         },
         {
@@ -9641,11 +9652,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/*.yml",
+          "path": ".github/workflows/**/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/*.yaml",
+          "path": ".github/workflows/**/*.yaml",
           "scope": "glob"
         },
         {
@@ -9665,7 +9676,7 @@
           "scope": "root"
         },
         {
-          "path": ".buildkite/*.yml",
+          "path": ".buildkite/**/*.yml",
           "scope": "glob"
         }
       ]
@@ -9689,11 +9700,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/*.yml",
+          "path": ".github/workflows/**/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/*.yaml",
+          "path": ".github/workflows/**/*.yaml",
           "scope": "glob"
         },
         {
@@ -9713,7 +9724,7 @@
           "scope": "root"
         },
         {
-          "path": ".buildkite/*.yml",
+          "path": ".buildkite/**/*.yml",
           "scope": "glob"
         },
         {
@@ -9776,11 +9787,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/*.yml",
+          "path": ".github/workflows/**/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/*.yaml",
+          "path": ".github/workflows/**/*.yaml",
           "scope": "glob"
         },
         {
@@ -9800,7 +9811,7 @@
           "scope": "root"
         },
         {
-          "path": ".buildkite/*.yml",
+          "path": ".buildkite/**/*.yml",
           "scope": "glob"
         },
         {
@@ -9910,11 +9921,11 @@
       },
       "where": [
         {
-          "path": ".github/workflows/*.yml",
+          "path": ".github/workflows/**/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/*.yaml",
+          "path": ".github/workflows/**/*.yaml",
           "scope": "glob"
         },
         {
@@ -9934,7 +9945,7 @@
           "scope": "root"
         },
         {
-          "path": ".buildkite/*.yml",
+          "path": ".buildkite/**/*.yml",
           "scope": "glob"
         },
         {
@@ -10138,6 +10149,14 @@
           "scope": "root"
         },
         {
+          "path": "package.json",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pyproject.toml",
+          "scope": "any-depth"
+        },
+        {
           "path": "setup.py",
           "scope": "any-depth"
         },
@@ -10147,6 +10166,18 @@
         },
         {
           "path": "Pipfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pom.xml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle.kts",
           "scope": "any-depth"
         },
         {
@@ -10341,6 +10372,14 @@
           "scope": "root"
         },
         {
+          "path": "package.json",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pyproject.toml",
+          "scope": "any-depth"
+        },
+        {
           "path": "setup.py",
           "scope": "any-depth"
         },
@@ -10350,6 +10389,18 @@
         },
         {
           "path": "Pipfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pom.xml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle.kts",
           "scope": "any-depth"
         },
         {
@@ -10525,11 +10576,11 @@
           "scope": "any-depth"
         },
         {
-          "path": ".github/workflows/*.yml",
+          "path": ".github/workflows/**/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/*.yaml",
+          "path": ".github/workflows/**/*.yaml",
           "scope": "glob"
         },
         {
@@ -10549,7 +10600,7 @@
           "scope": "root"
         },
         {
-          "path": ".buildkite/*.yml",
+          "path": ".buildkite/**/*.yml",
           "scope": "glob"
         },
         {
@@ -10593,6 +10644,14 @@
           "scope": "root"
         },
         {
+          "path": "package.json",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pyproject.toml",
+          "scope": "any-depth"
+        },
+        {
           "path": "setup.py",
           "scope": "any-depth"
         },
@@ -10602,6 +10661,18 @@
         },
         {
           "path": "Pipfile",
+          "scope": "any-depth"
+        },
+        {
+          "path": "pom.xml",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle",
+          "scope": "any-depth"
+        },
+        {
+          "path": "build.gradle.kts",
           "scope": "any-depth"
         },
         {
@@ -11149,7 +11220,7 @@
           "scope": "any-depth"
         },
         {
-          "path": ".devcontainer/*.json",
+          "path": ".devcontainer/**/*.json",
           "scope": "glob"
         },
         {
@@ -11672,7 +11743,7 @@
           "scope": "glob"
         },
         {
-          "path": ".husky/*",
+          "path": ".husky/**",
           "scope": "glob"
         },
         {
@@ -11799,7 +11870,7 @@
           "scope": "any-depth"
         },
         {
-          "path": "tests/*.rs",
+          "path": "tests/**/*.rs",
           "scope": "glob"
         }
       ]
@@ -11907,7 +11978,7 @@
           "scope": "any-depth"
         },
         {
-          "path": "tests/*.rs",
+          "path": "tests/**/*.rs",
           "scope": "glob"
         }
       ]
@@ -12892,7 +12963,7 @@
       },
       "where": [
         {
-          "path": ".github/rulesets/*.json",
+          "path": ".github/rulesets/**/*.json",
           "scope": "glob"
         },
         {
@@ -12912,11 +12983,11 @@
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/*.yml",
+          "path": ".github/workflows/**/*.yml",
           "scope": "glob"
         },
         {
-          "path": ".github/workflows/*.yaml",
+          "path": ".github/workflows/**/*.yaml",
           "scope": "glob"
         },
         {

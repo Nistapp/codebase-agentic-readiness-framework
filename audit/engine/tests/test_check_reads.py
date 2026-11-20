@@ -27,13 +27,22 @@ and reads outside the target (``$HOME``) are not paths of the target. The stack 
 before the checks run, so their reads belong to no check.
 
 An ask is covered when a declared place matches it at its scope. ``has`` looks at any depth, so a ``root`` place
-does not cover it. A ``match`` pattern is covered by a place with the same path, the same path under ``**/``, or the
-place ``**``.
+does not cover it. A ``glob`` place matches folder by folder, as the map does (``dev/consistency_map.py``): ``*``
+stays inside one folder name and ``**`` matches any number of folders, none included.
+
+A ``match`` ask is covered when the declared places cover every path its pattern finds. ``Inventory.match`` uses
+``fnmatch`` on the whole path and on the base name, so its ``*`` crosses ``/``: ``.husky/*`` finds
+``.husky/_/husky.sh``. No set of paths can be listed whole, so the test compares on probe paths
+(``probe_paths``): the pattern's own folders and name, each wildcard filled in, with no, one or two extra folders
+put in at each point, plus every path of the fixture the check ran on. Each probe path the engine's pattern finds
+must be covered by a declared place, read as a path. A pattern and a place with the same text therefore differ
+when the engine's ``*`` reaches a subfolder that the place's ``*`` does not.
 """
 
 from __future__ import annotations
 
 import fnmatch
+import functools
 import os
 import re
 import posixpath
@@ -129,18 +138,84 @@ def _recording_disk(root: Path, asks: set[Ask]) -> Iterator[None]:
 
 
 def _glob_match(path: str, pattern: str) -> bool:
-    """A glob from the root, where ``**/`` also matches no folder (the map's ``glob`` scope)."""
-    if pattern == "**" or fnmatch.fnmatchcase(path, pattern):
-        return True
-    return "**/" in pattern and fnmatch.fnmatchcase(path, pattern.replace("**/", "", 1))
+    """Whether a path from the root matches a glob from the root, folder by folder: the map's ``glob`` scope.
+
+    ``*``, ``?`` and ``[...]`` match inside one folder name, so ``*`` never crosses ``/``. A ``**`` folder matches
+    any number of folders, none included. This is ``_glob_matches`` in ``dev/consistency_map.py``, written again
+    because an engine test imports nothing from ``dev/``; ``dev/tests/test_consistency_map.py`` proves the two agree.
+    """
+    parts = pattern.split("/") if pattern else []
+    names = path.split("/") if path else []
+
+    @functools.lru_cache(maxsize=None)
+    def match(i: int, j: int) -> bool:
+        if i == len(parts):
+            return j == len(names)
+        if parts[i] == "**":
+            return match(i + 1, j) or (j < len(names) and match(i, j + 1))
+        return j < len(names) and fnmatch.fnmatchcase(names[j], parts[i]) and match(i + 1, j + 1)
+
+    return match(0, 0)
+
+
+def engine_matches(pattern: str, path: str) -> bool:
+    """Whether ``Inventory.match`` finds ``path`` with ``pattern``: on the whole path or on its base name.
+
+    ``fnmatch`` lets ``*`` cross ``/``, so ``.husky/*`` finds ``.husky/_/husky.sh``. Case is exact, as on Linux.
+    """
+    return fnmatch.fnmatchcase(path, pattern) or fnmatch.fnmatchcase(posixpath.basename(path), pattern)
+
+
+_CLASS = re.compile(r"\[(!?)([^\]]*)\]")
+
+
+def _concrete(segment: str) -> str:
+    """One name that a glob segment matches: each wildcard becomes ``x``, a ``[...]`` class one of its letters."""
+
+    def one(found: re.Match[str]) -> str:
+        return next((c for c in "xa0_-." if fnmatch.fnmatchcase(c, found.group(0))), "x")
+
+    return _CLASS.sub(one, segment).replace("*", "x").replace("?", "x")
+
+
+def probe_paths(pattern: str, tracked: Iterable[str] = ()) -> list[str]:
+    """The paths a ``match`` ask is tested on: every path below that the engine's ``pattern`` finds.
+
+    The synthetic paths take the pattern's folders and name, each wildcard filled in (``_concrete``), with no, one
+    or two extra folders put in before each folder or the name: ``.husky/*`` gives ``.husky/x``, ``.husky/p/x``
+    and ``p/q/.husky/x``. The name stays last, so a final ``*`` that swallows a folder (``.eslintrc*`` finding
+    ``.eslintrc.d/a.js``) is not probed. ``tracked`` adds the paths of the target the ask was made on. Only the
+    paths ``Inventory.match`` really finds with the pattern (``engine_matches``) are kept.
+    """
+    names = [_concrete(part) for part in pattern.split("/") if part and part != "**"] or ["x"]
+    candidates = set(tracked)
+    for at in range(len(names)):
+        for extra in ((), ("p",), ("p", "q")):
+            candidates.add("/".join((*names[:at], *extra, *names[at:])))
+    return sorted(path for path in candidates if engine_matches(pattern, path))
+
+
+def _match_covered(places: Iterable[reads.Place], pattern: str, tracked: Iterable[str] = ()) -> bool:
+    """Whether the places, together, cover every path the engine's pattern finds among its probe paths.
+
+    A pattern that finds a path no place covers asks for more than the places declare: ``.github/workflows/*.yml``
+    finds ``.github/workflows/p/x.yml``, which the place ``.github/workflows/*.yml`` does not cover, folder by
+    folder, but ``.github/workflows/**/*.yml`` does.
+    """
+    places = list(places)
+    return all(
+        any(place_covers(place, ("read", path)) or _folded_covers(place, ("read", path)) for place in places)
+        for path in probe_paths(pattern, tracked)
+    )
 
 
 def place_covers(place: reads.Place, ask: Ask) -> bool:
     """Whether one declared place covers one ask."""
     kind, path = ask
     if kind == "match":
-        # Inventory.match tries the pattern on the path and on the base name, so "**/" + pattern is the same ask.
-        return place.path in (path, "**/" + path, "**")
+        # Inventory.match finds a path the pattern fits whole or by its base name, and its "*" crosses "/": the
+        # place must cover each path the pattern finds, not repeat the pattern's text.
+        return _match_covered((place,), path)
     if kind == "has":
         # Inventory.has finds the name at any depth, so the place must cover it below a folder too.
         return place_covers(place, ("read", path)) and place_covers(place, ("read", "any/" + path))
@@ -162,8 +237,11 @@ def _folded_covers(place: reads.Place, ask: Ask) -> bool:
     return place.case == reads.FOLD and place_covers(lowered, (ask[0], ask[1].lower()))
 
 
-def _covered(check: str, ask: Ask) -> bool:
-    return any(place_covers(place, ask) or _folded_covers(place, ask) for place in reads.READS[check].where)
+def _covered(check: str, ask: Ask, tracked: Iterable[str] = ()) -> bool:
+    places = reads.READS[check].where
+    if ask[0] == "match":
+        return _match_covered(places, ask[1], tracked)
+    return any(place_covers(place, ask) or _folded_covers(place, ask) for place in places)
 
 
 #: A run of the characters a path or a glob is written with: one path token of the target's text.
@@ -206,13 +284,15 @@ def _text_core(operand: str) -> str:
     return core
 
 
-def undeclared(check: str, root: Path, asks: set[Ask]) -> set[Ask]:
+def undeclared(check: str, root: Path, asks: set[Ask], tracked: Iterable[str] = ()) -> set[Ask]:
     """The asks of one run that no declared place covers.
 
-    A declaration with ``named_by_text`` also allows a path that is one whole path token of a file the same run
-    read; that file itself must be declared.
+    ``tracked`` are the target's paths, which a ``match`` ask is tested on too (``probe_paths``). A declaration
+    with ``named_by_text`` also allows a path that is one whole path token of a file the same run read; that file
+    itself must be declared.
     """
-    missing = {ask for ask in asks if not _covered(check, ask)}
+    tracked = tuple(tracked)
+    missing = {ask for ask in asks if not _covered(check, ask, tracked)}
     if reads.READS[check].named_by_text:
         missing = {ask for ask in missing if not _named(root, asks, ask[1])}
     return missing
@@ -824,7 +904,7 @@ class Recorded:
             self.names[spec.id] |= names
             self.asks[spec.id] |= recording.asks
             self.runs[spec.id] += 1
-            missing = undeclared(spec.id, target.path, recording.asks)
+            missing = undeclared(spec.id, target.path, recording.asks, inventory.paths())
             self.undeclared[spec.id] |= {(path.name, kind, rel) for kind, rel in missing}
 
     def _exempt(self, label: str, check: str, asks: set[NameAsk]) -> None:
@@ -1176,6 +1256,47 @@ class CoverRuleTest(unittest.TestCase):
         self.assertTrue(place_covers(reads.Place("**/*.tf", reads.GLOB), ("match", "*.tf")))
         self.assertTrue(place_covers(reads.Place("**", reads.GLOB), ("match", "*.tf")))
         self.assertFalse(place_covers(reads.Place("main.tf", reads.ROOT), ("match", "*.tf")))
+
+    def test_a_glob_place_matches_folder_by_folder(self) -> None:
+        self.assertFalse(_glob_match(".husky/_/husky.sh", ".husky/*"))
+        self.assertTrue(_glob_match(".husky/_/husky.sh", ".husky/**"))
+        self.assertTrue(_glob_match("docs/a.md", "docs/**/*.md"))
+        self.assertTrue(_glob_match("a/b/c.md", "a/**/b/**/*.md"))
+        self.assertFalse(_glob_match("AGENTS.md", "*/**/AGENTS.md"))
+        self.assertTrue(_glob_match("pkg/AGENTS.md", "*/**/AGENTS.md"))
+
+    def test_the_probe_paths_are_what_the_engine_pattern_finds(self) -> None:
+        paths = probe_paths(".husky/*", tracked=(".husky/_/husky.sh", "src/a.py"))
+        self.assertIn(".husky/x", paths)
+        self.assertIn(".husky/p/q/x", paths)
+        self.assertIn(".husky/_/husky.sh", paths)
+        self.assertNotIn("src/a.py", paths)
+        self.assertNotIn("p/.husky/x", paths)
+        self.assertIn("p/q/package.json", probe_paths("package.json"))
+        self.assertIn("x.a", probe_paths("*.[ab]"))
+
+    def test_a_pattern_that_crosses_a_folder_needs_a_place_that_does(self) -> None:
+        for pattern, narrow, wide in (
+            (".husky/*", ".husky/*", ".husky/**"),
+            (".github/workflows/*.yml", ".github/workflows/*.yml", ".github/workflows/**/*.yml"),
+            ("tests/*.rs", "tests/*.rs", "tests/**/*.rs"),
+        ):
+            with self.subTest(pattern=pattern):
+                self.assertFalse(place_covers(reads.Place(narrow, reads.GLOB), ("match", pattern)))
+                self.assertTrue(place_covers(reads.Place(wide, reads.GLOB), ("match", pattern)))
+
+    def test_a_name_pattern_finds_the_name_at_any_depth(self) -> None:
+        self.assertFalse(place_covers(reads.Place("package.json", reads.ROOT), ("match", "package.json")))
+        self.assertTrue(place_covers(reads.Place("package.json", reads.ANY_DEPTH), ("match", "package.json")))
+
+    def test_a_pattern_may_be_covered_by_several_places_together(self) -> None:
+        places = (reads.Place(".husky/*", reads.GLOB), reads.Place(".husky/*/**/*", reads.GLOB))
+        self.assertFalse(any(place_covers(place, ("match", ".husky/*")) for place in places))
+        self.assertTrue(_match_covered(places, ".husky/*"))
+
+    def test_a_target_path_the_pattern_finds_must_be_covered_too(self) -> None:
+        place = reads.Place("docs/*.md", reads.GLOB)
+        self.assertFalse(_match_covered((place,), "docs/[a-z]*.md", tracked=("docs/a/b.md",)))
 
     def test_only_a_folded_place_covers_a_name_in_another_case(self) -> None:
         ask = ("read", "docs/Communication.md")

@@ -17,10 +17,12 @@ from ``dev/consistency_map.py``; the gate itself is tested at the end.
 
 from __future__ import annotations
 
+import importlib.util
 import io
 import json
 import posixpath
 import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
@@ -119,6 +121,65 @@ class ReadsCoverageTest(unittest.TestCase):
     def test_a_window_is_given_only_with_a_window_binding(self) -> None:
         for read in MAP["reads"]:
             self.assertEqual("window" in read, read["binding"] == "window", read["check"])
+
+
+def _recorder_glob() -> Callable[[str, str], bool]:
+    """The engine recorder test's own glob matcher (``audit/engine/tests/test_check_reads.py``), loaded by path."""
+    engine = _dev_paths.REPO / "audit" / "engine"
+    for folder in (engine / "tests", engine):
+        if str(folder) not in sys.path:
+            sys.path.insert(0, str(folder))
+    spec = importlib.util.spec_from_file_location("engine_test_check_reads", engine / "tests" / "test_check_reads.py")
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    match: Callable[[str, str], bool] = module._glob_match
+    return match
+
+
+class RecorderGlobParityTest(unittest.TestCase):
+    """The engine's recorder test writes the map's glob matcher again, since an engine test imports no dev module."""
+
+    def test_the_recorder_matches_globs_as_the_map_does(self) -> None:
+        recorder = _recorder_glob()
+        patterns = (
+            "**",
+            "**/AGENTS.md",
+            "*/**/AGENTS.md",
+            ".husky/*",
+            ".husky/**",
+            "docs/**/*.md",
+            "a/**/b/**/*.md",
+            ".github/workflows/*.yml",
+            ".github/workflows/**/*.yml",
+            ".roo/rules-*/**",
+            "README*",
+            "tests/[a-c]*.rs",
+        )
+        paths = (
+            "",
+            "AGENTS.md",
+            "pkg/AGENTS.md",
+            "a/b/AGENTS.md",
+            ".husky/pre-commit",
+            ".husky/_/husky.sh",
+            "docs/a.md",
+            "docs/x/y/a.md",
+            "a/b/c.md",
+            "a/x/b/y/c.md",
+            ".github/workflows/ci.yml",
+            ".github/workflows/sub/ci.yml",
+            ".roo/rules-code/a.md",
+            "README.md",
+            "docs/README.md",
+            "tests/a.rs",
+            "tests/d.rs",
+            "tests/common/b.rs",
+        )
+        for pattern in patterns:
+            for path in paths:
+                with self.subTest(pattern=pattern, path=path):
+                    self.assertEqual(recorder(path, pattern), consistency_map._glob_matches(pattern, path))
 
 
 class ConstantsTest(unittest.TestCase):
