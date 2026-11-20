@@ -20,9 +20,9 @@ Engine           `IDX-01`. Reads project-level MCP configs inside the target (`o
                  `codebase-memory-mcp`. Claude Code's `.mcp.json` is a project config. Its
                  `~/.claude.json` is parsed, not searched: the server counts in its top-level
                  `mcpServers` (user scope) or in the `projects` entry of this checkout's path (local
-                 scope), never in another checkout's entry. Distrust a `FAIL` when the harness in use names a config file the
-                 engine's list does not cover yet — ask the user which harness and config they use, then
-                 look there directly. A config present but unreadable is `UNKNOWN`, not `FAIL`.
+                 scope), never in another checkout's entry. Distrust a `FAIL` when the harness in use
+                 names a config file the engine's list does not cover yet — ask the user which harness
+                 and config they use, then look there directly. A config present but unreadable is `UNKNOWN`, not `FAIL`.
 Method           automated
 Look for         Ask the user which harness they run (Stage 0 intake) and which MCP config it reads; open
                  that file directly rather than re-deriving the engine's search order. For a project-level

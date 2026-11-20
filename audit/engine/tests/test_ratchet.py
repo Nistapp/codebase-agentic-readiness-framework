@@ -82,7 +82,9 @@ class RatchetTests(unittest.TestCase):
             self.assertEqual(agt_08, {"AGT-08:harness-reach"})
 
             # A CLAUDE.md with rules of its own: a bare pointer at AGENTS.md is neither a competitor nor a shadow.
-            support.write(target, "CLAUDE.md", "# Claude\n\nSee AGENTS.md.\n\nAlways run the linter before you commit.\n")
+            support.write(
+                target, "CLAUDE.md", "# Claude\n\nSee AGENTS.md.\n\nAlways run the linter before you commit.\n"
+            )
             current = out_dir / "current.json"
             proc, _ = support.run_audit_process(target, out=current, extra_args=("--baseline", str(baseline)))
             self.assertEqual(proc.returncode, 2, proc.stderr)

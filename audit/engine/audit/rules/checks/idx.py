@@ -504,7 +504,9 @@ def _head_moved_at(path: Path) -> int | None:
     committed = _git_query(path, "log", "-1", "--format=%ct", "HEAD")
     if committed and committed.isdigit():
         times.append(int(committed))
-    moved = re.fullmatch(r"HEAD@\{(\d+)\}", _git_query(path, "log", "-g", "-1", "--date=unix", "--format=%gd", "HEAD") or "")
+    moved = re.fullmatch(
+        r"HEAD@\{(\d+)\}", _git_query(path, "log", "-g", "-1", "--date=unix", "--format=%gd", "HEAD") or ""
+    )
     if moved:
         times.append(int(moved.group(1)))
     return max(times) if times else None

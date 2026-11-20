@@ -483,7 +483,9 @@ def check_agt08(*, spec, target, inventory, stack, components, session) -> Check
     )
     competitors = [p for p in classified["vendor_only"] if p not in pointers]
     shadowed = (
-        V.classify_present(present - pointers - importers)["shadowed"] if pointers or importers else classified["shadowed"]
+        V.classify_present(present - pointers - importers)["shadowed"]
+        if pointers or importers
+        else classified["shadowed"]
     )
     reached = classified["harnesses_reached"]
     missed = classified["harnesses_missed"]

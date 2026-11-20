@@ -406,7 +406,9 @@ class Agt08Tests(unittest.TestCase):
         ids = [f["id"] for f in findings_of(report, "AGT-08")]
         self.assertIn("AGT-08:vendor-files", ids)
         self.assertNotIn("AGT-08:CLAUDE.md>AGENTS.md", ids)
-        self.assertIn("files that import @AGENTS.md, so shadow nothing: CLAUDE.md", check_of(report, "AGT-08")["summary"])
+        self.assertIn(
+            "files that import @AGENTS.md, so shadow nothing: CLAUDE.md", check_of(report, "AGT-08")["summary"]
+        )
 
     def test_a_pointer_with_no_root_agents_md_is_still_a_vendor_file(self):
         report = audit({"CLAUDE.md": "@AGENTS.md\n"})
