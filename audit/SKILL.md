@@ -107,9 +107,11 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      `pyproject.toml`, `pom.xml`/`build.gradle`) — a direct read, never a command run — and tell the
      person which verbs already look like they resolve to something, so they decide with that in view
      rather than guessing blind; this is informal and not a substitute for the engine's own `CMD-01`
-     reader in Stage 2. Default is none. A target's own command is arbitrary code it owns, not a
+     reader in Stage 2. Default is none: when the person allows no verb, or probes are not feasible here,
+     record `probes.allowed: []`. A target's own command is arbitrary code it owns, not a
      read-only operation this skill controls — say so, and suggest a disposable worktree or container
-     when any verb is allowed;
+     when any verb is allowed. A disposable clone on another filesystem needs `git clone --no-hardlinks`.
+     `--local` hard-links the objects and fails across filesystems;
    - paths to exclude, and component roots they already know;
    - the confirmation policy: `interactive` for a person deciding on each finding (the default),
      `defer-all` or `accept-all` only for a headless evaluation run (`eval_mode: true`);
@@ -140,7 +142,8 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    the order above, what is excluded, and which probes (if any) will run — to `run-plan.md` beside the
    draft in the output directory, and tell the person its path before asking them to approve or edit it.
    A plan that lives only in chat is easy to lose once Stage 2 is under way; the file is not part of the
-   report and `report.py` never reads it.
+   report and `report.py` never reads it. In an unattended session, with no one to answer, write the file,
+   name its path and go on.
 
 ## Stage 2 — Assess
 
@@ -174,8 +177,11 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    - **A check with `method: agent`** (today `AGT-11` and `CI-04`), not yet in the draft. Gather the
      evidence its `Evidence to cite` field names and record it fresh with `report.py add-check`; there is
      no engine verdict to dispute.
-   - **Any check whose recorded verdict is not `PASS`.** Record the issue with `report.py add-finding`,
-     once per distinct scope, following the check's `Absence proof` field for what a `FAIL` must cite.
+   - **Any check whose recorded verdict is `FAIL`, `PARTIAL` or `UNKNOWN`.** It needs a finding per
+     distinct scope. The findings `import-engine` carried (pending in `report.py status`) already count;
+     an `UNKNOWN` verdict often has none. Record each scope they miss with `report.py add-finding`, and
+     every finding of a check you disputed or recorded fresh. Follow the check's `Absence proof` field for
+     what a `FAIL` must cite.
 4. After each family, `report.py status <draft>` is cheap enough (at most 40 lines) to call every time,
    not only to resume: its `families_remaining` says exactly what is left before moving to the next one.
 5. Stage 2 ends when `report.py status <draft>` shows `families_remaining` empty. Move to Stage 3 only
