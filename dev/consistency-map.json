@@ -1672,16 +1672,6 @@
       "status": "kept"
     },
     {
-      "check": "NAV-05",
-      "home": {
-        "path": "implement/playbooks/add-baselines-and-ratchet.md",
-        "quote": "Never put a reason line between a `def` line and its docstring:",
-        "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
-      },
-      "move": "add-baselines-and-ratchet/row-15",
-      "status": "kept"
-    },
-    {
       "check": "TST-03",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
@@ -5138,7 +5128,6 @@
       ],
       "touches": [
         "SEC-02",
-        "NAV-05",
         "TST-03"
       ]
     },
@@ -13481,9 +13470,9 @@
       ]
     },
     {
-      "binding": "window",
+      "binding": "file",
       "check": "NAV-05",
-      "note": "Python: a def, async def or class at column 0 with a public name is documented when the next non-blank line opens a docstring; TypeScript or JavaScript: an export declaration is documented when the line before (blank lines skipped) ends a /** */ block. Only the main language is read.",
+      "note": "Python, parsed with ast: a module-level def, async def or class and a method of a public class, each with a public name, is documented when ast finds its docstring; a test file (a tests or test folder, a test_*.py or *_test.py name) is not read, and a file that does not parse falls back to column-0 lines with the docstring on the next non-blank line. TypeScript or JavaScript: an export declaration is documented when the line before (blank lines skipped) ends a /** */ block. Only the main language is read.",
       "source": "engine",
       "what": {
         "kind": "phrase"
@@ -13517,8 +13506,7 @@
           "path": "*.cjs",
           "scope": "any-depth"
         }
-      ],
-      "window": 2
+      ]
     },
     {
       "binding": "file",

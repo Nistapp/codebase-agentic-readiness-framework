@@ -223,7 +223,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "20/28 harnesses reached; AGENTS.md:56 states the supported harnesses (Anthropic Claude Code, Cursor, Google Gemini CLI, OpenAI Codex CLI, opencode)",
+      "summary": "20/28 harnesses reached; AGENTS.md:60 states the supported harnesses (Anthropic Claude Code, Cursor, Google Gemini CLI, OpenAI Codex CLI, opencode)",
       "tier": "B",
       "title": "No competing instruction files, and the reach matrix is stated",
       "verdict": "PASS"
@@ -275,7 +275,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "conventions (AGENTS.md:96 \u00a7 Code conventions) cover naming, layering, error handling and logging, and testing, and link the formatter or linter config",
+      "summary": "conventions (AGENTS.md:101 \u00a7 Code conventions) cover naming, layering, error handling and logging, and testing, and link the formatter or linter config",
       "tier": "B",
       "title": "Coding conventions written",
       "verdict": "PASS"
@@ -338,9 +338,9 @@
           "long_sentences": 313,
           "pages": 56,
           "pages_without_diagram": 0,
-          "sentences": 3865,
+          "sentences": 3927,
           "vague_words": 9,
-          "words": 50280
+          "words": 51077
         },
         "kind": "counter",
         "unit": "long sentences",
@@ -352,7 +352,7 @@
       "scored": true,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "313/3865 sentences over the limit (8.1%), 9 vague word(s) (0.18 per 1,000 words), 0 explanation or tutorial page(s) without a diagram, in 56 page(s)",
+      "summary": "313/3927 sentences over the limit (8.0%), 9 vague word(s) (0.18 per 1,000 words), 0 explanation or tutorial page(s) without a diagram, in 56 page(s)",
       "tier": "B",
       "title": "Docs are readable",
       "verdict": "PASS"
@@ -910,7 +910,7 @@
       "scored": true,
       "severity": "BLOCKER",
       "status": "implemented",
-      "summary": "test verb on Makefile ($(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)); 170 test file(s)",
+      "summary": "test verb on Makefile ($(MAKE) --no-print-directory TEST_SUITES_SUBMAKE=1 $(TEST_JOBS) $(TEST_SUITES)); 180 test file(s)",
       "tier": "A",
       "title": "Test verb exists, suite non-empty",
       "verdict": "PASS"
@@ -931,11 +931,11 @@
     {
       "data": {
         "breakdown": {
-          "python": 2
+          "python": 9
         },
         "kind": "counter",
         "unit": "skip/xfail markers",
-        "value": 2
+        "value": 9
       },
       "id": "TST-03",
       "pack": "TST",
@@ -943,7 +943,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "skip/xfail census across 170 test file(s): python 2; total 2",
+      "summary": "skip/xfail census across 180 test file(s): python 9; total 9",
       "tier": "B",
       "title": "Skip / xfail census",
       "verdict": "PASS"
@@ -956,7 +956,7 @@
       "scored": true,
       "severity": "DEGRADER",
       "status": "implemented",
-      "summary": "fast path documented: AGENTS.md:45 `python3 -m unittest tests.packs.cmd.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md, CONTRIBUTING.md)",
+      "summary": "fast path documented: AGENTS.md:49 `python3 -m unittest tests.packs.cmd.test_cmd_pack -k verbs` (scope: README.md, AGENTS.md, CONTRIBUTING.md)",
       "tier": "B",
       "title": "Fast path documented",
       "verdict": "PASS"
@@ -1028,10 +1028,10 @@
     },
     {
       "data": {
-        "denominator": 1920,
+        "denominator": 1209,
         "kind": "ratio",
-        "method": "python: module-level def/class not starting with '_'",
-        "numerator": 928,
+        "method": "python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
+        "numerator": 791,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -1040,7 +1040,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "928/1920 public symbols documented (48%); method: python: module-level def/class not starting with '_'",
+      "summary": "791/1209 public symbols documented (65%); method: python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1438,8 +1438,8 @@
     }
   ],
   "inventory": {
-    "files_inspected": 501,
-    "files_set_aside": 748,
+    "files_inspected": 513,
+    "files_set_aside": 805,
     "files_skipped": 2,
     "ignored_dirs": [],
     "set_aside": [
@@ -1448,7 +1448,7 @@
         "path": "audit/engine/examples"
       },
       {
-        "files": 489,
+        "files": 534,
         "path": "audit/engine/tests/fixtures"
       },
       {
@@ -1456,7 +1456,7 @@
         "path": "audit/schema/examples"
       },
       {
-        "files": 144,
+        "files": 155,
         "path": "dev/eval/expected/fixtures"
       },
       {
@@ -1464,7 +1464,7 @@
         "path": "dev/eval/implement-fixtures/testdata"
       },
       {
-        "files": 2,
+        "files": 3,
         "path": "dev/tests/fixtures"
       },
       {
@@ -1506,15 +1506,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "9abde711164885077a678efd32e8baa288158d44",
-    "git_branch": "fix/engine-go-pin-and-self-audit",
-    "git_dirty": true,
-    "git_sha": "9abde711164885077a678efd32e8baa288158d44",
+    "framework_revision": "8bd6d93f9836e61eae1493051301fe35957440e1",
+    "git_branch": "fix/engine-nav-05-methods",
+    "git_dirty": false,
+    "git_sha": "8bd6d93f9836e61eae1493051301fe35957440e1",
     "phase": 1,
     "probes_enabled": false,
-    "ruleset_hash": "776be4fe00c7a3bb",
-    "ruleset_revision": "2026-11-20.16",
-    "scanned_at": "2026-11-20T06:34:32+00:00",
+    "ruleset_hash": "34bba6464eac63ff",
+    "ruleset_revision": "2026-11-20.23",
+    "scanned_at": "2026-11-20T10:20:16+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {

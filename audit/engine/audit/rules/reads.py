@@ -1849,12 +1849,14 @@ READS: dict[str, Reads] = {
     "NAV-05": Reads(
         where=(*_at(ANY_DEPTH, "*.py", "*.ts", "*.tsx", "*.js", "*.jsx", "*.mjs", "*.cjs"),),
         what=What("phrase"),
-        binding="window",
-        window=2,
+        binding="file",
         note=(
-            "Python: a def, async def or class at column 0 with a public name is documented when the next "
-            "non-blank line opens a docstring; TypeScript or JavaScript: an export declaration is documented "
-            "when the line before (blank lines skipped) ends a /** */ block. Only the main language is read."
+            "Python, parsed with ast: a module-level def, async def or class and a method of a public class, "
+            "each with a public name, is documented when ast finds its docstring; a test file (a tests or test "
+            "folder, a test_*.py or *_test.py name) is not read, and a file that does not parse falls back to "
+            "column-0 lines with the docstring on the next non-blank line. TypeScript or JavaScript: an export "
+            "declaration is documented when the line before (blank lines skipped) ends a /** */ block. Only the "
+            "main language is read."
         ),
     ),
     "SEC-01": Reads(

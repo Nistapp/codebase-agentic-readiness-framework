@@ -19,7 +19,7 @@ score from falling.
 | Phase-1 score | **0.9231** |
 | Date | 2026-11-20 |
 | Engine | `python-agentic-audit` 0.4.1 |
-| Ruleset | `2026-11-20.22` (hash `34bba6464eac63ff`) |
+| Ruleset | `2026-11-20.23` (hash `34bba6464eac63ff`) |
 | Applicable checks | 76 (61 scoreable) |
 | Findings | 1: DEGRADER |
 | Scope | the whole repository except `artefacts/` and `dist/`; the walk skips git-ignored folders such as the agent worktrees under `.claude/worktrees/`; no user-level configuration read |
@@ -36,7 +36,7 @@ verdicts moved, both from engine changes:
   `package.json`, `pyproject.toml` and `go.mod` files sit under `dev/tools/`. The 2026-11-17 `PASS` named a root
   manifest that does not exist; the engine now says it cannot tell.
 
-No finding opened or closed, and the rulesets between `2026-11-17.3` and `2026-11-20.15` moved no other verdict here.
+No finding opened or closed, and the rulesets between `2026-11-17.3` and `2026-11-20.23` moved no other verdict here.
 
 Since the 2026-11-06 report (0.8402): `HYG-02` closed with `.github/CODEOWNERS` and `HYG-06` with the security policy,
 `SECURITY.md`. On 2026-11-09, `TOOL-04` closed with the dependency audit in
@@ -82,7 +82,7 @@ Every check that is not `PASS`, with the reason it is open.
 | Check | Verdict | Severity | Why it is open |
 | --- | --- | --- | --- |
 | `BASE-02` | PARTIAL | DEGRADER | The T5 playbook was applied (D32): `.quality-baseline.json` holds the counts (ruff 0, mypy 0, Markdown lint outside the ratchet 735) and `make format-check`, `make typecheck` and `make docs-lint` fail when one goes up. The check still reads PARTIAL by design: it credits only a numeric budget flag (`--max-warnings N`), and none of these tools has one. Engine issue [#45](https://github.com/Nistapp/codebase-agentic-readiness-framework/issues/45) tracks it; the coverage floor (91) is unchanged and `BASE-04` passes |
-| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 48% of public symbols documented (928 of 1920). Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
+| `NAV-05` | PARTIAL | COSMETIC | No finding, informational and unscored (D34): 65% of public symbols documented (791 of 1209). Ruleset `2026-11-20.23` counts the methods of public classes and leaves test files out; it read 928 of 1920 before. Reviewed on 2026-11-09 and left as it is: a ruff `D1` ratchet would baseline about 700 violations for a cosmetic check, and mypy strict and the tests carry the meaning |
 | `NAV-01` | UNKNOWN | DEGRADER | No finding: this repository has no root build manifest, so the component detector finds no declared component. The framework is documentation plus standard-library Python tools; its only manifests pin the dev tools under `dev/tools/`. Owner decision (2026-11-20): it stays `UNKNOWN`. A manifest added only to pass the check would not describe a real component; the boundaries are written in the root `AGENTS.md` (Boundaries table) |
 | `IDX-02`, `IDX-03`, `TST-02`, `CON-04` | UNKNOWN | mixed | Need a probe, the user-level index store, or `--emit-baseline`; not run here |
 

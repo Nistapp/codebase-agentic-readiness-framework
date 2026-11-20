@@ -93,6 +93,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "nav-02-no-entry": {"NAV-02": "FAIL"},
     "nav-02-main-guard-only": {"NAV-02": "FAIL"},
     "nav-03-red-flags": {"NAV-03": "PARTIAL"},
+    "nav-05-methods": {"NAV-05": "PARTIAL"},
     # -- CMD ----------------------------------------------------------------------------------
     "cmd-01-missing-verb": {"CMD-01": "FAIL"},
     "cmd-02-weak-check": {"CMD-02": "FAIL"},
