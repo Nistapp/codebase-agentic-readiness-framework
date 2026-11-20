@@ -71,8 +71,9 @@ Severity         BLOCKER. The severity stays BLOCKER when a repository has a sec
                  severity.
 Engine           `SEC-02`. Scans tracked text files (falling back to the whole inventory, stated in
                  `detail`, when git cannot report tracked state) against `audit.probes.REDACTION_PATTERNS`:
-                 unambiguous shape patterns (`sk-...`, `ghp_...`, `AKIA...`, a `Bearer` token, and the PEM
-                 private-key header `BEGIN PRIVATE KEY`) <!-- pragma: allowlist secret -->
+                 unambiguous shape patterns (`sk-...`, `ghp_...`, `AKIA...`, a `Bearer` token, a Slack
+                 token `xoxb-...`, `xoxp-...` or `xapp-...`, and the PEM private-key header
+                 `BEGIN PRIVATE KEY`) <!-- pragma: allowlist secret -->
                  that always fire, plus one keyword-assignment pattern (`token`,
                  `password`, `api_key`, and the like) that fires only when a deterministic guard judges
                  the assigned value to actually look like a secret — a quoted literal that is not a

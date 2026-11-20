@@ -54,6 +54,8 @@ REDACTION_PATTERNS = (
     re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
     re.compile(_PEM_PRIVATE_KEY),
     re.compile(r"(?i)\b(Bearer)\s+[A-Za-z0-9._\-]{16,}"),
+    # Slack tokens: bot (xoxb-), user (xoxp-), app-level (xapp-) and the other xox kinds.
+    re.compile(r"\b(?:xox[abposr]|xapp)-[A-Za-z0-9-]{10,}"),
 )
 
 #: The order ``redact()`` applies the patterns in, so one secret counts once: the PEM block first, because a

@@ -12,6 +12,7 @@ from __future__ import annotations
 import unittest
 
 from audit.probes import redact
+from audit.rules.checks.sec import _line_is_secret
 
 
 def _join(*parts: str) -> str:
@@ -129,6 +130,34 @@ class PemPrivateKey(unittest.TestCase):
 
     def test_an_end_line_alone_is_left_alone(self) -> None:
         self.assertEqual(redact(_END), (_END, 0))
+
+
+class SlackToken(unittest.TestCase):
+    """A Slack token has a shape of its own: ``xoxb-``, ``xoxp-``, ``xapp-`` and the other ``xox`` kinds."""
+
+    def tokens(self) -> list[str]:
+        tail = _join("1234567890", "-", "0987654321", "-", "AbCdEfGhIjKlMnOp")
+        return [_join("xo", "xb-", tail), _join("xo", "xp-", tail), _join("xa", "pp-1-", tail)]
+
+    def test_each_kind_is_one_redaction(self) -> None:
+        for token in self.tokens():
+            with self.subTest(token=token[:4]):
+                clean, count = redact(f"posting with {token} now")
+                self.assertEqual((clean, count), ("posting with [REDACTED] now", 1))
+
+    def test_a_slack_token_in_a_keyword_assignment_counts_once(self) -> None:
+        token = self.tokens()[0]
+        self.assertEqual(redact(f"SLACK_BOT_TOKEN={token}"), ("[REDACTED]", 1))
+
+    def test_sec_02_reads_a_tracked_slack_token_as_a_credential(self) -> None:
+        for token in self.tokens():
+            with self.subTest(token=token[:4]):
+                self.assertTrue(_line_is_secret(f'client = WebClient("{token}")', in_code=True))
+
+    def test_words_that_only_start_alike_are_left_alone(self) -> None:
+        for text in ("xoxb-short", "the xapp- prefix", "toxoxb-1234567890abc"):
+            with self.subTest(text=text):
+                self.assertEqual(redact(text), (text, 0))
 
 
 if __name__ == "__main__":
