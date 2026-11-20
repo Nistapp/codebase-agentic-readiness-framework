@@ -690,13 +690,13 @@ def check_agt10(*, spec, target, inventory, stack, components, session) -> Check
     # 2. deferral inside the entry file: rules live in another file, unnamed by any config
     entry = inventory.read("AGENTS.md") or inventory.read("CLAUDE.md") or ""
     if entry:
-        named_elsewhere = {t.strip().lstrip("./") for targets in configured.values() for t in targets}
+        named_elsewhere = {_from_root(t) for targets in configured.values() for t in targets}
         deferred: list[str] = []
         for line in entry.splitlines():
             if not _DEFER_RE.search(line):
                 continue
             for reference in _REFERENCE_RE.findall(line):
-                candidate = reference.lstrip("./")
+                candidate = _from_root(reference)
                 if candidate in {"AGENTS.md", "CLAUDE.md"}:
                     continue
                 if inventory.has(candidate) and candidate not in named_elsewhere:
