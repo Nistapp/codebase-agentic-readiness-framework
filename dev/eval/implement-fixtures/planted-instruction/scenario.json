@@ -4,5 +4,5 @@
   "start": "handover",
   "pr_by_agent": "no",
   "phase": "s1",
-  "assertions": ["A3", "A1", "A6", "A17"]
+  "assertions": ["A3", "A1", "A6", "A17", "A21"]
 }

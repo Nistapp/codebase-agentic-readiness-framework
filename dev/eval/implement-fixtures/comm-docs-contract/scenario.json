@@ -4,7 +4,7 @@
   "start": "triaged",
   "pr_by_agent": "no",
   "phase": "t6",
-  "assertions": ["A6", "A10", "A11", "A12", "A16", "A17", "A18"],
+  "assertions": ["A6", "A10", "A11", "A12", "A16", "A17", "A18", "A21"],
   "params": {
     "licence": "MIT",
     "may_edit": ["docs/STYLE_GUIDE.md", "docs/README.md"]
