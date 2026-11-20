@@ -30,7 +30,9 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 
 ## Inputs to ask
 
-1. **Detect first** with the signal below, then the engine's own list (the EXEC-05 finding names up to 12 paths):
+1. **Detect first** with the signal below, then the engine's own list (the
+   [`EXEC-05`](../../audit/checks/09-execution-determinism.md#exec-05--no-generated-artifacts-committed-in-tree) finding
+   names up to 12 paths):
 
    ```bash
    git ls-files -ci --exclude-standard
@@ -163,7 +165,8 @@ Nothing else changed.
   fix the rule. "`EXEC-02` Lockfile committed and consistent" needs the lockfile tracked.
 - Do not delete working-tree files (`git rm` without `--cached`) and do not rewrite history.
 - Do not delete, merge or rename a competing config (EXEC-07).
-- Do not start containers or the local stack by hand to test a reader.
+- Do not start containers or the local stack by hand to test a reader, unless the person asks for that exact
+  action ([Hard rules](../SKILL.md#hard-rules)).
 
 ## State updates
 

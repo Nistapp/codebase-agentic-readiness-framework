@@ -26,7 +26,8 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 - Preferences this playbook reads, when present: `extra.t3` (what the owner already chose for a tracked key
   file), `layout.command_runner` (per-app layout means one example file per app), `ci.edits_authorised`,
   `scanner.choice` (a dependency scanner is not a secret scanner), `format.mass_reformat`.
-- No earlier theme is needed. If the command-surface theme already named the `security` verb, reuse it in the
+- No earlier theme is needed. If the command-surface theme
+  ([T1 Command surface and quality tools](../SKILL.md#themes)) already named the `security` verb, reuse it in the
   scanner step; do not create a second one.
 - **Hard rules, every step:** never print, quote, log or copy a value from any env, properties, realm,
   keystore or credentials file, not in a commit message, a status file or a summary. Count lines, list key
@@ -51,10 +52,10 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    second or the third when the owner wants each file beside the code that reads it. Record the choice as a
    preference. Ask also whether optional framework overrides (for example `QUARKUS_*`) are listed; the default is
    yes, marked optional, names only.
-2. **Tracked secret-bearing files.** For each path from step 3, show the owner the path and the reason it was
-   flagged (never its content) and ask: untrack, keep as a documented exception, or skip. Only the owner can
-   say a tracked local-development file holds throwaway values or must stay for developers' setup. A keep or a
-   skip is recorded in the owner's words; a skip is final.
+2. **Tracked secret-bearing files.** Take each path from [Steps](#generic) step 3. Show the owner the path and the
+   reason it was flagged, never its content. Ask: untrack, keep as a documented exception, or skip. Only the owner can say
+   a tracked local-development file holds throwaway values or must stay for developers' setup. A keep or a skip is
+   recorded in the owner's words; a skip is final.
 3. **Scanner.** Detect what the repository already runs (a script that CI calls, a `.gitleaks.toml`, a
    `.secrets.baseline`, a pre-commit entry). If one exists, use it and add no tool (the tool is the owner's
    choice). A second scanner config would fail "`EXEC-07` No competing configs for one concern". Only a
@@ -64,11 +65,13 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
    |---|---|---|---|
    | gitleaks (MIT) | v8.30.1, 2026-03-21; repo active 2026-10 | Single binary; fast; history and working-tree scans; config file; large user base | Pattern based, so entropy-only secrets are missed; false positives need an allowlist |
    | trufflehog (AGPL-3.0) | v3.99.7, 2026-10-24 | Verifies some hits against the live service; many detectors | AGPL licence; verification makes network calls with a found credential, which an owner may not want |
-   | detect-secrets (Apache-2.0) | v1.5.0, 2024-05-06; repo last pushed 2026-04 | Baseline file ratchets existing debt; plugin model | Python dependency; no release in over two years; slower on large trees |
+
+   Dropped: detect-secrets (v1.5.0, 2024-05-06; no stable release in over two years). A repository that already
+   runs it keeps it.
 
    Currency checked 2026-10-30 (GitHub releases API, PyPI). Re-check it when the playbook is applied: it
-   dates. Adding a local scanner step to the command surface belongs to the command-surface and CI themes:
-   note it, do not do it here.
+   dates. The [tool currency](../tool-choice.md#tool-currency) rule applies. Adding a local scanner step to the
+   command surface belongs to the command-surface and CI themes: note it, do not do it here.
 4. **Realm, vault or identity-provider exports** that contain a secret field (for example a Keycloak realm
    JSON). These are owner-review only: list the paths and the count of secret-field keys per file; ask nothing
    about values; do not edit or template them.
@@ -185,7 +188,8 @@ files. Repository variables and secrets are not in the repo: the example file is
 | 5 | Fake-token fixtures in the scanner's allowlist (only when the owner agrees) | `SEC-02` | config |
 | 6 | Pointers to the example file in the instruction file, CI README and deploy doc | `EXEC-04` | hand |
 
-A path that step 6.4 newly lists goes back to step 3: its untracking is one more commit like 1, after 4.
+A path that [Steps](#generic) step 6.4 newly lists goes back to step 3: its untracking is one more commit like
+commit 1 in the table above, after commit 4.
 
 ## Continue on error
 
@@ -227,7 +231,8 @@ undoing.
 - Do not template, edit or "clean" realm or identity-provider exports.
 - Do not install a scanner the owner has not approved.
 - Do not put shell builtins or script-internal names in the example file.
-- Do not start containers or the local stack by hand to test a change; use the repository's scripts.
+- Do not start containers or the local stack by hand to test a change; use the repository's scripts, unless the
+  person asks for that exact action ([Hard rules](../SKILL.md#hard-rules)).
 
 ## State updates
 

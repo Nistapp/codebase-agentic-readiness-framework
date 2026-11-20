@@ -17,8 +17,8 @@ asks for with the declaration (ADR 0012 in the repository's ``docs/architecture/
 Scopes, as the map's schema states them: ``root`` is the exact path at the root; ``any-depth`` is the
 base name in any folder; ``repository-level`` is the root, ``.github/``, ``.gitlab/`` or ``docs/``;
 ``glob`` is a glob from the root, where ``**/`` also matches no folder. A ``glob`` place matches folder by
-folder: its ``*`` stays inside one name. ``Inventory.match`` uses ``fnmatch``, whose ``*`` crosses ``/``, so the
-place for the engine's ``.husky/*`` is ``.husky/**``.
+folder: its ``*`` stays inside one name. The engine matches its own globs the same way (``audit/globs.py``), so
+the place for the engine's ``.husky/*`` is ``.husky/*``.
 
 A place with ``via`` is read upstream, before any check runs: ``scan-kind`` when the scan's file kinds
 (``Kind.TEST``, ``Kind.GENERATED``) match it by name, ``components`` when component detection reads it. The
@@ -784,7 +784,7 @@ READS: dict[str, Reads] = {
     "TOOL-04": Reads(
         where=(
             *_runners(),
-            *_at(GLOB, ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml"),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/**/*.yml"),
@@ -800,7 +800,7 @@ READS: dict[str, Reads] = {
     "TOOL-05": Reads(
         where=(
             *_at(ANY_DEPTH, ".pre-commit-config.yaml", "lefthook.yml", "lefthook.yaml"),
-            *_at(GLOB, ".githooks/**", ".husky/**", "**"),
+            *_at(GLOB, ".githooks/*", ".husky/*", "**"),
             *_runners(),
         ),
         what=What("exists"),
@@ -835,12 +835,12 @@ READS: dict[str, Reads] = {
                 "lefthook.yml",
                 "lefthook.yaml",
             ),
-            *_at(GLOB, ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml"),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/**/*.yml"),
             *_runners(),
-            *_at(GLOB, ".githooks/**", ".husky/**", "**"),
+            *_at(GLOB, ".githooks/*", ".husky/*", "**"),
         ),
         what=What("phrase"),
         binding="line",
@@ -856,7 +856,7 @@ READS: dict[str, Reads] = {
         where=(
             *_at(ROOT, ".pre-commit-config.yaml", "lefthook.yml", "lefthook.yaml"),
             *_at(ANY_DEPTH, "pre-commit", "commit-msg"),
-            *_at(GLOB, ".githooks/**", ".husky/**", "**"),
+            *_at(GLOB, ".githooks/*", ".husky/*", "**"),
             *_at(ROOT, "package.json"),
             *_at(GLOB, ".github/rulesets/**/*.json"),
             *_at(ROOT, ".github/settings.yml"),
@@ -874,7 +874,7 @@ READS: dict[str, Reads] = {
     ),
     "CI-01": Reads(
         where=(
-            *_at(GLOB, ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml"),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/**/*.yml"),
@@ -900,7 +900,7 @@ READS: dict[str, Reads] = {
     ),
     "CI-02": Reads(
         where=(
-            *_at(GLOB, ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml"),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/**/*.yml"),
@@ -928,7 +928,7 @@ READS: dict[str, Reads] = {
     ),
     "CI-03": Reads(
         where=(
-            *_at(GLOB, ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml"),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/**/*.yml"),
@@ -954,7 +954,7 @@ READS: dict[str, Reads] = {
     ),
     "CI-05": Reads(
         where=(
-            *_at(GLOB, ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml"),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/**/*.yml", "**"),
@@ -1163,7 +1163,7 @@ READS: dict[str, Reads] = {
                 ".secrets.baseline",
                 ".gitleaksignore",
             ),
-            *_at(GLOB, ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml"),
+            *_at(GLOB, ".github/workflows/*.yml", ".github/workflows/*.yaml"),
             *_at(ANY_DEPTH, ".gitlab-ci.yml", "Jenkinsfile", "azure-pipelines.yml"),
             *_at(ROOT, ".circleci/config.yml"),
             *_at(GLOB, ".buildkite/**/*.yml"),
@@ -1401,7 +1401,7 @@ READS: dict[str, Reads] = {
                 "*.Dockerfile",
                 "*.dockerfile",
             ),
-            *_at(GLOB, ".devcontainer/**/*.json"),
+            *_at(GLOB, ".devcontainer/*.json", ".devcontainer/*/devcontainer.json"),
             *_at(ROOT, "Makefile", "package.json"),
         ),
         what=What("fenced-command"),
@@ -1470,8 +1470,8 @@ READS: dict[str, Reads] = {
         threshold="every tracked generated file carries a marker",
         note=(
             "The scan classifies a file as generated by a case-insensitive substring of its path "
-            "(scan._GENERATED_HINTS) or by suffix; only tracked ones are read. The marker must stand in the "
-            "first 20 lines, case-insensitive."
+            "(scan._GENERATED_HINTS), a folder named dist or build (scan._GENERATED_DIRS) or by suffix; only "
+            "tracked ones are read. The marker must stand in the first 20 lines, case-insensitive."
         ),
     ),
     "EXEC-06": Reads(
@@ -1571,7 +1571,7 @@ READS: dict[str, Reads] = {
                 "makefile",
                 "package.json",
             ),
-            *_at(GLOB, "**/*.mk", ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml", ".husky/**"),
+            *_at(GLOB, "**/*.mk", ".github/workflows/**/*.yml", ".github/workflows/**/*.yaml", ".husky/*"),
             *_at(ROOT, "renovate.json", ".renovaterc", ".renovaterc.json", ".github/renovate.json"),
             *_at(ANY_DEPTH, "pyproject.toml"),
             *_at(ANY_DEPTH, "go.mod", unexercised=_GO_FIXTURE),
@@ -1986,8 +1986,8 @@ READS: dict[str, Reads] = {
                 GLOB,
                 "**/*branch-protection*",
                 "**/*branch_protection*",
-                ".github/workflows/**/*.yml",
-                ".github/workflows/**/*.yaml",
+                ".github/workflows/*.yml",
+                ".github/workflows/*.yaml",
             ),
             *_at(ANY_DEPTH, ".gitlab-ci.yml"),
         ),

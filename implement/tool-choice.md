@@ -2,6 +2,7 @@
 
 Two procedures of the [implement recipe](SKILL.md) for the tools a step needs: one for a tool the repository
 does not have, one for a tool that is older than the repository's pin. Every stage that needs a tool follows them.
+The [tool currency](#tool-currency) rule says which tools a step may offer.
 
 ## When a needed tool is missing
 
@@ -13,7 +14,8 @@ recommendation or a playbook's recommendation is not the owner's pick.
    `lint.*`, `scanner.*`). Otherwise use `tool.<concern>`, for example `tool.markdown-lint`. A recorded answer
    stands: never ask it again.
 2. **Stop and ask.** Send a [decision request](../audit/prompts/talking-to-the-user.md#decision-requests).
-   Offer two to four current, maintained options from the owning playbook's "Inputs to ask" or the stack profile.
+   Offer two to four [current](#tool-currency) options from the owning playbook's "Inputs to ask" or the stack
+   profile.
    Add a last option: none. Name the step that waits for the answer.
 3. **Ask the scope too.**
    - One-off: run the tool once, outside the target (for example through `npx` or `uvx` at a pinned version).
@@ -71,3 +73,13 @@ A tool on the machine can be older than the version the target pins: gitleaks 8.
 6. **Report it.** Name each open gap under "What was not done" in status reports and the pull request body. Give
    the tool, both versions, and the warning that local results may differ from CI.
 7. **When CI disagrees with a local run**, name the version gap first as a likely cause.
+
+## Tool currency
+
+This is the one rule for whether a step may offer a tool. Every playbook and stack profile follows it.
+
+- A tool with no stable release in the last 12 months is not offered. A pre-release does not count.
+- The owner may keep such a tool. Record the reason with `progress.py pref set`, as in step 6 above.
+- An archived repository or an open security advisory also rules a tool out.
+
+A playbook's currency table is dated. Re-check the latest release before you offer a tool from it.

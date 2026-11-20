@@ -27,14 +27,41 @@ from pathlib import Path
 #: Verbs that mutate the working tree or the environment. Never probe-eligible.
 MUTATING_VERBS = frozenset({"format", "install", "clean", "build"})
 
+#: The keyword-assignment pattern. The keyword may sit inside a compound name joined by ``_`` or ``-``
+#: (``GITHUB_TOKEN``, ``DB_PASSWORD``, ``AWS_SECRET_ACCESS_KEY``, ``client_secret``, ``x-api-key``), but it must be
+#: a whole segment and the name must be assigned with ``:`` or ``=`` (a JSON key's closing quote may come between):
+#: prose such as ``passwords must be rotated``, ``token count: 5``, ``tokens: 5`` and ``max_tokens: 5`` is left
+#: alone. A name such as ``TOKEN_URL=`` is redacted too: hiding a harmless value costs less than showing a credential.
+#: The value is a quoted string up to its closing quote on that line, spaces included, or to the end of
+#: the line when it has none, or else one run of non-space characters; ``Bearer`` before it is part of the value.
+_KEYWORD_ASSIGNMENT = (
+    r"(?i)(?<![A-Za-z0-9])(?:[A-Za-z0-9]+[_-])*(?:api[_-]?key|secret|token|password|passwd|pwd)"
+    r"(?:[_-][A-Za-z0-9]+)*(?![A-Za-z0-9])[\"']?[ \t]*[:=][ \t]*(?!\[REDACTED\])"
+    r"(?:Bearer[ \t]+)?(?:\"[^\"\n]*\"?|'[^'\n]*'?|\S+)"
+)
+
+#: A whole PEM private key, from its BEGIN line through its END line. A key cut off by the end of the output (a
+#: timeout, a crash) is redacted to the end. Read one line at a time, as ``SEC-02`` reads a file, the pattern still
+#: matches the BEGIN line.
+_PEM_PRIVATE_KEY = r"(?s)-----BEGIN [A-Z ]*PRIVATE KEY-----.*?(?:-----END [A-Z ]*PRIVATE KEY-----|\Z)"
+
+#: ``SEC-02`` and the report validator read this tuple too. The validator names a pattern by its place here
+#: ("redaction pattern 5"), so a new pattern goes at the end.
 REDACTION_PATTERNS = (
-    re.compile(r"(?i)\b(api[_-]?key|secret|token|password|passwd|pwd)\b\s*[:=]\s*\S+"),
+    re.compile(_KEYWORD_ASSIGNMENT),
     re.compile(r"\bsk-[A-Za-z0-9_\-]{16,}\b"),
     re.compile(r"\bgh[pousr]_[A-Za-z0-9]{16,}\b"),
     re.compile(r"\bAKIA[0-9A-Z]{16}\b"),
-    re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
+    re.compile(_PEM_PRIVATE_KEY),
     re.compile(r"(?i)\b(Bearer)\s+[A-Za-z0-9._\-]{16,}"),
+    # Slack tokens: bot (xoxb-), user (xoxp-), app-level (xapp-) and the other xox kinds.
+    re.compile(r"\b(?:xox[abposr]|xapp)-[A-Za-z0-9-]{10,}"),
 )
+
+#: The order ``redact()`` applies the patterns in, so one secret counts once: the PEM block first, because a
+#: keyword before it (``secret: -----BEGIN ...``) would take the BEGIN line and leave the body; then the keyword,
+#: whose value may itself have one of the other shapes.
+_REDACT_ORDER = (REDACTION_PATTERNS[4], REDACTION_PATTERNS[0], *REDACTION_PATTERNS[1:4], *REDACTION_PATTERNS[5:])
 
 OUTPUT_TAIL_LINES = 40
 
@@ -77,7 +104,7 @@ def _probe_env(plan: ProbePlan, cwd: Path) -> dict[str, str] | None:
 def redact(text: str) -> tuple[str, int]:
     """Redact credential-shaped substrings. Returns (clean_text, redaction_count)."""
     count = 0
-    for pattern in REDACTION_PATTERNS:
+    for pattern in _REDACT_ORDER:
         text, n = pattern.subn("[REDACTED]", text)
         count += n
     return text, count

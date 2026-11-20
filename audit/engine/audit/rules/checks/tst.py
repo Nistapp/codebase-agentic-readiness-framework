@@ -85,7 +85,7 @@ _TEST_SOURCE_SUFFIXES: tuple[str, ...] = (
 )
 
 #: Framework-specific test-file globs, in addition to the scan's classification.
-_FRAMEWORK_TEST_GLOBS: tuple[str, ...] = ("*_test.go", "tests/*.rs")
+_FRAMEWORK_TEST_GLOBS: tuple[str, ...] = ("*_test.go", "tests/**/*.rs")
 
 #: Entry documents read for a documented fast path, in fixed order.
 _FASTPATH_DOCS: tuple[str, ...] = ("README.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md")

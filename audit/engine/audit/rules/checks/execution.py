@@ -43,8 +43,8 @@ What each check reads and what makes it ``UNKNOWN`` rather than ``FAIL``:
   own folder and below it, so ``api/.env.example`` covers the keys ``api/`` reads and a root one covers every file;
   a key counts as declared when every file that reads it is covered by an example file that names it. A documented allow-list of conventional CI/test/host variables lives in
   :data:`_ENV_ALLOWLIST` and :data:`_ENV_ALLOW_PREFIXES`; it is deterministic and kept in code.
-* **EXEC-05** — files the scan classifies ``GENERATED`` (including vendored paths) are either
-  untracked or carry a generated-file header. Tracked state unavailable ⇒ ``UNKNOWN``.
+* **EXEC-05** — files the scan classifies ``GENERATED`` (tracked files under ``dist/`` and ``build/`` included)
+  are either untracked or carry a generated-file header. Tracked state unavailable ⇒ ``UNKNOWN``.
 * **EXEC-06** — every shell command in a fenced README/``AGENTS.md`` block resolves to a
   known tool, a declared verb, an npm script, a Makefile target, a package binary, or a real path.
   Shell builtins and obvious placeholders are skipped, never failed. Line continuations are joined.
@@ -808,13 +808,16 @@ _SETUP_FILES = (
 #: Dockerfiles with a variant in the name (``Dockerfile.jvm``, ``dev.Dockerfile``), found at any depth by base name:
 #: frameworks keep them below the root (Quarkus writes ``src/main/docker/Dockerfile.jvm``).
 _DOCKERFILE_PATTERNS = ("Dockerfile.*", "*.Dockerfile", "*.dockerfile")
+#: The dev container spec reads ``.devcontainer/devcontainer.json`` and one configuration per subfolder,
+#: ``.devcontainer/<name>/devcontainer.json``.
+_DEVCONTAINER_PATTERNS = (".devcontainer/*.json", ".devcontainer/*/devcontainer.json")
 _DOC_FILES = (README, "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md")
 _SETUP_TARGETS = ("setup", "bootstrap", "install", "dev", "dev-setup")
 
 
 def _setup_signals(inv: Inventory) -> list[str]:
     signals = [name for name in _SETUP_FILES if inv.has(name)]
-    signals += inv.match(".devcontainer/*.json")
+    signals += inv.match(*_DEVCONTAINER_PATTERNS)
     signals += inv.match(*_DOCKERFILE_PATTERNS)
 
     make_targets = parse_makefile_targets(inv)

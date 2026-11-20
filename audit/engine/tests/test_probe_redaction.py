@@ -45,6 +45,7 @@ SHAPES: tuple[tuple[str, str, str], ...] = (
     ("AWS key id", _join("AK", "IA", "Q2W3E4R5T6Y7U8I9"), "Q2W3E4R5T6Y7U8I9"),
     ("private key header", _join("-----BEGIN ", "RSA PRIVATE", " KEY-----"), "PRIVATE KEY"),
     ("bearer token", _join("Authorization: Bear", "er ", "abcDEF123456ghiJKL789"), "abcDEF123456ghiJKL789"),
+    ("Slack token", _join("xo", "xb-", "1234567890-", "AbCdEf", "GhIjKl"), "GhIjKl"),
 )
 
 
