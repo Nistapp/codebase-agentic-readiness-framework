@@ -21,8 +21,9 @@ Engine           `EXEC-01`. The pinnable ecosystems are node, python, jvm, dotne
                  go (go has no pin file of its own). For each one detected, the engine looks for its pin.
                  A version file pins: `.nvmrc`, `.python-version`, `.ruby-version`, `.php-version`,
                  `rust-toolchain.toml` or `rust-toolchain`. So do a wrapper (`gradlew`, `mvnw`) and, for
-                 dotnet, `global.json`. A shared `.tool-versions` pins with a matching line (read for
-                 node, python, rust, go and php). A manifest pins with `package.json`'s `engines.node`,
+                 dotnet, `global.json`. A shared `.tool-versions` pins with a line that starts with the
+                 ecosystem's asdf or mise plugin name: `nodejs` or `node`, `python`, `rust`, `golang`,
+                 `php`, `ruby`, `java` (jvm), and `dotnet` or `dotnet-core`. A manifest pins with `package.json`'s `engines.node`,
                  `pyproject.toml`'s `requires-python` or `go.mod`'s `go` directive. A `composer.json`
                  pins with `config.platform.php`, then `require.php`. Pin files and these manifests
                  count at any depth: a nested module
@@ -56,10 +57,12 @@ Pitfalls         A monorepo where only one of several ecosystems is pinned still
                  the engine fails the whole check on the first unpinned ecosystem, so a `FAIL` summary
                  naming one ecosystem does not mean the others are also unpinned; read which ecosystem
                  the finding actually names before writing remediation. Within one ecosystem, each module
-                 manifest (`package.json`, `pyproject.toml`, `go.mod`) must be reached by a pin: its own
-                 manifest, or a pin file or (node, python) a pinning manifest in its folder or a parent
-                 folder; one unreached module reads `PARTIAL` and is named in the evidence. A nested
-                 `.tool-versions` is not read, and a parent `go.mod` does not pin a nested Go module.
+                 manifest (`package.json`, `pyproject.toml`, `go.mod`, `composer.json`) must be reached by
+                 a pin: its own manifest, or a pin file or (node, python) a pinning manifest in its folder
+                 or a parent folder; one unreached module reads `PARTIAL` and is named in the evidence. A
+                 nested `.tool-versions` is not read. A parent `go.mod` does not pin a nested Go module,
+                 and a parent `composer.json` does not pin a nested Composer project, which Composer
+                 installs on its own.
 
 ## EXEC-02 — Lockfile committed and consistent
 
@@ -78,8 +81,7 @@ Engine           `EXEC-02`. For each detected ecosystem with a package manager t
                  lockfiles are `package-lock.json`, `npm-shrinkwrap.json` (compared as a
                  `package-lock.json`), `pnpm-lock.yaml`, `yarn.lock`, `bun.lock` and `bun.lockb`. Neither
                  Bun file is compared, so a Bun project reads `PARTIAL` at best. For python they are
-                 `poetry.lock`, `uv.lock` and `Pipfile.lock`. A `pdm.lock` names pdm in the stack but is
-                 not one of them. No
+                 `poetry.lock`, `uv.lock`, `Pipfile.lock` and `pdm.lock`, and each is compared. No
                  ecosystem with a recognised manager is detected ⇒ `UNKNOWN`, and the summary names a
                  recognised ecosystem that has no lockfile convention the engine reads; an ecosystem recognised only
                  from its source files, with no manifest (`Stack.source_only`), is also `UNKNOWN` — it

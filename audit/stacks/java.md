@@ -116,9 +116,9 @@ a human read of the build file to see the gap the engine's literal-name match ca
 which is `UNKNOWN` outright whenever `check` resolves only through the Gradle/Maven lifecycle path, by the
 engine's own documented rule, so this pack's check-composition question is never answered for an
 unmodified Gradle build and needs the agent's own read of what plugins (and their tasks) `check` actually
-depends on; `EXEC-02`, which recognises no Gradle lockfile convention at all, so `UNKNOWN` here means
-"the engine cannot see dependency locking," not "there is none" — confirm by reading the build file for a
-`dependencyLocking` block.
+depends on; `EXEC-02`, which reads only whether a `gradle.lockfile` exists and is tracked. It cannot compare
+the lock with the build file, so a tracked lock reads `PARTIAL` at best, never `PASS` — confirm by reading the
+build file for a `dependencyLocking` block and the lockfile itself.
 
 ## Pitfalls
 

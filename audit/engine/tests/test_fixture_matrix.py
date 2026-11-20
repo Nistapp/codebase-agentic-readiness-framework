@@ -161,6 +161,8 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-01-python-source-only": {"EXEC-01": "FAIL", "EXEC-02": "UNKNOWN"},
     "exec-01-php-version-file": {"EXEC-01": "PASS"},
     "exec-01-php-unpinned": {"EXEC-01": "FAIL"},
+    "exec-01-nested-composer-unpinned": {"EXEC-01": "PARTIAL"},
+    "exec-01-tool-versions-only": {"EXEC-01": "PASS"},
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
     "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},
     "exec-03-no-setup": {"EXEC-03": "FAIL"},
