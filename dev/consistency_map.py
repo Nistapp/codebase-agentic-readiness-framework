@@ -4,7 +4,7 @@
 """The consistency map's gate, in static mode: is every touched read kept? (ADR 0012).
 
 ``python3 dev/consistency_map.py`` reads the map (:func:`load_map`), the catalogue, the playbooks, the greenfield
-templates and the engine's constants in the working tree, and reports eight kinds of problem:
+templates and the engine's constants in the working tree, and reports nine kinds of problem:
 
 - ``unkept``: a move declares that it touches a check (``touches``) and no keeps entry covers the pair;
 - ``quote``: a kept quote is not in the section its address names;
@@ -15,7 +15,9 @@ templates and the engine's constants in the working tree, and reports eight kind
 - ``keeps``: a keeps entry names an unknown move or check, repeats a pair, or keeps a check its move does not
   declare in ``touches``;
 - ``boundary``: a boundary's home quote is not in its section, its id repeats, or the file or symbol that enforces
-  it no longer exists.
+  it no longer exists;
+- ``mode``: a move marked ``mode: add`` is not a ``write`` of a Commits row, or its row names an edit word
+  (:data:`EDIT_WORDS`).
 
 The touches are a reviewer's judgement, written in the map. The gate also infers touches from the paths and the
 content kinds (``touch``), and counts the inferred pairs no move declares and no keep covers as ``unreviewed``. That
@@ -69,7 +71,7 @@ if str(DEV) not in sys.path:
 
 from docindex.extract import _section_nodes  # noqa: E402  (dev/ must be on sys.path first)
 
-KINDS = ("unkept", "quote", "mention", "coverage", "names", "constants", "keeps", "boundary")
+KINDS = ("unkept", "quote", "mention", "coverage", "names", "constants", "keeps", "boundary", "mode")
 #: The boundary enforcements that name a file and a symbol; ``prose`` names neither.
 ENFORCERS = ("tool-refusal", "test", "eval")
 
@@ -110,6 +112,15 @@ CONTENT_INDEPENDENT_READS = frozenset({"CON-04"})
 #: every such file), so a write or a create cannot add a ``SEC-02`` hit; an untrack can take one away. The check's
 #: other places, its allowlist files, still count for every move.
 UNTRACK_ONLY_SCANS = frozenset({"SEC-02"})
+#: Rule R5: the words in a Commits row's commit text that say the step changes or removes text, so its move may not
+#: be marked ``mode: add``. A word counts at the start of a whole word, in any case and inflection: ``corrected``,
+#: ``Fix``, ``settled``. The list is a floor, not a proof: a row with none of them is ``add`` only when its step says
+#: it only adds (ADR 0012).
+_EDIT_VERBS = (
+    "edit replace rewrite reword remove delete drop fix correct change rename renumber move split update settle match"
+    " merge reconcile resolve convert repoint restructure trim shorten"
+).split()
+EDIT_WORDS = re.compile(r"(?i)\b(?:" + "|".join(verb.removesuffix("e") for verb in _EDIT_VERBS) + r")\w*")
 
 
 class MapError(Exception):
@@ -265,6 +276,20 @@ def undeclared_names(paths: dict[str, str], cmap: dict[str, Any]) -> list[str]:
 
 
 # --- Playbook rows, sections and quotes -----------------------------------------------------------------------------
+
+
+def commits_row_text(text: str, row: int) -> str | None:
+    """The commit cell of row ``row`` in a playbook's ``## Commits`` table, or ``None`` when there is no such row."""
+    inside = False
+    for line in text.splitlines():
+        if line.startswith("## "):
+            inside = line.strip() == "## Commits"
+            continue
+        match = _COMMITS_ROW.match(line) if inside else None
+        if match and int(match.group(1)) == row:
+            cells = line.split("|")
+            return cells[2].strip() if len(cells) > 2 else ""
+    return None
 
 
 def commits_rows(text: str) -> list[int]:
@@ -516,6 +541,21 @@ def touch(move: dict[str, Any], read: dict[str, Any]) -> str | None:
     return _covers(move, "to", read) or (hit if action in ("write", "rewrite") else None)
 
 
+def _only_gains(move: dict[str, Any], where: dict[str, Any]) -> bool:
+    """Rule R5: whether the move only adds text (``mode: add``) to a place where added text only raises the verdict."""
+    return move.get("mode") == "add" and where.get("monotone") is True
+
+
+def lowering_touch(move: dict[str, Any], read: dict[str, Any]) -> str | None:
+    """The move path through which ``move`` can lower ``read``'s verdict, or ``None`` (rule R5).
+
+    This is :func:`touch` without the places where the move only adds text to a ``monotone`` place. Such a touch can
+    raise the verdict and never lower it, so it needs no review; :func:`touch` still reports it.
+    """
+    where = [place for place in read["where"] if not _only_gains(move, place)]
+    return touch(move, {**read, "where": where}) if where else None
+
+
 def unkept_pairs(cmap: dict[str, Any]) -> list[tuple[str, str]]:
     """Each (move id, check) a move declares in ``touches`` that no keeps entry covers."""
     kept = {(keep["move"], keep["check"]) for keep in cmap["keeps"]}
@@ -530,7 +570,9 @@ def unkept_pairs(cmap: dict[str, Any]) -> list[tuple[str, str]]:
 def unreviewed_pairs(cmap: dict[str, Any]) -> list[tuple[str, str, str]]:
     """Each (move id, check, path) the coarse rule infers that no move declares and no keep covers.
 
-    Template moves are left out: a template is the read's own source, and its intent is checked by the names rule.
+    Template moves are left out: a template is the read's own source, and its intent is checked by the names rule. A
+    touch that can only raise the verdict is left out too (:func:`lowering_touch`, rule R5). A declared touch is never
+    left out: it is not inferred, and :func:`unkept_pairs` reads ``touches`` alone.
     """
     kept = {(keep["move"], keep["check"]) for keep in cmap["keeps"]}
     pairs = []
@@ -542,7 +584,7 @@ def unreviewed_pairs(cmap: dict[str, Any]) -> list[tuple[str, str, str]]:
             check = read["check"]
             if read["source"] != "engine" or check in declared or (move["id"], check) in kept:
                 continue
-            path = touch(move, read)
+            path = lowering_touch(move, read)
             if path is not None:
                 pairs.append((move["id"], check, path))
     return pairs
@@ -584,6 +626,27 @@ def keeps_problems(cmap: dict[str, Any], catalogue_ids: Sequence[str]) -> list[s
         if pair in seen:
             problems.append(f"{pair[0]} -> {pair[1]}: kept twice")
         seen.add(pair)
+    return problems
+
+
+def mode_problems(moves: Sequence[dict[str, Any]], read: Reader = working_tree) -> list[str]:
+    """Rule R5's guard: moves marked ``mode: add`` that are not a ``write`` of a Commits row whose text names no edit
+    word (:data:`EDIT_WORDS`)."""
+    problems: list[str] = []
+    for move in moves:
+        if move.get("mode") != "add":
+            continue
+        origin = move["origin"]
+        if move["action"] != "write":
+            problems.append(f"{move['id']}: mode add needs the action write, not {move['action']}")
+            continue
+        row = commits_row_text(read(origin["path"]), origin["row"]) if "row" in origin else None
+        if row is None:
+            problems.append(f"{move['id']}: mode add needs a Commits row, and {origin['path']} has none for it")
+            continue
+        found = EDIT_WORDS.search(row)
+        if found:
+            problems.append(f"{move['id']}: mode add, but its Commits row says {found.group(0)!r}: {row!r}")
     return problems
 
 
@@ -649,6 +712,7 @@ def report(cmap: dict[str, Any], catalogue_ids: Sequence[str], read: Reader = wo
         + names_constant_problems(cmap["names"]),
         "keeps": keeps_problems(cmap, catalogue_ids),
         "boundary": boundary_problems(cmap["boundaries"], read),
+        "mode": mode_problems(cmap["moves"], read),
     }
 
 
