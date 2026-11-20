@@ -908,8 +908,10 @@ READS: dict[str, Reads] = {
         note=(
             "Each step command (inline or each line of a block), split at shell operators outside quotes, is "
             "mapped to a verb by runner or known tool and compared with the verbs resolved on the runner "
-            "manifests. echo and printf text and heredoc bodies are not commands."
+            "manifests. echo and printf text and heredoc bodies are not commands. A step that runs a "
+            "repository shell script is read one script deep. No workflow, or no CI verb mapped, is UNKNOWN."
         ),
+        named_by_text="each shell script a step runs is looked up with Inventory.has and read, one level deep",
     ),
     "CI-03": Reads(
         where=(

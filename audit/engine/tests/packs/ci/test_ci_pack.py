@@ -264,5 +264,60 @@ class Ci03TextIsNotACommandTests(unittest.TestCase):
         self.assertIn("deploy-preview", outcome.findings[0].statement)
 
 
+class Ci02WrapperScriptTests(unittest.TestCase):
+    """Issue #14: CI that calls wrapper scripts is read one script deep, and no mapped verb is never a PASS."""
+
+    _LOCAL = '{"scripts": {"check": "true", "test": "vitest run"}}'
+
+    def test_verbs_inside_a_wrapper_script_count(self):
+        files = {
+            ".github/workflows/ci.yml": _PR_HEAD + "      - run: ./scripts/ci/test.sh\n",
+            "scripts/ci/test.sh": "#!/usr/bin/env bash\nset -euo pipefail\nnpm ci\nnpm run test  # the suite\n",
+            "package.json": self._LOCAL,
+        }
+        outcome = _check_in_process("CI-02", files)
+        self.assertEqual(outcome.verdict.value, "PASS")
+        self.assertIn("CI verbs: test", outcome.summary)
+
+    def test_a_script_run_through_bash_with_a_verb_missing_locally_fails(self):
+        files = {
+            ".github/workflows/ci.yml": _PR_HEAD + "      - run: CI=1 bash -e scripts/ci/types.sh\n",
+            "scripts/ci/types.sh": "npm run typecheck\n",
+            "package.json": self._LOCAL,
+        }
+        outcome = _check_in_process("CI-02", files)
+        self.assertEqual(outcome.verdict.value, "FAIL")
+        self.assertEqual([e.path for e in outcome.findings[0].evidence], ["scripts/ci/types.sh"])
+
+    def test_only_one_level_is_followed(self):
+        files = {
+            ".github/workflows/ci.yml": _PR_HEAD + "      - run: scripts/ci/outer.sh\n",
+            "scripts/ci/outer.sh": "scripts/ci/inner.sh\n",
+            "scripts/ci/inner.sh": "npm run test\n",
+            "package.json": self._LOCAL,
+        }
+        self.assertEqual(_check_in_process("CI-02", files).verdict.value, "UNKNOWN")
+
+    def test_ci_with_no_mapped_verb_is_unknown_not_pass(self):
+        files = {
+            ".github/workflows/ci.yml": _PR_HEAD + "      - run: python3 scripts/ci/build.py\n      - run: /opt/x.sh\n",
+            "scripts/ci/build.py": "print('npm run test')\n",
+            "package.json": self._LOCAL,
+        }
+        outcome = _check_in_process("CI-02", files)
+        self.assertEqual(outcome.verdict.value, "UNKNOWN")
+        self.assertIn("local verbs: check, test", outcome.summary)
+
+    def test_no_workflow_is_unknown(self):
+        self.assertEqual(_check_in_process("CI-02", {"package.json": self._LOCAL}).verdict.value, "UNKNOWN")
+
+    def test_a_missing_script_or_a_bare_shell_is_not_followed(self):
+        files = {
+            ".github/workflows/ci.yml": _PR_HEAD + "      - run: ./scripts/ci/gone.sh\n      - run: sh\n",
+            "package.json": self._LOCAL,
+        }
+        self.assertEqual(_check_in_process("CI-02", files).verdict.value, "UNKNOWN")
+
+
 if __name__ == "__main__":
     unittest.main()
