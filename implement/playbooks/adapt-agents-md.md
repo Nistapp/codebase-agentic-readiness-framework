@@ -398,7 +398,7 @@ holds the owner's text is an existing file: use the Generic steps. A vendor file
 
 3. **Review.** The owner reads each section as its diff arrives (Inputs 1 sets the order). The file is a draft until
    the owner has seen every section. Then run the engine's AGT-01, AGT-05 and AGT-12.
-4. **Budget.** The skeleton is far below 400 lines. Step 12 applies if a filled file is not.
+4. **Budget.** The skeleton is far below 400 lines. [Generic](#generic) step 12 applies if a filled file is not.
 
 If a fact is missing (no boundary the code shows, no release tool), leave that line out. Record the item `partial`
 with `--debt "what=facts the code does not show (<names>),count=N"` and a note. Do not fill a gap with generic text.

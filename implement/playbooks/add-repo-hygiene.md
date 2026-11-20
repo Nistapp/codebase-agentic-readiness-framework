@@ -161,7 +161,8 @@ the policy files, and for nothing else:
    - **No tool:** offer the keep-a-changelog skeleton from the template, one entry per release, and let the owner
      decide.
 
-   The release-process page (HYG-08) is a short document, not the 358-line template. A workflow file named
+   The release-process page (HYG-08) is a short document, not the long
+   [`RELEASE_PROCESS.md`](../../greenfield/templates/RELEASE_PROCESS.md) template. A workflow file named
    `release.yml` does not count; the check wants prose. It states: which tool opens release pull requests and tags,
    what a merge to the release branch triggers, how versions are decided (the commit or title convention), who
    merges the release pull request, and that agents never tag or release (when `agents_md.release_tags` says so).
@@ -417,7 +418,7 @@ One commit per file or concern. A check that already passes makes no commit.
 
 | Check | Command or file | Expected |
 |---|---|---|
-| HYG-01 | `wc -m README.md`; read the first lines; grep for the marker words | Root file, 200+ characters of body, no marker, not a bare title; `PASS` |
+| [`HYG-01`](../../audit/checks/13-hygiene-informational.md#hyg-01--readme-present-and-non-placeholder) | `wc -m README.md`; read the first lines; grep for the marker words | Root file, 200+ characters of body, no marker, not a bare title; `PASS` |
 | HYG-02 | `ls .github/CODEOWNERS` (or `.gitlab/`); `test -e` on each path in a rule | File present; routing-only header when no approval is required; `PASS` |
 | HYG-03 | `ls .github/pull_request_template*` | Present; `PASS` |
 | HYG-04 | `ls .github/ISSUE_TEMPLATE/` | At least one file; `PASS` |
@@ -483,5 +484,6 @@ python3 implement/tools/progress.py set-status F-nnn partial --workspace <worksp
   --commit <sha> --debt "what=contributing items missing (gate),count=1" --note "owner declined the line"
 ```
 
-Record a preference only when the owner answers; absent means the default above. The theme closes once, after
-both T8 playbooks ([Stage 4](../SKILL.md#stage-4-close-the-theme)).
+Record a preference only when the owner answers; absent means the default in [Inputs to ask](#inputs-to-ask). The
+theme closes once, after both playbooks of the theme T8 Hygiene and index ([themes](../SKILL.md#themes),
+[Stage 4](../SKILL.md#stage-4-close-the-theme)).

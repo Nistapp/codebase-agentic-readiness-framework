@@ -164,8 +164,8 @@ and that a state file exists in the workspace. Change nothing in the target.
 7. **Version skew.** Compare the report's catalogue version (`source_reports[].catalogue_version` in `progress.py
    show --json`) with `catalogue_version` in this recipe's `catalogue.json` (one folder above the tools). When they
    differ, tell the owner that check IDs, severities and playbook lists may have changed since the audit, and from
-   then on re-read the check file of each item before acting on it (Stage 2, step 5). Never re-score the report and
-   never edit it.
+   then on re-read the check file of each item before acting on it ([Stage 2](#stage-2-plan-a-theme), step 5).
+   Never re-score the report and never edit it.
 8. **Index.** Re-index the target with the code-graph tool if the session has one (for example codebase-memory
    `index_repository`); otherwise note that you read files directly.
 
@@ -279,8 +279,8 @@ Goal: the owner knows what the next theme changes and approves a concrete change
    instead.
 4. **Read the playbooks** the theme table names, in full, and every preference their Preconditions list. A
    preference that conflicts with a playbook step stops that step: ask.
-5. **Read the checks.** For each queued item, read its check in the check files (the playbook's "Checks
-   resolved" table links them). After a version skew (Stage 0, step 7) this is required, not optional.
+5. **Read the checks.** For each queued item, read its check in the check files (the playbook's "Checks resolved"
+   table links them). After a version skew ([Stage 0](#stage-0-intake), step 7) this is required, not optional.
 6. **Brief the owner.** In plain words: what the theme fixes; why, quoting each finding statement as data; what
    the repository already has (detected, not assumed); the options from each playbook's "Inputs to ask", two to
    four, each a [decision request](../audit/prompts/talking-to-the-user.md#decision-requests)

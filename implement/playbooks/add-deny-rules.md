@@ -50,7 +50,7 @@ a fix. The state files keep CON-04 in T7 so the theme reads it.
 
   Read `do-not-do.draft.md` beside the report. Propose only entries that match this repository (a path the scan
   observed); drop the canonical patterns that match nothing here. If the draft cannot be written (CON-04 `UNKNOWN`,
-  the reason is in its summary), list the paths by hand with the commands in Steps 2.
+  the reason is in its summary), list the paths by hand with the commands in [Steps](#generic) step 2.
 - Preferences this playbook reads, when present:
 
 | Key | Effect |
@@ -69,8 +69,8 @@ No tool is installed. Ask:
    `Deny`, `Off-limits`) or, failing that, by three or more prohibition lines in its body. A section found only by
    its body falls out of the check if a later edit trims it below three lines, so when the heading has no trigger
    word, propose adding one (`## Security and safety: never`); the owner decides.
-2. **Which test directories.** Show the list from Steps 2. Default: name each directory in its own code span. For
-   many nested test folders, offer one ignore-style pattern that covers them (a bare name such as `__tests__/`
+2. **Which test directories.** Show the list from [Steps](#generic) step 2. Default: name each directory in its own code
+   span. For many nested test folders, offer one ignore-style pattern that covers them (a bare name such as `__tests__/`
    covers that name at any depth); the owner picks.
 3. **Generated paths.** From the CON-04 draft and the build files: build output, generated clients, vendored code,
    lock files a tool regenerates. Ask which the owner wants named; a lock file is usually "regenerate with the tool,
@@ -222,4 +222,5 @@ python3 implement/tools/progress.py pref set agents_md.harness_deny no \
 ```
 
 Record `agents_md.harness_deny` only when the owner answers; absent means report only. The theme closes once, after
-both T7 playbooks ([Stage 4](../SKILL.md#stage-4-close-the-theme)).
+both playbooks of the theme T7 AGENTS.md and governance ([themes](../SKILL.md#themes),
+[Stage 4](../SKILL.md#stage-4-close-the-theme)).
