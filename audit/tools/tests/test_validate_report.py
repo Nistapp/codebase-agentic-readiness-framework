@@ -710,11 +710,12 @@ class Rule11Tests(unittest.TestCase):
             "AK" + "IA" + "ABCDEFGHIJKLMNOP",
             "-----BEGIN " + "RSA PRIVATE" + " KEY-----",
             "Bear" + "er " + "abcdefghij.klmnopqrst",
+            "xo" + "xb-" + "1234567890-AbCdEfGhIj",
         ]
 
     def test_each_of_the_engines_patterns_is_applied(self) -> None:
         patterns = vr.redaction_patterns()
-        self.assertEqual(len(patterns), 6)
+        self.assertEqual(len(patterns), 7)
         for number, text in enumerate(self.credentials(), start=1):
             with self.subTest(pattern=number):
                 self.assertIsNotNone(patterns[number - 1].search(text))
