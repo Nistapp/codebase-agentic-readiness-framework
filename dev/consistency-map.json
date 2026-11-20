@@ -1567,7 +1567,7 @@
       "check": "EXEC-06",
       "home": {
         "path": "implement/playbooks/add-baselines-and-ratchet.md",
-        "quote": "add the single-test command for the repository's runner to `AGENTS.md` in a fenced shell block (the engine reads only fenced commands)",
+        "quote": "add the single-test command for the repository's runner to `AGENTS.md` in a fenced shell block (the engine also reads an inline code span, but `EXEC-06` reads only fenced commands)",
         "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
       },
       "move": "add-baselines-and-ratchet/row-16",
@@ -8655,10 +8655,7 @@
     {
       "binding": "section",
       "check": "CMD-02",
-      "constants": [
-        "audit.rules.checks._common:RUNNER_PRECEDENCE"
-      ],
-      "note": "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite that is no verb is followed once. A Gradle or Maven lifecycle check is UNKNOWN.",
+      "note": "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite that is no verb is followed once, and so is a package script that is no verb. A Gradle check is read from the build file's plugins and check dependsOn wiring; a settings file that includes subprojects, or an unknown plugin or task, makes a check still missing a concern UNKNOWN. A Maven lifecycle check is UNKNOWN.",
       "source": "engine",
       "threshold": "check composes format-check, typecheck and test",
       "what": {
@@ -8706,6 +8703,14 @@
         },
         {
           "path": "mvnw",
+          "scope": "root"
+        },
+        {
+          "path": "settings.gradle",
+          "scope": "root"
+        },
+        {
+          "path": "settings.gradle.kts",
           "scope": "root"
         }
       ]
@@ -11883,7 +11888,7 @@
         "audit.rules.checks.tst:_FASTPATH_DOCS",
         "audit.rules.checks.tst:_FRAMEWORK_TEST_GLOBS"
       ],
-      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
+      "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. With no fenced match, an inline code span outside any fence is read with the same patterns. A file is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy is skipped silently. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
       "source": "engine",
       "what": {
         "kind": "fenced-command"

@@ -626,13 +626,16 @@ READS: dict[str, Reads] = {
         ),
     ),
     "CMD-02": Reads(
-        where=(*_runners(),),
+        where=(*_runners(), *_at(ROOT, "settings.gradle", "settings.gradle.kts")),
         what=What("key", ("check",)),
         binding="section",
         threshold="check composes format-check, typecheck and test",
         note=(
             "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite "
-            "that is no verb is followed once. A Gradle or Maven lifecycle check is UNKNOWN."
+            "that is no verb is followed once, and so is a package script that is no verb. A Gradle check is read "
+            "from the build file's plugins and check dependsOn wiring; a settings file that includes subprojects, "
+            "or an unknown plugin or task, makes a check still missing a concern UNKNOWN. A Maven lifecycle check "
+            "is UNKNOWN."
         ),
     ),
     "CMD-03": Reads(
@@ -1620,7 +1623,8 @@ READS: dict[str, Reads] = {
         binding="line",
         note=(
             "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a "
-            "plain full-suite run does not count. A file is kept when Inventory.has finds its name at any "
+            "plain full-suite run does not count. With no fenced match, an inline code span outside any fence "
+            "is read with the same patterns. A file is kept when Inventory.has finds its name at any "
             "depth but read by its exact root path, so a nested-only copy is skipped silently. The test files "
             "give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs."
         ),

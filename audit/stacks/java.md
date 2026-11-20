@@ -114,10 +114,11 @@ reading `gradle-wrapper.properties`'s `distributionUrl`. Needs independent agent
 `FAIL` here usually means "not registered as a task," which is accurate, but a repository that wires one of
 these through a plugin task with a different name (`dependencyCheckAnalyze` rather than `security`) needs
 a human read of the build file to see the gap the engine's literal-name match cannot bridge; `CMD-02`,
-which is `UNKNOWN` outright whenever `check` resolves only through the Gradle/Maven lifecycle path, by the
-engine's own documented rule, so this pack's check-composition question is never answered for an
-unmodified Gradle build and needs the agent's own read of what plugins (and their tasks) `check` actually
-depends on; `EXEC-02`, which reads only whether a `gradle.lockfile` exists and is tracked. It cannot compare
+which reads a Gradle `check` from the build file: a JVM plugin gives the compile (the typecheck) and
+`test`, Spotless or ktlint the format check, and `check.dependsOn` adds the verbs and known tasks it names.
+An unknown plugin, a version-catalog alias, `apply from`, subprojects in `settings.gradle` or an unknown
+task make a check that still misses a concern `UNKNOWN`; read what those wire into `check` yourself;
+`EXEC-02`, which reads only whether a `gradle.lockfile` exists and is tracked. It cannot compare
 the lock with the build file, so a tracked lock reads `PARTIAL` at best, never `PASS` — confirm by reading the
 build file for a `dependencyLocking` block and the lockfile itself.
 `TOOL-01` and `TOOL-02` look for a formatter or linter config file by name; `checkstyle.xml` is the one JVM name.
@@ -154,9 +155,10 @@ plugin needed — `test` → the `test` phase, `typecheck` → `compile test-com
 richer than Gradle's test/check-only pair — invoked through the wrapper (`./mvnw`) when committed.
 `format`, `format:check`, `lint` and `security` still need a named plugin, but the engine recognises
 three directly by `artifactId`: `spotless-maven-plugin`, `maven-checkstyle-plugin`,
-`dependency-check-maven`. `CMD-02` is `UNKNOWN` for a `check` resolved only through `verify`, the same
-rule as Gradle. A real engine gap, found by reading the check rather than a repository:
-`EXEC-02`'s lockfile table recognises only `gradle.lockfile` for `jvm` (`_lockfiles_for` in
+`dependency-check-maven`. `CMD-02` is `UNKNOWN` for a `check` resolved only through `verify`: unlike a
+Gradle build, the engine does not read which plugin goals a pom binds to that phase. A real engine gap,
+found by reading the check rather than a repository: `EXEC-02`'s lockfile table recognises
+only `gradle.lockfile` for `jvm` (`_lockfiles_for` in
 `audit/rules/checks/execution.py`, fed by `PACKAGE_MANAGERS` in `audit/stack.py`), never a Maven convention,
 so a pure-Maven project is still told it is missing `gradle.lockfile` — read the finding's own evidence
 before repeating that name.
