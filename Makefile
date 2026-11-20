@@ -276,9 +276,10 @@ coverage-combine:
 # are left out. The walk skips git-ignored folders itself, such as the agent worktrees under .claude/worktrees/ (ADR-0009
 # in audit/engine/docs/architecture/adrs/). --baseline is the ratchet
 # (ADR-0001): exit 2 when a finding appears that .audit-baseline.json did not have, exit 0 otherwise. --no-user-config
-# keeps the verdict the same on every machine. Publication: docs/reference/self-audit.md.
+# keeps the verdict the same on every machine, and --target-label . keeps the local path out of the committed report.
+# Publication: docs/reference/self-audit.md.
 SELF_AUDIT_OUT := $(CURDIR)/dist/self-audit
-SELF_AUDIT_FLAGS := --out $(SELF_AUDIT_OUT)/ --force --format both --no-user-config --exclude 'artefacts/*' --exclude 'dist/*'
+SELF_AUDIT_FLAGS := --out $(SELF_AUDIT_OUT)/ --force --format both --no-user-config --target-label . --exclude 'artefacts/*' --exclude 'dist/*'
 
 self-audit:
 	mkdir -p $(SELF_AUDIT_OUT)

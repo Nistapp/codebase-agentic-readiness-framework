@@ -51,6 +51,9 @@ python3 -m audit <target> --format both --out ./audit-out/<name>   # writes <nam
 # verdicts that do not depend on this machine: read nothing under $HOME (the IDX checks)
 python3 -m audit <target> --no-user-config --out ./audit-out/<name>
 
+# a report to commit or publish: write "." as provenance.target, not the local absolute path
+python3 -m audit <target> --target-label . --out ./audit-out/<name>
+
 # add executed probes, explicitly and with a time budget
 python3 -m audit <target> --run-gates --allow-probe check --allow-probe test --timeout 600
 

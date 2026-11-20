@@ -95,6 +95,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="read no user-level configuration ($HOME, XDG): the IDX checks look at the repository only, so the verdict "
         "does not depend on the machine; without it the paths that were read are listed in the report's provenance",
     )
+    parser.add_argument(
+        "--target-label",
+        metavar="LABEL",
+        help="write LABEL as the report's provenance.target instead of the target's absolute path, for a report "
+        "that is committed or published (for example: .); a tool that needs the path, such as "
+        "check_regressions.py --changed-from, refuses such a report",
+    )
     parser.add_argument("--max-files", type=int, default=250_000, help="hard cap on inspected files")
     parser.add_argument(
         "--list-checks",
@@ -209,6 +216,21 @@ def _verify_rules(framework: str | None) -> int:
     return EXIT_OK
 
 
+TARGET_LABEL_CHARS = 200
+
+
+def check_target_label(label: str | None) -> None:
+    """Refuse a ``--target-label`` that is empty, too long, or holds a control character."""
+    if label is None:
+        return
+    if not label.strip():
+        raise AuditUsageError("--target-label must not be empty")
+    if len(label) > TARGET_LABEL_CHARS:
+        raise AuditUsageError(f"--target-label must be at most {TARGET_LABEL_CHARS} characters")
+    if any(ord(char) < 32 or ord(char) == 127 for char in label):
+        raise AuditUsageError("--target-label must not hold a control character")
+
+
 def _scan(args: argparse.Namespace) -> int:
     """Wire the pipeline stages together. Stages are implemented incrementally."""
     from audit.evaluate import evaluate
@@ -218,6 +240,7 @@ def _scan(args: argparse.Namespace) -> int:
     from audit.stack import detect_stack
     from audit.target import resolve_target
 
+    check_target_label(getattr(args, "target_label", None))
     target = resolve_target(Path(args.target))
     inventory = build_inventory(target.path, extra_excludes=tuple(args.exclude), max_files=args.max_files)
     stack = detect_stack(inventory)

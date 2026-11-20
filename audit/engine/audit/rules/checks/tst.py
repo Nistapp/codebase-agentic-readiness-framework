@@ -31,8 +31,9 @@ What each check reads and what makes it `UNKNOWN` rather than `FAIL`:
   mocha, python, go, rust, jvm). Zero markers is a `PASS`; no test file, or no readable test file,
   is `UNKNOWN`. This check never invents a maximum.
 * **TST-04** — a single-test/subset invocation in a fenced shell block, read from the repository's
-  root entry documents (the root README by any name, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`) via
-  `_common.extract_fenced_commands`. `PASS` when one is documented; `FAIL` when the documents are
+  root entry documents (the root README by any name, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`), or else in
+  an inline code span outside a fence (`npm test -- <path>` in a sentence), both via
+  `_common.extract_documented_commands`. A fenced one is cited first. `PASS` when one is documented; `FAIL` when the documents are
   readable but none shows one. With **no test file** there is no suite for a fast path to act on, so
   the verdict is `UNKNOWN` — a missing suite is TST-01's finding, not doubled here. The search scope is
   stated in `detail`.
@@ -57,7 +58,7 @@ import re
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
 from audit.probes import ProbePlan
-from audit.rules.checks._common import at_root, entry_documents, extract_fenced_commands, resolve_verbs
+from audit.rules.checks._common import at_root, entry_documents, extract_documented_commands, resolve_verbs
 from audit.scan import Kind
 from audit.stack import extract_npm_scripts
 from audit.rules.payloads import Counter, Payload
@@ -99,6 +100,8 @@ _FASTPATH_PATTERNS: tuple[str, ...] = (
     r"\b(?:npx\s+)?vitest\s+run\s+\S*(?:test|spec)\S*",
     r"\b(?:npx\s+)?vitest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
     r"\b(?:npx\s+)?jest\b[^\n&|;]*\s(?:-t|--testNamePattern)\b",
+    r"\b(?:npx\s+)?jest\b[^\n&|;]*\s\S*\.(?:test|spec)\.\S*",
+    r"\breact-scripts\s+test\b[^\n&|;]*\s\S*\.(?:test|spec)\.\S*",
     r"\bgo\s+test\b[^\n&|;]*\s-run\b",
     r"\bcargo\s+test\b\s+[A-Za-z_]\w*",
     r"\b(?:\./)?(?:gradlew|gradle)\b[^\n&|;]*--tests\b",
@@ -408,18 +411,24 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
     docs = [rel for rel in entry_documents(inventory, _FASTPATH_DOCS) if inventory.has(rel) and at_root(inventory, rel)]
     scope = ", ".join(docs) if docs else f"{', '.join(_FASTPATH_DOCS)} (none present)"
 
-    for rel in docs:
-        text = inventory.read(rel)
-        if not text:
-            continue
-        for _language, line, command in extract_fenced_commands(text):
-            if _FASTPATH_RE.search(command):
+    commands = [(rel, extract_documented_commands(text)) for rel in docs if (text := inventory.read(rel))]
+    for rel, found in commands:
+        for language, line, command in found:
+            if language != "inline" and _FASTPATH_RE.search(command):
                 return _outcome(spec, Verdict.PASS, f"fast path documented: {rel}:{line} `{command}` (scope: {scope})")
+    for rel, found in commands:
+        for language, line, command in found:
+            if language == "inline" and _FASTPATH_RE.search(command):
+                return _outcome(
+                    spec,
+                    Verdict.PASS,
+                    f"fast path documented in an inline code span: {rel}:{line} `{command}` (scope: {scope})",
+                )
 
     return _outcome(
         spec,
         Verdict.FAIL,
-        f"no single-test/subset invocation in fenced shell blocks (scope: {scope})",
+        f"no single-test/subset invocation in fenced shell blocks or inline code spans (scope: {scope})",
         [
             _finding(
                 spec,
@@ -428,7 +437,7 @@ def check_tst04(*, spec, target, inventory, stack, components, session) -> Check
                 Verdict.FAIL,
                 [Evidence(rel) for rel in docs] or [Evidence("<repository>")],
                 "Document a fast path (for example `pytest -k <name>`, "
-                "`npm test -- <name>`, or `go test -run <name>`) in a fenced shell block.",
+                "`npm test -- <name>`, or `go test -run <name>`) in a fenced shell block or as inline code.",
             )
         ],
     )
