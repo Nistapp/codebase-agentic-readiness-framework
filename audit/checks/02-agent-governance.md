@@ -428,9 +428,9 @@ Pitfalls         The deferral pattern is deliberately narrow (calibrated against
 
 ## AGT-11 — Instructions are specific and not inferable
 
-Why it matters   This is where A14 (above) is judged directly: a file full of generic, inferable advice
-                  costs inference time for no benefit, which is R-16's own finding
-                  ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
+Why it matters   This is where [A14](#the-a14-rubric-r-16-score-content-not-presence) is judged directly: a
+                  file full of generic, inferable advice costs inference time for no benefit, which is R-16's
+                  own finding ([Phased-Approach.md § Activities](../../docs/framework/phased-approach.md#activities)).
 Severity         DEGRADER
 Engine           none — no deterministic rule can tell a derivable instruction from a specific one; this is
                  the one check in the family with `method: agent` and no `engine_id`. Status in the

@@ -82,7 +82,7 @@ Why it matters   Review routing should be machine-readable, not tribal knowledge
 Severity         COSMETIC
 Engine           `HYG-02`. A `CODEOWNERS` file at the root, under `.github/`, `.gitlab/` or `docs/` is
                  `PASS`; none at any of those locations is `FAIL`. This check reads presence only — see the
-                 header note above on the cross-check this pack does not implement.
+                 [header note](#hygiene-hyg--informational-never-scored) above on the cross-check this pack does not implement.
 Method           automated
 Look for         A file named exactly `CODEOWNERS` at the root, under `.github/`, `.gitlab/` or `docs/`.
 Rubric           PASS: a `CODEOWNERS` file exists at one of the recognised locations.

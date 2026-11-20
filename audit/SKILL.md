@@ -21,7 +21,7 @@ implementation recipe's job (`implement/SKILL.md`).
 These apply through every stage, without exception:
 
 - **Read-only against the target.** The audit never writes inside the repository it is assessing. Every
-  tool below refuses an output path inside the target on its own, but say so to the user too.
+  [tool below](#tools) refuses an output path inside the target on its own, but say so to the user too.
 - **Writes go only to the output directory** the intake names, outside the target.
 - **Cite evidence for every verdict.** A check or finding with nothing in `evidence[]` or `searches[]` is
   not a verdict, it is a guess.
@@ -123,7 +123,7 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      recipe keeps its state beside the final report there. Ask the person to keep the folder until the
      implement run ends, because the run's skips and preferences live only there.
 4. Write the answers as an intake file matching the schema.
-5. Call `report.py init <intake>` (see the tool table below). Read `data.draft`, `data.label`, `data.target`
+5. Call `report.py init <intake>` (see the [tool table](#tools) below). Read `data.draft`, `data.label`, `data.target`
    and the warnings, and tell the user the draft's path before moving to Stage 1. Pass `data.label` as
    `--repo-label` to `facts.py` and `engine.py`, so every file of the run carries one label.
 
@@ -142,7 +142,7 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    `list_projects`) to corroborate the facts — index first, grep second — and never let an unverified
    grep outrank `facts.json`'s own counts, which a tool produced.
 4. Unless this is an eval-mode run, write the plan — the stack profile chosen, the thirteen families in
-   the order above, what is excluded, and which probes (if any) will run — to `run-plan.md` beside the
+   the [order above](#stages), what is excluded, and which probes (if any) will run — to `run-plan.md` beside the
    draft in the output directory, and tell the person its path before asking them to approve or edit it.
    A plan that lives only in chat is easy to lose once Stage 2 is under way; the file is not part of the
    report and `report.py` never reads it. In an unattended session, with no one to answer, write the file,
@@ -165,7 +165,7 @@ Everything else depends on the answers here; stop and ask rather than guess at a
    what to do when it refuses. Read `data.checks_imported`, `findings_pending` and `evidence_not_carried`,
    and tell the user, in plain words, what the import carried over and what it cut or dropped; the tool
    reports the counts, the model explains what they mean.
-3. Work through the thirteen families in the order above. For each, load its check file
+3. Work through the thirteen families in the [order above](#stages). For each, load its check file
    (`audit/checks/NN-*.md`) and go check by check, in catalogue order:
    - **An automated check already in the draft** (every check `import-engine` carried). Read its
      `Engine` field. Verify independently whenever the severity is `BLOCKER`, or whenever the field's
@@ -186,8 +186,9 @@ Everything else depends on the answers here; stop and ask rather than guess at a
      an `UNKNOWN` verdict often has none. Record each scope they miss with `report.py add-finding`, and
      every finding of a check you disputed or recorded fresh. Follow the check's `Absence proof` field for
      what a `FAIL` must cite.
-4. After each family, `report.py status <draft>` is cheap enough (at most 40 lines) to call every time,
-   not only to resume: its `families_remaining` says exactly what is left before moving to the next one.
+4. After each family, `report.py status <draft>` is cheap enough (at most 40 lines, per its
+   [reference](../docs/reference/tools-cli.md#status)) to call every time, not only to resume: its
+   `families_remaining` says exactly what is left before moving to the next one.
 5. Stage 2 ends when `report.py status <draft>` shows `families_remaining` empty. Move to Stage 3 only
    then; do not synthesize over a draft that still has unrecorded checks.
 

@@ -171,9 +171,10 @@ Can an agent find the code, the rules and the documents it needs before it edits
 - **Passes when:** at least 80% of rule lines are specific (by the count above) and every specific line checked resolves
   against the repository; no overview section exceeds roughly a fifth of the file (A14: the overview is optional and
   must not dominate).
-- **Why it matters:** This is where A14 (above) is judged directly: a file full of generic, inferable advice costs
-  inference time for no benefit, which is R-16's own finding ([Phased-Approach.md §
-  Activities](../framework/phased-approach.md#activities)).
+- **Why it matters:** This is where
+  [A14](../../audit/checks/02-agent-governance.md#the-a14-rubric-r-16-score-content-not-presence) is judged directly: a
+  file full of generic, inferable advice costs inference time for no benefit, which is R-16's own finding
+  ([Phased-Approach.md § Activities](../framework/phased-approach.md#activities)).
 
 #### `AGT-12` Communication rules stated
 
