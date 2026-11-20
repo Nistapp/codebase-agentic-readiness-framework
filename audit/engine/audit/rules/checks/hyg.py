@@ -79,7 +79,7 @@ from pathlib import Path
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Verdict, statement
-from audit.rules.checks._common import BranchRules, _indent, declared_branch_rules
+from audit.rules.checks._common import BranchRules, _indent, declared_branch_rules, root_readme
 from audit.scan import Inventory
 from audit.stack import CI_PROVIDERS, Stack
 from audit.rules.payloads import Payload
@@ -285,8 +285,8 @@ def _readme_reason(text: str) -> str | None:
 
 
 def check_hyg01(*, spec, target, inventory, stack, components, session) -> CheckOutcome:
-    found = sorted(f.rel for f in inventory.files if "/" not in f.rel and _basename(f.rel).lower().startswith("readme"))
-    if not found:
+    primary = root_readme(inventory)
+    if primary is None:
         return _outcome(
             spec,
             Verdict.FAIL,
@@ -303,7 +303,6 @@ def check_hyg01(*, spec, target, inventory, stack, components, session) -> Check
             ],
         )
 
-    primary = min(found, key=lambda rel: (0 if _basename(rel).lower() == "readme.md" else 1, rel.lower()))
     text = inventory.read(primary)
     if text is None:
         return _outcome(spec, Verdict.UNKNOWN, f"{primary} present but not readable as text (binary or oversized)")

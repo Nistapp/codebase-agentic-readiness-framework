@@ -84,6 +84,7 @@ fixtures/
   exec-02-no-lockfile/       node project, no lockfile (needs git) -> EXEC-02 FAIL
   exec-02-nested-lockfile/   a tracked lockfile in `packages/app`, none at the root (needs git) -> EXEC-02 PARTIAL
   exec-03-no-setup/          node project, no setup path          -> EXEC-03 FAIL
+  exec-03-readme-no-extension/ the root README is `README`, no extension, and fences the install -> EXEC-03, HYG-01 PASS
   exec-04-missing-env/       source reads an undeclared env var    -> EXEC-04 FAIL
   exec-04-reincluded-example/ `.env.*` ignored, `!.env.example` re-includes the template -> EXEC-04 PASS
   exec-04-anchored-ignored-dir/ `/scratch/` ignored; its untracked file reads an undeclared key (needs git) -> EXEC-04 PASS

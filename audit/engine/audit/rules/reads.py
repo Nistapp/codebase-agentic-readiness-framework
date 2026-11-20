@@ -1103,6 +1103,7 @@ READS: dict[str, Reads] = {
                 "README.md",
                 "CONTRIBUTING.md",
             ),
+            *_at(GLOB, "README*"),
             *_at(
                 ANY_DEPTH,
                 ".eslintrc*",
@@ -1187,6 +1188,7 @@ READS: dict[str, Reads] = {
                 "README.md",
                 "CONTRIBUTING.md",
             ),
+            *_at(GLOB, "README*"),
             *_at(
                 ANY_DEPTH,
                 "vitest.config.*",
@@ -1343,6 +1345,7 @@ READS: dict[str, Reads] = {
     "EXEC-03": Reads(
         where=(
             *_at(ROOT, "README.md", "AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md"),
+            *_at(GLOB, "README*"),
             *_at(
                 ANY_DEPTH,
                 ".devcontainer/devcontainer.json",
@@ -1428,6 +1431,7 @@ READS: dict[str, Reads] = {
     "EXEC-06": Reads(
         where=(
             *_at(ROOT, "README.md", "AGENTS.md", "CLAUDE.md"),
+            *_at(GLOB, "README*"),
             *_runners(),
             *_at(ANY_DEPTH, "gradlew", "mvnw"),
         ),
@@ -1618,8 +1622,9 @@ READS: dict[str, Reads] = {
         binding="line",
         note=(
             "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a "
-            "plain full-suite run does not count. A file is kept when Inventory.has finds its name at any "
-            "depth but read by its exact root path, so a nested-only copy is skipped silently. The test files "
+            "plain full-suite run does not count. A file is kept only at the root, so a nested-only copy is "
+            "skipped. README.md stands for the root README: the root file whose name starts with readme, any "
+            "case, README.md first, as for HYG-01. The test files "
             "give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs."
         ),
     ),

@@ -163,6 +163,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "exec-02-no-lockfile": {"EXEC-02": "FAIL"},
     "exec-02-nested-lockfile": {"EXEC-02": "PARTIAL"},
     "exec-03-no-setup": {"EXEC-03": "FAIL"},
+    "exec-03-readme-no-extension": {"EXEC-03": "PASS", "HYG-01": "PASS"},
     "exec-04-missing-env": {"EXEC-04": "FAIL"},
     "exec-04-reincluded-example": {"EXEC-04": "PASS"},
     "exec-04-anchored-ignored-dir": {"EXEC-04": "PASS"},
