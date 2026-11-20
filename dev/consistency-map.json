@@ -8656,10 +8656,12 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         }
@@ -8709,10 +8711,12 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         },
@@ -8770,10 +8774,12 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         }
@@ -8790,10 +8796,12 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         }
@@ -8856,6 +8864,7 @@
           "scope": "any-depth"
         },
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "any-depth"
         },
@@ -9021,10 +9030,12 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         },
@@ -10523,42 +10534,52 @@
           "scope": "glob"
         },
         {
+          "monotone": true,
           "path": "package.json",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "Makefile",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "Taskfile.yml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "Taskfile.yaml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "pyproject.toml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "build.gradle",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "build.gradle.kts",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "pom.xml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "gradlew",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "mvnw",
           "scope": "root"
         }
@@ -10610,42 +10631,52 @@
           "scope": "glob"
         },
         {
+          "monotone": true,
           "path": "package.json",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "Makefile",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "Taskfile.yml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "Taskfile.yaml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "pyproject.toml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "build.gradle",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "build.gradle.kts",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "pom.xml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "gradlew",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "mvnw",
           "scope": "root"
         }
@@ -10816,10 +10847,12 @@
           "scope": "any-depth"
         },
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         },
@@ -11235,22 +11268,27 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "README.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CONTRIBUTING.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "README*",
           "scope": "glob"
         },
@@ -11526,22 +11564,27 @@
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "README.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CONTRIBUTING.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "README*",
           "scope": "glob"
         },
@@ -11623,10 +11666,12 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         }
@@ -11643,10 +11688,12 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         },
@@ -11943,22 +11990,27 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "README.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "CONTRIBUTING.md",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "README*",
           "scope": "glob"
         },
@@ -12590,42 +12642,52 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "package.json",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "Makefile",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "Taskfile.yml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "Taskfile.yaml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "pyproject.toml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "build.gradle",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "build.gradle.kts",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "pom.xml",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "gradlew",
           "scope": "root"
         },
         {
+          "monotone": true,
           "path": "mvnw",
           "scope": "root"
         },
@@ -12796,18 +12858,22 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "README.md",
           "scope": "any-depth"
         },
         {
+          "monotone": true,
           "path": "AGENTS.md",
           "scope": "any-depth"
         },
         {
+          "monotone": true,
           "path": "CLAUDE.md",
           "scope": "any-depth"
         },
         {
+          "monotone": true,
           "path": "CONTRIBUTING.md",
           "scope": "any-depth"
         },
@@ -13805,6 +13871,7 @@
       },
       "where": [
         {
+          "monotone": true,
           "path": "CONTRIBUTING*",
           "scope": "repository-level"
         }

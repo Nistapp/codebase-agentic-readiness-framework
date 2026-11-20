@@ -171,6 +171,13 @@
           "minLength": 1,
           "type": "string"
         },
+        "mode": {
+          "description": "add: the step only adds whole lines or keys to each to path, at a block boundary, in a file it does not create, and changes or removes nothing; the gate allows it only on a write whose Commits row names no edit word. replace, also when absent: the step may change or remove text.",
+          "enum": [
+            "add",
+            "replace"
+          ]
+        },
         "note": {
           "minLength": 1,
           "type": "string"
@@ -408,6 +415,10 @@
           "enum": [
             "fold"
           ]
+        },
+        "monotone": {
+          "const": true,
+          "description": "Rule R5: text added to this place (whole lines or keys, at a block boundary, in a file that exists, nothing changed or removed) can only raise the check's verdict. A move with mode add infers no touch through it. Absent means it can lower the verdict."
         },
         "path": {
           "$ref": "#/$defs/path"

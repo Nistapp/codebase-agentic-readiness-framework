@@ -45,8 +45,9 @@ def engine_declarations() -> dict[str, Any]:
 def _where(place: Any) -> dict[str, Any]:
     """One declared place as a map ``where`` item.
 
-    ``via`` only when an upstream step reads the place, ``case`` only when it is matched in lower case, and
-    ``unexercised`` only when no fixture can reach it: most items stay two keys long.
+    ``via`` only when an upstream step reads the place, ``case`` only when it is matched in lower case,
+    ``unexercised`` only when no fixture can reach it, and ``monotone`` only when added text can only raise the
+    verdict there: most items stay two keys long.
     """
     item: dict[str, Any] = {"path": place.path, "scope": place.scope}
     if place.via is not None:
@@ -55,6 +56,8 @@ def _where(place: Any) -> dict[str, Any]:
         item["case"] = place.case
     if place.unexercised is not None:
         item["unexercised"] = place.unexercised
+    if place.monotone:
+        item["monotone"] = True
     return item
 
 
