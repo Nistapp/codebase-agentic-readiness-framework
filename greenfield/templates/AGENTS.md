@@ -8,8 +8,8 @@
 > form. Sections 1, 2 and 3 already hold two prohibition lines each. The audit reads a section with three such
 > lines as a list of prohibitions.
 
-This file is read by opencode, Codex and Cursor. Claude Code reads it only through a `CLAUDE.md` that imports
-`@AGENTS.md`.
+This file is read by Claude Code, opencode, Codex and Cursor. Claude Code reads it when the repository has no
+`CLAUDE.md`; where one exists, that `CLAUDE.md` imports `@AGENTS.md`.
 
 ---
 
