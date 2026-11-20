@@ -2804,12 +2804,6 @@
       "status": "kept"
     },
     {
-      "check": "TOOL-02",
-      "move": "configure-quality-tools/row-8",
-      "reason": "Not a real pair: TOOL-02 credits a linter config name and a resolved lint verb. eslint-suppressions.json is neither, so creating it cannot change the verdict.",
-      "status": "accepted"
-    },
-    {
       "check": "CMD-04",
       "home": {
         "path": "implement/playbooks/configure-quality-tools.md",
@@ -3215,12 +3209,6 @@
       "status": "kept"
     },
     {
-      "check": "CMD-01",
-      "move": "define-command-surface/row-5",
-      "reason": "Not a real pair: CMD-01 resolves the verbs from the root runner manifests only. The verb commands written into AGENTS.md or CONTRIBUTING.md are not read by it (AGT-05 and EXEC-06 read them), so this row cannot change the CMD-01 verdict.",
-      "status": "accepted"
-    },
-    {
       "check": "SEC-01",
       "home": {
         "path": "implement/playbooks/env-inventory-and-secrets.md",
@@ -3512,12 +3500,6 @@
       },
       "move": "establish-docs-contract/row-6",
       "status": "kept"
-    },
-    {
-      "check": "NAV-01",
-      "move": "establish-docs-contract/row-6",
-      "reason": "Not a real pair: the engine's NAV-01 reads the workspace members from the root manifests and the build manifests under candidate folders. An architecture overview page is not read, so creating it cannot change the verdict.",
-      "status": "accepted"
     },
     {
       "check": "DOC-05",
@@ -3835,10 +3817,15 @@
       "status": "kept"
     },
     {
-      "check": "EXEC-01",
+      "check": "EXEC-08",
+      "home": {
+        "path": "implement/playbooks/pin-execution-environment.md",
+        "quote": "Keep the version you already use.",
+        "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+      },
       "move": "pin-execution-environment/row-2",
-      "reason": "Not a real pair: EXEC-01 reads the pin files and engines.node in package.json (_pin_evidence), never packageManager; only EXEC-08 reads that field. Adding packageManager cannot change the EXEC-01 verdict.",
-      "status": "accepted"
+      "note": "EXEC-08 counts a command's tool version as held when packageManager names the same tool at the same version, so the pin can only raise its verdict.",
+      "status": "kept"
     },
     {
       "check": "EXEC-06",
@@ -4728,7 +4715,7 @@
       ],
       "id": "adapt-agents-md/row-21",
       "intent": "The conventions file AGT-13 reads; it must not count as an Aider instruction file for AGT-01 and AGT-08, so no .aider.conf.yml may stand beside it unread.",
-      "note": "The target's own name and place win (D18), for example CODE_STYLE.md or a page under docs/.",
+      "note": "The target's own name and place win, for example CODE_STYLE.md or a page under docs/.",
       "origin": {
         "path": "implement/playbooks/adapt-agents-md.md",
         "row": 21,
@@ -6286,7 +6273,7 @@
         "file"
       ],
       "id": "configure-quality-tools/row-8",
-      "note": "No check reads this name; BASE-01 credits it only through the AGENTS.md paragraph of T5.",
+      "note": "No check reads this name; BASE-01 credits it only through the AGENTS.md paragraph of T5, so the row names no check.",
       "origin": {
         "path": "implement/playbooks/configure-quality-tools.md",
         "row": 8,
@@ -6294,9 +6281,6 @@
       },
       "to": [
         "eslint-suppressions.json"
-      ],
-      "touches": [
-        "TOOL-02"
       ]
     },
     {
@@ -6636,8 +6620,7 @@
       "touches": [
         "AGT-05",
         "EXEC-06",
-        "EXEC-03",
-        "CMD-01"
+        "EXEC-03"
       ]
     },
     {
@@ -6896,7 +6879,7 @@
         "table"
       ],
       "id": "establish-docs-contract/row-6",
-      "intent": "NAV-04 reads any file under docs/architecture/; the page also lists components and entry points for NAV-01 and NAV-02.",
+      "intent": "NAV-04 reads any file under docs/architecture/; the page also lists the components and the entry points the NAV-02 rubric asks for.",
       "note": "docs/architecture/README.md is added only when the folder holds more than one page.",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
@@ -6910,8 +6893,7 @@
         "DOC-05",
         "SEC-02",
         "NAV-02",
-        "NAV-04",
-        "NAV-01"
+        "NAV-04"
       ]
     },
     {
@@ -7115,7 +7097,7 @@
         "file"
       ],
       "id": "establish-docs-contract/row-16",
-      "note": "Item 5: the template copy under the owner's licence, named and placed as the repository names its scripts (D18).",
+      "note": "Item 5: the template copy under the owner's licence, named and placed as the repository names its scripts.",
       "origin": {
         "path": "implement/playbooks/establish-docs-contract.md",
         "row": 16,
@@ -7232,7 +7214,7 @@
         "package.json"
       ],
       "touches": [
-        "EXEC-01"
+        "EXEC-08"
       ]
     },
     {
@@ -10700,7 +10682,8 @@
     {
       "binding": "section",
       "check": "CI-04",
-      "note": "The agent reads each job that runs a CI-02 verb or check for continue-on-error: true and a swallowed exit code (|| true, exit 0, set +e), then whether the branch rules require the job (audit/checks/06-ci.md, CI-04). A live read-only query needs the person's consent.",
+      "named_by_text": "A wrapper script a step runs (run: scripts/ci/test.sh), a reusable workflow a job calls and the CI doc that holds a report-only step's debt row are read at the paths the workflow or the repository's docs name.",
+      "note": "The agent reads each job that runs a CI-02 verb or check for continue-on-error: true and a swallowed exit code (|| true, exit 0, set +e), following a composite action, a reusable workflow or a wrapper script into its file, then whether the declared branch rules (the HYG-11 files) require the job (audit/checks/06-ci.md, CI-04). A report-only step needs its debt record in the repository: a comment beside the step, its row in the CI doc or an entry in a committed counts file. A live read-only query needs the person's consent.",
       "source": "agent",
       "threshold": "every verb job gates and is a required status check",
       "what": {
@@ -10716,6 +10699,14 @@
         },
         {
           "path": ".github/workflows/*.yaml",
+          "scope": "glob"
+        },
+        {
+          "path": ".github/actions/**/action.yml",
+          "scope": "glob"
+        },
+        {
+          "path": ".github/actions/**/action.yaml",
           "scope": "glob"
         },
         {
@@ -10739,8 +10730,24 @@
           "scope": "glob"
         },
         {
-          "path": ".github/rulesets/*.json",
+          "path": ".github/rulesets/**/*.json",
           "scope": "glob"
+        },
+        {
+          "path": ".github/settings.yml",
+          "scope": "root"
+        },
+        {
+          "path": "**/*branch-protection*",
+          "scope": "glob"
+        },
+        {
+          "path": "**/*branch_protection*",
+          "scope": "glob"
+        },
+        {
+          "path": "*baseline*.json",
+          "scope": "any-depth"
         }
       ]
     },
@@ -13769,6 +13776,7 @@
       },
       "where": [
         {
+          "case": "fold",
           "path": "*release*",
           "scope": "repository-level"
         }

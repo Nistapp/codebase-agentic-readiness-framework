@@ -24,7 +24,7 @@ runs it, where CI runs it, and where its version is pinned. The rules for the ga
 | zizmor | Workflow and Dependabot security: injection, broad permissions, unpinned actions, cooldown. Runs at the pedantic persona, so a permission without a comment or a missing concurrency limit fails too | `make workflow-lint` | `static` | `dev/tools/pyproject.toml` |
 | typos | Misspelled words in the tracked text, code identifiers included (word list: [`_typos.toml`](../../_typos.toml)) ([Spell check](#spell-check)) | `make spell`; `make spell-fix` writes the fixes | `static` | `dev/tools/pyproject.toml` |
 | check-jsonschema | `.github/workflows/*.yml` and `.github/dependabot.yml` that do not match their SchemaStore schemas | `make workflow-lint` | `static` | `dev/tools/pyproject.toml` |
-| detect-secrets | Key-shaped strings not in `.secrets.baseline` | `make security` (part: `security-secrets`) | `security-secrets` | `dev/tools/pyproject.toml` |
+| detect-secrets | Key-shaped strings not in `.secrets.baseline`; kept on purpose ([Secrets scan](#secrets-scan)) | `make security` (part: `security-secrets`) | `security-secrets` | `dev/tools/pyproject.toml` |
 | osv-scanner | A known vulnerability in a dev tool or its dependencies (Python, Node, Go lockfiles), unless [`osv-scanner.toml`](../../dev/tools/osv-scanner.toml) accepts it ([Dependency audit](#dependency-audit)) | `make security` (part: `security-deps`) | `security-deps` | `dev/tools/osv/go.mod` |
 | markdownlint-cli2 | Markdown rule violations (`.markdownlint-cli2.jsonc`) | `make docs-lint`; `make changelog-fix` rewrites `CHANGELOG.md` with the fixes | `docs`; `format-changelog` in `release-please.yml` | `dev/tools/package.json` |
 | `dev/prose_check.py` | Long sentences, vague words, explanation pages without a diagram ([`COMMUNICATION_RULES.md`](../COMMUNICATION_RULES.md)). Advisory: warnings and notices, never a failure. Its copy for target repositories, `implement/playbooks/templates/docs_prose_check.py`, adds `--max-issues`; `dev/tests/test_prose_template_parity.py` holds the two equal | `make docs-prose [FILES=...]` | `docs` (annotations on changed Markdown) | This repository |
@@ -59,6 +59,22 @@ To fix a finding, do one of these:
 1. Correct the word. `make spell-fix` writes every suggested fix; review the diff before you commit.
 2. If the word is a correct project term, regex stem or code token, add it to `[default.extend-words]` in
    `_typos.toml`. Add a comment that says why.
+
+## Secrets scan
+
+`make security` runs detect-secrets first. It fails on a key-shaped string that `.secrets.baseline` does not
+list.
+
+detect-secrets has had no stable release since v1.5.0 (2024-05-06). So the
+[tool currency](../../implement/tool-choice.md#tool-currency) rule would not offer it to a new setup. The rule
+lets the owner keep such a tool with a recorded reason, and the owner keeps it here:
+
+- `.secrets.baseline`, the lefthook `secrets` hook, `make security` and CI's `security-secrets` job are all
+  built on it.
+- The scan is offline and deterministic: the same tree gives the same result, with no network call.
+
+A replacement would be a separate change. The playbooks do not offer detect-secrets to a target
+([`env-inventory-and-secrets`](../../implement/playbooks/env-inventory-and-secrets.md)).
 
 ## Dependency audit
 

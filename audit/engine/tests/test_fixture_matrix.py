@@ -66,6 +66,7 @@ MATRIX: dict[str, dict[str, str]] = {
     "agt-12-no-rules": {"AGT-09": "PASS", "AGT-12": "FAIL"},
     "agt-13-no-conventions": {"AGT-12": "PASS", "AGT-13": "FAIL"},
     "agt-10-deferred": {"AGT-10": "FAIL"},
+    "agt-10-deferred-dot-folder": {"AGT-10": "FAIL"},
     "agt-10-pointer-dot-folder": {"AGT-10": "PASS"},
     "agt-10-pointer-glob-top-level": {"AGT-10": "PASS"},
     # -- DOC / NAV ----------------------------------------------------------------------------

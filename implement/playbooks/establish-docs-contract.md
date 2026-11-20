@@ -352,7 +352,7 @@ Docs first, then the lint config, then the wiring. The instruction-file line wai
 | 3 | Plain language and Diagrams sections in the style guide (only for DOC-05) | `DOC-05` | hand |
 | 4 | Form rules section appended to an existing style guide (only with `docs.style_guide_update=yes`) | `DOC-02` | hand |
 | 5 | Decision log: `docs/architecture/adrs/` index, template, ADR policy page, first records | `DOC-04` | hand |
-| 6 | Architecture overview with its diagram | `NAV-01`, `NAV-02`, `NAV-04` | hand |
+| 6 | Architecture overview with its diagram | `NAV-02`, `NAV-04` | hand |
 | 7 | Repository notes section: the NAV-03 census | `NAV-03` | hand |
 | 8 | Instruction-file line naming the docs pages | `DOC-02`, `DOC-04` | hand |
 | 9 | Ignore rule for the scratch directory (only when one exists and lacks it) | `DOC-03` | config |

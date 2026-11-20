@@ -1028,10 +1028,10 @@
     },
     {
       "data": {
-        "denominator": 1252,
+        "denominator": 1251,
         "kind": "ratio",
         "method": "python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
-        "numerator": 818,
+        "numerator": 817,
         "unit": "public symbols"
       },
       "id": "NAV-05",
@@ -1040,7 +1040,7 @@
       "scored": false,
       "severity": "COSMETIC",
       "status": "implemented",
-      "summary": "818/1252 public symbols documented (65%); method: python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
+      "summary": "817/1251 public symbols documented (65%); method: python: module-level def/class and the methods of public classes, names not starting with '_', test files left out (ast; a file that does not parse falls back to column-0 def/class)",
       "tier": "B",
       "title": "Public-symbol documentation coverage",
       "verdict": "PARTIAL"
@@ -1439,7 +1439,7 @@
   ],
   "inventory": {
     "files_inspected": 520,
-    "files_set_aside": 812,
+    "files_set_aside": 808,
     "files_skipped": 2,
     "ignored_dirs": [],
     "set_aside": [
@@ -1448,7 +1448,7 @@
         "path": "audit/engine/examples"
       },
       {
-        "files": 540,
+        "files": 536,
         "path": "audit/engine/tests/fixtures"
       },
       {
@@ -1506,15 +1506,15 @@
     }
   ],
   "provenance": {
-    "framework_revision": "523f0677bf8244625648d1a4dc17257a81c230fa",
-    "git_branch": "fix/engine-exec-05-build-sign",
+    "framework_revision": "4b952360e6544edc87f0e6ff8cb62cf9ee88b25a",
+    "git_branch": "fix/engine-agt-10-deferral-dot-folder",
     "git_dirty": false,
-    "git_sha": "523f0677bf8244625648d1a4dc17257a81c230fa",
+    "git_sha": "4b952360e6544edc87f0e6ff8cb62cf9ee88b25a",
     "phase": 1,
     "probes_enabled": false,
     "ruleset_hash": "34bba6464eac63ff",
     "ruleset_revision": "2026-11-20.24",
-    "scanned_at": "2026-11-20T11:56:04+00:00",
+    "scanned_at": "2026-11-20T11:36:08+00:00",
     "target": ".",
     "tool": "python-agentic-audit",
     "user_config": {

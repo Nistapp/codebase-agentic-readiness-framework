@@ -1966,7 +1966,7 @@ READS: dict[str, Reads] = {
         ),
     ),
     "HYG-08": Reads(
-        where=(*_at(REPOSITORY_LEVEL, "*release*"),),
+        where=(*_at(REPOSITORY_LEVEL, "*release*", case=FOLD),),
         what=What("exists"),
         binding="file",
         note=(

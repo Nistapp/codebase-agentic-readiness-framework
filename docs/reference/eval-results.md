@@ -16,7 +16,7 @@
 ## Fixture sweep — Claude Code on Sonnet 5.5, 2026-10-17/18
 
 All 89 of the engine's one-defect fixtures (`brownfield-recipes/deterministic-audit/tests/fixtures/`), the
-full corpus named in review R-07, not a sample.
+full fixture corpus, not a sample.
 
 ### Headline numbers
 

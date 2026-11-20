@@ -163,7 +163,7 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#execution-determinism).
   and it cannot compare the lock with `build.gradle`. So "`EXEC-02` Lockfile committed and consistent" reads
   `FAIL` for an unlocked Gradle build, which has no lockfile. A tracked root `gradle.lockfile` reads `PARTIAL`
   at best (consistency unverified), never `PASS`. Verify by reading `build.gradle` and `gradle.lockfile`
-  directly and record the engine's limit in the item.
+  directly, then record the finding as [engine-limit debt](#continue-on-error).
 - Invoke only through the wrapper (`./gradlew`). Then "`EXEC-06` Documented commands resolve" finds the wrapper
   for each documented Gradle command.
 
@@ -187,8 +187,9 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#exe
   (`cache-dependency-path` for the component's lockfile).
 - A second Dockerfile for the same app (a dev image) may already name the target major while the finding text
   still says an old one: copy every value from the files and list only the places that really differ.
-- Docker images build only through the repository's own scripts, never by hand. Align the Dockerfile `FROM`
-  and any dev Dockerfile with the pin.
+- Docker images build only through the repository's own scripts, never by hand, unless the person asks for that
+  exact action ([Hard rules](../SKILL.md#hard-rules)). Align the Dockerfile `FROM` and any dev Dockerfile with
+  the pin.
 
 ### .NET (NuGet)
 
@@ -216,8 +217,8 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#exe
 - CI installs with `composer install`, never `composer update`, so it installs what the lock records.
 - The engine reads only whether each `composer.lock` exists and is tracked. It does not compare the lock with
   `composer.json`, so "`EXEC-02` Lockfile committed and consistent" reads `PARTIAL` at best (consistency
-  unverified). Verify by running `composer install`, then `git status --porcelain`, and record the engine's
-  limit in the item.
+  unverified). Verify by running `composer install`, then `git status --porcelain`. Then record the finding as
+  [engine-limit debt](#continue-on-error).
 
 ### Ruby (Bundler)
 
@@ -230,7 +231,8 @@ Profile: [`stacks/typescript-node.md`](../../audit/stacks/typescript-node.md#exe
   fails.
 - The engine reads only whether each `Gemfile.lock` exists and is tracked. It does not compare the lock with the
   `Gemfile`, so "`EXEC-02` Lockfile committed and consistent" reads `PARTIAL` at best (consistency unverified).
-  Verify by running `bundle install`, then `git status --porcelain`, and record the engine's limit in the item.
+  Verify by running `bundle install`, then `git status --porcelain`. Then record the finding as
+  [engine-limit debt](#continue-on-error).
 
 ## Commits
 
@@ -239,7 +241,7 @@ Steps 1, 5, 8 and 9 make no commit.
 | # | Commit | Checks | Kind |
 |---|---|---|---|
 | 1 | Toolchain pin: `.nvmrc` and `engines.node`, or the Gradle toolchain block | `EXEC-01` | config |
-| 2 | Package-manager pin, `packageManager` (Node only) | `EXEC-01` | config |
+| 2 | Package-manager pin, `packageManager` (Node only) | `EXEC-08` | config |
 | 3 | Lockfile from the tool's own command, with the `dependencyLocking` block on Gradle (only when none is tracked, or by owner choice) | `EXEC-02` | bulk |
 | 4 | Instruction-file line: a dependency bump regenerates the lockfile (Gradle only) | `EXEC-02` | hand |
 | 5 | Stack start-up script installs with `npm ci` (only when it runs a bare install) | `EXEC-02` | hand |
@@ -257,6 +259,13 @@ Steps 1, 5, 8 and 9 make no commit.
   debt: count the mismatched places, record them with `--debt`, mark the item `partial`, and list each place
   in the note. There is nothing to ratchet; the CI theme
   ([`add-ci-parity`](add-ci-parity.md)) closes it.
+- Some "`EXEC-02` Lockfile committed and consistent" `PARTIAL` findings are an engine limit. Their statement
+  says "`<lockfile>` is tracked, but the engine does not compare `php` lockfiles" (or `ruby`, `jvm`). No edit
+  turns one into `PASS`. Run the verification its ecosystem section gives. When it is clean, mark the item
+  `partial` with `--debt "what=engine cannot compare this lockfile with its manifest,count=1"`. The note names
+  the lockfile and quotes the verification result. Report-only is the wiring: there is no count to ratchet. A
+  failed verification is no debt: fix the lockfile first. An `EXEC-02` `PARTIAL` with any other reason is not
+  covered here.
 - A component whose build fails on the pinned major: record `blocked` with the error and the owner's options
   (a different major, an upgrade of the failing dependency). Never pin a version the build cannot use.
 
@@ -270,9 +279,9 @@ Steps 1, 5, 8 and 9 make no commit.
 | EXEC-08 | Launcher run; `grep` each cited line | No literal tool version in a command, workflow or hook; each tool is in a manifest with a lockfile; `PASS` |
 
 Also run the repository's own gate (`./gradlew build`, `npm run build` per component) once on the pinned
-toolchain. Read the CI run on the branch too: it must be green. The engine's re-audit can still read EXEC-02 as
-`PARTIAL` for a Gradle lockfile, whose consistency it does not read. Record that as an engine limit with the
-evidence above.
+toolchain. Read the CI run on the branch too: it must be green. The engine's re-audit still reads EXEC-02 as
+`PARTIAL` for a Gradle, Composer or Bundler lockfile, whose consistency it does not read. Record that as
+[engine-limit debt](#continue-on-error) with the evidence above.
 
 ## Rollback
 
@@ -307,6 +316,9 @@ python3 implement/tools/progress.py set-status F-nnn done --workspace <workspace
   --verification-result "<resolved versions identical; gradle.lockfile tracked>"
 python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
   --debt "what=version mismatch in CI,count=2" --note "<places, why not edited>"
+python3 implement/tools/progress.py set-status F-nnn partial --workspace <workspace> --phase <phase> \
+  --debt "what=engine cannot compare this lockfile with its manifest,count=1" \
+  --note "<lockfile>: composer install, then git status --porcelain: clean"
 python3 implement/tools/progress.py pref set tools.node_major <value> --reason "<owner's words>" \
   --by owner --workspace <workspace> --phase <phase>
 ```

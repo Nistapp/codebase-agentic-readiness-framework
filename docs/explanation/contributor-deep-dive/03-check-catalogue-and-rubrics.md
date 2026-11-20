@@ -7,10 +7,12 @@
 > and `S3.3` are all closed.
 
 Every check family under [`audit/checks/`](../../../audit/checks/) is now written, 71 checks across
-thirteen files:
+fourteen files:
 [`01-discovery-and-index.md`](../../../audit/checks/01-discovery-and-index.md) (`IDX`),
 [`02-agent-governance.md`](../../../audit/checks/02-agent-governance.md) (`AGT`, including `AGT-11`, the
 first agent-only check whose rubric exists — its catalogue `status` is now `implemented`),
+[`02-agent-governance-2.md`](../../../audit/checks/02-agent-governance-2.md) (the rest of `AGT`: `AGT-12`
+communication rules stated and `AGT-13` coding conventions written),
 [`03-documentation-contract.md`](../../../audit/checks/03-documentation-contract.md) (`DOC`),
 [`04-command-surface.md`](../../../audit/checks/04-command-surface.md) (`CMD`),
 [`05-tooling.md`](../../../audit/checks/05-tooling.md) (`TOOL`),

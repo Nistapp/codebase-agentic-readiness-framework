@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 #
-# Run a recipe headlessly with Claude Code, unattended, and record what it cost (DP §11, review R-07).
+# Run a recipe headlessly with Claude Code, unattended, and record what it cost.
+# The evaluation design is in docs/explanation/contributor-deep-dive/05-evaluation.md.
 #
 #   run-claude.sh [--recipe audit|implement] [--answers <file>] [--model <model>] [--max-budget-usd <n>]
 #                 <target> <out-dir> [<repo-label>]
@@ -12,7 +13,7 @@
 # already exist. <repo-label> defaults to <target>'s directory name. An intake file,
 # <out-dir>/audit-intake.<repo-label>.json, must already exist with "eval_mode": true and a fixed
 # "confirmation_policy" ("accept-all" or "defer-all"): Stage 0 of the recipe then never has to ask a question,
-# which is what makes the run unattended rather than scripted past a real refusal (review R-07). The agent works
+# which is what makes the run unattended rather than scripted past a real refusal. The agent works
 # from a temporary copy of the recipe that `audit_eval.py framework` makes (audit/, docs/ and spec/, without dev/,
 # the tests and the eval pages), so it cannot read what is asserted; the copy is removed when the script exits. It
 # runs with no MCP servers, no user-level settings and no saved session, as in the implement mode.

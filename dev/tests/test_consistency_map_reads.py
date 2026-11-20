@@ -69,10 +69,31 @@ class GeneratedTest(unittest.TestCase):
         self.assertEqual(
             [w["path"] for w in reads["AGT-12"]["where"] if w.get("case") == "fold"], ["**/*communicat*.md"]
         )
+        self.assertEqual([w.get("case") for w in reads["HYG-08"]["where"]], ["fold"])
         self.assertEqual(
-            sorted(c for c, read in reads.items() if "named_by_text" in read), ["AGT-06", "AGT-10", "CI-02", "CON-01"]
+            sorted(c for c, read in reads.items() if "named_by_text" in read),
+            ["AGT-06", "AGT-10", "CI-02", "CI-04", "CON-01"],
         )
         self.assertNotIn("case", reads["CMD-01"]["where"][0])
+
+    def test_the_ci04_entry_names_every_place_its_rubric_reads(self) -> None:
+        # audit/checks/06-ci.md, CI-04: the workflows and the actions they use, the declared branch rules (the
+        # HYG-11 files) and a committed counts file. Wrapper scripts and the CI doc are named by the target's text.
+        (ci04,) = [read for read in MAP["reads"] if read["check"] == "CI-04"]
+        paths = {where["path"] for where in ci04["where"]}
+        self.assertLessEqual(
+            {
+                ".github/workflows/*.yml",
+                ".github/actions/**/action.yml",
+                ".github/rulesets/**/*.json",
+                ".github/settings.yml",
+                "**/*branch-protection*",
+                "*baseline*.json",
+            },
+            paths,
+        )
+        self.assertIn("wrapper script", ci04["named_by_text"])
+        self.assertIn("CI doc", ci04["named_by_text"])
 
     def test_an_unexercised_place_carries_its_reason_and_others_carry_none(self) -> None:
         reads = {read["check"]: read for read in MAP["reads"]}
