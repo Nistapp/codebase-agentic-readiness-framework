@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
-from audit.rules.checks import agt, doc, idx
+from audit.rules.checks import agt, cmd, doc, idx
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -34,11 +34,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     *idx.SPECS,
     *agt.SPECS,
     *doc.SPECS,
-    # -- CMD ------------------------------------------------------------
-    _c("CMD-01", "Seven verbs resolvable on one runner", "B", _S.BLOCKER),
-    _c("CMD-02", "check composes the read-only verbs", "B", _S.BLOCKER),
-    _c("CMD-03", "No divergent second definition", "B", _S.DEGRADER),
-    _c("CMD-04", "Write verbs separated from read-only verbs", "B", _S.DEGRADER),
+    *cmd.SPECS,
     # -- TOOL -----------------------------------------------------------
     _c("TOOL-01", "Formatter configured", "B", _S.DEGRADER),
     _c("TOOL-02", "Linter configured", "B", _S.DEGRADER),

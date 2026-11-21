@@ -55,6 +55,7 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.probes import MUTATING_VERBS
 from audit.rules.checks._common import (
     GRADLE_LIFECYCLE_PLUGINS,
@@ -763,6 +764,14 @@ def check_cmd04(*, spec, target, inventory, stack, components, session) -> Check
         ],
     )
 
+
+#: The CMD checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("CMD-01", "Seven verbs resolvable on one runner", "B", Severity.BLOCKER),
+    declare("CMD-02", "check composes the read-only verbs", "B", Severity.BLOCKER),
+    declare("CMD-03", "No divergent second definition", "B", Severity.DEGRADER),
+    declare("CMD-04", "Write verbs separated from read-only verbs", "B", Severity.DEGRADER),
+)
 
 IMPLEMENTATIONS = {
     "CMD-01": check_cmd01,
