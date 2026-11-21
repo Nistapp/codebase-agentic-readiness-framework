@@ -125,6 +125,37 @@ def _fixture_repository(root: Path) -> str:
     )
 
 
+class MapAtBaseTest(unittest.TestCase):
+    """Change mode takes the map from the working tree. The base ref may hold the one file, the folder or neither."""
+
+    def _report(self, base_files: dict[str, str], head_files: dict[str, str]) -> cmc.ChangeReport:
+        scratch = Path(tempfile.mkdtemp(prefix="cmap-change-map-"))
+        self.addCleanup(shutil.rmtree, scratch)
+        root = scratch / "repo"
+        root.mkdir()
+        _git(root, "init", "--quiet")
+        files = {
+            "src/core/a.py": "X = 1\n",
+            "docs/README.md": "# Docs\n",
+            "AGENTS.md": AGENTS_BASE,
+            "docs/keeps.md": KEEPS_BASE,
+        }
+        base = _commit(root, {**files, **base_files}, "base")
+        at = _commit(root, {"AGENTS.md": AGENTS_RENUMBERED, **head_files}, "renumber")
+        return cmc.change_report(FIXTURE_MAP, root, base, at, CONFIG, targets=lambda path: [path])
+
+    def test_the_old_file_the_folder_or_no_map_at_the_base_gives_the_same_report(self) -> None:
+        old = {"dev/consistency-map.json": "{}\n", "dev/consistency-map-names.json": "{}\n"}
+        folder = {"dev/consistency-map/index.json": "{}\n", "dev/consistency-map/reads/AGT.json": "[]\n"}
+        reports = [self._report({}, {}), self._report(old, folder), self._report(folder, folder)]
+        lines = [[review.line for review in report.reviews] for report in reports]
+        self.assertTrue(lines[0])
+        self.assertEqual(lines[1], lines[0])
+        self.assertEqual(lines[2], lines[0])
+        self.assertEqual([_verdicts(report) for report in reports[1:]], [_verdicts(reports[0])] * 2)
+        self.assertEqual([report.problems for report in reports[1:]], [reports[0].problems] * 2)
+
+
 def _verdicts(report: cmc.ChangeReport) -> dict[str, tuple[str, str | None, str | None]]:
     assert report.evidence is not None
     return {
