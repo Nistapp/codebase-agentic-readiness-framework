@@ -58,6 +58,8 @@ REPO = DEV.parent
 MAP_PATH = DEV / "consistency-map.json"
 #: The suffix that turns the map file's name into its names file's name (``consistency-map-names.json``).
 NAMES_SUFFIX = "-names"
+#: The index of the map's folder form: it lists the part files of each part, in joining order.
+FOLDER_INDEX = "index.json"
 ENGINE = REPO / "audit" / "engine"
 BOOTSTRAP = REPO / "greenfield" / "bootstrap"
 TEMPLATES = REPO / "greenfield" / "templates"
@@ -124,7 +126,7 @@ EDIT_WORDS = re.compile(r"(?i)\b(?:" + "|".join(verb.removesuffix("e") for verb 
 
 
 class MapError(Exception):
-    """The map's two files do not join into one map."""
+    """The map's files do not join into one map."""
 
 
 def names_path(map_path: Path) -> Path:
@@ -133,7 +135,13 @@ def names_path(map_path: Path) -> Path:
 
 
 def load_map(map_path: Path = MAP_PATH) -> dict[str, Any]:
-    """The map file joined with its names file, as one map; raises :class:`MapError` when they do not join."""
+    """The map as one dictionary, from the folder form or from the single-file form.
+
+    A folder holds ``index.json`` and the part files it lists (:func:`_load_folder`). A file is the older form: the
+    map file joined with its names file. Either way, a map that does not join raises :class:`MapError`.
+    """
+    if map_path.is_dir():
+        return _load_folder(map_path)
     cmap = json.loads(map_path.read_text(encoding="utf-8"))
     if "names" in cmap:
         raise MapError(f"{map_path.name} holds names; they belong in {names_path(map_path).name}")
@@ -149,6 +157,46 @@ def load_map(map_path: Path = MAP_PATH) -> dict[str, Any]:
             f"{map_path.name} has {cmap.get('map_format')!r}"
         )
     return {**cmap, "names": names["names"]}
+
+
+def _load_folder(folder: Path) -> dict[str, Any]:
+    """Join the folder form of the map: ``index.json`` lists, for each part, the files that hold its entries.
+
+    The index fixes the order of the files, so a part's list is the lists of its files one after the other. Each
+    listed file holds one JSON list. A file the index does not list, a listed file that is missing, and a file
+    listed twice are refused.
+    """
+    try:
+        index = json.loads((folder / FOLDER_INDEX).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise MapError(f"{FOLDER_INDEX} is missing in {folder.name}") from None
+    if not isinstance(index, dict) or set(index) != {"map_format", "parts"} or not isinstance(index["parts"], dict):
+        raise MapError(f"{FOLDER_INDEX} must hold map_format and parts only")
+    cmap: dict[str, Any] = {"map_format": index["map_format"]}
+    listed: set[str] = set()
+    for part, files in index["parts"].items():
+        if part == "map_format" or not isinstance(files, list) or not all(isinstance(name, str) for name in files):
+            raise MapError(f"{FOLDER_INDEX}: part {part!r} must be a list of file names")
+        entries: list[Any] = []
+        for name in files:
+            if name in listed:
+                raise MapError(f"{FOLDER_INDEX} lists {name} twice")
+            listed.add(name)
+            path = (folder / name).resolve()
+            if folder.resolve() not in path.parents or name == FOLDER_INDEX:
+                raise MapError(f"{FOLDER_INDEX}: {name} is not a part file inside {folder.name}")
+            try:
+                items = json.loads(path.read_text(encoding="utf-8"))
+            except FileNotFoundError:
+                raise MapError(f"{FOLDER_INDEX} lists {name}, which is missing") from None
+            if not isinstance(items, list):
+                raise MapError(f"{name} must hold a list of entries")
+            entries += items
+        cmap[part] = entries
+    on_disk = {path.relative_to(folder).as_posix() for path in folder.rglob("*.json")} - {FOLDER_INDEX}
+    if on_disk - listed:
+        raise MapError(f"{FOLDER_INDEX} does not list {', '.join(sorted(on_disk - listed))}")
+    return cmap
 
 
 def working_tree(path: str) -> str:
