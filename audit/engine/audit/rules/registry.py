@@ -1,15 +1,17 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""Rule-pack registry — one table, mirroring docs/architecture/contributor-deep-dive/02-check-catalogue.md.
+"""Rule-pack registry — the catalogue, assembled from the check families.
 
-The catalogue page is the design of record; this module is its executable form. A change to either
-updates both in the same change set (enforced socially, and by the self-verification docstring in
-the catalogue's § Adding a Check).
+Each check family module under ``audit/rules/checks/`` declares its checks (``SPECS``) beside their
+implementations; this module joins the families, in the written order of ``FAMILIES``, into one
+catalogue. ``docs/architecture/contributor-deep-dive/02-check-catalogue.md`` is the design of record. A
+change to a check's declaration updates that page in the same change set (enforced socially, and by
+the self-verification docstring in the catalogue's § Adding a Check).
 
-Three things live here and nowhere else:
+Three things are joined or kept here:
 
-* the **id → metadata** table (tier, severity, phase anchor, scored/not)
+* the **id → metadata** table (tier, severity, phase anchor, scored/not), in catalogue order
 * **framework anchors**: the Phase-1 heading each pack traces back to, resolvable by ``--verify-rules``
 * **applicability**: which packs apply to a detected stack, so an unsupported ecosystem degrades to
   ``UNKNOWN`` instead of passing silently
@@ -20,52 +22,14 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from audit.findings import Severity
-from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, idx, nav, sec, tool, tst
+from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, hyg, idx, nav, sec, tool, tst
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
-from audit.rules.spec import declare as _c
 
-_S = Severity
-
-#: The catalogue. Order here is the order in the report and in ``--list-checks``.
-_CATALOGUE: tuple[CheckSpec, ...] = (
-    *idx.SPECS,
-    *agt.SPECS,
-    *doc.SPECS,
-    *cmd.SPECS,
-    *tool.SPECS,
-    *ci.SPECS,
-    *base.SPECS,
-    *con.SPECS,
-    *execution.SPECS,
-    *tst.SPECS,
-    *nav.SPECS,
-    *sec.SPECS,
-    # -- HYG (informational, never scored) -------------------------------
-    _c("HYG-01", "README present and non-placeholder", "A", _S.COSMETIC, scored=False),
-    _c("HYG-02", "CODEOWNERS present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-03", "Pull-request template present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-04", "Issue templates present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-05", "CONTRIBUTING present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-06", "SECURITY present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-07", "CHANGELOG present and recent", "A", _S.COSMETIC, scored=False),
-    _c("HYG-08", "Release process documented", "A", _S.COSMETIC, scored=False),
-    _c("HYG-09", "Dependency update automation configured", "A", _S.COSMETIC, scored=False),
-    _c("HYG-10", "License present", "A", _S.COSMETIC, scored=False),
-    _c("HYG-11", "Branch protection declared as code", "B", _S.COSMETIC, scored=False),
-    _c(
-        "HYG-13",
-        "Contributing rules written",
-        "B",
-        _S.COSMETIC,
-        scored=False,
-        rule="The CONTRIBUTING document (root, .github/, .gitlab/ or docs/) points to the setup command, names the gate "
-        "command and says CI runs the same, and states the rules for branches, commits and pull requests; no "
-        "CONTRIBUTING document is UNKNOWN, because HYG-05 owns that finding.",
-    ),
-)
+#: The check families, in catalogue order. Within a family, its ``SPECS`` give the order. This order is the order
+#: in the report and in ``--list-checks``, and ``ruleset_hash`` reads it.
+FAMILIES = (idx, agt, doc, cmd, tool, ci, base, con, execution, tst, nav, sec, hyg)
 
 
 def _attach_implementations(specs: tuple[CheckSpec, ...]) -> tuple[CheckSpec, ...]:
@@ -84,7 +48,8 @@ def _attach_implementations(specs: tuple[CheckSpec, ...]) -> tuple[CheckSpec, ..
     return specs
 
 
-REGISTRY: tuple[CheckSpec, ...] = _attach_implementations(_CATALOGUE)
+#: The catalogue: every family's declared checks, in order, wired to their implementations.
+REGISTRY: tuple[CheckSpec, ...] = _attach_implementations(tuple(spec for family in FAMILIES for spec in family.SPECS))
 
 REGISTRY_BY_ID: dict[str, CheckSpec] = {spec.id: spec for spec in REGISTRY}
 

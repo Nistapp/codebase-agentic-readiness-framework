@@ -78,7 +78,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.rules.checks._common import BranchRules, _indent, declared_branch_rules, root_readme
 from audit.scan import Inventory
 from audit.stack import CI_PROVIDERS, Stack
@@ -1058,6 +1059,31 @@ def check_hyg13(*, spec, target, inventory, stack, components, session) -> Check
         ],
     )
 
+
+#: The HYG checks (informational, never scored), in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("HYG-01", "README present and non-placeholder", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-02", "CODEOWNERS present", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-03", "Pull-request template present", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-04", "Issue templates present", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-05", "CONTRIBUTING present", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-06", "SECURITY present", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-07", "CHANGELOG present and recent", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-08", "Release process documented", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-09", "Dependency update automation configured", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-10", "License present", "A", Severity.COSMETIC, scored=False),
+    declare("HYG-11", "Branch protection declared as code", "B", Severity.COSMETIC, scored=False),
+    declare(
+        "HYG-13",
+        "Contributing rules written",
+        "B",
+        Severity.COSMETIC,
+        scored=False,
+        rule="The CONTRIBUTING document (root, .github/, .gitlab/ or docs/) points to the setup command, names the gate "
+        "command and says CI runs the same, and states the rules for branches, commits and pull requests; no "
+        "CONTRIBUTING document is UNKNOWN, because HYG-05 owns that finding.",
+    ),
+)
 
 IMPLEMENTATIONS = {
     "HYG-01": check_hyg01,
