@@ -546,5 +546,45 @@ class ArchiveTests(unittest.TestCase):
         self.assertFalse((self.tmp / "x").exists())
 
 
+class ManifestTests(unittest.TestCase):
+    """`dev/skill-bundles.json` is the one list of shipped files; the loader refuses a malformed one."""
+
+    def _load(self, data: str) -> dict[str, Any]:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "skill-bundles.json"
+            path.write_text(data, encoding="utf-8")
+            return bs.load_manifest(path)
+
+    def test_the_manifest_is_stable_sorted_json(self) -> None:
+        text = bs.BUNDLES_FILE.read_text(encoding="utf-8")
+        self.assertEqual(text, json.dumps(json.loads(text), indent=2, sort_keys=True, ensure_ascii=False) + "\n")
+
+    def test_the_constants_come_from_the_manifest(self) -> None:
+        manifest = bs.load_manifest()
+        self.assertEqual(bs.BUNDLE_NAME, manifest["audit"]["name"])
+        self.assertEqual(list(bs.TOOL_FILES), manifest["audit"]["tool_files"])
+        self.assertEqual(
+            list(bs.IMPLEMENT_REFERENCES),
+            [(e["source"], e["place"]) for e in manifest["implement"]["references"]],
+        )
+
+    def test_unreadable_json_is_a_tool_error(self) -> None:
+        with self.assertRaises(_common.ToolError):
+            self._load("{not json")
+
+    def test_a_bundle_without_a_name_is_refused(self) -> None:
+        with self.assertRaises(_common.ToolError):
+            self._load('{"audit": {}, "implement": {"name": "x"}}')
+
+    def test_a_reference_with_an_unknown_kind_is_refused(self) -> None:
+        bundle = {"name": "x", "references": [{"source": "a.md", "place": "a.md", "kind": "zip"}]}
+        with self.assertRaises(_common.ToolError):
+            bs._reference_entries(bundle, "audit")
+
+    def test_a_list_of_names_must_hold_strings(self) -> None:
+        with self.assertRaises(_common.ToolError):
+            bs._string_list(["a", 1], "audit.tool_files")
+
+
 if __name__ == "__main__":
     unittest.main()
