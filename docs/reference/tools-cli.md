@@ -801,7 +801,9 @@ Nothing is written by a plain `recipe_lint.py <root>`; a clean run's `data` hold
 ## build_skills.py
 
 Builds the two skill bundles under `dev/dist/skills/` (gitignored), self-contained copies that a harness installs and
-runs with no checkout of this repository. The source is [`build_skills.py`](../../dev/build_skills.py). Each
+runs with no checkout of this repository. The source is [`build_skills.py`](../../dev/build_skills.py). The list of
+shipped files is data in [`skill-bundles.json`](../../dev/skill-bundles.json): to ship or drop a file, change that file.
+A test fails when a source folder holds a file the manifest neither names nor lists under `excluded`. Each
 bundle is replaced whole on every run, so a stale file from an earlier build can never survive. Each has three parts:
 
 - `SKILL.md`: the recipe's own file, with its frontmatter `name` rewritten from the source folder's name to the
