@@ -161,8 +161,9 @@ No dependency is installed. Ask:
    the playbook is working in, and say which.
 5. **Freshness (IDX-03).** Add one line to the instruction file: the agent re-indexes at the start of a task and after
    the last commit, and checks freshness with `detect_changes`. Write the sentence in the file's own voice, in the
-   section where the file already keeps tool guidance, and keep it within the 400-line budget. Run `detect_changes` and
-   record the result as the evidence; if it names changed files, re-index and run it again.
+   section where the file already keeps tool guidance, and keep it within the 400-line
+   [budget](../../audit/checks/02-agent-governance.md#the-a14-rubric-r-16-score-content-not-presence).
+   Run `detect_changes` and record the result as the evidence; if it names changed files, re-index and run it again.
 6. **Language server (advisory).** Optional, and never a gate: the target's `typecheck` verb stays the source of
    truth. Never install a language server. How each harness reaches one is in
    [Language Servers Beside the Code Index](../../docs/framework/tool-ecosystem.md#language-servers-beside-the-code-index);
