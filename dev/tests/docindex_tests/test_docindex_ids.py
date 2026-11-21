@@ -22,7 +22,8 @@ import _dev_paths  # noqa: F401  (puts dev/ on sys.path)
 import doc_index
 from docindex import extract, ids, model
 from docindex.gitread import WorkTree
-from test_docindex_extract import _problems
+
+from .test_docindex_extract import _problems
 
 _GIT_ENV = {
     "GIT_AUTHOR_NAME": "Ids Test",
