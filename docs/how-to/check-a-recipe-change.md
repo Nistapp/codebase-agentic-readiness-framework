@@ -290,7 +290,9 @@ The consistency map, the folder [`dev/consistency-map/`](../../dev/consistency-m
 Its `names` part, the file names the engine gives a meaning to, is in
 [`dev/consistency-map/names/`](../../dev/consistency-map/names/). The map also says what each playbook
 Commits row and template does to that text, and which sentence keeps each read true.
-[ADR 0012](../architecture/adrs/0012-keep-the-consistency-map-as-json-in-dev.md) records its design. Do not edit
+[ADR 0012](../architecture/adrs/0012-keep-the-consistency-map-as-json-in-dev.md) records its design. The folder
+holds small files: the moves and keeps of a playbook are in `moves/<playbook>.json` and `keeps/<playbook>.json`.
+When you add a file, list it in `index.json`, in the order the lists join. Do not edit
 the map's `reads` part by hand: the engine declares each check's reads in `audit/engine/audit/rules/reads.py`. After
 you change a declaration, run `python3 dev/consistency_map_reads.py --write` to rewrite the part.
 
