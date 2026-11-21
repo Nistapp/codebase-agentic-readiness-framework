@@ -165,7 +165,8 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#execution-determinism).
   at best (consistency unverified), never `PASS`. Verify by reading `build.gradle` and `gradle.lockfile`
   directly, then record the finding as [engine-limit debt](#continue-on-error).
 - Invoke only through the wrapper (`./gradlew`). Then "`EXEC-06` Documented commands resolve" finds the wrapper
-  for each documented Gradle command.
+  for each documented Gradle command. The rule is in
+  [`spec/command-surface.md`](../../spec/command-surface.md#spelling-per-runner).
 
 ### Node (npm, pnpm, yarn)
 

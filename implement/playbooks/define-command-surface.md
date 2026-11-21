@@ -114,7 +114,8 @@ Profile: [`stacks/java.md`](../../audit/stacks/java.md#command-surface-map).
   ratchet or baseline mode (`configure-quality-tools`), or `check` turns red on today's code.
 - `typecheck` = `compileJava compileTestJava` (javac is the type checker). `-Xlint:all -Werror` is a later,
   owner-chosen hardening, not T1.
-- Invoke only through the wrapper (`./gradlew <task>`), never a system `gradle`.
+- Invoke only through the wrapper (`./gradlew <task>`), never a system `gradle`. The rule is in
+  [`spec/command-surface.md`](../../spec/command-surface.md#spelling-per-runner).
 
 ### Node (npm, pnpm, yarn)
 
