@@ -257,7 +257,9 @@ flowchart LR
 4. Emit a short human `summary`. Where the check has table-shaped facts, also emit a typed `data` payload from
    `audit/rules/payloads.py` (ADR-0007). The renderer builds check tables from the payload `kind`, never
    from prose. Editorial wording belongs in `audit/report/presentation.py`, not in the check.
-5. Add a broken fixture that fails exactly this check and nothing else.
+5. Add a broken fixture that fails exactly this check and nothing else. Add its row to the fixture matrix table
+   of the check's family, `tests/packs/<family>/matrix.py`. A fixture that belongs to no one family goes in
+   `tests/packs/cross_family/matrix.py`.
 6. Declare what the check reads in `audit/rules/reads.py`: the places, the text and the binding. Take the paths
    from the check's own constant with `_held` where one exists. Give a place `via` when the scan's file kinds or
    component detection read it before the check runs. Give it `case=FOLD` when the check lower-cases the name. Set
