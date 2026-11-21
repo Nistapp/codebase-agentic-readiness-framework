@@ -1,0 +1,36 @@
+[
+  {
+    "check": "IDX-01",
+    "home": {
+      "path": "implement/playbooks/register-index.md",
+      "quote": "`project-file`: create the harness's project config with one server entry named `codebase-memory-mcp`.",
+      "section": "implement/playbooks/register-index.md#playbook-register-index/steps/generic"
+    },
+    "move": "register-index/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "IDX-01",
+    "move": "register-index/row-2",
+    "reason": "Not a real pair: IDX-01 reads the MCP config files (.mcp.json and the other harness configs) and the user configs under $HOME. An AGENTS.md line is not read, so it cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "IDX-01",
+    "move": "register-index/row-3",
+    "reason": "Not a real pair: IDX-01 reads the MCP config files and the user configs under $HOME. A registration section in AGENTS.md or docs/ is not read, so on the document-only route it cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "IDX-02",
+    "move": "register-index/row-4",
+    "reason": "Not a real pair: IDX-02 looks for the index store under $HOME or at .codebase-memory/graph.db.zst and reads its projects table. An ignore rule for a harness copy is not read, so it cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "IDX-03",
+    "move": "register-index/row-5",
+    "reason": "Not a real pair: IDX-03 compares the index store's revision or time with HEAD and reads no repository text. A freshness line in AGENTS.md cannot change the verdict.",
+    "status": "accepted"
+  }
+]

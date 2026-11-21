@@ -1,0 +1,91 @@
+[
+  {
+    "action": "write",
+    "content": [
+      "heading",
+      "rule-line",
+      "code-span"
+    ],
+    "id": "add-deny-rules/row-1",
+    "note": "Adds a rule per concern to the prohibitions section, or a new Do not section when none exists.",
+    "origin": {
+      "path": "implement/playbooks/add-deny-rules.md",
+      "row": 1,
+      "step": "Step 3"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-07",
+      "CON-01",
+      "CON-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "rule-line"
+    ],
+    "id": "add-deny-rules/row-2",
+    "origin": {
+      "path": "implement/playbooks/add-deny-rules.md",
+      "row": 2,
+      "step": "Step 4"
+    },
+    "to": [
+      ".gitignore"
+    ],
+    "touches": [
+      "DOC-03",
+      "CON-03"
+    ]
+  },
+  {
+    "action": "untrack",
+    "content": [
+      "file"
+    ],
+    "from": [
+      "artefacts/",
+      "artifacts/",
+      ".codebase-memory/",
+      ".opencode/",
+      ".agentic-tdd/"
+    ],
+    "id": "add-deny-rules/row-3",
+    "note": "Untracks scratch files with git rm --cached; the working-tree copies stay, and the scan no longer sees them.",
+    "origin": {
+      "path": "implement/playbooks/add-deny-rules.md",
+      "row": 3,
+      "step": "Step 4"
+    },
+    "touches": [
+      "DOC-03",
+      "CON-03",
+      "NAV-03",
+      "SEC-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-deny-rules/row-4",
+    "note": "Permission keys only, in a harness file that already exists; no check reads them.",
+    "origin": {
+      "path": "implement/playbooks/add-deny-rules.md",
+      "row": 4,
+      "step": "Step 6"
+    },
+    "to": [
+      ".claude/settings.json",
+      "opencode.json",
+      ".codex/config.toml"
+    ],
+    "touches": [
+      "AGT-07"
+    ]
+  }
+]

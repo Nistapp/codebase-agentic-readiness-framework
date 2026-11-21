@@ -1,0 +1,418 @@
+[
+  {
+    "check": "EXEC-02",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "One exception keeps the tree working: a lockfile goes in the same commit as the manifest change that regenerates it.",
+      "section": "implement/SKILL.md#implement/stage-3-apply/what-one-commit-holds"
+    },
+    "move": "configure-quality-tools/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-01",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Config present, `format` and `format:check` resolve, `format:check` exits 0 (ratchet)",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+    },
+    "move": "configure-quality-tools/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-07",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Add the config file (or reuse the existing one) and the dependency, pinned to an exact version.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-2",
+    "note": "Reusing the existing config keeps one formatter config per concern.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-01",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "`format` writes, `format:check` reads.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-2",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-01",
+    "move": "configure-quality-tools/row-3",
+    "reason": "Not a real pair: TOOL-01 credits a formatter config name and a resolved format verb (check_tool01). It never reads a script under scripts/, so creating the changed-files script cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "TOOL-02",
+    "move": "configure-quality-tools/row-3",
+    "reason": "Not a real pair: TOOL-02 credits a linter config name and a resolved lint verb. It never reads a script under scripts/, so creating the changed-files script cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "`format` writes, `format:check` reads.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-4",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Add the config file (or reuse the existing one) and the dependency, pinned to an exact version.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-4",
+    "note": "Inferred: the verb calls the dependency the manifest pins.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-01",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Config present, `format` and `format:check` resolve, `format:check` exits 0 (ratchet)",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+    },
+    "move": "configure-quality-tools/row-4",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Its job is outside the merge gate's `needs`, and its name says report-only.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-5",
+    "note": "The full format:check runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
+    "status": "kept"
+  },
+  {
+    "check": "CI-02",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "CI-03",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-01",
+    "move": "configure-quality-tools/row-5",
+    "reason": "Not a real pair: TOOL-01 reads formatter configs and the runner manifests, never a CI workflow. A report-only format:check step in CI cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "EXEC-02",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "One exception keeps the tree working: a lockfile goes in the same commit as the manifest change that regenerates it.",
+      "section": "implement/SKILL.md#implement/stage-3-apply/what-one-commit-holds"
+    },
+    "move": "configure-quality-tools/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-02",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Config present, `lint` resolves, read-only (`git status` clean), exits 0 under the ratchet",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+    },
+    "move": "configure-quality-tools/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-07",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Add the config file (or reuse the existing one) and the dependency, pinned to an exact version.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-7",
+    "note": "Reusing the existing config keeps one lint config per concern.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-02",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "`lint` is read-only; the auto-fix form is a separate write verb.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "`lint` is read-only; the auto-fix form is a separate write verb.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Add the config file (or reuse the existing one) and the dependency, pinned to an exact version.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-9",
+    "note": "Inferred: the verb calls the dependency the manifest pins.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-02",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Config present, `lint` resolves, read-only (`git status` clean), exits 0 under the ratchet",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+    },
+    "move": "configure-quality-tools/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Its job is outside the merge gate's `needs`, and its name says report-only.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-10",
+    "note": "The full lint runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
+    "status": "kept"
+  },
+  {
+    "check": "CI-02",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-10",
+    "status": "kept"
+  },
+  {
+    "check": "CI-03",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-10",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-02",
+    "move": "configure-quality-tools/row-10",
+    "reason": "Not a real pair: TOOL-02 reads linter configs and the runner manifests, never a CI workflow. A report-only lint step in CI cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "EXEC-07",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Add the config file (or reuse the existing one) and the dependency, pinned to an exact version.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-11",
+    "note": "Reusing the existing config keeps one type-check config per concern.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-03",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Strict flag on where the codebase allows; `typecheck` exits 0.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+    },
+    "move": "configure-quality-tools/row-11",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-03",
+    "move": "configure-quality-tools/row-12",
+    "reason": "Not a real pair: TOOL-03 reads the strict settings of the type-checker configs and the typecheck verb's --strict flag (_typecheck_signals). It never reads a script under scripts/, so creating the strict ratchet script cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "TOOL-03",
+    "move": "configure-quality-tools/row-13",
+    "reason": "Not a real pair: TOOL-03 reads the type-checker configs and the typecheck verb, never a debt list. strict-debt.txt cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Add the config file (or reuse the existing one) and the dependency, pinned to an exact version.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-14",
+    "note": "Inferred: the verb calls the dependency the manifest pins.",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "A read-only verb never writes: no `--fix`, `--write` or `audit fix`, no `tsc` without `--noEmit`, no install.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-14",
+    "note": "CMD-04 reads tsc without --noEmit in typecheck as a build writer.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-03",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Strict flag on where the codebase allows; `typecheck` exits 0.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/verification"
+    },
+    "move": "configure-quality-tools/row-14",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Its job is outside the merge gate's `needs`, and its name says report-only.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-15",
+    "note": "The full type check runs as a report-only step outside the merge gate's needs, with its count and review date in a comment beside the step, which the CI-04 rubric's report-only clause accepts.",
+    "status": "kept"
+  },
+  {
+    "check": "CI-02",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-15",
+    "status": "kept"
+  },
+  {
+    "check": "CI-03",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "It runs a local verb or the tool by name, never a runner target that no local runner defines.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-15",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-03",
+    "move": "configure-quality-tools/row-15",
+    "reason": "Not a real pair: TOOL-03 reads the type-checker configs and the runner manifests, never a CI workflow. A report-only type check in CI cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "EXEC-02",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "One exception keeps the tree working: a lockfile goes in the same commit as the manifest change that regenerates it.",
+      "section": "implement/SKILL.md#implement/stage-3-apply/what-one-commit-holds"
+    },
+    "move": "configure-quality-tools/row-16",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Reuse a scan command the repository already runs in CI rather than adding a second scanner.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-16",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "A read-only verb never writes: no `--fix`, `--write` or `audit fix`, no `tsc` without `--noEmit`, no install.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-17",
+    "note": "security is a read-only verb; an audit fix or an install form would make CMD-04 fail.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "`security` runs a dependency-vulnerability scan with a fixed severity threshold.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-17",
+    "status": "kept"
+  },
+  {
+    "check": "CI-02",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Then run the verb in CI as its own job, beside the `check` job.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-18",
+    "note": "The CI job runs the local security verb, so the CI verb has a definition.",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "A scan that is red on day one gets a report-only job outside the merge gate's `needs`, named report-only. A comment beside the step holds its count and review date, as CI-04 accepts.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-18",
+    "note": "A red security job is report-only outside the merge gate's needs, with its count and review date committed beside the step; CI-04 reads PARTIAL, not PASS, while the verb gates nowhere else.",
+    "status": "kept"
+  },
+  {
+    "check": "CI-03",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "Then run the verb in CI as its own job, beside the `check` job.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-18",
+    "note": "The CI job calls the local security verb, so CI-03 finds no target without a local definition.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-04",
+    "home": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "quote": "TOOL-04 reads `PARTIAL` when only one of the two runs the scan.",
+      "section": "implement/playbooks/configure-quality-tools.md#playbook-configure-quality-tools/steps"
+    },
+    "move": "configure-quality-tools/row-18",
+    "status": "kept"
+  }
+]

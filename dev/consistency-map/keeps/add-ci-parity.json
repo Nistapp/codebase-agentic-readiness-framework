@@ -1,0 +1,342 @@
+[
+  {
+    "check": "CI-01",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "| CI-01 | Read the workflow's trigger block | A pull-request trigger |",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/verification"
+    },
+    "move": "add-ci-parity/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "CI-02",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "In a wrapper repository: edit the wrapper first so it calls the verb, run the wrapper locally,",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-2",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-04",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "A wrapper uses only CI's own variables or the names the example env file lists.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-2",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-04",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Call a verb on one `run:` line in the runner's own form (`make security`, `npm run security`).",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-3",
+    "note": "Kept for the direct route; on the wrapper route (Inputs 1) the engine cannot follow the wrapper, and the step tells the owner.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-06",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Call a verb on one `run:` line in the runner's own form (`make security`, `npm run security`).",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-3",
+    "note": "Kept for the direct route; on the wrapper route (Inputs 1) the engine cannot follow the wrapper, and the step tells the owner.",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Do not weaken a gate that already blocks.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "CI-02",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Every verb CI runs is the local verb with the same arguments; local run is green",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/verification"
+    },
+    "move": "add-ci-parity/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "CI-03",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Every CI-only step is named so and listed in the CI doc",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/verification"
+    },
+    "move": "add-ci-parity/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-05",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+      "section": "implement/SKILL.md#implement/stage-3-apply"
+    },
+    "move": "add-ci-parity/row-4",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "When the CI doc is the root README, list the CI-only steps as prose or a table, not in a fenced block.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-4",
+    "status": "kept"
+  },
+  {
+    "check": "HYG-01",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Write no stub word such as `TODO` there:",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-4",
+    "status": "kept"
+  },
+  {
+    "check": "CI-03",
+    "move": "add-ci-parity/row-4",
+    "reason": "Not a real pair: the engine's CI-03 reads the run lines of the CI files and the local runner targets they call. A CI doc in docs/ or README.md is not read, so listing the CI-only steps there cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "CI-02",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Every CI command must exist locally; a CI-only step (an image scan, a deploy) is named so (`CI-only: ...`) and listed in the CI doc.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "CI-03",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Every CI command must exist locally; a CI-only step (an image scan, a deploy) is named so (`CI-only: ...`) and listed in the CI doc.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Keep the pin in a manifest that dependency automation reads, such as a Go tool module or a `package.json`.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/inputs-to-ask"
+    },
+    "move": "add-ci-parity/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "A placeholder that prints \"skipped\" and exits 0 is replaced by the real scan or deleted with the reason recorded.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-07",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Use the existing one or the `scanner.choice` preference.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/inputs-to-ask"
+    },
+    "move": "add-ci-parity/row-6",
+    "note": "Reusing the scanner keeps its one config, so no second security config sits at the root (inferred).",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "A blocking scan with debt uses an ignore list with a reason and an expiry per entry, so the gate blocks on new findings only.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "HYG-11",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Do not rename the job; a rename silently un-requires it.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-7",
+    "note": "HYG-11 reads the job names in the required checks; the row edits the merge-gate job and never renames it.",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "The aggregate job (the one the platform requires) lists every blocking job in `needs`, runs `if: always()`, and fails on anything but success or skipped.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-05",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+      "section": "implement/SKILL.md#implement/stage-3-apply"
+    },
+    "move": "add-ci-parity/row-8",
+    "status": "kept"
+  },
+  {
+    "check": "HYG-11",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Put `branch-protection` in the page's path, such as `docs/branch-protection.md`",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-8",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Commit a short page in `docs/` (or the repository's CI doc): mechanism, required check name, up-to-date setting, bypass actors, the date the owner confirmed, and the exact read-only command that re-checks it.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-8",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-02",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "The pin carries its lockfile, so",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/rollback"
+    },
+    "move": "add-ci-parity/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Pin its version where the repository pins its other dev tools, never in the workflow alone.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/inputs-to-ask"
+    },
+    "move": "add-ci-parity/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "CI-05",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Add the chosen linter to the local surface (the route from Inputs 6).",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "CI-04",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Do not weaken a gate that already blocks.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-10",
+    "status": "kept"
+  },
+  {
+    "check": "HYG-11",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "A fix keeps the line that reads the pull request's source branch (`github.head_ref`) outside a `group:` or `ref:` key.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-10",
+    "status": "kept"
+  },
+  {
+    "check": "CI-05",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Fix what the linter reports in the workflows you edit.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-10",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Pin its version where the repository pins its other dev tools, never in the workflow alone.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/inputs-to-ask"
+    },
+    "move": "add-ci-parity/row-11",
+    "status": "kept"
+  },
+  {
+    "check": "CI-05",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Add the chosen linter to the local surface (the route from Inputs 6).",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-11",
+    "status": "kept"
+  },
+  {
+    "check": "CI-03",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Run the same command in CI as a blocking step, beside the gate.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Pin its version where the repository pins its other dev tools, never in the workflow alone.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/inputs-to-ask"
+    },
+    "move": "add-ci-parity/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "CI-05",
+    "home": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "quote": "Run the same command in CI as a blocking step, beside the gate.",
+      "section": "implement/playbooks/add-ci-parity.md#playbook-add-ci-parity/steps/generic"
+    },
+    "move": "add-ci-parity/row-12",
+    "status": "kept"
+  }
+]

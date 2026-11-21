@@ -455,7 +455,7 @@
   "$id": "urn:codebase-agentic-readiness-framework:consistency-map:1",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "The consistency map, joined from dev/consistency-map.json (every part but names) and dev/consistency-map-names.json (map_format and names): what each check reads (reads), what each playbook Commits row and greenfield template writes or moves (moves), the rules that keep the two in step (keeps), the file names the engine gives a meaning to (names) and the implement run's boundaries (boundaries).",
+  "description": "The consistency map, joined from the part files that dev/consistency-map/index.json lists: what each check reads (reads), what each playbook Commits row and greenfield template writes or moves (moves), the rules that keep the two in step (keeps), the file names the engine gives a meaning to (names) and the implement run's boundaries (boundaries).",
   "properties": {
     "boundaries": {
       "items": {

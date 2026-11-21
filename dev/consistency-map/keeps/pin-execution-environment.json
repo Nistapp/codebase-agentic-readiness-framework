@@ -1,0 +1,139 @@
+[
+  {
+    "check": "EXEC-01",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "One pin per ecosystem and component; every other place names the same version",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/verification"
+    },
+    "move": "pin-execution-environment/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Keep the version you already use.",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-2",
+    "note": "EXEC-08 counts a command's tool version as held when packageManager names the same tool at the same version, so the pin can only raise its verdict.",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Invoke only through the wrapper (`./gradlew`).",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps/gradle"
+    },
+    "move": "pin-execution-environment/row-4",
+    "note": "A real path as the first word resolves for EXEC-06.",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-06",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "correct that line in its own small commit once the owner agrees, and look the line up by text, not by the finding's line number (earlier themes move lines).",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-8",
+    "note": "Keeps the edit on the one claimed line, so the boundary lines around it stay as they are; DESIGN 3.5 marks it kept.",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-01",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Give a tool manifest no script named like a verb.",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-01",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "A new tool manifest needs a toolchain pin that reaches it, such as `engines.node` or `requires-python`.",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-02",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "With the place chosen in Inputs 7: add each tool, at the same version, to the manifest, lock it with the tool's own command (`npm install --save-dev --save-exact`, `uv lock`, `go get -tool`), then change each command to read it.",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "HYG-09",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Make sure `dependabot.yml` (or the Renovate config) has an entry for the manifest's ecosystem and directory ([`add-repo-hygiene`](add-repo-hygiene.md), HYG-09).",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-04",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-10",
+    "note": "Inferred from the reads notes: TOOL-04 follows a runner target on a CI line; CI-05 needs the linter's name on a local line.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-06",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-10",
+    "note": "Inferred from the reads notes: TOOL-04 follows a runner target on a CI line; CI-05 needs the linter's name on a local line.",
+    "status": "kept"
+  },
+  {
+    "check": "CI-02",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-10",
+    "note": "Inferred from the reads notes: TOOL-04 follows a runner target on a CI line; CI-05 needs the linter's name on a local line.",
+    "status": "kept"
+  },
+  {
+    "check": "CI-05",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Where a workflow or hook line ran the tool, call the verb there or keep the tool's name on the line",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-10",
+    "note": "Inferred from the reads notes: TOOL-04 follows a runner target on a CI line; CI-05 needs the linter's name on a local line.",
+    "status": "kept"
+  },
+  {
+    "check": "HYG-09",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Copy the form of the existing update entries, with no `target-branch` beside `ignore` or `groups`.",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-11",
+    "status": "kept"
+  }
+]

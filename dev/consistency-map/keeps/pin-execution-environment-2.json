@@ -1,0 +1,77 @@
+[
+  {
+    "check": "NAV-03",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "\"`NAV-03` Structural red flags\" leaves only those names out of its size count.",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-3",
+    "note": "The engine leaves known lockfile names out of the NAV-03 size count (audit.stack.LOCKFILE_NAMES), so the generated lockfile keeps NAV-03 as it was.",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-02",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Gradle: identical resolved versions, lockfile tracked. Node: `npm ci` succeeds and leaves the tree clean",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/verification"
+    },
+    "move": "pin-execution-environment/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-02",
+    "move": "pin-execution-environment/row-4",
+    "reason": "Not a real pair: EXEC-02 reads the lockfiles, whether git tracks them and the manifests beside them. An AGENTS.md line about regenerating the lockfile is not read, so it cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "EXEC-02",
+    "move": "pin-execution-environment/row-5",
+    "reason": "Not a real pair: EXEC-02 reads the lockfiles and the manifests beside them, never a shell script. Switching a start-up script to npm ci cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "EXEC-01",
+    "move": "pin-execution-environment/row-6",
+    "reason": "Not a real pair: EXEC-01 reads the pin files (.nvmrc, .python-version and the others) and the version fields of the manifests. Dockerfiles, compose files and documented prerequisites are not read, so aligning them with the pin cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "EXEC-01",
+    "move": "pin-execution-environment/row-7",
+    "reason": "Not a real pair: EXEC-01 reads the pin files and the manifests' version fields, never a CI workflow. A workflow that reads the pin cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "With the place chosen in Inputs 7: add each tool, at the same version, to the manifest, lock it with the tool's own command (`npm install --save-dev --save-exact`, `uv lock`, `go get -tool`), then change each command to read it.",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "With the place chosen in Inputs 7: add each tool, at the same version, to the manifest, lock it with the tool's own command (`npm install --save-dev --save-exact`, `uv lock`, `go get -tool`), then change each command to read it.",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-10",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/pin-execution-environment.md",
+      "quote": "Make sure `dependabot.yml` (or the Renovate config) has an entry for the manifest's ecosystem and directory ([`add-repo-hygiene`](add-repo-hygiene.md), HYG-09).",
+      "section": "implement/playbooks/pin-execution-environment.md#playbook-pin-execution-environment/steps"
+    },
+    "move": "pin-execution-environment/row-11",
+    "status": "kept"
+  }
+]
