@@ -12,6 +12,7 @@ from __future__ import annotations
 import io
 import json
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -210,6 +211,16 @@ class RealRunTests(unittest.TestCase):
             matrix = golden.engine_matrix()
             with self.assertRaises(_common.ToolError):
                 golden.fixture_report(matrix, "agt-01-missing", Path(tmp))
+
+    def test_a_fixture_outside_needs_git_is_still_copied_into_a_repo(self) -> None:
+        matrix = golden.engine_matrix()
+        self.assertNotIn("agt-01-missing", matrix.NEEDS_GIT)
+        target = golden.prepare_in_git(matrix, "agt-01-missing")
+        try:
+            self.assertTrue((target / ".git").is_dir())
+        finally:
+            shutil.rmtree(target.parent, ignore_errors=True)
+        self.assertNotIn("agt-01-missing", matrix.NEEDS_GIT)
 
     def test_the_report_of_a_git_fixture_does_not_depend_on_where_it_is_built(self) -> None:
         matrix = golden.engine_matrix()

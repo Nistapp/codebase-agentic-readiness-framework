@@ -26,9 +26,9 @@ What makes the digest the same on every run and every machine:
   ``.`` with ``--target-label``. The rest of the report is hashed as it is, with sorted keys.
 * Each fixture runs with ``--no-user-config`` and with an empty ``HOME`` and an absent index store, so the
   machine-local checks (the IDX pack) read no state of the host.
-* A fixture whose check reads git's tracked set is copied into a temporary git repository by the engine's own
-  ``test_fixture_matrix.prepare``, which is reused, not copied. Git's global ignore file of the host still applies
-  to the copy.
+* Every fixture is copied into a temporary git repository by the engine's own ``test_fixture_matrix.prepare``,
+  which is reused, not copied. So the digest does not depend on whether the checkout is a git work tree. Git's
+  global ignore file of the host still applies to the copy.
 * The skill archives are byte-reproducible (``build_skills.write_archive``) and are built with the fixed tag
   ``golden``.
 
@@ -144,10 +144,26 @@ def fixture_names(fixtures: Path = FIXTURES) -> list[str]:
     return sorted(p.name for p in fixtures.iterdir() if p.is_dir())
 
 
+def prepare_in_git(matrix: Any, name: str) -> Path:
+    """A copy of the fixture in a temporary git repository, through the matrix's own ``prepare``.
+
+    Every fixture goes through it, not only the ones the matrix lists in ``NEEDS_GIT``. Otherwise the engine would
+    find the git repository that holds the checkout, and a copy of the tree without ``.git`` would give other
+    reports than the checkout.
+    """
+    listed = matrix.NEEDS_GIT
+    matrix.NEEDS_GIT = listed | {name}
+    try:
+        target: Path = matrix.prepare(name)
+    finally:
+        matrix.NEEDS_GIT = listed
+    return target
+
+
 def fixture_report(matrix: Any, name: str, scratch: Path) -> dict[str, Any]:
     """The stripped engine report of one fixture."""
-    target: Path = matrix.prepare(name)
     out = scratch / f"{name}.json"
+    target = prepare_in_git(matrix, name)
     try:
         argv = [str(target), "--format", "json", "--out", str(out), "--no-user-config", "--target-label", "."]
         code, _stdout, stderr = launcher.run_engine(argv)
@@ -155,8 +171,7 @@ def fixture_report(matrix: Any, name: str, scratch: Path) -> dict[str, Any]:
             raise _common.ToolError(f"the engine failed on fixture {name} (exit {code}): {stderr.strip()}")
         report: dict[str, Any] = json.loads(out.read_text(encoding="utf-8"))
     finally:
-        if target != FIXTURES / name:
-            shutil.rmtree(target.parent, ignore_errors=True)
+        shutil.rmtree(target.parent, ignore_errors=True)
     return strip_report(report)
 
 
