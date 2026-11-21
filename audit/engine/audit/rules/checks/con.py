@@ -67,7 +67,8 @@ from itertools import accumulate
 from pathlib import Path
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.rules.checks._common import (
     directory_decision,
     entry_instruction_file,
@@ -663,6 +664,29 @@ def check_con04(*, spec, target, inventory, stack, components, session) -> Check
 
     return _outcome(spec, Verdict.PASS, f"draft deny list written: {written}")
 
+
+#: The CON checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare(
+        "CON-01",
+        "Allow/deny artifact present",
+        "B",
+        Severity.BLOCKER,
+        rule="The prohibitions section of the instruction file is the deny list (decision 0001): it names at least "
+        "one path or pattern, in a code span, that matches a file or directory of the repository.",
+    ),
+    declare("CON-02", "Test directories protected", "B", Severity.BLOCKER),
+    declare("CON-03", "artefacts/ excluded from index and agent reads", "B", Severity.DEGRADER),
+    declare(
+        "CON-04",
+        "Draft allow/deny emitted",
+        "—",
+        Severity.COSMETIC,
+        scored=False,
+        status="planned",
+        rule="Emitter, not a check: writes a draft list from the scan.",
+    ),
+)
 
 IMPLEMENTATIONS = {
     "CON-01": check_con01,

@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
-from audit.rules.checks import agt, base, ci, cmd, doc, idx, tool
+from audit.rules.checks import agt, base, ci, cmd, con, doc, idx, tool
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -38,26 +38,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     *tool.SPECS,
     *ci.SPECS,
     *base.SPECS,
-    # -- CON ------------------------------------------------------------
-    _c(
-        "CON-01",
-        "Allow/deny artifact present",
-        "B",
-        _S.BLOCKER,
-        rule="The prohibitions section of the instruction file is the deny list (decision 0001): it names at least "
-        "one path or pattern, in a code span, that matches a file or directory of the repository.",
-    ),
-    _c("CON-02", "Test directories protected", "B", _S.BLOCKER),
-    _c("CON-03", "artefacts/ excluded from index and agent reads", "B", _S.DEGRADER),
-    _c(
-        "CON-04",
-        "Draft allow/deny emitted",
-        "—",
-        _S.COSMETIC,
-        scored=False,
-        status="planned",
-        rule="Emitter, not a check: writes a draft list from the scan.",
-    ),
+    *con.SPECS,
     # -- EXEC -----------------------------------------------------------
     _c("EXEC-01", "Toolchain pinned / wrapper committed", "A", _S.BLOCKER),
     _c("EXEC-02", "Lockfile committed and consistent", "B", _S.BLOCKER),
