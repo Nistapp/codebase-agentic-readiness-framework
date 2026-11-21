@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
-from audit.rules.checks import idx
+from audit.rules.checks import agt, idx
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -32,27 +32,7 @@ _S = Severity
 #: The catalogue. Order here is the order in the report and in ``--list-checks``.
 _CATALOGUE: tuple[CheckSpec, ...] = (
     *idx.SPECS,
-    # -- AGT ------------------------------------------------------------
-    _c("AGT-01", "Instruction file present, canonical, and non-trivial", "A", _S.BLOCKER),
-    _c("AGT-02", "Component coverage by instruction files", "A", _S.DEGRADER),
-    _c("AGT-03", "Documentation contract named", "B", _S.DEGRADER),
-    _c("AGT-04", "Definition of done stated", "B", _S.DEGRADER),
-    _c("AGT-05", "Seven verbs named", "B", _S.DEGRADER),
-    _c("AGT-06", "Architectural boundaries declared", "B", _S.DEGRADER),
-    _c("AGT-07", "Do-not-do / deny rules present", "B", _S.DEGRADER),
-    _c("AGT-08", "No competing instruction files, and the reach matrix is stated", "B", _S.DEGRADER),
-    _c("AGT-09", "Branch and release boundary declared", "B", _S.DEGRADER),
-    _c("AGT-10", "Instruction indirection resolved", "B", _S.DEGRADER),
-    _c("AGT-12", "Communication rules stated", "B", _S.COSMETIC),
-    _c(
-        "AGT-13",
-        "Coding conventions written",
-        "B",
-        _S.COSMETIC,
-        rule="A conventions file (root, docs/ or .github/) or a conventions section of AGENTS.md or CONTRIBUTING.md "
-        "covers naming, layering, error handling and logging, and testing, links the formatter or linter config, "
-        "and holds no stub word; docs/STYLE_GUIDE.md never counts.",
-    ),
+    *agt.SPECS,
     # -- DOC ------------------------------------------------------------
     _c("DOC-01", "docs/ exists", "A", _S.DEGRADER),
     _c("DOC-02", "docs/STYLE_GUIDE.md exists", "A", _S.DEGRADER),
