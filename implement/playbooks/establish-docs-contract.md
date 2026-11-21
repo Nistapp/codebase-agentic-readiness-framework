@@ -432,7 +432,8 @@ both with owner consent. `git revert` returns them.
 - Do not mass-reformat or mass-fix existing Markdown, and do not turn off a lint rule to make a count fall.
 - Do not create a second `docs/` or restructure the existing report folders.
 - Do not copy content, paths, names or values from a private repository or workspace into an open-source
-  repository's docs or ADRs, or from any target repository into the framework.
+  repository's docs or ADRs, or from any target repository into the framework. This echoes
+  the hard rule [Keep private content private](../SKILL.md#hard-rules).
 - Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
   fill in". The owner of this rule is rule 10 of the greenfield
   [`ADR_POLICY.md`](../../greenfield/templates/docs/ADR_POLICY.md#rules).

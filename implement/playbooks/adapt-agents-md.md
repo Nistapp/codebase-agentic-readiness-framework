@@ -551,7 +551,7 @@ numbering. A conventions commit (Step 16) reverts alone too.
 - Do not move or rewrite a conventions section in `AGENTS.md` or `CONTRIBUTING.md` unasked, copy a Git rule into the
   conventions, or copy a formatter or linter setting into them.
 - Do not copy content from a private repository or workspace into an open-source one, or from any target into the
-  framework.
+  framework. This echoes the hard rule [Keep private content private](../SKILL.md#hard-rules).
 
 ## State updates
 
