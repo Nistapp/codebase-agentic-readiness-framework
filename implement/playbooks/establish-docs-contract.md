@@ -434,7 +434,8 @@ both with owner consent. `git revert` returns them.
 - Do not copy content, paths, names or values from a private repository or workspace into an open-source
   repository's docs or ADRs, or from any target repository into the framework.
 - Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
-  fill in".
+  fill in". The owner of this rule is rule 10 of the greenfield
+  [`ADR_POLICY.md`](../../greenfield/templates/docs/ADR_POLICY.md#rules).
 - Do not move, resize, delete or untrack files for NAV-03.
 - Do not put values from env files, credentials, realm exports or keystores in any page. Such a value also fails
   "`SEC-02` No key-shaped strings in tracked files".
