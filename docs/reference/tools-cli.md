@@ -163,7 +163,7 @@ The tool checks in three stages. The first reads `schema_version`. A report with
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. The draft's path may be a link: the draft it points to is changed, and the link stays a link. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../audit/tools/report.py).
 
-The subcommands are `init`, `import-engine`, `add-check`, `add-finding`, `set-disposition`, `set-stack-profile`, `status` and `finalise`.
+The subcommands are `init`, `import-engine`, `run-engine`, `add-check`, `add-finding`, `set-disposition`, `set-stack-profile`, `status` and `finalise`.
 
 Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step. The tool
 reads and validates the draft, makes the change, recomputes the summary and validates the result. Only then does it
@@ -177,6 +177,7 @@ changed.
 ```text
 python3 audit/tools/report.py init <intake>
 python3 audit/tools/report.py import-engine <draft> <engine report>
+python3 audit/tools/report.py run-engine <draft> --out-dir DIR
 python3 audit/tools/report.py add-check <draft> --from FILE|-
 python3 audit/tools/report.py add-finding <draft> --from FILE|-
 python3 audit/tools/report.py set-disposition <draft> --via VIA
@@ -315,6 +316,43 @@ Nothing the engine said is dropped without a warning, except a placeholder and a
 | `this draft already holds an engine report (ruleset H)` | Start a new draft with `init`. |
 | `the draft already records X` | The draft holds a check the engine reports. Start a new draft. |
 | `the change would leave the draft invalid, so nothing was written` | `data.errors` names the rule and the place, for example an engine finding more severe than its check (rule 7). |
+
+### run-engine
+
+Runs [`engine.py`](#enginepy) with the flags the draft's intake recorded, then imports the report it wrote, as
+[`import-engine`](#import-engine) does. It is Stage 2, steps 1 and 2 of the [audit recipe](../../audit/SKILL.md) in
+one call.
+
+```text
+python3 audit/tools/report.py run-engine <draft> --out-dir DIR
+```
+
+| Argument | Meaning |
+|---|---|
+| `<draft>` | The draft to change. It must not hold an engine report yet. |
+| `--out-dir DIR` | Where the engine's report and `do-not-do.draft.md` go. Required. It must be outside the target; `engine.py` refuses one inside. |
+
+The engine gets the draft's target and label, and these flags:
+
+- `--no-user-config` and `--emit-baseline`, always;
+- `--exclude` for each path in `run_context.excluded`;
+- `--run-gates`, `--allow-probe` for each verb in `run_context.probes.allowed`, and `--timeout` with
+  `run_context.probes.timeout_s`, only when at least one verb is allowed.
+
+A final report, or a draft that already holds an engine report, is refused before the engine runs. So no engine
+report is written for nothing.
+
+**Outputs.** `data` is the `data` of `import-engine`, with `engine_run` first: the `data` of `engine.py` (`report`,
+`label`, `stamp`, `target`, `baseline_draft` and `engine`). The warnings of both come in that order.
+
+**Exit codes.** Each code means:
+
+| Code | When |
+|---|---|
+| `0` | The engine ran, and its report was imported. |
+| `1` | A bad argument, a missing `--out-dir`, or a missing or final draft. Or `--out-dir` is inside the target, the engine refused the run, or `import-engine` gives exit 1. |
+| `2` | The draft is not valid, already holds an engine report, or the import failed validation, as for `import-engine`. The engine's report stays in `--out-dir`. |
+| `3` | The engine failed, or an internal error. The draft is not changed. |
 
 ### Fragments
 
@@ -545,7 +583,7 @@ The draft may be final: `status` then reports it and says it is already final. A
 | The draft | `next` starts with | `next_command` |
 |---|---|---|
 | Is final | `Nothing: the report is final.` | `null` |
-| Holds no engine report yet | `Stage 2, step 1:` | `engine.py` with the flags the intake recorded: `--repo-label`, `--no-user-config`, each `--exclude`, `--run-gates` with each `--allow-probe` verb and `--timeout` when a verb is allowed, and `--emit-baseline`. `--out-dir` is the draft's folder. |
+| Holds no engine report yet | `Stage 2, steps 1 and 2:` | `report.py run-engine <draft> --out-dir <the draft's folder>` |
 | Has a family with a check not recorded | `Stage 2, step 3:`, naming the first such family in the catalogue's order | `report.py add-check <draft> --from -` |
 | Is an eval-mode run | `Stage 5, step 1:`: stop at the draft (the eval-mode lines of Stages 4 and 5) | `null` |
 | Has a pending `BLOCKER` finding | `Stage 4, step 2:`, naming it | `report.py set-disposition <draft> --via interactive --finding <id> --disposition <disposition>` |

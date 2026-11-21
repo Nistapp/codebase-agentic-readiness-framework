@@ -32,6 +32,7 @@ import _paths
 import _common
 import _git
 import _summary
+import engine as engine_launcher
 import render_report
 import report as rb
 import validate_report as vr
@@ -1825,48 +1826,18 @@ class NextStepTests(BuilderCase):
         document["summary"] = _summary.compute_summary(document)
         draft.write_text(rb.dumps(document), encoding="utf-8")
 
-    def test_a_draft_with_no_engine_import_runs_the_engine_with_the_intake_flags(self) -> None:
-        draft = self.start(
-            excluded=["vendor/*", "docs/old notes/*"],
-            probes={"allowed": ["lint", "test"], "timeout_s": 90},
-            repo_label="svc",
-        )
+    def test_a_draft_with_no_engine_import_runs_the_engine(self) -> None:
+        draft = self.start()
         step, command = self.next_of(draft)
-        self.assertTrue(step.startswith("Stage 2, step 1: "), step)
-        self.assertIsNotNone(command)
-        assert command is not None
-        self.assertEqual(
-            shlex.split(command),
-            [
-                "python3",
-                "audit/tools/engine.py",
-                str(self.target),
-                "--out-dir",
-                str(self.out),
-                "--repo-label",
-                "svc",
-                "--no-user-config",
-                "--exclude",
-                "vendor/*",
-                "--exclude",
-                "docs/old notes/*",
-                "--run-gates",
-                "--allow-probe",
-                "lint",
-                "--allow-probe",
-                "test",
-                "--timeout",
-                "90",
-                "--emit-baseline",
-            ],
-        )
+        self.assertTrue(step.startswith("Stage 2, steps 1 and 2: "), step)
+        self.assertEqual(command, f"python3 audit/tools/report.py run-engine {draft} --out-dir {self.out}")
 
-    def test_no_allowed_verb_runs_no_gate(self) -> None:
-        _, command = self.next_of(self.start())
+    def test_a_path_with_a_space_is_quoted_in_the_command(self) -> None:
+        self.out = self.root / "audit runs"
+        draft = self.start()
+        _, command = self.next_of(draft)
         assert command is not None
-        self.assertNotIn("--run-gates", command)
-        self.assertNotIn("--timeout", command)
-        self.assertTrue(command.endswith("--no-user-config --emit-baseline"), command)
+        self.assertEqual(shlex.split(command)[3:], [str(draft), "--out-dir", str(self.out)])
 
     def test_a_family_left_names_the_first_one_in_catalogue_order(self) -> None:
         draft = self.engine_draft()
@@ -1935,7 +1906,7 @@ class NextStepTests(BuilderCase):
     def test_an_eval_draft_with_no_engine_import_still_runs_the_engine(self) -> None:
         draft = self.draft_with_findings(["a"], confirmation_policy="accept-all", eval_mode=True)
         step, _ = self.next_of(draft)
-        self.assertTrue(step.startswith("Stage 2, step 1: "), step)
+        self.assertTrue(step.startswith("Stage 2, steps 1 and 2: "), step)
 
     def test_a_final_report_has_no_next_command(self) -> None:
         worked = next((TOOLS.parent / "schema" / "examples").glob("example-service.audit-report.*.json"))
@@ -1951,6 +1922,122 @@ class NextStepTests(BuilderCase):
         relative = os.path.relpath(draft)
         _, command = self.next_of(Path(relative))
         self.assertEqual(command, f"python3 audit/tools/report.py add-check {draft} --from -")
+
+
+class RunEngineTests(BuilderCase):
+    """`run-engine` runs the engine with the flags the intake recorded, then imports its report, once."""
+
+    def run_engine(self, draft: Path, out_dir: Path | None = None) -> tuple[int, dict[str, Any], str]:
+        return call(["run-engine", str(draft), "--out-dir", str(out_dir or self.root / "engine")])
+
+    def test_the_engine_gets_every_flag_the_intake_recorded(self) -> None:
+        draft = self.start(
+            excluded=["vendor/*", "docs/old notes/*"],
+            probes={"allowed": ["lint", "test"], "timeout_s": 90},
+            repo_label="svc",
+        )
+        self.assertEqual(
+            rb.engine_arguments(read_json(draft), self.root / "engine"),
+            [
+                str(self.target),
+                "--out-dir",
+                str(self.root / "engine"),
+                "--repo-label",
+                "svc",
+                "--no-user-config",
+                "--exclude",
+                "vendor/*",
+                "--exclude",
+                "docs/old notes/*",
+                "--run-gates",
+                "--allow-probe",
+                "lint",
+                "--allow-probe",
+                "test",
+                "--timeout",
+                "90",
+                "--emit-baseline",
+            ],
+        )
+
+    def test_no_allowed_verb_runs_no_gate(self) -> None:
+        argv = rb.engine_arguments(read_json(self.start()), self.root / "engine")
+        self.assertNotIn("--run-gates", argv)
+        self.assertNotIn("--timeout", argv)
+        self.assertEqual(argv[-2:], ["--no-user-config", "--emit-baseline"])
+
+    def test_it_runs_the_engine_and_imports_its_report(self) -> None:
+        (self.target / "README.md").write_text("# My service\n", encoding="utf-8")
+        draft = self.start()
+        code, envelope, stderr = self.run_engine(draft)
+        self.assertEqual(code, 0, (envelope, stderr))
+        data = envelope["data"]
+        report = Path(data["engine_run"]["report"])
+        self.assertEqual(report.parent, self.root / "engine")
+        self.assertTrue(report.is_file())
+        self.assertTrue((self.root / "engine" / "do-not-do.draft.md").is_file())
+        self.assertEqual(data["engine_report"], str(report.resolve()))
+        self.assertGreater(data["checks_imported"], 0)
+        self.assertIn("engine", read_json(draft)["provenance"])
+        self.assertTrue(stderr.startswith(f"report: the engine wrote {report.name}; imported "), stderr)
+        step = call(["status", str(draft)])[1]["data"]["next"]
+        self.assertTrue(step.startswith("Stage 2, step 3: "), step)
+
+    def test_the_engine_is_called_with_the_draft_flags(self) -> None:
+        draft = self.start(excluded=["vendor/*"], repo_label="svc")
+        seen: list[list[str]] = []
+
+        def fake(argv: Sequence[str]) -> _common.Result:
+            seen.append(list(argv))
+            raise _common.UsageError("stop here")
+
+        with mock.patch.object(engine_launcher, "handler", fake):
+            code, _, _ = self.run_engine(draft)
+        self.assertEqual(code, 1)
+        self.assertEqual(seen, [rb.engine_arguments(read_json(draft), self.root / "engine")])
+
+    def test_a_draft_that_holds_an_engine_report_is_refused_before_the_engine_runs(self) -> None:
+        draft = self.engine_draft()
+        before = draft.read_bytes()
+        code, envelope, _ = self.run_engine(draft)
+        self.assertEqual(code, 2)
+        self.assertIn("already holds an engine report", envelope["data"]["error"])
+        self.assertEqual(draft.read_bytes(), before)
+        self.assertFalse((self.root / "engine").exists())
+
+    def test_a_final_report_is_refused(self) -> None:
+        worked = next((TOOLS.parent / "schema" / "examples").glob("example-service.audit-report.*.json"))
+        self.out.mkdir()
+        copy = self.out / worked.name
+        shutil.copyfile(worked, copy)
+        code, envelope, _ = self.run_engine(copy)
+        self.assertEqual(code, 1)
+        self.assertIn("is a final report", envelope["data"]["error"])
+
+    def test_an_output_folder_inside_the_target_is_refused_and_nothing_is_imported(self) -> None:
+        draft = self.start()
+        before = draft.read_bytes()
+        code, envelope, _ = self.run_engine(draft, self.target / "reports")
+        self.assertEqual(code, 1)
+        self.assertIn("inside the target", envelope["data"]["error"])
+        self.assertEqual(draft.read_bytes(), before)
+        self.assertFalse((self.target / "reports").exists())
+
+    def test_an_engine_failure_is_exit_3_and_leaves_the_draft(self) -> None:
+        draft = self.start()
+        before = draft.read_bytes()
+
+        def broken(argv: Sequence[str]) -> _common.Result:
+            raise _common.ToolError("the engine exited with code 4: boom")
+
+        with mock.patch.object(engine_launcher, "handler", broken):
+            code, envelope, _ = self.run_engine(draft)
+        self.assertEqual(code, 3)
+        self.assertEqual(draft.read_bytes(), before)
+
+    def test_out_dir_is_required(self) -> None:
+        code, envelope, _ = call(["run-engine", str(self.start())])
+        self.assertEqual((code, envelope["ok"]), (1, False))
 
 
 class FinaliseTests(BuilderCase):
