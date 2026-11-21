@@ -47,7 +47,8 @@ from __future__ import annotations
 import re
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.ignore import IgnoreRule, decide, decide_path
 from audit.rules.checks._common import scoped_rules, tracked_and_ignored, tracked_in_scope
 from audit.rules.checks._secret_allowlist import SecretAllowlist, load_secret_allowlist
@@ -662,6 +663,13 @@ def _committed_key_material(target, inventory, rules: list[IgnoreRule]) -> list[
         if (label := _key_material(rel)) is not None
     ]
 
+
+#: The SEC checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("SEC-01", ".env untracked and ignored", "B", Severity.BLOCKER),
+    declare("SEC-02", "No key-shaped strings in tracked files", "B", Severity.BLOCKER),
+    declare("SEC-03", "Ignore patterns cover secret shapes", "B", Severity.DEGRADER),
+)
 
 IMPLEMENTATIONS = {
     "SEC-01": check_sec01,

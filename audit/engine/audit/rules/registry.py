@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
-from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, idx, nav, tool, tst
+from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, idx, nav, sec, tool, tst
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -42,10 +42,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     *execution.SPECS,
     *tst.SPECS,
     *nav.SPECS,
-    # -- SEC ------------------------------------------------------------
-    _c("SEC-01", ".env untracked and ignored", "B", _S.BLOCKER),
-    _c("SEC-02", "No key-shaped strings in tracked files", "B", _S.BLOCKER),
-    _c("SEC-03", "Ignore patterns cover secret shapes", "B", _S.DEGRADER),
+    *sec.SPECS,
     # -- HYG (informational, never scored) -------------------------------
     _c("HYG-01", "README present and non-placeholder", "A", _S.COSMETIC, scored=False),
     _c("HYG-02", "CODEOWNERS present", "A", _S.COSMETIC, scored=False),
