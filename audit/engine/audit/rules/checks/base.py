@@ -55,7 +55,8 @@ from __future__ import annotations
 import re
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.rules.checks._common import README, entry_documents, resolve_verbs
 from audit.scan import Inventory
 from audit.stack import CI_PROVIDERS
@@ -582,6 +583,14 @@ def check_base04(*, spec, target, inventory, stack, components, session) -> Chec
         spec, "no recognised ecosystem or test-runner configuration, so a coverage floor cannot be ruled out"
     )
 
+
+#: The BASE checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("BASE-01", "Baseline artifact exists", "A", Severity.DEGRADER),
+    declare("BASE-02", "Current violation counts measured", "B", Severity.DEGRADER),
+    declare("BASE-03", "No-new-violations mechanism", "B", Severity.DEGRADER),
+    declare("BASE-04", "Coverage floor configured", "A", Severity.DEGRADER),
+)
 
 IMPLEMENTATIONS = {
     "BASE-01": check_base01,
