@@ -164,6 +164,10 @@ make docs-prose FILES=<file.md>
 
 `docs-prose` never fails. Fix the warnings it reports on the lines you changed.
 
+If your change adds a ruleset revision and `dev` gained one meanwhile, run `make ruleset-renumber RULESET_ARGS=check`.
+It lists your revisions and exits 2 when one also exists on `dev`. Merge `origin/dev` into your branch, then run
+`make ruleset-renumber` to move your revisions after the newest one on `dev`. Review the diff and commit.
+
 If you added or changed a Mermaid diagram, also run this for each file:
 
 ```bash
