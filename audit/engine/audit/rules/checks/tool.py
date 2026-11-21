@@ -66,7 +66,8 @@ import json
 import re
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.rules.checks._common import (
     _expand_make,  # noqa: F401 (tested through this module)
     _makefile_variables,  # noqa: F401
@@ -1218,6 +1219,17 @@ def check_tool07(*, spec, target, inventory, stack, components, session) -> Chec
     named = f"; names {', '.join(protected)}" if protected else ""
     return _outcome(spec, Verdict.PASS, f"branch guard at {where}{named}")
 
+
+#: The TOOL checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("TOOL-01", "Formatter configured", "B", Severity.DEGRADER),
+    declare("TOOL-02", "Linter configured", "B", Severity.DEGRADER),
+    declare("TOOL-03", "Type checker configured", "A", Severity.DEGRADER),
+    declare("TOOL-04", "Dependency / security scan verb", "A", Severity.DEGRADER),
+    declare("TOOL-05", "Local hook chain active", "B", Severity.DEGRADER),
+    declare("TOOL-06", "Commit convention enforced", "A", Severity.COSMETIC),
+    declare("TOOL-07", "Local guard against commits to a protected branch", "B", Severity.COSMETIC),
+)
 
 IMPLEMENTATIONS = {
     "TOOL-01": check_tool01,
