@@ -534,9 +534,26 @@ The draft may be final: `status` then reports it and says it is already final. A
 | `families_remaining` | For each family with a check not yet recorded, the IDs of those checks. |
 | `findings`, `findings_pending`, `blockers_pending` | The findings, those waiting for a decision, and the `BLOCKER` ones among them. |
 | `ready_to_finalise`, `blocking` | Whether `finalise` has nothing to stop it, and if not, why in a sentence: an eval-mode run, checks not recorded, findings pending, a `BLOCKER` not decided interactively, or a report that is already final. `finalise` has the last word: it validates the final report. |
+| `next` | What the audit recipe does next, in one sentence that starts with the stage and the step of [`audit/SKILL.md`](../../audit/SKILL.md), for example `Stage 2, step 3: ...`. The rule is the recipe's "Resuming" section; the table below gives it. |
+| `next_command` | The command that does it, with absolute paths, or `null` when there is none; `next` then says why. A part only the person can give stays a placeholder, such as `<disposition>`. |
 | `pending` | The findings waiting for a decision, one line each as `<id> <severity> <key>`, blockers first, as many as fit in the line budget (at most 8). With `--all`, every one that fits the byte budget. |
 | `pending_severity` | The severity given with `--severity`, when one was given. |
 | `pending_omitted` | How many pending findings are not listed, when some are left out. The envelope then has `truncated: true`. |
+
+`next` and `next_command` follow the first row that holds, from the top:
+
+| The draft | `next` starts with | `next_command` |
+|---|---|---|
+| Is final | `Nothing: the report is final.` | `null` |
+| Holds no engine report yet | `Stage 2, step 1:` | `engine.py` with the flags the intake recorded: `--repo-label`, `--no-user-config`, each `--exclude`, `--run-gates` with each `--allow-probe` verb and `--timeout` when a verb is allowed, and `--emit-baseline`. `--out-dir` is the draft's folder. |
+| Has a family with a check not recorded | `Stage 2, step 3:`, naming the first such family in the catalogue's order | `report.py add-check <draft> --from -` |
+| Is an eval-mode run | `Stage 5, step 1:`: stop at the draft (the eval-mode lines of Stages 4 and 5) | `null` |
+| Has a pending `BLOCKER` finding | `Stage 4, step 2:`, naming it | `report.py set-disposition <draft> --via interactive --finding <id> --disposition <disposition>` |
+| Has other pending findings | `Stage 4, step 3:` | `report.py set-disposition <draft> --via batch --from -` |
+| Has a `BLOCKER` finding no person decided alone | `Stage 4, step 2:`, naming it | as for a pending `BLOCKER` |
+| Is ready to finalise | `Stage 5, step 3:` | `report.py finalise <draft>` |
+
+The two keys take two lines of the 40, so the `pending` list fits in what is left.
 
 **Exit codes**
 

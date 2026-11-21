@@ -16,6 +16,7 @@ import io
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -1807,6 +1808,149 @@ class StatusTests(BuilderCase):
         document["provenance"]["target"]["path"] = str(self.root)
         draft.write_text(rb.dumps(document), encoding="utf-8")
         self.assertEqual(self.status(draft)[0], 0)
+
+
+class NextStepTests(BuilderCase):
+    """`status` says what the recipe does next: one rule of audit/SKILL.md's "Resuming" per test."""
+
+    def next_of(self, draft: Path) -> tuple[str, str | None]:
+        code, envelope, stderr = call(["status", str(draft)])
+        self.assertEqual(code, 0, stderr)
+        data = envelope["data"]
+        return data["next"], data["next_command"]
+
+    def rewrite(self, draft: Path, change: Callable[[dict[str, Any]], None]) -> None:
+        document = read_json(draft)
+        change(document)
+        document["summary"] = _summary.compute_summary(document)
+        draft.write_text(rb.dumps(document), encoding="utf-8")
+
+    def test_a_draft_with_no_engine_import_runs_the_engine_with_the_intake_flags(self) -> None:
+        draft = self.start(
+            excluded=["vendor/*", "docs/old notes/*"],
+            probes={"allowed": ["lint", "test"], "timeout_s": 90},
+            repo_label="svc",
+        )
+        step, command = self.next_of(draft)
+        self.assertTrue(step.startswith("Stage 2, step 1: "), step)
+        self.assertIsNotNone(command)
+        assert command is not None
+        self.assertEqual(
+            shlex.split(command),
+            [
+                "python3",
+                "audit/tools/engine.py",
+                str(self.target),
+                "--out-dir",
+                str(self.out),
+                "--repo-label",
+                "svc",
+                "--no-user-config",
+                "--exclude",
+                "vendor/*",
+                "--exclude",
+                "docs/old notes/*",
+                "--run-gates",
+                "--allow-probe",
+                "lint",
+                "--allow-probe",
+                "test",
+                "--timeout",
+                "90",
+                "--emit-baseline",
+            ],
+        )
+
+    def test_no_allowed_verb_runs_no_gate(self) -> None:
+        _, command = self.next_of(self.start())
+        assert command is not None
+        self.assertNotIn("--run-gates", command)
+        self.assertNotIn("--timeout", command)
+        self.assertTrue(command.endswith("--no-user-config --emit-baseline"), command)
+
+    def test_a_family_left_names_the_first_one_in_catalogue_order(self) -> None:
+        draft = self.engine_draft()
+        step, command = self.next_of(draft)
+        self.assertEqual(
+            step, "Stage 2, step 3: assess the Agent Governance (AGT) family, check by check; 1 check not recorded."
+        )
+        self.assertEqual(command, f"python3 audit/tools/report.py add-check {draft} --from -")
+
+    def test_a_pending_blocker_is_asked_on_its_own(self) -> None:
+        draft = self.engine_draft()
+        evidence = [{"kind": "file", "path": "AGENTS.md", "quote": "x"}]
+        for check_id in ("AGT-11", "CI-04"):
+            self.assertEqual(self.add_check(draft, agent_check(id=check_id, evidence=evidence))[0], 0)
+        blocker = rb.pending_findings(read_json(draft))[0]["id"]
+        step, command = self.next_of(draft)
+        self.assertEqual(step, f"Stage 4, step 2: ask the person about BLOCKER finding {blocker}, on its own.")
+        self.assertEqual(
+            command,
+            f"python3 audit/tools/report.py set-disposition {draft} --via interactive --finding {blocker}"
+            " --disposition <disposition>",
+        )
+
+    def test_other_pending_findings_are_asked_in_batches(self) -> None:
+        draft = self.complete_engine_draft()
+        other = next(f["id"] for f in read_json(draft)["findings"] if f["severity"] != "BLOCKER")
+        self.decide(draft, "--finding", other, "--disposition", "pending")
+        step, command = self.next_of(draft)
+        self.assertEqual(step, "Stage 4, step 3: ask the person about the 1 other pending findings, in batches.")
+        self.assertEqual(command, f"python3 audit/tools/report.py set-disposition {draft} --via batch --from -")
+
+    def test_a_blocker_no_person_decided_is_asked_again(self) -> None:
+        draft = self.complete_engine_draft()
+        blocker = next(f["id"] for f in read_json(draft)["findings"] if f["severity"] == "BLOCKER")
+
+        def by_batch(document: dict[str, Any]) -> None:
+            next(f for f in document["findings"] if f["id"] == blocker)["confirmed_via"] = "batch"
+
+        self.rewrite(draft, by_batch)
+        step, command = self.next_of(draft)
+        self.assertTrue(step.startswith(f"Stage 4, step 2: ask the person about BLOCKER finding {blocker} again"))
+        assert command is not None
+        self.assertIn(f"--via interactive --finding {blocker}", command)
+
+    def test_a_ready_draft_is_finalised(self) -> None:
+        draft = self.complete_engine_draft()
+        self.assertEqual(
+            self.next_of(draft),
+            ("Stage 5, step 3: finalise the draft.", f"python3 audit/tools/report.py finalise {draft}"),
+        )
+
+    def test_an_eval_draft_with_every_family_done_stops_at_the_draft(self) -> None:
+        draft = self.complete_engine_draft()
+
+        def to_eval(document: dict[str, Any]) -> None:
+            document["run_context"].update(eval_mode=True, confirmation_policy="defer-all")
+            for finding in document["findings"]:
+                finding["disposition"] = "pending"
+                finding.pop("confirmed_via", None)
+
+        self.rewrite(draft, to_eval)
+        step, command = self.next_of(draft)
+        self.assertTrue(step.startswith("Stage 5, step 1: eval mode, so stop at the draft"), step)
+        self.assertIsNone(command)
+
+    def test_an_eval_draft_with_no_engine_import_still_runs_the_engine(self) -> None:
+        draft = self.draft_with_findings(["a"], confirmation_policy="accept-all", eval_mode=True)
+        step, _ = self.next_of(draft)
+        self.assertTrue(step.startswith("Stage 2, step 1: "), step)
+
+    def test_a_final_report_has_no_next_command(self) -> None:
+        worked = next((TOOLS.parent / "schema" / "examples").glob("example-service.audit-report.*.json"))
+        self.out.mkdir()
+        copy = self.out / worked.name
+        shutil.copyfile(worked, copy)
+        step, command = self.next_of(copy)
+        self.assertTrue(step.startswith("Nothing: the report is final."), step)
+        self.assertIsNone(command)
+
+    def test_a_relative_draft_path_gives_an_absolute_one_in_the_command(self) -> None:
+        draft = self.engine_draft()
+        relative = os.path.relpath(draft)
+        _, command = self.next_of(Path(relative))
+        self.assertEqual(command, f"python3 audit/tools/report.py add-check {draft} --from -")
 
 
 class FinaliseTests(BuilderCase):
