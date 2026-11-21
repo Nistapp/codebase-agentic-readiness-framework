@@ -91,7 +91,8 @@ from collections.abc import Collection
 from dataclasses import dataclass
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.rules.checks._common import (
     extract_documented_commands,
     extract_fenced_commands,
@@ -2096,6 +2097,18 @@ def check_exec08(*, spec, target, inventory, stack, components, session) -> Chec
     )
     return _outcome(spec, verdict, summary, findings)
 
+
+#: The EXEC checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("EXEC-01", "Toolchain pinned / wrapper committed", "A", Severity.BLOCKER),
+    declare("EXEC-02", "Lockfile committed and consistent", "B", Severity.BLOCKER),
+    declare("EXEC-03", "Non-interactive setup path", "A", Severity.BLOCKER),
+    declare("EXEC-04", "Env-var inventory complete", "B", Severity.BLOCKER),
+    declare("EXEC-05", "No generated artifacts committed in-tree", "B", Severity.DEGRADER),
+    declare("EXEC-06", "Documented commands resolve", "B", Severity.DEGRADER),
+    declare("EXEC-07", "No competing configs for one concern", "B", Severity.DEGRADER),
+    declare("EXEC-08", "Tool versions visible to dependency automation", "B", Severity.DEGRADER),
+)
 
 IMPLEMENTATIONS = {
     "EXEC-01": check_exec01,

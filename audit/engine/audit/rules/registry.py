@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
-from audit.rules.checks import agt, base, ci, cmd, con, doc, idx, tool
+from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, idx, tool
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -39,15 +39,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     *ci.SPECS,
     *base.SPECS,
     *con.SPECS,
-    # -- EXEC -----------------------------------------------------------
-    _c("EXEC-01", "Toolchain pinned / wrapper committed", "A", _S.BLOCKER),
-    _c("EXEC-02", "Lockfile committed and consistent", "B", _S.BLOCKER),
-    _c("EXEC-03", "Non-interactive setup path", "A", _S.BLOCKER),
-    _c("EXEC-04", "Env-var inventory complete", "B", _S.BLOCKER),
-    _c("EXEC-05", "No generated artifacts committed in-tree", "B", _S.DEGRADER),
-    _c("EXEC-06", "Documented commands resolve", "B", _S.DEGRADER),
-    _c("EXEC-07", "No competing configs for one concern", "B", _S.DEGRADER),
-    _c("EXEC-08", "Tool versions visible to dependency automation", "B", _S.DEGRADER),
+    *execution.SPECS,
     # -- TST ------------------------------------------------------------
     _c("TST-01", "Test verb exists, suite non-empty", "A", _S.BLOCKER),
     _c("TST-02", "Suite status known", "C", _S.DEGRADER),
