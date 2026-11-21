@@ -1,0 +1,277 @@
+[
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-ci-parity/row-1",
+    "note": "Adds the pull_request trigger only when it is missing.",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 1,
+      "step": "Step 2"
+    },
+    "to": [
+      ".github/workflows/*.yml",
+      ".github/workflows/*.yaml"
+    ],
+    "touches": [
+      "CI-01"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-ci-parity/row-2",
+    "note": "CI-02 reads a shell script a CI step runs, one script deep, so the wrapper's verbs count; TOOL-04 and TOOL-06 read workflow lines only.",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 2,
+      "step": "Step 3"
+    },
+    "to": [
+      "scripts/ci/*.sh"
+    ],
+    "touches": [
+      "CI-02",
+      "EXEC-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-ci-parity/row-3",
+    "note": "Replaces direct tool calls in run: lines with the local verbs.",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 3,
+      "step": "Step 3"
+    },
+    "to": [
+      ".github/workflows/*.yml",
+      ".github/workflows/*.yaml"
+    ],
+    "touches": [
+      "TOOL-04",
+      "TOOL-06",
+      "CI-04",
+      "CI-02",
+      "CI-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose",
+      "table"
+    ],
+    "id": "add-ci-parity/row-4",
+    "mode": "add",
+    "note": "The CI doc is the repository's own; README.md when no docs page exists.",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 4,
+      "step": "Step 3"
+    },
+    "to": [
+      "docs/**/*.md",
+      "README.md"
+    ],
+    "touches": [
+      "DOC-05",
+      "EXEC-06",
+      "HYG-01",
+      "CI-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-ci-parity/row-5",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 5,
+      "step": "Step 4"
+    },
+    "to": [
+      ".github/workflows/*.yml",
+      ".github/workflows/*.yaml",
+      "scripts/ci/*.sh"
+    ],
+    "touches": [
+      "CI-02",
+      "CI-03",
+      "EXEC-08",
+      "CI-04"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "key"
+    ],
+    "id": "add-ci-parity/row-6",
+    "intent": "The scan's ignore list, with a reason and an expiry per entry, so a blocking scan fails on new findings only; it is the config of the scanner the repository already runs.",
+    "note": "Only for a blocking scan with debt; the file name is the scanner's own.",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 6,
+      "step": "Step 4"
+    },
+    "to": [
+      "osv-scanner.toml",
+      ".snyk",
+      ".trivyignore"
+    ],
+    "touches": [
+      "EXEC-07",
+      "CI-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-ci-parity/row-7",
+    "note": "Edits the needs list and result check of the existing merge-gate job; never renames it.",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 7,
+      "step": "Step 5"
+    },
+    "to": [
+      ".github/workflows/*.yml",
+      ".github/workflows/*.yaml"
+    ],
+    "touches": [
+      "HYG-11",
+      "CI-04"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose"
+    ],
+    "id": "add-ci-parity/row-8",
+    "intent": "The branch-protection record page; a path that holds branch-protection is read by HYG-11 as a document of the declared rules.",
+    "note": "The playbook leaves the name free (docs/ or the CI doc); only a name with branch-protection counts for HYG-11.",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 8,
+      "step": "Step 6"
+    },
+    "to": [
+      "docs/*branch-protection*.md"
+    ],
+    "touches": [
+      "DOC-05",
+      "HYG-11",
+      "CI-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-ci-parity/row-9",
+    "note": "The pin goes where the repository pins its other dev tools (Inputs 6), with the lockfile.",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 9,
+      "step": "Step 7"
+    },
+    "to": [
+      "Makefile",
+      "package.json",
+      "pyproject.toml",
+      "Taskfile.yml",
+      "package-lock.json",
+      "uv.lock",
+      "go.mod",
+      "go.sum"
+    ],
+    "touches": [
+      "EXEC-02",
+      "EXEC-08",
+      "CI-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-ci-parity/row-10",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 10,
+      "step": "Step 7"
+    },
+    "to": [
+      ".github/workflows/*.yml",
+      ".github/workflows/*.yaml"
+    ],
+    "touches": [
+      "CI-04",
+      "HYG-11",
+      "CI-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-ci-parity/row-11",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 11,
+      "step": "Step 7"
+    },
+    "to": [
+      "Makefile",
+      "package.json",
+      "pyproject.toml",
+      "Taskfile.yml",
+      ".husky/pre-commit",
+      ".pre-commit-config.yaml",
+      "lefthook.yml"
+    ],
+    "touches": [
+      "EXEC-08",
+      "CI-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-ci-parity/row-12",
+    "origin": {
+      "path": "implement/playbooks/add-ci-parity.md",
+      "row": 12,
+      "step": "Step 7"
+    },
+    "to": [
+      ".github/workflows/*.yml",
+      ".github/workflows/*.yaml"
+    ],
+    "touches": [
+      "CI-03",
+      "EXEC-08",
+      "CI-05"
+    ]
+  }
+]

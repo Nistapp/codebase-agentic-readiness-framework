@@ -1,0 +1,831 @@
+[
+  {
+    "binding": "file",
+    "check": "AGT-01",
+    "note": "The root AGENTS.md text is read for its length, four stub phrases and the words todo, tbd and placeholder at a line start or in brackets; a root agents.md is the only mis-cased name found. A fixed harness path with a folder (.github/copilot-instructions.md) counts only from the root.",
+    "source": "engine",
+    "threshold": "AGENTS.md at the root, at least 400 characters, no stub marker",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": ".augment-guidelines",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".clinerules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".cursorrules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".goosehints",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".roorules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".rules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".voidrules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".windsurfrules",
+        "scope": "any-depth"
+      },
+      {
+        "path": "AGENT.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "AGENTS.local.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "AGENTS.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "AGENTS.override.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "AmazonQ.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "CLAUDE.local.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "CLAUDE.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "CONVENTIONS.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "CRUSH.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "GEMINI.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "QWEN.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "WARP.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "agents.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "replit.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".devin/global_rules.md",
+        "scope": "root"
+      },
+      {
+        "path": ".gemini/styleguide.md",
+        "scope": "root"
+      },
+      {
+        "path": ".github/copilot-instructions.md",
+        "scope": "root"
+      },
+      {
+        "path": ".idx/airules.md",
+        "scope": "root"
+      },
+      {
+        "path": ".junie/guidelines.md",
+        "scope": "root"
+      },
+      {
+        "path": ".junie/playbook.md",
+        "scope": "root"
+      },
+      {
+        "path": ".claude/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/instructions/**/*.instructions.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".cursor/rules/**/*.mdc",
+        "scope": "glob"
+      },
+      {
+        "path": ".devin/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".windsurf/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".continue/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".clinerules/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".cline/rules/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".roo/rules/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".roo/rules-*/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".roorules-*",
+        "scope": "glob"
+      },
+      {
+        "path": ".junie/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".amazonq/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".kiro/steering/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".trae/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".augment/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".aider.conf.yml",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "AGT-02",
+    "note": "The root manifests declare the components (components.py); for each one <component>/AGENTS.md must exist, matched as a path suffix at any depth. The root component is left out, so the root AGENTS.md never counts. The suffix test runs over agt.instruction_paths, which scans every instruction file name, but only a path ending in <component>/AGENTS.md counts, so the other names are never read for this check.",
+    "source": "engine",
+    "threshold": "every declared component has an AGENTS.md",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "*/**/AGENTS.md",
+        "scope": "glob"
+      },
+      {
+        "path": "package.json",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "settings.gradle",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "settings.gradle.kts",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "go.work",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "Cargo.toml",
+        "scope": "root",
+        "via": "components"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "AGT-03",
+    "note": "Three items, each on any line: docs, the style guide name and the scratch folder. CLAUDE.md is read only when the root AGENTS.md is missing or empty.",
+    "source": "engine",
+    "threshold": "all three named",
+    "what": {
+      "kind": "word-list",
+      "text": [
+        "docs/",
+        "docs",
+        "STYLE_GUIDE.md",
+        "artefact/",
+        "artefacts/",
+        "artifact/",
+        "artifacts/"
+      ]
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "window",
+    "check": "AGT-04",
+    "note": "A trigger word (public interface, observable behaviour, architecture, ADR, documentation, docs) must stand within the two lines before or after the phrase: a five-line window.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase",
+      "text": [
+        "same changeset",
+        "same change set"
+      ]
+    },
+    "where": [
+      {
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "path": "CLAUDE.md",
+        "scope": "root"
+      }
+    ],
+    "window": 5
+  },
+  {
+    "binding": "file",
+    "check": "AGT-05",
+    "note": "Each verb must stand as a whole token (format inside format:check does not count). format:check also counts as format-check or formatCheck, the spellings spec/command-surface.md accepts; no other script name counts. The resolution half reads the runner manifests as CMD-01 does.",
+    "source": "engine",
+    "threshold": "all seven named and resolved",
+    "what": {
+      "kind": "word-list",
+      "text": [
+        "format",
+        "format:check",
+        "lint",
+        "typecheck",
+        "test",
+        "check",
+        "security"
+      ]
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "AGT-06",
+    "named_by_text": "each path token of a boundary line is looked up with Inventory.has",
+    "note": "A line with one of 18 rule words (must, never, only, module, owns, import, layer and others) and, on the same line, a path token with a slash that names a scanned file or a folder above one.",
+    "source": "engine",
+    "threshold": "two or more boundary rules naming real paths",
+    "what": {
+      "kind": "word-list"
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "AGT-07",
+    "note": "A prohibitions section must exist (a heading word, or three prohibition lines under a heading). Then any line of the whole file with a prohibition word and a concern word on that line: tests, generated files, the default branch, secrets.",
+    "source": "engine",
+    "threshold": "all four concerns covered",
+    "what": {
+      "kind": "word-list"
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "AGT-08",
+    "note": "The instruction-file set of AGT-01 gives the competitors and the reach. The statement is read in the root AGENTS.md only, never CLAUDE.md, and needs a known harness name on the same line. With a root AGENTS.md, each vendor file is read too: one whose few content lines all name AGENTS.md is a pointer, not a competitor, and one that imports @AGENTS.md shadows nothing.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase",
+      "text": [
+        "read by",
+        "supported harness",
+        "supported harnesses",
+        "AGENTS.md",
+        "@AGENTS.md"
+      ]
+    },
+    "where": [
+      {
+        "path": ".augment-guidelines",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".clinerules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".cursorrules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".goosehints",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".roorules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".rules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".voidrules",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".windsurfrules",
+        "scope": "any-depth"
+      },
+      {
+        "path": "AGENT.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "AGENTS.local.md",
+        "scope": "any-depth"
+      },
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "AGENTS.override.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "AmazonQ.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "CLAUDE.local.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "CLAUDE.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "CONVENTIONS.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "CRUSH.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "GEMINI.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "QWEN.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "WARP.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "agents.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "replit.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".devin/global_rules.md",
+        "scope": "root"
+      },
+      {
+        "path": ".gemini/styleguide.md",
+        "scope": "root"
+      },
+      {
+        "path": ".github/copilot-instructions.md",
+        "scope": "root"
+      },
+      {
+        "path": ".idx/airules.md",
+        "scope": "root"
+      },
+      {
+        "path": ".junie/guidelines.md",
+        "scope": "root"
+      },
+      {
+        "path": ".junie/playbook.md",
+        "scope": "root"
+      },
+      {
+        "path": ".claude/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/instructions/**/*.instructions.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".cursor/rules/**/*.mdc",
+        "scope": "glob"
+      },
+      {
+        "path": ".devin/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".windsurf/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".continue/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".clinerules/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".cline/rules/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".roo/rules/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".roo/rules-*/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".roorules-*",
+        "scope": "glob"
+      },
+      {
+        "path": ".junie/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".amazonq/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".kiro/steering/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".trae/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".augment/rules/**/*.md",
+        "scope": "glob"
+      },
+      {
+        "path": ".aider.conf.yml",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "AGT-09",
+    "note": "Each literal branch the declared rules protect (ruleset JSON, the Settings app's branches:, Terraform protection resources) must stand as a whole word anywhere in the entry file. .github/settings.yml passes Inventory.has at any depth but is read at the root only.",
+    "source": "engine",
+    "threshold": "a branch word, a release word and every protected branch named",
+    "what": {
+      "kind": "word-list",
+      "text": [
+        "branch",
+        "branches",
+        "branching",
+        "main",
+        "dev",
+        "trunk",
+        "tag",
+        "release",
+        "publish",
+        "deploy",
+        "push"
+      ]
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      },
+      {
+        "path": ".github/rulesets/**/*.json",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/settings.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "**/*.tf",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "AGT-10",
+    "named_by_text": "each file a harness config names must exist",
+    "note": "Each file a config names (aider read:, three Codex keys, Gemini context.fileName, opencode instructions) must exist. A deferral phrase (first read, read ... first, before you ... read, start by reading, refer to ... first) with an existing .md, .txt, .yml, .yaml, .json or .toml reference on the same line, unnamed by any config, fails.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "path": ".aider.conf.yml",
+        "scope": "root"
+      },
+      {
+        "path": ".codex/config.toml",
+        "scope": "root"
+      },
+      {
+        "path": ".gemini/settings.json",
+        "scope": "root"
+      },
+      {
+        "path": "opencode.json",
+        "scope": "root"
+      },
+      {
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "path": "CLAUDE.md",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "AGT-11",
+    "note": "The agent sorts every rule line of the canonical file and each component AGENTS.md as specific or generic, and confirms each specific line against the repository (audit/checks/02-agent-governance.md, AGT-11).",
+    "source": "agent",
+    "threshold": "at least 80% of rule lines are specific",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "path": "**/AGENTS.md",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "section",
+    "check": "AGT-12",
+    "note": "A heading outside a fence that matches communicat*, write for people, how to write, reporting and others opens a section with its subsections; a Markdown file whose name holds communicat, named in a link or code span, is read whole. Three element word groups must appear in those bodies and files together.",
+    "source": "engine",
+    "threshold": "the reader, how to report and how to ask for a decision",
+    "what": {
+      "kind": "word-list"
+    },
+    "where": [
+      {
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "path": "CLAUDE.md",
+        "scope": "root"
+      },
+      {
+        "case": "fold",
+        "path": "**/*communicat*.md",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "AGT-13",
+    "note": "Conventions files match the globs by lower-case base name at the root or anywhere under docs/ or .github/, with a prose extension or none, never docs/STYLE_GUIDE.md; the four root files give level 2-6 conventions sections that are not about git or docs. Five items over all sources together (naming, layering, error handling and logging, testing, a formatter or linter config name), plus TBD or TODO outside code.",
+    "source": "engine",
+    "threshold": "all five items and no stub word",
+    "what": {
+      "kind": "word-list"
+    },
+    "where": [
+      {
+        "case": "fold",
+        "path": "*convention*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": "code_style*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": "coding_standards*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": "*coding-guidelines*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": "docs/**/*convention*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": "docs/**/code_style*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": "docs/**/coding_standards*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": "docs/**/*coding-guidelines*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": ".github/**/*convention*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": ".github/**/code_style*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": ".github/**/coding_standards*",
+        "scope": "glob"
+      },
+      {
+        "case": "fold",
+        "path": ".github/**/*coding-guidelines*",
+        "scope": "glob"
+      },
+      {
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "path": "CONTRIBUTING.md",
+        "scope": "root"
+      },
+      {
+        "path": ".github/CONTRIBUTING.md",
+        "scope": "root"
+      },
+      {
+        "path": "docs/CONTRIBUTING.md",
+        "scope": "root"
+      }
+    ]
+  }
+]

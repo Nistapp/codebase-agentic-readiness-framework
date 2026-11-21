@@ -1,0 +1,876 @@
+[
+  {
+    "binding": "file",
+    "check": "BASE-01",
+    "note": "A baseline name at any depth, or a mechanism phrase in the root AGENTS.md or CLAUDE.md, passes; the phrase words are joined by \\s+ so they may span lines. The counting-tool configs, root pyproject.toml, setup.cfg and tox.ini and the lint, typecheck and security verbs only give PARTIAL. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase",
+      "text": [
+        "quality baseline",
+        "baseline file",
+        "baseline report",
+        "baseline artifact",
+        "baseline count",
+        "baseline json",
+        "no new violations",
+        "violation budget",
+        "suppression file",
+        "suppression list",
+        "suppression count"
+      ]
+    },
+    "where": [
+      {
+        "path": ".eslint-baseline*",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".ruff-baseline*",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".mypy-baseline*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "baseline.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*baseline*.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*baseline*.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "coverage-baseline.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.baseline",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".secrets.baseline",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".snyk",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".gitleaksignore",
+        "scope": "any-depth"
+      },
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      },
+      {
+        "path": "setup.cfg",
+        "scope": "root"
+      },
+      {
+        "path": "tox.ini",
+        "scope": "root"
+      },
+      {
+        "path": ".eslintrc*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "eslint.config.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.jsonc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".flake8",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pylintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".pylintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": "mypy.ini",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".mypy.ini",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".golangci.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".golangci.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "clippy.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".gitleaks.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "sonar-project.properties",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".semgrep.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".semgrep.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      },
+      {
+        "path": "package.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "setup.py",
+        "scope": "any-depth"
+      },
+      {
+        "path": "requirements*.txt",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Pipfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "any-depth"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "any-depth"
+      },
+      {
+        "path": "go.mod",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Cargo.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Gemfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "composer.json",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "BASE-02",
+    "note": "A numeric budget (--max-warnings N, max-warnings|max-issues|max-problems N, violation-budget N) on one line of the five root runner manifests, a counting config at any depth, or a resolved verb command. Counting tools or baseline artifacts only give PARTIAL; the check never fails. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "path": "setup.cfg",
+        "scope": "root"
+      },
+      {
+        "path": "tox.ini",
+        "scope": "root"
+      },
+      {
+        "path": ".eslintrc*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "eslint.config.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.jsonc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".flake8",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pylintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".pylintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": "mypy.ini",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".mypy.ini",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".golangci.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".golangci.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "clippy.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".gitleaks.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".snyk",
+        "scope": "any-depth"
+      },
+      {
+        "path": "sonar-project.properties",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".semgrep.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".semgrep.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".eslint-baseline*",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".ruff-baseline*",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".mypy-baseline*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "baseline.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*baseline*.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*baseline*.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "coverage-baseline.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.baseline",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".secrets.baseline",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".gitleaksignore",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      },
+      {
+        "path": "package.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "setup.py",
+        "scope": "any-depth"
+      },
+      {
+        "path": "requirements*.txt",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Pipfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "any-depth"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "any-depth"
+      },
+      {
+        "path": "go.mod",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Cargo.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Gemfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "composer.json",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "BASE-03",
+    "note": "First a BASE-02 budget, then a baseline artifact whose base name appears in any CI file, then a ratchet phrase in the four root documents; compare, comparison or regression must be within 48 characters of baseline on one line. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase",
+      "text": [
+        "ratchet",
+        "no new violations",
+        "violation budget",
+        "compare",
+        "comparison",
+        "regression",
+        "baseline"
+      ]
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "README.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CONTRIBUTING.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "README*",
+        "scope": "glob"
+      },
+      {
+        "path": ".eslintrc*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "eslint.config.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.jsonc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".flake8",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pylintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".pylintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": "mypy.ini",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".mypy.ini",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".golangci.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".golangci.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "clippy.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".gitleaks.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".snyk",
+        "scope": "any-depth"
+      },
+      {
+        "path": "sonar-project.properties",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".semgrep.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".semgrep.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".eslint-baseline*",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".ruff-baseline*",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".mypy-baseline*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "baseline.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*baseline*.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*baseline*.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "coverage-baseline.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.baseline",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".secrets.baseline",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".gitleaksignore",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".github/workflows/*.yml",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/workflows/*.yaml",
+        "scope": "glob"
+      },
+      {
+        "path": ".gitlab-ci.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Jenkinsfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "azure-pipelines.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".circleci/config.yml",
+        "scope": "root"
+      },
+      {
+        "path": ".buildkite/**/*.yml",
+        "scope": "glob"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      },
+      {
+        "path": "package.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "setup.py",
+        "scope": "any-depth"
+      },
+      {
+        "path": "requirements*.txt",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Pipfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "any-depth"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "any-depth"
+      },
+      {
+        "path": "go.mod",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Cargo.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Gemfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "composer.json",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "BASE-04",
+    "note": "Config: fail_under = N or --cov-fail-under N in six root files, coverageThreshold or --cov-fail-under in a package.json at any depth, a threshold key in a runner config at any depth (whole-line // comments dropped), a jacocoTestCoverageVerification task with a minimum in a Gradle build at any depth, or a jacoco-maven-plugin check goal with a <minimum> in a pom.xml at any depth. Prose (PARTIAL): coverage within 40 characters of threshold, minimum, fail, floor or at least, or within 20 of a percentage, on one line of the four root documents. With no detected ecosystem, a project manifest at any depth still makes the check apply.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "path": ".coveragerc",
+        "scope": "root"
+      },
+      {
+        "path": ".coveragerc.toml",
+        "scope": "root"
+      },
+      {
+        "path": "setup.cfg",
+        "scope": "root"
+      },
+      {
+        "path": "tox.ini",
+        "scope": "root"
+      },
+      {
+        "path": "pytest.ini",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "README.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CONTRIBUTING.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "README*",
+        "scope": "glob"
+      },
+      {
+        "path": "vitest.config.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "jest.config.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "vite.config.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "karma.conf.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "setup.py",
+        "scope": "any-depth"
+      },
+      {
+        "path": "requirements*.txt",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Pipfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "any-depth"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "any-depth"
+      },
+      {
+        "path": "go.mod",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Cargo.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Gemfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "composer.json",
+        "scope": "any-depth"
+      }
+    ]
+  }
+]

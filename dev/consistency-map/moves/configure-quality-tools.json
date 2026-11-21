@@ -1,0 +1,393 @@
+[
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-1",
+    "note": "Adds the formatter as a pinned devDependency and regenerates the lockfile in the same commit.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 1,
+      "step": "Step 2"
+    },
+    "to": [
+      "package.json",
+      "package-lock.json",
+      "build.gradle"
+    ],
+    "touches": [
+      "EXEC-02",
+      "TOOL-01"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "configure-quality-tools/row-2",
+    "intent": "The formatter config that TOOL-01 credits by name; one config per concern, so EXEC-07 also reads it.",
+    "note": "On Gradle the Spotless block goes into build.gradle and an Eclipse profile under config/.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 2,
+      "step": "Step 3"
+    },
+    "to": [
+      ".prettierrc*",
+      "prettier.config.*",
+      "biome.json",
+      "config/",
+      "build.gradle"
+    ],
+    "touches": [
+      "EXEC-07",
+      "TOOL-01"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "configure-quality-tools/row-3",
+    "note": "A changed-files script the format:check and lint ratchets call; its name has no engine meaning.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 3,
+      "step": "Steps, TypeScript and Node"
+    },
+    "to": [
+      "scripts/"
+    ],
+    "touches": [
+      "TOOL-01",
+      "TOOL-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-4",
+    "note": "Points the format and format:check verbs at the formatter, in ratchet form when there is debt.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 4,
+      "step": "Step 3"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "build.gradle"
+    ],
+    "touches": [
+      "CMD-04",
+      "EXEC-08",
+      "TOOL-01"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-5",
+    "note": "Adds a report-only full format:check step to CI, named report-only.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 5,
+      "step": "Step 2"
+    },
+    "to": [
+      ".github/workflows/ci.yml"
+    ],
+    "touches": [
+      "CI-04",
+      "CI-02",
+      "CI-03",
+      "TOOL-01"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-6",
+    "note": "Adds the linter as a pinned devDependency and regenerates the lockfile in the same commit.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 6,
+      "step": "Step 2"
+    },
+    "to": [
+      "package.json",
+      "package-lock.json",
+      "build.gradle"
+    ],
+    "touches": [
+      "EXEC-02",
+      "TOOL-02"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "configure-quality-tools/row-7",
+    "intent": "The linter config that TOOL-02 credits by name; EXEC-07 reads it as the one lint config.",
+    "note": "On Gradle the PMD block goes into build.gradle with its ruleset and exclude list under config/pmd/.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 7,
+      "step": "Step 4"
+    },
+    "to": [
+      "eslint.config.*",
+      "biome.json",
+      "config/pmd/ruleset.xml",
+      "build.gradle"
+    ],
+    "touches": [
+      "EXEC-07",
+      "TOOL-02"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "configure-quality-tools/row-8",
+    "note": "No check reads this name; BASE-01 credits it only through the AGENTS.md paragraph of T5, so the row names no check.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 8,
+      "step": "Steps, TypeScript and Node"
+    },
+    "to": [
+      "eslint-suppressions.json"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-9",
+    "note": "Points the lint verb at the linter, read-only, in ratchet form when there is debt.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 9,
+      "step": "Step 4"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "build.gradle"
+    ],
+    "touches": [
+      "CMD-04",
+      "EXEC-08",
+      "TOOL-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-10",
+    "note": "Adds a report-only full lint step to CI, named report-only.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 10,
+      "step": "Step 2"
+    },
+    "to": [
+      ".github/workflows/ci.yml"
+    ],
+    "touches": [
+      "CI-04",
+      "CI-02",
+      "CI-03",
+      "TOOL-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-11",
+    "note": "Edits the existing type-check config, or adds a strict config that extends it; not on the JVM.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 11,
+      "step": "Step 5"
+    },
+    "to": [
+      "tsconfig.json",
+      "tsconfig.strict.json",
+      "mypy.ini",
+      "pyproject.toml"
+    ],
+    "touches": [
+      "EXEC-07",
+      "TOOL-03"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "configure-quality-tools/row-12",
+    "note": "A strict ratchet script that fails only on errors in files absent from the debt list.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 12,
+      "step": "Steps, TypeScript and Node"
+    },
+    "to": [
+      "scripts/"
+    ],
+    "touches": [
+      "TOOL-03"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "configure-quality-tools/row-13",
+    "note": "The strict debt list; its name is free, and a *baseline*.json name would add BASE-01 credit.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 13,
+      "step": "Steps, TypeScript and Node"
+    },
+    "to": [
+      "strict-debt.txt"
+    ],
+    "touches": [
+      "TOOL-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-14",
+    "note": "Points the typecheck verb at the type checker, in ratchet form when there is debt.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 14,
+      "step": "Step 5"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "build.gradle"
+    ],
+    "touches": [
+      "EXEC-08",
+      "CMD-04",
+      "TOOL-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-15",
+    "note": "Adds a report-only full type-check step to CI, named report-only.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 15,
+      "step": "Step 2"
+    },
+    "to": [
+      ".github/workflows/ci.yml"
+    ],
+    "touches": [
+      "CI-04",
+      "CI-02",
+      "CI-03",
+      "TOOL-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-16",
+    "note": "Pins a scanner that is not built in; the playbook does not say which manifest holds the pin.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 16,
+      "step": "Step 6"
+    },
+    "to": [
+      "package.json",
+      "package-lock.json",
+      "build.gradle"
+    ],
+    "touches": [
+      "EXEC-02",
+      "TOOL-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-17",
+    "note": "Points the security verb at the dependency scan with a fixed threshold, outside check.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 17,
+      "step": "Step 6"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "build.gradle"
+    ],
+    "touches": [
+      "CMD-04",
+      "TOOL-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "configure-quality-tools/row-18",
+    "note": "Adds a CI job that runs the security verb beside the check job, report-only when red today.",
+    "origin": {
+      "path": "implement/playbooks/configure-quality-tools.md",
+      "row": 18,
+      "step": "Step 6"
+    },
+    "to": [
+      ".github/workflows/ci.yml"
+    ],
+    "touches": [
+      "CI-02",
+      "CI-04",
+      "CI-03",
+      "TOOL-04"
+    ]
+  }
+]

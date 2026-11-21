@@ -1,0 +1,317 @@
+[
+  {
+    "check": "BASE-01",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "it has a native baseline or exclude list (inventory step): check it still matches the count",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-2",
+    "note": "BASE-01 credits .ruff-baseline*, .secrets.baseline and .gitleaksignore by name; eslint-suppressions.json only through the AGENTS.md paragraph of row 8.",
+    "status": "kept"
+  },
+  {
+    "check": "SEC-02",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "accepts an allowlisted hit only on its listed line",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-2",
+    "note": "A root .secrets.baseline or .gitleaksignore suppresses a SEC-02 hit by path and line number, so creating one can change the verdict.",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-01",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "otherwise add an entry to the counts file: tool, what is counted, count, the command that produced it, the date.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-02",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Every other count lives in the counts file.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "NAV-05",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Give each public function in it a docstring or doc comment.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-4",
+    "status": "kept"
+  },
+  {
+    "check": "NAV-02",
+    "move": "add-baselines-and-ratchet/row-4",
+    "reason": "The move can only remove findings or add credit: the compare script's __main__ guard can make NAV-02 pass in a repository with no real entry point. The engine is to stop counting such a script; until then the false credit is accepted.",
+    "status": "accepted"
+  },
+  {
+    "check": "BASE-03",
+    "move": "add-baselines-and-ratchet/row-4",
+    "reason": "Not a real pair: BASE-03 reads a budget, a baseline name in a CI file, or a ratchet phrase in the root documents and counting configs, never a script under scripts/. The compare script changes the verdict only once rows 5 and 6 wire and name it, and those rows declare BASE-03.",
+    "status": "accepted"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "When a count went down it prints the new number and asks for the counts file to be lowered in the same change (it does not rewrite the file itself).",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-5",
+    "note": "format:check stays read-only: the compare script never rewrites the counts file.",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-03",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Call the script from `format:check` (spec decision 0002).",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-03",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "The counts file named in a CI workflow, or a \"ratchet\" / \"no new violations\" sentence: `PASS`",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+    },
+    "move": "add-baselines-and-ratchet/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Add only the flag: the verb stays read-only, with no `--fix` or `--write`.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-02",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Where a tool has a budget flag, put today's count on the flag in the verb (`--max-warnings <N>`) instead of a counts-file entry.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-01",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Each tool with debt has a baseline; the paragraph names them",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+    },
+    "move": "add-baselines-and-ratchet/row-8",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-03",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "The counts file named in a CI workflow, or a \"ratchet\" / \"no new violations\" sentence: `PASS`",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+    },
+    "move": "add-baselines-and-ratchet/row-8",
+    "status": "kept"
+  },
+  {
+    "check": "TST-05",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "A coverage config, key or `--coverage`/`jacoco` in a script or build file: `PASS`",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+    },
+    "move": "add-baselines-and-ratchet/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "The verb runs it by name, never as `npx c8@<version>`.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-10",
+    "status": "kept"
+  },
+  {
+    "check": "TST-05",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "A coverage config, key or `--coverage`/`jacoco` in a script or build file: `PASS`",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+    },
+    "move": "add-baselines-and-ratchet/row-10",
+    "status": "kept"
+  },
+  {
+    "check": "TST-02",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Never a target the repository fails today.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/inputs-to-ask"
+    },
+    "move": "add-baselines-and-ratchet/row-11",
+    "note": "The floor never fails today's suite, so the test verb's status holds.",
+    "status": "kept"
+  },
+  {
+    "check": "TST-05",
+    "move": "add-baselines-and-ratchet/row-11",
+    "reason": "The move can only remove findings or add credit: a coverage threshold key in the runner config is one more coverage key TST-05 finds.",
+    "status": "accepted"
+  },
+  {
+    "check": "BASE-04",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Configure the runner's coverage, add or reuse a coverage verb (`test:cov` or similar), measure, set the floor (Inputs 4) in the runner's own configuration, and wire it per `tests.coverage_gate`.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-11",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-02",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "`check` (default): the floor sits in the test runner's configuration and the coverage-instrumented run is part of `test`, so local `check` and CI fail on a drop.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/inputs-to-ask"
+    },
+    "move": "add-baselines-and-ratchet/row-12",
+    "note": "Coverage runs inside test, so check still composes test.",
+    "status": "kept"
+  },
+  {
+    "check": "TST-02",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Never a target the repository fails today.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/inputs-to-ask"
+    },
+    "move": "add-baselines-and-ratchet/row-12",
+    "note": "The floor wired into test never fails today's suite.",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "The floor adds no writer to `test` or `check`: no `--fix`, `--write` or install.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "TST-05",
+    "move": "add-baselines-and-ratchet/row-12",
+    "reason": "The move can only remove findings or add credit: coverage flags wired into test are one more coverage signal TST-05 finds in the resolved verbs.",
+    "status": "accepted"
+  },
+  {
+    "check": "BASE-04",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Configure the runner's coverage, add or reuse a coverage verb (`test:cov` or similar), measure, set the floor (Inputs 4) in the runner's own configuration, and wire it per `tests.coverage_gate`.",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-04",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "a JaCoCo floor in a Gradle or Maven build, root Python coverage configs: `PASS`",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+    },
+    "move": "add-baselines-and-ratchet/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "TST-02",
+    "move": "add-baselines-and-ratchet/row-14",
+    "reason": "Not a real pair: TST-02 reads no file text; its verdict comes only from a Tier-C probe of the resolved test verb. The failing-suite entry in the counts file is a record for the agent, as Step 8 says, not a substitute verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "SEC-02",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Then regenerate it with the scanner's own command, in its own commit (Commits row 17).",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-15",
+    "note": "SEC-02 binds an allowlisted hit to its line number (DESIGN 2.2 f3); the regenerated allowlist follows the shifted lines.",
+    "status": "kept"
+  },
+  {
+    "check": "TST-03",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Every marker has a reason or an owner item",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+    },
+    "move": "add-baselines-and-ratchet/row-15",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "add the single-test command for the repository's runner to `AGENTS.md` in a fenced shell block (the engine also reads an inline code span, but `EXEC-06` reads only fenced commands)",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-16",
+    "note": "Inferred: the named forms start with a resolvable launcher (./gradlew, npx).",
+    "status": "kept"
+  },
+  {
+    "check": "TST-04",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "One single-test command for the runner",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/verification"
+    },
+    "move": "add-baselines-and-ratchet/row-16",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-01",
+    "move": "add-baselines-and-ratchet/row-17",
+    "reason": "Not a real pair: BASE-01 credits .secrets.baseline and .gitleaksignore by name only (_BASELINE_GLOBS in checks/base.py; it never reads their contents), and row 17 regenerates an allowlist that already exists, so the set of baseline names is unchanged. BASE-02 and BASE-03 match the same names the same way.",
+    "status": "accepted"
+  },
+  {
+    "check": "SEC-02",
+    "home": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "quote": "Then regenerate it with the scanner's own command, in its own commit (Commits row 17).",
+      "section": "implement/playbooks/add-baselines-and-ratchet.md#playbook-add-baselines-and-ratchet/steps"
+    },
+    "move": "add-baselines-and-ratchet/row-17",
+    "note": "SEC-02 suppresses a hit only on a line number the root .secrets.baseline or .gitleaksignore lists (_secret_allowlist.py), so the regenerated allowlist decides whether the shifted hits stay accepted.",
+    "status": "kept"
+  }
+]

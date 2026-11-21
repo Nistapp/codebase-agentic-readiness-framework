@@ -25,6 +25,7 @@ Each command answers one question:
 | Does each quote in a report exist where it says? | `verify-quotes <folder>` | [Step 7](#step-7-check-the-quotes-of-a-report) |
 | Does a playbook change still keep what each check reads? | `make consistency-map` | [Step 8](#step-8-run-the-consistency-maps-gate) |
 | What did my branch change in the text the checks read? | `make consistency-map CMAP_ARGS=--base` | [Step 8](#step-8-run-the-consistency-maps-gate) |
+| Did a change that should alter no output alter one? | `make golden GOLDEN_ARGS="record --out <dir>"`, then `compare` | [Step 9](#step-9-prove-that-no-output-changed-the-golden-digest) |
 
 The flow below shows the order. The manifest and the evidence run read only the working tree, so record their
 before side first.
@@ -287,11 +288,13 @@ reason.
 
 ### Step 8: Run the consistency map's gate
 
-The consistency map, [`dev/consistency-map.json`](../../dev/consistency-map.json), says what each check reads.
+The consistency map, the folder [`dev/consistency-map/`](../../dev/consistency-map/), says what each check reads.
 Its `names` part, the file names the engine gives a meaning to, is in
-[`dev/consistency-map-names.json`](../../dev/consistency-map-names.json). The map also says what each playbook
+[`dev/consistency-map/names/`](../../dev/consistency-map/names/). The map also says what each playbook
 Commits row and template does to that text, and which sentence keeps each read true.
-[ADR 0012](../architecture/adrs/0012-keep-the-consistency-map-as-json-in-dev.md) records its design. Do not edit
+[ADR 0012](../architecture/adrs/0012-keep-the-consistency-map-as-json-in-dev.md) records its design. The folder
+holds small files: the moves and keeps of a playbook are in `moves/<playbook>.json` and `keeps/<playbook>.json`.
+When you add a file, list it in `index.json`, in the order the lists join. Do not edit
 the map's `reads` part by hand: the engine declares each check's reads in `audit/engine/audit/rules/reads.py`. After
 you change a declaration, run `python3 dev/consistency_map_reads.py --write` to rewrite the part.
 
@@ -356,6 +359,28 @@ the broad ones under `broad`. The evidence part still compares all of them.
 The evidence part copies each side into a temporary repository and runs the engine on both. It takes about
 15 seconds on this repository. `--no-evidence` skips it.
 
+### Step 9: Prove that no output changed (the golden digest)
+
+Use this step for a change that should alter no output, such as moving code between files. The digest holds one
+SHA-256 for each shipped output: the engine's report of every fixture, `--list-checks`, each tool's `--describe`,
+`audit/catalogue.json` and the two skill archives. It also holds the ruleset hash and revision.
+
+Record it on the base before you change anything, for example in a clean checkout of `origin/dev`. Then compare it
+from your branch:
+
+```bash
+make golden GOLDEN_ARGS="record --out <scratch>/golden"
+make golden GOLDEN_ARGS="compare <scratch>/golden"
+```
+
+Each takes about 10 seconds. `compare` prints each entry that differs, one per line, and exits 2. Without a
+difference it prints `all <n> entries match`. A usage error, such as a digest that is missing, exits 1.
+
+The digest is the same on every run and every machine. It drops the keys that name the clock or the checkout
+(`scanned_at`, `git_sha`, `git_branch`, `git_dirty`, `framework_revision`) and fixes the report's target to `.`.
+It runs every fixture with an empty `HOME` and an absent index store. A change that is meant to alter an output
+shows as a difference here; this step only tells you that it did. It is not part of `make check`.
+
 ---
 
 ## What the tools cannot see
@@ -372,6 +397,7 @@ The tools find a loss in text and structure. They do not prove that the recipes 
 | `manifest-diff` | Whether a changed bundle file still says the same thing |
 | `evidence compare` | A check whose input changed but whose verdict and evidence stayed the same |
 | `consistency-map` | A touch that no reviewer declared. It shows only as an unreviewed guess |
+| `golden` | Why an output changed, and any output outside its list: the Markdown renderings of a report and the tools' results other than `--describe` |
 | `consistency-map --base` | The evidence of a fresh greenfield scaffold. A template change shows under `review`, but the engine audits only this repository |
 | All but `consistency-map` and `evidence compare` | An engine contract bound to one line of a file |
 
@@ -398,6 +424,7 @@ A config path that matches no tracked file is only a warning in the `build` summ
 | `evidence run` | Every report is written | A command failed; or a usage error | The run is refused: folder not fresh or inside the repository, or a report missing or stale |
 | `evidence compare` | A report, whatever it finds | A run folder cannot be read, or the targets differ; or a usage error | Not used |
 | `verify-quotes` | Every quote and citation passes | A usage error, or a folder with no `quotes.json` | A quote or citation fails |
+| `golden.py` | `record` wrote the digest; `compare` found no difference | A usage error, such as a digest that is missing or a folder that already holds one | `compare` found a difference |
 | `consistency_map.py` | A report, whatever it finds | With `--strict`: a problem found; with `--base`: an engine run failed | A usage error, such as a base ref that names no commit |
 
 ---
@@ -413,4 +440,5 @@ You checked the change when all of this holds:
 - [ ] `make consistency-map` shows no new `unkept`, `quote` or `coverage` problem.
 - [ ] `make consistency-map CMAP_ARGS=--base` shows no `lost-mention` or `left-scope` problem, and you read each
   `review` and `evidence` line.
+- [ ] For a change that should alter no output, `make golden` `compare` shows no difference.
 - [ ] `make check` passes, as [`AGENTS.md`](../../AGENTS.md#definition-of-done) asks.
