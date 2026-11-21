@@ -59,6 +59,7 @@ import re
 
 from audit.evaluate import CheckOutcome
 from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.probes import ProbePlan
 from audit.rules.checks._common import at_root, entry_documents, extract_documented_commands, resolve_verbs, runner_kind
 from audit.scan import Kind
@@ -520,6 +521,15 @@ def check_tst05(*, spec, target, inventory, stack, components, session) -> Check
         ],
     )
 
+
+#: The TST checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("TST-01", "Test verb exists, suite non-empty", "A", Severity.BLOCKER),
+    declare("TST-02", "Suite status known", "C", Severity.DEGRADER),
+    declare("TST-03", "Skip / xfail census", "B", Severity.DEGRADER),
+    declare("TST-04", "Fast path documented", "B", Severity.DEGRADER),
+    declare("TST-05", "Coverage configuration present", "A", Severity.COSMETIC),
+)
 
 IMPLEMENTATIONS = {
     "TST-01": check_tst01,

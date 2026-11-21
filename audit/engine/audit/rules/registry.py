@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
-from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, idx, tool
+from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, idx, tool, tst
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -40,12 +40,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     *base.SPECS,
     *con.SPECS,
     *execution.SPECS,
-    # -- TST ------------------------------------------------------------
-    _c("TST-01", "Test verb exists, suite non-empty", "A", _S.BLOCKER),
-    _c("TST-02", "Suite status known", "C", _S.DEGRADER),
-    _c("TST-03", "Skip / xfail census", "B", _S.DEGRADER),
-    _c("TST-04", "Fast path documented", "B", _S.DEGRADER),
-    _c("TST-05", "Coverage configuration present", "A", _S.COSMETIC),
+    *tst.SPECS,
     # -- NAV ------------------------------------------------------------
     _c("NAV-01", "Declared component boundaries", "A", _S.DEGRADER),
     _c("NAV-02", "Obvious entry points", "B", _S.DEGRADER),
