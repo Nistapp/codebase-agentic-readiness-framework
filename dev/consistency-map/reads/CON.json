@@ -1,0 +1,130 @@
+[
+  {
+    "binding": "section",
+    "check": "CON-01",
+    "named_by_text": "each code span of the prohibitions section is looked up in the scan and on disk",
+    "note": "Every code span on the lines of every prohibitions section; a span counts when it has no command characters and holds a slash, a glob or a dot, or names something that exists. Existence is checked in the scan and on disk. In a section opened by its body alone, only the spans of a list item or paragraph that holds a prohibition line count.",
+    "source": "engine",
+    "threshold": "a named path that exists",
+    "what": {
+      "kind": "code-span"
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "section",
+    "check": "CON-02",
+    "note": "The prohibitions-section code spans of CON-01, read like ignore entries, against every folder segment named test, tests or __tests__ in the scan plus those folders at the root on disk.",
+    "source": "engine",
+    "threshold": "every test directory named",
+    "what": {
+      "kind": "code-span"
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "root"
+      },
+      {
+        "path": "test",
+        "scope": "any-depth"
+      },
+      {
+        "path": "tests",
+        "scope": "any-depth"
+      },
+      {
+        "path": "__tests__",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "CON-03",
+    "constants": [
+      "audit.rules.checks.con:_CON_ROOTS",
+      "audit.ignore:IGNORE_FILE_NAMES"
+    ],
+    "note": "The top-level scratch and agent-state folders in the scan or on disk, the tracked files under them, and the ignore rules as DOC-03 reads them.",
+    "source": "engine",
+    "threshold": "every present folder ignored and untracked",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "artefacts",
+        "scope": "root"
+      },
+      {
+        "path": "artifacts",
+        "scope": "root"
+      },
+      {
+        "path": ".codebase-memory",
+        "scope": "root"
+      },
+      {
+        "path": ".opencode",
+        "scope": "root"
+      },
+      {
+        "path": ".agentic-tdd",
+        "scope": "root"
+      },
+      {
+        "path": ".gitignore",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".cbmignore",
+        "scope": "root"
+      },
+      {
+        "path": ".cursorignore",
+        "scope": "root"
+      },
+      {
+        "path": ".aiderignore",
+        "scope": "root"
+      },
+      {
+        "path": ".rooignore",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "CON-04",
+    "note": "Only paths are read, never content: each scanned file is sorted into secrets, migrations, generated, tests, infrastructure as code and production by name and folder. With --emit-baseline it writes do-not-do.draft.md beside the report, never inside the target; else UNKNOWN.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "**",
+        "scope": "glob"
+      }
+    ]
+  }
+]

@@ -1,0 +1,787 @@
+[
+  {
+    "binding": "file",
+    "check": "TOOL-01",
+    "note": "Formatter config names count on presence at any depth; the root pyproject.toml is read for [tool.black|ruff|autopep8|yapf] and the root package.json for a prettier key. The format verb is resolved from the runner manifests.",
+    "source": "engine",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "path": ".prettierrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".prettierrc.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".prettierrc.json5",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".prettierrc.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".prettierrc.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".prettierrc.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".prettierrc.js",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".prettierrc.cjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".prettierrc.mjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": "prettier.config.js",
+        "scope": "any-depth"
+      },
+      {
+        "path": "prettier.config.cjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": "prettier.config.mjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.jsonc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".dprint.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "dprint.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "black.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".black.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "rustfmt.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".rustfmt.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".clang-format",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pint.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".php-cs-fixer.php",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".php-cs-fixer.dist.php",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "TOOL-02",
+    "note": "Linter config names count on presence at any depth; the root pyproject.toml is read for [tool.ruff|pylint|flake8] and the root package.json for an eslintConfig key. The lint verb is resolved from the runner manifests.",
+    "source": "engine",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "path": ".eslintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".eslintrc.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".eslintrc.js",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".eslintrc.cjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".eslintrc.mjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".eslintrc.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".eslintrc.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "eslint.config.js",
+        "scope": "any-depth"
+      },
+      {
+        "path": "eslint.config.cjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": "eslint.config.mjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": "eslint.config.ts",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "biome.jsonc",
+        "scope": "any-depth"
+      },
+      {
+        "path": "ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".ruff.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".flake8",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".pylintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pylintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".golangci.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".golangci.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".golangci.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "clippy.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".clippy.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".rubocop.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "checkstyle.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".stylelintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".stylelintrc.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "phpcs.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".phpcs.xml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "TOOL-03",
+    "note": "mypy.ini, .mypy.ini, pyproject.toml and setup.cfg are kept when found at any depth but read at the root, so a nested-only copy counts as present but not strict; global.json counts on presence only. The typecheck verb is resolved from the runner manifests and must carry --strict.",
+    "source": "engine",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "path": "tsconfig.json",
+        "scope": "root"
+      },
+      {
+        "path": "jsconfig.json",
+        "scope": "root"
+      },
+      {
+        "path": "mypy.ini",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".mypy.ini",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "setup.cfg",
+        "scope": "any-depth"
+      },
+      {
+        "path": "pyrightconfig.json",
+        "scope": "root"
+      },
+      {
+        "path": "*.csproj",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Directory.Build.props",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Directory.Build.targets",
+        "scope": "any-depth"
+      },
+      {
+        "path": "global.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "TOOL-04",
+    "note": "A resolved verb, a root-Makefile recipe line it reaches, or one workflow line must run a dependency-audit command (npm audit, pip-audit, osv-scanner and others) or a scanner action or template. Commented workflow lines are skipped; Dependabot and Renovate do not count.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      },
+      {
+        "path": ".github/workflows/*.yml",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/workflows/*.yaml",
+        "scope": "glob"
+      },
+      {
+        "path": ".gitlab-ci.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Jenkinsfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "azure-pipelines.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".circleci/config.yml",
+        "scope": "root"
+      },
+      {
+        "path": ".buildkite/**/*.yml",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "TOOL-05",
+    "note": "A hook-manager file at any depth, or core.hooksPath in any manifest, config, script, CI or build file (glob **), is wired; .husky/ is wired only when a root package.json script names husky. With no hook chain, the FAIL cites the runner manifests that the runner resolver finds.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": ".pre-commit-config.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "lefthook.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "lefthook.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".githooks/*",
+        "scope": "glob"
+      },
+      {
+        "path": ".husky/*",
+        "scope": "glob"
+      },
+      {
+        "path": "**",
+        "scope": "glob"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "TOOL-06",
+    "note": "Local: commitlint config names at any depth, a commitlint key in the root package.json, a commit-msg hook file (presence matched at any depth), or commit-msg/commitlint/conventional in the root hook-manager files. CI: one workflow line runs a commit-message tool, a pull-request title action, a script the local commit-msg stage names, or a runner target that does. The FAIL path reads the hook wiring as TOOL-05 does: hook-manager files, .githooks/, .husky/, core.hooksPath.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "path": "commitlint.config.js",
+        "scope": "any-depth"
+      },
+      {
+        "path": "commitlint.config.cjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": "commitlint.config.mjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": "commitlint.config.ts",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".commitlintrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".commitlintrc.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".commitlintrc.js",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".commitlintrc.cjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".commitlintrc.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".commitlintrc.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".commitlintrc.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".husky/commit-msg",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".githooks/commit-msg",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".pre-commit-config.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "lefthook.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "lefthook.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".github/workflows/*.yml",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/workflows/*.yaml",
+        "scope": "glob"
+      },
+      {
+        "path": ".gitlab-ci.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "Jenkinsfile",
+        "scope": "any-depth"
+      },
+      {
+        "path": "azure-pipelines.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".circleci/config.yml",
+        "scope": "root"
+      },
+      {
+        "path": ".buildkite/**/*.yml",
+        "scope": "glob"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      },
+      {
+        "path": ".githooks/*",
+        "scope": "glob"
+      },
+      {
+        "path": ".husky/*",
+        "scope": "glob"
+      },
+      {
+        "path": "**",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "TOOL-07",
+    "note": "The branch read (git symbolic-ref HEAD, git branch --show-current, git rev-parse --abbrev-ref HEAD) is one line, and its non-zero exit must be in the same indented block of a hook-manager file or anywhere in a pre-commit or commit-msg script outside .git/. The hook-manager files are found at any depth but read at the root; core.hooksPath is grepped in every manifest, config, script, CI and build file (glob **).",
+    "source": "engine",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "path": ".pre-commit-config.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "lefthook.yml",
+        "scope": "root"
+      },
+      {
+        "path": "lefthook.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pre-commit",
+        "scope": "any-depth"
+      },
+      {
+        "path": "commit-msg",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".githooks/*",
+        "scope": "glob"
+      },
+      {
+        "path": ".husky/*",
+        "scope": "glob"
+      },
+      {
+        "path": "**",
+        "scope": "glob"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": ".github/rulesets/**/*.json",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/settings.yml",
+        "scope": "root"
+      },
+      {
+        "path": "*.tf",
+        "scope": "any-depth"
+      }
+    ]
+  }
+]

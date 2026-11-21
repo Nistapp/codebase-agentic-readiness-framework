@@ -21,7 +21,9 @@ from typing import Any
 import _dev_paths
 import consistency_map_reads as cmr
 
-MAP: dict[str, Any] = json.loads((_dev_paths.DEV / "consistency-map.json").read_text(encoding="utf-8"))
+import consistency_map
+
+MAP: dict[str, Any] = consistency_map.load_map()
 CATALOGUE_IDS: list[str] = [
     check["id"]
     for check in json.loads((_dev_paths.REPO / "audit" / "catalogue.json").read_text(encoding="utf-8"))["checks"]
@@ -144,6 +146,40 @@ class DriftTest(unittest.TestCase):
         written = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(written["moves"], MAP["moves"][:1])
         self.assertEqual(written["reads"], MAP["reads"])
+
+    def _copy_folder(self) -> Path:
+        """A copy of this tree's map folder."""
+        path = Path(tempfile.mkdtemp(prefix="cmap-reads-")) / "consistency-map"
+        self.addCleanup(shutil.rmtree, path.parent, ignore_errors=True)
+        shutil.copytree(consistency_map.MAP_PATH, path)
+        return path
+
+    def test_write_restores_the_reads_files_of_the_folder_form(self) -> None:
+        path = self._copy_folder()
+        # The two agent entries, AGT-11 and CI-04, are written in the map, so their files stay.
+        (path / "reads" / "BASE.json").unlink()
+        (path / "reads" / "TOOL.json").write_text("[]\n", encoding="utf-8")
+        index = json.loads((path / "index.json").read_text(encoding="utf-8"))
+        index["parts"]["reads"].remove("reads/BASE.json")
+        (path / "index.json").write_text(json.dumps(index), encoding="utf-8")
+        code, _, err = _run("--map", str(path))
+        self.assertEqual(code, 1)
+        self.assertIn("BASE-01", err)
+        code, out, _ = _run("--map", str(path), "--write")
+        self.assertEqual(code, 0)
+        self.assertIn("reads entries rewritten", out)
+        for original in sorted(consistency_map.MAP_PATH.rglob("*.json")):
+            copied = path / original.relative_to(consistency_map.MAP_PATH)
+            self.assertEqual(copied.read_text(encoding="utf-8"), original.read_text(encoding="utf-8"), original.name)
+        self.assertEqual(_run("--map", str(path))[0], 0)
+
+    def test_write_in_the_folder_form_leaves_the_other_parts_alone(self) -> None:
+        path = self._copy_folder()
+        before = {p.name: p.read_bytes() for part in ("moves", "keeps", "names") for p in (path / part).glob("*.json")}
+        (path / "reads" / "TOOL.json").write_text("[]\n", encoding="utf-8")
+        self.assertEqual(_run("--map", str(path), "--write")[0], 0)
+        after = {p.name: p.read_bytes() for part in ("moves", "keeps", "names") for p in (path / part).glob("*.json")}
+        self.assertEqual(before, after)
 
     def test_a_missing_agent_entry_is_an_error(self) -> None:
         cmap = json.loads(json.dumps(MAP))

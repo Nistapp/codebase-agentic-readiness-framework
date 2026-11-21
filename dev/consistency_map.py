@@ -32,10 +32,13 @@ scope, and the evidence comparison (:mod:`consistency_map_change`). ``--at REF``
 not the working tree; ``--no-evidence`` skips the engine runs. A ref that names no commit is a usage error (exit 2);
 a failed engine run exits 1.
 
-The map is two files, so that each stays under the 512 KiB size the audit's structural check flags:
-``dev/consistency-map.json`` holds every part but ``names``, and ``dev/consistency-map-names.json`` holds
-``map_format`` and ``names``. :func:`load_map` joins them into the one map the schema describes. A map file that
-also holds ``names``, a missing names file, or a ``map_format`` that differs is a usage error (exit 2).
+The map is a folder, ``dev/consistency-map/``, so that no branch has to edit one big file. ``index.json`` lists the
+part files of each part in joining order: ``boundaries.json``, ``reads/<FAMILY>.json`` (one for each check family),
+``moves/<playbook>.json`` and ``keeps/<playbook>.json`` (the entries that belong to a playbook or recipe file),
+``moves/templates.json`` and ``names/names-<N>.json``. Each file stays under 100 KiB. :func:`load_map` joins the files
+into the one map the schema describes; a folder with no index, an index that lists a missing file or a file twice,
+and a part file the index does not list are usage errors (exit 2). It still reads the older form too: a map file with
+the names file beside it (``consistency-map-names.json``).
 """
 
 from __future__ import annotations
@@ -55,7 +58,7 @@ from typing import Any
 
 DEV = Path(__file__).resolve().parent
 REPO = DEV.parent
-MAP_PATH = DEV / "consistency-map.json"
+MAP_PATH = DEV / "consistency-map"
 #: The suffix that turns the map file's name into its names file's name (``consistency-map-names.json``).
 NAMES_SUFFIX = "-names"
 #: The index of the map's folder form: it lists the part files of each part, in joining order.
@@ -784,7 +787,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--map",
         type=Path,
         default=MAP_PATH,
-        help="the map file; its names file is beside it (default: dev/consistency-map.json)",
+        help="the map folder, or a map file with its names file beside it (default: dev/consistency-map)",
     )
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--strict", action="store_true", help="exit 1 when the gate finds a problem")

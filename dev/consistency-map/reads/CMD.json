@@ -1,0 +1,250 @@
+[
+  {
+    "binding": "file",
+    "check": "CMD-01",
+    "constants": [
+      "audit.rules.checks._common:RUNNER_PRECEDENCE"
+    ],
+    "note": "Every runner (package.json, the Makefile, the Taskfile, pyproject.toml, the Gradle and the Maven build) counts only at the root, where it is read. A root gradlew or mvnw only chooses the launcher. format:check is also read under the spelling its runner accepts.",
+    "source": "engine",
+    "threshold": "all seven verbs on one runner",
+    "what": {
+      "kind": "key",
+      "text": [
+        "format",
+        "format:check",
+        "lint",
+        "typecheck",
+        "test",
+        "check",
+        "security"
+      ]
+    },
+    "where": [
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "section",
+    "check": "CMD-02",
+    "note": "The command of the resolved check verb, split at shell operators; in a Makefile a prerequisite that is no verb is followed once, and so is a package script that is no verb. A Gradle check is read from the build file's plugins and check dependsOn wiring; a settings file that includes subprojects, or an unknown plugin or task, makes a check still missing a concern UNKNOWN. A Maven lifecycle check is UNKNOWN.",
+    "source": "engine",
+    "threshold": "check composes format-check, typecheck and test",
+    "what": {
+      "kind": "key",
+      "text": [
+        "check"
+      ]
+    },
+    "where": [
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      },
+      {
+        "path": "settings.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "settings.gradle.kts",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "section",
+    "check": "CMD-03",
+    "constants": [
+      "audit.rules.checks._common:RUNNER_PRECEDENCE"
+    ],
+    "note": "Every runner that declares check (lifecycle tasks left out); each after the first must call the first by a per-runner pattern or a check call through another runner.",
+    "source": "engine",
+    "threshold": "every second check delegates to the first",
+    "what": {
+      "kind": "key",
+      "text": [
+        "check"
+      ]
+    },
+    "where": [
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "section",
+    "check": "CMD-04",
+    "constants": [
+      "audit.rules.checks._common:RUNNER_PRECEDENCE"
+    ],
+    "note": "The command of each resolved read-only verb, segment by segment: a write verb through a runner or a writing tool form (prettier --write, ruff format, eslint --fix, npm install and others) fails.",
+    "source": "engine",
+    "threshold": "no read-only verb invokes a write verb",
+    "what": {
+      "kind": "key",
+      "text": [
+        "format:check",
+        "lint",
+        "typecheck",
+        "test",
+        "check",
+        "security"
+      ]
+    },
+    "where": [
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  }
+]

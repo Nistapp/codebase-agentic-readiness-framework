@@ -1,0 +1,1217 @@
+[
+  {
+    "check": "AGT-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "| AGT-01 | `ls AGENTS.md` and the engine's AGT-01 | Present, exact case; `PASS` |",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Not written here; it runs on the same branch",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/no-instruction-file-yet"
+    },
+    "move": "adapt-agents-md/row-1",
+    "note": "The empty Never section is filled by add-deny-rules on the same T7 branch; a theme that closes before T7 sees it empty.",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Not written here; it runs on the same branch",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/no-instruction-file-yet"
+    },
+    "move": "adapt-agents-md/row-1",
+    "note": "The empty Never section is filled by add-deny-rules on the same T7 branch; a theme that closes before T7 sees it empty.",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Not written here; it runs on the same branch",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/no-instruction-file-yet"
+    },
+    "move": "adapt-agents-md/row-1",
+    "note": "The empty Never section is filled by add-deny-rules on the same T7 branch; a theme that closes before T7 sees it empty.",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The engine strips the comment before resolving the command (EXEC-06) and reads the verb name in it (AGT-05):",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-2",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-05",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Name each of `format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security` as a whole token in a fenced block, in the runner's own spelling, with an inline `#` comment that names the framework verb when the spelling differs.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-2",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-05",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "For an EXEC-06 finding, fix the one command it names, inline, and re-run the engine; do not rewrite the block.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Every fenced command resolves; `PASS`",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "TST-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "For an EXEC-06 finding, fix the one command it names, inline, and re-run the engine; do not rewrite the block.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/checks-resolved"
+    },
+    "move": "adapt-agents-md/row-4",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/checks-resolved"
+    },
+    "move": "adapt-agents-md/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "TST-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A fenced single-test command for the runner; `PASS`",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Three lines, one fact each; `PASS`",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep prohibition words out of sections that are not prohibitions.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep prohibition words out of sections that are not prohibitions.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep prohibition words out of sections that are not prohibitions.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Two or more rules, every path exists; `PASS`",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "State the rules of other sections in positive form.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "State the rules of other sections in positive form.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "State the rules of other sections in positive form.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "One sentence naming the triggers; `PASS`",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-8",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The sentence is the one line of its section that holds never, do not or must not (Step 14). Keep it the only one.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-09",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Branches named, each protected branch the declared rules name included; push and PR only as the state allows; never merge, tag or release; `PASS`",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The sentence is the one line of its section that holds never, do not or must not (Step 14). Keep it the only one.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The sentence is the one line of its section that holds never, do not or must not (Step 14). Keep it the only one.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-08",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The reach line is true; every vendor file is a pointer or reconciled; `PASS`",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-10",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move, not copy) and ask whether the vendor file then becomes the one-line pointer.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/inputs-to-ask"
+    },
+    "move": "adapt-agents-md/row-11",
+    "note": "Move, not copy, lands the text in the file these readers read first; a harness-only rule left in the vendor file is not covered.",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move, not copy) and ask whether the vendor file then becomes the one-line pointer.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/inputs-to-ask"
+    },
+    "move": "adapt-agents-md/row-11",
+    "note": "Move, not copy, lands the text in the file these readers read first; a harness-only rule left in the vendor file is not covered.",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-05",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move, not copy) and ask whether the vendor file then becomes the one-line pointer.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/inputs-to-ask"
+    },
+    "move": "adapt-agents-md/row-11",
+    "note": "Move, not copy, lands the text in the file these readers read first; a harness-only rule left in the vendor file is not covered.",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep a boundary path and its rule word on one line.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-11",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep prohibition words out of sections that are not prohibitions.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-11",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-08",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The reach line is true; every vendor file is a pointer or reconciled; `PASS`",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-11",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-09",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move, not copy) and ask whether the vendor file then becomes the one-line pointer.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/inputs-to-ask"
+    },
+    "move": "adapt-agents-md/row-11",
+    "note": "Move, not copy, lands the text in the file these readers read first; a harness-only rule left in the vendor file is not covered.",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-12",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move, not copy) and ask whether the vendor file then becomes the one-line pointer.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/inputs-to-ask"
+    },
+    "move": "adapt-agents-md/row-11",
+    "note": "Move, not copy, lands the text in the file these readers read first; a harness-only rule left in the vendor file is not covered.",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-13",
+    "move": "adapt-agents-md/row-11",
+    "reason": "The move can only remove findings or add credit: AGT-13 does not read CLAUDE.md, so the conventions items in the moved rules start to count in AGENTS.md. A TODO or TBD moved with them goes to the owner as a question (Inputs 11), never stays as a guess.",
+    "status": "accepted"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep prohibition words out of sections that are not prohibitions.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-11",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep prohibition words out of sections that are not prohibitions.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-11",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A vendor file that carries extra rules beside the pointer: offer to move those rules into `AGENTS.md` (move, not copy) and ask whether the vendor file then becomes the one-line pointer.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/inputs-to-ask"
+    },
+    "move": "adapt-agents-md/row-11",
+    "note": "Move, not copy, lands the text in the file these readers read first; a harness-only rule left in the vendor file is not covered.",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep a boundary path and its rule word on one line.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep prohibition words out of sections that are not prohibitions.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-10",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "No unconfigured deferral; `PASS`",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-13",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "If either verdict falls, put the rule back in X.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep prohibition words out of sections that are not prohibitions.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep prohibition words out of sections that are not prohibitions.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "HYG-13",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "If either verdict falls, put the rule back in X.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-12",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-05",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-09",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-12",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A reader persona (who the docs and messages are written for, AGT-12) is a communication rule, not a role-play prompt: it stays.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/inputs-to-ask"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-13",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A conventions section in `AGENTS.md` or `CONTRIBUTING.md` stays where it is, unless the owner asks to move it.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-05",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+      "section": "implement/SKILL.md#implement/stage-3-apply"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-11",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "move each generic block to the `docs/` page and leave one link line.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-13",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep a boundary path and its rule word on one line.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-14",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "State the rules of other sections in positive form.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-14",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "State the rules of other sections in positive form.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-14",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "State the rules of other sections in positive form.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-14",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-11",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "reword each contradicted rule as target state with the measured exception count and the command that finds them",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-14",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep a boundary path and its rule word on one line.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-15",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Every fenced command in `AGENTS.md` resolves; the one command a finding names is fixed inline",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/checks-resolved"
+    },
+    "move": "adapt-agents-md/row-15",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-11",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "correct each stale line.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-15",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "`PASS`, or the owner's recorded choice",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-16",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-08",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Name a component file `AGENTS.md`, never a vendor name such as `CLAUDE.md`.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-16",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-11",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "For a multi-component repository, a component `AGENTS.md` is written only when the owner asks and the component has rules the root file cannot state; otherwise record AGT-02 as the owner's choice (component scoping is planned for a later framework version).",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-16",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-12",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The section names the confirmed persona, how to report and how to ask for a decision; `PASS` (`partial` for a non-English docs language)",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-17",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-12",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The section names the confirmed persona, how to report and how to ask for a decision; `PASS` (`partial` for a non-English docs language)",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-18",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-05",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+      "section": "implement/SKILL.md#implement/stage-3-apply"
+    },
+    "move": "adapt-agents-md/row-18",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-05",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-08",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-09",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-10",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-12",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-13",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "A conventions section in `AGENTS.md` or `CONTRIBUTING.md` stays where it is, unless the owner asks to move it.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-05",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+      "section": "implement/SKILL.md#implement/stage-3-apply"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Do not edit the prohibitions section; that is [`add-deny-rules`](add-deny-rules.md).",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/do-not-do"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "TST-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Move only a section that no root-only check reads.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-19",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-05",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The two traps of Step 14 still hold: the renumbering never splits a boundary path from its rule word, and never moves a prohibition word into another section.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The two traps of Step 14 still hold: the renumbering never splits a boundary path from its rule word, and never moves a prohibition word into another section.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-08",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-09",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-10",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-12",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-13",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-03",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-04",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Any row in that table (`improved`, `regressed`, `changed`, `added` or `removed`) stops the step.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The two traps of Step 14 still hold: the renumbering never splits a boundary path from its rule word, and never moves a prohibition word into another section.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "The two traps of Step 14 still hold: the renumbering never splits a boundary path from its rule word, and never moves a prohibition word into another section.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-20",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-08",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Run `AGT-08` too: it must not count the new file as a vendor instruction file.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-21",
+    "status": "kept"
+  },
+  {
+    "check": "DOC-05",
+    "home": {
+      "path": "implement/SKILL.md",
+      "quote": "readable\" reads every page a step writes or moves under `docs/`. Keep its sentences short, without vague words.",
+      "section": "implement/SKILL.md#implement/stage-3-apply"
+    },
+    "move": "adapt-agents-md/row-21",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-13",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep the template's five sections.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-21",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-10",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Word it as a reference (\"Coding conventions: `CONVENTIONS.md`\"), never as \"read `CONVENTIONS.md` first\".",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-22",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-13",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Naming, layering, errors and logging, testing and the config link are covered, with no stub word; `PASS`, or `partial` with the missing items named",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-22",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-06",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Keep a boundary path and its rule word on one line.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-23",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-07",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "State the rules of other sections in positive form.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-23",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-13",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Naming, layering, errors and logging, testing and the config link are covered, with no stub word; `PASS`, or `partial` with the missing items named",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-23",
+    "status": "kept"
+  },
+  {
+    "check": "CON-01",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "State the rules of other sections in positive form.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-23",
+    "status": "kept"
+  },
+  {
+    "check": "CON-02",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "State the rules of other sections in positive form.",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/steps/generic"
+    },
+    "move": "adapt-agents-md/row-23",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-13",
+    "home": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "quote": "Naming, layering, errors and logging, testing and the config link are covered, with no stub word; `PASS`, or `partial` with the missing items named",
+      "section": "implement/playbooks/adapt-agents-md.md#playbook-adapt-agents-md/verification"
+    },
+    "move": "adapt-agents-md/row-24",
+    "status": "kept"
+  }
+]

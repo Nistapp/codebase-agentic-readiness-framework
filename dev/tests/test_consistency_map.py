@@ -58,13 +58,15 @@ class MapShapeTest(unittest.TestCase):
         self.assertEqual(_problems(MAP, SCHEMA), [])
 
 
-#: The size over which the audit's structural check (``NAV-03``, ``LARGE_FILE_BYTES`` in the engine's ``nav.py``)
-#: flags a file. Each map file stays under it.
-_LARGE_FILE_BYTES = 512 * 1024
+#: The size each map file stays under (ADR 0012), well below the 512 KiB over which the audit's structural check
+#: (``NAV-03``) flags a file.
+_MAP_FILE_BYTES = 100 * 1024
 
 
 class MapFilesTest(unittest.TestCase):
-    """The map is two files, joined by ``load_map``: each part once, one format, each file under the size limit."""
+    """The map is a folder of files, joined by ``load_map``: each file under the size limit, the index lists them all.
+
+    The one-file form (the map file and its names file) is still read, and its tests are here too."""
 
     def _write(self, folder: Path, cmap: dict[str, Any], names: Any) -> Path:
         path = folder / "consistency-map.json"
@@ -73,9 +75,24 @@ class MapFilesTest(unittest.TestCase):
             consistency_map.names_path(path).write_text(json.dumps(names), encoding="utf-8")
         return path
 
-    def test_each_map_file_stays_under_the_structural_size_limit(self) -> None:
-        for path in (consistency_map.MAP_PATH, consistency_map.names_path(consistency_map.MAP_PATH)):
-            self.assertLess(path.stat().st_size, _LARGE_FILE_BYTES, path.name)
+    def test_each_map_file_stays_under_the_size_limit(self) -> None:
+        files = sorted(consistency_map.MAP_PATH.rglob("*.json"))
+        self.assertGreater(len(files), 10)
+        for path in files:
+            self.assertLess(path.stat().st_size, _MAP_FILE_BYTES, str(path.relative_to(consistency_map.MAP_PATH)))
+
+    def test_the_folder_holds_only_what_the_index_lists_and_each_file_is_in_the_repository_format(self) -> None:
+        folder = consistency_map.MAP_PATH
+        index = json.loads((folder / "index.json").read_text(encoding="utf-8"))
+        listed = {name for files in index["parts"].values() for name in files}
+        self.assertEqual({p.relative_to(folder).as_posix() for p in folder.rglob("*.json")}, listed | {"index.json"})
+        for path in folder.rglob("*.json"):
+            text = path.read_text(encoding="utf-8")
+            self.assertEqual(text, json.dumps(json.loads(text), indent=2, sort_keys=True) + "\n", path.name)
+
+    def test_the_default_map_is_the_folder(self) -> None:
+        self.assertEqual(consistency_map.MAP_PATH, consistency_map.DEV / "consistency-map")
+        self.assertTrue(consistency_map.MAP_PATH.is_dir())
 
     def test_the_names_file_sits_beside_the_map_file(self) -> None:
         self.assertEqual(
