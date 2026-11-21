@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
-from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, idx, tool, tst
+from audit.rules.checks import agt, base, ci, cmd, con, doc, execution, idx, nav, tool, tst
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -41,12 +41,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     *con.SPECS,
     *execution.SPECS,
     *tst.SPECS,
-    # -- NAV ------------------------------------------------------------
-    _c("NAV-01", "Declared component boundaries", "A", _S.DEGRADER),
-    _c("NAV-02", "Obvious entry points", "B", _S.DEGRADER),
-    _c("NAV-03", "Structural red flags", "B", _S.COSMETIC),
-    _c("NAV-04", "Architecture orientation artifact", "A", _S.COSMETIC, scored=False),
-    _c("NAV-05", "Public-symbol documentation coverage", "B", _S.COSMETIC, scored=False),
+    *nav.SPECS,
     # -- SEC ------------------------------------------------------------
     _c("SEC-01", ".env untracked and ignored", "B", _S.BLOCKER),
     _c("SEC-02", "No key-shaped strings in tracked files", "B", _S.BLOCKER),

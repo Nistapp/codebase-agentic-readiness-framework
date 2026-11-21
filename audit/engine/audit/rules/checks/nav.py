@@ -46,7 +46,8 @@ import re
 import warnings
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.scan import Inventory, Kind
 from audit.stack import LOCKFILE_NAMES
 from audit.rules.payloads import Payload, Ratio
@@ -542,6 +543,15 @@ def check_nav05(*, spec, target, inventory, stack, components, session) -> Check
         spec, verdict, detail, data=Ratio(numerator=documented, denominator=total, unit="public symbols", method=method)
     )
 
+
+#: The NAV checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("NAV-01", "Declared component boundaries", "A", Severity.DEGRADER),
+    declare("NAV-02", "Obvious entry points", "B", Severity.DEGRADER),
+    declare("NAV-03", "Structural red flags", "B", Severity.COSMETIC),
+    declare("NAV-04", "Architecture orientation artifact", "A", Severity.COSMETIC, scored=False),
+    declare("NAV-05", "Public-symbol documentation coverage", "B", Severity.COSMETIC, scored=False),
+)
 
 IMPLEMENTATIONS = {
     "NAV-01": check_nav01,
