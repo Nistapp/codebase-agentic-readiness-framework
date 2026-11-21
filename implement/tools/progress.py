@@ -688,6 +688,51 @@ def summary_data(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+#: The preference Stage 1 (triage) of implement/SKILL.md always records, so a state that holds it has been triaged.
+TRIAGE_KEY = "ci.pr_by_agent"
+OPEN_THEME = ("branch_open", "pr_open")
+
+
+def next_step(state: dict[str, Any]) -> dict[str, Any]:
+    """The stage and step of implement/SKILL.md a session goes on with, from the state alone.
+
+    The first rule that holds decides: an item left `in_progress` is resumed (Stage 3, step 4, and "Resuming"); a state
+    with no theme started and no `ci.pr_by_agent` preference has not been triaged (Stage 1); a theme shown as
+    `branch_open` or `pr_open` is checked for its merge first (Stage 2, step 1); a `queued` item means the next theme is
+    picked (Stage 2, step 2); otherwise the run closes out (Stage 5).
+    """
+    items = state["items"]
+    working = sorted(
+        (item for item in items if item["status"] == "in_progress"), key=lambda i: _finding_order(i["finding"])
+    )
+    if working:
+        item = working[0]
+        return {
+            "stage": 3,
+            "step": 4,
+            "text": f"Stage 3, step 4: resume {item['finding']} ({item['theme']}) on its theme's branch; read the "
+            "branch's git log first, so nothing is committed twice.",
+        }
+    themes = sorted(state["themes"], key=lambda entry: entry["id"])
+    triaged = any(pref["key"] == TRIAGE_KEY for pref in state["preferences"])
+    if not triaged and all(theme["status"] == "not_started" for theme in themes):
+        return {
+            "stage": 1,
+            "step": 1,
+            "text": f"Stage 1, step 1: triage; no theme has started and the {TRIAGE_KEY} preference is not recorded.",
+        }
+    shown_open = [f"{theme['id']} ({theme['status']})" for theme in themes if theme["status"] in OPEN_THEME]
+    if shown_open:
+        return {
+            "stage": 2,
+            "step": 1,
+            "text": f"Stage 2, step 1: check whether {', '.join(shown_open)} merged, and record each merge.",
+        }
+    if any(item["status"] == "queued" for item in items):
+        return {"stage": 2, "step": 2, "text": "Stage 2, step 2: pick the next theme."}
+    return {"stage": 5, "step": 1, "text": "Stage 5, step 1: close out; no item is queued and no theme is open."}
+
+
 # Byte budgets for `show --json`, which together stay under the envelope's item budget.
 SHOW_BUDGETS = {"items": 24 * 1024, "preferences": 8 * 1024, "not_queued": 6 * 1024, "log": 8 * 1024}
 
@@ -708,7 +753,8 @@ def run_show(args: Any) -> _common.Result:
         "tools": {"release": facts["release"], "revision": facts["revision"]},
     }
     if not args.json:
-        return _common.Result(data={"state": str(path), **summary, "versions": versions}, summary=line)
+        brief: dict[str, Any] = {"state": str(path), **summary, "versions": versions, "next": next_step(state)}
+        return _common.Result(data=brief, summary=line)
     shown = dict(state)
     omitted: dict[str, int] = {}
     for key, budget in SHOW_BUDGETS.items():
@@ -717,7 +763,7 @@ def run_show(args: Any) -> _common.Result:
         shown[key] = list(reversed(kept)) if key == "log" else kept
         if left_out:
             omitted[key] = left_out
-    data: dict[str, Any] = {"state_file": str(path), "state": shown, "versions": versions}
+    data: dict[str, Any] = {"state_file": str(path), "state": shown, "versions": versions, "next": next_step(state)}
     warnings = []
     if omitted:
         data["omitted"] = omitted

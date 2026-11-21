@@ -411,6 +411,74 @@ class ShowTests(TargetCase):
         self.assertIn("repeats the key", envelope["data"]["error"])
 
 
+class NextStepTests(TargetCase):
+    """`show` says the stage and step of implement/SKILL.md a session goes on with: one rule per test."""
+
+    def next_of(self, change: Any = None, *, source: Path = LATER_STATE, mode: Sequence[str] = ()) -> dict[str, Any]:
+        state = json.loads(source.read_text(encoding="utf-8"))
+        if change is not None:
+            change(state)
+        self.json_path.write_text(json.dumps(state), encoding="utf-8")
+        code, envelope, err = call(["show", "--workspace", str(self.state_dir), *mode])
+        self.assertEqual(code, 0, (envelope, err))
+        shown: dict[str, Any] = envelope["data"]["next"]
+        return shown
+
+    @staticmethod
+    def set_item(state: dict[str, Any], finding: str, status: str) -> None:
+        item = next(entry for entry in state["items"] if entry["finding"] == finding)
+        item["status"] = status
+
+    @staticmethod
+    def set_theme(state: dict[str, Any], theme: str, status: str) -> None:
+        entry = next(entry for entry in state["themes"] if entry["id"] == theme)
+        entry["status"] = status
+
+    def test_an_item_in_progress_is_resumed(self) -> None:
+        shown = self.next_of()
+        self.assertEqual((shown["stage"], shown["step"]), (3, 4))
+        self.assertTrue(shown["text"].startswith("Stage 3, step 4: resume F-003 (T2)"), shown)
+
+    def test_show_json_says_the_same(self) -> None:
+        self.assertEqual(self.next_of(mode=["--json"]), self.next_of())
+
+    def test_a_new_state_is_triaged_first(self) -> None:
+        shown = self.next_of(source=EXAMPLE_STATE)
+        self.assertEqual((shown["stage"], shown["step"]), (1, 1))
+        self.assertIn("ci.pr_by_agent", shown["text"])
+
+    def test_a_recorded_pr_preference_ends_triage(self) -> None:
+        def triaged(state: dict[str, Any]) -> None:
+            state["preferences"].append(
+                {
+                    "key": "ci.pr_by_agent",
+                    "value": "no",
+                    "reason": "owner",
+                    "by": "owner",
+                    "date": "2026-10-29",
+                    "phase": "s1",
+                }
+            )
+
+        shown = self.next_of(triaged, source=EXAMPLE_STATE)
+        self.assertEqual((shown["stage"], shown["step"]), (2, 2))
+
+    def test_an_open_theme_is_checked_for_its_merge(self) -> None:
+        shown = self.next_of(lambda state: self.set_item(state, "F-003", "done"))
+        self.assertEqual((shown["stage"], shown["step"]), (2, 1))
+        self.assertEqual(shown["text"], "Stage 2, step 1: check whether T2 (pr_open) merged, and record each merge.")
+
+    def test_nothing_queued_and_no_open_theme_closes_out(self) -> None:
+        def finished(state: dict[str, Any]) -> None:
+            for item in state["items"]:
+                if item["status"] in ("queued", "in_progress"):
+                    item.update(status="blocked", reason="waits for the owner")
+            self.set_theme(state, "T2", "merged")
+
+        shown = self.next_of(finished)
+        self.assertEqual((shown["stage"], shown["step"]), (5, 1))
+
+
 class WorkspaceTests(TargetCase):
     """Every command but init finds the state in the folder --workspace names."""
 

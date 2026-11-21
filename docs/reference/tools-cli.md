@@ -967,7 +967,17 @@ the count per status and the `not_queued` count, with `versions` as [`check_drif
 - the counts per status and per theme (`items`, and `open`: neither `done` nor `skipped`);
 - the skipped finding ids, and the number of preferences, debt entries and log entries;
 - `versions`: the framework that created the state (`created`), the one that last wrote it (`last`) and these
-  tools (`tools`).
+  tools (`tools`);
+- `next`: where a session goes on, from the state alone, as `stage` and `step` of
+  [`implement/SKILL.md`](../../implement/SKILL.md) and a one-sentence `text`. The first rule that holds decides:
+
+  | The state | `stage`, `step` |
+  |---|---|
+  | An item is `in_progress` (the lowest finding id is named) | 3, 4: resume it on its theme's branch |
+  | No theme has started and no `ci.pr_by_agent` preference is recorded | 1, 1: triage |
+  | A theme is `branch_open` or `pr_open` | 2, 1: check whether it merged |
+  | An item is `queued` | 2, 2: pick the next theme |
+  | Anything else | 5, 1: close out |
 
 `adopt` writes both state files into the workspace, and copies each source report and the `.md` beside it there.
 It rewrites each `source_reports[].path` to the file name and appends the log entry `State adopted from <path>.`
@@ -975,8 +985,8 @@ Its `data` holds `state`, `markdown`, `label`, `adopted_from`, `copied` and `may
 in-repo files the owner may now remove: the state folder, the report folder and an `AGENTS.md` that names the
 state folder. `adopt` writes and deletes nothing in the target.
 
-`show --json` puts the state under `data.state`, with the same `versions`. `render` writes the Markdown and puts its
-path and size in `data`. Every other command checks the changed state whole and appends one log entry. It appends
+`show --json` puts the state under `data.state`, with the same `versions` and `next`. `render` writes the Markdown
+and puts its path and size in `data`. Every other command checks the changed state whole and appends one log entry. It appends
 two when the framework changed since the last write (see `last_framework`). Then it replaces the JSON and puts the
 path and the count per status in `data`. A refused command changes nothing, and a refused move says which states
 the item may go to. The Markdown view keeps prose lines under 110 columns, so it passes MD013: the item details, and
