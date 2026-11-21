@@ -166,7 +166,7 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 **What it never does:**
 
 - Do not print, quote, log or copy a value from any env, properties, realm, keystore or credentials file, and
-  do not open a `.env`-like file.
+  do not open a `.env`-like file. This echoes the hard rule [Never touch secrets](../../implement/SKILL.md#hard-rules).
 - Do not rotate a credential, remove one from history or run a history-rewriting command: report and stop.
 - Do not touch a tracked env file the owner keeps; do not add an ignore rule or `git rm --cached` for it.
 - Do not re-raise a finding the owner rejected or skipped; new observations go to the pull request body.
@@ -412,7 +412,8 @@ contradict it.
 - Do not untrack, ignore or delete a file the owner has not confirmed is scratch, and do not change which env files
   are tracked; state the owner's decision instead.
 - Do not paste the CON-04 draft whole: an entry that matches nothing in the repository is noise.
-- Do not open, print or quote a secret store while listing the paths.
+- Do not open, print or quote a secret store while listing the paths. This echoes the hard
+  rule [Never touch secrets](../../implement/SKILL.md#hard-rules).
 
 Full playbook: [`add-deny-rules.md`](../../implement/playbooks/add-deny-rules.md).
 
