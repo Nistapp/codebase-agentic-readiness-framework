@@ -60,7 +60,8 @@ from __future__ import annotations
 import re
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.probes import MUTATING_VERBS
 from audit.rules.checks._common import resolve_verbs, runner_commands, runner_target, strip_shell_comment
 from audit.stack import CI_PROVIDERS, LOCKFILE_NAMES, VERBS
@@ -715,6 +716,14 @@ def check_ci05(*, spec, target, inventory, stack, components, session) -> CheckO
         )
     return _outcome(spec, Verdict.PARTIAL, detail, findings)
 
+
+#: The CI checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("CI-01", "Pipeline present, triggered on PRs", "B", Severity.BLOCKER),
+    declare("CI-02", "Local↔CI parity", "B", Severity.BLOCKER),
+    declare("CI-03", "CI-only steps flagged", "B", Severity.DEGRADER),
+    declare("CI-05", "Workflow files are linted", "B", Severity.DEGRADER),
+)
 
 IMPLEMENTATIONS = {
     "CI-01": check_ci01,

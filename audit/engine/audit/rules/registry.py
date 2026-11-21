@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
-from audit.rules.checks import agt, cmd, doc, idx, tool
+from audit.rules.checks import agt, ci, cmd, doc, idx, tool
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -36,11 +36,7 @@ _CATALOGUE: tuple[CheckSpec, ...] = (
     *doc.SPECS,
     *cmd.SPECS,
     *tool.SPECS,
-    # -- CI -------------------------------------------------------------
-    _c("CI-01", "Pipeline present, triggered on PRs", "B", _S.BLOCKER),
-    _c("CI-02", "Local↔CI parity", "B", _S.BLOCKER),
-    _c("CI-03", "CI-only steps flagged", "B", _S.DEGRADER),
-    _c("CI-05", "Workflow files are linted", "B", _S.DEGRADER),
+    *ci.SPECS,
     # -- BASE -----------------------------------------------------------
     _c("BASE-01", "Baseline artifact exists", "A", _S.DEGRADER),
     _c("BASE-02", "Current violation counts measured", "B", _S.DEGRADER),
