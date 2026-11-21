@@ -32,10 +32,13 @@ scope, and the evidence comparison (:mod:`consistency_map_change`). ``--at REF``
 not the working tree; ``--no-evidence`` skips the engine runs. A ref that names no commit is a usage error (exit 2);
 a failed engine run exits 1.
 
-The map is two files, so that each stays under the 512 KiB size the audit's structural check flags:
-``dev/consistency-map.json`` holds every part but ``names``, and ``dev/consistency-map-names.json`` holds
-``map_format`` and ``names``. :func:`load_map` joins them into the one map the schema describes. A map file that
-also holds ``names``, a missing names file, or a ``map_format`` that differs is a usage error (exit 2).
+The map is a folder, ``dev/consistency-map/``, so that no branch has to edit one big file. ``index.json`` lists the
+part files of each part in joining order: ``boundaries.json``, ``reads/<FAMILY>.json`` (one for each check family),
+``moves/<playbook>.json`` and ``keeps/<playbook>.json`` (the entries that belong to a playbook or recipe file),
+``moves/templates.json`` and ``names/names-<N>.json``. Each file stays under 100 KiB. :func:`load_map` joins the files
+into the one map the schema describes; a folder with no index, an index that lists a missing file or a file twice,
+and a part file the index does not list are usage errors (exit 2). It still reads the older form too: a map file with
+the names file beside it (``consistency-map-names.json``).
 """
 
 from __future__ import annotations
@@ -55,9 +58,11 @@ from typing import Any
 
 DEV = Path(__file__).resolve().parent
 REPO = DEV.parent
-MAP_PATH = DEV / "consistency-map.json"
+MAP_PATH = DEV / "consistency-map"
 #: The suffix that turns the map file's name into its names file's name (``consistency-map-names.json``).
 NAMES_SUFFIX = "-names"
+#: The index of the map's folder form: it lists the part files of each part, in joining order.
+FOLDER_INDEX = "index.json"
 ENGINE = REPO / "audit" / "engine"
 BOOTSTRAP = REPO / "greenfield" / "bootstrap"
 TEMPLATES = REPO / "greenfield" / "templates"
@@ -124,7 +129,7 @@ EDIT_WORDS = re.compile(r"(?i)\b(?:" + "|".join(verb.removesuffix("e") for verb 
 
 
 class MapError(Exception):
-    """The map's two files do not join into one map."""
+    """The map's files do not join into one map."""
 
 
 def names_path(map_path: Path) -> Path:
@@ -133,7 +138,13 @@ def names_path(map_path: Path) -> Path:
 
 
 def load_map(map_path: Path = MAP_PATH) -> dict[str, Any]:
-    """The map file joined with its names file, as one map; raises :class:`MapError` when they do not join."""
+    """The map as one dictionary, from the folder form or from the single-file form.
+
+    A folder holds ``index.json`` and the part files it lists (:func:`_load_folder`). A file is the older form: the
+    map file joined with its names file. Either way, a map that does not join raises :class:`MapError`.
+    """
+    if map_path.is_dir():
+        return _load_folder(map_path)
     cmap = json.loads(map_path.read_text(encoding="utf-8"))
     if "names" in cmap:
         raise MapError(f"{map_path.name} holds names; they belong in {names_path(map_path).name}")
@@ -149,6 +160,46 @@ def load_map(map_path: Path = MAP_PATH) -> dict[str, Any]:
             f"{map_path.name} has {cmap.get('map_format')!r}"
         )
     return {**cmap, "names": names["names"]}
+
+
+def _load_folder(folder: Path) -> dict[str, Any]:
+    """Join the folder form of the map: ``index.json`` lists, for each part, the files that hold its entries.
+
+    The index fixes the order of the files, so a part's list is the lists of its files one after the other. Each
+    listed file holds one JSON list. A file the index does not list, a listed file that is missing, and a file
+    listed twice are refused.
+    """
+    try:
+        index = json.loads((folder / FOLDER_INDEX).read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        raise MapError(f"{FOLDER_INDEX} is missing in {folder.name}") from None
+    if not isinstance(index, dict) or set(index) != {"map_format", "parts"} or not isinstance(index["parts"], dict):
+        raise MapError(f"{FOLDER_INDEX} must hold map_format and parts only")
+    cmap: dict[str, Any] = {"map_format": index["map_format"]}
+    listed: set[str] = set()
+    for part, files in index["parts"].items():
+        if part == "map_format" or not isinstance(files, list) or not all(isinstance(name, str) for name in files):
+            raise MapError(f"{FOLDER_INDEX}: part {part!r} must be a list of file names")
+        entries: list[Any] = []
+        for name in files:
+            if name in listed:
+                raise MapError(f"{FOLDER_INDEX} lists {name} twice")
+            listed.add(name)
+            path = (folder / name).resolve()
+            if folder.resolve() not in path.parents or name == FOLDER_INDEX:
+                raise MapError(f"{FOLDER_INDEX}: {name} is not a part file inside {folder.name}")
+            try:
+                items = json.loads(path.read_text(encoding="utf-8"))
+            except FileNotFoundError:
+                raise MapError(f"{FOLDER_INDEX} lists {name}, which is missing") from None
+            if not isinstance(items, list):
+                raise MapError(f"{name} must hold a list of entries")
+            entries += items
+        cmap[part] = entries
+    on_disk = {path.relative_to(folder).as_posix() for path in folder.rglob("*.json")} - {FOLDER_INDEX}
+    if on_disk - listed:
+        raise MapError(f"{FOLDER_INDEX} does not list {', '.join(sorted(on_disk - listed))}")
+    return cmap
 
 
 def working_tree(path: str) -> str:
@@ -736,7 +787,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "--map",
         type=Path,
         default=MAP_PATH,
-        help="the map file; its names file is beside it (default: dev/consistency-map.json)",
+        help="the map folder, or a map file with its names file beside it (default: dev/consistency-map)",
     )
     parser.add_argument("--format", choices=("text", "json"), default="text")
     parser.add_argument("--strict", action="store_true", help="exit 1 when the gate finds a problem")

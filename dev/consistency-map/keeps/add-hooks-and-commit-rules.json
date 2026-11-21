@@ -1,0 +1,178 @@
+[
+  {
+    "check": "EXEC-02",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "Each reverts alone, a dependency with its lockfile in one commit.",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/rollback"
+    },
+    "move": "add-hooks-and-commit-rules/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-05",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "The engine reads `.husky/` as wired only when a script names `husky` (`TOOL-05`).",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/node-with-a-root-manifest"
+    },
+    "move": "add-hooks-and-commit-rules/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "Do not duplicate the secret-scanner version: reuse the CI pin.",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/do-not-do"
+    },
+    "move": "add-hooks-and-commit-rules/row-2",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-05",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "The engine's wiring file exists; the install step is documented",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
+    },
+    "move": "add-hooks-and-commit-rules/row-2",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "In a fenced block of the instruction file, start each command with a word that resolves, such as `npm` or a verb.",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/generic"
+    },
+    "move": "add-hooks-and-commit-rules/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "HYG-13",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "In the contributing doc, add the lines as a paragraph of their own.",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/generic"
+    },
+    "move": "add-hooks-and-commit-rules/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-05",
+    "move": "add-hooks-and-commit-rules/row-3",
+    "reason": "Not a real pair: TOOL-05 reads the hook-manager files and core.hooksPath in manifest, config, script, CI and build files only. AGENTS.md and CONTRIBUTING.md are doc kind and not read, so the one-time install line cannot change the verdict.",
+    "status": "accepted"
+  },
+  {
+    "check": "HYG-13",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "In the contributing doc, add the lines as a paragraph of their own.",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/generic"
+    },
+    "move": "add-hooks-and-commit-rules/row-4",
+    "note": "Step 3 says Step 4 adds its text the same way.",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-06",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "Option A: the contributing doc names the title check and the state records `skipped` with the owner's reason.",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
+    },
+    "move": "add-hooks-and-commit-rules/row-4",
+    "note": "A rubric target: the engine's TOOL-06 reads no doc kind, so the contributing doc itself cannot change its verdict.",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-02",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "Each reverts alone, a dependency with its lockfile in one commit.",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/rollback"
+    },
+    "move": "add-hooks-and-commit-rules/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-06",
+    "move": "add-hooks-and-commit-rules/row-5",
+    "reason": "Not a real pair: TOOL-06 reads a \"commitlint\" key in the root package.json (_commit_rule), not a dependency name; an @commitlint/cli entry in devDependencies does not match, and the CI pattern skips @commitlint/ installs. The verdict moves with rows 6, 8 and 9, which declare TOOL-06.",
+    "status": "accepted"
+  },
+  {
+    "check": "TOOL-06",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "Option B or C: the config and the `commit-msg` stage exist; a bad message is refused locally",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
+    },
+    "move": "add-hooks-and-commit-rules/row-6",
+    "status": "kept"
+  },
+  {
+    "check": "NAV-05",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "Keep the docstring of each function:",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/commit-lint-script-template"
+    },
+    "move": "add-hooks-and-commit-rules/row-7",
+    "status": "kept"
+  },
+  {
+    "check": "NAV-02",
+    "move": "add-hooks-and-commit-rules/row-7",
+    "reason": "The move can only remove findings or add credit: the commit-lint script's __main__ guard can make NAV-02 pass in a repository with no real entry point. The engine is to stop counting such a script; until then the false credit is accepted.",
+    "status": "accepted"
+  },
+  {
+    "check": "TOOL-06",
+    "move": "add-hooks-and-commit-rules/row-7",
+    "reason": "Not a real pair: TOOL-06 credits commitlint configs, a commit-msg hook and a CI line that runs a commit tool or a script the commit-msg stage names. The script is credited only by name, through rows 8 and 9, which declare TOOL-06; creating it cannot change the verdict alone.",
+    "status": "accepted"
+  },
+  {
+    "check": "TOOL-06",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "Option B or C: the config and the `commit-msg` stage exist; a bad message is refused locally",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
+    },
+    "move": "add-hooks-and-commit-rules/row-8",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "When the step runs a Node or Python tool, set it up as the gate's other jobs do (`actions/setup-node` and `npm ci`, or `astral-sh/setup-uv`), at the version the repository already pins.",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/steps/commit-rule-in-ci"
+    },
+    "move": "add-hooks-and-commit-rules/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-06",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "The CI step fails on the bad subject and passes on a clean range; the engine reads `TOOL-06` `PASS`",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
+    },
+    "move": "add-hooks-and-commit-rules/row-9",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-07",
+    "home": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "quote": "Refused on each protected branch with the fix in the message; passes on the work branch; the engine reads `TOOL-07` `PASS`",
+      "section": "implement/playbooks/add-hooks-and-commit-rules.md#playbook-add-hooks-and-commit-rules/verification"
+    },
+    "move": "add-hooks-and-commit-rules/row-10",
+    "status": "kept"
+  }
+]

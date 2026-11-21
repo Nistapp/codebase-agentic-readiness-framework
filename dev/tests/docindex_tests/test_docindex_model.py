@@ -24,7 +24,7 @@ import docindex
 from docindex import cli, model
 from docindex import config as index_config
 
-DEV = Path(__file__).resolve().parents[1]
+DEV = Path(__file__).resolve().parents[2]
 SCHEMA = json.loads((DEV / "docindex" / "index.schema.json").read_text(encoding="utf-8"))
 
 HASH_A = model.content_hash("a")

@@ -1,4 +1,4 @@
-# 0012. Keep the Consistency Map as a JSON File in `dev/`, Checked by a Standard-Library Script
+# 0012. Keep the Consistency Map as JSON Files in `dev/`, Checked by a Standard-Library Script
 
 ## Context
 
@@ -18,10 +18,20 @@ the boundaries and the gate in both modes exist, with their tests.
 
 ## Decision
 
-1. The consistency map is JSON in two files. Each stays under the 512 KiB size that `NAV-03` flags.
-   `dev/consistency-map.json` holds every part but `names`.
-   `dev/consistency-map-names.json` holds `map_format` and `names`. The script joins them into one map. It
-   refuses `names` in both files, a missing names file, or two `map_format` values.
+1. The consistency map is a folder of small JSON files, `dev/consistency-map/`. No file passes 100 KiB, so no
+   branch has to edit one large file.
+   1. `index.json` holds `map_format` and `parts`. For each part it lists the files that hold its entries, in
+      joining order. An index is needed because the lists are not in sorted order and the data is not re-sorted.
+   2. The part files are `boundaries.json` and `reads/<FAMILY>.json`, one for each check family.
+      They are also `moves/<playbook>.json` and `keeps/<playbook>.json`, and `moves/templates.json`.
+      A later run of the same playbook's entries has a `-2` suffix.
+      The names list is cut into runs, `names/names-<N>.json`, in its order.
+   3. Each file is a JSON list with sorted keys, two-space indent and a final newline.
+   4. The script joins the files into one map. It refuses a missing index and a listed file that is missing.
+      It also refuses a file listed twice, a file the index does not list, and a file that is not a list.
+      It still reads the older form, a map file with its names file beside it. The tests use that form.
+   5. `python3 dev/consistency_map_reads.py --write` writes the reads files of the folder.
+
    [`dev/consistency-map.schema.json`](../../../dev/consistency-map.schema.json) is the JSON Schema of the joined
    map. A standard-library script in `dev/` checks it.
 2. The map has five parts:
@@ -106,7 +116,7 @@ the boundaries and the gate in both modes exist, with their tests.
 | The reads in `audit/catalogue.json` | The catalogue ships to readers and holds no code constant, so it drifts like a separate file |
 | Files and phrases only, no boundaries | The run's own promises stay unmapped, and a playbook step can contradict a hard rule unseen |
 | Fail the gate on any changed evidence | Rationale not recorded; owner to fill in |
-| One map file, or one written with less indentation | The one file passed 512 KiB, which `NAV-03` flags in this repository's own audit. Less indentation buys about 80 KB and changes every line; the names list, at 224 KB, is the largest part and changes least |
+| One map file, or two (the map and its names), or one written with less indentation | The one file passed 512 KiB, which `NAV-03` flags in this repository's own audit. Two files stayed under it, but every branch that touched a move or a keep edited the same 400 KiB file and met the same merge conflicts. Less indentation buys about 80 KB and changes every line |
 | Infer the touches from paths and content kinds alone | On this repository the rule listed 1,772 pairs, and it found 28 of the 67 gaps a review named. A gate that noisy is not read |
 
 ## Consequences

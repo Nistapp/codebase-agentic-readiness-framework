@@ -1,0 +1,80 @@
+[
+  {
+    "action": "write",
+    "content": [
+      "rule-line"
+    ],
+    "id": "untrack-generated/row-1",
+    "origin": {
+      "path": "implement/playbooks/untrack-generated.md",
+      "row": 1,
+      "step": "Step 5"
+    },
+    "to": [
+      ".gitignore"
+    ],
+    "touches": [
+      "EXEC-05"
+    ]
+  },
+  {
+    "action": "untrack",
+    "content": [
+      "file"
+    ],
+    "from": [
+      "**/dist/**",
+      "**/build/**",
+      "**/generated/**"
+    ],
+    "id": "untrack-generated/row-2",
+    "note": "Untracks build output with git rm -r --cached; the working-tree copies stay, and the scan no longer sees them.",
+    "origin": {
+      "path": "implement/playbooks/untrack-generated.md",
+      "row": 2,
+      "step": "Step 5"
+    },
+    "touches": [
+      "EXEC-01",
+      "EXEC-02",
+      "EXEC-05",
+      "NAV-03",
+      "SEC-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "untrack-generated/row-3",
+    "note": "The marker goes into the generator's template, whose path depends on the target, so the next build keeps it.",
+    "origin": {
+      "path": "implement/playbooks/untrack-generated.md",
+      "row": 3,
+      "step": "Step 7"
+    },
+    "touches": [
+      "EXEC-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "untrack-generated/row-4",
+    "mode": "add",
+    "origin": {
+      "path": "implement/playbooks/untrack-generated.md",
+      "row": 4,
+      "step": "Step 8"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "EXEC-07"
+    ]
+  }
+]

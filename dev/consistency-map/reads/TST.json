@@ -1,0 +1,431 @@
+[
+  {
+    "binding": "file",
+    "check": "TST-01",
+    "note": "The test verb is resolved from the runner manifests. A test file is a scanned file whose lower-case path holds a test hint (test_, _test., .test., .spec., tests/, test/, __tests__/) and has a test-source suffix, plus *_test.go and tests/*.rs; the globs approximate that substring match.",
+    "source": "engine",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "monotone": true,
+        "path": "mvnw",
+        "scope": "root"
+      },
+      {
+        "path": "**/*test_*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*_test.*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.test.*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.spec.*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/tests/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/test/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/__tests__/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "*_test.go",
+        "scope": "any-depth"
+      },
+      {
+        "path": "tests/**/*.rs",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "TST-02",
+    "constants": [
+      "audit.rules.checks._common:RUNNER_PRECEDENCE"
+    ],
+    "note": "No file text: the resolved test verb runs as a read-only probe, only with --run-gates and --allow-probe test. Every runner manifest counts only at the root, where it is read. A package.json verb runs with node_modules/.bin first on PATH.",
+    "source": "engine",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "TST-03",
+    "note": "Each readable test file of TST-01 is searched for skip, ignore and expected-failure markers of its language family (by suffix), for example @pytest.mark.skip, it.skip, t.Skip(, #[ignore], @Disabled. A census: any count passes.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "path": "**/*test_*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*_test.*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.test.*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.spec.*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/tests/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/test/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/__tests__/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "*_test.go",
+        "scope": "any-depth"
+      },
+      {
+        "path": "tests/**/*.rs",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "TST-04",
+    "constants": [
+      "audit.rules.checks.tst:_FASTPATH_DOCS",
+      "audit.rules.checks.tst:_FRAMEWORK_TEST_GLOBS"
+    ],
+    "note": "Only bash, sh, shell, console or zsh fences count, each physical line is one command, and a plain full-suite run does not count. With no fenced match, an inline code span outside any fence is read with the same patterns. A file is kept only at the root, so a nested-only copy is skipped. README.md stands for the root README: the root file whose name starts with readme, any case, README.md first, as for HYG-01. The test files give the runner family: the scanned files with a test hint, as in TST-01, and the two framework globs.",
+    "source": "engine",
+    "what": {
+      "kind": "fenced-command"
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "README.md",
+        "scope": "any-depth"
+      },
+      {
+        "monotone": true,
+        "path": "AGENTS.md",
+        "scope": "any-depth"
+      },
+      {
+        "monotone": true,
+        "path": "CLAUDE.md",
+        "scope": "any-depth"
+      },
+      {
+        "monotone": true,
+        "path": "CONTRIBUTING.md",
+        "scope": "any-depth"
+      },
+      {
+        "path": "**/*test_*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*_test.*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.test.*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/*.spec.*",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/tests/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/test/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "**/__tests__/**",
+        "scope": "glob",
+        "via": "scan-kind"
+      },
+      {
+        "path": "*_test.go",
+        "scope": "any-depth"
+      },
+      {
+        "path": "tests/**/*.rs",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "TST-05",
+    "note": "Coverage config names count on presence at any depth; the root files are read for [tool.coverage, [coverage, --cov or jacoco; a runner config at any depth for a coverage key; package scripts and resolved verbs for --coverage, --cov, c8, nyc, jacoco or go test -cover.",
+    "source": "engine",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "path": ".coveragerc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".coveragerc.toml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".nycrc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".nycrc.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".nycrc.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".nycrc.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "nyc.config.js",
+        "scope": "any-depth"
+      },
+      {
+        "path": "nyc.config.cjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".c8rc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".c8rc.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "codecov.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".codecov.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".codecov.yaml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "coveralls.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".coveralls.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "setup.cfg",
+        "scope": "root"
+      },
+      {
+        "path": "tox.ini",
+        "scope": "root"
+      },
+      {
+        "path": "pytest.ini",
+        "scope": "root"
+      },
+      {
+        "path": "vitest.config.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "jest.config.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "vite.config.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "karma.conf.*",
+        "scope": "any-depth"
+      },
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "Makefile",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yml",
+        "scope": "root"
+      },
+      {
+        "path": "Taskfile.yaml",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root"
+      },
+      {
+        "path": "gradlew",
+        "scope": "root"
+      },
+      {
+        "path": "mvnw",
+        "scope": "root"
+      }
+    ]
+  }
+]

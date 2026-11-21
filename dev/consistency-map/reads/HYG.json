@@ -1,0 +1,286 @@
+[
+  {
+    "binding": "file",
+    "check": "HYG-01",
+    "note": "Root files whose base name starts with readme, any case; README.md is read first. It needs 200 trimmed characters, no stub marker, and one line that is not a heading. Under 400 characters a marker anywhere counts, and lorem ipsum or <describe counts at any length; in a longer README a word marker counts only when it opens a line and the line's end or punctuation follows it.",
+    "source": "engine",
+    "what": {
+      "kind": "word-list",
+      "text": [
+        "todo",
+        "tbd",
+        "placeholder",
+        "lorem ipsum",
+        "coming soon",
+        "fill this in",
+        "<describe"
+      ]
+    },
+    "where": [
+      {
+        "path": "README*",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "HYG-02",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "CODEOWNERS",
+        "scope": "repository-level"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "HYG-03",
+    "note": "The base name is matched case-insensitively.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "pull_request_template*",
+        "scope": "repository-level"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "HYG-04",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": ".github/ISSUE_TEMPLATE/**",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/ISSUE_TEMPLATE.md",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "HYG-05",
+    "note": "The base name starts with contributing, any case, and has a doc suffix (.md, .rst, .txt, .markdown, .adoc) or none.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "CONTRIBUTING*",
+        "scope": "repository-level"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "HYG-06",
+    "note": "The base name starts with security, any case, and has a doc suffix or none.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "SECURITY*",
+        "scope": "repository-level"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "HYG-07",
+    "note": "The first match in sort order (any case, doc suffix or none) is dated by git against HEAD; at most 365 days apart passes.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "CHANGELOG*",
+        "scope": "repository-level"
+      },
+      {
+        "path": "CHANGES*",
+        "scope": "repository-level"
+      },
+      {
+        "path": "HISTORY*",
+        "scope": "repository-level"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "HYG-08",
+    "note": "The lower-case base name holds release and ends with a doc suffix, so a release.yml workflow never counts.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "case": "fold",
+        "path": "*release*",
+        "scope": "repository-level"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "HYG-09",
+    "constants": [
+      "audit.rules.checks.hyg:_DEPENDENCY_AUTOMATION"
+    ],
+    "note": "Dependabot: the package-ecosystem of each updates item, and target-branch with ignore or groups is a defect; Renovate JSON: enabledManagers. Each detected ecosystem, plus github-actions with GitHub CI, must be covered.",
+    "source": "engine",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "path": ".github/dependabot.yml",
+        "scope": "repository-level"
+      },
+      {
+        "path": ".github/dependabot.yaml",
+        "scope": "repository-level"
+      },
+      {
+        "path": "dependabot.yml",
+        "scope": "repository-level"
+      },
+      {
+        "path": "dependabot.yaml",
+        "scope": "repository-level"
+      },
+      {
+        "path": "renovate.json",
+        "scope": "repository-level"
+      },
+      {
+        "path": "renovate.json5",
+        "scope": "repository-level"
+      },
+      {
+        "path": ".renovaterc",
+        "scope": "repository-level"
+      },
+      {
+        "path": ".renovaterc.json",
+        "scope": "repository-level"
+      },
+      {
+        "path": ".github/renovate.json",
+        "scope": "repository-level"
+      },
+      {
+        "path": "renovate.config.js",
+        "scope": "repository-level"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "HYG-10",
+    "note": "Root files only, any case, with a doc suffix or none.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "LICENSE*",
+        "scope": "glob"
+      },
+      {
+        "path": "LICENCE*",
+        "scope": "glob"
+      },
+      {
+        "path": "COPYING*",
+        "scope": "glob"
+      },
+      {
+        "path": "COPYRIGHT*",
+        "scope": "glob"
+      },
+      {
+        "path": "UNLICENSE*",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "HYG-11",
+    "note": "Declared rules: ruleset JSON, the branches: list of .github/settings.yml, Terraform protection resources, and any path holding branch-protection or branch_protection (a document records, another file declares). With an integration branch and another protected branch, one GitHub or GitLab CI line must read the pull request's source branch, outside a group: or ref: key. .github/settings.yml passes Inventory.has at any depth but is read at the root only.",
+    "source": "engine",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "path": ".github/rulesets/**/*.json",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/settings.yml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.tf",
+        "scope": "any-depth"
+      },
+      {
+        "path": "**/*branch-protection*",
+        "scope": "glob"
+      },
+      {
+        "path": "**/*branch_protection*",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/workflows/*.yml",
+        "scope": "glob"
+      },
+      {
+        "path": ".github/workflows/*.yaml",
+        "scope": "glob"
+      },
+      {
+        "path": ".gitlab-ci.yml",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "paragraph",
+    "check": "HYG-13",
+    "note": "Item (b) needs a CI word and either same or the gate command in one paragraph (lines between blank lines); items (a), a link to README.md or AGENTS.md or a setup command, and (c), words for branches, commits and pull requests, are file-wide. The link target is never read.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "monotone": true,
+        "path": "CONTRIBUTING*",
+        "scope": "repository-level"
+      }
+    ]
+  }
+]
