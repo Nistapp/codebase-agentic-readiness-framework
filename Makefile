@@ -111,13 +111,13 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint adr-lint consistency-map masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint adr-lint consistency-map masters-check eval-expected-check update-masters check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills ruleset-renumber docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  consistency-map [CMAP_ARGS=...]  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  consistency-map [CMAP_ARGS=...]  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills  ruleset-renumber [RULESET_ARGS=check]"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -420,6 +420,12 @@ endif
 changelog-fix:
 	$(PYTHON) dev/wrap_changelog.py CHANGELOG.md
 	$(MARKDOWNLINT) --fix CHANGELOG.md
+
+# Renumbers the ruleset revisions this branch adds after the newest one on origin/dev (dev/ruleset_renumber.py).
+# RULESET_ARGS=check lists them and changes nothing; the default is apply. It never stages a file.
+RULESET_ARGS ?= apply
+ruleset-renumber:
+	$(PYTHON) dev/ruleset_renumber.py $(RULESET_ARGS)
 
 # Renders every Mermaid block in FILES with the pinned mermaid-cli; fails on a block that does not render.
 docs-mermaid:

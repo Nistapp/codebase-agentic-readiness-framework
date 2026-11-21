@@ -189,6 +189,8 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
   green.
 - **Gate:** run `make check` and `make security` ([§3.1](#31-standardized-command-surface)) from the repository
   root before proposing a change.
+- **Ruleset revision:** when two branches each add a revision, `make ruleset-renumber` renumbers yours after the
+  base's newest one (`RULESET_ARGS=check` lists them and changes nothing).
 
 ---
 
