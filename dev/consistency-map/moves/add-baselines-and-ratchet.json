@@ -1,0 +1,370 @@
+[
+  {
+    "action": "none",
+    "content": [
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-1",
+    "note": "Removes clean files from an exclude list; no check reads these files.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 1,
+      "step": "Step 3"
+    },
+    "to": [
+      "config/pmd/ruleset.xml",
+      "config/checkstyle/suppressions.xml"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "add-baselines-and-ratchet/row-2",
+    "intent": "A native baseline file under the tool's own name; BASE-01 credits .ruff-baseline*, .secrets.baseline and .gitleaksignore as a baseline artifact by that name.",
+    "note": "No check reads eslint-suppressions.json; BASE-01 credits it only through the AGENTS.md paragraph of row 8.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 2,
+      "step": "Step 3"
+    },
+    "to": [
+      "eslint-suppressions.json",
+      ".ruff-baseline",
+      ".secrets.baseline",
+      ".gitleaksignore"
+    ],
+    "touches": [
+      "BASE-01",
+      "SEC-02"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "add-baselines-and-ratchet/row-3",
+    "intent": "The one committed counts file; a *baseline*.json name is what BASE-01 credits as a baseline artifact and BASE-03 looks for in CI.",
+    "note": "The playbook lets the repository's own name win, which can drop the *baseline* part.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 3,
+      "step": "Step 3"
+    },
+    "to": [
+      "quality-baseline.json"
+    ],
+    "touches": [
+      "BASE-01",
+      "BASE-02"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "add-baselines-and-ratchet/row-4",
+    "note": "The compare script, in the repository's own language and script folder.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 4,
+      "step": "Step 4"
+    },
+    "to": [
+      "scripts/"
+    ],
+    "touches": [
+      "NAV-05",
+      "NAV-02",
+      "BASE-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-5",
+    "note": "Calls the compare script from format:check.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 5,
+      "step": "Step 4"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "build.gradle"
+    ],
+    "touches": [
+      "CMD-04",
+      "BASE-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose",
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-6",
+    "note": "Names the counts file in the CI step or comment that runs check.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 6,
+      "step": "Step 4"
+    },
+    "to": [
+      ".github/workflows/ci.yml"
+    ],
+    "touches": [
+      "BASE-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-7",
+    "note": "Puts today's count on a budget flag such as --max-warnings in the verb.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 7,
+      "step": "Step 5"
+    },
+    "to": [
+      "package.json",
+      "Makefile"
+    ],
+    "touches": [
+      "CMD-04",
+      "BASE-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "add-baselines-and-ratchet/row-8",
+    "mode": "add",
+    "note": "Writes the baseline paragraph with the fixed phrases in the quality or commands section.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 8,
+      "step": "Step 6"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "BASE-01",
+      "BASE-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-9",
+    "note": "Configures coverage in the runner's own configuration.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 9,
+      "step": "Step 7"
+    },
+    "to": [
+      "jest.config.*",
+      "vitest.config.*",
+      "package.json",
+      "build.gradle"
+    ],
+    "touches": [
+      "TST-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-10",
+    "mode": "add",
+    "note": "Adds a coverage verb such as test:cov when none exists.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 10,
+      "step": "Step 7"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "build.gradle"
+    ],
+    "touches": [
+      "EXEC-08",
+      "TST-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-11",
+    "mode": "add",
+    "note": "Sets the floor at today's measured number, rounded down, in the runner's configuration.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 11,
+      "step": "Step 7"
+    },
+    "to": [
+      "jest.config.*",
+      "vitest.config.*",
+      "package.json",
+      "build.gradle"
+    ],
+    "touches": [
+      "TST-02",
+      "TST-05",
+      "BASE-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-12",
+    "note": "Runs the floor in test (and so check) or in a CI step, per tests.coverage_gate.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 12,
+      "step": "Step 7"
+    },
+    "to": [
+      "package.json",
+      "Makefile",
+      "build.gradle",
+      ".github/workflows/ci.yml"
+    ],
+    "touches": [
+      "CMD-02",
+      "TST-02",
+      "CMD-04",
+      "TST-05",
+      "BASE-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "add-baselines-and-ratchet/row-13",
+    "mode": "add",
+    "note": "Writes one coverage-floor sentence where the engine cannot read the floor.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 13,
+      "step": "Steps, Java (Gradle)"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "BASE-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-14",
+    "note": "Adds an informational failing-suite entry to the counts file.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 14,
+      "step": "Step 8"
+    },
+    "to": [
+      "quality-baseline.json"
+    ],
+    "touches": [
+      "TST-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "add-baselines-and-ratchet/row-15",
+    "note": "Inserts a one-line reason next to each deliberate skip marker, which shifts the lines below it.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 15,
+      "step": "Step 9"
+    },
+    "to": [
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/tests/**",
+      "**/test/**",
+      "**/__tests__/**"
+    ],
+    "touches": [
+      "SEC-02",
+      "TST-03"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "fenced-command"
+    ],
+    "id": "add-baselines-and-ratchet/row-16",
+    "mode": "add",
+    "note": "Writes the single-test command in a fenced shell block.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 16,
+      "step": "Step 10"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "EXEC-06",
+      "TST-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-baselines-and-ratchet/row-17",
+    "note": "Regenerates the secrets allowlist with the scanner's own command after the skip reasons of row 15 shift its listed lines.",
+    "origin": {
+      "path": "implement/playbooks/add-baselines-and-ratchet.md",
+      "row": 17,
+      "step": "Step 9"
+    },
+    "to": [
+      ".secrets.baseline",
+      ".gitleaksignore"
+    ],
+    "touches": [
+      "BASE-01",
+      "SEC-02"
+    ]
+  }
+]

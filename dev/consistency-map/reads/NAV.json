@@ -1,0 +1,434 @@
+[
+  {
+    "binding": "file",
+    "check": "NAV-01",
+    "note": "Workspace members are read from the root manifests (components.py); a member or candidate counts when a build manifest is found under it. When the root folder itself holds no build manifest, a top-level folder with one in it is a candidate too. The root counts as declared when any of the nine manifest names is found at any depth, or a .NET solution or project file is in the root folder itself (in a member's or candidate's own folder for that member or candidate).",
+    "source": "engine",
+    "what": {
+      "kind": "key"
+    },
+    "where": [
+      {
+        "path": "package.json",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "pnpm-workspace.yaml",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "pom.xml",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "settings.gradle",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "settings.gradle.kts",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "go.work",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "Cargo.toml",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "build.gradle",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "build.gradle.kts",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "go.mod",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "Gemfile",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "composer.json",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "*.sln",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "*.slnx",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "*.csproj",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "*.fsproj",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "*.vbproj",
+        "scope": "root",
+        "via": "components"
+      },
+      {
+        "path": "apps/*",
+        "scope": "glob",
+        "via": "components"
+      },
+      {
+        "path": "services/*",
+        "scope": "glob",
+        "via": "components"
+      },
+      {
+        "path": "packages/*",
+        "scope": "glob",
+        "via": "components"
+      },
+      {
+        "path": "components/*",
+        "scope": "glob",
+        "via": "components"
+      },
+      {
+        "path": "modules/*",
+        "scope": "glob",
+        "via": "components"
+      },
+      {
+        "path": "libs/*",
+        "scope": "glob",
+        "via": "components"
+      },
+      {
+        "path": "workers/*",
+        "scope": "glob",
+        "via": "components"
+      }
+    ]
+  },
+  {
+    "binding": "line",
+    "check": "NAV-02",
+    "note": "Fixed names are matched by exact path per detected ecosystem; source files (glob **) are grepped for a line that starts with func main(, a JVM main method or a Spring Boot or Quarkus marker, and build files for io.quarkus. A Python __main__ guard alone is not read.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "package.json",
+        "scope": "root"
+      },
+      {
+        "path": "index.js",
+        "scope": "root"
+      },
+      {
+        "path": "index.ts",
+        "scope": "root"
+      },
+      {
+        "path": "index.mjs",
+        "scope": "root"
+      },
+      {
+        "path": "index.cjs",
+        "scope": "root"
+      },
+      {
+        "path": "src/index.js",
+        "scope": "root"
+      },
+      {
+        "path": "src/index.ts",
+        "scope": "root"
+      },
+      {
+        "path": "src/index.mjs",
+        "scope": "root"
+      },
+      {
+        "path": "server.js",
+        "scope": "root"
+      },
+      {
+        "path": "server.ts",
+        "scope": "root"
+      },
+      {
+        "path": "src/server.js",
+        "scope": "root"
+      },
+      {
+        "path": "src/server.ts",
+        "scope": "root"
+      },
+      {
+        "path": "main.js",
+        "scope": "root"
+      },
+      {
+        "path": "main.ts",
+        "scope": "root"
+      },
+      {
+        "path": "main.mjs",
+        "scope": "root"
+      },
+      {
+        "path": "main.cjs",
+        "scope": "root"
+      },
+      {
+        "path": "src/main.js",
+        "scope": "root"
+      },
+      {
+        "path": "src/main.ts",
+        "scope": "root"
+      },
+      {
+        "path": "app.js",
+        "scope": "root"
+      },
+      {
+        "path": "app.ts",
+        "scope": "root"
+      },
+      {
+        "path": "src/app.js",
+        "scope": "root"
+      },
+      {
+        "path": "src/app.ts",
+        "scope": "root"
+      },
+      {
+        "path": "main.py",
+        "scope": "root"
+      },
+      {
+        "path": "app.py",
+        "scope": "root"
+      },
+      {
+        "path": "src/main.py",
+        "scope": "root"
+      },
+      {
+        "path": "src/app.py",
+        "scope": "root"
+      },
+      {
+        "path": "manage.py",
+        "scope": "root"
+      },
+      {
+        "path": "pyproject.toml",
+        "scope": "root"
+      },
+      {
+        "path": "setup.py",
+        "scope": "root"
+      },
+      {
+        "path": "setup.cfg",
+        "scope": "root"
+      },
+      {
+        "path": "src/main.rs",
+        "scope": "root"
+      },
+      {
+        "path": "src/bin/main.rs",
+        "scope": "root"
+      },
+      {
+        "path": "main.rs",
+        "scope": "root"
+      },
+      {
+        "path": "Cargo.toml",
+        "scope": "root"
+      },
+      {
+        "path": "Program.cs",
+        "scope": "root"
+      },
+      {
+        "path": "program.cs",
+        "scope": "root"
+      },
+      {
+        "path": "src/Program.cs",
+        "scope": "root"
+      },
+      {
+        "path": "config.ru",
+        "scope": "root"
+      },
+      {
+        "path": "app.rb",
+        "scope": "root"
+      },
+      {
+        "path": "main.rb",
+        "scope": "root"
+      },
+      {
+        "path": "bin/rails",
+        "scope": "root"
+      },
+      {
+        "path": "bin/setup",
+        "scope": "root"
+      },
+      {
+        "path": "index.php",
+        "scope": "root"
+      },
+      {
+        "path": "public/index.php",
+        "scope": "root"
+      },
+      {
+        "path": "bin/console",
+        "scope": "root"
+      },
+      {
+        "path": "__main__.py",
+        "scope": "any-depth"
+      },
+      {
+        "path": "**",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "NAV-03",
+    "note": "Every scanned file: over 512 KiB, a folder with more than 50 files of its own, a binary, or a generated file with .min. in its path. A file whose exact base name is a lockfile name (stack.LOCKFILE_NAMES) is left out of the size count.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "**",
+        "scope": "glob"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "NAV-04",
+    "note": "Any file under docs/architecture/ or docs/adr/, or any file whose lower-case name ends with a diagram suffix; a Mermaid block inside a page does not count.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": "docs/architecture/**",
+        "scope": "glob"
+      },
+      {
+        "path": "docs/adr/**",
+        "scope": "glob"
+      },
+      {
+        "path": "*.mmd",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.puml",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.drawio",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.excalidraw",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.svg",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.png",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "NAV-05",
+    "note": "Python, parsed with ast: a module-level def, async def or class and a method of a public class, each with a public name, is documented when ast finds its docstring; a test file (a tests or test folder, a test_*.py or *_test.py name) is not read, and a file that does not parse falls back to column-0 lines with the docstring on the next non-blank line. TypeScript or JavaScript: an export declaration is documented when the line before (blank lines skipped) ends a /** */ block. Only the main language is read.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase"
+    },
+    "where": [
+      {
+        "path": "*.py",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.ts",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.tsx",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.js",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.jsx",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.mjs",
+        "scope": "any-depth"
+      },
+      {
+        "path": "*.cjs",
+        "scope": "any-depth"
+      }
+    ]
+  }
+]

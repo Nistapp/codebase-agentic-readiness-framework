@@ -1,0 +1,63 @@
+{
+  "map_format": 1,
+  "parts": {
+    "boundaries": [
+      "boundaries.json"
+    ],
+    "keeps": [
+      "keeps/adapt-agents-md.json",
+      "keeps/add-baselines-and-ratchet.json",
+      "keeps/add-ci-parity.json",
+      "keeps/add-deny-rules.json",
+      "keeps/add-hooks-and-commit-rules.json",
+      "keeps/add-repo-hygiene.json",
+      "keeps/configure-quality-tools.json",
+      "keeps/define-command-surface.json",
+      "keeps/env-inventory-and-secrets.json",
+      "keeps/establish-docs-contract.json",
+      "keeps/pin-execution-environment.json",
+      "keeps/register-index.json",
+      "keeps/untrack-generated.json",
+      "keeps/pin-execution-environment-2.json",
+      "keeps/register-index-2.json",
+      "keeps/untrack-generated-2.json"
+    ],
+    "moves": [
+      "moves/adapt-agents-md.json",
+      "moves/add-baselines-and-ratchet.json",
+      "moves/add-ci-parity.json",
+      "moves/add-deny-rules.json",
+      "moves/add-hooks-and-commit-rules.json",
+      "moves/add-repo-hygiene.json",
+      "moves/configure-quality-tools.json",
+      "moves/define-command-surface.json",
+      "moves/env-inventory-and-secrets.json",
+      "moves/establish-docs-contract.json",
+      "moves/pin-execution-environment.json",
+      "moves/register-index.json",
+      "moves/untrack-generated.json",
+      "moves/templates.json"
+    ],
+    "names": [
+      "names/names-1.json",
+      "names/names-2.json",
+      "names/names-3.json",
+      "names/names-4.json"
+    ],
+    "reads": [
+      "reads/IDX.json",
+      "reads/AGT.json",
+      "reads/DOC.json",
+      "reads/CMD.json",
+      "reads/TOOL.json",
+      "reads/CI.json",
+      "reads/BASE.json",
+      "reads/CON.json",
+      "reads/EXEC.json",
+      "reads/TST.json",
+      "reads/NAV.json",
+      "reads/SEC.json",
+      "reads/HYG.json"
+    ]
+  }
+}

@@ -19,6 +19,10 @@
 - ``evidence`` (never a problem, rule 7): a check whose verdict or evidence changed, from the evidence comparison,
   when the check reads a file the diff touched. Changes in other checks are counted only.
 
+Change mode reads the map itself (the ``cmap`` argument of :func:`change_report`) from the working tree only. It
+never opens the map at the base ref, so a base that still holds the one file ``dev/consistency-map.json``, a base
+that holds the folder ``dev/consistency-map/`` and a base with neither give the same report.
+
 The evidence comparison copies each side's files into a fresh git repository with one commit (a fixed identity and
 date), outside the repository, and runs this working tree's engine on both (:mod:`docindex.evidence`). Both sides get
 the same engine and the same history, so a change in evidence comes from the text. ``--no-evidence`` skips it.

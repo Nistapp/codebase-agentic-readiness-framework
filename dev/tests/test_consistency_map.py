@@ -58,13 +58,15 @@ class MapShapeTest(unittest.TestCase):
         self.assertEqual(_problems(MAP, SCHEMA), [])
 
 
-#: The size over which the audit's structural check (``NAV-03``, ``LARGE_FILE_BYTES`` in the engine's ``nav.py``)
-#: flags a file. Each map file stays under it.
-_LARGE_FILE_BYTES = 512 * 1024
+#: The size each map file stays under (ADR 0012), well below the 512 KiB over which the audit's structural check
+#: (``NAV-03``) flags a file.
+_MAP_FILE_BYTES = 100 * 1024
 
 
 class MapFilesTest(unittest.TestCase):
-    """The map is two files, joined by ``load_map``: each part once, one format, each file under the size limit."""
+    """The map is a folder of files, joined by ``load_map``: each file under the size limit, the index lists them all.
+
+    The one-file form (the map file and its names file) is still read, and its tests are here too."""
 
     def _write(self, folder: Path, cmap: dict[str, Any], names: Any) -> Path:
         path = folder / "consistency-map.json"
@@ -73,9 +75,24 @@ class MapFilesTest(unittest.TestCase):
             consistency_map.names_path(path).write_text(json.dumps(names), encoding="utf-8")
         return path
 
-    def test_each_map_file_stays_under_the_structural_size_limit(self) -> None:
-        for path in (consistency_map.MAP_PATH, consistency_map.names_path(consistency_map.MAP_PATH)):
-            self.assertLess(path.stat().st_size, _LARGE_FILE_BYTES, path.name)
+    def test_each_map_file_stays_under_the_size_limit(self) -> None:
+        files = sorted(consistency_map.MAP_PATH.rglob("*.json"))
+        self.assertGreater(len(files), 10)
+        for path in files:
+            self.assertLess(path.stat().st_size, _MAP_FILE_BYTES, str(path.relative_to(consistency_map.MAP_PATH)))
+
+    def test_the_folder_holds_only_what_the_index_lists_and_each_file_is_in_the_repository_format(self) -> None:
+        folder = consistency_map.MAP_PATH
+        index = json.loads((folder / "index.json").read_text(encoding="utf-8"))
+        listed = {name for files in index["parts"].values() for name in files}
+        self.assertEqual({p.relative_to(folder).as_posix() for p in folder.rglob("*.json")}, listed | {"index.json"})
+        for path in folder.rglob("*.json"):
+            text = path.read_text(encoding="utf-8")
+            self.assertEqual(text, json.dumps(json.loads(text), indent=2, sort_keys=True) + "\n", path.name)
+
+    def test_the_default_map_is_the_folder(self) -> None:
+        self.assertEqual(consistency_map.MAP_PATH, consistency_map.DEV / "consistency-map")
+        self.assertTrue(consistency_map.MAP_PATH.is_dir())
 
     def test_the_names_file_sits_beside_the_map_file(self) -> None:
         self.assertEqual(
@@ -99,6 +116,61 @@ class MapFilesTest(unittest.TestCase):
                 path = self._write(Path(folder), cmap, names)
                 with self.assertRaisesRegex(consistency_map.MapError, message):
                     consistency_map.load_map(path)
+
+    def _write_folder(self, folder: Path, cmap: dict[str, Any], pieces: int = 3) -> Path:
+        """The folder form of ``cmap``: each part cut into ``pieces`` runs of entries, listed in order by the index."""
+        parts: dict[str, list[str]] = {}
+        for part, entries in cmap.items():
+            if part == "map_format":
+                continue
+            size = max(1, -(-len(entries) // pieces))
+            parts[part] = []
+            for number, start in enumerate(range(0, len(entries), size), 1):
+                name = f"{part}-{number}.json"
+                (folder / name).write_text(json.dumps(entries[start : start + size]), encoding="utf-8")
+                parts[part].append(name)
+        (folder / "index.json").write_text(json.dumps({"map_format": cmap["map_format"], "parts": parts}))
+        return folder
+
+    def test_the_folder_form_joins_to_the_same_map_as_the_one_file(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            path = self._write_folder(Path(folder), MAP)
+            self.assertEqual(
+                json.dumps(consistency_map.load_map(path), sort_keys=True), json.dumps(MAP, sort_keys=True)
+            )
+
+    def test_the_folder_form_keeps_the_order_the_index_gives(self) -> None:
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            (root / "a.json").write_text('[{"n": 1}]')
+            (root / "b.json").write_text('[{"n": 2}]')
+            (root / "index.json").write_text('{"map_format": 1, "parts": {"reads": ["b.json", "a.json"]}}')
+            self.assertEqual(consistency_map.load_map(root), {"map_format": 1, "reads": [{"n": 2}, {"n": 1}]})
+
+    def test_a_folder_that_does_not_join_is_refused(self) -> None:
+        cases: list[tuple[str, str, dict[str, str]]] = [
+            ("index.json is missing", "", {}),
+            ("must hold map_format and parts", '{"parts": {}}', {}),
+            ("must be a list of file names", '{"map_format": 1, "parts": {"reads": "a.json"}}', {}),
+            ("lists a.json, which is missing", '{"map_format": 1, "parts": {"reads": ["a.json"]}}', {}),
+            ("lists a.json twice", '{"map_format": 1, "parts": {"reads": ["a.json", "a.json"]}}', {"a.json": "[]"}),
+            (
+                "does not list b.json",
+                '{"map_format": 1, "parts": {"reads": ["a.json"]}}',
+                {"a.json": "[]", "b.json": "[]"},
+            ),
+            ("must hold a list", '{"map_format": 1, "parts": {"reads": ["a.json"]}}', {"a.json": "{}"}),
+            ("not a part file", '{"map_format": 1, "parts": {"reads": ["../a.json"]}}', {}),
+        ]
+        for message, index, files in cases:
+            with self.subTest(message), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder)
+                if index:
+                    (root / "index.json").write_text(index)
+                for name, text in files.items():
+                    (root / name).write_text(text)
+                with self.assertRaisesRegex(consistency_map.MapError, message):
+                    consistency_map.load_map(root)
 
     def test_a_map_that_does_not_join_is_a_usage_error(self) -> None:
         with tempfile.TemporaryDirectory() as folder:

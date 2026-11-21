@@ -1,0 +1,153 @@
+[
+  {
+    "check": "EXEC-08",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "A verb runs each tool by name, never as `npx <tool>@<version>`.",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+    },
+    "move": "define-command-surface/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-01",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "All seven resolve on one runner per component; each exits as its tool says, not \"command not found\"",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+    },
+    "move": "define-command-surface/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-03",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "A root `Makefile`, `Taskfile` or dispatcher script calls the authoritative runner's verb (`npm run check`, `./gradlew check`, `make -C <component> check`) and composes nothing of its own.",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+    },
+    "move": "define-command-surface/row-1",
+    "note": "A second runner's own check can differ from the new one until row 4 delegates it; the theme closes only after row 4.",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "Never leave the writer under the read-only name.",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+    },
+    "move": "define-command-surface/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "TOOL-01",
+    "move": "define-command-surface/row-1",
+    "reason": "The move can only remove findings or add credit: the new format verb is what TOOL-01 resolves to find the formatter.",
+    "status": "accepted"
+  },
+  {
+    "check": "TOOL-02",
+    "move": "define-command-surface/row-1",
+    "reason": "The move can only remove findings or add credit: the new lint verb is what TOOL-02 resolves to find the linter.",
+    "status": "accepted"
+  },
+  {
+    "check": "TOOL-03",
+    "move": "define-command-surface/row-1",
+    "reason": "The move can only remove findings or add credit: the new typecheck verb is what TOOL-03 resolves to find the type checker.",
+    "status": "accepted"
+  },
+  {
+    "check": "TST-01",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "The runner executes the suite (stack-dependent suites: with the stack up, as recorded)",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+    },
+    "move": "define-command-surface/row-1",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-02",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "npm: the three verbs by name, in order.",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+    },
+    "move": "define-command-surface/row-2",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "by calling the verbs by name (indirection) rather than repeating their commands.",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+    },
+    "move": "define-command-surface/row-2",
+    "note": "check calls the read-only verbs by name, so it holds no writer of its own.",
+    "status": "kept"
+  },
+  {
+    "check": "BASE-02",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "A read-only verb that carries `--fix`, `--write` or calls `format` becomes two verbs: the read-only one keeps the name (`lint` without `--fix`) and the writer gets a separate name (`lint:fix`, or folded into `format`).",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+    },
+    "move": "define-command-surface/row-3",
+    "note": "The read-only verb keeps its command less the fix flag, so a budget such as --max-warnings stays on it.",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-04",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "Empty both times: no read-only verb wrote a file",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+    },
+    "move": "define-command-surface/row-3",
+    "status": "kept"
+  },
+  {
+    "check": "CMD-03",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "Each calls the authoritative runner's `check` and nothing else",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+    },
+    "move": "define-command-surface/row-4",
+    "status": "kept"
+  },
+  {
+    "check": "AGT-05",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "The instruction file lists the exact command for each verb per component (`spec/command-surface.md` rule 4).",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+    },
+    "move": "define-command-surface/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-06",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "Start each fenced command with a word that resolves",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/steps"
+    },
+    "move": "define-command-surface/row-5",
+    "status": "kept"
+  },
+  {
+    "check": "EXEC-03",
+    "home": {
+      "path": "implement/playbooks/define-command-surface.md",
+      "quote": "One non-interactive setup command per component",
+      "section": "implement/playbooks/define-command-surface.md#playbook-define-command-surface/verification"
+    },
+    "move": "define-command-surface/row-5",
+    "status": "kept"
+  }
+]

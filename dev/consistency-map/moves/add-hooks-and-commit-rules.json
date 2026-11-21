@@ -1,0 +1,222 @@
+[
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-hooks-and-commit-rules/row-1",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 1,
+      "step": "Node with a root manifest"
+    },
+    "to": [
+      "package.json",
+      "package-lock.json"
+    ],
+    "touches": [
+      "EXEC-02",
+      "TOOL-05"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "key"
+    ],
+    "id": "add-hooks-and-commit-rules/row-2",
+    "intent": "The hook-manager config that TOOL-05 reads as wired; the name is the manager's own.",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 2,
+      "step": "Step 2"
+    },
+    "to": [
+      ".husky/pre-commit",
+      ".pre-commit-config.yaml",
+      "lefthook.yml"
+    ],
+    "touches": [
+      "EXEC-08",
+      "TOOL-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose",
+      "fenced-command"
+    ],
+    "id": "add-hooks-and-commit-rules/row-3",
+    "mode": "add",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 3,
+      "step": "Step 3"
+    },
+    "to": [
+      "AGENTS.md",
+      "CONTRIBUTING.md"
+    ],
+    "touches": [
+      "EXEC-06",
+      "HYG-13",
+      "TOOL-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "add-hooks-and-commit-rules/row-4",
+    "mode": "add",
+    "note": "Option A only.",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 4,
+      "step": "Step 4"
+    },
+    "to": [
+      "CONTRIBUTING.md"
+    ],
+    "touches": [
+      "HYG-13",
+      "TOOL-06"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-hooks-and-commit-rules/row-5",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 5,
+      "step": "Step 4"
+    },
+    "to": [
+      "package.json",
+      "package-lock.json"
+    ],
+    "touches": [
+      "EXEC-02",
+      "TOOL-06"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "key"
+    ],
+    "id": "add-hooks-and-commit-rules/row-6",
+    "intent": "The commit-rule config that TOOL-06 reads as the local half; the name is the tool's own.",
+    "note": "commitizen keeps its config in pyproject.toml, which is then edited, not created.",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 6,
+      "step": "Step 4"
+    },
+    "to": [
+      "commitlint.config.js",
+      ".commitlintrc.json",
+      "pyproject.toml",
+      ".pre-commit-config.yaml"
+    ],
+    "touches": [
+      "TOOL-06"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "add-hooks-and-commit-rules/row-7",
+    "note": "Copies the playbook's Commit-lint script template to where the repository keeps its scripts.",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 7,
+      "step": "Step 4"
+    },
+    "to": [
+      "scripts/commit_lint.py",
+      "scripts/*"
+    ],
+    "touches": [
+      "NAV-05",
+      "NAV-02",
+      "TOOL-06"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "key"
+    ],
+    "id": "add-hooks-and-commit-rules/row-8",
+    "intent": "The local commit-msg stage that TOOL-06 reads as the local half.",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 8,
+      "step": "Step 4"
+    },
+    "to": [
+      ".husky/commit-msg",
+      ".githooks/commit-msg",
+      "lefthook.yml",
+      ".pre-commit-config.yaml"
+    ],
+    "touches": [
+      "TOOL-06"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-hooks-and-commit-rules/row-9",
+    "note": "A job of its own in the workflow that runs the gate (Commit rule in CI).",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 9,
+      "step": "Step 4"
+    },
+    "to": [
+      ".github/workflows/*.yml",
+      ".github/workflows/*.yaml",
+      ".gitlab-ci.yml"
+    ],
+    "touches": [
+      "EXEC-08",
+      "TOOL-06"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-hooks-and-commit-rules/row-10",
+    "note": "Adds the guard to the hook file of the manager already in use.",
+    "origin": {
+      "path": "implement/playbooks/add-hooks-and-commit-rules.md",
+      "row": 10,
+      "step": "Step 5"
+    },
+    "to": [
+      ".husky/pre-commit",
+      ".pre-commit-config.yaml",
+      "lefthook.yml",
+      ".githooks/pre-commit"
+    ],
+    "touches": [
+      "TOOL-07"
+    ]
+  }
+]
