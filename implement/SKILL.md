@@ -155,12 +155,10 @@ and that a state file exists in the workspace. Change nothing in the target.
    `init` never replaces a state; if it says a state exists, resume.
    - **Resume.** Run `progress.py show` and read `data.skipped`, the preferences and the theme progress. If the
      workspace holds more than one state, pass `--label`.
-   - **Adopt** a state the target keeps (step 3). Theme branches can be ahead of the integration branch, so pick
-     the branch whose state has the newest log entry. Read it from that branch's worktree. Without one, add a
-     detached worktree: `git -C <repo> worktree add --detach <dir> <branch>`, and remove it afterwards. Then run
+   - **Adopt** a state the target keeps (step 3). Pick the branch and its checkout as [Move a state kept in the
+     target](state.md#move-a-state-kept-in-the-target) says, then run
      `python3 implement/tools/progress.py adopt --target <that checkout> --workspace <workspace> --phase <phase>`.
-     Tell the owner which branch you chose. `data.may_remove` lists the in-repo files the owner may now remove.
-     Offer that removal as a change in the next theme branch. Remove nothing without the owner's consent.
+     Remove nothing without the owner's consent.
 7. **Version skew.** Compare the report's catalogue version (`source_reports[].catalogue_version` in `progress.py
    show --json`) with `catalogue_version` in this recipe's `catalogue.json` (one folder above the tools). When they
    differ, tell the owner that check IDs, severities and playbook lists may have changed since the audit, and from

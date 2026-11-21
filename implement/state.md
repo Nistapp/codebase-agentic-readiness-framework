@@ -82,9 +82,12 @@ python3 implement/tools/progress.py adopt --target <checkout> --workspace <works
   refuses a missing report, a workspace inside the target, and a workspace that already holds the label.
 - Theme branches can hold a newer state than the integration branch. A session MUST adopt from the checkout whose
   state has the newest log entry, and MUST tell the owner which branch it chose. The tool does not merge states.
+  Read it from that branch's worktree. Without one, add a detached worktree:
+  `git -C <repo> worktree add --detach <dir> <branch>`, and remove it afterwards.
 - Its envelope lists the in-repo files the owner may now remove, in `data.may_remove`. They are the state folder,
   the report folder and the `AGENTS.md` line that points at the state. A session removes them only with the owner's
-  consent, as a normal change in the next theme branch or a small `chore` branch.
+  consent, as a normal change in the next theme branch or a small `chore` branch. Offer that removal as a change
+  in the next theme branch.
 
 ## Item statuses
 
