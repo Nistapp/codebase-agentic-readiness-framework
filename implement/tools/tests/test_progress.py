@@ -466,7 +466,115 @@ class NextStepTests(TargetCase):
     def test_an_open_theme_is_checked_for_its_merge(self) -> None:
         shown = self.next_of(lambda state: self.set_item(state, "F-003", "done"))
         self.assertEqual((shown["stage"], shown["step"]), (2, 1))
-        self.assertEqual(shown["text"], "Stage 2, step 1: check whether T2 (pr_open) merged, and record each merge.")
+        self.assertEqual(
+            shown["text"],
+            "Stage 2, step 1: check whether T2 (pr_open) merged, and record each merge; "
+            "no other theme can start until they merge.",
+        )
+        self.assertEqual((shown["theme"], shown["check_first"]), (None, ["T2"]))
+
+    # --- S3.2: the next theme -----------------------------------------------------------------------------
+
+    def picked(self, statuses: dict[str, str], queued: Sequence[tuple[str, str]], **themes: str) -> dict[str, Any]:
+        """`next` for a triaged state whose items have `statuses` by check, plus `queued` (finding, check) items."""
+
+        def build(state: dict[str, Any]) -> None:
+            state["preferences"].append(
+                {
+                    "key": "ci.pr_by_agent",
+                    "value": "no",
+                    "reason": "owner",
+                    "by": "owner",
+                    "date": "2026-10-29",
+                    "phase": "s1",
+                }
+            )
+            template = state["items"][0]
+            state["items"] = []
+            for number, (check, status) in enumerate(statuses.items(), start=1):
+                state["items"].append(self.item(template, f"F-{number:03d}", check, status))
+            for finding, check in queued:
+                state["items"].append(self.item(template, finding, check, "queued"))
+            for theme, status in themes.items():
+                entry = next(entry for entry in state["themes"] if entry["id"] == theme)
+                entry.update(self.theme_fields(status))
+
+        return self.next_of(build, source=EXAMPLE_STATE)
+
+    @staticmethod
+    def item(template: dict[str, Any], finding: str, check: str, status: str) -> dict[str, Any]:
+        entry: dict[str, Any] = copy.deepcopy(template)
+        entry.update(finding=finding, check=check, theme=progress.CHECK_THEME[check], status=status)
+        if status in progress.NEEDS_REASON:
+            entry.update(reason="the owner said so", by="owner")
+        return entry
+
+    @staticmethod
+    def theme_fields(status: str) -> dict[str, Any]:
+        fields: dict[str, Any] = {"status": status, "phase": "s1", "branch": "agentic-readiness/s1-x"}
+        if status in ("pr_open", "merged"):
+            fields["pr"] = 7
+        if status == "merged":
+            fields["merged_sha"] = "aaaabbbbcccc"
+        return fields
+
+    def test_the_first_theme_with_queued_items_is_next(self) -> None:
+        shown = self.picked({}, [("F-101", "SEC-01"), ("F-102", "CMD-01")])
+        self.assertEqual((shown["stage"], shown["step"], shown["theme"]), (2, 2, "T1"))
+        self.assertEqual(shown["text"], "Stage 2, step 2: plan T1, the next theme.")
+
+    def test_a_theme_waits_for_an_unmerged_predecessor_with_work_left(self) -> None:
+        shown = self.picked({}, [("F-101", "CI-01"), ("F-102", "SEC-01")], T1="pr_open")
+        self.assertEqual((shown["stage"], shown["step"], shown["theme"]), (2, 1, "T3"))
+        self.assertEqual(shown["check_first"], ["T1"])
+        self.assertTrue(shown["text"].endswith("then T3 is next."), shown)
+
+    def test_a_merged_predecessor_lets_the_theme_start(self) -> None:
+        shown = self.picked({"CMD-01": "done"}, [("F-101", "CI-01")], T1="merged")
+        self.assertEqual(shown["theme"], "T4")
+
+    def test_a_predecessor_with_nothing_left_counts_as_satisfied(self) -> None:
+        shown = self.picked({"EXEC-01": "skipped", "EXEC-02": "deferred"}, [("F-101", "CI-01")])
+        self.assertEqual(shown["theme"], "T4")
+
+    def test_an_indirect_predecessor_with_work_left_holds_a_theme_back(self) -> None:
+        # T7 waits for T5, which waits for T4, which waits for T2. T4 and T5 have nothing left; T2 is open.
+        shown = self.picked({"EXEC-01": "done"}, [("F-101", "AGT-01")], T2="branch_open")
+        self.assertEqual((shown["stage"], shown["step"], shown["theme"]), (2, 1, None))
+
+    def test_a_cross_theme_item_neither_holds_its_theme_back_nor_starts_it(self) -> None:
+        # EXEC-03 belongs to T2 by family and is worked by T1's define-command-surface.
+        shown = self.picked({"CMD-01": "done"}, [("F-101", "EXEC-03"), ("F-102", "CI-01")], T1="merged")
+        self.assertEqual(shown["theme"], "T4")
+        alone = self.picked({}, [("F-101", "EXEC-03")], T1="merged")
+        self.assertEqual((alone["stage"], alone["theme"]), (5, None))
+        self.assertIn("no theme works the queued F-101", alone["text"])
+
+    def test_a_cross_theme_item_in_progress_is_resumed_in_the_playbook_theme(self) -> None:
+        shown = self.picked({"EXEC-03": "in_progress"}, [], T1="branch_open")
+        self.assertEqual((shown["stage"], shown["theme"]), (3, "T1"))
+        self.assertIn("F-001 (T1)", shown["text"])
+
+    def test_an_open_branch_with_queued_items_goes_on(self) -> None:
+        shown = self.picked({"CMD-01": "done"}, [("F-101", "CMD-02")], T1="branch_open")
+        self.assertEqual((shown["stage"], shown["step"], shown["theme"]), (3, 4, "T1"))
+        self.assertEqual(shown["check_first"], ["T1"])
+
+    def test_the_cross_theme_checks_come_from_the_catalogue_and_themes(self) -> None:
+        self.assertEqual(progress.cross_theme_checks(), {"EXEC-03": "T1", "TST-01": "T1", "EXEC-06": "T7"})
+
+    def test_the_predecessors_are_the_diagram_in_skill_md_and_themes_is_an_order_it_allows(self) -> None:
+        skill = (_implement_paths.REPO / "implement" / "SKILL.md").read_text(encoding="utf-8")
+        block = skill.split("flowchart LR", 1)[1].split("```", 1)[0]
+        edges: dict[str, set[str]] = {theme: set() for theme in progress.THEME_IDS}
+        for line in block.splitlines():
+            if "-->" in line:
+                before, after = line.split("-->")
+                edges[after.split()[0].split("[")[0]].add(before.split()[0].split("[")[0])
+        self.assertEqual({theme: set(earlier) for theme, earlier in progress.THEME_PREDECESSORS.items()}, edges)
+        for theme, earlier_themes in progress.THEME_PREDECESSORS.items():
+            for earlier in earlier_themes:
+                self.assertLess(progress.THEME_IDS.index(earlier), progress.THEME_IDS.index(theme))
 
     def test_nothing_queued_and_no_open_theme_closes_out(self) -> None:
         def finished(state: dict[str, Any]) -> None:

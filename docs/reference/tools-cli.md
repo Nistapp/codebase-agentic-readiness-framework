@@ -968,16 +968,28 @@ the count per status and the `not_queued` count, with `versions` as [`check_drif
 - the skipped finding ids, and the number of preferences, debt entries and log entries;
 - `versions`: the framework that created the state (`created`), the one that last wrote it (`last`) and these
   tools (`tools`);
-- `next`: where a session goes on, from the state alone, as `stage` and `step` of
-  [`implement/SKILL.md`](../../implement/SKILL.md) and a one-sentence `text`. The first rule that holds decides:
+- `next`: where a session goes on, worked out from the state alone. `stage` and `step` name a step of
+  [`implement/SKILL.md`](../../implement/SKILL.md), and `text` says it in one sentence. `theme` is the theme the
+  step works on, or `null`. `check_first` lists the themes shown as `branch_open` or `pr_open`; Stage 2, step 1
+  checks each for a merge. The first rule that holds decides:
 
   | The state | `stage`, `step` |
   |---|---|
   | An item is `in_progress` (the lowest finding id is named) | 3, 4: resume it on its theme's branch |
   | No theme has started and no `ci.pr_by_agent` preference is recorded | 1, 1: triage |
-  | A theme is `branch_open` or `pr_open` | 2, 1: check whether it merged |
-  | An item is `queued` | 2, 2: pick the next theme |
-  | Anything else | 5, 1: close out |
+  | A `branch_open` theme has `queued` items of its own | 3, 4: go on with them |
+  | A theme is `branch_open` or `pr_open` | 2, 1: check whether it merged; `theme` is the theme after that |
+  | The rule below picks a theme | 2, 2: plan it |
+  | Anything else | 5, 1: close out, naming any `queued` item no theme works |
+
+  The next theme is the first `not_started` theme, from T1 to T8, with `queued` items for its own playbooks.
+  The themes before it in the recipe's Themes diagram, directly or through another, must each be `merged`. A
+  `not_started` one with no item `queued` or `in_progress` counts too. A theme shown as `branch_open` or
+  `pr_open` holds back the themes after it. Some items are worked by a playbook of another theme. Today T1 works
+  "`EXEC-03` Non-interactive setup path" and "`TST-01` Test verb exists, suite non-empty". T7 works "`EXEC-06`
+  Documented commands resolve". Such an item counts for neither test, and is resumed in that playbook's theme. The
+  list comes from the catalogue's `playbooks` and `THEMES` in `progress.py`. A playbook belongs to the theme that
+  owns most of its checks.
 
 `adopt` writes both state files into the workspace, and copies each source report and the `.md` beside it there.
 It rewrites each `source_reports[].path` to the file name and appends the log entry `State adopted from <path>.`
