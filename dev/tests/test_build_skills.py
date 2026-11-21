@@ -568,6 +568,40 @@ class ManifestTests(unittest.TestCase):
             [(e["source"], e["place"]) for e in manifest["implement"]["references"]],
         )
 
+    def _shipped_sources(self) -> set[str]:
+        """Every repository-relative source the manifest names, apart from whole-folder references."""
+        manifest = bs.load_manifest()
+        audit, implement = manifest["audit"], manifest["implement"]
+        shipped = {f"audit/tools/{n}" for n in audit["tool_files"] + implement["shared_tool_files"]}
+        shipped |= {f"implement/tools/{n}" for n in implement["own_tool_files"]}
+        shipped |= {f"audit/schema/{n}" for n in audit["schema_files"] + implement["schema_files"]}
+        shipped |= {f"implement/playbooks/templates/{n}" for n in implement["template_files"]}
+        for bundle in (audit, implement):
+            shipped |= {e["source"] for e in bundle["references"]}
+        return shipped
+
+    def test_every_path_the_manifest_names_exists(self) -> None:
+        manifest = bs.load_manifest()
+        paths = self._shipped_sources() | set(manifest["excluded"]) | set(manifest["checked_folders"])
+        paths |= {"audit/catalogue.json", "audit/engine/audit"}
+        missing = sorted(p for p in paths if not (bs.REPO / p).exists())
+        self.assertEqual(missing, [])
+
+    def test_no_checked_folder_holds_a_file_the_manifest_leaves_out(self) -> None:
+        manifest = bs.load_manifest()
+        known = self._shipped_sources() | set(manifest["excluded"])
+        unlisted = []
+        for folder in manifest["checked_folders"]:
+            for file in sorted((bs.REPO / folder).iterdir()):
+                relative = file.relative_to(bs.REPO).as_posix()
+                if file.is_file() and relative not in known:
+                    unlisted.append(relative)
+        self.assertEqual(unlisted, [], "name each file in skill-bundles.json: ship it, or list it under excluded")
+
+    def test_an_excluded_file_is_not_also_shipped(self) -> None:
+        manifest = bs.load_manifest()
+        self.assertEqual(sorted(set(manifest["excluded"]) & self._shipped_sources()), [])
+
     def test_unreadable_json_is_a_tool_error(self) -> None:
         with self.assertRaises(_common.ToolError):
             self._load("{not json")

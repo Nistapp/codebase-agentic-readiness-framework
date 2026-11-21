@@ -71,6 +71,19 @@
       "_summary.py"
     ]
   },
+  "checked_folders": [
+    "audit/prompts",
+    "audit/schema",
+    "audit/tools",
+    "implement/playbooks/templates",
+    "implement/tools"
+  ],
+  "excluded": [
+    "audit/prompts/kickoff.md",
+    "audit/schema/eval-expected.schema.json",
+    "audit/tools/CATALOGUE.md",
+    "audit/tools/README.md"
+  ],
   "implement": {
     "command_rewrites": [
       {
