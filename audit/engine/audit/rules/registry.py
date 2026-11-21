@@ -21,7 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
-from audit.rules.checks import agt, idx
+from audit.rules.checks import agt, doc, idx
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -33,12 +33,7 @@ _S = Severity
 _CATALOGUE: tuple[CheckSpec, ...] = (
     *idx.SPECS,
     *agt.SPECS,
-    # -- DOC ------------------------------------------------------------
-    _c("DOC-01", "docs/ exists", "A", _S.DEGRADER),
-    _c("DOC-02", "docs/STYLE_GUIDE.md exists", "A", _S.DEGRADER),
-    _c("DOC-03", "artefacts/ exists and is ignored", "B", _S.DEGRADER),
-    _c("DOC-04", "ADR directory and index", "A", _S.COSMETIC),
-    _c("DOC-05", "Docs are readable", "B", _S.COSMETIC),
+    *doc.SPECS,
     # -- CMD ------------------------------------------------------------
     _c("CMD-01", "Seven verbs resolvable on one runner", "B", _S.BLOCKER),
     _c("CMD-02", "check composes the read-only verbs", "B", _S.BLOCKER),

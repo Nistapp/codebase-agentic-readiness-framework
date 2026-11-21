@@ -41,7 +41,8 @@ from __future__ import annotations
 import re
 
 from audit.evaluate import CheckOutcome
-from audit.findings import Evidence, Finding, Verdict, statement
+from audit.findings import Evidence, Finding, Severity, Verdict, statement
+from audit.rules.spec import CheckSpec, declare
 from audit.ignore import decide
 from audit.rules.checks._common import directory_decision, is_sanctioned_member, scoped_rules, tracked_in_scope
 from audit.scan import Inventory
@@ -557,6 +558,15 @@ def check_doc05(*, spec, target, inventory, stack, components, session) -> Check
         data=data,
     )
 
+
+#: The DOC checks, in catalogue order. The registry assembles every family's SPECS into the catalogue.
+SPECS: tuple[CheckSpec, ...] = (
+    declare("DOC-01", "docs/ exists", "A", Severity.DEGRADER),
+    declare("DOC-02", "docs/STYLE_GUIDE.md exists", "A", Severity.DEGRADER),
+    declare("DOC-03", "artefacts/ exists and is ignored", "B", Severity.DEGRADER),
+    declare("DOC-04", "ADR directory and index", "A", Severity.COSMETIC),
+    declare("DOC-05", "Docs are readable", "B", Severity.COSMETIC),
+)
 
 IMPLEMENTATIONS = {
     "DOC-01": check_doc01,
