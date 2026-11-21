@@ -21,6 +21,7 @@ import re
 from pathlib import Path
 
 from audit.findings import Severity
+from audit.rules.checks import idx
 from audit.rules.spec import PACK_ANCHORS as PACK_ANCHORS
 from audit.rules.spec import Anchor as Anchor
 from audit.rules.spec import CheckSpec as CheckSpec
@@ -30,10 +31,7 @@ _S = Severity
 
 #: The catalogue. Order here is the order in the report and in ``--list-checks``.
 _CATALOGUE: tuple[CheckSpec, ...] = (
-    # -- IDX ------------------------------------------------------------
-    _c("IDX-01", "codebase-memory-mcp registered for this repository", "A", _S.BLOCKER),
-    _c("IDX-02", "An index exists for this checkout", "A", _S.BLOCKER),
-    _c("IDX-03", "Index freshness", "C", _S.DEGRADER),
+    *idx.SPECS,
     # -- AGT ------------------------------------------------------------
     _c("AGT-01", "Instruction file present, canonical, and non-trivial", "A", _S.BLOCKER),
     _c("AGT-02", "Component coverage by instruction files", "A", _S.DEGRADER),
