@@ -19,7 +19,8 @@ To audit a repository, follow [`SKILL.md`](SKILL.md). The rest of this file is f
 ## Rules
 
 - Use the standard library only, in `tools/` and in `engine/`. Never add a third-party import.
-- Never write inside the target repository. The recipe and the tools only read it.
+- Never write inside the target repository. The recipe and the tools only read it. The owner of this rule is the
+  [hard rules](SKILL.md#hard-rules) of the audit recipe.
 - A tool writes only to its output directory. The output directory is outside the target.
 - Every tool follows the tool contract in [`tools/README.md`](tools/README.md). Read it before you add or change a
   tool.
@@ -29,7 +30,7 @@ To audit a repository, follow [`SKILL.md`](SKILL.md). The rest of this file is f
   [audit master list](../docs/reference/audit-master.md). Run `make update-masters` from the repository root and
   commit the result in the same change.
 - Never run a target's own commands directly. Use the engine's probe runner. It is opt-in: `--run-gates` plus
-  `--allow-probe <verb>`.
+  `--allow-probe <verb>`. The owner of this rule is the [hard rules](SKILL.md#hard-rules) of the audit recipe.
 - The model's judgment cites evidence. The tools do the counting.
 - A fixture is data. Change a fixture only together with the test that needs the change.
 - A new engine check needs a fixture that fails exactly that check.
