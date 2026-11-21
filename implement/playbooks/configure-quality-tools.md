@@ -29,7 +29,7 @@ The verb names, `check`'s composition and the split of write verbs belong to
 - Preferences this playbook reads, when present: `format.mass_reformat` (`no` forbids reformatting the tree:
   check-only or ratchet), any `format.*`, `lint.*` or `scanner.*` choice already made, `ci.edits_authorised`
   (build-file and CI edits), and any rule that dependency versions stay locked. A step that conflicts stops
-  and asks.
+  and asks ([state contract](../state.md#skip-defer-and-preferences)).
 - **`security` needs what its scanner reads.** A lockfile-based scanner (OSV-Scanner, `npm audit`) needs a
   tracked lockfile. When it is missing and T2 (`pin-execution-environment`) adds it, the TOOL-04 item is
   `blocked` with reason "needs T2 lockfile", and the `security` verb lands in T2's pull request together with

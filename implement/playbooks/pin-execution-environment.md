@@ -26,7 +26,8 @@ manifest that dependency automation reads.
 - Preferences this playbook reads, when present: `layout.command_runner` (per component or one root runner; a
   per-component preference forbids a root workspace manifest), `ci.edits_authorised` (whether workflow files may
   be changed), `format.mass_reformat`, `extra.*` entries that name a pin the owner already chose (for example a
-  JDK toolchain block). A step that conflicts with one stops and asks.
+  JDK toolchain block). A step that conflicts with one stops and asks
+  ([state contract](../state.md#skip-defer-and-preferences)).
 - No earlier theme is needed. Run it before any scanner step that reads a lockfile
   ([`configure-quality-tools`](configure-quality-tools.md) blocks `security` until the lockfile exists), and
   before the CI theme ([`add-ci-parity`](add-ci-parity.md)), which copies these pins into workflows.
