@@ -581,6 +581,17 @@ class ManifestTests(unittest.TestCase):
         with self.assertRaises(_common.ToolError):
             bs._reference_entries(bundle, "audit")
 
+    def test_the_engine_rewrite_names_the_audit_bundle_and_comes_first(self) -> None:
+        self.assertEqual(
+            bs.COMMAND_REWRITES[0],
+            ("python3 audit/tools/engine.py", f"python3 ../{bs.BUNDLE_NAME}/scripts/tools/engine.py"),
+        )
+        self.assertEqual(bs.AUDIT_COMMAND_REWRITES, (("python3 audit/tools/", "python3 scripts/tools/"),))
+
+    def test_command_rewrites_must_be_from_to_pairs(self) -> None:
+        with self.assertRaises(_common.ToolError):
+            bs._rewrites({"command_rewrites": [{"from": "a"}]}, "audit")
+
     def test_a_list_of_names_must_hold_strings(self) -> None:
         with self.assertRaises(_common.ToolError):
             bs._string_list(["a", 1], "audit.tool_files")

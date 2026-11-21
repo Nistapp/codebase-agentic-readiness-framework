@@ -1,5 +1,11 @@
 {
   "audit": {
+    "command_rewrites": [
+      {
+        "from": "python3 audit/tools/",
+        "to": "python3 scripts/tools/"
+      }
+    ],
     "name": "agentic-readiness-audit",
     "references": [
       {
@@ -52,6 +58,7 @@
       "catalogue.schema.json",
       "facts.schema.json"
     ],
+    "source_name": "audit",
     "tool_files": [
       "facts.py",
       "engine.py",
@@ -65,6 +72,20 @@
     ]
   },
   "implement": {
+    "command_rewrites": [
+      {
+        "from": "python3 audit/tools/engine.py",
+        "to": "python3 ../{audit_bundle}/scripts/tools/engine.py"
+      },
+      {
+        "from": "python3 audit/tools/",
+        "to": "python3 scripts/tools/"
+      },
+      {
+        "from": "python3 implement/tools/",
+        "to": "python3 scripts/tools/"
+      }
+    ],
     "name": "agentic-readiness-implement",
     "own_tool_files": [
       "progress.py",
@@ -181,6 +202,7 @@
       "_jsonschema_subset.py",
       "_summary.py"
     ],
+    "source_name": "implement",
     "template_files": [
       "docs_prose_check.py"
     ]

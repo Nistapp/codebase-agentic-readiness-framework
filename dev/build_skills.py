@@ -168,6 +168,16 @@ def _kinds(bundle: dict[str, Any], where: str) -> dict[str, str]:
     return {str(e["place"]): str(e["kind"]) for e in _reference_entries(bundle, where)}
 
 
+def _rewrites(bundle: dict[str, Any], where: str) -> tuple[tuple[str, str], ...]:
+    """The tool-command rewrites, in order. `{audit_bundle}` in a replacement is the audit bundle's name."""
+    entries = bundle.get("command_rewrites")
+    if not isinstance(entries, list) or not all(
+        isinstance(e, dict) and isinstance(e.get("from"), str) and isinstance(e.get("to"), str) for e in entries
+    ):
+        raise _common.ToolError(f"{BUNDLES_FILE.name}: {where}.command_rewrites must be a list of from/to pairs")
+    return tuple((e["from"], e["to"].replace("{audit_bundle}", BUNDLE_NAME)) for e in entries)
+
+
 def _sections(bundle: dict[str, Any], where: str) -> tuple[str, ...]:
     for entry in _reference_entries(bundle, where):
         if entry["kind"] == "sections":
@@ -210,9 +220,9 @@ AUDIT_PROMPT_FILES = tuple(Path(s).name for s, _ in AUDIT_REFERENCES if s.starts
 AUDIT_TOOLS_CLI_SECTIONS = _sections(_AUDIT, "audit")
 
 #: The audit sources name a tool by its file name alone; a command written for a checkout still gets the bundle path.
-AUDIT_COMMAND_REWRITES = (("python3 audit/tools/", "python3 scripts/tools/"),)
+AUDIT_COMMAND_REWRITES = _rewrites(_AUDIT, "audit")
 
-SKILL_MD_SOURCE_NAME = "name: audit\n"
+SKILL_MD_SOURCE_NAME = f"name: {_AUDIT['source_name']}\n"
 SKILL_MD_BUNDLE_NAME = f"name: {BUNDLE_NAME}\n"
 
 
@@ -334,17 +344,13 @@ TOOLS_CLI_SECTIONS = _sections(_IMPLEMENT, "implement")
 #: bundle. A folder carries every Markdown file in it. Order matters only for the shown order of a listing.
 IMPLEMENT_REFERENCES = _pairs(_IMPLEMENT, "implement")
 
-IMPLEMENT_SKILL_SOURCE_NAME = "name: implement\n"
+IMPLEMENT_SKILL_SOURCE_NAME = f"name: {_IMPLEMENT['source_name']}\n"
 IMPLEMENT_SKILL_BUNDLE_NAME = f"name: {IMPLEMENT_BUNDLE_NAME}\n"
 
 #: Tool commands in the source text are written for a framework checkout. In the bundle they run from the skill's
 #: own folder, where the audit and implement tools sit side by side in `scripts/tools/`; the engine is the audit
 #: skill's, installed beside this one. The engine rule comes first, so it wins over the general audit rule.
-COMMAND_REWRITES = (
-    ("python3 audit/tools/engine.py", f"python3 ../{BUNDLE_NAME}/scripts/tools/engine.py"),
-    ("python3 audit/tools/", "python3 scripts/tools/"),
-    ("python3 implement/tools/", "python3 scripts/tools/"),
-)
+COMMAND_REWRITES = _rewrites(_IMPLEMENT, "implement")
 
 #: Written as `scripts/tools/engine.py` in the implement bundle. It holds no engine code of its own.
 ENGINE_SHIM = f'''# SPDX-License-Identifier: AGPL-3.0-or-later
