@@ -101,7 +101,7 @@ class ClaudeUserConfigTests(unittest.TestCase):
         self.assertEqual(session.user_reads, [])
 
     def test_a_file_larger_than_the_bound_is_unreadable(self):
-        with mock.patch("audit.rules.checks.idx._CLAUDE_READ_LIMIT", 10):
+        with mock.patch("audit.rules.checks.idx.idx_01._CLAUDE_READ_LIMIT", 10):
             outcome, _, _, _ = self.scan({"mcpServers": {"codebase-memory-mcp": {}}})
         self.assertEqual(outcome.verdict.value, "UNKNOWN")
 
@@ -198,7 +198,7 @@ class FreshnessByTimeTests(unittest.TestCase):
             root = Path(tmp) / "repo"
             _git_repo(root)
             store = _store_at(Path(tmp) / "store", root, "2026-01-02T00:00:00Z")
-            with mock.patch("audit.rules.checks.idx._git_query", return_value=None):
+            with mock.patch("audit.rules.checks.idx.idx_03._git_query", return_value=None):
                 outcome = _idx03(root, store)
         self.assertEqual(outcome.verdict.value, "UNKNOWN")
         self.assertIn("git gives no time for HEAD", outcome.summary)
