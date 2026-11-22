@@ -235,3 +235,19 @@ def check_con04(*, spec, target, inventory, stack, components, session) -> Check
         )
 
     return _outcome(spec, Verdict.PASS, f"draft deny list written: {written}")
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, Reads, What, _at
+
+    return Reads(
+        where=(*_at(GLOB, "**"),),
+        what=What("exists"),
+        binding="file",
+        note=(
+            "Only paths are read, never content: each scanned file is sorted into secrets, migrations, "
+            "generated, tests, infrastructure as code and production by name and folder. With --emit-baseline"
+            " it writes do-not-do.draft.md beside the report, never inside the target; else UNKNOWN."
+        ),
+    )

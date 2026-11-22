@@ -95,3 +95,22 @@ def check_con02(*, spec, target, inventory, stack, components, session) -> Check
         ],
         data=paths,
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(ROOT, "AGENTS.md", "CLAUDE.md"),
+            *_at(ANY_DEPTH, "test", "tests", "__tests__"),
+        ),
+        what=What("code-span"),
+        binding="section",
+        threshold="every test directory named",
+        note=(
+            "The prohibitions-section code spans of CON-01, read like ignore entries, against every folder "
+            "segment named test, tests or __tests__ in the scan plus those folders at the root on disk."
+        ),
+    )

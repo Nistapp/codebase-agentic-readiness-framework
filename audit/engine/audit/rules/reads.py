@@ -36,7 +36,7 @@ from dataclasses import dataclass, replace
 from types import ModuleType
 
 from audit import ignore
-from audit.rules.checks import _common, con, hyg, idx, tst
+from audit.rules.checks import _common, hyg, idx, tst
 
 ROOT = "root"
 ANY_DEPTH = "any-depth"
@@ -529,55 +529,6 @@ _DECLARED: dict[str, Reads] = {
             "level 2-6 conventions sections that are not about git or docs. Five items over all sources "
             "together (naming, layering, error handling and logging, testing, a formatter or linter config "
             "name), plus TBD or TODO outside code."
-        ),
-    ),
-    "CON-01": Reads(
-        where=(*_at(ROOT, "AGENTS.md", "CLAUDE.md"),),
-        what=What("code-span"),
-        binding="section",
-        threshold="a named path that exists",
-        note=(
-            "Every code span on the lines of every prohibitions section; a span counts when it has no command"
-            " characters and holds a slash, a glob or a dot, or names something that exists. Existence is "
-            "checked in the scan and on disk. In a section opened by its body alone, only the spans of a list"
-            " item or paragraph that holds a prohibition line count."
-        ),
-        named_by_text="each code span of the prohibitions section is looked up in the scan and on disk",
-    ),
-    "CON-02": Reads(
-        where=(
-            *_at(ROOT, "AGENTS.md", "CLAUDE.md"),
-            *_at(ANY_DEPTH, "test", "tests", "__tests__"),
-        ),
-        what=What("code-span"),
-        binding="section",
-        threshold="every test directory named",
-        note=(
-            "The prohibitions-section code spans of CON-01, read like ignore entries, against every folder "
-            "segment named test, tests or __tests__ in the scan plus those folders at the root on disk."
-        ),
-    ),
-    "CON-03": Reads(
-        where=(
-            *_held(con, "_CON_ROOTS", ROOT),
-            *_held(ignore, "IGNORE_FILE_NAMES", ROOT, {".gitignore": ANY_DEPTH}),
-        ),
-        what=What("exists"),
-        binding="file",
-        threshold="every present folder ignored and untracked",
-        note=(
-            "The top-level scratch and agent-state folders in the scan or on disk, the tracked files under "
-            "them, and the ignore rules as DOC-03 reads them."
-        ),
-    ),
-    "CON-04": Reads(
-        where=(*_at(GLOB, "**"),),
-        what=What("exists"),
-        binding="file",
-        note=(
-            "Only paths are read, never content: each scanned file is sorted into secrets, migrations, "
-            "generated, tests, infrastructure as code and production by name and folder. With --emit-baseline"
-            " it writes do-not-do.draft.md beside the report, never inside the target; else UNKNOWN."
         ),
     ),
     "EXEC-01": Reads(

@@ -114,3 +114,24 @@ def check_con03(*, spec, target, inventory, stack, components, session) -> Check
     return _outcome(
         spec, Verdict.PASS, f"{', '.join(root + '/' for root in covered)} present, ignored{via}, and untracked"
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit import ignore
+    from audit.rules.checks import con
+    from audit.rules.reads import ANY_DEPTH, ROOT, Reads, What, _held
+
+    return Reads(
+        where=(
+            *_held(con, "_CON_ROOTS", ROOT),
+            *_held(ignore, "IGNORE_FILE_NAMES", ROOT, {".gitignore": ANY_DEPTH}),
+        ),
+        what=What("exists"),
+        binding="file",
+        threshold="every present folder ignored and untracked",
+        note=(
+            "The top-level scratch and agent-state folders in the scan or on disk, the tracked files under "
+            "them, and the ignore rules as DOC-03 reads them."
+        ),
+    )

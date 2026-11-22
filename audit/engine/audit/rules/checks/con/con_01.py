@@ -129,3 +129,22 @@ def check_con01(*, spec, target, inventory, stack, components, session) -> Check
         ],
         data=data,
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ROOT, Reads, What, _at
+
+    return Reads(
+        where=(*_at(ROOT, "AGENTS.md", "CLAUDE.md"),),
+        what=What("code-span"),
+        binding="section",
+        threshold="a named path that exists",
+        note=(
+            "Every code span on the lines of every prohibitions section; a span counts when it has no command"
+            " characters and holds a slash, a glob or a dot, or names something that exists. Existence is "
+            "checked in the scan and on disk. In a section opened by its body alone, only the spans of a list"
+            " item or paragraph that holds a prohibition line count."
+        ),
+        named_by_text="each code span of the prohibitions section is looked up in the scan and on disk",
+    )
