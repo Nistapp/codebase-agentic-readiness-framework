@@ -173,6 +173,8 @@ fixtures/
   hyg-11-no-source-branch-check/ rulesets for dev and main, no workflow reads the source branch -> HYG-11 PARTIAL
   hyg-13-thin-contributing/  CONTRIBUTING.md with no setup pointer, gate or workflow rules -> HYG-05 PASS, HYG-13 FAIL
   hyg-minimal/               no hygiene artifacts at all                 -> HYG-01…10 FAIL, HYG-11 and HYG-13 UNKNOWN
+  idx-01-no-mcp-config/      package.json, no code-index server registered in any harness config -> IDX-01 FAIL
+  idx-02-no-index/           opencode.json registers the server; the isolated HOME holds no index store -> IDX-02, IDX-03 UNKNOWN (machine-local)
   stack-dotnet/              a .csproj with nullable on, global.json pinning the SDK, Program.cs, no packages.lock.json (needs git) -> EXEC-01, NAV-01, NAV-02, TOOL-03 PASS; EXEC-02 FAIL
   stack-dotnet-locked/       stack-dotnet plus one PackageReference and the tracked root packages.lock.json that records it (needs git) -> EXEC-01, EXEC-02, NAV-01, NAV-02, TOOL-03 PASS
   stack-gradle-wrapper-readme/ a Gradle application with gradlew; its README runs `./gradlew build` and `./gradlew test` (needs git) -> EXEC-01, EXEC-06, NAV-02 PASS; EXEC-02 FAIL (no gradle.lockfile)
