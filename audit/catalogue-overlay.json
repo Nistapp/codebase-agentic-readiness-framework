@@ -1,0 +1,619 @@
+{
+  "catalogue_version": "0.9.0",
+  "checks": {
+    "IDX-01": {
+      "req_ids": [
+        "REQ-SH-001"
+      ],
+      "playbooks": [
+        "register-index"
+      ]
+    },
+    "IDX-02": {
+      "req_ids": [
+        "REQ-SH-002"
+      ],
+      "playbooks": [
+        "register-index"
+      ]
+    },
+    "IDX-03": {
+      "req_ids": [
+        "REQ-SH-003"
+      ],
+      "playbooks": [
+        "register-index"
+      ]
+    },
+    "AGT-01": {
+      "req_ids": [
+        "REQ-SH-005"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-02": {
+      "req_ids": [
+        "REQ-SH-006"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-03": {
+      "req_ids": [
+        "REQ-SH-007"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-04": {
+      "req_ids": [
+        "REQ-SH-008"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-05": {
+      "req_ids": [
+        "REQ-SH-009"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-06": {
+      "req_ids": [
+        "REQ-SH-010"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-07": {
+      "req_ids": [
+        "REQ-SH-011"
+      ],
+      "playbooks": [
+        "add-deny-rules"
+      ]
+    },
+    "AGT-08": {
+      "req_ids": [
+        "REQ-SH-012"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-09": {
+      "req_ids": [
+        "REQ-SH-013"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-10": {
+      "req_ids": [
+        "REQ-SH-014"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-11": {
+      "title": "Instructions are specific and not inferable",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "agent",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-015"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-12": {
+      "req_ids": [
+        "REQ-SH-060"
+      ],
+      "since_ruleset": "2026-11-10.1",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "AGT-13": {
+      "req_ids": [
+        "REQ-SH-062"
+      ],
+      "since_ruleset": "2026-11-17.2",
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "DOC-01": {
+      "req_ids": [
+        "REQ-SH-016"
+      ],
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "DOC-02": {
+      "req_ids": [
+        "REQ-SH-017"
+      ],
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "DOC-03": {
+      "req_ids": [
+        "REQ-SH-018"
+      ],
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "DOC-04": {
+      "req_ids": [
+        "REQ-SH-019"
+      ],
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "DOC-05": {
+      "req_ids": [
+        "REQ-SH-061"
+      ],
+      "since_ruleset": "2026-11-10.2",
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "CMD-01": {
+      "req_ids": [
+        "REQ-SH-021"
+      ],
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    "CMD-02": {
+      "req_ids": [
+        "REQ-SH-022"
+      ],
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    "CMD-03": {
+      "req_ids": [
+        "REQ-SH-023"
+      ],
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    "CMD-04": {
+      "req_ids": [
+        "REQ-SH-024"
+      ],
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    "TOOL-01": {
+      "req_ids": [
+        "REQ-SH-027"
+      ],
+      "playbooks": [
+        "configure-quality-tools"
+      ]
+    },
+    "TOOL-02": {
+      "req_ids": [
+        "REQ-SH-028"
+      ],
+      "playbooks": [
+        "configure-quality-tools"
+      ]
+    },
+    "TOOL-03": {
+      "req_ids": [
+        "REQ-SH-029"
+      ],
+      "playbooks": [
+        "configure-quality-tools"
+      ]
+    },
+    "TOOL-04": {
+      "req_ids": [
+        "REQ-SH-030"
+      ],
+      "playbooks": [
+        "configure-quality-tools"
+      ]
+    },
+    "TOOL-05": {
+      "req_ids": [
+        "REQ-SH-031"
+      ],
+      "playbooks": [
+        "add-hooks-and-commit-rules"
+      ]
+    },
+    "TOOL-06": {
+      "req_ids": [
+        "REQ-SH-032"
+      ],
+      "playbooks": [
+        "add-hooks-and-commit-rules"
+      ]
+    },
+    "TOOL-07": {
+      "req_ids": [
+        "REQ-SH-059"
+      ],
+      "since_ruleset": "2026-11-09.6",
+      "playbooks": [
+        "add-hooks-and-commit-rules"
+      ]
+    },
+    "CI-01": {
+      "req_ids": [
+        "REQ-SH-033"
+      ],
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    "CI-02": {
+      "req_ids": [
+        "REQ-SH-034"
+      ],
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    "CI-03": {
+      "req_ids": [
+        "REQ-SH-034"
+      ],
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    "CI-04": {
+      "title": "CI enforces the same gate as the local check",
+      "phase": 1,
+      "severity": "DEGRADER",
+      "scored": true,
+      "method": "agent",
+      "status": "implemented",
+      "req_ids": [
+        "REQ-SH-035"
+      ],
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    "CI-05": {
+      "req_ids": [
+        "REQ-SH-057"
+      ],
+      "since_ruleset": "2026-11-09.1",
+      "playbooks": [
+        "add-ci-parity"
+      ]
+    },
+    "BASE-01": {
+      "req_ids": [
+        "REQ-BF-001"
+      ],
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
+    },
+    "BASE-02": {
+      "req_ids": [
+        "REQ-BF-002"
+      ],
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
+    },
+    "BASE-03": {
+      "req_ids": [
+        "REQ-BF-003"
+      ],
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
+    },
+    "BASE-04": {
+      "req_ids": [
+        "REQ-SH-036"
+      ],
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
+    },
+    "CON-01": {
+      "req_ids": [
+        "REQ-SH-037"
+      ],
+      "playbooks": [
+        "add-deny-rules"
+      ]
+    },
+    "CON-02": {
+      "req_ids": [
+        "REQ-SH-038"
+      ],
+      "playbooks": [
+        "add-deny-rules"
+      ]
+    },
+    "CON-03": {
+      "req_ids": [
+        "REQ-SH-018"
+      ],
+      "playbooks": [
+        "add-deny-rules"
+      ]
+    },
+    "CON-04": {
+      "req_ids": [],
+      "playbooks": []
+    },
+    "EXEC-01": {
+      "req_ids": [
+        "REQ-SH-039"
+      ],
+      "playbooks": [
+        "pin-execution-environment"
+      ]
+    },
+    "EXEC-02": {
+      "req_ids": [
+        "REQ-SH-040"
+      ],
+      "playbooks": [
+        "pin-execution-environment"
+      ]
+    },
+    "EXEC-03": {
+      "req_ids": [
+        "REQ-SH-041"
+      ],
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    "EXEC-04": {
+      "req_ids": [
+        "REQ-SH-042"
+      ],
+      "playbooks": [
+        "env-inventory-and-secrets"
+      ]
+    },
+    "EXEC-05": {
+      "req_ids": [
+        "REQ-SH-043"
+      ],
+      "playbooks": [
+        "untrack-generated"
+      ]
+    },
+    "EXEC-06": {
+      "req_ids": [
+        "REQ-SH-025"
+      ],
+      "playbooks": [
+        "adapt-agents-md"
+      ]
+    },
+    "EXEC-07": {
+      "req_ids": [
+        "REQ-SH-044"
+      ],
+      "playbooks": [
+        "untrack-generated"
+      ]
+    },
+    "EXEC-08": {
+      "req_ids": [
+        "REQ-SH-058"
+      ],
+      "since_ruleset": "2026-11-09.3",
+      "playbooks": [
+        "pin-execution-environment"
+      ]
+    },
+    "TST-01": {
+      "req_ids": [
+        "REQ-SH-045"
+      ],
+      "playbooks": [
+        "define-command-surface"
+      ]
+    },
+    "TST-02": {
+      "req_ids": [
+        "REQ-SH-046"
+      ],
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
+    },
+    "TST-03": {
+      "req_ids": [
+        "REQ-SH-047"
+      ],
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
+    },
+    "TST-04": {
+      "req_ids": [
+        "REQ-SH-048"
+      ],
+      "playbooks": [
+        "adapt-agents-md",
+        "add-baselines-and-ratchet"
+      ]
+    },
+    "TST-05": {
+      "req_ids": [
+        "REQ-SH-049"
+      ],
+      "playbooks": [
+        "add-baselines-and-ratchet"
+      ]
+    },
+    "NAV-01": {
+      "req_ids": [
+        "REQ-SH-051"
+      ],
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "NAV-02": {
+      "req_ids": [
+        "REQ-SH-052"
+      ],
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "NAV-03": {
+      "req_ids": [
+        "REQ-SH-053"
+      ],
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "NAV-04": {
+      "req_ids": [],
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "NAV-05": {
+      "req_ids": [],
+      "playbooks": [
+        "establish-docs-contract"
+      ]
+    },
+    "SEC-01": {
+      "req_ids": [
+        "REQ-SH-054"
+      ],
+      "playbooks": [
+        "env-inventory-and-secrets"
+      ]
+    },
+    "SEC-02": {
+      "req_ids": [
+        "REQ-SH-055"
+      ],
+      "playbooks": [
+        "env-inventory-and-secrets"
+      ]
+    },
+    "SEC-03": {
+      "req_ids": [
+        "REQ-SH-056"
+      ],
+      "playbooks": [
+        "env-inventory-and-secrets"
+      ]
+    },
+    "HYG-01": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-02": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-03": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-04": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-05": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-06": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-07": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-08": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-09": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-10": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-11": {
+      "req_ids": [],
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    },
+    "HYG-13": {
+      "req_ids": [
+        "REQ-SH-063"
+      ],
+      "since_ruleset": "2026-11-17.3",
+      "playbooks": [
+        "add-repo-hygiene"
+      ]
+    }
+  }
+}

@@ -5,8 +5,9 @@
 > **Status:** Live for the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs (the `CON-04` emitter included); every catalogued check is implemented. This page is the design of record; each check's `SPEC` in its module under `audit/rules/checks/` is its executable form, assembled by `audit/rules/registry.py`, and `python3 -m audit --list-checks` prints the current truth.
 
 > [!NOTE]
-> The recipes' [`catalogue.json`](../../../../catalogue.json) is seeded from this registry through `--list-checks --format json`
-> and adds the checks only an agent can judge. A test keeps it identical to this registry on every field they share.
+> The recipes' [`catalogue.json`](../../../../catalogue.json) is generated from this registry and the hand-kept
+> `audit/catalogue-overlay.json` by `dev/build_catalogue.py` (`make update-catalogue`), which adds the checks only an
+> agent can judge. `make masters-check` fails when the committed file is stale.
 
 > [!IMPORTANT]
 > **The executable rules live in code, not here.** This catalogue holds the id, tier, phase anchor, severity and

@@ -38,7 +38,7 @@ checks, all informational and unscored). The catalogue itself,
 
 Where the entries come from:
 
-- **Engine checks** are seeded from the engine's own list, `python3 -m audit --list-checks --format json` ([`cli.py`](../../../audit/engine/audit/cli.py)). After seeding the file is edited by hand. The engine's ID is the check's ID, and `engine_id` repeats it.
+- **Engine checks** come from the engine's registry ([`registry.py`](../../../audit/engine/audit/rules/registry.py)). The file is generated, never edited by hand: `dev/build_catalogue.py` (`make update-catalogue`) joins the registry with the hand-kept [`catalogue-overlay.json`](../../../audit/catalogue-overlay.json), which holds the requirement IDs, the playbooks and the history. The engine's ID is the check's ID, and `engine_id` repeats it.
 - **Agent-only checks** are the ones no deterministic rule can settle. Today there are two: `AGT-11` (instructions are specific and not inferable, for [REQ-SH-015](../../../spec/readiness-requirements.md#req-sh-015--instructions-are-specific-and-not-inferable)) and `CI-04` (CI enforces the same gate as the local check, for [REQ-SH-035](../../../spec/readiness-requirements.md#req-sh-035--ci-enforces-the-gate)). Each took the next free number in its family when it was added. An engine check added later takes the next free number after it (`CI-05` follows the agent-only `CI-04`), and the test fails only if an engine check takes an agent check's ID.
 - **`status`** is the engine's own status for an engine check. An agent-only check is `planned` until its rubric exists. A check that is planned or blocked is reported `UNKNOWN`. `scored` is also the engine's: `CON-01` was `blocked` and unscored until catalogue 0.2.0, when the engine began to read the prohibitions section.
 
@@ -55,8 +55,8 @@ The diagram shows where each kind of verdict comes from, and where a requirement
 
 ```mermaid
 flowchart LR
-    E["Engine: --list-checks"] -->|seeds| C["catalogue.json"]
-    H["Agent-only checks, added by hand"] --> C
+    E["Engine registry"] -->|generates| C["catalogue.json"]
+    H["Overlay: agent-only checks, requirements, playbooks"] -->|generates| C
     C -->|"method automated"| V1["Engine verdict, overridable with evidence and a reason"]
     C -->|"method agent"| V2["Agent verdict with cited evidence"]
     R["Requirement verified by human or attested"] --> U["unattested[] in the report: no check, no verdict"]

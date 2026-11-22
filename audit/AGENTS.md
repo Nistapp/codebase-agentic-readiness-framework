@@ -10,7 +10,7 @@ To audit a repository, follow [`SKILL.md`](SKILL.md). The rest of this file is f
 | Path | What it is |
 |---|---|
 | `SKILL.md`, `checks/`, `prompts/` | The LLM-driven audit recipe, its check procedures and its prompts |
-| `catalogue.json`, `stacks/` | The check catalogue and the stack profiles |
+| `catalogue.json`, `catalogue-overlay.json`, `stacks/` | The check catalogue (generated), its hand-kept overlay and the stack profiles |
 | `schema/` | The JSON Schemas for the tools' files. See `schema/SCHEMA.md` |
 | `tools/` | Deterministic tools the recipe calls, and the shared helpers (`_common.py` and others) |
 | `engine/` | The deterministic audit engine. It has its own, stricter [`AGENTS.md`](engine/AGENTS.md) |
@@ -26,6 +26,11 @@ To audit a repository, follow [`SKILL.md`](SKILL.md). The rest of this file is f
   tool.
 - Keep `tools/CATALOGUE.md` the same as each tool's `--describe` output. Regenerate it with
   `python3 dev/recipe_lint.py --write-catalogue .` from the repository root.
+- `catalogue.json` is generated: never edit it by hand. The engine gives each engine check's title, phase,
+  severity, scored flag, status and order. `catalogue-overlay.json` gives the rest: `catalogue_version`, each
+  check's `req_ids`, `playbooks` and `since_ruleset`, and every field of an agent-only check. Edit the overlay or
+  the engine, then run `make update-catalogue` from the repository root. `make masters-check` (in `make check`)
+  fails when the committed file is stale.
 - A change to `catalogue.json` or to a file in `checks/` changes the generated
   [audit master list](../docs/reference/audit-master.md). Run `make update-masters` from the repository root and
   commit the result in the same change.
