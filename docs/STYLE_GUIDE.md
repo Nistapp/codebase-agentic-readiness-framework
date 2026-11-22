@@ -172,6 +172,7 @@ Paths are relative to `docs/`.
 | `dev/prose_check.py` | Sentence length, vague words, diagrams on explanation pages | Nowhere: advisory warnings and notices |
 | `dev/mermaid_check.py` | Each Mermaid block renders | The files you pass to `make docs-mermaid` |
 | `dev/recipe_lint.py` | Links resolve inside the repository | Recipes, `docs/` and the root pages |
+| `dev/recipe_paths.py` | A repository path in backticks still exists | The recipe pages and every `AGENTS.md` |
 | `dev/adr_lint.py` | Every ADR follows [`ADR_POLICY.md`](ADR_POLICY.md) and is indexed; no page names a missing ADR | The ADR folders, their indexes and every Markdown page |
 
 `DOCS_LINT_PATHS` is a ratchet: a page joins once it is clean, and the list only grows. Outside the list, the
