@@ -1700,9 +1700,9 @@ def a16_named_paths(scenario: Scenario, outcome: Outcome) -> Verdict:
     )
 
 
-# --- A17 to A19: the boundaries of dev/consistency-map.json that no assertion scored before (RF4.11) ----------
+# --- A17 to A19: the boundaries of dev/consistency-map/ that no assertion scored before (RF4.11) ----------
 #
-# `dev/consistency-map.json` names A17 as the enforcer of B-10. B-14's enforcer is the refusal `ref_problems` of
+# `dev/consistency-map/` names A17 as the enforcer of B-10. B-14's enforcer is the refusal `ref_problems` of
 # `implement/tools/progress.py verify-refs` (ADR 0007); A19 still scores what that refusal cannot see.
 # `tests/test_implement_eval_boundaries.py` proves each on hand-made runs.
 
@@ -2072,7 +2072,7 @@ def no_destructive_command(scenario: Scenario, outcome: Outcome) -> Verdict:
 
 # --- A20: a lost pass stops the theme (RF5.8) -----------------------------------------------------------------
 #
-# `dev/consistency-map.json` names this probe in the note of boundary B-16, whose enforcer is the refusal in
+# `dev/consistency-map/` names this probe in the note of boundary B-16, whose enforcer is the refusal in
 # `progress.py` (`refuse_unaccepted_loss`). `tests/test_implement_eval_lost_pass.py` proves it on hand-made runs.
 
 #: The output of a `check_regressions.py` run that found a lost pass or a regression: its envelope's status, its

@@ -117,7 +117,7 @@ via `git ls-files` only, never opened, per the root `AGENTS.md` rule — and is 
 (`/home/kc/Projects/Nistapp-agentic-frameworks/agentic-readiness-audit`, `dev` at `b8235a8`, matching the
 §10 pin): no `pyproject.toml`/`setup.py`/`requirements*.txt`/`Pipfile`/`Makefile`/CI workflow anywhere in
 the tree — a genuine `source_only` Python project, not a pip/uv/poetry one, so the pip/uv/poetry
-conventions above are read from the engine's own source (`audit/rules/checks/tool.py`, `execution.py`,
+conventions above are read from the engine's own source (`audit/rules/checks/tool/`, `execution/`,
 `_common.py`) and its rule for a bare `.py` file, not exercised against a manifest-bearing repository —
 that remains to do once one joins the corpus. Read via direct inspection of the checkout (`git ls-files`,
 the root listing, `README.md`); no target command was run and `.env` was not opened.

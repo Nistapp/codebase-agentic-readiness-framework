@@ -90,7 +90,7 @@ def reads():
         binding="file",
         threshold="present and named",
         note=(
-            "The exact path docs/STYLE_GUIDE.md, never a suffix match. The entry file (doc.py's own reader) "
+            "The exact path docs/STYLE_GUIDE.md, never a suffix match. The entry file (the DOC-02 module's own reader) "
             "must hold STYLE_GUIDE.md on any line, else PARTIAL."
         ),
     )

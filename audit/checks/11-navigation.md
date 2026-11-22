@@ -6,7 +6,7 @@
 > [Why These Checks §12](../engine/docs/architecture/user-overview/03-why-these-checks.md#12-navigation-nav)
 > for the consequence behind this family: an agent that cannot see component boundaries, entry points or
 > structural traps either guesses at blast radius or is drawn to the worst places in the codebase. Every
-> check reads the engine's `NAV` pack (`audit/engine/audit/rules/checks/nav.py`), whose module
+> check reads the engine's `NAV` pack (`audit/engine/audit/rules/checks/nav/__init__.py`), whose module
 > docstring names each check's deliberate limits (`NAV-02` reads a fixed, documented entry-point signal
 > set per ecosystem rather than resolving one semantically; `NAV-05`'s "public" is a best-effort static
 > approximation — for Python, module-level functions and classes and the methods of public classes whose
@@ -114,7 +114,7 @@ Engine           `NAV-03`. A census, never a verdict on a heuristic: counts file
                  files the scan classifies `Kind.BINARY`, and generated files whose name contains
                  `.min.`. Committed build output counts: the walk enters `dist/` and `build/` to
                  reach the files git tracks there (an untracked build folder stays out). Both
-                 thresholds are documented constants in `nav.py`, not tuned per repository.
+                 thresholds are documented constants in `nav/nav_03.py`, not tuned per repository.
                  A lockfile is large by design, so the size count leaves it out. The match is by exact
                  base name, never by pattern, against a closed list: `LOCKFILE_NAMES` in `stack.py`. It
                  holds `package-lock.json`, `yarn.lock`, `uv.lock`, `Cargo.lock`, `go.sum` and others. A

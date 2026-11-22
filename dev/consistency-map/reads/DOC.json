@@ -26,7 +26,7 @@
   {
     "binding": "file",
     "check": "DOC-02",
-    "note": "The exact path docs/STYLE_GUIDE.md, never a suffix match. The entry file (doc.py's own reader) must hold STYLE_GUIDE.md on any line, else PARTIAL.",
+    "note": "The exact path docs/STYLE_GUIDE.md, never a suffix match. The entry file (the DOC-02 module's own reader) must hold STYLE_GUIDE.md on any line, else PARTIAL.",
     "source": "engine",
     "threshold": "present and named",
     "what": {
