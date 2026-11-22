@@ -265,3 +265,22 @@ def check_sec02(*, spec, target, inventory, stack, components, session) -> Check
     if allowed_note:
         because += f"; {allowed_note}"
     return _outcome(spec, Verdict.FAIL, because, findings, data=matrix)
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import GLOB, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(GLOB, "**"),
+            *_at(ROOT, ".secrets.baseline", ".gitleaksignore", ".gitleaks.toml"),
+        ),
+        what=What("phrase"),
+        binding="line",
+        note=(
+            "Each line of every tracked text file (less template names) is tested for a key shape or a "
+            "keyword with a secret-looking literal; a line with a placeholder word is skipped. The root "
+            "allowlists suppress a hit, .secrets.baseline and .gitleaksignore by path and line number."
+        ),
+    )

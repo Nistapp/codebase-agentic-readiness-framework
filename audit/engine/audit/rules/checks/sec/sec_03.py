@@ -162,3 +162,21 @@ def _committed_key_material(target, inventory, rules: list[IgnoreRule]) -> list[
         for rel in tracked_and_ignored(target, inventory, rules) or []
         if (label := _key_material(rel)) is not None
     ]
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit import ignore
+    from audit.rules.reads import ANY_DEPTH, ROOT, Reads, What, _held
+
+    return Reads(
+        where=(*_held(ignore, "IGNORE_FILE_NAMES", ROOT, {".gitignore": ANY_DEPTH}),),
+        what=What("exists"),
+        binding="file",
+        note=(
+            "The ignore rules are probed with eleven sample paths (.env, .env.local, id_rsa, server.pem, "
+            "server.key, server.p12, server.pfx, app.keystore, server.crt, server.cer, .aws/credentials); "
+            "nested .gitignore files come from the scan and from git ls-files. A tracked file an ignore rule also "
+            "matches whose name is one of the nine non-dotenv shapes fails."
+        ),
+    )

@@ -125,3 +125,23 @@ def check_sec01(*, spec, target, inventory, stack, components, session) -> Check
         ],
         data=shapes,
     )
+
+
+def reads():
+    """What this check reads in a target; ``audit/rules/reads.py`` gathers it into ``READS``."""
+    from audit.rules.reads import ANY_DEPTH, ROOT, Reads, What, _at
+
+    return Reads(
+        where=(
+            *_at(ANY_DEPTH, ".env", ".env.*", "*.env", "env.*", ".gitignore"),
+            *_at(ROOT, ".cbmignore", ".cursorignore", ".aiderignore", ".rooignore"),
+        ),
+        what=What("exists"),
+        binding="file",
+        note=(
+            "Tracked files (git) whose base name is .env or starts with .env., less six template names, fail;"
+            " so does a tracked file an ignore rule also matches whose base name starts with .env, ends with .env"
+            " or starts with env., less the templates. The ignore rules (the five root ignore files and every nested .gitignore) are probed with .env "
+            "and .env.local at the root and one folder down."
+        ),
+    )
