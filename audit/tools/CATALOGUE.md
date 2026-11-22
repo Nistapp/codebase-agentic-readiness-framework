@@ -39,13 +39,14 @@ render_report.py <report> --out <md>
 ## report.py
 
 **Version:** 0.1.0  
-**Writes:** init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the target; a name that is taken is never replaced. import-engine, add-check, add-finding, set-disposition and set-stack-profile: that draft, in place and atomically, and no other file. status: nothing. finalise: a new final report, <label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, which it leaves as it was.
+**Writes:** init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the target; a name that is taken is never replaced. The run-engine subcommand writes what engine.py writes in --out-dir, outside the target, then changes the draft as import-engine does. import-engine, add-check, add-finding, set-disposition and set-stack-profile: that draft, in place and atomically, and no other file. status: nothing. finalise: a new final report, <label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, which it leaves as it was.
 
 Build the audit report: the only writer of the draft, and every write is validated.
 
 ```text
 report.py init <intake>
 report.py import-engine <draft> <engine report>
+report.py run-engine <draft> --out-dir DIR
 report.py add-check <draft> --from FILE|-
 report.py add-finding <draft> --from FILE|-
 report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
