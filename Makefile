@@ -111,13 +111,13 @@ endif
 ifndef TEST_SUITES_SUBMAKE
 .NOTPARALLEL:
 endif
-.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint adr-lint consistency-map catalogue-check update-catalogue new-check masters-check eval-expected-check update-masters golden check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills ruleset-renumber docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
+.PHONY: help setup format format-check format\:check lint typecheck test $(TEST_SUITES) test-engine-shard test-audit-tools-shard test-dev-shard test-part coverage coverage-engine coverage-engine-shard coverage-audit-tools-shard coverage-part coverage-audit-tools coverage-implement-tools coverage-greenfield coverage-combine verify-rules crosscheck recipe-lint recipe-paths adr-lint consistency-map catalogue-check update-catalogue new-check masters-check eval-expected-check update-masters golden check security security-secrets security-deps update-secrets-baseline self-audit update-audit-baseline update-skip-baseline validate-skills ruleset-renumber docs-lint docs-lint-all docs-prose docs-mermaid changelog-fix workflow-lint commit-lint spell spell-fix
 
 help:
 	@echo "verbs: format  format:check (format-check)  lint  typecheck  test  check  security"
 	@echo "parts: test-engine  test-audit-tools  test-implement-tools  test-greenfield  test-dev  coverage-engine  coverage-audit-tools  coverage-implement-tools  coverage-greenfield  coverage-combine"
 	@echo "ci:    test-part SHARD=<i>  coverage-part SHARD=<i>  coverage-combine SHARDED=1  (and test-<suite>-shard, coverage-<suite>-shard)"
-	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  adr-lint  consistency-map [CMAP_ARGS=...]  golden GOLDEN_ARGS=...  catalogue-check  update-catalogue  new-check ID=... TITLE=...  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills  ruleset-renumber [RULESET_ARGS=check]"
+	@echo "extra: setup (checks prerequisites, installs nothing)  coverage  self-audit  update-audit-baseline  update-skip-baseline  verify-rules  crosscheck  recipe-lint  recipe-paths  adr-lint  consistency-map [CMAP_ARGS=...]  golden GOLDEN_ARGS=...  catalogue-check  update-catalogue  new-check ID=... TITLE=...  masters-check  eval-expected-check  update-masters  workflow-lint  commit-lint  spell  spell-fix  update-secrets-baseline  validate-skills  ruleset-renumber [RULESET_ARGS=check]"
 	@echo "docs:  docs-lint  docs-lint-all  docs-prose [FILES=...]  docs-mermaid FILES=...  changelog-fix"
 
 # There is nothing to install into the project: the runtime code is standard-library Python and the dev tools run
@@ -314,6 +314,10 @@ crosscheck:
 recipe-lint:
 	$(PYTHON) dev/recipe_lint.py .
 
+# Every repository path that a recipe page or an AGENTS.md names in backticks must exist (or be git-ignored output).
+recipe-paths:
+	$(PYTHON) dev/recipe_paths.py .
+
 # Every ADR follows docs/ADR_POLICY.md: no lifecycle fields or tombstones, the four sections, a row in the root index.
 adr-lint:
 	$(PYTHON) dev/adr_lint.py .
@@ -379,7 +383,7 @@ RANGE ?= origin/dev..HEAD
 commit-lint:
 	$(PYTHON) dev/commit_lint.py --range $(RANGE)
 
-check: format-check typecheck test verify-rules crosscheck recipe-lint adr-lint masters-check eval-expected-check workflow-lint spell
+check: format-check typecheck test verify-rules crosscheck recipe-lint recipe-paths adr-lint masters-check eval-expected-check workflow-lint spell
 
 # The gate has two parts. The secrets scan: the baseline lists the deliberate key-shaped strings in the fixtures
 # and tests; a new hit fails the scan. It stays in `security` here, and root AGENTS.md ("Commands") says why; the
