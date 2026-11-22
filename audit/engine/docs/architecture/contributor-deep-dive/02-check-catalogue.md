@@ -5,14 +5,16 @@
 > **Status:** Live for the `IDX`, `AGT`, `EXEC`, `CMD`, `DOC`, `NAV`, `SEC`, `TOOL`, `CI`, `TST`, `BASE`, `CON` and `HYG` packs (the `CON-04` emitter included); every catalogued check is implemented. This page is the design of record; each check's `SPEC` in its module under `audit/rules/checks/` is its executable form, assembled by `audit/rules/registry.py`, and `python3 -m audit --list-checks` prints the current truth.
 
 > [!NOTE]
-> The recipes' [`catalogue.json`](../../../../catalogue.json) is seeded from this registry through `--list-checks --format json`
-> and adds the checks only an agent can judge. A test keeps it identical to this registry on every field they share.
+> The recipes' [`catalogue.json`](../../../../catalogue.json) is generated from this registry and the hand-kept
+> `audit/catalogue-overlay.json` by `dev/build_catalogue.py` (`make update-catalogue`), which adds the checks only an
+> agent can judge. `make masters-check` fails when the committed file is stale.
 
 > [!IMPORTANT]
 > **The executable rules live in code, not here.** This catalogue holds the id, tier, phase anchor, severity and
 > evidence rule for every check — the rationale for each family is in
 > [Why These Checks](../user-overview/03-why-these-checks.md). Any change to a check's semantics updates this page
-> and its rule pack in the same change set.
+> and its rule pack in the same change set. `dev/tests/test_engine_check_page.py` fails when a row's ID, title, tier,
+> severity or status, the row order or the summary counts differ from the registry.
 
 ---
 
@@ -77,13 +79,13 @@ so no one has to infer it from a suspicious verdict.
 | ID | Check | Tier | Sev | Evidence rule | Status |
 |---|---|---|---|---|---|
 | `AGT-01` | Instruction file present, canonical, and non-trivial | A | BLOCKER | A canonical instruction file is present, over the minimum size, not a stub (a template phrase such as "coming soon", or `TODO`, `TBD` or `placeholder` as a marker: opening a line, or in brackets; the word inside a sentence is not one), not mis-cased, and not shadowed by an override in the same directory | Implemented |
-| `AGT-02` | Component coverage | A | DEGRADER | `components with AGENTS.md / declared components`, as a `PARTIAL` ratio | Implemented |
+| `AGT-02` | Component coverage by instruction files | A | DEGRADER | `components with AGENTS.md / declared components`, as a `PARTIAL` ratio | Implemented |
 | `AGT-03` | Documentation contract named | B | DEGRADER | Names `docs/`, names `docs/STYLE_GUIDE.md` as canonical, names `artefacts/` as off-limits | Implemented |
 | `AGT-04` | Definition of done stated | B | DEGRADER | A doc-trigger sentence exists and names the same change set | Implemented |
 | `AGT-05` | Seven verbs named | B | DEGRADER | The command block lists `format`, `format:check`, `lint`, `typecheck`, `test`, `check`, `security` and they resolve in `CMD-01` | Implemented |
 | `AGT-06` | Architectural boundaries declared | B | DEGRADER | At least two named boundary rules referencing real paths | Implemented |
 | `AGT-07` | Do-not-do / deny rules present | B | DEGRADER | A prohibitions section exists (a heading with `Do Not Do`, `Never`, `Prohibited`, `Forbidden`, `Deny` or the like; a heading inside a code fence is not one) and the file, anywhere in it, covers tests, generated files, default branch, secrets. `prohibitions_section` in `audit/rules/checks/_common.py` finds the section for this check, `CON-01` and `CON-02`, so that they cannot disagree on where it is | Implemented |
-| `AGT-08` | No competing instruction files; reach stated | B | DEGRADER | No variant file competes with the canonical one; shadow pairs reconciled; the harnesses that reach nothing are stated | Implemented |
+| `AGT-08` | No competing instruction files, and the reach matrix is stated | B | DEGRADER | No variant file competes with the canonical one; shadow pairs reconciled; the harnesses that reach nothing are stated | Implemented |
 | `AGT-09` | Branch and release boundary declared | B | DEGRADER | States which branches exist and whether an agent may tag or release, and names every branch the declared branch rules protect by name | Implemented |
 | `AGT-10` | Instruction indirection resolved | B | DEGRADER | A file the entry file defers to ("first read …") is named in a harness config (`.aider.conf.yml` `read:`, `opencode.json` `instructions`, `.codex/config.toml` `model_instructions_file`, `.gemini/settings.json` `context.fileName`) or inlined | Implemented |
 | `AGT-12` | Communication rules stated | B | COSMETIC | A section of the instruction file headed for writing to people, or a linked file whose name says `communicat`, names the reader, how to report and how to ask for a decision; a named file that does not exist, or a missing element, is `PARTIAL` | Implemented |
@@ -220,17 +222,17 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 
 | ID | Check | Tier | Evidence rule | Status |
 |---|---|---|---|---|
-| `HYG-01` | README | A | Present, non-placeholder | Implemented |
-| `HYG-02` | CODEOWNERS | A | Present; paths noted for consistency against the draft deny list | Implemented |
-| `HYG-03` | Pull-request template | A | Present | Implemented |
-| `HYG-04` | Issue templates | A | At least one present | Implemented |
-| `HYG-05` | CONTRIBUTING | A | Present | Implemented |
-| `HYG-06` | SECURITY | A | Present | Implemented |
-| `HYG-07` | CHANGELOG | A | Present and dated recently | Implemented |
+| `HYG-01` | README present and non-placeholder | A | Present, non-placeholder | Implemented |
+| `HYG-02` | CODEOWNERS present | A | Present; paths noted for consistency against the draft deny list | Implemented |
+| `HYG-03` | Pull-request template present | A | Present | Implemented |
+| `HYG-04` | Issue templates present | A | At least one present | Implemented |
+| `HYG-05` | CONTRIBUTING present | A | Present | Implemented |
+| `HYG-06` | SECURITY present | A | Present | Implemented |
+| `HYG-07` | CHANGELOG present and recent | A | Present and dated recently | Implemented |
 | `HYG-08` | Release process documented | A | A release document exists | Implemented |
-| `HYG-09` | Dependency update automation | A | Dependabot or Renovate configured, an entry for each detected ecosystem, and no `target-branch` beside `ignore` or `groups` | Implemented |
-| `HYG-10` | License | A | A license file exists | Implemented |
-| `HYG-11` | Branch protection | B | Protection declared by configuration-as-code where the provider allows (ruleset files, the Settings app, Terraform), plus a source-branch check for a two-branch model | Implemented |
+| `HYG-09` | Dependency update automation configured | A | Dependabot or Renovate configured, an entry for each detected ecosystem, and no `target-branch` beside `ignore` or `groups` | Implemented |
+| `HYG-10` | License present | A | A license file exists | Implemented |
+| `HYG-11` | Branch protection declared as code | B | Protection declared by configuration-as-code where the provider allows (ruleset files, the Settings app, Terraform), plus a source-branch check for a two-branch model | Implemented |
 | `HYG-13` | Contributing rules written | B | The `CONTRIBUTING*` documents `HYG-05` finds point to the setup command (a link to `README.md` or `AGENTS.md`, or a named setup command), name the gate command with a paragraph saying CI runs the same, and name branches, commits and pull requests; one or two of the three is `PARTIAL`, none `FAIL`, no document `UNKNOWN` | Implemented |
 
 ---
@@ -238,6 +240,12 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 ## 15. Adding a Check
 
 The diagram shows the steps below in order. A check that misses one does not merge.
+
+`make new-check ID=<PACK-NN> TITLE="..."`, run from the repository root, writes the stubs of steps 2, 5 and 6: the
+module wired into its family, a fixture with its matrix row, a rubric section in `audit/checks/`, the overlay entry
+and a ruleset changelog row. It prints what is left to write. Each stub carries `NEW-CHECK-STUB`, and
+`dev/tests/test_new_check.py` fails while one is left. It refuses `IDX`, `AGT` and `TST`, which are still one
+module each, and never takes the ruleset revision for you.
 
 ```mermaid
 flowchart LR

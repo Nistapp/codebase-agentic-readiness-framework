@@ -48,6 +48,10 @@ runs it, where CI runs it, and where its version is pinned. The rules for the ga
 `make check` runs `format:check`, `typecheck`, `test`, the engine's rule check, `crosscheck`, `recipe-lint`,
 `adr-lint`, `masters-check`, `eval-expected-check`, `workflow-lint` and `spell`, in sequence. CI's `CI Gate`
 passes only when the `check`, `security`, `coverage`, `self-audit`, `docs` and `commits` jobs pass ([Branch protection](branch-protection.md#the-required-checks)).
+`masters-check` first runs `catalogue-check`: `audit/catalogue.json` is generated from the engine registry and
+`audit/catalogue-overlay.json` by `dev/build_catalogue.py`, and `make update-catalogue` rewrites it.
+`make new-check ID=<PACK-NN> TITLE="..."` (`dev/new_check.py`) writes the stubs of a new engine check and regenerates
+the catalogue; `make check` fails while a stub is left.
 
 ## Spell check
 
