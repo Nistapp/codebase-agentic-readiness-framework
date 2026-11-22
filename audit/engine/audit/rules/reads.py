@@ -38,7 +38,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from types import ModuleType
 
-from audit.rules.checks import _common, idx, tst
+from audit.rules.checks import _common, tst
 
 ROOT = "root"
 ANY_DEPTH = "any-depth"
@@ -160,44 +160,6 @@ _GO_FIXTURE = (
 
 #: The reads that a family with no module per check still declares here, keyed by check id.
 _DECLARED: dict[str, Reads] = {
-    "IDX-01": Reads(
-        where=(*_held(idx, "_PROJECT_CONFIGS", ANY_DEPTH),),
-        what=What("phrase", ("codebase-memory-mcp",)),
-        binding="file",
-        note=(
-            "Each config is kept when Inventory.has finds its name at any depth but read by its exact root "
-            "path, so a nested-only copy reads as unreadable (UNKNOWN). Three user configs under $HOME are "
-            "read too, unless --no-user-config, and Claude Code's ~/.claude.json is parsed: its top-level "
-            "mcpServers or the projects entry of this checkout's path."
-        ),
-    ),
-    "IDX-02": Reads(
-        where=(*_at(ROOT, ".codebase-memory/graph.db.zst"),),
-        what=What("exists"),
-        binding="file",
-        note=(
-            "The store is looked for in AUDIT_INDEX_STORE, then three folders under $HOME, then this team "
-            "artifact in the target; only a *.db store is opened, and its projects table is read for a "
-            "root_path that resolves to the target."
-        ),
-    ),
-    "IDX-03": Reads(
-        where=(
-            *_at(
-                ROOT,
-                ".codebase-memory/graph.db.zst",
-                unexercised="IDX-03 looks for the store only as a Tier-C probe (--run-gates) on a git target, and "
-                "the recording runs no probe",
-            ),
-        ),
-        what=What("exists"),
-        binding="file",
-        note=(
-            "The store of IDX-02 (no repository text); a git-revision column of the matching project row is "
-            "compared with HEAD as a probe. With no such column, its indexed_at is compared with the time HEAD "
-            "last moved (git's committer time and reflog)."
-        ),
-    ),
     "TST-01": Reads(
         where=(
             *_runners(),
