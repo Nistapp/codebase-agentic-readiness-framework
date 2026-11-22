@@ -13,7 +13,7 @@ names them when they hold every place of the entry.
 The declaration is data for the framework's own tools, never for a verdict: a check module imports this
 module only inside ``reads()``, so an audit run never loads it, the ruleset hash does not take it in, and
 no report shows it. ``dev/consistency_map_reads.py``
-writes the ``reads`` part of ``dev/consistency-map.json`` from this table, and
+writes the ``reads`` part of the folder ``dev/consistency-map/`` from this table, and
 ``tests/test_check_reads.py`` runs every check with a recording inventory and compares the paths it
 asks for with the declaration (ADR 0012 in the repository's ``docs/architecture/adrs/``).
 

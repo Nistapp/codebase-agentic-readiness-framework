@@ -159,7 +159,7 @@ three directly by `artifactId`: `spotless-maven-plugin`, `maven-checkstyle-plugi
 Gradle build, the engine does not read which plugin goals a pom binds to that phase. A real engine gap,
 found by reading the check rather than a repository: `EXEC-02`'s lockfile table recognises
 only `gradle.lockfile` for `jvm` (`_lockfiles_for` in
-`audit/rules/checks/execution.py`, fed by `PACKAGE_MANAGERS` in `audit/stack.py`), never a Maven convention,
+`audit/rules/checks/execution/exec_02.py`, fed by `PACKAGE_MANAGERS` in `audit/stack.py`), never a Maven convention,
 so a pure-Maven project is still told it is missing `gradle.lockfile` — read the finding's own evidence
 before repeating that name.
 

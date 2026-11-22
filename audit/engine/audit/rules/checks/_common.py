@@ -603,7 +603,7 @@ def runner_kind(runner: str) -> str:
     """The manifest name a runner path was matched on, e.g. ``"packages/app/package.json"`` -> ``"package.json"``.
 
     The literal manifest name is what every precedence table, alias table and delegation pattern in this
-    module and in ``cmd.py`` is keyed on. ``_runner_commands`` yields root manifests only, whose kind and path
+    module and in the ``cmd`` package is keyed on. ``_runner_commands`` yields root manifests only, whose kind and path
     are the same string; a caller may still pass a path.
     """
     return runner.rsplit("/", 1)[-1]

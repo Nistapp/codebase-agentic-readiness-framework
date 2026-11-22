@@ -18,7 +18,7 @@
 > `CONTRIBUTING.md` that only exists under `greenfield/templates/` is a template the repository
 > ships, not the repository's own, and reads `FAIL` on `HYG-05` and `UNKNOWN` on `HYG-13`.
 >
-> **Verdict contract, shared by every check in this file (from the engine's own `hyg.py` docstring):
+> **Verdict contract, shared by every check in this file (from the engine's own `hyg/__init__.py` docstring):
 > an absent artifact is `FAIL`.** Because every check here is unscored, a `FAIL` is a reported fact that
 > never moves the readiness number — write it up like any other finding, just without a score
 > consequence. `UNKNOWN` is reserved for "the artifact is present but its quality cannot be settled" (an

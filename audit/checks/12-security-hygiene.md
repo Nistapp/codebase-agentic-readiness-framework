@@ -4,7 +4,7 @@
 > [Why These Checks §13](../engine/docs/architecture/user-overview/03-why-these-checks.md#13-security-hygiene-sec)
 > for the consequence behind this family: an agent's context is transmitted and logged by the tooling
 > around it, so a secret an agent reads is a secret exposed through the very tool added for safety.
-> Every check reads the engine's `SEC` pack (`audit/engine/audit/rules/checks/sec.py`), whose
+> Every check reads the engine's `SEC` pack (`audit/engine/audit/rules/checks/sec/__init__.py`), whose
 > redaction happens at capture time, never at render time (`audit/engine/AGENTS.md` §9).
 >
 > **Never quote a secret value, in a finding, a summary, or anywhere else in the report.** `SEC-02`'s

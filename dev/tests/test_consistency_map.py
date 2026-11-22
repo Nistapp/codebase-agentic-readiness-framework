@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""The consistency map, ``dev/consistency-map.json``, against its schema, the catalogue and the engine's constants.
+"""The consistency map, the folder ``dev/consistency-map/``, against its schema, the catalogue and the engine's
+constants.
 
 Every check in ``audit/catalogue.json`` has exactly one reads entry, in catalogue order. A reads entry that names
 engine constants (``module:NAME``) must list exactly the paths those constants hold, so a file added to or removed
@@ -715,7 +716,7 @@ class GateTest(unittest.TestCase):
         """Rule R6's premise: a playbook copies no text SEC-02 would flag into a target.
 
         Every line of every tracked file under ``implement/playbooks/`` and ``greenfield/templates/`` is read with
-        the engine's own line test (``_scan_secrets_allowlisted`` in ``audit/engine/audit/rules/checks/sec.py``), at
+        the engine's own line test (``_scan_secrets_allowlisted`` in ``audit/engine/audit/rules/checks/sec/sec_02.py``), at
         its strictest: as code and as configuration, with the short minimum length of an env-style file. The scan's
         placeholder rule still applies, so ``KEY=your_key_here`` in a template is not a hit; its file skip for
         ``.example`` files does not, so every file counts.

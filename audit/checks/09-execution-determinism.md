@@ -4,7 +4,7 @@
 > [Why These Checks §10](../engine/docs/architecture/user-overview/03-why-these-checks.md#10-execution-determinism-exec)
 > for the consequence behind this family: this is where brownfield repositories fail hardest, and where
 > the framework's Phase 1 is thinnest. Every check reads the engine's `EXEC` pack
-> (`audit/engine/audit/rules/checks/execution.py`), whose module docstring names each check's own
+> (`audit/engine/audit/rules/checks/execution/__init__.py`), whose module docstring names each check's own
 > `UNKNOWN` conditions and its one documented limitation (manifest↔lockfile parsing beyond
 > node/python/rust/go is not attempted, so those ecosystems report the tracked fact and `PARTIAL`
 > consistency rather than a false `PASS`).
@@ -201,7 +201,7 @@ Engine           `EXEC-04`. Collects every `${VAR}` reference in shell-family fi
                  regardless of detected ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` that
                  names a key your own reading recognises as a CI/host convention the allow-list has not
                  yet caught — verify against `_ENV_ALLOWLIST`/`_ENV_ALLOW_PREFIXES` in
-                 `audit/rules/checks/execution.py` before writing a false "missing variable" finding.
+                 `audit/rules/checks/execution/exec_04.py` before writing a false "missing variable" finding.
 Method           automated
 Look for         `${VAR}`-style references in shell/`Dockerfile` files, and language-level environment
                  reads in source and script files generally; the keys declared in each committed example
@@ -292,7 +292,7 @@ Engine           `EXEC-06`. Extracts every fenced shell command from README.md, 
                  reads the same here and in `AGT-05` when the Makefile spells it `format-check`. This check runs regardless of detected
                  ecosystem — there is no `UNKNOWN` path. Distrust a `FAIL` naming a tool the fixed table
                  does not yet carry — verify the tool is genuinely unresolvable, not merely missing from
-                 `_KNOWN_TOOLS` in `audit/rules/checks/execution.py`, before treating the finding as a
+                 `_KNOWN_TOOLS` in `audit/rules/checks/execution/exec_06.py`, before treating the finding as a
                  real documentation defect.
 Method           automated
 Look for         Fenced shell commands in README.md, AGENTS.md and CLAUDE.md; each one's head token

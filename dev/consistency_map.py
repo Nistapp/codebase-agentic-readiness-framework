@@ -95,9 +95,10 @@ _CONTENT_FOR: dict[str, frozenset[str]] = {
 }
 #: The checks whose ``**`` read sees only some scan kinds, and those kinds. The engine passes them as ``kinds=`` to
 #: ``Inventory.grep``, or reads them through a named place: the hook wiring (``core.hooksPath``) in
-#: ``rules/checks/tool.py``, the local surface (``_LOCAL_SURFACE_KINDS``) and the workflow lines in ``ci.py``, the
-#: env references in ``execution.py``, and the entry-point markers in source and the Quarkus marker in build files in
-#: ``nav.py``. A test in ``dev/tests/test_consistency_map.py`` records the kinds the engine passes and compares them.
+#: ``rules/checks/tool/``, the local surface (``_LOCAL_SURFACE_KINDS``) and the workflow lines in ``rules/checks/ci/``,
+#: the env references in ``rules/checks/execution/``, and the entry-point markers in source and the Quarkus marker in
+#: build files in ``rules/checks/nav/``. A test in ``dev/tests/test_consistency_map.py`` records the kinds the engine
+#: passes and compares them.
 KIND_FILTERED_READS: dict[str, frozenset[str]] = {
     "TOOL-05": frozenset({"manifest", "config", "script", "ci", "build"}),
     "TOOL-06": frozenset({"manifest", "config", "script", "ci", "build"}),
@@ -107,7 +108,7 @@ KIND_FILTERED_READS: dict[str, frozenset[str]] = {
     "NAV-02": frozenset({"source", "build"}),
 }
 #: Rule R4: the checks whose verdict ignores the target's content, so no move can change it. ``check_con04``
-#: (``audit/engine/audit/rules/checks/con.py:650-664``) returns ``UNKNOWN`` without ``--emit-baseline``. With it,
+#: (in ``audit/engine/audit/rules/checks/con/con_04.py``) returns ``UNKNOWN`` without ``--emit-baseline``. With it,
 #: the check returns ``PASS`` once the draft is written outside the target, and ``UNKNOWN`` when the draft may not
 #: be written. The draft's text comes from the target; the verdict does not. A test in
 #: ``dev/tests/test_consistency_map.py`` runs the check on two different targets.
