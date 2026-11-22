@@ -38,7 +38,8 @@ To audit a repository, follow [`SKILL.md`](SKILL.md). The rest of this file is f
   `--allow-probe <verb>`. The owner of this rule is the [hard rules](SKILL.md#hard-rules) of the audit recipe.
 - The model's judgment cites evidence. The tools do the counting.
 - A fixture is data. Change a fixture only together with the test that needs the change.
-- A new engine check needs a fixture that fails exactly that check.
+- A new engine check needs a fixture that fails exactly that check. `make new-check ID=<PACK-NN> TITLE="..."` writes
+  the stubs of the module, the fixture, its matrix row, the rubric section and the overlay entry, and prints the rest.
 - The engine never imports from `tools/`. The audit folder never imports from `implement/`.
 - Before you change anything under `engine/`, read [`engine/AGENTS.md`](engine/AGENTS.md).
 

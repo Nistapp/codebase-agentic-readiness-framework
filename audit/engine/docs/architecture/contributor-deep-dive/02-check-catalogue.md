@@ -241,6 +241,12 @@ pattern is *named* when it stands in a code span of the section. The audit also 
 
 The diagram shows the steps below in order. A check that misses one does not merge.
 
+`make new-check ID=<PACK-NN> TITLE="..."`, run from the repository root, writes the stubs of steps 2, 5 and 6: the
+module wired into its family, a fixture with its matrix row, a rubric section in `audit/checks/`, the overlay entry
+and a ruleset changelog row. It prints what is left to write. Each stub carries `NEW-CHECK-STUB`, and
+`dev/tests/test_new_check.py` fails while one is left. It refuses `IDX`, `AGT` and `TST`, which are still one
+module each, and never takes the ruleset revision for you.
+
 ```mermaid
 flowchart LR
     A["Next id in its group"] --> B["Tier, anchor, severity, falsifiable evidence rule"]
