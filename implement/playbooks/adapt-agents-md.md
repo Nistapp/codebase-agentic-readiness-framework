@@ -470,6 +470,8 @@ finding the owner skips makes no commit, and the owner's order (Inputs 1) replac
 
 - **Over budget:** an `AGENTS.md` over 400 lines after the moves is `partial` with
   `--debt "what=AGENTS.md lines over the 400 budget,count=N"`. The next theme or the owner moves more text out.
+  The [A14 rubric](../../audit/checks/02-agent-governance.md#the-a14-rubric-r-16-score-content-not-presence) sets the
+  budget.
 - **Contradicted rules:** each rule kept as target state carries its exception count as debt
   (`what=files that break the <rule> rule,count=N`). The count may only go down; the item is `partial` until it is 0
   or the owner records the rule as describing the code.
@@ -549,7 +551,7 @@ numbering. A conventions commit (Step 16) reverts alone too.
 - Do not move or rewrite a conventions section in `AGENTS.md` or `CONTRIBUTING.md` unasked, copy a Git rule into the
   conventions, or copy a formatter or linter setting into them.
 - Do not copy content from a private repository or workspace into an open-source one, or from any target into the
-  framework.
+  framework. This echoes the hard rule [Keep private content private](../SKILL.md#hard-rules).
 
 ## State updates
 

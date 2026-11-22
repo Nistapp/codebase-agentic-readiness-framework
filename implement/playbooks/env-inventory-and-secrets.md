@@ -224,7 +224,7 @@ undoing.
 ## Do-not-do
 
 - Do not print, quote, log or copy a value from any env, properties, realm, keystore or credentials file, and
-  do not open a `.env`-like file.
+  do not open a `.env`-like file. This echoes the hard rule [Never touch secrets](../SKILL.md#hard-rules).
 - Do not rotate a credential, remove one from history or run a history-rewriting command: report and stop.
 - Do not touch a tracked env file the owner keeps; do not add an ignore rule or `git rm --cached` for it.
 - Do not re-raise a finding the owner rejected or skipped; new observations go to the pull request body.

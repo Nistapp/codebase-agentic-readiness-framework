@@ -22,7 +22,7 @@ lines, and every concern (lint, format, test, types, security) has one authorita
 - Preferences this playbook reads, when present: `layout.command_runner`, `ci.edits_authorised`,
   `tests.stack_dependent` (a stack the build scripts start), and any `extra.*` entry that already decides a
   tracked-but-ignored path (for example a secret-bearing file assigned to the secrets theme). A step that
-  conflicts with one stops and asks.
+  conflicts with one stops and asks ([state contract](../state.md#skip-defer-and-preferences)).
 - No earlier theme is needed. If the repository has a script that regenerates the output (a build verb, a
   stack start-up script), read it first: it is the evidence that untracking is safe.
 - Docker and the local stack start only through the repository's scripts (workspace rule). This playbook never

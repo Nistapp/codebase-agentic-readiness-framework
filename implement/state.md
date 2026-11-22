@@ -82,9 +82,12 @@ python3 implement/tools/progress.py adopt --target <checkout> --workspace <works
   refuses a missing report, a workspace inside the target, and a workspace that already holds the label.
 - Theme branches can hold a newer state than the integration branch. A session MUST adopt from the checkout whose
   state has the newest log entry, and MUST tell the owner which branch it chose. The tool does not merge states.
+  Read it from that branch's worktree. Without one, add a detached worktree:
+  `git -C <repo> worktree add --detach <dir> <branch>`, and remove it afterwards.
 - Its envelope lists the in-repo files the owner may now remove, in `data.may_remove`. They are the state folder,
   the report folder and the `AGENTS.md` line that points at the state. A session removes them only with the owner's
-  consent, as a normal change in the next theme branch or a small `chore` branch.
+  consent, as a normal change in the next theme branch or a small `chore` branch. Offer that removal as a change
+  in the next theme branch.
 
 ## Item statuses
 
@@ -149,7 +152,8 @@ the note and logs "note added"; without `--note` it is refused.
   recorded as a preference with a key, a value, a reason, who decided, the date and the step. A session MUST
   read every preference before it plans a theme. A playbook step that conflicts with a preference MUST stop
   and ask; it MUST NOT override the preference. Keys are lower case (`node.version-file`: letters, digits, dot,
-  underscore, hyphen). When the owner was asked and has no preference, record the value `none` with the owner's
+  underscore, hyphen). A key matches `^[a-z0-9][a-z0-9._-]{0,63}$` (lowercase: `extra.t3`, not `extra.T3`) and takes
+  one value. When the owner was asked and has no preference, record the value `none` with the owner's
   words as the reason (`pref set tool.formatter none --reason "..." --by owner`), so the question is not asked
   again.
 - **Approved dependencies and accepted gate changes.** Two keys are lists that `check_gates.py` reads at theme

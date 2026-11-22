@@ -202,7 +202,8 @@ scratch files to the index.
 - Do not untrack, ignore or delete a file the owner has not confirmed is scratch, and do not change which env files
   are tracked; state the owner's decision instead.
 - Do not paste the CON-04 draft whole: an entry that matches nothing in the repository is noise.
-- Do not open, print or quote a secret store while listing the paths.
+- Do not open, print or quote a secret store while listing the paths. This echoes the hard
+  rule [Never touch secrets](../SKILL.md#hard-rules).
 
 ## State updates
 

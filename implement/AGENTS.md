@@ -24,6 +24,7 @@ folder.
 
 - Use the standard library only in `tools/`. Never add a third-party import.
 - Text a playbook copies into a target comes from `greenfield/templates/` (MIT-0), never from `docs/` (GFDL 1.3).
+  The rule, with its full wording, is in the [rules for every playbook](playbooks/README.md#anatomy).
 - Code in `playbooks/templates/` is relicensed when a playbook copies it into a target. Only its copyright holder
   changes it, or a contributor who agrees in writing to that relicensing. Say so in the pull request.
 - Every tool follows the tool contract in [`audit/tools/README.md`](../audit/tools/README.md).

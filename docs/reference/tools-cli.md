@@ -163,7 +163,7 @@ The tool checks in three stages. The first reads `schema_version`. A report with
 
 Builds the audit report. It is the only writer of the draft: the agent calls a subcommand and never edits the JSON by hand. The draft's path may be a link: the draft it points to is changed, and the link stays a link. Every file it writes is validated first with the checks of [`validate_report.py`](#validate_reportpy), and the readiness summary is computed by the tool, never taken from a caller. The source is [`report.py`](../../audit/tools/report.py).
 
-The subcommands are `init`, `import-engine`, `add-check`, `add-finding`, `set-disposition`, `set-stack-profile`, `status` and `finalise`.
+The subcommands are `init`, `import-engine`, `run-engine`, `add-check`, `add-finding`, `set-disposition`, `set-stack-profile`, `status` and `finalise`.
 
 Every subcommand but `init` and `status` changes the draft it is given, in place. A change is one step. The tool
 reads and validates the draft, makes the change, recomputes the summary and validates the result. Only then does it
@@ -177,6 +177,7 @@ changed.
 ```text
 python3 audit/tools/report.py init <intake>
 python3 audit/tools/report.py import-engine <draft> <engine report>
+python3 audit/tools/report.py run-engine <draft> --out-dir DIR
 python3 audit/tools/report.py add-check <draft> --from FILE|-
 python3 audit/tools/report.py add-finding <draft> --from FILE|-
 python3 audit/tools/report.py set-disposition <draft> --via VIA
@@ -315,6 +316,43 @@ Nothing the engine said is dropped without a warning, except a placeholder and a
 | `this draft already holds an engine report (ruleset H)` | Start a new draft with `init`. |
 | `the draft already records X` | The draft holds a check the engine reports. Start a new draft. |
 | `the change would leave the draft invalid, so nothing was written` | `data.errors` names the rule and the place, for example an engine finding more severe than its check (rule 7). |
+
+### run-engine
+
+Runs [`engine.py`](#enginepy) with the flags the draft's intake recorded, then imports the report it wrote, as
+[`import-engine`](#import-engine) does. It is Stage 2, steps 1 and 2 of the [audit recipe](../../audit/SKILL.md) in
+one call.
+
+```text
+python3 audit/tools/report.py run-engine <draft> --out-dir DIR
+```
+
+| Argument | Meaning |
+|---|---|
+| `<draft>` | The draft to change. It must not hold an engine report yet. |
+| `--out-dir DIR` | Where the engine's report and `do-not-do.draft.md` go. Required. It must be outside the target; `engine.py` refuses one inside. |
+
+The engine gets the draft's target and label, and these flags:
+
+- `--no-user-config` and `--emit-baseline`, always;
+- `--exclude` for each path in `run_context.excluded`;
+- `--run-gates`, `--allow-probe` for each verb in `run_context.probes.allowed`, and `--timeout` with
+  `run_context.probes.timeout_s`, only when at least one verb is allowed.
+
+A final report, or a draft that already holds an engine report, is refused before the engine runs. So no engine
+report is written for nothing.
+
+**Outputs.** `data` is the `data` of `import-engine`, with `engine_run` first: the `data` of `engine.py` (`report`,
+`label`, `stamp`, `target`, `baseline_draft` and `engine`). The warnings of both come in that order.
+
+**Exit codes.** Each code means:
+
+| Code | When |
+|---|---|
+| `0` | The engine ran, and its report was imported. |
+| `1` | A bad argument, a missing `--out-dir`, or a missing or final draft. Or `--out-dir` is inside the target, the engine refused the run, or `import-engine` gives exit 1. |
+| `2` | The draft is not valid, already holds an engine report, or the import failed validation, as for `import-engine`. The engine's report stays in `--out-dir`. |
+| `3` | The engine failed, or an internal error. The draft is not changed. |
 
 ### Fragments
 
@@ -534,9 +572,26 @@ The draft may be final: `status` then reports it and says it is already final. A
 | `families_remaining` | For each family with a check not yet recorded, the IDs of those checks. |
 | `findings`, `findings_pending`, `blockers_pending` | The findings, those waiting for a decision, and the `BLOCKER` ones among them. |
 | `ready_to_finalise`, `blocking` | Whether `finalise` has nothing to stop it, and if not, why in a sentence: an eval-mode run, checks not recorded, findings pending, a `BLOCKER` not decided interactively, or a report that is already final. `finalise` has the last word: it validates the final report. |
+| `next` | What the audit recipe does next, in one sentence that starts with the stage and the step of [`audit/SKILL.md`](../../audit/SKILL.md), for example `Stage 2, step 3: ...`. The rule is the recipe's "Resuming" section; the table below gives it. |
+| `next_command` | The command that does it, with absolute paths, or `null` when there is none; `next` then says why. A part only the person can give stays a placeholder, such as `<disposition>`. |
 | `pending` | The findings waiting for a decision, one line each as `<id> <severity> <key>`, blockers first, as many as fit in the line budget (at most 8). With `--all`, every one that fits the byte budget. |
 | `pending_severity` | The severity given with `--severity`, when one was given. |
 | `pending_omitted` | How many pending findings are not listed, when some are left out. The envelope then has `truncated: true`. |
+
+`next` and `next_command` follow the first row that holds, from the top:
+
+| The draft | `next` starts with | `next_command` |
+|---|---|---|
+| Is final | `Nothing: the report is final.` | `null` |
+| Holds no engine report yet | `Stage 2, steps 1 and 2:` | `report.py run-engine <draft> --out-dir <the draft's folder>` |
+| Has a family with a check not recorded | `Stage 2, step 3:`, naming the first such family in the catalogue's order | `report.py add-check <draft> --from -` |
+| Is an eval-mode run | `Stage 5, step 1:`: stop at the draft (the eval-mode lines of Stages 4 and 5) | `null` |
+| Has a pending `BLOCKER` finding | `Stage 4, step 2:`, naming it | `report.py set-disposition <draft> --via interactive --finding <id> --disposition <disposition>` |
+| Has other pending findings | `Stage 4, step 3:` | `report.py set-disposition <draft> --via batch --from -` |
+| Has a `BLOCKER` finding no person decided alone | `Stage 4, step 2:`, naming it | as for a pending `BLOCKER` |
+| Is ready to finalise | `Stage 5, step 3:` | `report.py finalise <draft>` |
+
+The two keys take two lines of the 40, so the `pending` list fits in what is left.
 
 **Exit codes**
 
@@ -801,7 +856,9 @@ Nothing is written by a plain `recipe_lint.py <root>`; a clean run's `data` hold
 ## build_skills.py
 
 Builds the two skill bundles under `dev/dist/skills/` (gitignored), self-contained copies that a harness installs and
-runs with no checkout of this repository. The source is [`build_skills.py`](../../dev/build_skills.py). Each
+runs with no checkout of this repository. The source is [`build_skills.py`](../../dev/build_skills.py). The list of
+shipped files is data in [`skill-bundles.json`](../../dev/skill-bundles.json): to ship or drop a file, change that file.
+A test fails when a source folder holds a file the manifest neither names nor lists under `excluded`. Each
 bundle is replaced whole on every run, so a stale file from an earlier build can never survive. Each has three parts:
 
 - `SKILL.md`: the recipe's own file, with its frontmatter `name` rewritten from the source folder's name to the
@@ -950,7 +1007,29 @@ the count per status and the `not_queued` count, with `versions` as [`check_drif
 - the counts per status and per theme (`items`, and `open`: neither `done` nor `skipped`);
 - the skipped finding ids, and the number of preferences, debt entries and log entries;
 - `versions`: the framework that created the state (`created`), the one that last wrote it (`last`) and these
-  tools (`tools`).
+  tools (`tools`);
+- `next`: where a session goes on, worked out from the state alone. `stage` and `step` name a step of
+  [`implement/SKILL.md`](../../implement/SKILL.md), and `text` says it in one sentence. `theme` is the theme the
+  step works on, or `null`. `check_first` lists the themes shown as `branch_open` or `pr_open`; Stage 2, step 1
+  checks each for a merge. The first rule that holds decides:
+
+  | The state | `stage`, `step` |
+  |---|---|
+  | An item is `in_progress` (the lowest finding id is named) | 3, 4: resume it on its theme's branch |
+  | No theme has started and no `ci.pr_by_agent` preference is recorded | 1, 1: triage |
+  | A `branch_open` theme has `queued` items of its own | 3, 4: go on with them |
+  | A theme is `branch_open` or `pr_open` | 2, 1: check whether it merged; `theme` is the theme after that |
+  | The rule below picks a theme | 2, 2: plan it |
+  | Anything else | 5, 1: close out, naming any `queued` item no theme works |
+
+  The next theme is the first `not_started` theme, from T1 to T8, with `queued` items for its own playbooks.
+  The themes before it in the recipe's Themes diagram, directly or through another, must each be `merged`. A
+  `not_started` one with no item `queued` or `in_progress` counts too. A theme shown as `branch_open` or
+  `pr_open` holds back the themes after it. Some items are worked by a playbook of another theme. Today T1 works
+  "`EXEC-03` Non-interactive setup path" and "`TST-01` Test verb exists, suite non-empty". T7 works "`EXEC-06`
+  Documented commands resolve". Such an item counts for neither test, and is resumed in that playbook's theme. The
+  list comes from the catalogue's `playbooks` and `THEMES` in `progress.py`. A playbook belongs to the theme that
+  owns most of its checks.
 
 `adopt` writes both state files into the workspace, and copies each source report and the `.md` beside it there.
 It rewrites each `source_reports[].path` to the file name and appends the log entry `State adopted from <path>.`
@@ -958,8 +1037,8 @@ Its `data` holds `state`, `markdown`, `label`, `adopted_from`, `copied` and `may
 in-repo files the owner may now remove: the state folder, the report folder and an `AGENTS.md` that names the
 state folder. `adopt` writes and deletes nothing in the target.
 
-`show --json` puts the state under `data.state`, with the same `versions`. `render` writes the Markdown and puts its
-path and size in `data`. Every other command checks the changed state whole and appends one log entry. It appends
+`show --json` puts the state under `data.state`, with the same `versions` and `next`. `render` writes the Markdown
+and puts its path and size in `data`. Every other command checks the changed state whole and appends one log entry. It appends
 two when the framework changed since the last write (see `last_framework`). Then it replaces the JSON and puts the
 path and the count per status in `data`. A refused command changes nothing, and a refused move says which states
 the item may go to. The Markdown view keeps prose lines under 110 columns, so it passes MD013: the item details, and

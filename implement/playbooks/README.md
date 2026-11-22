@@ -37,7 +37,8 @@ How to write the Commits section:
 - `Kind`: `hand` for hand-written edits, `bulk` for generated or tool output (a lockfile, a baseline file, a
   formatter run), `config` for a tool's own config, `wiring` for a verb, a hook or a CI step that runs a tool.
   Bulk output and config never share a commit with hand edits or wiring. A dependency change and the lockfile it
-  regenerates are one `bulk` commit, so `npm ci` and the like never break between them.
+  regenerates are one `bulk` commit, so `npm ci` and the like never break between them. The rules these kinds
+  serve are in [What one commit holds](../SKILL.md#what-one-commit-holds).
 - The Rollback section reverts these commits, newest first, and names any that must go together.
 
 How to write the State updates section so each line runs as written:

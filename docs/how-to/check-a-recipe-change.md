@@ -91,7 +91,8 @@ The sweep lists every normative item of the in-scope files. An item is a paragra
 fenced command block. An item is normative when it holds a trigger word ("must", "never"), a limit, an exit code or a
 write to a path. A command block and a row of a tool table are normative too.
 
-The scope is the files the skill bundles carry, as `dev/build_skills.py` names them. It adds `greenfield/templates/`
+The scope is the files the skill bundles carry, as `dev/skill-bundles.json` names them (`dev/build_skills.py`
+reads it). It adds `greenfield/templates/`
 and every `AGENTS.md`. The scope and the trigger words are in
 [`dev/docindex.config.json`](../../dev/docindex.config.json).
 

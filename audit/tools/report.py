@@ -5,6 +5,7 @@
 
     report.py init <intake>
     report.py import-engine <draft> <engine report>
+    report.py run-engine <draft> --out-dir DIR
     report.py add-check <draft> --from FILE|-
     report.py add-finding <draft> --from FILE|-
     report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)
@@ -20,6 +21,9 @@ components, file counts, probes and unattested items into the draft, with the en
 so once, and only for the repository and the commit that the draft was started for: the report of another repository is
 refused, and so is a second import. The conversion is `_engine_adapter.py`, a pure function of the engine's report;
 what the report cannot hold is a warning, and nothing is dropped without one.
+
+``run-engine`` runs ``engine.py`` with the flags the draft's intake recorded (Stage 2, step 1 of the audit recipe), then
+does what ``import-engine`` does with the report it wrote.
 
 Every other subcommand changes the draft in place, and only its own draft. A change is one read-modify-write under a
 lock on the output folder: the draft is read and validated, the change is made on a copy, the summary is recomputed,
@@ -44,6 +48,7 @@ import json
 import os
 import posixpath
 import re
+import shlex
 import shutil
 import sys
 import time
@@ -67,6 +72,7 @@ INFO = _common.ToolInfo(
     synopsis=(
         "report.py init <intake>",
         "report.py import-engine <draft> <engine report>",
+        "report.py run-engine <draft> --out-dir DIR",
         "report.py add-check <draft> --from FILE|-",
         "report.py add-finding <draft> --from FILE|-",
         "report.py set-disposition <draft> --via VIA (--finding ID --disposition D [--note TEXT] | --from FILE|-)",
@@ -76,7 +82,8 @@ INFO = _common.ToolInfo(
     ),
     writes=(
         "init: a new draft, <label>.audit-draft.<stamp>.json, in the intake's output_dir, which must be outside the "
-        "target; a name that is taken is never replaced. import-engine, add-check, add-finding, set-disposition and set-stack-profile: that "
+        "target; a name that is taken is never replaced. The run-engine subcommand writes what engine.py writes in --out-dir, "
+        "outside the target, then changes the draft as import-engine does. import-engine, add-check, add-finding, set-disposition and set-stack-profile: that "
         "draft, in place and atomically, and no other file. status: nothing. finalise: a new final report, "
         "<label>.audit-report.<stamp>.json, and its Markdown, <label>.audit-report.<stamp>.md, beside the draft, "
         "which it leaves as it was."
@@ -671,6 +678,35 @@ def run_import_engine(args: argparse.Namespace) -> _common.Result:
     return result
 
 
+# --- run-engine ------------------------------------------------------------------------------------------
+
+
+def run_run_engine(args: argparse.Namespace) -> _common.Result:
+    """Run `engine.py` with the flags the draft's intake recorded, then `import-engine` its report into the draft.
+
+    The flags are :func:`engine_arguments`. A draft that is final, or that already holds an engine report, is refused
+    before the engine runs, so no report is written for nothing. `engine.py` refuses an output folder inside the target.
+    """
+    path = Path(args.draft).expanduser()
+    document = read_valid_report(path, when="to run the engine for")
+    if document["status"] != "draft":
+        raise _common.UsageError(f"{path.name} is a final report; only a draft can take an engine report")
+    if "engine" in document["provenance"]:
+        held = document["provenance"]["engine"]
+        raise _common.ValidationFailed(
+            f"this draft already holds an engine report (ruleset {held['ruleset_hash']})",
+            errors=["the engine was not run; start a new draft with init to audit again"],
+        )
+    ran = engine_launcher.handler(engine_arguments(document, Path(args.out_dir).expanduser()))
+    result = run_import_engine(argparse.Namespace(draft=args.draft, engine_report=ran.data["report"]))
+    result.data = {"engine_run": ran.data, **result.data}
+    result.warnings = ran.warnings + result.warnings
+    result.summary = (
+        f"report: the engine wrote {Path(ran.data['report']).name}; {result.summary.removeprefix('report: ')}"
+    )
+    return result
+
+
 # --- add-check -------------------------------------------------------------------------------------------
 
 CHECK_FIELDS = ("id", "verdict", "summary", "confidence", "evidence", "searches", "override_reason")
@@ -1155,6 +1191,90 @@ def blocking_reasons(document: Mapping[str, Any]) -> list[str]:
     return reasons
 
 
+#: How a command the recipe runs names a tool: by its path from the folder that holds the recipe (audit/SKILL.md, Tools).
+REPORT_TOOL = ("python3", "audit/tools/report.py")
+
+
+def engine_arguments(document: Mapping[str, Any], out_dir: Path) -> list[str]:
+    """The `engine.py` arguments Stage 2, step 1 of audit/SKILL.md names, from what the draft's intake recorded.
+
+    The label is the draft's, so every file of the run carries one. `--no-user-config` and `--emit-baseline` are always
+    passed. The excluded paths are passed as `--exclude`, and each allowed probe verb as `--allow-probe`, with
+    `--run-gates` and the recorded per-command timeout only when at least one verb is allowed.
+    """
+    target = document["provenance"]["target"]
+    context = document["run_context"]
+    argv = [target["path"], "--out-dir", str(out_dir), "--repo-label", target["label"], "--no-user-config"]
+    for pattern in context["excluded"]:
+        argv += ["--exclude", pattern]
+    verbs = context["probes"]["allowed"]
+    if verbs:
+        argv.append("--run-gates")
+        for verb in verbs:
+            argv += ["--allow-probe", verb]
+        argv += ["--timeout", str(context["probes"]["timeout_s"])]
+    argv.append("--emit-baseline")
+    return argv
+
+
+def command_line(tool: Sequence[str], *arguments: str) -> str:
+    """One command as a person types it in a POSIX shell, every argument quoted where it needs to be."""
+    return shlex.join([*tool, *arguments])
+
+
+def next_step(path: Path, document: Mapping[str, Any]) -> tuple[str, str | None]:
+    """What the audit recipe does next with this draft, and the command that does it (None when there is none).
+
+    The text starts with the stage and the step of audit/SKILL.md. The rule is the recipe's "Resuming" section: no
+    engine import yet is Stage 2, step 1; a family with a check not recorded is Stage 2, step 3, for the first such
+    family in the catalogue's order; findings pending are Stage 4; a draft ready to finalise is Stage 5. An eval-mode
+    draft whose families are all done follows the eval-mode lines of Stages 4 and 5: it stops at the draft. Paths in
+    the command are absolute.
+    """
+    draft = str(path.expanduser().resolve())
+    if document["status"] == "final":
+        return "Nothing: the report is final. To implement it, give its path to the implement recipe.", None
+    if "engine" not in document["provenance"]:
+        command = command_line(REPORT_TOOL, "run-engine", draft, "--out-dir", str(Path(draft).parent))
+        return "Stage 2, steps 1 and 2: run the engine with the intake's flags and bring its report in.", command
+    missing = missing_checks(document)
+    if missing:
+        family = next(iter(missing))
+        names = {entry["id"]: entry["name"] for entry in vr.load_catalogue()["families"]}
+        count = len(missing[family])
+        return (
+            f"Stage 2, step 3: assess the {names.get(family, family)} ({family}) family, check by check; "
+            f"{count} check{'' if count == 1 else 's'} not recorded.",
+            command_line(REPORT_TOOL, "add-check", draft, "--from", "-"),
+        )
+    if document["run_context"]["eval_mode"]:
+        return (
+            "Stage 5, step 1: eval mode, so stop at the draft; it is this run's result, and finalise refuses it.",
+            None,
+        )
+    waiting = pending_findings(document)
+    if waiting and waiting[0]["severity"] == "BLOCKER":
+        finding = waiting[0]["id"]
+        return (
+            f"Stage 4, step 2: ask the person about BLOCKER finding {finding}, on its own.",
+            command_line(REPORT_TOOL, "set-disposition", draft, "--via", "interactive", "--finding", finding)
+            + " --disposition <disposition>",
+        )
+    if waiting:
+        return (
+            f"Stage 4, step 3: ask the person about the {len(waiting)} other pending findings, in batches.",
+            command_line(REPORT_TOOL, "set-disposition", draft, "--via", "batch", "--from", "-"),
+        )
+    undecided = undecided_blockers(document)
+    if undecided:
+        return (
+            f"Stage 4, step 2: ask the person about BLOCKER finding {undecided[0]} again; no person decided it alone.",
+            command_line(REPORT_TOOL, "set-disposition", draft, "--via", "interactive", "--finding", undecided[0])
+            + " --disposition <disposition>",
+        )
+    return "Stage 5, step 3: finalise the draft.", command_line(REPORT_TOOL, "finalise", draft)
+
+
 def envelope_lines(data: Mapping[str, Any]) -> int:
     """How many lines the envelope for `data` takes on stdout."""
     text = _common.encode_envelope(_common.make_envelope(INFO, ok=True, data=dict(data)))
@@ -1176,6 +1296,7 @@ def status_data(
     families = list(dict.fromkeys(family_of(check["id"]) for check in expected_checks()))
     counts = decision_counts(document)
     reasons = blocking_reasons(document)
+    step, command = next_step(path, document)
     waiting = [
         f"{f['id']} {f['severity']} {f['key']}"
         for f in pending_findings(document)
@@ -1192,6 +1313,8 @@ def status_data(
         **counts,
         "ready_to_finalise": not reasons,
         "blocking": "; ".join(reasons),
+        "next": step,
+        "next_command": command,
     }
     if severity is not None:
         data["pending_severity"] = severity
@@ -1328,6 +1451,11 @@ def build_parser() -> _common.ToolParser:
     bring = commands.add_parser("import-engine", help="bring in the engine's report", allow_abbrev=False)
     bring.add_argument("draft", help="the draft to change; it must not hold an engine report yet")
     bring.add_argument("engine_report", help="the engine's JSON report, as tools/engine.py wrote it")
+    scan = commands.add_parser(
+        "run-engine", help="run the engine with the intake's flags, then import its report", allow_abbrev=False
+    )
+    scan.add_argument("draft", help="the draft to change; it must not hold an engine report yet")
+    scan.add_argument("--out-dir", required=True, help="where the engine's report goes; outside the target")
     record = commands.add_parser("add-check", help="record the result of one check", allow_abbrev=False)
     record.add_argument("draft", help="the draft to change")
     record.add_argument(
@@ -1372,6 +1500,7 @@ def build_parser() -> _common.ToolParser:
 HANDLERS = {
     "init": run_init,
     "import-engine": run_import_engine,
+    "run-engine": run_run_engine,
     "add-check": run_add_check,
     "add-finding": run_add_finding,
     "set-disposition": run_set_disposition,

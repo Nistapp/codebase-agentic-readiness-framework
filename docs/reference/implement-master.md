@@ -166,7 +166,7 @@ owner decision, and the ignore rules cover every secret shape the audit probes.
 **What it never does:**
 
 - Do not print, quote, log or copy a value from any env, properties, realm, keystore or credentials file, and
-  do not open a `.env`-like file.
+  do not open a `.env`-like file. This echoes the hard rule [Never touch secrets](../../implement/SKILL.md#hard-rules).
 - Do not rotate a credential, remove one from history or run a history-rewriting command: report and stop.
 - Do not touch a tracked env file the owner keeps; do not add an ignore rule or `git rm --cached` for it.
 - Do not re-raise a finding the owner rejected or skipped; new observations go to the pull request body.
@@ -296,9 +296,11 @@ not moved.
 - Do not mass-reformat or mass-fix existing Markdown, and do not turn off a lint rule to make a count fall.
 - Do not create a second `docs/` or restructure the existing report folders.
 - Do not copy content, paths, names or values from a private repository or workspace into an open-source
-  repository's docs or ADRs, or from any target repository into the framework.
+  repository's docs or ADRs, or from any target repository into the framework. This echoes
+  the hard rule [Keep private content private](../../implement/SKILL.md#hard-rules).
 - Do not invent the reason behind a decision. Say what is inferred, or write "Rationale not recorded; owner to
-  fill in".
+  fill in". The owner of this rule is rule 10 of the greenfield
+  [`ADR_POLICY.md`](../../greenfield/templates/docs/ADR_POLICY.md#rules).
 - Do not move, resize, delete or untrack files for NAV-03.
 - Do not put values from env files, credentials, realm exports or keystores in any page. Such a value also fails
   "`SEC-02` No key-shaped strings in tracked files".
@@ -378,7 +380,7 @@ section, one commit at a time ([details](../../implement/playbooks/adapt-agents-
 - Do not move or rewrite a conventions section in `AGENTS.md` or `CONTRIBUTING.md` unasked, copy a Git rule into the
   conventions, or copy a formatter or linter setting into them.
 - Do not copy content from a private repository or workspace into an open-source one, or from any target into the
-  framework.
+  framework. This echoes the hard rule [Keep private content private](../../implement/SKILL.md#hard-rules).
 
 Full playbook: [`adapt-agents-md.md`](../../implement/playbooks/adapt-agents-md.md).
 
@@ -410,7 +412,8 @@ contradict it.
 - Do not untrack, ignore or delete a file the owner has not confirmed is scratch, and do not change which env files
   are tracked; state the owner's decision instead.
 - Do not paste the CON-04 draft whole: an entry that matches nothing in the repository is noise.
-- Do not open, print or quote a secret store while listing the paths.
+- Do not open, print or quote a secret store while listing the paths. This echoes the hard
+  rule [Never touch secrets](../../implement/SKILL.md#hard-rules).
 
 Full playbook: [`add-deny-rules.md`](../../implement/playbooks/add-deny-rules.md).
 
@@ -452,7 +455,8 @@ action in the state, never an invented contact.
 - Do not apply a ruleset file (`gh api -X POST` or `PUT`); the owner does.
 - Do not invent a mailbox, a response time or a second reviewer.
 - Do not copy `RELEASE_PROCESS.md` whole; write the short page.
-- Do not copy a private runbook, another repository's page, or its values into a repository's file.
+- Do not copy a private runbook, another repository's page, or its values into a repository's file. This echoes
+  the hard rule [Keep private content private](../../implement/SKILL.md#hard-rules).
 - Do not choose a licence.
 - Do not add a contributing item the owner has not accepted, or a rule the repository does not show. Do not write
   contributing text that does not come from `greenfield/templates/`.
