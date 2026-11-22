@@ -86,6 +86,11 @@ class Refusals(unittest.TestCase):
         self.assertEqual(self.run_main("--id", STUB_ID, "--title", "a | b")[0], 1)
 
     def test_a_family_that_is_one_module_is_refused(self) -> None:
+        # The test plants its own one-module family file, so it holds whether or not the real AGT family is split.
+        module = self.root / new_check.CHECKS_PKG / "agt.py"
+        if not module.exists():
+            module.write_text("# placeholder for a one-module family\n", encoding="utf-8")
+            self.addCleanup(module.unlink)
         code, err = self.run_main("--id", "AGT-14", "--title", "A new check")
         self.assertEqual(code, 2)
         self.assertIn("the AGT family is still one module", err)
