@@ -16,6 +16,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import shutil
 import tempfile
 import unittest
@@ -117,6 +118,24 @@ class ThemeMapTests(unittest.TestCase):
 
     def test_the_themes_are_t1_to_t8_in_order(self) -> None:
         self.assertEqual(progress.THEME_IDS, tuple(f"T{number}" for number in range(1, 9)))
+
+    def test_a_check_with_a_playbook_has_the_theme_of_one_of_its_playbooks(self) -> None:
+        # The playbook-to-theme source is the Themes table of implement/SKILL.md. EXEC-03, EXEC-06 and TST-01 are the
+        # cross-theme checks that file's text names: no playbook of their own theme closes them.
+        skill = (_implement_paths.REPO / "implement" / "SKILL.md").read_text(encoding="utf-8")
+        playbook_theme: dict[str, str] = {}
+        for row in re.finditer(r"^\| (T\d) \| `[^`]+` \| (.+) \|$", skill, re.MULTILINE):
+            for playbook in re.findall(r"`([^`]+)`", row.group(2)):
+                playbook_theme[playbook] = row.group(1)
+        catalogue = json.loads((RECIPES / "catalogue.json").read_text(encoding="utf-8"))
+        odd: list[str] = []
+        for check in catalogue["checks"]:
+            playbooks = check.get("playbooks", [])
+            self.assertTrue(all(name in playbook_theme for name in playbooks), (check["id"], playbooks))
+            homes = {playbook_theme[name] for name in playbooks}
+            if playbooks and progress.CHECK_THEME[check["id"]] not in homes:
+                odd.append(check["id"])
+        self.assertEqual(sorted(odd), ["EXEC-03", "EXEC-06", "TST-01"])
 
 
 class ContractTests(unittest.TestCase):
