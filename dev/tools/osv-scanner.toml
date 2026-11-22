@@ -18,8 +18,3 @@ reason = "re2js 2.8.6: quadratic-time lookbehind matching. markdownlint 0.42.0 p
 id = "GHSA-238p-pmpm-9mq7"
 ignoreUntil = 2027-02-09
 reason = "katex 0.16.47: prototype pollution bypasses trust restrictions when KaTeX renders. Reached only through markdownlint 0.42.0 (micromark-extension-math), which parses Markdown and renders no HTML. No markdownlint release raises it yet."
-
-[[IgnoredVulns]]
-id = "GHSA-fc5q-39xc-vjpf"
-ignoreUntil = 2027-05-18
-reason = "picomatch 2.3.2: ReDoS through single-branch repeated extglobs. Reached only through markdownlint-cli2 0.24.0, which pins micromatch 4.0.8; the globs come from this repository's own Makefile and config, never from untrusted input. No picomatch release fixes it (affected through 4.0.7)."
