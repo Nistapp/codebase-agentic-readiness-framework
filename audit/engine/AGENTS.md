@@ -60,8 +60,8 @@ Agents MUST respect the following structural rules.
 | `audit/rules/spec.py` | The check specification type (`CheckSpec`), `declare`, and the pack anchors. Imports no check module. |
 | `audit/rules/variants.py` | **The** instruction-variant table — one data structure, in code. |
 | `audit/rules/payloads.py` | Typed, `kind`-discriminated structured check payloads (ADR-0007). |
-| `audit/rules/reads.py` | The read types and helpers, and `READS`: what each check reads (places, text, binding), keyed by check id, gathered from each check module's `reads()` (`_DECLARED` holds the entries of `idx.py`, `agt.py` and `tst.py`). Data for the consistency map, never for a verdict: a check module imports it only inside `reads()`, so an audit run never loads it, and the ruleset hash leaves it out. |
-| `audit/rules/checks/` | One package per check pack, `<family>/<pack>_NN.py` per check plus `_shared.py`; `idx.py`, `agt.py` and `tst.py` are still one module each. Each family exposes `SPECS` and an `IMPLEMENTATIONS` dict. |
+| `audit/rules/reads.py` | The read types and helpers, and `READS`: what each check reads (places, text, binding), keyed by check id, gathered from each check module's `reads()` (`_DECLARED` holds the entries of `idx.py` and `tst.py`). Data for the consistency map, never for a verdict: a check module imports it only inside `reads()`, so an audit run never loads it, and the ruleset hash leaves it out. |
+| `audit/rules/checks/` | One package per check pack, `<family>/<pack>_NN.py` per check plus `_shared.py`; `idx.py` and `tst.py` are still one module each. Each family exposes `SPECS` and an `IMPLEMENTATIONS` dict. |
 | `audit/report/model.py` | **The** schema-v2 report model — the JSON render contract (ADR-0007). |
 | `audit/report/presentation.py` | The Markdown template (sections, columns, editorial wording), in code. |
 | `audit/report/md_render.py` | Generic section/table renderer over the report dict. |

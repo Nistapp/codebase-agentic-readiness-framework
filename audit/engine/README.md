@@ -116,7 +116,7 @@ audit/                     the tool: standard library only, no install step
     spec.py                the check specification type and declare()
     registry.py            check catalogue (joined from the families) + framework anchors + ruleset hash
     reads.py               what each check reads, gathered from the check modules' reads()
-    checks/                one package per check family, one module per check (doc/doc_01.py, ...); idx.py, agt.py and tst.py are one module each
+    checks/                one package per check family, one module per check (doc/doc_01.py, ...); idx.py and tst.py are one module each
   report/                  report model (schema v2), Markdown template, writer
 tools/build.py             python3 tools/build.py  ->  dist/audit.pyz
 tests/                     stdlib unittest suite + fixtures
