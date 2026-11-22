@@ -68,7 +68,11 @@
       "_common.py",
       "_engine_adapter.py",
       "_jsonschema_subset.py",
-      "_summary.py"
+      "_summary.py",
+      "_render_evidence.py",
+      "_render_facts.py",
+      "_render_terms.py",
+      "_render_text.py"
     ]
   },
   "checked_folders": [
