@@ -1,0 +1,598 @@
+[
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "heading"
+    ],
+    "id": "adapt-agents-md/row-1",
+    "intent": "The canonical instruction file that AGT-01 asks for and every root-only reader of AGENTS.md reads; it is created only when no instruction file of any variant exists.",
+    "note": "The skeleton holds the title and six numbered headings, one of them 6. Never, which is a prohibitions heading with no rules until add-deny-rules fills it.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 1,
+      "step": "No instruction file yet, step 1"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-01",
+      "AGT-07",
+      "CON-01",
+      "CON-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "fenced-command"
+    ],
+    "id": "adapt-agents-md/row-2",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 2,
+      "step": "Step 2"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "EXEC-06",
+      "AGT-05"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "fenced-command"
+    ],
+    "id": "adapt-agents-md/row-3",
+    "note": "Fixes the one command an EXEC-06 finding names, inline.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 3,
+      "step": "Step 2"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-05",
+      "EXEC-06",
+      "TST-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose",
+      "fenced-command"
+    ],
+    "id": "adapt-agents-md/row-4",
+    "mode": "add",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 4,
+      "step": "Step 2"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "EXEC-06"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "fenced-command"
+    ],
+    "id": "adapt-agents-md/row-5",
+    "mode": "add",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 5,
+      "step": "Step 3"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "EXEC-06",
+      "TST-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose",
+      "code-span"
+    ],
+    "id": "adapt-agents-md/row-6",
+    "mode": "add",
+    "note": "The scratch line can carry a prohibition word (off-limits, never a source of truth) outside the prohibitions section.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 6,
+      "step": "Step 4"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-03",
+      "AGT-07",
+      "CON-01",
+      "CON-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "rule-line",
+      "code-span"
+    ],
+    "id": "adapt-agents-md/row-7",
+    "mode": "add",
+    "note": "Boundary rules often use never (one app never imports another), so three of them make the section a prohibitions section.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 7,
+      "step": "Step 4"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-06",
+      "AGT-07",
+      "CON-01",
+      "CON-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "adapt-agents-md/row-8",
+    "mode": "add",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 8,
+      "step": "Step 5"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-04"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "adapt-agents-md/row-9",
+    "note": "The sentence carries the prohibition half (never merges, tags, publishes) outside the prohibitions section.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 9,
+      "step": "Step 6"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-07",
+      "AGT-09",
+      "CON-01",
+      "CON-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "adapt-agents-md/row-10",
+    "mode": "add",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 10,
+      "step": "Step 7"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-08"
+    ]
+  },
+  {
+    "action": "move",
+    "content": [
+      "rule-line",
+      "prose",
+      "fenced-command"
+    ],
+    "from": [
+      "CLAUDE.md",
+      "GEMINI.md",
+      ".cursorrules",
+      ".windsurfrules"
+    ],
+    "id": "adapt-agents-md/row-11",
+    "note": "Rules move out of a vendor file into AGENTS.md; the vendor file may stay as a one-line pointer.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 11,
+      "step": "Step 7"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-12",
+      "AGT-13",
+      "DOC-02",
+      "CON-01",
+      "CON-02"
+    ]
+  },
+  {
+    "action": "move",
+    "content": [
+      "rule-line",
+      "prose"
+    ],
+    "from": [
+      "CONVENTIONS.md",
+      "CONTRIBUTING.md",
+      "docs/**/*.md"
+    ],
+    "id": "adapt-agents-md/row-12",
+    "note": "Must-always rules move from the file the deferral names into AGENTS.md and, if the owner agrees, leave that file.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 12,
+      "step": "Step 8"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-06",
+      "AGT-07",
+      "AGT-10",
+      "AGT-13",
+      "CON-01",
+      "CON-02",
+      "HYG-13"
+    ]
+  },
+  {
+    "action": "move",
+    "content": [
+      "prose",
+      "rule-line"
+    ],
+    "from": [
+      "AGENTS.md"
+    ],
+    "id": "adapt-agents-md/row-13",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 13,
+      "step": "Step 9"
+    },
+    "to": [
+      "docs/"
+    ],
+    "touches": [
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-07",
+      "AGT-09",
+      "AGT-12",
+      "AGT-13",
+      "DOC-02",
+      "DOC-05",
+      "BASE-01",
+      "BASE-03",
+      "BASE-04",
+      "CON-01",
+      "CON-02",
+      "EXEC-03",
+      "AGT-11"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "rule-line",
+      "code-span"
+    ],
+    "id": "adapt-agents-md/row-14",
+    "note": "A contradicted rule such as never inject X in Y is reworded as target state on its own line.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 14,
+      "step": "Step 9"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-06",
+      "AGT-07",
+      "CON-01",
+      "CON-02",
+      "AGT-11"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "rule-line",
+      "code-span",
+      "fenced-command"
+    ],
+    "id": "adapt-agents-md/row-15",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 15,
+      "step": "Step 9"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-06",
+      "EXEC-06",
+      "AGT-11"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "adapt-agents-md/row-16",
+    "intent": "A component instruction file that AGT-02 asks for, written only when the owner asks and the component has rules the root file cannot state.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 16,
+      "step": "Step 10"
+    },
+    "to": [
+      "*/AGENTS.md"
+    ],
+    "touches": [
+      "AGT-02",
+      "AGT-08",
+      "AGT-11"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "heading",
+      "prose",
+      "rule-line"
+    ],
+    "id": "adapt-agents-md/row-17",
+    "mode": "add",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 17,
+      "step": "Step 11"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-12"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose"
+    ],
+    "id": "adapt-agents-md/row-18",
+    "intent": "The long-form communication rules; the file name keeps communicat so AGT-12 reads it as a linked file.",
+    "note": "The name and place follow the target's convention under docs/; a link line goes into the AGT-12 section of AGENTS.md.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 18,
+      "step": "Step 11"
+    },
+    "to": [
+      "docs/COMMUNICATION_RULES.md",
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-12",
+      "DOC-05"
+    ]
+  },
+  {
+    "action": "move",
+    "content": [
+      "prose",
+      "rule-line",
+      "fenced-command",
+      "heading"
+    ],
+    "from": [
+      "AGENTS.md"
+    ],
+    "id": "adapt-agents-md/row-19",
+    "note": "Only when AGENTS.md is over the 400-line budget; any section but the prohibitions section may move.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 19,
+      "step": "Step 12"
+    },
+    "to": [
+      "docs/"
+    ],
+    "touches": [
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "DOC-02",
+      "DOC-05",
+      "BASE-01",
+      "BASE-03",
+      "BASE-04",
+      "CON-01",
+      "CON-02",
+      "EXEC-03",
+      "EXEC-06",
+      "TST-04"
+    ]
+  },
+  {
+    "action": "rewrite",
+    "content": [
+      "heading",
+      "rule-line"
+    ],
+    "id": "adapt-agents-md/row-20",
+    "note": "Changes only the number, marker or trailing backslash that starts or ends a line; the compare tool sees verdicts and finding keys, not evidence.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 20,
+      "step": "Step 15"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-03",
+      "AGT-04",
+      "AGT-05",
+      "AGT-06",
+      "AGT-07",
+      "AGT-08",
+      "AGT-09",
+      "AGT-10",
+      "AGT-12",
+      "AGT-13",
+      "BASE-01",
+      "BASE-03",
+      "BASE-04",
+      "CON-01",
+      "CON-02"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "adapt-agents-md/row-21",
+    "intent": "The conventions file AGT-13 reads; it must not count as an Aider instruction file for AGT-01 and AGT-08, so no .aider.conf.yml may stand beside it unread.",
+    "note": "The target's own name and place win, for example CODE_STYLE.md or a page under docs/.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 21,
+      "step": "Step 16"
+    },
+    "to": [
+      "CONVENTIONS.md"
+    ],
+    "touches": [
+      "AGT-08",
+      "DOC-05",
+      "AGT-13"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose",
+      "code-span"
+    ],
+    "id": "adapt-agents-md/row-22",
+    "mode": "add",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 22,
+      "step": "Step 16"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-10",
+      "AGT-13"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "rule-line",
+      "code-span"
+    ],
+    "id": "adapt-agents-md/row-23",
+    "note": "Completes the conventions in place, so an item can land in a conventions section of AGENTS.md.",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 23,
+      "step": "Step 16"
+    },
+    "to": [
+      "CONVENTIONS.md",
+      "AGENTS.md",
+      "CONTRIBUTING.md"
+    ],
+    "touches": [
+      "AGT-06",
+      "AGT-07",
+      "AGT-13",
+      "CON-01",
+      "CON-02"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "rule-line"
+    ],
+    "id": "adapt-agents-md/row-24",
+    "origin": {
+      "path": "implement/playbooks/adapt-agents-md.md",
+      "row": 24,
+      "step": "Step 16"
+    },
+    "to": [
+      "CONVENTIONS.md",
+      "AGENTS.md",
+      "CONTRIBUTING.md"
+    ],
+    "touches": [
+      "AGT-13"
+    ]
+  }
+]

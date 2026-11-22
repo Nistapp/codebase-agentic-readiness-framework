@@ -37,6 +37,7 @@ make check          # THE gate: format:check, typecheck, test, the engine's --ve
 make security       # secrets scan, then the dependency audit (osv-scanner; needs Go and the network)
 make commit-lint    # Conventional Commits subjects on this branch (RANGE=origin/dev..HEAD); CI runs it on each PR
 make update-masters # regenerate docs/reference/audit-master.md and implement-master.md (check runs masters-check)
+make golden GOLDEN_ARGS="record --out DIR"   # then "compare DIR": prove a change altered no output (not in check)
 ```
 
 Here `make security` also runs the secrets scan. This repository has no runtime dependencies, so the verb began

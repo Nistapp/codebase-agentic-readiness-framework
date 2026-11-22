@@ -3,7 +3,7 @@
 
 """The implement eval's boundary probes on hand-made runs, with no agent (RF4.11).
 
-Each probe in `implement_eval.py` scores one boundary of `dev/consistency-map.json` that no assertion scored before.
+Each probe in `implement_eval.py` scores one boundary of `dev/consistency-map/boundaries.json` that no assertion scored before.
 As in `test_implement_eval.py`, each runs on a materialised scenario and a synthetic stream-json transcript: a run
 that keeps the rule must pass, and each way of breaking it must fail. Standard library only; no network, no `claude`.
 """

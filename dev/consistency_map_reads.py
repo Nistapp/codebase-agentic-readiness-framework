@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 # Copyright (C) 2026 K. C. Ramakrishna
 
-"""Writes the ``reads`` part of ``dev/consistency-map.json`` from the engine's declarations (ADR 0012).
+"""Writes the ``reads`` part of the map in ``dev/consistency-map/`` from the engine's declarations (ADR 0012).
 
 Each implemented engine check declares what it reads beside the registry, in ``audit/rules/reads.py`` under
 ``audit/engine/``. This script turns that table into the map's reads entries, in catalogue order. A check with no
@@ -9,7 +9,8 @@ engine code (``source`` ``agent``) keeps the entry the map already holds, since 
 
 ``python3 dev/consistency_map_reads.py`` exits 0 when the map's reads equal the generated ones, and 1 with the
 differing check IDs when they do not. ``--write`` rewrites the reads part in place and leaves every other part of the
-map as it was. A catalogue check with neither an engine declaration nor an agent entry, or an engine declaration for
+map as it was. In the map's folder form it writes one file for each check family, ``reads/<FAMILY>.json``, and
+lists them in the index. A catalogue check with neither an engine declaration nor an agent entry, or an engine declaration for
 a check the catalogue does not list, is an error (exit 2).
 """
 
@@ -25,8 +26,13 @@ from typing import Any
 
 DEV = Path(__file__).resolve().parent
 REPO = DEV.parent
-MAP_PATH = DEV / "consistency-map.json"
+MAP_PATH = DEV / "consistency-map"
 ENGINE = REPO / "audit" / "engine"
+if str(DEV) not in sys.path:
+    sys.path.insert(0, str(DEV))
+
+import consistency_map  # noqa: E402  (dev/ must be on sys.path first)
+
 CATALOGUE = REPO / "audit" / "catalogue.json"
 
 
@@ -112,17 +118,49 @@ def differing_checks(current: Sequence[dict[str, Any]], generated: Sequence[dict
     return differ
 
 
-def render(cmap: dict[str, Any]) -> str:
+def render(cmap: Any) -> str:
     """The map file's text, in the format the repository keeps it."""
     return json.dumps(cmap, indent=2, sort_keys=True) + "\n"
 
 
+def write_reads_folder(folder: Path, reads: Sequence[dict[str, Any]]) -> None:
+    """Rewrite the reads files of the map's folder form: one file for each check family, in the order of ``reads``.
+
+    The index lists the new files in place of the old ones, and a reads file the index no longer lists is removed.
+    """
+    index_path = folder / consistency_map.FOLDER_INDEX
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    families: dict[str, list[dict[str, Any]]] = {}
+    for entry in reads:
+        families.setdefault(entry["check"].split("-")[0], []).append(entry)
+    names = [f"reads/{family}.json" for family in families]
+    for name, entries in zip(names, families.values(), strict=True):
+        (folder / name).parent.mkdir(parents=True, exist_ok=True)
+        (folder / name).write_text(render(entries), encoding="utf-8")
+    for old in index["parts"].get("reads", []):
+        if old not in names:
+            (folder / old).unlink(missing_ok=True)
+    index["parts"]["reads"] = names
+    index_path.write_text(render(index), encoding="utf-8")
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
-    parser.add_argument("--map", type=Path, default=MAP_PATH, help="the map file (default: dev/consistency-map.json)")
+    parser.add_argument(
+        "--map", type=Path, default=MAP_PATH, help="the map folder, or a map file (default: dev/consistency-map)"
+    )
     parser.add_argument("--write", action="store_true", help="rewrite the map's reads part from the engine")
     args = parser.parse_args(argv)
-    cmap = json.loads(args.map.read_text(encoding="utf-8"))
+    try:
+        # A map file holds every part but names; a folder joins them all.
+        cmap = (
+            consistency_map.load_map(args.map)
+            if args.map.is_dir()
+            else json.loads(args.map.read_text(encoding="utf-8"))
+        )
+    except consistency_map.MapError as exc:
+        print(f"consistency_map_reads.py: {exc}", file=sys.stderr)
+        return 2
     catalogue_ids = [check["id"] for check in json.loads(CATALOGUE.read_text(encoding="utf-8"))["checks"]]
     try:
         generated = generated_reads(cmap["reads"], catalogue_ids, engine_declarations())
@@ -132,7 +170,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     differ = differing_checks(cmap["reads"], generated)
     if args.write:
         if differ:
-            args.map.write_text(render({**cmap, "reads": generated}), encoding="utf-8")
+            if args.map.is_dir():
+                write_reads_folder(args.map, generated)
+            else:
+                args.map.write_text(render({**cmap, "reads": generated}), encoding="utf-8")
         print(f"consistency_map_reads.py: {len(differ)} reads entries rewritten")
         return 0
     if differ:

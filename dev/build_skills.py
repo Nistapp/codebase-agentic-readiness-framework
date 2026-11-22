@@ -13,6 +13,10 @@ under ``<repo>/dev/dist/skills/`` by default (``dev/dist/`` is gitignored); ``--
 changes where ``skills/`` itself goes, for a build that is not meant to land there.
 Each bundle is replaced whole on every run, so a stale leftover from an earlier build can never survive.
 
+The list of shipped files is data, in ``dev/skill-bundles.json`` (:func:`load_manifest`). The module constants
+below (:data:`TOOL_FILES`, :data:`AUDIT_REFERENCES` and the others) are values read from it; add or drop a shipped
+file there, not here.
+
 **agentic-readiness-audit** has three parts and a ``LICENSE`` (the repository's ``LICENSE-CODE``, AGPL-3.0):
 
 - ``SKILL.md``: the recipe's own file (``audit/SKILL.md``), with its frontmatter ``name`` rewritten from
@@ -85,7 +89,7 @@ import stat
 import sys
 import zipfile
 from pathlib import Path
-from typing import Sequence
+from typing import Any, Sequence
 
 REPO = Path(__file__).resolve().parent.parent
 AUDIT = REPO / "audit"
@@ -116,68 +120,109 @@ INFO = _common.ToolInfo(
     ),
 )
 
-BUNDLE_NAME = "agentic-readiness-audit"
-IMPLEMENT_BUNDLE_NAME = "agentic-readiness-implement"
 DEFAULT_OUT_DIR = REPO / "dev" / "dist" / "skills"
+BUNDLES_FILE = Path(__file__).resolve().parent / "skill-bundles.json"
+
+_REFERENCE_KINDS = ("markdown", "sections", "skill")
+
+
+def _string_list(value: object, where: str) -> tuple[str, ...]:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        raise _common.ToolError(f"{BUNDLES_FILE.name}: {where} must be a list of strings")
+    return tuple(value)
+
+
+def _reference_entries(bundle: dict[str, Any], where: str) -> list[dict[str, Any]]:
+    entries = bundle.get("references")
+    if not isinstance(entries, list):
+        raise _common.ToolError(f"{BUNDLES_FILE.name}: {where}.references must be a list")
+    for index, entry in enumerate(entries):
+        if not isinstance(entry, dict) or not all(isinstance(entry.get(k), str) for k in ("source", "place")):
+            raise _common.ToolError(f"{BUNDLES_FILE.name}: {where}.references[{index}] needs a source and a place")
+        if entry.get("kind") not in _REFERENCE_KINDS:
+            raise _common.ToolError(
+                f"{BUNDLES_FILE.name}: {where}.references[{index}].kind must be one of {', '.join(_REFERENCE_KINDS)}"
+            )
+    return entries
+
+
+def load_manifest(path: Path = BUNDLES_FILE) -> dict[str, dict[str, Any]]:
+    """Read the shipped-file lists of the two bundles from `dev/skill-bundles.json` (stable, sorted JSON)."""
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise _common.ToolError(f"{path.name}: cannot read the bundle manifest: {exc}") from exc
+    for key in ("audit", "implement"):
+        if not isinstance(data.get(key), dict) or not isinstance(data[key].get("name"), str):
+            raise _common.ToolError(f"{path.name}: the '{key}' bundle needs a name")
+    manifest: dict[str, dict[str, Any]] = data
+    return manifest
+
+
+def _pairs(bundle: dict[str, Any], where: str) -> tuple[tuple[str, str], ...]:
+    return tuple((str(e["source"]), str(e["place"])) for e in _reference_entries(bundle, where))
+
+
+def _kinds(bundle: dict[str, Any], where: str) -> dict[str, str]:
+    """The kind of each reference, by its place in the bundle. A folder's files are `markdown`."""
+    return {str(e["place"]): str(e["kind"]) for e in _reference_entries(bundle, where)}
+
+
+def _rewrites(bundle: dict[str, Any], where: str) -> tuple[tuple[str, str], ...]:
+    """The tool-command rewrites, in order. `{audit_bundle}` in a replacement is the audit bundle's name."""
+    entries = bundle.get("command_rewrites")
+    if not isinstance(entries, list) or not all(
+        isinstance(e, dict) and isinstance(e.get("from"), str) and isinstance(e.get("to"), str) for e in entries
+    ):
+        raise _common.ToolError(f"{BUNDLES_FILE.name}: {where}.command_rewrites must be a list of from/to pairs")
+    return tuple((e["from"], e["to"].replace("{audit_bundle}", BUNDLE_NAME)) for e in entries)
+
+
+def _sections(bundle: dict[str, Any], where: str) -> tuple[str, ...]:
+    for entry in _reference_entries(bundle, where):
+        if entry["kind"] == "sections":
+            return _string_list(entry.get("sections"), f"{where}.references sections")
+    raise _common.ToolError(f"{BUNDLES_FILE.name}: {where} has no 'sections' reference")
+
+
+_MANIFEST = load_manifest()
+_AUDIT = _MANIFEST["audit"]
+_IMPLEMENT = _MANIFEST["implement"]
+_AUDIT_KINDS = _kinds(_AUDIT, "audit")
+_IMPLEMENT_KINDS = _kinds(_IMPLEMENT, "implement")
+
+BUNDLE_NAME = str(_AUDIT["name"])
+IMPLEMENT_BUNDLE_NAME = str(_IMPLEMENT["name"])
 
 #: The five tools `audit/SKILL.md`'s Tools table calls, plus the private modules they import (checked by
 #: grepping their own `import` lines, not guessed).
-TOOL_FILES = (
-    "facts.py",
-    "engine.py",
-    "report.py",
-    "validate_report.py",
-    "render_report.py",
-    "_common.py",
-    "_engine_adapter.py",
-    "_jsonschema_subset.py",
-    "_summary.py",
-)
+TOOL_FILES = _string_list(_AUDIT["tool_files"], "audit.tool_files")
 
 #: The audit bundle's schema files, in `scripts/schema/` only. The tools above read three of them at a path fixed
 #: relative to themselves (`validate_report.RECIPES`), so they sit beside `scripts/tools/` the same way they sit
 #: beside `audit/tools/` in this repository; `SCHEMA.md` links all four. `eval-expected.schema.json` stays out: it
 #: describes the evals' expected files, and no carried tool reads it and no carried file links it.
-SCHEMA_FILES = (
-    "audit-intake.schema.json",
-    "audit-report.schema.json",
-    "catalogue.schema.json",
-    "facts.schema.json",
-)
-
-#: The schema docs, carried once, in `references/schema/`; their links to a schema file point into `scripts/schema/`.
-SCHEMA_DOC_FILES = ("SCHEMA.md", "LICENSING.md")
-
-#: The prompts in `audit/prompts/` the audit bundle carries, under `references/prompts/`. `kickoff.md` stays out:
-#: a person pastes it into a harness; the skill does not read it.
-AUDIT_PROMPT_FILES = ("talking-to-the-user.md",)
-
-#: The level-2 sections of the Tools CLI reference the audit bundle carries, in page order: the five tools of
-#: `audit/SKILL.md`'s Tools table and the contract every tool shares.
-AUDIT_TOOLS_CLI_SECTIONS = (
-    "Every tool",
-    "engine.py",
-    "validate_report.py",
-    "report.py",
-    "render_report.py",
-    "facts.py",
-)
+SCHEMA_FILES = _string_list(_AUDIT["schema_files"], "audit.schema_files")
 
 #: The source of each carried Markdown file or folder of the audit bundle and its place in the bundle, as
 #: :data:`IMPLEMENT_REFERENCES` is for the implement bundle. Each source has one place, the one links point at.
-AUDIT_REFERENCES = (
-    ("audit/SKILL.md", "SKILL.md"),
-    ("audit/checks", "references/checks"),
-    ("audit/stacks", "references/stacks"),
-    *((f"audit/prompts/{name}", f"references/prompts/{name}") for name in AUDIT_PROMPT_FILES),
-    *((f"audit/schema/{name}", f"references/schema/{name}") for name in SCHEMA_DOC_FILES),
-    ("docs/reference/tools-cli.md", "references/tools-cli.md"),
-)
+AUDIT_REFERENCES = _pairs(_AUDIT, "audit")
+
+#: The schema docs, carried once, in `references/schema/`; their links to a schema file point into `scripts/schema/`.
+SCHEMA_DOC_FILES = tuple(Path(s).name for s, _ in AUDIT_REFERENCES if s.startswith("audit/schema/"))
+
+#: The prompts in `audit/prompts/` the audit bundle carries, under `references/prompts/`. `kickoff.md` stays out:
+#: a person pastes it into a harness; the skill does not read it.
+AUDIT_PROMPT_FILES = tuple(Path(s).name for s, _ in AUDIT_REFERENCES if s.startswith("audit/prompts/"))
+
+#: The level-2 sections of the Tools CLI reference the audit bundle carries, in page order: the five tools of
+#: `audit/SKILL.md`'s Tools table and the contract every tool shares.
+AUDIT_TOOLS_CLI_SECTIONS = _sections(_AUDIT, "audit")
 
 #: The audit sources name a tool by its file name alone; a command written for a checkout still gets the bundle path.
-AUDIT_COMMAND_REWRITES = (("python3 audit/tools/", "python3 scripts/tools/"),)
+AUDIT_COMMAND_REWRITES = _rewrites(_AUDIT, "audit")
 
-SKILL_MD_SOURCE_NAME = "name: audit\n"
+SKILL_MD_SOURCE_NAME = f"name: {_AUDIT['source_name']}\n"
 SKILL_MD_BUNDLE_NAME = f"name: {BUNDLE_NAME}\n"
 
 
@@ -234,11 +279,12 @@ def _write_audit_markdown(bundle_dir: Path) -> None:
     texts: dict[str, tuple[Path, str]] = {}
     for source, dest in _reference_places(AUDIT_REFERENCES):
         text = source.read_text(encoding="utf-8")
-        if dest == "SKILL.md":
+        kind = _AUDIT_KINDS.get(dest, "markdown")
+        if kind == "skill":
             text = stamp_frontmatter(
                 text, "audit/SKILL.md", SKILL_MD_SOURCE_NAME, SKILL_MD_BUNDLE_NAME, release_version()
             )
-        elif dest == "references/tools-cli.md":
+        elif kind == "sections":
             text = extract_sections(text, AUDIT_TOOLS_CLI_SECTIONS)
         texts[dest] = (source, text)
     _write_rewritten(bundle_dir, texts, carried, AUDIT_COMMAND_REWRITES)
@@ -274,87 +320,37 @@ def build_bundle(out_dir: Path) -> Path:
 
 #: The implement recipe's own tools (in `implement/tools/`), and `_audit_tools_path`, which they import first: in a
 #: checkout it puts `audit/tools/` on `sys.path`; in the bundle that folder does not exist, so it does nothing.
-IMPLEMENT_OWN_TOOL_FILES = (
-    "progress.py",
-    "check_drift.py",
-    "compare_reports.py",
-    "check_regressions.py",
-    "check_gates.py",
-    "_audit_tools_path.py",
-)
+IMPLEMENT_OWN_TOOL_FILES = _string_list(_IMPLEMENT["own_tool_files"], "implement.own_tool_files")
 
 #: The shared modules the implement tools import (in `audit/tools/`): `progress`, `check_drift`, `compare_reports`,
 #: `check_regressions` and `check_gates` import `validate_report`, which imports `_summary` and `engine`; `engine` is
 #: the shim.
-IMPLEMENT_SHARED_TOOL_FILES = (
-    "validate_report.py",
-    "_common.py",
-    "_jsonschema_subset.py",
-    "_summary.py",
-)
+IMPLEMENT_SHARED_TOOL_FILES = _string_list(_IMPLEMENT["shared_tool_files"], "implement.shared_tool_files")
 
 #: Every file in the implement bundle's `scripts/tools/` apart from the engine shim, in one flat folder.
 IMPLEMENT_TOOL_FILES = IMPLEMENT_OWN_TOOL_FILES + IMPLEMENT_SHARED_TOOL_FILES
 
 #: The files a playbook copies into a target (in `implement/playbooks/templates/`), carried beside the playbooks.
-IMPLEMENT_TEMPLATE_FILES = ("docs_prose_check.py",)
+IMPLEMENT_TEMPLATE_FILES = _string_list(_IMPLEMENT["template_files"], "implement.template_files")
 
 #: Read at a fixed path next to the tools (`validate_report.RECIPES`, `progress.STATE_SCHEMA`), in `scripts/schema/`
 #: only; `catalogue.schema.json` is there because `SCHEMA.md` links it.
-IMPLEMENT_SCHEMA_FILES = (
-    "audit-report.schema.json",
-    "catalogue.schema.json",
-    "readiness-state.schema.json",
-)
+IMPLEMENT_SCHEMA_FILES = _string_list(_IMPLEMENT["schema_files"], "implement.schema_files")
 
 #: The level-2 sections of the Tools CLI reference the implement bundle carries, in page order.
-TOOLS_CLI_SECTIONS = (
-    "Every tool",
-    "validate_report.py",
-    "progress.py",
-    "check_drift.py",
-    "compare_reports.py",
-    "check_regressions.py",
-    "check_gates.py",
-)
+TOOLS_CLI_SECTIONS = _sections(_IMPLEMENT, "implement")
 
 #: The source of each carried Markdown file or folder (relative to the repository root) and its place in the
 #: bundle. A folder carries every Markdown file in it. Order matters only for the shown order of a listing.
-IMPLEMENT_REFERENCES = (
-    ("implement/SKILL.md", "SKILL.md"),
-    ("implement/state.md", "references/state.md"),
-    ("implement/tool-choice.md", "references/tool-choice.md"),
-    ("implement/theme-checks.md", "references/theme-checks.md"),
-    ("implement/playbooks", "references/playbooks"),
-    ("implement/prompts", "references/prompts"),
-    ("audit/prompts/talking-to-the-user.md", "references/prompts/talking-to-the-user.md"),
-    ("audit/checks", "references/checks"),
-    ("audit/stacks", "references/stacks"),
-    (
-        "implement/docs/architecture/adrs/0003-push-and-pr-policy.md",
-        "references/adrs/0003-push-and-pr-policy.md",
-    ),
-    # The greenfield copies (MIT-0), the ones `establish-docs-contract` adapts into a target, not `docs/` (GFDL).
-    ("greenfield/templates/docs/ADR_POLICY.md", "references/adr-policy/ADR_POLICY.md"),
-    ("greenfield/templates/docs/templates/adr-template.md", "references/adr-policy/adr-template.md"),
-    ("spec/command-surface.md", "references/spec/command-surface.md"),
-    ("spec/decisions/0001-constraint-artifact.md", "references/spec/decisions/0001-constraint-artifact.md"),
-    ("spec/decisions/0002-lint-in-the-gate.md", "references/spec/decisions/0002-lint-in-the-gate.md"),
-    ("audit/schema/SCHEMA.md", "references/schema/SCHEMA.md"),
-    ("docs/reference/tools-cli.md", "references/tools-cli.md"),
-)
+IMPLEMENT_REFERENCES = _pairs(_IMPLEMENT, "implement")
 
-IMPLEMENT_SKILL_SOURCE_NAME = "name: implement\n"
+IMPLEMENT_SKILL_SOURCE_NAME = f"name: {_IMPLEMENT['source_name']}\n"
 IMPLEMENT_SKILL_BUNDLE_NAME = f"name: {IMPLEMENT_BUNDLE_NAME}\n"
 
 #: Tool commands in the source text are written for a framework checkout. In the bundle they run from the skill's
 #: own folder, where the audit and implement tools sit side by side in `scripts/tools/`; the engine is the audit
 #: skill's, installed beside this one. The engine rule comes first, so it wins over the general audit rule.
-COMMAND_REWRITES = (
-    ("python3 audit/tools/engine.py", f"python3 ../{BUNDLE_NAME}/scripts/tools/engine.py"),
-    ("python3 audit/tools/", "python3 scripts/tools/"),
-    ("python3 implement/tools/", "python3 scripts/tools/"),
-)
+COMMAND_REWRITES = _rewrites(_IMPLEMENT, "implement")
 
 #: Written as `scripts/tools/engine.py` in the implement bundle. It holds no engine code of its own.
 ENGINE_SHIM = f'''# SPDX-License-Identifier: AGPL-3.0-or-later
@@ -549,11 +545,12 @@ def build_implement_bundle(out_dir: Path) -> Path:
     texts: dict[str, tuple[Path, str]] = {}
     for source, dest in _reference_places(IMPLEMENT_REFERENCES):
         text = source.read_text(encoding="utf-8")
-        if dest == "SKILL.md":
+        kind = _IMPLEMENT_KINDS.get(dest, "markdown")
+        if kind == "skill":
             text = stamp_frontmatter(
                 text, "implement/SKILL.md", IMPLEMENT_SKILL_SOURCE_NAME, IMPLEMENT_SKILL_BUNDLE_NAME, release_version()
             )
-        elif dest == "references/tools-cli.md":
+        elif kind == "sections":
             text = extract_sections(
                 text, TOOLS_CLI_SECTIONS, f"The engine's own section is in the {BUNDLE_NAME} skill."
             )

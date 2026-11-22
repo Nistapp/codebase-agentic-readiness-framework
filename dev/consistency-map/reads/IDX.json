@@ -1,0 +1,78 @@
+[
+  {
+    "binding": "file",
+    "check": "IDX-01",
+    "constants": [
+      "audit.rules.checks.idx:_PROJECT_CONFIGS"
+    ],
+    "note": "Each config is kept when Inventory.has finds its name at any depth but read by its exact root path, so a nested-only copy reads as unreadable (UNKNOWN). Three user configs under $HOME are read too, unless --no-user-config, and Claude Code's ~/.claude.json is parsed: its top-level mcpServers or the projects entry of this checkout's path.",
+    "source": "engine",
+    "what": {
+      "kind": "phrase",
+      "text": [
+        "codebase-memory-mcp"
+      ]
+    },
+    "where": [
+      {
+        "path": "opencode.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": "opencode.jsonc",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".mcp.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".cursor/mcp.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".vscode/mcp.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".gemini/settings.json",
+        "scope": "any-depth"
+      },
+      {
+        "path": ".codex/config.toml",
+        "scope": "any-depth"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "IDX-02",
+    "note": "The store is looked for in AUDIT_INDEX_STORE, then three folders under $HOME, then this team artifact in the target; only a *.db store is opened, and its projects table is read for a root_path that resolves to the target.",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": ".codebase-memory/graph.db.zst",
+        "scope": "root"
+      }
+    ]
+  },
+  {
+    "binding": "file",
+    "check": "IDX-03",
+    "note": "The store of IDX-02 (no repository text); a git-revision column of the matching project row is compared with HEAD as a probe. With no such column, its indexed_at is compared with the time HEAD last moved (git's committer time and reflog).",
+    "source": "engine",
+    "what": {
+      "kind": "exists"
+    },
+    "where": [
+      {
+        "path": ".codebase-memory/graph.db.zst",
+        "scope": "root",
+        "unexercised": "IDX-03 looks for the store only as a Tier-C probe (--run-gates) on a git target, and the recording runs no probe"
+      }
+    ]
+  }
+]

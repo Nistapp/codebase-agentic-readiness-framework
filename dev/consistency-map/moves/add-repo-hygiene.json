@@ -1,0 +1,371 @@
+[
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose",
+      "fenced-command"
+    ],
+    "id": "add-repo-hygiene/row-1",
+    "intent": "HYG-01 reads the root README; EXEC-03, EXEC-06, TST-04, BASE-03 and BASE-04 also read its fenced commands and prose.",
+    "note": "Only when the root README is missing or fails HYG-01.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 1,
+      "step": "Step 2"
+    },
+    "to": [
+      "README.md"
+    ],
+    "touches": [
+      "EXEC-06",
+      "HYG-01"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file"
+    ],
+    "id": "add-repo-hygiene/row-2",
+    "intent": "HYG-02 reads CODEOWNERS at the root, .github/, .gitlab/ or docs/; .github/ is where GitHub reads it.",
+    "note": ".gitlab/CODEOWNERS on GitLab; an existing file at the root or under docs/ stays where it is.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 2,
+      "step": "Step 3"
+    },
+    "to": [
+      ".github/CODEOWNERS"
+    ],
+    "touches": [
+      "HYG-02"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose"
+    ],
+    "id": "add-repo-hygiene/row-3",
+    "intent": "HYG-03 reads a pull_request_template file at the repository level.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 3,
+      "step": "Step 4"
+    },
+    "to": [
+      ".github/pull_request_template.md"
+    ],
+    "touches": [
+      "HYG-03"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose"
+    ],
+    "id": "add-repo-hygiene/row-4",
+    "intent": "HYG-04 reads any file under .github/ISSUE_TEMPLATE/.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 4,
+      "step": "Step 4"
+    },
+    "to": [
+      ".github/ISSUE_TEMPLATE/bug_report.md",
+      ".github/ISSUE_TEMPLATE/feature_request.md"
+    ],
+    "touches": [
+      "HYG-04"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose",
+      "fenced-command"
+    ],
+    "id": "add-repo-hygiene/row-5",
+    "intent": "HYG-05 and HYG-13 read a contributing file; the root CONTRIBUTING.md is also read by TST-04, EXEC-03, BASE-03, BASE-04 and AGT-13.",
+    "note": "Written as a diff when a generic file exists; the name follows the repository's convention (Step 1).",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 5,
+      "step": "Step 5"
+    },
+    "to": [
+      "CONTRIBUTING.md"
+    ],
+    "touches": [
+      "DOC-05",
+      "TST-04",
+      "HYG-13",
+      "HYG-05"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose"
+    ],
+    "id": "add-repo-hygiene/row-6",
+    "intent": "HYG-06 reads a SECURITY file at the root, .github/ or docs/.",
+    "note": "Owner values are TODO(owner) placeholders.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 6,
+      "step": "Step 5"
+    },
+    "to": [
+      "SECURITY.md"
+    ],
+    "touches": [
+      "DOC-05",
+      "HYG-06"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose"
+    ],
+    "id": "add-repo-hygiene/row-7",
+    "intent": "HYG-07 reads a CHANGELOG file and dates its last commit.",
+    "note": "Only with no release tool and on the owner's yes.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 7,
+      "step": "Step 6"
+    },
+    "to": [
+      "CHANGELOG.md"
+    ],
+    "touches": [
+      "HYG-07"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose"
+    ],
+    "id": "add-repo-hygiene/row-8",
+    "intent": "HYG-08 reads a doc whose base name holds release, at the root or docs/.",
+    "note": "Named by the repository's convention, for example docs/release-process.md.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 8,
+      "step": "Step 6"
+    },
+    "to": [
+      "RELEASE_PROCESS.md"
+    ],
+    "touches": [
+      "DOC-05",
+      "HYG-08"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "key"
+    ],
+    "id": "add-repo-hygiene/row-9",
+    "intent": "HYG-11, AGT-09 and TOOL-07 read the branches that ruleset files declare.",
+    "note": "Or a Terraform protection resource beside existing ones (*.tf); none on GitLab without Terraform.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 9,
+      "step": "Step 7"
+    },
+    "to": [
+      ".github/rulesets/*-protection.json"
+    ],
+    "touches": [
+      "AGT-09",
+      "TOOL-07",
+      "HYG-11"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "key"
+    ],
+    "id": "add-repo-hygiene/row-10",
+    "intent": "HYG-11 needs one CI line that reads the pull request's source branch for a two-branch model.",
+    "note": "On GitLab the job goes in .gitlab-ci.yml.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 10,
+      "step": "Step 7"
+    },
+    "to": [
+      ".github/workflows/pr-source-branch.yml"
+    ],
+    "touches": [
+      "HYG-11"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-repo-hygiene/row-11",
+    "note": "Adds the source-branch job's name to the release branch's required status checks.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 11,
+      "step": "Step 7"
+    },
+    "to": [
+      ".github/rulesets/*-protection.json"
+    ],
+    "touches": [
+      "HYG-11"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "prose"
+    ],
+    "id": "add-repo-hygiene/row-12",
+    "intent": "HYG-11 counts any path holding branch-protection as the recorded rules; the page summarises the rule files.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 12,
+      "step": "Step 7"
+    },
+    "to": [
+      "docs/branch-protection.md"
+    ],
+    "touches": [
+      "DOC-05",
+      "HYG-11"
+    ]
+  },
+  {
+    "action": "create",
+    "content": [
+      "file",
+      "key"
+    ],
+    "id": "add-repo-hygiene/row-13",
+    "intent": "HYG-09 reads the dependency-update config for each detected ecosystem.",
+    "note": "renovate.json instead where the repository uses Renovate or is not on GitHub.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 13,
+      "step": "Step 8"
+    },
+    "to": [
+      ".github/dependabot.yml"
+    ],
+    "touches": [
+      "EXEC-08",
+      "HYG-09"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "add-repo-hygiene/row-14",
+    "mode": "add",
+    "note": "One accepted item per commit: a setup link, the gate with its CI sentence, or the branch, commit and pull-request rules.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 14,
+      "step": "Step 9"
+    },
+    "to": [
+      "CONTRIBUTING.md"
+    ],
+    "touches": [
+      "HYG-13"
+    ]
+  },
+  {
+    "action": "move",
+    "content": [
+      "rule-line",
+      "prose"
+    ],
+    "from": [
+      "AGENTS.md",
+      "CONVENTIONS.md"
+    ],
+    "id": "add-repo-hygiene/row-15",
+    "note": "Only with contributing.content=suggest-and-move and the owner's yes; one source file per commit, a link left behind.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 15,
+      "step": "Step 9"
+    },
+    "to": [
+      "CONTRIBUTING.md"
+    ],
+    "touches": [
+      "AGT-04",
+      "AGT-07",
+      "AGT-09",
+      "AGT-10",
+      "AGT-13",
+      "CON-01",
+      "CON-02",
+      "HYG-13"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "prose"
+    ],
+    "id": "add-repo-hygiene/row-16",
+    "note": "Adds a branch name that a new rule file of row 9 protects to the existing release sentence; no other word changes.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 16,
+      "step": "Step 7"
+    },
+    "to": [
+      "AGENTS.md"
+    ],
+    "touches": [
+      "AGT-09"
+    ]
+  },
+  {
+    "action": "write",
+    "content": [
+      "key"
+    ],
+    "id": "add-repo-hygiene/row-17",
+    "note": "Adds the branch to the guard of the hook manager already in use.",
+    "origin": {
+      "path": "implement/playbooks/add-repo-hygiene.md",
+      "row": 17,
+      "step": "Step 7"
+    },
+    "to": [
+      ".husky/pre-commit",
+      ".pre-commit-config.yaml",
+      "lefthook.yml",
+      ".githooks/pre-commit"
+    ]
+  }
+]

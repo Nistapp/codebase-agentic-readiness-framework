@@ -175,7 +175,9 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
 - **Framework:** stdlib `unittest` (import from `unittest`, not `pytest`).
 - **Location:** a check pack's tests go in its package, `tests/packs/<pack>/` (`agt`, `cmd`, `exec`, `tool`, ...);
   cross-pack and pipeline tests (the fixture matrix, scan, report, CLI) and the `support` helpers stay in `tests/`;
-  fixtures under `tests/fixtures/`. A test module name is unique across the suite (CI's shards find a module by
+  fixtures under `tests/fixtures/`. A fixture's row in the fixture matrix goes in the table of its check's family,
+  `tests/packs/<family>/matrix.py`; a fixture of no one family goes in `tests/packs/cross_family/matrix.py`.
+  A test module name is unique across the suite (CI's shards find a module by
   name). Keep each folder at 50 files or fewer: the self-audit's `NAV-03` reads a larger one as a catch-all.
 - **Fixtures:** one directory per check id, each a minimal repository that fails **exactly one** check.
   The catalogue's § Adding a Check makes this a merge requirement: **no fixture, no check.**
@@ -189,6 +191,8 @@ python3 build.py && ./dist/audit.pyz --list-checks                      # the si
   green.
 - **Gate:** run `make check` and `make security` ([§3.1](#31-standardized-command-surface)) from the repository
   root before proposing a change.
+- **Ruleset revision:** when two branches each add a revision, `make ruleset-renumber` renumbers yours after the
+  base's newest one (`RULESET_ARGS=check` lists them and changes nothing).
 
 ---
 
